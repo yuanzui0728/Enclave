@@ -90,7 +90,9 @@ const SCENE_PROMPT_SECTIONS: Array<{
 ];
 
 export function CharacterFactoryPage() {
-  const { characterId } = useParams({ from: "/characters/$characterId/factory" });
+  const { characterId } = useParams({
+    from: "/characters/$characterId/factory",
+  });
   const queryClient = useQueryClient();
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const [draft, setDraft] = useState<CharacterBlueprintRecipe | null>(null);
@@ -112,7 +114,8 @@ export function CharacterFactoryPage() {
     queryFn: () => getSystemStatus(baseUrl),
   });
   const draftRecipe = factoryQuery.data?.blueprint.draftRecipe ?? null;
-  const lastGeneratedPersonName = factoryQuery.data?.blueprint.lastAiGeneration?.personName ?? "";
+  const lastGeneratedPersonName =
+    factoryQuery.data?.blueprint.lastAiGeneration?.personName ?? "";
 
   const seedSignature = useMemo(
     () => (draftRecipe ? JSON.stringify(draftRecipe) : ""),
@@ -138,8 +141,12 @@ export function CharacterFactoryPage() {
 
   async function invalidateFactory() {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["admin-character-factory", characterId] }),
-      queryClient.invalidateQueries({ queryKey: ["admin-character-factory-revisions", characterId] }),
+      queryClient.invalidateQueries({
+        queryKey: ["admin-character-factory", characterId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["admin-character-factory-revisions", characterId],
+      }),
       queryClient.invalidateQueries({ queryKey: ["admin-characters-crud"] }),
       queryClient.invalidateQueries({ queryKey: ["admin-characters"] }),
     ]);
@@ -147,14 +154,18 @@ export function CharacterFactoryPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (payload: CharacterBlueprintRecipe) =>
-      adminApi.updateCharacterFactory(characterId, payload as unknown as Record<string, unknown>),
+      adminApi.updateCharacterFactory(
+        characterId,
+        payload as unknown as Record<string, unknown>,
+      ),
     onSuccess: async () => {
       await invalidateFactory();
     },
   });
 
   const publishMutation = useMutation({
-    mutationFn: async () => adminApi.publishCharacterFactory(characterId, publishSummary),
+    mutationFn: async () =>
+      adminApi.publishCharacterFactory(characterId, publishSummary),
     onSuccess: async () => {
       setPublishSummary("");
       await invalidateFactory();
@@ -180,7 +191,9 @@ export function CharacterFactoryPage() {
     },
   });
 
-  function patchDraft(updater: (current: CharacterBlueprintRecipe) => CharacterBlueprintRecipe) {
+  function patchDraft(
+    updater: (current: CharacterBlueprintRecipe) => CharacterBlueprintRecipe,
+  ) {
     setDraft((current) => {
       if (!current) {
         return current;
@@ -203,8 +216,12 @@ export function CharacterFactoryPage() {
 
   const snapshot = factoryQuery.data;
   const revisions = revisionsQuery.data ?? [];
-  const driftFieldCount = snapshot.fieldSources.filter((item) => item.status === "runtime_drift").length;
-  const changedPublishItems = snapshot.publishDiff.items.filter((item) => item.changed);
+  const driftFieldCount = snapshot.fieldSources.filter(
+    (item) => item.status === "runtime_drift",
+  ).length;
+  const changedPublishItems = snapshot.publishDiff.items.filter(
+    (item) => item.changed,
+  );
   const digitalHumanSummary = buildDigitalHumanAdminSummary(
     systemStatusQuery.data?.digitalHumanGateway,
   );
@@ -221,15 +238,21 @@ export function CharacterFactoryPage() {
           actions={
             <>
               <Link to="/characters">
-                <Button variant="secondary" size="lg">返回角色中心</Button>
+                <Button variant="secondary" size="lg">
+                  返回角色中心
+                </Button>
               </Link>
               <Link to="/characters/$characterId" params={{ characterId }}>
-                <Button variant="secondary" size="lg">基础资料</Button>
+                <Button variant="secondary" size="lg">
+                  基础资料
+                </Button>
               </Link>
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => setDraft(factoryQuery.data?.blueprint.draftRecipe ?? null)}
+                onClick={() =>
+                  setDraft(factoryQuery.data?.blueprint.draftRecipe ?? null)
+                }
                 disabled={!isDirty}
               >
                 重置草稿
@@ -245,10 +268,19 @@ export function CharacterFactoryPage() {
             </>
           }
           metrics={[
-            { label: "来源", value: formatSourceType(snapshot.blueprint.sourceType) },
+            {
+              label: "来源",
+              value: formatSourceType(snapshot.blueprint.sourceType),
+            },
             { label: "状态", value: formatStatus(snapshot.blueprint.status) },
-            { label: "已发布版本", value: snapshot.blueprint.publishedVersion || 0 },
-            { label: "未发布变更", value: snapshot.diffSummary.hasUnpublishedChanges ? "有" : "无" },
+            {
+              label: "已发布版本",
+              value: snapshot.blueprint.publishedVersion || 0,
+            },
+            {
+              label: "未发布变更",
+              value: snapshot.diffSummary.hasUnpublishedChanges ? "有" : "无",
+            },
           ]}
         />
 
@@ -256,8 +288,14 @@ export function CharacterFactoryPage() {
           <SectionHeading>当前状态</SectionHeading>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <MetricCard label="运行态漂移字段" value={driftFieldCount} />
-            <MetricCard label="发布将覆盖字段" value={snapshot.publishDiff.changedCount} />
-            <MetricCard label="草稿变更字段" value={snapshot.diffSummary.changedFields.length} />
+            <MetricCard
+              label="发布将覆盖字段"
+              value={snapshot.publishDiff.changedCount}
+            />
+            <MetricCard
+              label="草稿变更字段"
+              value={snapshot.diffSummary.changedFields.length}
+            />
             <MetricCard label="版本记录" value={revisions.length} />
           </div>
         </Card>
@@ -282,20 +320,25 @@ export function CharacterFactoryPage() {
       {restoreMutation.isError && restoreMutation.error instanceof Error ? (
         <ErrorBlock message={restoreMutation.error.message} />
       ) : null}
-      {aiGenerateMutation.isError && aiGenerateMutation.error instanceof Error ? (
+      {aiGenerateMutation.isError &&
+      aiGenerateMutation.error instanceof Error ? (
         <ErrorBlock message={aiGenerateMutation.error.message} />
       ) : null}
 
       <InlineNotice tone="muted">
-        工厂页改的是角色配方。只有点击"发布到运行时"后，配方才会映射到当前 `Character` 实体并影响真实对话与生活逻辑。
+        工厂页改的是角色配方。只有点击"发布到运行时"后，配方才会映射到当前
+        `Character` 实体并影响真实对话与生活逻辑。
       </InlineNotice>
 
       {/* Tab 导航 */}
-      <AdminTabs tabs={FACTORY_TABS} activeKey={activeTab} onChange={setActiveTab} />
+      <AdminTabs
+        tabs={FACTORY_TABS}
+        activeKey={activeTab}
+        onChange={setActiveTab}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
-
           {/* Tab: AI 辅助 */}
           {activeTab === "ai" ? (
             <Card className="bg-[color:var(--surface-console)]">
@@ -328,34 +371,66 @@ export function CharacterFactoryPage() {
                 <Button
                   variant="primary"
                   onClick={() => aiGenerateMutation.mutate()}
-                  disabled={!generationSample.trim() || aiGenerateMutation.isPending}
+                  disabled={
+                    !generationSample.trim() || aiGenerateMutation.isPending
+                  }
                 >
-                  {aiGenerateMutation.isPending ? "生成中..." : "生成并写入草稿"}
+                  {aiGenerateMutation.isPending
+                    ? "生成中..."
+                    : "生成并写入草稿"}
                 </Button>
               </div>
               {snapshot.blueprint.lastAiGeneration ? (
                 <div className="mt-6 space-y-4">
                   <SectionHeading>最近一次 AI 制造链路</SectionHeading>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <ValueSnapshot label="样本人名" value={snapshot.blueprint.lastAiGeneration.personName} />
-                    <ValueSnapshot label="生成时间" value={formatDateTime(snapshot.blueprint.lastAiGeneration.requestedAt)} />
+                    <ValueSnapshot
+                      label="样本人名"
+                      value={snapshot.blueprint.lastAiGeneration.personName}
+                    />
+                    <ValueSnapshot
+                      label="生成时间"
+                      value={formatDateTime(
+                        snapshot.blueprint.lastAiGeneration.requestedAt,
+                      )}
+                    />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {snapshot.blueprint.lastAiGeneration.appliedFields.map((field) => (
-                      <StatusPill key={field} tone="warning">{field}</StatusPill>
-                    ))}
+                    {snapshot.blueprint.lastAiGeneration.appliedFields.map(
+                      (field) => (
+                        <StatusPill key={field} tone="warning">
+                          {field}
+                        </StatusPill>
+                      ),
+                    )}
                   </div>
                   <div>
-                    <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">聊天样本</div>
-                    <CodeBlock value={snapshot.blueprint.lastAiGeneration.chatSample} />
+                    <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      聊天样本
+                    </div>
+                    <CodeBlock
+                      value={snapshot.blueprint.lastAiGeneration.chatSample}
+                    />
                   </div>
                   <div>
-                    <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">提取 Prompt</div>
-                    <CodeBlock value={snapshot.blueprint.lastAiGeneration.prompt} />
+                    <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      提取 Prompt
+                    </div>
+                    <CodeBlock
+                      value={snapshot.blueprint.lastAiGeneration.prompt}
+                    />
                   </div>
                   <div>
-                    <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">结构化结果</div>
-                    <CodeBlock value={JSON.stringify(snapshot.blueprint.lastAiGeneration.extractedProfile, null, 2)} />
+                    <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      结构化结果
+                    </div>
+                    <CodeBlock
+                      value={JSON.stringify(
+                        snapshot.blueprint.lastAiGeneration.extractedProfile,
+                        null,
+                        2,
+                      )}
+                    />
                   </div>
                 </div>
               ) : (
@@ -397,7 +472,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      identity: { ...current.identity, relationshipType: value },
+                      identity: {
+                        ...current.identity,
+                        relationshipType: value,
+                      },
                     }))
                   }
                   options={[
@@ -484,7 +562,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      expertise: { ...current.expertise, expertDomains: csvToList(value) },
+                      expertise: {
+                        ...current.expertise,
+                        expertDomains: csvToList(value),
+                      },
                     }))
                   }
                 />
@@ -494,7 +575,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      expertise: { ...current.expertise, expertiseDescription: value },
+                      expertise: {
+                        ...current.expertise,
+                        expertiseDescription: value,
+                      },
                     }))
                   }
                 />
@@ -504,7 +588,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      expertise: { ...current.expertise, knowledgeLimits: value },
+                      expertise: {
+                        ...current.expertise,
+                        knowledgeLimits: value,
+                      },
                     }))
                   }
                 />
@@ -546,7 +633,8 @@ export function CharacterFactoryPage() {
                         ...current,
                         tone: {
                           ...current.tone,
-                          responseLength: value as CharacterBlueprintRecipe["tone"]["responseLength"],
+                          responseLength:
+                            value as CharacterBlueprintRecipe["tone"]["responseLength"],
                         },
                       }))
                     }
@@ -564,7 +652,8 @@ export function CharacterFactoryPage() {
                         ...current,
                         tone: {
                           ...current.tone,
-                          emojiUsage: value as CharacterBlueprintRecipe["tone"]["emojiUsage"],
+                          emojiUsage:
+                            value as CharacterBlueprintRecipe["tone"]["emojiUsage"],
                         },
                       }))
                     }
@@ -601,7 +690,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      tone: { ...current.tone, speechPatterns: csvToList(value) },
+                      tone: {
+                        ...current.tone,
+                        speechPatterns: csvToList(value),
+                      },
                     }))
                   }
                 />
@@ -621,7 +713,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      tone: { ...current.tone, topicsOfInterest: csvToList(value) },
+                      tone: {
+                        ...current.tone,
+                        topicsOfInterest: csvToList(value),
+                      },
                     }))
                   }
                 />
@@ -651,7 +746,8 @@ export function CharacterFactoryPage() {
                   新提示词架构
                 </div>
                 <InlineNotice tone="muted">
-                  角色工厂现在优先维护 `coreLogic + scenePrompts`。这些字段会直接进入真实回复、发帖、评论和主动提醒链路。
+                  角色工厂现在优先维护 `coreLogic +
+                  scenePrompts`。这些字段会直接进入真实回复、发帖、评论和主动提醒链路。
                 </InlineNotice>
                 <TextAreaBlock
                   label="底层逻辑"
@@ -742,7 +838,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      memorySeed: { ...current.memorySeed, memorySummary: value },
+                      memorySeed: {
+                        ...current.memorySeed,
+                        memorySummary: value,
+                      },
                     }))
                   }
                 />
@@ -762,7 +861,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      memorySeed: { ...current.memorySeed, recentSummarySeed: value },
+                      memorySeed: {
+                        ...current.memorySeed,
+                        recentSummarySeed: value,
+                      },
                     }))
                   }
                 />
@@ -772,7 +874,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      memorySeed: { ...current.memorySeed, recentSummaryPrompt: value },
+                      memorySeed: {
+                        ...current.memorySeed,
+                        recentSummaryPrompt: value,
+                      },
                     }))
                   }
                 />
@@ -782,7 +887,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      memorySeed: { ...current.memorySeed, coreMemoryPrompt: value },
+                      memorySeed: {
+                        ...current.memorySeed,
+                        coreMemoryPrompt: value,
+                      },
                     }))
                   }
                 />
@@ -798,7 +906,10 @@ export function CharacterFactoryPage() {
                         ...current,
                         memorySeed: {
                           ...current.memorySeed,
-                          forgettingCurve: parseIntWithFallback(value, current.memorySeed.forgettingCurve),
+                          forgettingCurve: parseIntWithFallback(
+                            value,
+                            current.memorySeed.forgettingCurve,
+                          ),
                         },
                       }))
                     }
@@ -809,7 +920,10 @@ export function CharacterFactoryPage() {
                     onChange={(value) =>
                       patchDraft((current) => ({
                         ...current,
-                        lifeStrategy: { ...current.lifeStrategy, activityFrequency: value },
+                        lifeStrategy: {
+                          ...current.lifeStrategy,
+                          activityFrequency: value,
+                        },
                       }))
                     }
                     options={[
@@ -828,7 +942,10 @@ export function CharacterFactoryPage() {
                         ...current,
                         lifeStrategy: {
                           ...current.lifeStrategy,
-                          momentsFrequency: parseIntWithFallback(value, current.lifeStrategy.momentsFrequency),
+                          momentsFrequency: parseIntWithFallback(
+                            value,
+                            current.lifeStrategy.momentsFrequency,
+                          ),
                         },
                       }))
                     }
@@ -843,7 +960,10 @@ export function CharacterFactoryPage() {
                         ...current,
                         lifeStrategy: {
                           ...current.lifeStrategy,
-                          feedFrequency: parseIntWithFallback(value, current.lifeStrategy.feedFrequency),
+                          feedFrequency: parseIntWithFallback(
+                            value,
+                            current.lifeStrategy.feedFrequency,
+                          ),
                         },
                       }))
                     }
@@ -857,7 +977,10 @@ export function CharacterFactoryPage() {
                     onChange={(value) =>
                       patchDraft((current) => ({
                         ...current,
-                        lifeStrategy: { ...current.lifeStrategy, activeHoursStart: parseOptionalHour(value) },
+                        lifeStrategy: {
+                          ...current.lifeStrategy,
+                          activeHoursStart: parseOptionalHour(value),
+                        },
                       }))
                     }
                   />
@@ -870,7 +993,10 @@ export function CharacterFactoryPage() {
                     onChange={(value) =>
                       patchDraft((current) => ({
                         ...current,
-                        lifeStrategy: { ...current.lifeStrategy, activeHoursEnd: parseOptionalHour(value) },
+                        lifeStrategy: {
+                          ...current.lifeStrategy,
+                          activeHoursEnd: parseOptionalHour(value),
+                        },
                       }))
                     }
                   />
@@ -881,7 +1007,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      lifeStrategy: { ...current.lifeStrategy, triggerScenes: csvToList(value) },
+                      lifeStrategy: {
+                        ...current.lifeStrategy,
+                        triggerScenes: csvToList(value),
+                      },
                     }))
                   }
                 />
@@ -904,7 +1033,10 @@ export function CharacterFactoryPage() {
                     onChange={(event) =>
                       patchDraft((current) => ({
                         ...current,
-                        reasoning: { ...current.reasoning, enableCoT: event.currentTarget.checked },
+                        reasoning: {
+                          ...current.reasoning,
+                          enableCoT: event.currentTarget.checked,
+                        },
                       }))
                     }
                   />
@@ -914,7 +1046,10 @@ export function CharacterFactoryPage() {
                     onChange={(event) =>
                       patchDraft((current) => ({
                         ...current,
-                        reasoning: { ...current.reasoning, enableReflection: event.currentTarget.checked },
+                        reasoning: {
+                          ...current.reasoning,
+                          enableReflection: event.currentTarget.checked,
+                        },
                       }))
                     }
                   />
@@ -924,7 +1059,10 @@ export function CharacterFactoryPage() {
                     onChange={(event) =>
                       patchDraft((current) => ({
                         ...current,
-                        reasoning: { ...current.reasoning, enableRouting: event.currentTarget.checked },
+                        reasoning: {
+                          ...current.reasoning,
+                          enableRouting: event.currentTarget.checked,
+                        },
                       }))
                     }
                   />
@@ -942,7 +1080,8 @@ export function CharacterFactoryPage() {
                         ...current,
                         publishMapping: {
                           ...current.publishMapping,
-                          onlineModeDefault: value === "manual" ? "manual" : "auto",
+                          onlineModeDefault:
+                            value === "manual" ? "manual" : "auto",
                         },
                       }))
                     }
@@ -959,7 +1098,8 @@ export function CharacterFactoryPage() {
                         ...current,
                         publishMapping: {
                           ...current.publishMapping,
-                          activityModeDefault: value === "manual" ? "manual" : "auto",
+                          activityModeDefault:
+                            value === "manual" ? "manual" : "auto",
                         },
                       }))
                     }
@@ -980,7 +1120,10 @@ export function CharacterFactoryPage() {
                     onChange={(value) =>
                       patchDraft((current) => ({
                         ...current,
-                        publishMapping: { ...current.publishMapping, initialActivity: value || null },
+                        publishMapping: {
+                          ...current.publishMapping,
+                          initialActivity: value || null,
+                        },
                       }))
                     }
                     options={ACTIVITY_OPTIONS}
@@ -993,7 +1136,10 @@ export function CharacterFactoryPage() {
                     onChange={(event) =>
                       patchDraft((current) => ({
                         ...current,
-                        publishMapping: { ...current.publishMapping, isTemplate: event.currentTarget.checked },
+                        publishMapping: {
+                          ...current.publishMapping,
+                          isTemplate: event.currentTarget.checked,
+                        },
                       }))
                     }
                   />
@@ -1003,7 +1149,10 @@ export function CharacterFactoryPage() {
                     onChange={(event) =>
                       patchDraft((current) => ({
                         ...current,
-                        publishMapping: { ...current.publishMapping, initialOnline: event.currentTarget.checked },
+                        publishMapping: {
+                          ...current.publishMapping,
+                          initialOnline: event.currentTarget.checked,
+                        },
                       }))
                     }
                   />
@@ -1020,7 +1169,9 @@ export function CharacterFactoryPage() {
                 {snapshot.diffSummary.changedFields.length ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {snapshot.diffSummary.changedFields.map((field) => (
-                      <StatusPill key={field} tone="warning">{field}</StatusPill>
+                      <StatusPill key={field} tone="warning">
+                        {field}
+                      </StatusPill>
                     ))}
                   </div>
                 ) : (
@@ -1036,8 +1187,12 @@ export function CharacterFactoryPage() {
               <div className="grid gap-6 xl:grid-cols-2">
                 <Card className="bg-[color:var(--surface-console)]">
                   <SectionHeading>字段来源</SectionHeading>
-                  <InlineNotice className="mt-4" tone={driftFieldCount > 0 ? "warning" : "muted"}>
-                    这里展示运行时 `Character` 字段来自哪个配方字段，以及当前运行态是否已经偏离上次发布结果。
+                  <InlineNotice
+                    className="mt-4"
+                    tone={driftFieldCount > 0 ? "warning" : "muted"}
+                  >
+                    这里展示运行时 `Character`
+                    字段来自哪个配方字段，以及当前运行态是否已经偏离上次发布结果。
                   </InlineNotice>
                   <div className="mt-4 space-y-3">
                     {snapshot.fieldSources.map((item) => (
@@ -1045,17 +1200,38 @@ export function CharacterFactoryPage() {
                         key={`${item.targetField}-${item.recipeField}`}
                         title={item.label}
                         badges={
-                          <StatusPill tone={item.status === "runtime_drift" ? "warning" : item.status === "draft_only" ? "muted" : "healthy"}>
+                          <StatusPill
+                            tone={
+                              item.status === "runtime_drift"
+                                ? "warning"
+                                : item.status === "draft_only"
+                                  ? "muted"
+                                  : "healthy"
+                            }
+                          >
                             {formatFieldSourceStatus(item.status)}
                           </StatusPill>
                         }
-                        meta={<>{item.targetField} ← {item.recipeField}</>}
+                        meta={
+                          <>
+                            {item.targetField} ← {item.recipeField}
+                          </>
+                        }
                         description={item.note}
                         details={
                           <div className="grid gap-3 md:grid-cols-3">
-                            <ValueSnapshot label="运行时" value={item.runtimeValue} />
-                            <ValueSnapshot label="已发布" value={item.publishedValue} />
-                            <ValueSnapshot label="草稿" value={item.draftValue} />
+                            <ValueSnapshot
+                              label="运行时"
+                              value={item.runtimeValue}
+                            />
+                            <ValueSnapshot
+                              label="已发布"
+                              value={item.publishedValue}
+                            />
+                            <ValueSnapshot
+                              label="草稿"
+                              value={item.draftValue}
+                            />
                           </div>
                         }
                       />
@@ -1065,7 +1241,10 @@ export function CharacterFactoryPage() {
 
                 <Card className="bg-[color:var(--surface-console)]">
                   <SectionHeading>发布映射 Diff</SectionHeading>
-                  <InlineNotice className="mt-4" tone={changedPublishItems.length ? "warning" : "success"}>
+                  <InlineNotice
+                    className="mt-4"
+                    tone={changedPublishItems.length ? "warning" : "success"}
+                  >
                     {changedPublishItems.length
                       ? `当前草稿一旦发布，会覆盖 ${changedPublishItems.length} 个运行时字段。`
                       : "当前运行时与草稿发布结果一致，发布不会改动角色实体。"}
@@ -1075,12 +1254,24 @@ export function CharacterFactoryPage() {
                       <AdminRecordCard
                         key={`${item.targetField}-${item.recipeField}`}
                         title={item.label}
-                        badges={<StatusPill tone="warning">发布后变更</StatusPill>}
-                        meta={<>{item.targetField} ← {item.recipeField}</>}
+                        badges={
+                          <StatusPill tone="warning">发布后变更</StatusPill>
+                        }
+                        meta={
+                          <>
+                            {item.targetField} ← {item.recipeField}
+                          </>
+                        }
                         details={
                           <div className="grid gap-3 md:grid-cols-2">
-                            <ValueSnapshot label="当前运行时" value={item.currentValue} />
-                            <ValueSnapshot label="发布后" value={item.nextValue} />
+                            <ValueSnapshot
+                              label="当前运行时"
+                              value={item.currentValue}
+                            />
+                            <ValueSnapshot
+                              label="发布后"
+                              value={item.nextValue}
+                            />
                           </div>
                         }
                       />
@@ -1088,9 +1279,13 @@ export function CharacterFactoryPage() {
                     {changedPublishItems.length === 0 ? (
                       <AdminPanelEmpty message="当前没有需要覆盖的运行态字段。" />
                     ) : null}
-                    {snapshot.publishDiff.items.length > changedPublishItems.length ? (
+                    {snapshot.publishDiff.items.length >
+                    changedPublishItems.length ? (
                       <div className="text-sm text-[color:var(--text-muted)]">
-                        其余 {snapshot.publishDiff.items.length - changedPublishItems.length} 个字段发布后保持不变。
+                        其余{" "}
+                        {snapshot.publishDiff.items.length -
+                          changedPublishItems.length}{" "}
+                        个字段发布后保持不变。
                       </div>
                     ) : null}
                   </div>
@@ -1099,8 +1294,11 @@ export function CharacterFactoryPage() {
 
               <Card className="bg-[color:var(--surface-console)]">
                 <SectionHeading>版本记录</SectionHeading>
-                {revisionsQuery.isLoading ? <LoadingBlock className="mt-4" label="正在加载版本..." /> : null}
-                {revisionsQuery.isError && revisionsQuery.error instanceof Error ? (
+                {revisionsQuery.isLoading ? (
+                  <LoadingBlock className="mt-4" label="正在加载版本..." />
+                ) : null}
+                {revisionsQuery.isError &&
+                revisionsQuery.error instanceof Error ? (
                   <ErrorBlock message={revisionsQuery.error.message} />
                 ) : null}
                 <div className="mt-4 space-y-4">
@@ -1110,8 +1308,12 @@ export function CharacterFactoryPage() {
                       title={revision.summary?.trim() || "无发布说明"}
                       badges={
                         <>
-                          <StatusPill tone="muted">v{revision.version}</StatusPill>
-                          <StatusPill tone="muted">{formatChangeSource(revision.changeSource)}</StatusPill>
+                          <StatusPill tone="muted">
+                            v{revision.version}
+                          </StatusPill>
+                          <StatusPill tone="muted">
+                            {formatChangeSource(revision.changeSource)}
+                          </StatusPill>
                         </>
                       }
                       meta={formatDateTime(revision.createdAt)}
@@ -1120,9 +1322,15 @@ export function CharacterFactoryPage() {
                           variant="secondary"
                           size="sm"
                           onClick={() => restoreMutation.mutate(revision.id)}
-                          disabled={restoreMutation.isPending && restoreMutation.variables === revision.id}
+                          disabled={
+                            restoreMutation.isPending &&
+                            restoreMutation.variables === revision.id
+                          }
                         >
-                          {restoreMutation.isPending && restoreMutation.variables === revision.id ? "恢复中..." : "恢复到草稿"}
+                          {restoreMutation.isPending &&
+                          restoreMutation.variables === revision.id
+                            ? "恢复中..."
+                            : "恢复到草稿"}
                         </Button>
                       }
                     />
@@ -1134,12 +1342,15 @@ export function CharacterFactoryPage() {
                 <SectionHeading>已发布快照</SectionHeading>
                 <CodeBlock
                   className="mt-4"
-                  value={JSON.stringify(snapshot.blueprint.publishedRecipe ?? {}, null, 2)}
+                  value={JSON.stringify(
+                    snapshot.blueprint.publishedRecipe ?? {},
+                    null,
+                    2,
+                  )}
                 />
               </Card>
             </div>
           ) : null}
-
         </div>
 
         {/* 右侧：发布操作 & 状态（始终可见） */}
@@ -1148,7 +1359,9 @@ export function CharacterFactoryPage() {
             <AdminSectionHeader
               title="发布操作"
               actions={
-                <StatusPill tone={publishMutation.isPending ? "warning" : "muted"}>
+                <StatusPill
+                  tone={publishMutation.isPending ? "warning" : "muted"}
+                >
                   {publishMutation.isPending ? "发布中" : "等待发布"}
                 </StatusPill>
               }
@@ -1181,7 +1394,12 @@ export function CharacterFactoryPage() {
             title="运营提示"
             rows={[
               { label: "草稿状态", value: isDirty ? "有未保存变更" : "已同步" },
-              { label: "发布状态", value: snapshot.diffSummary.hasUnpublishedChanges ? "待发布" : "已发布同步" },
+              {
+                label: "发布状态",
+                value: snapshot.diffSummary.hasUnpublishedChanges
+                  ? "待发布"
+                  : "已发布同步",
+              },
               { label: "建议流程", value: "先改草稿，再看 Diff，最后发布" },
             ]}
           />
@@ -1218,7 +1436,9 @@ function parseOptionalHour(value: string) {
   return Math.min(Math.max(Math.round(parsed), 0), 23);
 }
 
-function formatSourceType(value: CharacterFactorySnapshot["blueprint"]["sourceType"]) {
+function formatSourceType(
+  value: CharacterFactorySnapshot["blueprint"]["sourceType"],
+) {
   switch (value) {
     case "default_seed":
       return "内置默认角色";
@@ -1263,7 +1483,9 @@ function formatChangeSource(value: CharacterBlueprintRevision["changeSource"]) {
   }
 }
 
-function formatFieldSourceStatus(value: CharacterFactorySnapshot["fieldSources"][number]["status"]) {
+function formatFieldSourceStatus(
+  value: CharacterFactorySnapshot["fieldSources"][number]["status"],
+) {
   switch (value) {
     case "draft_only":
       return "仅草稿";

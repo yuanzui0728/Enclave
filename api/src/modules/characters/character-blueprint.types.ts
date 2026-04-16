@@ -7,10 +7,7 @@ export type CharacterBlueprintSourceTypeValue =
   | 'template_clone'
   | 'ai_generated';
 
-export type CharacterBlueprintStatusValue =
-  | 'draft'
-  | 'published'
-  | 'archived';
+export type CharacterBlueprintStatusValue = 'draft' | 'published' | 'archived';
 
 export interface CharacterBlueprintAiGenerationTraceValue {
   requestedAt: string;
@@ -126,11 +123,7 @@ export interface CharacterBlueprintRevisionContract {
   version: number;
   recipe: CharacterBlueprintRecipeValue;
   summary?: string | null;
-  changeSource:
-    | 'publish'
-    | 'restore'
-    | 'seed_backfill'
-    | 'manual_snapshot';
+  changeSource: 'publish' | 'restore' | 'seed_backfill' | 'manual_snapshot';
   createdAt: string;
 }
 

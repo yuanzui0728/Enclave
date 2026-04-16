@@ -127,11 +127,7 @@ export interface CharacterBlueprintRevision {
   version: number;
   recipe: CharacterBlueprintRecipe;
   summary?: string | null;
-  changeSource:
-    | "publish"
-    | "restore"
-    | "seed_backfill"
-    | "manual_snapshot";
+  changeSource: "publish" | "restore" | "seed_backfill" | "manual_snapshot";
   createdAt: string;
 }
 

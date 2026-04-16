@@ -1,5 +1,9 @@
 import { randomUUID } from 'crypto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type {
   CharacterBlueprintAiGenerationTraceValue,
@@ -130,7 +134,8 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     recipeField: 'tone.speechPatterns',
     targetField: 'profile.traits.speechPatterns',
     readRecipe: (recipe) => recipe.tone.speechPatterns,
-    readCharacter: (character) => character.profile?.traits?.speechPatterns ?? [],
+    readCharacter: (character) =>
+      character.profile?.traits?.speechPatterns ?? [],
   },
   {
     label: '口头禅',
@@ -152,14 +157,16 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     recipeField: 'tone.emotionalTone',
     targetField: 'profile.traits.emotionalTone',
     readRecipe: (recipe) => recipe.tone.emotionalTone,
-    readCharacter: (character) => character.profile?.traits?.emotionalTone ?? '',
+    readCharacter: (character) =>
+      character.profile?.traits?.emotionalTone ?? '',
   },
   {
     label: '回复长度',
     recipeField: 'tone.responseLength',
     targetField: 'profile.traits.responseLength',
     readRecipe: (recipe) => recipe.tone.responseLength,
-    readCharacter: (character) => character.profile?.traits?.responseLength ?? '',
+    readCharacter: (character) =>
+      character.profile?.traits?.responseLength ?? '',
   },
   {
     label: '表情使用',
@@ -189,14 +196,16 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     recipeField: 'tone.taboos',
     targetField: 'profile.behavioralPatterns.taboos',
     readRecipe: (recipe) => recipe.tone.taboos,
-    readCharacter: (character) => character.profile?.behavioralPatterns?.taboos ?? [],
+    readCharacter: (character) =>
+      character.profile?.behavioralPatterns?.taboos ?? [],
   },
   {
     label: '个人癖好',
     recipeField: 'tone.quirks',
     targetField: 'profile.behavioralPatterns.quirks',
     readRecipe: (recipe) => recipe.tone.quirks,
-    readCharacter: (character) => character.profile?.behavioralPatterns?.quirks ?? [],
+    readCharacter: (character) =>
+      character.profile?.behavioralPatterns?.quirks ?? [],
   },
   {
     label: '行动纲领',
@@ -308,14 +317,16 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     recipeField: 'memorySeed.recentSummarySeed',
     targetField: 'profile.memory.recentSummary',
     readRecipe: (recipe) => recipe.memorySeed.recentSummarySeed,
-    readCharacter: (character) => character.profile?.memory?.recentSummary ?? '',
+    readCharacter: (character) =>
+      character.profile?.memory?.recentSummary ?? '',
   },
   {
     label: '遗忘曲线',
     recipeField: 'memorySeed.forgettingCurve',
     targetField: 'profile.memory.forgettingCurve',
     readRecipe: (recipe) => recipe.memorySeed.forgettingCurve,
-    readCharacter: (character) => character.profile?.memory?.forgettingCurve ?? 70,
+    readCharacter: (character) =>
+      character.profile?.memory?.forgettingCurve ?? 70,
   },
   {
     label: '近期摘要提取提示词',
@@ -457,9 +468,7 @@ function normalizeStringList(value: unknown) {
     return [];
   }
 
-  return value
-    .map((item) => String(item ?? '').trim())
-    .filter(Boolean);
+  return value.map((item) => String(item ?? '').trim()).filter(Boolean);
 }
 
 function normalizeOptionalString(value: unknown) {
@@ -482,7 +491,9 @@ function createEmptyScenePrompts(): CharacterBlueprintRecipeValue['prompting']['
 function cloneRecipe(
   recipe: CharacterBlueprintRecipeValue,
 ): CharacterBlueprintRecipeValue {
-  const cloned = JSON.parse(JSON.stringify(recipe)) as CharacterBlueprintRecipeValue;
+  const cloned = JSON.parse(
+    JSON.stringify(recipe),
+  ) as CharacterBlueprintRecipeValue;
   return {
     ...cloned,
     prompting: {
@@ -505,9 +516,7 @@ function cloneRecipe(
   };
 }
 
-function cloneCharacter(
-  character: CharacterEntity,
-): CharacterEntity {
+function cloneCharacter(character: CharacterEntity): CharacterEntity {
   return JSON.parse(JSON.stringify(character)) as CharacterEntity;
 }
 
@@ -525,7 +534,9 @@ function deepMerge<T>(base: T, patch: Partial<T>): T {
     return (patch ?? base) as T;
   }
 
-  const next: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  const next: Record<string, unknown> = {
+    ...(base as Record<string, unknown>),
+  };
   for (const [key, value] of Object.entries(patch)) {
     if (value === undefined) {
       continue;
@@ -549,11 +560,7 @@ function deepMerge<T>(base: T, patch: Partial<T>): T {
   return next as T;
 }
 
-function listDiffPaths(
-  left: unknown,
-  right: unknown,
-  prefix = '',
-): string[] {
+function listDiffPaths(left: unknown, right: unknown, prefix = ''): string[] {
   if (JSON.stringify(left) === JSON.stringify(right)) {
     return [];
   }
@@ -594,7 +601,10 @@ function valuesEqual(left: unknown, right: unknown) {
 function summarizeValue(value: unknown) {
   if (Array.isArray(value)) {
     return value.length
-      ? value.map((item) => String(item).trim()).filter(Boolean).join('、')
+      ? value
+          .map((item) => String(item).trim())
+          .filter(Boolean)
+          .join('、')
       : '未设置';
   }
 
@@ -730,13 +740,17 @@ export class CharacterBlueprintService {
       chatSample,
       personName,
     );
-    const extractedRaw = await this.ai.extractPersonality(chatSample, personName, {
-      surface: 'admin',
-      scene: 'character_factory_extract',
-      scopeType: 'admin_task',
-      scopeLabel: personName,
-      characterId,
-    });
+    const extractedRaw = await this.ai.extractPersonality(
+      chatSample,
+      personName,
+      {
+        surface: 'admin',
+        scene: 'character_factory_extract',
+        scopeType: 'admin_task',
+        scopeLabel: personName,
+        characterId,
+      },
+    );
     const extracted = {
       speechPatterns: normalizeStringList(extractedRaw.speechPatterns),
       catchphrases: normalizeStringList(extractedRaw.catchphrases),
@@ -868,9 +882,10 @@ export class CharacterBlueprintService {
       );
       const nextPublishedRecipe = existing.publishedRecipe
         ? this.hydrateRecipeFromCharacter(existing.publishedRecipe, character)
-        : existing.publishedRecipe ?? null;
+        : (existing.publishedRecipe ?? null);
       const draftChanged =
-        JSON.stringify(existing.draftRecipe) !== JSON.stringify(nextDraftRecipe);
+        JSON.stringify(existing.draftRecipe) !==
+        JSON.stringify(nextDraftRecipe);
       const publishedChanged =
         JSON.stringify(existing.publishedRecipe ?? null) !==
         JSON.stringify(nextPublishedRecipe ?? null);
@@ -893,7 +908,7 @@ export class CharacterBlueprintService {
         ? 'default_seed'
         : character.sourceType === 'preset_catalog'
           ? 'preset_catalog'
-        : 'manual_admin';
+          : 'manual_admin';
     const blueprint = this.blueprintRepo.create({
       id: `blueprint_${character.id}`,
       characterId: character.id,
@@ -961,15 +976,15 @@ export class CharacterBlueprintService {
         worldview: character.profile?.identity?.worldview ?? '',
       },
       expertise: {
-        expertDomains:
-          character.expertDomains?.length
-            ? [...character.expertDomains]
-            : ['general'],
+        expertDomains: character.expertDomains?.length
+          ? [...character.expertDomains]
+          : ['general'],
         expertiseDescription:
           character.profile?.cognitiveBoundaries?.expertiseDescription ?? '',
         knowledgeLimits:
           character.profile?.cognitiveBoundaries?.knowledgeLimits ?? '',
-        refusalStyle: character.profile?.cognitiveBoundaries?.refusalStyle ?? '',
+        refusalStyle:
+          character.profile?.cognitiveBoundaries?.refusalStyle ?? '',
       },
       tone: {
         speechPatterns: [...(character.profile?.traits?.speechPatterns ?? [])],
@@ -1015,7 +1030,8 @@ export class CharacterBlueprintService {
         enableCoT: character.profile?.reasoningConfig?.enableCoT ?? true,
         enableReflection:
           character.profile?.reasoningConfig?.enableReflection ?? true,
-        enableRouting: character.profile?.reasoningConfig?.enableRouting ?? true,
+        enableRouting:
+          character.profile?.reasoningConfig?.enableRouting ?? true,
       },
       lifeStrategy: {
         activityFrequency: character.activityFrequency ?? 'normal',
@@ -1051,42 +1067,42 @@ export class CharacterBlueprintService {
         coreLogic:
           typeof recipe.prompting?.coreLogic === 'string'
             ? recipe.prompting.coreLogic
-            : currentProfile?.coreLogic ??
+            : (currentProfile?.coreLogic ??
               currentProfile?.coreDirective ??
-              '',
+              ''),
         scenePrompts: {
           chat:
             typeof recipe.prompting?.scenePrompts?.chat === 'string'
               ? recipe.prompting.scenePrompts.chat
-              : currentScenePrompts?.chat ?? currentProfile?.basePrompt ?? '',
+              : (currentScenePrompts?.chat ?? currentProfile?.basePrompt ?? ''),
           moments_post:
             typeof recipe.prompting?.scenePrompts?.moments_post === 'string'
               ? recipe.prompting.scenePrompts.moments_post
-              : currentScenePrompts?.moments_post ?? '',
+              : (currentScenePrompts?.moments_post ?? ''),
           moments_comment:
             typeof recipe.prompting?.scenePrompts?.moments_comment === 'string'
               ? recipe.prompting.scenePrompts.moments_comment
-              : currentScenePrompts?.moments_comment ?? '',
+              : (currentScenePrompts?.moments_comment ?? ''),
           feed_post:
             typeof recipe.prompting?.scenePrompts?.feed_post === 'string'
               ? recipe.prompting.scenePrompts.feed_post
-              : currentScenePrompts?.feed_post ?? '',
+              : (currentScenePrompts?.feed_post ?? ''),
           channel_post:
             typeof recipe.prompting?.scenePrompts?.channel_post === 'string'
               ? recipe.prompting.scenePrompts.channel_post
-              : currentScenePrompts?.channel_post ?? '',
+              : (currentScenePrompts?.channel_post ?? ''),
           feed_comment:
             typeof recipe.prompting?.scenePrompts?.feed_comment === 'string'
               ? recipe.prompting.scenePrompts.feed_comment
-              : currentScenePrompts?.feed_comment ?? '',
+              : (currentScenePrompts?.feed_comment ?? ''),
           greeting:
             typeof recipe.prompting?.scenePrompts?.greeting === 'string'
               ? recipe.prompting.scenePrompts.greeting
-              : currentScenePrompts?.greeting ?? '',
+              : (currentScenePrompts?.greeting ?? ''),
           proactive:
             typeof recipe.prompting?.scenePrompts?.proactive === 'string'
               ? recipe.prompting.scenePrompts.proactive
-              : currentScenePrompts?.proactive ?? '',
+              : (currentScenePrompts?.proactive ?? ''),
         },
       },
       memorySeed: {
@@ -1094,11 +1110,11 @@ export class CharacterBlueprintService {
         recentSummaryPrompt:
           typeof recipe.memorySeed?.recentSummaryPrompt === 'string'
             ? recipe.memorySeed.recentSummaryPrompt
-            : currentProfile?.memory?.recentSummaryPrompt ?? '',
+            : (currentProfile?.memory?.recentSummaryPrompt ?? ''),
         coreMemoryPrompt:
           typeof recipe.memorySeed?.coreMemoryPrompt === 'string'
             ? recipe.memorySeed.coreMemoryPrompt
-            : currentProfile?.memory?.coreMemoryPrompt ?? '',
+            : (currentProfile?.memory?.coreMemoryPrompt ?? ''),
       },
     };
   }
@@ -1113,9 +1129,12 @@ export class CharacterBlueprintService {
     character.avatar = recipe.identity.avatar.trim();
     character.bio = recipe.identity.bio.trim();
     character.expertDomains = recipe.expertise.expertDomains.length
-      ? recipe.expertise.expertDomains.map((item) => item.trim()).filter(Boolean)
+      ? recipe.expertise.expertDomains
+          .map((item) => item.trim())
+          .filter(Boolean)
       : ['general'];
-    character.activityFrequency = recipe.lifeStrategy.activityFrequency.trim() || 'normal';
+    character.activityFrequency =
+      recipe.lifeStrategy.activityFrequency.trim() || 'normal';
     character.momentsFrequency = recipe.lifeStrategy.momentsFrequency;
     character.feedFrequency = recipe.lifeStrategy.feedFrequency;
     character.activeHoursStart =
@@ -1151,9 +1170,15 @@ export class CharacterBlueprintService {
       systemPrompt: recipe.tone.systemPrompt.trim(),
       memorySummary: recipe.memorySeed.memorySummary.trim(),
       traits: {
-        speechPatterns: recipe.tone.speechPatterns.map((item) => item.trim()).filter(Boolean),
-        catchphrases: recipe.tone.catchphrases.map((item) => item.trim()).filter(Boolean),
-        topicsOfInterest: recipe.tone.topicsOfInterest.map((item) => item.trim()).filter(Boolean),
+        speechPatterns: recipe.tone.speechPatterns
+          .map((item) => item.trim())
+          .filter(Boolean),
+        catchphrases: recipe.tone.catchphrases
+          .map((item) => item.trim())
+          .filter(Boolean),
+        topicsOfInterest: recipe.tone.topicsOfInterest
+          .map((item) => item.trim())
+          .filter(Boolean),
         emotionalTone: recipe.tone.emotionalTone.trim() || 'grounded',
         responseLength: normalizeResponseLength(
           recipe.tone.responseLength.trim(),
@@ -1307,7 +1332,9 @@ export class CharacterBlueprintService {
       publishedRevisionId: blueprint.publishedRevisionId ?? null,
       publishedVersion: blueprint.publishedVersion ?? 0,
       lastAiGeneration: blueprint.lastAiGeneration
-        ? ({ ...blueprint.lastAiGeneration } as CharacterBlueprintAiGenerationTraceValue)
+        ? ({
+            ...blueprint.lastAiGeneration,
+          } as CharacterBlueprintAiGenerationTraceValue)
         : null,
       createdAt: blueprint.createdAt.toISOString(),
       updatedAt: blueprint.updatedAt.toISOString(),

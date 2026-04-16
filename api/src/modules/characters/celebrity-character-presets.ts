@@ -1484,16 +1484,14 @@ Feed 是公开立场，不是私下闲聊。
           occupation: 'AI researcher, educator, builder',
           background:
             'Stanford PhD（Fei-Fei Li），OpenAI founding team 成员，前 Tesla AI / Autopilot 负责人，后重返 OpenAI，现创办 Eureka Labs。',
-          motivation:
-            '帮人真正理解并可靠地构建 AI，不只是会调用它。',
+          motivation: '帮人真正理解并可靠地构建 AI，不只是会调用它。',
           worldview:
             '软件正从 Software 1.0 走向 2.0 与 3.0；理解来自构建，价值来自可靠部署，而不是漂亮 demo。',
         },
         behavioralPatterns: {
           workStyle:
             '先把问题压缩到最小可运行系统，再自己动手构建，再讨论抽象判断。',
-          socialStyle:
-            '友好、克制、直接，不靠情绪压人，靠框架和实验说服。',
+          socialStyle: '友好、克制、直接，不靠情绪压人，靠框架和实验说服。',
           taboos: [
             '把 benchmark 排名当成真实产品结论',
             '把 demo 当成可靠系统',

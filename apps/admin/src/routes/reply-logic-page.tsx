@@ -70,7 +70,10 @@ type EditableCharacter = Omit<Character, "profile"> & {
   profile: EditableProfile;
 };
 
-const ACTIVITY_OPTIONS: Array<{ value: NonNullable<Character["currentActivity"]>; label: string }> = [
+const ACTIVITY_OPTIONS: Array<{
+  value: NonNullable<Character["currentActivity"]>;
+  label: string;
+}> = [
   { value: "free", label: "空闲" },
   { value: "working", label: "工作中" },
   { value: "eating", label: "吃饭中" },
@@ -108,13 +111,18 @@ export function ReplyLogicPage() {
   const queryClient = useQueryClient();
   const initialFocus = useMemo(() => readInitialReplyLogicFocus(), []);
   const [scope, setScope] = useState<InspectorScope>(initialFocus.scope);
-  const [selectedCharacterId, setSelectedCharacterId] = useState(initialFocus.characterId);
+  const [selectedCharacterId, setSelectedCharacterId] = useState(
+    initialFocus.characterId,
+  );
   const [selectedConversationId, setSelectedConversationId] = useState(
     initialFocus.conversationId,
   );
-  const [configuredConversationActorId, setConfiguredConversationActorId] = useState("");
-  const [characterDraft, setCharacterDraft] = useState<EditableCharacter | null>(null);
-  const [runtimeRulesDraft, setRuntimeRulesDraft] = useState<ReplyLogicConstantSummary | null>(null);
+  const [configuredConversationActorId, setConfiguredConversationActorId] =
+    useState("");
+  const [characterDraft, setCharacterDraft] =
+    useState<EditableCharacter | null>(null);
+  const [runtimeRulesDraft, setRuntimeRulesDraft] =
+    useState<ReplyLogicConstantSummary | null>(null);
   const [previewMessage, setPreviewMessage] = useState("");
 
   const overviewQuery = useQuery({
@@ -135,7 +143,8 @@ export function ReplyLogicPage() {
     }
   }, [overviewQuery.data, selectedCharacterId, selectedConversationId]);
 
-  const activeCharacterId = selectedCharacterId || overviewQuery.data?.characters[0]?.id || "";
+  const activeCharacterId =
+    selectedCharacterId || overviewQuery.data?.characters[0]?.id || "";
   const activeConversationId =
     selectedConversationId || overviewQuery.data?.conversations[0]?.id || "";
 
@@ -147,7 +156,8 @@ export function ReplyLogicPage() {
 
   const conversationSnapshotQuery = useQuery({
     queryKey: ["admin-reply-logic-conversation", baseUrl, activeConversationId],
-    queryFn: () => adminApi.getReplyLogicConversationSnapshot(activeConversationId),
+    queryFn: () =>
+      adminApi.getReplyLogicConversationSnapshot(activeConversationId),
     enabled: scope === "conversation" && Boolean(activeConversationId),
   });
 
@@ -167,11 +177,16 @@ export function ReplyLogicPage() {
 
   const overview = overviewQuery.data;
   const selectedCharacter = useMemo(
-    () => overview?.characters.find((item) => item.id === activeCharacterId) ?? null,
+    () =>
+      overview?.characters.find((item) => item.id === activeCharacterId) ??
+      null,
     [activeCharacterId, overview?.characters],
   );
   const selectedConversation = useMemo(
-    () => overview?.conversations.find((item) => item.id === activeConversationId) ?? null,
+    () =>
+      overview?.conversations.find(
+        (item) => item.id === activeConversationId,
+      ) ?? null,
     [activeConversationId, overview?.conversations],
   );
 
@@ -195,7 +210,9 @@ export function ReplyLogicPage() {
 
     if (
       !configuredConversationActorId ||
-      !conversationActorOptions.some((item) => item.id === configuredConversationActorId)
+      !conversationActorOptions.some(
+        (item) => item.id === configuredConversationActorId,
+      )
     ) {
       setConfiguredConversationActorId(conversationActorOptions[0].id);
     }
@@ -220,7 +237,10 @@ export function ReplyLogicPage() {
   ]);
 
   const editableCharacterSeed = useMemo(
-    () => (editableCharacterSource ? createEditableCharacter(editableCharacterSource) : null),
+    () =>
+      editableCharacterSource
+        ? createEditableCharacter(editableCharacterSource)
+        : null,
     [editableCharacterSource],
   );
   const editableCharacterSeedSignature = useMemo(
@@ -233,14 +253,22 @@ export function ReplyLogicPage() {
   );
   const stableEditableCharacterSeedRef = useRef<EditableCharacter | null>(null);
   const stableEditableCharacterSeedSignatureRef = useRef("");
-  if (stableEditableCharacterSeedSignatureRef.current !== editableCharacterSeedSignature) {
+  if (
+    stableEditableCharacterSeedSignatureRef.current !==
+    editableCharacterSeedSignature
+  ) {
     stableEditableCharacterSeedRef.current = editableCharacterSeed;
-    stableEditableCharacterSeedSignatureRef.current = editableCharacterSeedSignature;
+    stableEditableCharacterSeedSignatureRef.current =
+      editableCharacterSeedSignature;
   }
 
-  const stableRuntimeRulesSeedRef = useRef<ReplyLogicConstantSummary | null>(null);
+  const stableRuntimeRulesSeedRef = useRef<ReplyLogicConstantSummary | null>(
+    null,
+  );
   const stableRuntimeRulesSeedSignatureRef = useRef("");
-  if (stableRuntimeRulesSeedSignatureRef.current !== runtimeRulesSeedSignature) {
+  if (
+    stableRuntimeRulesSeedSignatureRef.current !== runtimeRulesSeedSignature
+  ) {
     stableRuntimeRulesSeedRef.current = overview?.constants ?? null;
     stableRuntimeRulesSeedSignatureRef.current = runtimeRulesSeedSignature;
   }
@@ -254,9 +282,15 @@ export function ReplyLogicPage() {
 
   async function refreshAll() {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
-      queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-character", baseUrl] }),
-      queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-conversation", baseUrl] }),
+      queryClient.invalidateQueries({
+        queryKey: ["admin-reply-logic-overview", baseUrl],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["admin-reply-logic-character", baseUrl],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["admin-reply-logic-conversation", baseUrl],
+      }),
     ]);
   }
 
@@ -268,19 +302,28 @@ export function ReplyLogicPage() {
     onSuccess: async () => {
       await Promise.all([
         refreshAll(),
-        queryClient.invalidateQueries({ queryKey: ["admin-characters", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-characters-crud", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-character-edit", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters-crud", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-character-edit", baseUrl],
+        }),
       ]);
     },
   });
 
   const runtimeRulesSaveMutation = useMutation({
-    mutationFn: async (draft: ReplyLogicConstantSummary) => adminApi.setReplyLogicRules(draft),
+    mutationFn: async (draft: ReplyLogicConstantSummary) =>
+      adminApi.setReplyLogicRules(draft),
     onSuccess: async () => {
       await Promise.all([
         refreshAll(),
-        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-reply-logic-overview", baseUrl],
+        }),
       ]);
     },
   });
@@ -366,7 +409,9 @@ export function ReplyLogicPage() {
       providerSetup.providerSaveMutation.error.message) ||
     null;
 
-  function patchCharacterDraft(updater: (current: EditableCharacter) => EditableCharacter) {
+  function patchCharacterDraft(
+    updater: (current: EditableCharacter) => EditableCharacter,
+  ) {
     setCharacterDraft((current) => {
       if (!current) {
         return current;
@@ -424,13 +469,22 @@ export function ReplyLogicPage() {
     scope === "character" && selectedCharacter
       ? [
           { label: "角色", value: selectedCharacter.name },
-          { label: "活动", value: formatActivity(selectedCharacter.currentActivity) },
-          { label: "在线", value: selectedCharacter.isOnline ? "在线" : "离线" },
+          {
+            label: "活动",
+            value: formatActivity(selectedCharacter.currentActivity),
+          },
+          {
+            label: "在线",
+            value: selectedCharacter.isOnline ? "在线" : "离线",
+          },
         ]
       : scope === "conversation" && selectedConversation
         ? [
             { label: "会话", value: selectedConversation.title },
-            { label: "来源", value: formatConversationSource(selectedConversation.source) },
+            {
+              label: "来源",
+              value: formatConversationSource(selectedConversation.source),
+            },
             {
               label: "参与角色",
               value: selectedConversation.participantNames.join(" / ") || "无",
@@ -465,19 +519,25 @@ export function ReplyLogicPage() {
       return;
     }
 
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById(sectionId)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
     <div className="space-y-6">
-      {overviewQuery.isLoading ? <LoadingBlock label="正在读取回复逻辑总览..." /> : null}
+      {overviewQuery.isLoading ? (
+        <LoadingBlock label="正在读取回复逻辑总览..." />
+      ) : null}
       {overviewQuery.isError && overviewQuery.error instanceof Error ? (
         <ErrorBlock message={overviewQuery.error.message} />
       ) : null}
       {initialFocus.conversationId || initialFocus.characterId ? (
         <InlineNotice>
           当前已带入
-          {initialFocus.conversationId ? `会话 ${initialFocus.conversationId}` : `角色 ${initialFocus.characterId}`}
+          {initialFocus.conversationId
+            ? `会话 ${initialFocus.conversationId}`
+            : `角色 ${initialFocus.characterId}`}
           的回复逻辑上下文。
         </InlineNotice>
       ) : null}
@@ -488,7 +548,12 @@ export function ReplyLogicPage() {
             <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
               {/* Quick actions */}
               <div className="flex gap-2">
-                <Button onClick={() => void refreshAll()} variant="secondary" size="sm" className="flex-1 justify-center">
+                <Button
+                  onClick={() => void refreshAll()}
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1 justify-center"
+                >
                   刷新快照
                 </Button>
                 <Button
@@ -496,9 +561,14 @@ export function ReplyLogicPage() {
                   variant="primary"
                   size="sm"
                   className="flex-1 justify-center"
-                  disabled={!isRuntimeRulesDraftDirty || runtimeRulesSaveMutation.isPending}
+                  disabled={
+                    !isRuntimeRulesDraftDirty ||
+                    runtimeRulesSaveMutation.isPending
+                  }
                 >
-                  {runtimeRulesSaveMutation.isPending ? "保存中..." : "保存规则"}
+                  {runtimeRulesSaveMutation.isPending
+                    ? "保存中..."
+                    : "保存规则"}
                 </Button>
               </div>
 
@@ -547,7 +617,6 @@ export function ReplyLogicPage() {
                   </button>
                 </div>
                 <div className="mt-3 space-y-3">
-
                   {scope === "character" ? (
                     <TargetListCard
                       title="角色列表"
@@ -580,7 +649,10 @@ export function ReplyLogicPage() {
 
               <AdminInfoRows title="目标摘要" rows={targetSummaryRows} />
 
-              <AdminInfoRows title="真实运行推理服务" rows={providerSummaryRows} />
+              <AdminInfoRows
+                title="真实运行推理服务"
+                rows={providerSummaryRows}
+              />
 
               {overview.provider.notes.length ? (
                 <Card className="bg-[color:var(--surface-console)]">
@@ -630,7 +702,9 @@ export function ReplyLogicPage() {
                   onPreviewMessageChange={setPreviewMessage}
                   actorOptions={conversationActorOptions}
                   configuredConversationActorId={configuredConversationActorId}
-                  onConfiguredConversationActorIdChange={setConfiguredConversationActorId}
+                  onConfiguredConversationActorIdChange={
+                    setConfiguredConversationActorId
+                  }
                   preview={previewMutation.data}
                   error={previewMutation.error}
                   isPending={previewMutation.isPending}
@@ -651,10 +725,18 @@ export function ReplyLogicPage() {
                     }
                   />
                   <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-                    <MetricCard label="当前范围" value={scope === "character" ? "角色" : "会话"} />
+                    <MetricCard
+                      label="当前范围"
+                      value={scope === "character" ? "角色" : "会话"}
+                    />
                     <MetricCard
                       label="配置目标"
-                      value={editableCharacterSource?.name ?? (scope === "conversation" ? "先选择会话角色" : "先选择角色")}
+                      value={
+                        editableCharacterSource?.name ??
+                        (scope === "conversation"
+                          ? "先选择会话角色"
+                          : "先选择角色")
+                      }
                     />
                   </div>
 
@@ -672,7 +754,8 @@ export function ReplyLogicPage() {
                   ) : null}
 
                   <InlineNotice className="mt-4" tone="muted">
-                    这里改的是实体字段和 `profile` 配置对象。本页不会实时重算草稿提示词，保存后会刷新右侧快照，看到真实生效结果。
+                    这里改的是实体字段和 `profile`
+                    配置对象。本页不会实时重算草稿提示词，保存后会刷新右侧快照，看到真实生效结果。
                   </InlineNotice>
                 </Card>
               </div>
@@ -682,7 +765,11 @@ export function ReplyLogicPage() {
                   title="角色配置"
                   actions={
                     editableCharacterSource ? (
-                      <StatusPill tone={editableCharacterSource.isOnline ? "healthy" : "muted"}>
+                      <StatusPill
+                        tone={
+                          editableCharacterSource.isOnline ? "healthy" : "muted"
+                        }
+                      >
                         {editableCharacterSource.isOnline ? "在线" : "离线"}
                       </StatusPill>
                     ) : null
@@ -691,9 +778,16 @@ export function ReplyLogicPage() {
 
                 {!characterDraft ? (
                   scope === "character" && characterSnapshotQuery.isLoading ? (
-                    <LoadingBlock className="mt-4" label="正在加载角色配置..." />
-                  ) : scope === "conversation" && conversationSnapshotQuery.isLoading ? (
-                    <LoadingBlock className="mt-4" label="正在加载会话角色配置..." />
+                    <LoadingBlock
+                      className="mt-4"
+                      label="正在加载角色配置..."
+                    />
+                  ) : scope === "conversation" &&
+                    conversationSnapshotQuery.isLoading ? (
+                    <LoadingBlock
+                      className="mt-4"
+                      label="正在加载会话角色配置..."
+                    />
                   ) : (
                     <AdminEmptyState
                       className="mt-4"
@@ -709,12 +803,17 @@ export function ReplyLogicPage() {
                   <>
                     {characterDraft.profile.systemPrompt?.trim() ? (
                       <InlineNotice className="mt-4" tone="warning">
-                        当前已填写 `systemPrompt`，真实回复时会直接覆盖结构化提示词拼装。你在下面改的身份、语气、边界字段，只有清空 `systemPrompt` 后才会重新体现在最终提示词里。
+                        当前已填写
+                        `systemPrompt`，真实回复时会直接覆盖结构化提示词拼装。你在下面改的身份、语气、边界字段，只有清空
+                        `systemPrompt` 后才会重新体现在最终提示词里。
                       </InlineNotice>
                     ) : null}
 
-                    {characterSaveMutation.isError && characterSaveMutation.error instanceof Error ? (
-                      <ErrorBlock message={characterSaveMutation.error.message} />
+                    {characterSaveMutation.isError &&
+                    characterSaveMutation.error instanceof Error ? (
+                      <ErrorBlock
+                        message={characterSaveMutation.error.message}
+                      />
                     ) : null}
                     {characterSaveMutation.isSuccess ? (
                       <AdminActionFeedback
@@ -730,7 +829,10 @@ export function ReplyLogicPage() {
                           label="关系描述"
                           value={characterDraft.relationship}
                           onChange={(value) =>
-                            patchCharacterDraft((current) => ({ ...current, relationship: value }))
+                            patchCharacterDraft((current) => ({
+                              ...current,
+                              relationship: value,
+                            }))
                           }
                         />
                         <FieldBlock
@@ -750,7 +852,8 @@ export function ReplyLogicPage() {
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
-                              onlineMode: value === "manual" ? "manual" : "auto",
+                              onlineMode:
+                                value === "manual" ? "manual" : "auto",
                             }))
                           }
                           options={[
@@ -764,7 +867,8 @@ export function ReplyLogicPage() {
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
-                              activityMode: value === "manual" ? "manual" : "auto",
+                              activityMode:
+                                value === "manual" ? "manual" : "auto",
                             }))
                           }
                           options={[
@@ -854,42 +958,59 @@ export function ReplyLogicPage() {
                       <ConfigSection title="场景提示词 — 主动发布">
                         <TextAreaBlock
                           label="发朋友圈"
-                          value={characterDraft.profile.scenePrompts?.moments_post ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts?.moments_post ??
+                            ""
+                          }
                           description="触发：定时发朋友圈（由发圈频率控制）。无实时上下文。写发圈内容偏好、常见话题、风格规范，以及是否偏好配图/纯文字等倾向。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, moments_post: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  moments_post: value,
+                                },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
                           label="发 Feed 贴文"
-                          value={characterDraft.profile.scenePrompts?.feed_post ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts?.feed_post ?? ""
+                          }
                           description="触发：定时在广场发贴（由 Feed 频率控制）。无实时上下文。写公开发帖的风格、内容方向、是否引导讨论等。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, feed_post: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  feed_post: value,
+                                },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
                           label="发视频号"
-                          value={characterDraft.profile.scenePrompts?.channel_post ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts?.channel_post ??
+                            ""
+                          }
                           description="触发：定时发视频号内容。无实时上下文。写视频号文案风格、内容结构要求（标题/正文/话题标签等）。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, channel_post: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  channel_post: value,
+                                },
                               },
                             }))
                           }
@@ -899,70 +1020,97 @@ export function ReplyLogicPage() {
                       <ConfigSection title="场景提示词 — 互动响应">
                         <TextAreaBlock
                           label="聊天回复"
-                          value={characterDraft.profile.scenePrompts?.chat ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts?.chat ?? ""
+                          }
                           description="触发：用户发消息时。系统自动注入：当前时间、角色活动状态、距上次聊天时长。写聊天风格、话题偏好、对话节奏，可引导 AI 调整回复长短和语气。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, chat: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  chat: value,
+                                },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
                           label="朋友圈评论/回复"
-                          value={characterDraft.profile.scenePrompts?.moments_comment ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts
+                              ?.moments_comment ?? ""
+                          }
                           description="触发：角色浏览到用户朋友圈时自动评论。写评论语气、常用开场方式、喜欢哪类内容多互动，不喜欢哪类则少评甚至不评。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, moments_comment: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  moments_comment: value,
+                                },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
                           label="Feed 评论"
-                          value={characterDraft.profile.scenePrompts?.feed_comment ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts?.feed_comment ??
+                            ""
+                          }
                           description="触发：角色看到用户 Feed 贴文时自动评论。写评论偏好，例如犀利点评 / 鼓励互动 / 专业补充，以及对哪类帖子积极评论。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, feed_comment: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  feed_comment: value,
+                                },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
                           label="好友请求/摇一摇问候"
-                          value={characterDraft.profile.scenePrompts?.greeting ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts?.greeting ?? ""
+                          }
                           description="触发：角色发起好友申请或摇一摇。只生成一句打招呼的话，建议写简短有特点的开场方式，20 字以内效果最佳。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, greeting: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  greeting: value,
+                                },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
                           label="主动提醒"
-                          value={characterDraft.profile.scenePrompts?.proactive ?? ""}
+                          value={
+                            characterDraft.profile.scenePrompts?.proactive ?? ""
+                          }
                           description="触发：定时任务检测角色记忆，决定是否主动给用户发消息。写什么情况下应该主动发（如记得某事想分享），什么情况下保持沉默。不填则由底层逻辑判断。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                scenePrompts: { ...current.profile.scenePrompts, proactive: value },
+                                scenePrompts: {
+                                  ...current.profile.scenePrompts,
+                                  proactive: value,
+                                },
                               },
                             }))
                           }
@@ -974,13 +1122,28 @@ export function ReplyLogicPage() {
                           核心记忆每周一自动更新，近期摘要每日自动更新。在运行台中可查看和手动覆盖当前值。
                         </p>
                         <div className="rounded border border-[color:var(--border-faint)] px-3 py-2 text-xs text-[color:var(--text-secondary)]">
-                          <p><span className="font-medium text-[color:var(--text-primary)]">核心记忆：</span>{characterDraft.profile.memory.coreMemory || "（暂无）"}</p>
-                          <p className="mt-1"><span className="font-medium text-[color:var(--text-primary)]">近期摘要：</span>{characterDraft.profile.memory.recentSummary || "（暂无）"}</p>
+                          <p>
+                            <span className="font-medium text-[color:var(--text-primary)]">
+                              核心记忆：
+                            </span>
+                            {characterDraft.profile.memory.coreMemory ||
+                              "（暂无）"}
+                          </p>
+                          <p className="mt-1">
+                            <span className="font-medium text-[color:var(--text-primary)]">
+                              近期摘要：
+                            </span>
+                            {characterDraft.profile.memory.recentSummary ||
+                              "（暂无）"}
+                          </p>
                         </div>
                       </ConfigSection>
 
                       <div className="flex flex-wrap gap-3 border-t border-[color:var(--border-faint)] pt-5">
-                        <Button variant="secondary" onClick={resetCharacterDraft}>
+                        <Button
+                          variant="secondary"
+                          onClick={resetCharacterDraft}
+                        >
                           重置草稿
                         </Button>
                         <Button
@@ -1027,9 +1190,14 @@ export function ReplyLogicPage() {
                         <Button
                           variant="primary"
                           onClick={saveCharacterDraft}
-                          disabled={!isCharacterDraftDirty || characterSaveMutation.isPending}
+                          disabled={
+                            !isCharacterDraftDirty ||
+                            characterSaveMutation.isPending
+                          }
                         >
-                          {characterSaveMutation.isPending ? "保存中..." : "保存角色配置"}
+                          {characterSaveMutation.isPending
+                            ? "保存中..."
+                            : "保存角色配置"}
                         </Button>
                       </div>
                     </div>
@@ -1041,7 +1209,9 @@ export function ReplyLogicPage() {
                 <AdminSectionHeader
                   title="回复运行配置"
                   actions={
-                    <StatusPill tone={providerSetup.providerReady ? "healthy" : "warning"}>
+                    <StatusPill
+                      tone={providerSetup.providerReady ? "healthy" : "warning"}
+                    >
                       {providerSetup.providerReady ? "已配置" : "待配置"}
                     </StatusPill>
                   }
@@ -1052,7 +1222,9 @@ export function ReplyLogicPage() {
                     label="接口地址"
                     value={providerSetup.providerDraft.endpoint}
                     placeholder="https://api.openai.com/v1"
-                    onChange={(value) => providerSetup.updateProviderDraft("endpoint", value)}
+                    onChange={(value) =>
+                      providerSetup.updateProviderDraft("endpoint", value)
+                    }
                   />
 
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
@@ -1075,10 +1247,14 @@ export function ReplyLogicPage() {
                       value={providerSetup.providerDraft.model}
                       placeholder="gpt-4.1-mini"
                       list="reply-logic-available-models"
-                      onChange={(value) => providerSetup.updateProviderDraft("model", value)}
+                      onChange={(value) =>
+                        providerSetup.updateProviderDraft("model", value)
+                      }
                     />
                     <datalist id="reply-logic-available-models">
-                      {(providerSetup.availableModelsQuery.data?.models ?? []).map((model) => (
+                      {(
+                        providerSetup.availableModelsQuery.data?.models ?? []
+                      ).map((model) => (
                         <option key={model} value={model} />
                       ))}
                     </datalist>
@@ -1089,7 +1265,9 @@ export function ReplyLogicPage() {
                     value={providerSetup.providerDraft.apiKey ?? ""}
                     type="password"
                     placeholder="输入实例级推理服务 API 密钥"
-                    onChange={(value) => providerSetup.updateProviderDraft("apiKey", value)}
+                    onChange={(value) =>
+                      providerSetup.updateProviderDraft("apiKey", value)
+                    }
                   />
 
                   {providerSetup.providerValidationMessage ? (
@@ -1097,8 +1275,12 @@ export function ReplyLogicPage() {
                       {providerSetup.providerValidationMessage}
                     </InlineNotice>
                   ) : null}
-                  {providerLoadError ? <ErrorBlock message={providerLoadError} /> : null}
-                  {providerActionError ? <ErrorBlock message={providerActionError} /> : null}
+                  {providerLoadError ? (
+                    <ErrorBlock message={providerLoadError} />
+                  ) : null}
+                  {providerActionError ? (
+                    <ErrorBlock message={providerActionError} />
+                  ) : null}
                   {providerSetup.providerSaveMutation.isSuccess ? (
                     <AdminActionFeedback
                       tone="success"
@@ -1113,14 +1295,18 @@ export function ReplyLogicPage() {
                       onClick={providerSetup.submitProviderProbe}
                       disabled={providerSetup.providerProbeMutation.isPending}
                     >
-                      {providerSetup.providerProbeMutation.isPending ? "测试中..." : "测试连接"}
+                      {providerSetup.providerProbeMutation.isPending
+                        ? "测试中..."
+                        : "测试连接"}
                     </Button>
                     <Button
                       variant="primary"
                       onClick={providerSetup.submitProviderSave}
                       disabled={providerSetup.providerSaveMutation.isPending}
                     >
-                      {providerSetup.providerSaveMutation.isPending ? "保存中..." : "保存运行配置"}
+                      {providerSetup.providerSaveMutation.isPending
+                        ? "保存中..."
+                        : "保存运行配置"}
                     </Button>
                   </div>
 
@@ -1171,7 +1357,9 @@ function TargetListCard({
 }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">{title}</div>
+      <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
+        {title}
+      </div>
       <div className="mt-3 space-y-2">
         {items.map((item) => (
           <AdminSelectableCard
@@ -1195,7 +1383,9 @@ function CharacterInspectorPanel({
 }: {
   selectedCharacter: ReplyLogicOverview["characters"][number] | null;
   query: ReturnType<typeof useQuery<ReplyLogicCharacterSnapshot>>;
-  narrativePresentation: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null;
+  narrativePresentation:
+    | ReplyLogicConstantSummary["narrativePresentationTemplates"]
+    | null;
 }) {
   if (!selectedCharacter) {
     return (
@@ -1229,9 +1419,18 @@ function CharacterInspectorPanel({
         <SectionHeading>当前角色</SectionHeading>
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="名称" value={query.data.character.name} />
-          <MetricCard label="关系" value={formatRelationship(query.data.character.relationship)} />
-          <MetricCard label="活动" value={formatActivity(query.data.character.currentActivity)} />
-          <MetricCard label="遗忘曲线" value={query.data.actor.forgettingCurve} />
+          <MetricCard
+            label="关系"
+            value={formatRelationship(query.data.character.relationship)}
+          />
+          <MetricCard
+            label="活动"
+            value={formatActivity(query.data.character.currentActivity)}
+          />
+          <MetricCard
+            label="遗忘曲线"
+            value={query.data.actor.forgettingCurve}
+          />
         </div>
       </Card>
 
@@ -1326,7 +1525,9 @@ function ReplyPreviewPanel({
         <div className="mt-6 space-y-6 border-t border-[color:var(--border-faint)] pt-6">
           <ActorSnapshotCard actor={preview.actor} title="候选消息预演快照" />
           <AdminSubpanel title="预演备注" contentClassName="mt-3">
-            <AdminNoteList items={preview.notes.map((note) => formatReplyLogicText(note))} />
+            <AdminNoteList
+              items={preview.notes.map((note) => formatReplyLogicText(note))}
+            />
           </AdminSubpanel>
         </div>
       ) : null}
@@ -1343,7 +1544,9 @@ function ConversationInspectorPanel({
   selectedConversation: ReplyLogicOverview["conversations"][number] | null;
   query: ReturnType<typeof useQuery<ReplyLogicConversationSnapshot>>;
   baseUrl: string;
-  narrativePresentation: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null;
+  narrativePresentation:
+    | ReplyLogicConstantSummary["narrativePresentationTemplates"]
+    | null;
 }) {
   if (!selectedConversation) {
     return (
@@ -1377,8 +1580,14 @@ function ConversationInspectorPanel({
         <SectionHeading>会话分支</SectionHeading>
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="标题" value={query.data.conversation.title} />
-          <MetricCard label="类型" value={formatConversationType(query.data.conversation.type)} />
-          <MetricCard label="来源" value={formatConversationSource(query.data.conversation.source)} />
+          <MetricCard
+            label="类型"
+            value={formatConversationType(query.data.conversation.type)}
+          />
+          <MetricCard
+            label="来源"
+            value={formatConversationSource(query.data.conversation.source)}
+          />
           <MetricCard label="参与角色" value={query.data.actors.length} />
         </div>
         <AdminRecordCard
@@ -1386,7 +1595,9 @@ function ConversationInspectorPanel({
           title={formatReplyLogicText(query.data.branchSummary.title)}
           details={
             <AdminNoteList
-              items={query.data.branchSummary.notes.map((note) => formatReplyLogicText(note))}
+              items={query.data.branchSummary.notes.map((note) =>
+                formatReplyLogicText(note),
+              )}
             />
           }
         />
@@ -1437,11 +1648,15 @@ function GroupReplyRuntimeCard({
 }) {
   const queryClient = useQueryClient();
   const taskSectionRef = useRef<HTMLDivElement | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | ReplyLogicGroupReplyTaskStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | ReplyLogicGroupReplyTaskStatus
+  >("all");
   const [actorFilter, setActorFilter] = useState("all");
   const [cleanupDays, setCleanupDays] = useState("14");
   const [archiveTrendWindow, setArchiveTrendWindow] = useState("14");
-  const visibleMessageMap = new Map(visibleMessages.map((item) => [item.id, item]));
+  const visibleMessageMap = new Map(
+    visibleMessages.map((item) => [item.id, item]),
+  );
   const actorOptions = useMemo(() => {
     const actorMap = new Map<string, string>();
     for (const turn of runtime.recentTurns) {
@@ -1462,11 +1677,16 @@ function GroupReplyRuntimeCard({
   }, [runtime.archiveSummary?.actorSummary, runtime.recentTurns]);
 
   const retryMutation = useMutation({
-    mutationFn: async (taskId: string) => adminApi.retryReplyLogicGroupReplyTask(taskId),
+    mutationFn: async (taskId: string) =>
+      adminApi.retryReplyLogicGroupReplyTask(taskId),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-reply-logic-overview", baseUrl],
+        }),
       ]);
     },
   });
@@ -1480,18 +1700,27 @@ function GroupReplyRuntimeCard({
       }),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-reply-logic-overview", baseUrl],
+        }),
       ]);
     },
   });
 
   const retryTurnMutation = useMutation({
-    mutationFn: async (turnId: string) => adminApi.retryReplyLogicGroupReplyTurn(turnId),
+    mutationFn: async (turnId: string) =>
+      adminApi.retryReplyLogicGroupReplyTurn(turnId),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-reply-logic-overview", baseUrl],
+        }),
       ]);
     },
   });
@@ -1514,9 +1743,12 @@ function GroupReplyRuntimeCard({
           }
           return true;
         });
-        const matchesStatus = statusFilter === "all" ? true : filteredTasks.length > 0;
+        const matchesStatus =
+          statusFilter === "all" ? true : filteredTasks.length > 0;
         const matchesActor =
-          actorFilter === "all" ? true : filteredTasks.length > 0 || filteredCandidates.length > 0;
+          actorFilter === "all"
+            ? true
+            : filteredTasks.length > 0 || filteredCandidates.length > 0;
         if (!matchesStatus || !matchesActor) {
           return null;
         }
@@ -1567,7 +1799,8 @@ function GroupReplyRuntimeCard({
     }
 
     const windowSize = Number(archiveTrendWindow) || 14;
-    const trendSource = selectedArchiveActor?.trend ?? runtime.archiveSummary.trend;
+    const trendSource =
+      selectedArchiveActor?.trend ?? runtime.archiveSummary.trend;
     return trendSource.slice(-windowSize);
   }, [archiveTrendWindow, runtime.archiveSummary, selectedArchiveActor]);
   const visibleArchiveActors = useMemo(() => {
@@ -1586,7 +1819,9 @@ function GroupReplyRuntimeCard({
       return [];
     }
 
-    return selectedArchiveActor?.issueSummary ?? runtime.archiveSummary.issueSummary;
+    return (
+      selectedArchiveActor?.issueSummary ?? runtime.archiveSummary.issueSummary
+    );
   }, [runtime.archiveSummary, selectedArchiveActor]);
   const selectedActorOption = useMemo(
     () => actorOptions.find((actor) => actor.id === actorFilter) ?? null,
@@ -1598,7 +1833,7 @@ function GroupReplyRuntimeCard({
         cancelled: selectedArchiveActor.cancelledCount,
         failed: selectedArchiveActor.failedCount,
       }
-    : runtime.archiveSummary?.statusCounts ?? null;
+    : (runtime.archiveSummary?.statusCounts ?? null);
   const hasActiveTaskFilter = actorFilter !== "all" || statusFilter !== "all";
   const taskFilterSummary = [
     `角色：${selectedActorOption?.name ?? "全部角色"}`,
@@ -1636,7 +1871,9 @@ function GroupReplyRuntimeCard({
             <SelectFieldBlock
               label="状态筛选"
               value={statusFilter}
-              onChange={(value) => setStatusFilter(value as "all" | ReplyLogicGroupReplyTaskStatus)}
+              onChange={(value) =>
+                setStatusFilter(value as "all" | ReplyLogicGroupReplyTaskStatus)
+              }
               options={[
                 { value: "all", label: "全部状态" },
                 { value: "pending", label: "待执行" },
@@ -1741,10 +1978,14 @@ function GroupReplyRuntimeCard({
                 title={issue.label}
                 badges={
                   <>
-                    <StatusPill tone={issue.status === "failed" ? "warning" : "muted"}>
+                    <StatusPill
+                      tone={issue.status === "failed" ? "warning" : "muted"}
+                    >
                       {issue.status === "failed" ? "失败" : "取消"}
                     </StatusPill>
-                    <StatusPill tone="muted">{issue.source === "error_message" ? "错误" : "取消原因"}</StatusPill>
+                    <StatusPill tone="muted">
+                      {issue.source === "error_message" ? "错误" : "取消原因"}
+                    </StatusPill>
                     <StatusPill tone="warning">{issue.count} 次</StatusPill>
                   </>
                 }
@@ -1760,7 +2001,9 @@ function GroupReplyRuntimeCard({
         {!visibleActorDrift.length ? (
           <AdminEmptyState
             title={
-              actorFilter === "all" ? "最近没有明显恶化角色" : "当前角色最近没有异常抬头"
+              actorFilter === "all"
+                ? "最近没有明显恶化角色"
+                : "当前角色最近没有异常抬头"
             }
             description={
               actorFilter === "all"
@@ -1776,11 +2019,17 @@ function GroupReplyRuntimeCard({
                 title={actor.actorName}
                 badges={
                   <>
-                    <StatusPill tone={toneForGroupReplyActorDriftSeverity(actor.severity)}>
+                    <StatusPill
+                      tone={toneForGroupReplyActorDriftSeverity(actor.severity)}
+                    >
                       {formatGroupReplyActorDriftSeverity(actor.severity)}
                     </StatusPill>
-                    <StatusPill tone="muted">最近 {actor.recentTaskCount} 任务</StatusPill>
-                    <StatusPill tone="muted">{actor.recentTurnCount} 轮</StatusPill>
+                    <StatusPill tone="muted">
+                      最近 {actor.recentTaskCount} 任务
+                    </StatusPill>
+                    <StatusPill tone="muted">
+                      {actor.recentTurnCount} 轮
+                    </StatusPill>
                     <StatusPill tone="warning">
                       异常率 {(actor.recentIssueRate * 100).toFixed(1)}%
                     </StatusPill>
@@ -1795,15 +2044,26 @@ function GroupReplyRuntimeCard({
                 details={
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-2">
-                      <StatusPill tone="healthy">发送 {actor.recentSentCount}</StatusPill>
-                      <StatusPill tone="muted">取消 {actor.recentCancelledCount}</StatusPill>
-                      <StatusPill tone="warning">失败 {actor.recentFailedCount}</StatusPill>
+                      <StatusPill tone="healthy">
+                        发送 {actor.recentSentCount}
+                      </StatusPill>
+                      <StatusPill tone="muted">
+                        取消 {actor.recentCancelledCount}
+                      </StatusPill>
+                      <StatusPill tone="warning">
+                        失败 {actor.recentFailedCount}
+                      </StatusPill>
                       {actor.openTaskCount > 0 ? (
-                        <StatusPill tone="muted">未落定 {actor.openTaskCount}</StatusPill>
+                        <StatusPill tone="muted">
+                          未落定 {actor.openTaskCount}
+                        </StatusPill>
                       ) : null}
                     </div>
                     <div className="text-xs leading-6 text-[color:var(--text-muted)]">
-                      基线来源：{formatGroupReplyActorDriftBaselineSource(actor.baselineSource)}
+                      基线来源：
+                      {formatGroupReplyActorDriftBaselineSource(
+                        actor.baselineSource,
+                      )}
                       {" · "}
                       基线异常率 {(actor.baselineIssueRate * 100).toFixed(1)}%
                       {" · "}
@@ -1828,7 +2088,9 @@ function GroupReplyRuntimeCard({
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => focusFilteredTasks(actor.actorCharacterId, "all")}
+                      onClick={() =>
+                        focusFilteredTasks(actor.actorCharacterId, "all")
+                      }
                     >
                       查看该角色轮次
                     </Button>
@@ -1836,7 +2098,9 @@ function GroupReplyRuntimeCard({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => focusFilteredTasks(actor.actorCharacterId, "failed")}
+                        onClick={() =>
+                          focusFilteredTasks(actor.actorCharacterId, "failed")
+                        }
                       >
                         筛到失败任务
                       </Button>
@@ -1845,7 +2109,12 @@ function GroupReplyRuntimeCard({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => focusFilteredTasks(actor.actorCharacterId, "cancelled")}
+                        onClick={() =>
+                          focusFilteredTasks(
+                            actor.actorCharacterId,
+                            "cancelled",
+                          )
+                        }
                       >
                         筛到取消任务
                       </Button>
@@ -1882,168 +2151,192 @@ function GroupReplyRuntimeCard({
 
             {actorFilter !== "all" && !selectedArchiveActor ? null : (
               <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <MetricCard
-                label="已归档任务"
-                value={selectedArchiveActor?.taskCount ?? runtime.archiveSummary.archivedTaskCount}
-              />
-              <MetricCard
-                label="已归档轮次"
-                value={selectedArchiveActor?.turnCount ?? runtime.archiveSummary.archivedTurnCount}
-              />
-              <MetricCard
-                label="历史失败率"
-                value={`${(
-                  (selectedArchiveActor?.failureRate ?? runtime.archiveSummary.failureRate) * 100
-                ).toFixed(1)}%`}
-              />
-              <MetricCard
-                label="历史取消率"
-                value={`${(
-                  (selectedArchiveActor?.cancelRate ?? runtime.archiveSummary.cancelRate) * 100
-                ).toFixed(1)}%`}
-              />
-            </div>
-
-            <AdminRecordCard
-              title={
-                selectedArchiveActor
-                  ? `归档状态分布 · ${selectedArchiveActor.actorName}`
-                  : "归档状态分布"
-              }
-              badges={
-                <>
-                  <StatusPill tone="healthy">
-                    已发送 {archiveMetricStatusCounts?.sent ?? 0}
-                  </StatusPill>
-                  <StatusPill tone="muted">
-                    已取消 {archiveMetricStatusCounts?.cancelled ?? 0}
-                  </StatusPill>
-                  <StatusPill tone="warning">
-                    失败 {archiveMetricStatusCounts?.failed ?? 0}
-                  </StatusPill>
-                </>
-              }
-              meta={`最近归档：${formatDateTime(runtime.archiveSummary.lastArchivedAt)} · 归档截止：${formatDateTime(runtime.archiveSummary.lastCutoff)}`}
-              description={
-                selectedArchiveActor
-                  ? "这些统计只看当前角色已经归档的终态任务，用来判断它是否在长期上持续恶化。"
-                  : "这些统计来自已经被清理出任务表的历史终态任务，用来保留长期运行趋势。"
-              }
-              className="bg-white/90"
-            />
-
-            <AdminSubpanel title="按天趋势">
-              <div className="mb-4 max-w-[220px]">
-                <SelectFieldBlock
-                  label="时间范围"
-                  value={archiveTrendWindow}
-                  onChange={setArchiveTrendWindow}
-                  options={[
-                    { value: "7", label: "最近 7 天" },
-                    { value: "14", label: "最近 14 天" },
-                    { value: "30", label: "最近 30 天" },
-                  ]}
-                />
-              </div>
-              {!visibleArchiveTrend.length ? (
-                <AdminEmptyState
-                  title="当前时间范围没有归档趋势"
-                  description="要么还没形成足够归档数据，要么所选窗口内暂无历史清理记录。"
-                />
-              ) : (
-                <div className="space-y-3">
-                  {visibleArchiveTrend.map((point) => (
-                    <AdminRecordCard
-                      key={point.date}
-                      title={formatArchiveTrendDate(point.date)}
-                      badges={
-                        <>
-                          <StatusPill tone="muted">{point.taskCount} 任务</StatusPill>
-                          <StatusPill tone="muted">{point.turnCount} 轮</StatusPill>
-                          <StatusPill tone="warning">
-                            失败率 {(point.failureRate * 100).toFixed(1)}%
-                          </StatusPill>
-                          <StatusPill tone="muted">
-                            取消率 {(point.cancelRate * 100).toFixed(1)}%
-                          </StatusPill>
-                        </>
-                      }
-                      description={describeArchiveTrendPoint(point)}
-                      className="bg-white/90"
-                    />
-                  ))}
-                </div>
-              )}
-            </AdminSubpanel>
-
-            <AdminSubpanel title="角色异常率">
-              {!visibleArchiveActors.length ? (
-                <AdminEmptyState
-                  title="还没有角色归档画像"
-                  description="当前归档数据还不足以形成角色级长期统计。"
-                />
-              ) : (
-                <div className="space-y-3">
-                  {visibleArchiveActors.map((actor) => (
-                    <AdminRecordCard
-                      key={actor.actorCharacterId}
-                      title={actor.actorName}
-                      badges={
-                        <>
-                          <StatusPill tone="muted">{actor.taskCount} 任务</StatusPill>
-                          <StatusPill tone="muted">{actor.turnCount} 轮</StatusPill>
-                          <StatusPill tone="warning">
-                            异常率 {(actor.issueRate * 100).toFixed(1)}%
-                          </StatusPill>
-                          <StatusPill tone="warning">
-                            失败率 {(actor.failureRate * 100).toFixed(1)}%
-                          </StatusPill>
-                          <StatusPill tone="muted">
-                            取消率 {(actor.cancelRate * 100).toFixed(1)}%
-                          </StatusPill>
-                        </>
-                      }
-                      description={describeArchiveActorSummary(actor)}
-                      className="bg-white/90"
-                    />
-                  ))}
-                </div>
-              )}
-            </AdminSubpanel>
-
-            {!visibleArchiveIssueSummary.length ? (
-              <AdminEmptyState
-                title="归档里没有异常热点"
-                description={
-                  selectedArchiveActor
-                    ? "当前角色的已归档历史里，没有形成显著的失败或取消原因聚合。"
-                    : "已归档的历史任务里，当前没有形成显著的失败/取消原因聚合。"
-                }
-              />
-            ) : (
-              <div className="space-y-3">
-                {visibleArchiveIssueSummary.map((issue) => (
-                  <AdminRecordCard
-                    key={`archived-${issue.key}`}
-                    title={issue.label}
-                    badges={
-                      <>
-                        <StatusPill tone={issue.status === "failed" ? "warning" : "muted"}>
-                          {issue.status === "failed" ? "失败" : "取消"}
-                        </StatusPill>
-                        <StatusPill tone="muted">
-                          {issue.source === "error_message" ? "归档错误" : "归档取消原因"}
-                        </StatusPill>
-                        <StatusPill tone="warning">{issue.count} 次</StatusPill>
-                      </>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <MetricCard
+                    label="已归档任务"
+                    value={
+                      selectedArchiveActor?.taskCount ??
+                      runtime.archiveSummary.archivedTaskCount
                     }
-                    description={describeArchivedGroupReplyIssue(issue)}
-                    className="bg-white/90"
                   />
-                ))}
-              </div>
-            )}
+                  <MetricCard
+                    label="已归档轮次"
+                    value={
+                      selectedArchiveActor?.turnCount ??
+                      runtime.archiveSummary.archivedTurnCount
+                    }
+                  />
+                  <MetricCard
+                    label="历史失败率"
+                    value={`${(
+                      (selectedArchiveActor?.failureRate ??
+                        runtime.archiveSummary.failureRate) * 100
+                    ).toFixed(1)}%`}
+                  />
+                  <MetricCard
+                    label="历史取消率"
+                    value={`${(
+                      (selectedArchiveActor?.cancelRate ??
+                        runtime.archiveSummary.cancelRate) * 100
+                    ).toFixed(1)}%`}
+                  />
+                </div>
+
+                <AdminRecordCard
+                  title={
+                    selectedArchiveActor
+                      ? `归档状态分布 · ${selectedArchiveActor.actorName}`
+                      : "归档状态分布"
+                  }
+                  badges={
+                    <>
+                      <StatusPill tone="healthy">
+                        已发送 {archiveMetricStatusCounts?.sent ?? 0}
+                      </StatusPill>
+                      <StatusPill tone="muted">
+                        已取消 {archiveMetricStatusCounts?.cancelled ?? 0}
+                      </StatusPill>
+                      <StatusPill tone="warning">
+                        失败 {archiveMetricStatusCounts?.failed ?? 0}
+                      </StatusPill>
+                    </>
+                  }
+                  meta={`最近归档：${formatDateTime(runtime.archiveSummary.lastArchivedAt)} · 归档截止：${formatDateTime(runtime.archiveSummary.lastCutoff)}`}
+                  description={
+                    selectedArchiveActor
+                      ? "这些统计只看当前角色已经归档的终态任务，用来判断它是否在长期上持续恶化。"
+                      : "这些统计来自已经被清理出任务表的历史终态任务，用来保留长期运行趋势。"
+                  }
+                  className="bg-white/90"
+                />
+
+                <AdminSubpanel title="按天趋势">
+                  <div className="mb-4 max-w-[220px]">
+                    <SelectFieldBlock
+                      label="时间范围"
+                      value={archiveTrendWindow}
+                      onChange={setArchiveTrendWindow}
+                      options={[
+                        { value: "7", label: "最近 7 天" },
+                        { value: "14", label: "最近 14 天" },
+                        { value: "30", label: "最近 30 天" },
+                      ]}
+                    />
+                  </div>
+                  {!visibleArchiveTrend.length ? (
+                    <AdminEmptyState
+                      title="当前时间范围没有归档趋势"
+                      description="要么还没形成足够归档数据，要么所选窗口内暂无历史清理记录。"
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {visibleArchiveTrend.map((point) => (
+                        <AdminRecordCard
+                          key={point.date}
+                          title={formatArchiveTrendDate(point.date)}
+                          badges={
+                            <>
+                              <StatusPill tone="muted">
+                                {point.taskCount} 任务
+                              </StatusPill>
+                              <StatusPill tone="muted">
+                                {point.turnCount} 轮
+                              </StatusPill>
+                              <StatusPill tone="warning">
+                                失败率 {(point.failureRate * 100).toFixed(1)}%
+                              </StatusPill>
+                              <StatusPill tone="muted">
+                                取消率 {(point.cancelRate * 100).toFixed(1)}%
+                              </StatusPill>
+                            </>
+                          }
+                          description={describeArchiveTrendPoint(point)}
+                          className="bg-white/90"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </AdminSubpanel>
+
+                <AdminSubpanel title="角色异常率">
+                  {!visibleArchiveActors.length ? (
+                    <AdminEmptyState
+                      title="还没有角色归档画像"
+                      description="当前归档数据还不足以形成角色级长期统计。"
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {visibleArchiveActors.map((actor) => (
+                        <AdminRecordCard
+                          key={actor.actorCharacterId}
+                          title={actor.actorName}
+                          badges={
+                            <>
+                              <StatusPill tone="muted">
+                                {actor.taskCount} 任务
+                              </StatusPill>
+                              <StatusPill tone="muted">
+                                {actor.turnCount} 轮
+                              </StatusPill>
+                              <StatusPill tone="warning">
+                                异常率 {(actor.issueRate * 100).toFixed(1)}%
+                              </StatusPill>
+                              <StatusPill tone="warning">
+                                失败率 {(actor.failureRate * 100).toFixed(1)}%
+                              </StatusPill>
+                              <StatusPill tone="muted">
+                                取消率 {(actor.cancelRate * 100).toFixed(1)}%
+                              </StatusPill>
+                            </>
+                          }
+                          description={describeArchiveActorSummary(actor)}
+                          className="bg-white/90"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </AdminSubpanel>
+
+                {!visibleArchiveIssueSummary.length ? (
+                  <AdminEmptyState
+                    title="归档里没有异常热点"
+                    description={
+                      selectedArchiveActor
+                        ? "当前角色的已归档历史里，没有形成显著的失败或取消原因聚合。"
+                        : "已归档的历史任务里，当前没有形成显著的失败/取消原因聚合。"
+                    }
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {visibleArchiveIssueSummary.map((issue) => (
+                      <AdminRecordCard
+                        key={`archived-${issue.key}`}
+                        title={issue.label}
+                        badges={
+                          <>
+                            <StatusPill
+                              tone={
+                                issue.status === "failed" ? "warning" : "muted"
+                              }
+                            >
+                              {issue.status === "failed" ? "失败" : "取消"}
+                            </StatusPill>
+                            <StatusPill tone="muted">
+                              {issue.source === "error_message"
+                                ? "归档错误"
+                                : "归档取消原因"}
+                            </StatusPill>
+                            <StatusPill tone="warning">
+                              {issue.count} 次
+                            </StatusPill>
+                          </>
+                        }
+                        description={describeArchivedGroupReplyIssue(issue)}
+                        className="bg-white/90"
+                      />
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -2058,7 +2351,9 @@ function GroupReplyRuntimeCard({
             badges={
               <>
                 <StatusPill tone="muted">{taskFilterSummary}</StatusPill>
-                <StatusPill tone="warning">{filteredTurns.length} 轮命中</StatusPill>
+                <StatusPill tone="warning">
+                  {filteredTurns.length} 轮命中
+                </StatusPill>
               </>
             }
             actions={
@@ -2080,179 +2375,247 @@ function GroupReplyRuntimeCard({
             description="可以放宽状态或角色筛选，或者先让群聊实际跑几轮。"
           />
         ) : (
-        <div className="space-y-4">
-          {filteredTurns.map((turn) => {
-            const triggerMessage = visibleMessageMap.get(turn.triggerMessageId);
-            return (
-              <AdminSubpanel
-                key={turn.turnId}
-                title={`轮次 ${turn.turnId.slice(0, 8)}`}
-                contentClassName="mt-4"
-              >
-                <AdminRecordCard
-                  title={
-                    triggerMessage
-                      ? `触发消息 · ${triggerMessage.senderName}`
-                      : `触发消息 ${turn.triggerMessageId.slice(0, 8)}`
-                  }
-                  meta={`触发时间：${formatDateTime(turn.triggerMessageCreatedAt)} · 最近更新：${formatDateTime(turn.updatedAt)}`}
-                  description={triggerMessage?.text || "这条触发消息已不在当前可见窗口内。"}
-                  badges={
-                    <>
-                      <StatusPill tone="warning">最多 {turn.maxSpeakers} 人</StatusPill>
-                      {turn.explicitInterest ? (
-                        <StatusPill tone="healthy">有明确指向</StatusPill>
-                      ) : (
-                        <StatusPill tone="muted">无明确指向</StatusPill>
-                      )}
-                      {turn.hasMentionAll ? (
-                        <StatusPill tone="warning">@所有人</StatusPill>
-                      ) : null}
-                    </>
-                  }
-                  details={
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill tone={toneForGroupReplyTaskStatus("pending")}>
-                          待执行 {turn.statusCounts.pending}
+          <div className="space-y-4">
+            {filteredTurns.map((turn) => {
+              const triggerMessage = visibleMessageMap.get(
+                turn.triggerMessageId,
+              );
+              return (
+                <AdminSubpanel
+                  key={turn.turnId}
+                  title={`轮次 ${turn.turnId.slice(0, 8)}`}
+                  contentClassName="mt-4"
+                >
+                  <AdminRecordCard
+                    title={
+                      triggerMessage
+                        ? `触发消息 · ${triggerMessage.senderName}`
+                        : `触发消息 ${turn.triggerMessageId.slice(0, 8)}`
+                    }
+                    meta={`触发时间：${formatDateTime(turn.triggerMessageCreatedAt)} · 最近更新：${formatDateTime(turn.updatedAt)}`}
+                    description={
+                      triggerMessage?.text ||
+                      "这条触发消息已不在当前可见窗口内。"
+                    }
+                    badges={
+                      <>
+                        <StatusPill tone="warning">
+                          最多 {turn.maxSpeakers} 人
                         </StatusPill>
-                        <StatusPill tone={toneForGroupReplyTaskStatus("processing")}>
-                          处理中 {turn.statusCounts.processing}
-                        </StatusPill>
-                        <StatusPill tone={toneForGroupReplyTaskStatus("sent")}>
-                          已发送 {turn.statusCounts.sent}
-                        </StatusPill>
-                        <StatusPill tone={toneForGroupReplyTaskStatus("cancelled")}>
-                          已取消 {turn.statusCounts.cancelled}
-                        </StatusPill>
-                        <StatusPill tone={toneForGroupReplyTaskStatus("failed")}>
-                          失败 {turn.statusCounts.failed}
-                        </StatusPill>
-                      </div>
-                      {turn.mentionTargets.length || turn.replyTargetCharacterId ? (
-                        <div className="text-xs leading-6 text-[color:var(--text-muted)]">
-                          {turn.mentionTargets.length
-                            ? `提及：${turn.mentionTargets.join("、")}`
-                            : "未显式提及角色"}
-                          {turn.replyTargetCharacterId
-                            ? ` · 回复目标：${turn.replyTargetCharacterId}`
-                            : ""}
-                        </div>
-                      ) : null}
-                    </div>
-                  }
-                  className="bg-white/90"
-                  actions={
-                    turn.tasks.some((task) => task.status === "failed" || task.status === "cancelled") ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => retryTurnMutation.mutate(turn.turnId)}
-                        disabled={retryTurnMutation.isPending}
-                      >
-                        {retryTurnMutation.isPending && retryTurnMutation.variables === turn.turnId
-                          ? "整轮重试中..."
-                          : "重试本轮未完成任务"}
-                      </Button>
-                    ) : null
-                  }
-                />
-
-                <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                  <AdminSubpanel title="候选决策">
-                    {!turn.candidates.length ? (
-                      <AdminEmptyState
-                        title="没有候选快照"
-                        description="该轮次是在老数据写入前产生的，所以只保留了任务结果。"
-                      />
-                    ) : (
+                        {turn.explicitInterest ? (
+                          <StatusPill tone="healthy">有明确指向</StatusPill>
+                        ) : (
+                          <StatusPill tone="muted">无明确指向</StatusPill>
+                        )}
+                        {turn.hasMentionAll ? (
+                          <StatusPill tone="warning">@所有人</StatusPill>
+                        ) : null}
+                      </>
+                    }
+                    details={
                       <div className="space-y-3">
-                        {turn.candidates.map((candidate) => (
+                        <div className="flex flex-wrap gap-2">
+                          <StatusPill
+                            tone={toneForGroupReplyTaskStatus("pending")}
+                          >
+                            待执行 {turn.statusCounts.pending}
+                          </StatusPill>
+                          <StatusPill
+                            tone={toneForGroupReplyTaskStatus("processing")}
+                          >
+                            处理中 {turn.statusCounts.processing}
+                          </StatusPill>
+                          <StatusPill
+                            tone={toneForGroupReplyTaskStatus("sent")}
+                          >
+                            已发送 {turn.statusCounts.sent}
+                          </StatusPill>
+                          <StatusPill
+                            tone={toneForGroupReplyTaskStatus("cancelled")}
+                          >
+                            已取消 {turn.statusCounts.cancelled}
+                          </StatusPill>
+                          <StatusPill
+                            tone={toneForGroupReplyTaskStatus("failed")}
+                          >
+                            失败 {turn.statusCounts.failed}
+                          </StatusPill>
+                        </div>
+                        {turn.mentionTargets.length ||
+                        turn.replyTargetCharacterId ? (
+                          <div className="text-xs leading-6 text-[color:var(--text-muted)]">
+                            {turn.mentionTargets.length
+                              ? `提及：${turn.mentionTargets.join("、")}`
+                              : "未显式提及角色"}
+                            {turn.replyTargetCharacterId
+                              ? ` · 回复目标：${turn.replyTargetCharacterId}`
+                              : ""}
+                          </div>
+                        ) : null}
+                      </div>
+                    }
+                    className="bg-white/90"
+                    actions={
+                      turn.tasks.some(
+                        (task) =>
+                          task.status === "failed" ||
+                          task.status === "cancelled",
+                      ) ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => retryTurnMutation.mutate(turn.turnId)}
+                          disabled={retryTurnMutation.isPending}
+                        >
+                          {retryTurnMutation.isPending &&
+                          retryTurnMutation.variables === turn.turnId
+                            ? "整轮重试中..."
+                            : "重试本轮未完成任务"}
+                        </Button>
+                      ) : null
+                    }
+                  />
+
+                  <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                    <AdminSubpanel title="候选决策">
+                      {!turn.candidates.length ? (
+                        <AdminEmptyState
+                          title="没有候选快照"
+                          description="该轮次是在老数据写入前产生的，所以只保留了任务结果。"
+                        />
+                      ) : (
+                        <div className="space-y-3">
+                          {turn.candidates.map((candidate) => (
+                            <AdminRecordCard
+                              key={`${turn.turnId}-${candidate.characterId}`}
+                              title={candidate.characterName}
+                              meta={formatGroupReplyCandidateMeta(
+                                candidate.recentSpeakerIndex,
+                              )}
+                              badges={
+                                <>
+                                  <StatusPill
+                                    tone={toneForGroupReplyDisposition(
+                                      candidate.selectionDisposition,
+                                    )}
+                                  >
+                                    {formatGroupReplyDisposition(
+                                      candidate.selectionDisposition,
+                                    )}
+                                  </StatusPill>
+                                  <StatusPill tone="muted">
+                                    分数 {candidate.score.toFixed(1)}
+                                  </StatusPill>
+                                  {candidate.isReplyTarget ? (
+                                    <StatusPill tone="healthy">
+                                      回复目标
+                                    </StatusPill>
+                                  ) : null}
+                                  {candidate.isExplicitTarget ? (
+                                    <StatusPill tone="warning">
+                                      被提及
+                                    </StatusPill>
+                                  ) : null}
+                                  <StatusPill
+                                    tone={
+                                      candidate.randomPassed
+                                        ? "healthy"
+                                        : "muted"
+                                    }
+                                  >
+                                    {candidate.randomPassed
+                                      ? "概率通过"
+                                      : "概率未过"}
+                                  </StatusPill>
+                                </>
+                              }
+                              description={describeGroupReplyDisposition(
+                                candidate.selectionDisposition,
+                              )}
+                              className="bg-white/90"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </AdminSubpanel>
+
+                    <AdminSubpanel title="任务执行">
+                      <div className="space-y-3">
+                        {turn.tasks.map((task) => (
                           <AdminRecordCard
-                            key={`${turn.turnId}-${candidate.characterId}`}
-                            title={candidate.characterName}
-                            meta={formatGroupReplyCandidateMeta(candidate.recentSpeakerIndex)}
+                            key={task.id}
+                            title={`${task.sequenceIndex + 1}. ${task.actorName}`}
+                            meta={`计划执行：${formatDateTime(task.executeAfter)}`}
                             badges={
                               <>
-                                <StatusPill tone={toneForGroupReplyDisposition(candidate.selectionDisposition)}>
-                                  {formatGroupReplyDisposition(candidate.selectionDisposition)}
+                                <StatusPill
+                                  tone={toneForGroupReplyTaskStatus(
+                                    task.status,
+                                  )}
+                                >
+                                  {formatGroupReplyTaskStatus(task.status)}
                                 </StatusPill>
-                                <StatusPill tone="muted">分数 {candidate.score.toFixed(1)}</StatusPill>
-                                {candidate.isReplyTarget ? (
-                                  <StatusPill tone="healthy">回复目标</StatusPill>
-                                ) : null}
-                                {candidate.isExplicitTarget ? (
-                                  <StatusPill tone="warning">被提及</StatusPill>
-                                ) : null}
-                                <StatusPill tone={candidate.randomPassed ? "healthy" : "muted"}>
-                                  {candidate.randomPassed ? "概率通过" : "概率未过"}
+                                <StatusPill
+                                  tone={toneForGroupReplyDisposition(
+                                    task.selectionDisposition,
+                                  )}
+                                >
+                                  {formatGroupReplyDisposition(
+                                    task.selectionDisposition,
+                                  )}
                                 </StatusPill>
                               </>
                             }
-                            description={describeGroupReplyDisposition(candidate.selectionDisposition)}
+                            description={describeGroupReplyTask(task)}
+                            details={
+                              <div className="space-y-2 text-xs leading-6 text-[color:var(--text-muted)]">
+                                <div>分数：{task.score.toFixed(1)}</div>
+                                <div>
+                                  概率门：
+                                  {task.randomPassed ? "通过" : "未通过"} ·
+                                  被提及：
+                                  {task.isExplicitTarget ? "是" : "否"} ·
+                                  回复目标：
+                                  {task.isReplyTarget ? "是" : "否"}
+                                </div>
+                                {task.errorMessage ? (
+                                  <div>错误：{task.errorMessage}</div>
+                                ) : null}
+                                {task.cancelReason ? (
+                                  <div>
+                                    取消原因：
+                                    {formatGroupReplyCancelReason(
+                                      task.cancelReason,
+                                    )}
+                                  </div>
+                                ) : null}
+                              </div>
+                            }
+                            actions={
+                              task.status === "failed" ? (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => retryMutation.mutate(task.id)}
+                                  disabled={retryMutation.isPending}
+                                >
+                                  {retryMutation.isPending &&
+                                  retryMutation.variables === task.id
+                                    ? "重试中..."
+                                    : "重新入队"}
+                                </Button>
+                              ) : null
+                            }
                             className="bg-white/90"
                           />
                         ))}
                       </div>
-                    )}
-                  </AdminSubpanel>
-
-                  <AdminSubpanel title="任务执行">
-                    <div className="space-y-3">
-                      {turn.tasks.map((task) => (
-                        <AdminRecordCard
-                          key={task.id}
-                          title={`${task.sequenceIndex + 1}. ${task.actorName}`}
-                          meta={`计划执行：${formatDateTime(task.executeAfter)}`}
-                          badges={
-                            <>
-                              <StatusPill tone={toneForGroupReplyTaskStatus(task.status)}>
-                                {formatGroupReplyTaskStatus(task.status)}
-                              </StatusPill>
-                              <StatusPill tone={toneForGroupReplyDisposition(task.selectionDisposition)}>
-                                {formatGroupReplyDisposition(task.selectionDisposition)}
-                              </StatusPill>
-                            </>
-                          }
-                          description={describeGroupReplyTask(task)}
-                          details={
-                            <div className="space-y-2 text-xs leading-6 text-[color:var(--text-muted)]">
-                              <div>分数：{task.score.toFixed(1)}</div>
-                              <div>
-                                概率门：{task.randomPassed ? "通过" : "未通过"} · 被提及：
-                                {task.isExplicitTarget ? "是" : "否"} · 回复目标：
-                                {task.isReplyTarget ? "是" : "否"}
-                              </div>
-                              {task.errorMessage ? <div>错误：{task.errorMessage}</div> : null}
-                              {task.cancelReason ? (
-                                <div>取消原因：{formatGroupReplyCancelReason(task.cancelReason)}</div>
-                              ) : null}
-                            </div>
-                          }
-                          actions={
-                            task.status === "failed" ? (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => retryMutation.mutate(task.id)}
-                                disabled={retryMutation.isPending}
-                              >
-                                {retryMutation.isPending && retryMutation.variables === task.id
-                                  ? "重试中..."
-                                  : "重新入队"}
-                              </Button>
-                            ) : null
-                          }
-                          className="bg-white/90"
-                        />
-                      ))}
-                    </div>
-                  </AdminSubpanel>
-                </div>
-              </AdminSubpanel>
-            );
-          })}
-        </div>
+                    </AdminSubpanel>
+                  </div>
+                </AdminSubpanel>
+              );
+            })}
+          </div>
         )}
       </div>
     </Card>
@@ -2275,14 +2638,25 @@ function ActorSnapshotCard({
           <StateGateCard gate={actor.stateGate} />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
             <MetricCard label="模型" value={actor.model} />
-            <MetricCard label="API 可用" value={actor.apiAvailable ? "可用" : "不可用"} />
+            <MetricCard
+              label="API 可用"
+              value={actor.apiAvailable ? "可用" : "不可用"}
+            />
             <MetricCard label="历史窗口" value={actor.historyWindow} />
             <MetricCard label="可见消息数" value={actor.visibleHistoryCount} />
-            <MetricCard label="最近聊天时间" value={formatDateTime(actor.lastChatAt)} />
-            <MetricCard label="世界上下文" value={actor.worldContextText || "暂无快照"} />
+            <MetricCard
+              label="最近聊天时间"
+              value={formatDateTime(actor.lastChatAt)}
+            />
+            <MetricCard
+              label="世界上下文"
+              value={actor.worldContextText || "暂无快照"}
+            />
           </div>
           <AdminSubpanel title="角色备注" contentClassName="mt-3">
-            <AdminNoteList items={actor.notes.map((note) => formatReplyLogicText(note))} />
+            <AdminNoteList
+              items={actor.notes.map((note) => formatReplyLogicText(note))}
+            />
           </AdminSubpanel>
         </div>
 
@@ -2319,7 +2693,9 @@ function StateGateCard({ gate }: { gate: ReplyLogicStateGateSummary }) {
   return (
     <AdminSubpanel title="状态门" contentClassName="mt-3">
       <div className="flex justify-end">
-        <StatusPill tone={toneForGate(gate.mode)}>{formatGateMode(gate.mode)}</StatusPill>
+        <StatusPill tone={toneForGate(gate.mode)}>
+          {formatGateMode(gate.mode)}
+        </StatusPill>
       </div>
       <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
         {formatStateGateReason(gate)}
@@ -2370,38 +2746,44 @@ function HistoryList({
   }
 
   return (
-      <div className={className}>
-        <div className="space-y-3">
-          {items.map((item) => (
-            <AdminRecordCard
-              key={item.id}
-              title={item.senderName}
-              badges={
-                <>
-                  <StatusPill tone={item.includedInWindow ? "healthy" : "muted"}>
-                    {item.includedInWindow ? "进入窗口" : "仅可见"}
+    <div className={className}>
+      <div className="space-y-3">
+        {items.map((item) => (
+          <AdminRecordCard
+            key={item.id}
+            title={item.senderName}
+            badges={
+              <>
+                <StatusPill tone={item.includedInWindow ? "healthy" : "muted"}>
+                  {item.includedInWindow ? "进入窗口" : "仅可见"}
+                </StatusPill>
+                <StatusPill tone="muted">
+                  {formatSenderType(item.senderType)}
+                </StatusPill>
+                <StatusPill tone="muted">
+                  {formatMessageType(item.type)}
+                </StatusPill>
+                {item.attachmentKind ? (
+                  <StatusPill tone="warning">
+                    {formatAttachmentKind(item.attachmentKind)}
                   </StatusPill>
-                  <StatusPill tone="muted">{formatSenderType(item.senderType)}</StatusPill>
-                  <StatusPill tone="muted">{formatMessageType(item.type)}</StatusPill>
-                  {item.attachmentKind ? (
-                    <StatusPill tone="warning">{formatAttachmentKind(item.attachmentKind)}</StatusPill>
-                  ) : null}
-                </>
-              }
-              meta={formatDateTime(item.createdAt)}
-              description={item.text}
-              details={
-                item.note ? (
-                  <div className="text-xs text-[color:var(--text-muted)]">
-                    {formatReplyLogicText(item.note)}
-                  </div>
-                ) : undefined
-              }
-              className="bg-white/90"
-            />
-          ))}
-        </div>
+                ) : null}
+              </>
+            }
+            meta={formatDateTime(item.createdAt)}
+            description={item.text}
+            details={
+              item.note ? (
+                <div className="text-xs text-[color:var(--text-muted)]">
+                  {formatReplyLogicText(item.note)}
+                </div>
+              ) : undefined
+            }
+            className="bg-white/90"
+          />
+        ))}
       </div>
+    </div>
   );
 }
 
@@ -2430,7 +2812,13 @@ function RequestMessageList({
             title={formatRequestRole(item.role)}
             badges={
               <StatusPill
-                tone={item.role === "system" ? "warning" : item.role === "assistant" ? "healthy" : "muted"}
+                tone={
+                  item.role === "system"
+                    ? "warning"
+                    : item.role === "assistant"
+                      ? "healthy"
+                      : "muted"
+                }
               >
                 {formatRequestRole(item.role)}
               </StatusPill>
@@ -2449,7 +2837,9 @@ function NarrativeCard({
   narrativePresentation,
 }: {
   arcs: ReplyLogicNarrativeArcSummary[];
-  narrativePresentation: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null;
+  narrativePresentation:
+    | ReplyLogicConstantSummary["narrativePresentationTemplates"]
+    | null;
 }) {
   return (
     <Card className="bg-[color:var(--surface-console)]">
@@ -2468,7 +2858,9 @@ function NarrativeCard({
               title={formatNarrativeTitle(arc.title, narrativePresentation)}
               badges={
                 <>
-                  <StatusPill tone={arc.status === "completed" ? "healthy" : "warning"}>
+                  <StatusPill
+                    tone={arc.status === "completed" ? "healthy" : "warning"}
+                  >
                     {formatNarrativeStatus(arc.status)}
                   </StatusPill>
                   <StatusPill tone="muted">{arc.progress}%</StatusPill>
@@ -2479,7 +2871,10 @@ function NarrativeCard({
                 <div className="flex flex-wrap gap-2">
                   {arc.milestones.map((item) => (
                     <StatusPill key={`${arc.id}-${item.label}`} tone="healthy">
-                      {formatNarrativeMilestoneLabel(item.label, narrativePresentation)}
+                      {formatNarrativeMilestoneLabel(
+                        item.label,
+                        narrativePresentation,
+                      )}
                     </StatusPill>
                   ))}
                 </div>
@@ -2507,7 +2902,9 @@ function RuntimeRulesEditorCard({
   isPending: boolean;
   error: string | null;
   isSuccess: boolean;
-  onPatch: (updater: (current: ReplyLogicConstantSummary) => ReplyLogicConstantSummary) => void;
+  onPatch: (
+    updater: (current: ReplyLogicConstantSummary) => ReplyLogicConstantSummary,
+  ) => void;
   onReset: () => void;
   onSave: () => void;
 }) {
@@ -2515,7 +2912,9 @@ function RuntimeRulesEditorCard({
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
         title="运行规则配置"
-        actions={<AdminDraftStatusPill ready={Boolean(draft)} dirty={isDirty} />}
+        actions={
+          <AdminDraftStatusPill ready={Boolean(draft)} dirty={isDirty} />
+        }
       />
 
       {!draft ? (
@@ -2583,7 +2982,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       sleepDelayMs: {
                         ...current.sleepDelayMs,
-                        min: parseNonNegativeInteger(value, current.sleepDelayMs.min),
+                        min: parseNonNegativeInteger(
+                          value,
+                          current.sleepDelayMs.min,
+                        ),
                       },
                     }))
                   }
@@ -2598,7 +3000,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       sleepDelayMs: {
                         ...current.sleepDelayMs,
-                        max: parseNonNegativeInteger(value, current.sleepDelayMs.max),
+                        max: parseNonNegativeInteger(
+                          value,
+                          current.sleepDelayMs.max,
+                        ),
                       },
                     }))
                   }
@@ -2613,7 +3018,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       busyDelayMs: {
                         ...current.busyDelayMs,
-                        min: parseNonNegativeInteger(value, current.busyDelayMs.min),
+                        min: parseNonNegativeInteger(
+                          value,
+                          current.busyDelayMs.min,
+                        ),
                       },
                     }))
                   }
@@ -2628,7 +3036,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       busyDelayMs: {
                         ...current.busyDelayMs,
-                        max: parseNonNegativeInteger(value, current.busyDelayMs.max),
+                        max: parseNonNegativeInteger(
+                          value,
+                          current.busyDelayMs.max,
+                        ),
                       },
                     }))
                   }
@@ -2649,7 +3060,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       groupReplyChance: {
                         ...current.groupReplyChance,
-                        high: parseProbability(value, current.groupReplyChance.high),
+                        high: parseProbability(
+                          value,
+                          current.groupReplyChance.high,
+                        ),
                       },
                     }))
                   }
@@ -2665,7 +3079,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       groupReplyChance: {
                         ...current.groupReplyChance,
-                        normal: parseProbability(value, current.groupReplyChance.normal),
+                        normal: parseProbability(
+                          value,
+                          current.groupReplyChance.normal,
+                        ),
                       },
                     }))
                   }
@@ -2681,7 +3098,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       groupReplyChance: {
                         ...current.groupReplyChance,
-                        low: parseProbability(value, current.groupReplyChance.low),
+                        low: parseProbability(
+                          value,
+                          current.groupReplyChance.low,
+                        ),
                       },
                     }))
                   }
@@ -2698,7 +3118,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       groupReplyDelayMs: {
                         ...current.groupReplyDelayMs,
-                        min: parseNonNegativeInteger(value, current.groupReplyDelayMs.min),
+                        min: parseNonNegativeInteger(
+                          value,
+                          current.groupReplyDelayMs.min,
+                        ),
                       },
                     }))
                   }
@@ -2713,7 +3136,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       groupReplyDelayMs: {
                         ...current.groupReplyDelayMs,
-                        max: parseNonNegativeInteger(value, current.groupReplyDelayMs.max),
+                        max: parseNonNegativeInteger(
+                          value,
+                          current.groupReplyDelayMs.max,
+                        ),
                       },
                     }))
                   }
@@ -2747,7 +3173,10 @@ function RuntimeRulesEditorCard({
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
-                      momentGenerateChance: parseProbability(value, current.momentGenerateChance),
+                      momentGenerateChance: parseProbability(
+                        value,
+                        current.momentGenerateChance,
+                      ),
                     }))
                   }
                 />
@@ -2760,7 +3189,10 @@ function RuntimeRulesEditorCard({
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
-                      channelGenerateChance: parseProbability(value, current.channelGenerateChance),
+                      channelGenerateChance: parseProbability(
+                        value,
+                        current.channelGenerateChance,
+                      ),
                     }))
                   }
                 />
@@ -2773,7 +3205,10 @@ function RuntimeRulesEditorCard({
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
-                      sceneFriendRequestChance: parseProbability(value, current.sceneFriendRequestChance),
+                      sceneFriendRequestChance: parseProbability(
+                        value,
+                        current.sceneFriendRequestChance,
+                      ),
                     }))
                   }
                 />
@@ -2786,7 +3221,10 @@ function RuntimeRulesEditorCard({
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
-                      activityBaseWeight: parseProbability(value, current.activityBaseWeight),
+                      activityBaseWeight: parseProbability(
+                        value,
+                        current.activityBaseWeight,
+                      ),
                     }))
                   }
                 />
@@ -2800,7 +3238,10 @@ function RuntimeRulesEditorCard({
                     onPatch((current) => ({
                       ...current,
                       proactiveReminderHour: clamp(
-                        parseNonNegativeInteger(value, current.proactiveReminderHour),
+                        parseNonNegativeInteger(
+                          value,
+                          current.proactiveReminderHour,
+                        ),
                         0,
                         23,
                       ),
@@ -2887,7 +3328,9 @@ function RuntimeRulesEditorCard({
               <div className="grid gap-4 md:grid-cols-2">
                 <SelectFieldBlock
                   label="默认角色在线状态"
-                  value={draft.defaultCharacterRules.isOnline ? "online" : "offline"}
+                  value={
+                    draft.defaultCharacterRules.isOnline ? "online" : "offline"
+                  }
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
@@ -2951,7 +3394,10 @@ function RuntimeRulesEditorCard({
                     onPatch((current) => ({
                       ...current,
                       relationshipInitialStrength: clamp(
-                        parseNonNegativeInteger(value, current.relationshipInitialStrength),
+                        parseNonNegativeInteger(
+                          value,
+                          current.relationshipInitialStrength,
+                        ),
                         0,
                         100,
                       ),
@@ -2984,7 +3430,10 @@ function RuntimeRulesEditorCard({
                     onPatch((current) => ({
                       ...current,
                       relationshipUpdateStep: clamp(
-                        parseNonNegativeInteger(value, current.relationshipUpdateStep),
+                        parseNonNegativeInteger(
+                          value,
+                          current.relationshipUpdateStep,
+                        ),
                         0,
                         100,
                       ),
@@ -3001,7 +3450,10 @@ function RuntimeRulesEditorCard({
                     onPatch((current) => ({
                       ...current,
                       relationshipStrengthMax: clamp(
-                        parsePositiveInteger(value, current.relationshipStrengthMax),
+                        parsePositiveInteger(
+                          value,
+                          current.relationshipStrengthMax,
+                        ),
                         1,
                         100,
                       ),
@@ -3033,7 +3485,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       historyWindow: {
                         ...current.historyWindow,
-                        base: parsePositiveInteger(value, current.historyWindow.base),
+                        base: parsePositiveInteger(
+                          value,
+                          current.historyWindow.base,
+                        ),
                       },
                     }))
                   }
@@ -3048,7 +3503,10 @@ function RuntimeRulesEditorCard({
                       ...current,
                       historyWindow: {
                         ...current.historyWindow,
-                        range: parseNonNegativeInteger(value, current.historyWindow.range),
+                        range: parseNonNegativeInteger(
+                          value,
+                          current.historyWindow.range,
+                        ),
                       },
                     }))
                   }
@@ -3070,7 +3528,9 @@ function RuntimeRulesEditorCard({
               />
               <FieldBlock
                 label="关系弧线标题后缀"
-                value={draft.narrativePresentationTemplates.relationshipArcSuffix}
+                value={
+                  draft.narrativePresentationTemplates.relationshipArcSuffix
+                }
                 onChange={(value) =>
                   onPatch((current) => ({
                     ...current,
@@ -3083,7 +3543,9 @@ function RuntimeRulesEditorCard({
               />
               <TextAreaBlock
                 label="里程碑显示标签（key=value）"
-                value={recordToLines(draft.narrativePresentationTemplates.milestoneLabels)}
+                value={recordToLines(
+                  draft.narrativePresentationTemplates.milestoneLabels,
+                )}
                 onChange={(value) =>
                   onPatch((current) => ({
                     ...current,
@@ -3101,8 +3563,10 @@ function RuntimeRulesEditorCard({
 
             <ConfigSection title="System Prompt 模板">
               <InlineNotice tone="muted">
-                这里改的是结构化 system prompt 的母版。支持的占位符会直接在标签里标出来，例如{" "}
-                <code>{"{{name}}"}</code>、<code>{"{{relationship}}"}</code>、<code>{"{{currentTime}}"}</code>。
+                这里改的是结构化 system prompt
+                的母版。支持的占位符会直接在标签里标出来，例如{" "}
+                <code>{"{{name}}"}</code>、<code>{"{{relationship}}"}</code>、
+                <code>{"{{currentTime}}"}</code>。
               </InlineNotice>
               <TextAreaBlock
                 label="身份兜底模板（{{name}} / {{relationship}}）"
@@ -3212,7 +3676,8 @@ function RuntimeRulesEditorCard({
 
             <ConfigSection title="生成器 Prompt 模板">
               <InlineNotice tone="muted">
-                这部分会直接影响朋友圈生成、人格提取、意图分类、记忆压缩等 AI 子链路。
+                这部分会直接影响朋友圈生成、人格提取、意图分类、记忆压缩等 AI
+                子链路。
               </InlineNotice>
               <TextAreaBlock
                 label="朋友圈生成模板（{{name}} / {{relationship}} / {{dayOfWeek}} / {{timeOfDay}} / {{clockTime}} / {{emotionalTone}} / {{topicsHint}}）"
@@ -3293,7 +3758,10 @@ function RuntimeRulesEditorCard({
                     ...current,
                     semanticLabels: {
                       ...current.semanticLabels,
-                      domainLabels: parseKeyValueLines(value, current.semanticLabels.domainLabels),
+                      domainLabels: parseKeyValueLines(
+                        value,
+                        current.semanticLabels.domainLabels,
+                      ),
                     },
                   }))
                 }
@@ -3461,7 +3929,8 @@ function RuntimeRulesEditorCard({
 
             <ConfigSection title="世界快照规则">
               <InlineNotice tone="muted">
-                这里定义世界上下文的生成方式，以及注入到 system prompt 时的拼接模板。
+                这里定义世界上下文的生成方式，以及注入到 system prompt
+                时的拼接模板。
               </InlineNotice>
               <TextAreaBlock
                 label="季节标签（key=value）"
@@ -3482,7 +3951,9 @@ function RuntimeRulesEditorCard({
               <div className="grid gap-4 md:grid-cols-2">
                 <TextAreaBlock
                   label="春季天气候选"
-                  value={listToLines(draft.worldContextRules.weatherOptions.spring)}
+                  value={listToLines(
+                    draft.worldContextRules.weatherOptions.spring,
+                  )}
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
@@ -3498,7 +3969,9 @@ function RuntimeRulesEditorCard({
                 />
                 <TextAreaBlock
                   label="夏季天气候选"
-                  value={listToLines(draft.worldContextRules.weatherOptions.summer)}
+                  value={listToLines(
+                    draft.worldContextRules.weatherOptions.summer,
+                  )}
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
@@ -3514,7 +3987,9 @@ function RuntimeRulesEditorCard({
                 />
                 <TextAreaBlock
                   label="秋季天气候选"
-                  value={listToLines(draft.worldContextRules.weatherOptions.autumn)}
+                  value={listToLines(
+                    draft.worldContextRules.weatherOptions.autumn,
+                  )}
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
@@ -3530,7 +4005,9 @@ function RuntimeRulesEditorCard({
                 />
                 <TextAreaBlock
                   label="冬季天气候选"
-                  value={listToLines(draft.worldContextRules.weatherOptions.winter)}
+                  value={listToLines(
+                    draft.worldContextRules.weatherOptions.winter,
+                  )}
                   onChange={(value) =>
                     onPatch((current) => ({
                       ...current,
@@ -3576,7 +4053,9 @@ function RuntimeRulesEditorCard({
               />
               <TextAreaBlock
                 label="上下文字段模板（key=value）"
-                value={recordToLines(draft.worldContextRules.contextFieldTemplates)}
+                value={recordToLines(
+                  draft.worldContextRules.contextFieldTemplates,
+                )}
                 onChange={(value) =>
                   onPatch((current) => ({
                     ...current,
@@ -3622,7 +4101,8 @@ function RuntimeRulesEditorCard({
 
             <ConfigSection title="链路解释模板">
               <InlineNotice tone="muted">
-                这部分主要影响后台里“角色视图备注 / 会话分支摘要 / 候选消息预演说明 / 历史窗口注释”这些解释文字。
+                这部分主要影响后台里“角色视图备注 / 会话分支摘要 /
+                候选消息预演说明 / 历史窗口注释”这些解释文字。
               </InlineNotice>
               <TextAreaBlock
                 label="角色视图总说明"
@@ -3888,7 +4368,8 @@ function RuntimeRulesEditorCard({
 
             <ConfigSection title="Provider 备注模板">
               <InlineNotice tone="muted">
-                这里改的是回复逻辑总览里 Provider 差异备注，不影响真实推理请求，只影响后台解释文本。
+                这里改的是回复逻辑总览里 Provider
+                差异备注，不影响真实推理请求，只影响后台解释文本。
               </InlineNotice>
               <TextAreaBlock
                 label="Provider 备注（key=value）"
@@ -3896,7 +4377,10 @@ function RuntimeRulesEditorCard({
                 onChange={(value) =>
                   onPatch((current) => ({
                     ...current,
-                    providerTemplates: parseKeyValueLines(value, current.providerTemplates),
+                    providerTemplates: parseKeyValueLines(
+                      value,
+                      current.providerTemplates,
+                    ),
                   }))
                 }
               />
@@ -3923,7 +4407,8 @@ function RuntimeRulesEditorCard({
 
             <ConfigSection title="调度器任务说明">
               <InlineNotice tone="muted">
-                这里改的是 Scheduler 任务列表里的描述文字，不改 cron 表达式和实际触发频率。
+                这里改的是 Scheduler 任务列表里的描述文字，不改 cron
+                表达式和实际触发频率。
               </InlineNotice>
               <TextAreaBlock
                 label="任务名称（key=value）"
@@ -3931,7 +4416,10 @@ function RuntimeRulesEditorCard({
                 onChange={(value) =>
                   onPatch((current) => ({
                     ...current,
-                    schedulerNames: parseKeyValueLines(value, current.schedulerNames),
+                    schedulerNames: parseKeyValueLines(
+                      value,
+                      current.schedulerNames,
+                    ),
                   }))
                 }
               />
@@ -3966,11 +4454,16 @@ function RuntimeRulesEditorCard({
             <ConfigSection title="调度事件与摘要模板">
               <InlineNotice tone="muted">
                 这里改的是调度执行结果、生活事件和主动提醒子链路里的文本模板。支持{" "}
-                <code>{"{{count}}"}</code>、<code>{"{{characterCount}}"}</code>、<code>{"{{scene}}"}</code>、<code>{"{{postId}}"}</code>、<code>{"{{activity}}"}</code>、<code>{"{{otherName}}"}</code> 等占位符。
+                <code>{"{{count}}"}</code>、<code>{"{{characterCount}}"}</code>
+                、<code>{"{{scene}}"}</code>、<code>{"{{postId}}"}</code>、
+                <code>{"{{activity}}"}</code>、<code>{"{{otherName}}"}</code>{" "}
+                等占位符。
               </InlineNotice>
               <TextAreaBlock
                 label="调度事件与摘要（key=value）"
-                value={schedulerTextTemplatesToLines(draft.schedulerTextTemplates)}
+                value={schedulerTextTemplatesToLines(
+                  draft.schedulerTextTemplates,
+                )}
                 onChange={(value) =>
                   onPatch((current) => ({
                     ...current,
@@ -3983,7 +4476,9 @@ function RuntimeRulesEditorCard({
               />
               <TextAreaBlock
                 label="主动提醒检查 Prompt（{{characterName}} / {{memoryText}} / {{today}}）"
-                value={draft.schedulerTextTemplates.proactiveReminderCheckPrompt}
+                value={
+                  draft.schedulerTextTemplates.proactiveReminderCheckPrompt
+                }
                 onChange={(value) =>
                   onPatch((current) => ({
                     ...current,
@@ -4000,7 +4495,11 @@ function RuntimeRulesEditorCard({
               <Button variant="secondary" onClick={onReset}>
                 重置运行规则
               </Button>
-              <Button variant="primary" onClick={onSave} disabled={!isDirty || isPending}>
+              <Button
+                variant="primary"
+                onClick={onSave}
+                disabled={!isDirty || isPending}
+              >
                 {isPending ? "保存中..." : "保存运行规则"}
               </Button>
             </div>
@@ -4063,9 +4562,13 @@ function createEditableCharacter(source: Character): EditableCharacter {
   };
 }
 
-function normalizeCharacterForSave(draft: EditableCharacter): EditableCharacter {
+function normalizeCharacterForSave(
+  draft: EditableCharacter,
+): EditableCharacter {
   const normalized = createEditableCharacter(draft);
-  const expertDomains = normalized.expertDomains.map((item) => item.trim()).filter(Boolean);
+  const expertDomains = normalized.expertDomains
+    .map((item) => item.trim())
+    .filter(Boolean);
 
   return {
     ...normalized,
@@ -4075,10 +4578,14 @@ function normalizeCharacterForSave(draft: EditableCharacter): EditableCharacter 
     bio: normalized.bio.trim(),
     onlineMode: normalized.onlineMode === "manual" ? "manual" : "auto",
     expertDomains: expertDomains.length ? expertDomains : ["general"],
-    triggerScenes: normalized.triggerScenes?.map((item) => item.trim()).filter(Boolean) ?? [],
+    triggerScenes:
+      normalized.triggerScenes?.map((item) => item.trim()).filter(Boolean) ??
+      [],
     activeHoursStart: normalizeOptionalHour(normalized.activeHoursStart),
     activeHoursEnd: normalizeOptionalHour(normalized.activeHoursEnd),
-    currentActivity: normalized.currentActivity?.trim() ? normalized.currentActivity : null,
+    currentActivity: normalized.currentActivity?.trim()
+      ? normalized.currentActivity
+      : null,
     activityMode: normalized.activityMode === "manual" ? "manual" : "auto",
     profile: {
       ...normalized.profile,
@@ -4089,27 +4596,43 @@ function normalizeCharacterForSave(draft: EditableCharacter): EditableCharacter 
       coreLogic: normalized.profile.coreLogic?.trim() ?? "",
       scenePrompts: {
         chat: normalized.profile.scenePrompts?.chat?.trim() ?? "",
-        moments_post: normalized.profile.scenePrompts?.moments_post?.trim() ?? "",
-        moments_comment: normalized.profile.scenePrompts?.moments_comment?.trim() ?? "",
+        moments_post:
+          normalized.profile.scenePrompts?.moments_post?.trim() ?? "",
+        moments_comment:
+          normalized.profile.scenePrompts?.moments_comment?.trim() ?? "",
         feed_post: normalized.profile.scenePrompts?.feed_post?.trim() ?? "",
-        channel_post: normalized.profile.scenePrompts?.channel_post?.trim() ?? "",
-        feed_comment: normalized.profile.scenePrompts?.feed_comment?.trim() ?? "",
+        channel_post:
+          normalized.profile.scenePrompts?.channel_post?.trim() ?? "",
+        feed_comment:
+          normalized.profile.scenePrompts?.feed_comment?.trim() ?? "",
         greeting: normalized.profile.scenePrompts?.greeting?.trim() ?? "",
         proactive: normalized.profile.scenePrompts?.proactive?.trim() ?? "",
       },
       memorySummary: normalized.profile.memorySummary?.trim() ?? "",
       traits: {
         ...normalized.profile.traits,
-        speechPatterns: normalized.profile.traits.speechPatterns.map((item) => item.trim()).filter(Boolean),
-        catchphrases: normalized.profile.traits.catchphrases.map((item) => item.trim()).filter(Boolean),
-        topicsOfInterest: normalized.profile.traits.topicsOfInterest.map((item) => item.trim()).filter(Boolean),
-        emotionalTone: normalized.profile.traits.emotionalTone.trim() || "grounded",
+        speechPatterns: normalized.profile.traits.speechPatterns
+          .map((item) => item.trim())
+          .filter(Boolean),
+        catchphrases: normalized.profile.traits.catchphrases
+          .map((item) => item.trim())
+          .filter(Boolean),
+        topicsOfInterest: normalized.profile.traits.topicsOfInterest
+          .map((item) => item.trim())
+          .filter(Boolean),
+        emotionalTone:
+          normalized.profile.traits.emotionalTone.trim() || "grounded",
       },
       memory: {
         coreMemory: normalized.profile.memory.coreMemory.trim(),
         recentSummary: normalized.profile.memory.recentSummary.trim(),
-        forgettingCurve: clamp(normalized.profile.memory.forgettingCurve, 0, 100),
-        recentSummaryPrompt: normalized.profile.memory.recentSummaryPrompt?.trim(),
+        forgettingCurve: clamp(
+          normalized.profile.memory.forgettingCurve,
+          0,
+          100,
+        ),
+        recentSummaryPrompt:
+          normalized.profile.memory.recentSummaryPrompt?.trim(),
         coreMemoryPrompt: normalized.profile.memory.coreMemoryPrompt?.trim(),
       },
     },
@@ -4269,8 +4792,14 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       工作中: [...constants.busyHintMessages.working],
       通勤中: [...constants.busyHintMessages.commuting],
     },
-    睡眠延迟毫秒: { 最小值: constants.sleepDelayMs.min, 最大值: constants.sleepDelayMs.max },
-    忙碌延迟毫秒: { 最小值: constants.busyDelayMs.min, 最大值: constants.busyDelayMs.max },
+    睡眠延迟毫秒: {
+      最小值: constants.sleepDelayMs.min,
+      最大值: constants.sleepDelayMs.max,
+    },
+    忙碌延迟毫秒: {
+      最小值: constants.busyDelayMs.min,
+      最大值: constants.busyDelayMs.max,
+    },
     群聊回复概率: {
       高频角色: constants.groupReplyChance.high,
       中频角色: constants.groupReplyChance.normal,
@@ -4314,12 +4843,18 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
     },
     叙事里程碑: constants.narrativeMilestones.map((item) => ({
       阈值: item.threshold,
-      标签: formatNarrativeMilestoneLabel(item.label, constants.narrativePresentationTemplates),
+      标签: formatNarrativeMilestoneLabel(
+        item.label,
+        constants.narrativePresentationTemplates,
+      ),
       进度: item.progress,
     })),
     叙事展示模板: {
-      关系弧线标题后缀: constants.narrativePresentationTemplates.relationshipArcSuffix,
-      里程碑显示标签: { ...constants.narrativePresentationTemplates.milestoneLabels },
+      关系弧线标题后缀:
+        constants.narrativePresentationTemplates.relationshipArcSuffix,
+      里程碑显示标签: {
+        ...constants.narrativePresentationTemplates.milestoneLabels,
+      },
     },
     Prompt模板: {
       身份兜底: constants.promptTemplates.identityFallback,
@@ -4372,23 +4907,31 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
     },
     链路解释模板: {
       角色视图总说明: constants.inspectorTemplates.characterViewIntro,
-      角色视图已找到单聊: constants.inspectorTemplates.characterViewHistoryFound,
-      角色视图未找到单聊: constants.inspectorTemplates.characterViewHistoryMissing,
+      角色视图已找到单聊:
+        constants.inspectorTemplates.characterViewHistoryFound,
+      角色视图未找到单聊:
+        constants.inspectorTemplates.characterViewHistoryMissing,
       历史窗口内注释: constants.inspectorTemplates.historyIncludedNote,
       历史窗口外注释: constants.inspectorTemplates.historyExcludedNote,
       StoredGroup标题: constants.inspectorTemplates.storedGroupTitle,
       StoredGroup升级说明: constants.inspectorTemplates.storedGroupUpgradedNote,
-      StoredGroup下一步说明: constants.inspectorTemplates.storedGroupNextReplyNote,
+      StoredGroup下一步说明:
+        constants.inspectorTemplates.storedGroupNextReplyNote,
       DirectBranch标题: constants.inspectorTemplates.directBranchTitle,
-      DirectBranch下一步说明: constants.inspectorTemplates.directBranchNextReplyNote,
+      DirectBranch下一步说明:
+        constants.inspectorTemplates.directBranchNextReplyNote,
       FormalGroup标题: constants.inspectorTemplates.formalGroupTitle,
-      FormalGroup状态门说明: constants.inspectorTemplates.formalGroupStateGateNote,
-      FormalGroup回复规则说明: constants.inspectorTemplates.formalGroupReplyRuleNote,
+      FormalGroup状态门说明:
+        constants.inspectorTemplates.formalGroupStateGateNote,
+      FormalGroup回复规则说明:
+        constants.inspectorTemplates.formalGroupReplyRuleNote,
       预演角色说明: constants.inspectorTemplates.previewCharacterIntro,
       预演角色有历史: constants.inspectorTemplates.previewCharacterWithHistory,
-      预演角色无历史: constants.inspectorTemplates.previewCharacterWithoutHistory,
+      预演角色无历史:
+        constants.inspectorTemplates.previewCharacterWithoutHistory,
       预演StoredGroup: constants.inspectorTemplates.previewStoredGroup,
-      预演DirectConversation: constants.inspectorTemplates.previewDirectConversation,
+      预演DirectConversation:
+        constants.inspectorTemplates.previewDirectConversation,
       预演FormalGroup: constants.inspectorTemplates.previewFormalGroup,
       预演默认用户消息: constants.inspectorTemplates.previewDefaultUserMessage,
     },
@@ -4503,7 +5046,9 @@ function parseHolidayRules(
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [monthText, dayText, labelText] = line.split("|").map((item) => item.trim());
+      const [monthText, dayText, labelText] = line
+        .split("|")
+        .map((item) => item.trim());
       const month = Number(monthText);
       const day = Number(dayText);
       if (!labelText || Number.isNaN(month) || Number.isNaN(day)) {
@@ -4560,7 +5105,9 @@ function parseNarrativeMilestones(
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [thresholdText, labelText, progressText] = line.split("|").map((item) => item.trim());
+      const [thresholdText, labelText, progressText] = line
+        .split("|")
+        .map((item) => item.trim());
       const threshold = Number(thresholdText);
       const progress = Number(progressText);
       if (!labelText || Number.isNaN(threshold) || Number.isNaN(progress)) {
@@ -4586,7 +5133,9 @@ function formatConversationType(type: string) {
   return "单聊";
 }
 
-function formatConversationSource(source: ReplyLogicOverview["conversations"][number]["source"]) {
+function formatConversationSource(
+  source: ReplyLogicOverview["conversations"][number]["source"],
+) {
   if (source === "group") {
     return "群聊";
   }
@@ -4628,7 +5177,9 @@ function toneForGroupReplyTaskStatus(status: ReplyLogicGroupReplyTaskStatus) {
   }
 }
 
-function formatGroupReplyDisposition(disposition: ReplyLogicGroupReplySelectionDisposition) {
+function formatGroupReplyDisposition(
+  disposition: ReplyLogicGroupReplySelectionDisposition,
+) {
   switch (disposition) {
     case "selected_targeted":
       return "选中：明确指向";
@@ -4649,7 +5200,9 @@ function formatGroupReplyDisposition(disposition: ReplyLogicGroupReplySelectionD
   }
 }
 
-function toneForGroupReplyDisposition(disposition: ReplyLogicGroupReplySelectionDisposition) {
+function toneForGroupReplyDisposition(
+  disposition: ReplyLogicGroupReplySelectionDisposition,
+) {
   if (disposition.startsWith("selected_")) {
     return "healthy" as const;
   }
@@ -4659,7 +5212,9 @@ function toneForGroupReplyDisposition(disposition: ReplyLogicGroupReplySelection
   return "muted" as const;
 }
 
-function describeGroupReplyDisposition(disposition: ReplyLogicGroupReplySelectionDisposition) {
+function describeGroupReplyDisposition(
+  disposition: ReplyLogicGroupReplySelectionDisposition,
+) {
   switch (disposition) {
     case "selected_targeted":
       return "被回复目标或显式提及时，planner 会优先把他放进本轮发言名单。";
@@ -4688,7 +5243,9 @@ function describeGroupReplyIssue(issue: ReplyLogicGroupReplyIssueSummary) {
   return `最近群聊任务里，这类执行错误共出现 ${issue.count} 次。优先看失败任务明细里的原始错误，再决定是重新入队还是修运行环境。`;
 }
 
-function describeArchivedGroupReplyIssue(issue: ReplyLogicGroupReplyIssueSummary) {
+function describeArchivedGroupReplyIssue(
+  issue: ReplyLogicGroupReplyIssueSummary,
+) {
   if (issue.source === "cancel_reason") {
     return `这是已经归档的历史取消热点，累计出现 ${issue.count} 次，适合用来判断长期是否存在过度取消或轮次过时问题。`;
   }
@@ -4735,7 +5292,9 @@ function formatGroupReplyActorDriftBaselineSource(
   }
 }
 
-function describeGroupReplyActorDrift(actor: ReplyLogicGroupReplyActorDriftSummary) {
+function describeGroupReplyActorDrift(
+  actor: ReplyLogicGroupReplyActorDriftSummary,
+) {
   if (actor.baselineSource === "none") {
     return `最近 8 轮里，这个角色已有 ${actor.recentTaskCount} 条终态任务；因为还没有足够历史基线，所以先按绝对异常率 ${(actor.recentIssueRate * 100).toFixed(1)}% 做兜底监控。`;
   }
@@ -4774,7 +5333,9 @@ function buildVisibleGroupReplyIssueSummary(
     }
 
     if (task.status === "failed" && task.errorMessage) {
-      const normalizedError = normalizeGroupReplyErrorMessage(task.errorMessage);
+      const normalizedError = normalizeGroupReplyErrorMessage(
+        task.errorMessage,
+      );
       const key = `error:${normalizedError}`;
       const existing = issueCounts.get(key);
       issueCounts.set(key, {
@@ -4828,11 +5389,15 @@ function formatArchiveTrendDate(date: string) {
   }
 }
 
-function describeArchiveTrendPoint(point: ReplyLogicGroupReplyArchiveTrendPoint) {
+function describeArchiveTrendPoint(
+  point: ReplyLogicGroupReplyArchiveTrendPoint,
+) {
   return `当天共归档 ${point.taskCount} 条终态任务，涉及 ${point.turnCount} 轮；其中已发送 ${point.sentCount} 条、已取消 ${point.cancelledCount} 条、失败 ${point.failedCount} 条。`;
 }
 
-function describeArchiveActorSummary(actor: ReplyLogicGroupReplyArchiveActorSummary) {
+function describeArchiveActorSummary(
+  actor: ReplyLogicGroupReplyArchiveActorSummary,
+) {
   return `长期归档里，这个角色累计参与 ${actor.taskCount} 条任务；成功发送 ${actor.sentCount} 条，取消 ${actor.cancelledCount} 条，失败 ${actor.failedCount} 条。`;
 }
 
@@ -4944,7 +5509,9 @@ function formatAttachmentKind(kind: string) {
   return formatMessageType(kind);
 }
 
-function formatPromptSectionLabel(section: ReplyLogicActorSnapshot["promptSections"][number]) {
+function formatPromptSectionLabel(
+  section: ReplyLogicActorSnapshot["promptSections"][number],
+) {
   switch (section.key) {
     case "identity":
       return "身份设定";
@@ -4973,7 +5540,9 @@ function formatPromptSectionLabel(section: ReplyLogicActorSnapshot["promptSectio
 
 function formatNarrativeTitle(
   title: string,
-  narrativePresentation?: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null,
+  narrativePresentation?:
+    | ReplyLogicConstantSummary["narrativePresentationTemplates"]
+    | null,
 ) {
   if (title.endsWith(" relationship arc")) {
     const suffix = narrativePresentation?.relationshipArcSuffix ?? "关系弧线";
@@ -4985,7 +5554,9 @@ function formatNarrativeTitle(
 
 function formatNarrativeMilestoneLabel(
   label: string,
-  narrativePresentation?: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null,
+  narrativePresentation?:
+    | ReplyLogicConstantSummary["narrativePresentationTemplates"]
+    | null,
 ) {
   const milestoneLabels = narrativePresentation?.milestoneLabels;
   const mapped =
