@@ -260,7 +260,12 @@ export function CharacterEditorPage() {
     if (characterQuery.isError) {
       setDraft(emptyCharacterDraft);
     }
-  }, [characterQuery.data, characterQuery.isError, characterQuery.isLoading, isNew]);
+  }, [
+    characterQuery.data,
+    characterQuery.isError,
+    characterQuery.isLoading,
+    isNew,
+  ]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -272,9 +277,15 @@ export function CharacterEditorPage() {
     },
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin-characters-crud", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-characters", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters-crud", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-system-status", baseUrl],
+        }),
       ]);
       navigate({ to: "/characters" });
     },
@@ -302,28 +313,59 @@ export function CharacterEditorPage() {
         name: str(raw.name) || current.name,
         avatar: str(raw.avatar) || current.avatar,
         relationship: str(raw.relationship) || current.relationship,
-        relationshipType: (str(raw.relationshipType) as Character["relationshipType"]) || current.relationshipType,
+        relationshipType:
+          (str(raw.relationshipType) as Character["relationshipType"]) ||
+          current.relationshipType,
         bio: str(raw.bio) || current.bio,
-        expertDomains: strList(raw.expertDomains).length ? strList(raw.expertDomains) : (current.expertDomains ?? []),
+        expertDomains: strList(raw.expertDomains).length
+          ? strList(raw.expertDomains)
+          : (current.expertDomains ?? []),
         profile: {
           ...(current.profile ?? emptyCharacterDraft.profile!),
           basePrompt: str(raw.basePrompt) || current.profile?.basePrompt,
-          memorySummary: str(raw.memorySummary) || (current.profile?.memorySummary ?? ""),
+          memorySummary:
+            str(raw.memorySummary) || (current.profile?.memorySummary ?? ""),
           traits: {
             ...(current.profile?.traits ?? emptyCharacterDraft.profile!.traits),
-            speechPatterns: strList(raw.speechPatterns).length ? strList(raw.speechPatterns) : (current.profile?.traits.speechPatterns ?? []),
-            catchphrases: strList(raw.catchphrases).length ? strList(raw.catchphrases) : (current.profile?.traits.catchphrases ?? []),
-            topicsOfInterest: strList(raw.topicsOfInterest).length ? strList(raw.topicsOfInterest) : (current.profile?.traits.topicsOfInterest ?? []),
-            emotionalTone: str(raw.emotionalTone) || current.profile?.traits.emotionalTone || "grounded",
-            responseLength: (str(raw.responseLength) as "short" | "medium" | "long") || current.profile?.traits.responseLength || "medium",
-            emojiUsage: (str(raw.emojiUsage) as "none" | "occasional" | "frequent") || current.profile?.traits.emojiUsage || "occasional",
+            speechPatterns: strList(raw.speechPatterns).length
+              ? strList(raw.speechPatterns)
+              : (current.profile?.traits.speechPatterns ?? []),
+            catchphrases: strList(raw.catchphrases).length
+              ? strList(raw.catchphrases)
+              : (current.profile?.traits.catchphrases ?? []),
+            topicsOfInterest: strList(raw.topicsOfInterest).length
+              ? strList(raw.topicsOfInterest)
+              : (current.profile?.traits.topicsOfInterest ?? []),
+            emotionalTone:
+              str(raw.emotionalTone) ||
+              current.profile?.traits.emotionalTone ||
+              "grounded",
+            responseLength:
+              (str(raw.responseLength) as "short" | "medium" | "long") ||
+              current.profile?.traits.responseLength ||
+              "medium",
+            emojiUsage:
+              (str(raw.emojiUsage) as "none" | "occasional" | "frequent") ||
+              current.profile?.traits.emojiUsage ||
+              "occasional",
           },
           identity: {
-            ...(current.profile?.identity ?? emptyCharacterDraft.profile!.identity!),
-            occupation: str(raw.occupation) || current.profile?.identity?.occupation || "",
-            background: str(raw.background) || current.profile?.identity?.background || "",
-            motivation: str(raw.motivation) || current.profile?.identity?.motivation || "",
-            worldview: str(raw.worldview) || current.profile?.identity?.worldview || "",
+            ...(current.profile?.identity ??
+              emptyCharacterDraft.profile!.identity!),
+            occupation:
+              str(raw.occupation) ||
+              current.profile?.identity?.occupation ||
+              "",
+            background:
+              str(raw.background) ||
+              current.profile?.identity?.background ||
+              "",
+            motivation:
+              str(raw.motivation) ||
+              current.profile?.identity?.motivation ||
+              "",
+            worldview:
+              str(raw.worldview) || current.profile?.identity?.worldview || "",
           },
         },
       }));
@@ -344,9 +386,16 @@ export function CharacterEditorPage() {
           actions={
             <>
               <Link to="/characters">
-                <Button variant="secondary" size="lg">返回角色中心</Button>
+                <Button variant="secondary" size="lg">
+                  返回角色中心
+                </Button>
               </Link>
-              <Button onClick={() => saveMutation.mutate()} disabled={!canSave || saveMutation.isPending} variant="primary" size="lg">
+              <Button
+                onClick={() => saveMutation.mutate()}
+                disabled={!canSave || saveMutation.isPending}
+                variant="primary"
+                size="lg"
+              >
                 {saveMutation.isPending ? "保存中..." : "保存角色"}
               </Button>
             </>
@@ -354,12 +403,28 @@ export function CharacterEditorPage() {
         />
       </div>
 
-      {!isNew && characterQuery.isLoading ? <LoadingBlock label="正在加载角色草稿..." /> : null}
-      {!isNew && characterQuery.isError && characterQuery.error instanceof Error ? <ErrorBlock message={characterQuery.error.message} /> : null}
-      {!canSave ? <InlineNotice tone="warning">保存角色前，名称和关系描述为必填项。</InlineNotice> : null}
-      {saveMutation.isError && saveMutation.error instanceof Error ? <ErrorBlock message={saveMutation.error.message} /> : null}
+      {!isNew && characterQuery.isLoading ? (
+        <LoadingBlock label="正在加载角色草稿..." />
+      ) : null}
+      {!isNew &&
+      characterQuery.isError &&
+      characterQuery.error instanceof Error ? (
+        <ErrorBlock message={characterQuery.error.message} />
+      ) : null}
+      {!canSave ? (
+        <InlineNotice tone="warning">
+          保存角色前，名称和关系描述为必填项。
+        </InlineNotice>
+      ) : null}
+      {saveMutation.isError && saveMutation.error instanceof Error ? (
+        <ErrorBlock message={saveMutation.error.message} />
+      ) : null}
       {saveMutation.isSuccess ? (
-        <AdminActionFeedback tone="success" title="角色已保存" description="正在返回角色名册..." />
+        <AdminActionFeedback
+          tone="success"
+          title="角色已保存"
+          description="正在返回角色名册..."
+        />
       ) : null}
 
       {isNew ? (
@@ -367,13 +432,16 @@ export function CharacterEditorPage() {
           <AdminSectionHeader
             title="AI 快速生成"
             actions={
-              <StatusPill tone={aiGenerateMutation.isSuccess ? "healthy" : "muted"}>
+              <StatusPill
+                tone={aiGenerateMutation.isSuccess ? "healthy" : "muted"}
+              >
                 {aiGenerateMutation.isSuccess ? "已填入" : "一键生成"}
               </StatusPill>
             }
           />
           <p className="mt-3 text-sm text-[color:var(--text-secondary)]">
-            输入对角色的简短描述，AI 会自动生成姓名、简介、人格特征、职业背景等字段并填入表单，你可以在下方继续微调。
+            输入对角色的简短描述，AI
+            会自动生成姓名、简介、人格特征、职业背景等字段并填入表单，你可以在下方继续微调。
           </p>
           <div className="mt-4 flex flex-col gap-3">
             <textarea
@@ -392,12 +460,18 @@ export function CharacterEditorPage() {
                 {aiGenerateMutation.isPending ? "生成中..." : "AI 生成角色"}
               </Button>
               {aiGenerateMutation.isSuccess ? (
-                <span className="text-sm text-[color:var(--text-success)]">已生成并填入，请在下方检查和微调</span>
+                <span className="text-sm text-[color:var(--text-success)]">
+                  已生成并填入，请在下方检查和微调
+                </span>
               ) : null}
             </div>
           </div>
-          {aiGenerateMutation.isError && aiGenerateMutation.error instanceof Error ? (
-            <ErrorBlock className="mt-3" message={aiGenerateMutation.error.message} />
+          {aiGenerateMutation.isError &&
+          aiGenerateMutation.error instanceof Error ? (
+            <ErrorBlock
+              className="mt-3"
+              message={aiGenerateMutation.error.message}
+            />
           ) : null}
         </Card>
       ) : null}
@@ -410,17 +484,36 @@ export function CharacterEditorPage() {
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>基础信息</SectionHeading>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Field label="名称" value={draft.name ?? ""} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} />
-            <Field label="头像" value={draft.avatar ?? ""} onChange={(value) => setDraft((current) => ({ ...current, avatar: value }))} />
+            <Field
+              label="名称"
+              value={draft.name ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({ ...current, name: value }))
+              }
+            />
+            <Field
+              label="头像"
+              value={draft.avatar ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({ ...current, avatar: value }))
+              }
+            />
             <Field
               label="关系描述"
               value={draft.relationship ?? ""}
-              onChange={(value) => setDraft((current) => ({ ...current, relationship: value }))}
+              onChange={(value) =>
+                setDraft((current) => ({ ...current, relationship: value }))
+              }
             />
             <SelectField
               label="关系类型"
               value={draft.relationshipType ?? "expert"}
-              onChange={(value) => setDraft((current) => ({ ...current, relationshipType: value as Character["relationshipType"] }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  relationshipType: value as Character["relationshipType"],
+                }))
+              }
               options={[
                 { value: "family", label: "家人" },
                 { value: "friend", label: "朋友" },
@@ -432,25 +525,36 @@ export function CharacterEditorPage() {
             <Field
               label="擅长领域"
               value={listToCsv(draft.expertDomains)}
-              onChange={(value) => setDraft((current) => ({ ...current, expertDomains: csvToList(value) }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  expertDomains: csvToList(value),
+                }))
+              }
             />
           </div>
           <TextAreaField
             className="mt-4"
             label="简介"
             value={draft.bio ?? ""}
-            onChange={(value) => setDraft((current) => ({ ...current, bio: value }))}
+            onChange={(value) =>
+              setDraft((current) => ({ ...current, bio: value }))
+            }
           />
           <div className="mt-4 flex flex-wrap gap-3">
             <Toggle
               label="在线"
               checked={draft.isOnline ?? false}
-              onChange={(checked) => setDraft((current) => ({ ...current, isOnline: checked }))}
+              onChange={(checked) =>
+                setDraft((current) => ({ ...current, isOnline: checked }))
+              }
             />
             <Toggle
               label="模板"
               checked={draft.isTemplate ?? false}
-              onChange={(checked) => setDraft((current) => ({ ...current, isTemplate: checked }))}
+              onChange={(checked) =>
+                setDraft((current) => ({ ...current, isTemplate: checked }))
+              }
             />
           </div>
         </Card>
@@ -469,7 +573,12 @@ export function CharacterEditorPage() {
               value={profile.coreLogic ?? ""}
               description="所有场景强制注入。描述角色的核心人格、价值观、思维方式。这里写的内容在聊天、发帖、评论等每个场景都会生效。"
               defaultPrompt={DEFAULT_PROMPTS.coreLogic}
-              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, coreLogic: value } }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, coreLogic: value },
+                }))
+              }
             />
             <Field
               label="遗忘曲线（0-100，默认70）"
@@ -477,7 +586,13 @@ export function CharacterEditorPage() {
               onChange={(value) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, memory: { ...profile.memory!, forgettingCurve: Number(value) || 0 } },
+                  profile: {
+                    ...profile,
+                    memory: {
+                      ...profile.memory!,
+                      forgettingCurve: Number(value) || 0,
+                    },
+                  },
                 }))
               }
             />
@@ -498,7 +613,15 @@ export function CharacterEditorPage() {
               value={profile.scenePrompts?.chat ?? ""}
               description="触发：用户发消息时。系统会自动注入：当前时间、角色活动状态、距上次聊天时长。写聊天风格、话题偏好、对话节奏，可引导 AI 调整回复长短和语气。"
               defaultPrompt={DEFAULT_PROMPTS.chat}
-              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, chat: value } } }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: {
+                    ...profile,
+                    scenePrompts: { ...profile.scenePrompts, chat: value },
+                  },
+                }))
+              }
             />
           </div>
         </Card>
@@ -513,61 +636,142 @@ export function CharacterEditorPage() {
           </p>
           <div className="mt-5 space-y-6">
             <div>
-              <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[color:var(--text-muted)]">主动发布</p>
+              <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[color:var(--text-muted)]">
+                主动发布
+              </p>
               <div className="space-y-4">
                 <TextAreaField
                   label="发朋友圈"
                   value={profile.scenePrompts?.moments_post ?? ""}
                   description="触发：定时发朋友圈（由发圈频率控制）。无实时上下文。写发圈内容偏好、常见话题、风格规范，以及是否偏好配图/纯文字等倾向。"
                   defaultPrompt={DEFAULT_PROMPTS.moments_post}
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, moments_post: value } } }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      profile: {
+                        ...profile,
+                        scenePrompts: {
+                          ...profile.scenePrompts,
+                          moments_post: value,
+                        },
+                      },
+                    }))
+                  }
                 />
                 <TextAreaField
                   label="发 Feed 贴文"
                   value={profile.scenePrompts?.feed_post ?? ""}
                   description="触发：定时在广场发贴（由 Feed 频率控制）。无实时上下文。写公开发帖的风格、内容方向、是否引导讨论等。"
                   defaultPrompt={DEFAULT_PROMPTS.feed_post}
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, feed_post: value } } }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      profile: {
+                        ...profile,
+                        scenePrompts: {
+                          ...profile.scenePrompts,
+                          feed_post: value,
+                        },
+                      },
+                    }))
+                  }
                 />
                 <TextAreaField
                   label="发视频号内容"
                   value={profile.scenePrompts?.channel_post ?? ""}
                   description="触发：定时发视频号内容。无实时上下文。写视频号文案风格、内容结构要求（标题/正文/话题标签等）。"
                   defaultPrompt={DEFAULT_PROMPTS.channel_post}
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, channel_post: value } } }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      profile: {
+                        ...profile,
+                        scenePrompts: {
+                          ...profile.scenePrompts,
+                          channel_post: value,
+                        },
+                      },
+                    }))
+                  }
                 />
               </div>
             </div>
             <div>
-              <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[color:var(--text-muted)]">互动响应</p>
+              <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[color:var(--text-muted)]">
+                互动响应
+              </p>
               <div className="space-y-4">
                 <TextAreaField
                   label="朋友圈评论 / 回复"
                   value={profile.scenePrompts?.moments_comment ?? ""}
                   description="触发：角色浏览到用户朋友圈时自动评论。写评论语气、常用开场方式、喜欢哪类内容多互动，不喜欢哪类则少评甚至不评。"
                   defaultPrompt={DEFAULT_PROMPTS.moments_comment}
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, moments_comment: value } } }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      profile: {
+                        ...profile,
+                        scenePrompts: {
+                          ...profile.scenePrompts,
+                          moments_comment: value,
+                        },
+                      },
+                    }))
+                  }
                 />
                 <TextAreaField
                   label="Feed 评论"
                   value={profile.scenePrompts?.feed_comment ?? ""}
                   description="触发：角色看到用户 Feed 贴文时自动评论。写评论偏好，例如犀利点评 / 鼓励互动 / 专业补充，以及对哪类帖子积极评论。"
                   defaultPrompt={DEFAULT_PROMPTS.feed_comment}
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, feed_comment: value } } }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      profile: {
+                        ...profile,
+                        scenePrompts: {
+                          ...profile.scenePrompts,
+                          feed_comment: value,
+                        },
+                      },
+                    }))
+                  }
                 />
                 <TextAreaField
                   label="好友请求 / 摇一摇问候"
                   value={profile.scenePrompts?.greeting ?? ""}
                   description="触发：角色发起好友申请或摇一摇。只生成一句打招呼的话，建议写简短有特点的开场方式，20 字以内效果最佳。"
                   defaultPrompt={DEFAULT_PROMPTS.greeting}
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, greeting: value } } }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      profile: {
+                        ...profile,
+                        scenePrompts: {
+                          ...profile.scenePrompts,
+                          greeting: value,
+                        },
+                      },
+                    }))
+                  }
                 />
                 <TextAreaField
                   label="主动提醒"
                   value={profile.scenePrompts?.proactive ?? ""}
                   description="触发：定时任务检测角色记忆，决定是否主动给用户发消息。写什么情况下应该主动发（如记得某事想分享），什么情况下保持沉默。不填则由底层逻辑判断。"
                   defaultPrompt={DEFAULT_PROMPTS.proactive}
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, proactive: value } } }))}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      profile: {
+                        ...profile,
+                        scenePrompts: {
+                          ...profile.scenePrompts,
+                          proactive: value,
+                        },
+                      },
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -579,12 +783,19 @@ export function CharacterEditorPage() {
       {activeTab === "life" ? (
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>生活策略</SectionHeading>
-          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">控制角色在系统中的活跃节奏、内容发布频率和触发场景。</p>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+            控制角色在系统中的活跃节奏、内容发布频率和触发场景。
+          </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <SelectField
               label="在线模式"
               value={draft.onlineMode ?? "auto"}
-              onChange={(value) => setDraft((current) => ({ ...current, onlineMode: value as "auto" | "manual" }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  onlineMode: value as "auto" | "manual",
+                }))
+              }
               options={[
                 { value: "auto", label: "自动" },
                 { value: "manual", label: "手动" },
@@ -593,7 +804,12 @@ export function CharacterEditorPage() {
             <SelectField
               label="活动模式"
               value={draft.activityMode ?? "auto"}
-              onChange={(value) => setDraft((current) => ({ ...current, activityMode: value as "auto" | "manual" }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  activityMode: value as "auto" | "manual",
+                }))
+              }
               options={[
                 { value: "auto", label: "自动" },
                 { value: "manual", label: "手动" },
@@ -602,7 +818,12 @@ export function CharacterEditorPage() {
             <SelectField
               label="活动频率"
               value={draft.activityFrequency ?? "normal"}
-              onChange={(value) => setDraft((current) => ({ ...current, activityFrequency: value }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  activityFrequency: value,
+                }))
+              }
               options={[
                 { value: "high", label: "高频" },
                 { value: "normal", label: "中频" },
@@ -612,7 +833,9 @@ export function CharacterEditorPage() {
             <SelectField
               label="当前活动"
               value={draft.currentActivity ?? "free"}
-              onChange={(value) => setDraft((current) => ({ ...current, currentActivity: value }))}
+              onChange={(value) =>
+                setDraft((current) => ({ ...current, currentActivity: value }))
+              }
               options={[
                 { value: "free", label: "空闲" },
                 { value: "working", label: "工作中" },
@@ -625,29 +848,54 @@ export function CharacterEditorPage() {
             <Field
               label="朋友圈频率（次/天）"
               value={String(draft.momentsFrequency ?? 1)}
-              onChange={(value) => setDraft((current) => ({ ...current, momentsFrequency: Number(value) || 0 }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  momentsFrequency: Number(value) || 0,
+                }))
+              }
             />
             <Field
               label="视频号频率（次/周）"
               value={String(draft.feedFrequency ?? 1)}
-              onChange={(value) => setDraft((current) => ({ ...current, feedFrequency: Number(value) || 0 }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  feedFrequency: Number(value) || 0,
+                }))
+              }
             />
             <Field
               label="活跃开始小时（0-23）"
               value={String(draft.activeHoursStart ?? 8)}
-              onChange={(value) => setDraft((current) => ({ ...current, activeHoursStart: Number(value) || 0 }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  activeHoursStart: Number(value) || 0,
+                }))
+              }
             />
             <Field
               label="活跃结束小时（0-23）"
               value={String(draft.activeHoursEnd ?? 23)}
-              onChange={(value) => setDraft((current) => ({ ...current, activeHoursEnd: Number(value) || 0 }))}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  activeHoursEnd: Number(value) || 0,
+                }))
+              }
             />
           </div>
           <Field
             className="mt-4"
             label="触发场景"
             value={listToCsv(draft.triggerScenes)}
-            onChange={(value) => setDraft((current) => ({ ...current, triggerScenes: csvToList(value) }))}
+            onChange={(value) =>
+              setDraft((current) => ({
+                ...current,
+                triggerScenes: csvToList(value),
+              }))
+            }
           />
         </Card>
       ) : null}
@@ -665,7 +913,10 @@ export function CharacterEditorPage() {
               onChange={(value) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, memory: { ...profile.memory!, recentSummaryPrompt: value } },
+                  profile: {
+                    ...profile,
+                    memory: { ...profile.memory!, recentSummaryPrompt: value },
+                  },
                 }))
               }
             />
@@ -677,7 +928,10 @@ export function CharacterEditorPage() {
               onChange={(value) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, memory: { ...profile.memory!, coreMemoryPrompt: value } },
+                  profile: {
+                    ...profile,
+                    memory: { ...profile.memory!, coreMemoryPrompt: value },
+                  },
                 }))
               }
             />
@@ -689,7 +943,9 @@ export function CharacterEditorPage() {
       {activeTab === "reasoning" ? (
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>推理配置</SectionHeading>
-          <p className="mt-2 text-sm text-[color:var(--text-secondary)]">控制角色推理链路的启用状态，影响响应质量和 Token 消耗。</p>
+          <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            控制角色推理链路的启用状态，影响响应质量和 Token 消耗。
+          </p>
           <div className="mt-4 space-y-3">
             <Toggle
               label="启用链路推理（CoT）"
@@ -697,7 +953,13 @@ export function CharacterEditorPage() {
               onChange={(checked) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableCoT: checked } },
+                  profile: {
+                    ...profile,
+                    reasoningConfig: {
+                      ...profile.reasoningConfig!,
+                      enableCoT: checked,
+                    },
+                  },
                 }))
               }
             />
@@ -707,7 +969,13 @@ export function CharacterEditorPage() {
               onChange={(checked) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableReflection: checked } },
+                  profile: {
+                    ...profile,
+                    reasoningConfig: {
+                      ...profile.reasoningConfig!,
+                      enableReflection: checked,
+                    },
+                  },
                 }))
               }
             />
@@ -717,22 +985,33 @@ export function CharacterEditorPage() {
               onChange={(checked) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableRouting: checked } },
+                  profile: {
+                    ...profile,
+                    reasoningConfig: {
+                      ...profile.reasoningConfig!,
+                      enableRouting: checked,
+                    },
+                  },
                 }))
               }
             />
           </div>
         </Card>
       ) : null}
-
     </div>
   );
 }
 
-function normalizeDraft(draft: CharacterDraft, characterId: string, isNew: boolean): CharacterDraft {
+function normalizeDraft(
+  draft: CharacterDraft,
+  characterId: string,
+  isNew: boolean,
+): CharacterDraft {
   const normalizedId = isNew ? `char_${Date.now()}` : characterId;
   const profile = draft.profile ?? emptyCharacterDraft.profile!;
-  const expertDomains = draft.expertDomains?.length ? draft.expertDomains : ["general"];
+  const expertDomains = draft.expertDomains?.length
+    ? draft.expertDomains
+    : ["general"];
 
   return {
     ...draft,
@@ -777,6 +1056,8 @@ function normalizeDraft(draft: CharacterDraft, characterId: string, isNew: boole
         coreMemory: profile.memory?.coreMemory?.trim() ?? "",
         recentSummary: profile.memory?.recentSummary?.trim() ?? "",
         forgettingCurve: profile.memory?.forgettingCurve ?? 70,
+        recentSummaryPrompt: profile.memory?.recentSummaryPrompt?.trim() ?? "",
+        coreMemoryPrompt: profile.memory?.coreMemoryPrompt?.trim() ?? "",
       },
     },
   };
