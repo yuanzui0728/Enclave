@@ -855,13 +855,13 @@ export function ReplyLogicPage() {
 
                       <ConfigSection title="提示词覆盖与身份">
                         <TextAreaBlock
-                          label="系统提示词"
-                          value={characterDraft.profile.systemPrompt}
-                          placeholder="留空时使用结构化提示词生成器。"
+                          label="行动纲领（底层逻辑）"
+                          value={characterDraft.profile.coreDirective}
+                          placeholder="最高优先级准则，会在聊天、发朋友圈等所有场景中强制注入。留空则不注入。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
-                              profile: { ...current.profile, systemPrompt: value },
+                              profile: { ...current.profile, coreDirective: value },
                             }))
                           }
                         />

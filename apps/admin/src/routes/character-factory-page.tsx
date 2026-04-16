@@ -641,16 +641,6 @@ export function CharacterFactoryPage() {
                     }))
                   }
                 />
-                <TextAreaBlock
-                  label="系统提示词"
-                  value={draft.tone.systemPrompt}
-                  onChange={(value) =>
-                    patchDraft((current) => ({
-                      ...current,
-                      tone: { ...current.tone, systemPrompt: value },
-                    }))
-                  }
-                />
               </div>
             </Card>
           ) : null}

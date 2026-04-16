@@ -533,11 +533,6 @@ export function CharacterEditorPage() {
               value={profile.basePrompt ?? ""}
               onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, basePrompt: value } }))}
             />
-            <TextAreaField
-              label="系统提示词"
-              value={profile.systemPrompt ?? ""}
-              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, systemPrompt: value } }))}
-            />
           </div>
         </Card>
       ) : null}
