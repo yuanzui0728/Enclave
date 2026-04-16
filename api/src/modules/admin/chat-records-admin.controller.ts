@@ -80,4 +80,16 @@ export class ChatRecordsAdminController {
   getConversationTokenUsage(@Param('id') id: string) {
     return this.chatRecordsAdminService.getConversationTokenUsage(id);
   }
+
+  @Get('conversations/:id/export')
+  exportConversation(
+    @Param('id') id: string,
+    @Query()
+    query: {
+      format?: string;
+      includeClearedHistory?: string;
+    },
+  ) {
+    return this.chatRecordsAdminService.exportConversation(id, query);
+  }
 }

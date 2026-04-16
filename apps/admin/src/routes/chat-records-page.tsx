@@ -3,6 +3,7 @@ import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
   AdminChatRecordActivityWindow,
+  AdminChatRecordConversationExportResponse,
   AdminChatRecordConversationListQuery,
   AdminChatRecordConversationSearchQuery,
   Character,
@@ -136,6 +137,14 @@ export function ChatRecordsPage() {
   const searchMutation = useMutation({
     mutationFn: (payload: AdminChatRecordConversationSearchQuery) =>
       chatRecordsAdminApi.searchConversationMessages(activeConversationId, payload),
+  });
+  const exportMutation = useMutation({
+    mutationFn: (format: "markdown" | "json") =>
+      chatRecordsAdminApi.exportConversation(activeConversationId, {
+        format,
+        includeClearedHistory,
+      }),
+    onSuccess: (file) => downloadExportFile(file),
   });
   const messagesQuery = useInfiniteQuery({
     queryKey: ["admin-chat-records-messages", baseUrl, activeConversationId, includeClearedHistory, focusedMessageId],
@@ -284,7 +293,26 @@ export function ChatRecordsPage() {
           <div className="flex flex-wrap gap-3">
             <Button variant="primary" size="sm" onClick={runSearch} disabled={!activeConversationId || searchMutation.isPending}>搜索会话</Button>
             {focusedMessageId ? <Button variant="secondary" size="sm" onClick={() => setFocusedMessageId("")}>返回最新消息</Button> : null}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportMutation.mutate("markdown")}
+              disabled={!activeConversationId || exportMutation.isPending}
+            >
+              {exportMutation.isPending ? "导出中..." : "导出 Markdown"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportMutation.mutate("json")}
+              disabled={!activeConversationId || exportMutation.isPending}
+            >
+              {exportMutation.isPending ? "导出中..." : "导出 JSON"}
+            </Button>
           </div>
+          {exportMutation.error instanceof Error ? (
+            <ErrorBlock message={exportMutation.error.message} />
+          ) : null}
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-[color:var(--text-muted)]">时间线筛选</span>
             <select
@@ -686,4 +714,16 @@ function shiftDate(days: number) {
   const next = new Date();
   next.setDate(next.getDate() + days);
   return formatDateInput(next);
+}
+
+function downloadExportFile(file: AdminChatRecordConversationExportResponse) {
+  const blob = new Blob([file.content], { type: file.contentType });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }

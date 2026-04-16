@@ -302,6 +302,7 @@
 - `GET /api/admin/chat-records/conversations/:id/messages`
 - `GET /api/admin/chat-records/conversations/:id/search`
 - `GET /api/admin/chat-records/conversations/:id/token-usage`
+- `GET /api/admin/chat-records/conversations/:id/export`
 
 ## 管理后台 Token 用量路由
 
