@@ -25,7 +25,6 @@ import {
   AdminInfoRows,
   AdminPageHero,
   AdminSectionHeader,
-  AdminSubTabs,
   AdminTabs,
   AdminSelectField as SelectField,
   AdminTextArea as TextAreaField,
@@ -111,18 +110,14 @@ function listToCsv(items?: string[] | null) {
   return items?.join(", ") ?? "";
 }
 
-const MAIN_TABS = [
+const TABS = [
   { key: "basics", label: "基础信息" },
   { key: "identity", label: "身份背景" },
-  { key: "reply", label: "回复逻辑" },
-];
-
-const REPLY_SUB_TABS = [
-  { key: "personality", label: "个性与语气" },
+  { key: "personality", label: "个性语气" },
   { key: "prompts", label: "提示词" },
   { key: "boundaries", label: "能力边界" },
   { key: "memory", label: "记忆" },
-  { key: "reasoning", label: "推理配置" },
+  { key: "reasoning", label: "推理" },
 ];
 
 export function CharacterEditorPage() {
@@ -133,7 +128,6 @@ export function CharacterEditorPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const [draft, setDraft] = useState<CharacterDraft>(emptyCharacterDraft);
   const [activeTab, setActiveTab] = useState("basics");
-  const [activeReplyTab, setActiveReplyTab] = useState("personality");
 
   const characterQuery = useQuery({
     queryKey: ["admin-character-edit", characterId, baseUrl],
@@ -337,7 +331,7 @@ export function CharacterEditorPage() {
       ) : null}
 
       {/* Tab 导航 */}
-      <AdminTabs tabs={MAIN_TABS} activeKey={activeTab} onChange={setActiveTab} />
+      <AdminTabs tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
       {/* Tab: 基础信息 */}
       {activeTab === "basics" ? (
@@ -444,275 +438,267 @@ export function CharacterEditorPage() {
         </Card>
       ) : null}
 
-      {/* Tab: 回复逻辑 */}
-      {activeTab === "reply" ? (
+      {/* Tab: 个性语气 */}
+      {activeTab === "personality" ? (
         <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>回复逻辑</SectionHeading>
-          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
-            配置角色如何思考、如何说话、边界在哪里以及如何记忆和推理。
-          </p>
-          <AdminSubTabs
-            className="mt-4"
-            tabs={REPLY_SUB_TABS}
-            activeKey={activeReplyTab}
-            onChange={setActiveReplyTab}
-          />
-
-          {/* Sub-Tab: 个性与语气 */}
-          {activeReplyTab === "personality" ? (
-            <div className="mt-6 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field
-                  label="情绪基调"
-                  value={profile.traits.emotionalTone}
-                  onChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, traits: { ...profile.traits, emotionalTone: value } },
-                    }))
-                  }
-                />
-                <SelectField
-                  label="回复长度"
-                  value={profile.traits.responseLength}
-                  onChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, traits: { ...profile.traits, responseLength: value as "short" | "medium" | "long" } },
-                    }))
-                  }
-                  options={[
-                    { value: "short", label: "简短" },
-                    { value: "medium", label: "适中" },
-                    { value: "long", label: "详细" },
-                  ]}
-                />
-                <SelectField
-                  label="表情使用"
-                  value={profile.traits.emojiUsage}
-                  onChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, traits: { ...profile.traits, emojiUsage: value as "none" | "occasional" | "frequent" } },
-                    }))
-                  }
-                  options={[
-                    { value: "none", label: "不用" },
-                    { value: "occasional", label: "偶尔" },
-                    { value: "frequent", label: "频繁" },
-                  ]}
-                />
-                <Field
-                  label="工作风格"
-                  value={profile.behavioralPatterns?.workStyle ?? ""}
-                  onChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, workStyle: value } },
-                    }))
-                  }
-                />
-                <Field
-                  label="社交风格"
-                  value={profile.behavioralPatterns?.socialStyle ?? ""}
-                  onChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, socialStyle: value } },
-                    }))
-                  }
-                />
-              </div>
+          <SectionHeading>个性与语气</SectionHeading>
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <Field
-                label="说话习惯"
-                value={listToCsv(profile.traits.speechPatterns)}
+                label="情绪基调"
+                value={profile.traits.emotionalTone}
                 onChange={(value) =>
                   setDraft((current) => ({
                     ...current,
-                    profile: { ...profile, traits: { ...profile.traits, speechPatterns: csvToList(value) } },
+                    profile: { ...profile, traits: { ...profile.traits, emotionalTone: value } },
+                  }))
+                }
+              />
+              <SelectField
+                label="回复长度"
+                value={profile.traits.responseLength}
+                onChange={(value) =>
+                  setDraft((current) => ({
+                    ...current,
+                    profile: { ...profile, traits: { ...profile.traits, responseLength: value as "short" | "medium" | "long" } },
+                  }))
+                }
+                options={[
+                  { value: "short", label: "简短" },
+                  { value: "medium", label: "适中" },
+                  { value: "long", label: "详细" },
+                ]}
+              />
+              <SelectField
+                label="表情使用"
+                value={profile.traits.emojiUsage}
+                onChange={(value) =>
+                  setDraft((current) => ({
+                    ...current,
+                    profile: { ...profile, traits: { ...profile.traits, emojiUsage: value as "none" | "occasional" | "frequent" } },
+                  }))
+                }
+                options={[
+                  { value: "none", label: "不用" },
+                  { value: "occasional", label: "偶尔" },
+                  { value: "frequent", label: "频繁" },
+                ]}
+              />
+              <Field
+                label="工作风格"
+                value={profile.behavioralPatterns?.workStyle ?? ""}
+                onChange={(value) =>
+                  setDraft((current) => ({
+                    ...current,
+                    profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, workStyle: value } },
                   }))
                 }
               />
               <Field
-                label="口头禅"
-                value={listToCsv(profile.traits.catchphrases)}
+                label="社交风格"
+                value={profile.behavioralPatterns?.socialStyle ?? ""}
                 onChange={(value) =>
                   setDraft((current) => ({
                     ...current,
-                    profile: { ...profile, traits: { ...profile.traits, catchphrases: csvToList(value) } },
-                  }))
-                }
-              />
-              <Field
-                label="兴趣话题"
-                value={listToCsv(profile.traits.topicsOfInterest)}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, traits: { ...profile.traits, topicsOfInterest: csvToList(value) } },
-                  }))
-                }
-              />
-              <Field
-                label="语言禁忌"
-                value={listToCsv(profile.behavioralPatterns?.taboos)}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, taboos: csvToList(value) } },
-                  }))
-                }
-              />
-              <Field
-                label="个人癖好"
-                value={listToCsv(profile.behavioralPatterns?.quirks)}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, quirks: csvToList(value) } },
+                    profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, socialStyle: value } },
                   }))
                 }
               />
             </div>
-          ) : null}
+            <Field
+              label="说话习惯"
+              value={listToCsv(profile.traits.speechPatterns)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, traits: { ...profile.traits, speechPatterns: csvToList(value) } },
+                }))
+              }
+            />
+            <Field
+              label="口头禅"
+              value={listToCsv(profile.traits.catchphrases)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, traits: { ...profile.traits, catchphrases: csvToList(value) } },
+                }))
+              }
+            />
+            <Field
+              label="兴趣话题"
+              value={listToCsv(profile.traits.topicsOfInterest)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, traits: { ...profile.traits, topicsOfInterest: csvToList(value) } },
+                }))
+              }
+            />
+            <Field
+              label="语言禁忌"
+              value={listToCsv(profile.behavioralPatterns?.taboos)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, taboos: csvToList(value) } },
+                }))
+              }
+            />
+            <Field
+              label="个人癖好"
+              value={listToCsv(profile.behavioralPatterns?.quirks)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, quirks: csvToList(value) } },
+                }))
+              }
+            />
+          </div>
+        </Card>
+      ) : null}
 
-          {/* Sub-Tab: 提示词 */}
-          {activeReplyTab === "prompts" ? (
-            <div className="mt-6 space-y-4">
-              <p className="text-xs text-[color:var(--text-secondary)]">行动纲领是最高优先级准则，会在聊天、发朋友圈等所有场景中强制注入。</p>
-              <TextAreaField
-                label="行动纲领（底层逻辑）"
-                value={profile.coreDirective ?? ""}
-                onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, coreDirective: value } }))}
-              />
-              <TextAreaField
-                label="基础提示词"
-                value={profile.basePrompt ?? ""}
-                onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, basePrompt: value } }))}
-              />
-              <TextAreaField
-                label="系统提示词"
-                value={profile.systemPrompt ?? ""}
-                onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, systemPrompt: value } }))}
-              />
-            </div>
-          ) : null}
+      {/* Tab: 提示词 */}
+      {activeTab === "prompts" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>提示词</SectionHeading>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">行动纲领是最高优先级准则，会在聊天、发朋友圈等所有场景中强制注入。</p>
+          <div className="mt-4 space-y-4">
+            <TextAreaField
+              label="行动纲领（底层逻辑）"
+              value={profile.coreDirective ?? ""}
+              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, coreDirective: value } }))}
+            />
+            <TextAreaField
+              label="基础提示词"
+              value={profile.basePrompt ?? ""}
+              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, basePrompt: value } }))}
+            />
+            <TextAreaField
+              label="系统提示词"
+              value={profile.systemPrompt ?? ""}
+              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, systemPrompt: value } }))}
+            />
+          </div>
+        </Card>
+      ) : null}
 
-          {/* Sub-Tab: 能力边界 */}
-          {activeReplyTab === "boundaries" ? (
-            <div className="mt-6 space-y-4">
-              <TextAreaField
-                label="能力边界说明"
-                value={profile.cognitiveBoundaries?.expertiseDescription ?? ""}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, expertiseDescription: value } },
-                  }))
-                }
-              />
-              <TextAreaField
-                label="知识边界"
-                value={profile.cognitiveBoundaries?.knowledgeLimits ?? ""}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, knowledgeLimits: value } },
-                  }))
-                }
-              />
-              <TextAreaField
-                label="超界拒绝方式"
-                value={profile.cognitiveBoundaries?.refusalStyle ?? ""}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, refusalStyle: value } },
-                  }))
-                }
-              />
-            </div>
-          ) : null}
+      {/* Tab: 能力边界 */}
+      {activeTab === "boundaries" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>能力边界</SectionHeading>
+          <div className="mt-4 space-y-4">
+            <TextAreaField
+              label="能力边界说明"
+              value={profile.cognitiveBoundaries?.expertiseDescription ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, expertiseDescription: value } },
+                }))
+              }
+            />
+            <TextAreaField
+              label="知识边界"
+              value={profile.cognitiveBoundaries?.knowledgeLimits ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, knowledgeLimits: value } },
+                }))
+              }
+            />
+            <TextAreaField
+              label="超界拒绝方式"
+              value={profile.cognitiveBoundaries?.refusalStyle ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, refusalStyle: value } },
+                }))
+              }
+            />
+          </div>
+        </Card>
+      ) : null}
 
-          {/* Sub-Tab: 记忆 */}
-          {activeReplyTab === "memory" ? (
-            <div className="mt-6 space-y-4">
-              <TextAreaField
-                label="记忆摘要"
-                value={profile.memorySummary}
-                onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, memorySummary: value } }))}
-              />
-              <TextAreaField
-                label="核心记忆"
-                value={profile.memory?.coreMemory ?? ""}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, memory: { ...profile.memory!, coreMemory: value } },
-                  }))
-                }
-              />
-              <TextAreaField
-                label="近期摘要"
-                value={profile.memory?.recentSummary ?? ""}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, memory: { ...profile.memory!, recentSummary: value } },
-                  }))
-                }
-              />
-              <Field
-                label="遗忘曲线（0-100）"
-                value={String(profile.memory?.forgettingCurve ?? 70)}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, memory: { ...profile.memory!, forgettingCurve: Number(value) || 0 } },
-                  }))
-                }
-              />
-            </div>
-          ) : null}
+      {/* Tab: 记忆 */}
+      {activeTab === "memory" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>记忆</SectionHeading>
+          <div className="mt-4 space-y-4">
+            <TextAreaField
+              label="核心记忆"
+              value={profile.memory?.coreMemory ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, memory: { ...profile.memory!, coreMemory: value } },
+                }))
+              }
+            />
+            <TextAreaField
+              label="近期摘要"
+              value={profile.memory?.recentSummary ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, memory: { ...profile.memory!, recentSummary: value } },
+                }))
+              }
+            />
+            <Field
+              label="遗忘曲线（0-100）"
+              value={String(profile.memory?.forgettingCurve ?? 70)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, memory: { ...profile.memory!, forgettingCurve: Number(value) || 0 } },
+                }))
+              }
+            />
+          </div>
+        </Card>
+      ) : null}
 
-          {/* Sub-Tab: 推理配置 */}
-          {activeReplyTab === "reasoning" ? (
-            <div className="mt-6 space-y-4">
-              <p className="text-sm text-[color:var(--text-secondary)]">控制角色推理链路的启用状态，影响响应质量和 Token 消耗。</p>
-              <div className="space-y-3">
-                <Toggle
-                  label="启用链路推理（CoT）"
-                  checked={profile.reasoningConfig?.enableCoT ?? true}
-                  onChange={(checked) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableCoT: checked } },
-                    }))
-                  }
-                />
-                <Toggle
-                  label="启用反思"
-                  checked={profile.reasoningConfig?.enableReflection ?? true}
-                  onChange={(checked) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableReflection: checked } },
-                    }))
-                  }
-                />
-                <Toggle
-                  label="启用路由"
-                  checked={profile.reasoningConfig?.enableRouting ?? true}
-                  onChange={(checked) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableRouting: checked } },
-                    }))
-                  }
-                />
-              </div>
-            </div>
-          ) : null}
+      {/* Tab: 推理 */}
+      {activeTab === "reasoning" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>推理配置</SectionHeading>
+          <p className="mt-2 text-sm text-[color:var(--text-secondary)]">控制角色推理链路的启用状态，影响响应质量和 Token 消耗。</p>
+          <div className="mt-4 space-y-3">
+            <Toggle
+              label="启用链路推理（CoT）"
+              checked={profile.reasoningConfig?.enableCoT ?? true}
+              onChange={(checked) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableCoT: checked } },
+                }))
+              }
+            />
+            <Toggle
+              label="启用反思"
+              checked={profile.reasoningConfig?.enableReflection ?? true}
+              onChange={(checked) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableReflection: checked } },
+                }))
+              }
+            />
+            <Toggle
+              label="启用路由"
+              checked={profile.reasoningConfig?.enableRouting ?? true}
+              onChange={(checked) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, reasoningConfig: { ...profile.reasoningConfig!, enableRouting: checked } },
+                }))
+              }
+            />
+          </div>
         </Card>
       ) : null}
 
