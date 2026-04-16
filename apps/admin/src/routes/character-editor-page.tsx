@@ -57,9 +57,17 @@ const emptyCharacterDraft: CharacterDraft = {
     name: "",
     relationship: "",
     expertDomains: [],
-    coreDirective: "",
-    basePrompt: "",
-    systemPrompt: "",
+    coreLogic: "",
+    scenePrompts: {
+      chat: "",
+      moments_post: "",
+      moments_comment: "",
+      feed_post: "",
+      channel_post: "",
+      feed_comment: "",
+      greeting: "",
+      proactive: "",
+    },
     memorySummary: "",
     traits: {
       speechPatterns: [],
@@ -68,28 +76,6 @@ const emptyCharacterDraft: CharacterDraft = {
       emotionalTone: "grounded",
       responseLength: "medium",
       emojiUsage: "occasional",
-    },
-    identity: {
-      occupation: "",
-      background: "",
-      motivation: "",
-      worldview: "",
-    },
-    behavioralPatterns: {
-      workStyle: "",
-      socialStyle: "",
-      taboos: [],
-      quirks: [],
-    },
-    cognitiveBoundaries: {
-      expertiseDescription: "",
-      knowledgeLimits: "",
-      refusalStyle: "",
-    },
-    reasoningConfig: {
-      enableCoT: true,
-      enableReflection: true,
-      enableRouting: true,
     },
     memory: {
       coreMemory: "",
@@ -112,13 +98,10 @@ function listToCsv(items?: string[] | null) {
 
 const TABS = [
   { key: "basics", label: "基础信息" },
-  { key: "identity", label: "身份背景" },
-  { key: "personality", label: "个性语气" },
-  { key: "prompts", label: "提示词" },
-  { key: "boundaries", label: "能力边界" },
-  { key: "life", label: "生活策略" },
+  { key: "core_logic", label: "底层逻辑" },
+  { key: "scenes", label: "场景提示词" },
   { key: "memory", label: "记忆" },
-  { key: "reasoning", label: "推理" },
+  { key: "life", label: "生活策略" },
 ];
 
 export function CharacterEditorPage() {
@@ -347,231 +330,81 @@ export function CharacterEditorPage() {
         </Card>
       ) : null}
 
-      {/* Tab: 身份背景 */}
-      {activeTab === "identity" ? (
+      {/* Tab: 底层逻辑 */}
+      {activeTab === "core_logic" ? (
         <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>身份背景</SectionHeading>
-          <div className="mt-4 space-y-4">
-            <Field
-              label="职业"
-              value={profile.identity?.occupation ?? ""}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, identity: { ...profile.identity!, occupation: value } },
-                }))
-              }
-            />
+          <SectionHeading>底层逻辑</SectionHeading>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+            所有场景都会注入这段逻辑，是角色行为的最底层基础。适合写：角色是谁、核心价值观、思维方式、不可违反的行为准则。
+          </p>
+          <div className="mt-4">
             <TextAreaField
-              label="背景"
-              value={profile.identity?.background ?? ""}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, identity: { ...profile.identity!, background: value } },
-                }))
-              }
-            />
-            <TextAreaField
-              label="核心动机"
-              value={profile.identity?.motivation ?? ""}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, identity: { ...profile.identity!, motivation: value } },
-                }))
-              }
-            />
-            <TextAreaField
-              label="世界观"
-              value={profile.identity?.worldview ?? ""}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, identity: { ...profile.identity!, worldview: value } },
-                }))
-              }
+              label="底层逻辑"
+              value={profile.coreLogic ?? ""}
+              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, coreLogic: value } }))}
             />
           </div>
         </Card>
       ) : null}
 
-      {/* Tab: 个性语气 */}
-      {activeTab === "personality" ? (
+      {/* Tab: 场景提示词 */}
+      {activeTab === "scenes" ? (
         <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>个性与语气</SectionHeading>
-          <div className="mt-4 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field
-                label="情绪基调"
-                value={profile.traits.emotionalTone}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, traits: { ...profile.traits, emotionalTone: value } },
-                  }))
-                }
-              />
-              <SelectField
-                label="回复长度"
-                value={profile.traits.responseLength}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, traits: { ...profile.traits, responseLength: value as "short" | "medium" | "long" } },
-                  }))
-                }
-                options={[
-                  { value: "short", label: "简短" },
-                  { value: "medium", label: "适中" },
-                  { value: "long", label: "详细" },
-                ]}
-              />
-              <SelectField
-                label="表情使用"
-                value={profile.traits.emojiUsage}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, traits: { ...profile.traits, emojiUsage: value as "none" | "occasional" | "frequent" } },
-                  }))
-                }
-                options={[
-                  { value: "none", label: "不用" },
-                  { value: "occasional", label: "偶尔" },
-                  { value: "frequent", label: "频繁" },
-                ]}
-              />
-              <Field
-                label="工作风格"
-                value={profile.behavioralPatterns?.workStyle ?? ""}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, workStyle: value } },
-                  }))
-                }
-              />
-              <Field
-                label="社交风格"
-                value={profile.behavioralPatterns?.socialStyle ?? ""}
-                onChange={(value) =>
-                  setDraft((current) => ({
-                    ...current,
-                    profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, socialStyle: value } },
-                  }))
-                }
-              />
+          <SectionHeading>场景提示词</SectionHeading>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+            每个场景的专属行为指令，叠加在底层逻辑之上。留空则该场景只使用底层逻辑。
+          </p>
+          <div className="mt-5 space-y-6">
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[color:var(--text-muted)]">主动发布</p>
+              <div className="space-y-4">
+                <TextAreaField
+                  label="发朋友圈"
+                  value={profile.scenePrompts?.moments_post ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, moments_post: value } } }))}
+                />
+                <TextAreaField
+                  label="发 Feed 贴文"
+                  value={profile.scenePrompts?.feed_post ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, feed_post: value } } }))}
+                />
+                <TextAreaField
+                  label="发视频号内容"
+                  value={profile.scenePrompts?.channel_post ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, channel_post: value } } }))}
+                />
+              </div>
             </div>
-            <Field
-              label="说话习惯"
-              value={listToCsv(profile.traits.speechPatterns)}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, traits: { ...profile.traits, speechPatterns: csvToList(value) } },
-                }))
-              }
-            />
-            <Field
-              label="口头禅"
-              value={listToCsv(profile.traits.catchphrases)}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, traits: { ...profile.traits, catchphrases: csvToList(value) } },
-                }))
-              }
-            />
-            <Field
-              label="兴趣话题"
-              value={listToCsv(profile.traits.topicsOfInterest)}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, traits: { ...profile.traits, topicsOfInterest: csvToList(value) } },
-                }))
-              }
-            />
-            <Field
-              label="语言禁忌"
-              value={listToCsv(profile.behavioralPatterns?.taboos)}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, taboos: csvToList(value) } },
-                }))
-              }
-            />
-            <Field
-              label="个人癖好"
-              value={listToCsv(profile.behavioralPatterns?.quirks)}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, behavioralPatterns: { ...profile.behavioralPatterns!, quirks: csvToList(value) } },
-                }))
-              }
-            />
-          </div>
-        </Card>
-      ) : null}
-
-      {/* Tab: 提示词 */}
-      {activeTab === "prompts" ? (
-        <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>提示词</SectionHeading>
-          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">行动纲领是最高优先级准则，会在聊天、发朋友圈等所有场景中强制注入。</p>
-          <div className="mt-4 space-y-4">
-            <TextAreaField
-              label="行动纲领（底层逻辑）"
-              value={profile.coreDirective ?? ""}
-              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, coreDirective: value } }))}
-            />
-            <TextAreaField
-              label="基础提示词"
-              value={profile.basePrompt ?? ""}
-              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, basePrompt: value } }))}
-            />
-          </div>
-        </Card>
-      ) : null}
-
-      {/* Tab: 能力边界 */}
-      {activeTab === "boundaries" ? (
-        <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>能力边界</SectionHeading>
-          <div className="mt-4 space-y-4">
-            <TextAreaField
-              label="能力边界说明"
-              value={profile.cognitiveBoundaries?.expertiseDescription ?? ""}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, expertiseDescription: value } },
-                }))
-              }
-            />
-            <TextAreaField
-              label="知识边界"
-              value={profile.cognitiveBoundaries?.knowledgeLimits ?? ""}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, knowledgeLimits: value } },
-                }))
-              }
-            />
-            <TextAreaField
-              label="超界拒绝方式"
-              value={profile.cognitiveBoundaries?.refusalStyle ?? ""}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, cognitiveBoundaries: { ...profile.cognitiveBoundaries!, refusalStyle: value } },
-                }))
-              }
-            />
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[color:var(--text-muted)]">互动响应</p>
+              <div className="space-y-4">
+                <TextAreaField
+                  label="聊天回复"
+                  value={profile.scenePrompts?.chat ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, chat: value } } }))}
+                />
+                <TextAreaField
+                  label="朋友圈评论 / 回复"
+                  value={profile.scenePrompts?.moments_comment ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, moments_comment: value } } }))}
+                />
+                <TextAreaField
+                  label="Feed 评论"
+                  value={profile.scenePrompts?.feed_comment ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, feed_comment: value } } }))}
+                />
+                <TextAreaField
+                  label="好友请求 / 摇一摇问候"
+                  value={profile.scenePrompts?.greeting ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, greeting: value } } }))}
+                />
+                <TextAreaField
+                  label="主动提醒"
+                  value={profile.scenePrompts?.proactive ?? ""}
+                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, proactive: value } } }))}
+                />
+              </div>
+            </div>
           </div>
         </Card>
       ) : null}
@@ -764,34 +597,21 @@ function normalizeDraft(draft: CharacterDraft, characterId: string, isNew: boole
       name: draft.name?.trim() ?? "",
       relationship: draft.relationship?.trim() ?? "",
       expertDomains,
-      basePrompt: profile.basePrompt?.trim() ?? "",
-      systemPrompt: profile.systemPrompt?.trim() ?? "",
+      coreLogic: profile.coreLogic?.trim() ?? "",
+      scenePrompts: {
+        chat: profile.scenePrompts?.chat?.trim() ?? "",
+        moments_post: profile.scenePrompts?.moments_post?.trim() ?? "",
+        moments_comment: profile.scenePrompts?.moments_comment?.trim() ?? "",
+        feed_post: profile.scenePrompts?.feed_post?.trim() ?? "",
+        channel_post: profile.scenePrompts?.channel_post?.trim() ?? "",
+        feed_comment: profile.scenePrompts?.feed_comment?.trim() ?? "",
+        greeting: profile.scenePrompts?.greeting?.trim() ?? "",
+        proactive: profile.scenePrompts?.proactive?.trim() ?? "",
+      },
       memorySummary: profile.memorySummary?.trim() ?? "",
       traits: {
         ...profile.traits,
         emotionalTone: profile.traits.emotionalTone?.trim() || "grounded",
-      },
-      identity: {
-        occupation: profile.identity?.occupation?.trim() ?? "",
-        background: profile.identity?.background?.trim() ?? "",
-        motivation: profile.identity?.motivation?.trim() ?? "",
-        worldview: profile.identity?.worldview?.trim() ?? "",
-      },
-      behavioralPatterns: {
-        workStyle: profile.behavioralPatterns?.workStyle?.trim() ?? "",
-        socialStyle: profile.behavioralPatterns?.socialStyle?.trim() ?? "",
-        taboos: profile.behavioralPatterns?.taboos ?? [],
-        quirks: profile.behavioralPatterns?.quirks ?? [],
-      },
-      cognitiveBoundaries: {
-        expertiseDescription: profile.cognitiveBoundaries?.expertiseDescription?.trim() ?? "",
-        knowledgeLimits: profile.cognitiveBoundaries?.knowledgeLimits?.trim() ?? "",
-        refusalStyle: profile.cognitiveBoundaries?.refusalStyle?.trim() ?? "",
-      },
-      reasoningConfig: {
-        enableCoT: profile.reasoningConfig?.enableCoT ?? true,
-        enableReflection: profile.reasoningConfig?.enableReflection ?? true,
-        enableRouting: profile.reasoningConfig?.enableRouting ?? true,
       },
       memory: {
         coreMemory: profile.memory?.coreMemory?.trim() ?? "",
