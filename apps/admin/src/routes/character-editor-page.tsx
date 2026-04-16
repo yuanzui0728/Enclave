@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
   createCharacter,
   getCharacter,
-  getSystemStatus,
   updateCharacter,
   type Character,
   type CharacterDraft,
@@ -15,14 +14,11 @@ import {
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
-  MetricCard,
   SectionHeading,
   StatusPill,
 } from "@yinjie/ui";
 import {
-  AdminCallout,
   AdminActionFeedback,
-  AdminInfoRows,
   AdminPageHero,
   AdminSectionHeader,
   AdminTabs,
@@ -32,7 +28,6 @@ import {
   AdminToggle as Toggle,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
-import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 import { adminApi } from "../lib/admin-api";
 import { CharacterWorkspaceNav } from "../components/character-workspace-nav";
 
@@ -140,14 +135,6 @@ export function CharacterEditorPage() {
     queryFn: () => getCharacter(characterId, baseUrl),
     enabled: !isNew,
   });
-  const systemStatusQuery = useQuery({
-    queryKey: ["admin-character-edit-system-status", baseUrl],
-    queryFn: () => getSystemStatus(baseUrl),
-  });
-  const digitalHumanSummary = buildDigitalHumanAdminSummary(
-    systemStatusQuery.data?.digitalHumanGateway,
-  );
-
   useEffect(() => {
     if (isNew) {
       setDraft(emptyCharacterDraft);
@@ -245,7 +232,6 @@ export function CharacterEditorPage() {
         <AdminPageHero
           eyebrow={isNew ? "新建角色" : "行为管理"}
           title={isNew ? "新建角色" : draft.name || "行为管理"}
-          description="统一管理角色的身份、个性、提示词、能力边界、生活策略、记忆与推理配置。"
           actions={
             <>
               <Link to="/characters">
@@ -256,37 +242,8 @@ export function CharacterEditorPage() {
               </Button>
             </>
           }
-          metrics={[
-            { label: "可保存", value: canSave ? "是" : "否" },
-            { label: "关系类型", value: formatRelationshipType(draft.relationshipType ?? "expert") },
-            { label: "角色来源", value: formatCharacterSourceType(draft.sourceType) },
-            { label: "擅长领域数", value: (draft.expertDomains?.length ?? 0) || 0 },
-            { label: "触发场景数", value: (draft.triggerScenes?.length ?? 0) || 0 },
-          ]}
         />
-
-        <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>当前状态</SectionHeading>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <MetricCard label="名称" value={draft.name || "未填写"} />
-            <MetricCard label="关系" value={draft.relationship || "待填写"} />
-            <MetricCard label="在线" value={draft.isOnline ? "在线" : "离线"} />
-            <MetricCard label="模板" value={draft.isTemplate ? "是" : "否"} />
-            <MetricCard label="角色来源" value={formatCharacterSourceType(draft.sourceType)} />
-            <MetricCard label="删除策略" value={formatDeletionPolicy(draft.deletionPolicy)} />
-          </div>
-        </Card>
       </div>
-
-      <AdminCallout
-        tone={digitalHumanSummary.ready ? "success" : "warning"}
-        title={
-          digitalHumanSummary.ready
-            ? "数字人链路已进入可联调状态"
-            : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
-        }
-        description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
-      />
 
       {!isNew && characterQuery.isLoading ? <LoadingBlock label="正在加载角色草稿..." /> : null}
       {!isNew && characterQuery.isError && characterQuery.error instanceof Error ? <ErrorBlock message={characterQuery.error.message} /> : null}
@@ -780,14 +737,6 @@ export function CharacterEditorPage() {
         </Card>
       ) : null}
 
-      {/* 底部信息行 */}
-      <AdminInfoRows
-        title="保存提示"
-        rows={[
-          { label: "必填字段", value: canSave ? "已满足" : "名称和关系描述未齐" },
-          { label: "当前入口", value: isNew ? "新建角色" : "编辑现有角色" },
-        ]}
-      />
     </div>
   );
 }
