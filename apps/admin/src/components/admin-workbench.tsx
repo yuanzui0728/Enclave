@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Card,
@@ -912,6 +912,7 @@ export function AdminTextArea({
   onChange,
   placeholder,
   description,
+  defaultPrompt,
   className,
   textareaClassName,
 }: {
@@ -920,17 +921,35 @@ export function AdminTextArea({
   onChange: (value: string) => void;
   placeholder?: string;
   description?: string;
+  defaultPrompt?: string;
   className?: string;
   textareaClassName?: string;
 }) {
+  const [showDefault, setShowDefault] = useState(false);
   return (
     <div className={className ?? "block"}>
       <label>
-        <div className="mb-1 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-          {label}
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <span className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+            {label}
+          </span>
+          {defaultPrompt ? (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); setShowDefault((v) => !v); }}
+              className="shrink-0 rounded-md px-2 py-0.5 text-[11px] text-[color:var(--text-muted)] ring-1 ring-[color:var(--border-faint)] transition hover:bg-[color:var(--surface-secondary)] hover:text-[color:var(--text-secondary)]"
+            >
+              {showDefault ? "收起" : "查看默认"}
+            </button>
+          ) : null}
         </div>
         {description ? (
           <div className="mb-2 text-xs leading-5 text-[color:var(--text-secondary)]">{description}</div>
+        ) : null}
+        {showDefault && defaultPrompt ? (
+          <pre className="mb-2 overflow-x-auto whitespace-pre-wrap break-words rounded-[16px] border border-[color:var(--border-faint)] bg-white/80 p-3 text-[11px] leading-[1.7] text-[color:var(--text-secondary)]">
+            {defaultPrompt}
+          </pre>
         ) : null}
         <TextAreaField
           className={textareaClassName ?? "min-h-28"}
