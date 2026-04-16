@@ -101,7 +101,7 @@ const TABS = [
   { key: "core_logic", label: "底层逻辑" },
   { key: "chat", label: "聊天回复" },
   { key: "scenes", label: "场景提示词" },
-  { key: "memory", label: "记忆" },
+  { key: "memory", label: "记忆提示词" },
   { key: "life", label: "生活策略" },
 ];
 
@@ -338,12 +338,22 @@ export function CharacterEditorPage() {
           <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
             所有场景都会注入这段逻辑，是角色行为的最底层基础。适合写：角色是谁、核心价值观、思维方式、不可违反的行为准则。
           </p>
-          <div className="mt-4">
+          <div className="mt-4 space-y-4">
             <TextAreaField
               label="底层逻辑"
               value={profile.coreLogic ?? ""}
               description="所有场景强制注入。描述角色的核心人格、价值观、思维方式。这里写的内容在聊天、发帖、评论等每个场景都会生效。"
               onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, coreLogic: value } }))}
+            />
+            <Field
+              label="遗忘曲线（0-100，默认70）"
+              value={String(profile.memory?.forgettingCurve ?? 70)}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  profile: { ...profile, memory: { ...profile.memory!, forgettingCurve: Number(value) || 0 } },
+                }))
+              }
             />
           </div>
         </Card>
@@ -508,38 +518,30 @@ export function CharacterEditorPage() {
         </Card>
       ) : null}
 
-      {/* Tab: 记忆 */}
+      {/* Tab: 记忆提示词 */}
       {activeTab === "memory" ? (
         <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>记忆</SectionHeading>
+          <SectionHeading>记忆提示词</SectionHeading>
           <div className="mt-4 space-y-4">
             <TextAreaField
-              label="核心记忆"
-              value={profile.memory?.coreMemory ?? ""}
+              label="近期摘要提取提示词"
+              description="每日自动提取近期摘要时使用。留空则使用全局默认模板。可用变量：{{name}}（角色名）、{{chatHistory}}（对话记录）。"
+              value={profile.memory?.recentSummaryPrompt ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, memory: { ...profile.memory!, coreMemory: value } },
+                  profile: { ...profile, memory: { ...profile.memory!, recentSummaryPrompt: value } },
                 }))
               }
             />
             <TextAreaField
-              label="近期摘要"
-              value={profile.memory?.recentSummary ?? ""}
+              label="核心记忆提取提示词"
+              description="每周自动提取核心记忆时使用。留空则使用全局默认模板。可用变量：{{name}}（角色名）、{{interactionHistory}}（近30天全量互动记录）。"
+              value={profile.memory?.coreMemoryPrompt ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
                   ...current,
-                  profile: { ...profile, memory: { ...profile.memory!, recentSummary: value } },
-                }))
-              }
-            />
-            <Field
-              label="遗忘曲线（0-100）"
-              value={String(profile.memory?.forgettingCurve ?? 70)}
-              onChange={(value) =>
-                setDraft((current) => ({
-                  ...current,
-                  profile: { ...profile, memory: { ...profile.memory!, forgettingCurve: Number(value) || 0 } },
+                  profile: { ...profile, memory: { ...profile.memory!, coreMemoryPrompt: value } },
                 }))
               }
             />

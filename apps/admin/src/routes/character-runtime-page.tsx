@@ -357,17 +357,10 @@ export function CharacterRuntimePage() {
 
           <Card id="character-runtime-memory" className="bg-[color:var(--surface-console)]">
             <SectionHeading>记忆与状态</SectionHeading>
+            <InlineNotice tone="info" className="mt-3">
+              核心记忆每周一自动更新，近期摘要每日自动更新。此处可手动覆盖，覆盖后将在下次自动任务时被替换。
+            </InlineNotice>
             <div className="mt-4 space-y-4">
-              <TextAreaBlock
-                label="记忆摘要"
-                value={draft.profile.memorySummary}
-                onChange={(value) =>
-                  patchDraft((current) => ({
-                    ...current,
-                    profile: { ...current.profile, memorySummary: value },
-                  }))
-                }
-              />
               <TextAreaBlock
                 label="核心记忆"
                 value={draft.profile.memory?.coreMemory ?? ""}
@@ -395,28 +388,6 @@ export function CharacterRuntimePage() {
                       memory: {
                         ...current.profile.memory!,
                         recentSummary: value,
-                      },
-                    },
-                  }))
-                }
-              />
-              <FieldBlock
-                label="遗忘曲线"
-                value={draft.profile.memory?.forgettingCurve ?? 70}
-                type="number"
-                min={0}
-                max={100}
-                onChange={(value) =>
-                  patchDraft((current) => ({
-                    ...current,
-                    profile: {
-                      ...current.profile,
-                      memory: {
-                        ...current.profile.memory!,
-                        forgettingCurve: Math.min(
-                          Math.max(parseIntWithFallback(value, current.profile.memory?.forgettingCurve ?? 70), 0),
-                          100,
-                        ),
                       },
                     },
                   }))

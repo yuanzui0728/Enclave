@@ -969,52 +969,14 @@ export function ReplyLogicPage() {
                         />
                       </ConfigSection>
 
-                      <ConfigSection title="记忆">
-                        <TextAreaBlock
-                          label="核心记忆"
-                          value={characterDraft.profile.memory.coreMemory}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                memory: { ...current.profile.memory, coreMemory: value },
-                              },
-                            }))
-                          }
-                        />
-                        <TextAreaBlock
-                          label="近期摘要"
-                          value={characterDraft.profile.memory.recentSummary}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                memory: { ...current.profile.memory, recentSummary: value },
-                              },
-                            }))
-                          }
-                        />
-                        <FieldBlock
-                          label="遗忘曲线"
-                          value={characterDraft.profile.memory.forgettingCurve}
-                          type="number"
-                          min={0}
-                          max={100}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                memory: {
-                                  ...current.profile.memory,
-                                  forgettingCurve: parseForgettingCurve(value),
-                                },
-                              },
-                            }))
-                          }
-                        />
+                      <ConfigSection title="记忆（当前值）">
+                        <p className="text-xs text-[color:var(--text-secondary)]">
+                          核心记忆每周一自动更新，近期摘要每日自动更新。在运行台中可查看和手动覆盖当前值。
+                        </p>
+                        <div className="rounded border border-[color:var(--border-faint)] px-3 py-2 text-xs text-[color:var(--text-secondary)]">
+                          <p><span className="font-medium text-[color:var(--text-primary)]">核心记忆：</span>{characterDraft.profile.memory.coreMemory || "（暂无）"}</p>
+                          <p className="mt-1"><span className="font-medium text-[color:var(--text-primary)]">近期摘要：</span>{characterDraft.profile.memory.recentSummary || "（暂无）"}</p>
+                        </div>
                       </ConfigSection>
 
                       <div className="flex flex-wrap gap-3 border-t border-[color:var(--border-faint)] pt-5">
@@ -4094,6 +4056,8 @@ function createEditableCharacter(source: Character): EditableCharacter {
         coreMemory: source.profile?.memory?.coreMemory ?? "",
         recentSummary: source.profile?.memory?.recentSummary ?? "",
         forgettingCurve: source.profile?.memory?.forgettingCurve ?? 70,
+        recentSummaryPrompt: source.profile?.memory?.recentSummaryPrompt,
+        coreMemoryPrompt: source.profile?.memory?.coreMemoryPrompt,
       },
     },
   };
@@ -4145,6 +4109,8 @@ function normalizeCharacterForSave(draft: EditableCharacter): EditableCharacter 
         coreMemory: normalized.profile.memory.coreMemory.trim(),
         recentSummary: normalized.profile.memory.recentSummary.trim(),
         forgettingCurve: clamp(normalized.profile.memory.forgettingCurve, 0, 100),
+        recentSummaryPrompt: normalized.profile.memory.recentSummaryPrompt?.trim(),
+        coreMemoryPrompt: normalized.profile.memory.coreMemoryPrompt?.trim(),
       },
     },
   };
@@ -4198,19 +4164,6 @@ function normalizeOptionalHour(value?: number | null) {
   }
 
   return clamp(Math.round(value), 0, 23);
-}
-
-function parseForgettingCurve(value: string) {
-  if (!value.trim()) {
-    return 0;
-  }
-
-  const parsed = Number(value);
-  if (Number.isNaN(parsed)) {
-    return 0;
-  }
-
-  return clamp(Math.round(parsed), 0, 100);
 }
 
 function clamp(value: number, min: number, max: number) {
