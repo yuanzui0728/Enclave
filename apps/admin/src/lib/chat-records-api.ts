@@ -4,12 +4,14 @@ import type {
   AdminChatRecordConversationExportResponse,
   AdminChatRecordConversationListQuery,
   AdminChatRecordConversationListResponse,
+  AdminChatRecordConversationReview,
   AdminChatRecordConversationSearchQuery,
   AdminChatRecordConversationSearchResponse,
   AdminChatRecordMessagesPage,
   AdminChatRecordMessagesQuery,
   AdminChatRecordOverview,
   AdminChatRecordTokenUsageSummary,
+  AdminChatRecordUpsertReviewRequest,
 } from "@yinjie/contracts";
 import { getAdminSecret, setAdminSecret } from "./admin-api";
 
@@ -161,4 +163,16 @@ export const chatRecordsAdminApi = {
     chatRecordsFetch<AdminChatRecordConversationExportResponse>(
       `/conversations/${id}/export${buildQueryString(query)}`,
     ),
+  upsertConversationReview: (
+    id: string,
+    payload: AdminChatRecordUpsertReviewRequest,
+  ) =>
+    chatRecordsFetch<AdminChatRecordConversationReview>(`/conversations/${id}/review`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  deleteConversationReview: (id: string) =>
+    chatRecordsFetch<{ success: boolean }>(`/conversations/${id}/review`, {
+      method: "DELETE",
+    }),
 };

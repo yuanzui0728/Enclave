@@ -54,6 +54,7 @@ import { OfficialAccountDeliveryEntity } from './modules/official-accounts/offic
 import { OfficialAccountFollowEntity } from './modules/official-accounts/official-account-follow.entity';
 import { OfficialAccountServiceMessageEntity } from './modules/official-accounts/official-account-service-message.entity';
 import { ModerationReportEntity } from './modules/moderation/moderation-report.entity';
+import { AdminConversationReviewEntity } from './modules/admin/admin-conversation-review.entity';
 import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database/database-path';
 
 @Module({
@@ -78,7 +79,7 @@ import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database
           FeedPostEntity, FeedCommentEntity, VideoChannelFollowEntity, WorldContextEntity,
           NarrativeArcEntity, AIBehaviorLogEntity, AiUsageLedgerEntity, UserFeedInteractionEntity,
           OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountDeliveryEntity, OfficialAccountFollowEntity, OfficialAccountServiceMessageEntity,
-          ModerationReportEntity,
+          ModerationReportEntity, AdminConversationReviewEntity,
         ],
         synchronize: true,
       }),

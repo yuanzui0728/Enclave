@@ -17,10 +17,16 @@ export type AdminChatRecordConversationSort =
 
 export type AdminChatRecordActivityWindow = "all" | "7d" | "30d";
 export type AdminChatRecordExportFormat = "markdown" | "json";
+export type AdminChatRecordReviewStatus =
+  | "backlog"
+  | "watching"
+  | "important"
+  | "resolved";
 
 export interface AdminChatRecordConversationListQuery {
   characterId?: string;
   includeHidden?: boolean;
+  onlyReviewed?: boolean;
   dateFrom?: string;
   dateTo?: string;
   activityWindow?: AdminChatRecordActivityWindow;
@@ -48,6 +54,7 @@ export interface AdminChatRecordConversationListItem {
   recentMessageCount30d: number;
   lastVisibleMessage?: Message | null;
   lastStoredMessage?: Message | null;
+  review?: AdminChatRecordConversationReview | null;
 }
 
 export interface AdminChatRecordConversationListResponse {
@@ -127,11 +134,22 @@ export interface AdminChatRecordConversationInsight {
   trend30d: AdminChatRecordConversationTrendPoint[];
 }
 
+export interface AdminChatRecordConversationReview {
+  conversationId: string;
+  status: AdminChatRecordReviewStatus;
+  tags: string[];
+  note?: string | null;
+  hasNote: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminChatRecordConversationDetail {
   conversation: AdminChatRecordConversationListItem;
   character: AdminChatRecordCharacterSummary | null;
   stats: AdminChatRecordConversationStats;
   insight: AdminChatRecordConversationInsight;
+  review: AdminChatRecordConversationReview | null;
 }
 
 export interface AdminChatRecordMessagesQuery {
@@ -184,6 +202,7 @@ export interface AdminChatRecordConversationExportPayload {
   character: AdminChatRecordCharacterSummary | null;
   stats: AdminChatRecordConversationStats;
   insight: AdminChatRecordConversationInsight;
+  review: AdminChatRecordConversationReview | null;
   messages: Message[];
   tokenUsage: AdminChatRecordTokenUsageSummary;
 }
@@ -194,4 +213,10 @@ export interface AdminChatRecordConversationExportResponse {
   contentType: string;
   content: string;
   payload: AdminChatRecordConversationExportPayload;
+}
+
+export interface AdminChatRecordUpsertReviewRequest {
+  status: AdminChatRecordReviewStatus;
+  tags?: string[];
+  note?: string | null;
 }

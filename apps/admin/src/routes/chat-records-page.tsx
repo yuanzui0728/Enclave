@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
   AdminChatRecordActivityWindow,
   AdminChatRecordConversationExportResponse,
   AdminChatRecordConversationListQuery,
   AdminChatRecordConversationSearchQuery,
+  AdminChatRecordReviewStatus,
   Character,
   Message,
 } from "@yinjie/contracts";
@@ -51,10 +52,22 @@ const ACTIVITY_WINDOW_OPTIONS: Array<{
   { value: "30d", label: "近 30 天活跃" },
 ];
 
+const REVIEW_STATUS_OPTIONS: Array<{
+  value: AdminChatRecordReviewStatus;
+  label: string;
+}> = [
+  { value: "backlog", label: "待复盘" },
+  { value: "watching", label: "持续观察" },
+  { value: "important", label: "重点样本" },
+  { value: "resolved", label: "已处理" },
+];
+
 export function ChatRecordsPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
+  const queryClient = useQueryClient();
   const [characterId, setCharacterId] = useState("");
   const [includeHidden, setIncludeHidden] = useState(false);
+  const [onlyReviewed, setOnlyReviewed] = useState(false);
   const [includeClearedHistory, setIncludeClearedHistory] = useState(false);
   const [activityWindow, setActivityWindow] =
     useState<AdminChatRecordActivityWindow>("all");
@@ -63,6 +76,15 @@ export function ChatRecordsPage() {
   const [page, setPage] = useState(1);
   const [selectedConversationId, setSelectedConversationId] = useState("");
   const [focusedMessageId, setFocusedMessageId] = useState("");
+  const [reviewDraft, setReviewDraft] = useState<{
+    status: AdminChatRecordReviewStatus;
+    tags: string;
+    note: string;
+  }>({
+    status: "backlog",
+    tags: "",
+    note: "",
+  });
   const [timelineMessageType, setTimelineMessageType] =
     useState<AdminChatRecordConversationSearchQuery["messageType"] | "all">("all");
   const [search, setSearch] = useState<{
@@ -81,12 +103,13 @@ export function ChatRecordsPage() {
     () => ({
       characterId: characterId || undefined,
       includeHidden,
+      onlyReviewed,
       activityWindow,
       sortBy,
       page,
       pageSize: 24,
     }),
-    [activityWindow, characterId, includeHidden, page, sortBy],
+    [activityWindow, characterId, includeHidden, onlyReviewed, page, sortBy],
   );
 
   const overviewQuery = useQuery({
@@ -143,8 +166,39 @@ export function ChatRecordsPage() {
       chatRecordsAdminApi.exportConversation(activeConversationId, {
         format,
         includeClearedHistory,
-      }),
+    }),
     onSuccess: (file) => downloadExportFile(file),
+  });
+  const saveReviewMutation = useMutation({
+    mutationFn: () =>
+      chatRecordsAdminApi.upsertConversationReview(activeConversationId, {
+        status: reviewDraft.status,
+        tags: parseReviewTags(reviewDraft.tags),
+        note: reviewDraft.note.trim() || null,
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["admin-chat-records-conversations", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-chat-records-detail", baseUrl, activeConversationId],
+        }),
+      ]);
+    },
+  });
+  const deleteReviewMutation = useMutation({
+    mutationFn: () => chatRecordsAdminApi.deleteConversationReview(activeConversationId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["admin-chat-records-conversations", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-chat-records-detail", baseUrl, activeConversationId],
+        }),
+      ]);
+    },
   });
   const messagesQuery = useInfiniteQuery({
     queryKey: ["admin-chat-records-messages", baseUrl, activeConversationId, includeClearedHistory, focusedMessageId],
@@ -174,6 +228,23 @@ export function ChatRecordsPage() {
   const visibleMessages = useMemo(() => {
     return messages.filter((message) => matchesMessageType(message, timelineMessageType));
   }, [messages, timelineMessageType]);
+
+  useEffect(() => {
+    const review = detail?.review;
+    if (!review) {
+      setReviewDraft({
+        status: "backlog",
+        tags: "",
+        note: "",
+      });
+      return;
+    }
+    setReviewDraft({
+      status: review.status,
+      tags: review.tags.join(", "),
+      note: review.note ?? "",
+    });
+  }, [detail?.review?.conversationId, detail?.review?.updatedAt]);
 
   function runSearch() {
     if (!activeConversationId) {
@@ -230,6 +301,7 @@ export function ChatRecordsPage() {
           </select>
           <div className="flex flex-wrap gap-2">
             <ToggleChip label="显示隐藏会话" checked={includeHidden} onChange={(event) => { setIncludeHidden(event.target.checked); setPage(1); }} />
+            <ToggleChip label="仅看已标记样本" checked={onlyReviewed} onChange={(event) => { setOnlyReviewed(event.target.checked); setPage(1); }} />
             <ToggleChip label="包含清空前历史" checked={includeClearedHistory} onChange={(event) => setIncludeClearedHistory(event.target.checked)} />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -268,6 +340,7 @@ export function ChatRecordsPage() {
                   <span>30 天 {item.recentMessageCount30d}</span>
                   {item.isHidden ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">已隐藏</span> : null}
                   {item.hasClearedHistory ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">含清空前历史</span> : null}
+                  {item.review ? <span className={`rounded-full px-2 py-0.5 ${reviewBadgeClassName(item.review.status)}`}>{formatReviewStatus(item.review.status)}</span> : null}
                 </div>
               </button>
             )) : <AdminEmptyState title="没有符合条件的会话" description="可以切回全部角色或包含隐藏会话后再查看。" />}
@@ -413,6 +486,92 @@ export function ChatRecordsPage() {
                     { label: "最近一次角色回复", value: formatDateTime(detail.insight.lastCharacterMessageAt) },
                   ]}
                 />
+              </Card>
+
+              <Card className="space-y-4 bg-[color:var(--surface-console)]">
+                <SectionHeading>复盘池</SectionHeading>
+                <div className="grid gap-3">
+                  <label className="space-y-1">
+                    <span className="text-xs font-medium text-[color:var(--text-muted)]">标记状态</span>
+                    <select
+                      value={reviewDraft.status}
+                      onChange={(event) =>
+                        setReviewDraft((current) => ({
+                          ...current,
+                          status: event.target.value as AdminChatRecordReviewStatus,
+                        }))
+                      }
+                      className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2.5 text-sm"
+                    >
+                      {REVIEW_STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs font-medium text-[color:var(--text-muted)]">标签</span>
+                    <input
+                      value={reviewDraft.tags}
+                      onChange={(event) =>
+                        setReviewDraft((current) => ({ ...current, tags: event.target.value }))
+                      }
+                      placeholder="如：高需求、高成本、易复用"
+                      className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2.5 text-sm"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs font-medium text-[color:var(--text-muted)]">复盘备注</span>
+                    <textarea
+                      value={reviewDraft.note}
+                      onChange={(event) =>
+                        setReviewDraft((current) => ({ ...current, note: event.target.value }))
+                      }
+                      rows={5}
+                      placeholder="记录这段对话为什么值得复盘、后续该如何迭代。"
+                      className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2.5 text-sm"
+                    />
+                  </label>
+                </div>
+                {detail.review ? (
+                  <AdminInfoRows
+                    title="当前标记"
+                    rows={[
+                      { label: "状态", value: formatReviewStatus(detail.review.status) },
+                      { label: "最后更新", value: formatDateTime(detail.review.updatedAt) },
+                      { label: "标签数", value: detail.review.tags.length },
+                    ]}
+                  />
+                ) : (
+                  <InlineNotice title="这段会话还没有进入复盘池">
+                    先打一个状态或写几句备注，后面筛“仅看已标记样本”时就能快速回到它。
+                  </InlineNotice>
+                )}
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => saveReviewMutation.mutate()}
+                    disabled={!activeConversationId || saveReviewMutation.isPending}
+                  >
+                    {saveReviewMutation.isPending ? "保存中..." : "保存复盘标记"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => deleteReviewMutation.mutate()}
+                    disabled={!detail.review || deleteReviewMutation.isPending}
+                  >
+                    {deleteReviewMutation.isPending ? "清除中..." : "清空标记"}
+                  </Button>
+                </div>
+                {saveReviewMutation.error instanceof Error ? (
+                  <ErrorBlock message={saveReviewMutation.error.message} />
+                ) : null}
+                {deleteReviewMutation.error instanceof Error ? (
+                  <ErrorBlock message={deleteReviewMutation.error.message} />
+                ) : null}
               </Card>
 
               {detail.character ? (
@@ -683,6 +842,31 @@ function formatActivity(value?: string | null) {
   if (value === "sleeping") return "睡觉中";
   if (value === "free") return "空闲";
   return value || "未标注";
+}
+
+function parseReviewTags(value: string) {
+  return value
+    .split(/[,\n，]/g)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function formatReviewStatus(status: AdminChatRecordReviewStatus) {
+  return REVIEW_STATUS_OPTIONS.find((item) => item.value === status)?.label || status;
+}
+
+function reviewBadgeClassName(status: AdminChatRecordReviewStatus) {
+  if (status === "important") {
+    return "bg-rose-50 text-rose-700";
+  }
+  if (status === "watching") {
+    return "bg-amber-50 text-amber-700";
+  }
+  if (status === "resolved") {
+    return "bg-emerald-50 text-emerald-700";
+  }
+  return "bg-sky-50 text-sky-700";
 }
 
 function buildReplyLogicHref(conversationId: string, characterId?: string | null) {

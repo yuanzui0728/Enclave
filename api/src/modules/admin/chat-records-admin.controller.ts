@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AdminGuard } from './admin.guard';
 import { ChatRecordsAdminService } from './chat-records-admin.service';
 
@@ -20,6 +29,7 @@ export class ChatRecordsAdminController {
     query: {
       characterId?: string;
       includeHidden?: string;
+      onlyReviewed?: string;
       dateFrom?: string;
       dateTo?: string;
       activityWindow?: string;
@@ -91,5 +101,23 @@ export class ChatRecordsAdminController {
     },
   ) {
     return this.chatRecordsAdminService.exportConversation(id, query);
+  }
+
+  @Put('conversations/:id/review')
+  upsertConversationReview(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      status?: string;
+      tags?: string[];
+      note?: string | null;
+    },
+  ) {
+    return this.chatRecordsAdminService.upsertConversationReview(id, body);
+  }
+
+  @Delete('conversations/:id/review')
+  deleteConversationReview(@Param('id') id: string) {
+    return this.chatRecordsAdminService.deleteConversationReview(id);
   }
 }

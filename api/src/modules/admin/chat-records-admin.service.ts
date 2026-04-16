@@ -7,6 +7,7 @@ import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { AdminConversationReviewEntity } from './admin-conversation-review.entity';
 import {
   searchMessages as searchVisibleMessages,
   sliceMessagesAround,
@@ -21,6 +22,7 @@ import {
 type ChatRecordConversationListQuery = {
   characterId?: string;
   includeHidden?: boolean | string;
+  onlyReviewed?: boolean | string;
   dateFrom?: string;
   dateTo?: string;
   activityWindow?: string;
@@ -66,6 +68,7 @@ type ChatRecordConversationListItem = {
   recentMessageCount30d: number;
   lastVisibleMessage?: ChatRecordMessage | null;
   lastStoredMessage?: ChatRecordMessage | null;
+  review?: ChatRecordConversationReview | null;
 };
 
 type ChatRecordConversationCharacterSummary = {
@@ -146,6 +149,22 @@ type ChatRecordTokenUsageSummary = {
   recentRecords: Awaited<ReturnType<AiUsageLedgerService['getRecords']>>;
 };
 
+type ChatRecordConversationReviewStatus =
+  | 'backlog'
+  | 'watching'
+  | 'important'
+  | 'resolved';
+
+type ChatRecordConversationReview = {
+  conversationId: string;
+  status: ChatRecordConversationReviewStatus;
+  tags: string[];
+  note?: string | null;
+  hasNote: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type ChatRecordExportFormat = 'markdown' | 'json';
 
 type ChatRecordConversationExportQuery = {
@@ -160,6 +179,7 @@ type ChatRecordConversationExportPayload = {
   character: ChatRecordConversationCharacterSummary | null;
   stats: ChatRecordConversationStats;
   insight: ChatRecordConversationInsight;
+  review: ChatRecordConversationReview | null;
   messages: ChatRecordMessage[];
   tokenUsage: ChatRecordTokenUsageSummary;
 };
@@ -170,6 +190,12 @@ type ChatRecordConversationExportResponse = {
   contentType: string;
   content: string;
   payload: ChatRecordConversationExportPayload;
+};
+
+type ChatRecordConversationReviewInput = {
+  status?: string;
+  tags?: string[];
+  note?: string | null;
 };
 
 const DEFAULT_LIST_PAGE_SIZE = 24;
@@ -188,6 +214,8 @@ export class ChatRecordsAdminService {
     private readonly characterRepo: Repository<CharacterEntity>,
     @InjectRepository(AiUsageLedgerEntity)
     private readonly usageRepo: Repository<AiUsageLedgerEntity>,
+    @InjectRepository(AdminConversationReviewEntity)
+    private readonly reviewRepo: Repository<AdminConversationReviewEntity>,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly usageLedger: AiUsageLedgerService,
   ) {}
@@ -279,6 +307,7 @@ export class ChatRecordsAdminService {
   async listConversations(query: ChatRecordConversationListQuery) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const includeHidden = this.normalizeBoolean(query.includeHidden);
+    const onlyReviewed = this.normalizeBoolean(query.onlyReviewed);
     const page = this.normalizePositiveInteger(query.page, 1);
     const pageSize = Math.min(
       this.normalizePositiveInteger(query.pageSize, DEFAULT_LIST_PAGE_SIZE),
@@ -316,8 +345,14 @@ export class ChatRecordsAdminService {
       return true;
     });
 
-    const listItems = (await this.buildConversationListItems(directConversations)).filter(
-      (item) => this.matchesActivityWindow(item, activityWindow),
+    const listItems = (
+      await this.buildConversationListItems(directConversations, {
+        ownerId: owner.id,
+      })
+    ).filter(
+      (item) =>
+        this.matchesActivityWindow(item, activityWindow) &&
+        (!onlyReviewed || Boolean(item.review)),
     );
     listItems.sort((left, right) => {
       if (sortBy === 'recentMessageCount30d') {
@@ -364,6 +399,7 @@ export class ChatRecordsAdminService {
     const character = await this.loadConversationCharacter(conversation);
 
     const conversationItems = await this.buildConversationListItems([conversation], {
+      ownerId: conversation.ownerId,
       preloadedMessages: new Map([[conversation.id, storedMessages]]),
       preloadedCharacters: character ? [character] : [],
     });
@@ -380,6 +416,7 @@ export class ChatRecordsAdminService {
         includeClearedHistory,
       ),
       insight: this.buildConversationInsight(activeMessages),
+      review: conversationItems[0].review ?? null,
     };
   }
 
@@ -516,6 +553,36 @@ export class ChatRecordsAdminService {
     };
   }
 
+  async upsertConversationReview(
+    conversationId: string,
+    payload: ChatRecordConversationReviewInput,
+  ) {
+    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const existing = await this.reviewRepo.findOneBy({
+      conversationId: conversation.id,
+      ownerId: conversation.ownerId,
+    });
+    const review = this.reviewRepo.create({
+      ...(existing ?? {}),
+      conversationId: conversation.id,
+      ownerId: conversation.ownerId,
+      status: this.normalizeReviewStatus(payload.status),
+      tags: this.normalizeReviewTags(payload.tags),
+      note: this.normalizeReviewNote(payload.note),
+    });
+    const saved = await this.reviewRepo.save(review);
+    return this.toReviewContract(saved);
+  }
+
+  async deleteConversationReview(conversationId: string) {
+    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    await this.reviewRepo.delete({
+      conversationId: conversation.id,
+      ownerId: conversation.ownerId,
+    });
+    return { success: true };
+  }
+
   async exportConversation(
     conversationId: string,
     query: ChatRecordConversationExportQuery,
@@ -548,8 +615,10 @@ export class ChatRecordsAdminService {
   private async buildConversationListItems(
     conversations: ConversationEntity[],
     options?: {
+      ownerId?: string;
       preloadedMessages?: Map<string, MessageEntity[]>;
       preloadedCharacters?: CharacterEntity[];
+      preloadedReviews?: Map<string, AdminConversationReviewEntity>;
     },
   ): Promise<ChatRecordConversationListItem[]> {
     if (!conversations.length) {
@@ -564,7 +633,8 @@ export class ChatRecordsAdminService {
           .filter((value): value is string => Boolean(value)),
       ),
     );
-    const [storedMessages, characters] = await Promise.all([
+    const ownerId = options?.ownerId ?? conversations[0]?.ownerId;
+    const [storedMessages, characters, reviews] = await Promise.all([
       options?.preloadedMessages
         ? Promise.resolve(options.preloadedMessages)
         : this.loadStoredMessagesMap(conversationIds),
@@ -575,6 +645,11 @@ export class ChatRecordsAdminService {
               where: { id: In(characterIds) },
             })
           : Promise.resolve([]),
+      options?.preloadedReviews
+        ? Promise.resolve(options.preloadedReviews)
+        : ownerId
+          ? this.loadConversationReviewMap(conversationIds, ownerId)
+          : Promise.resolve(new Map<string, AdminConversationReviewEntity>()),
     ]);
     const characterMap = new Map(
       characters.map((character) => [character.id, character]),
@@ -591,6 +666,7 @@ export class ChatRecordsAdminService {
         conversation,
         currentStoredMessages,
       );
+      const review = reviews.get(conversation.id) ?? null;
       const sevenDaysAgo = this.daysAgo(7).getTime();
       const thirtyDaysAgo = this.daysAgo(30).getTime();
       const recentMessageCount7d = currentStoredMessages.filter(
@@ -632,6 +708,7 @@ export class ChatRecordsAdminService {
               currentStoredMessages[currentStoredMessages.length - 1],
             )
           : null,
+        review: review ? this.toReviewContract(review) : null,
       };
     });
   }
@@ -676,6 +753,29 @@ export class ChatRecordsAdminService {
     }
 
     return grouped;
+  }
+
+  private async loadConversationReviewMap(
+    conversationIds: string[],
+    ownerId: string,
+  ) {
+    if (!conversationIds.length) {
+      return new Map<string, AdminConversationReviewEntity>();
+    }
+
+    const reviews = await this.reviewRepo.find({
+      where: {
+        ownerId,
+        conversationId: In(conversationIds),
+      },
+      order: {
+        updatedAt: 'DESC',
+      },
+    });
+
+    return new Map(
+      reviews.map((review) => [review.conversationId, review]),
+    );
   }
 
   private async loadStoredMessages(conversationId: string) {
@@ -804,6 +904,7 @@ export class ChatRecordsAdminService {
       character: detail.character,
       stats: detail.stats,
       insight: detail.insight,
+      review: detail.review,
       messages: activeMessages.map((message) => this.toMessageContract(message)),
       tokenUsage,
     };
@@ -882,6 +983,21 @@ export class ChatRecordsAdminService {
       expertDomains: character.expertDomains ?? [],
       intimacyLevel: character.intimacyLevel,
       lastActiveAt: character.lastActiveAt?.toISOString() ?? null,
+    };
+  }
+
+  private toReviewContract(
+    review: AdminConversationReviewEntity,
+  ): ChatRecordConversationReview {
+    const note = this.normalizeReviewNote(review.note);
+    return {
+      conversationId: review.conversationId,
+      status: this.normalizeReviewStatus(review.status),
+      tags: this.normalizeReviewTags(review.tags ?? []),
+      note,
+      hasNote: Boolean(note),
+      createdAt: review.createdAt.toISOString(),
+      updatedAt: review.updatedAt.toISOString(),
     };
   }
 
@@ -967,6 +1083,32 @@ export class ChatRecordsAdminService {
     }
 
     return 'lastActivityAt';
+  }
+
+  private normalizeReviewStatus(
+    value: string | undefined | null,
+  ): ChatRecordConversationReviewStatus {
+    if (
+      value === 'watching' ||
+      value === 'important' ||
+      value === 'resolved'
+    ) {
+      return value;
+    }
+
+    return 'backlog';
+  }
+
+  private normalizeReviewTags(value: string[] | undefined | null) {
+    return (value ?? [])
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+  }
+
+  private normalizeReviewNote(value: string | undefined | null) {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed.slice(0, 4000) : null;
   }
 
   private normalizeActivityWindow(value: string | undefined) {
@@ -1154,6 +1296,12 @@ export class ChatRecordsAdminService {
       `- 近 30 天活跃天数：${payload.insight.activeDays30d}`,
       `- 活跃日均消息：${payload.insight.averageMessagesPerActiveDay30d ?? '暂无'}`,
       `- 高峰工作日：${payload.insight.mostActiveWeekday ?? '暂无'}`,
+      '',
+      '## 复盘池',
+      '',
+      `- 标记状态：${payload.review?.status ?? '未标记'}`,
+      `- 标签：${payload.review?.tags.join('、') || '暂无'}`,
+      `- 备注：${payload.review?.note ?? '暂无'}`,
       '',
       '## Token 成本',
       '',

@@ -22,6 +22,7 @@ import { ChatModule } from '../chat/chat.module';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
 import { ChatRecordsAdminService } from './chat-records-admin.service';
 import { ChatRecordsAdminController } from './chat-records-admin.controller';
+import { AdminConversationReviewEntity } from './admin-conversation-review.entity';
 import { SchedulerModule } from '../scheduler/scheduler.module';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
@@ -50,6 +51,7 @@ import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
       MomentPostEntity,
       FeedPostEntity,
       AiUsageLedgerEntity,
+      AdminConversationReviewEntity,
     ]),
   ],
   providers: [

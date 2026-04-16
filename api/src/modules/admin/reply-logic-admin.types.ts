@@ -37,6 +37,7 @@ export type ReplyLogicGroupReplySelectionDisposition =
 
 export interface ReplyLogicPromptSection {
   key:
+    | 'core_directive'
     | 'identity'
     | 'personality_and_tone'
     | 'behavioral_patterns'
