@@ -17,6 +17,7 @@ import type {
   TokenPricingCatalog,
   TokenUsageBreakdownResponse,
   TokenUsageDowngradeInsights,
+  TokenUsageDowngradeQualityInsights,
   TokenUsageOverview,
   TokenUsageQuery,
   TokenUsageRecordListResponse,
@@ -247,6 +248,8 @@ export const adminApi = {
     adminFetch<TokenUsageRecordListResponse>(`/token-usage/records${buildQueryString(query)}`),
   getTokenUsageDowngradeInsights: (query?: TokenUsageQuery) =>
     adminFetch<TokenUsageDowngradeInsights>(`/token-usage/downgrade-insights${buildQueryString(query)}`),
+  getTokenUsageDowngradeQuality: (query?: TokenUsageQuery) =>
+    adminFetch<TokenUsageDowngradeQualityInsights>(`/token-usage/downgrade-quality${buildQueryString(query)}`),
   getTokenUsagePricing: () =>
     adminFetch<TokenPricingCatalog>("/token-usage/pricing"),
   setTokenUsagePricing: (payload: TokenPricingCatalog) =>

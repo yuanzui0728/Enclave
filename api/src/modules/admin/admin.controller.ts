@@ -147,6 +147,27 @@ export class AdminController {
     return this.usageLedger.getDowngradeInsights(query);
   }
 
+  @Get('token-usage/downgrade-quality')
+  getTokenUsageDowngradeQuality(
+    @Query()
+    query: {
+      from?: string;
+      to?: string;
+      grain?: string;
+      characterId?: string;
+      conversationId?: string;
+      groupId?: string;
+      scene?: string;
+      model?: string;
+      billingSource?: string;
+      status?: string;
+      errorCode?: string;
+      limit?: number | string;
+    },
+  ) {
+    return this.usageLedger.getDowngradeQuality(query);
+  }
+
   @Get('token-usage/pricing')
   getTokenUsagePricing() {
     return this.usageLedger.getPricingCatalog();
