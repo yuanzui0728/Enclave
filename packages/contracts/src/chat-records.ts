@@ -16,6 +16,7 @@ export type AdminChatRecordConversationSort =
   | "storedMessageCount";
 
 export type AdminChatRecordActivityWindow = "all" | "7d" | "30d";
+export type AdminChatRecordExportFormat = "markdown" | "json";
 
 export interface AdminChatRecordConversationListQuery {
   characterId?: string;
@@ -169,4 +170,28 @@ export interface AdminChatRecordTokenUsageSummary {
     "byScene" | "byModel" | "byBillingSource"
   >;
   recentRecords: TokenUsageRecordListResponse;
+}
+
+export interface AdminChatRecordConversationExportQuery {
+  format?: AdminChatRecordExportFormat;
+  includeClearedHistory?: boolean;
+}
+
+export interface AdminChatRecordConversationExportPayload {
+  exportedAt: string;
+  includeClearedHistory: boolean;
+  conversation: AdminChatRecordConversationListItem;
+  character: AdminChatRecordCharacterSummary | null;
+  stats: AdminChatRecordConversationStats;
+  insight: AdminChatRecordConversationInsight;
+  messages: Message[];
+  tokenUsage: AdminChatRecordTokenUsageSummary;
+}
+
+export interface AdminChatRecordConversationExportResponse {
+  format: AdminChatRecordExportFormat;
+  fileName: string;
+  contentType: string;
+  content: string;
+  payload: AdminChatRecordConversationExportPayload;
 }

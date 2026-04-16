@@ -1,5 +1,7 @@
 import type {
   AdminChatRecordConversationDetail,
+  AdminChatRecordConversationExportQuery,
+  AdminChatRecordConversationExportResponse,
   AdminChatRecordConversationListQuery,
   AdminChatRecordConversationListResponse,
   AdminChatRecordConversationSearchQuery,
@@ -151,5 +153,12 @@ export const chatRecordsAdminApi = {
   getConversationTokenUsage: (id: string) =>
     chatRecordsFetch<AdminChatRecordTokenUsageSummary>(
       `/conversations/${id}/token-usage`,
+    ),
+  exportConversation: (
+    id: string,
+    query?: AdminChatRecordConversationExportQuery,
+  ) =>
+    chatRecordsFetch<AdminChatRecordConversationExportResponse>(
+      `/conversations/${id}/export${buildQueryString(query)}`,
     ),
 };

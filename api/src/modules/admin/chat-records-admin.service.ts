@@ -146,6 +146,32 @@ type ChatRecordTokenUsageSummary = {
   recentRecords: Awaited<ReturnType<AiUsageLedgerService['getRecords']>>;
 };
 
+type ChatRecordExportFormat = 'markdown' | 'json';
+
+type ChatRecordConversationExportQuery = {
+  format?: string;
+  includeClearedHistory?: boolean | string;
+};
+
+type ChatRecordConversationExportPayload = {
+  exportedAt: string;
+  includeClearedHistory: boolean;
+  conversation: ChatRecordConversationListItem;
+  character: ChatRecordConversationCharacterSummary | null;
+  stats: ChatRecordConversationStats;
+  insight: ChatRecordConversationInsight;
+  messages: ChatRecordMessage[];
+  tokenUsage: ChatRecordTokenUsageSummary;
+};
+
+type ChatRecordConversationExportResponse = {
+  format: ChatRecordExportFormat;
+  fileName: string;
+  contentType: string;
+  content: string;
+  payload: ChatRecordConversationExportPayload;
+};
+
 const DEFAULT_LIST_PAGE_SIZE = 24;
 const MAX_LIST_PAGE_SIZE = 100;
 const DEFAULT_MESSAGE_PAGE_SIZE = 60;
@@ -490,6 +516,35 @@ export class ChatRecordsAdminService {
     };
   }
 
+  async exportConversation(
+    conversationId: string,
+    query: ChatRecordConversationExportQuery,
+  ): Promise<ChatRecordConversationExportResponse> {
+    const format = this.normalizeExportFormat(query.format);
+    const payload = await this.buildConversationExportPayload(
+      conversationId,
+      this.normalizeBoolean(query.includeClearedHistory),
+    );
+    const content =
+      format === 'json'
+        ? JSON.stringify(payload, null, 2)
+        : this.renderConversationMarkdown(payload);
+    const extension = format === 'json' ? 'json' : 'md';
+    const scopeLabel = payload.includeClearedHistory ? 'full' : 'visible';
+    const fileName = `${this.slugifyFileName(payload.conversation.characterName || 'conversation')}-${scopeLabel}-${payload.exportedAt.slice(0, 10)}.${extension}`;
+
+    return {
+      format,
+      fileName,
+      contentType:
+        format === 'json'
+          ? 'application/json; charset=utf-8'
+          : 'text/markdown; charset=utf-8',
+      content,
+      payload,
+    };
+  }
+
   private async buildConversationListItems(
     conversations: ConversationEntity[],
     options?: {
@@ -726,6 +781,31 @@ export class ChatRecordsAdminService {
       firstResponseMedianMs: sortedDurations.length
         ? sortedDurations[Math.floor(sortedDurations.length / 2)]
         : null,
+    };
+  }
+
+  private async buildConversationExportPayload(
+    conversationId: string,
+    includeClearedHistory: boolean,
+  ): Promise<ChatRecordConversationExportPayload> {
+    const detail = await this.getConversationDetail(conversationId, {
+      includeClearedHistory,
+    });
+    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const storedMessages = await this.loadStoredMessages(conversation.id);
+    const visibleMessages = this.filterVisibleMessages(conversation, storedMessages);
+    const activeMessages = includeClearedHistory ? storedMessages : visibleMessages;
+    const tokenUsage = await this.getConversationTokenUsage(conversationId);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      includeClearedHistory,
+      conversation: detail.conversation,
+      character: detail.character,
+      stats: detail.stats,
+      insight: detail.insight,
+      messages: activeMessages.map((message) => this.toMessageContract(message)),
+      tokenUsage,
     };
   }
 
@@ -1045,6 +1125,135 @@ export class ChatRecordsAdminService {
     const month = String(value.getMonth() + 1).padStart(2, '0');
     const day = String(value.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private normalizeExportFormat(value: string | undefined): ChatRecordExportFormat {
+    return value === 'json' ? 'json' : 'markdown';
+  }
+
+  private renderConversationMarkdown(
+    payload: ChatRecordConversationExportPayload,
+  ) {
+    const header = [
+      `# 聊天记录导出：${payload.conversation.characterName}`,
+      '',
+      `- 导出时间：${payload.exportedAt}`,
+      `- 会话 ID：${payload.conversation.id}`,
+      `- 导出口径：${payload.includeClearedHistory ? '包含清空前历史' : '仅当前可见历史'}`,
+      `- 最后活跃：${payload.conversation.lastActivityAt ?? '暂无'}`,
+      `- 最后清空：${payload.conversation.lastClearedAt ?? '未清空'}`,
+      '',
+      '## 会话概览',
+      '',
+      `- 当前口径消息数：${payload.stats.messageCount}`,
+      `- 用户消息数：${payload.stats.userMessageCount}`,
+      `- 角色消息数：${payload.stats.characterMessageCount}`,
+      `- 主动消息数：${payload.stats.proactiveMessageCount}`,
+      `- 附件消息数：${payload.stats.attachmentMessageCount}`,
+      `- 近 7 天活跃天数：${payload.insight.activeDays7d}`,
+      `- 近 30 天活跃天数：${payload.insight.activeDays30d}`,
+      `- 活跃日均消息：${payload.insight.averageMessagesPerActiveDay30d ?? '暂无'}`,
+      `- 高峰工作日：${payload.insight.mostActiveWeekday ?? '暂无'}`,
+      '',
+      '## Token 成本',
+      '',
+      `- 累计请求：${payload.tokenUsage.allTimeOverview.requestCount}`,
+      `- 累计 Token：${payload.tokenUsage.allTimeOverview.totalTokens}`,
+      `- 累计成本：${payload.tokenUsage.allTimeOverview.estimatedCost} ${payload.tokenUsage.allTimeOverview.currency}`,
+      `- 近 30 天成本：${payload.tokenUsage.recent30dOverview.estimatedCost} ${payload.tokenUsage.recent30dOverview.currency}`,
+      '',
+      '### 近 30 天主要模型',
+      ...this.renderBreakdownLines(payload.tokenUsage.recent30dBreakdown.byModel),
+      '',
+      '### 近 30 天主要场景',
+      ...this.renderBreakdownLines(payload.tokenUsage.recent30dBreakdown.byScene),
+      '',
+      '## 对话正文',
+      '',
+    ];
+
+    const transcript = payload.messages.flatMap((message, index) => {
+      const blocks = [
+        `### ${index + 1}. ${message.senderName} · ${message.senderType} · ${message.type}`,
+        `- 时间：${message.createdAt}`,
+      ];
+
+      if (message.attachment) {
+        blocks.push(`- 附件：${this.describeAttachment(message)}`);
+      }
+
+      blocks.push('');
+      blocks.push(this.quoteMarkdownText(message.text?.trim() || '空消息'));
+      blocks.push('');
+
+      return blocks;
+    });
+
+    return [...header, ...transcript].join('\n');
+  }
+
+  private renderBreakdownLines(
+    items: Array<{
+      label: string;
+      requestCount: number;
+      totalTokens: number;
+      estimatedCost: number;
+    }>,
+  ) {
+    if (!items.length) {
+      return ['- 暂无'];
+    }
+
+    return items.slice(0, 5).map(
+      (item) =>
+        `- ${item.label}：请求 ${item.requestCount}，Token ${item.totalTokens}，成本 ${item.estimatedCost}`,
+    );
+  }
+
+  private quoteMarkdownText(text: string) {
+    return text
+      .split(/\r?\n/)
+      .map((line) => `> ${line}`)
+      .join('\n');
+  }
+
+  private describeAttachment(message: Pick<ChatRecordMessage, 'attachment' | 'type'>) {
+    const attachment = message.attachment;
+    if (!attachment) {
+      return '无';
+    }
+
+    if (
+      attachment.kind === 'image' ||
+      attachment.kind === 'file' ||
+      attachment.kind === 'voice'
+    ) {
+      return `${message.type} · ${attachment.fileName}`;
+    }
+
+    if (attachment.kind === 'sticker') {
+      return `sticker · ${attachment.label ?? attachment.stickerId}`;
+    }
+
+    if (attachment.kind === 'contact_card') {
+      return `contact_card · ${attachment.name}`;
+    }
+
+    if (attachment.kind === 'location_card') {
+      return `location_card · ${attachment.title}`;
+    }
+
+    return `note_card · ${attachment.title}`;
+  }
+
+  private slugifyFileName(value: string) {
+    const slug = value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    return slug || 'conversation';
   }
 
   private roundCost(value: number) {
