@@ -176,7 +176,19 @@ export class MomentsService {
     if (!char || !profile) return null;
 
     try {
-      const text = await this.ai.generateMoment({ profile, currentTime: new Date() });
+      const text = await this.ai.generateMoment({
+        profile,
+        currentTime: new Date(),
+        usageContext: {
+          surface: 'app',
+          scene: 'moment_post_generate',
+          scopeType: 'character',
+          scopeId: char.id,
+          scopeLabel: char.name,
+          characterId: char.id,
+          characterName: char.name,
+        },
+      });
       if (!text) return null;
 
       const post = this.postRepo.create({
@@ -324,6 +336,15 @@ export class MomentsService {
                 profile,
                 conversationHistory: [],
                 userMessage: `你的朋友${post.authorName}发了一条朋友圈：${this.buildMomentPromptSummary(post)}。用一句话自然地评论一下，不超过20字。`,
+                usageContext: {
+                  surface: 'app',
+                  scene: 'moment_comment_generate',
+                  scopeType: 'character',
+                  scopeId: char.id,
+                  scopeLabel: char.name,
+                  characterId: char.id,
+                  characterName: char.name,
+                },
               });
               await this.addComment(post.id, char.id, char.name, char.avatar, reply.text, 'character');
               return;
@@ -361,6 +382,15 @@ export class MomentsService {
             profile,
             conversationHistory: [],
             userMessage: `${commenterName}在你的朋友圈评论了："${commentText}"，你的朋友圈内容是：${this.buildMomentPromptSummary(post)}，回复一下，不超过20字。`,
+            usageContext: {
+              surface: 'app',
+              scene: 'moment_comment_generate',
+              scopeType: 'character',
+              scopeId: char.id,
+              scopeLabel: char.name,
+              characterId: char.id,
+              characterName: char.name,
+            },
           });
           await this.addComment(postId, char.id, char.name, char.avatar, reply.text, 'character');
         } catch {

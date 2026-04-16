@@ -44,6 +44,21 @@ export interface MemoryLayers {
   coreMemory: string;
   recentSummary: string;
   forgettingCurve: number;
+  /** 近期摘要提取提示词，留空使用全局默认。变量：{{name}}、{{chatHistory}} */
+  recentSummaryPrompt?: string;
+  /** 核心记忆提取提示词，留空使用全局默认。变量：{{name}}、{{interactionHistory}} */
+  coreMemoryPrompt?: string;
+}
+
+export interface ScenePrompts {
+  chat?: string;            // 聊天回复
+  moments_post?: string;    // 发朋友圈
+  moments_comment?: string; // 朋友圈评论/回复
+  feed_post?: string;       // 发 Feed 贴文
+  channel_post?: string;    // 发视频号内容
+  feed_comment?: string;    // Feed 评论反应
+  greeting?: string;        // 好友请求问候 / 摇一摇
+  proactive?: string;       // 主动提醒
 }
 
 export interface PersonalityProfile {
@@ -51,13 +66,26 @@ export interface PersonalityProfile {
   name: string;
   relationship: string;
   expertDomains: string[];
+  /** 底层逻辑：注入所有场景，优先于 coreDirective */
+  coreLogic?: string;
+  /** 场景提示词：每个场景独立配置，叠加在底层逻辑之上 */
+  scenePrompts?: ScenePrompts;
+  /** @deprecated 使用 coreLogic 替代 */
+  coreDirective?: string;
+  /** @deprecated 使用 scenePrompts.chat 替代 */
   basePrompt?: string;
+  /** @deprecated 直接使用 coreLogic + scenePrompts */
+  systemPrompt?: string;
+  /** @deprecated 使用 scenePrompts 各场景字段替代 */
   traits: PersonalityTraits;
   memorySummary: string;
-  systemPrompt?: string;
+  /** @deprecated */
   identity?: CharacterIdentity;
+  /** @deprecated */
   behavioralPatterns?: BehavioralPatterns;
+  /** @deprecated */
   cognitiveBoundaries?: CognitiveBoundaries;
+  /** @deprecated */
   reasoningConfig?: ReasoningConfig;
   memory?: MemoryLayers;
 }

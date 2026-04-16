@@ -1,13 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { LessThan, MoreThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { UserEntity } from '../auth/user.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { MessageEntity } from '../chat/message.entity';
 import { WorldService } from '../world/world.service';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
@@ -50,6 +51,8 @@ export class SchedulerService {
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(ConversationEntity)
     private readonly convRepo: Repository<ConversationEntity>,
+    @InjectRepository(MessageEntity)
+    private readonly messageRepo: Repository<MessageEntity>,
     @InjectRepository(AIRelationshipEntity)
     private readonly aiRelationshipRepo: Repository<AIRelationshipEntity>,
     private readonly worldService: WorldService,
@@ -142,6 +145,24 @@ export class SchedulerService {
     );
   }
 
+  @Cron('0 3 * * *')
+  async updateRecentMemoryDaily() {
+    await this.runScheduledJob(
+      'update_recent_memory_daily',
+      () => this.handleUpdateRecentMemoryDaily(),
+      'Failed to update recent memory daily',
+    );
+  }
+
+  @Cron('0 4 * * 1')
+  async updateCoreMemoryWeekly() {
+    await this.runScheduledJob(
+      'update_core_memory_weekly',
+      () => this.handleUpdateCoreMemoryWeekly(),
+      'Failed to update core memory weekly',
+    );
+  }
+
   async runJobNow(jobId: string) {
     try {
       const summary = await this.executeManualJob(jobId as SchedulerJobId);
@@ -212,6 +233,14 @@ export class SchedulerService {
       case 'trigger_memory_proactive_messages':
         return (await this.executeTrackedJob(jobId, () =>
           this.handleTriggerMemoryProactiveMessages(),
+        )).summary;
+      case 'update_recent_memory_daily':
+        return (await this.executeTrackedJob(jobId, () =>
+          this.handleUpdateRecentMemoryDaily(),
+        )).summary;
+      case 'update_core_memory_weekly':
+        return (await this.executeTrackedJob(jobId, () =>
+          this.handleUpdateCoreMemoryWeekly(),
         )).summary;
       default:
         throw new Error('Unknown scheduler job');
@@ -702,30 +731,24 @@ export class SchedulerService {
         }
 
         memorySeededCount += 1;
-        const checkPrompt = renderTemplate(
-          runtimeRules.schedulerTextTemplates.proactiveReminderCheckPrompt,
-          {
-            characterName: char.name,
-            memoryText,
-            today: now.toLocaleDateString('zh-CN'),
-            noActionToken:
-              runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken,
-          },
-        );
-        const model = await this.ai['configService'].getAiModel();
-        const client = this.ai['client'];
-        const resp = await client.chat.completions.create({
-          model,
-          messages: [{ role: 'user', content: checkPrompt }],
-          max_tokens: 100,
-          temperature: 0.7,
-        });
-        const result = sanitizeAiText(
-          resp.choices[0]?.message?.content ??
-            runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken,
-        );
+        const today = now.toLocaleDateString('zh-CN');
         const noActionToken =
           runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken;
+        const replyResult = await this.ai.generateReply({
+          profile: char.profile as any,
+          conversationHistory: [],
+          userMessage: `今天是${today}，结合你的记忆，请判断是否需要主动向用户发送消息。如果不需要，只回复：${noActionToken}`,
+          usageContext: {
+            surface: 'scheduler',
+            scene: 'proactive',
+            scopeType: 'character',
+            scopeId: char.id,
+            scopeLabel: char.name,
+            characterId: char.id,
+            characterName: char.name,
+          },
+        });
+        const result = sanitizeAiText(replyResult.text ?? noActionToken);
         if (result === noActionToken || result.startsWith(noActionToken)) {
           continue;
         }
@@ -891,6 +914,15 @@ export class SchedulerService {
       const text = await this.ai.generateMoment({
         profile: char.profile,
         currentTime: new Date(),
+        usageContext: {
+          surface: 'scheduler',
+          scene: 'moment_post_generate',
+          scopeType: 'character',
+          scopeId: char.id,
+          scopeLabel: char.name,
+          characterId: char.id,
+          characterName: char.name,
+        },
       });
       if (!text) return null;
 
@@ -911,5 +943,197 @@ export class SchedulerService {
       );
       return null;
     }
+  }
+
+  private async handleUpdateRecentMemoryDaily(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
+    const chars = await this.characterRepo.find();
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    for (const char of chars) {
+      try {
+        // 找该角色参与的所有对话
+        const convs = await this.convRepo.find();
+        const charConvIds = convs
+          .filter((c) => c.participants?.includes(char.id))
+          .map((c) => c.id);
+
+        if (charConvIds.length === 0) {
+          skippedCount += 1;
+          continue;
+        }
+
+        // 查询近7天的消息
+        const recentMessages = await this.messageRepo
+          .createQueryBuilder('msg')
+          .where('msg.conversationId IN (:...ids)', { ids: charConvIds })
+          .andWhere('msg.createdAt > :since', { since })
+          .orderBy('msg.createdAt', 'ASC')
+          .limit(200)
+          .getMany();
+
+        if (recentMessages.length === 0) {
+          skippedCount += 1;
+          continue;
+        }
+
+        const chatHistory = recentMessages
+          .map((m) =>
+            m.senderType === 'character'
+              ? `${char.name}：${m.text}`
+              : `用户：${m.text}`,
+          )
+          .join('\n');
+
+        const newSummary = await this.ai.compressMemory(
+          recentMessages.map((m) => ({
+            role: m.senderType === 'character' ? ('assistant' as const) : ('user' as const),
+            content: m.text,
+          })),
+          char.profile as any,
+          {
+            surface: 'scheduler',
+            scene: 'recent_memory_daily',
+            scopeType: 'character',
+            scopeId: char.id,
+            scopeLabel: char.name,
+            characterId: char.id,
+            characterName: char.name,
+          },
+        );
+
+        if (!char.profile.memory) {
+          char.profile.memory = {
+            coreMemory: char.profile.memorySummary ?? '',
+            recentSummary: newSummary,
+            forgettingCurve: 70,
+          };
+        } else {
+          char.profile.memory.recentSummary = newSummary;
+        }
+        await this.characterRepo.save(char);
+        updatedCount += 1;
+        this.logger.debug(`Updated recent memory for ${char.name}`);
+      } catch (error) {
+        this.logger.warn(
+          `Failed to update recent memory for ${char.name}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        skippedCount += 1;
+      }
+    }
+
+    return {
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryUpdateRecentMemoryDaily,
+        {
+          characterCount: chars.length,
+          updatedCount,
+          skippedCount,
+        },
+      ),
+    };
+  }
+
+  private async handleUpdateCoreMemoryWeekly(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
+    const chars = await this.characterRepo.find();
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    for (const char of chars) {
+      try {
+        // 找该角色参与的所有对话
+        const convs = await this.convRepo.find();
+        const charConvIds = convs
+          .filter((c) => c.participants?.includes(char.id))
+          .map((c) => c.id);
+
+        // 查询近30天消息
+        const messages =
+          charConvIds.length > 0
+            ? await this.messageRepo
+                .createQueryBuilder('msg')
+                .where('msg.conversationId IN (:...ids)', { ids: charConvIds })
+                .andWhere('msg.createdAt > :since', { since })
+                .orderBy('msg.createdAt', 'ASC')
+                .limit(500)
+                .getMany()
+            : [];
+
+        // 追加近30天朋友圈（authorId = char.id）
+        const moments = await this.momentPostRepo.find({
+          where: {
+            authorId: char.id,
+            postedAt: MoreThan(since),
+          },
+          order: { postedAt: 'ASC' },
+        });
+
+        const chatLines = messages.map((m) =>
+          m.senderType === 'character'
+            ? `${char.name}：${m.text}`
+            : `用户：${m.text}`,
+        );
+        const momentLines = moments.map(
+          (p) => `[朋友圈] ${char.name}：${p.text ?? ''}`,
+        );
+        const interactionHistory = [...chatLines, ...momentLines].join('\n');
+
+        if (!interactionHistory.trim()) {
+          skippedCount += 1;
+          continue;
+        }
+
+        const newCoreMemory = await this.ai.extractCoreMemory(
+          interactionHistory,
+          char.profile as any,
+          {
+            surface: 'scheduler',
+            scene: 'core_memory_weekly',
+            scopeType: 'character',
+            scopeId: char.id,
+            scopeLabel: char.name,
+            characterId: char.id,
+            characterName: char.name,
+          },
+        );
+
+        if (!char.profile.memory) {
+          char.profile.memory = {
+            coreMemory: newCoreMemory,
+            recentSummary: char.profile.memorySummary ?? '',
+            forgettingCurve: 70,
+          };
+        } else {
+          char.profile.memory.coreMemory = newCoreMemory;
+        }
+        await this.characterRepo.save(char);
+        updatedCount += 1;
+        this.logger.debug(`Updated core memory for ${char.name}`);
+      } catch (error) {
+        this.logger.warn(
+          `Failed to update core memory for ${char.name}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        skippedCount += 1;
+      }
+    }
+
+    return {
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryUpdateCoreMemoryWeekly,
+        {
+          characterCount: chars.length,
+          updatedCount,
+          skippedCount,
+        },
+      ),
+    };
   }
 }

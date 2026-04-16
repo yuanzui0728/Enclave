@@ -97,7 +97,7 @@
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（30个，物理表保持兼容）
+## 数据库实体（32个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -115,7 +115,11 @@
 
 **公众号**：OfficialAccount · OfficialAccountArticle · OfficialAccountFollow · OfficialAccountDelivery · OfficialAccountServiceMessage
 
-**世界**：WorldContext · NarrativeArc · AIBehaviorLog
+**世界**：WorldContext · NarrativeArc
+
+**分析**：AIBehaviorLog · AIUsageLedger
+
+**后台**：AdminConversationReview
 
 ## 单用户世界约束（2026-04-08）
 
@@ -273,6 +277,8 @@
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
 - `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、字段来源、发布映射 diff、已发布版本与版本记录
 - `character-runtime-page.tsx`：角色运行逻辑台，查看单角色回复快照、scheduler 最近执行结果、生活状态、记忆摘要、叙事进度与生活逻辑可观测性，并直接修改运行时字段
+- `chat-records-page.tsx`：聊天记录管理页，集中查看世界主人与各角色的单聊档案、消息搜索、上下文定位、会话级 Token 成本，以及样本标记 / 复盘备注池
+- `token-usage-page.tsx`：AI 用量中心页，查看 token / 费用总览、时间趋势、角色 / 场景 / 模型分布、预算预警、角色预算与价格配置
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量
@@ -289,6 +295,32 @@
 - `POST /api/admin/reply-logic/group-reply-tasks/:taskId/retry`
 - `POST /api/admin/reply-logic/group-reply-turns/:turnId/retry`
 - `POST /api/admin/reply-logic/conversations/:id/preview`
+
+## 管理后台聊天记录路由
+
+- `GET /api/admin/chat-records/overview`
+- `GET /api/admin/chat-records/conversations`
+- `GET /api/admin/chat-records/conversations/:id`
+- `GET /api/admin/chat-records/conversations/:id/messages`
+- `GET /api/admin/chat-records/conversations/:id/search`
+- `GET /api/admin/chat-records/conversations/:id/token-usage`
+- `GET /api/admin/chat-records/conversations/:id/export`
+- `PUT /api/admin/chat-records/conversations/:id/review`
+- `DELETE /api/admin/chat-records/conversations/:id/review`
+
+## 管理后台 Token 用量路由
+
+- `GET /api/admin/token-usage/overview`
+- `GET /api/admin/token-usage/trend`
+- `GET /api/admin/token-usage/breakdown`
+- `GET /api/admin/token-usage/records`
+- `GET /api/admin/token-usage/downgrade-insights`
+- `GET /api/admin/token-usage/downgrade-insights`
+- `GET /api/admin/token-usage/downgrade-insights`
+- `GET /api/admin/token-usage/pricing`
+- `PATCH /api/admin/token-usage/pricing`
+- `GET /api/admin/token-usage/budgets`
+- `PATCH /api/admin/token-usage/budgets`
 
 ## 管理后台角色工厂路由
 
@@ -426,3 +458,107 @@
 - `FriendshipEntity`, `FriendRequestEntity`, and `NarrativeArcEntity` now use runtime field `ownerId`, while their physical columns remain `userId`.
 - `UserFeedInteractionEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.
 - Backend runtime code no longer uses `userId` as a world-owner semantic field; remaining `userId` usage is only for physical database column compatibility.
+
+## Cloud World Orchestration Update (2026-04-15)
+
+- New cloud platform entities in `apps/cloud-api/src/entities/`:
+  - `CloudInstance`
+  - `WorldLifecycleJob`
+  - `WorldAccessSession`
+- Cloud platform responsibility update:
+  - phone login now resolves world access directly
+  - first-time users automatically get a dedicated world instance
+  - returning users wake their existing world instead of creating a new request
+  - in-process mock orchestration is available in `apps/cloud-api` until the real VM provider is wired in
+- New cloud client routes:
+  - `POST /cloud/me/world-access/resolve`
+  - `GET /cloud/me/world-access/sessions/:sessionId`
+- New cloud admin routes:
+  - `GET /admin/cloud/providers`
+  - `GET /admin/cloud/jobs`
+  - `GET /admin/cloud/jobs/:id`
+  - `GET /admin/cloud/drift-summary`
+  - `GET /admin/cloud/worlds/:id/instance`
+  - `GET /admin/cloud/worlds/:id/bootstrap-config`
+  - `GET /admin/cloud/worlds/:id/runtime-status`
+  - `GET /admin/cloud/worlds/:id/alert-summary`
+  - `POST /admin/cloud/worlds/:id/reconcile`
+  - `POST /admin/cloud/worlds/:id/resume`
+  - `POST /admin/cloud/worlds/:id/suspend`
+  - `POST /admin/cloud/worlds/:id/retry`
+  - `POST /admin/cloud/worlds/:id/rotate-callback-token`
+- New cloud env var:
+  - `CLOUD_MOCK_WORLD_API_BASE_URL`
+- Runtime callback routes added in `apps/cloud-api`:
+  - `POST /internal/worlds/:worldId/bootstrap`
+  - `POST /internal/worlds/:worldId/heartbeat`
+  - `POST /internal/worlds/:worldId/activity`
+  - `POST /internal/worlds/:worldId/health`
+  - `POST /internal/worlds/:worldId/fail`
+- Core API now includes backend module `cloud-runtime` in `api/src/modules/cloud-runtime/`:
+  - the world instance reports bootstrap, heartbeat, and latest interaction time back to the cloud platform
+  - latest activity comes from runtime `Conversation.lastActivityAt` / `Group.lastActivityAt`
+- `CloudWorld` now tracks `lastInteractiveAt` as the runtime activity signal used by orchestration and ops views.
+- New core API env vars:
+  - `CLOUD_PLATFORM_BASE_URL`
+  - `CLOUD_WORLD_ID`
+  - `CLOUD_WORLD_CALLBACK_TOKEN`
+  - `CLOUD_WORLD_HEARTBEAT_INTERVAL_MS`
+- New cloud platform env var:
+  - `CLOUD_WORLD_IDLE_SUSPEND_SECONDS`
+- Additional cloud platform env vars for bootstrap config generation:
+  - `CLOUD_PLATFORM_PUBLIC_BASE_URL`
+  - `CLOUD_WORLD_API_BASE_URL_TEMPLATE`
+  - `CLOUD_WORLD_ADMIN_URL_TEMPLATE`
+  - `CLOUD_DEFAULT_WORLD_HEARTBEAT_INTERVAL_MS`
+  - `CLOUD_DEFAULT_PROVIDER_KEY`
+  - `CLOUD_MANUAL_DOCKER_IMAGE`
+  - `CLOUD_MANUAL_DOCKER_DEFAULT_REGION`
+  - `CLOUD_MANUAL_DOCKER_DEFAULT_ZONE`
+  - `CLOUD_MANUAL_DOCKER_DISK_SIZE_GB`
+  - `CLOUD_MANUAL_DOCKER_EXECUTOR_MODE`
+  - `CLOUD_MANUAL_DOCKER_REMOTE_ROOT`
+  - `CLOUD_MANUAL_DOCKER_SSH_HOST`
+  - `CLOUD_MANUAL_DOCKER_SSH_PORT`
+  - `CLOUD_MANUAL_DOCKER_SSH_USER`
+  - `CLOUD_MANUAL_DOCKER_SSH_PRIVATE_KEY_PATH`
+  - `CLOUD_MANUAL_DOCKER_SSH_STRICT_HOST_KEY_CHECKING`
+  - `CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS`
+  - `CLOUD_WORLD_ALERT_RETRY_THRESHOLD`
+  - `CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS`
+- Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.
+- Cloud console world detail now exposes a bootstrap package:
+  - generated runtime env overlay for `api`
+  - docker compose environment snippet
+  - callback endpoints and callback token rotation for redeploying a world instance safely
+- Cloud platform now has a provider abstraction layer in `apps/cloud-api/src/providers/`:
+  - `ComputeProviderRegistryService` selects the active compute provider by `providerKey`
+  - built-in providers now include `mock` and `manual-docker` (legacy `manual` keys normalize to `manual-docker`)
+  - `manual-docker` prepares a per-world docker deployment package and waits for runtime bootstrap / heartbeat callbacks before promoting the world to `ready`
+  - when `CLOUD_MANUAL_DOCKER_EXECUTOR_MODE=ssh`, the cloud platform can upload compose/env files to a remote Docker host and execute `docker compose up/stop` over SSH, while still relying on runtime callbacks for final readiness
+- `CloudInstance` now also tracks provider resource metadata:
+  - `providerVolumeId`
+  - `providerSnapshotId`
+  - `launchConfig`
+  - `lastOperationAt`
+- Cloud console world detail now supports provider-catalog based editing for `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.
+- Cloud bootstrap packages are now provider-aware and include `providerLabel`, `deploymentMode`, `image`, `containerName`, `volumeName`, plus a manual-docker compose snippet that can be applied on the target host.
+- Bootstrap packages for `manual-docker` now also expose `executorMode`, `projectName`, and `remoteDeployPath` so ops can see the exact remote deployment location used by the SSH executor.
+- Cloud platform now exposes provider runtime observation for ops:
+  - providers implement a unified runtime-status inspection surface
+  - `manual-docker` can inspect the remote Docker host over SSH and report `running / starting / stopped / missing / error`
+  - cloud console world detail now shows provider-observed deployment state separately from runtime heartbeat state
+- World lifecycle reconcile now uses provider observation to heal drift:
+  - maintenance loop inspects active worlds with no in-flight lifecycle jobs
+  - if desired state is `running` but provider reports `stopped` or `missing`, the platform queues recovery automatically
+  - if desired state is `sleeping` but provider still reports `running`, the platform queues suspend automatically
+  - cloud console world detail exposes a manual `Reconcile` action for on-demand drift repair
+  - each effective reconcile run now writes a `reconcile` lifecycle job with observed state, chosen action, and before/after status for audit
+- Cloud console worlds list now includes a drift summary panel:
+  - `GET /admin/cloud/drift-summary` aggregates failed worlds, stale heartbeats, provider drift, and queued recovery counts
+  - the worlds page surfaces top attention items and per-world attention badges so operators can see why a world needs intervention before opening detail view
+- Cloud platform alerting now supports threshold-based escalation:
+  - `GET /admin/cloud/worlds/:id/alert-summary` returns the current alert snapshot, retry counters, stale-heartbeat age, and escalation thresholds for one world
+  - `CLOUD_WORLD_ALERT_RETRY_THRESHOLD` upgrades repeated recovery drift into a critical alert after enough failed retries
+  - `CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS` upgrades long-running stale heartbeat conditions into a critical alert
+  - cloud console now distinguishes warning vs critical worlds and shows whether an alert has already been escalated

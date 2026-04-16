@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Query, UseGuards } from "@nestjs/common";
-import { type CloudWorldStatus } from "@yinjie/contracts";
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import type {
+  CloudWorldLifecycleStatus,
+  CloudWorldRequestStatus,
+  WorldLifecycleJobStatus,
+  WorldLifecycleJobType,
+} from "@yinjie/contracts";
 import { AdminGuard } from "../auth/admin.guard";
 import { CloudService } from "../cloud/cloud.service";
-
-type EditableStatus = Exclude<CloudWorldStatus, "none">;
 
 @Controller("admin/cloud")
 @UseGuards(AdminGuard)
@@ -11,7 +14,7 @@ export class AdminCloudController {
   constructor(private readonly cloudService: CloudService) {}
 
   @Get("world-requests")
-  listWorldRequests(@Query("status") status?: EditableStatus) {
+  listWorldRequests(@Query("status") status?: CloudWorldRequestStatus) {
     return this.cloudService.listRequests(status);
   }
 
@@ -27,7 +30,7 @@ export class AdminCloudController {
     body: {
       phone?: string;
       worldName?: string;
-      status?: EditableStatus;
+      status?: CloudWorldRequestStatus;
       note?: string | null;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
@@ -37,13 +40,23 @@ export class AdminCloudController {
   }
 
   @Get("worlds")
-  listWorlds(@Query("status") status?: EditableStatus) {
+  listWorlds(@Query("status") status?: CloudWorldLifecycleStatus) {
     return this.cloudService.listWorlds(status);
+  }
+
+  @Get("drift-summary")
+  getWorldDriftSummary() {
+    return this.cloudService.getWorldDriftSummary();
   }
 
   @Get("worlds/:id")
   getWorld(@Param("id") id: string) {
     return this.cloudService.getWorldById(id);
+  }
+
+  @Get("providers")
+  listProviders() {
+    return this.cloudService.listProviders();
   }
 
   @Patch("worlds/:id")
@@ -53,12 +66,79 @@ export class AdminCloudController {
     body: {
       phone?: string;
       name?: string;
-      status?: EditableStatus;
+      status?: CloudWorldLifecycleStatus;
+      provisionStrategy?: string;
+      providerKey?: string | null;
+      providerRegion?: string | null;
+      providerZone?: string | null;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
       note?: string | null;
     },
   ) {
     return this.cloudService.updateWorld(id, body);
+  }
+
+  @Get("jobs")
+  listJobs(
+    @Query("worldId") worldId?: string,
+    @Query("status") status?: WorldLifecycleJobStatus,
+    @Query("jobType") jobType?: WorldLifecycleJobType,
+  ) {
+    return this.cloudService.listJobs({
+      worldId,
+      status,
+      jobType,
+    });
+  }
+
+  @Get("jobs/:id")
+  getJob(@Param("id") id: string) {
+    return this.cloudService.getJobById(id);
+  }
+
+  @Get("worlds/:id/instance")
+  getWorldInstance(@Param("id") id: string) {
+    return this.cloudService.getWorldInstance(id);
+  }
+
+  @Get("worlds/:id/bootstrap-config")
+  getWorldBootstrapConfig(@Param("id") id: string) {
+    return this.cloudService.getWorldBootstrapConfig(id);
+  }
+
+  @Get("worlds/:id/runtime-status")
+  getWorldRuntimeStatus(@Param("id") id: string) {
+    return this.cloudService.getWorldRuntimeStatus(id);
+  }
+
+  @Get("worlds/:id/alert-summary")
+  getWorldAlertSummary(@Param("id") id: string) {
+    return this.cloudService.getWorldAlertSummary(id);
+  }
+
+  @Post("worlds/:id/reconcile")
+  reconcileWorld(@Param("id") id: string) {
+    return this.cloudService.reconcileWorld(id);
+  }
+
+  @Post("worlds/:id/resume")
+  resumeWorld(@Param("id") id: string) {
+    return this.cloudService.resumeWorld(id);
+  }
+
+  @Post("worlds/:id/suspend")
+  suspendWorld(@Param("id") id: string) {
+    return this.cloudService.suspendWorld(id);
+  }
+
+  @Post("worlds/:id/retry")
+  retryWorld(@Param("id") id: string) {
+    return this.cloudService.retryWorld(id);
+  }
+
+  @Post("worlds/:id/rotate-callback-token")
+  rotateWorldCallbackToken(@Param("id") id: string) {
+    return this.cloudService.rotateWorldCallbackToken(id);
   }
 }

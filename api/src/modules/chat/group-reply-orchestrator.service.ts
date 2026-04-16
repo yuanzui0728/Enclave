@@ -15,6 +15,8 @@ export class GroupReplyOrchestratorService {
 
   async generateTaskReply(input: {
     actor: GroupReplyCandidate;
+    groupId: string;
+    groupName?: string;
     conversationHistory: ChatMessage[];
     baseUserPrompt: string;
     userMessageParts: GroupReplyOrchestratorInput['currentUserContext']['parts'];
@@ -22,6 +24,8 @@ export class GroupReplyOrchestratorService {
   }) {
     const {
       actor,
+      groupId,
+      groupName,
       conversationHistory,
       baseUserPrompt,
       userMessageParts,
@@ -43,12 +47,23 @@ export class GroupReplyOrchestratorService {
       userMessage: this.buildTurnUserPrompt(baseUserPrompt, followupReplies),
       userMessageParts,
       isGroupChat: true,
+      usageContext: {
+        surface: 'app',
+        scene: 'group_reply',
+        scopeType: 'group',
+        scopeId: groupId,
+        scopeLabel: groupName || groupId,
+        characterId: actor.character.id,
+        characterName: actor.character.name,
+        groupId,
+      },
     });
   }
 
   async executeTurn(input: GroupReplyOrchestratorInput): Promise<void> {
     const {
       groupId,
+      groupName,
       triggerMessageId,
       selectedActors,
       conversationHistory,
@@ -86,6 +101,16 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
+          usageContext: {
+            surface: 'app',
+            scene: 'group_reply',
+            scopeType: 'group',
+            scopeId: groupId,
+            scopeLabel: groupName || groupId,
+            characterId: actor.character.id,
+            characterName: actor.character.name,
+            groupId,
+          },
         });
         if (this.isReplyTurnStale(groupId, triggerMessageId)) {
           return;

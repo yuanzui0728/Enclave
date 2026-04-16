@@ -2,12 +2,10 @@ import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   updateCharacter,
-  type BehavioralPatterns,
   type Character,
-  type CharacterIdentity,
-  type CognitiveBoundaries,
   type MemoryLayers,
   type PersonalityProfile,
+  type ScenePrompts,
   type ReplyLogicActorSnapshot,
   type ReplyLogicCharacterSnapshot,
   type ReplyLogicConstantSummary,
@@ -24,7 +22,6 @@ import {
   type ReplyLogicNarrativeArcSummary,
   type ReplyLogicOverview,
   type ReplyLogicPreviewResult,
-  type ReasoningConfig,
   type ReplyLogicStateGateSummary,
 } from "@yinjie/contracts";
 import {
@@ -63,22 +60,9 @@ import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 type InspectorScope = "character" | "conversation";
 
-type EditableProfile = Omit<
-  PersonalityProfile,
-  | "basePrompt"
-  | "systemPrompt"
-  | "identity"
-  | "behavioralPatterns"
-  | "cognitiveBoundaries"
-  | "reasoningConfig"
-  | "memory"
-> & {
-  basePrompt: string;
-  systemPrompt: string;
-  identity: CharacterIdentity;
-  behavioralPatterns: BehavioralPatterns;
-  cognitiveBoundaries: CognitiveBoundaries;
-  reasoningConfig: ReasoningConfig;
+type EditableProfile = Omit<PersonalityProfile, "memory"> & {
+  coreLogic: string;
+  scenePrompts: ScenePrompts;
   memory: MemoryLayers;
 };
 
@@ -95,12 +79,39 @@ const ACTIVITY_OPTIONS: Array<{ value: NonNullable<Character["currentActivity"]>
   { value: "sleeping", label: "睡觉中" },
 ];
 
+function readInitialReplyLogicFocus() {
+  if (typeof window === "undefined") {
+    return {
+      scope: "character" as InspectorScope,
+      characterId: "",
+      conversationId: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const conversationId = params.get("conversationId")?.trim() || "";
+  const characterId = params.get("characterId")?.trim() || "";
+  const scopeParam = params.get("scope");
+
+  return {
+    scope:
+      scopeParam === "conversation" || conversationId
+        ? ("conversation" as InspectorScope)
+        : ("character" as InspectorScope),
+    characterId,
+    conversationId,
+  };
+}
+
 export function ReplyLogicPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
-  const [scope, setScope] = useState<InspectorScope>("character");
-  const [selectedCharacterId, setSelectedCharacterId] = useState("");
-  const [selectedConversationId, setSelectedConversationId] = useState("");
+  const initialFocus = useMemo(() => readInitialReplyLogicFocus(), []);
+  const [scope, setScope] = useState<InspectorScope>(initialFocus.scope);
+  const [selectedCharacterId, setSelectedCharacterId] = useState(initialFocus.characterId);
+  const [selectedConversationId, setSelectedConversationId] = useState(
+    initialFocus.conversationId,
+  );
   const [configuredConversationActorId, setConfiguredConversationActorId] = useState("");
   const [characterDraft, setCharacterDraft] = useState<EditableCharacter | null>(null);
   const [runtimeRulesDraft, setRuntimeRulesDraft] = useState<ReplyLogicConstantSummary | null>(null);
@@ -463,6 +474,13 @@ export function ReplyLogicPage() {
       {overviewQuery.isError && overviewQuery.error instanceof Error ? (
         <ErrorBlock message={overviewQuery.error.message} />
       ) : null}
+      {initialFocus.conversationId || initialFocus.characterId ? (
+        <InlineNotice>
+          当前已带入
+          {initialFocus.conversationId ? `会话 ${initialFocus.conversationId}` : `角色 ${initialFocus.characterId}`}
+          的回复逻辑上下文。
+        </InlineNotice>
+      ) : null}
 
       {overview ? (
         <>
@@ -819,396 +837,145 @@ export function ReplyLogicPage() {
                         ) : null}
                       </ConfigSection>
 
-                      <ConfigSection title="提示词覆盖与身份">
+                      <ConfigSection title="底层逻辑">
                         <TextAreaBlock
-                          label="系统提示词"
-                          value={characterDraft.profile.systemPrompt}
-                          placeholder="留空时使用结构化提示词生成器。"
+                          label="底层逻辑"
+                          value={characterDraft.profile.coreLogic ?? ""}
+                          description="所有场景强制注入。描述角色的核心人格、价值观、思维方式。这里写的内容在聊天、发帖、评论等每个场景都会生效。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
-                              profile: { ...current.profile, systemPrompt: value },
+                              profile: { ...current.profile, coreLogic: value },
                             }))
                           }
                         />
+                      </ConfigSection>
+
+                      <ConfigSection title="场景提示词 — 主动发布">
                         <TextAreaBlock
-                          label="基础提示词"
-                          value={characterDraft.profile.basePrompt}
-                          placeholder="你是……用户的……"
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: { ...current.profile, basePrompt: value },
-                            }))
-                          }
-                        />
-                        <FieldBlock
-                          label="职业"
-                          value={characterDraft.profile.identity.occupation}
+                          label="发朋友圈"
+                          value={characterDraft.profile.scenePrompts?.moments_post ?? ""}
+                          description="触发：定时发朋友圈（由发圈频率控制）。无实时上下文。写发圈内容偏好、常见话题、风格规范，以及是否偏好配图/纯文字等倾向。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                identity: { ...current.profile.identity, occupation: value },
+                                scenePrompts: { ...current.profile.scenePrompts, moments_post: value },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
-                          label="背景"
-                          value={characterDraft.profile.identity.background}
+                          label="发 Feed 贴文"
+                          value={characterDraft.profile.scenePrompts?.feed_post ?? ""}
+                          description="触发：定时在广场发贴（由 Feed 频率控制）。无实时上下文。写公开发帖的风格、内容方向、是否引导讨论等。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                identity: { ...current.profile.identity, background: value },
+                                scenePrompts: { ...current.profile.scenePrompts, feed_post: value },
                               },
                             }))
                           }
                         />
                         <TextAreaBlock
-                          label="核心动机"
-                          value={characterDraft.profile.identity.motivation}
+                          label="发视频号"
+                          value={characterDraft.profile.scenePrompts?.channel_post ?? ""}
+                          description="触发：定时发视频号内容。无实时上下文。写视频号文案风格、内容结构要求（标题/正文/话题标签等）。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                identity: { ...current.profile.identity, motivation: value },
-                              },
-                            }))
-                          }
-                        />
-                        <TextAreaBlock
-                          label="世界观"
-                          value={characterDraft.profile.identity.worldview}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                identity: { ...current.profile.identity, worldview: value },
+                                scenePrompts: { ...current.profile.scenePrompts, channel_post: value },
                               },
                             }))
                           }
                         />
                       </ConfigSection>
 
-                      <ConfigSection title="语气与行为">
-                        <FieldBlock
-                          label="说话习惯"
-                          value={listToCsv(characterDraft.profile.traits.speechPatterns)}
-                          placeholder="一句一风格，逗号分隔"
+                      <ConfigSection title="场景提示词 — 互动响应">
+                        <TextAreaBlock
+                          label="聊天回复"
+                          value={characterDraft.profile.scenePrompts?.chat ?? ""}
+                          description="触发：用户发消息时。系统自动注入：当前时间、角色活动状态、距上次聊天时长。写聊天风格、话题偏好、对话节奏，可引导 AI 调整回复长短和语气。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                traits: {
-                                  ...current.profile.traits,
-                                  speechPatterns: csvToList(value),
-                                },
+                                scenePrompts: { ...current.profile.scenePrompts, chat: value },
                               },
                             }))
                           }
                         />
-                        <FieldBlock
-                          label="口头禅"
-                          value={listToCsv(characterDraft.profile.traits.catchphrases)}
+                        <TextAreaBlock
+                          label="朋友圈评论/回复"
+                          value={characterDraft.profile.scenePrompts?.moments_comment ?? ""}
+                          description="触发：角色浏览到用户朋友圈时自动评论。写评论语气、常用开场方式、喜欢哪类内容多互动，不喜欢哪类则少评甚至不评。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                traits: {
-                                  ...current.profile.traits,
-                                  catchphrases: csvToList(value),
-                                },
+                                scenePrompts: { ...current.profile.scenePrompts, moments_comment: value },
                               },
                             }))
                           }
                         />
-                        <FieldBlock
-                          label="情绪基调"
-                          value={characterDraft.profile.traits.emotionalTone}
+                        <TextAreaBlock
+                          label="Feed 评论"
+                          value={characterDraft.profile.scenePrompts?.feed_comment ?? ""}
+                          description="触发：角色看到用户 Feed 贴文时自动评论。写评论偏好，例如犀利点评 / 鼓励互动 / 专业补充，以及对哪类帖子积极评论。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                traits: {
-                                  ...current.profile.traits,
-                                  emotionalTone: value,
-                                },
+                                scenePrompts: { ...current.profile.scenePrompts, feed_comment: value },
                               },
                             }))
                           }
                         />
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <SelectFieldBlock
-                            label="回复长度"
-                            value={characterDraft.profile.traits.responseLength}
-                            onChange={(value) =>
-                              patchCharacterDraft((current) => ({
-                                ...current,
-                                profile: {
-                                  ...current.profile,
-                                  traits: {
-                                    ...current.profile.traits,
-                                    responseLength: value as Character["profile"]["traits"]["responseLength"],
-                                  },
-                                },
-                              }))
-                            }
-                            options={[
-                              { value: "short", label: "简短" },
-                              { value: "medium", label: "适中" },
-                              { value: "long", label: "详细" },
-                            ]}
-                          />
-                          <SelectFieldBlock
-                            label="表情使用"
-                            value={characterDraft.profile.traits.emojiUsage}
-                            onChange={(value) =>
-                              patchCharacterDraft((current) => ({
-                                ...current,
-                                profile: {
-                                  ...current.profile,
-                                  traits: {
-                                    ...current.profile.traits,
-                                    emojiUsage: value as Character["profile"]["traits"]["emojiUsage"],
-                                  },
-                                },
-                              }))
-                            }
-                            options={[
-                              { value: "none", label: "不用" },
-                              { value: "occasional", label: "偶尔" },
-                              { value: "frequent", label: "频繁" },
-                            ]}
-                          />
-                        </div>
-                        <FieldBlock
-                          label="工作风格"
-                          value={characterDraft.profile.behavioralPatterns.workStyle}
+                        <TextAreaBlock
+                          label="好友请求/摇一摇问候"
+                          value={characterDraft.profile.scenePrompts?.greeting ?? ""}
+                          description="触发：角色发起好友申请或摇一摇。只生成一句打招呼的话，建议写简短有特点的开场方式，20 字以内效果最佳。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                behavioralPatterns: {
-                                  ...current.profile.behavioralPatterns,
-                                  workStyle: value,
-                                },
+                                scenePrompts: { ...current.profile.scenePrompts, greeting: value },
                               },
                             }))
                           }
                         />
-                        <FieldBlock
-                          label="社交风格"
-                          value={characterDraft.profile.behavioralPatterns.socialStyle}
+                        <TextAreaBlock
+                          label="主动提醒"
+                          value={characterDraft.profile.scenePrompts?.proactive ?? ""}
+                          description="触发：定时任务检测角色记忆，决定是否主动给用户发消息。写什么情况下应该主动发（如记得某事想分享），什么情况下保持沉默。不填则由底层逻辑判断。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
                               profile: {
                                 ...current.profile,
-                                behavioralPatterns: {
-                                  ...current.profile.behavioralPatterns,
-                                  socialStyle: value,
-                                },
-                              },
-                            }))
-                          }
-                        />
-                        <FieldBlock
-                          label="语言禁忌"
-                          value={listToCsv(characterDraft.profile.behavioralPatterns.taboos)}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                behavioralPatterns: {
-                                  ...current.profile.behavioralPatterns,
-                                  taboos: csvToList(value),
-                                },
-                              },
-                            }))
-                          }
-                        />
-                        <FieldBlock
-                          label="个人癖好"
-                          value={listToCsv(characterDraft.profile.behavioralPatterns.quirks)}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                behavioralPatterns: {
-                                  ...current.profile.behavioralPatterns,
-                                  quirks: csvToList(value),
-                                },
+                                scenePrompts: { ...current.profile.scenePrompts, proactive: value },
                               },
                             }))
                           }
                         />
                       </ConfigSection>
 
-                      <ConfigSection title="边界、记忆与调试">
-                        <TextAreaBlock
-                          label="专长描述"
-                          value={characterDraft.profile.cognitiveBoundaries.expertiseDescription}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                cognitiveBoundaries: {
-                                  ...current.profile.cognitiveBoundaries,
-                                  expertiseDescription: value,
-                                },
-                              },
-                            }))
-                          }
-                        />
-                        <TextAreaBlock
-                          label="知识边界"
-                          value={characterDraft.profile.cognitiveBoundaries.knowledgeLimits}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                cognitiveBoundaries: {
-                                  ...current.profile.cognitiveBoundaries,
-                                  knowledgeLimits: value,
-                                },
-                              },
-                            }))
-                          }
-                        />
-                        <TextAreaBlock
-                          label="超界拒绝方式"
-                          value={characterDraft.profile.cognitiveBoundaries.refusalStyle}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                cognitiveBoundaries: {
-                                  ...current.profile.cognitiveBoundaries,
-                                  refusalStyle: value,
-                                },
-                              },
-                            }))
-                          }
-                        />
-                        <TextAreaBlock
-                          label="旧版记忆摘要"
-                          value={characterDraft.profile.memorySummary}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: { ...current.profile, memorySummary: value },
-                            }))
-                          }
-                        />
-                        <TextAreaBlock
-                          label="核心记忆"
-                          value={characterDraft.profile.memory.coreMemory}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                memory: { ...current.profile.memory, coreMemory: value },
-                              },
-                            }))
-                          }
-                        />
-                        <TextAreaBlock
-                          label="近期摘要"
-                          value={characterDraft.profile.memory.recentSummary}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                memory: { ...current.profile.memory, recentSummary: value },
-                              },
-                            }))
-                          }
-                        />
-                        <FieldBlock
-                          label="遗忘曲线"
-                          value={characterDraft.profile.memory.forgettingCurve}
-                          type="number"
-                          min={0}
-                          max={100}
-                          onChange={(value) =>
-                            patchCharacterDraft((current) => ({
-                              ...current,
-                              profile: {
-                                ...current.profile,
-                                memory: {
-                                  ...current.profile.memory,
-                                  forgettingCurve: parseForgettingCurve(value),
-                                },
-                              },
-                            }))
-                          }
-                        />
-                        <div className="flex flex-wrap gap-3">
-                          <ToggleChip
-                            label="启用链路推理"
-                            checked={characterDraft.profile.reasoningConfig.enableCoT}
-                            onChange={(event) =>
-                              patchCharacterDraft((current) => ({
-                                ...current,
-                                profile: {
-                                  ...current.profile,
-                                  reasoningConfig: {
-                                    ...current.profile.reasoningConfig,
-                                    enableCoT: event.currentTarget.checked,
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                          <ToggleChip
-                            label="启用反思"
-                            checked={characterDraft.profile.reasoningConfig.enableReflection}
-                            onChange={(event) =>
-                              patchCharacterDraft((current) => ({
-                                ...current,
-                                profile: {
-                                  ...current.profile,
-                                  reasoningConfig: {
-                                    ...current.profile.reasoningConfig,
-                                    enableReflection: event.currentTarget.checked,
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                          <ToggleChip
-                            label="启用路由"
-                            checked={characterDraft.profile.reasoningConfig.enableRouting}
-                            onChange={(event) =>
-                              patchCharacterDraft((current) => ({
-                                ...current,
-                                profile: {
-                                  ...current.profile,
-                                  reasoningConfig: {
-                                    ...current.profile.reasoningConfig,
-                                    enableRouting: event.currentTarget.checked,
-                                  },
-                                },
-                              }))
-                            }
-                          />
+                      <ConfigSection title="记忆（当前值）">
+                        <p className="text-xs text-[color:var(--text-secondary)]">
+                          核心记忆每周一自动更新，近期摘要每日自动更新。在运行台中可查看和手动覆盖当前值。
+                        </p>
+                        <div className="rounded border border-[color:var(--border-faint)] px-3 py-2 text-xs text-[color:var(--text-secondary)]">
+                          <p><span className="font-medium text-[color:var(--text-primary)]">核心记忆：</span>{characterDraft.profile.memory.coreMemory || "（暂无）"}</p>
+                          <p className="mt-1"><span className="font-medium text-[color:var(--text-primary)]">近期摘要：</span>{characterDraft.profile.memory.recentSummary || "（暂无）"}</p>
                         </div>
                       </ConfigSection>
 
@@ -1223,12 +990,22 @@ export function ReplyLogicPage() {
                               ...current,
                               profile: {
                                 ...current.profile,
-                                systemPrompt: "",
+                                coreLogic: "",
+                                scenePrompts: {
+                                  chat: "",
+                                  moments_post: "",
+                                  moments_comment: "",
+                                  feed_post: "",
+                                  channel_post: "",
+                                  feed_comment: "",
+                                  greeting: "",
+                                  proactive: "",
+                                },
                               },
                             }))
                           }
                         >
-                          清空系统提示词
+                          清空所有提示词
                         </Button>
                         <Button
                           variant="secondary"
@@ -4255,8 +4032,17 @@ function createEditableCharacter(source: Character): EditableCharacter {
       name: source.name ?? "",
       relationship: source.relationship ?? "",
       expertDomains,
-      basePrompt: source.profile?.basePrompt ?? "",
-      systemPrompt: source.profile?.systemPrompt ?? "",
+      coreLogic: source.profile?.coreLogic ?? "",
+      scenePrompts: {
+        chat: source.profile?.scenePrompts?.chat ?? "",
+        moments_post: source.profile?.scenePrompts?.moments_post ?? "",
+        moments_comment: source.profile?.scenePrompts?.moments_comment ?? "",
+        feed_post: source.profile?.scenePrompts?.feed_post ?? "",
+        channel_post: source.profile?.scenePrompts?.channel_post ?? "",
+        feed_comment: source.profile?.scenePrompts?.feed_comment ?? "",
+        greeting: source.profile?.scenePrompts?.greeting ?? "",
+        proactive: source.profile?.scenePrompts?.proactive ?? "",
+      },
       memorySummary: source.profile?.memorySummary ?? "",
       traits: {
         speechPatterns: source.profile?.traits?.speechPatterns ?? [],
@@ -4266,32 +4052,12 @@ function createEditableCharacter(source: Character): EditableCharacter {
         responseLength: source.profile?.traits?.responseLength ?? "medium",
         emojiUsage: source.profile?.traits?.emojiUsage ?? "occasional",
       },
-      identity: {
-        occupation: source.profile?.identity?.occupation ?? "",
-        background: source.profile?.identity?.background ?? "",
-        motivation: source.profile?.identity?.motivation ?? "",
-        worldview: source.profile?.identity?.worldview ?? "",
-      },
-      behavioralPatterns: {
-        workStyle: source.profile?.behavioralPatterns?.workStyle ?? "",
-        socialStyle: source.profile?.behavioralPatterns?.socialStyle ?? "",
-        taboos: source.profile?.behavioralPatterns?.taboos ?? [],
-        quirks: source.profile?.behavioralPatterns?.quirks ?? [],
-      },
-      cognitiveBoundaries: {
-        expertiseDescription: source.profile?.cognitiveBoundaries?.expertiseDescription ?? "",
-        knowledgeLimits: source.profile?.cognitiveBoundaries?.knowledgeLimits ?? "",
-        refusalStyle: source.profile?.cognitiveBoundaries?.refusalStyle ?? "",
-      },
-      reasoningConfig: {
-        enableCoT: source.profile?.reasoningConfig?.enableCoT ?? true,
-        enableReflection: source.profile?.reasoningConfig?.enableReflection ?? true,
-        enableRouting: source.profile?.reasoningConfig?.enableRouting ?? true,
-      },
       memory: {
         coreMemory: source.profile?.memory?.coreMemory ?? "",
         recentSummary: source.profile?.memory?.recentSummary ?? "",
         forgettingCurve: source.profile?.memory?.forgettingCurve ?? 70,
+        recentSummaryPrompt: source.profile?.memory?.recentSummaryPrompt,
+        coreMemoryPrompt: source.profile?.memory?.coreMemoryPrompt,
       },
     },
   };
@@ -4320,9 +4086,18 @@ function normalizeCharacterForSave(draft: EditableCharacter): EditableCharacter 
       name: normalized.name.trim(),
       relationship: normalized.relationship.trim(),
       expertDomains: expertDomains.length ? expertDomains : ["general"],
-      basePrompt: normalized.profile.basePrompt.trim(),
-      systemPrompt: normalized.profile.systemPrompt.trim(),
-      memorySummary: normalized.profile.memorySummary.trim(),
+      coreLogic: normalized.profile.coreLogic?.trim() ?? "",
+      scenePrompts: {
+        chat: normalized.profile.scenePrompts?.chat?.trim() ?? "",
+        moments_post: normalized.profile.scenePrompts?.moments_post?.trim() ?? "",
+        moments_comment: normalized.profile.scenePrompts?.moments_comment?.trim() ?? "",
+        feed_post: normalized.profile.scenePrompts?.feed_post?.trim() ?? "",
+        channel_post: normalized.profile.scenePrompts?.channel_post?.trim() ?? "",
+        feed_comment: normalized.profile.scenePrompts?.feed_comment?.trim() ?? "",
+        greeting: normalized.profile.scenePrompts?.greeting?.trim() ?? "",
+        proactive: normalized.profile.scenePrompts?.proactive?.trim() ?? "",
+      },
+      memorySummary: normalized.profile.memorySummary?.trim() ?? "",
       traits: {
         ...normalized.profile.traits,
         speechPatterns: normalized.profile.traits.speechPatterns.map((item) => item.trim()).filter(Boolean),
@@ -4330,32 +4105,12 @@ function normalizeCharacterForSave(draft: EditableCharacter): EditableCharacter 
         topicsOfInterest: normalized.profile.traits.topicsOfInterest.map((item) => item.trim()).filter(Boolean),
         emotionalTone: normalized.profile.traits.emotionalTone.trim() || "grounded",
       },
-      identity: {
-        occupation: normalized.profile.identity.occupation.trim(),
-        background: normalized.profile.identity.background.trim(),
-        motivation: normalized.profile.identity.motivation.trim(),
-        worldview: normalized.profile.identity.worldview.trim(),
-      },
-      behavioralPatterns: {
-        workStyle: normalized.profile.behavioralPatterns.workStyle.trim(),
-        socialStyle: normalized.profile.behavioralPatterns.socialStyle.trim(),
-        taboos: normalized.profile.behavioralPatterns.taboos.map((item) => item.trim()).filter(Boolean),
-        quirks: normalized.profile.behavioralPatterns.quirks.map((item) => item.trim()).filter(Boolean),
-      },
-      cognitiveBoundaries: {
-        expertiseDescription: normalized.profile.cognitiveBoundaries.expertiseDescription.trim(),
-        knowledgeLimits: normalized.profile.cognitiveBoundaries.knowledgeLimits.trim(),
-        refusalStyle: normalized.profile.cognitiveBoundaries.refusalStyle.trim(),
-      },
-      reasoningConfig: {
-        enableCoT: normalized.profile.reasoningConfig.enableCoT,
-        enableReflection: normalized.profile.reasoningConfig.enableReflection,
-        enableRouting: normalized.profile.reasoningConfig.enableRouting,
-      },
       memory: {
         coreMemory: normalized.profile.memory.coreMemory.trim(),
         recentSummary: normalized.profile.memory.recentSummary.trim(),
         forgettingCurve: clamp(normalized.profile.memory.forgettingCurve, 0, 100),
+        recentSummaryPrompt: normalized.profile.memory.recentSummaryPrompt?.trim(),
+        coreMemoryPrompt: normalized.profile.memory.coreMemoryPrompt?.trim(),
       },
     },
   };
@@ -4409,19 +4164,6 @@ function normalizeOptionalHour(value?: number | null) {
   }
 
   return clamp(Math.round(value), 0, 23);
-}
-
-function parseForgettingCurve(value: string) {
-  if (!value.trim()) {
-    return 0;
-  }
-
-  const parsed = Number(value);
-  if (Number.isNaN(parsed)) {
-    return 0;
-  }
-
-  return clamp(Math.round(parsed), 0, 100);
 }
 
 function clamp(value: number, min: number, max: number) {

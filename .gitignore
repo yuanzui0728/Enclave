@@ -65,6 +65,7 @@ Thumbs.db
 # Claude
 .claude/
 .Codex/
+.git-rewrite/
 .cache/tools/
 .cache/android-api/
 

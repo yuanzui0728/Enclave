@@ -71,6 +71,22 @@ export const SCHEDULER_JOB_DEFINITIONS = [
     nextRunHint: '每日 20:00',
     enabled: true,
   },
+  {
+    id: 'update_recent_memory_daily',
+    name: '近期摘要日更',
+    cadence: '0 3 * * *',
+    description: '每日从近7天互动记录中自动提取并更新近期摘要。',
+    nextRunHint: '每日 03:00',
+    enabled: true,
+  },
+  {
+    id: 'update_core_memory_weekly',
+    name: '核心记忆周更',
+    cadence: '0 4 * * 1',
+    description: '每周从近30天全量交互数据中自动提取并更新核心记忆。',
+    nextRunHint: '每周一 04:00',
+    enabled: true,
+  },
 ] as const;
 
 export type SchedulerJobId = (typeof SCHEDULER_JOB_DEFINITIONS)[number]['id'];

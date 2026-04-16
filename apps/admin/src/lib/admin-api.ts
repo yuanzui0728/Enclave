@@ -13,6 +13,15 @@ import type {
   ReplyLogicOverview,
   ReplyLogicPreviewRequest,
   ReplyLogicPreviewResult,
+  TokenUsageBudgetSnapshot,
+  TokenPricingCatalog,
+  TokenUsageBreakdownResponse,
+  TokenUsageDowngradeInsights,
+  TokenUsageDowngradeQualityInsights,
+  TokenUsageOverview,
+  TokenUsageQuery,
+  TokenUsageRecordListResponse,
+  TokenUsageTrendPoint,
 } from "@yinjie/contracts";
 
 const ADMIN_SECRET_KEY = "yinjie_admin_secret";
@@ -77,12 +86,16 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
   let res = await requestWithSecret(path, secret, options);
   let rawBody = await res.text();
+  const isNotConfigured = (body: string) => {
+    try { return ((JSON.parse(body)?.message as string) ?? body).includes("not configured"); } catch { return body.includes("not configured"); }
+  };
+
   if (
     res.status === 401 &&
     storedSecret &&
     DEV_ADMIN_SECRET &&
     storedSecret !== DEV_ADMIN_SECRET &&
-    !rawBody.includes("not configured")
+    !isNotConfigured(rawBody)
   ) {
     res = await requestWithSecret(path, DEV_ADMIN_SECRET, options);
     rawBody = await res.text();
@@ -91,7 +104,7 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
     }
   }
   if (res.status === 401) {
-    if (rawBody.includes("not configured")) {
+    if (isNotConfigured(rawBody)) {
       throw new Error("服务端尚未配置 ADMIN_SECRET。");
     }
     throw new Error("ADMIN_SECRET 不正确。");
@@ -99,7 +112,23 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
   if (!res.ok) {
     throw new Error(rawBody || `管理接口请求失败 ${res.status}：${path}`);
   }
-  return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  try {
+    return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  } catch {
+    throw new Error(`管理接口响应解析失败 (${path})：${rawBody.slice(0, 200)}`);
+  }
+}
+
+function buildQueryString(query?: TokenUsageQuery) {
+  const params = new URLSearchParams();
+  Object.entries(query ?? {}).forEach(([key, value]) => {
+    if (value == null || value === "") {
+      return;
+    }
+    params.set(key, String(value));
+  });
+  const serialized = params.toString();
+  return serialized ? `?${serialized}` : "";
 }
 
 export type AdminStats = {
@@ -120,6 +149,7 @@ export type AdminSystemInfo = {
 export const adminApi = {
   getStats: () => adminFetch<AdminStats>("/stats"),
   getSystem: () => adminFetch<AdminSystemInfo>("/system"),
+  getCharacters: () => adminFetch<Character[]>("/characters"),
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
@@ -128,6 +158,8 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify({ description }),
     }),
+  getFriendCharacterIds: () =>
+    adminFetch<string[]>("/characters/friend-ids"),
   listCharacterPresets: () =>
     adminFetch<CharacterPresetSummary[]>("/characters/presets"),
   installCharacterPreset: (presetKey: string) =>
@@ -204,6 +236,32 @@ export const adminApi = {
   previewReplyLogicConversation: (id: string, payload: ReplyLogicPreviewRequest) =>
     adminFetch<ReplyLogicPreviewResult>(`/reply-logic/conversations/${id}/preview`, {
       method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getTokenUsageOverview: (query?: TokenUsageQuery) =>
+    adminFetch<TokenUsageOverview>(`/token-usage/overview${buildQueryString(query)}`),
+  getTokenUsageTrend: (query?: TokenUsageQuery) =>
+    adminFetch<TokenUsageTrendPoint[]>(`/token-usage/trend${buildQueryString(query)}`),
+  getTokenUsageBreakdown: (query?: TokenUsageQuery) =>
+    adminFetch<TokenUsageBreakdownResponse>(`/token-usage/breakdown${buildQueryString(query)}`),
+  getTokenUsageRecords: (query?: TokenUsageQuery) =>
+    adminFetch<TokenUsageRecordListResponse>(`/token-usage/records${buildQueryString(query)}`),
+  getTokenUsageDowngradeInsights: (query?: TokenUsageQuery) =>
+    adminFetch<TokenUsageDowngradeInsights>(`/token-usage/downgrade-insights${buildQueryString(query)}`),
+  getTokenUsageDowngradeQuality: (query?: TokenUsageQuery) =>
+    adminFetch<TokenUsageDowngradeQualityInsights>(`/token-usage/downgrade-quality${buildQueryString(query)}`),
+  getTokenUsagePricing: () =>
+    adminFetch<TokenPricingCatalog>("/token-usage/pricing"),
+  setTokenUsagePricing: (payload: TokenPricingCatalog) =>
+    adminFetch<TokenPricingCatalog>("/token-usage/pricing", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  getTokenUsageBudgets: () =>
+    adminFetch<TokenUsageBudgetSnapshot>("/token-usage/budgets"),
+  setTokenUsageBudgets: (payload: TokenUsageBudgetSnapshot["config"]) =>
+    adminFetch<TokenUsageBudgetSnapshot>("/token-usage/budgets", {
+      method: "PATCH",
       body: JSON.stringify(payload),
     }),
 };

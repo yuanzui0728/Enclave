@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Search, UserPlus } from "lucide-react";
-import { getFriends, listCharacters } from "@yinjie/contracts";
+import { getFriends, listPresetCatalog } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
@@ -31,8 +31,8 @@ export function WorldCharactersPage() {
     queryFn: () => getFriends(baseUrl),
   });
   const charactersQuery = useQuery({
-    queryKey: ["app-characters", baseUrl],
-    queryFn: () => listCharacters(baseUrl),
+    queryKey: ["app-preset-catalog", baseUrl],
+    queryFn: () => listPresetCatalog(baseUrl),
   });
 
   const friendIds = useMemo(

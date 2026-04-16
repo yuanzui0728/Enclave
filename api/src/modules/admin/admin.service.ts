@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { resolveDatabasePath } from '../../database/database-path';
 import { CharactersService } from '../characters/characters.service';
+import { FriendshipEntity } from '../social/friendship.entity';
 
 @Injectable()
 export class AdminService {
@@ -23,6 +24,8 @@ export class AdminService {
     private messageRepo: Repository<MessageEntity>,
     @InjectRepository(SystemConfigEntity)
     private configRepo: Repository<SystemConfigEntity>,
+    @InjectRepository(FriendshipEntity)
+    private friendshipRepo: Repository<FriendshipEntity>,
     private readonly config: ConfigService,
     private readonly charactersService: CharactersService,
   ) {}
@@ -73,6 +76,14 @@ export class AdminService {
       await this.configRepo.save(this.configRepo.create({ key, value }));
     }
     return { success: true };
+  }
+
+  async getFriendCharacterIds(): Promise<string[]> {
+    const friendships = await this.friendshipRepo.find({
+      select: ['characterId'],
+      where: { status: 'friend' },
+    });
+    return friendships.map((f) => f.characterId);
   }
 
   findAllCharacters() {

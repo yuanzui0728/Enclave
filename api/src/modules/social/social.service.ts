@@ -10,6 +10,8 @@ import { NarrativeService } from '../narrative/narrative.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { DEFAULT_CHARACTER_IDS } from '../characters/default-characters';
 import { ChatService } from '../chat/chat.service';
+import { CharactersService } from '../characters/characters.service';
+import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
 
@@ -30,6 +32,7 @@ export class SocialService {
     private readonly narrativeService: NarrativeService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly chatService: ChatService,
+    private readonly charactersService: CharactersService,
   ) {}
 
   async getPendingRequests(): Promise<FriendRequestEntity[]> {
@@ -179,16 +182,21 @@ export class SocialService {
 
   async triggerSceneFriendRequest(scene: string): Promise<FriendRequestEntity | null> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const chars = await this.characterRepo.find();
-    const candidates = chars.filter((character) => character.triggerScenes?.includes(scene));
+
+    // 从硬编码预设中按场景过滤，不依赖 DB 是否已安装
+    const allPresets = listCelebrityCharacterPresets();
+    const candidates = allPresets.filter((p) =>
+      (p.character.triggerScenes ?? []).includes(scene),
+    );
     if (candidates.length === 0) return null;
 
     const existingFriendships = await this.friendshipRepo.find({ where: { ownerId: owner.id } });
     const existingIds = new Set(existingFriendships.map((friendship) => friendship.characterId));
-    const available = candidates.filter((character) => !existingIds.has(character.id));
+    const available = candidates.filter((p) => !existingIds.has(p.id));
     if (available.length === 0) return null;
 
-    const char = available[Math.floor(Math.random() * available.length)];
+    const preset = available[Math.floor(Math.random() * available.length)];
+    const char = preset.character as CharacterEntity;
 
     const existing = await this.friendRequestRepo.findOneBy({ ownerId: owner.id, characterId: char.id, status: 'pending' });
     if (existing) return null;
@@ -199,6 +207,16 @@ export class SocialService {
         profile: char.profile,
         conversationHistory: [],
         userMessage: `Write a short friend request greeting after meeting someone in ${scene}. Keep it under 30 words.`,
+        usageContext: {
+          surface: 'app',
+          scene: 'social_greeting_generate',
+          scopeType: 'character',
+          scopeId: char.id,
+          scopeLabel: char.name,
+          ownerId: owner.id,
+          characterId: char.id,
+          characterName: char.name,
+        },
       });
       greeting = result.text;
     } catch {
@@ -224,13 +242,16 @@ export class SocialService {
 
   async shake(): Promise<{ character: CharacterEntity; greeting: string } | null> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const all = await this.characterRepo.find();
+
+    // 从硬编码预设中选，不依赖 DB
+    const allPresets = listCelebrityCharacterPresets();
     const existingFriendships = await this.friendshipRepo.find({ where: { ownerId: owner.id } });
     const existingIds = new Set(existingFriendships.map((friendship) => friendship.characterId));
-    const available = all.filter((character) => !existingIds.has(character.id));
+    const available = allPresets.filter((p) => !existingIds.has(p.id));
     if (available.length === 0) return null;
 
-    const char = available[Math.floor(Math.random() * available.length)];
+    const preset = available[Math.floor(Math.random() * available.length)];
+    const char = preset.character as CharacterEntity;
 
     let greeting = `Hi, I'm ${char.name}. We just met in Yinjie.`;
     try {
@@ -238,6 +259,16 @@ export class SocialService {
         profile: char.profile,
         conversationHistory: [],
         userMessage: 'Write a short, warm self-introduction after a random encounter. Keep it under 25 words.',
+        usageContext: {
+          surface: 'app',
+          scene: 'social_greeting_generate',
+          scopeType: 'character',
+          scopeId: char.id,
+          scopeLabel: char.name,
+          ownerId: owner.id,
+          characterId: char.id,
+          characterName: char.name,
+        },
       });
       greeting = result.text;
     } catch {
@@ -253,7 +284,9 @@ export class SocialService {
     options?: { autoAccept?: boolean },
   ): Promise<FriendRequestEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const char = await this.characterRepo.findOneBy({ id: characterId });
+    // 预设角色首次添加好友时自动写入 DB；已在 DB 的角色（含管理员改过的）直接返回
+    const char = await this.charactersService.ensurePresetCharacterInstalled(characterId)
+      ?? await this.characterRepo.findOneBy({ id: characterId });
     if (!char) throw new Error('Character not found');
 
     const existing = await this.friendRequestRepo.findOneBy({ ownerId: owner.id, characterId, status: 'pending' });

@@ -48,7 +48,7 @@ export function ChatRoomPage() {
 
   useEffect(() => {
     setRouteContext(resolveRouteContext(conversationId));
-  }, [conversationId, search]);
+  }, [conversationId]);
 
   useEffect(() => {
     if (!activeConversation || !isPersistedGroupConversation(activeConversation)) {

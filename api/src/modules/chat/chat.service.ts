@@ -702,6 +702,17 @@ export class ChatService {
       userMessageParts: normalizedInput.aiParts,
       chatContext,
       aiKeyOverride,
+      usageContext: {
+        surface: 'app',
+        scene: 'chat_reply',
+        scopeType: 'conversation',
+        scopeId: convId,
+        scopeLabel: entity.title,
+        ownerId: owner.id,
+        characterId: charId,
+        characterName: profile.name,
+        conversationId: convId,
+      },
     });
     const aiEntity = this.msgRepo.create({
       id: `msg_${Date.now()}_ai`,
@@ -736,7 +747,17 @@ export class ChatService {
       const primaryCharId = entity.participants[0];
       const char = await this.characters.findById(primaryCharId);
       if (char) {
-        const newMemory = await this.ai.compressMemory(history, char.profile);
+        const newMemory = await this.ai.compressMemory(history, char.profile, {
+          surface: 'app',
+          scene: 'memory_compress',
+          scopeType: 'conversation',
+          scopeId: convId,
+          scopeLabel: entity.title,
+          ownerId: entity.ownerId,
+          characterId: primaryCharId,
+          characterName: char.name,
+          conversationId: convId,
+        });
         if (!char.profile.memory) {
           char.profile.memory = {
             coreMemory: char.profile.memorySummary ?? '',

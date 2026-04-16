@@ -24,7 +24,10 @@ export function RootLayout() {
     retry: false,
   });
 
-  const routeMeta = useMemo(() => resolveRouteMeta(location.pathname), [location.pathname]);
+  const routeMeta = useMemo(
+    () => resolveRouteMeta(location.pathname),
+    [location.pathname],
+  );
   const digitalHumanSummary = useMemo(
     () => buildDigitalHumanAdminSummary(statusQuery.data?.digitalHumanGateway),
     [statusQuery.data?.digitalHumanGateway],
@@ -34,7 +37,7 @@ export function RootLayout() {
       return {
         label: "实例状态待确认",
         tone: "warning" as const,
-        detailLabel: "数字人与运行状态尚未同步",
+        detailLabel: "数字人、推理服务或实例连通性还未同步成功。",
       };
     }
 
@@ -42,13 +45,15 @@ export function RootLayout() {
       return {
         label: "正在读取实例状态",
         tone: "muted" as const,
-        detailLabel: "正在同步数字人、推理和世界状态",
+        detailLabel: "正在同步远程 API、推理网关和世界表面状态。",
       };
     }
 
     const issues = [
       !statusQuery.data.coreApi.healthy ? "核心接口待恢复" : null,
-      !statusQuery.data.inferenceGateway.activeProvider ? "推理服务待配置" : null,
+      !statusQuery.data.inferenceGateway.activeProvider
+        ? "推理服务待配置"
+        : null,
       (statusQuery.data.worldSurface.ownerCount ?? 0) !== 1
         ? "世界主人数量异常"
         : null,
@@ -57,14 +62,14 @@ export function RootLayout() {
         : null,
     ].filter((item): item is string => Boolean(item));
 
-    const issueCount = issues.length;
-
-    if (issueCount > 0) {
+    if (issues.length > 0) {
       return {
-        label: `${issueCount} 项待处理`,
+        label: `${issues.length} 项待处理`,
         tone: "warning" as const,
         detailLabel:
-          issueCount === 1 ? issues[0] : `${issues[0]}，其中 ${issues[issues.length - 1]}`,
+          issues.length === 1
+            ? issues[0]
+            : `${issues[0]}，其余项也需要继续检查。`,
       };
     }
 
@@ -73,7 +78,12 @@ export function RootLayout() {
       tone: "healthy" as const,
       detailLabel: `数字人${digitalHumanSummary.statusLabel}`,
     };
-  }, [digitalHumanSummary.ready, digitalHumanSummary.statusLabel, statusQuery.data, statusQuery.isError]);
+  }, [
+    digitalHumanSummary.ready,
+    digitalHumanSummary.statusLabel,
+    statusQuery.data,
+    statusQuery.isError,
+  ]);
 
   function saveSecret() {
     setAdminSecret(draft);
@@ -95,7 +105,9 @@ export function RootLayout() {
             onSaveSecret={saveSecret}
             onEditSecret={() => setEditingSecret(true)}
             coreApiHealthy={Boolean(statusQuery.data?.coreApi.healthy)}
-            providerReady={Boolean(statusQuery.data?.inferenceGateway.activeProvider)}
+            providerReady={Boolean(
+              statusQuery.data?.inferenceGateway.activeProvider,
+            )}
             digitalHumanSummary={digitalHumanSummary}
             ownerCount={statusQuery.data?.worldSurface.ownerCount ?? null}
             navLinks={NAV_ITEMS}
@@ -118,10 +130,31 @@ export function RootLayout() {
 }
 
 const NAV_ITEMS = [
-  { to: "/", label: "运行总览", hint: "实例健康、配置和运维操作。" },
-  { to: "/characters", label: "角色中心", hint: "查看角色名册、工厂和运行逻辑。" },
-  { to: "/reply-logic", label: "回复逻辑", hint: "排查真实回复链路和全局规则。" },
-  { to: "/evals", label: "评测分析", hint: "集中看 runs、对比和 trace。" },
+  {
+    to: "/",
+    label: "运行总览",
+    hint: "实例健康、Provider、诊断和运维动作的统一入口。",
+  },
+  {
+    to: "/characters",
+    label: "角色中心",
+    hint: "查看角色名册、角色工厂和运行逻辑台。",
+  },
+  {
+    to: "/chat-records",
+    label: "聊天记录",
+    hint: "回看世界主人与角色的真实单聊样本、搜索命中和会话成本。",
+  },
+  {
+    to: "/token-usage",
+    label: "Token 用量",
+    hint: "查看 AI 请求、Token 花费、预算预警和价格配置。",
+  },
+  {
+    to: "/evals",
+    label: "评测分析",
+    hint: "集中查看 runs、compare 和 trace。",
+  },
 ] as const;
 
 function resolveRouteMeta(pathname: string) {
@@ -129,7 +162,15 @@ function resolveRouteMeta(pathname: string) {
     return {
       eyebrow: "运营控制台",
       title: "实例状态与配置",
-      description: "接入检查、推理配置、数字人设置和运维操作统一入口。",
+      description: "接入检查、推理配置、数字人设置和运维操作的统一入口。",
+    };
+  }
+
+  if (pathname === "/setup") {
+    return {
+      eyebrow: "运行设置",
+      title: "运行时与 Provider 初始化",
+      description: "补齐推理 Provider、实例连通性和运行前置条件，确保后台操作与真实生成链路可用。",
     };
   }
 
@@ -165,6 +206,22 @@ function resolveRouteMeta(pathname: string) {
     };
   }
 
+  if (pathname === "/chat-records") {
+    return {
+      eyebrow: "聊天记录",
+      title: "世界样本与会话档案",
+      description: "集中查看世界主人与各角色的真实单聊历史、搜索命中上下文和会话级 Token 成本。",
+    };
+  }
+
+  if (pathname === "/token-usage") {
+    return {
+      eyebrow: "Token 用量",
+      title: "AI 成本与请求账本",
+      description: "集中查看 Token 消耗、时间趋势、角色分布、预算预警和价格配置。",
+    };
+  }
+
   if (pathname === "/reply-logic") {
     return {
       eyebrow: "回复逻辑",
@@ -187,4 +244,3 @@ function resolveRouteMeta(pathname: string) {
     description: "围绕实例运行、角色运营和回复分析组织后台操作。",
   };
 }
-

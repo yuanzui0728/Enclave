@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, UseGuards,
+  Param, Body, Query, UseGuards,
 } from '@nestjs/common';
 import { AdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
@@ -8,6 +8,7 @@ import { CharacterEntity } from '../characters/character.entity';
 import { CharacterBlueprintService } from '../characters/character-blueprint.service';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -17,6 +18,7 @@ export class AdminController {
     private readonly replyLogicAdminService: ReplyLogicAdminService,
     private readonly characterBlueprintService: CharacterBlueprintService,
     private readonly ai: AiOrchestratorService,
+    private readonly usageLedger: AiUsageLedgerService,
   ) {}
 
   @Get('stats')
@@ -42,6 +44,231 @@ export class AdminController {
   @Get('characters')
   getCharacters() {
     return this.adminService.findAllCharacters();
+  }
+
+  @Get('token-usage/overview')
+  getTokenUsageOverview(
+    @Query()
+    query: {
+      from?: string;
+      to?: string;
+      characterId?: string;
+      conversationId?: string;
+      groupId?: string;
+      scene?: string;
+      model?: string;
+      billingSource?: string;
+      status?: string;
+      errorCode?: string;
+    },
+  ) {
+    return this.usageLedger.getOverview(query);
+  }
+
+  @Get('token-usage/trend')
+  getTokenUsageTrend(
+    @Query()
+    query: {
+      from?: string;
+      to?: string;
+      grain?: string;
+      characterId?: string;
+      conversationId?: string;
+      groupId?: string;
+      scene?: string;
+      model?: string;
+      billingSource?: string;
+      status?: string;
+      errorCode?: string;
+    },
+  ) {
+    return this.usageLedger.getTrend(query);
+  }
+
+  @Get('token-usage/breakdown')
+  getTokenUsageBreakdown(
+    @Query()
+    query: {
+      from?: string;
+      to?: string;
+      characterId?: string;
+      conversationId?: string;
+      groupId?: string;
+      scene?: string;
+      model?: string;
+      billingSource?: string;
+      status?: string;
+      errorCode?: string;
+      limit?: number | string;
+    },
+  ) {
+    return this.usageLedger.getBreakdown(query);
+  }
+
+  @Get('token-usage/records')
+  getTokenUsageRecords(
+    @Query()
+    query: {
+      from?: string;
+      to?: string;
+      characterId?: string;
+      conversationId?: string;
+      groupId?: string;
+      scene?: string;
+      model?: string;
+      billingSource?: string;
+      status?: string;
+      errorCode?: string;
+      page?: number | string;
+      pageSize?: number | string;
+    },
+  ) {
+    return this.usageLedger.getRecords(query);
+  }
+
+  @Get('token-usage/downgrade-insights')
+  getTokenUsageDowngradeInsights(
+    @Query()
+    query: {
+      from?: string;
+      to?: string;
+      grain?: string;
+      characterId?: string;
+      conversationId?: string;
+      groupId?: string;
+      scene?: string;
+      model?: string;
+      billingSource?: string;
+      status?: string;
+      errorCode?: string;
+      limit?: number | string;
+    },
+  ) {
+    return this.usageLedger.getDowngradeInsights(query);
+  }
+
+  @Get('token-usage/downgrade-quality')
+  getTokenUsageDowngradeQuality(
+    @Query()
+    query: {
+      from?: string;
+      to?: string;
+      grain?: string;
+      characterId?: string;
+      conversationId?: string;
+      groupId?: string;
+      scene?: string;
+      model?: string;
+      billingSource?: string;
+      status?: string;
+      errorCode?: string;
+      limit?: number | string;
+    },
+  ) {
+    return this.usageLedger.getDowngradeQuality(query);
+  }
+
+  @Get('token-usage/pricing')
+  getTokenUsagePricing() {
+    return this.usageLedger.getPricingCatalog();
+  }
+
+  @Patch('token-usage/pricing')
+  setTokenUsagePricing(
+    @Body()
+    body: {
+      currency?: 'CNY' | 'USD';
+      items?: Array<{
+        model?: string;
+        inputPer1kTokens?: number;
+        outputPer1kTokens?: number;
+        enabled?: boolean;
+        note?: string;
+      }>;
+    },
+  ) {
+    return this.usageLedger.setPricingCatalog({
+      currency: body.currency === 'USD' ? 'USD' : 'CNY',
+      items: (body.items ?? []).map((item) => ({
+        model: item.model ?? '',
+        inputPer1kTokens: item.inputPer1kTokens ?? 0,
+        outputPer1kTokens: item.outputPer1kTokens ?? 0,
+        enabled: item.enabled !== false,
+        note: item.note,
+      })),
+    });
+  }
+
+  @Get('token-usage/budgets')
+  getTokenUsageBudgets() {
+    return this.usageLedger.getBudgetSnapshot();
+  }
+
+  @Patch('token-usage/budgets')
+  setTokenUsageBudgets(
+    @Body()
+    body: {
+      overall?: {
+        enabled?: boolean;
+        metric?: 'tokens' | 'cost';
+        enforcement?: 'monitor' | 'downgrade' | 'block';
+        downgradeModel?: string | null;
+        dailyLimit?: number | null;
+        monthlyLimit?: number | null;
+        warningRatio?: number;
+      };
+      characters?: Array<{
+        characterId?: string;
+        enabled?: boolean;
+        metric?: 'tokens' | 'cost';
+        enforcement?: 'monitor' | 'downgrade' | 'block';
+        downgradeModel?: string | null;
+        dailyLimit?: number | null;
+        monthlyLimit?: number | null;
+        warningRatio?: number;
+        note?: string;
+      }>;
+    },
+  ) {
+    return this.usageLedger.setBudgetConfig({
+          overall: body.overall
+        ? {
+            enabled: body.overall.enabled === true,
+            metric: body.overall.metric === 'cost' ? 'cost' : 'tokens',
+            enforcement:
+              body.overall.enforcement === 'block'
+                ? 'block'
+                : body.overall.enforcement === 'downgrade'
+                  ? 'downgrade'
+                  : 'monitor',
+            downgradeModel: body.overall.downgradeModel?.trim() || null,
+            dailyLimit: body.overall.dailyLimit ?? null,
+            monthlyLimit: body.overall.monthlyLimit ?? null,
+            warningRatio: body.overall.warningRatio ?? 0.8,
+          }
+        : undefined,
+      characters: (body.characters ?? []).map((item) => ({
+        characterId: item.characterId ?? '',
+        enabled: item.enabled === true,
+        metric: item.metric === 'cost' ? 'cost' : 'tokens',
+        enforcement:
+          item.enforcement === 'block'
+            ? 'block'
+            : item.enforcement === 'downgrade'
+              ? 'downgrade'
+              : 'monitor',
+        downgradeModel: item.downgradeModel?.trim() || null,
+        dailyLimit: item.dailyLimit ?? null,
+        monthlyLimit: item.monthlyLimit ?? null,
+        warningRatio: item.warningRatio ?? 0.8,
+        note: item.note,
+      })),
+    });
+  }
+
+  @Get('characters/friend-ids')
+  getCharacterFriendIds() {
+    return this.adminService.getFriendCharacterIds();
   }
 
   @Get('characters/presets')
@@ -150,7 +377,7 @@ export class AdminController {
   @Post('reply-logic/characters/:id/preview')
   previewReplyLogicCharacter(
     @Param('id') id: string,
-    @Body() body: { userMessage?: string | null },
+    @Body() body: { userMessage?: string | null; actorCharacterId?: string | null },
   ) {
     return this.replyLogicAdminService.previewCharacterReply(
       id,

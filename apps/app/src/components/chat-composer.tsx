@@ -2962,6 +2962,7 @@ export function ChatComposer({
               !mobileMentionDismissed
             }
             candidates={filteredMentionCandidates}
+            keyboardInset={keyboardInset}
             onClose={() => setMobileMentionDismissed(true)}
             onSelect={applyMentionCandidate}
           />

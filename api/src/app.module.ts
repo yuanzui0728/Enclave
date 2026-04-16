@@ -17,6 +17,7 @@ import { WorldModule } from './modules/world/world.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { NarrativeModule } from './modules/narrative/narrative.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CloudRuntimeModule } from './modules/cloud-runtime/cloud-runtime.module';
 import { SystemModule } from './modules/system/system.module';
 
 // Entities
@@ -45,6 +46,7 @@ import { VideoChannelFollowEntity } from './modules/feed/video-channel-follow.en
 import { WorldContextEntity } from './modules/world/world-context.entity';
 import { NarrativeArcEntity } from './modules/narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from './modules/analytics/ai-behavior-log.entity';
+import { AiUsageLedgerEntity } from './modules/analytics/ai-usage-ledger.entity';
 import { UserFeedInteractionEntity } from './modules/analytics/user-feed-interaction.entity';
 import { OfficialAccountEntity } from './modules/official-accounts/official-account.entity';
 import { OfficialAccountArticleEntity } from './modules/official-accounts/official-account-article.entity';
@@ -52,6 +54,7 @@ import { OfficialAccountDeliveryEntity } from './modules/official-accounts/offic
 import { OfficialAccountFollowEntity } from './modules/official-accounts/official-account-follow.entity';
 import { OfficialAccountServiceMessageEntity } from './modules/official-accounts/official-account-service-message.entity';
 import { ModerationReportEntity } from './modules/moderation/moderation-report.entity';
+import { AdminConversationReviewEntity } from './modules/admin/admin-conversation-review.entity';
 import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database/database-path';
 
 @Module({
@@ -74,9 +77,9 @@ import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database
           MomentLikeEntity, FriendshipEntity, FriendRequestEntity, AIRelationshipEntity,
           GroupEntity, GroupMemberEntity, GroupMessageEntity, GroupReplyTaskEntity, ChatCustomStickerEntity,
           FeedPostEntity, FeedCommentEntity, VideoChannelFollowEntity, WorldContextEntity,
-          NarrativeArcEntity, AIBehaviorLogEntity, UserFeedInteractionEntity,
+          NarrativeArcEntity, AIBehaviorLogEntity, AiUsageLedgerEntity, UserFeedInteractionEntity,
           OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountDeliveryEntity, OfficialAccountFollowEntity, OfficialAccountServiceMessageEntity,
-          ModerationReportEntity,
+          ModerationReportEntity, AdminConversationReviewEntity,
         ],
         synchronize: true,
       }),
@@ -95,6 +98,7 @@ import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database
     SchedulerModule,
     NarrativeModule,
     AdminModule,
+    CloudRuntimeModule,
     SystemModule,
   ],
 })

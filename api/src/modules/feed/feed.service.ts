@@ -646,6 +646,15 @@ export class FeedService {
       const text = await this.ai.generateMoment({
         profile,
         currentTime: new Date(),
+        usageContext: {
+          surface: 'app',
+          scene: 'feed_post_generate',
+          scopeType: 'character',
+          scopeId: char.id,
+          scopeLabel: char.name,
+          characterId: char.id,
+          characterName: char.name,
+        },
       });
       if (!text) return null;
       return this.createPost({
@@ -708,6 +717,15 @@ export class FeedService {
       const baseText = await this.ai.generateMoment({
         profile,
         currentTime: new Date(),
+        usageContext: {
+          surface: 'app',
+          scene: 'channel_post_generate',
+          scopeType: 'character',
+          scopeId: selectedCharacter.id,
+          scopeLabel: selectedCharacter.name,
+          characterId: selectedCharacter.id,
+          characterName: selectedCharacter.name,
+        },
       });
       const text = baseText.trim() || fallbackText;
 
@@ -784,6 +802,15 @@ export class FeedService {
           profile,
           conversationHistory: [],
           userMessage: `你在${post.surface === 'channels' ? '视频号' : '广场动态'}里看到一条内容："${post.text}"，用一句话自然地评论，不超过25字。`,
+          usageContext: {
+            surface: 'app',
+            scene: 'feed_comment_generate',
+            scopeType: 'character',
+            scopeId: char.id,
+            scopeLabel: char.name,
+            characterId: char.id,
+            characterName: char.name,
+          },
         });
         await this.addComment({
           postId: post.id,

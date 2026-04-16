@@ -10,9 +10,21 @@ import { MockSmsProviderService } from "./auth/mock-sms-provider.service";
 import { PhoneAuthService } from "./auth/phone-auth.service";
 import { CloudController } from "./cloud/cloud.controller";
 import { CloudService } from "./cloud/cloud.service";
+import { CloudInstanceEntity } from "./entities/cloud-instance.entity";
 import { CloudWorldEntity } from "./entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "./entities/cloud-world-request.entity";
 import { PhoneVerificationSessionEntity } from "./entities/phone-verification-session.entity";
+import { WorldAccessSessionEntity } from "./entities/world-access-session.entity";
+import { WorldLifecycleJobEntity } from "./entities/world-lifecycle-job.entity";
+import { MockComputeProviderService } from "./orchestration/mock-compute-provider.service";
+import { WorldLifecycleWorkerService } from "./orchestration/world-lifecycle-worker.service";
+import { ComputeProviderRegistryService } from "./providers/compute-provider-registry.service";
+import { ManualDockerComputeProviderService } from "./providers/manual-docker-compute-provider.service";
+import { ManualDockerRemoteExecutorService } from "./providers/manual-docker-remote-executor.service";
+import { WorldRuntimeController } from "./runtime-callbacks/world-runtime.controller";
+import { WorldRuntimeService } from "./runtime-callbacks/world-runtime.service";
+import { WorldAccessController } from "./world-access/world-access.controller";
+import { WorldAccessService } from "./world-access/world-access.service";
 
 @Module({
   imports: [
@@ -27,12 +39,45 @@ import { PhoneVerificationSessionEntity } from "./entities/phone-verification-se
     TypeOrmModule.forRoot({
       type: "better-sqlite3",
       database: process.env.CLOUD_DATABASE_PATH ?? "cloud-platform.sqlite",
-      entities: [PhoneVerificationSessionEntity, CloudWorldEntity, CloudWorldRequestEntity],
+      entities: [
+        PhoneVerificationSessionEntity,
+        CloudWorldEntity,
+        CloudWorldRequestEntity,
+        CloudInstanceEntity,
+        WorldAccessSessionEntity,
+        WorldLifecycleJobEntity,
+      ],
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([PhoneVerificationSessionEntity, CloudWorldEntity, CloudWorldRequestEntity]),
+    TypeOrmModule.forFeature([
+      PhoneVerificationSessionEntity,
+      CloudWorldEntity,
+      CloudWorldRequestEntity,
+      CloudInstanceEntity,
+      WorldAccessSessionEntity,
+      WorldLifecycleJobEntity,
+    ]),
   ],
-  controllers: [CloudAuthController, CloudController, AdminCloudController],
-  providers: [PhoneAuthService, MockSmsProviderService, CloudService, CloudClientAuthGuard, AdminGuard],
+  controllers: [
+    CloudAuthController,
+    CloudController,
+    AdminCloudController,
+    WorldAccessController,
+    WorldRuntimeController,
+  ],
+  providers: [
+    PhoneAuthService,
+    MockSmsProviderService,
+    CloudService,
+    CloudClientAuthGuard,
+    AdminGuard,
+    WorldAccessService,
+    MockComputeProviderService,
+    ManualDockerComputeProviderService,
+    ManualDockerRemoteExecutorService,
+    ComputeProviderRegistryService,
+    WorldLifecycleWorkerService,
+    WorldRuntimeService,
+  ],
 })
 export class AppModule {}

@@ -1,8 +1,20 @@
-import type { CloudWorldRequestRecord, CloudWorldStatus, CloudWorldSummary } from "@yinjie/contracts";
+import type {
+  CloudComputeProviderSummary,
+  CloudWorldAlertSummary,
+  CloudWorldDriftSummary,
+  CloudWorldBootstrapConfig,
+  CloudWorldRuntimeStatusSummary,
+  CloudInstanceSummary,
+  CloudWorldLifecycleStatus,
+  CloudWorldRequestRecord,
+  CloudWorldRequestStatus,
+  CloudWorldSummary,
+  WorldLifecycleJobStatus,
+  WorldLifecycleJobSummary,
+  WorldLifecycleJobType,
+} from "@yinjie/contracts";
 
 const ADMIN_SECRET_KEY = "yinjie_cloud_admin_secret";
-
-type EditableStatus = Exclude<CloudWorldStatus, "none">;
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -29,6 +41,19 @@ function resolveCloudAdminApiBase() {
   return "http://localhost:3001";
 }
 
+function buildQueryString(params: Record<string, string | undefined>) {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.set(key, value);
+    }
+  });
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
 export function getCloudAdminSecret() {
   return getStorage()?.getItem(ADMIN_SECRET_KEY)?.trim() ?? "";
 }
@@ -40,7 +65,7 @@ export function setCloudAdminSecret(secret: string) {
 async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const secret = getCloudAdminSecret();
   if (!secret) {
-    throw new Error("请先配置 CLOUD_ADMIN_SECRET。");
+    throw new Error("CLOUD_ADMIN_SECRET is required.");
   }
 
   const response = await fetch(`${resolveCloudAdminApiBase()}/admin/cloud${path}`, {
@@ -53,7 +78,7 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (response.status === 401) {
-    throw new Error("CLOUD_ADMIN_SECRET 不正确。");
+    throw new Error("CLOUD_ADMIN_SECRET is invalid.");
   }
 
   const rawBody = await response.text();
@@ -65,32 +90,78 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const cloudAdminApi = {
-  listRequests: (status?: EditableStatus) =>
-    adminFetch<CloudWorldRequestRecord[]>(status ? `/world-requests?status=${encodeURIComponent(status)}` : "/world-requests"),
+  listRequests: (status?: CloudWorldRequestStatus) =>
+    adminFetch<CloudWorldRequestRecord[]>(`/world-requests${buildQueryString({ status })}`),
+
   getRequest: (id: string) => adminFetch<CloudWorldRequestRecord>(`/world-requests/${id}`),
+
   updateRequest: (
     id: string,
     payload: {
       phone?: string;
       worldName?: string;
-      status?: EditableStatus;
+      status?: CloudWorldRequestStatus;
       note?: string | null;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
     },
   ) => adminFetch<CloudWorldRequestRecord>(`/world-requests/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  listWorlds: (status?: EditableStatus) =>
-    adminFetch<CloudWorldSummary[]>(status ? `/worlds?status=${encodeURIComponent(status)}` : "/worlds"),
+
+  listWorlds: (status?: CloudWorldLifecycleStatus) =>
+    adminFetch<CloudWorldSummary[]>(`/worlds${buildQueryString({ status })}`),
+
+  getWorldDriftSummary: () => adminFetch<CloudWorldDriftSummary>("/drift-summary"),
+
   getWorld: (id: string) => adminFetch<CloudWorldSummary>(`/worlds/${id}`),
+
+  listProviders: () => adminFetch<CloudComputeProviderSummary[]>("/providers"),
+
   updateWorld: (
     id: string,
     payload: {
       phone?: string;
       name?: string;
-      status?: EditableStatus;
+      status?: CloudWorldLifecycleStatus;
+      provisionStrategy?: string;
+      providerKey?: string | null;
+      providerRegion?: string | null;
+      providerZone?: string | null;
       note?: string | null;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
     },
   ) => adminFetch<CloudWorldSummary>(`/worlds/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+
+  listJobs: (filters?: { worldId?: string; status?: WorldLifecycleJobStatus; jobType?: WorldLifecycleJobType }) =>
+    adminFetch<WorldLifecycleJobSummary[]>(
+      `/jobs${buildQueryString({
+        worldId: filters?.worldId,
+        status: filters?.status,
+        jobType: filters?.jobType,
+      })}`,
+    ),
+
+  getJob: (id: string) => adminFetch<WorldLifecycleJobSummary>(`/jobs/${id}`),
+
+  getWorldInstance: (worldId: string) => adminFetch<CloudInstanceSummary | null>(`/worlds/${worldId}/instance`),
+
+  getWorldBootstrapConfig: (worldId: string) =>
+    adminFetch<CloudWorldBootstrapConfig>(`/worlds/${worldId}/bootstrap-config`),
+
+  getWorldRuntimeStatus: (worldId: string) =>
+    adminFetch<CloudWorldRuntimeStatusSummary>(`/worlds/${worldId}/runtime-status`),
+
+  getWorldAlertSummary: (worldId: string) =>
+    adminFetch<CloudWorldAlertSummary>(`/worlds/${worldId}/alert-summary`),
+
+  reconcileWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/reconcile`, { method: "POST" }),
+
+  resumeWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/resume`, { method: "POST" }),
+
+  suspendWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/suspend`, { method: "POST" }),
+
+  retryWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/retry`, { method: "POST" }),
+
+  rotateWorldCallbackToken: (worldId: string) =>
+    adminFetch<CloudWorldBootstrapConfig>(`/worlds/${worldId}/rotate-callback-token`, { method: "POST" }),
 };

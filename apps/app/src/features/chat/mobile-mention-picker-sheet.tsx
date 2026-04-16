@@ -10,6 +10,7 @@ type MentionCandidate = {
 type MobileMentionPickerSheetProps = {
   open: boolean;
   candidates: MentionCandidate[];
+  keyboardInset?: number;
   onClose: () => void;
   onSelect: (candidate: MentionCandidate) => void;
 };
@@ -17,6 +18,7 @@ type MobileMentionPickerSheetProps = {
 export function MobileMentionPickerSheet({
   open,
   candidates,
+  keyboardInset = 0,
   onClose,
   onSelect,
 }: MobileMentionPickerSheetProps) {
@@ -32,7 +34,10 @@ export function MobileMentionPickerSheet({
         aria-label="关闭选择提醒成员面板"
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]">
+      <div
+        className="absolute inset-x-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+        style={{ bottom: keyboardInset > 0 ? `${keyboardInset}px` : 0 }}
+      >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>

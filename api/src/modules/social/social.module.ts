@@ -10,6 +10,7 @@ import { AiModule } from '../ai/ai.module';
 import { NarrativeModule } from '../narrative/narrative.module';
 import { AuthModule } from '../auth/auth.module';
 import { ChatModule } from '../chat/chat.module';
+import { CharactersModule } from '../characters/characters.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ChatModule } from '../chat/chat.module';
     NarrativeModule,
     AuthModule,
     ChatModule,
+    CharactersModule,
   ],
   providers: [SocialService],
   controllers: [SocialController],

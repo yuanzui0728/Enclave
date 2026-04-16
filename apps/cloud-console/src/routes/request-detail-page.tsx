@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import type { CloudWorldStatus } from "@yinjie/contracts";
+import type { CloudWorldRequestStatus } from "@yinjie/contracts";
 import { ErrorBlock } from "@yinjie/ui";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 
-type EditableStatus = Exclude<CloudWorldStatus, "none">;
+const REQUEST_STATUSES: CloudWorldRequestStatus[] = ["pending", "provisioning", "active", "rejected", "disabled"];
+
+function formatOptional(value?: string | null) {
+  return value?.trim() || "Not set";
+}
 
 export function RequestDetailPage() {
   const { requestId } = useParams({ from: "/requests/$requestId" });
@@ -14,7 +18,8 @@ export function RequestDetailPage() {
     queryKey: ["cloud-console", "request", requestId],
     queryFn: () => cloudAdminApi.getRequest(requestId),
   });
-  const [draftStatus, setDraftStatus] = useState<EditableStatus>("pending");
+
+  const [draftStatus, setDraftStatus] = useState<CloudWorldRequestStatus>("pending");
   const [phone, setPhone] = useState("");
   const [worldName, setWorldName] = useState("");
   const [apiBaseUrl, setApiBaseUrl] = useState("");
@@ -44,14 +49,16 @@ export function RequestDetailPage() {
   const requestError = requestQuery.error instanceof Error ? requestQuery.error.message : null;
 
   useEffect(() => {
-    if (request) {
-      setDraftStatus(request.status);
-      setPhone(request.phone);
-      setWorldName(request.worldName);
-      setApiBaseUrl(request.apiBaseUrl ?? "");
-      setAdminUrl(request.adminUrl ?? "");
-      setNote(request.note ?? "");
+    if (!request) {
+      return;
     }
+
+    setDraftStatus(request.status);
+    setPhone(request.phone);
+    setWorldName(request.worldName);
+    setApiBaseUrl(request.apiBaseUrl ?? "");
+    setAdminUrl(request.adminUrl ?? "");
+    setNote(request.note ?? "");
   }, [request]);
 
   if (requestError) {
@@ -59,50 +66,92 @@ export function RequestDetailPage() {
   }
 
   if (!request) {
-    return <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">正在读取申请详情...</div>;
+    return (
+      <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">
+        Loading request...
+      </div>
+    );
   }
 
   return (
     <section className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
       <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
         <div className="text-xl font-semibold text-[color:var(--text-primary)]">{request.worldName}</div>
-        <div className="mt-2 text-sm text-[color:var(--text-secondary)]">手机号：{request.phone}</div>
+        <div className="mt-2 text-sm text-[color:var(--text-secondary)]">{request.phone}</div>
         <div className="mt-1 text-xs uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{request.status}</div>
 
         <div className="mt-5 grid gap-4">
           <label className="grid gap-2 text-sm">
-            <span>手机号</span>
-            <input value={phone} onChange={(event) => setPhone(event.target.value)} className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]" />
+            <span>Phone</span>
+            <input
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+            />
           </label>
+
           <label className="grid gap-2 text-sm">
-            <span>世界名称</span>
-            <input value={worldName} onChange={(event) => setWorldName(event.target.value)} className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]" />
+            <span>World name</span>
+            <input
+              value={worldName}
+              onChange={(event) => setWorldName(event.target.value)}
+              className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+            />
           </label>
+
           <label className="grid gap-2 text-sm">
-            <span>状态</span>
-            <select value={draftStatus} onChange={(event) => setDraftStatus(event.target.value as EditableStatus)} className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]">
-              {["pending", "provisioning", "active", "rejected", "disabled"].map((status) => (
+            <span>Status</span>
+            <select
+              value={draftStatus}
+              onChange={(event) => setDraftStatus(event.target.value as CloudWorldRequestStatus)}
+              className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+            >
+              {REQUEST_STATUSES.map((status) => (
                 <option key={status} value={status}>
                   {status}
                 </option>
               ))}
             </select>
           </label>
+
           <label className="grid gap-2 text-sm">
-            <span>云世界地址</span>
-            <input value={apiBaseUrl} onChange={(event) => setApiBaseUrl(event.target.value)} placeholder="https://world-api.example.com" className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]" />
+            <span>World API base URL</span>
+            <input
+              value={apiBaseUrl}
+              onChange={(event) => setApiBaseUrl(event.target.value)}
+              placeholder="https://world-api.example.com"
+              className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+            />
           </label>
+
           <label className="grid gap-2 text-sm">
-            <span>世界后台地址</span>
-            <input value={adminUrl} onChange={(event) => setAdminUrl(event.target.value)} placeholder="https://world-admin.example.com" className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]" />
+            <span>World admin URL</span>
+            <input
+              value={adminUrl}
+              onChange={(event) => setAdminUrl(event.target.value)}
+              placeholder="https://world-admin.example.com"
+              className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+            />
           </label>
+
           <label className="grid gap-2 text-sm">
-            <span>备注</span>
-            <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={5} className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]" />
+            <span>Ops note</span>
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              rows={5}
+              className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+            />
           </label>
-          <button onClick={() => updateMutation.mutate()} className="rounded-xl bg-[color:var(--surface-secondary)] px-4 py-3 text-[color:var(--text-primary)] hover:bg-[color:var(--surface-tertiary)]">
-            {updateMutation.isPending ? "正在保存..." : "保存申请处理结果"}
+
+          <button
+            type="button"
+            onClick={() => updateMutation.mutate()}
+            className="rounded-xl bg-[color:var(--surface-secondary)] px-4 py-3 text-[color:var(--text-primary)] hover:bg-[color:var(--surface-tertiary)]"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save request"}
           </button>
+
           {updateMutation.isError && updateMutation.error instanceof Error ? (
             <ErrorBlock message={updateMutation.error.message} />
           ) : null}
@@ -110,12 +159,18 @@ export function RequestDetailPage() {
       </div>
 
       <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
-        <div className="text-sm font-semibold text-[color:var(--text-primary)]">处理建议</div>
+        <div className="text-sm font-semibold text-[color:var(--text-primary)]">Request guidance</div>
         <div className="mt-3 space-y-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-          <p>`pending` 表示刚收到申请，还没开始人工处理。</p>
-          <p>`provisioning` 表示正在人工开通、登记资源信息或录入世界地址，不代表平台会自动创建实例。</p>
-          <p>`active` 需要同时填好 `apiBaseUrl`，客户端才能真正进入这个世界。</p>
-          <p>`rejected` 和 `disabled` 都会阻止客户端进入，前者面向申请单，后者面向已交付世界。</p>
+          <p>`pending` means the request is still awaiting staff action.</p>
+          <p>`provisioning` means staff accepted it and the world is being prepared outside of the old orchestration path.</p>
+          <p>`active` should only be used when the world already has a reachable `apiBaseUrl`.</p>
+          <p>`rejected` and `disabled` should always be paired with a clear ops note.</p>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] p-4 text-sm text-[color:var(--text-secondary)]">
+          <div className="font-medium text-[color:var(--text-primary)]">Current endpoints</div>
+          <div className="mt-2">API: {formatOptional(request.apiBaseUrl)}</div>
+          <div className="mt-1">Admin: {formatOptional(request.adminUrl)}</div>
         </div>
       </div>
     </section>

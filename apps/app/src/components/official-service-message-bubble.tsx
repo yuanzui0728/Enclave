@@ -118,7 +118,7 @@ export function OfficialServiceMessageBubble({
                             : "text-[13px] font-medium leading-[1.35rem] text-[color:var(--text-primary)]"
                         }
                       >
-                        {message.attachment.title}
+                        {message.attachment!.title}
                       </div>
                       <div
                         className={
@@ -127,13 +127,13 @@ export function OfficialServiceMessageBubble({
                             : "mt-1 line-clamp-2 text-[10px] leading-[1.1rem] text-[color:var(--text-secondary)]"
                         }
                       >
-                        {message.attachment.summary}
+                        {message.attachment!.summary}
                       </div>
                     </div>
-                    {message.attachment.coverImage ? (
+                    {message.attachment!.coverImage ? (
                       <img
-                        src={message.attachment.coverImage}
-                        alt={message.attachment.title}
+                        src={message.attachment!.coverImage}
+                        alt={message.attachment!.title}
                         className={
                           isDesktop
                             ? "h-20 w-20 shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"

@@ -1,11 +1,24 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import type { CloudWorldStatus } from "@yinjie/contracts";
+import type { CloudWorldRequestStatus } from "@yinjie/contracts";
 import { ErrorBlock } from "@yinjie/ui";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 
-type RequestStatusFilter = Exclude<CloudWorldStatus, "none"> | "all";
+type RequestStatusFilter = CloudWorldRequestStatus | "all";
+
+const REQUEST_STATUS_FILTERS: RequestStatusFilter[] = [
+  "all",
+  "pending",
+  "provisioning",
+  "active",
+  "rejected",
+  "disabled",
+];
+
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString();
+}
 
 export function RequestsPage() {
   const [filter, setFilter] = useState<RequestStatusFilter>("all");
@@ -18,14 +31,18 @@ export function RequestsPage() {
     <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="text-xl font-semibold text-[color:var(--text-primary)]">云世界申请列表</div>
-          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">优先处理 `pending`，进入人工开通和地址录入阶段后切到 `provisioning`，确认可访问后再切到 `active`。</div>
+          <div className="text-xl font-semibold text-[color:var(--text-primary)]">World requests</div>
+          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+            Compatibility view for the older approval workflow. Staff can still use it when manual intervention is needed.
+          </div>
         </div>
+
         <div className="flex flex-wrap gap-2">
-          {["all", "pending", "provisioning", "active", "rejected", "disabled"].map((status) => (
+          {REQUEST_STATUS_FILTERS.map((status) => (
             <button
               key={status}
-              onClick={() => setFilter(status as RequestStatusFilter)}
+              type="button"
+              onClick={() => setFilter(status)}
               className={`rounded-full border px-3 py-2 text-xs uppercase tracking-[0.2em] ${
                 filter === status
                   ? "border-[color:var(--border-strong)] bg-[color:var(--surface-tertiary)] text-[color:var(--text-primary)]"
@@ -42,35 +59,42 @@ export function RequestsPage() {
         <table className="min-w-full border-collapse text-left text-sm">
           <thead className="bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]">
             <tr>
-              <th className="px-4 py-3">世界名称</th>
-              <th className="px-4 py-3">手机号</th>
-              <th className="px-4 py-3">状态</th>
-              <th className="px-4 py-3">更新时间</th>
+              <th className="px-4 py-3">World name</th>
+              <th className="px-4 py-3">Phone</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Updated</th>
             </tr>
           </thead>
           <tbody>
             {(requestsQuery.data ?? []).map((item) => (
               <tr key={item.id} className="border-t border-[color:var(--border-faint)]">
                 <td className="px-4 py-3">
-                  <Link to="/requests/$requestId" params={{ requestId: item.id }} className="text-[color:var(--text-primary)] hover:underline">
+                  <Link
+                    to="/requests/$requestId"
+                    params={{ requestId: item.id }}
+                    className="text-[color:var(--text-primary)] hover:underline"
+                  >
                     {item.worldName}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-[color:var(--text-secondary)]">{item.phone}</td>
                 <td className="px-4 py-3 uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{item.status}</td>
-                <td className="px-4 py-3 text-[color:var(--text-secondary)]">{new Date(item.updatedAt).toLocaleString()}</td>
+                <td className="px-4 py-3 text-[color:var(--text-secondary)]">{formatDateTime(item.updatedAt)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+
         {requestsQuery.isError && requestsQuery.error instanceof Error ? (
           <div className="p-4">
             <ErrorBlock message={requestsQuery.error.message} />
           </div>
         ) : null}
-        {requestsQuery.isLoading ? <div className="p-4 text-sm text-[color:var(--text-muted)]">正在读取申请列表...</div> : null}
+
+        {requestsQuery.isLoading ? <div className="p-4 text-sm text-[color:var(--text-muted)]">Loading requests...</div> : null}
+
         {!requestsQuery.isLoading && !requestsQuery.isError && !requestsQuery.data?.length ? (
-          <div className="p-4 text-sm text-[color:var(--text-muted)]">暂无匹配申请。</div>
+          <div className="p-4 text-sm text-[color:var(--text-muted)]">No requests match this filter.</div>
         ) : null}
       </div>
     </section>

@@ -1,6 +1,8 @@
 import {
   BadGatewayException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   ServiceUnavailableException,
@@ -9,6 +11,9 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI, { toFile } from 'openai';
 import {
   AiMessagePart,
+  AiUsageBillingSource,
+  AiUsageContext,
+  AiUsageMetrics,
   GenerateReplyOptions,
   GenerateReplyResult,
   GenerateMomentOptions,
@@ -22,6 +27,7 @@ import { sanitizeAiText } from './ai-text-sanitizer';
 import { SystemConfigService } from '../config/config.service';
 import { WorldService } from '../world/world.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
+import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
@@ -80,6 +86,24 @@ type PreparedReplyRequest = {
   isGroupChat?: boolean;
 };
 
+type BudgetAwareProviderResult = {
+  provider: ResolvedProviderConfig;
+  usageAudit?: {
+    errorCode: string;
+    errorMessage: string;
+    audit?: {
+      budgetAction: 'downgrade' | 'block';
+      requestedModel?: string | null;
+      appliedModel?: string | null;
+      budgetScope?: 'overall' | 'character';
+      budgetPeriod?: 'daily' | 'monthly';
+      budgetMetric?: 'tokens' | 'cost';
+      budgetUsed?: number;
+      budgetLimit?: number;
+    };
+  };
+};
+
 @Injectable()
 export class AiOrchestratorService {
   private readonly logger = new Logger(AiOrchestratorService.name);
@@ -91,6 +115,7 @@ export class AiOrchestratorService {
     private readonly configService: SystemConfigService,
     private readonly worldService: WorldService,
     private readonly replyLogicRules: ReplyLogicRulesService,
+    private readonly usageLedger: AiUsageLedgerService,
   ) {
     this.client = new OpenAI({
       apiKey: this.config.get<string>('DEEPSEEK_API_KEY'),
@@ -332,6 +357,233 @@ export class AiOrchestratorService {
     throw new BadGatewayException('语音请求重试失败。');
   }
 
+  private buildProviderKey(provider: ResolvedProviderConfig) {
+    return `${provider.mode}:${provider.endpoint}`;
+  }
+
+  private normalizeUsageMetrics(
+    usage:
+      | {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          input_tokens?: number;
+          output_tokens?: number;
+          total_tokens?: number;
+        }
+      | null
+      | undefined,
+  ): AiUsageMetrics {
+    const promptTokens = usage?.prompt_tokens ?? usage?.input_tokens;
+    const completionTokens =
+      usage?.completion_tokens ?? usage?.output_tokens;
+    const totalTokens =
+      usage?.total_tokens ??
+      ((promptTokens ?? 0) || (completionTokens ?? 0)
+        ? (promptTokens ?? 0) + (completionTokens ?? 0)
+        : undefined);
+
+    return {
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      raw: usage ? ({ ...usage } as Record<string, unknown>) : null,
+    };
+  }
+
+  private resolveReplyUsageContext(
+    profile: PersonalityProfile,
+    options: GenerateReplyOptions,
+  ): AiUsageContext {
+    return {
+      surface: options.usageContext?.surface ?? 'app',
+      scene:
+        options.usageContext?.scene ??
+        (options.isGroupChat ? 'group_reply' : 'chat_reply'),
+      scopeType:
+        options.usageContext?.scopeType ??
+        (options.isGroupChat ? 'group' : 'character'),
+      scopeId: options.usageContext?.scopeId ?? profile.characterId,
+      scopeLabel: options.usageContext?.scopeLabel ?? profile.name,
+      ownerId: options.usageContext?.ownerId,
+      characterId: options.usageContext?.characterId ?? profile.characterId,
+      characterName: options.usageContext?.characterName ?? profile.name,
+      conversationId: options.usageContext?.conversationId,
+      groupId: options.usageContext?.groupId,
+    };
+  }
+
+  private async safeRecordUsage(input: Parameters<AiUsageLedgerService['record']>[0]) {
+    try {
+      await this.usageLedger.record(input);
+    } catch (error) {
+      this.logger.warn('Failed to write AI usage ledger record', {
+        scene: input.scene,
+        scopeType: input.scopeType,
+        errorMessage: this.extractErrorMessage(error),
+      });
+    }
+  }
+
+  private async recordSuccessfulUsage(
+    provider: ResolvedProviderConfig,
+    billingSource: AiUsageBillingSource,
+    usageContext: AiUsageContext,
+    result: GenerateReplyResult | { usage?: AiUsageMetrics; model?: string },
+    usageAudit?: {
+      errorCode?: string | null;
+      errorMessage?: string | null;
+      audit?: {
+        budgetAction: 'downgrade' | 'block';
+        requestedModel?: string | null;
+        appliedModel?: string | null;
+        budgetScope?: 'overall' | 'character';
+        budgetPeriod?: 'daily' | 'monthly';
+        budgetMetric?: 'tokens' | 'cost';
+        budgetUsed?: number;
+        budgetLimit?: number;
+      };
+    },
+  ) {
+    await this.safeRecordUsage({
+      status: 'success',
+      surface: usageContext.surface,
+      scene: usageContext.scene,
+      scopeType: usageContext.scopeType,
+      scopeId: usageContext.scopeId,
+      scopeLabel: usageContext.scopeLabel,
+      ownerId: usageContext.ownerId,
+      characterId: usageContext.characterId,
+      characterName: usageContext.characterName,
+      conversationId: usageContext.conversationId,
+      groupId: usageContext.groupId,
+      providerKey: this.buildProviderKey(provider),
+      providerMode: provider.mode,
+      model: result.model ?? provider.model,
+      apiStyle: provider.apiStyle,
+      billingSource,
+      usage: result.usage,
+      audit: usageAudit?.audit,
+      errorCode: usageAudit?.errorCode ?? null,
+      errorMessage: usageAudit?.errorMessage ?? null,
+    });
+  }
+
+  private async recordFailedUsage(
+    provider: ResolvedProviderConfig,
+    billingSource: AiUsageBillingSource,
+    usageContext: AiUsageContext,
+    error: unknown,
+  ) {
+    const errorStatus = this.extractErrorStatus(error);
+    await this.safeRecordUsage({
+      status: 'failed',
+      surface: usageContext.surface,
+      scene: usageContext.scene,
+      scopeType: usageContext.scopeType,
+      scopeId: usageContext.scopeId,
+      scopeLabel: usageContext.scopeLabel,
+      ownerId: usageContext.ownerId,
+      characterId: usageContext.characterId,
+      characterName: usageContext.characterName,
+      conversationId: usageContext.conversationId,
+      groupId: usageContext.groupId,
+      providerKey: this.buildProviderKey(provider),
+      providerMode: provider.mode,
+      model: provider.model,
+      apiStyle: provider.apiStyle,
+      billingSource,
+      errorCode:
+        errorStatus != null
+          ? `HTTP_${errorStatus}`
+          : this.isAuthenticationFailure(error)
+            ? 'AUTH_FAILURE'
+            : 'REQUEST_FAILED',
+      errorMessage: this.extractErrorMessage(error) || 'Unknown provider error',
+    });
+  }
+
+  private async prepareBudgetAwareProvider(
+    provider: ResolvedProviderConfig,
+    billingSource: AiUsageBillingSource,
+    usageContext: AiUsageContext,
+  ): Promise<BudgetAwareProviderResult> {
+    const decision = await this.usageLedger.getBudgetExecutionDecision({
+      characterId: usageContext.characterId,
+      characterName:
+        usageContext.characterName ??
+        usageContext.scopeLabel ??
+        undefined,
+      currentModel: provider.model,
+    });
+    if (!decision) {
+      return { provider };
+    }
+
+    if (decision.action === 'downgrade' && decision.downgradeModel) {
+      const downgradedProvider = {
+        ...provider,
+        model: decision.downgradeModel,
+      };
+      this.logger.warn('AI budget exceeded, downgrading model', {
+        scene: usageContext.scene,
+        scope: decision.scope,
+        period: decision.period,
+        fromModel: provider.model,
+        toModel: decision.downgradeModel,
+        characterId: usageContext.characterId ?? null,
+      });
+      return {
+        provider: downgradedProvider,
+        usageAudit: {
+          errorCode: 'BUDGET_DOWNGRADED',
+          errorMessage: decision.message,
+          audit: {
+            budgetAction: 'downgrade',
+            requestedModel: provider.model,
+            appliedModel: decision.downgradeModel,
+            budgetScope: decision.scope,
+            budgetPeriod: decision.period,
+            budgetMetric: decision.metric,
+            budgetUsed: decision.used,
+            budgetLimit: decision.limit,
+          },
+        },
+      };
+    }
+
+    await this.safeRecordUsage({
+      status: 'failed',
+      surface: usageContext.surface,
+      scene: usageContext.scene,
+      scopeType: usageContext.scopeType,
+      scopeId: usageContext.scopeId,
+      scopeLabel: usageContext.scopeLabel,
+      ownerId: usageContext.ownerId,
+      characterId: usageContext.characterId,
+      characterName: usageContext.characterName,
+      conversationId: usageContext.conversationId,
+      groupId: usageContext.groupId,
+      providerKey: this.buildProviderKey(provider),
+      providerMode: provider.mode,
+      model: provider.model,
+      apiStyle: provider.apiStyle,
+      billingSource,
+      audit: {
+        budgetAction: 'block',
+        requestedModel: provider.model,
+        appliedModel: provider.model,
+        budgetScope: decision.scope,
+        budgetPeriod: decision.period,
+        budgetMetric: decision.metric,
+        budgetUsed: decision.used,
+        budgetLimit: decision.limit,
+      },
+      errorCode: 'BUDGET_BLOCKED',
+      errorMessage: decision.message,
+    });
+    throw new HttpException(decision.message, HttpStatus.TOO_MANY_REQUESTS);
+  }
+
   private async requestReplyFromProvider(
     provider: ResolvedProviderConfig,
     request: PreparedReplyRequest,
@@ -360,8 +612,13 @@ export class AiOrchestratorService {
 
       const rawText = response.output_text ?? '（无回复）';
       const text = sanitizeAiText(rawText) || '（无回复）';
-      const tokensUsed = response.usage?.total_tokens ?? 0;
-      return { text, tokensUsed };
+      const usage = this.normalizeUsageMetrics(response.usage);
+      return {
+        text,
+        tokensUsed: usage.totalTokens ?? 0,
+        usage,
+        model: response.model ?? provider.model,
+      };
     }
 
     const response = await client.chat.completions.create({
@@ -383,9 +640,14 @@ export class AiOrchestratorService {
 
     const rawText = response.choices[0]?.message?.content ?? '（无回复）';
     const text = sanitizeAiText(rawText) || '（无回复）';
-    const tokensUsed = response.usage?.total_tokens ?? 0;
+    const usage = this.normalizeUsageMetrics(response.usage);
 
-    return { text, tokensUsed };
+    return {
+      text,
+      tokensUsed: usage.totalTokens ?? 0,
+      usage,
+      model: response.model ?? provider.model,
+    };
   }
 
   private canRetryWithDefaultProvider(
@@ -528,6 +790,7 @@ export class AiOrchestratorService {
       profile,
       isGroupChat,
       chatContext,
+      this.resolveSceneKey(options.usageContext?.scene),
     );
     const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
@@ -574,14 +837,25 @@ export class AiOrchestratorService {
     profile: PersonalityProfile,
     isGroupChat?: boolean,
     chatContext?: GenerateReplyOptions['chatContext'],
+    sceneKey?: import('./ai.types').SceneKey,
   ) {
-    let systemPrompt =
-      profile.systemPrompt ??
-      (await this.promptBuilder.buildChatSystemPrompt(
+    let systemPrompt: string;
+    if (profile.systemPrompt) {
+      systemPrompt = profile.systemPrompt;
+    } else if (sceneKey && sceneKey !== 'chat') {
+      // 非聊天场景（评论、问候、主动提醒等）走场景化构建
+      systemPrompt = await this.promptBuilder.buildSceneSystemPrompt(
+        profile,
+        sceneKey,
+        chatContext,
+      );
+    } else {
+      systemPrompt = await this.promptBuilder.buildChatSystemPrompt(
         profile,
         isGroupChat,
         chatContext,
-      ));
+      );
+    }
 
     try {
       const worldCtx = await this.worldService.getLatest();
@@ -605,6 +879,23 @@ export class AiOrchestratorService {
     return systemPrompt;
   }
 
+  /** usageContext.scene → SceneKey 映射，用于场景化提示词路由 */
+  private resolveSceneKey(
+    scene?: string,
+  ): import('./ai.types').SceneKey | undefined {
+    const map: Record<string, import('./ai.types').SceneKey> = {
+      chat_reply: 'chat',
+      moment_post_generate: 'moments_post',
+      feed_post_generate: 'feed_post',
+      channel_post_generate: 'channel_post',
+      moment_comment_generate: 'moments_comment',
+      feed_comment_generate: 'feed_comment',
+      social_greeting_generate: 'greeting',
+      proactive: 'proactive',
+    };
+    return scene ? map[scene] : undefined;
+  }
+
   async generateReply(
     options: GenerateReplyOptions,
   ): Promise<GenerateReplyResult> {
@@ -617,8 +908,9 @@ export class AiOrchestratorService {
       chatContext,
       aiKeyOverride,
     } = options;
-    const provider = await this.resolveRuntimeProvider(aiKeyOverride);
-    if (!provider.apiKey) {
+    const usageContext = this.resolveReplyUsageContext(profile, options);
+    const runtimeProvider = await this.resolveRuntimeProvider(aiKeyOverride);
+    if (!runtimeProvider.apiKey) {
       return this.buildUnavailableReply(profile);
     }
 
@@ -626,6 +918,7 @@ export class AiOrchestratorService {
       profile,
       isGroupChat,
       chatContext,
+      this.resolveSceneKey(usageContext.scene),
     );
     const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
@@ -647,22 +940,73 @@ export class AiOrchestratorService {
       currentUserMessage,
       isGroupChat,
     };
+    const billingSource: AiUsageBillingSource = aiKeyOverride
+      ? 'owner_custom'
+      : 'instance_default';
+    const budgetedProvider = await this.prepareBudgetAwareProvider(
+      runtimeProvider,
+      billingSource,
+      usageContext,
+    );
+    const provider = budgetedProvider.provider;
 
     try {
-      return await this.requestReplyFromProvider(provider, request);
+      const result = await this.requestReplyFromProvider(provider, request);
+      await this.recordSuccessfulUsage(
+        provider,
+        billingSource,
+        usageContext,
+        result,
+        budgetedProvider.usageAudit,
+      );
+      return {
+        ...result,
+        billingSource,
+      };
     } catch (err) {
       if (aiKeyOverride && this.isAuthenticationFailure(err)) {
+        await this.recordFailedUsage(
+          provider,
+          'owner_custom',
+          usageContext,
+          err,
+        );
         const defaultProvider = await this.resolveProviderConfig();
         if (this.canRetryWithDefaultProvider(provider, defaultProvider)) {
           this.logger.warn(
             `Owner-level AI key failed authentication for ${profile.characterId}; retrying with instance provider.`,
           );
+          let fallbackProvider = defaultProvider;
           try {
-            return await this.requestReplyFromProvider(
-              defaultProvider,
+            const budgetedDefaultProvider =
+              await this.prepareBudgetAwareProvider(
+                defaultProvider,
+                'instance_default',
+                usageContext,
+              );
+            fallbackProvider = budgetedDefaultProvider.provider;
+            const fallbackResult = await this.requestReplyFromProvider(
+              fallbackProvider,
               request,
             );
+            await this.recordSuccessfulUsage(
+              fallbackProvider,
+              'instance_default',
+              usageContext,
+              fallbackResult,
+              budgetedDefaultProvider.usageAudit,
+            );
+            return {
+              ...fallbackResult,
+              billingSource: 'instance_default',
+            };
           } catch (fallbackError) {
+            await this.recordFailedUsage(
+              fallbackProvider,
+              'instance_default',
+              usageContext,
+              fallbackError,
+            );
             this.logger.error('AI provider fallback error', fallbackError);
             if (this.isAuthenticationFailure(fallbackError)) {
               throw new AiProviderAuthError('instance_default');
@@ -675,57 +1019,156 @@ export class AiOrchestratorService {
       }
 
       if (this.isAuthenticationFailure(err)) {
+        await this.recordFailedUsage(
+          provider,
+          'instance_default',
+          usageContext,
+          err,
+        );
         throw new AiProviderAuthError('instance_default');
       }
 
+      await this.recordFailedUsage(
+        provider,
+        aiKeyOverride ? 'owner_custom' : 'instance_default',
+        usageContext,
+        err,
+      );
       this.logger.error('AI provider error', err);
       throw err;
     }
   }
 
   async generateMoment(options: GenerateMomentOptions): Promise<string> {
-    const { profile, currentTime, recentTopics } = options;
+    const { profile, currentTime, recentTopics, usageContext } = options;
+    const sceneKey = this.resolveSceneKey(usageContext?.scene) ?? 'moments_post';
     const prompt = await this.promptBuilder.buildMomentPrompt(
       profile,
       currentTime,
       recentTopics,
+      sceneKey,
     );
 
-    const model = await this.configService.getAiModel();
-    const response = await this.client.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 150,
-      temperature: 0.95,
-    });
+    const runtimeProvider = await this.resolveRuntimeProvider();
+    const resolvedUsageContext: AiUsageContext = {
+      surface: usageContext?.surface ?? 'app',
+      scene: usageContext?.scene ?? 'moment_post_generate',
+      scopeType: usageContext?.scopeType ?? 'character',
+      scopeId: usageContext?.scopeId ?? profile.characterId,
+      scopeLabel: usageContext?.scopeLabel ?? profile.name,
+      ownerId: usageContext?.ownerId,
+      characterId: usageContext?.characterId ?? profile.characterId,
+      characterName: usageContext?.characterName ?? profile.name,
+      conversationId: usageContext?.conversationId,
+      groupId: usageContext?.groupId,
+    };
+    const budgetedProvider = await this.prepareBudgetAwareProvider(
+      runtimeProvider,
+      'instance_default',
+      resolvedUsageContext,
+    );
+    const provider = budgetedProvider.provider;
+    const client = this.createProviderClient(provider);
 
-    return sanitizeAiText(response.choices[0]?.message?.content ?? '');
+    try {
+      const response = await client.chat.completions.create({
+        model: provider.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 150,
+        temperature: 0.95,
+      });
+
+      const usage = this.normalizeUsageMetrics(response.usage);
+      await this.recordSuccessfulUsage(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+        {
+          usage,
+          model: response.model ?? provider.model,
+        },
+        budgetedProvider.usageAudit,
+      );
+
+      return sanitizeAiText(response.choices[0]?.message?.content ?? '');
+    } catch (error) {
+      await this.recordFailedUsage(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+        error,
+      );
+      throw error;
+    }
   }
 
   async extractPersonality(
     chatSample: string,
     personName: string,
+    usageContext?: AiUsageContext,
   ): Promise<Record<string, unknown>> {
     const prompt = await this.promptBuilder.buildPersonalityExtractionPrompt(
       chatSample,
       personName,
     );
 
-    const model = await this.configService.getAiModel();
-    const response = await this.client.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 600,
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
+    const runtimeProvider = await this.resolveRuntimeProvider();
+    const resolvedUsageContext: AiUsageContext = {
+      surface: usageContext?.surface ?? 'admin',
+      scene: usageContext?.scene ?? 'character_factory_extract',
+      scopeType: usageContext?.scopeType ?? 'admin_task',
+      scopeId: usageContext?.scopeId,
+      scopeLabel: usageContext?.scopeLabel ?? personName,
+      ownerId: usageContext?.ownerId,
+      characterId: usageContext?.characterId,
+      characterName: usageContext?.characterName,
+      conversationId: usageContext?.conversationId,
+      groupId: usageContext?.groupId,
+    };
+    const budgetedProvider = await this.prepareBudgetAwareProvider(
+      runtimeProvider,
+      'instance_default',
+      resolvedUsageContext,
+    );
+    const provider = budgetedProvider.provider;
+    const client = this.createProviderClient(provider);
 
-    const raw = response.choices[0]?.message?.content ?? '{}';
     try {
-      return JSON.parse(raw) as Record<string, unknown>;
-    } catch {
-      this.logger.error('Failed to parse personality JSON', raw);
-      return {};
+      const response = await client.chat.completions.create({
+        model: provider.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 600,
+        temperature: 0.3,
+        response_format: { type: 'json_object' },
+      });
+
+      const usage = this.normalizeUsageMetrics(response.usage);
+      await this.recordSuccessfulUsage(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+        {
+          usage,
+          model: response.model ?? provider.model,
+        },
+        budgetedProvider.usageAudit,
+      );
+
+      const raw = response.choices[0]?.message?.content ?? '{}';
+      try {
+        return JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        this.logger.error('Failed to parse personality JSON', raw);
+        return {};
+      }
+    } catch (error) {
+      await this.recordFailedUsage(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -756,27 +1199,64 @@ export class AiOrchestratorService {
   "basePrompt": "角色扮演基础提示词（2-4句话，描述角色的说话风格和行为方式）"
 }`;
 
-    const model = await this.configService.getAiModel();
-    const response = await this.client.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 800,
-      temperature: 0.8,
-      response_format: { type: 'json_object' },
-    });
+    const runtimeProvider = await this.resolveRuntimeProvider();
+    const usageContext: AiUsageContext = {
+      surface: 'admin',
+      scene: 'quick_character_generate',
+      scopeType: 'admin_task',
+      scopeLabel: description.slice(0, 48) || 'quick-character',
+    };
+    const budgetedProvider = await this.prepareBudgetAwareProvider(
+      runtimeProvider,
+      'instance_default',
+      usageContext,
+    );
+    const provider = budgetedProvider.provider;
+    const client = this.createProviderClient(provider);
 
-    const raw = response.choices[0]?.message?.content ?? '{}';
     try {
-      return JSON.parse(raw) as Record<string, unknown>;
-    } catch {
-      this.logger.error('Failed to parse quick character JSON', raw);
-      return {};
+      const response = await client.chat.completions.create({
+        model: provider.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 800,
+        temperature: 0.8,
+        response_format: { type: 'json_object' },
+      });
+
+      const usage = this.normalizeUsageMetrics(response.usage);
+      await this.recordSuccessfulUsage(
+        provider,
+        'instance_default',
+        usageContext,
+        {
+          usage,
+          model: response.model ?? provider.model,
+        },
+        budgetedProvider.usageAudit,
+      );
+
+      const raw = response.choices[0]?.message?.content ?? '{}';
+      try {
+        return JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        this.logger.error('Failed to parse quick character JSON', raw);
+        return {};
+      }
+    } catch (error) {
+      await this.recordFailedUsage(
+        provider,
+        'instance_default',
+        usageContext,
+        error,
+      );
+      throw error;
     }
   }
 
   async compressMemory(
     history: ChatMessage[],
     profile: PersonalityProfile,
+    usageContext?: AiUsageContext,
   ): Promise<string> {
     const chatHistory = history
       .filter((m) => m.role !== 'system')
@@ -788,18 +1268,123 @@ export class AiOrchestratorService {
       profile,
     );
 
+    const runtimeProvider = await this.resolveRuntimeProvider();
+    const resolvedUsageContext: AiUsageContext = {
+      surface: usageContext?.surface ?? 'app',
+      scene: usageContext?.scene ?? 'memory_compress',
+      scopeType: usageContext?.scopeType ?? 'character',
+      scopeId: usageContext?.scopeId ?? profile.characterId,
+      scopeLabel: usageContext?.scopeLabel ?? profile.name,
+      ownerId: usageContext?.ownerId,
+      characterId: usageContext?.characterId ?? profile.characterId,
+      characterName: usageContext?.characterName ?? profile.name,
+      conversationId: usageContext?.conversationId,
+      groupId: usageContext?.groupId,
+    };
+    let failureProvider = runtimeProvider;
+
     try {
-      const model = await this.configService.getAiModel();
-      const response = await this.client.chat.completions.create({
-        model,
+      const budgetedProvider = await this.prepareBudgetAwareProvider(
+        runtimeProvider,
+        'instance_default',
+        resolvedUsageContext,
+      );
+      const provider = budgetedProvider.provider;
+      failureProvider = provider;
+      const client = this.createProviderClient(provider);
+      const response = await client.chat.completions.create({
+        model: provider.model,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 200,
         temperature: 0.3,
       });
+
+      const usage = this.normalizeUsageMetrics(response.usage);
+      await this.recordSuccessfulUsage(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+        {
+          usage,
+          model: response.model ?? provider.model,
+        },
+        budgetedProvider.usageAudit,
+      );
+
       return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (err) {
+      await this.recordFailedUsage(
+        failureProvider,
+        'instance_default',
+        resolvedUsageContext,
+        err,
+      );
       this.logger.error('compressMemory error', err);
       return profile.memory?.recentSummary ?? profile.memorySummary;
+    }
+  }
+
+  async extractCoreMemory(
+    interactionHistory: string,
+    profile: PersonalityProfile,
+    usageContext?: AiUsageContext,
+  ): Promise<string> {
+    const prompt = await this.promptBuilder.buildCoreMemoryExtractionPrompt(
+      interactionHistory,
+      profile,
+    );
+
+    const runtimeProvider = await this.resolveRuntimeProvider();
+    const resolvedUsageContext: AiUsageContext = {
+      surface: usageContext?.surface ?? 'scheduler',
+      scene: usageContext?.scene ?? 'core_memory_extract',
+      scopeType: usageContext?.scopeType ?? 'character',
+      scopeId: usageContext?.scopeId ?? profile.characterId,
+      scopeLabel: usageContext?.scopeLabel ?? profile.name,
+      ownerId: usageContext?.ownerId,
+      characterId: usageContext?.characterId ?? profile.characterId,
+      characterName: usageContext?.characterName ?? profile.name,
+    };
+    let failureProvider = runtimeProvider;
+
+    try {
+      const budgetedProvider = await this.prepareBudgetAwareProvider(
+        runtimeProvider,
+        'instance_default',
+        resolvedUsageContext,
+      );
+      const provider = budgetedProvider.provider;
+      failureProvider = provider;
+      const client = this.createProviderClient(provider);
+      const response = await client.chat.completions.create({
+        model: provider.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 300,
+        temperature: 0.3,
+      });
+
+      const usage = this.normalizeUsageMetrics(response.usage);
+      await this.recordSuccessfulUsage(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+        {
+          usage,
+          model: response.model ?? provider.model,
+        },
+        budgetedProvider.usageAudit,
+      );
+
+      return sanitizeAiText(response.choices[0]?.message?.content ?? '');
+    } catch (err) {
+      await this.recordFailedUsage(
+        failureProvider,
+        'instance_default',
+        resolvedUsageContext,
+        err,
+      );
+      this.logger.error('extractCoreMemory error', err);
+      return profile.memory?.coreMemory ?? profile.memorySummary ?? '';
     }
   }
 
@@ -807,13 +1392,14 @@ export class AiOrchestratorService {
     userMessage: string,
     characterName: string,
     characterDomains: string[],
+    usageContext?: AiUsageContext,
   ): Promise<{
     needsGroupChat: boolean;
     reason: string;
     requiredDomains: string[];
   }> {
-    const provider = await this.resolveRuntimeProvider();
-    if (!provider.apiKey) {
+    const runtimeProvider = await this.resolveRuntimeProvider();
+    if (!runtimeProvider.apiKey) {
       return { needsGroupChat: false, reason: '', requiredDomains: [] };
     }
 
@@ -822,8 +1408,29 @@ export class AiOrchestratorService {
       characterName,
       characterDomains,
     );
+    const resolvedUsageContext: AiUsageContext = {
+      surface: usageContext?.surface ?? 'system',
+      scene: usageContext?.scene ?? 'intent_classify',
+      scopeType: usageContext?.scopeType ?? 'character',
+      scopeId: usageContext?.scopeId,
+      scopeLabel: usageContext?.scopeLabel ?? characterName,
+      ownerId: usageContext?.ownerId,
+      characterId: usageContext?.characterId,
+      characterName: usageContext?.characterName ?? characterName,
+      conversationId: usageContext?.conversationId,
+      groupId: usageContext?.groupId,
+    };
+
+    let failureProvider = runtimeProvider;
 
     try {
+      const budgetedProvider = await this.prepareBudgetAwareProvider(
+        runtimeProvider,
+        'instance_default',
+        resolvedUsageContext,
+      );
+      const provider = budgetedProvider.provider;
+      failureProvider = provider;
       const client = this.createProviderClient(provider);
       const response = await client.chat.completions.create({
         model: provider.model,
@@ -833,13 +1440,31 @@ export class AiOrchestratorService {
         response_format: { type: 'json_object' },
       });
 
+      const usage = this.normalizeUsageMetrics(response.usage);
+      await this.recordSuccessfulUsage(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+        {
+          usage,
+          model: response.model ?? provider.model,
+        },
+        budgetedProvider.usageAudit,
+      );
+
       const raw = response.choices[0]?.message?.content ?? '{}';
       return JSON.parse(raw) as {
         needsGroupChat: boolean;
         reason: string;
         requiredDomains: string[];
       };
-    } catch {
+    } catch (error) {
+      await this.recordFailedUsage(
+        failureProvider,
+        'instance_default',
+        resolvedUsageContext,
+        error,
+      );
       return { needsGroupChat: false, reason: '', requiredDomains: [] };
     }
   }

@@ -372,6 +372,7 @@ export class GroupReplyTaskService {
       const character = await this.characterRepo.findOneBy({
         id: task.actorCharacterId,
       });
+      const group = await this.groupRepo.findOneBy({ id: task.groupId });
       if (!character?.profile) {
         await this.markTaskCancelled(task, 'actor_missing');
         return;
@@ -402,6 +403,8 @@ export class GroupReplyTaskService {
           isReplyTarget: false,
           recentSpeakerIndex: -1,
         },
+        groupId: task.groupId,
+        groupName: group?.name,
         conversationHistory,
         baseUserPrompt: task.userPromptText,
         userMessageParts,

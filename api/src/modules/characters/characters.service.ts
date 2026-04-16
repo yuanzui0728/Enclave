@@ -32,6 +32,7 @@ import {
   getCelebrityCharacterPreset,
   getCelebrityCharacterPresetGroup,
   listCelebrityCharacterPresets,
+  CELEBRITY_CHARACTER_PRESETS,
 } from './celebrity-character-presets';
 
 export type Character = CharacterEntity;
@@ -64,6 +65,36 @@ export class CharactersService {
 
   async upsert(character: CharacterEntity): Promise<void> {
     await this.repo.save(character);
+  }
+
+  /**
+   * 返回硬编码预设目录中所有角色的完整数据（不查 DB）。
+   * 供前台发现页使用——用户加好友前不需要管理员先"安装"。
+   */
+  listPresetCatalog(): CharacterEntity[] {
+    return CELEBRITY_CHARACTER_PRESETS.map(
+      (preset) => preset.character as CharacterEntity,
+    );
+  }
+
+  /**
+   * 确保预设角色已写入 DB。
+   * - 已存在：直接返回 DB 记录（保留管理员改动）
+   * - 不存在但匹配预设：从硬编码安装后返回
+   * - 不是预设角色：返回 null（自定义角色应已在 DB）
+   */
+  async ensurePresetCharacterInstalled(
+    characterId: string,
+  ): Promise<CharacterEntity | null> {
+    const existing = await this.repo.findOneBy({ id: characterId });
+    if (existing) return existing;
+
+    const preset = CELEBRITY_CHARACTER_PRESETS.find(
+      (p) => p.id === characterId,
+    );
+    if (!preset) return null;
+
+    return this.installCelebrityPreset(preset.presetKey);
   }
 
   async listCelebrityPresets() {

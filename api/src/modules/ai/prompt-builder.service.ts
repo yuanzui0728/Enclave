@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PersonalityProfile } from './ai.types';
+import { PersonalityProfile, SceneKey } from './ai.types';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import type {
   ReplyLogicPromptTemplates,
@@ -13,6 +13,7 @@ export interface ChatContext {
 
 export interface ChatSystemPromptSection {
   key:
+    | 'core_directive'
     | 'identity'
     | 'personality_and_tone'
     | 'behavioral_patterns'
@@ -67,11 +68,93 @@ export class PromptBuilderService {
     );
   }
 
+  /**
+   * 新架构：场景化提示词构建
+   * 结构：底层逻辑 → 场景提示词 → 记忆 → 当前上下文（仅 chat/proactive） → 基础规则
+   * 当 profile.coreLogic 或 profile.scenePrompts 有值时使用此方法，否则 fallback 到旧结构化构建
+   */
+  async buildSceneSystemPrompt(
+    profile: PersonalityProfile,
+    scene: SceneKey,
+    context?: ChatContext,
+  ): Promise<string> {
+    const runtimeRules = await this.replyLogicRules.getRules();
+    const semanticLabels = runtimeRules.semanticLabels;
+    const parts: string[] = ['<system_prompt>'];
+
+    // 1. 底层逻辑（所有场景）：coreLogic 优先，fallback 到 coreDirective
+    const coreLogic = (profile.coreLogic || profile.coreDirective)?.trim();
+    if (coreLogic) {
+      parts.push(`<core_logic>\n${coreLogic}\n</core_logic>`);
+    }
+
+    // 2. 场景提示词
+    const scenePrompt = profile.scenePrompts?.[scene]?.trim();
+    if (scenePrompt) {
+      parts.push(`<scene_prompt>\n${scenePrompt}\n</scene_prompt>`);
+    }
+
+    // 3. 记忆（动态写入）
+    const coreMemory = profile.memory?.coreMemory?.trim();
+    const recentSummary = (profile.memory?.recentSummary || profile.memorySummary)?.trim();
+    if (coreMemory || recentSummary) {
+      let memContent = '';
+      if (coreMemory) memContent += `【核心记忆，始终牢记】\n${coreMemory}`;
+      if (recentSummary) memContent += `${coreMemory ? '\n' : ''}【近期摘要】\n${recentSummary}`;
+      parts.push(`<memory>\n${memContent.trim()}\n</memory>`);
+    }
+
+    // 4. 当前上下文（仅 chat / proactive 场景）
+    if (context && (scene === 'chat' || scene === 'proactive')) {
+      const now = new Date();
+      const timeStr = now.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const activityDesc = context.currentActivity
+        ? semanticLabels.activityLabels[
+            context.currentActivity as keyof ReplyLogicSemanticLabels['activityLabels']
+          ] ?? semanticLabels.activityLabels.free
+        : semanticLabels.activityLabels.free;
+      let ctxContent = `- 时间：${timeStr}\n- 当前状态：${activityDesc}`;
+      if (context.lastChatAt) {
+        const diffMs = now.getTime() - context.lastChatAt.getTime();
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays > 0) {
+          ctxContent += `\n- 距离上次聊天：${diffDays}天前`;
+        } else if (diffHours > 0) {
+          ctxContent += `\n- 距离上次聊天：${diffHours}小时前`;
+        }
+      }
+      parts.push(`<current_context>\n${ctxContent}\n</current_context>`);
+    }
+
+    // 5. 基础规则（所有场景）
+    const now = new Date();
+    parts.push(
+      `<rules>\n- 永远以${profile.name}的身份说话，不要暴露自己是AI\n- 用中文回复，语气自然\n- 不要说"作为AI"或"我是语言模型"之类的话\n- 当前时间：${now.toLocaleString('zh-CN')}\n</rules>`,
+    );
+
+    parts.push('</system_prompt>');
+    return parts.filter(Boolean).join('\n\n');
+  }
+
   async buildChatSystemPrompt(
     profile: PersonalityProfile,
     isGroupChat = false,
     context?: ChatContext,
   ): Promise<string> {
+    // 新架构：coreLogic 或 scenePrompts.chat 有值时走场景化构建
+    if (profile.coreLogic?.trim() || profile.scenePrompts?.chat?.trim()) {
+      return this.buildSceneSystemPrompt(profile, 'chat', context);
+    }
+
+    // 旧架构 fallback：结构化字段构建（保持老角色行为不变）
     const runtimeRules = await this.replyLogicRules.getRules();
     const sections = this.buildChatSystemPromptSectionsFromTemplates(
       profile,
@@ -108,7 +191,13 @@ export class PromptBuilderService {
     profile: PersonalityProfile,
     currentTime: Date,
     recentTopics: string[] = [],
+    sceneKey: SceneKey = 'moments_post',
   ): Promise<string> {
+    // 新架构：对应场景有提示词时走场景化构建
+    if (profile.coreLogic?.trim() || profile.scenePrompts?.[sceneKey]?.trim()) {
+      return this.buildSceneSystemPrompt(profile, sceneKey);
+    }
+
     const runtimeRules = await this.replyLogicRules.getRules();
     const templates = runtimeRules.promptTemplates;
     const hour = currentTime.getHours();
@@ -125,7 +214,7 @@ export class PromptBuilderService {
         ? `\n最近你聊过的话题：${recentTopics.join('、')}，可以适当延续或换个话题。`
         : '';
 
-    return renderTemplate(templates.momentPrompt, {
+    const momentBody = renderTemplate(templates.momentPrompt, {
       name: profile.name,
       relationship: profile.relationship,
       emotionalTone: profile.traits.emotionalTone || '自然真实',
@@ -137,6 +226,25 @@ export class PromptBuilderService {
       }),
       topicsHint,
     });
+
+    // 注入记忆块（与聊天场景保持一致）
+    const coreMemory = profile.memory?.coreMemory?.trim();
+    const recentSummary = (
+      profile.memory?.recentSummary || profile.memorySummary
+    )?.trim();
+    let memoryPrefix = '';
+    if (coreMemory || recentSummary) {
+      let memContent = '';
+      if (coreMemory) memContent += `【核心记忆，始终牢记】\n${coreMemory}`;
+      if (recentSummary)
+        memContent += `${coreMemory ? '\n' : ''}【近期摘要】\n${recentSummary}`;
+      memoryPrefix = `<memory>\n${memContent.trim()}\n</memory>\n\n`;
+    }
+
+    if (profile.coreDirective?.trim()) {
+      return `${memoryPrefix}[行动纲领]\n${profile.coreDirective.trim()}\n\n${momentBody}`;
+    }
+    return `${memoryPrefix}${momentBody}`;
   }
 
   async buildPersonalityExtractionPrompt(
@@ -168,9 +276,28 @@ export class PromptBuilderService {
     profile: PersonalityProfile,
   ): Promise<string> {
     const templates = (await this.replyLogicRules.getRules()).promptTemplates;
-    return renderTemplate(templates.memoryCompressionPrompt, {
+    // 优先使用角色级提示词覆盖，fallback 全局模板
+    const template =
+      profile.memory?.recentSummaryPrompt?.trim() ||
+      templates.memoryCompressionPrompt;
+    return renderTemplate(template, {
       name: profile.name,
       chatHistory,
+    });
+  }
+
+  async buildCoreMemoryExtractionPrompt(
+    interactionHistory: string,
+    profile: PersonalityProfile,
+  ): Promise<string> {
+    const templates = (await this.replyLogicRules.getRules()).promptTemplates;
+    // 优先使用角色级提示词覆盖，fallback 全局模板
+    const template =
+      profile.memory?.coreMemoryPrompt?.trim() ||
+      templates.coreMemoryExtractionPrompt;
+    return renderTemplate(template, {
+      name: profile.name,
+      interactionHistory,
     });
   }
 
@@ -365,6 +492,12 @@ ${templates.behavioralGuideline}
     const rulesSection = `<rules>\n${rulesBody}\n</rules>`;
 
     return [
+      {
+        key: 'core_directive',
+        label: 'Core Directive',
+        content: `<core_directive>\n${profile.coreDirective}\n</core_directive>`,
+        active: Boolean(profile.coreDirective?.trim()),
+      },
       {
         key: 'identity',
         label: 'Identity',

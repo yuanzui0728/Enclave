@@ -130,7 +130,7 @@ export function MobileShell({ children }: PropsWithChildren) {
             );
           })}
           {activeKeepAlivePath ? null : (
-            <MobileViewportPane active>{children}</MobileViewportPane>
+            <MobileViewportPane active safeBottom>{children}</MobileViewportPane>
           )}
         </div>
         {showTabs ? (
@@ -194,8 +194,9 @@ export function MobileShell({ children }: PropsWithChildren) {
 
 function MobileViewportPane({
   active,
+  safeBottom = false,
   children,
-}: PropsWithChildren<{ active: boolean }>) {
+}: PropsWithChildren<{ active: boolean; safeBottom?: boolean }>) {
   return (
     <div
       aria-hidden={!active}
@@ -206,6 +207,7 @@ function MobileViewportPane({
       style={{
         paddingTop: "var(--safe-area-inset-top)",
         paddingRight: "var(--safe-area-inset-right)",
+        paddingBottom: safeBottom ? "var(--safe-area-inset-bottom)" : undefined,
         paddingLeft: "var(--safe-area-inset-left)",
       }}
     >

@@ -199,6 +199,13 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     readCharacter: (character) => character.profile?.behavioralPatterns?.quirks ?? [],
   },
   {
+    label: '行动纲领',
+    recipeField: 'tone.coreDirective',
+    targetField: 'profile.coreDirective',
+    readRecipe: (recipe) => recipe.tone.coreDirective,
+    readCharacter: (character) => character.profile?.coreDirective ?? '',
+  },
+  {
     label: '基础提示词',
     recipeField: 'tone.basePrompt',
     targetField: 'profile.basePrompt',
@@ -612,7 +619,13 @@ export class CharacterBlueprintService {
       chatSample,
       personName,
     );
-    const extractedRaw = await this.ai.extractPersonality(chatSample, personName);
+    const extractedRaw = await this.ai.extractPersonality(chatSample, personName, {
+      surface: 'admin',
+      scene: 'character_factory_extract',
+      scopeType: 'admin_task',
+      scopeLabel: personName,
+      characterId,
+    });
     const extracted = {
       speechPatterns: normalizeStringList(extractedRaw.speechPatterns),
       catchphrases: normalizeStringList(extractedRaw.catchphrases),
@@ -840,6 +853,7 @@ export class CharacterBlueprintService {
         socialStyle: character.profile?.behavioralPatterns?.socialStyle ?? '',
         taboos: [...(character.profile?.behavioralPatterns?.taboos ?? [])],
         quirks: [...(character.profile?.behavioralPatterns?.quirks ?? [])],
+        coreDirective: character.profile?.coreDirective ?? '',
         basePrompt: character.profile?.basePrompt ?? '',
         systemPrompt: character.profile?.systemPrompt ?? '',
       },
@@ -908,6 +922,7 @@ export class CharacterBlueprintService {
       name: character.name,
       relationship: character.relationship,
       expertDomains: [...character.expertDomains],
+      coreDirective: (recipe.tone.coreDirective ?? '').trim(),
       basePrompt: recipe.tone.basePrompt.trim(),
       systemPrompt: recipe.tone.systemPrompt.trim(),
       memorySummary: recipe.memorySeed.memorySummary.trim(),

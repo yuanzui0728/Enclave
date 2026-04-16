@@ -12,6 +12,7 @@ import { SocialModule } from '../social/social.module';
 import { FeedModule } from '../feed/feed.module';
 import { ChatModule } from '../chat/chat.module';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { MessageEntity } from '../chat/message.entity';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 
@@ -24,6 +25,7 @@ import { SchedulerTelemetryService } from './scheduler-telemetry.service';
       CharacterEntity,
       UserEntity,
       ConversationEntity,
+      MessageEntity,
       AIRelationshipEntity,
     ]),
     WorldModule,

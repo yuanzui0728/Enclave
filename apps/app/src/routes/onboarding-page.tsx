@@ -8,5 +8,5 @@ export function OnboardingPage() {
     void navigate({ to: "/welcome", replace: true });
   }, [navigate]);
 
-  return null;
+  return <div className="h-full bg-[#f5f5f5]" />;
 }

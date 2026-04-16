@@ -61,11 +61,6 @@ export function DesktopSubscriptionWorkspace({
       feedItems.find((delivery) => delivery.articleId === activeArticleId) ?? null,
     [activeArticleId, feedItems],
   );
-  const hasReaderSurface =
-    Boolean(activeArticleId) ||
-    articleQuery.isLoading ||
-    articleQuery.isError ||
-    markArticleReadMutation.isError;
   const unreadCount = inboxQuery.data?.summary?.unreadCount ?? 0;
   const groupCount = inboxQuery.data?.groups.length ?? 0;
   const lastDeliveredLabel = inboxQuery.data?.summary?.lastDeliveredAt
@@ -147,6 +142,11 @@ export function DesktopSubscriptionWorkspace({
       ]);
     },
   });
+  const hasReaderSurface =
+    Boolean(activeArticleId) ||
+    articleQuery.isLoading ||
+    articleQuery.isError ||
+    markArticleReadMutation.isError;
 
   useEffect(() => {
     if (

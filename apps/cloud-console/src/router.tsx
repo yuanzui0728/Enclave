@@ -27,6 +27,11 @@ const WorldDetailPage = lazy(async () => {
   return { default: mod.WorldDetailPage };
 });
 
+const JobsPage = lazy(async () => {
+  const mod = await import("./routes/jobs-page");
+  return { default: mod.JobsPage };
+});
+
 const rootRoute = createRootRoute({
   component: RootLayout,
 });
@@ -61,7 +66,20 @@ const worldDetailRoute = createRoute({
   component: WorldDetailPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, requestsRoute, requestDetailRoute, worldsRoute, worldDetailRoute]);
+const jobsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/jobs",
+  component: JobsPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  requestsRoute,
+  requestDetailRoute,
+  worldsRoute,
+  worldDetailRoute,
+  jobsRoute,
+]);
 
 export const router = createRouter({
   routeTree,

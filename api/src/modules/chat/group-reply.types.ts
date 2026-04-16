@@ -73,6 +73,7 @@ export type GroupReplyPlannerInput = {
 
 export type GroupReplyOrchestratorInput = {
   groupId: string;
+  groupName?: string;
   triggerMessageId: string;
   selectedActors: GroupReplyCandidate[];
   conversationHistory: ChatMessage[];
