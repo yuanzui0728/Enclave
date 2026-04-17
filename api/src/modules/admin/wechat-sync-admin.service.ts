@@ -927,6 +927,7 @@ function buildImportChangeRecord(input: {
     }),
     changedFields,
     diffs,
+    resultSnapshot: cloneImportSnapshotRecord(input.currentSnapshot),
   };
 }
 
@@ -1049,6 +1050,27 @@ function summarizeChangedFieldLabels(labels: string[]) {
     return labels.join('、');
   }
   return `${labels.slice(0, 3).join('、')}，另 ${labels.length - 3} 项`;
+}
+
+function cloneImportSnapshotRecord(
+  snapshot: ImportSnapshotRecord,
+): ImportSnapshotRecord {
+  return {
+    version: snapshot.version,
+    importedAt: snapshot.importedAt,
+    status: snapshot.status,
+    autoAddFriend: snapshot.autoAddFriend,
+    seedMoments: snapshot.seedMoments,
+    seededMomentCount: snapshot.seededMomentCount,
+    contact: cloneWechatContactSnapshot(snapshot.contact),
+    draftCharacter: {
+      name: snapshot.draftCharacter.name,
+      relationship: snapshot.draftCharacter.relationship,
+      bio: snapshot.draftCharacter.bio,
+      expertDomains: [...snapshot.draftCharacter.expertDomains],
+      memorySummary: snapshot.draftCharacter.memorySummary,
+    },
+  };
 }
 
 function buildSnapshotHistory(

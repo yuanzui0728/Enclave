@@ -1520,6 +1520,18 @@ export function WechatSyncPage() {
                       loadSnapshotIntoManualInput(snapshot, selectedHistoryItem)
                   : undefined
               }
+              onReplayChangeRecordPreview={
+                selectedHistoryItem
+                  ? (snapshot) =>
+                      restorePreviewFromSnapshot(snapshot, selectedHistoryItem)
+                  : undefined
+              }
+              onLoadChangeRecordToManualInput={
+                selectedHistoryItem
+                  ? (snapshot) =>
+                      loadSnapshotIntoManualInput(snapshot, selectedHistoryItem)
+                  : undefined
+              }
               confirmingSnapshotKey={
                 pendingSnapshotRestore
                   ? buildSnapshotMutationKey(
@@ -1787,6 +1799,8 @@ function HistoryDetailPanel({
   onConfirmSnapshotRestore,
   onCancelSnapshotRestore,
   onLoadSnapshotToManualInput,
+  onReplayChangeRecordPreview,
+  onLoadChangeRecordToManualInput,
   onRetryFriendship,
   onRollback,
   onLoadTemplateToManualInput,
@@ -1808,6 +1822,10 @@ function HistoryDetailPanel({
   onConfirmSnapshotRestore?: () => void;
   onCancelSnapshotRestore?: () => void;
   onLoadSnapshotToManualInput?: (snapshot: WechatImportSnapshotLike) => void;
+  onReplayChangeRecordPreview?: (snapshot: WechatImportSnapshotLike) => void;
+  onLoadChangeRecordToManualInput?: (
+    snapshot: WechatImportSnapshotLike,
+  ) => void;
   onRetryFriendship?: () => void;
   onRollback?: () => void;
   onLoadTemplateToManualInput?: () => void;
@@ -1992,7 +2010,11 @@ function HistoryDetailPanel({
         <div className="mt-4">
           <ImportChangeHistoryList
             key={item.character.id}
+            characterName={item.character.name}
             records={importChangeHistory}
+            availableSnapshots={importSnapshots}
+            onReplaySnapshotPreview={onReplayChangeRecordPreview}
+            onLoadSnapshotToManualInput={onLoadChangeRecordToManualInput}
           />
         </div>
       ) : currentImportSnapshot ? (
@@ -2181,9 +2203,17 @@ function HistoryDiffCard({
 }
 
 function ImportChangeHistoryList({
+  characterName,
   records,
+  availableSnapshots,
+  onReplaySnapshotPreview,
+  onLoadSnapshotToManualInput,
 }: {
+  characterName: string;
   records: WechatImportChangeRecordLike[];
+  availableSnapshots: WechatImportSnapshotLike[];
+  onReplaySnapshotPreview?: (snapshot: WechatImportSnapshotLike) => void;
+  onLoadSnapshotToManualInput?: (snapshot: WechatImportSnapshotLike) => void;
 }) {
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState<
@@ -2247,6 +2277,20 @@ function ImportChangeHistoryList({
             >
               历史恢复
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                downloadWechatSyncChangeExport(
+                  characterName,
+                  filteredRecords,
+                  availableSnapshots,
+                )
+              }
+              disabled={!filteredRecords.length}
+            >
+              导出当前筛选 JSON
+            </Button>
           </div>
         </div>
       </div>
@@ -2263,6 +2307,10 @@ function ImportChangeHistoryList({
         {filteredRecords.map((record) => {
           const expanded = expandedRecordId === record.id;
           const diffHeadings = buildImportChangeDiffHeadings(record);
+          const replaySnapshot = resolveReplaySnapshotForChangeRecord(
+            record,
+            availableSnapshots,
+          );
 
           return (
             <Card key={record.id} className="bg-[color:var(--surface-soft)]">
@@ -2313,17 +2361,54 @@ function ImportChangeHistoryList({
                       <StatusPill tone="healthy">无字段差异</StatusPill>
                     )}
                   </div>
-                  <Button
-                    variant={expanded ? "primary" : "secondary"}
-                    size="sm"
-                    onClick={() =>
-                      setExpandedRecordId((current) =>
-                        current === record.id ? null : record.id,
-                      )
-                    }
-                  >
-                    {expanded ? "收起完整 diff" : "展开完整 diff"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={expanded ? "primary" : "secondary"}
+                      size="sm"
+                      onClick={() =>
+                        setExpandedRecordId((current) =>
+                          current === record.id ? null : record.id,
+                        )
+                      }
+                    >
+                      {expanded ? "收起完整 diff" : "展开完整 diff"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        downloadWechatSyncChangeExport(
+                          characterName,
+                          [record],
+                          availableSnapshots,
+                        )
+                      }
+                    >
+                      导出本条 JSON
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        replaySnapshot &&
+                        onLoadSnapshotToManualInput?.(replaySnapshot)
+                      }
+                      disabled={!replaySnapshot || !onLoadSnapshotToManualInput}
+                    >
+                      写入回放 JSON
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        replaySnapshot &&
+                        onReplaySnapshotPreview?.(replaySnapshot)
+                      }
+                      disabled={!replaySnapshot || !onReplaySnapshotPreview}
+                    >
+                      {replaySnapshot ? "回放为此版本预览" : "当前无可回放快照"}
+                    </Button>
+                  </div>
                 </div>
               </div>
               {expanded ? (
@@ -3217,6 +3302,27 @@ function buildImportChangeRecordKeyword(record: WechatImportChangeRecordLike) {
     .toLowerCase();
 }
 
+function resolveReplaySnapshotForChangeRecord(
+  record: WechatImportChangeRecordLike,
+  availableSnapshots: WechatImportSnapshotLike[],
+) {
+  if (record.resultSnapshot) {
+    return record.resultSnapshot;
+  }
+
+  return (
+    availableSnapshots.find(
+      (snapshot) =>
+        snapshot.version === record.toVersion &&
+        snapshot.importedAt === record.recordedAt,
+    ) ??
+    availableSnapshots.find(
+      (snapshot) => snapshot.version === record.toVersion,
+    ) ??
+    null
+  );
+}
+
 function buildImportChangeDiffHeadings(record: WechatImportChangeRecordLike) {
   if (record.mode === "snapshot_restore") {
     return {
@@ -3237,6 +3343,46 @@ function buildImportChangeDiffHeadings(record: WechatImportChangeRecordLike) {
         : "导入前为空",
     next: `当前版 v${record.toVersion}`,
   };
+}
+
+function downloadWechatSyncChangeExport(
+  characterName: string,
+  records: WechatImportChangeRecordLike[],
+  availableSnapshots: WechatImportSnapshotLike[],
+) {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return;
+  }
+
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    characterName,
+    recordCount: records.length,
+    records: records.map((record) => ({
+      ...record,
+      replaySnapshot: resolveReplaySnapshotForChangeRecord(
+        record,
+        availableSnapshots,
+      ),
+    })),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${sanitizeWechatSyncExportFileName(characterName)}-wechat-sync-audit-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+function sanitizeWechatSyncExportFileName(value: string) {
+  const normalized = value.trim().replace(/\s+/g, "-");
+  const safe = normalized.replace(/[^a-zA-Z0-9\-_一-龥]+/g, "-");
+  return safe || "wechat-sync-character";
 }
 
 function buildContactBundleFromImportSnapshot(

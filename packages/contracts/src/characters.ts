@@ -203,6 +203,7 @@ export interface WechatSyncImportChangeRecord {
   summary: string;
   changedFields: string[];
   diffs?: WechatSyncImportChangeDiff[];
+  resultSnapshot?: WechatSyncImportSnapshot | null;
 }
 
 export interface WechatSyncImportMetadata {

@@ -114,6 +114,7 @@ export interface WechatSyncImportChangeRecordValue {
   summary: string;
   changedFields: string[];
   diffs?: WechatSyncImportChangeDiffValue[];
+  resultSnapshot?: WechatSyncImportSnapshotValue | null;
 }
 
 export interface WechatSyncImportMetadataValue {
