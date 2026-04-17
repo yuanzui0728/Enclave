@@ -862,8 +862,9 @@ export function ActionRuntimePage() {
                                     实体发现与映射向导
                                   </div>
                                   <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
-                                    会通过 Home Assistant `/api/states` 拉取可控实体，并给出推荐的
-                                    `deviceTargets` 键。
+                                    会优先通过 Home Assistant WebSocket registry
+                                    识别 area / device / entity 关系，失败时回退到
+                                    `/api/states`，并给出推荐的 `deviceTargets` 键。
                                   </div>
                                 </div>
                                 <Button
@@ -899,7 +900,12 @@ export function ActionRuntimePage() {
                                 <div className="mt-4 space-y-3">
                                   <AdminCallout
                                     tone={
-                                      discoveryResult.itemCount ? "success" : "warning"
+                                      discoveryResult.topologySource ===
+                                      "websocket_registry"
+                                        ? "success"
+                                        : discoveryResult.itemCount
+                                          ? "info"
+                                          : "warning"
                                     }
                                     title={
                                       discoveryResult.itemCount
@@ -910,8 +916,18 @@ export function ActionRuntimePage() {
                                       discoveryResult.query
                                         ? `，当前筛选：${discoveryResult.query}`
                                         : ""
-                                    }。点“写入映射”会把推荐 target 合并进当前草稿，不会自动保存。`}
+                                    }。房间识别模式：${translateDiscoveryTopologySource(
+                                      discoveryResult.topologySource,
+                                    )}。点“写入映射”会把推荐 target 合并进当前草稿，不会自动保存。`}
                                   />
+                                  {discoveryResult.warnings.map((warning) => (
+                                    <AdminCallout
+                                      key={warning}
+                                      tone="warning"
+                                      title="识别回退提示"
+                                      description={warning}
+                                    />
+                                  ))}
                                   {discoveryResult.items.map((item) => (
                                     <div
                                       key={`${item.entityId}-${item.key}`}
@@ -954,6 +970,18 @@ export function ActionRuntimePage() {
                                         />
                                       </div>
                                       <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                                        房间来源：{translateDiscoverySource(item.roomSource)}
+                                        {item.registryAreaName
+                                          ? `（${item.registryAreaName}）`
+                                          : ""}{" "}
+                                        · 设备来源：{translateDiscoverySource(
+                                          item.deviceSource,
+                                        )}
+                                        {item.registryDeviceName
+                                          ? `（${item.registryDeviceName}）`
+                                          : ""}
+                                      </div>
+                                      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
                                         可执行动作：{item.availableActions.join(" / ")}
                                       </div>
                                       <div className="mt-3">
@@ -1475,4 +1503,27 @@ function translateRunRetryStep(
     return "待确认";
   }
   return "已重新执行";
+}
+
+function translateDiscoveryTopologySource(source: string) {
+  if (source === "websocket_registry") {
+    return "WebSocket registry 优先";
+  }
+  return "states 启发式";
+}
+
+function translateDiscoverySource(source: string) {
+  if (source === "entity_registry") {
+    return "Entity Registry";
+  }
+  if (source === "device_registry") {
+    return "Device Registry";
+  }
+  if (source === "heuristic") {
+    return "名称启发式";
+  }
+  if (source === "unresolved") {
+    return "未识别";
+  }
+  return source;
 }

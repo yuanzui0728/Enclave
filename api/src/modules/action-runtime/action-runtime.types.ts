@@ -94,6 +94,10 @@ export type ActionConnectorDiscoveryItemValue = {
   state: string;
   suggestedRoom: string;
   suggestedDevice: string;
+  roomSource: string;
+  deviceSource: string;
+  registryAreaName?: string | null;
+  registryDeviceName?: string | null;
   targetConfig: Record<string, unknown>;
   availableActions: string[];
   attributes: Record<string, unknown>;
@@ -102,8 +106,10 @@ export type ActionConnectorDiscoveryItemValue = {
 export type ActionConnectorDiscoveryResultValue = {
   connector: Record<string, unknown>;
   provider: string;
+  topologySource: string;
   fetchedAt: string;
   query: string;
+  warnings: string[];
   itemCount: number;
   items: ActionConnectorDiscoveryItemValue[];
 };

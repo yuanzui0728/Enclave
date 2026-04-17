@@ -87,6 +87,30 @@ const HOME_ASSISTANT_ROOM_PATTERNS: Array<[string, RegExp[]]> = [
   ['玄关', [/玄关/, /\bentry\b/i, /\bfoyer\b/i]],
 ];
 
+type HomeAssistantRegistryArea = {
+  areaId: string;
+  name: string;
+};
+
+type HomeAssistantRegistryDevice = {
+  id: string;
+  areaId: string;
+  name: string;
+};
+
+type HomeAssistantRegistryEntity = {
+  entityId: string;
+  areaId: string;
+  deviceId: string;
+  name: string;
+};
+
+type HomeAssistantRegistrySnapshot = {
+  areasById: Map<string, HomeAssistantRegistryArea>;
+  devicesById: Map<string, HomeAssistantRegistryDevice>;
+  entitiesById: Map<string, HomeAssistantRegistryEntity>;
+};
+
 @Injectable()
 export class ActionRuntimeService {
   private connectorsSeeded = false;
@@ -2079,6 +2103,22 @@ export class ActionRuntimeService {
   ): Promise<ActionConnectorDiscoveryResultValue> {
     const { baseUrl, token, timeoutMs } =
       this.resolveHomeAssistantConnection(connector);
+    let registrySnapshot: HomeAssistantRegistrySnapshot | null = null;
+    const warnings: string[] = [];
+    try {
+      registrySnapshot = await this.fetchHomeAssistantRegistrySnapshot(
+        baseUrl,
+        token,
+        timeoutMs,
+      );
+    } catch (error) {
+      warnings.push(
+        error instanceof Error
+          ? `Home Assistant registry 拉取失败，已回退到 states 启发式识别：${error.message}`
+          : 'Home Assistant registry 拉取失败，已回退到 states 启发式识别。',
+      );
+    }
+
     const response = await fetch(`${baseUrl}/api/states`, {
       method: 'GET',
       headers: {
@@ -2113,7 +2153,9 @@ export class ActionRuntimeService {
         ? Math.max(1, Math.min(100, Math.round(payload.limit)))
         : 30;
     const items = parsedBody
-      .map((item) => this.buildHomeAssistantDiscoveryItem(item))
+      .map((item) =>
+        this.buildHomeAssistantDiscoveryItem(item, registrySnapshot),
+      )
       .filter(
         (
           item,
@@ -2139,6 +2181,12 @@ export class ActionRuntimeService {
           .includes(normalizedQuery);
       })
       .sort((left, right) => {
+        const roomSourceDiff =
+          this.rankHomeAssistantDiscoverySource(left.roomSource) -
+          this.rankHomeAssistantDiscoverySource(right.roomSource);
+        if (roomSourceDiff !== 0) {
+          return roomSourceDiff;
+        }
         if (left.suggestedRoom && !right.suggestedRoom) {
           return -1;
         }
@@ -2152,14 +2200,19 @@ export class ActionRuntimeService {
     return {
       connector: this.serializeConnector(connector),
       provider: 'home_assistant',
+      topologySource: registrySnapshot ? 'websocket_registry' : 'states_only',
       fetchedAt: new Date().toISOString(),
       query,
+      warnings,
       itemCount: items.length,
       items,
     };
   }
 
-  private buildHomeAssistantDiscoveryItem(item: unknown) {
+  private buildHomeAssistantDiscoveryItem(
+    item: unknown,
+    registrySnapshot?: HomeAssistantRegistrySnapshot | null,
+  ) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
       return null;
     }
@@ -2190,12 +2243,44 @@ export class ActionRuntimeService {
       typeof record.state === 'string' && record.state.trim()
         ? record.state.trim()
         : 'unknown';
-    const suggestedRoom = this.inferHomeAssistantRoom(friendlyName, entityId);
+    const registryEntity =
+      registrySnapshot?.entitiesById.get(entityId) ?? null;
+    const registryDevice =
+      registryEntity?.deviceId
+        ? (registrySnapshot?.devicesById.get(registryEntity.deviceId) ?? null)
+        : null;
+    const registryAreaName =
+      (registryEntity?.areaId
+        ? registrySnapshot?.areasById.get(registryEntity.areaId)?.name
+        : '') ||
+      (registryDevice?.areaId
+        ? registrySnapshot?.areasById.get(registryDevice.areaId)?.name
+        : '') ||
+      '';
+    const heuristicRoom = this.inferHomeAssistantRoom(friendlyName, entityId);
+    const suggestedRoom = registryAreaName || heuristicRoom;
+    const roomSource = registryEntity?.areaId
+      ? 'entity_registry'
+      : registryDevice?.areaId
+        ? 'device_registry'
+        : heuristicRoom
+          ? 'heuristic'
+          : 'unresolved';
+    const registryDeviceName =
+      registryDevice?.name || registryEntity?.name || '';
     const suggestedDevice = this.inferHomeAssistantDevice(
       domain,
       friendlyName,
       entityId,
+      registryEntity?.name,
+      registryDeviceName,
+      registryAreaName,
     );
+    const deviceSource = registryDevice?.name
+      ? 'device_registry'
+      : registryEntity?.name
+        ? 'entity_registry'
+        : 'heuristic';
     const key = suggestedRoom
       ? `${suggestedRoom}:${suggestedDevice}`
       : suggestedDevice || entityId;
@@ -2208,6 +2293,10 @@ export class ActionRuntimeService {
       state,
       suggestedRoom,
       suggestedDevice,
+      roomSource,
+      deviceSource,
+      registryAreaName: registryAreaName || null,
+      registryDeviceName: registryDeviceName || null,
       targetConfig: this.buildHomeAssistantDiscoveryTargetConfig(
         domain,
         entityId,
@@ -2217,7 +2306,11 @@ export class ActionRuntimeService {
         domain,
         suggestedDevice,
       ),
-      attributes,
+      attributes: {
+        ...attributes,
+        registryAreaId: registryEntity?.areaId || registryDevice?.areaId || null,
+        registryDeviceId: registryEntity?.deviceId || null,
+      },
     };
   }
 
@@ -2234,6 +2327,281 @@ export class ActionRuntimeService {
     ].includes(domain);
   }
 
+  private rankHomeAssistantDiscoverySource(source: string) {
+    if (source === 'entity_registry') {
+      return 0;
+    }
+    if (source === 'device_registry') {
+      return 1;
+    }
+    if (source === 'heuristic') {
+      return 2;
+    }
+    return 3;
+  }
+
+  private async fetchHomeAssistantRegistrySnapshot(
+    baseUrl: string,
+    token: string,
+    timeoutMs: number,
+  ): Promise<HomeAssistantRegistrySnapshot> {
+    const wsUrl = this.resolveHomeAssistantWebsocketUrl(baseUrl);
+    const commands = [
+      { id: 1, type: 'config/area_registry/list' },
+      { id: 2, type: 'config/device_registry/list' },
+      { id: 3, type: 'config/entity_registry/list_for_display' },
+    ] as const;
+
+    const results = await new Promise<{
+      areas: unknown;
+      devices: unknown;
+      entities: unknown;
+    }>((resolve, reject) => {
+      const socket = new WebSocket(wsUrl);
+      let settled = false;
+      const commandResults = new Map<number, unknown>();
+      const timeout = setTimeout(() => {
+        fail(new Error('Home Assistant WebSocket registry 拉取超时。'));
+      }, timeoutMs);
+
+      const fail = (error: Error) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timeout);
+        try {
+          socket.close();
+        } catch {
+          // noop
+        }
+        reject(error);
+      };
+
+      const finish = () => {
+        if (settled || commandResults.size < commands.length) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timeout);
+        try {
+          socket.close();
+        } catch {
+          // noop
+        }
+        resolve({
+          areas: commandResults.get(1),
+          devices: commandResults.get(2),
+          entities: commandResults.get(3),
+        });
+      };
+
+      socket.addEventListener('message', (event) => {
+        let message: Record<string, unknown>;
+        try {
+          message = JSON.parse(String(event.data)) as Record<string, unknown>;
+        } catch {
+          fail(new Error('Home Assistant WebSocket 返回了无法解析的消息。'));
+          return;
+        }
+
+        if (message.type === 'auth_required') {
+          socket.send(
+            JSON.stringify({
+              type: 'auth',
+              access_token: token,
+            }),
+          );
+          return;
+        }
+
+        if (message.type === 'auth_invalid') {
+          fail(
+            new Error(
+              typeof message.message === 'string' && message.message.trim()
+                ? `Home Assistant WebSocket 鉴权失败：${message.message.trim()}`
+                : 'Home Assistant WebSocket 鉴权失败。',
+            ),
+          );
+          return;
+        }
+
+        if (message.type === 'auth_ok') {
+          for (const command of commands) {
+            socket.send(JSON.stringify(command));
+          }
+          return;
+        }
+
+        if (message.type !== 'result') {
+          return;
+        }
+
+        const id =
+          typeof message.id === 'number' ? message.id : Number(message.id);
+        if (!Number.isFinite(id) || !commands.some((command) => command.id === id)) {
+          return;
+        }
+
+        if (message.success !== true) {
+          const errorMessage =
+            message.error && typeof message.error === 'object'
+              ? ((message.error as Record<string, unknown>).message as string)
+              : null;
+          fail(
+            new Error(
+              errorMessage?.trim()
+                ? `Home Assistant WebSocket command ${id} 失败：${errorMessage.trim()}`
+                : `Home Assistant WebSocket command ${id} 失败。`,
+            ),
+          );
+          return;
+        }
+
+        commandResults.set(id, message.result);
+        finish();
+      });
+
+      socket.addEventListener('error', () => {
+        fail(new Error('Home Assistant WebSocket 连接失败。'));
+      });
+
+      socket.addEventListener('close', (event) => {
+        if (!settled && commandResults.size < commands.length) {
+          fail(
+            new Error(
+              `Home Assistant WebSocket 连接提前关闭（code=${event.code || 'unknown'}）。`,
+            ),
+          );
+        }
+      });
+    });
+
+    return this.buildHomeAssistantRegistrySnapshot(results);
+  }
+
+  private resolveHomeAssistantWebsocketUrl(baseUrl: string) {
+    if (baseUrl.startsWith('https://')) {
+      return `wss://${baseUrl.slice('https://'.length)}/api/websocket`;
+    }
+    if (baseUrl.startsWith('http://')) {
+      return `ws://${baseUrl.slice('http://'.length)}/api/websocket`;
+    }
+    return `${baseUrl.replace(/^ws/i, 'ws')}/api/websocket`;
+  }
+
+  private buildHomeAssistantRegistrySnapshot(input: {
+    areas: unknown;
+    devices: unknown;
+    entities: unknown;
+  }): HomeAssistantRegistrySnapshot {
+    const areasById = new Map<string, HomeAssistantRegistryArea>();
+    const devicesById = new Map<string, HomeAssistantRegistryDevice>();
+    const entitiesById = new Map<string, HomeAssistantRegistryEntity>();
+
+    if (Array.isArray(input.areas)) {
+      for (const item of input.areas) {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          continue;
+        }
+        const record = item as Record<string, unknown>;
+        const areaId =
+          typeof record.area_id === 'string' ? record.area_id.trim() : '';
+        const name = typeof record.name === 'string' ? record.name.trim() : '';
+        if (!areaId || !name) {
+          continue;
+        }
+        areasById.set(areaId, {
+          areaId,
+          name,
+        });
+      }
+    }
+
+    if (Array.isArray(input.devices)) {
+      for (const item of input.devices) {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          continue;
+        }
+        const record = item as Record<string, unknown>;
+        const id = typeof record.id === 'string' ? record.id.trim() : '';
+        const areaId =
+          typeof record.area_id === 'string' ? record.area_id.trim() : '';
+        const name = [
+          record.name_by_user,
+          record.name,
+          record.model,
+        ].find((value) => typeof value === 'string' && value.trim()) as
+          | string
+          | undefined;
+        if (!id) {
+          continue;
+        }
+        devicesById.set(id, {
+          id,
+          areaId,
+          name: name?.trim() || id,
+        });
+      }
+    }
+
+    const rawEntities =
+      input.entities &&
+      typeof input.entities === 'object' &&
+      !Array.isArray(input.entities) &&
+      Array.isArray((input.entities as Record<string, unknown>).entities)
+        ? ((input.entities as Record<string, unknown>).entities as unknown[])
+        : Array.isArray(input.entities)
+          ? input.entities
+          : [];
+    for (const item of rawEntities) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        continue;
+      }
+      const record = item as Record<string, unknown>;
+      const entityId = [
+        record.ei,
+        record.entity_id,
+      ].find((value) => typeof value === 'string' && value.trim()) as
+        | string
+        | undefined;
+      if (!entityId?.trim()) {
+        continue;
+      }
+      const areaId = [
+        record.ai,
+        record.area_id,
+      ].find((value) => typeof value === 'string' && value.trim()) as
+        | string
+        | undefined;
+      const deviceId = [
+        record.di,
+        record.device_id,
+      ].find((value) => typeof value === 'string' && value.trim()) as
+        | string
+        | undefined;
+      const name = [
+        record.en,
+        record.name,
+        record.original_name,
+      ].find((value) => typeof value === 'string' && value.trim()) as
+        | string
+        | undefined;
+      entitiesById.set(entityId.trim(), {
+        entityId: entityId.trim(),
+        areaId: areaId?.trim() || '',
+        deviceId: deviceId?.trim() || '',
+        name: name?.trim() || entityId.trim(),
+      });
+    }
+
+    return {
+      areasById,
+      devicesById,
+      entitiesById,
+    };
+  }
+
   private inferHomeAssistantRoom(...candidates: string[]) {
     const haystack = candidates.join(' ');
     for (const [room, patterns] of HOME_ASSISTANT_ROOM_PATTERNS) {
@@ -2248,8 +2616,20 @@ export class ActionRuntimeService {
     domain: string,
     friendlyName: string,
     entityId: string,
+    entityRegistryName?: string,
+    registryDeviceName?: string,
+    registryAreaName?: string,
   ) {
-    const haystack = `${friendlyName} ${entityId}`.toLowerCase();
+    const haystack = [
+      friendlyName,
+      entityId,
+      entityRegistryName,
+      registryDeviceName,
+      registryAreaName,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
     if (domain === 'climate') {
       return '空调';
     }
