@@ -36,6 +36,8 @@ export interface FollowupRuntimeCandidateWeights {
 export interface FollowupRuntimePromptTemplates {
   openLoopExtractionPrompt: string;
   handoffMessagePrompt: string;
+  friendRequestGreetingPrompt: string;
+  friendRequestNoticePrompt: string;
 }
 
 export interface FollowupRuntimeTextTemplates {
@@ -44,11 +46,15 @@ export interface FollowupRuntimeTextTemplates {
   jobSummarySkippedNoSignals: string;
   fallbackMessage: string;
   recommendationBadge: string;
+  friendRequestFallbackGreeting: string;
+  friendRequestFallbackMessage: string;
+  friendRequestBadge: string;
 }
 
 export interface FollowupRuntimeRules {
   enabled: boolean;
   executionMode: FollowupRuntimeExecutionMode;
+  autoSendFriendRequestToNotFriend: boolean;
   scanIntervalMinutes: number;
   lookbackHours: number;
   quietHoursThreshold: number;

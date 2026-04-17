@@ -37,6 +37,8 @@ export type FollowupRuntimeCandidateWeightsValue = {
 export type FollowupRuntimePromptTemplatesValue = {
   openLoopExtractionPrompt: string;
   handoffMessagePrompt: string;
+  friendRequestGreetingPrompt: string;
+  friendRequestNoticePrompt: string;
 };
 
 export type FollowupRuntimeTextTemplatesValue = {
@@ -45,11 +47,15 @@ export type FollowupRuntimeTextTemplatesValue = {
   jobSummarySkippedNoSignals: string;
   fallbackMessage: string;
   recommendationBadge: string;
+  friendRequestFallbackGreeting: string;
+  friendRequestFallbackMessage: string;
+  friendRequestBadge: string;
 };
 
 export type FollowupRuntimeRulesValue = {
   enabled: boolean;
   executionMode: FollowupRuntimeExecutionModeValue;
+  autoSendFriendRequestToNotFriend: boolean;
   scanIntervalMinutes: number;
   lookbackHours: number;
   quietHoursThreshold: number;
@@ -230,6 +236,7 @@ export const FOLLOWUP_RUNTIME_RULES_CONFIG_KEY = 'followup_runtime_rules';
 export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
   enabled: true,
   executionMode: 'emit_messages',
+  autoSendFriendRequestToNotFriend: true,
   scanIntervalMinutes: 60,
   lookbackHours: 72,
   quietHoursThreshold: 6,
@@ -312,15 +319,52 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
 - 不要用项目符号，不要加引号
 - 结尾不要加“你看要不要”这种过度客气拖沓的话
 - 保持“我自己”那种克制、直接、像内心提醒的语气`,
+    friendRequestGreetingPrompt: `你要替用户写一条很短的好友申请招呼语，准备发给一个新朋友。
+
+未闭环事项：
+{{loopSummary}}
+
+目标对象：
+{{targetCharacterName}}（{{targetCharacterRelationship}}）
+
+想加对方的原因：
+{{reasonSummary}}
+
+要求：
+- 只写 1-2 句话
+- 自然、具体，像真实加好友时会发的话
+- 可以轻轻提到想聊的主题，但不要像系统推荐
+- 不要假装已经很熟，不要过度热情，不要写成模板腔`,
+    friendRequestNoticePrompt: `你现在代表“我自己”这个角色，要给用户发一条很短的主动跟进消息，告诉他这件事我已经先往前推了一步。
+
+未闭环事项：
+{{loopSummary}}
+
+我刚刚发出好友申请的人：
+{{targetCharacterName}}（{{targetCharacterRelationship}}）
+
+这么做的原因：
+{{reasonSummary}}
+
+要求：
+- 只写 1-2 句话
+- 先点出这件事还值得继续推进，再自然说明好友申请已经发出
+- 不要像系统通知，不要用项目符号
+- 保持“我自己”那种克制、直接、像内心提醒的语气`,
   },
   textTemplates: {
     jobSummarySuccess:
-      '扫描到 {{candidateLoopCount}} 个候选 open loop，命中 {{selectedLoopCount}} 个并发出 {{emittedRecommendationCount}} 条推荐。',
+      '扫描到 {{candidateLoopCount}} 个候选 open loop，命中 {{selectedLoopCount}} 个，发出 {{emittedRecommendationCount}} 条推荐，其中 {{autoStartedFriendRequestCount}} 条已自动发起好友申请。',
     jobSummarySkippedDisabled: '主动跟进已停用，跳过本次扫描。',
     jobSummarySkippedNoSignals: '没有命中适合回捞的安静线程或手动提醒。',
     fallbackMessage:
       '这件事其实还没真正放下。继续往下聊的话，{{targetCharacterName}}会更合适。',
     recommendationBadge: '继续聊',
+    friendRequestFallbackGreeting:
+      '你好，我最近一直在想{{loopSummary}}这件事，感觉你会很懂，想先加个好友聊聊。',
+    friendRequestFallbackMessage:
+      '这件事继续拖着没意义，我已经先把{{targetCharacterName}}加上了，后面可以直接接着聊。',
+    friendRequestBadge: '已发申请',
   },
 };
 
@@ -339,6 +383,9 @@ export function normalizeFollowupRuntimeRules(
     enabled: input?.enabled ?? defaults.enabled,
     executionMode:
       input?.executionMode === 'dry_run' ? 'dry_run' : defaults.executionMode,
+    autoSendFriendRequestToNotFriend:
+      input?.autoSendFriendRequestToNotFriend ??
+      defaults.autoSendFriendRequestToNotFriend,
     scanIntervalMinutes: clampInt(
       input?.scanIntervalMinutes,
       defaults.scanIntervalMinutes,
@@ -446,6 +493,14 @@ export function normalizeFollowupRuntimeRules(
         promptTemplates.handoffMessagePrompt,
         defaults.promptTemplates.handoffMessagePrompt,
       ),
+      friendRequestGreetingPrompt: sanitizeTemplate(
+        promptTemplates.friendRequestGreetingPrompt,
+        defaults.promptTemplates.friendRequestGreetingPrompt,
+      ),
+      friendRequestNoticePrompt: sanitizeTemplate(
+        promptTemplates.friendRequestNoticePrompt,
+        defaults.promptTemplates.friendRequestNoticePrompt,
+      ),
     },
     textTemplates: {
       jobSummarySuccess: sanitizeTemplate(
@@ -467,6 +522,18 @@ export function normalizeFollowupRuntimeRules(
       recommendationBadge: sanitizeTemplate(
         textTemplates.recommendationBadge,
         defaults.textTemplates.recommendationBadge,
+      ),
+      friendRequestFallbackGreeting: sanitizeTemplate(
+        textTemplates.friendRequestFallbackGreeting,
+        defaults.textTemplates.friendRequestFallbackGreeting,
+      ),
+      friendRequestFallbackMessage: sanitizeTemplate(
+        textTemplates.friendRequestFallbackMessage,
+        defaults.textTemplates.friendRequestFallbackMessage,
+      ),
+      friendRequestBadge: sanitizeTemplate(
+        textTemplates.friendRequestBadge,
+        defaults.textTemplates.friendRequestBadge,
       ),
     },
   };

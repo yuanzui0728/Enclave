@@ -20,6 +20,7 @@ import { MessageRemindersService } from '../chat/message-reminders.service';
 import { MessageEntity } from '../chat/message.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
+import { SocialService } from '../social/social.service';
 import type {
   FollowupDirectThreadSnapshotValue,
   FollowupExtractedOpenLoopValue,
@@ -93,6 +94,7 @@ export class FollowupRuntimeService {
     private readonly chatService: ChatService,
     private readonly chatGateway: ChatGateway,
     private readonly messageRemindersService: MessageRemindersService,
+    private readonly socialService: SocialService,
   ) {}
 
   async getOverview(): Promise<FollowupRuntimeOverviewValue> {
@@ -351,6 +353,11 @@ export class FollowupRuntimeService {
       run.promptSnapshot = {
         openLoopExtractionPrompt:
           rules.promptTemplates.openLoopExtractionPrompt,
+        handoffMessagePrompt: rules.promptTemplates.handoffMessagePrompt,
+        friendRequestGreetingPrompt:
+          rules.promptTemplates.friendRequestGreetingPrompt,
+        friendRequestNoticePrompt:
+          rules.promptTemplates.friendRequestNoticePrompt,
       };
       run.llmOutputPayload = extraction as unknown as Record<string, unknown>;
       const loops = this.normalizeExtractedLoops(
@@ -366,6 +373,7 @@ export class FollowupRuntimeService {
       await this.runRepo.save(run);
 
       let emittedCount = 0;
+      let autoStartedFriendRequestCount = 0;
       let remainingBudget = Math.max(
         0,
         rules.dailyRecommendationLimit - todayRecommendationCount,
@@ -439,22 +447,61 @@ export class FollowupRuntimeService {
           continue;
         }
 
+        let startedFriendRequest: FriendRequestEntity | null = null;
+        let badgeLabel = rules.textTemplates.recommendationBadge;
+
+        if (
+          rules.autoSendFriendRequestToNotFriend &&
+          candidate.relationshipState === 'not_friend'
+        ) {
+          try {
+            startedFriendRequest = await this.startFollowupFriendRequest({
+              loop: draft.loop,
+              candidate,
+              rules,
+              ownerId: owner.id,
+            });
+            recommendation.friendRequestId = startedFriendRequest.id;
+            recommendation.friendRequestStartedAt =
+              startedFriendRequest.createdAt ?? new Date();
+            recommendation.relationshipState = 'pending';
+            recommendation.status = 'friend_request_pending';
+            badgeLabel = rules.textTemplates.friendRequestBadge;
+          } catch (error) {
+            this.logger.warn(
+              'Failed to auto-start followup friend request, falling back to recommendation message',
+              {
+                recommendationId: recommendation.id,
+                targetCharacterId: candidate.character.id,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            );
+          }
+        }
+
         try {
+          const handoffMessage = startedFriendRequest
+            ? await this.buildFriendRequestNoticeMessage({
+                loop: draft.loop,
+                candidate,
+                rules,
+                ownerId: owner.id,
+              })
+            : await this.buildHandoffMessage({
+                loop: draft.loop,
+                candidate,
+                rules,
+                ownerId: owner.id,
+              });
+          recommendation.handoffSummary = handoffMessage;
           const conversation =
             await this.chatService.getOrCreateConversation(SELF_CHARACTER_ID);
-          const handoffMessage = await this.buildHandoffMessage({
-            loop: draft.loop,
-            candidate,
-            rules,
-            ownerId: owner.id,
-          });
           const textMessage = await this.chatGateway.sendProactiveMessage(
             conversation.id,
             SELF_CHARACTER_ID,
             '我自己',
             handoffMessage,
           );
-          recommendation.handoffSummary = handoffMessage;
           const cardMessage =
             await this.chatGateway.sendProactiveAttachmentMessage(
               conversation.id,
@@ -480,7 +527,7 @@ export class FollowupRuntimeService {
                     | 'friend'
                     | 'pending'
                     | 'not_friend',
-                  badgeLabel: rules.textTemplates.recommendationBadge,
+                  badgeLabel,
                 },
               },
               `[名片] ${candidate.character.name}`,
@@ -492,8 +539,28 @@ export class FollowupRuntimeService {
           await this.recommendationRepo.save(recommendation);
           emittedCount += 1;
           remainingBudget -= 1;
+          if (startedFriendRequest) {
+            autoStartedFriendRequestCount += 1;
+          }
         } catch (error) {
+          if (startedFriendRequest) {
+            await this.recommendationRepo.save(recommendation);
+            emittedCount += 1;
+            remainingBudget -= 1;
+            autoStartedFriendRequestCount += 1;
+            this.logger.warn(
+              'Followup friend request started but owner notification failed',
+              {
+                recommendationId: recommendation.id,
+                friendRequestId: startedFriendRequest.id,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            );
+            continue;
+          }
+
           recommendation.status = 'draft';
+          recommendation.handoffSummary = null;
           await this.recommendationRepo.save(recommendation);
           openLoop.status = 'watching';
           openLoop.recommendedAt = null;
@@ -512,6 +579,7 @@ export class FollowupRuntimeService {
           candidateLoopCount: run.candidateLoopCount,
           selectedLoopCount: run.selectedLoopCount,
           emittedRecommendationCount: emittedCount,
+          autoStartedFriendRequestCount,
         }),
       });
     } catch (error) {
@@ -1020,6 +1088,124 @@ export class FollowupRuntimeService {
     return sanitizeHandoffText(text || fallback);
   }
 
+  private async startFollowupFriendRequest(input: {
+    loop: FollowupExtractedOpenLoopValue;
+    candidate: RecommendationCandidate;
+    rules: FollowupRuntimeRulesValue;
+    ownerId: string;
+  }) {
+    const prompt = renderTemplate(
+      input.rules.promptTemplates.friendRequestGreetingPrompt,
+      {
+        loopSummary: input.loop.summary,
+        sourceThreadTitle:
+          input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
+        targetCharacterName: input.candidate.character.name,
+        targetCharacterRelationship:
+          input.candidate.character.relationship || '更合适的人',
+        reasonSummary:
+          input.loop.reasonSummary ??
+          (input.candidate.matchReasons.join('，') ||
+            `${input.candidate.character.name}更适合继续接住这个话题。`),
+      },
+    );
+    const fallback = renderTemplate(
+      input.rules.textTemplates.friendRequestFallbackGreeting,
+      {
+        loopSummary: input.loop.summary,
+        sourceThreadTitle:
+          input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
+        targetCharacterName: input.candidate.character.name,
+        targetCharacterRelationship:
+          input.candidate.character.relationship || '更合适的人',
+        reasonSummary:
+          input.loop.reasonSummary ??
+          (input.candidate.matchReasons.join('，') ||
+            `${input.candidate.character.name}更适合继续接住这个话题。`),
+      },
+    );
+    const text = await this.ai.generatePlainText({
+      prompt,
+      usageContext: {
+        surface: 'app',
+        scene: 'followup_runtime_friend_request_greeting',
+        scopeType: 'character',
+        scopeId: SELF_CHARACTER_ID,
+        scopeLabel: '我自己',
+        ownerId: input.ownerId,
+        characterId: SELF_CHARACTER_ID,
+        characterName: '我自己',
+      },
+      maxTokens: 120,
+      temperature: 0.45,
+      fallback,
+    });
+
+    return this.socialService.sendFriendRequest(
+      input.candidate.character.id,
+      sanitizeFriendRequestGreeting(text || fallback),
+      {
+        triggerScene: 'followup_runtime',
+      },
+    );
+  }
+
+  private async buildFriendRequestNoticeMessage(input: {
+    loop: FollowupExtractedOpenLoopValue;
+    candidate: RecommendationCandidate;
+    rules: FollowupRuntimeRulesValue;
+    ownerId: string;
+  }) {
+    const prompt = renderTemplate(
+      input.rules.promptTemplates.friendRequestNoticePrompt,
+      {
+        loopSummary: input.loop.summary,
+        sourceThreadTitle:
+          input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
+        targetCharacterName: input.candidate.character.name,
+        targetCharacterRelationship:
+          input.candidate.character.relationship || '更合适的人',
+        reasonSummary:
+          input.loop.reasonSummary ??
+          (input.candidate.matchReasons.join('，') ||
+            `${input.candidate.character.name}更适合继续接住这个话题。`),
+      },
+    );
+    const fallback = renderTemplate(
+      input.rules.textTemplates.friendRequestFallbackMessage,
+      {
+        loopSummary: input.loop.summary,
+        sourceThreadTitle:
+          input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
+        targetCharacterName: input.candidate.character.name,
+        targetCharacterRelationship:
+          input.candidate.character.relationship || '更合适的人',
+        reasonSummary:
+          input.loop.reasonSummary ??
+          (input.candidate.matchReasons.join('，') ||
+            `${input.candidate.character.name}更适合继续接住这个话题。`),
+      },
+    );
+    const text = await this.ai.generatePlainText({
+      prompt,
+      usageContext: {
+        surface: 'app',
+        scene: 'followup_runtime_friend_request_notice',
+        scopeType: 'character',
+        scopeId: SELF_CHARACTER_ID,
+        scopeLabel: '我自己',
+        ownerId: input.ownerId,
+        characterId: SELF_CHARACTER_ID,
+        characterName: '我自己',
+      },
+      maxTokens: 160,
+      temperature: 0.45,
+      fallback,
+    });
+
+    return sanitizeHandoffText(text || fallback);
+  }
+
   private async finishRun(
     run: FollowupRunEntity,
     input: {
@@ -1289,6 +1475,16 @@ function sanitizeHandoffText(value: string) {
     .map((item) => item.trim())
     .filter(Boolean)
     .join(' ')
+    .trim();
+}
+
+function sanitizeFriendRequestGreeting(value: string) {
+  return sanitizeAiText(value || '')
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 120)
     .trim();
 }
 

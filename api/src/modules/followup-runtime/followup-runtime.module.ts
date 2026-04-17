@@ -6,6 +6,7 @@ import { CharactersModule } from '../characters/characters.module';
 import { ChatModule } from '../chat/chat.module';
 import { SystemConfigModule } from '../config/config.module';
 import { EventsModule } from '../events/events.module';
+import { SocialModule } from '../social/social.module';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { MessageEntity } from '../chat/message.entity';
@@ -37,6 +38,7 @@ import { FollowupRuntimeService } from './followup-runtime.service';
     ChatModule,
     SystemConfigModule,
     EventsModule,
+    SocialModule,
   ],
   providers: [
     FollowupRuntimeRulesService,

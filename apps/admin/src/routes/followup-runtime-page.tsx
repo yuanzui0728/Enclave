@@ -110,7 +110,7 @@ export function FollowupRuntimePage() {
       <AdminPageHero
         eyebrow="主动跟进"
         title="我自己回捞未闭环事项"
-        description="扫描已经安静下来的私聊，把没真正解决的事从“我自己”里捞回来，再推荐更合适的朋友继续接住。"
+        description="扫描已经安静下来的私聊，把没真正解决的事从“我自己”里捞回来；能直接接住的人，必要时会先自动发出好友申请。"
         metrics={metrics}
         actions={
           <>
@@ -180,6 +180,16 @@ export function FollowupRuntimePage() {
                     ...draft,
                     executionMode:
                       value === "dry_run" ? "dry_run" : "emit_messages",
+                  })
+                }
+              />
+              <CheckboxField
+                label="候选还不是好友时自动发申请"
+                checked={draft.autoSendFriendRequestToNotFriend}
+                onChange={(checked) =>
+                  setDraft({
+                    ...draft,
+                    autoSendFriendRequestToNotFriend: checked,
                   })
                 }
               />
@@ -433,6 +443,34 @@ export function FollowupRuntimePage() {
                   })
                 }
               />
+              <TextareaField
+                label="好友申请招呼语 Prompt"
+                rows={12}
+                value={draft.promptTemplates.friendRequestGreetingPrompt}
+                onChange={(value) =>
+                  setDraft({
+                    ...draft,
+                    promptTemplates: {
+                      ...draft.promptTemplates,
+                      friendRequestGreetingPrompt: value,
+                    },
+                  })
+                }
+              />
+              <TextareaField
+                label="申请后通知 Prompt"
+                rows={12}
+                value={draft.promptTemplates.friendRequestNoticePrompt}
+                onChange={(value) =>
+                  setDraft({
+                    ...draft,
+                    promptTemplates: {
+                      ...draft.promptTemplates,
+                      friendRequestNoticePrompt: value,
+                    },
+                  })
+                }
+              />
               <div className="grid gap-4 md:grid-cols-2">
                 <TextField
                   label="成功总结文案"
@@ -495,6 +533,45 @@ export function FollowupRuntimePage() {
                       textTemplates: {
                         ...draft.textTemplates,
                         recommendationBadge: value,
+                      },
+                    })
+                  }
+                />
+                <TextField
+                  label="好友申请兜底招呼语"
+                  value={draft.textTemplates.friendRequestFallbackGreeting}
+                  onChange={(value) =>
+                    setDraft({
+                      ...draft,
+                      textTemplates: {
+                        ...draft.textTemplates,
+                        friendRequestFallbackGreeting: value,
+                      },
+                    })
+                  }
+                />
+                <TextField
+                  label="申请后通知兜底文案"
+                  value={draft.textTemplates.friendRequestFallbackMessage}
+                  onChange={(value) =>
+                    setDraft({
+                      ...draft,
+                      textTemplates: {
+                        ...draft.textTemplates,
+                        friendRequestFallbackMessage: value,
+                      },
+                    })
+                  }
+                />
+                <TextField
+                  label="已发申请角标"
+                  value={draft.textTemplates.friendRequestBadge}
+                  onChange={(value) =>
+                    setDraft({
+                      ...draft,
+                      textTemplates: {
+                        ...draft.textTemplates,
+                        friendRequestBadge: value,
                       },
                     })
                   }
