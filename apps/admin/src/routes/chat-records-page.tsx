@@ -62,10 +62,26 @@ const REVIEW_STATUS_OPTIONS: Array<{
   { value: "resolved", label: "已处理" },
 ];
 
+function readInitialChatRecordsFocus() {
+  if (typeof window === "undefined") {
+    return {
+      characterId: "",
+      conversationId: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return {
+    characterId: params.get("characterId")?.trim() || "",
+    conversationId: params.get("conversationId")?.trim() || "",
+  };
+}
+
 export function ChatRecordsPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
-  const [characterId, setCharacterId] = useState("");
+  const initialFocus = useMemo(() => readInitialChatRecordsFocus(), []);
+  const [characterId, setCharacterId] = useState(initialFocus.characterId);
   const [includeHidden, setIncludeHidden] = useState(false);
   const [onlyReviewed, setOnlyReviewed] = useState(false);
   const [includeClearedHistory, setIncludeClearedHistory] = useState(false);
@@ -74,7 +90,9 @@ export function ChatRecordsPage() {
   const [sortBy, setSortBy] =
     useState<AdminChatRecordConversationListQuery["sortBy"]>("lastActivityAt");
   const [page, setPage] = useState(1);
-  const [selectedConversationId, setSelectedConversationId] = useState("");
+  const [selectedConversationId, setSelectedConversationId] = useState(
+    initialFocus.conversationId,
+  );
   const [focusedMessageId, setFocusedMessageId] = useState("");
   const [reviewDraft, setReviewDraft] = useState<{
     status: AdminChatRecordReviewStatus;
@@ -130,12 +148,9 @@ export function ChatRecordsPage() {
 
   useEffect(() => {
     if (!conversations.length) {
-      if (selectedConversationId) {
-        setSelectedConversationId("");
-      }
       return;
     }
-    if (!selectedConversationId || !conversations.some((item) => item.id === selectedConversationId)) {
+    if (!selectedConversationId) {
       setSelectedConversationId(conversations[0].id);
     }
   }, [conversations, selectedConversationId]);

@@ -224,6 +224,35 @@ export interface TokenUsageDowngradeInsights {
   byModelSwitch: TokenUsageDowngradeModelSwitchItem[];
 }
 
+export interface TokenUsageDowngradeReviewSample {
+  conversationId: string;
+  occurredAt: string;
+  reviewUpdatedAt: string;
+  targetLabel: string;
+  characterId?: string | null;
+  characterName?: string | null;
+  scene: string;
+  reviewStatus: string;
+  reviewTags: string[];
+  reviewNote?: string | null;
+}
+
+export interface TokenUsageDowngradeCharacterQualityItem {
+  characterId?: string | null;
+  characterName: string;
+  requestCount: number;
+  distinctConversationCount: number;
+  reviewedConversationCount: number;
+  acceptableConversationCount: number;
+  tooWeakConversationCount: number;
+  pendingOutcomeConversationCount: number;
+  reviewCoverageRate: number | null;
+  acceptableReviewRate: number | null;
+  tooWeakReviewRate: number | null;
+  tooWeakSamples: TokenUsageDowngradeReviewSample[];
+  pendingOutcomeSamples: TokenUsageDowngradeReviewSample[];
+}
+
 export interface TokenUsageDowngradeQualityInsights {
   generatedAt: string;
   requestCount: number;
@@ -233,6 +262,8 @@ export interface TokenUsageDowngradeQualityInsights {
   reviewedConversationCount: number;
   resolvedConversationCount: number;
   importantConversationCount: number;
+  acceptableConversationCount: number;
+  tooWeakConversationCount: number;
   immediateContinuationCount: number;
   continuedWithin24hCount: number;
   postDowngradeFailureCount: number;
@@ -242,5 +273,10 @@ export interface TokenUsageDowngradeQualityInsights {
   postDowngradeFailureRate: number | null;
   postDowngradeBlockedRate: number | null;
   reviewCoverageRate: number | null;
+  acceptableReviewRate: number | null;
+  tooWeakReviewRate: number | null;
   proxyQualityScore: number | null;
+  tooWeakSamples: TokenUsageDowngradeReviewSample[];
+  pendingOutcomeSamples: TokenUsageDowngradeReviewSample[];
+  byCharacter: TokenUsageDowngradeCharacterQualityItem[];
 }

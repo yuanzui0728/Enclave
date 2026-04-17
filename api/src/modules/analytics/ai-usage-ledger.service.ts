@@ -233,6 +233,35 @@ type DowngradeModelSwitchBucket = {
   estimatedSavings: number;
 };
 
+type DowngradeReviewSample = {
+  conversationId: string;
+  occurredAt: string;
+  reviewUpdatedAt: string;
+  targetLabel: string;
+  characterId?: string | null;
+  characterName?: string | null;
+  scene: string;
+  reviewStatus: string;
+  reviewTags: string[];
+  reviewNote?: string | null;
+};
+
+type DowngradeCharacterQualityItem = {
+  characterId?: string | null;
+  characterName: string;
+  requestCount: number;
+  distinctConversationCount: number;
+  reviewedConversationCount: number;
+  acceptableConversationCount: number;
+  tooWeakConversationCount: number;
+  pendingOutcomeConversationCount: number;
+  reviewCoverageRate: number | null;
+  acceptableReviewRate: number | null;
+  tooWeakReviewRate: number | null;
+  tooWeakSamples: DowngradeReviewSample[];
+  pendingOutcomeSamples: DowngradeReviewSample[];
+};
+
 const PRICING_CONFIG_KEY = 'token_pricing_catalog';
 const BUDGET_CONFIG_KEY = 'token_budget_config';
 const PRICING_CACHE_TTL_MS = 10_000;
@@ -776,6 +805,8 @@ export class AiUsageLedgerService {
         reviewedConversationCount: 0,
         resolvedConversationCount: 0,
         importantConversationCount: 0,
+        acceptableConversationCount: 0,
+        tooWeakConversationCount: 0,
         immediateContinuationCount: 0,
         continuedWithin24hCount: 0,
         postDowngradeFailureCount: 0,
@@ -785,7 +816,12 @@ export class AiUsageLedgerService {
         postDowngradeFailureRate: null,
         postDowngradeBlockedRate: null,
         reviewCoverageRate: null,
+        acceptableReviewRate: null,
+        tooWeakReviewRate: null,
         proxyQualityScore: null,
+        tooWeakSamples: [],
+        pendingOutcomeSamples: [],
+        byCharacter: [],
       };
     }
 
@@ -798,7 +834,7 @@ export class AiUsageLedgerService {
     );
     const messageRepo = this.repo.manager.getRepository(MessageEntity);
     const reviewRepo = this.repo.manager.getRepository(AdminConversationReviewEntity);
-    const [messages, followupLedgerRecords, reviews] = await Promise.all([
+    const [messages, followupLedgerRecords, reviews, labelMaps] = await Promise.all([
       messageRepo.find({
         where: {
           conversationId: In(conversationIds),
@@ -818,6 +854,7 @@ export class AiUsageLedgerService {
           conversationId: In(conversationIds),
         },
       }),
+      this.buildLabelMaps(conversationScopedRecords),
     ]);
 
     const messagesByConversation = new Map<string, MessageEntity[]>();
@@ -841,6 +878,8 @@ export class AiUsageLedgerService {
     const reviewMap = new Map(
       reviews.map((review) => [review.conversationId, review]),
     );
+    const latestDowngradeRecordByConversation =
+      this.groupLatestUsageByConversation(conversationScopedRecords);
 
     let immediateContinuationCount = 0;
     let continuedWithin24hCount = 0;
@@ -908,6 +947,12 @@ export class AiUsageLedgerService {
     const importantConversationCount = reviews.filter(
       (review) => review.status === 'important',
     ).length;
+    const acceptableConversationCount = reviews.filter((review) =>
+      this.reviewHasTag(review.tags, 'downgrade-acceptable'),
+    ).length;
+    const tooWeakConversationCount = reviews.filter((review) =>
+      this.reviewHasTag(review.tags, 'downgrade-too-weak'),
+    ).length;
     const distinctConversationCount = conversationIds.length;
     const immediateContinuationRate =
       requestCount > 0
@@ -929,6 +974,38 @@ export class AiUsageLedgerService {
       distinctConversationCount > 0
         ? this.roundRatio(reviewedConversationCount / distinctConversationCount)
         : null;
+    const acceptableReviewRate =
+      reviewedConversationCount > 0
+        ? this.roundRatio(acceptableConversationCount / reviewedConversationCount)
+        : null;
+    const tooWeakReviewRate =
+      reviewedConversationCount > 0
+        ? this.roundRatio(tooWeakConversationCount / reviewedConversationCount)
+        : null;
+    const tooWeakSamples = this.buildDowngradeReviewSamples({
+      reviews,
+      latestDowngradeRecordByConversation,
+      labelMaps,
+      limit: normalized.limit,
+      predicate: (review) =>
+        this.reviewHasTag(review.tags, 'downgrade-too-weak'),
+    });
+    const pendingOutcomeSamples = this.buildDowngradeReviewSamples({
+      reviews,
+      latestDowngradeRecordByConversation,
+      labelMaps,
+      limit: normalized.limit,
+      predicate: (review) =>
+        !this.reviewHasTag(review.tags, 'downgrade-acceptable') &&
+        !this.reviewHasTag(review.tags, 'downgrade-too-weak'),
+    });
+    const byCharacter = this.buildDowngradeCharacterQualityItems({
+      records: conversationScopedRecords,
+      reviews,
+      latestDowngradeRecordByConversation,
+      labelMaps,
+      limit: normalized.limit,
+    });
     const proxyQualityScore =
       requestCount > 0
         ? this.roundRatio(
@@ -949,6 +1026,8 @@ export class AiUsageLedgerService {
       reviewedConversationCount,
       resolvedConversationCount,
       importantConversationCount,
+      acceptableConversationCount,
+      tooWeakConversationCount,
       immediateContinuationCount,
       continuedWithin24hCount,
       postDowngradeFailureCount,
@@ -958,8 +1037,223 @@ export class AiUsageLedgerService {
       postDowngradeFailureRate,
       postDowngradeBlockedRate,
       reviewCoverageRate,
+      acceptableReviewRate,
+      tooWeakReviewRate,
       proxyQualityScore,
+      tooWeakSamples,
+      pendingOutcomeSamples,
+      byCharacter,
     };
+  }
+
+  private reviewHasTag(tags: string[] | null | undefined, target: string) {
+    if (!tags?.length) {
+      return false;
+    }
+    return tags.some((tag) => tag.trim().toLowerCase() === target);
+  }
+
+  private buildDowngradeReviewSamples(input: {
+    reviews: AdminConversationReviewEntity[];
+    latestDowngradeRecordByConversation: Map<string, AiUsageLedgerEntity>;
+    labelMaps: {
+      conversationMap: Map<string, string>;
+      groupMap: Map<string, string>;
+      characterMap: Map<string, string>;
+    };
+    limit: number;
+    predicate: (review: AdminConversationReviewEntity) => boolean;
+  }): DowngradeReviewSample[] {
+    return [...input.reviews]
+      .filter(input.predicate)
+      .sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime())
+      .slice(0, input.limit)
+      .map((review) => {
+        const record = input.latestDowngradeRecordByConversation.get(review.conversationId);
+        return {
+          conversationId: review.conversationId,
+          occurredAt: (record?.occurredAt ?? review.updatedAt).toISOString(),
+          reviewUpdatedAt: review.updatedAt.toISOString(),
+          targetLabel: record
+            ? this.resolveTargetLabel(record, input.labelMaps)
+            : review.conversationId,
+          characterId: record?.characterId ?? null,
+          characterName: record?.characterName ?? null,
+          scene: record?.scene ?? 'chat_reply',
+          reviewStatus: review.status,
+          reviewTags: Array.isArray(review.tags) ? review.tags : [],
+          reviewNote: review.note ?? null,
+        };
+      });
+  }
+
+  private buildDowngradeCharacterQualityItems(input: {
+    records: AiUsageLedgerEntity[];
+    reviews: AdminConversationReviewEntity[];
+    latestDowngradeRecordByConversation: Map<string, AiUsageLedgerEntity>;
+    labelMaps: {
+      conversationMap: Map<string, string>;
+      groupMap: Map<string, string>;
+      characterMap: Map<string, string>;
+    };
+    limit: number;
+  }): DowngradeCharacterQualityItem[] {
+    const buckets = new Map<
+      string,
+      {
+        characterId?: string | null;
+        characterName: string;
+        requestCount: number;
+        conversationIds: Set<string>;
+        reviewedConversationCount: number;
+        acceptableConversationCount: number;
+        tooWeakConversationCount: number;
+        pendingOutcomeConversationCount: number;
+        tooWeakSamples: DowngradeReviewSample[];
+        pendingOutcomeSamples: DowngradeReviewSample[];
+      }
+    >();
+
+    const reviewMap = new Map(
+      input.reviews.map((review) => [review.conversationId, review] as const),
+    );
+
+    const ensureBucket = (record: AiUsageLedgerEntity) => {
+      const key =
+        record.characterId?.trim() ||
+        record.characterName?.trim() ||
+        record.scopeId?.trim() ||
+        '__unknown__';
+      const existing = buckets.get(key);
+      if (existing) {
+        return existing;
+      }
+      const created = {
+        characterId: record.characterId ?? null,
+        characterName:
+          record.characterName?.trim() ||
+          record.scopeLabel?.trim() ||
+          record.scopeId?.trim() ||
+          'Unknown character',
+        requestCount: 0,
+        conversationIds: new Set<string>(),
+        reviewedConversationCount: 0,
+        acceptableConversationCount: 0,
+        tooWeakConversationCount: 0,
+        pendingOutcomeConversationCount: 0,
+        tooWeakSamples: [],
+        pendingOutcomeSamples: [],
+      };
+      buckets.set(key, created);
+      return created;
+    };
+
+    input.records.forEach((record) => {
+      const conversationId = record.conversationId?.trim();
+      if (!conversationId) {
+        return;
+      }
+      const bucket = ensureBucket(record);
+      bucket.requestCount += 1;
+      bucket.conversationIds.add(conversationId);
+    });
+
+    input.latestDowngradeRecordByConversation.forEach((record, conversationId) => {
+      const review = reviewMap.get(conversationId);
+      if (!review) {
+        return;
+      }
+      const bucket = ensureBucket(record);
+      bucket.reviewedConversationCount += 1;
+      const acceptable = this.reviewHasTag(review.tags, 'downgrade-acceptable');
+      const tooWeak = this.reviewHasTag(review.tags, 'downgrade-too-weak');
+      if (acceptable) {
+        bucket.acceptableConversationCount += 1;
+      }
+      if (tooWeak) {
+        bucket.tooWeakConversationCount += 1;
+      }
+      if (!acceptable && !tooWeak) {
+        bucket.pendingOutcomeConversationCount += 1;
+      }
+
+      const sample: DowngradeReviewSample = {
+        conversationId: review.conversationId,
+        occurredAt: (record.occurredAt ?? review.updatedAt).toISOString(),
+        reviewUpdatedAt: review.updatedAt.toISOString(),
+        targetLabel: this.resolveTargetLabel(record, input.labelMaps),
+        characterId: record.characterId ?? null,
+        characterName: record.characterName ?? null,
+        scene: record.scene ?? 'chat_reply',
+        reviewStatus: review.status,
+        reviewTags: Array.isArray(review.tags) ? review.tags : [],
+        reviewNote: review.note ?? null,
+      };
+
+      if (tooWeak && bucket.tooWeakSamples.length < 2) {
+        bucket.tooWeakSamples.push(sample);
+      }
+      if (!acceptable && !tooWeak && bucket.pendingOutcomeSamples.length < 2) {
+        bucket.pendingOutcomeSamples.push(sample);
+      }
+    });
+
+    return Array.from(buckets.values())
+      .map((bucket) => ({
+        characterId: bucket.characterId ?? null,
+        characterName: bucket.characterName,
+        requestCount: bucket.requestCount,
+        distinctConversationCount: bucket.conversationIds.size,
+        reviewedConversationCount: bucket.reviewedConversationCount,
+        acceptableConversationCount: bucket.acceptableConversationCount,
+        tooWeakConversationCount: bucket.tooWeakConversationCount,
+        pendingOutcomeConversationCount: bucket.pendingOutcomeConversationCount,
+        reviewCoverageRate: bucket.conversationIds.size
+          ? this.roundRatio(bucket.reviewedConversationCount / bucket.conversationIds.size)
+          : null,
+        acceptableReviewRate: bucket.reviewedConversationCount
+          ? this.roundRatio(
+              bucket.acceptableConversationCount / bucket.reviewedConversationCount,
+            )
+          : null,
+        tooWeakReviewRate: bucket.reviewedConversationCount
+          ? this.roundRatio(
+              bucket.tooWeakConversationCount / bucket.reviewedConversationCount,
+            )
+          : null,
+        tooWeakSamples: bucket.tooWeakSamples,
+        pendingOutcomeSamples: bucket.pendingOutcomeSamples,
+      }))
+      .sort((left, right) => {
+        if (right.tooWeakConversationCount !== left.tooWeakConversationCount) {
+          return right.tooWeakConversationCount - left.tooWeakConversationCount;
+        }
+        if ((right.tooWeakReviewRate ?? 0) !== (left.tooWeakReviewRate ?? 0)) {
+          return (right.tooWeakReviewRate ?? 0) - (left.tooWeakReviewRate ?? 0);
+        }
+        if (
+          right.pendingOutcomeConversationCount !== left.pendingOutcomeConversationCount
+        ) {
+          return (
+            right.pendingOutcomeConversationCount -
+            left.pendingOutcomeConversationCount
+          );
+        }
+        return right.requestCount - left.requestCount;
+      })
+      .slice(0, input.limit);
+  }
+
+  private groupLatestUsageByConversation(records: AiUsageLedgerEntity[]) {
+    const grouped = new Map<string, AiUsageLedgerEntity>();
+    records.forEach((record) => {
+      const conversationId = record.conversationId?.trim();
+      if (!conversationId) {
+        return;
+      }
+      grouped.set(conversationId, record);
+    });
+    return grouped;
   }
 
   private async buildBudgetSummary(

@@ -15,7 +15,9 @@ import type {
   TokenUsageBreakdownItem,
   TokenUsageCharacterBudgetRule,
   TokenUsageCharacterBudgetStatus,
+  TokenUsageDowngradeCharacterQualityItem,
   TokenUsageDowngradeModelSwitchItem,
+  TokenUsageDowngradeReviewSample,
   TokenUsageQuery,
   TokenUsageStatus,
 } from "@yinjie/contracts";
@@ -345,6 +347,11 @@ export function TokenUsagePage() {
     queryFn: () => adminApi.getTokenUsageDowngradeInsights(downgradeInsightsQueryInput),
   });
 
+  const downgradeQualityQuery = useQuery({
+    queryKey: ["admin-token-usage-downgrade-quality", downgradeInsightsQueryInput],
+    queryFn: () => adminApi.getTokenUsageDowngradeQuality(downgradeInsightsQueryInput),
+  });
+
   const pricingQuery = useQuery({
     queryKey: ["admin-token-usage-pricing"],
     queryFn: () => adminApi.getTokenUsagePricing(),
@@ -445,6 +452,7 @@ export function TokenUsagePage() {
     downgradedBreakdownQuery.isLoading ||
     downgradedRecordsQuery.isLoading ||
     downgradeInsightsQuery.isLoading ||
+    downgradeQualityQuery.isLoading ||
     pricingQuery.isLoading ||
     budgetQuery.isLoading;
 
@@ -462,6 +470,7 @@ export function TokenUsagePage() {
     (downgradedBreakdownQuery.error instanceof Error && downgradedBreakdownQuery.error) ||
     (downgradedRecordsQuery.error instanceof Error && downgradedRecordsQuery.error) ||
     (downgradeInsightsQuery.error instanceof Error && downgradeInsightsQuery.error) ||
+    (downgradeQualityQuery.error instanceof Error && downgradeQualityQuery.error) ||
     (pricingQuery.error instanceof Error && pricingQuery.error) ||
     (budgetQuery.error instanceof Error && budgetQuery.error) ||
     null;
@@ -479,6 +488,7 @@ export function TokenUsagePage() {
   const downgradedBreakdown = downgradedBreakdownQuery.data;
   const downgradedRecords = downgradedRecordsQuery.data;
   const downgradeInsights = downgradeInsightsQuery.data;
+  const downgradeQuality = downgradeQualityQuery.data;
   const budgetSummary = budgetQuery.data?.summary;
   const characters = charactersQuery.data ?? [];
   const currency = overview?.currency ?? pricingDraft?.currency ?? budgetSummary?.currency ?? "CNY";
@@ -514,7 +524,8 @@ export function TokenUsagePage() {
     !budgetSummary &&
     !blockedOverview &&
     !downgradedOverview &&
-    !downgradeInsights
+    !downgradeInsights &&
+    !downgradeQuality
   ) {
     return <LoadingBlock label="正在加载 Token 用量中心..." />;
   }
@@ -535,6 +546,13 @@ export function TokenUsagePage() {
     downgradeInsights?.traceableRequestCount ?? 0,
     downgradeInsights?.requestCount ?? 0,
   );
+  const downgradeScopedCoverage = calculateRatio(
+    downgradeQuality?.conversationScopedRequestCount ?? 0,
+    downgradeQuality?.requestCount ?? 0,
+  );
+  const qualityByCharacter = downgradeQuality?.byCharacter ?? [];
+  const tooWeakSamples = downgradeQuality?.tooWeakSamples ?? [];
+  const pendingOutcomeSamples = downgradeQuality?.pendingOutcomeSamples ?? [];
 
   return (
     <div className="space-y-6">
@@ -1268,6 +1286,96 @@ export function TokenUsagePage() {
         />
       </div>
 
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
+        <Card className="bg-[color:var(--surface-console)]">
+          <AdminSectionHeader
+            title="Downgrade Quality Loop"
+            actions={
+              <span className="text-xs text-[color:var(--text-muted)]">
+                Scoped {formatPercent(downgradeScopedCoverage)}
+              </span>
+            }
+          />
+
+          <div className="mt-5 space-y-5">
+            {(downgradeQuality?.unscopedRequestCount ?? 0) > 0 ? (
+              <InlineNotice tone="warning">
+                {formatInteger(downgradeQuality?.unscopedRequestCount ?? 0)} downgraded requests are outside
+                conversation scope, so quality follow-up focuses on the traceable chat threads.
+              </InlineNotice>
+            ) : null}
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <SummaryTile
+                label="Reviewed"
+                value={formatInteger(downgradeQuality?.reviewedConversationCount ?? 0)}
+              />
+              <SummaryTile
+                label="Acceptable"
+                value={formatInteger(downgradeQuality?.acceptableConversationCount ?? 0)}
+              />
+              <SummaryTile
+                label="Too Weak"
+                value={formatInteger(downgradeQuality?.tooWeakConversationCount ?? 0)}
+              />
+              <SummaryTile
+                label="Review Coverage"
+                value={formatPercentNullable(downgradeQuality?.reviewCoverageRate ?? null)}
+              />
+              <SummaryTile
+                label="Acceptable Rate"
+                value={formatPercentNullable(downgradeQuality?.acceptableReviewRate ?? null)}
+              />
+              <SummaryTile
+                label="Too Weak Rate"
+                value={formatPercentNullable(downgradeQuality?.tooWeakReviewRate ?? null)}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <SignalProgressRow
+                label="Review coverage"
+                value={formatPercentNullable(downgradeQuality?.reviewCoverageRate ?? null)}
+                ratio={downgradeQuality?.reviewCoverageRate ?? 0}
+                gradient="bg-[linear-gradient(90deg,rgba(59,130,246,0.92),rgba(14,165,233,0.92))]"
+              />
+              <SignalProgressRow
+                label="Acceptable among reviewed"
+                value={formatPercentNullable(downgradeQuality?.acceptableReviewRate ?? null)}
+                ratio={downgradeQuality?.acceptableReviewRate ?? 0}
+                gradient="bg-[linear-gradient(90deg,rgba(34,197,94,0.92),rgba(16,185,129,0.92))]"
+              />
+              <SignalProgressRow
+                label="Too weak among reviewed"
+                value={formatPercentNullable(downgradeQuality?.tooWeakReviewRate ?? null)}
+                ratio={downgradeQuality?.tooWeakReviewRate ?? 0}
+                gradient="bg-[linear-gradient(90deg,rgba(244,63,94,0.92),rgba(249,115,22,0.92))]"
+              />
+            </div>
+
+            <div className="grid gap-4">
+              <ReviewSampleList
+                title="Too weak samples"
+                description="These downgrade conversations were explicitly tagged as quality too weak during review."
+                samples={tooWeakSamples}
+                emptyText="No too-weak downgrade samples in the current range."
+              />
+              <ReviewSampleList
+                title="Awaiting outcome"
+                description="These conversations were reviewed but still need an acceptable or too-weak outcome tag."
+                samples={pendingOutcomeSamples}
+                emptyText="No reviewed downgrade samples are waiting for an outcome tag."
+              />
+            </div>
+          </div>
+        </Card>
+
+        <DowngradeCharacterQualityCard
+          items={qualityByCharacter}
+          emptyText="No character-level downgrade review samples in the current range."
+        />
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <Card className="bg-[color:var(--surface-console)]">
           <AdminSectionHeader
@@ -1915,6 +2023,218 @@ function DowngradeSwitchCard({
   );
 }
 
+function ReviewSampleList({
+  title,
+  description,
+  samples,
+  emptyText,
+}: {
+  title: string;
+  description: string;
+  samples: TokenUsageDowngradeReviewSample[];
+  emptyText: string;
+}) {
+  return (
+    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+            {title}
+          </div>
+          <div className="mt-2 text-sm text-[color:var(--text-secondary)]">{description}</div>
+        </div>
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          {formatInteger(samples.length)}
+        </div>
+      </div>
+
+      {samples.length ? (
+        <div className="mt-4 space-y-3">
+          {samples.map((sample) => (
+            <a
+              key={`${title}-${sample.conversationId}`}
+              href={buildChatRecordsReviewHref(sample.conversationId, sample.characterId)}
+              className="block rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3 transition hover:border-[color:var(--border-subtle)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-medium text-[color:var(--text-primary)]">{sample.targetLabel}</div>
+                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                    {sample.characterName || "Unknown character"} / {formatScene(sample.scene)}
+                  </div>
+                </div>
+                <div className="text-right text-xs text-[color:var(--text-muted)]">
+                  <div>{formatDateTime(sample.occurredAt)}</div>
+                  <div className="mt-1">Reviewed {formatDateTime(sample.reviewUpdatedAt)}</div>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
+                {sample.reviewTags.length ? (
+                  sample.reviewTags.map((tag) => (
+                    <span
+                      key={`${sample.conversationId}-${tag}`}
+                      className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2 py-1"
+                    >
+                      {tag}
+                    </span>
+                  ))
+                ) : (
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2 py-1">
+                    {sample.reviewStatus}
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 text-xs font-medium text-[color:var(--brand-primary)]">
+                Open in chat review
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-4">
+          <EmptyState text={emptyText} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DowngradeCharacterQualityCard({
+  items,
+  emptyText,
+}: {
+  items: TokenUsageDowngradeCharacterQualityItem[];
+  emptyText: string;
+}) {
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <AdminSectionHeader title="Character Sample Drilldown" />
+      {items.length ? (
+        <div className="mt-5 space-y-4">
+          {items.map((item) => (
+            <div
+              key={item.characterId || item.characterName}
+              className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-medium text-[color:var(--text-primary)]">{item.characterName}</div>
+                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                    {formatInteger(item.requestCount)} downgraded requests / {formatInteger(item.reviewedConversationCount)} reviewed / {formatInteger(item.distinctConversationCount)} conversations
+                  </div>
+                </div>
+                <div className="text-right text-xs text-[color:var(--text-muted)]">
+                  <div>Too weak {formatInteger(item.tooWeakConversationCount)}</div>
+                  <div className="mt-1">Pending {formatInteger(item.pendingOutcomeConversationCount)}</div>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <SignalProgressRow
+                  label="Review coverage"
+                  value={formatPercentNullable(item.reviewCoverageRate)}
+                  ratio={item.reviewCoverageRate ?? 0}
+                  gradient="bg-[linear-gradient(90deg,rgba(59,130,246,0.92),rgba(14,165,233,0.92))]"
+                />
+                <SignalProgressRow
+                  label="Too weak among reviewed"
+                  value={formatPercentNullable(item.tooWeakReviewRate)}
+                  ratio={item.tooWeakReviewRate ?? 0}
+                  gradient="bg-[linear-gradient(90deg,rgba(244,63,94,0.92),rgba(249,115,22,0.92))]"
+                />
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <CompactSampleLinks
+                  title="Too weak"
+                  samples={item.tooWeakSamples}
+                  emptyText="No too-weak samples for this character."
+                />
+                <CompactSampleLinks
+                  title="Awaiting outcome"
+                  samples={item.pendingOutcomeSamples}
+                  emptyText="No pending outcome samples for this character."
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-5">
+          <EmptyState text={emptyText} />
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function CompactSampleLinks({
+  title,
+  samples,
+  emptyText,
+}: {
+  title: string;
+  samples: TokenUsageDowngradeReviewSample[];
+  emptyText: string;
+}) {
+  return (
+    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
+      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+        {title}
+      </div>
+      {samples.length ? (
+        <div className="mt-3 space-y-2">
+          {samples.map((sample) => (
+            <a
+              key={`${title}-${sample.conversationId}`}
+              href={buildChatRecordsReviewHref(sample.conversationId, sample.characterId)}
+              className="block rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 transition hover:border-[color:var(--border-subtle)]"
+            >
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                {sample.targetLabel}
+              </div>
+              <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                {formatDateTime(sample.occurredAt)} / {formatScene(sample.scene)}
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3">
+          <EmptyState text={emptyText} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SignalProgressRow({
+  label,
+  value,
+  ratio,
+  gradient,
+}: {
+  label: string;
+  value: string;
+  ratio: number;
+  gradient: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="text-[color:var(--text-primary)]">{label}</span>
+        <span className="text-[color:var(--text-secondary)]">{value}</span>
+      </div>
+      <div className="h-2 rounded-full bg-[color:var(--surface-primary)]">
+        <div
+          className={`h-2 rounded-full ${gradient}`}
+          style={{ width: `${Math.max(0, Math.min(100, ratio * 100))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function FilterField({
   label,
   children,
@@ -1983,6 +2303,13 @@ function calculateRatio(value: number, total: number) {
 
 function formatPercent(value: number) {
   return `${Math.round(value * 100)}%`;
+}
+
+function formatPercentNullable(value: number | null | undefined) {
+  if (value == null) {
+    return "--";
+  }
+  return formatPercent(value);
 }
 
 function formatErrorCode(value?: string | null) {
@@ -2098,6 +2425,15 @@ function normalizeNullableNumber(value: number | null | undefined) {
     return null;
   }
   return Number(value);
+}
+
+function buildChatRecordsReviewHref(conversationId: string, characterId?: string | null) {
+  const params = new URLSearchParams();
+  params.set("conversationId", conversationId);
+  if (characterId) {
+    params.set("characterId", characterId);
+  }
+  return `/chat-records?${params.toString()}`;
 }
 
 function updatePricingItem(
