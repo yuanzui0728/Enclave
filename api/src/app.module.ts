@@ -48,6 +48,7 @@ import { ChatCustomStickerEntity } from './modules/chat/custom-sticker.entity';
 import { FeedPostEntity } from './modules/feed/feed-post.entity';
 import { FeedCommentEntity } from './modules/feed/feed-comment.entity';
 import { VideoChannelFollowEntity } from './modules/feed/video-channel-follow.entity';
+import { GameOwnerStateEntity } from './modules/games/game-owner-state.entity';
 import { WorldContextEntity } from './modules/world/world-context.entity';
 import { NarrativeArcEntity } from './modules/narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from './modules/analytics/ai-behavior-log.entity';
@@ -112,6 +113,7 @@ import {
           FeedPostEntity,
           FeedCommentEntity,
           VideoChannelFollowEntity,
+          GameOwnerStateEntity,
           WorldContextEntity,
           NarrativeArcEntity,
           AIBehaviorLogEntity,

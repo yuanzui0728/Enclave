@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import {
-  dismissActiveGame,
   hydrateGameCenterStateFromNative,
   markGameCenterEventAction,
   markGameCenterInviteDelivered,
   markGameCenterFriendInvite,
-  markGameOpened,
   readGameCenterState,
-  togglePinnedGame,
   writeGameCenterState,
   type GameCenterStoredState,
 } from "./game-center-storage";
@@ -100,12 +97,6 @@ export function useGameCenterState() {
 
   return {
     ...state,
-    launchGame(gameId: string) {
-      setState((current) => markGameOpened(current, gameId));
-    },
-    togglePinned(gameId: string) {
-      setState((current) => togglePinnedGame(current, gameId));
-    },
     applyEventAction(eventId: string, status: string) {
       setState((current) =>
         markGameCenterEventAction(current, {
@@ -136,9 +127,6 @@ export function useGameCenterState() {
           conversationTitle,
         }),
       );
-    },
-    dismissActiveGame() {
-      setState((current) => dismissActiveGame(current));
     },
   };
 }

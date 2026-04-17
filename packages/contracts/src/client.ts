@@ -65,6 +65,7 @@ import type {
 } from "./feed";
 import type {
   GameCenterHomeResponse,
+  GameCenterOwnerState,
 } from "./games";
 import type {
   CreateMessageFavoriteRequest,
@@ -2444,6 +2445,48 @@ export function getGameCenterHome(baseUrl?: string) {
   return requestLegacyApi<GameCenterHomeResponse>(
     "/games/home",
     undefined,
+    baseUrl,
+  );
+}
+
+export function getGameCenterOwnerState(baseUrl?: string) {
+  return requestLegacyApi<GameCenterOwnerState>(
+    "/games/owner-state",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function launchGameCenterGame(gameId: string, baseUrl?: string) {
+  return requestLegacyApi<GameCenterOwnerState>(
+    `/games/${gameId}/launch`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function setGameCenterPinned(
+  gameId: string,
+  pinned: boolean,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<GameCenterOwnerState>(
+    `/games/${gameId}/pin`,
+    {
+      method: pinned ? "POST" : "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function dismissGameCenterActiveGame(baseUrl?: string) {
+  return requestLegacyApi<GameCenterOwnerState>(
+    "/games/active-game",
+    {
+      method: "DELETE",
+    },
     baseUrl,
   );
 }

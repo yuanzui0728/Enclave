@@ -35,10 +35,15 @@ import {
   type GameCenterEvent,
   type GameCenterFriendActivity,
   type GameCenterGame,
+  type GameCenterPrimarySection,
+  type GameCenterPrimarySectionId,
   type GameCenterRankingEntry,
+  type GameCenterShelf,
+  type GameCenterStory,
 } from "../../games/game-center-data";
 
 type DesktopGamesWorkspaceProps = {
+  activeSection: GameCenterPrimarySectionId;
   activeCategory: GameCenterCategoryId;
   activeGameId: string | null;
   activeInviteActivityId: string | null;
@@ -57,11 +62,15 @@ type DesktopGamesWorkspaceProps = {
   launchCountById: Record<string, number>;
   newRankings: GameCenterRankingEntry[];
   pinnedGameIds: string[];
+  primarySections: GameCenterPrimarySection[];
   recentGameIds: string[];
   selectedGameId: string;
+  shelves: GameCenterShelf[];
+  stories: GameCenterStory[];
   lastOpenedAtById: Record<string, string>;
   successNotice?: string;
   noticeTone?: "success" | "info";
+  onSectionChange: (sectionId: GameCenterPrimarySectionId) => void;
   onCategoryChange: (categoryId: GameCenterCategoryId) => void;
   onCompleteEventAction: (eventId: string) => void;
   onCopyInviteToMobile: (activityId: string) => void;
@@ -86,6 +95,7 @@ function resolveGames(ids: string[], games: GameCenterGame[]) {
 }
 
 export function DesktopGamesWorkspace({
+  activeSection,
   activeCategory,
   activeGameId,
   activeInviteActivityId,
@@ -104,11 +114,15 @@ export function DesktopGamesWorkspace({
   launchCountById,
   newRankings,
   pinnedGameIds,
+  primarySections,
   recentGameIds,
   selectedGameId,
+  shelves,
+  stories,
   lastOpenedAtById,
   successNotice,
   noticeTone = "success",
+  onSectionChange,
   onCategoryChange,
   onCompleteEventAction,
   onCopyInviteToMobile,
@@ -135,6 +149,13 @@ export function DesktopGamesWorkspace({
     : null;
   const pinnedGames = resolveGames(pinnedGameIds, games);
   const recentGames = resolveGames(recentGameIds, games);
+  const mostPlayedGames = [...games]
+    .sort(
+      (left, right) =>
+        (launchCountById[right.id] ?? 0) - (launchCountById[left.id] ?? 0),
+    )
+    .filter((game) => (launchCountById[game.id] ?? 0) > 0)
+    .slice(0, 4);
   const browseGames =
     activeCategory === "featured"
       ? games.slice(0, 6)
@@ -146,6 +167,9 @@ export function DesktopGamesWorkspace({
 
   const selectedTone = getGameCenterToneStyle(selectedGame.tone);
   const selectedPinned = pinnedGameIds.includes(selectedGame.id);
+  const activeSectionMeta =
+    primarySections.find((section) => section.id === activeSection) ??
+    primarySections[0];
   const selectedSidebarItemClassName =
     "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]";
   const selectedContentCardClassName =
@@ -169,7 +193,35 @@ export function DesktopGamesWorkspace({
         <div className="min-h-0 space-y-4 overflow-auto bg-[rgba(242,246,245,0.76)] px-4 py-4">
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="text-xs text-[color:var(--text-muted)]">
-              浏览频道
+              一级分栏
+            </div>
+            <div className="mt-3 space-y-2">
+              {primarySections.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => onSectionChange(section.id)}
+                  className={cn(
+                    "w-full rounded-[18px] border px-3 py-3 text-left transition",
+                    activeSection === section.id
+                      ? selectedSidebarItemClassName
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+                  )}
+                >
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    {section.label}
+                  </div>
+                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                    {section.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+            <div className="text-xs text-[color:var(--text-muted)]">
+              找游戏频道
             </div>
             <div className="mt-3 space-y-2">
               {categoryTabs.map((tab) => (
@@ -286,13 +338,13 @@ export function DesktopGamesWorkspace({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
-                微信式桌面节奏
+                {activeSectionMeta?.label ?? "首页"} / 微信式桌面节奏
               </div>
               <div className="mt-1 text-[20px] font-semibold text-[color:var(--text-primary)]">
-                最近玩过、固定常玩、推荐位和活动位都放进一个工作区
+                {activeSectionMeta?.label ?? "首页"}：{activeSectionMeta?.description ?? "最近玩过、固定常玩、推荐位和活动位都放进一个工作区"}
               </div>
               <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
-                首版先不做小游戏运行容器，点击开始游戏会先记录使用状态并回到内容工作区。
+                首版先不做小游戏运行容器，点击开始游戏会先把使用状态写回服务端，再承接到当前工作区。
               </div>
             </div>
             {successNotice ? (
@@ -394,7 +446,8 @@ export function DesktopGamesWorkspace({
                 </div>
               </article>
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              {activeSection === "home" || activeSection === "discover" ? (
+                <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -479,9 +532,11 @@ export function DesktopGamesWorkspace({
                     );
                   })}
                 </div>
-              </section>
+                </section>
+              ) : null}
 
-              <div className="grid gap-4 lg:grid-cols-2">
+              {activeSection === "home" || activeSection === "rankings" ? (
+                <div className="grid gap-4 lg:grid-cols-2">
                 <DesktopRankingPanel
                   title="热门榜"
                   icon={
@@ -506,25 +561,57 @@ export function DesktopGamesWorkspace({
                   games={games}
                   onSelectGame={onSelectGame}
                 />
-              </div>
+                </div>
+              ) : null}
+
+              {activeSection === "discover" ? (
+                <DesktopShelfPanel
+                  shelves={shelves}
+                  games={games}
+                  pinnedGameIds={pinnedGameIds}
+                  onLaunchGame={onLaunchGame}
+                  onSelectGame={onSelectGame}
+                />
+              ) : null}
+
+              {activeSection === "content" ? (
+                <DesktopStoryPanel
+                  stories={stories}
+                  games={games}
+                  onSelectGame={onSelectGame}
+                />
+              ) : null}
+
+              {activeSection === "mine" ? (
+                <DesktopMineOverviewPanel
+                  pinnedGames={pinnedGames}
+                  recentGames={recentGames}
+                  launchCountById={launchCountById}
+                  lastOpenedAtById={lastOpenedAtById}
+                  onSelectGame={onSelectGame}
+                />
+              ) : null}
             </div>
 
             <div className="space-y-5">
-              <GameCenterSessionPanel
-                game={selectedGame}
-                isActive={activeGameId === selectedGame.id}
-                launchCount={launchCountById[selectedGame.id] ?? 0}
-                lastOpenedAt={lastOpenedAtById[selectedGame.id]}
-                onCopyToMobile={onCopyGameToMobile}
-                onDismiss={
-                  activeGameId === selectedGame.id
-                    ? onDismissActiveGame
-                    : undefined
-                }
-                onLaunch={onLaunchGame}
-              />
+              {activeSection === "home" || activeSection === "mine" ? (
+                <GameCenterSessionPanel
+                  game={selectedGame}
+                  isActive={activeGameId === selectedGame.id}
+                  launchCount={launchCountById[selectedGame.id] ?? 0}
+                  lastOpenedAt={lastOpenedAtById[selectedGame.id]}
+                  onCopyToMobile={onCopyGameToMobile}
+                  onDismiss={
+                    activeGameId === selectedGame.id
+                      ? onDismissActiveGame
+                      : undefined
+                  }
+                  onLaunch={onLaunchGame}
+                />
+              ) : null}
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              {activeSection === "home" ? (
+                <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <UsersRound
                     size={16}
@@ -631,9 +718,11 @@ export function DesktopGamesWorkspace({
                     );
                   })}
                 </div>
-              </section>
+                </section>
+              ) : null}
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              {activeSection === "home" ? (
+                <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gamepad2
                     size={16}
@@ -688,9 +777,11 @@ export function DesktopGamesWorkspace({
                     />
                   </div>
                 )}
-              </section>
+                </section>
+              ) : null}
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              {activeSection === "home" || activeSection === "content" ? (
+                <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gift
                     size={16}
@@ -746,9 +837,30 @@ export function DesktopGamesWorkspace({
                     );
                   })}
                 </div>
-              </section>
+                </section>
+              ) : null}
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              {activeSection === "rankings" ? (
+                <DesktopLaunchLeaderboardPanel
+                  games={mostPlayedGames}
+                  launchCountById={launchCountById}
+                  lastOpenedAtById={lastOpenedAtById}
+                  onSelectGame={onSelectGame}
+                />
+              ) : null}
+
+              {activeSection === "mine" ? (
+                <DesktopLaunchLeaderboardPanel
+                  title="我的高频入口"
+                  games={mostPlayedGames}
+                  launchCountById={launchCountById}
+                  lastOpenedAtById={lastOpenedAtById}
+                  onSelectGame={onSelectGame}
+                />
+              ) : null}
+
+              {activeSection === "home" ? (
+                <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gamepad2
                     size={16}
@@ -764,12 +876,238 @@ export function DesktopGamesWorkspace({
                     后续再补小游戏运行容器、好友组局邀请和真实活动编排，避免这次直接把范围做成平台级工程。
                   </div>
                 </div>
-              </section>
+                </section>
+              ) : null}
             </div>
           </div>
         </div>
       </section>
     </div>
+  );
+}
+
+function DesktopShelfPanel({
+  shelves,
+  games,
+  pinnedGameIds,
+  onLaunchGame,
+  onSelectGame,
+}: {
+  shelves: GameCenterShelf[];
+  games: GameCenterGame[];
+  pinnedGameIds: string[];
+  onLaunchGame: (gameId: string) => void | Promise<void>;
+  onSelectGame: (gameId: string) => void;
+}) {
+  return (
+    <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+        货架式找游戏
+      </div>
+      <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+        对齐微信游戏中心的货架浏览逻辑，先按主题货架逛，再决定点进哪个游戏。
+      </div>
+      <div className="mt-4 space-y-4">
+        {shelves.map((shelf) => (
+          <div
+            key={shelf.id}
+            className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  {shelf.title}
+                </div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+                  {shelf.description}
+                </div>
+              </div>
+              <div className="rounded-full bg-white px-3 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                {shelf.gameIds.length} 个入口
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 xl:grid-cols-2">
+              {resolveGames(shelf.gameIds, games).map((game) => {
+                const tone = getGameCenterToneStyle(game.tone);
+                return (
+                  <article
+                    key={`${shelf.id}-${game.id}`}
+                    className={cn(
+                      "rounded-[20px] border p-4",
+                      tone.mutedPanelClassName,
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => onSelectGame(game.id)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "rounded-md border px-2 py-1 text-[10px] font-medium",
+                              tone.badgeClassName,
+                            )}
+                          >
+                            {game.deckLabel}
+                          </span>
+                          {pinnedGameIds.includes(game.id) ? (
+                            <span className="rounded-md bg-[rgba(7,193,96,0.07)] px-2 py-1 text-[10px] text-[color:var(--brand-primary)]">
+                              已固定
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-[color:var(--text-primary)]">
+                          {game.name}
+                        </div>
+                        <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                          {game.description}
+                        </div>
+                      </button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onLaunchGame(game.id)}
+                      >
+                        秒开
+                      </Button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DesktopStoryPanel({
+  stories,
+  games,
+  onSelectGame,
+}: {
+  stories: GameCenterStory[];
+  games: GameCenterGame[];
+  onSelectGame: (gameId: string) => void;
+}) {
+  return (
+    <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+        看内容
+      </div>
+      <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+        给 AI 游戏、第三方上传和角色产游统一留出内容阵地，后续可以继续接攻略、幕后和直播切片。
+      </div>
+      <div className="mt-4 space-y-3">
+        {stories.map((story) => {
+          const tone = getGameCenterToneStyle(story.tone);
+          const relatedGame = story.relatedGameId
+            ? getGameCenterGame(story.relatedGameId, games)
+            : null;
+
+          return (
+            <article
+              key={story.id}
+              className={cn("rounded-[24px] border p-4", tone.mutedPanelClassName)}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "rounded-md border px-2.5 py-1 text-[10px] font-medium",
+                        tone.badgeClassName,
+                      )}
+                    >
+                      {story.eyebrow}
+                    </span>
+                    <span className="text-[11px] text-[color:var(--text-muted)]">
+                      {formatTimestamp(story.publishedAt)}
+                    </span>
+                  </div>
+                  <div className="mt-3 text-base font-semibold text-[color:var(--text-primary)]">
+                    {story.title}
+                  </div>
+                  <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+                    {story.description}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+                    <span>{story.authorName}</span>
+                    {relatedGame ? (
+                      <button
+                        type="button"
+                        onClick={() => onSelectGame(relatedGame.id)}
+                        className="rounded-full bg-white px-3 py-1 text-[11px] text-[color:var(--brand-primary)]"
+                      >
+                        {relatedGame.name}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => relatedGame && onSelectGame(relatedGame.id)}
+                >
+                  {story.ctaLabel}
+                </Button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function DesktopMineOverviewPanel({
+  pinnedGames,
+  recentGames,
+  launchCountById,
+  lastOpenedAtById,
+  onSelectGame,
+}: {
+  pinnedGames: GameCenterGame[];
+  recentGames: GameCenterGame[];
+  launchCountById: Record<string, number>;
+  lastOpenedAtById: Record<string, string>;
+  onSelectGame: (gameId: string) => void;
+}) {
+  const totalLaunches = Object.values(launchCountById).reduce(
+    (total, count) => total + count,
+    0,
+  );
+
+  return (
+    <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+        我的游戏中心
+      </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <DesktopSummaryMetric label="固定常玩" value={`${pinnedGames.length}`} />
+        <DesktopSummaryMetric label="最近玩过" value={`${recentGames.length}`} />
+        <DesktopSummaryMetric label="累计启动" value={`${totalLaunches}`} />
+      </div>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <DesktopGameMiniList
+          title="固定常玩"
+          games={pinnedGames}
+          lastOpenedAtById={lastOpenedAtById}
+          onSelectGame={onSelectGame}
+          emptyText="还没有固定常玩的游戏。"
+        />
+        <DesktopGameMiniList
+          title="最近玩过"
+          games={recentGames}
+          lastOpenedAtById={lastOpenedAtById}
+          onSelectGame={onSelectGame}
+          emptyText="还没有最近玩过的游戏。"
+        />
+      </div>
+    </section>
   );
 }
 
@@ -842,6 +1180,77 @@ function DesktopMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function DesktopSummaryMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
+        {label}
+      </div>
+      <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function DesktopGameMiniList({
+  title,
+  games,
+  lastOpenedAtById,
+  onSelectGame,
+  emptyText,
+}: {
+  title: string;
+  games: GameCenterGame[];
+  lastOpenedAtById: Record<string, string>;
+  onSelectGame: (gameId: string) => void;
+  emptyText: string;
+}) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <div className="mt-3 space-y-2">
+        {games.length ? (
+          games.map((game) => (
+            <button
+              key={`${title}-${game.id}`}
+              type="button"
+              onClick={() => onSelectGame(game.id)}
+              className="flex w-full items-center justify-between rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
+            >
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  {game.name}
+                </div>
+                <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+                  {lastOpenedAtById[game.id]
+                    ? `最近打开 ${formatConversationTimestamp(lastOpenedAtById[game.id])}`
+                    : "暂无打开记录"}
+                </div>
+              </div>
+              <span className="text-[11px] text-[color:var(--text-secondary)]">
+                查看
+              </span>
+            </button>
+          ))
+        ) : (
+          <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-white px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+            {emptyText}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DesktopRankingPanel({
   title,
   icon,
@@ -907,6 +1316,62 @@ function DesktopRankingPanel({
             </button>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function DesktopLaunchLeaderboardPanel({
+  title = "启动热度",
+  games,
+  launchCountById,
+  lastOpenedAtById,
+  onSelectGame,
+}: {
+  title?: string;
+  games: GameCenterGame[];
+  launchCountById: Record<string, number>;
+  lastOpenedAtById: Record<string, string>;
+  onSelectGame: (gameId: string) => void;
+}) {
+  return (
+    <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+      <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+        <Play size={16} className="text-[color:var(--brand-primary)]" />
+        {title}
+      </div>
+      <div className="mt-4 space-y-3">
+        {games.length ? (
+          games.map((game, index) => (
+            <button
+              key={`${title}-${game.id}`}
+              type="button"
+              onClick={() => onSelectGame(game.id)}
+              className="flex w-full items-start gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-left transition hover:bg-white"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(7,193,96,0.08)] text-sm font-semibold text-[color:var(--brand-primary)]">
+                {index + 1}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  {game.name}
+                </div>
+                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  已启动 {launchCountById[game.id] ?? 0} 次
+                </div>
+                <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                  {lastOpenedAtById[game.id]
+                    ? `最近打开 ${formatConversationTimestamp(lastOpenedAtById[game.id])}`
+                    : "还没有最近打开记录"}
+                </div>
+              </div>
+            </button>
+          ))
+        ) : (
+          <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-5 text-xs leading-6 text-[color:var(--text-muted)]">
+            还没有启动记录，先从首页或找游戏里打开一局。
+          </div>
+        )}
       </div>
     </section>
   );

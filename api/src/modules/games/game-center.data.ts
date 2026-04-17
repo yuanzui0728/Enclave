@@ -13,6 +13,13 @@ type GameCenterCategoryId =
   | 'relax'
   | 'strategy';
 
+type GameCenterPrimarySectionId =
+  | 'home'
+  | 'discover'
+  | 'rankings'
+  | 'content'
+  | 'mine';
+
 type GamePublisherKind =
   | 'platform_official'
   | 'third_party'
@@ -42,6 +49,12 @@ type GameVisibilityScope =
   | 'published'
   | 'coming_soon'
   | 'internal';
+
+type GameCenterStoryKind =
+  | 'spotlight'
+  | 'guide'
+  | 'update'
+  | 'behind_the_scenes';
 
 type GameCenterGame = {
   id: string;
@@ -82,7 +95,34 @@ type GameCenterEvent = {
   tone: GameCenterTone;
 };
 
+type GameCenterStory = {
+  id: string;
+  title: string;
+  description: string;
+  eyebrow: string;
+  authorName: string;
+  ctaLabel: string;
+  publishedAt: string;
+  kind: GameCenterStoryKind;
+  tone: GameCenterTone;
+  relatedGameId?: string | null;
+};
+
+type GameCenterOwnerState = {
+  activeGameId?: string | null;
+  recentGameIds: string[];
+  pinnedGameIds: string[];
+  launchCountById: Record<string, number>;
+  lastOpenedAtById: Record<string, string>;
+  updatedAt: string;
+};
+
 type GameCenterHomeSeed = {
+  primarySections: Array<{
+    id: GameCenterPrimarySectionId;
+    label: string;
+    description: string;
+  }>;
   categoryTabs: Array<{
     id: GameCenterCategoryId;
     label: string;
@@ -114,10 +154,38 @@ type GameCenterHomeSeed = {
     updatedAt: string;
   }>;
   events: GameCenterEvent[];
+  stories: GameCenterStory[];
   games: GameCenterGame[];
 };
 
 export const GAME_CENTER_HOME_SEED: GameCenterHomeSeed = {
+  primarySections: [
+    {
+      id: 'home',
+      label: '首页',
+      description: '主推、好友动态、福利活动和当前游戏会话。',
+    },
+    {
+      id: 'discover',
+      label: '找游戏',
+      description: '按频道和货架继续找适合当前时段的 AI 游戏。',
+    },
+    {
+      id: 'rankings',
+      label: '榜单',
+      description: '集中看热门榜、新游榜和高回访内容。',
+    },
+    {
+      id: 'content',
+      label: '看内容',
+      description: '看 AI 游戏攻略、幕后和版本更新内容。',
+    },
+    {
+      id: 'mine',
+      label: '我的',
+      description: '沉淀最近玩过、固定常玩和个人启动轨迹。',
+    },
+  ],
   categoryTabs: [
     {
       id: 'featured',
@@ -476,10 +544,88 @@ export const GAME_CENTER_HOME_SEED: GameCenterHomeSeed = {
       tone: 'gold',
     },
   ],
+  stories: [
+    {
+      id: 'story-signal-review',
+      title: '信号小队新赛季复盘：AI 陪练为什么让 3 分钟局更上头',
+      description:
+        '拆解新赛季的匹配、陪练和赛后复盘设计，适合给主推位做内容承接。',
+      eyebrow: '编辑精选',
+      authorName: '隐界游戏编辑部',
+      ctaLabel: '去看看',
+      publishedAt: '2026-04-17T07:30:00.000Z',
+      kind: 'spotlight',
+      tone: 'forest',
+      relatedGameId: 'signal-squad',
+    },
+    {
+      id: 'story-market-guide',
+      title: '夜市合伙人周末翻倍怎么跑：先冲摊位还是先拉好友互访',
+      description:
+        '把活动位直接接成攻略卡，方便用户从内容页回到游戏本体继续跑收益。',
+      eyebrow: '活动攻略',
+      authorName: '月台事务所运营',
+      ctaLabel: '查看攻略',
+      publishedAt: '2026-04-17T05:20:00.000Z',
+      kind: 'guide',
+      tone: 'sunset',
+      relatedGameId: 'night-market',
+    },
+    {
+      id: 'story-train-bts',
+      title: '星野乘务长如何现场生成支线：角色产游的幕后流程',
+      description:
+        '展示世界角色生产游戏的制作链路，强化平台的 AI Native 内容心智。',
+      eyebrow: '幕后制作',
+      authorName: '星野乘务长',
+      ctaLabel: '查看幕后',
+      publishedAt: '2026-04-16T13:40:00.000Z',
+      kind: 'behind_the_scenes',
+      tone: 'mint',
+      relatedGameId: 'forest-train',
+    },
+    {
+      id: 'story-arena-update',
+      title: '像素擂台双人同屏更新日志：第三方上传游戏也要有内容阵地',
+      description:
+        '把第三方游戏的版本日志和内容稿统一接进看内容频道，平台侧更容易运营。',
+      eyebrow: '版本更新',
+      authorName: '格点工坊',
+      ctaLabel: '查看更新',
+      publishedAt: '2026-04-16T09:15:00.000Z',
+      kind: 'update',
+      tone: 'violet',
+      relatedGameId: 'pixel-arena',
+    },
+  ],
 };
 
-export function cloneGameCenterHomeResponse() {
+export function createDefaultGameCenterOwnerState(): GameCenterOwnerState {
   return {
+    activeGameId: 'signal-squad',
+    recentGameIds: ['signal-squad', 'night-market', 'cat-inn'],
+    pinnedGameIds: ['signal-squad', 'cloud-farm'],
+    launchCountById: {
+      'signal-squad': 8,
+      'night-market': 5,
+      'cat-inn': 2,
+      'cloud-farm': 4,
+    },
+    lastOpenedAtById: {
+      'signal-squad': '2026-04-10T14:18:00.000Z',
+      'night-market': '2026-04-10T12:36:00.000Z',
+      'cat-inn': '2026-04-09T19:22:00.000Z',
+      'cloud-farm': '2026-04-08T20:10:00.000Z',
+    },
+    updatedAt: '2026-04-17T00:00:00.000Z',
+  };
+}
+
+export function cloneGameCenterHomeSeed() {
+  return {
+    primarySections: GAME_CENTER_HOME_SEED.primarySections.map((section) => ({
+      ...section,
+    })),
     categoryTabs: GAME_CENTER_HOME_SEED.categoryTabs.map((tab) => ({ ...tab })),
     featuredGameIds: [...GAME_CENTER_HOME_SEED.featuredGameIds],
     shelves: GAME_CENTER_HOME_SEED.shelves.map((shelf) => ({
@@ -492,11 +638,11 @@ export function cloneGameCenterHomeResponse() {
       ...activity,
     })),
     events: GAME_CENTER_HOME_SEED.events.map((event) => ({ ...event })),
+    stories: GAME_CENTER_HOME_SEED.stories.map((story) => ({ ...story })),
     games: GAME_CENTER_HOME_SEED.games.map((game) => ({
       ...game,
       tags: [...game.tags],
       aiHighlights: [...game.aiHighlights],
     })),
-    generatedAt: new Date().toISOString(),
   };
 }

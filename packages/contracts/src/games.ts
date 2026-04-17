@@ -13,6 +13,13 @@ export type GameCenterCategoryId =
   | "relax"
   | "strategy";
 
+export type GameCenterPrimarySectionId =
+  | "home"
+  | "discover"
+  | "rankings"
+  | "content"
+  | "mine";
+
 export type GamePublisherKind =
   | "platform_official"
   | "third_party"
@@ -42,6 +49,18 @@ export type GameVisibilityScope =
   | "published"
   | "coming_soon"
   | "internal";
+
+export type GameCenterStoryKind =
+  | "spotlight"
+  | "guide"
+  | "update"
+  | "behind_the_scenes";
+
+export interface GameCenterPrimarySection {
+  id: GameCenterPrimarySectionId;
+  label: string;
+  description: string;
+}
 
 export interface GameCenterCategoryTab {
   id: GameCenterCategoryId;
@@ -103,6 +122,19 @@ export interface GameCenterEvent {
   tone: GameCenterTone;
 }
 
+export interface GameCenterStory {
+  id: string;
+  title: string;
+  description: string;
+  eyebrow: string;
+  authorName: string;
+  ctaLabel: string;
+  publishedAt: string;
+  kind: GameCenterStoryKind;
+  tone: GameCenterTone;
+  relatedGameId?: string | null;
+}
+
 export interface GameCenterShelf {
   id: string;
   title: string;
@@ -110,7 +142,17 @@ export interface GameCenterShelf {
   gameIds: string[];
 }
 
+export interface GameCenterOwnerState {
+  activeGameId?: string | null;
+  recentGameIds: string[];
+  pinnedGameIds: string[];
+  launchCountById: Record<string, number>;
+  lastOpenedAtById: Record<string, string>;
+  updatedAt: string;
+}
+
 export interface GameCenterHomeResponse {
+  primarySections: GameCenterPrimarySection[];
   categoryTabs: GameCenterCategoryTab[];
   featuredGameIds: string[];
   shelves: GameCenterShelf[];
@@ -118,7 +160,9 @@ export interface GameCenterHomeResponse {
   newRankings: GameCenterRankingEntry[];
   friendActivities: GameCenterFriendActivity[];
   events: GameCenterEvent[];
+  stories: GameCenterStory[];
   games: GameCenterGame[];
+  ownerState: GameCenterOwnerState;
   generatedAt: string;
 }
 

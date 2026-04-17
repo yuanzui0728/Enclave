@@ -1,11 +1,6 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 
 export type GameCenterStoredState = {
-  activeGameId: string | null;
-  recentGameIds: string[];
-  pinnedGameIds: string[];
-  launchCountById: Record<string, number>;
-  lastOpenedAtById: Record<string, string>;
   eventActionStatusById: Record<string, string>;
   lastInviteConversationIdByActivityId: Record<string, string>;
   lastInviteConversationPathByActivityId: Record<string, string>;
@@ -15,7 +10,6 @@ export type GameCenterStoredState = {
 };
 
 const GAME_CENTER_STORAGE_KEY = "yinjie-game-center-state";
-const MAX_RECENT_GAMES = 6;
 let gameCenterNativeWriteQueue: Promise<void> = Promise.resolve();
 
 function getStorage() {
@@ -24,14 +18,6 @@ function getStorage() {
   }
 
   return window.localStorage;
-}
-
-function sanitizeIds(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [] as string[];
-  }
-
-  return value.filter((item): item is string => typeof item === "string");
 }
 
 function sanitizeTimestampRecord(value: unknown) {
@@ -49,21 +35,6 @@ function sanitizeTimestampRecord(value: unknown) {
 
 export function getDefaultGameCenterState(): GameCenterStoredState {
   return {
-    activeGameId: "signal-squad",
-    recentGameIds: ["signal-squad", "night-market", "cat-inn"],
-    pinnedGameIds: ["signal-squad", "cloud-farm"],
-    launchCountById: {
-      "signal-squad": 8,
-      "night-market": 5,
-      "cat-inn": 2,
-      "cloud-farm": 4,
-    },
-    lastOpenedAtById: {
-      "signal-squad": "2026-04-10T14:18:00.000Z",
-      "night-market": "2026-04-10T12:36:00.000Z",
-      "cat-inn": "2026-04-09T19:22:00.000Z",
-      "cloud-farm": "2026-04-08T20:10:00.000Z",
-    },
     eventActionStatusById: {
       "market-night": "reminder_set",
     },
@@ -89,17 +60,6 @@ function normalizeGameCenterState(
   state: Partial<GameCenterStoredState> | null | undefined,
 ): GameCenterStoredState {
   return {
-    activeGameId:
-      typeof state?.activeGameId === "string" ? state.activeGameId : null,
-    recentGameIds: sanitizeIds(state?.recentGameIds).slice(0, MAX_RECENT_GAMES),
-    pinnedGameIds: sanitizeIds(state?.pinnedGameIds),
-    launchCountById: Object.fromEntries(
-      Object.entries(state?.launchCountById ?? {}).filter(
-        (entry): entry is [string, number] =>
-          typeof entry[0] === "string" && typeof entry[1] === "number",
-      ),
-    ),
-    lastOpenedAtById: sanitizeTimestampRecord(state?.lastOpenedAtById),
     eventActionStatusById: sanitizeTimestampRecord(state?.eventActionStatusById),
     lastInviteConversationIdByActivityId: sanitizeTimestampRecord(
       state?.lastInviteConversationIdByActivityId,
@@ -132,13 +92,13 @@ function parseGameCenterState(raw: string | null | undefined) {
 }
 
 function getLatestGameCenterTimestamp(state: GameCenterStoredState) {
-  return Object.values({
-    ...state.lastOpenedAtById,
-    ...state.friendInviteSentAtByActivityId,
-  }).reduce((latest, value) => {
-    const timestamp = Date.parse(value);
-    return Number.isFinite(timestamp) && timestamp > latest ? timestamp : latest;
-  }, 0);
+  return Object.values(state.friendInviteSentAtByActivityId).reduce(
+    (latest, value) => {
+      const timestamp = Date.parse(value);
+      return Number.isFinite(timestamp) && timestamp > latest ? timestamp : latest;
+    },
+    0,
+  );
 }
 
 function queueNativeGameCenterStateWrite(state: GameCenterStoredState) {
@@ -219,57 +179,6 @@ export async function hydrateGameCenterStateFromNative() {
   }
 }
 
-export function markGameOpened(
-  state: GameCenterStoredState,
-  gameId: string,
-): GameCenterStoredState {
-  const openedAt = new Date().toISOString();
-  return {
-    activeGameId: gameId,
-    recentGameIds: [gameId, ...state.recentGameIds.filter((id) => id !== gameId)].slice(
-      0,
-      MAX_RECENT_GAMES,
-    ),
-    pinnedGameIds: state.pinnedGameIds,
-    launchCountById: {
-      ...state.launchCountById,
-      [gameId]: (state.launchCountById[gameId] ?? 0) + 1,
-    },
-    lastOpenedAtById: {
-      ...state.lastOpenedAtById,
-      [gameId]: openedAt,
-    },
-    eventActionStatusById: state.eventActionStatusById,
-    lastInviteConversationIdByActivityId: state.lastInviteConversationIdByActivityId,
-    lastInviteConversationPathByActivityId:
-      state.lastInviteConversationPathByActivityId,
-    lastInviteConversationTitleByActivityId:
-      state.lastInviteConversationTitleByActivityId,
-    friendInviteStatusByActivityId: state.friendInviteStatusByActivityId,
-    friendInviteSentAtByActivityId: state.friendInviteSentAtByActivityId,
-  };
-}
-
-export function togglePinnedGame(
-  state: GameCenterStoredState,
-  gameId: string,
-): GameCenterStoredState {
-  const alreadyPinned = state.pinnedGameIds.includes(gameId);
-  return {
-    ...state,
-    pinnedGameIds: alreadyPinned
-      ? state.pinnedGameIds.filter((id) => id !== gameId)
-      : [gameId, ...state.pinnedGameIds],
-  };
-}
-
-export function dismissActiveGame(state: GameCenterStoredState): GameCenterStoredState {
-  return {
-    ...state,
-    activeGameId: null,
-  };
-}
-
 export function markGameCenterEventAction(
   state: GameCenterStoredState,
   input: {
@@ -331,7 +240,7 @@ export function markGameCenterInviteDelivered(
     },
     friendInviteStatusByActivityId: {
       ...state.friendInviteStatusByActivityId,
-      [input.activityId]: "invited",
+      [input.activityId]: "delivered",
     },
     friendInviteSentAtByActivityId: {
       ...state.friendInviteSentAtByActivityId,
