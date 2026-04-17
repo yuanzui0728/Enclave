@@ -22,7 +22,7 @@ import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
-import { DEFAULT_CHARACTER_IDS } from '../characters/default-characters';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 import type { SchedulerJobId } from './scheduler-telemetry.types';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
@@ -30,9 +30,18 @@ import { CharactersService } from '../characters/characters.service';
 import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
 import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service';
+import {
+  WORLD_NEWS_BULLETIN_GENERATION_KIND,
+  WORLD_NEWS_DESK_CHARACTER_ID,
+} from '../characters/world-news-desk-character';
 
 type TrackedJobResult = {
   summary: string;
+};
+
+type NewsBulletinSlot = {
+  key: 'morning' | 'noon' | 'evening';
+  label: '早报' | '午报' | '晚报';
 };
 
 function renderTemplate(
@@ -129,6 +138,15 @@ export class SchedulerService {
       'check_moment_schedule',
       () => this.handleCheckMomentSchedule(),
       'Failed to check moment schedule',
+    );
+  }
+
+  @Cron('*/10 * * * *')
+  async checkRealWorldNewsBulletins() {
+    await this.runScheduledJob(
+      'check_real_world_news_bulletins',
+      () => this.handleCheckRealWorldNewsBulletins(),
+      'Failed to check real-world news bulletins',
     );
   }
 
@@ -266,6 +284,12 @@ export class SchedulerService {
             this.handleCheckMomentSchedule(),
           )
         ).summary;
+      case 'check_real_world_news_bulletins':
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleCheckRealWorldNewsBulletins(),
+          )
+        ).summary;
       case 'trigger_scene_friend_requests':
         return (
           await this.executeTrackedJob(jobId, () =>
@@ -389,11 +413,7 @@ export class SchedulerService {
     let manualLockedCount = 0;
 
     for (const char of chars) {
-      if (
-        DEFAULT_CHARACTER_IDS.includes(
-          char.id as (typeof DEFAULT_CHARACTER_IDS)[number],
-        )
-      ) {
+      if (char.id === SELF_CHARACTER_ID) {
         const nextOnline = runtimeRules.defaultCharacterRules.isOnline;
         const nextActivity = runtimeRules.defaultCharacterRules.activity;
         const onlineChanged = char.isOnline !== nextOnline;
@@ -570,6 +590,87 @@ export class SchedulerService {
     };
   }
 
+  private async handleCheckRealWorldNewsBulletins(): Promise<TrackedJobResult> {
+    const slot = this.resolveNewsBulletinSlot(new Date());
+    if (!slot) {
+      return {
+        summary: '当前不在界闻早报、午报或晚报窗口，跳过新闻简报调度。',
+      };
+    }
+
+    const newsDesk = await this.characterRepo.findOneBy({
+      id: WORLD_NEWS_DESK_CHARACTER_ID,
+    });
+    if (!newsDesk) {
+      return {
+        summary: '界闻角色尚未落库，跳过新闻简报调度。',
+      };
+    }
+
+    const blockedCharacterIds = new Set(
+      await this.socialService.getBlockedCharacterIds(),
+    );
+    if (blockedCharacterIds.has(newsDesk.id)) {
+      return {
+        summary: '界闻当前处于屏蔽状态，跳过新闻简报调度。',
+      };
+    }
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const existingPosts = await this.momentPostRepo.find({
+      where: {
+        authorId: newsDesk.id,
+        generationKind: WORLD_NEWS_BULLETIN_GENERATION_KIND,
+        postedAt: Between(start, new Date()),
+      },
+      order: { postedAt: 'DESC' },
+    });
+    if (
+      existingPosts.some((post) => post.generationMetadata?.slot === slot.key)
+    ) {
+      return {
+        summary: `界闻今天的${slot.label}已存在，跳过重复播报。`,
+      };
+    }
+
+    const syncResult = await this.realWorldSync.runSync({
+      characterId: newsDesk.id,
+      force: true,
+    });
+    if (!syncResult.success && syncResult.successCount === 0) {
+      return {
+        summary: `界闻在${slot.label}前的新闻同步失败，未生成简报。`,
+      };
+    }
+
+    const digestSnapshot = await this.realWorldSync.getActiveDigestSnapshot(
+      newsDesk.id,
+    );
+    const post = await this.generateMomentForChar(newsDesk, {
+      currentTime: new Date(),
+      generationKind: WORLD_NEWS_BULLETIN_GENERATION_KIND,
+      generationMetadata: {
+        slot: slot.key,
+        slotLabel: slot.label,
+        digestId: digestSnapshot?.digestId ?? null,
+        syncDate: digestSnapshot?.syncDate ?? null,
+        signalIds: digestSnapshot?.signalIds ?? [],
+        signalTitles: digestSnapshot?.signalTitles ?? [],
+        sourceNames: digestSnapshot?.sourceNames ?? [],
+      },
+    });
+    if (!post) {
+      return {
+        summary: `界闻已完成${slot.label}同步，但朋友圈生成失败。`,
+      };
+    }
+
+    return {
+      summary: `界闻已发布今天的${slot.label}。`,
+    };
+  }
+
   private async handleTriggerSceneFriendRequests(): Promise<TrackedJobResult> {
     const runtimeRules = await this.replyLogicRules.getRules();
     if (Math.random() > runtimeRules.sceneFriendRequestChance) {
@@ -728,11 +829,7 @@ export class SchedulerService {
     const activities = runtimeRules.activityRandomPool;
 
     for (const char of chars) {
-      if (
-        DEFAULT_CHARACTER_IDS.includes(
-          char.id as (typeof DEFAULT_CHARACTER_IDS)[number],
-        )
-      ) {
+      if (char.id === SELF_CHARACTER_ID) {
         const defaultActivity = runtimeRules.defaultCharacterRules.activity;
         const defaultOnline = runtimeRules.defaultCharacterRules.isOnline;
         const activityChanged = char.currentActivity !== defaultActivity;
@@ -1030,14 +1127,36 @@ export class SchedulerService {
     });
   }
 
-  private async generateMomentForChar(char: CharacterEntity) {
+  private resolveNewsBulletinSlot(date: Date): NewsBulletinSlot | null {
+    const minutes = date.getHours() * 60 + date.getMinutes();
+    if (minutes >= 7 * 60 + 30 && minutes <= 9 * 60 + 30) {
+      return { key: 'morning', label: '早报' };
+    }
+    if (minutes >= 11 * 60 + 30 && minutes <= 13 * 60 + 30) {
+      return { key: 'noon', label: '午报' };
+    }
+    if (minutes >= 18 * 60 + 30 && minutes <= 21 * 60) {
+      return { key: 'evening', label: '晚报' };
+    }
+    return null;
+  }
+
+  private async generateMomentForChar(
+    char: CharacterEntity,
+    options?: {
+      currentTime?: Date;
+      generationKind?: string;
+      generationMetadata?: Record<string, unknown> | null;
+    },
+  ) {
     try {
       const runtimeProfile =
         (await this.charactersService.getRuntimeProfileFromCharacter(char)) ??
         char.profile;
+      const currentTime = options?.currentTime ?? new Date();
       const text = await this.ai.generateMoment({
         profile: runtimeProfile,
-        currentTime: new Date(),
+        currentTime,
         usageContext: {
           surface: 'scheduler',
           scene: 'moment_post_generate',
@@ -1056,18 +1175,22 @@ export class SchedulerService {
         authorAvatar: char.avatar,
         authorType: 'character',
         text,
-        generationKind: runtimeProfile.realWorldContext?.realityMomentBrief
-          ? 'reality_linked_ai'
-          : 'routine_ai',
-        generationMetadata: runtimeProfile.realWorldContext
-          ? {
-              digestId: runtimeProfile.realWorldContext.digestId ?? null,
-              syncDate: runtimeProfile.realWorldContext.syncDate ?? null,
-              subjectName: runtimeProfile.realWorldContext.subjectName ?? null,
-              realityMomentBrief:
-                runtimeProfile.realWorldContext.realityMomentBrief ?? null,
-            }
-          : null,
+        generationKind:
+          options?.generationKind ??
+          (runtimeProfile.realWorldContext?.realityMomentBrief
+            ? 'reality_linked_ai'
+            : 'routine_ai'),
+        generationMetadata:
+          options?.generationMetadata ??
+          (runtimeProfile.realWorldContext
+            ? {
+                digestId: runtimeProfile.realWorldContext.digestId ?? null,
+                syncDate: runtimeProfile.realWorldContext.syncDate ?? null,
+                subjectName: runtimeProfile.realWorldContext.subjectName ?? null,
+                realityMomentBrief:
+                  runtimeProfile.realWorldContext.realityMomentBrief ?? null,
+              }
+            : null),
       });
       await this.momentPostRepo.save(post);
       await this.feedService.syncMomentPostToFeed(post, {

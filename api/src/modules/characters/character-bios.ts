@@ -1,5 +1,6 @@
 export const DEFAULT_CHARACTER_BIOS = {
   self: '先把最乱的那一句说出来。我一直都在。',
+  world_news_desk: '今天真正值得看什么，我替你先筛一遍。',
 } as const;
 
 export const PRESET_CHARACTER_BIOS = {

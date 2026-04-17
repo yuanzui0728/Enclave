@@ -307,10 +307,9 @@ export class RealWorldSyncService {
     const rules = await this.rulesService.getRules();
     const today = formatSyncDate(new Date());
     const todayStart = startOfDay(new Date());
-    const [characters, blueprints, recentRuns, recentSignals, activeDigests] =
+    const [characters, recentRuns, recentSignals, activeDigests] =
       await Promise.all([
         this.characterRepo.find({ order: { name: 'ASC' } }),
-        this.blueprintRepo.find(),
         this.runRepo.find({
           order: { createdAt: 'DESC' },
           take: 20,
@@ -334,9 +333,6 @@ export class RealWorldSyncService {
         postedAt: MoreThanOrEqual(todayStart),
       },
     });
-    const blueprintByCharacterId = new Map(
-      blueprints.map((item) => [item.characterId, item]),
-    );
     const activeDigestByCharacterId = new Map(
       activeDigests.map((item) => [item.characterId, item]),
     );
@@ -372,36 +368,33 @@ export class RealWorldSyncService {
         .map((item) => item.authorId),
     );
 
-    const characterSummaries = characters
-      .map((character) => {
-        const blueprint = blueprintByCharacterId.get(character.id);
-        const config = normalizeRealityLinkConfig(
-          blueprint?.publishedRecipe?.realityLink ??
-            blueprint?.draftRecipe?.realityLink,
-          character.name,
-          rules,
-        );
+    const characterSummaries = (
+      await Promise.all(
+        characters.map(async (character) => {
+          const config = await this.getRealityLinkConfig(character, rules);
         const activeDigest = activeDigestByCharacterId.get(character.id);
         const latestRun = latestRunByCharacterId.get(character.id);
-        return {
-          characterId: character.id,
-          characterName: character.name,
-          characterAvatar: character.avatar,
-          enabled: config.enabled,
-          applyMode: config.applyMode,
-          subjectType: config.subjectType,
-          subjectName: config.subjectName,
-          hasActiveDigest: Boolean(activeDigest),
-          activeDigestId: activeDigest?.id ?? null,
-          latestRunStatus: latestRun?.status ?? null,
-          latestRunAt: latestRun?.updatedAt.toISOString() ?? null,
-          todayAcceptedSignalCount:
-            acceptedSignalsTodayByCharacterId.get(character.id) ?? 0,
-          hasRealityLinkedMomentToday: charactersWithRealityMomentsToday.has(
-            character.id,
-          ),
-        };
-      })
+          return {
+            characterId: character.id,
+            characterName: character.name,
+            characterAvatar: character.avatar,
+            enabled: config.enabled,
+            applyMode: config.applyMode,
+            subjectType: config.subjectType,
+            subjectName: config.subjectName,
+            hasActiveDigest: Boolean(activeDigest),
+            activeDigestId: activeDigest?.id ?? null,
+            latestRunStatus: latestRun?.status ?? null,
+            latestRunAt: latestRun?.updatedAt.toISOString() ?? null,
+            todayAcceptedSignalCount:
+              acceptedSignalsTodayByCharacterId.get(character.id) ?? 0,
+            hasRealityLinkedMomentToday: charactersWithRealityMomentsToday.has(
+              character.id,
+            ),
+          };
+        }),
+      )
+    )
       .filter((item) => item.enabled || item.hasActiveDigest);
 
     return {
@@ -426,10 +419,9 @@ export class RealWorldSyncService {
 
   async getCharacterDetail(characterId: string) {
     const rules = await this.rulesService.getRules();
-    const [character, blueprint, runs, signals, digests, momentsToday] =
+    const [character, runs, signals, digests, momentsToday] =
       await Promise.all([
         this.characterRepo.findOneBy({ id: characterId }),
-        this.blueprintRepo.findOneBy({ characterId }),
         this.runRepo.find({
           where: { characterId },
           order: { createdAt: 'DESC' },
@@ -458,12 +450,7 @@ export class RealWorldSyncService {
       return null;
     }
 
-    const config = normalizeRealityLinkConfig(
-      blueprint?.publishedRecipe?.realityLink ??
-        blueprint?.draftRecipe?.realityLink,
-      character.name,
-      rules,
-    );
+    const config = await this.getRealityLinkConfig(character, rules);
     const activeDigest =
       digests.find((item) => item.status === 'active') ?? null;
 

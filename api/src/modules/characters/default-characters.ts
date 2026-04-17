@@ -1,9 +1,16 @@
 import type { CharacterEntity } from './character.entity';
 import { DEFAULT_CHARACTER_BIOS } from './character-bios';
+import {
+  buildWorldNewsDeskCharacter,
+  WORLD_NEWS_DESK_CHARACTER_ID,
+} from './world-news-desk-character';
 
 export const SELF_CHARACTER_ID = 'char-default-self';
 
-export const DEFAULT_CHARACTER_IDS = [SELF_CHARACTER_ID] as const;
+export const DEFAULT_CHARACTER_IDS = [
+  SELF_CHARACTER_ID,
+  WORLD_NEWS_DESK_CHARACTER_ID,
+] as const;
 
 export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
   return [
@@ -199,5 +206,6 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
       intimacyLevel: 100,
       currentActivity: 'free',
     },
+    buildWorldNewsDeskCharacter(),
   ];
 }

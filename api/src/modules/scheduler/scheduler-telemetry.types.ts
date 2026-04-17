@@ -48,6 +48,14 @@ export const SCHEDULER_JOB_DEFINITIONS = [
     enabled: true,
   },
   {
+    id: 'check_real_world_news_bulletins',
+    name: '新闻简报调度',
+    cadence: '*/10 * * * *',
+    description: '检查界闻是否应发布早报、午报或晚报。',
+    nextRunHint: '每 10 分钟检查一次早报 / 午报 / 晚报窗口',
+    enabled: true,
+  },
+  {
     id: 'trigger_scene_friend_requests',
     name: '场景加好友调度',
     cadence: '0 10,14,19 * * *',
