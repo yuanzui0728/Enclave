@@ -3083,7 +3083,14 @@ function AnnotationTemplateManager({
   const [content, setContent] = useState("");
   const [scope, setScope] = useState<WechatSyncAnnotationTemplateScope>("all");
   const [importJson, setImportJson] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState<{
+    tone: "success" | "warning" | "info";
+    title: string;
+    description: string;
+  } | null>(null);
+  const [previewFilter, setPreviewFilter] = useState<
+    "all" | WechatSyncAnnotationTemplateImportPreviewStatus
+  >("all");
   const pinnedCount = useMemo(
     () => templates.filter((template) => template.isPinned).length,
     [templates],
@@ -3104,13 +3111,38 @@ function AnnotationTemplateManager({
     () => JSON.stringify(exportPayload, null, 2),
     [exportPayload],
   );
+  const importPreviewState = useMemo(() => {
+    if (!importJson.trim()) {
+      return {
+        preview: null as WechatSyncAnnotationTemplateImportPreview | null,
+        error: null as string | null,
+      };
+    }
+    try {
+      return {
+        preview: buildWechatSyncAnnotationTemplateImportPreview(
+          templates,
+          importJson,
+        ),
+        error: null as string | null,
+      };
+    } catch (error) {
+      return {
+        preview: null as WechatSyncAnnotationTemplateImportPreview | null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "模板导入预览失败，请检查 JSON。",
+      };
+    }
+  }, [importJson, templates]);
 
   useEffect(() => {
     if (!feedback) {
       return;
     }
     const timeoutId = window.setTimeout(() => {
-      setFeedback((current) => (current === feedback ? "" : current));
+      setFeedback((current) => (current === feedback ? null : current));
     }, 2600);
     return () => window.clearTimeout(timeoutId);
   }, [feedback]);
@@ -3118,30 +3150,51 @@ function AnnotationTemplateManager({
   function submitTemplate() {
     const created = onAddTemplate(label, content, scope);
     if (!created) {
-      setFeedback("模板未新增，可能是标签/内容为空，或与现有模板重复。");
+      setFeedback({
+        tone: "warning",
+        title: "模板未新增",
+        description: "模板标签或内容为空，或与现有模板重复。",
+      });
       return;
     }
     setLabel("");
     setContent("");
     setScope("all");
-    setFeedback("已新增自定义批注模板。");
+    setFeedback({
+      tone: "success",
+      title: "模板已新增",
+      description: "已新增自定义批注模板。",
+    });
   }
 
   function importTemplates() {
     if (!importJson.trim()) {
-      setFeedback("导入 JSON 为空，先粘贴模板配置。");
+      setFeedback({
+        tone: "warning",
+        title: "导入内容为空",
+        description: "导入 JSON 为空，先粘贴模板配置。",
+      });
       return;
     }
     try {
       const result = onImportTemplates(importJson);
-      setFeedback(result.message);
+      setFeedback({
+        tone: result.changed ? "success" : "info",
+        title: result.changed ? "模板已导入" : "导入未产生变更",
+        description: result.message,
+      });
       if (result.changed) {
         setImportJson("");
       }
     } catch (error) {
-      setFeedback(
-        error instanceof Error ? error.message : "模板导入失败，请检查 JSON。",
-      );
+      setFeedback({
+        tone: "warning",
+        title: "模板导入失败",
+        description:
+          error instanceof Error
+            ? error.message
+            : "模板导入失败，请检查 JSON。",
+      });
     }
   }
 
@@ -3150,9 +3203,9 @@ function AnnotationTemplateManager({
       {feedback ? (
         <AdminActionFeedback
           className="mb-4"
-          tone="success"
-          title="模板操作已完成"
-          description={feedback}
+          tone={feedback.tone}
+          title={feedback.title}
+          description={feedback.description}
         />
       ) : null}
 
@@ -3186,7 +3239,11 @@ function AnnotationTemplateManager({
                 "复制模板 JSON",
               );
               if (copied) {
-                setFeedback("已复制当前模板 JSON。");
+                setFeedback({
+                  tone: "success",
+                  title: "模板已复制",
+                  description: "已复制当前模板 JSON。",
+                });
               }
             }}
           >
@@ -3282,7 +3339,10 @@ function AnnotationTemplateManager({
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setImportJson(exportJson)}
+                  onClick={() => {
+                    setImportJson(exportJson);
+                    setPreviewFilter("all");
+                  }}
                 >
                   写入当前模板到导入框
                 </Button>
@@ -3290,19 +3350,32 @@ function AnnotationTemplateManager({
                   variant="primary"
                   size="sm"
                   onClick={importTemplates}
-                  disabled={!importJson.trim()}
+                  disabled={
+                    !importJson.trim() ||
+                    Boolean(importPreviewState.error) ||
+                    importPreviewState.preview?.entries.length === 0
+                  }
                 >
                   导入并合并
                 </Button>
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setImportJson("")}
+                  onClick={() => {
+                    setImportJson("");
+                    setPreviewFilter("all");
+                  }}
                   disabled={!importJson.trim()}
                 >
                   清空导入框
                 </Button>
               </div>
+              <AnnotationTemplateImportPreviewPanel
+                preview={importPreviewState.preview}
+                error={importPreviewState.error}
+                filter={previewFilter}
+                onFilterChange={setPreviewFilter}
+              />
             </div>
           </div>
         </div>
@@ -3390,6 +3463,230 @@ function AnnotationTemplateManager({
         </div>
       </div>
     </Card>
+  );
+}
+
+function AnnotationTemplateImportPreviewPanel({
+  preview,
+  error,
+  filter,
+  onFilterChange,
+}: {
+  preview: WechatSyncAnnotationTemplateImportPreview | null;
+  error: string | null;
+  filter: "all" | WechatSyncAnnotationTemplateImportPreviewStatus;
+  onFilterChange: (
+    nextFilter: "all" | WechatSyncAnnotationTemplateImportPreviewStatus,
+  ) => void;
+}) {
+  const filteredEntries = useMemo(() => {
+    if (!preview) {
+      return [];
+    }
+    if (filter === "all") {
+      return preview.entries;
+    }
+    return preview.entries.filter((entry) => entry.status === filter);
+  }, [filter, preview]);
+
+  if (!error && !preview) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <AdminCallout
+        tone="warning"
+        title="模板导入预览失败"
+        description={error}
+      />
+    );
+  }
+
+  if (!preview) {
+    return null;
+  }
+
+  const summaryTone = preview.changed
+    ? "info"
+    : preview.skippedCount > 0
+      ? "warning"
+      : "success";
+
+  return (
+    <div className="space-y-3">
+      <AdminCallout
+        tone={summaryTone}
+        title="导入前差异预览"
+        description={preview.message}
+      />
+      {preview.entries.length ? (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              {
+                key: "all",
+                label: `全部 ${preview.entries.length}`,
+              },
+              {
+                key: "added",
+                label: `新增 ${preview.addedCount}`,
+              },
+              {
+                key: "updated",
+                label: `更新 ${preview.updatedCount}`,
+              },
+              {
+                key: "unchanged",
+                label: `无变化 ${preview.unchangedCount}`,
+              },
+              {
+                key: "skipped",
+                label: `跳过 ${preview.skippedCount}`,
+              },
+            ] as const
+          ).map((option) => (
+            <Button
+              key={option.key}
+              variant={filter === option.key ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => onFilterChange(option.key)}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+      {!preview.entries.length ? (
+        <AdminEmptyState
+          title="当前导入 JSON 没有可预览模板"
+          description="补充有效的 templates 数组后，再查看导入前差异。"
+        />
+      ) : !filteredEntries.length ? (
+        <AdminEmptyState
+          title="当前筛选没有命中预览项"
+          description="切回全部或调整导入 JSON 后，再查看这批模板的差异。"
+        />
+      ) : (
+        <div className="space-y-3">
+          {filteredEntries.map((entry) => (
+            <div
+              key={entry.key}
+              className="rounded-2xl border border-[color:var(--border-faint)] bg-white/70 px-4 py-3"
+            >
+              <div className="space-y-3 text-sm text-[color:var(--text-secondary)]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-[color:var(--text-primary)]">
+                    {entry.nextTemplate.label}
+                  </span>
+                  <StatusPill
+                    tone={resolveWechatSyncAnnotationTemplateImportStatusTone(
+                      entry.status,
+                    )}
+                  >
+                    {formatWechatSyncAnnotationTemplateImportStatusLabel(
+                      entry.status,
+                    )}
+                  </StatusPill>
+                  <StatusPill
+                    tone={
+                      entry.nextTemplate.source === "default"
+                        ? "healthy"
+                        : "warning"
+                    }
+                  >
+                    {entry.nextTemplate.source === "default"
+                      ? "默认模板"
+                      : "自定义模板"}
+                  </StatusPill>
+                  <StatusPill tone="muted">
+                    {formatWechatSyncAnnotationTemplateScopeLabel(
+                      entry.nextTemplate.scope,
+                    )}
+                  </StatusPill>
+                  {entry.nextTemplate.isPinned ? (
+                    <StatusPill tone="warning">导入后置顶</StatusPill>
+                  ) : null}
+                </div>
+                <div className="leading-6">
+                  {formatWechatSyncAnnotationTemplateImportStatusDescription(
+                    entry,
+                  )}
+                </div>
+                {entry.status === "updated" && entry.currentTemplate ? (
+                  <div className="space-y-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-3">
+                    <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      变更字段：
+                      {entry.changedFields
+                        .map(formatWechatSyncAnnotationTemplateImportFieldLabel)
+                        .join("、")}
+                    </div>
+                    {entry.changedFields.includes("label") ? (
+                      <div>
+                        标签：{entry.currentTemplate.label} -&gt;{" "}
+                        {entry.nextTemplate.label}
+                      </div>
+                    ) : null}
+                    {entry.changedFields.includes("scope") ? (
+                      <div>
+                        作用域：
+                        {formatWechatSyncAnnotationTemplateScopeLabel(
+                          entry.currentTemplate.scope,
+                        )}{" "}
+                        -&gt;{" "}
+                        {formatWechatSyncAnnotationTemplateScopeLabel(
+                          entry.nextTemplate.scope,
+                        )}
+                      </div>
+                    ) : null}
+                    {entry.changedFields.includes("isPinned") ? (
+                      <div>
+                        置顶状态：
+                        {formatWechatSyncAnnotationTemplatePinnedLabel(
+                          entry.currentTemplate.isPinned,
+                        )}{" "}
+                        -&gt;{" "}
+                        {formatWechatSyncAnnotationTemplatePinnedLabel(
+                          entry.nextTemplate.isPinned,
+                        )}
+                      </div>
+                    ) : null}
+                    {entry.changedFields.includes("content") ? (
+                      <div className="grid gap-3 lg:grid-cols-2">
+                        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2">
+                          <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                            当前内容
+                          </div>
+                          <div className="mt-2 leading-6">
+                            {entry.currentTemplate.content}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
+                          <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                            导入后内容
+                          </div>
+                          <div className="mt-2 leading-6">
+                            {entry.nextTemplate.content}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 leading-6">
+                    {entry.status === "added"
+                      ? `导入后会新增这条模板：${entry.nextTemplate.content}`
+                      : entry.status === "unchanged"
+                        ? "当前模板已与导入内容一致，不会产生更新。"
+                        : "这条默认模板没有命中当前列表，因此本次会跳过，不会新增到模板库。"}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -5254,6 +5551,37 @@ type WechatSyncAnnotationTemplateImportResult = {
   message: string;
 };
 
+type WechatSyncAnnotationTemplateImportPreviewStatus =
+  | "added"
+  | "updated"
+  | "unchanged"
+  | "skipped";
+
+type WechatSyncAnnotationTemplateImportPreviewField =
+  | "label"
+  | "content"
+  | "scope"
+  | "isPinned";
+
+type WechatSyncAnnotationTemplateImportPreviewEntry = {
+  key: string;
+  status: WechatSyncAnnotationTemplateImportPreviewStatus;
+  currentTemplate: WechatSyncAnnotationTemplate | null;
+  nextTemplate: WechatSyncAnnotationTemplate;
+  changedFields: WechatSyncAnnotationTemplateImportPreviewField[];
+};
+
+type WechatSyncAnnotationTemplateImportPreview = {
+  nextTemplates: WechatSyncAnnotationTemplate[];
+  entries: WechatSyncAnnotationTemplateImportPreviewEntry[];
+  changed: boolean;
+  addedCount: number;
+  updatedCount: number;
+  unchangedCount: number;
+  skippedCount: number;
+  message: string;
+};
+
 type WechatSyncAnnotationsState = {
   records: Record<string, string>;
   snapshots: Record<string, string>;
@@ -5598,78 +5926,266 @@ function mergeWechatSyncAnnotationTemplateImportPayload(
   currentTemplates: WechatSyncAnnotationTemplate[],
   raw: string,
 ): WechatSyncAnnotationTemplateImportResult {
-  const importedTemplates = parseWechatSyncAnnotationTemplateImportPayload(raw);
-  if (!importedTemplates.length) {
+  const preview = buildWechatSyncAnnotationTemplateImportPreview(
+    currentTemplates,
+    raw,
+  );
+  if (!preview.entries.length) {
     return {
-      templates: currentTemplates,
+      templates: preview.nextTemplates,
       changed: false,
       addedCount: 0,
       updatedCount: 0,
       message: "导入 JSON 里没有可用模板。",
     };
   }
+  return {
+    templates: preview.nextTemplates,
+    changed: preview.changed,
+    addedCount: preview.addedCount,
+    updatedCount: preview.updatedCount,
+    message: preview.changed
+      ? `已导入模板：新增 ${preview.addedCount} 条，更新 ${preview.updatedCount} 条${
+          preview.skippedCount
+            ? `，跳过 ${preview.skippedCount} 条未命中的默认模板`
+            : ""
+        }。`
+      : preview.skippedCount
+        ? `导入完成，没有可生效变更；已跳过 ${preview.skippedCount} 条未命中的默认模板。`
+        : "导入完成，但没有需要变更的模板。",
+  };
+}
+
+function buildWechatSyncAnnotationTemplateImportPreview(
+  currentTemplates: WechatSyncAnnotationTemplate[],
+  raw: string,
+): WechatSyncAnnotationTemplateImportPreview {
+  const importedTemplates = parseWechatSyncAnnotationTemplateImportPayload(raw);
+  if (!importedTemplates.length) {
+    return {
+      nextTemplates: sortWechatSyncAnnotationTemplates(currentTemplates),
+      entries: [],
+      changed: false,
+      addedCount: 0,
+      updatedCount: 0,
+      unchangedCount: 0,
+      skippedCount: 0,
+      message: "导入 JSON 里没有可用模板。",
+    };
+  }
 
   const nextTemplates = [...currentTemplates];
+  const entries: WechatSyncAnnotationTemplateImportPreviewEntry[] = [];
   let addedCount = 0;
   let updatedCount = 0;
+  let unchangedCount = 0;
+  let skippedCount = 0;
 
-  for (const importedTemplate of importedTemplates) {
-    const existingIndex = nextTemplates.findIndex((template) =>
-      template.id === importedTemplate.id
-        ? true
-        : template.source === "custom" &&
-          importedTemplate.source === "custom" &&
-          template.label.trim().toLowerCase() ===
-            importedTemplate.label.trim().toLowerCase() &&
-          template.content.trim().toLowerCase() ===
-            importedTemplate.content.trim().toLowerCase(),
+  importedTemplates.forEach((importedTemplate, index) => {
+    const existingIndex = findMatchingWechatSyncAnnotationTemplateIndex(
+      nextTemplates,
+      importedTemplate,
     );
 
     if (existingIndex >= 0) {
       const currentTemplate = nextTemplates[existingIndex];
-      const nextTemplate = {
-        ...currentTemplate,
-        label:
-          importedTemplate.source === "custom"
-            ? importedTemplate.label
-            : currentTemplate.label,
-        content:
-          importedTemplate.source === "custom"
-            ? importedTemplate.content
-            : currentTemplate.content,
-        isPinned: importedTemplate.isPinned,
-        scope: importedTemplate.scope,
-      };
-      if (
-        nextTemplate.label !== currentTemplate.label ||
-        nextTemplate.content !== currentTemplate.content ||
-        nextTemplate.isPinned !== currentTemplate.isPinned ||
-        nextTemplate.scope !== currentTemplate.scope
-      ) {
+      const nextTemplate = buildWechatSyncAnnotationTemplateImportMergeTarget(
+        currentTemplate,
+        importedTemplate,
+      );
+      const changedFields = diffWechatSyncAnnotationTemplateImportFields(
+        currentTemplate,
+        nextTemplate,
+      );
+      const status = changedFields.length ? "updated" : "unchanged";
+      if (changedFields.length) {
         nextTemplates[existingIndex] = nextTemplate;
         updatedCount += 1;
+      } else {
+        unchangedCount += 1;
       }
-      continue;
+      entries.push({
+        key: `${importedTemplate.id}-${index}`,
+        status,
+        currentTemplate,
+        nextTemplate,
+        changedFields,
+      });
+      return;
     }
 
     if (importedTemplate.source === "default") {
-      continue;
+      skippedCount += 1;
+      entries.push({
+        key: `${importedTemplate.id}-${index}`,
+        status: "skipped",
+        currentTemplate: null,
+        nextTemplate: importedTemplate,
+        changedFields: [],
+      });
+      return;
     }
 
     nextTemplates.push(importedTemplate);
     addedCount += 1;
-  }
+    entries.push({
+      key: `${importedTemplate.id}-${index}`,
+      status: "added",
+      currentTemplate: null,
+      nextTemplate: importedTemplate,
+      changedFields: [],
+    });
+  });
 
   const changed = addedCount > 0 || updatedCount > 0;
+  const summaryParts = [
+    `新增 ${addedCount} 条`,
+    `更新 ${updatedCount} 条`,
+    `无变化 ${unchangedCount} 条`,
+  ];
+  if (skippedCount > 0) {
+    summaryParts.push(`跳过 ${skippedCount} 条未命中的默认模板`);
+  }
+
   return {
-    templates: sortWechatSyncAnnotationTemplates(nextTemplates),
+    nextTemplates: sortWechatSyncAnnotationTemplates(nextTemplates),
+    entries,
     changed,
     addedCount,
     updatedCount,
-    message: changed
-      ? `已导入模板：新增 ${addedCount} 条，更新 ${updatedCount} 条。`
-      : "导入完成，但没有需要变更的模板。",
+    unchangedCount,
+    skippedCount,
+    message: `本次导入预览：${summaryParts.join("，")}。`,
   };
+}
+
+function findMatchingWechatSyncAnnotationTemplateIndex(
+  templates: WechatSyncAnnotationTemplate[],
+  importedTemplate: WechatSyncAnnotationTemplate,
+) {
+  return templates.findIndex((template) =>
+    template.id === importedTemplate.id
+      ? true
+      : template.source === "custom" &&
+        importedTemplate.source === "custom" &&
+        normalizeWechatSyncAnnotationTemplateMatchText(template.label) ===
+          normalizeWechatSyncAnnotationTemplateMatchText(
+            importedTemplate.label,
+          ) &&
+        normalizeWechatSyncAnnotationTemplateMatchText(template.content) ===
+          normalizeWechatSyncAnnotationTemplateMatchText(
+            importedTemplate.content,
+          ),
+  );
+}
+
+function buildWechatSyncAnnotationTemplateImportMergeTarget(
+  currentTemplate: WechatSyncAnnotationTemplate,
+  importedTemplate: WechatSyncAnnotationTemplate,
+) {
+  return {
+    ...currentTemplate,
+    label:
+      importedTemplate.source === "custom"
+        ? importedTemplate.label
+        : currentTemplate.label,
+    content:
+      importedTemplate.source === "custom"
+        ? importedTemplate.content
+        : currentTemplate.content,
+    isPinned: importedTemplate.isPinned,
+    scope: importedTemplate.scope,
+  };
+}
+
+function diffWechatSyncAnnotationTemplateImportFields(
+  currentTemplate: WechatSyncAnnotationTemplate,
+  nextTemplate: WechatSyncAnnotationTemplate,
+): WechatSyncAnnotationTemplateImportPreviewField[] {
+  const changedFields: WechatSyncAnnotationTemplateImportPreviewField[] = [];
+  if (currentTemplate.label !== nextTemplate.label) {
+    changedFields.push("label");
+  }
+  if (currentTemplate.content !== nextTemplate.content) {
+    changedFields.push("content");
+  }
+  if (currentTemplate.scope !== nextTemplate.scope) {
+    changedFields.push("scope");
+  }
+  if (currentTemplate.isPinned !== nextTemplate.isPinned) {
+    changedFields.push("isPinned");
+  }
+  return changedFields;
+}
+
+function normalizeWechatSyncAnnotationTemplateMatchText(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function formatWechatSyncAnnotationTemplateImportStatusLabel(
+  status: WechatSyncAnnotationTemplateImportPreviewStatus,
+) {
+  switch (status) {
+    case "added":
+      return "将新增";
+    case "updated":
+      return "将更新";
+    case "unchanged":
+      return "无变化";
+    default:
+      return "将跳过";
+  }
+}
+
+function resolveWechatSyncAnnotationTemplateImportStatusTone(
+  status: WechatSyncAnnotationTemplateImportPreviewStatus,
+) {
+  switch (status) {
+    case "added":
+      return "healthy" as const;
+    case "updated":
+      return "warning" as const;
+    case "unchanged":
+      return "muted" as const;
+    default:
+      return "warning" as const;
+  }
+}
+
+function formatWechatSyncAnnotationTemplateImportFieldLabel(
+  field: WechatSyncAnnotationTemplateImportPreviewField,
+) {
+  switch (field) {
+    case "label":
+      return "标签";
+    case "content":
+      return "内容";
+    case "scope":
+      return "作用域";
+    default:
+      return "置顶状态";
+  }
+}
+
+function formatWechatSyncAnnotationTemplatePinnedLabel(isPinned: boolean) {
+  return isPinned ? "已置顶" : "未置顶";
+}
+
+function formatWechatSyncAnnotationTemplateImportStatusDescription(
+  entry: WechatSyncAnnotationTemplateImportPreviewEntry,
+) {
+  switch (entry.status) {
+    case "added":
+      return "这条自定义模板会追加到当前模板列表。";
+    case "updated":
+      return `会覆盖当前模板的 ${entry.changedFields
+        .map(formatWechatSyncAnnotationTemplateImportFieldLabel)
+        .join("、")}。`;
+    case "unchanged":
+      return "当前模板已经与导入内容一致，不会产生实际更新。";
+    default:
+      return "这条默认模板没有命中当前列表中的默认模板，本次导入会直接跳过。";
+  }
 }
 
 function parseWechatSyncAnnotationTemplateImportPayload(raw: string) {
