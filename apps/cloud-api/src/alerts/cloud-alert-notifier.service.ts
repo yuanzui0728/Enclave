@@ -7,6 +7,15 @@ type CloudAlertWebhookEvent = "world_job_failed" | "world_provider_error";
 interface CloudAlertWebhookPayload {
   event: CloudAlertWebhookEvent;
   occurredAt: string;
+  title: string;
+  summary: string;
+  text: string;
+  severity: "warning" | "critical";
+  tags: string[];
+  links: {
+    adminUrl: string | null;
+    apiBaseUrl: string | null;
+  };
   world: {
     id: string;
     phone: string;
@@ -80,9 +89,19 @@ export class CloudAlertNotifierService {
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const presentation = this.buildPresentation(event, world, context);
     const payload: CloudAlertWebhookPayload = {
       event,
       occurredAt: new Date().toISOString(),
+      title: presentation.title,
+      summary: presentation.summary,
+      text: presentation.summary,
+      severity: presentation.severity,
+      tags: presentation.tags,
+      links: {
+        adminUrl: world.adminUrl,
+        apiBaseUrl: world.apiBaseUrl,
+      },
       world: {
         id: world.id,
         phone: world.phone,
@@ -161,5 +180,62 @@ export class CloudAlertNotifierService {
     }
 
     return Math.floor(parsed);
+  }
+
+  private buildPresentation(
+    event: CloudAlertWebhookEvent,
+    world: CloudWorldEntity,
+    context: Record<string, unknown>,
+  ) {
+    if (event === "world_job_failed") {
+      const jobType = this.readString(context.jobType) ?? "unknown";
+      const attempt = this.readNumber(context.attempt);
+      const maxAttempts = this.readNumber(context.maxAttempts);
+      const failureMessage =
+        this.readString(context.failureMessage) ??
+        world.failureMessage ??
+        "Lifecycle job failed without a detailed error message.";
+      const attemptLabel =
+        attempt !== null && maxAttempts !== null ? `第 ${attempt}/${maxAttempts} 次` : "最终一次";
+
+      return {
+        title: `云世界作业失败 | ${world.name}`,
+        summary: [
+          `世界 ${world.name}（${world.phone}）的 ${jobType} 作业失败。`,
+          `${attemptLabel} 执行未恢复。`,
+          `原因：${failureMessage}`,
+          `当前状态：${world.status}，期望状态：${world.desiredState}。`,
+        ].join(" "),
+        severity: "critical" as const,
+        tags: ["cloud-world", "job-failed", jobType],
+      };
+    }
+
+    const source = this.readString(context.source) ?? "provider";
+    const deploymentState = this.readString(context.deploymentState) ?? "error";
+    const providerMessage =
+      this.readString(context.providerMessage) ??
+      world.failureMessage ??
+      "Provider reported an error without a detailed message.";
+
+    return {
+      title: `云世界实例异常 | ${world.name}`,
+      summary: [
+        `世界 ${world.name}（${world.phone}）检测到 ${source} 异常。`,
+        `部署状态：${deploymentState}。`,
+        `原因：${providerMessage}`,
+        `当前状态：${world.status}，Provider：${world.providerKey ?? "unknown"}。`,
+      ].join(" "),
+      severity: "critical" as const,
+      tags: ["cloud-world", "provider-error", source],
+    };
+  }
+
+  private readString(value: unknown) {
+    return typeof value === "string" && value.trim().length ? value.trim() : null;
+  }
+
+  private readNumber(value: unknown) {
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
   }
 }

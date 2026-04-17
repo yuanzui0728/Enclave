@@ -544,6 +544,7 @@
 - Cloud alert delivery now includes outbound webhook notifications in `apps/cloud-api/src/alerts/`:
   - `CloudAlertNotifierService` sends structured JSON webhooks for critical platform failures
   - current automatic events: `world_job_failed` and `world_provider_error`
+  - webhook payload now includes human-friendly `title` / `summary` / `text` fields plus direct admin/api links for Feishu / WeCom style forwarding
   - webhook delivery is best-effort and does not block lifecycle processing
 - Cloud console world detail now supports provider-catalog based editing for `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.
 - Cloud bootstrap packages are now provider-aware and include `providerLabel`, `deploymentMode`, `image`, `containerName`, `volumeName`, plus a manual-docker compose snippet that can be applied on the target host.
