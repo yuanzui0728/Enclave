@@ -122,6 +122,71 @@ export interface RealWorldRuntimeContext {
   signalTitles?: string[];
 }
 
+export type WechatSyncImportMessageDirection =
+  | "owner"
+  | "contact"
+  | "group_member"
+  | "system"
+  | "unknown";
+
+export interface WechatSyncImportMessageSample {
+  timestamp: string;
+  text: string;
+  sender?: string | null;
+  typeLabel?: string | null;
+  direction?: WechatSyncImportMessageDirection;
+}
+
+export interface WechatSyncImportMomentHighlight {
+  postedAt?: string | null;
+  text: string;
+  location?: string | null;
+  mediaHint?: string | null;
+}
+
+export interface WechatSyncImportContactSnapshot {
+  username: string;
+  displayName: string;
+  nickname?: string | null;
+  remarkName?: string | null;
+  region?: string | null;
+  source?: string | null;
+  tags: string[];
+  isGroup: boolean;
+  messageCount: number;
+  ownerMessageCount: number;
+  contactMessageCount: number;
+  latestMessageAt?: string | null;
+  chatSummary?: string | null;
+  topicKeywords: string[];
+  sampleMessages: WechatSyncImportMessageSample[];
+  momentHighlights: WechatSyncImportMomentHighlight[];
+}
+
+export interface WechatSyncImportDraftSnapshot {
+  name: string;
+  relationship: string;
+  bio: string;
+  expertDomains: string[];
+  memorySummary: string;
+}
+
+export interface WechatSyncImportSnapshot {
+  version: number;
+  importedAt: string;
+  status: "created" | "updated";
+  autoAddFriend: boolean;
+  seedMoments: boolean;
+  seededMomentCount: number;
+  contact: WechatSyncImportContactSnapshot;
+  draftCharacter: WechatSyncImportDraftSnapshot;
+}
+
+export interface WechatSyncImportMetadata {
+  currentSnapshot?: WechatSyncImportSnapshot | null;
+  previousSnapshot?: WechatSyncImportSnapshot | null;
+}
+
 export interface PersonalityProfile {
   characterId: string;
   name: string;
@@ -150,6 +215,7 @@ export interface PersonalityProfile {
   reasoningConfig?: ReasoningConfig;
   memory?: MemoryLayers;
   realWorldContext?: RealWorldRuntimeContext;
+  wechatSyncImport?: WechatSyncImportMetadata;
 }
 
 export interface CharacterAiRelationship {

@@ -1346,6 +1346,7 @@ function WechatSyncHistoryCard({
   onRetryFriendship: () => void;
   onRollback: () => void;
 }) {
+  const currentSnapshot = item.character.profile?.wechatSyncImport?.currentSnapshot;
   const friendshipTone =
     item.friendshipStatus === "friend" ||
     item.friendshipStatus === "close" ||
@@ -1377,6 +1378,10 @@ function WechatSyncHistoryCard({
         <AdminMiniPanel title="导入信息">
           <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
             <div>导入时间：{formatDateTime(item.importedAt)}</div>
+            <div>
+              导入版本：
+              {currentSnapshot ? `v${currentSnapshot.version}` : "未持久化"}
+            </div>
             <div>朋友圈种子：{item.seededMomentCount} 条</div>
             <div>来源键：{item.character.sourceKey || "暂无"}</div>
             <div>地区：{item.region || "暂无"}</div>
@@ -1473,6 +1478,11 @@ function HistoryDetailPanel({
     );
   }
 
+  const currentImportSnapshot =
+    item.character.profile?.wechatSyncImport?.currentSnapshot ?? null;
+  const previousImportSnapshot =
+    item.character.profile?.wechatSyncImport?.previousSnapshot ?? null;
+
   return (
     <Card className="bg-[color:var(--surface-card)]">
       <div className="flex items-start justify-between gap-3">
@@ -1539,6 +1549,61 @@ function HistoryDetailPanel({
           </div>
         </div>
       </div>
+
+      {currentImportSnapshot ? (
+        <div className="mt-4 space-y-4">
+          <AdminCallout
+            title={
+              previousImportSnapshot
+                ? "最近两次导入预览快照已持久化"
+                : "当前导入预览快照已持久化"
+            }
+            tone={previousImportSnapshot ? "info" : "success"}
+            description={
+              previousImportSnapshot ? (
+                <div className="space-y-2">
+                  <p>
+                    当前线上角色保存了 `v{previousImportSnapshot.version}` 到
+                    `v{currentImportSnapshot.version}` 的导入快照。
+                  </p>
+                  <p>下面展示的是“上一版导入草稿 / 当前导入草稿”的字段差异，可直接用于回看这次同步改了什么。</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p>这条记录已经持久化了最近一次导入快照。</p>
+                  <p>后续再次导入时，会把当前快照滚到上一版，形成可对照的版本链。</p>
+                </div>
+              )
+            }
+          />
+
+          {previousImportSnapshot ? (
+            <div>
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                上一次导入版本 / 当前导入版本
+              </div>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {buildPersistedImportVersionDiffs(
+                  previousImportSnapshot,
+                  currentImportSnapshot,
+                ).map((diff) => (
+                  <HistoryDiffCard key={`snapshot-${diff.label}`} diff={diff} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <AdminMiniPanel title="当前导入快照">
+              <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+                <div>版本：v{currentImportSnapshot.version}</div>
+                <div>导入时间：{formatDateTime(currentImportSnapshot.importedAt)}</div>
+                <div>导入状态：{currentImportSnapshot.status === "created" ? "首次创建" : "覆盖更新"}</div>
+                <div>自动加好友：{currentImportSnapshot.autoAddFriend ? "是" : "否"}</div>
+                <div>朋友圈种子：{currentImportSnapshot.seededMomentCount} 条</div>
+              </div>
+            </AdminMiniPanel>
+          )}
+        </div>
+      ) : null}
 
       <div className="mt-4 space-y-4">
         {matchedPreviewItem ? (
@@ -1659,7 +1724,7 @@ function HistoryDetailPanel({
 function HistoryDiffCard({
   diff,
 }: {
-  diff: ReturnType<typeof buildHistoryPreviewDiffs>[number];
+  diff: HistoryDiffCardValue;
 }) {
   return (
     <div
@@ -2203,6 +2268,17 @@ function extractWechatUsername(sourceKey?: string | null) {
 function buildRollbackGuideContactBundle(
   item: WechatSyncHistoryItem,
 ): WechatSyncContactBundle {
+  const snapshotContact =
+    item.character.profile?.wechatSyncImport?.currentSnapshot?.contact ?? null;
+  if (snapshotContact) {
+    return {
+      ...snapshotContact,
+      remarkName: item.remarkName || snapshotContact.remarkName || null,
+      region: item.region || snapshotContact.region || null,
+      tags: item.tags.length ? item.tags : snapshotContact.tags,
+    };
+  }
+
   const username =
     extractWechatUsername(item.character.sourceKey) || `wechat_import_${item.character.id}`;
   const displayName =
@@ -2234,6 +2310,13 @@ function buildRollbackGuideContactBundle(
     momentHighlights: [],
   };
 }
+
+type HistoryDiffCardValue = {
+  label: string;
+  currentValue: string;
+  nextValue: string;
+  changed: boolean;
+};
 
 function findPreviewItemForHistoryItem(
   item: WechatSyncHistoryItem,
@@ -2310,6 +2393,72 @@ function hasHistoryPreviewChanges(
   previewItem: WechatSyncPreviewItem,
 ) {
   return buildHistoryPreviewDiffs(item, previewItem).some((diff) => diff.changed);
+}
+
+function buildPersistedImportVersionDiffs(
+  previousSnapshot: NonNullable<
+    WechatSyncHistoryItem["character"]["profile"]["wechatSyncImport"]
+  >["previousSnapshot"],
+  currentSnapshot: NonNullable<
+    WechatSyncHistoryItem["character"]["profile"]["wechatSyncImport"]
+  >["currentSnapshot"],
+) {
+  return [
+    createHistoryPreviewDiff(
+      "版本与导入时间",
+      `v${previousSnapshot?.version ?? 0} · ${formatDateTime(previousSnapshot?.importedAt)}`,
+      `v${currentSnapshot?.version ?? 0} · ${formatDateTime(currentSnapshot?.importedAt)}`,
+    ),
+    createHistoryPreviewDiff(
+      "角色名",
+      previousSnapshot?.draftCharacter.name ?? "暂无",
+      currentSnapshot?.draftCharacter.name ?? "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "关系定位",
+      previousSnapshot?.draftCharacter.relationship ?? "暂无",
+      currentSnapshot?.draftCharacter.relationship ?? "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "角色简介",
+      previousSnapshot?.draftCharacter.bio ?? "暂无",
+      currentSnapshot?.draftCharacter.bio ?? "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "领域标签",
+      (previousSnapshot?.draftCharacter.expertDomains ?? []).join("、"),
+      (currentSnapshot?.draftCharacter.expertDomains ?? []).join("、"),
+    ),
+    createHistoryPreviewDiff(
+      "记忆摘要",
+      previousSnapshot?.draftCharacter.memorySummary ?? "暂无",
+      currentSnapshot?.draftCharacter.memorySummary ?? "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "联系人备注 / 显示名",
+      previousSnapshot?.contact.remarkName?.trim() ||
+        previousSnapshot?.contact.displayName ||
+        "暂无",
+      currentSnapshot?.contact.remarkName?.trim() ||
+        currentSnapshot?.contact.displayName ||
+        "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "地区",
+      previousSnapshot?.contact.region ?? "暂无",
+      currentSnapshot?.contact.region ?? "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "联系人标签",
+      (previousSnapshot?.contact.tags ?? []).join("、"),
+      (currentSnapshot?.contact.tags ?? []).join("、"),
+    ),
+    createHistoryPreviewDiff(
+      "聊天摘要",
+      previousSnapshot?.contact.chatSummary ?? "暂无",
+      currentSnapshot?.contact.chatSummary ?? "暂无",
+    ),
+  ];
 }
 
 function createHistoryPreviewDiff(

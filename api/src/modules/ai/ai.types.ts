@@ -35,6 +35,71 @@ export interface RealWorldRuntimeContextValue {
   signalTitles?: string[];
 }
 
+export type WechatSyncImportMessageDirectionValue =
+  | 'owner'
+  | 'contact'
+  | 'group_member'
+  | 'system'
+  | 'unknown';
+
+export interface WechatSyncImportMessageSampleValue {
+  timestamp: string;
+  text: string;
+  sender?: string | null;
+  typeLabel?: string | null;
+  direction?: WechatSyncImportMessageDirectionValue;
+}
+
+export interface WechatSyncImportMomentHighlightValue {
+  postedAt?: string | null;
+  text: string;
+  location?: string | null;
+  mediaHint?: string | null;
+}
+
+export interface WechatSyncImportContactSnapshotValue {
+  username: string;
+  displayName: string;
+  nickname?: string | null;
+  remarkName?: string | null;
+  region?: string | null;
+  source?: string | null;
+  tags: string[];
+  isGroup: boolean;
+  messageCount: number;
+  ownerMessageCount: number;
+  contactMessageCount: number;
+  latestMessageAt?: string | null;
+  chatSummary?: string | null;
+  topicKeywords: string[];
+  sampleMessages: WechatSyncImportMessageSampleValue[];
+  momentHighlights: WechatSyncImportMomentHighlightValue[];
+}
+
+export interface WechatSyncImportDraftSnapshotValue {
+  name: string;
+  relationship: string;
+  bio: string;
+  expertDomains: string[];
+  memorySummary: string;
+}
+
+export interface WechatSyncImportSnapshotValue {
+  version: number;
+  importedAt: string;
+  status: 'created' | 'updated';
+  autoAddFriend: boolean;
+  seedMoments: boolean;
+  seededMomentCount: number;
+  contact: WechatSyncImportContactSnapshotValue;
+  draftCharacter: WechatSyncImportDraftSnapshotValue;
+}
+
+export interface WechatSyncImportMetadataValue {
+  currentSnapshot?: WechatSyncImportSnapshotValue | null;
+  previousSnapshot?: WechatSyncImportSnapshotValue | null;
+}
+
 // 角色人格画像结构
 export interface PersonalityProfile {
   characterId: string;
@@ -102,6 +167,7 @@ export interface PersonalityProfile {
     coreMemoryPrompt?: string;
   };
   realWorldContext?: RealWorldRuntimeContextValue;
+  wechatSyncImport?: WechatSyncImportMetadataValue;
 }
 
 export interface ChatMessage {

@@ -94,11 +94,15 @@ export class WechatSyncAdminService {
       .map((character) => {
         const friendship = friendshipMap.get(character.id);
         const request = requestMap.get(character.id);
-        const importedAt = request?.createdAt ?? friendship?.createdAt ?? null;
+        const importedAt =
+          character.profile?.wechatSyncImport?.currentSnapshot?.importedAt ??
+          request?.createdAt?.toISOString() ??
+          friendship?.createdAt?.toISOString() ??
+          null;
 
         return {
           character,
-          importedAt: importedAt ? importedAt.toISOString() : null,
+          importedAt,
           friendshipStatus: friendship?.status ?? null,
           friendshipCreatedAt: friendship?.createdAt?.toISOString() ?? null,
           lastInteractedAt: friendship?.lastInteractedAt?.toISOString() ?? null,
@@ -181,12 +185,16 @@ export class WechatSyncAdminService {
         sourceType: 'wechat_import',
         sourceKey,
       });
+      const previousSnapshot =
+        existing?.profile?.wechatSyncImport?.currentSnapshot ??
+        existing?.profile?.wechatSyncImport?.previousSnapshot ??
+        null;
       const normalizedCharacter = this.normalizeCharacterDraft(
         item.draftCharacter,
         contact,
         existing?.id,
       );
-      const saved = await this.characterRepo.save(
+      let saved = await this.characterRepo.save(
         this.characterRepo.create(
           existing
             ? {
@@ -207,6 +215,23 @@ export class WechatSyncAdminService {
       ) {
         seededMomentCount = await this.seedMomentHighlights(saved, contact);
       }
+
+      saved.profile = {
+        ...saved.profile,
+        wechatSyncImport: {
+          currentSnapshot: buildImportSnapshot({
+            contact,
+            character: saved,
+            status,
+            autoAddFriend: item.autoAddFriend !== false,
+            seedMoments: item.seedMoments !== false,
+            seededMomentCount,
+            previousSnapshot,
+          }),
+          previousSnapshot,
+        },
+      };
+      saved = await this.characterRepo.save(saved);
 
       let friendshipCreated = false;
       if (item.autoAddFriend !== false) {
@@ -793,6 +818,66 @@ function buildFallbackChatPrompt(
     return `${name} 回复时尽量保留微信熟人的说话味道。可参考这类真实表达：${examples}`;
   }
   return `${name} 回复时要像已经在微信认识的熟人朋友，语气自然，不端着，不套模板。`;
+}
+
+function buildImportSnapshot(input: {
+  contact: WechatSyncContactBundleValue;
+  character: CharacterEntity;
+  status: 'created' | 'updated';
+  autoAddFriend: boolean;
+  seedMoments: boolean;
+  seededMomentCount: number;
+  previousSnapshot?: { version: number } | null;
+}) {
+  const nextVersion = (input.previousSnapshot?.version ?? 0) + 1;
+  return {
+    version: nextVersion,
+    importedAt: new Date().toISOString(),
+    status: input.status,
+    autoAddFriend: input.autoAddFriend,
+    seedMoments: input.seedMoments,
+    seededMomentCount: input.seededMomentCount,
+    contact: cloneWechatContactSnapshot(input.contact),
+    draftCharacter: {
+      name: input.character.name,
+      relationship: input.character.relationship,
+      bio: input.character.bio,
+      expertDomains: [...(input.character.expertDomains ?? [])],
+      memorySummary: input.character.profile?.memorySummary ?? '',
+    },
+  };
+}
+
+function cloneWechatContactSnapshot(contact: WechatSyncContactBundleValue) {
+  return {
+    username: contact.username,
+    displayName: contact.displayName,
+    nickname: contact.nickname ?? null,
+    remarkName: contact.remarkName ?? null,
+    region: contact.region ?? null,
+    source: contact.source ?? null,
+    tags: [...contact.tags],
+    isGroup: contact.isGroup,
+    messageCount: contact.messageCount,
+    ownerMessageCount: contact.ownerMessageCount,
+    contactMessageCount: contact.contactMessageCount,
+    latestMessageAt: contact.latestMessageAt ?? null,
+    chatSummary: contact.chatSummary ?? null,
+    topicKeywords: [...contact.topicKeywords],
+    sampleMessages: contact.sampleMessages.map((item) => ({
+      timestamp: item.timestamp,
+      text: item.text,
+      sender: item.sender ?? null,
+      typeLabel: item.typeLabel ?? null,
+      direction: item.direction ?? 'unknown',
+    })),
+    momentHighlights: contact.momentHighlights.map((item) => ({
+      postedAt: item.postedAt ?? null,
+      text: item.text,
+      location: item.location ?? null,
+      mediaHint: item.mediaHint ?? null,
+    })),
+  };
 }
 
 function resolveActivityFrequency(messageCount: number) {
