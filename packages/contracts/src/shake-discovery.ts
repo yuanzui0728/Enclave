@@ -26,6 +26,10 @@ export interface ShakeDiscoveryConfig {
   roleGenerationPrompt: string;
 }
 
+export interface CreateShakeDiscoverySessionRequest {
+  mode?: "new" | "reroll";
+}
+
 export const SHAKE_DISCOVERY_CONFIG_KEY = "shake_discovery_config";
 export const SHAKE_DISCOVERY_SESSIONS_KEY = "shake_discovery_sessions";
 

@@ -38,7 +38,8 @@ function MobileDiscoverEncounterPage() {
   });
 
   const shakeMutation = useMutation({
-    mutationFn: () => shake(baseUrl),
+    mutationFn: (payload?: { mode?: "new" | "reroll" }) =>
+      shake(payload, baseUrl),
     onSuccess: async (result) => {
       if (!result) {
         setMessage("附近暂时没有新的相遇。");
@@ -104,13 +105,7 @@ function MobileDiscoverEncounterPage() {
   }
 
   async function handleReroll() {
-    if (session?.id) {
-      await dismissMutation.mutateAsync({
-        sessionId: session.id,
-        reason: "reroll",
-      });
-    }
-    await shakeMutation.mutateAsync();
+    await shakeMutation.mutateAsync({ mode: "reroll" });
   }
 
   useEffect(() => {
@@ -166,7 +161,7 @@ function MobileDiscoverEncounterPage() {
           </div>
         ) : (
           <Button
-            onClick={() => shakeMutation.mutate()}
+            onClick={() => shakeMutation.mutate({ mode: "new" })}
             disabled={shakeMutation.isPending || activeSessionQuery.isLoading}
             variant="primary"
             className="h-12 w-full rounded-full bg-[#07c160] text-white hover:bg-[#06ad56]"

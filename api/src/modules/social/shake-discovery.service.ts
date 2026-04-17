@@ -42,6 +42,7 @@ import {
 
 const ACTIVE_FRIEND_STATUSES = ['friend', 'close', 'best'] as const;
 type CyberAvatarProfile = Awaited<ReturnType<CyberAvatarService['getProfile']>>;
+type RestrictedRoleCategory = 'medical' | 'legal' | 'finance';
 
 @Injectable()
 export class ShakeDiscoveryService {
@@ -82,19 +83,30 @@ export class ShakeDiscoveryService {
     private readonly socialService: SocialService,
   ) {}
 
-  async createSessionPreview(): Promise<ShakeDiscoveryPreview | null> {
+  async createSessionPreview(options?: {
+    mode?: 'new' | 'reroll';
+  }): Promise<ShakeDiscoveryPreview | null> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const config = await this.getConfig();
     if (!config.enabled) {
       throw new BadRequestException('摇一摇当前已在后台停用。');
     }
 
+    const mode = options?.mode === 'reroll' ? 'reroll' : 'new';
     const now = new Date();
     const sessions = await this.readSessions(owner.id);
-    expirePreviewSessions(sessions, now);
-    dismissActivePreviewSessions(sessions, now, 'reroll');
+    const changed = expirePreviewSessions(sessions, now);
+    const activeSession =
+      sessions.find((item) => item.status === 'preview_ready') ?? null;
 
-    if (config.cooldownMinutes > 0) {
+    if (activeSession && mode !== 'reroll') {
+      if (changed) {
+        await this.writeSessions(owner.id, sessions);
+      }
+      return toPreview(activeSession);
+    }
+
+    if (config.cooldownMinutes > 0 && mode !== 'reroll') {
       const latestCreatedAt = sessions[0]?.createdAt
         ? new Date(sessions[0].createdAt)
         : null;
@@ -200,29 +212,79 @@ export class ShakeDiscoveryService {
         config,
         sessions,
       );
-      const selectedDirection = pickDirection(weightedDirections);
-      const generationPrompt = renderTemplate(config.roleGenerationPrompt, {
-        selectedDirection: JSON.stringify(selectedDirection, null, 2),
-        cyberAvatarSummary: buildCyberAvatarSummary(cyberAvatarProfile),
-        signals: signalTexts.join('\n') || '暂无最近行为证据',
-      });
-      const generationRaw = await this.ai.generateJsonObject({
-        prompt: generationPrompt,
-        maxTokens: 1800,
-        temperature: 0.82,
-        usageContext: {
-          surface: 'app',
-          scene: 'shake_discovery_generate',
-          scopeType: 'world',
-          scopeId: owner.id,
-          scopeLabel: selectedDirection.directionKey,
-          ownerId: owner.id,
-        },
-      });
-      const generated = normalizeGeneratedCharacterDraft(
-        generationRaw,
-        selectedDirection,
-      );
+      const remainingDirections = [...weightedDirections];
+      let selectedDirection: ShakeDiscoveryDirectionDraft | null = null;
+      let generationPrompt: string | null = null;
+      let generated: ShakeDiscoveryGeneratedCharacterDraft | null = null;
+      let restrictedCategory: RestrictedRoleCategory | null = null;
+
+      while (remainingDirections.length > 0) {
+        const candidateDirection = pickDirection(remainingDirections);
+        const candidatePrompt = renderTemplate(config.roleGenerationPrompt, {
+          selectedDirection: JSON.stringify(candidateDirection, null, 2),
+          cyberAvatarSummary: buildCyberAvatarSummary(cyberAvatarProfile),
+          signals: signalTexts.join('\n') || '暂无最近行为证据',
+        });
+        const generationRaw = await this.ai.generateJsonObject({
+          prompt: candidatePrompt,
+          maxTokens: 1800,
+          temperature: 0.82,
+          usageContext: {
+            surface: 'app',
+            scene: 'shake_discovery_generate',
+            scopeType: 'world',
+            scopeId: owner.id,
+            scopeLabel: candidateDirection.directionKey,
+            ownerId: owner.id,
+          },
+        });
+        const candidateGenerated = normalizeGeneratedCharacterDraft(
+          generationRaw,
+          candidateDirection,
+        );
+        const candidateRestriction = getGeneratedRestrictionViolation(
+          candidateDirection,
+          candidateGenerated,
+          config,
+        );
+        if (!candidateRestriction) {
+          selectedDirection = candidateDirection;
+          generationPrompt = candidatePrompt;
+          generated = candidateGenerated;
+          break;
+        }
+
+        restrictedCategory = candidateRestriction;
+        removeDirectionByKey(
+          remainingDirections,
+          candidateDirection.directionKey,
+        );
+      }
+
+      if (!selectedDirection || !generationPrompt || !generated) {
+        sessions.unshift(
+          buildFailedSession({
+            id: sessionId,
+            ownerId: owner.id,
+            createdAt: now,
+            planningPrompt,
+            planningResult: {
+              summary: planning.summary,
+              directions: weightedDirections,
+            },
+            failureReason: restrictedCategory
+              ? `生成结果命中了已禁用的${labelForRestrictedCategory(
+                  restrictedCategory,
+                )}角色类型。`
+              : '没有生成出符合约束的摇一摇角色。',
+            signalSummary: signalTexts.join('\n'),
+            cyberAvatarSummary: buildCyberAvatarSummary(cyberAvatarProfile),
+          }),
+        );
+        await this.writeSessions(owner.id, sessions);
+        return null;
+      }
+
       const recipeDraft = buildRecipeFromGeneratedDraft(generated);
       const expiresAt = new Date(
         now.getTime() + config.sessionExpiryMinutes * 60 * 1000,
@@ -233,6 +295,11 @@ export class ShakeDiscoveryService {
         createdAt: now,
         expiresAt,
       });
+      if (activeSession && mode === 'reroll') {
+        activeSession.status = 'dismissed';
+        activeSession.dismissReason = 'reroll';
+        activeSession.dismissedAt = now.toISOString();
+      }
       sessions.unshift({
         ...preview,
         ownerId: owner.id,
@@ -310,34 +377,90 @@ export class ShakeDiscoveryService {
   async keepSession(sessionId: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const sessions = await this.readSessions(owner.id);
-    expirePreviewSessions(sessions, new Date());
+    const changed = expirePreviewSessions(sessions, new Date());
     const session = sessions.find((item) => item.id === sessionId);
     if (!session) {
       throw new NotFoundException(`Shake session ${sessionId} not found`);
     }
+    const sourceKey = buildShakeSourceKey(session.id);
+    if (session.status === 'kept') {
+      const existingCharacter = await this.findExistingShakeCharacter(
+        session.characterId?.trim() || buildShakeCharacterId(session.id),
+        sourceKey,
+      );
+      if (changed) {
+        await this.writeSessions(owner.id, sessions);
+      }
+      if (!existingCharacter) {
+        throw new BadRequestException('当前摇一摇结果已保留，但角色记录不存在。');
+      }
+      return {
+        sessionId,
+        status: 'kept' as const,
+        characterId: existingCharacter.id,
+        characterName: existingCharacter.name,
+      };
+    }
     if (session.status !== 'preview_ready') {
+      if (changed) {
+        await this.writeSessions(owner.id, sessions);
+      }
       throw new BadRequestException('当前摇一摇结果已经不能再保留。');
     }
     if (!session.recipeDraft) {
       throw new BadRequestException('当前摇一摇结果缺少角色草稿。');
     }
 
-    const character =
-      await this.characterBlueprintService.createCharacterFromRecipe({
-        id: `char_shake_${randomUUID().slice(0, 12)}`,
-        sourceType: 'shake_generated',
-        sourceKey: `shake:${session.id}`,
-        deletionPolicy: 'archive_allowed',
-        recipe: session.recipeDraft,
-      });
-    await this.socialService.sendFriendRequest(
-      character.id,
-      session.greeting || `你好，我是${character.name}。`,
-      {
-        autoAccept: true,
-        triggerScene: 'shake_keep',
-      },
+    const targetCharacterId =
+      session.characterId?.trim() || buildShakeCharacterId(session.id);
+    let character = await this.findExistingShakeCharacter(
+      targetCharacterId,
+      sourceKey,
     );
+
+    if (!character) {
+      try {
+        character =
+          await this.characterBlueprintService.createCharacterFromRecipe({
+            id: targetCharacterId,
+            sourceType: 'shake_generated',
+            sourceKey,
+            deletionPolicy: 'archive_allowed',
+            recipe: session.recipeDraft,
+          });
+      } catch (error) {
+        if (!isCharacterAlreadyExistsError(error, targetCharacterId)) {
+          throw error;
+        }
+        character = await this.findExistingShakeCharacter(
+          targetCharacterId,
+          sourceKey,
+        );
+        if (!character) {
+          throw error;
+        }
+      }
+    }
+
+    if (session.characterId !== character.id) {
+      session.characterId = character.id;
+      await this.writeSessions(owner.id, sessions);
+    }
+
+    const friendship = await this.friendshipRepo.findOneBy({
+      ownerId: owner.id,
+      characterId: character.id,
+    });
+    if (!isActiveFriendshipStatus(friendship?.status)) {
+      await this.socialService.sendFriendRequest(
+        character.id,
+        session.greeting || `你好，我是${character.name}。`,
+        {
+          autoAccept: true,
+          triggerScene: 'shake_keep',
+        },
+      );
+    }
     session.status = 'kept';
     session.characterId = character.id;
     session.keptAt = new Date().toISOString();
@@ -348,6 +471,17 @@ export class ShakeDiscoveryService {
       characterId: character.id,
       characterName: character.name,
     };
+  }
+
+  private async findExistingShakeCharacter(
+    characterId: string,
+    sourceKey: string,
+  ) {
+    const [byId, bySourceKey] = await Promise.all([
+      this.characterRepo.findOneBy({ id: characterId }),
+      this.characterRepo.findOneBy({ sourceKey }),
+    ]);
+    return byId ?? bySourceKey ?? null;
   }
 
   private async getConfig(): Promise<ShakeDiscoveryConfig> {
@@ -1005,26 +1139,110 @@ function normalizeDirectionDraft(
   };
 }
 
+function getDirectionRestrictionViolation(
+  direction: ShakeDiscoveryDirectionDraft,
+  config: ShakeDiscoveryConfig,
+) {
+  return detectRestrictedRoleCategory(
+    [
+      direction.roleBrief,
+      direction.relationshipLabel,
+      direction.whyNow,
+      ...direction.expertDomains,
+      ...direction.evidenceHighlights,
+    ].join(' '),
+    config,
+  );
+}
+
+function getGeneratedRestrictionViolation(
+  direction: ShakeDiscoveryDirectionDraft,
+  generated: ShakeDiscoveryGeneratedCharacterDraft,
+  config: ShakeDiscoveryConfig,
+) {
+  return detectRestrictedRoleCategory(
+    [
+      direction.roleBrief,
+      direction.relationshipLabel,
+      direction.whyNow,
+      ...direction.expertDomains,
+      generated.relationship,
+      generated.occupation,
+      generated.bio,
+      generated.background,
+      generated.motivation,
+      generated.worldview,
+      generated.matchReason,
+      ...generated.expertDomains,
+      ...generated.topicsOfInterest,
+    ].join(' '),
+    config,
+  );
+}
+
+function detectRestrictedRoleCategory(
+  text: string,
+  config: ShakeDiscoveryConfig,
+): RestrictedRoleCategory | null {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  if (
+    !config.allowMedical &&
+    /(医疗|医学|医生|心理咨询|咨询师|治疗|精神科|临床|医院|康复|药师|health|medical|doctor|therap|counselor|psychiat|clinical)/.test(
+      normalized,
+    )
+  ) {
+    return 'medical';
+  }
+  if (
+    !config.allowLegal &&
+    /(法律|律师|法务|合规|legal|lawyer|attorney|compliance|law )/.test(
+      normalized,
+    )
+  ) {
+    return 'legal';
+  }
+  if (
+    !config.allowFinance &&
+    /(金融|投资|理财|财务|基金|证券|保险|银行|finance|financial|investment|wealth|advisor|banker|trader|accounting)/.test(
+      normalized,
+    )
+  ) {
+    return 'finance';
+  }
+  return null;
+}
+
+function labelForRestrictedCategory(category: RestrictedRoleCategory) {
+  switch (category) {
+    case 'medical':
+      return '医疗';
+    case 'legal':
+      return '法律';
+    case 'finance':
+      return '金融';
+    default:
+      return category;
+  }
+}
+
+function removeDirectionByKey(
+  directions: ShakeDiscoveryDirectionDraft[],
+  directionKey: string,
+) {
+  const index = directions.findIndex((item) => item.directionKey === directionKey);
+  if (index >= 0) {
+    directions.splice(index, 1);
+  }
+}
+
 function isDirectionAllowed(
   direction: ShakeDiscoveryDirectionDraft,
   config: ShakeDiscoveryConfig,
 ) {
-  const normalizedDomains = direction.expertDomains
-    .map((item) => item.toLowerCase())
-    .join(' ');
-  if (
-    !config.allowMedical &&
-    /(医疗|医学|医生|心理咨询|治疗|精神科|临床)/.test(normalizedDomains)
-  ) {
-    return false;
-  }
-  if (!config.allowLegal && /(法律|律师|法务|合规)/.test(normalizedDomains)) {
-    return false;
-  }
-  if (!config.allowFinance && /(金融|投资|理财|财务)/.test(normalizedDomains)) {
-    return false;
-  }
-  return true;
+  return getDirectionRestrictionViolation(direction, config) == null;
 }
 
 function applyDirectionWeights(
@@ -1341,6 +1559,42 @@ function toPreview(
 function normalizeDismissReason(value: string | null | undefined) {
   const normalized = sanitizeText(value);
   return normalized || 'user_skip';
+}
+
+function buildShakeSourceKey(sessionId: string) {
+  return `shake:${sessionId}`;
+}
+
+function buildShakeCharacterId(sessionId: string) {
+  return `char_shake_${sessionId.replace(/-/g, '')}`;
+}
+
+function isActiveFriendshipStatus(status?: string | null) {
+  return ACTIVE_FRIEND_STATUSES.includes(
+    (status?.trim() || '') as (typeof ACTIVE_FRIEND_STATUSES)[number],
+  );
+}
+
+function isCharacterAlreadyExistsError(error: unknown, characterId: string) {
+  if (!(error instanceof BadRequestException)) {
+    return false;
+  }
+  const response = error.getResponse();
+  const responseBody =
+    typeof response === 'string'
+      ? null
+      : (response as {
+          message?: string | string[];
+        });
+  const message =
+    typeof response === 'string'
+      ? response
+      : Array.isArray(responseBody?.message)
+        ? responseBody.message.join(' ')
+        : typeof responseBody?.message === 'string'
+          ? responseBody.message
+          : error.message;
+  return message.includes(`Character ${characterId} already exists`);
 }
 
 function truncateText(value: string | undefined | null, maxLength: number) {

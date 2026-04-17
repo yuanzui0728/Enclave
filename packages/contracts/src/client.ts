@@ -116,6 +116,7 @@ import type {
   UpdateFriendProfileRequest,
 } from "./social";
 import type {
+  CreateShakeDiscoverySessionRequest,
   DismissShakeDiscoverySessionResult,
   KeepShakeDiscoverySessionResult,
   ShakeDiscoverySessionPreview,
@@ -2932,11 +2933,17 @@ export function markOfficialAccountArticleRead(
   );
 }
 
-export function shake(baseUrl?: string) {
+export function shake(
+  payload?: CreateShakeDiscoverySessionRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<ShakeDiscoverySessionPreview | null>(
     "/social/shake",
     {
       method: "POST",
+      body: JSON.stringify({
+        mode: payload?.mode === "reroll" ? "reroll" : "new",
+      }),
     },
     baseUrl,
   );

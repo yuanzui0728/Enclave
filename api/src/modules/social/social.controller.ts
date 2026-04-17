@@ -60,8 +60,15 @@ export class SocialController {
   }
 
   @Post('shake')
-  shake() {
-    return this.shakeDiscoveryService.createSessionPreview();
+  shake(
+    @Body()
+    body?: {
+      mode?: 'new' | 'reroll';
+    },
+  ) {
+    return this.shakeDiscoveryService.createSessionPreview({
+      mode: body?.mode === 'reroll' ? 'reroll' : 'new',
+    });
   }
 
   @Get('shake/active')
