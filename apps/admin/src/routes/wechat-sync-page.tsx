@@ -99,12 +99,18 @@ export function WechatSyncPage() {
   const [seedMoments, setSeedMoments] = useState(true);
   const [manualBundleJson, setManualBundleJson] = useState("");
   const [manualBundleError, setManualBundleError] = useState<string | null>(null);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<
+    "all" | "active" | "attention" | "removed"
+  >("all");
+  const [rollbackGuideItem, setRollbackGuideItem] = useState<WechatSyncHistoryItem | null>(null);
   const [selectedUsernames, setSelectedUsernames] = useState<string[]>([]);
   const [selectedPreviewUsernames, setSelectedPreviewUsernames] = useState<string[]>([]);
   const [batchRelationshipInput, setBatchRelationshipInput] = useState("");
   const [batchDomainInput, setBatchDomainInput] = useState("");
   const [previewItems, setPreviewItems] = useState<WechatSyncPreviewItem[]>([]);
   const deferredSearch = useDeferredValue(search.trim());
+  const deferredHistorySearch = useDeferredValue(historySearch.trim().toLowerCase());
 
   const connectorHealthQuery = useQuery({
     queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
@@ -167,6 +173,50 @@ export function WechatSyncPage() {
     }
     return previewItems.map((item) => item.contact.username);
   }, [previewItems, selectedPreviewUsernames]);
+  const historyItems = historyQuery.data?.items ?? [];
+  const historyCounts = useMemo(
+    () => ({
+      total: historyItems.length,
+      active: historyItems.filter((item) =>
+        isActiveFriendshipStatus(item.friendshipStatus),
+      ).length,
+      attention: historyItems.filter(
+        (item) => !isActiveFriendshipStatus(item.friendshipStatus),
+      ).length,
+      removed: historyItems.filter(
+        (item) => item.friendshipStatus === "removed",
+      ).length,
+    }),
+    [historyItems],
+  );
+  const filteredHistoryItems = useMemo(() => {
+    return historyItems.filter((item) => {
+      const matchesSearch =
+        !deferredHistorySearch ||
+        [
+          item.character.name,
+          item.character.relationship,
+          item.character.sourceKey,
+          item.remarkName,
+          item.region,
+          ...item.tags,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(deferredHistorySearch);
+
+      const matchesStatus =
+        historyStatusFilter === "all" ||
+        (historyStatusFilter === "active"
+          ? isActiveFriendshipStatus(item.friendshipStatus)
+          : historyStatusFilter === "attention"
+            ? !isActiveFriendshipStatus(item.friendshipStatus)
+            : item.friendshipStatus === "removed");
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [deferredHistorySearch, historyItems, historyStatusFilter]);
 
   const scanMutation = useMutation({
     mutationFn: () => scanWechatConnector(connectorSettings.baseUrl),
@@ -219,6 +269,7 @@ export function WechatSyncPage() {
       });
     },
     onSuccess: async () => {
+      setRollbackGuideItem(null);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["admin-wechat-sync-history", baseUrl],
@@ -256,9 +307,10 @@ export function WechatSyncPage() {
     },
   });
   const rollbackMutation = useMutation({
-    mutationFn: (characterId: string) =>
-      adminApi.rollbackWechatSyncImport(characterId),
-    onSuccess: async () => {
+    mutationFn: (item: WechatSyncHistoryItem) =>
+      adminApi.rollbackWechatSyncImport(item.character.id),
+    onSuccess: async (_, item) => {
+      setRollbackGuideItem(item);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["admin-wechat-sync-history", baseUrl],
@@ -397,6 +449,16 @@ export function WechatSyncPage() {
       ...item,
       draftCharacter: fillWechatSyncDraftBlanks(item.contact, item.draftCharacter),
     }));
+  }
+
+  function loadRollbackGuideIntoManualInput() {
+    if (!rollbackGuideItem) {
+      return;
+    }
+    setManualBundleError(null);
+    setManualBundleJson(
+      JSON.stringify([buildRollbackGuideContactBundle(rollbackGuideItem)], null, 2),
+    );
   }
 
   return (
@@ -585,6 +647,45 @@ export function WechatSyncPage() {
               placeholder='[{"username":"wxid_alice","displayName":"Alice","tags":["同事"],"isGroup":false,"messageCount":128,"ownerMessageCount":62,"contactMessageCount":66,"latestMessageAt":"2026-04-16T11:20:00.000Z","chatSummary":"经常聊产品迭代、周末约饭和出差安排。","topicKeywords":["产品","出差","周末"],"sampleMessages":[{"timestamp":"2026-04-16 19:20","text":"周五一起吃饭？","sender":"Alice","direction":"contact"}],"momentHighlights":[]}]'
             />
           </div>
+
+          {rollbackGuideItem ? (
+            <AdminCallout
+              className="mt-4"
+              title="已保留最近一次回滚的重新导入模板"
+              tone="warning"
+              description={
+                <div className="space-y-2">
+                  <p>
+                    已回滚角色：{rollbackGuideItem.character.name}。
+                    {rollbackGuideItem.character.sourceKey
+                      ? ` 你也可以用 ${extractWechatUsername(
+                          rollbackGuideItem.character.sourceKey,
+                        ) || rollbackGuideItem.character.sourceKey} 在上方连接器联系人里重新搜索。`
+                      : " 当前没有可用的 sourceKey，只能通过手动 JSON 重新导入。"}
+                  </p>
+                  <p>点“填回手动导入区”后，会生成一份最小联系人快照模板，方便你重新生成预览。</p>
+                </div>
+              }
+              actions={
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={loadRollbackGuideIntoManualInput}
+                  >
+                    填回手动导入区
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setRollbackGuideItem(null)}
+                  >
+                    关闭引导
+                  </Button>
+                </>
+              }
+            />
+          ) : null}
 
           {manualBundleError ? (
             <ErrorBlock className="mt-4" message={manualBundleError} />
@@ -928,11 +1029,52 @@ export function WechatSyncPage() {
             className="mt-4"
             tone="success"
             title="导入已回滚"
-            description="该微信同步角色已删除，关联会话、好友关系和内容也一并清理。"
+            description="该微信同步角色已删除，关联会话、好友关系和内容也一并清理；下方保留了重新导入引导。"
           />
         ) : null}
 
-        {!historyQuery.isLoading && !(historyQuery.data?.items.length ?? 0) ? (
+        {historyItems.length ? (
+          <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
+            <AdminTextField
+              label="搜索历史记录"
+              value={historySearch}
+              onChange={setHistorySearch}
+              placeholder="搜索角色名、关系、sourceKey、备注或标签"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={historyStatusFilter === "all" ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => setHistoryStatusFilter("all")}
+              >
+                全部 {historyCounts.total}
+              </Button>
+              <Button
+                variant={historyStatusFilter === "active" ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => setHistoryStatusFilter("active")}
+              >
+                好友正常 {historyCounts.active}
+              </Button>
+              <Button
+                variant={historyStatusFilter === "attention" ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => setHistoryStatusFilter("attention")}
+              >
+                待处理 {historyCounts.attention}
+              </Button>
+              <Button
+                variant={historyStatusFilter === "removed" ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => setHistoryStatusFilter("removed")}
+              >
+                已移除 {historyCounts.removed}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {!historyQuery.isLoading && !historyItems.length ? (
           <AdminEmptyState
             className="mt-4"
             title="还没有微信同步导入历史"
@@ -940,9 +1082,17 @@ export function WechatSyncPage() {
           />
         ) : null}
 
-        {historyQuery.data?.items.length ? (
+        {historyItems.length && !filteredHistoryItems.length ? (
+          <AdminEmptyState
+            className="mt-4"
+            title="当前筛选没有匹配的导入历史"
+            description="调整搜索词或状态筛选后，再继续查看导入记录。"
+          />
+        ) : null}
+
+        {filteredHistoryItems.length ? (
           <div className="mt-4 grid gap-4 xl:grid-cols-2">
-            {historyQuery.data.items.map((item) => (
+            {filteredHistoryItems.map((item) => (
               <WechatSyncHistoryCard
                 key={item.character.id}
                 item={item}
@@ -952,12 +1102,12 @@ export function WechatSyncPage() {
                 }
                 rollbackPending={
                   rollbackMutation.isPending &&
-                  rollbackMutation.variables === item.character.id
+                  rollbackMutation.variables?.character.id === item.character.id
                 }
                 onRetryFriendship={() =>
                   retryFriendshipMutation.mutate(item.character.id)
                 }
-                onRollback={() => rollbackMutation.mutate(item.character.id)}
+                onRollback={() => rollbackMutation.mutate(item)}
               />
             ))}
           </div>
@@ -1607,6 +1757,52 @@ function formatFriendshipStatus(value?: string | null) {
     default:
       return "未建立";
   }
+}
+
+function isActiveFriendshipStatus(value?: string | null) {
+  return value === "friend" || value === "close" || value === "best";
+}
+
+function extractWechatUsername(sourceKey?: string | null) {
+  if (!sourceKey) {
+    return "";
+  }
+  return sourceKey.startsWith("wechat:") ? sourceKey.slice("wechat:".length) : sourceKey;
+}
+
+function buildRollbackGuideContactBundle(
+  item: WechatSyncHistoryItem,
+): WechatSyncContactBundle {
+  const username =
+    extractWechatUsername(item.character.sourceKey) || `wechat_import_${item.character.id}`;
+  const displayName =
+    item.remarkName?.trim() ||
+    item.character.name.trim() ||
+    "未命名联系人";
+  const memorySummary =
+    item.character.profile?.memorySummary?.trim() ||
+    item.character.bio?.trim() ||
+    item.character.relationship?.trim() ||
+    `${displayName} 是曾经导入过的微信联系人。`;
+
+  return {
+    username,
+    displayName,
+    nickname: item.character.name,
+    remarkName: item.remarkName || item.character.name,
+    region: item.region || null,
+    source: "wechat_rollback_template",
+    tags: item.tags,
+    isGroup: false,
+    messageCount: 0,
+    ownerMessageCount: 0,
+    contactMessageCount: 0,
+    latestMessageAt: item.lastInteractedAt || item.importedAt || null,
+    chatSummary: memorySummary,
+    topicKeywords: item.character.expertDomains.slice(0, 8),
+    sampleMessages: [],
+    momentHighlights: [],
+  };
 }
 
 function validatePreviewItem(item: WechatSyncPreviewItem) {
