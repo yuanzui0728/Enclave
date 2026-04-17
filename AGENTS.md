@@ -23,7 +23,7 @@
 
 ## 后端模块（`api/src/modules/`）
 
-`action-runtime` · `admin` · `ai` · `analytics` · `auth` · `characters` · `chat` · `cloud-runtime` · `config` · `cyber-avatar` · `events` · `feed` · `games` · `moderation` · `moments` · `narrative` · `need-discovery` · `official-accounts` · `real-world-sync` · `scheduler` · `social` · `system` · `world`
+`action-runtime` · `admin` · `ai` · `analytics` · `auth` · `characters` · `chat` · `cloud-runtime` · `config` · `cyber-avatar` · `events` · `feed` · `followup-runtime` · `games` · `moderation` · `moments` · `narrative` · `need-discovery` · `official-accounts` · `real-world-sync` · `scheduler` · `social` · `system` · `world`
 
 ## 主 App 结构（`apps/app/src/`）
 
@@ -97,7 +97,7 @@
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（46个，物理表保持兼容）
+## 数据库实体（49个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -122,6 +122,8 @@
 **分析**：AIBehaviorLog · AIUsageLedger
 
 **需求发现**：NeedDiscoveryRun · NeedDiscoveryCandidate
+
+**主动跟进**：FollowupRun · FollowupOpenLoop · FollowupRecommendation
 
 **赛博分身**：CyberAvatarProfile · CyberAvatarSignal · CyberAvatarRun · CyberAvatarRealWorldItem · CyberAvatarRealWorldBrief
 
@@ -176,6 +178,7 @@
 - `Conversation` 表保留字段：`isPinned`、`pinnedAt`、`isHidden`、`hiddenAt`、`strongReminderUntil`、`lastClearedAt`、`lastActivityAt`
 - `Conversation` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载会话专属聊天背景配置
 - `Message` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载 `sticker` 表情包消息元数据
+- `Message` / `GroupMessage` 的 `contact_card` 附件现已支持 `recommendationMetadata`，用于承载“我自己”主动跟进推荐链路的推荐原因、来源线程与关系状态
 - `Group` 表现已扩展字段：`announcement`、`isMuted`、`mutedAt`、`isPinned`、`pinnedAt`、`savedToContacts`、`savedToContactsAt`、`showMemberNicknames`、`notifyOnAtMe`、`notifyOnAtAll`、`notifyOnAnnouncement`、`lastClearedAt`、`lastReadAt`、`isHidden`、`hiddenAt`、`lastActivityAt`
 - `Group` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载群聊专属聊天背景配置
 - `GroupMessage` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载聊天附件消息元数据
@@ -247,6 +250,10 @@
   - `POST /api/reminders/messages`
   - `POST /api/reminders/messages/:sourceId/notified`
   - `DELETE /api/reminders/messages/:sourceId`
+- 主动跟进路由：
+  - `POST /api/followup-runtime/recommendations/:id/opened`
+  - `POST /api/followup-runtime/recommendations/:id/friend-request-pending`
+  - `POST /api/followup-runtime/recommendations/:id/chat-started`
 - 安全举报路由：
   - `GET /api/moderation/reports`
   - `POST /api/moderation/reports`
@@ -296,6 +303,7 @@
 - `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要，并支持名人预设分组筛选与批量安装
 - `games-page.tsx`：AI 游戏工作台，查看目录、来源、审核状态，并直接编辑游戏资料与新建草稿
 - `need-discovery-page.tsx`：角色缺口识别与自动加友配置页，查看短期/每日 cadence 规则、候选和运行记录
+- `followup-runtime-page.tsx`：主动跟进配置页，查看 open loop、推荐记录、规则、Prompt 与“我自己”推荐链路结果
 - `cyber-avatar-page.tsx`：赛博分身工作台入口页，承接分身画像、真实世界回流、好友需求上游、信号与运行记录视图
 - `real-world-sync-page.tsx`：真实世界联动页，查看每日外部信号、active digest、scene patch、现实发圈锚点与全局规则
 - `wechat-sync-page.tsx`：微信朋友同步页，接收本地授权导出的联系人资料与聊天摘要，生成角色预览并导入为好友
@@ -334,6 +342,12 @@
 - `GET /api/admin/need-discovery/overview`
 - `PATCH /api/admin/need-discovery/config`
 
+## 管理后台主动跟进路由
+
+- `GET /api/admin/followup-runtime/overview`
+- `GET /api/admin/followup-runtime/rules`
+- `PATCH /api/admin/followup-runtime/rules`
+
 ## 管理后台赛博分身路由
 
 - `GET /api/admin/cyber-avatar/overview`
@@ -358,6 +372,7 @@
 - `PATCH /api/admin/action-runtime/rules`
 - `GET /api/admin/action-runtime/connectors`
 - `PATCH /api/admin/action-runtime/connectors/:id`
+- `POST /api/admin/action-runtime/connectors/:id/discover`
 - `POST /api/admin/action-runtime/connectors/:id/test`
 - `GET /api/admin/action-runtime/runs`
 - `GET /api/admin/action-runtime/runs/:id`

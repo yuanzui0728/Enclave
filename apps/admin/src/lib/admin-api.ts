@@ -3,6 +3,7 @@ import type {
   AdminGameCatalogDetail,
   AdminGameCatalogItem,
   AdminUpdateGameCatalogRequest,
+  ActionConnectorDiscoveryResult,
   ActionConnectorSummary,
   ActionConnectorTestResult,
   ActionRunDetail,
@@ -269,10 +270,7 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
-  updateGameCatalogItem: (
-    id: string,
-    payload: AdminUpdateGameCatalogRequest,
-  ) =>
+  updateGameCatalogItem: (id: string, payload: AdminUpdateGameCatalogRequest) =>
     adminFetch<AdminGameCatalogDetail>(`/games/${id}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
@@ -422,6 +420,17 @@ export const adminApi = {
   ) =>
     adminFetch<ActionConnectorTestResult>(
       `/action-runtime/connectors/${id}/test`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
+  discoverActionRuntimeConnector: (
+    id: string,
+    payload?: { query?: string | null; limit?: number | null },
+  ) =>
+    adminFetch<ActionConnectorDiscoveryResult>(
+      `/action-runtime/connectors/${id}/discover`,
       {
         method: "POST",
         body: JSON.stringify(payload ?? {}),

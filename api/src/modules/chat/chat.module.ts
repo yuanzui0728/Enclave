@@ -104,6 +104,7 @@ import { CharacterEntity } from '../characters/character.entity';
     GroupReplyTaskService,
     FavoritesService,
     SearchActivityService,
+    MessageRemindersService,
   ],
 })
 export class ChatModule {}

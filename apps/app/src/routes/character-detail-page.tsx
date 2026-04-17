@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Star } from "lucide-react";
 import {
   blockCharacter,
@@ -11,6 +11,8 @@ import {
   getFriendRequests,
   getFriends,
   getOrCreateConversation,
+  markFollowupRecommendationChatStarted,
+  markFollowupRecommendationFriendRequestPending,
   sendFriendRequest,
   setConversationMuted,
   setConversationPinned,
@@ -51,6 +53,7 @@ type FriendProfileFormState = {
 export function CharacterDetailPage() {
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
@@ -75,6 +78,10 @@ export function CharacterDetailPage() {
     remarkName: "",
     tags: "",
   });
+  const recommendationId = useMemo(
+    () => parseRecommendationRouteHash(hash),
+    [hash],
+  );
 
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
@@ -186,11 +193,17 @@ export function CharacterDetailPage() {
 
       return getOrCreateConversation({ characterId: character.id }, baseUrl);
     },
-    onSuccess: (conversation) => {
+    onSuccess: async (conversation) => {
       if (!conversation) {
         return;
       }
 
+      if (recommendationId) {
+        await markFollowupRecommendationChatStarted(
+          recommendationId,
+          baseUrl,
+        ).catch(() => undefined);
+      }
       void navigate({
         to: "/chat/$conversationId",
         params: { conversationId: conversation.id },
@@ -228,19 +241,28 @@ export function CharacterDetailPage() {
     },
   });
   const sendFriendRequestMutation = useMutation({
-    mutationFn: () =>
-      sendFriendRequest(
+    mutationFn: async () => {
+      const request = await sendFriendRequest(
         {
           characterId,
           greeting: `${ownerName} 想把你加到通讯录里。`,
-          autoAccept: true,
+          autoAccept: recommendationId ? false : true,
         },
         baseUrl,
-      ),
+      );
+      if (recommendationId) {
+        await markFollowupRecommendationFriendRequestPending(
+          recommendationId,
+          { friendRequestId: request.id },
+          baseUrl,
+        ).catch(() => undefined);
+      }
+      return request;
+    },
     onSuccess: async () => {
       setNotice({
         tone: "success",
-        message: "已添加到通讯录。",
+        message: recommendationId ? "好友申请已发送。" : "已添加到通讯录。",
       });
       await Promise.all([
         queryClient.invalidateQueries({
@@ -512,6 +534,7 @@ export function CharacterDetailPage() {
           keyword: character?.name ?? "",
           characterId,
           openCompose: true,
+          recommendationId,
         }),
       });
       return;
@@ -1271,7 +1294,8 @@ export function CharacterDetailPage() {
                   value={
                     isFriend
                       ? formatTimestamp(
-                          friendship?.lastInteractedAt ?? character.lastActiveAt,
+                          friendship?.lastInteractedAt ??
+                            character.lastActiveAt,
                         )
                       : formatTimestamp(character.lastActiveAt)
                   }
@@ -1491,6 +1515,16 @@ export function CharacterDetailPage() {
       ) : null}
     </AppPage>
   );
+}
+
+function parseRecommendationRouteHash(hash: string) {
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  if (!normalizedHash) {
+    return undefined;
+  }
+
+  const params = new URLSearchParams(normalizedHash);
+  return params.get("recommendationId")?.trim() || undefined;
 }
 
 function MobileCharacterStatusCard({

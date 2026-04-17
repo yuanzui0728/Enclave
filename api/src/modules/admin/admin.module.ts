@@ -36,6 +36,7 @@ import { ActionRuntimeModule } from '../action-runtime/action-runtime.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
 import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
+import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
     CyberAvatarModule,
     NeedDiscoveryModule,
     RealWorldSyncModule,
+    FollowupRuntimeModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CharacterEntity,

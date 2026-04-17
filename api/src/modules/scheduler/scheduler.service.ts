@@ -30,6 +30,7 @@ import { CharactersService } from '../characters/characters.service';
 import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
 import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service';
+import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
 import {
   WORLD_NEWS_BULLETIN_GENERATION_KIND,
   WORLD_NEWS_DESK_CHARACTER_ID,
@@ -93,6 +94,7 @@ export class SchedulerService {
     private readonly needDiscoveryService: NeedDiscoveryService,
     private readonly eventBus: EventBusService,
     private readonly realWorldSync: RealWorldSyncService,
+    private readonly followupRuntimeService: FollowupRuntimeService,
   ) {}
 
   @Cron('*/30 * * * *')
@@ -146,6 +148,15 @@ export class SchedulerService {
       'check_moment_schedule',
       () => this.handleCheckMomentSchedule(),
       'Failed to check moment schedule',
+    );
+  }
+
+  @Cron('*/10 * * * *')
+  async triggerFollowupRecommendations() {
+    await this.runScheduledJob(
+      'trigger_followup_recommendations',
+      () => this.handleTriggerFollowupRecommendations(),
+      'Failed to trigger followup recommendations',
     );
   }
 
@@ -397,6 +408,12 @@ export class SchedulerService {
         return (
           await this.executeTrackedJob(jobId, () =>
             this.handleCheckMomentSchedule(),
+          )
+        ).summary;
+      case 'trigger_followup_recommendations':
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleTriggerFollowupRecommendations(true),
           )
         ).summary;
       case 'check_real_world_news_bulletins':
@@ -703,6 +720,12 @@ export class SchedulerService {
         },
       ),
     };
+  }
+
+  private async handleTriggerFollowupRecommendations(
+    force = false,
+  ): Promise<TrackedJobResult> {
+    return this.followupRuntimeService.runSchedulerScan({ force });
   }
 
   private async handleCheckRealWorldNewsBulletins(): Promise<TrackedJobResult> {
@@ -1262,7 +1285,8 @@ export class SchedulerService {
             ? {
                 digestId: runtimeProfile.realWorldContext.digestId ?? null,
                 syncDate: runtimeProfile.realWorldContext.syncDate ?? null,
-                subjectName: runtimeProfile.realWorldContext.subjectName ?? null,
+                subjectName:
+                  runtimeProfile.realWorldContext.subjectName ?? null,
                 realityMomentBrief:
                   runtimeProfile.realWorldContext.realityMomentBrief ?? null,
               }

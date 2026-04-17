@@ -156,6 +156,11 @@ const NAV_ITEMS = [
     hint: "配置短期/长期角色生成策略，并查看候选与运行记录。",
   },
   {
+    to: "/followup-runtime",
+    label: "主动跟进",
+    hint: "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。",
+  },
+  {
     to: "/token-usage",
     label: "Token 用量",
     hint: "查看 AI 请求、Token 花费、预算预警和价格配置。",
@@ -223,6 +228,15 @@ function resolveRouteMeta(pathname: string) {
       title: "角色缺口识别与自动加友",
       description:
         "配置短周期和每日节奏的提示词、频率、角色生成策略，并查看运行记录与候选结果。",
+    };
+  }
+
+  if (pathname === "/followup-runtime") {
+    return {
+      eyebrow: "主动跟进",
+      title: "我自己回捞未闭环事项",
+      description:
+        "配置 open loop 提取、推荐候选打分、我自己主动消息文案，并查看推荐后的打开、加好友和开聊动作。",
     };
   }
 

@@ -46,6 +46,16 @@ export interface ContactCardAttachment {
   avatar?: string;
   relationship?: string;
   bio?: string;
+  recommendationMetadata?: {
+    recommendationId: string;
+    reasonSummary: string;
+    sourceThreadId: string;
+    sourceThreadType: 'direct' | 'group';
+    sourceThreadTitle?: string | null;
+    sourceMessageId?: string | null;
+    relationshipState: 'friend' | 'pending' | 'not_friend';
+    badgeLabel?: string | null;
+  };
 }
 
 export interface LocationCardAttachment {

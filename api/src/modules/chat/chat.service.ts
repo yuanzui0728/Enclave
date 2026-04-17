@@ -621,6 +621,47 @@ export class ChatService {
     return this._entityToMessage(messageEntity);
   }
 
+  async saveProactiveAttachmentMessage(
+    conversationId: string,
+    characterId: string,
+    characterName: string,
+    attachment: MessageAttachment,
+    text?: string,
+  ): Promise<Message> {
+    const entity = await this.requireOwnedConversation(conversationId);
+    const fallbackText =
+      text?.trim() || this.getAttachmentFallbackText(attachment);
+
+    const messageEntity = this.msgRepo.create({
+      id: `msg_${Date.now()}_${attachment.kind}`,
+      conversationId,
+      senderType: 'character',
+      senderId: characterId,
+      senderName: characterName,
+      type: attachment.kind,
+      text: fallbackText,
+      attachmentKind: attachment.kind,
+      attachmentPayload: JSON.stringify(attachment),
+    });
+
+    await this.msgRepo.save(messageEntity);
+    await this.touchConversationActivity(
+      entity,
+      messageEntity.createdAt ?? new Date(),
+    );
+
+    const history = await this.ensureConversationHistory(entity);
+    history.push({
+      role: 'assistant',
+      content: fallbackText,
+      parts: this.buildAiParts(fallbackText, attachment),
+      characterId,
+    });
+    this.conversationHistory.set(conversationId, history);
+
+    return this._entityToMessage(messageEntity);
+  }
+
   async saveSystemMessage(
     conversationId: string,
     text: string,

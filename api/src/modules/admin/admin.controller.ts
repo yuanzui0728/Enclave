@@ -90,9 +90,7 @@ export class AdminController {
   }
 
   @Patch('followup-runtime/rules')
-  setFollowupRuntimeRules(
-    @Body() body: Partial<FollowupRuntimeRulesValue>,
-  ) {
+  setFollowupRuntimeRules(@Body() body: Partial<FollowupRuntimeRulesValue>) {
     return this.followupRuntimeService.setRules(body);
   }
 

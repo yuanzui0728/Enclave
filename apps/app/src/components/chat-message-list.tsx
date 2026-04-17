@@ -37,6 +37,9 @@ import {
   deleteGroupMessage,
   getFavorites,
   getConversations,
+  getOrCreateConversation,
+  markFollowupRecommendationChatStarted,
+  markFollowupRecommendationOpened,
   recallConversationMessage,
   recallGroupMessage,
   removeFavorite,
@@ -80,6 +83,7 @@ import {
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import { buildDesktopNoteWindowRouteHash } from "../features/desktop/chat/desktop-note-window-route-state";
 import { createDesktopNoteDraft } from "../features/desktop/chat/desktop-notes-storage";
+import { buildDesktopAddFriendRouteHash } from "../features/desktop/contacts/desktop-add-friend-route-state";
 import {
   hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
@@ -1441,11 +1445,60 @@ export function ChatMessageList({
     }
 
     if (attachment.kind === "contact_card") {
+      const recommendationId =
+        attachment.recommendationMetadata?.recommendationId ?? undefined;
+      if (recommendationId) {
+        void markFollowupRecommendationOpened(recommendationId, baseUrl).catch(
+          () => undefined,
+        );
+      }
+
+      if (variant === "desktop") {
+        if (attachment.recommendationMetadata?.relationshipState === "friend") {
+          void getOrCreateConversation(
+            { characterId: attachment.characterId },
+            baseUrl,
+          )
+            .then((conversation) => {
+              if (recommendationId) {
+                void markFollowupRecommendationChatStarted(
+                  recommendationId,
+                  baseUrl,
+                ).catch(() => undefined);
+              }
+              void navigate({
+                to: "/chat/$conversationId",
+                params: {
+                  conversationId: conversation.id,
+                },
+              });
+            })
+            .catch(() => undefined);
+          return;
+        }
+
+        void navigate({
+          to: "/desktop/add-friend",
+          hash: buildDesktopAddFriendRouteHash({
+            keyword: attachment.name,
+            characterId: attachment.characterId,
+            openCompose:
+              attachment.recommendationMetadata?.relationshipState !==
+              "pending",
+            recommendationId,
+          }),
+        });
+        return;
+      }
+
       void navigate({
         to: "/character/$characterId",
         params: {
           characterId: attachment.characterId,
         },
+        hash: recommendationId
+          ? `recommendationId=${encodeURIComponent(recommendationId)}`
+          : undefined,
       });
       return;
     }
@@ -1948,8 +2001,9 @@ export function ChatMessageList({
 
     try {
       if (threadContext) {
-        let nextLocalState: ReturnType<typeof readLocalChatMessageActionState> | null =
-          null;
+        let nextLocalState: ReturnType<
+          typeof readLocalChatMessageActionState
+        > | null = null;
 
         for (const message of messagesToDelete) {
           if (isLocalOnlyMessage(message)) {
@@ -2704,7 +2758,9 @@ export function ChatMessageList({
                     <div
                       className={cn(
                         "flex items-center gap-1.5 px-1",
-                        isDesktop ? "mt-1 text-[11px]" : "mt-px px-0.5 text-[10px]",
+                        isDesktop
+                          ? "mt-1 text-[11px]"
+                          : "mt-px px-0.5 text-[10px]",
                         message.localStatus === "failed"
                           ? "text-[#d74b45]"
                           : "text-[#8c8c8c]",
@@ -4395,6 +4451,7 @@ function ContactCardMessage({
   onOpen?: () => void;
 }) {
   const isDesktop = variant === "desktop";
+  const recommendation = attachment.recommendationMetadata;
   const card = (
     <div
       className={`bg-white shadow-none ${
@@ -4403,6 +4460,15 @@ function ContactCardMessage({
           : "w-[204px] rounded-[13px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
+      {recommendation ? (
+        <div
+          className={`inline-flex rounded-full bg-[#07c160]/10 px-2 py-0.5 text-[10px] font-medium text-[#07c160] ${
+            isDesktop ? "mb-2.5" : "mb-2"
+          }`}
+        >
+          {recommendation.badgeLabel || "继续聊"}
+        </div>
+      ) : null}
       <div className={`flex items-center ${isDesktop ? "gap-3" : "gap-2.5"}`}>
         <AvatarChip
           name={attachment.name}
@@ -4426,13 +4492,24 @@ function ContactCardMessage({
           </div>
         </div>
       </div>
+      {recommendation?.reasonSummary ? (
+        <div
+          className={`line-clamp-2 text-[color:var(--text-secondary)] ${
+            isDesktop
+              ? "mt-2 text-[12px] leading-5"
+              : "mt-2 text-[11px] leading-4.5"
+          }`}
+        >
+          {recommendation.reasonSummary}
+        </div>
+      ) : null}
       <div
         className={`flex items-center gap-2 uppercase tracking-[0.12em] text-[color:var(--text-muted)] ${
           isDesktop ? "mt-3 text-[11px]" : "mt-2.5 text-[10px]"
         }`}
       >
         <ContactRound size={12} />
-        <span>角色名片</span>
+        <span>{recommendation ? "推荐联系人" : "角色名片"}</span>
       </div>
     </div>
   );

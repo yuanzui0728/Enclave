@@ -56,6 +56,11 @@ const NeedDiscoveryPage = lazy(async () => {
   return { default: mod.NeedDiscoveryPage };
 });
 
+const FollowupRuntimePage = lazy(async () => {
+  const mod = await import("./routes/followup-runtime-page");
+  return { default: mod.FollowupRuntimePage };
+});
+
 const ActionRuntimePage = lazy(async () => {
   const mod = await import("./routes/action-runtime-page");
   return { default: mod.ActionRuntimePage };
@@ -156,6 +161,12 @@ const needDiscoveryRoute = createRoute({
   component: NeedDiscoveryPage,
 });
 
+const followupRuntimeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/followup-runtime",
+  component: FollowupRuntimePage,
+});
+
 const actionRuntimeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/action-runtime",
@@ -198,6 +209,7 @@ const routeTree = rootRoute.addChildren([
   evalsRoute,
   replyLogicRoute,
   needDiscoveryRoute,
+  followupRuntimeRoute,
   actionRuntimeRoute,
   cyberAvatarRoute,
   realWorldSyncRoute,

@@ -17,18 +17,13 @@ import {
   getFriends,
   getOrCreateConversation,
   listCharacters,
+  markFollowupRecommendationFriendRequestPending,
   sendFriendRequest,
   type Character,
   type FriendListItem,
   type FriendRequest,
 } from "@yinjie/contracts";
-import {
-  Button,
-  ErrorBlock,
-  InlineNotice,
-  LoadingBlock,
-  cn,
-} from "@yinjie/ui";
+import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -124,11 +119,26 @@ export function DesktopAddFriendWorkspace() {
     }: {
       characterId: string;
       greeting: string;
-    }) => sendFriendRequest({ characterId, greeting }, baseUrl),
+    }) => {
+      const request = await sendFriendRequest(
+        { characterId, greeting },
+        baseUrl,
+      );
+      if (routeState.recommendationId) {
+        await markFollowupRecommendationFriendRequestPending(
+          routeState.recommendationId,
+          { friendRequestId: request.id },
+          baseUrl,
+        ).catch(() => undefined);
+      }
+      return request;
+    },
     onSuccess: async (_, variables) => {
       setNotice({
         tone: "success",
-        message: "好友申请已发送。",
+        message: routeState.recommendationId
+          ? "推荐联系人好友申请已发送。"
+          : "好友申请已发送。",
       });
       setSendDialogCharacterId(null);
       await Promise.all([
@@ -165,7 +175,10 @@ export function DesktopAddFriendWorkspace() {
   const friendshipMap = useMemo(
     () =>
       new Map(
-        (friendsQuery.data ?? []).map((item) => [item.character.id, item.friendship]),
+        (friendsQuery.data ?? []).map((item) => [
+          item.character.id,
+          item.friendship,
+        ]),
       ),
     [friendsQuery.data],
   );
@@ -208,8 +221,9 @@ export function DesktopAddFriendWorkspace() {
   const routeSelectedResult = useMemo(
     () =>
       routeCharacterId
-        ? searchResults.find((item) => item.character.id === routeCharacterId) ??
-          null
+        ? (searchResults.find(
+            (item) => item.character.id === routeCharacterId,
+          ) ?? null)
         : null,
     [routeCharacterId, searchResults],
   );
@@ -292,11 +306,13 @@ export function DesktopAddFriendWorkspace() {
       hash: buildDesktopAddFriendRouteHash({
         keyword: routeState.keyword,
         characterId: routeState.characterId,
+        recommendationId: routeState.recommendationId,
       }),
       replace: true,
     });
   }, [
     navigate,
+    routeState.recommendationId,
     routeSelectedResult,
     routeState.characterId,
     routeState.keyword,
@@ -434,7 +450,9 @@ export function DesktopAddFriendWorkspace() {
                     {ownerName}
                   </div>
                   <div className="mt-1 text-[13px] text-[color:var(--text-muted)]">
-                    {ownerId ? buildCharacterIdentifier(ownerId) : "隐界号待生成"}
+                    {ownerId
+                      ? buildCharacterIdentifier(ownerId)
+                      : "隐界号待生成"}
                   </div>
                 </div>
               </div>
@@ -485,7 +503,10 @@ export function DesktopAddFriendWorkspace() {
         >
           <div className="flex items-center gap-3">
             <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[8px] border border-[rgba(15,23,42,0.10)] bg-white px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-              <Search size={18} className="shrink-0 text-[color:var(--text-dim)]" />
+              <Search
+                size={18}
+                className="shrink-0 text-[color:var(--text-dim)]"
+              />
               <input
                 ref={inputRef}
                 value={searchText}
@@ -586,8 +607,12 @@ export function DesktopAddFriendWorkspace() {
                         <DesktopAddFriendResultRow
                           key={item.character.id}
                           item={item}
-                          selected={selectedResult?.character.id === item.character.id}
-                          onClick={() => setSelectedCharacterId(item.character.id)}
+                          selected={
+                            selectedResult?.character.id === item.character.id
+                          }
+                          onClick={() =>
+                            setSelectedCharacterId(item.character.id)
+                          }
                         />
                       ))}
                     </div>
@@ -633,12 +658,16 @@ export function DesktopAddFriendWorkspace() {
                         }}
                         onPrimaryAction={() => {
                           if (selectedResult.status === "friend") {
-                            openChatMutation.mutate(selectedResult.character.id);
+                            openChatMutation.mutate(
+                              selectedResult.character.id,
+                            );
                             return;
                           }
 
                           if (selectedResult.status === "available") {
-                            setSendDialogCharacterId(selectedResult.character.id);
+                            setSendDialogCharacterId(
+                              selectedResult.character.id,
+                            );
                           }
                         }}
                       />
@@ -963,10 +992,12 @@ function buildSearchResults(
       friendship,
       identifier,
       matchReason: directRouteTarget
-        ? match?.reason ?? "来自当前资料页"
+        ? (match?.reason ?? "来自当前资料页")
         : (match?.reason ?? "资料关键词匹配"),
       pendingRequest,
-      score: directRouteTarget ? Math.min(match?.score ?? 0, 0) : (match?.score ?? 0),
+      score: directRouteTarget
+        ? Math.min(match?.score ?? 0, 0)
+        : (match?.score ?? 0),
       status,
     });
   }
@@ -1100,15 +1131,10 @@ function getSearchResultDisplayName(
 
 function FakeQrPanel() {
   const cells = [
-    1, 1, 1, 0, 0, 1, 1, 0, 1,
-    1, 0, 1, 0, 1, 0, 1, 0, 1,
-    1, 1, 1, 0, 1, 1, 1, 0, 1,
-    0, 0, 0, 1, 0, 0, 1, 0, 0,
-    1, 1, 0, 1, 1, 0, 0, 1, 1,
-    0, 1, 0, 0, 1, 1, 0, 1, 0,
-    1, 1, 1, 0, 1, 0, 1, 1, 1,
-    1, 0, 0, 0, 0, 1, 0, 0, 1,
-    1, 1, 1, 1, 0, 1, 1, 0, 1,
+    1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1,
+    0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
+    1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1,
+    1, 0, 1, 1, 0, 1,
   ];
 
   return (
@@ -1146,7 +1172,9 @@ function StatusMetaRow({
         <Icon size={14} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[12px] text-[color:var(--text-muted)]">{label}</div>
+        <div className="text-[12px] text-[color:var(--text-muted)]">
+          {label}
+        </div>
         <div className="mt-0.5 text-[14px] font-medium text-[color:var(--text-primary)]">
           {value}
         </div>

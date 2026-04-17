@@ -19,7 +19,8 @@ export const SCHEDULER_JOB_DEFINITIONS = [
     id: 'discover_need_characters_short_interval',
     name: '实时需求发现',
     cadence: '*/10 * * * *',
-    description: '按短间隔轮询交互信号，识别更实时的角色缺口并尝试发起好友申请。',
+    description:
+      '按短间隔轮询交互信号，识别更实时的角色缺口并尝试发起好友申请。',
     nextRunHint: '每 10 分钟检查一次是否到达实时需求窗口',
     enabled: true,
   },
@@ -27,7 +28,8 @@ export const SCHEDULER_JOB_DEFINITIONS = [
     id: 'discover_need_characters_daily',
     name: '长期需求发现',
     cadence: '*/10 * * * *',
-    description: '按固定轮询检查每日窗口，识别更长期的角色缺口并尝试发起好友申请。',
+    description:
+      '按固定轮询检查每日窗口，识别更长期的角色缺口并尝试发起好友申请。',
     nextRunHint: '每 10 分钟检查一次是否到达每日需求窗口',
     enabled: true,
   },
@@ -53,6 +55,14 @@ export const SCHEDULER_JOB_DEFINITIONS = [
     cadence: '*/10 * * * *',
     description: '检查界闻是否应发布早报、午报或晚报。',
     nextRunHint: '每 10 分钟检查一次早报 / 午报 / 晚报窗口',
+    enabled: true,
+  },
+  {
+    id: 'trigger_followup_recommendations',
+    name: '主动跟进调度',
+    cadence: '*/10 * * * *',
+    description: '扫描已安静但未闭环的话题，并由“我自己”回捞后推荐更合适的人。',
+    nextRunHint: '每 10 分钟检查一次是否到达主动跟进窗口',
     enabled: true,
   },
   {

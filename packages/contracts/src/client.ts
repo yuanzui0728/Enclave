@@ -63,10 +63,7 @@ import type {
   FeedSurface,
   FeedViewRequest,
 } from "./feed";
-import type {
-  GameCenterHomeResponse,
-  GameCenterOwnerState,
-} from "./games";
+import type { GameCenterHomeResponse, GameCenterOwnerState } from "./games";
 import type {
   CreateMessageFavoriteRequest,
   FavoriteNoteDocument,
@@ -74,6 +71,10 @@ import type {
   FavoriteRecord,
   UpsertFavoriteNoteRequest,
 } from "./favorites";
+import type {
+  FollowupRecommendationEventResult,
+  MarkFollowupRecommendationFriendRequestPendingRequest,
+} from "./followup-runtime";
 import type {
   CreateMessageReminderRequest,
   MarkMessageReminderNotifiedRequest,
@@ -110,11 +111,15 @@ import type {
   FriendRequest,
   SendFriendRequestRequest,
   SetFriendStarredRequest,
-  ShakeResult,
   TriggerSceneRequest,
   UnblockCharacterRequest,
   UpdateFriendProfileRequest,
 } from "./social";
+import type {
+  DismissShakeDiscoverySessionResult,
+  KeepShakeDiscoverySessionResult,
+  ShakeDiscoverySessionPreview,
+} from "./shake-discovery";
 import type {
   CreateDigitalHumanSessionRequest,
   DigitalHumanSession,
@@ -1338,7 +1343,11 @@ export function listCharacters(baseUrl?: string) {
 }
 
 export function listPresetCatalog(baseUrl?: string) {
-  return requestLegacyApi<Character[]>("/characters/preset-catalog", undefined, baseUrl);
+  return requestLegacyApi<Character[]>(
+    "/characters/preset-catalog",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function getCharacter(id: string, baseUrl?: string) {
@@ -1415,6 +1424,51 @@ export function getOrCreateConversation(
     {
       method: "POST",
       body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function markFollowupRecommendationOpened(
+  recommendationId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FollowupRecommendationEventResult>(
+    `/followup-runtime/recommendations/${encodeURIComponent(recommendationId)}/opened`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function markFollowupRecommendationFriendRequestPending(
+  recommendationId: string,
+  payload: MarkFollowupRecommendationFriendRequestPendingRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FollowupRecommendationEventResult>(
+    `/followup-runtime/recommendations/${encodeURIComponent(
+      recommendationId,
+    )}/friend-request-pending`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function markFollowupRecommendationChatStarted(
+  recommendationId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FollowupRecommendationEventResult>(
+    `/followup-runtime/recommendations/${encodeURIComponent(
+      recommendationId,
+    )}/chat-started`,
+    {
+      method: "POST",
     },
     baseUrl,
   );
@@ -2879,10 +2933,45 @@ export function markOfficialAccountArticleRead(
 }
 
 export function shake(baseUrl?: string) {
-  return requestLegacyApi<ShakeResult | null>(
+  return requestLegacyApi<ShakeDiscoverySessionPreview | null>(
     "/social/shake",
     {
       method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function getActiveShakeSession(baseUrl?: string) {
+  return requestLegacyApi<ShakeDiscoverySessionPreview | null>(
+    "/social/shake/active",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function keepShakeSession(sessionId: string, baseUrl?: string) {
+  return requestLegacyApi<KeepShakeDiscoverySessionResult>(
+    `/social/shake/${encodeURIComponent(sessionId)}/keep`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function dismissShakeSession(
+  sessionId: string,
+  payload?: { reason?: string | null },
+  baseUrl?: string,
+) {
+  return requestLegacyApi<DismissShakeDiscoverySessionResult>(
+    `/social/shake/${encodeURIComponent(sessionId)}/dismiss`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        reason: payload?.reason?.trim() || null,
+      }),
     },
     baseUrl,
   );

@@ -157,7 +157,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 ? (payload.text ?? `[位置] ${payload.attachment.title}`)
                 : payload.type === 'note_card'
                   ? (payload.text ?? `[笔记] ${payload.attachment.title}`)
-                : payload.text;
+                  : payload.text;
 
     try {
       let convId = conversationId;
@@ -235,6 +235,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       convId,
       characterId,
       characterName,
+      text,
+    );
+    this.emitThreadMessage(convId, message);
+    return message;
+  }
+
+  async sendProactiveAttachmentMessage(
+    convId: string,
+    characterId: string,
+    characterName: string,
+    attachment: Parameters<ChatService['saveProactiveAttachmentMessage']>[3],
+    text?: string,
+  ) {
+    const message = await this.chatService.saveProactiveAttachmentMessage(
+      convId,
+      characterId,
+      characterName,
+      attachment,
       text,
     );
     this.emitThreadMessage(convId, message);
