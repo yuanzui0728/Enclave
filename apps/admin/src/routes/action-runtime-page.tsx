@@ -93,6 +93,9 @@ export function ActionRuntimePage() {
   const [connectorDraftErrors, setConnectorDraftErrors] = useState<
     Record<string, string>
   >({});
+  const [connectorDraftFeedbacks, setConnectorDraftFeedbacks] = useState<
+    Record<string, string>
+  >({});
   const [connectorTestResults, setConnectorTestResults] = useState<
     Record<string, ActionConnectorTestResult>
   >({});
@@ -333,6 +336,11 @@ export function ActionRuntimePage() {
       delete next[id];
       return next;
     });
+    setConnectorDraftFeedbacks((current) => {
+      const next: Record<string, string> = { ...current };
+      delete next[id];
+      return next;
+    });
   }
 
   function handleSaveConnector(connector: ActionConnectorSummary) {
@@ -414,6 +422,14 @@ export function ActionRuntimePage() {
     connector: ActionConnectorSummary,
     suggestion: ActionConnectorDiscoveryResult["items"][number],
   ) {
+    applyHomeAssistantTargetSuggestions(connector, [suggestion], "all");
+  }
+
+  function applyHomeAssistantTargetSuggestions(
+    connector: ActionConnectorSummary,
+    suggestions: ActionConnectorDiscoveryResult["items"],
+    mode: "all" | "missing",
+  ) {
     const draft =
       connectorDrafts[connector.id] ?? createConnectorDraft(connector);
     const parsed = parseEndpointConfig(draft.endpointConfigText);
@@ -427,28 +443,49 @@ export function ActionRuntimePage() {
     }
 
     const currentConfig = parsed.value ?? {};
-    const existingTargets =
-      currentConfig.deviceTargets &&
-      typeof currentConfig.deviceTargets === "object" &&
-      !Array.isArray(currentConfig.deviceTargets)
-        ? (currentConfig.deviceTargets as Record<string, unknown>)
-        : {};
-    const nextConfig = {
-      ...currentConfig,
-      provider:
-        typeof currentConfig.provider === "string" &&
-        currentConfig.provider.trim()
-          ? currentConfig.provider
-          : "home_assistant",
-      deviceTargets: {
-        ...existingTargets,
-        [suggestion.key]: suggestion.targetConfig,
-      },
-    };
+    const mergeResult = mergeHomeAssistantTargetSuggestions({
+      currentConfig,
+      suggestions,
+      mode,
+    });
+    if (mergeResult.appliedCount === 0) {
+      setConnectorDraftFeedbacks((current) => ({
+        ...current,
+        [connector.id]:
+          mode === "missing"
+            ? "当前推荐项都已经存在，没有新增映射。"
+            : "当前没有可写入的推荐映射。",
+      }));
+      return;
+    }
 
     updateConnectorDraft(connector.id, {
-      endpointConfigText: formatEndpointConfig(nextConfig),
+      endpointConfigText: formatEndpointConfig(mergeResult.nextConfig),
     });
+    setConnectorDraftFeedbacks((current) => ({
+      ...current,
+      [connector.id]:
+        mode === "missing"
+          ? `已补入 ${mergeResult.appliedCount} 条未配置映射，跳过 ${mergeResult.skippedCount} 条已存在项。`
+          : `已写入 ${mergeResult.appliedCount} 条推荐映射，其中覆盖 ${mergeResult.overwrittenCount} 条已存在项。`,
+    }));
+  }
+
+  function countExistingMappedTargets(connector: ActionConnectorSummary) {
+    const draft =
+      connectorDrafts[connector.id] ?? createConnectorDraft(connector);
+    const parsed = parseEndpointConfig(draft.endpointConfigText);
+    if (parsed.error || !parsed.value) {
+      return 0;
+    }
+
+    const deviceTargets =
+      parsed.value.deviceTargets &&
+      typeof parsed.value.deviceTargets === "object" &&
+      !Array.isArray(parsed.value.deviceTargets)
+        ? (parsed.value.deviceTargets as Record<string, unknown>)
+        : {};
+    return Object.keys(deviceTargets).length;
   }
 
   return (
@@ -805,6 +842,8 @@ export function ActionRuntimePage() {
                   connectorDiscoveryResults[connector.id] ?? null;
                 const testResult = connectorTestResults[connector.id];
                 const connectorError = connectorDraftErrors[connector.id];
+                const connectorFeedback =
+                  connectorDraftFeedbacks[connector.id] ?? null;
                 const isSaving =
                   saveConnectorMutation.isPending &&
                   saveConnectorMutation.variables?.id === connector.id;
@@ -928,6 +967,45 @@ export function ActionRuntimePage() {
                                       description={warning}
                                     />
                                   ))}
+                                  {connectorFeedback ? (
+                                    <AdminCallout
+                                      tone="success"
+                                      title="映射草稿已更新"
+                                      description={connectorFeedback}
+                                    />
+                                  ) : null}
+                                  <div className="flex flex-wrap items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+                                    <div className="text-sm leading-6 text-[color:var(--text-secondary)]">
+                                      当前草稿已有 {countExistingMappedTargets(connector)} 条
+                                      deviceTargets 映射。
+                                    </div>
+                                    <Button
+                                      variant="secondary"
+                                      disabled={!discoveryResult.items.length}
+                                      onClick={() =>
+                                        applyHomeAssistantTargetSuggestions(
+                                          connector,
+                                          discoveryResult.items,
+                                          "missing",
+                                        )
+                                      }
+                                    >
+                                      只补未配置项
+                                    </Button>
+                                    <Button
+                                      variant="secondary"
+                                      disabled={!discoveryResult.items.length}
+                                      onClick={() =>
+                                        applyHomeAssistantTargetSuggestions(
+                                          connector,
+                                          discoveryResult.items,
+                                          "all",
+                                        )
+                                      }
+                                    >
+                                      批量写入全部
+                                    </Button>
+                                  </div>
                                   {discoveryResult.items.map((item) => (
                                     <div
                                       key={`${item.entityId}-${item.key}`}
@@ -1431,6 +1509,54 @@ function parseEndpointConfig(value: string): {
   } catch {
     return { value: null, error: "Endpoint Config 不是合法 JSON。" };
   }
+}
+
+function mergeHomeAssistantTargetSuggestions(input: {
+  currentConfig: Record<string, unknown>;
+  suggestions: ActionConnectorDiscoveryResult["items"];
+  mode: "all" | "missing";
+}) {
+  const existingTargets =
+    input.currentConfig.deviceTargets &&
+    typeof input.currentConfig.deviceTargets === "object" &&
+    !Array.isArray(input.currentConfig.deviceTargets)
+      ? (input.currentConfig.deviceTargets as Record<string, unknown>)
+      : {};
+  const nextTargets: Record<string, unknown> = { ...existingTargets };
+  let appliedCount = 0;
+  let overwrittenCount = 0;
+  let skippedCount = 0;
+
+  for (const suggestion of input.suggestions) {
+    const exists = Object.prototype.hasOwnProperty.call(
+      nextTargets,
+      suggestion.key,
+    );
+    if (input.mode === "missing" && exists) {
+      skippedCount += 1;
+      continue;
+    }
+    if (exists) {
+      overwrittenCount += 1;
+    }
+    nextTargets[suggestion.key] = suggestion.targetConfig;
+    appliedCount += 1;
+  }
+
+  return {
+    nextConfig: {
+      ...input.currentConfig,
+      provider:
+        typeof input.currentConfig.provider === "string" &&
+        input.currentConfig.provider.trim()
+          ? input.currentConfig.provider
+          : "home_assistant",
+      deviceTargets: nextTargets,
+    },
+    appliedCount,
+    overwrittenCount,
+    skippedCount,
+  };
 }
 
 function prettyJson(value: unknown) {
