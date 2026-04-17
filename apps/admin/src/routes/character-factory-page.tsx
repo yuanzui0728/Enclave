@@ -363,7 +363,7 @@ export function CharacterFactoryPage() {
             <Card className="bg-[color:var(--surface-console)]">
               <SectionHeading>AI 辅助制造</SectionHeading>
               <InlineNotice className="mt-4" tone="muted">
-                输入一段角色聊天样本后，后台会走人格提取链，把可结构化的语气、口头禅、兴趣、情绪基调和记忆摘要写回工厂草稿。
+                输入一段角色聊天样本后，后台会走聊天样本归纳链，把能收出来的语气、口头禅、兴趣、情绪基调和记忆概况写回工厂草稿。
               </InlineNotice>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <FieldBlock

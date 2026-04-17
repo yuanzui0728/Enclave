@@ -434,11 +434,11 @@ export const DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES: ReplyLogicPromptTemplates =
 - 可以带位置（如"北京·国贸"），也可以不带{{topicsHint}}
 
 只输出朋友圈正文内容，不要加任何解释。`,
-    personalityExtractionPrompt: `以下是与"{{personName}}"的真实聊天记录片段：
+    personalityExtractionPrompt: `以下是与"{{personName}}"的真实聊天样本：
 
 {{chatSample}}
 
-请分析这个人的说话风格，以JSON格式输出：
+请根据这段样本归纳这个人的表达习惯和相处感觉，以JSON格式输出：
 {
   "speechPatterns": ["说话习惯1", "说话习惯2"],
   "catchphrases": ["口头禅1", "口头禅2"],
@@ -446,7 +446,7 @@ export const DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES: ReplyLogicPromptTemplates =
   "emotionalTone": "一句话描述情感基调",
   "responseLength": "short/medium/long",
   "emojiUsage": "none/occasional/frequent",
-  "memorySummary": "用100字以内总结这个人的性格和与用户的关系"
+  "memorySummary": "用100字以内写这个人给用户留下的感觉、关系远近和相处方式，不要写成角色说明书"
 }
 
 只输出JSON，不要其他内容。`,

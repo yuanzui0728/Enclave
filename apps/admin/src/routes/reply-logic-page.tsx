@@ -3676,7 +3676,7 @@ function RuntimeRulesEditorCard({
 
             <ConfigSection title="生成器 Prompt 模板">
               <InlineNotice tone="muted">
-                这部分会直接影响朋友圈生成、人格提取、意图分类、记忆压缩等 AI
+                这部分会直接影响朋友圈生成、聊天样本归纳、意图分类、记忆整理等 AI
                 子链路。
               </InlineNotice>
               <TextAreaBlock
@@ -3693,7 +3693,7 @@ function RuntimeRulesEditorCard({
                 }
               />
               <TextAreaBlock
-                label="人格提取模板（{{personName}} / {{chatSample}}）"
+                label="聊天样本归纳模板（{{personName}} / {{chatSample}}）"
                 value={draft.promptTemplates.personalityExtractionPrompt}
                 onChange={(value) =>
                   onPatch((current) => ({
@@ -4879,7 +4879,7 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       群聊提示: constants.promptTemplates.groupChatInstruction,
       基础规则: [...constants.promptTemplates.baseRules],
       朋友圈生成模板: constants.promptTemplates.momentPrompt,
-      人格提取模板: constants.promptTemplates.personalityExtractionPrompt,
+      聊天样本归纳模板: constants.promptTemplates.personalityExtractionPrompt,
       意图分类模板: constants.promptTemplates.intentClassificationPrompt,
       近期记忆整理模板: constants.promptTemplates.memoryCompressionPrompt,
       长期记忆整理模板: constants.promptTemplates.coreMemoryExtractionPrompt,
