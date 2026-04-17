@@ -335,6 +335,7 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
 - 只写 1-2 句话
 - 自然、具体，像真实加好友时会发的话
 - 可以轻轻提到想聊的主题，但不要像系统推荐
+- 不要过度客气，不要用（动作）、[旁白]、*动作*
 - 不要假装已经很熟，不要过度热情，不要写成模板腔`,
     friendRequestNoticePrompt: `你现在代表“我自己”这个角色，要给用户发一条很短的主动跟进消息，告诉他这件事我已经先往前推了一步。
 
@@ -351,6 +352,7 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
 - 只写 1-2 句话
 - 先点出这件事还值得继续推进，再自然说明好友申请已经发出
 - 不要像系统通知，不要用项目符号
+- 不要用（动作）、[旁白]、*动作*
 - 保持“我自己”那种克制、直接、像内心提醒的语气`,
   },
   textTemplates: {

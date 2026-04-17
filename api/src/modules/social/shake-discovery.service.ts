@@ -148,7 +148,8 @@ export class ShakeDiscoveryService {
       candidateDirectionCount: config.candidateDirectionCount,
       cyberAvatarSummary: buildCyberAvatarSummary(cyberAvatarProfile),
       signals: signalTexts.join('\n') || '暂无最近行为证据',
-      existingCoverage: signalSnapshot.existingCoverageSummary || '暂无已建立好友',
+      existingCoverage:
+        signalSnapshot.existingCoverageSummary || '暂无已建立好友',
       recentShakeHistory,
       allowMedical: config.allowMedical ? '是' : '否',
       allowLegal: config.allowLegal ? '是' : '否',
@@ -321,15 +322,14 @@ export class ShakeDiscoveryService {
       throw new BadRequestException('当前摇一摇结果缺少角色草稿。');
     }
 
-    const character = await this.characterBlueprintService.createCharacterFromRecipe(
-      {
+    const character =
+      await this.characterBlueprintService.createCharacterFromRecipe({
         id: `char_shake_${randomUUID().slice(0, 12)}`,
         sourceType: 'shake_generated',
         sourceKey: `shake:${session.id}`,
         deletionPolicy: 'archive_allowed',
         recipe: session.recipeDraft,
-      },
-    );
+      });
     await this.socialService.sendFriendRequest(
       character.id,
       session.greeting || `你好，我是${character.name}。`,
@@ -363,7 +363,9 @@ export class ShakeDiscoveryService {
     }
   }
 
-  private async readSessions(ownerId: string): Promise<ShakeDiscoverySessionRecord[]> {
+  private async readSessions(
+    ownerId: string,
+  ): Promise<ShakeDiscoverySessionRecord[]> {
     const raw = await this.systemConfig.getConfig(SHAKE_DISCOVERY_SESSIONS_KEY);
     if (!raw?.trim()) {
       return [];
@@ -426,7 +428,9 @@ export class ShakeDiscoveryService {
     const characterIds = conversations
       .flatMap((item) => item.participants ?? [])
       .filter(Boolean);
-    const userGroupIds = [...new Set(userGroupMemberships.map((item) => item.groupId))];
+    const userGroupIds = [
+      ...new Set(userGroupMemberships.map((item) => item.groupId)),
+    ];
     const [characters, activeGroups] = await Promise.all([
       characterIds.length
         ? this.characterRepo.find({ where: { id: In(characterIds) } })
@@ -442,7 +446,9 @@ export class ShakeDiscoveryService {
           })
         : Promise.resolve([] as GroupEntity[]),
     ]);
-    const characterMap = new Map(characters.map((item) => [item.id, item.name]));
+    const characterMap = new Map(
+      characters.map((item) => [item.id, item.name]),
+    );
     const groupMap = new Map(activeGroups.map((item) => [item.id, item.name]));
 
     if (conversationIds.length > 0) {
@@ -569,7 +575,8 @@ export class ShakeDiscoveryService {
       entries.push({
         timestamp: post.postedAt,
         text: `[朋友圈发布][${formatTimestamp(post.postedAt)}] ${truncateText(
-          post.text || describeMomentContent(post.contentType, post.mediaPayload),
+          post.text ||
+            describeMomentContent(post.contentType, post.mediaPayload),
           120,
         )}`,
       });
@@ -601,7 +608,8 @@ export class ShakeDiscoveryService {
           text: `[朋友圈点赞][${formatTimestamp(
             like.createdAt,
           )}] 点赞了 ${post?.authorName?.trim() || '某人'} 的朋友圈：${truncateText(
-            post?.text || describeMomentContent(post?.contentType, post?.mediaPayload),
+            post?.text ||
+              describeMomentContent(post?.contentType, post?.mediaPayload),
             80,
           )}`,
         });
@@ -663,7 +671,9 @@ export class ShakeDiscoveryService {
           timestamp >= windowStartedAt &&
           timestamp <= windowEndedAt,
       )
-      .sort((left, right) => right.timestamp.getTime() - left.timestamp.getTime())
+      .sort(
+        (left, right) => right.timestamp.getTime() - left.timestamp.getTime(),
+      )
       .slice(0, 6)
       .forEach(({ note, timestamp }) => {
         entries.push({
@@ -734,11 +744,18 @@ export class ShakeDiscoveryService {
   }
 }
 
-function normalizeConfig(input: Partial<ShakeDiscoveryConfig>): ShakeDiscoveryConfig {
+function normalizeConfig(
+  input: Partial<ShakeDiscoveryConfig>,
+): ShakeDiscoveryConfig {
   const fallback = DEFAULT_SHAKE_DISCOVERY_CONFIG;
   return {
     enabled: sanitizeBoolean(input.enabled, fallback.enabled),
-    cooldownMinutes: sanitizeInteger(input.cooldownMinutes, fallback.cooldownMinutes, 0, 1440),
+    cooldownMinutes: sanitizeInteger(
+      input.cooldownMinutes,
+      fallback.cooldownMinutes,
+      0,
+      1440,
+    ),
     sessionExpiryMinutes: sanitizeInteger(
       input.sessionExpiryMinutes,
       fallback.sessionExpiryMinutes,
@@ -774,7 +791,10 @@ function normalizeConfig(input: Partial<ShakeDiscoveryConfig>): ShakeDiscoveryCo
       8,
     ),
     noveltyWeight: sanitizeScore(input.noveltyWeight, fallback.noveltyWeight),
-    surpriseWeight: sanitizeScore(input.surpriseWeight, fallback.surpriseWeight),
+    surpriseWeight: sanitizeScore(
+      input.surpriseWeight,
+      fallback.surpriseWeight,
+    ),
     allowMedical: sanitizeBoolean(input.allowMedical, fallback.allowMedical),
     allowLegal: sanitizeBoolean(input.allowLegal, fallback.allowLegal),
     allowFinance: sanitizeBoolean(input.allowFinance, fallback.allowFinance),
@@ -899,11 +919,17 @@ function summarizeRecentShakeHistory(sessions: ShakeDiscoverySessionRecord[]) {
   const recentKept = sessions
     .filter((item) => item.status === 'kept')
     .slice(0, 4)
-    .map((item) => `${item.character.relationship} / ${item.character.expertDomains.join('、') || '泛陪伴'}`);
+    .map(
+      (item) =>
+        `${item.character.relationship} / ${item.character.expertDomains.join('、') || '泛陪伴'}`,
+    );
   const recentDismissed = sessions
     .filter((item) => item.status === 'dismissed' || item.status === 'expired')
     .slice(0, 4)
-    .map((item) => `${item.character.relationship} / ${item.character.expertDomains.join('、') || '泛陪伴'}`);
+    .map(
+      (item) =>
+        `${item.character.relationship} / ${item.character.expertDomains.join('、') || '泛陪伴'}`,
+    );
   return [
     `最近保留：${recentKept.length ? recentKept.join('；') : '暂无'}`,
     `最近跳过：${recentDismissed.length ? recentDismissed.join('；') : '暂无'}`,
@@ -934,15 +960,10 @@ function renderTemplate(
   });
 }
 
-function normalizePlanningResult(
-  raw: Record<string, unknown>,
-  limit: number,
-) {
+function normalizePlanningResult(raw: Record<string, unknown>, limit: number) {
   const directions = Array.isArray(raw.directions)
     ? raw.directions
-        .map((item) =>
-          normalizeDirectionDraft(item as Record<string, unknown>),
-        )
+        .map((item) => normalizeDirectionDraft(item as Record<string, unknown>))
         .filter((item): item is ShakeDiscoveryDirectionDraft => Boolean(item))
         .slice(0, limit)
     : [];
@@ -966,12 +987,7 @@ function normalizeDirectionDraft(
   if (!roleBrief && !relationshipLabel && expertDomains.length === 0) {
     return null;
   }
-  const seed = [
-    roleBrief,
-    relationshipLabel,
-    expertDomains.join('|'),
-    whyNow,
-  ]
+  const seed = [roleBrief, relationshipLabel, expertDomains.join('|'), whyNow]
     .filter(Boolean)
     .join('::');
   return {
@@ -1018,7 +1034,9 @@ function applyDirectionWeights(
 ) {
   const recentDismissedDomains = new Set(
     sessions
-      .filter((item) => item.status === 'dismissed' || item.status === 'expired')
+      .filter(
+        (item) => item.status === 'dismissed' || item.status === 'expired',
+      )
       .slice(0, 6)
       .flatMap((item) => item.character.expertDomains)
       .map((item) => item.trim().toLowerCase())
@@ -1093,9 +1111,7 @@ function normalizeGeneratedCharacterDraft(
     name: inferredName.slice(0, 24) || '新的相遇对象',
     avatar: sanitizeText(raw.avatar) || '🙂',
     relationship:
-      sanitizeText(raw.relationship) ||
-      direction.relationshipLabel ||
-      '新朋友',
+      sanitizeText(raw.relationship) || direction.relationshipLabel || '新朋友',
     relationshipType: normalizeRelationshipType(raw.relationshipType),
     bio:
       sanitizeText(raw.bio) ||
@@ -1109,9 +1125,10 @@ function normalizeGeneratedCharacterDraft(
     motivation:
       sanitizeText(raw.motivation) || '希望在合适的时候给用户有分寸的支持。',
     worldview:
-      sanitizeText(raw.worldview) ||
-      '先理解处境，再给出克制而有效的回应。',
-    expertDomains: expertDomains.length ? expertDomains : direction.expertDomains,
+      sanitizeText(raw.worldview) || '先理解处境，再给出克制而有效的回应。',
+    expertDomains: expertDomains.length
+      ? expertDomains
+      : direction.expertDomains,
     speechPatterns: normalizeStringList(raw.speechPatterns),
     catchphrases: normalizeStringList(raw.catchphrases),
     topicsOfInterest: normalizeStringList(raw.topicsOfInterest),
@@ -1175,13 +1192,13 @@ function buildRecipeFromGeneratedDraft(
       emotionalTone: draft.emotionalTone,
       responseLength: draft.responseLength,
       emojiUsage: draft.emojiUsage,
-      workStyle: '先澄清问题，再给出可执行的回应。',
+      workStyle: '先把问题说清楚，再接最该接的那一点。',
       socialStyle: '自然、稳定、不过度热情。',
       taboos: ['夸大承诺', '制造依赖'],
-      quirks: ['喜欢把问题拆成 2-3 个可执行步骤'],
+      quirks: ['说话会顺手把复杂问题压回当下最关键的一点'],
       coreDirective: corePrompt,
       basePrompt: corePrompt,
-      systemPrompt: corePrompt,
+      systemPrompt: '',
     },
     prompting: {
       coreLogic: corePrompt,
@@ -1276,7 +1293,10 @@ function buildFailedSession(input: {
   ownerId: string;
   createdAt: Date;
   planningPrompt?: string | null;
-  planningResult?: { summary: string; directions: ShakeDiscoveryDirectionDraft[] } | null;
+  planningResult?: {
+    summary: string;
+    directions: ShakeDiscoveryDirectionDraft[];
+  } | null;
   failureReason: string;
   signalSummary?: string | null;
   cyberAvatarSummary?: string | null;
@@ -1304,7 +1324,9 @@ function buildFailedSession(input: {
   };
 }
 
-function toPreview(session: ShakeDiscoverySessionRecord): ShakeDiscoveryPreview {
+function toPreview(
+  session: ShakeDiscoverySessionRecord,
+): ShakeDiscoveryPreview {
   return {
     id: session.id,
     status: session.status,
@@ -1405,7 +1427,7 @@ function describeMomentContent(
   }
   if (contentType === 'image_album' || contentType === 'live_photo') {
     try {
-      const parsed = mediaPayload ? JSON.parse(mediaPayload) : [];
+      const parsed: unknown = mediaPayload ? JSON.parse(mediaPayload) : [];
       const count = Array.isArray(parsed) ? parsed.length : 0;
       return `用户发布了 ${count || 1} 张图片的朋友圈`;
     } catch {

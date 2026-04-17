@@ -18,15 +18,13 @@ export interface NeedDiscoveryCadenceConfig {
   promptTemplate: string;
 }
 
-export interface NeedDiscoveryShortCadenceConfig
-  extends NeedDiscoveryCadenceConfig {
+export interface NeedDiscoveryShortCadenceConfig extends NeedDiscoveryCadenceConfig {
   intervalMinutes: number;
   lookbackHours: number;
   skipIfNoNewSignals: boolean;
 }
 
-export interface NeedDiscoveryDailyCadenceConfig
-  extends NeedDiscoveryCadenceConfig {
+export interface NeedDiscoveryDailyCadenceConfig extends NeedDiscoveryCadenceConfig {
   runAtHour: number;
   runAtMinute: number;
   lookbackDays: number;
@@ -244,6 +242,8 @@ export const DEFAULT_NEED_DISCOVERY_CONFIG: NeedDiscoveryConfig = {
 - 语言风格自然、可信、不过度营销
 - 如果是医生/律师/金融顾问，必须体现专业边界，不要夸大承诺
 - 好友申请问候语要简短自然，像第一次来加好友的人
+- basePrompt 要像这个人自己的说话底色，不要写成提示词说明书、咨询交付件或万能助理设定
+- greeting 不要过度客气，不要用（动作）、[旁白]、*动作*，也不要像系统推荐
 
 只输出 JSON，不要输出其他内容：
 {

@@ -180,6 +180,8 @@ export const DEFAULT_SHAKE_DISCOVERY_CONFIG: ShakeDiscoveryConfig = {
 - 角色要和用户当前状态有关，但不能显得像在监视用户
 - 问候语必须自然，像初次认识的人，不要直接下诊断或过度熟络
 - “matchReason” 要解释为什么这次会遇见这个人，但语气要克制
+- basePrompt 要像这个人自己的说话底色，不要写成提示词说明书、课程提纲或万能助理设定
+- greeting 不要太客气，不要像名片自我介绍，也不要用（动作）、[旁白]、*动作*
 - 如果是医生/律师/金融顾问，必须体现边界意识，不能夸大承诺
 
 只输出 JSON：
@@ -206,4 +208,3 @@ export const DEFAULT_SHAKE_DISCOVERY_CONFIG: ShakeDiscoveryConfig = {
   "matchReason": "为什么这次会遇见这个人"
 }`,
 };
-

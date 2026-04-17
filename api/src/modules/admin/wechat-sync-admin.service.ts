@@ -438,6 +438,10 @@ export class WechatSyncAdminService {
       normalizeText(profile.basePrompt) ||
       normalizeText(profile.coreLogic) ||
       buildFallbackCoreLogic(contact, name, relationship);
+    const coreLogic =
+      normalizeText(profile.coreLogic) ||
+      basePrompt ||
+      buildFallbackCoreLogic(contact, name, relationship);
     const memorySummary =
       normalizeText(profile.memorySummary) ||
       normalizeText(contact.chatSummary) ||
@@ -446,6 +450,13 @@ export class WechatSyncAdminService {
       normalizeText(memory.coreMemory) ||
       buildFallbackCoreMemory(contact, name);
     const recentSummary = normalizeText(memory.recentSummary) || memorySummary;
+    const chatScenePrompt =
+      normalizeText(scenePrompts.chat) ||
+      buildFallbackChatPrompt(contact, name);
+    const legacySystemPrompt = normalizeImportedLegacySystemPrompt(
+      normalizeText(profile.systemPrompt),
+      [coreLogic, basePrompt, chatScenePrompt],
+    );
 
     return {
       id,
@@ -469,14 +480,9 @@ export class WechatSyncAdminService {
         name,
         relationship,
         expertDomains,
-        coreLogic:
-          normalizeText(profile.coreLogic) ||
-          basePrompt ||
-          buildFallbackCoreLogic(contact, name, relationship),
+        coreLogic,
         scenePrompts: {
-          chat:
-            normalizeText(scenePrompts.chat) ||
-            buildFallbackChatPrompt(contact, name),
+          chat: chatScenePrompt,
           moments_post: normalizeText(scenePrompts.moments_post) || '',
           moments_comment: normalizeText(scenePrompts.moments_comment) || '',
           feed_post: normalizeText(scenePrompts.feed_post) || '',
@@ -489,7 +495,7 @@ export class WechatSyncAdminService {
         },
         coreDirective: normalizeText(profile.coreDirective),
         basePrompt,
-        systemPrompt: normalizeText(profile.systemPrompt),
+        systemPrompt: legacySystemPrompt,
         traits: {
           speechPatterns: normalizeStringList(traits.speechPatterns),
           catchphrases: normalizeStringList(traits.catchphrases),
@@ -597,6 +603,7 @@ export class WechatSyncAdminService {
       '请根据下面这位微信联系人资料，生成一个适合导入隐界世界的角色草稿。',
       '这个角色本质上是用户现实微信关系里的熟人朋友，不是陌生人、专家客服或虚拟助理。',
       '关系类型请优先保持为 friend；如果对方明显有某些专业身份，可以体现在 expertDomains、bio 和职业里，但不要把关系改成 mentor/expert。',
+      '角色说话要像现实里已经认识的人，不要写成客套模板、万能助理、专家客服，也不要用（动作）、[旁白]、*动作*。',
       '',
       `- 微信 username：${contact.username}`,
       `- 微信显示名：${contact.displayName}`,
@@ -848,6 +855,22 @@ function buildFallbackChatPrompt(
     return `${name} 回复时尽量保留微信熟人的说话味道。可参考这类真实表达：${examples}`;
   }
   return `${name} 回复时要像已经在微信认识的熟人朋友，语气自然，不端着，不套模板。`;
+}
+
+function normalizeImportedLegacySystemPrompt(
+  systemPrompt: string,
+  candidates: string[],
+) {
+  if (!systemPrompt) {
+    return '';
+  }
+
+  const normalizedCandidates = candidates.map((item) => normalizeText(item));
+  if (normalizedCandidates.includes(systemPrompt)) {
+    return '';
+  }
+
+  return systemPrompt;
 }
 
 function buildImportSnapshot(input: {
