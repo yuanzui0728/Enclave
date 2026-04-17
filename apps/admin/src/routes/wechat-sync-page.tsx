@@ -2,6 +2,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
+  CharacterDraft,
   WechatSyncContactBundle,
   WechatSyncImportResponse,
   WechatSyncPreviewItem,
@@ -36,6 +37,52 @@ import {
   type WechatConnectorSettings,
 } from "../lib/wechat-local-connector";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+
+const SAMPLE_WECHAT_SYNC_CONTACTS: WechatSyncContactBundle[] = [
+  {
+    username: "wxid_alice_product",
+    displayName: "Alice",
+    nickname: "Alice",
+    remarkName: "产品 Alice",
+    region: "上海",
+    source: "wechat_export",
+    tags: ["同事", "产品"],
+    isGroup: false,
+    messageCount: 128,
+    ownerMessageCount: 62,
+    contactMessageCount: 66,
+    latestMessageAt: "2026-04-16T11:20:00.000Z",
+    chatSummary: "经常聊产品迭代、周末约饭和出差安排，说话直接，节奏很快。",
+    topicKeywords: ["产品", "迭代", "出差", "周末"],
+    sampleMessages: [
+      {
+        timestamp: "2026-04-16 19:20",
+        text: "周五评审后一起吃饭？",
+        sender: "Alice",
+        direction: "contact",
+      },
+      {
+        timestamp: "2026-04-16 19:22",
+        text: "可以，我把新方案带过去。",
+        sender: "我",
+        direction: "owner",
+      },
+    ],
+    momentHighlights: [
+      {
+        postedAt: "2026-04-14T08:00:00.000Z",
+        text: "连续开了三天会，今天终于把方案敲定。",
+        location: "上海",
+      },
+    ],
+  },
+];
+
+const SAMPLE_WECHAT_SYNC_JSON = JSON.stringify(
+  SAMPLE_WECHAT_SYNC_CONTACTS,
+  null,
+  2,
+);
 
 export function WechatSyncPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
@@ -169,6 +216,36 @@ export function WechatSyncPage() {
   function clearSelection() {
     setPreviewItems([]);
     setSelectedUsernames([]);
+  }
+
+  function patchPreviewItem(
+    username: string,
+    updater: (current: WechatSyncPreviewItem) => WechatSyncPreviewItem,
+  ) {
+    setPreviewItems((current) =>
+      current.map((item) =>
+        item.contact.username === username ? updater(item) : item,
+      ),
+    );
+  }
+
+  function patchPreviewDraft(
+    username: string,
+    updater: (current: CharacterDraft) => CharacterDraft,
+  ) {
+    patchPreviewItem(username, (item) => ({
+      ...item,
+      draftCharacter: updater(item.draftCharacter),
+    }));
+  }
+
+  function removePreviewItem(username: string) {
+    setPreviewItems((current) =>
+      current.filter((item) => item.contact.username !== username),
+    );
+    setSelectedUsernames((current) =>
+      current.filter((item) => item !== username),
+    );
   }
 
   return (
@@ -316,26 +393,35 @@ export function WechatSyncPage() {
           <AdminSectionHeader
             title="手动导入联系人快照"
             actions={
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  try {
-                    const bundles = parseWechatSyncContactBundles(manualBundleJson);
-                    setManualBundleError(null);
-                    setPreviewItems([]);
-                    setSelectedUsernames(bundles.map((item) => item.username));
-                    previewMutation.mutate(bundles);
-                  } catch (error) {
-                    setManualBundleError(
-                      error instanceof Error ? error.message : "联系人快照解析失败。",
-                    );
-                  }
-                }}
-                disabled={previewMutation.isPending}
-              >
-                载入 JSON 并生成预览
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setManualBundleJson(SAMPLE_WECHAT_SYNC_JSON)}
+                >
+                  填入示例
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    try {
+                      const bundles = parseWechatSyncContactBundles(manualBundleJson);
+                      setManualBundleError(null);
+                      setPreviewItems([]);
+                      setSelectedUsernames(bundles.map((item) => item.username));
+                      previewMutation.mutate(bundles);
+                    } catch (error) {
+                      setManualBundleError(
+                        error instanceof Error ? error.message : "联系人快照解析失败。",
+                      );
+                    }
+                  }}
+                  disabled={previewMutation.isPending}
+                >
+                  载入 JSON 并生成预览
+                </Button>
+              </div>
             }
           />
           <div className="mt-4">
@@ -453,14 +539,24 @@ export function WechatSyncPage() {
         <AdminSectionHeader
           title="角色预览"
           actions={
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => importMutation.mutate()}
-              disabled={!previewItems.length || importMutation.isPending}
-            >
-              {importMutation.isPending ? "导入中..." : "导入并建立好友关系"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPreviewItems([])}
+                disabled={!previewItems.length || importMutation.isPending}
+              >
+                清空预览
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => importMutation.mutate()}
+                disabled={!previewItems.length || importMutation.isPending}
+              >
+                {importMutation.isPending ? "导入中..." : "导入并建立好友关系"}
+              </Button>
+            </div>
           }
         />
 
@@ -488,54 +584,37 @@ export function WechatSyncPage() {
         {previewItems.length ? (
           <div className="mt-4 grid gap-4 xl:grid-cols-2">
             {previewItems.map((item) => (
-              <Card key={item.contact.username} className="bg-[color:var(--surface-card)]">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-lg font-semibold text-[color:var(--text-primary)]">
-                      {item.draftCharacter.name || item.contact.displayName}
-                    </div>
-                    <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-                      来源联系人：{item.contact.displayName}
-                    </div>
-                  </div>
-                  <StatusPill tone={item.confidence === "high" ? "healthy" : item.confidence === "medium" ? "warning" : "muted"}>
-                    {item.confidence === "high"
-                      ? "高置信"
-                      : item.confidence === "medium"
-                        ? "中置信"
-                        : "低置信"}
-                  </StatusPill>
-                </div>
-
-                <div className="mt-4 space-y-2 text-sm text-[color:var(--text-secondary)]">
-                  <div>关系：{item.draftCharacter.relationship || "未生成"}</div>
-                  <div>简介：{item.draftCharacter.bio || "未生成"}</div>
-                  <div>
-                    领域：
-                    {(item.draftCharacter.expertDomains?.length
-                      ? item.draftCharacter.expertDomains
-                      : ["general"]
-                    ).join("、")}
-                  </div>
-                  <div>
-                    记忆摘要：
-                    {item.draftCharacter.profile?.memorySummary || "未生成"}
-                  </div>
-                </div>
-
-                {item.warnings.length ? (
-                  <div className="mt-4 space-y-2">
-                    {item.warnings.map((warning) => (
-                      <div
-                        key={warning}
-                        className="rounded-2xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-[color:var(--text-secondary)]"
-                      >
-                        {warning}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </Card>
+              <PreviewCharacterCard
+                key={item.contact.username}
+                item={item}
+                onRemove={() => removePreviewItem(item.contact.username)}
+                onNameChange={(value) =>
+                  patchPreviewDraft(item.contact.username, (draft) =>
+                    patchDraftIdentity(draft, { name: value }),
+                  )
+                }
+                onRelationshipChange={(value) =>
+                  patchPreviewDraft(item.contact.username, (draft) =>
+                    patchDraftIdentity(draft, { relationship: value }),
+                  )
+                }
+                onBioChange={(value) =>
+                  patchPreviewDraft(item.contact.username, (draft) => ({
+                    ...draft,
+                    bio: value,
+                  }))
+                }
+                onDomainsChange={(value) =>
+                  patchPreviewDraft(item.contact.username, (draft) =>
+                    patchDraftDomains(draft, value),
+                  )
+                }
+                onMemorySummaryChange={(value) =>
+                  patchPreviewDraft(item.contact.username, (draft) =>
+                    patchDraftMemorySummary(draft, value),
+                  )
+                }
+              />
             ))}
           </div>
         ) : null}
@@ -606,6 +685,160 @@ function ImportResultPanel({ result }: { result: WechatSyncImportResponse }) {
         </Card>
       ) : null}
     </div>
+  );
+}
+
+function PreviewCharacterCard({
+  item,
+  onRemove,
+  onNameChange,
+  onRelationshipChange,
+  onBioChange,
+  onDomainsChange,
+  onMemorySummaryChange,
+}: {
+  item: WechatSyncPreviewItem;
+  onRemove: () => void;
+  onNameChange: (value: string) => void;
+  onRelationshipChange: (value: string) => void;
+  onBioChange: (value: string) => void;
+  onDomainsChange: (value: string) => void;
+  onMemorySummaryChange: (value: string) => void;
+}) {
+  const draft = item.draftCharacter;
+  const confidenceTone =
+    item.confidence === "high"
+      ? "healthy"
+      : item.confidence === "medium"
+        ? "warning"
+        : "muted";
+  const domains = (draft.expertDomains?.length
+    ? draft.expertDomains
+    : ["general"]).join("、");
+
+  return (
+    <Card className="bg-[color:var(--surface-card)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-lg font-semibold text-[color:var(--text-primary)]">
+            {draft.name || item.contact.displayName}
+          </div>
+          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+            来源联系人：{item.contact.displayName}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusPill tone={confidenceTone}>
+            {item.confidence === "high"
+              ? "高置信"
+              : item.confidence === "medium"
+                ? "中置信"
+                : "低置信"}
+          </StatusPill>
+          <Button variant="secondary" size="sm" onClick={onRemove}>
+            移出本轮
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdminTextField
+              label="角色名"
+              value={draft.name || ""}
+              onChange={onNameChange}
+              placeholder="导入后的角色名"
+            />
+            <AdminTextField
+              label="领域标签（逗号分隔）"
+              value={draft.expertDomains?.join(", ") || ""}
+              onChange={onDomainsChange}
+              placeholder="例如：产品, 创业, 出差"
+            />
+          </div>
+          <AdminTextField
+            label="关系定位"
+            value={draft.relationship || ""}
+            onChange={onRelationshipChange}
+            placeholder="描述你和这个联系人的关系"
+          />
+          <AdminTextArea
+            label="角色简介"
+            value={draft.bio || ""}
+            onChange={onBioChange}
+            textareaClassName="min-h-24"
+            placeholder="导入后的角色简介"
+          />
+          <AdminTextArea
+            label="记忆摘要"
+            value={draft.profile?.memorySummary || ""}
+            onChange={onMemorySummaryChange}
+            textareaClassName="min-h-28"
+            placeholder="总结这位联系人与你的长期熟悉关系"
+          />
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-3 text-sm text-[color:var(--text-secondary)]">
+            当前导入字段概览：领域 {domains}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <AdminMiniPanel title="源联系人上下文">
+            <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+              <div>用户名：{item.contact.username}</div>
+              <div>备注 / 昵称：{item.contact.remarkName || item.contact.nickname || "暂无"}</div>
+              <div>地区：{item.contact.region || "暂无"}</div>
+              <div>消息数：{item.contact.messageCount}</div>
+              <div>最近聊天：{formatDateTime(item.contact.latestMessageAt)}</div>
+              <div>标签：{item.contact.tags.length ? item.contact.tags.join("、") : "暂无"}</div>
+              <div>
+                关键词：
+                {item.contact.topicKeywords.length
+                  ? item.contact.topicKeywords.join("、")
+                  : "暂无"}
+              </div>
+            </div>
+          </AdminMiniPanel>
+          <AdminMiniPanel title="聊天摘要">
+            <div className="text-sm leading-6 text-[color:var(--text-secondary)]">
+              {item.contact.chatSummary || "当前没有附带聊天摘要。"}
+            </div>
+          </AdminMiniPanel>
+          <AdminMiniPanel title="聊天样本">
+            <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+              {item.contact.sampleMessages.length ? (
+                item.contact.sampleMessages.slice(0, 4).map((message) => (
+                  <div
+                    key={`${message.timestamp}-${message.text}`}
+                    className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2"
+                  >
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {message.sender || formatDirection(message.direction)} · {message.timestamp}
+                    </div>
+                    <div className="mt-1 leading-6">{message.text}</div>
+                  </div>
+                ))
+              ) : (
+                <div>当前没有聊天样本。</div>
+              )}
+            </div>
+          </AdminMiniPanel>
+        </div>
+      </div>
+
+      {item.warnings.length ? (
+        <div className="mt-4 space-y-2">
+          {item.warnings.map((warning) => (
+            <div
+              key={warning}
+              className="rounded-2xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-[color:var(--text-secondary)]"
+            >
+              {warning}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </Card>
   );
 }
 
@@ -795,4 +1028,88 @@ function readNumber(value: unknown) {
     return Number.isFinite(parsed) ? parsed : 0;
   }
   return 0;
+}
+
+function patchDraftIdentity(
+  draft: CharacterDraft,
+  patch: { name?: string; relationship?: string },
+): CharacterDraft {
+  const profile = draft.profile;
+
+  return {
+    ...draft,
+    name: patch.name ?? draft.name,
+    relationship: patch.relationship ?? draft.relationship,
+    profile: profile
+      ? {
+          ...profile,
+          name: patch.name ?? profile.name,
+          relationship: patch.relationship ?? profile.relationship,
+        }
+      : profile,
+  };
+}
+
+function patchDraftDomains(draft: CharacterDraft, value: string): CharacterDraft {
+  const expertDomains = splitCsv(value);
+  const profile = draft.profile;
+
+  return {
+    ...draft,
+    expertDomains,
+    profile: profile
+      ? {
+          ...profile,
+          expertDomains,
+        }
+      : profile,
+  };
+}
+
+function patchDraftMemorySummary(
+  draft: CharacterDraft,
+  value: string,
+): CharacterDraft {
+  const profile = draft.profile;
+  if (!profile) {
+    return draft;
+  }
+
+  return {
+    ...draft,
+    profile: {
+      ...profile,
+      memorySummary: value,
+      memory: profile.memory
+        ? {
+            ...profile.memory,
+            recentSummary: value,
+          }
+        : profile.memory,
+    },
+  };
+}
+
+function splitCsv(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function formatDirection(
+  value: WechatSyncContactBundle["sampleMessages"][number]["direction"],
+) {
+  switch (value) {
+    case "owner":
+      return "我";
+    case "contact":
+      return "联系人";
+    case "group_member":
+      return "群成员";
+    case "system":
+      return "系统";
+    default:
+      return "未知";
+  }
 }
