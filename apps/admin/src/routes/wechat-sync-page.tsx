@@ -81,6 +81,7 @@ const SAMPLE_WECHAT_SYNC_JSON = JSON.stringify(
 export function WechatSyncPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
+  const initialViewState = readInitialWechatSyncViewState();
   const [connectorSettings, setConnectorSettings] =
     useState<WechatConnectorSettings>(() => loadWechatConnectorSettings());
   const [search, setSearch] = useState("");
@@ -91,13 +92,15 @@ export function WechatSyncPage() {
   const [manualBundleError, setManualBundleError] = useState<string | null>(
     null,
   );
-  const [historySearch, setHistorySearch] = useState("");
+  const [historySearch, setHistorySearch] = useState(
+    initialViewState.historySearch,
+  );
   const [historyStatusFilter, setHistoryStatusFilter] = useState<
     "all" | "active" | "attention" | "removed"
-  >("all");
+  >(initialViewState.historyStatusFilter);
   const [selectedHistoryCharacterId, setSelectedHistoryCharacterId] = useState<
     string | null
-  >(null);
+  >(initialViewState.selectedHistoryCharacterId);
   const [rollbackGuideItem, setRollbackGuideItem] =
     useState<WechatSyncHistoryItem | null>(null);
   const [pendingSnapshotRestore, setPendingSnapshotRestore] = useState<{
@@ -107,6 +110,16 @@ export function WechatSyncPage() {
   const [focusedHistorySnapshotKey, setFocusedHistorySnapshotKey] = useState<
     string | null
   >(null);
+  const [auditSearch, setAuditSearch] = useState(initialViewState.auditSearch);
+  const [auditModeFilter, setAuditModeFilter] = useState<
+    "all" | "preview_import" | "snapshot_restore"
+  >(initialViewState.auditModeFilter);
+  const [auditExpandedRecordId, setAuditExpandedRecordId] = useState<
+    string | null
+  >(initialViewState.auditExpandedRecordId);
+  const [linkedAuditVersion, setLinkedAuditVersion] = useState<number | null>(
+    initialViewState.linkedAuditVersion,
+  );
   const [selectedUsernames, setSelectedUsernames] = useState<string[]>([]);
   const [selectedPreviewUsernames, setSelectedPreviewUsernames] = useState<
     string[]
@@ -130,6 +143,26 @@ export function WechatSyncPage() {
     }, 3200);
     return () => window.clearTimeout(timeoutId);
   }, [focusedHistorySnapshotKey]);
+
+  useEffect(() => {
+    syncWechatSyncViewStateToUrl({
+      historySearch,
+      historyStatusFilter,
+      selectedHistoryCharacterId,
+      auditSearch,
+      auditModeFilter,
+      auditExpandedRecordId,
+      linkedAuditVersion,
+    });
+  }, [
+    auditExpandedRecordId,
+    auditModeFilter,
+    auditSearch,
+    historySearch,
+    historyStatusFilter,
+    linkedAuditVersion,
+    selectedHistoryCharacterId,
+  ]);
 
   const connectorHealthQuery = useQuery({
     queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
@@ -262,6 +295,44 @@ export function WechatSyncPage() {
       previewValidation.get(selectedHistoryPreviewItem.contact.username) ?? []
     );
   }, [previewValidation, selectedHistoryPreviewItem]);
+
+  useEffect(() => {
+    if (
+      selectedHistoryItem &&
+      selectedHistoryCharacterId !== selectedHistoryItem.character.id
+    ) {
+      setSelectedHistoryCharacterId(selectedHistoryItem.character.id);
+    }
+  }, [selectedHistoryCharacterId, selectedHistoryItem]);
+
+  const auditShareUrl = useMemo(
+    () =>
+      buildWechatSyncAuditShareUrl({
+        historySearch,
+        historyStatusFilter,
+        selectedHistoryCharacterId,
+        auditSearch,
+        auditModeFilter,
+        auditExpandedRecordId,
+        linkedAuditVersion,
+      }),
+    [
+      auditExpandedRecordId,
+      auditModeFilter,
+      auditSearch,
+      historySearch,
+      historyStatusFilter,
+      linkedAuditVersion,
+      selectedHistoryCharacterId,
+    ],
+  );
+
+  function selectHistoryItem(characterId: string) {
+    setSelectedHistoryCharacterId(characterId);
+    setAuditExpandedRecordId(null);
+    setLinkedAuditVersion(null);
+    setFocusedHistorySnapshotKey(null);
+  }
 
   const scanMutation = useMutation({
     mutationFn: () => scanWechatConnector(connectorSettings.baseUrl),
@@ -631,6 +702,26 @@ export function WechatSyncPage() {
     setFocusedHistorySnapshotKey(
       buildSnapshotMutationKey(item.character.id, snapshot),
     );
+  }
+
+  function linkAuditVersionForHistoryItem(
+    item: WechatSyncHistoryItem,
+    version: number | null,
+  ) {
+    setSelectedHistoryCharacterId(item.character.id);
+    setLinkedAuditVersion(version);
+    if (version === null) {
+      setFocusedHistorySnapshotKey(null);
+      return;
+    }
+    const snapshot = getImportSnapshotsFromHistoryItem(item).find(
+      (entry) => entry.version === version,
+    );
+    if (snapshot) {
+      focusSnapshotVersionCard(item, snapshot);
+      return;
+    }
+    setFocusedHistorySnapshotKey(null);
   }
 
   function regeneratePreviewFromHistoryItem(item: WechatSyncHistoryItem) {
@@ -1480,9 +1571,7 @@ export function WechatSyncPage() {
                     rollbackMutation.variables?.character.id ===
                       item.character.id
                   }
-                  onSelect={() =>
-                    setSelectedHistoryCharacterId(item.character.id)
-                  }
+                  onSelect={() => selectHistoryItem(item.character.id)}
                   onRegeneratePreview={() =>
                     regeneratePreviewFromHistoryItem(item)
                   }
@@ -1555,6 +1644,23 @@ export function WechatSyncPage() {
                 selectedHistoryItem
                   ? (snapshot) =>
                       loadSnapshotIntoManualInput(snapshot, selectedHistoryItem)
+                  : undefined
+              }
+              auditSearch={auditSearch}
+              auditModeFilter={auditModeFilter}
+              auditExpandedRecordId={auditExpandedRecordId}
+              linkedAuditVersion={linkedAuditVersion}
+              auditShareUrl={auditShareUrl}
+              onAuditSearchChange={setAuditSearch}
+              onAuditModeFilterChange={setAuditModeFilter}
+              onAuditExpandedRecordIdChange={setAuditExpandedRecordId}
+              onLinkedAuditVersionChange={
+                selectedHistoryItem
+                  ? (version) =>
+                      linkAuditVersionForHistoryItem(
+                        selectedHistoryItem,
+                        version,
+                      )
                   : undefined
               }
               focusedSnapshotKey={
@@ -1831,6 +1937,15 @@ function HistoryDetailPanel({
   onLoadSnapshotToManualInput,
   onReplayChangeRecordPreview,
   onLoadChangeRecordToManualInput,
+  auditSearch,
+  auditModeFilter,
+  auditExpandedRecordId,
+  linkedAuditVersion,
+  auditShareUrl,
+  onAuditSearchChange,
+  onAuditModeFilterChange,
+  onAuditExpandedRecordIdChange,
+  onLinkedAuditVersionChange,
   focusedSnapshotKey,
   onRetryFriendship,
   onRollback,
@@ -1857,6 +1972,17 @@ function HistoryDetailPanel({
   onLoadChangeRecordToManualInput?: (
     snapshot: WechatImportSnapshotLike,
   ) => void;
+  auditSearch: string;
+  auditModeFilter: "all" | "preview_import" | "snapshot_restore";
+  auditExpandedRecordId: string | null;
+  linkedAuditVersion: number | null;
+  auditShareUrl: string;
+  onAuditSearchChange: (value: string) => void;
+  onAuditModeFilterChange: (
+    value: "all" | "preview_import" | "snapshot_restore",
+  ) => void;
+  onAuditExpandedRecordIdChange: (value: string | null) => void;
+  onLinkedAuditVersionChange?: (value: number | null) => void;
   focusedSnapshotKey?: string | null;
   onRetryFriendship?: () => void;
   onRollback?: () => void;
@@ -2025,11 +2151,13 @@ function HistoryDetailPanel({
             title="导入版本列表"
             liveItem={item}
             snapshots={importSnapshots}
+            linkedVersionFilter={linkedAuditVersion}
             onRestorePreview={onRestoreSnapshotPreview}
             onRestoreLive={onRestoreSnapshotToLive}
             onConfirmRestoreLive={onConfirmSnapshotRestore}
             onCancelRestoreLive={onCancelSnapshotRestore}
             onLoadToManualInput={onLoadSnapshotToManualInput}
+            onLinkRelatedRecords={onLinkedAuditVersionChange}
             confirmingSnapshotKey={confirmingSnapshotKey}
             focusedSnapshotKey={focusedSnapshotKey}
             restoringSnapshotKey={
@@ -2046,6 +2174,15 @@ function HistoryDetailPanel({
             characterName={item.character.name}
             records={importChangeHistory}
             availableSnapshots={importSnapshots}
+            search={auditSearch}
+            modeFilter={auditModeFilter}
+            expandedRecordId={auditExpandedRecordId}
+            linkedVersionFilter={linkedAuditVersion}
+            shareUrl={auditShareUrl}
+            onSearchChange={onAuditSearchChange}
+            onModeFilterChange={onAuditModeFilterChange}
+            onExpandedRecordIdChange={onAuditExpandedRecordIdChange}
+            onLinkedVersionFilterChange={onLinkedAuditVersionChange}
             onReplaySnapshotPreview={onReplayChangeRecordPreview}
             onLoadSnapshotToManualInput={onLoadChangeRecordToManualInput}
           />
@@ -2239,20 +2376,35 @@ function ImportChangeHistoryList({
   characterName,
   records,
   availableSnapshots,
+  search,
+  modeFilter,
+  expandedRecordId,
+  linkedVersionFilter,
+  shareUrl,
+  onSearchChange,
+  onModeFilterChange,
+  onExpandedRecordIdChange,
+  onLinkedVersionFilterChange,
   onReplaySnapshotPreview,
   onLoadSnapshotToManualInput,
 }: {
   characterName: string;
   records: WechatImportChangeRecordLike[];
   availableSnapshots: WechatImportSnapshotLike[];
+  search: string;
+  modeFilter: "all" | "preview_import" | "snapshot_restore";
+  expandedRecordId: string | null;
+  linkedVersionFilter: number | null;
+  shareUrl: string;
+  onSearchChange: (value: string) => void;
+  onModeFilterChange: (
+    value: "all" | "preview_import" | "snapshot_restore",
+  ) => void;
+  onExpandedRecordIdChange: (value: string | null) => void;
+  onLinkedVersionFilterChange?: (value: number | null) => void;
   onReplaySnapshotPreview?: (snapshot: WechatImportSnapshotLike) => void;
   onLoadSnapshotToManualInput?: (snapshot: WechatImportSnapshotLike) => void;
 }) {
-  const [search, setSearch] = useState("");
-  const [modeFilter, setModeFilter] = useState<
-    "all" | "preview_import" | "snapshot_restore"
-  >("all");
-  const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
   const [focusedRecordId, setFocusedRecordId] = useState<string | null>(null);
   const [copyNotice, setCopyNotice] = useState("");
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
@@ -2262,11 +2414,19 @@ function ImportChangeHistoryList({
         return false;
       }
       if (!deferredSearch) {
-        return true;
+        return (
+          linkedVersionFilter === null ||
+          isWechatSyncRecordLinkedToVersion(record, linkedVersionFilter)
+        );
       }
-      return buildImportChangeRecordKeyword(record).includes(deferredSearch);
+      const matchesSearch =
+        buildImportChangeRecordKeyword(record).includes(deferredSearch);
+      const matchesVersion =
+        linkedVersionFilter === null ||
+        isWechatSyncRecordLinkedToVersion(record, linkedVersionFilter);
+      return matchesSearch && matchesVersion;
     });
-  }, [deferredSearch, modeFilter, records]);
+  }, [deferredSearch, linkedVersionFilter, modeFilter, records]);
 
   useEffect(() => {
     if (!copyNotice) {
@@ -2314,14 +2474,14 @@ function ImportChangeHistoryList({
           <AdminTextField
             label="筛选变更记录"
             value={search}
-            onChange={setSearch}
+            onChange={onSearchChange}
             placeholder="搜索摘要、版本号、字段名或字段值"
           />
           <div className="flex flex-wrap gap-2 xl:justify-end">
             <Button
               variant={modeFilter === "all" ? "primary" : "secondary"}
               size="sm"
-              onClick={() => setModeFilter("all")}
+              onClick={() => onModeFilterChange("all")}
             >
               全部
             </Button>
@@ -2330,7 +2490,7 @@ function ImportChangeHistoryList({
                 modeFilter === "preview_import" ? "primary" : "secondary"
               }
               size="sm"
-              onClick={() => setModeFilter("preview_import")}
+              onClick={() => onModeFilterChange("preview_import")}
             >
               重新导入
             </Button>
@@ -2339,7 +2499,7 @@ function ImportChangeHistoryList({
                 modeFilter === "snapshot_restore" ? "primary" : "secondary"
               }
               size="sm"
-              onClick={() => setModeFilter("snapshot_restore")}
+              onClick={() => onModeFilterChange("snapshot_restore")}
             >
               历史恢复
             </Button>
@@ -2376,26 +2536,49 @@ function ImportChangeHistoryList({
               size="sm"
               onClick={async () => {
                 const copied = await copyWechatSyncAuditText(
-                  buildWechatSyncChangeMarkdownReport(
-                    characterName,
-                    filteredRecords,
-                    availableSnapshots,
-                  ),
-                  "复制审计 Markdown",
+                  shareUrl,
+                  "复制审计链接",
                 );
                 if (copied) {
-                  setCopyNotice(
-                    `已复制 ${filteredRecords.length} 条当前筛选记录的 Markdown 报告。`,
-                  );
+                  setCopyNotice("已复制当前审计视图分享链接。");
                 }
               }}
-              disabled={!filteredRecords.length}
+              disabled={!shareUrl}
             >
-              复制当前筛选 Markdown
+              复制当前审计链接
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onLinkedVersionFilterChange?.(null)}
+              disabled={
+                linkedVersionFilter === null || !onLinkedVersionFilterChange
+              }
+            >
+              清除版本联动
             </Button>
           </div>
         </div>
       </div>
+
+      {linkedVersionFilter !== null ? (
+        <AdminCallout
+          className="mt-4"
+          title={`当前只看和 v${linkedVersionFilter} 相关的审计记录`}
+          tone="info"
+          description="来自版本列表或单条变更记录的联动筛选已生效。这里会保留 toVersion / previousVersion / restoredFromVersion 命中的记录。"
+          actions={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onLinkedVersionFilterChange?.(null)}
+              disabled={!onLinkedVersionFilterChange}
+            >
+              查看全部记录
+            </Button>
+          }
+        />
+      ) : null}
 
       {!filteredRecords.length ? (
         <AdminEmptyState
@@ -2479,9 +2662,7 @@ function ImportChangeHistoryList({
                       variant={expanded ? "primary" : "secondary"}
                       size="sm"
                       onClick={() =>
-                        setExpandedRecordId((current) =>
-                          current === record.id ? null : record.id,
-                        )
+                        onExpandedRecordIdChange(expanded ? null : record.id)
                       }
                     >
                       {expanded ? "收起完整 diff" : "展开完整 diff"}
@@ -2547,11 +2728,22 @@ function ImportChangeHistoryList({
                     <Button
                       variant="secondary"
                       size="sm"
+                      onClick={() =>
+                        onLinkedVersionFilterChange?.(record.toVersion)
+                      }
+                      disabled={!onLinkedVersionFilterChange}
+                    >
+                      筛选相关版本
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => {
                         if (!replaySnapshot || !onReplaySnapshotPreview) {
                           return;
                         }
-                        setExpandedRecordId(record.id);
+                        onExpandedRecordIdChange(record.id);
+                        onLinkedVersionFilterChange?.(record.toVersion);
                         setFocusedRecordId(record.id);
                         onReplaySnapshotPreview(replaySnapshot);
                       }}
@@ -2605,11 +2797,13 @@ function ImportSnapshotVersionList({
   title,
   liveItem,
   snapshots,
+  linkedVersionFilter,
   onRestorePreview,
   onRestoreLive,
   onConfirmRestoreLive,
   onCancelRestoreLive,
   onLoadToManualInput,
+  onLinkRelatedRecords,
   confirmingSnapshotKey,
   focusedSnapshotKey,
   restoringSnapshotKey,
@@ -2617,11 +2811,13 @@ function ImportSnapshotVersionList({
   title: string;
   liveItem: WechatSyncHistoryItem | null;
   snapshots: WechatImportSnapshotLike[];
+  linkedVersionFilter?: number | null;
   onRestorePreview?: (snapshot: WechatImportSnapshotLike) => void;
   onRestoreLive?: (snapshot: WechatImportSnapshotLike) => void;
   onConfirmRestoreLive?: () => void;
   onCancelRestoreLive?: () => void;
   onLoadToManualInput?: (snapshot: WechatImportSnapshotLike) => void;
+  onLinkRelatedRecords?: (version: number | null) => void;
   confirmingSnapshotKey?: string | null;
   focusedSnapshotKey?: string | null;
   restoringSnapshotKey?: string | null;
@@ -2645,13 +2841,54 @@ function ImportSnapshotVersionList({
     return null;
   }
 
+  const visibleSnapshots =
+    linkedVersionFilter === null || linkedVersionFilter === undefined
+      ? snapshots
+      : snapshots.filter(
+          (snapshot) => snapshot.version === linkedVersionFilter,
+        );
+
   return (
     <div>
-      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-        {title}
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+            {title}
+          </div>
+          {linkedVersionFilter !== null && linkedVersionFilter !== undefined ? (
+            <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
+              当前只展示和 v{linkedVersionFilter} 对应的版本卡。
+            </div>
+          ) : null}
+        </div>
+        {linkedVersionFilter !== null && linkedVersionFilter !== undefined ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onLinkRelatedRecords?.(null)}
+            disabled={!onLinkRelatedRecords}
+          >
+            查看全部版本
+          </Button>
+        ) : null}
       </div>
+      {linkedVersionFilter !== null && linkedVersionFilter !== undefined ? (
+        <AdminCallout
+          className="mt-4"
+          title={`当前只看 v${linkedVersionFilter} 版本卡`}
+          tone="info"
+          description="来自变更记录区的联动筛选已生效。清除后会恢复完整版本链。"
+        />
+      ) : null}
+      {!visibleSnapshots.length ? (
+        <AdminEmptyState
+          className="mt-4"
+          title="当前联动版本没有命中版本卡"
+          description="这通常说明所选记录引用的是更旧的历史版本。清除联动筛选后可恢复完整版本链。"
+        />
+      ) : null}
       <div className="mt-3 space-y-3">
-        {snapshots.map((snapshot, index) => {
+        {visibleSnapshots.map((snapshot, index) => {
           const diffs = liveItem
             ? buildHistorySnapshotDiffs(liveItem, snapshot)
             : [];
@@ -2741,6 +2978,14 @@ function ImportSnapshotVersionList({
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onLinkRelatedRecords?.(snapshot.version)}
+                      disabled={!onLinkRelatedRecords}
+                    >
+                      筛选相关记录
+                    </Button>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -3470,6 +3715,145 @@ function buildChangeRecordVersionPath(record: WechatImportChangeRecordLike) {
     return `${previousVersion} -> 快照 v${record.restoredFromVersion ?? "?"} -> v${record.toVersion}`;
   }
   return `${previousVersion} -> v${record.toVersion}`;
+}
+
+function isWechatSyncRecordLinkedToVersion(
+  record: WechatImportChangeRecordLike,
+  version: number,
+) {
+  return (
+    record.toVersion === version ||
+    record.previousVersion === version ||
+    record.restoredFromVersion === version
+  );
+}
+
+type WechatSyncViewState = {
+  historySearch: string;
+  historyStatusFilter: "all" | "active" | "attention" | "removed";
+  selectedHistoryCharacterId: string | null;
+  auditSearch: string;
+  auditModeFilter: "all" | "preview_import" | "snapshot_restore";
+  auditExpandedRecordId: string | null;
+  linkedAuditVersion: number | null;
+};
+
+function readInitialWechatSyncViewState(): WechatSyncViewState {
+  if (typeof window === "undefined") {
+    return {
+      historySearch: "",
+      historyStatusFilter: "all",
+      selectedHistoryCharacterId: null,
+      auditSearch: "",
+      auditModeFilter: "all",
+      auditExpandedRecordId: null,
+      linkedAuditVersion: null,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const historyStatus = params.get("historyStatus");
+  const auditMode = params.get("auditMode");
+  const linkedVersion = params.get("auditVersion");
+
+  return {
+    historySearch: params.get("historySearch") ?? "",
+    historyStatusFilter:
+      historyStatus === "active" ||
+      historyStatus === "attention" ||
+      historyStatus === "removed"
+        ? historyStatus
+        : "all",
+    selectedHistoryCharacterId: params.get("historyCharacter") || null,
+    auditSearch: params.get("auditSearch") ?? "",
+    auditModeFilter:
+      auditMode === "preview_import" || auditMode === "snapshot_restore"
+        ? auditMode
+        : "all",
+    auditExpandedRecordId: params.get("auditRecord") || null,
+    linkedAuditVersion:
+      linkedVersion && Number.isFinite(Number(linkedVersion))
+        ? Number(linkedVersion)
+        : null,
+  };
+}
+
+function syncWechatSyncViewStateToUrl(state: WechatSyncViewState) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  setWechatSyncQueryParam(params, "historySearch", state.historySearch || null);
+  setWechatSyncQueryParam(
+    params,
+    "historyStatus",
+    state.historyStatusFilter === "all" ? null : state.historyStatusFilter,
+  );
+  setWechatSyncQueryParam(
+    params,
+    "historyCharacter",
+    state.selectedHistoryCharacterId,
+  );
+  setWechatSyncQueryParam(params, "auditSearch", state.auditSearch || null);
+  setWechatSyncQueryParam(
+    params,
+    "auditMode",
+    state.auditModeFilter === "all" ? null : state.auditModeFilter,
+  );
+  setWechatSyncQueryParam(params, "auditRecord", state.auditExpandedRecordId);
+  setWechatSyncQueryParam(
+    params,
+    "auditVersion",
+    state.linkedAuditVersion === null ? null : String(state.linkedAuditVersion),
+  );
+  const next = params.toString();
+  const nextUrl = `${window.location.pathname}${next ? `?${next}` : ""}`;
+  window.history.replaceState(null, "", nextUrl);
+}
+
+function buildWechatSyncAuditShareUrl(state: WechatSyncViewState) {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  const params = new URLSearchParams();
+  setWechatSyncQueryParam(params, "historySearch", state.historySearch || null);
+  setWechatSyncQueryParam(
+    params,
+    "historyStatus",
+    state.historyStatusFilter === "all" ? null : state.historyStatusFilter,
+  );
+  setWechatSyncQueryParam(
+    params,
+    "historyCharacter",
+    state.selectedHistoryCharacterId,
+  );
+  setWechatSyncQueryParam(params, "auditSearch", state.auditSearch || null);
+  setWechatSyncQueryParam(
+    params,
+    "auditMode",
+    state.auditModeFilter === "all" ? null : state.auditModeFilter,
+  );
+  setWechatSyncQueryParam(params, "auditRecord", state.auditExpandedRecordId);
+  setWechatSyncQueryParam(
+    params,
+    "auditVersion",
+    state.linkedAuditVersion === null ? null : String(state.linkedAuditVersion),
+  );
+  const next = params.toString();
+  return `${window.location.origin}${window.location.pathname}${next ? `?${next}` : ""}`;
+}
+
+function setWechatSyncQueryParam(
+  params: URLSearchParams,
+  key: string,
+  value: string | null,
+) {
+  if (value === null || value.trim() === "") {
+    params.delete(key);
+    return;
+  }
+  params.set(key, value);
 }
 
 function buildImportChangeRecordKeyword(record: WechatImportChangeRecordLike) {
