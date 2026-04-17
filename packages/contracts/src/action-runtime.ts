@@ -149,6 +149,28 @@ export interface ActionRuntimePreviewResult {
   responsePreview?: string | null;
 }
 
+export interface ActionConnectorDiscoveryItem {
+  key: string;
+  entityId: string;
+  domain: string;
+  friendlyName: string;
+  state: string;
+  suggestedRoom: string;
+  suggestedDevice: string;
+  targetConfig: Record<string, unknown>;
+  availableActions: string[];
+  attributes: Record<string, unknown>;
+}
+
+export interface ActionConnectorDiscoveryResult {
+  connector: ActionConnectorSummary;
+  provider: string;
+  fetchedAt: string;
+  query: string;
+  itemCount: number;
+  items: ActionConnectorDiscoveryItem[];
+}
+
 export interface ActionConnectorTestResult {
   ok: boolean;
   testedAt: string;

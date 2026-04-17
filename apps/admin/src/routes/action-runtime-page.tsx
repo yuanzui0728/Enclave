@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  ActionConnectorDiscoveryResult,
   ActionConnectorSummary,
   ActionConnectorTestResult,
   ActionRiskLevel,
@@ -34,6 +35,7 @@ import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 type ConnectorDraft = {
   displayName: string;
+  discoveryQuery: string;
   endpointConfigText: string;
   testMessage: string;
   credential: string;
@@ -93,6 +95,9 @@ export function ActionRuntimePage() {
   >({});
   const [connectorTestResults, setConnectorTestResults] = useState<
     Record<string, ActionConnectorTestResult>
+  >({});
+  const [connectorDiscoveryResults, setConnectorDiscoveryResults] = useState<
+    Record<string, ActionConnectorDiscoveryResult>
   >({});
   const [runActionFeedback, setRunActionFeedback] = useState<string | null>(
     null,
@@ -198,6 +203,24 @@ export function ActionRuntimePage() {
     },
   });
 
+  const discoverConnectorMutation = useMutation({
+    mutationFn: (payload: {
+      id: string;
+      query?: string | null;
+      limit?: number | null;
+    }) =>
+      adminApi.discoverActionRuntimeConnector(payload.id, {
+        query: payload.query?.trim() || null,
+        limit: payload.limit ?? null,
+      }),
+    onSuccess: (result, variables) => {
+      setConnectorDiscoveryResults((current) => ({
+        ...current,
+        [variables.id]: result,
+      }));
+    },
+  });
+
   const retryRunMutation = useMutation({
     mutationFn: (id: string) => adminApi.retryActionRuntimeRun(id),
     onSuccess: (result) => {
@@ -297,6 +320,7 @@ export function ActionRuntimePage() {
       [id]: {
         ...(current[id] ?? {
           displayName: "",
+          discoveryQuery: "",
           endpointConfigText: "",
           testMessage: "",
           credential: "",
@@ -351,6 +375,79 @@ export function ActionRuntimePage() {
       endpointConfig: parsed.value,
       credential: null,
       clearCredential: true,
+    });
+  }
+
+  async function handleDiscoverConnector(connector: ActionConnectorSummary) {
+    const draft =
+      connectorDrafts[connector.id] ?? createConnectorDraft(connector);
+    const parsed = parseEndpointConfig(draft.endpointConfigText);
+    if (parsed.error) {
+      const errorMessage = parsed.error ?? "Endpoint Config 无法解析。";
+      setConnectorDraftErrors((current) => ({
+        ...current,
+        [connector.id]: errorMessage,
+      }));
+      return;
+    }
+
+    try {
+      if (isConnectorDirty(connector, draft)) {
+        await saveConnectorMutation.mutateAsync({
+          id: connector.id,
+          displayName: draft.displayName.trim() || connector.displayName,
+          endpointConfig: parsed.value,
+          credential: draft.credential.trim() || null,
+        });
+      }
+      await discoverConnectorMutation.mutateAsync({
+        id: connector.id,
+        query: draft.discoveryQuery,
+        limit: 30,
+      });
+    } catch {
+      return;
+    }
+  }
+
+  function applyHomeAssistantTargetSuggestion(
+    connector: ActionConnectorSummary,
+    suggestion: ActionConnectorDiscoveryResult["items"][number],
+  ) {
+    const draft =
+      connectorDrafts[connector.id] ?? createConnectorDraft(connector);
+    const parsed = parseEndpointConfig(draft.endpointConfigText);
+    if (parsed.error) {
+      const errorMessage = parsed.error ?? "Endpoint Config 无法解析。";
+      setConnectorDraftErrors((current) => ({
+        ...current,
+        [connector.id]: errorMessage,
+      }));
+      return;
+    }
+
+    const currentConfig = parsed.value ?? {};
+    const existingTargets =
+      currentConfig.deviceTargets &&
+      typeof currentConfig.deviceTargets === "object" &&
+      !Array.isArray(currentConfig.deviceTargets)
+        ? (currentConfig.deviceTargets as Record<string, unknown>)
+        : {};
+    const nextConfig = {
+      ...currentConfig,
+      provider:
+        typeof currentConfig.provider === "string" &&
+        currentConfig.provider.trim()
+          ? currentConfig.provider
+          : "home_assistant",
+      deviceTargets: {
+        ...existingTargets,
+        [suggestion.key]: suggestion.targetConfig,
+      },
+    };
+
+    updateConnectorDraft(connector.id, {
+      endpointConfigText: formatEndpointConfig(nextConfig),
     });
   }
 
@@ -704,6 +801,8 @@ export function ActionRuntimePage() {
                 const draft =
                   connectorDrafts[connector.id] ??
                   createConnectorDraft(connector);
+                const discoveryResult =
+                  connectorDiscoveryResults[connector.id] ?? null;
                 const testResult = connectorTestResults[connector.id];
                 const connectorError = connectorDraftErrors[connector.id];
                 const isSaving =
@@ -715,6 +814,9 @@ export function ActionRuntimePage() {
                 const isTesting =
                   testConnectorMutation.isPending &&
                   testConnectorMutation.variables?.id === connector.id;
+                const isDiscovering =
+                  discoverConnectorMutation.isPending &&
+                  discoverConnectorMutation.variables?.id === connector.id;
                 const isDirty = isConnectorDirty(connector, draft);
 
                 return (
@@ -747,11 +849,125 @@ export function ActionRuntimePage() {
                         ) : null}
                         {connector.connectorKey ===
                         "official-home-assistant-smart-home" ? (
-                          <AdminCallout
-                            tone="info"
-                            title="Home Assistant 配置方式"
-                            description='填写 `baseUrl`，把 Long-Lived Access Token 填进 credential。`deviceTargets` 用 “房间:设备” 作为 key，例如 `客厅:空调`；每个 target 至少包含 `entityId`，可选 `serviceDomain`、`turnOnService`、`turnOffService`、`setTemperatureService`、`temperatureField`。'
-                          />
+                          <div className="space-y-4">
+                            <AdminCallout
+                              tone="info"
+                              title="Home Assistant 配置方式"
+                              description='填写 `baseUrl`，把 Long-Lived Access Token 填进 credential。`deviceTargets` 用 “房间:设备” 作为 key，例如 `客厅:空调`；每个 target 至少包含 `entityId`，可选 `serviceDomain`、`turnOnService`、`turnOffService`、`setTemperatureService`、`temperatureField`。'
+                            />
+                            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                                    实体发现与映射向导
+                                  </div>
+                                  <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+                                    会通过 Home Assistant `/api/states` 拉取可控实体，并给出推荐的
+                                    `deviceTargets` 键。
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="secondary"
+                                  disabled={isDiscovering}
+                                  onClick={() => void handleDiscoverConnector(connector)}
+                                >
+                                  {isDiscovering ? "发现中..." : "发现实体"}
+                                </Button>
+                              </div>
+                              <div className="mt-4">
+                                <AdminTextField
+                                  label="发现筛选词"
+                                  value={draft.discoveryQuery}
+                                  onChange={(value) =>
+                                    updateConnectorDraft(connector.id, {
+                                      discoveryQuery: value,
+                                    })
+                                  }
+                                  placeholder="可按房间、设备、entity_id 检索，例如 客厅 / 空调 / light."
+                                />
+                              </div>
+                              {discoverConnectorMutation.isError &&
+                              discoverConnectorMutation.error instanceof Error &&
+                              discoverConnectorMutation.variables?.id ===
+                                connector.id ? (
+                                <ErrorBlock
+                                  className="mt-4"
+                                  message={discoverConnectorMutation.error.message}
+                                />
+                              ) : null}
+                              {discoveryResult ? (
+                                <div className="mt-4 space-y-3">
+                                  <AdminCallout
+                                    tone={
+                                      discoveryResult.itemCount ? "success" : "warning"
+                                    }
+                                    title={
+                                      discoveryResult.itemCount
+                                        ? `发现到 ${discoveryResult.itemCount} 个候选实体`
+                                        : "没有发现匹配实体"
+                                    }
+                                    description={`拉取时间 ${formatDateTime(discoveryResult.fetchedAt)}${
+                                      discoveryResult.query
+                                        ? `，当前筛选：${discoveryResult.query}`
+                                        : ""
+                                    }。点“写入映射”会把推荐 target 合并进当前草稿，不会自动保存。`}
+                                  />
+                                  {discoveryResult.items.map((item) => (
+                                    <div
+                                      key={`${item.entityId}-${item.key}`}
+                                      className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-4"
+                                    >
+                                      <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                          <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                                            {item.friendlyName}
+                                          </div>
+                                          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                                            {item.entityId} · {item.domain} · 当前状态{" "}
+                                            {item.state}
+                                          </div>
+                                        </div>
+                                        <Button
+                                          variant="secondary"
+                                          onClick={() =>
+                                            applyHomeAssistantTargetSuggestion(
+                                              connector,
+                                              item,
+                                            )
+                                          }
+                                        >
+                                          写入映射
+                                        </Button>
+                                      </div>
+                                      <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                        <MetricCard
+                                          label="推荐房间"
+                                          value={item.suggestedRoom || "未识别"}
+                                        />
+                                        <MetricCard
+                                          label="推荐设备"
+                                          value={item.suggestedDevice || "设备"}
+                                        />
+                                        <MetricCard
+                                          label="映射键"
+                                          value={item.key}
+                                        />
+                                      </div>
+                                      <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                                        可执行动作：{item.availableActions.join(" / ")}
+                                      </div>
+                                      <div className="mt-3">
+                                        <LabeledCodeBlock
+                                          label="Target Config"
+                                          value={prettyJson(item.targetConfig)}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
                         ) : null}
                         <AdminTextField
                           label="显示名称"
@@ -912,6 +1128,16 @@ export function ActionRuntimePage() {
                         >
                           {isTesting ? "自检中..." : "测试连接器"}
                         </Button>
+                        {connector.connectorKey ===
+                        "official-home-assistant-smart-home" ? (
+                          <Button
+                            variant="secondary"
+                            disabled={isDiscovering}
+                            onClick={() => void handleDiscoverConnector(connector)}
+                          >
+                            {isDiscovering ? "发现中..." : "发现实体"}
+                          </Button>
+                        ) : null}
                         <Button
                           variant="secondary"
                           disabled={isToggling || connector.status === "ready"}
@@ -1115,6 +1341,7 @@ function createConnectorDraft(
 ): ConnectorDraft {
   return {
     displayName: connector.displayName,
+    discoveryQuery: "",
     endpointConfigText: formatEndpointConfig(connector.endpointConfig ?? null),
     testMessage: "",
     credential: "",

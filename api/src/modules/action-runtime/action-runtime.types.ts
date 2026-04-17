@@ -86,6 +86,28 @@ export type ActionHandlingResultValue = {
   responseText?: string;
 };
 
+export type ActionConnectorDiscoveryItemValue = {
+  key: string;
+  entityId: string;
+  domain: string;
+  friendlyName: string;
+  state: string;
+  suggestedRoom: string;
+  suggestedDevice: string;
+  targetConfig: Record<string, unknown>;
+  availableActions: string[];
+  attributes: Record<string, unknown>;
+};
+
+export type ActionConnectorDiscoveryResultValue = {
+  connector: Record<string, unknown>;
+  provider: string;
+  fetchedAt: string;
+  query: string;
+  itemCount: number;
+  items: ActionConnectorDiscoveryItemValue[];
+};
+
 export type ActionConnectorTestResultValue = {
   ok: boolean;
   testedAt: string;

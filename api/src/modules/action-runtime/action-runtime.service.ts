@@ -14,6 +14,7 @@ import { ActionRunEntity } from './action-run.entity';
 import { ActionRuntimeRulesService } from './action-runtime-rules.service';
 import type {
   ActionConnectorSeedValue,
+  ActionConnectorDiscoveryResultValue,
   ActionConnectorTestResultValue,
   ActionExecutionResultValue,
   ActionHandlingResultValue,
@@ -72,6 +73,19 @@ function rankConnectorProvider(providerType: ActionConnectorEntity['providerType
   }
   return 1;
 }
+
+const HOME_ASSISTANT_ROOM_PATTERNS: Array<[string, RegExp[]]> = [
+  ['客厅', [/客厅/, /\bliving[\s_-]?room\b/i, /\blounge\b/i]],
+  ['卧室', [/卧室/, /\bbedroom\b/i]],
+  ['主卧', [/主卧/, /\bmaster[\s_-]?bedroom\b/i]],
+  ['次卧', [/次卧/]],
+  ['书房', [/书房/, /\bstudy\b/i, /\boffice\b/i]],
+  ['厨房', [/厨房/, /\bkitchen\b/i]],
+  ['餐厅', [/餐厅/, /\bdining\b/i]],
+  ['阳台', [/阳台/, /\bbalcony\b/i]],
+  ['卫生间', [/卫生间/, /\bbath(room)?\b/i, /\bwashroom\b/i]],
+  ['玄关', [/玄关/, /\bentry\b/i, /\bfoyer\b/i]],
+];
 
 @Injectable()
 export class ActionRuntimeService {
@@ -391,6 +405,33 @@ export class ActionRuntimeService {
         errorMessage,
       };
     }
+  }
+
+  async discoverConnector(
+    id: string,
+    payload?: {
+      query?: string;
+      limit?: number;
+    },
+  ): Promise<ActionConnectorDiscoveryResultValue> {
+    await this.ensureDefaultConnectors();
+    const connector = await this.connectorRepo.findOneBy({ id });
+    if (!connector) {
+      throw new NotFoundException(`Connector ${id} not found`);
+    }
+
+    if (
+      connector.connectorKey === 'official-home-assistant-smart-home' ||
+      (connector.providerType === 'official_api' &&
+        (connector.endpointConfigPayload as Record<string, unknown> | null)?.provider ===
+          'home_assistant')
+    ) {
+      return this.discoverHomeAssistantConnector(connector, payload);
+    }
+
+    throw new BadRequestException(
+      `当前连接器 ${connector.displayName} 暂不支持自动发现。`,
+    );
   }
 
   async listRuns(limit = 20) {
@@ -1749,32 +1790,12 @@ export class ActionRuntimeService {
     connector: ActionConnectorEntity,
     previewOnly: boolean,
   ): Promise<ActionExecutionResultValue> {
-    const endpointConfig =
-      connector.endpointConfigPayload &&
-      typeof connector.endpointConfigPayload === 'object'
-        ? connector.endpointConfigPayload
-        : null;
-    const baseUrl =
-      typeof endpointConfig?.baseUrl === 'string'
-        ? endpointConfig.baseUrl.trim().replace(/\/+$/, '')
-        : '';
-    if (!baseUrl) {
-      throw new Error('Home Assistant connector 缺少 baseUrl。');
-    }
-
-    const token = decryptUserApiKey(connector.credentialPayloadEncrypted);
-    if (!token?.trim()) {
-      throw new Error('Home Assistant connector 尚未配置 access token。');
-    }
-
-    const timeoutMs =
-      typeof endpointConfig?.timeoutMs === 'number' && endpointConfig.timeoutMs > 0
-        ? Math.min(endpointConfig.timeoutMs, 60000)
-        : 12000;
+    const { endpointConfig, baseUrl, token, timeoutMs } =
+      this.resolveHomeAssistantConnection(connector);
     const health = await fetch(`${baseUrl}/api/`, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${token.trim()}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       signal: AbortSignal.timeout(timeoutMs),
@@ -1819,7 +1840,7 @@ export class ActionRuntimeService {
       {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token.trim()}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(serviceCall.payload),
@@ -1863,6 +1884,38 @@ export class ActionRuntimeService {
               entityId: target.entityId,
               serviceResultRaw: parsedBody ?? rawText,
             },
+    };
+  }
+
+  private resolveHomeAssistantConnection(connector: ActionConnectorEntity) {
+    const endpointConfig =
+      connector.endpointConfigPayload &&
+      typeof connector.endpointConfigPayload === 'object'
+        ? connector.endpointConfigPayload
+        : null;
+    const baseUrl =
+      typeof endpointConfig?.baseUrl === 'string'
+        ? endpointConfig.baseUrl.trim().replace(/\/+$/, '')
+        : '';
+    if (!baseUrl) {
+      throw new Error('Home Assistant connector 缺少 baseUrl。');
+    }
+
+    const token = decryptUserApiKey(connector.credentialPayloadEncrypted)?.trim();
+    if (!token) {
+      throw new Error('Home Assistant connector 尚未配置 access token。');
+    }
+
+    const timeoutMs =
+      typeof endpointConfig?.timeoutMs === 'number' && endpointConfig.timeoutMs > 0
+        ? Math.min(endpointConfig.timeoutMs, 60000)
+        : 12000;
+
+    return {
+      endpointConfig,
+      baseUrl,
+      token,
+      timeoutMs,
     };
   }
 
@@ -2015,6 +2068,275 @@ export class ActionRuntimeService {
       return `${room}的${device}已通过 Home Assistant 关闭。`;
     }
     return `${room}的${device}已通过 Home Assistant 打开。目标实体：${target.entityId}`;
+  }
+
+  private async discoverHomeAssistantConnector(
+    connector: ActionConnectorEntity,
+    payload?: {
+      query?: string;
+      limit?: number;
+    },
+  ): Promise<ActionConnectorDiscoveryResultValue> {
+    const { baseUrl, token, timeoutMs } =
+      this.resolveHomeAssistantConnection(connector);
+    const response = await fetch(`${baseUrl}/api/states`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const rawText = await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `Home Assistant 实体发现失败 ${response.status}：${rawText.slice(0, 280) || response.statusText}`,
+      );
+    }
+
+    let parsedBody: unknown = [];
+    if (rawText.trim()) {
+      try {
+        parsedBody = JSON.parse(rawText) as unknown;
+      } catch {
+        throw new Error('Home Assistant /api/states 返回了无法解析的 JSON。');
+      }
+    }
+    if (!Array.isArray(parsedBody)) {
+      throw new Error('Home Assistant /api/states 返回格式异常。');
+    }
+
+    const query = payload?.query?.trim() ?? '';
+    const normalizedQuery = query.toLowerCase();
+    const limit =
+      typeof payload?.limit === 'number' && Number.isFinite(payload.limit)
+        ? Math.max(1, Math.min(100, Math.round(payload.limit)))
+        : 30;
+    const items = parsedBody
+      .map((item) => this.buildHomeAssistantDiscoveryItem(item))
+      .filter(
+        (
+          item,
+        ): item is NonNullable<ReturnType<typeof this.buildHomeAssistantDiscoveryItem>> =>
+          Boolean(item),
+      )
+      .filter((item) => {
+        if (!normalizedQuery) {
+          return true;
+        }
+        return [
+          item.key,
+          item.entityId,
+          item.domain,
+          item.friendlyName,
+          item.state,
+          item.suggestedRoom,
+          item.suggestedDevice,
+          ...item.availableActions,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedQuery);
+      })
+      .sort((left, right) => {
+        if (left.suggestedRoom && !right.suggestedRoom) {
+          return -1;
+        }
+        if (!left.suggestedRoom && right.suggestedRoom) {
+          return 1;
+        }
+        return left.friendlyName.localeCompare(right.friendlyName, 'zh-CN');
+      })
+      .slice(0, limit);
+
+    return {
+      connector: this.serializeConnector(connector),
+      provider: 'home_assistant',
+      fetchedAt: new Date().toISOString(),
+      query,
+      itemCount: items.length,
+      items,
+    };
+  }
+
+  private buildHomeAssistantDiscoveryItem(item: unknown) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return null;
+    }
+
+    const record = item as Record<string, unknown>;
+    const entityId =
+      typeof record.entity_id === 'string' ? record.entity_id.trim() : '';
+    if (!entityId || !entityId.includes('.')) {
+      return null;
+    }
+
+    const domain = entityId.split('.')[0]?.trim();
+    if (!domain || !this.isSupportedHomeAssistantDiscoveryDomain(domain)) {
+      return null;
+    }
+
+    const attributes =
+      record.attributes &&
+      typeof record.attributes === 'object' &&
+      !Array.isArray(record.attributes)
+        ? { ...(record.attributes as Record<string, unknown>) }
+        : {};
+    const friendlyName =
+      typeof attributes.friendly_name === 'string' && attributes.friendly_name.trim()
+        ? attributes.friendly_name.trim()
+        : entityId;
+    const state =
+      typeof record.state === 'string' && record.state.trim()
+        ? record.state.trim()
+        : 'unknown';
+    const suggestedRoom = this.inferHomeAssistantRoom(friendlyName, entityId);
+    const suggestedDevice = this.inferHomeAssistantDevice(
+      domain,
+      friendlyName,
+      entityId,
+    );
+    const key = suggestedRoom
+      ? `${suggestedRoom}:${suggestedDevice}`
+      : suggestedDevice || entityId;
+
+    return {
+      key,
+      entityId,
+      domain,
+      friendlyName,
+      state,
+      suggestedRoom,
+      suggestedDevice,
+      targetConfig: this.buildHomeAssistantDiscoveryTargetConfig(
+        domain,
+        entityId,
+        suggestedDevice,
+      ),
+      availableActions: this.resolveHomeAssistantAvailableActions(
+        domain,
+        suggestedDevice,
+      ),
+      attributes,
+    };
+  }
+
+  private isSupportedHomeAssistantDiscoveryDomain(domain: string) {
+    return [
+      'climate',
+      'light',
+      'switch',
+      'fan',
+      'cover',
+      'media_player',
+      'humidifier',
+      'vacuum',
+    ].includes(domain);
+  }
+
+  private inferHomeAssistantRoom(...candidates: string[]) {
+    const haystack = candidates.join(' ');
+    for (const [room, patterns] of HOME_ASSISTANT_ROOM_PATTERNS) {
+      if (patterns.some((pattern) => pattern.test(haystack))) {
+        return room;
+      }
+    }
+    return '';
+  }
+
+  private inferHomeAssistantDevice(
+    domain: string,
+    friendlyName: string,
+    entityId: string,
+  ) {
+    const haystack = `${friendlyName} ${entityId}`.toLowerCase();
+    if (domain === 'climate') {
+      return '空调';
+    }
+    if (domain === 'light') {
+      return '灯';
+    }
+    if (domain === 'cover') {
+      return '窗帘';
+    }
+    if (domain === 'fan') {
+      return '风扇';
+    }
+    if (domain === 'humidifier') {
+      return '加湿器';
+    }
+    if (domain === 'vacuum') {
+      return '扫地机器人';
+    }
+    if (domain === 'media_player') {
+      if (
+        /(tv|television|电视|投影|projector|display|screen)/i.test(haystack)
+      ) {
+        return '电视';
+      }
+      return '音箱';
+    }
+    if (domain === 'switch') {
+      if (/(插座|排插|socket|plug|outlet)/i.test(haystack)) {
+        return '插座';
+      }
+      if (/(净化|purifier)/i.test(haystack)) {
+        return '净化器';
+      }
+      return '开关';
+    }
+    return '设备';
+  }
+
+  private buildHomeAssistantDiscoveryTargetConfig(
+    domain: string,
+    entityId: string,
+    suggestedDevice: string,
+  ) {
+    const targetConfig: Record<string, unknown> = {
+      entityId,
+      serviceDomain: domain,
+    };
+
+    if (domain === 'climate') {
+      targetConfig.turnOnService = 'turn_on';
+      targetConfig.turnOffService = 'turn_off';
+      targetConfig.setTemperatureService = 'set_temperature';
+      targetConfig.temperatureField = 'temperature';
+      return targetConfig;
+    }
+
+    if (domain === 'cover') {
+      targetConfig.turnOnService = 'open_cover';
+      targetConfig.turnOffService = 'close_cover';
+      return targetConfig;
+    }
+
+    if (suggestedDevice === '净化器') {
+      targetConfig.turnOnService = 'turn_on';
+      targetConfig.turnOffService = 'turn_off';
+      return targetConfig;
+    }
+
+    targetConfig.turnOnService = 'turn_on';
+    targetConfig.turnOffService = 'turn_off';
+    return targetConfig;
+  }
+
+  private resolveHomeAssistantAvailableActions(
+    domain: string,
+    suggestedDevice: string,
+  ) {
+    if (domain === 'climate') {
+      return ['turn_on', 'turn_off', 'set_temperature'];
+    }
+    if (domain === 'cover') {
+      return ['turn_on', 'turn_off'];
+    }
+    if (suggestedDevice === '净化器') {
+      return ['turn_on', 'turn_off'];
+    }
+    return ['turn_on', 'turn_off'];
   }
 
   private async executeHttpBridgeOperation(
