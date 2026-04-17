@@ -562,3 +562,9 @@
   - `CLOUD_WORLD_ALERT_RETRY_THRESHOLD` upgrades repeated recovery drift into a critical alert after enough failed retries
   - `CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS` upgrades long-running stale heartbeat conditions into a critical alert
   - cloud console now distinguishes warning vs critical worlds and shows whether an alert has already been escalated
+- Cloud alert ops now also cover recovery and shareable views:
+  - silence expiry automatically emits `alert_resurfaced`
+  - manual takeover timeout automatically emits `manual_takeover_escalated`
+  - cloud console worlds summary surfaces `resurfaced alerts` and `takeover escalated` counters
+  - `/worlds` persists `status` and `attention` filters in the URL and can copy the current filtered view as a shareable link
+  - `/jobs` persists `status` and `jobType` filters in the URL and can copy the current filtered view as a shareable link
