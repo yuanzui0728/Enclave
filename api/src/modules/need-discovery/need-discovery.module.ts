@@ -12,6 +12,8 @@ import { GroupMemberEntity } from '../chat/group-member.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { SystemConfigModule } from '../config/config.module';
+import { CyberAvatarRealWorldBriefEntity } from '../cyber-avatar/cyber-avatar-real-world-brief.entity';
+import { CyberAvatarRealWorldItemEntity } from '../cyber-avatar/cyber-avatar-real-world-item.entity';
 import { EventsModule } from '../events/events.module';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
@@ -37,6 +39,8 @@ import { NeedDiscoveryService } from './need-discovery.service';
       GroupMemberEntity,
       GroupMessageEntity,
       MessageEntity,
+      CyberAvatarRealWorldItemEntity,
+      CyberAvatarRealWorldBriefEntity,
       MomentPostEntity,
       MomentCommentEntity,
       MomentLikeEntity,

@@ -572,6 +572,10 @@ export class CyberAvatarService {
         return toggles.includeOwnerProfileUpdates;
       case 'location_update':
         return toggles.includeLocationUpdates;
+      case 'real_world_item':
+        return toggles.includeRealWorldItems;
+      case 'real_world_brief':
+        return toggles.includeRealWorldBriefs;
       default:
         return true;
     }
@@ -949,6 +953,9 @@ export class CyberAvatarService {
       (signalTypes.moment_post ?? 0) +
       (signalTypes.feed_post ?? 0) +
       (signalTypes.channel_post ?? 0);
+    const realWorldSignals =
+      (signalTypes.real_world_item ?? 0) +
+      (signalTypes.real_world_brief ?? 0);
 
     const liveState: CyberAvatarLiveState = {
       focus,
@@ -967,6 +974,8 @@ export class CyberAvatarService {
           ? '近期更偏向人与人互动。'
           : contentSignals > 0
             ? '近期更偏向公开表达。'
+            : realWorldSignals > 0
+              ? '近期开始持续吸收外部世界信息。'
             : current.liveState.socialTemperature,
       activeTopics: aggregation.topKeywords.slice(0, 6),
       openLoops: summaries.slice(-3),
@@ -1046,7 +1055,16 @@ export class CyberAvatarService {
   }
 
   private buildMissingSurfaces(covered: string[]) {
-    const expected = ['chat', 'group', 'moments', 'feed', 'channels', 'social', 'owner'];
+    const expected = [
+      'chat',
+      'group',
+      'moments',
+      'feed',
+      'channels',
+      'social',
+      'owner',
+      'real_world',
+    ];
     return expected.filter((item) => !covered.includes(item));
   }
 

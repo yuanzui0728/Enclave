@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  CyberAvatarRealWorldBrief,
+  CyberAvatarRealWorldItem,
   CyberAvatarRunDetail,
   CyberAvatarRunSummary,
   CyberAvatarRuntimeRules,
   CyberAvatarSignal,
+  NeedDiscoveryOverview,
 } from "@yinjie/contracts";
 import {
   Button,
@@ -64,6 +67,16 @@ function resolveSignalTone(status: CyberAvatarSignal["status"]) {
   return "muted" as const;
 }
 
+function resolveRealWorldItemTone(status: CyberAvatarRealWorldItem["status"]) {
+  if (status === "accepted") {
+    return "healthy" as const;
+  }
+  if (status === "filtered_low_score" || status === "filtered_blocked_source") {
+    return "warning" as const;
+  }
+  return "muted" as const;
+}
+
 export function CyberAvatarPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
@@ -74,6 +87,11 @@ export function CyberAvatarPage() {
   const overviewQuery = useQuery({
     queryKey: ["admin-cyber-avatar-overview", baseUrl],
     queryFn: () => adminApi.getCyberAvatarOverview(),
+  });
+
+  const needDiscoveryQuery = useQuery({
+    queryKey: ["admin-need-discovery-overview", baseUrl],
+    queryFn: () => adminApi.getNeedDiscoveryOverview(),
   });
 
   const overviewRulesJson = useMemo(
@@ -114,7 +132,14 @@ export function CyberAvatarPage() {
   });
 
   const runMutation = useMutation({
-    mutationFn: (mode: "incremental" | "deep_refresh" | "full_rebuild" | "project") => {
+    mutationFn: (
+      mode:
+        | "incremental"
+        | "deep_refresh"
+        | "full_rebuild"
+        | "project"
+        | "real_world",
+    ) => {
       if (mode === "incremental") {
         return adminApi.runCyberAvatarIncremental();
       }
@@ -124,6 +149,9 @@ export function CyberAvatarPage() {
       if (mode === "full_rebuild") {
         return adminApi.runCyberAvatarFullRebuild();
       }
+      if (mode === "real_world") {
+        return adminApi.runCyberAvatarRealWorldSync();
+      }
       return adminApi.runCyberAvatarProjection();
     },
     onSuccess: async (result) => {
@@ -131,6 +159,9 @@ export function CyberAvatarPage() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["admin-cyber-avatar-overview", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-need-discovery-overview", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["admin-cyber-avatar-run", baseUrl, result.id],
@@ -178,6 +209,7 @@ export function CyberAvatarPage() {
 
   const overview = overviewQuery.data;
   const profile = overview.profile;
+  const realWorld = overview.realWorld;
   const activeRun = runDetailQuery.data;
 
   function handleSaveRules() {
@@ -199,11 +231,11 @@ export function CyberAvatarPage() {
               Cyber Avatar
             </div>
             <h2 className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-              用户行为建模与 Prompt 投影
+              用户建模、真实世界回流与好友需求上游
             </h2>
             <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              当前阶段只实现“行为信号采集、画像增量刷新、深度重建、Prompt 投影”链路。
-              世界内交互和真实世界交互执行层暂时不在这里落地。
+              当前阶段已经把“行为信号采集、画像增量刷新、真实世界信息回流、Prompt
+              投影、好友需求发现上游”收进同一个工作台。对外交互执行层仍然暂不在这里落地。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -235,6 +267,8 @@ export function CyberAvatarPage() {
             label="最近构建时间"
             value={profile.lastBuiltAt ? formatDateTime(profile.lastBuiltAt) : "暂无"}
           />
+          <MetricCard label="外部回流条目" value={realWorld.stats.acceptedItems} />
+          <MetricCard label="活跃外部简报" value={realWorld.stats.activeBriefs} />
         </div>
       </Card>
 
@@ -349,6 +383,48 @@ export function CyberAvatarPage() {
 
           <Card className="bg-[color:var(--surface-console)]">
             <AdminSectionHeader
+              title="真实世界回流"
+              actions={
+                <StatusPill tone={realWorld.latestBrief ? "healthy" : "muted"}>
+                  {realWorld.latestBrief ? "有最新简报" : "暂无简报"}
+                </StatusPill>
+              }
+            />
+            <div className="mt-4 grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+              <AdminInfoRows
+                title="回流状态"
+                rows={[
+                  {
+                    label: "最近条目时间",
+                    value: formatDateTime(realWorld.stats.latestAcceptedAt),
+                  },
+                  {
+                    label: "最近简报时间",
+                    value: formatDateTime(realWorld.stats.latestBriefAt),
+                  },
+                  {
+                    label: "查询预览",
+                    value: realWorld.queryPreview.join(" / ") || "暂无",
+                  },
+                  {
+                    label: "Need Discovery 上游",
+                    value: realWorld.rules.feedNeedDiscoveryEnabled ? "已启用" : "已关闭",
+                  },
+                ]}
+              />
+              {realWorld.latestBrief ? (
+                <RealWorldBriefPanel brief={realWorld.latestBrief} />
+              ) : (
+                <AdminEmptyState
+                  title="还没有外部简报"
+                  description="先手动执行一次真实世界回流，后台会把外部条目整理成一份可读简报。"
+                />
+              )}
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <AdminSectionHeader
               title="规则与提示词配置"
               actions={<AdminDraftStatusPill ready dirty={isRulesDirty} />}
             />
@@ -407,6 +483,15 @@ export function CyberAvatarPage() {
                 {runMutation.isPending && runMutation.variables === "project"
                   ? "执行中..."
                   : "只重投影 Prompt"}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={runMutation.isPending}
+                onClick={() => runMutation.mutate("real_world")}
+              >
+                {runMutation.isPending && runMutation.variables === "real_world"
+                  ? "执行中..."
+                  : "拉一次真实世界信息"}
               </Button>
             </div>
           </Card>
@@ -474,6 +559,70 @@ export function CyberAvatarPage() {
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
+            <AdminSectionHeader title="最近外部条目" />
+            <div className="mt-4 space-y-3">
+              {realWorld.recentItems.length ? (
+                realWorld.recentItems.map((item) => (
+                  <AdminRecordCard
+                    key={item.id}
+                    title={item.title}
+                    badges={
+                      <StatusPill tone={resolveRealWorldItemTone(item.status)}>
+                        {item.status}
+                      </StatusPill>
+                    }
+                    meta={`${item.sourceName} · ${formatDateTime(item.publishedAt || item.capturedAt)}`}
+                    description={item.normalizedSummary}
+                    details={
+                      <AdminInfoRows
+                        title="条目详情"
+                        rows={[
+                          {
+                            label: "查询",
+                            value: item.queryText,
+                          },
+                          {
+                            label: "标签",
+                            value: item.topicTags.join(" / ") || "暂无",
+                          },
+                          {
+                            label: "综合分",
+                            value: item.compositeScore.toFixed(2),
+                          },
+                        ]}
+                      />
+                    }
+                  />
+                ))
+              ) : (
+                <AdminEmptyState
+                  title="还没有回流条目"
+                  description="拉取真实世界信息后，这里会显示被接纳或被过滤的外部条目。"
+                />
+              )}
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <AdminSectionHeader title="好友需求上游" />
+            <div className="mt-4">
+              {needDiscoveryQuery.isLoading ? (
+                <LoadingBlock label="正在读取好友需求发现概览..." />
+              ) : needDiscoveryQuery.isError &&
+                needDiscoveryQuery.error instanceof Error ? (
+                <ErrorBlock message={needDiscoveryQuery.error.message} />
+              ) : needDiscoveryQuery.data ? (
+                <NeedDiscoverySnapshotPanel detail={needDiscoveryQuery.data} />
+              ) : (
+                <AdminEmptyState
+                  title="需求发现概览暂不可用"
+                  description="后端 need-discovery 模块未返回数据。"
+                />
+              )}
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
             <AdminSectionHeader
               title="运行详情"
               actions={
@@ -512,6 +661,96 @@ function ProjectionBlock({ title, value }: { title: string; value: string }) {
       <div className="mt-3">
         <AdminCodeBlock value={value || "暂无"} />
       </div>
+    </div>
+  );
+}
+
+function RealWorldBriefPanel({ brief }: { brief: CyberAvatarRealWorldBrief }) {
+  return (
+    <div className="space-y-4">
+      <AdminInfoRows
+        title={brief.title}
+        rows={[
+          { label: "简报日期", value: brief.briefDate },
+          {
+            label: "相关条目",
+            value: brief.relatedItemIds.length ? String(brief.relatedItemIds.length) : "0",
+          },
+          {
+            label: "Query Hints",
+            value: brief.queryHints.join(" / ") || "暂无",
+          },
+        ]}
+      />
+      <AdminCodeBlock value={brief.summary} />
+      <RunSnapshotBlock
+        title="Bullet Points"
+        value={{ bulletPoints: brief.bulletPoints }}
+      />
+      <RunSnapshotBlock
+        title="Need Signals"
+        value={{ needSignals: brief.needSignals }}
+      />
+    </div>
+  );
+}
+
+function NeedDiscoverySnapshotPanel({
+  detail,
+}: {
+  detail: NeedDiscoveryOverview;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-2">
+        <MetricCard label="待处理候选" value={detail.stats.pendingCandidates} />
+        <MetricCard label="今日可生成上限" value={detail.config.shared.dailyCreationLimit} />
+      </div>
+      <AdminInfoRows
+        title="执行配置"
+        rows={[
+          {
+            label: "短周期模式",
+            value: `${detail.config.shortInterval.executionMode} / ${detail.config.shortInterval.intervalMinutes} 分钟`,
+          },
+          {
+            label: "日周期模式",
+            value: `${detail.config.daily.executionMode} / ${detail.config.daily.runAtHour
+              .toString()
+              .padStart(2, "0")}:${detail.config.daily.runAtMinute
+              .toString()
+              .padStart(2, "0")}`,
+          },
+          {
+            label: "允许领域",
+            value: [
+              detail.config.shared.allowMedical ? "医疗" : null,
+              detail.config.shared.allowLegal ? "法律" : null,
+              detail.config.shared.allowFinance ? "金融" : null,
+            ]
+              .filter(Boolean)
+              .join(" / ") || "全部关闭",
+          },
+        ]}
+      />
+      {detail.activeCandidates.length ? (
+        <div className="space-y-3">
+          {detail.activeCandidates.slice(0, 4).map((candidate) => (
+            <AdminRecordCard
+              key={candidate.id}
+              title={`${candidate.needCategory} · ${candidate.needKey}`}
+              badges={<StatusPill tone="muted">{candidate.status}</StatusPill>}
+              meta={`置信度 ${candidate.confidenceScore.toFixed(2)} · 优先级 ${candidate.priorityScore.toFixed(2)}`}
+              description={candidate.coverageGapSummary ?? "暂无覆盖缺口摘要"}
+            />
+          ))}
+        </div>
+      ) : (
+        <AdminEmptyState
+          title="当前没有活跃候选"
+          description="真实世界简报和用户行为会继续作为 need-discovery 的上游输入。"
+        />
+      )}
     </div>
   );
 }

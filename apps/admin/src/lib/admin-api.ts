@@ -1,5 +1,8 @@
 import type {
+  AdminCreateGameCatalogRequest,
+  AdminGameCatalogDetail,
   AdminGameCatalogItem,
+  AdminUpdateGameCatalogRequest,
   ActionConnectorSummary,
   ActionConnectorTestResult,
   ActionRunDetail,
@@ -257,6 +260,21 @@ export const adminApi = {
     ),
   getFriendCharacterIds: () => adminFetch<string[]>("/characters/friend-ids"),
   getGamesCatalog: () => adminFetch<AdminGameCatalogItem[]>("/games"),
+  getGameCatalogItem: (id: string) =>
+    adminFetch<AdminGameCatalogDetail>(`/games/${id}`),
+  createGameCatalogItem: (payload: AdminCreateGameCatalogRequest) =>
+    adminFetch<AdminGameCatalogDetail>("/games", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateGameCatalogItem: (
+    id: string,
+    payload: AdminUpdateGameCatalogRequest,
+  ) =>
+    adminFetch<AdminGameCatalogDetail>(`/games/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
   listCharacterPresets: () =>
     adminFetch<CharacterPresetSummary[]>("/characters/presets"),
   installCharacterPreset: (presetKey: string) =>

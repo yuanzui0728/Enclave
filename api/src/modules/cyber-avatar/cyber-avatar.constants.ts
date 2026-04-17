@@ -1,5 +1,7 @@
 import type {
   CyberAvatarAggregationPayload,
+  CyberAvatarInteractionPromptTemplates,
+  CyberAvatarInteractionRules,
   CyberAvatarProfilePayload,
   CyberAvatarPromptTemplates,
   CyberAvatarRuntimeRules,
@@ -10,6 +12,7 @@ export const CYBER_AVATAR_RUNTIME_RULES_CONFIG_KEY =
 
 export const CYBER_AVATAR_INCREMENTAL_SCAN_CRON = '*/5 * * * *';
 export const CYBER_AVATAR_DEEP_REFRESH_CRON = '30 4 * * *';
+export const CYBER_AVATAR_REAL_WORLD_SYNC_CRON = '17 * * * *';
 
 export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
   {
@@ -178,6 +181,61 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 {{liveState}}`,
   };
 
+export const DEFAULT_CYBER_AVATAR_INTERACTION_PROMPT_TEMPLATES: CyberAvatarInteractionPromptTemplates =
+  {
+    realWorldBriefPrompt: `你是“赛博分身真实世界情报整理器”。
+
+任务：根据赛博分身当前画像和本次收集到的真实世界信息，生成一份给世界主人使用的“外部世界简报 JSON”。
+
+要求：
+1. 只根据输入事实归纳，不要编造不存在的新闻或机会。
+2. 优先总结“对这个用户近期更有价值”的信息，而不是泛泛而谈。
+3. needSignals 用于提示后续“可能值得补什么好友角色位”，只写线索，不要直接生成角色。
+4. 必须严格输出合法 JSON，不要输出其他文字。
+
+赛博分身画像：
+{{profile}}
+
+本次真实世界条目：
+{{items}}
+
+输出 JSON：
+{
+  "title": "一句标题",
+  "summary": "一段摘要",
+  "bulletPoints": ["最多6条"],
+  "queryHints": ["最多4条，后续值得继续盯的查询方向"],
+  "needSignals": ["最多4条，对好友需求或外部支持缺口的线索"]
+}`,
+  };
+
+export const DEFAULT_CYBER_AVATAR_INTERACTION_RULES: CyberAvatarInteractionRules =
+  {
+    enabled: true,
+    realWorldSyncEnabled: true,
+    createSignals: true,
+    feedNeedDiscoveryEnabled: true,
+    providerMode: 'google_news_rss',
+    ownerQueryOverrides: [],
+    maxQueriesPerRun: 4,
+    defaultRecencyHours: 72,
+    maxItemsPerQuery: 4,
+    maxAcceptedItemsPerRun: 6,
+    maxItemsPerBrief: 4,
+    minimumItemScore: 0.58,
+    sourceAllowlist: [],
+    sourceBlocklist: [],
+    syncEveryHours: 6,
+    googleNews: {
+      editionLanguage: 'zh-CN',
+      editionRegion: 'CN',
+      editionCeid: 'CN:zh-Hans',
+      maxEntriesPerQuery: 8,
+      fallbackToMockOnEmpty: true,
+    },
+    promptTemplates: DEFAULT_CYBER_AVATAR_INTERACTION_PROMPT_TEMPLATES,
+  };
+
 export const DEFAULT_CYBER_AVATAR_RUNTIME_RULES: CyberAvatarRuntimeRules = {
   enabled: true,
   captureEnabled: true,
@@ -195,6 +253,8 @@ export const DEFAULT_CYBER_AVATAR_RUNTIME_RULES: CyberAvatarRuntimeRules = {
     includeFriendshipEvents: true,
     includeOwnerProfileUpdates: true,
     includeLocationUpdates: true,
+    includeRealWorldItems: true,
+    includeRealWorldBriefs: true,
   },
   scheduling: {
     minSignalsPerIncrementalRun: 3,
@@ -222,8 +282,11 @@ export const DEFAULT_CYBER_AVATAR_RUNTIME_RULES: CyberAvatarRuntimeRules = {
     friendship_event: 1.1,
     owner_profile_update: 1.6,
     location_update: 0.6,
+    real_world_item: 1.2,
+    real_world_brief: 1.4,
   },
   promptTemplates: DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES,
+  interaction: DEFAULT_CYBER_AVATAR_INTERACTION_RULES,
 };
 
 export function createEmptyCyberAvatarProfile(): CyberAvatarProfilePayload {
@@ -286,4 +349,3 @@ export function createEmptyCyberAvatarAggregation(): CyberAvatarAggregationPaylo
     earliestOccurredAt: null,
   };
 }
-

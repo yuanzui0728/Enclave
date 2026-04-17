@@ -22,8 +22,10 @@ import { CyberAvatarAdminService } from '../cyber-avatar/cyber-avatar-admin.serv
 import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
 import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
+import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
 import type { RealWorldSyncRulesValue } from '../real-world-sync/real-world-sync.types';
 import type { NeedDiscoveryConfig } from '../need-discovery/need-discovery.types';
+import type { FollowupRuntimeRulesValue } from '../followup-runtime/followup-runtime.types';
 import type {
   WechatSyncImportRequestValue,
   WechatSyncPreviewRequestValue,
@@ -44,6 +46,7 @@ export class AdminController {
     private readonly needDiscoveryService: NeedDiscoveryService,
     private readonly realWorldSyncService: RealWorldSyncService,
     private readonly schedulerService: SchedulerService,
+    private readonly followupRuntimeService: FollowupRuntimeService,
   ) {}
 
   @Get('stats')
@@ -74,6 +77,23 @@ export class AdminController {
   @Get('real-world-sync/overview')
   getRealWorldSyncOverview() {
     return this.realWorldSyncService.getOverview();
+  }
+
+  @Get('followup-runtime/overview')
+  getFollowupRuntimeOverview() {
+    return this.followupRuntimeService.getOverview();
+  }
+
+  @Get('followup-runtime/rules')
+  getFollowupRuntimeRules() {
+    return this.followupRuntimeService.getRules();
+  }
+
+  @Patch('followup-runtime/rules')
+  setFollowupRuntimeRules(
+    @Body() body: Partial<FollowupRuntimeRulesValue>,
+  ) {
+    return this.followupRuntimeService.setRules(body);
   }
 
   @Get('real-world-sync/characters/:id')

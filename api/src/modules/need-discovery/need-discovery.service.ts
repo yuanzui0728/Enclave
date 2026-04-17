@@ -20,6 +20,8 @@ import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { SearchActivityService } from '../chat/search-activity.service';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { CyberAvatarRealWorldBriefEntity } from '../cyber-avatar/cyber-avatar-real-world-brief.entity';
+import { CyberAvatarRealWorldItemEntity } from '../cyber-avatar/cyber-avatar-real-world-item.entity';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { MomentCommentEntity } from '../moments/moment-comment.entity';
@@ -70,6 +72,10 @@ export class NeedDiscoveryService {
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(MessageEntity)
     private readonly messageRepo: Repository<MessageEntity>,
+    @InjectRepository(CyberAvatarRealWorldItemEntity)
+    private readonly cyberAvatarRealWorldItemRepo: Repository<CyberAvatarRealWorldItemEntity>,
+    @InjectRepository(CyberAvatarRealWorldBriefEntity)
+    private readonly cyberAvatarRealWorldBriefRepo: Repository<CyberAvatarRealWorldBriefEntity>,
     @InjectRepository(MomentPostEntity)
     private readonly momentPostRepo: Repository<MomentPostEntity>,
     @InjectRepository(MomentCommentEntity)
@@ -472,6 +478,8 @@ export class NeedDiscoveryService {
       feedPosts,
       feedComments,
       feedInteractions,
+      realWorldItems,
+      realWorldBriefs,
     ] = await Promise.all([
       activeGroupIds.length
         ? this.groupMessageRepo.find({
@@ -535,6 +543,23 @@ export class NeedDiscoveryService {
         },
         order: { createdAt: 'DESC' },
         take: 12,
+      }),
+      this.cyberAvatarRealWorldItemRepo.find({
+        where: {
+          ownerId,
+          status: 'accepted',
+          capturedAt: Between(windowStartedAt, windowEndedAt),
+        },
+        order: { capturedAt: 'DESC', createdAt: 'DESC' },
+        take: 10,
+      }),
+      this.cyberAvatarRealWorldBriefRepo.find({
+        where: {
+          ownerId,
+          createdAt: Between(windowStartedAt, windowEndedAt),
+        },
+        order: { createdAt: 'DESC', updatedAt: 'DESC' },
+        take: 6,
       }),
     ]);
 
@@ -647,6 +672,25 @@ export class NeedDiscoveryService {
         });
       });
     }
+
+    realWorldItems.forEach((item) => {
+      entries.push({
+        timestamp: item.capturedAt,
+        text: `[真实世界回流][${formatTimestamp(item.capturedAt)}][${item.sourceName}] ${truncateText(
+          item.normalizedSummary,
+          120,
+        )}`,
+      });
+    });
+    realWorldBriefs.forEach((brief) => {
+      entries.push({
+        timestamp: brief.createdAt,
+        text: `[真实世界简报][${formatTimestamp(brief.createdAt)}] ${truncateText(
+          brief.summary,
+          140,
+        )}`,
+      });
+    });
 
     favoriteNotes
       .map((note) => ({

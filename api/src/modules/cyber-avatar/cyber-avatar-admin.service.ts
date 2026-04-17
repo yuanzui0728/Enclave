@@ -1,12 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
+import { CyberAvatarRealWorldService } from './cyber-avatar-real-world.service';
 import { CyberAvatarService } from './cyber-avatar.service';
 
 @Injectable()
 export class CyberAvatarAdminService {
-  constructor(private readonly cyberAvatar: CyberAvatarService) {}
+  constructor(
+    private readonly cyberAvatar: CyberAvatarService,
+    private readonly realWorld: CyberAvatarRealWorldService,
+    private readonly needDiscovery: NeedDiscoveryService,
+  ) {}
 
   async getOverview() {
-    return this.cyberAvatar.getOverview();
+    const [overview, realWorld, needDiscovery] = await Promise.all([
+      this.cyberAvatar.getOverview(),
+      this.realWorld.getOverview(),
+      this.needDiscovery.getOverview(),
+    ]);
+    return {
+      ...overview,
+      realWorld,
+      needDiscovery: {
+        config: needDiscovery.config,
+        stats: needDiscovery.stats,
+        recentRuns: needDiscovery.recentRuns.slice(0, 6),
+        activeCandidates: needDiscovery.activeCandidates.slice(0, 6),
+      },
+    };
   }
 
   async getRules() {
@@ -52,5 +72,17 @@ export class CyberAvatarAdminService {
 
   async runProjection() {
     return this.cyberAvatar.reprojectProfile({ trigger: 'manual' });
+  }
+
+  async listRealWorldItems(limit?: number) {
+    return this.realWorld.listItems(limit);
+  }
+
+  async listRealWorldBriefs(limit?: number) {
+    return this.realWorld.listBriefs(limit);
+  }
+
+  async runRealWorldSync() {
+    return this.realWorld.runSync({ trigger: 'manual' });
   }
 }

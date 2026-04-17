@@ -24,6 +24,7 @@ import { ActionRuntimeModule } from './modules/action-runtime/action-runtime.mod
 import { CyberAvatarModule } from './modules/cyber-avatar/cyber-avatar.module';
 import { NeedDiscoveryModule } from './modules/need-discovery/need-discovery.module';
 import { RealWorldSyncModule } from './modules/real-world-sync/real-world-sync.module';
+import { FollowupRuntimeModule } from './modules/followup-runtime/followup-runtime.module';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -48,6 +49,7 @@ import { ChatCustomStickerEntity } from './modules/chat/custom-sticker.entity';
 import { FeedPostEntity } from './modules/feed/feed-post.entity';
 import { FeedCommentEntity } from './modules/feed/feed-comment.entity';
 import { VideoChannelFollowEntity } from './modules/feed/video-channel-follow.entity';
+import { GameCatalogEntity } from './modules/games/game-catalog.entity';
 import { GameOwnerStateEntity } from './modules/games/game-owner-state.entity';
 import { WorldContextEntity } from './modules/world/world-context.entity';
 import { NarrativeArcEntity } from './modules/narrative/narrative-arc.entity';
@@ -64,6 +66,8 @@ import { AdminConversationReviewEntity } from './modules/admin/admin-conversatio
 import { ActionConnectorEntity } from './modules/action-runtime/action-connector.entity';
 import { ActionRunEntity } from './modules/action-runtime/action-run.entity';
 import { CyberAvatarProfileEntity } from './modules/cyber-avatar/cyber-avatar-profile.entity';
+import { CyberAvatarRealWorldBriefEntity } from './modules/cyber-avatar/cyber-avatar-real-world-brief.entity';
+import { CyberAvatarRealWorldItemEntity } from './modules/cyber-avatar/cyber-avatar-real-world-item.entity';
 import { CyberAvatarSignalEntity } from './modules/cyber-avatar/cyber-avatar-signal.entity';
 import { CyberAvatarRunEntity } from './modules/cyber-avatar/cyber-avatar-run.entity';
 import { NeedDiscoveryRunEntity } from './modules/need-discovery/need-discovery-run.entity';
@@ -71,6 +75,9 @@ import { NeedDiscoveryCandidateEntity } from './modules/need-discovery/need-disc
 import { CharacterRealWorldSignalEntity } from './modules/real-world-sync/character-real-world-signal.entity';
 import { CharacterRealWorldDigestEntity } from './modules/real-world-sync/character-real-world-digest.entity';
 import { CharacterRealWorldSyncRunEntity } from './modules/real-world-sync/character-real-world-sync-run.entity';
+import { FollowupRunEntity } from './modules/followup-runtime/followup-run.entity';
+import { FollowupOpenLoopEntity } from './modules/followup-runtime/followup-open-loop.entity';
+import { FollowupRecommendationEntity } from './modules/followup-runtime/followup-recommendation.entity';
 import {
   prepareDatabasePath,
   resolveApiPath,
@@ -113,6 +120,7 @@ import {
           FeedPostEntity,
           FeedCommentEntity,
           VideoChannelFollowEntity,
+          GameCatalogEntity,
           GameOwnerStateEntity,
           WorldContextEntity,
           NarrativeArcEntity,
@@ -129,6 +137,8 @@ import {
           ActionConnectorEntity,
           ActionRunEntity,
           CyberAvatarProfileEntity,
+          CyberAvatarRealWorldItemEntity,
+          CyberAvatarRealWorldBriefEntity,
           CyberAvatarSignalEntity,
           CyberAvatarRunEntity,
           NeedDiscoveryRunEntity,
@@ -136,6 +146,9 @@ import {
           CharacterRealWorldSignalEntity,
           CharacterRealWorldDigestEntity,
           CharacterRealWorldSyncRunEntity,
+          FollowupRunEntity,
+          FollowupOpenLoopEntity,
+          FollowupRecommendationEntity,
         ],
         synchronize: true,
       }),
@@ -159,6 +172,7 @@ import {
     ActionRuntimeModule,
     CyberAvatarModule,
     RealWorldSyncModule,
+    FollowupRuntimeModule,
     CloudRuntimeModule,
     SystemModule,
   ],

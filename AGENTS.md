@@ -97,7 +97,7 @@
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（43个，物理表保持兼容）
+## 数据库实体（46个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -113,7 +113,7 @@
 
 **视频号**：FeedPost · FeedComment · UserFeedInteraction · VideoChannelFollow
 
-**游戏**：GameOwnerState
+**游戏**：GameOwnerState · GameCatalogEntry
 
 **公众号**：OfficialAccount · OfficialAccountArticle · OfficialAccountFollow · OfficialAccountDelivery · OfficialAccountServiceMessage
 
@@ -123,7 +123,7 @@
 
 **需求发现**：NeedDiscoveryRun · NeedDiscoveryCandidate
 
-**赛博分身**：CyberAvatarProfile · CyberAvatarSignal · CyberAvatarRun
+**赛博分身**：CyberAvatarProfile · CyberAvatarSignal · CyberAvatarRun · CyberAvatarRealWorldItem · CyberAvatarRealWorldBrief
 
 **动作运行时**：ActionConnector · ActionRun
 
@@ -294,9 +294,9 @@
 
 - `dashboard-page.tsx`：实例级概览、Provider、诊断与运维入口
 - `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要，并支持名人预设分组筛选与批量安装
-- `games-page.tsx`：AI 游戏目录与来源结构页，查看分类、状态、来源与审核摘要
+- `games-page.tsx`：AI 游戏工作台，查看目录、来源、审核状态，并直接编辑游戏资料与新建草稿
 - `need-discovery-page.tsx`：角色缺口识别与自动加友配置页，查看短期/每日 cadence 规则、候选和运行记录
-- `cyber-avatar-page.tsx`：赛博分身工作台入口页，承接分身画像、信号与运行记录视图
+- `cyber-avatar-page.tsx`：赛博分身工作台入口页，承接分身画像、真实世界回流、好友需求上游、信号与运行记录视图
 - `real-world-sync-page.tsx`：真实世界联动页，查看每日外部信号、active digest、scene patch、现实发圈锚点与全局规则
 - `wechat-sync-page.tsx`：微信朋友同步页，接收本地授权导出的联系人资料与聊天摘要，生成角色预览并导入为好友
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
@@ -325,6 +325,9 @@
 ## 管理后台游戏目录路由
 
 - `GET /api/admin/games`
+- `GET /api/admin/games/:id`
+- `POST /api/admin/games`
+- `PATCH /api/admin/games/:id`
 
 ## 管理后台需求发现路由
 
@@ -338,12 +341,15 @@
 - `PATCH /api/admin/cyber-avatar/rules`
 - `GET /api/admin/cyber-avatar/profile`
 - `GET /api/admin/cyber-avatar/signals`
+- `GET /api/admin/cyber-avatar/real-world/items`
+- `GET /api/admin/cyber-avatar/real-world/briefs`
 - `GET /api/admin/cyber-avatar/runs`
 - `GET /api/admin/cyber-avatar/runs/:id`
 - `POST /api/admin/cyber-avatar/run/incremental`
 - `POST /api/admin/cyber-avatar/run/deep-refresh`
 - `POST /api/admin/cyber-avatar/run/full-rebuild`
 - `POST /api/admin/cyber-avatar/run/project`
+- `POST /api/admin/cyber-avatar/run/real-world`
 
 ## 管理后台动作运行时路由
 

@@ -1,10 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SystemConfigService } from '../config/config.service';
 import {
+  DEFAULT_CYBER_AVATAR_INTERACTION_RULES,
   CYBER_AVATAR_RUNTIME_RULES_CONFIG_KEY,
   DEFAULT_CYBER_AVATAR_RUNTIME_RULES,
 } from './cyber-avatar.constants';
 import type {
+  CyberAvatarInteractionGoogleNewsRules,
+  CyberAvatarInteractionPromptTemplates,
+  CyberAvatarInteractionRules,
   CyberAvatarMergeRules,
   CyberAvatarPromptTemplates,
   CyberAvatarRuntimeRules,
@@ -77,6 +81,14 @@ function normalizeSourceToggles(
     includeLocationUpdates: sanitizeBoolean(
       value?.includeLocationUpdates,
       fallback.includeLocationUpdates,
+    ),
+    includeRealWorldItems: sanitizeBoolean(
+      value?.includeRealWorldItems,
+      fallback.includeRealWorldItems,
+    ),
+    includeRealWorldBriefs: sanitizeBoolean(
+      value?.includeRealWorldBriefs,
+      fallback.includeRealWorldBriefs,
     ),
   };
 }
@@ -209,6 +221,129 @@ function normalizePromptTemplates(
   };
 }
 
+function normalizeInteractionPromptTemplates(
+  value: Partial<CyberAvatarInteractionPromptTemplates> | undefined,
+): CyberAvatarInteractionPromptTemplates {
+  const fallback = DEFAULT_CYBER_AVATAR_INTERACTION_RULES.promptTemplates;
+  return {
+    realWorldBriefPrompt: sanitizeText(
+      value?.realWorldBriefPrompt,
+      fallback.realWorldBriefPrompt,
+    ),
+  };
+}
+
+function normalizeInteractionGoogleNewsRules(
+  value: Partial<CyberAvatarInteractionGoogleNewsRules> | undefined,
+): CyberAvatarInteractionGoogleNewsRules {
+  const fallback = DEFAULT_CYBER_AVATAR_INTERACTION_RULES.googleNews;
+  return {
+    editionLanguage: sanitizeText(
+      value?.editionLanguage,
+      fallback.editionLanguage,
+    ),
+    editionRegion: sanitizeText(value?.editionRegion, fallback.editionRegion),
+    editionCeid: sanitizeText(value?.editionCeid, fallback.editionCeid),
+    maxEntriesPerQuery: sanitizeNumber(
+      value?.maxEntriesPerQuery,
+      fallback.maxEntriesPerQuery,
+      1,
+      50,
+    ),
+    fallbackToMockOnEmpty: sanitizeBoolean(
+      value?.fallbackToMockOnEmpty,
+      fallback.fallbackToMockOnEmpty,
+    ),
+  };
+}
+
+function normalizeInteractionRules(
+  value: Partial<CyberAvatarInteractionRules> | undefined,
+): CyberAvatarInteractionRules {
+  const fallback = DEFAULT_CYBER_AVATAR_INTERACTION_RULES;
+  return {
+    enabled: sanitizeBoolean(value?.enabled, fallback.enabled),
+    realWorldSyncEnabled: sanitizeBoolean(
+      value?.realWorldSyncEnabled,
+      fallback.realWorldSyncEnabled,
+    ),
+    createSignals: sanitizeBoolean(
+      value?.createSignals,
+      fallback.createSignals,
+    ),
+    feedNeedDiscoveryEnabled: sanitizeBoolean(
+      value?.feedNeedDiscoveryEnabled,
+      fallback.feedNeedDiscoveryEnabled,
+    ),
+    providerMode:
+      value?.providerMode === 'mock' || value?.providerMode === 'google_news_rss'
+        ? value.providerMode
+        : fallback.providerMode,
+    ownerQueryOverrides: Array.isArray(value?.ownerQueryOverrides)
+      ? value.ownerQueryOverrides
+          .map((item) => sanitizeText(item, ''))
+          .filter(Boolean)
+          .slice(0, 12)
+      : fallback.ownerQueryOverrides,
+    maxQueriesPerRun: sanitizeNumber(
+      value?.maxQueriesPerRun,
+      fallback.maxQueriesPerRun,
+      1,
+      12,
+    ),
+    defaultRecencyHours: sanitizeNumber(
+      value?.defaultRecencyHours,
+      fallback.defaultRecencyHours,
+      1,
+      24 * 30,
+    ),
+    maxItemsPerQuery: sanitizeNumber(
+      value?.maxItemsPerQuery,
+      fallback.maxItemsPerQuery,
+      1,
+      20,
+    ),
+    maxAcceptedItemsPerRun: sanitizeNumber(
+      value?.maxAcceptedItemsPerRun,
+      fallback.maxAcceptedItemsPerRun,
+      1,
+      30,
+    ),
+    maxItemsPerBrief: sanitizeNumber(
+      value?.maxItemsPerBrief,
+      fallback.maxItemsPerBrief,
+      1,
+      12,
+    ),
+    minimumItemScore: sanitizeNumber(
+      value?.minimumItemScore,
+      fallback.minimumItemScore,
+      0,
+      1,
+    ),
+    sourceAllowlist: Array.isArray(value?.sourceAllowlist)
+      ? value.sourceAllowlist
+          .map((item) => sanitizeText(item, ''))
+          .filter(Boolean)
+          .slice(0, 50)
+      : fallback.sourceAllowlist,
+    sourceBlocklist: Array.isArray(value?.sourceBlocklist)
+      ? value.sourceBlocklist
+          .map((item) => sanitizeText(item, ''))
+          .filter(Boolean)
+          .slice(0, 50)
+      : fallback.sourceBlocklist,
+    syncEveryHours: sanitizeNumber(
+      value?.syncEveryHours,
+      fallback.syncEveryHours,
+      1,
+      24 * 14,
+    ),
+    googleNews: normalizeInteractionGoogleNewsRules(value?.googleNews),
+    promptTemplates: normalizeInteractionPromptTemplates(value?.promptTemplates),
+  };
+}
+
 export function normalizeCyberAvatarRuntimeRules(
   input?: Partial<CyberAvatarRuntimeRules> | null,
 ): CyberAvatarRuntimeRules {
@@ -259,6 +394,7 @@ export function normalizeCyberAvatarRuntimeRules(
     mergeRules: normalizeMergeRules(input?.mergeRules),
     signalWeights,
     promptTemplates: normalizePromptTemplates(input?.promptTemplates),
+    interaction: normalizeInteractionRules(input?.interaction),
   };
 }
 
@@ -309,4 +445,3 @@ export class CyberAvatarRulesService {
     return normalized;
   }
 }
-

@@ -21,14 +21,17 @@ export type CyberAvatarSignalType =
   | "feed_interaction"
   | "friendship_event"
   | "owner_profile_update"
-  | "location_update";
+  | "location_update"
+  | "real_world_item"
+  | "real_world_brief";
 
 export type CyberAvatarRunMode =
   | "incremental"
   | "deep_refresh"
   | "full_rebuild"
   | "projection_only"
-  | "preview";
+  | "preview"
+  | "real_world_sync";
 
 export type CyberAvatarRunTrigger =
   | "event_flush"
@@ -37,6 +40,13 @@ export type CyberAvatarRunTrigger =
   | "backfill";
 
 export type CyberAvatarRunStatus = "success" | "partial" | "skipped" | "failed";
+export type CyberAvatarRealWorldItemStatus =
+  | "accepted"
+  | "filtered_duplicate"
+  | "filtered_low_score"
+  | "filtered_blocked_source";
+export type CyberAvatarRealWorldBriefStatus = "active" | "archived" | "failed";
+export type CyberAvatarRealWorldProviderMode = "mock" | "google_news_rss";
 
 export interface CyberAvatarLiveState {
   focus: string[];
@@ -160,6 +170,10 @@ export interface CyberAvatarPromptTemplates {
   projectionMemoryTemplate: string;
 }
 
+export interface CyberAvatarInteractionPromptTemplates {
+  realWorldBriefPrompt: string;
+}
+
 export interface CyberAvatarSourceToggles {
   includeDirectMessages: boolean;
   includeGroupMessages: boolean;
@@ -170,6 +184,8 @@ export interface CyberAvatarSourceToggles {
   includeFriendshipEvents: boolean;
   includeOwnerProfileUpdates: boolean;
   includeLocationUpdates: boolean;
+  includeRealWorldItems: boolean;
+  includeRealWorldBriefs: boolean;
 }
 
 export interface CyberAvatarSchedulingRules {
@@ -190,6 +206,34 @@ export interface CyberAvatarMergeRules {
   openLoopDecayDays: number;
 }
 
+export interface CyberAvatarInteractionGoogleNewsRules {
+  editionLanguage: string;
+  editionRegion: string;
+  editionCeid: string;
+  maxEntriesPerQuery: number;
+  fallbackToMockOnEmpty: boolean;
+}
+
+export interface CyberAvatarInteractionRules {
+  enabled: boolean;
+  realWorldSyncEnabled: boolean;
+  createSignals: boolean;
+  feedNeedDiscoveryEnabled: boolean;
+  providerMode: CyberAvatarRealWorldProviderMode;
+  ownerQueryOverrides: string[];
+  maxQueriesPerRun: number;
+  defaultRecencyHours: number;
+  maxItemsPerQuery: number;
+  maxAcceptedItemsPerRun: number;
+  maxItemsPerBrief: number;
+  minimumItemScore: number;
+  sourceAllowlist: string[];
+  sourceBlocklist: string[];
+  syncEveryHours: number;
+  googleNews: CyberAvatarInteractionGoogleNewsRules;
+  promptTemplates: CyberAvatarInteractionPromptTemplates;
+}
+
 export interface CyberAvatarRuntimeRules {
   enabled: boolean;
   captureEnabled: boolean;
@@ -202,6 +246,60 @@ export interface CyberAvatarRuntimeRules {
   mergeRules: CyberAvatarMergeRules;
   signalWeights: Record<string, number>;
   promptTemplates: CyberAvatarPromptTemplates;
+  interaction: CyberAvatarInteractionRules;
+}
+
+export interface CyberAvatarRealWorldItem {
+  id: string;
+  ownerId: string;
+  status: CyberAvatarRealWorldItemStatus;
+  providerMode: CyberAvatarRealWorldProviderMode;
+  queryText: string;
+  sourceName: string;
+  sourceUrl?: string | null;
+  title: string;
+  snippet: string;
+  normalizedSummary: string;
+  topicTags: string[];
+  credibilityScore: number;
+  relevanceScore: number;
+  compositeScore: number;
+  publishedAt?: string | null;
+  capturedAt: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CyberAvatarRealWorldBrief {
+  id: string;
+  ownerId: string;
+  status: CyberAvatarRealWorldBriefStatus;
+  briefDate: string;
+  title: string;
+  summary: string;
+  bulletPoints: string[];
+  queryHints: string[];
+  needSignals: string[];
+  relatedItemIds: string[];
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CyberAvatarRealWorldOverview {
+  rules: CyberAvatarInteractionRules;
+  stats: {
+    acceptedItems: number;
+    filteredItems: number;
+    activeBriefs: number;
+    latestAcceptedAt?: string | null;
+    latestBriefAt?: string | null;
+  };
+  recentItems: CyberAvatarRealWorldItem[];
+  recentBriefs: CyberAvatarRealWorldBrief[];
+  latestBrief: CyberAvatarRealWorldBrief | null;
+  queryPreview: string[];
 }
 
 export interface CyberAvatarOverview {
@@ -209,5 +307,5 @@ export interface CyberAvatarOverview {
   profile: CyberAvatarProfile;
   recentSignals: CyberAvatarSignal[];
   recentRuns: CyberAvatarRunSummary[];
+  realWorld: CyberAvatarRealWorldOverview;
 }
-
