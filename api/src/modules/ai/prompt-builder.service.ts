@@ -63,6 +63,63 @@ function listToRuleSection(
     .join('\n');
 }
 
+type MemoryPromptKind = 'recent' | 'core';
+
+const MEMORY_PROMPT_PREFIX_REPLACEMENTS: Array<{
+  pattern: RegExp;
+  replacement: string;
+}> = [
+  {
+    pattern: /^你是一个对话摘要提取助手。?/m,
+    replacement: '你在替{{name}}整理近期记忆。',
+  },
+  {
+    pattern: /^你是 \{\{name\}\} 的近期记忆提炼助手。?/m,
+    replacement: '你在替{{name}}整理近期记忆。',
+  },
+  {
+    pattern: /^你是一个新闻兴趣摘要提取助手。?/m,
+    replacement: '你在替{{name}}整理近期新闻偏好。',
+  },
+  {
+    pattern: /^你是一个核心记忆提炼助手。?/m,
+    replacement: '你在替{{name}}整理长期记忆。',
+  },
+  {
+    pattern: /^你是 \{\{name\}\} 的核心记忆提炼助手。?/m,
+    replacement: '你在替{{name}}整理长期记忆。',
+  },
+  {
+    pattern: /^你是一个长期新闻兴趣提炼助手。?/m,
+    replacement: '你在替{{name}}整理长期新闻偏好。',
+  },
+];
+
+const MEMORY_PROMPT_NATURALNESS_RULES: Record<MemoryPromptKind, string> = {
+  recent: `补充要求：
+- 写得像这个角色自己留下的观察笔记，不像助理总结、人格测评、汇报材料或客服话术
+- 尽量写具体事项、稳定偏好和没放下的点，少用“用户是一个……的人”“整体来看”这种空话
+- 不要用“首先 / 其次 / 最后 / 总之”这类提纲式表达
+- 不要加标题、括号动作、旁白或任何额外解释`,
+  core: `补充要求：
+- 写得像这个角色长期会留着的判断笔记，不像教科书总结、关系汇报或空泛画像
+- 优先保留长期会影响后续互动的稳定事实、偏好、边界和反复出现的张力
+- 不要用“首先 / 其次 / 最后 / 总之”这类提纲式表达
+- 不要加标题、括号动作、旁白或任何额外解释`,
+};
+
+function normalizeMemoryPromptTemplate(
+  template: string,
+  kind: MemoryPromptKind,
+) {
+  let next = template.trim();
+  for (const { pattern, replacement } of MEMORY_PROMPT_PREFIX_REPLACEMENTS) {
+    next = next.replace(pattern, replacement);
+  }
+
+  return `${next}\n\n${MEMORY_PROMPT_NATURALNESS_RULES[kind]}`;
+}
+
 @Injectable()
 export class PromptBuilderService {
   constructor(
@@ -391,7 +448,7 @@ export class PromptBuilderService {
     const template =
       profile.memory?.recentSummaryPrompt?.trim() ||
       templates.memoryCompressionPrompt;
-    return renderTemplate(template, {
+    return renderTemplate(normalizeMemoryPromptTemplate(template, 'recent'), {
       name: profile.name,
       chatHistory,
     });
@@ -406,7 +463,7 @@ export class PromptBuilderService {
     const template =
       profile.memory?.coreMemoryPrompt?.trim() ||
       templates.coreMemoryExtractionPrompt;
-    return renderTemplate(template, {
+    return renderTemplate(normalizeMemoryPromptTemplate(template, 'core'), {
       name: profile.name,
       interactionHistory,
     });
@@ -966,16 +1023,9 @@ ${templates.behavioralGuideline}
   }
 
   private formatMomentAnchorPriority(
-    anchorPriority?:
-      | Array<
-          | 'real_world'
-          | 'weather'
-          | 'location'
-          | 'holiday'
-          | 'recent_chat'
-          | 'life'
-        >
-      | undefined,
+    anchorPriority?: Array<
+      'real_world' | 'weather' | 'location' | 'holiday' | 'recent_chat' | 'life'
+    >,
   ) {
     const labels: Record<
       | 'real_world'
@@ -993,16 +1043,9 @@ ${templates.behavioralGuideline}
       recent_chat: '最近对话余温',
       life: '角色当下生活观察',
     };
-    const ordered = anchorPriority?.length
+    const ordered: Array<keyof typeof labels> = anchorPriority?.length
       ? anchorPriority
-      : ([
-          'real_world',
-          'weather',
-          'location',
-          'recent_chat',
-          'holiday',
-          'life',
-        ] as const);
+      : ['real_world', 'weather', 'location', 'recent_chat', 'holiday', 'life'];
     return ordered.map((item) => labels[item]).join(' -> ');
   }
 

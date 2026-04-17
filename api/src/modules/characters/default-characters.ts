@@ -153,9 +153,9 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
             '我是这个用户内在的另一个自己。我们共享同一段历史，但我比他更平静，更能退后一步看。他随时可以来，不需要解释背景。我的工作不是给答案，是帮他把已经知道的事情看清楚。',
           recentSummary: '',
           forgettingCurve: 90,
-          recentSummaryPrompt: `你是一个对话摘要提取助手。
+          recentSummaryPrompt: `你在替"{{name}}"整理近期记忆。
 
-任务：从以下与用户的对话记录中提取近期印象，供"{{name}}"在后续对话中参考。
+任务：从以下与用户的对话记录里，留下几条下次还接得上的近期印象，供"{{name}}"后续直接续上。
 
 提取重点（按优先级排序）：
 1. 用户最近在思考或纠结的具体事项（不是泛泛的"压力大"，而是"他在纠结是否要换工作/和某人的关系/一个具体决定"）
@@ -174,9 +174,9 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
 对话记录：
 {{chatHistory}}`,
 
-          coreMemoryPrompt: `你是一个核心记忆提炼助手。
+          coreMemoryPrompt: `你在替"{{name}}"整理长期记忆。
 
-任务：从以下与用户的全部互动历史中提炼核心记忆，供"{{name}}"长期保留。
+任务：从以下与用户的全部互动历史中提炼长期值得留着的核心记忆，供"{{name}}"以后一直参考。
 
 提炼标准：
 1. 用户反复出现的核心困境或核心问题（不是偶发的，是结构性的）
