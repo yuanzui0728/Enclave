@@ -82,6 +82,36 @@ const WECHAT_SYNC_LOCAL_VIEW_STATE_STORAGE_KEY =
   "yinjie.admin.wechat-sync.local-view-state.v1";
 const WECHAT_SYNC_ANNOTATIONS_STORAGE_KEY =
   "yinjie.admin.wechat-sync.annotations.v1";
+const WECHAT_SYNC_ANNOTATION_TEMPLATES_STORAGE_KEY =
+  "yinjie.admin.wechat-sync.annotation-templates.v1";
+
+const DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES: WechatSyncAnnotationTemplate[] =
+  [
+    {
+      id: "default-reliable-source",
+      label: "来源可信",
+      content: "聊天样本与联系人标签基本一致，当前资料可作为后续角色修订依据。",
+      source: "default",
+    },
+    {
+      id: "default-needs-review",
+      label: "需二次核验",
+      content: "聊天摘要和联系人画像仍需二次核验，暂不建议直接覆盖线上角色。",
+      source: "default",
+    },
+    {
+      id: "default-safe-restore",
+      label: "适合恢复线上",
+      content: "当前信息完整，适合直接恢复为线上角色并保留现有好友关系。",
+      source: "default",
+    },
+    {
+      id: "default-trim-summary",
+      label: "建议压缩摘要",
+      content: "摘要信息偏长，建议先压缩成关键事实，再执行重导入或版本恢复。",
+      source: "default",
+    },
+  ];
 
 export function WechatSyncPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
@@ -135,6 +165,9 @@ export function WechatSyncPage() {
   const [annotations, setAnnotations] = useState<WechatSyncAnnotationsState>(
     () => readWechatSyncAnnotationsState(),
   );
+  const [annotationTemplates, setAnnotationTemplates] = useState<
+    WechatSyncAnnotationTemplate[]
+  >(() => readWechatSyncAnnotationTemplates());
   const [selectedUsernames, setSelectedUsernames] = useState<string[]>([]);
   const [selectedPreviewUsernames, setSelectedPreviewUsernames] = useState<
     string[]
@@ -206,6 +239,10 @@ export function WechatSyncPage() {
   useEffect(() => {
     persistWechatSyncAnnotationsState(annotations);
   }, [annotations]);
+
+  useEffect(() => {
+    persistWechatSyncAnnotationTemplates(annotationTemplates);
+  }, [annotationTemplates]);
 
   const connectorHealthQuery = useQuery({
     queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
@@ -827,6 +864,78 @@ export function WechatSyncPage() {
     }));
   }
 
+  function addAnnotationTemplate(label: string, content: string) {
+    const normalizedLabel = label.trim();
+    const normalizedContent = content.trim();
+    if (!normalizedLabel || !normalizedContent) {
+      return false;
+    }
+    const exists = annotationTemplates.some(
+      (template) =>
+        template.label.trim().toLowerCase() === normalizedLabel.toLowerCase() &&
+        template.content.trim().toLowerCase() ===
+          normalizedContent.toLowerCase(),
+    );
+    if (exists) {
+      return false;
+    }
+    setAnnotationTemplates((current) => [
+      ...current,
+      {
+        id: createWechatSyncAnnotationTemplateId(),
+        label: normalizedLabel,
+        content: normalizedContent,
+        source: "custom",
+      },
+    ]);
+    return true;
+  }
+
+  function removeAnnotationTemplate(templateId: string) {
+    setAnnotationTemplates((current) =>
+      current.filter(
+        (template) =>
+          !(template.id === templateId && template.source === "custom"),
+      ),
+    );
+  }
+
+  function resetAnnotationTemplates() {
+    setAnnotationTemplates(DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES);
+  }
+
+  function applyAnnotationTemplateToRecord(
+    recordId: string,
+    template: WechatSyncAnnotationTemplate,
+  ) {
+    updateRecordAnnotation(
+      recordId,
+      appendWechatSyncAnnotationTemplate(
+        annotations.records[recordId] ?? "",
+        template,
+      ),
+    );
+  }
+
+  function applyAnnotationTemplateToSnapshot(
+    snapshot: WechatImportSnapshotLike,
+    characterId: string | null,
+    template: WechatSyncAnnotationTemplate,
+  ) {
+    updateSnapshotAnnotation(
+      snapshot,
+      characterId,
+      appendWechatSyncAnnotationTemplate(
+        resolveWechatSyncSnapshotAnnotation(
+          annotations.snapshots,
+          snapshot,
+          characterId,
+        ),
+        template,
+      ),
+    );
+  }
+
   function regeneratePreviewFromHistoryItem(item: WechatSyncHistoryItem) {
     const bundle = buildRollbackGuideContactBundle(item);
     reimportMutation.reset();
@@ -1182,6 +1291,7 @@ export function WechatSyncPage() {
                   )}
                   annotationCharacterId={rollbackGuideItem.character.id}
                   annotations={annotations.snapshots}
+                  annotationTemplates={annotationTemplates}
                   onRestorePreview={(snapshot) =>
                     restorePreviewFromSnapshot(snapshot, rollbackGuideItem)
                   }
@@ -1198,6 +1308,13 @@ export function WechatSyncPage() {
                       snapshot,
                       rollbackGuideItem.character.id,
                       value,
+                    )
+                  }
+                  onApplyAnnotationTemplate={(snapshot, template) =>
+                    applyAnnotationTemplateToSnapshot(
+                      snapshot,
+                      rollbackGuideItem.character.id,
+                      template,
                     )
                   }
                   confirmingSnapshotKey={
@@ -1820,6 +1937,21 @@ export function WechatSyncPage() {
                       )
                   : undefined
               }
+              annotationTemplates={annotationTemplates}
+              onAddAnnotationTemplate={addAnnotationTemplate}
+              onRemoveAnnotationTemplate={removeAnnotationTemplate}
+              onResetAnnotationTemplates={resetAnnotationTemplates}
+              onApplyRecordAnnotationTemplate={applyAnnotationTemplateToRecord}
+              onApplySnapshotAnnotationTemplate={
+                selectedHistoryItem
+                  ? (snapshot, template) =>
+                      applyAnnotationTemplateToSnapshot(
+                        snapshot,
+                        selectedHistoryItem.character.id,
+                        template,
+                      )
+                  : undefined
+              }
               onFocusSnapshotVersion={
                 selectedHistoryItem
                   ? (snapshot) =>
@@ -2113,6 +2245,12 @@ function HistoryDetailPanel({
   snapshotAnnotations,
   onRecordAnnotationChange,
   onSnapshotAnnotationChange,
+  annotationTemplates,
+  onAddAnnotationTemplate,
+  onRemoveAnnotationTemplate,
+  onResetAnnotationTemplates,
+  onApplyRecordAnnotationTemplate,
+  onApplySnapshotAnnotationTemplate,
   onFocusSnapshotVersion,
   focusedSnapshotKey,
   onRetryFriendship,
@@ -2157,6 +2295,18 @@ function HistoryDetailPanel({
   onSnapshotAnnotationChange?: (
     snapshot: WechatImportSnapshotLike,
     value: string,
+  ) => void;
+  annotationTemplates: WechatSyncAnnotationTemplate[];
+  onAddAnnotationTemplate: (label: string, content: string) => boolean;
+  onRemoveAnnotationTemplate: (templateId: string) => void;
+  onResetAnnotationTemplates: () => void;
+  onApplyRecordAnnotationTemplate: (
+    recordId: string,
+    template: WechatSyncAnnotationTemplate,
+  ) => void;
+  onApplySnapshotAnnotationTemplate?: (
+    snapshot: WechatImportSnapshotLike,
+    template: WechatSyncAnnotationTemplate,
   ) => void;
   onFocusSnapshotVersion?: (snapshot: WechatImportSnapshotLike) => void;
   focusedSnapshotKey?: string | null;
@@ -2363,6 +2513,7 @@ function HistoryDetailPanel({
             linkedVersionFilter={linkedAuditVersion}
             annotationCharacterId={item.character.id}
             annotations={snapshotAnnotations}
+            annotationTemplates={annotationTemplates}
             onRestorePreview={onRestoreSnapshotPreview}
             onRestoreLive={onRestoreSnapshotToLive}
             onConfirmRestoreLive={onConfirmSnapshotRestore}
@@ -2370,6 +2521,7 @@ function HistoryDetailPanel({
             onLoadToManualInput={onLoadSnapshotToManualInput}
             onLinkRelatedRecords={onLinkedAuditVersionChange}
             onAnnotationChange={onSnapshotAnnotationChange}
+            onApplyAnnotationTemplate={onApplySnapshotAnnotationTemplate}
             confirmingSnapshotKey={confirmingSnapshotKey}
             focusedSnapshotKey={focusedSnapshotKey}
             restoringSnapshotKey={
@@ -2379,16 +2531,18 @@ function HistoryDetailPanel({
         </div>
       ) : null}
 
-      {annotationEntries.length ? (
-        <div className="mt-4">
-          <ImportAnnotationSummaryPanel
-            characterName={item.character.name}
-            entries={annotationEntries}
-            onOpenRecord={openAnnotatedRecord}
-            onOpenSnapshot={openAnnotatedSnapshot}
-          />
-        </div>
-      ) : null}
+      <div className="mt-4">
+        <ImportAnnotationSummaryPanel
+          characterName={item.character.name}
+          entries={annotationEntries}
+          templates={annotationTemplates}
+          onAddTemplate={onAddAnnotationTemplate}
+          onRemoveTemplate={onRemoveAnnotationTemplate}
+          onResetTemplates={onResetAnnotationTemplates}
+          onOpenRecord={openAnnotatedRecord}
+          onOpenSnapshot={openAnnotatedSnapshot}
+        />
+      </div>
 
       {importChangeHistory.length ? (
         <div ref={changeHistorySectionRef} className="mt-4">
@@ -2410,6 +2564,8 @@ function HistoryDetailPanel({
             annotations={recordAnnotations}
             snapshotAnnotations={snapshotAnnotations}
             onAnnotationChange={onRecordAnnotationChange}
+            annotationTemplates={annotationTemplates}
+            onApplyAnnotationTemplate={onApplyRecordAnnotationTemplate}
             onReplaySnapshotPreview={onReplayChangeRecordPreview}
             onLoadSnapshotToManualInput={onLoadChangeRecordToManualInput}
           />
@@ -2602,11 +2758,19 @@ function HistoryDiffCard({
 function ImportAnnotationSummaryPanel({
   characterName,
   entries,
+  templates,
+  onAddTemplate,
+  onRemoveTemplate,
+  onResetTemplates,
   onOpenRecord,
   onOpenSnapshot,
 }: {
   characterName: string;
   entries: WechatSyncAnnotationSummaryEntry[];
+  templates: WechatSyncAnnotationTemplate[];
+  onAddTemplate: (label: string, content: string) => boolean;
+  onRemoveTemplate: (templateId: string) => void;
+  onResetTemplates: () => void;
   onOpenRecord?: (record: WechatImportChangeRecordLike) => void;
   onOpenSnapshot?: (snapshot: WechatImportSnapshotLike) => void;
 }) {
@@ -2746,6 +2910,12 @@ function ImportAnnotationSummaryPanel({
         ) : null}
 
         <div className="mt-4 space-y-3">
+          <AnnotationTemplateManager
+            templates={templates}
+            onAddTemplate={onAddTemplate}
+            onRemoveTemplate={onRemoveTemplate}
+            onResetTemplates={onResetTemplates}
+          />
           {filteredEntries.map((entry) => (
             <Card key={entry.key} className="bg-[color:var(--surface-card)]">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -2796,6 +2966,191 @@ function ImportAnnotationSummaryPanel({
   );
 }
 
+function AnnotationTemplateManager({
+  templates,
+  onAddTemplate,
+  onRemoveTemplate,
+  onResetTemplates,
+}: {
+  templates: WechatSyncAnnotationTemplate[];
+  onAddTemplate: (label: string, content: string) => boolean;
+  onRemoveTemplate: (templateId: string) => void;
+  onResetTemplates: () => void;
+}) {
+  const [label, setLabel] = useState("");
+  const [content, setContent] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const customCount = useMemo(
+    () => templates.filter((template) => template.source === "custom").length,
+    [templates],
+  );
+
+  useEffect(() => {
+    if (!feedback) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      setFeedback((current) => (current === feedback ? "" : current));
+    }, 2600);
+    return () => window.clearTimeout(timeoutId);
+  }, [feedback]);
+
+  function submitTemplate() {
+    const created = onAddTemplate(label, content);
+    if (!created) {
+      setFeedback("模板未新增，可能是标签/内容为空，或与现有模板重复。");
+      return;
+    }
+    setLabel("");
+    setContent("");
+    setFeedback("已新增自定义批注模板。");
+  }
+
+  return (
+    <Card className="bg-[color:var(--surface-card)]">
+      {feedback ? (
+        <AdminActionFeedback
+          className="mb-4"
+          tone="success"
+          title="模板已更新"
+          description={feedback}
+        />
+      ) : null}
+
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+            批注模板 / 常用标签
+          </div>
+          <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            默认模板 {templates.length - customCount} 条，自定义模板{" "}
+            {customCount}{" "}
+            条。点击下方模板后，可以在记录批注和版本批注里一键追加。
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={onResetTemplates}>
+            恢复默认模板
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="space-y-3">
+          <AdminTextField
+            label="模板标签"
+            value={label}
+            onChange={setLabel}
+            placeholder="例如：需二次核验"
+          />
+          <AdminTextArea
+            label="模板内容"
+            value={content}
+            onChange={setContent}
+            textareaClassName="min-h-24"
+            placeholder="例如：聊天摘要和联系人画像仍需二次核验，暂不建议直接覆盖线上角色。"
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={submitTemplate}
+              disabled={!label.trim() || !content.trim()}
+            >
+              新增自定义模板
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setLabel("");
+                setContent("");
+              }}
+              disabled={!label && !content}
+            >
+              清空输入
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {templates.map((template) => (
+            <div
+              key={template.id}
+              className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-[color:var(--text-primary)]">
+                      {template.label}
+                    </span>
+                    <StatusPill
+                      tone={
+                        template.source === "default" ? "healthy" : "warning"
+                      }
+                    >
+                      {template.source === "default"
+                        ? "默认模板"
+                        : "自定义模板"}
+                    </StatusPill>
+                  </div>
+                  <div className="leading-6">{template.content}</div>
+                </div>
+                {template.source === "custom" ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onRemoveTemplate(template.id)}
+                  >
+                    删除
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function AnnotationTemplateQuickActions({
+  templates,
+  onApplyTemplate,
+}: {
+  templates: WechatSyncAnnotationTemplate[];
+  onApplyTemplate?: (template: WechatSyncAnnotationTemplate) => void;
+}) {
+  if (!templates.length) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+        常用模板
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {templates.map((template) => (
+          <Button
+            key={template.id}
+            variant="secondary"
+            size="sm"
+            onClick={() => onApplyTemplate?.(template)}
+            disabled={!onApplyTemplate}
+          >
+            {template.label}
+          </Button>
+        ))}
+      </div>
+      <div className="text-xs leading-5 text-[color:var(--text-muted)]">
+        点击模板会把对应内容追加到当前批注里，重复内容不会重复插入。
+      </div>
+    </div>
+  );
+}
+
 function ImportChangeHistoryList({
   characterId,
   characterName,
@@ -2808,11 +3163,13 @@ function ImportChangeHistoryList({
   shareUrl,
   annotations,
   snapshotAnnotations,
+  annotationTemplates,
   onSearchChange,
   onModeFilterChange,
   onExpandedRecordIdChange,
   onLinkedVersionFilterChange,
   onAnnotationChange,
+  onApplyAnnotationTemplate,
   onReplaySnapshotPreview,
   onLoadSnapshotToManualInput,
 }: {
@@ -2827,6 +3184,7 @@ function ImportChangeHistoryList({
   shareUrl: string;
   annotations: Record<string, string>;
   snapshotAnnotations: Record<string, string>;
+  annotationTemplates: WechatSyncAnnotationTemplate[];
   onSearchChange: (value: string) => void;
   onModeFilterChange: (
     value: "all" | "preview_import" | "snapshot_restore",
@@ -2834,6 +3192,10 @@ function ImportChangeHistoryList({
   onExpandedRecordIdChange: (value: string | null) => void;
   onLinkedVersionFilterChange?: (value: number | null) => void;
   onAnnotationChange: (recordId: string, value: string) => void;
+  onApplyAnnotationTemplate?: (
+    recordId: string,
+    template: WechatSyncAnnotationTemplate,
+  ) => void;
   onReplaySnapshotPreview?: (snapshot: WechatImportSnapshotLike) => void;
   onLoadSnapshotToManualInput?: (snapshot: WechatImportSnapshotLike) => void;
 }) {
@@ -3296,6 +3658,12 @@ function ImportChangeHistoryList({
                     textareaClassName="min-h-24"
                     placeholder="补充这条导入记录的判断、风险、回放备注。"
                   />
+                  <AnnotationTemplateQuickActions
+                    templates={annotationTemplates}
+                    onApplyTemplate={(template) =>
+                      onApplyAnnotationTemplate?.(record.id, template)
+                    }
+                  />
                   {record.diffs?.length ? (
                     <div className="space-y-3">
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
@@ -3342,6 +3710,7 @@ function ImportSnapshotVersionList({
   linkedVersionFilter,
   annotationCharacterId,
   annotations,
+  annotationTemplates,
   onRestorePreview,
   onRestoreLive,
   onConfirmRestoreLive,
@@ -3349,6 +3718,7 @@ function ImportSnapshotVersionList({
   onLoadToManualInput,
   onLinkRelatedRecords,
   onAnnotationChange,
+  onApplyAnnotationTemplate,
   confirmingSnapshotKey,
   focusedSnapshotKey,
   restoringSnapshotKey,
@@ -3360,6 +3730,7 @@ function ImportSnapshotVersionList({
   linkedVersionFilter?: number | null;
   annotationCharacterId?: string | null;
   annotations: Record<string, string>;
+  annotationTemplates: WechatSyncAnnotationTemplate[];
   onRestorePreview?: (snapshot: WechatImportSnapshotLike) => void;
   onRestoreLive?: (snapshot: WechatImportSnapshotLike) => void;
   onConfirmRestoreLive?: () => void;
@@ -3369,6 +3740,10 @@ function ImportSnapshotVersionList({
   onAnnotationChange?: (
     snapshot: WechatImportSnapshotLike,
     value: string,
+  ) => void;
+  onApplyAnnotationTemplate?: (
+    snapshot: WechatImportSnapshotLike,
+    template: WechatSyncAnnotationTemplate,
   ) => void;
   confirmingSnapshotKey?: string | null;
   focusedSnapshotKey?: string | null;
@@ -3734,6 +4109,14 @@ function ImportSnapshotVersionList({
                     textareaClassName="min-h-24"
                     placeholder="记录这个版本的判断、来源可信度或恢复备注。"
                   />
+                  <div className="mt-4">
+                    <AnnotationTemplateQuickActions
+                      templates={annotationTemplates}
+                      onApplyTemplate={(template) =>
+                        onApplyAnnotationTemplate?.(snapshot, template)
+                      }
+                    />
+                  </div>
                 </div>
                 {awaitingConfirmation ? (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
@@ -4451,6 +4834,13 @@ type WechatSyncViewState = {
 
 type WechatSyncAnnotationFilter = "all" | "annotated" | "unannotated";
 
+type WechatSyncAnnotationTemplate = {
+  id: string;
+  label: string;
+  content: string;
+  source: "default" | "custom";
+};
+
 type WechatSyncAnnotationsState = {
   records: Record<string, string>;
   snapshots: Record<string, string>;
@@ -4596,6 +4986,46 @@ function persistWechatSyncAnnotationsState(state: WechatSyncAnnotationsState) {
   storage.setItem(WECHAT_SYNC_ANNOTATIONS_STORAGE_KEY, JSON.stringify(state));
 }
 
+function readWechatSyncAnnotationTemplates() {
+  const storage = getWechatSyncBrowserStorage();
+  if (!storage) {
+    return DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES;
+  }
+  const raw = storage.getItem(WECHAT_SYNC_ANNOTATION_TEMPLATES_STORAGE_KEY);
+  if (!raw) {
+    return DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return [
+      ...DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES,
+      ...normalizeWechatSyncAnnotationTemplates(parsed),
+    ];
+  } catch {
+    return DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES;
+  }
+}
+
+function persistWechatSyncAnnotationTemplates(
+  templates: WechatSyncAnnotationTemplate[],
+) {
+  const storage = getWechatSyncBrowserStorage();
+  if (!storage) {
+    return;
+  }
+  const customTemplates = templates
+    .filter((template) => template.source === "custom")
+    .map((template) => ({
+      id: template.id,
+      label: template.label,
+      content: template.content,
+    }));
+  storage.setItem(
+    WECHAT_SYNC_ANNOTATION_TEMPLATES_STORAGE_KEY,
+    JSON.stringify(customTemplates),
+  );
+}
+
 function normalizeWechatSyncAnnotationMap(value: unknown) {
   if (!isRecord(value)) {
     return {};
@@ -4605,6 +5035,31 @@ function normalizeWechatSyncAnnotationMap(value: unknown) {
       .map(([key, entry]) => [key, readString(entry)])
       .filter(([, entry]) => entry.length > 0),
   );
+}
+
+function normalizeWechatSyncAnnotationTemplates(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((entry) => {
+      if (!isRecord(entry)) {
+        return null;
+      }
+      const id = readString(entry.id);
+      const label = readString(entry.label);
+      const content = readString(entry.content);
+      if (!id || !label || !content) {
+        return null;
+      }
+      return {
+        id,
+        label,
+        content,
+        source: "custom" as const,
+      };
+    })
+    .filter(Boolean) as WechatSyncAnnotationTemplate[];
 }
 
 function syncWechatSyncViewStateToUrl(state: WechatSyncViewState) {
@@ -4742,6 +5197,33 @@ function resolveWechatSyncSnapshotAnnotation(
       buildWechatSyncSnapshotAnnotationKey(snapshot, characterId ?? null)
     ] ?? ""
   );
+}
+
+function formatWechatSyncAnnotationTemplateContent(
+  template: WechatSyncAnnotationTemplate,
+) {
+  return template.content.trim() === template.label.trim()
+    ? `【${template.label.trim()}】`
+    : `【${template.label.trim()}】${template.content.trim()}`;
+}
+
+function appendWechatSyncAnnotationTemplate(
+  currentValue: string,
+  template: WechatSyncAnnotationTemplate,
+) {
+  const normalizedCurrent = currentValue.trim();
+  const nextLine = formatWechatSyncAnnotationTemplateContent(template);
+  if (!nextLine.trim()) {
+    return normalizedCurrent;
+  }
+  if (normalizedCurrent.includes(nextLine)) {
+    return normalizedCurrent;
+  }
+  return normalizedCurrent ? `${normalizedCurrent}\n${nextLine}` : nextLine;
+}
+
+function createWechatSyncAnnotationTemplateId() {
+  return `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 type WechatSyncAuditExportOptions = {
