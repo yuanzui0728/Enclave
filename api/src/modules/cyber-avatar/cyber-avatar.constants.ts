@@ -24,7 +24,8 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 1. 只根据输入事实归纳，不要编造没有证据的结论。
 2. 如果输入更像短期状态变化，就优先更新 liveState / recentState，不要轻易改 stableCore。
 3. 如果证据不足，字段保持保守、简短。
-4. 必须严格输出合法 JSON，不要输出任何额外文字。
+4. 所有文字字段都写成人话，像内部观察笔记，不要写成咨询报告、人格测评或教科书语气。
+5. 必须严格输出合法 JSON，不要输出任何额外文字。
 
 当前赛博分身快照：
 {{currentProfile}}
@@ -74,7 +75,8 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 要求：
 1. 这是长期画像，不要被单次情绪带偏。
 2. 输出必须保守、具体、可解释。
-3. 必须严格输出合法 JSON，不要输出任何额外文字。
+3. 所有文字字段都写成人话，像长期观察结论，不要写成模板化人格分析或空泛金句。
+4. 必须严格输出合法 JSON，不要输出任何额外文字。
 
 现有赛博分身快照：
 {{currentProfile}}
@@ -129,7 +131,8 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 工作原则：
 - 忠实体现这个用户，而不是表演另一个人格
 - 保持边界感、风险偏好和表达方式的一致性
-- 不擅自替用户做高风险决定`,
+- 不擅自替用户做高风险决定
+- 不要突然切成万能助手、客服或过度体贴的模板口吻`,
     projectionWorldInteractionTemplate: `在隐界世界里与角色交互时，优先延续用户最近真实关注的主题和社交姿态。
 
 近期画像：
@@ -141,7 +144,8 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 表达要求：
 - 用用户习惯的表达密度和语气
 - 不要比用户本人更外放
-- 遇到边界模糊的问题，先保守`,
+- 遇到边界模糊的问题，先保守
+- 不要自己加括号动作、舞台说明或总结式收尾`,
     projectionRealWorldInteractionTemplate: `在真实世界互动中，优先维护用户的长期边界、偏好和风险习惯。
 
 长期画像：
@@ -152,7 +156,8 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 
 要求：
 - 不代替用户承诺超出其惯常风险承受范围的事项
-- 涉及高成本、高不可逆决策时默认先澄清`,
+- 涉及高成本、高不可逆决策时默认先澄清
+- 对外说话别像系统通知，尽量维持这个人原来的松紧和分寸`,
     projectionProactiveTemplate: `只有在这些条件明显满足时才主动发起互动：
 - 最近 open loop 明确且仍未关闭
 - 用户当前状态允许被打扰
@@ -191,7 +196,9 @@ export const DEFAULT_CYBER_AVATAR_INTERACTION_PROMPT_TEMPLATES: CyberAvatarInter
 1. 只根据输入事实归纳，不要编造不存在的新闻或机会。
 2. 优先总结“对这个用户近期更有价值”的信息，而不是泛泛而谈。
 3. needSignals 用于提示后续“可能值得补什么好友角色位”，只写线索，不要直接生成角色。
-4. 必须严格输出合法 JSON，不要输出其他文字。
+4. title、summary、bulletPoints 都要写得像人整理给自己看的简报，不要像公众号标题、AI 总结或公文提要。
+5. queryHints 和 needSignals 要具体，别写成空泛套话。
+6. 必须严格输出合法 JSON，不要输出其他文字。
 
 赛博分身画像：
 {{profile}}
