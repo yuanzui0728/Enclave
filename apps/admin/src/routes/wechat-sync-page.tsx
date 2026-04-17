@@ -228,6 +228,18 @@ export function WechatSyncPage() {
       ) ?? filteredHistoryItems[0]
     );
   }, [filteredHistoryItems, selectedHistoryCharacterId]);
+  const selectedHistoryPreviewItem = useMemo(() => {
+    if (!selectedHistoryItem) {
+      return null;
+    }
+    return findPreviewItemForHistoryItem(selectedHistoryItem, previewItems);
+  }, [previewItems, selectedHistoryItem]);
+  const selectedHistoryPreviewValidationIssues = useMemo(() => {
+    if (!selectedHistoryPreviewItem) {
+      return [];
+    }
+    return previewValidation.get(selectedHistoryPreviewItem.contact.username) ?? [];
+  }, [previewValidation, selectedHistoryPreviewItem]);
 
   const scanMutation = useMutation({
     mutationFn: () => scanWechatConnector(connectorSettings.baseUrl),
@@ -322,6 +334,42 @@ export function WechatSyncPage() {
       adminApi.rollbackWechatSyncImport(item.character.id),
     onSuccess: async (_, item) => {
       setRollbackGuideItem(item);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["admin-wechat-sync-history", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters-crud", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-character-friend-ids", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-system-status", baseUrl],
+        }),
+      ]);
+    },
+  });
+  const reimportMutation = useMutation({
+    mutationFn: (item: WechatSyncPreviewItem) =>
+      adminApi.importWechatSync({
+        items: [
+          {
+            contact: item.contact,
+            draftCharacter: item.draftCharacter,
+            autoAddFriend,
+            seedMoments,
+          },
+        ],
+      }),
+    onSuccess: async (result) => {
+      setRollbackGuideItem(null);
+      if (result.items[0]) {
+        setSelectedHistoryCharacterId(result.items[0].character.id);
+      }
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["admin-wechat-sync-history", baseUrl],
@@ -474,6 +522,7 @@ export function WechatSyncPage() {
 
   function regeneratePreviewFromHistoryItem(item: WechatSyncHistoryItem) {
     const bundle = buildRollbackGuideContactBundle(item);
+    reimportMutation.reset();
     setManualBundleError(null);
     setManualBundleJson(JSON.stringify([bundle], null, 2));
     setPreviewItems([]);
@@ -1033,6 +1082,9 @@ export function WechatSyncPage() {
         {rollbackMutation.isError && rollbackMutation.error instanceof Error ? (
           <ErrorBlock className="mt-4" message={rollbackMutation.error.message} />
         ) : null}
+        {reimportMutation.isError && reimportMutation.error instanceof Error ? (
+          <ErrorBlock className="mt-4" message={reimportMutation.error.message} />
+        ) : null}
         {retryFriendshipMutation.isSuccess ? (
           <AdminActionFeedback
             className="mt-4"
@@ -1051,6 +1103,13 @@ export function WechatSyncPage() {
             tone="success"
             title="导入已回滚"
             description="该微信同步角色已删除，关联会话、好友关系和内容也一并清理；下方保留了重新导入引导。"
+          />
+        ) : null}
+        {reimportMutation.isSuccess ? (
+          <ImportResultPanel
+            result={reimportMutation.data}
+            title="再导入完成"
+            description={`已按当前预览重新导入 ${reimportMutation.data.importedCount} 个角色。`}
           />
         ) : null}
 
@@ -1138,7 +1197,12 @@ export function WechatSyncPage() {
             </div>
             <HistoryDetailPanel
               item={selectedHistoryItem}
+              matchedPreviewItem={selectedHistoryPreviewItem}
+              matchedPreviewValidationIssues={
+                selectedHistoryPreviewValidationIssues
+              }
               previewPending={previewMutation.isPending}
+              reimportPending={reimportMutation.isPending}
               retryPending={
                 retryFriendshipMutation.isPending &&
                 retryFriendshipMutation.variables === selectedHistoryItem?.character.id
@@ -1150,6 +1214,11 @@ export function WechatSyncPage() {
               onRegeneratePreview={
                 selectedHistoryItem
                   ? () => regeneratePreviewFromHistoryItem(selectedHistoryItem)
+                  : undefined
+              }
+              onReimportPreview={
+                selectedHistoryPreviewItem
+                  ? () => reimportMutation.mutate(selectedHistoryPreviewItem)
                   : undefined
               }
               onRetryFriendship={
@@ -1185,13 +1254,21 @@ export function WechatSyncPage() {
   );
 }
 
-function ImportResultPanel({ result }: { result: WechatSyncImportResponse }) {
+function ImportResultPanel({
+  result,
+  title = "导入完成",
+  description = `本轮共导入 ${result.importedCount} 个角色。`,
+}: {
+  result: WechatSyncImportResponse;
+  title?: string;
+  description?: string;
+}) {
   return (
     <div className="mt-4 space-y-4">
       <AdminActionFeedback
         tone="success"
-        title="导入完成"
-        description={`本轮共导入 ${result.importedCount} 个角色。`}
+        title={title}
+        description={description}
       />
 
       {result.items.length ? (
@@ -1358,19 +1435,27 @@ function WechatSyncHistoryCard({
 
 function HistoryDetailPanel({
   item,
+  matchedPreviewItem,
+  matchedPreviewValidationIssues,
   previewPending,
+  reimportPending,
   retryPending,
   rollbackPending,
   onRegeneratePreview,
+  onReimportPreview,
   onRetryFriendship,
   onRollback,
   onLoadTemplateToManualInput,
 }: {
   item: WechatSyncHistoryItem | null;
+  matchedPreviewItem: WechatSyncPreviewItem | null;
+  matchedPreviewValidationIssues: string[];
   previewPending: boolean;
+  reimportPending: boolean;
   retryPending: boolean;
   rollbackPending: boolean;
   onRegeneratePreview?: () => void;
+  onReimportPreview?: () => void;
   onRetryFriendship?: () => void;
   onRollback?: () => void;
   onLoadTemplateToManualInput?: () => void;
@@ -1455,9 +1540,87 @@ function HistoryDetailPanel({
         </div>
       </div>
 
+      <div className="mt-4 space-y-4">
+        {matchedPreviewItem ? (
+          <>
+            <AdminCallout
+              title={
+                matchedPreviewValidationIssues.length
+                  ? "当前已有对应预览，但还不能直接再导入"
+                  : hasHistoryPreviewChanges(item, matchedPreviewItem)
+                    ? "当前预览与线上角色存在差异"
+                    : "当前预览与线上角色已经一致"
+              }
+              tone={
+                matchedPreviewValidationIssues.length
+                  ? "warning"
+                  : hasHistoryPreviewChanges(item, matchedPreviewItem)
+                    ? "info"
+                    : "success"
+              }
+              description={
+                matchedPreviewValidationIssues.length ? (
+                  <div className="space-y-2">
+                    <p>当前已经命中了这条历史项对应的预览草稿，但还有未通过校验的字段，暂时不能直接再导入。</p>
+                    <p>请先在上方“角色预览”卡片里补齐缺失字段，再回来执行一键再导入。</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p>这条历史项已经和当前预览草稿关联上了。下面会按“当前线上角色 / 当前预览草稿”展示字段差异。</p>
+                    <p>确认无误后，可以直接按当前预览重新导入，后台会按同一个 `sourceKey` 更新角色与好友资料。</p>
+                  </div>
+                )
+              }
+            />
+
+            <div>
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                当前线上角色 / 当前预览草稿
+              </div>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {buildHistoryPreviewDiffs(item, matchedPreviewItem).map((diff) => (
+                  <HistoryDiffCard key={diff.label} diff={diff} />
+                ))}
+              </div>
+            </div>
+
+            {matchedPreviewValidationIssues.length ? (
+              <div className="space-y-2">
+                {matchedPreviewValidationIssues.map((issue) => (
+                  <div
+                    key={issue}
+                    className="rounded-2xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-[color:var(--text-secondary)]"
+                  >
+                    {issue}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <AdminCallout
+            title="当前还没有这条历史项的再导入预览"
+            tone="muted"
+            description="点“一键重新生成预览”后，这里会自动关联对应草稿，并显示字段差异与再导入按钮。"
+          />
+        )}
+      </div>
+
       <div className="mt-4 flex flex-wrap gap-2">
         <Button
           variant="primary"
+          size="sm"
+          onClick={onReimportPreview}
+          disabled={
+            reimportPending ||
+            !onReimportPreview ||
+            matchedPreviewValidationIssues.length > 0
+          }
+        >
+          {reimportPending ? "再导入中..." : "按当前预览重新导入"}
+        </Button>
+        <Button
+          variant="secondary"
           size="sm"
           onClick={onRegeneratePreview}
           disabled={previewPending || !onRegeneratePreview}
@@ -1490,6 +1653,49 @@ function HistoryDetailPanel({
         </Button>
       </div>
     </Card>
+  );
+}
+
+function HistoryDiffCard({
+  diff,
+}: {
+  diff: ReturnType<typeof buildHistoryPreviewDiffs>[number];
+}) {
+  return (
+    <div
+      className={`rounded-2xl border px-4 py-3 ${
+        diff.changed
+          ? "border-sky-200 bg-sky-50/80"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+          {diff.label}
+        </div>
+        <StatusPill tone={diff.changed ? "warning" : "healthy"}>
+          {diff.changed ? "有变化" : "一致"}
+        </StatusPill>
+      </div>
+      <div className="mt-3 grid gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+            当前线上角色
+          </div>
+          <div className="mt-1 rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+            {diff.currentValue}
+          </div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+            当前预览草稿
+          </div>
+          <div className="mt-1 rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+            {diff.nextValue}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -2027,6 +2233,103 @@ function buildRollbackGuideContactBundle(
     sampleMessages: [],
     momentHighlights: [],
   };
+}
+
+function findPreviewItemForHistoryItem(
+  item: WechatSyncHistoryItem,
+  previewItems: WechatSyncPreviewItem[],
+) {
+  const username = extractWechatUsername(item.character.sourceKey);
+  if (username) {
+    const byUsername = previewItems.find(
+      (previewItem) => previewItem.contact.username === username,
+    );
+    if (byUsername) {
+      return byUsername;
+    }
+  }
+
+  return previewItems.find(
+    (previewItem) =>
+      previewItem.draftCharacter.sourceKey === item.character.sourceKey,
+  ) ?? null;
+}
+
+function buildHistoryPreviewDiffs(
+  item: WechatSyncHistoryItem,
+  previewItem: WechatSyncPreviewItem,
+) {
+  return [
+    createHistoryPreviewDiff(
+      "角色名",
+      item.character.name,
+      previewItem.draftCharacter.name?.trim() || previewItem.contact.displayName,
+    ),
+    createHistoryPreviewDiff(
+      "关系定位",
+      item.character.relationship,
+      previewItem.draftCharacter.relationship?.trim() || "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "角色简介",
+      item.character.bio,
+      previewItem.draftCharacter.bio?.trim() || "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "领域标签",
+      item.character.expertDomains.join("、"),
+      (previewItem.draftCharacter.expertDomains ?? []).join("、"),
+    ),
+    createHistoryPreviewDiff(
+      "记忆摘要",
+      item.character.profile?.memorySummary || "",
+      previewItem.draftCharacter.profile?.memorySummary?.trim() || "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "微信备注/显示名",
+      item.remarkName?.trim() || item.character.name,
+      previewItem.contact.remarkName?.trim() ||
+        previewItem.contact.nickname?.trim() ||
+        previewItem.contact.displayName,
+    ),
+    createHistoryPreviewDiff(
+      "地区",
+      item.region?.trim() || "暂无",
+      previewItem.contact.region?.trim() || "暂无",
+    ),
+    createHistoryPreviewDiff(
+      "联系人标签",
+      item.tags.join("、"),
+      previewItem.contact.tags.join("、"),
+    ),
+  ];
+}
+
+function hasHistoryPreviewChanges(
+  item: WechatSyncHistoryItem,
+  previewItem: WechatSyncPreviewItem,
+) {
+  return buildHistoryPreviewDiffs(item, previewItem).some((diff) => diff.changed);
+}
+
+function createHistoryPreviewDiff(
+  label: string,
+  currentValue: string,
+  nextValue: string,
+) {
+  const normalizedCurrent = normalizeHistoryDiffValue(currentValue);
+  const normalizedNext = normalizeHistoryDiffValue(nextValue);
+  return {
+    label,
+    currentValue: normalizedCurrent,
+    nextValue: normalizedNext,
+    changed: normalizedCurrent !== normalizedNext,
+  };
+}
+
+function normalizeHistoryDiffValue(value?: string | null) {
+  const normalized = value?.trim();
+  return normalized && normalized.length > 0 ? normalized : "暂无";
 }
 
 function validatePreviewItem(item: WechatSyncPreviewItem) {
