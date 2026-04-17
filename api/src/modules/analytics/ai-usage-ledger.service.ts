@@ -1293,7 +1293,7 @@ export class AiUsageLedgerService {
             (postDowngradeBlockedRate ?? 0) * 0.12 +
             (bucket.pendingOutcomeConversationCount > 0
               ? bucket.pendingOutcomeConversationCount /
-                Math.max(bucket.distinctConversationCount ?? 0, 1)
+                Math.max(bucket.conversationIds.size, 1)
               : 0) *
               0.12 +
             (1 - (continuedWithin24hRate ?? 0)) * 0.12 +

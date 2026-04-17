@@ -1372,6 +1372,7 @@ export function TokenUsagePage() {
 
         <DowngradeCharacterQualityCard
           items={qualityByCharacter}
+          currency={currency}
           emptyText="No character-level downgrade review samples in the current range."
         />
       </div>
@@ -2101,9 +2102,11 @@ function ReviewSampleList({
 
 function DowngradeCharacterQualityCard({
   items,
+  currency,
   emptyText,
 }: {
   items: TokenUsageDowngradeCharacterQualityItem[];
+  currency: "CNY" | "USD";
   emptyText: string;
 }) {
   return (
@@ -2118,7 +2121,10 @@ function DowngradeCharacterQualityCard({
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="font-medium text-[color:var(--text-primary)]">{item.characterName}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-[color:var(--text-primary)]">{item.characterName}</div>
+                    <PriorityBadge score={item.priorityScore} />
+                  </div>
                   <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                     {formatInteger(item.requestCount)} downgraded requests / {formatInteger(item.reviewedConversationCount)} reviewed / {formatInteger(item.distinctConversationCount)} conversations
                   </div>
@@ -2126,10 +2132,11 @@ function DowngradeCharacterQualityCard({
                 <div className="text-right text-xs text-[color:var(--text-muted)]">
                   <div>Too weak {formatInteger(item.tooWeakConversationCount)}</div>
                   <div className="mt-1">Pending {formatInteger(item.pendingOutcomeConversationCount)}</div>
+                  <div className="mt-1">Cost {formatCost(item.estimatedCost, currency)}</div>
                 </div>
               </div>
 
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <SignalProgressRow
                   label="Review coverage"
                   value={formatPercentNullable(item.reviewCoverageRate)}
@@ -2141,6 +2148,18 @@ function DowngradeCharacterQualityCard({
                   value={formatPercentNullable(item.tooWeakReviewRate)}
                   ratio={item.tooWeakReviewRate ?? 0}
                   gradient="bg-[linear-gradient(90deg,rgba(244,63,94,0.92),rgba(249,115,22,0.92))]"
+                />
+                <SignalProgressRow
+                  label="24h continuation"
+                  value={formatPercentNullable(item.continuedWithin24hRate)}
+                  ratio={item.continuedWithin24hRate ?? 0}
+                  gradient="bg-[linear-gradient(90deg,rgba(34,197,94,0.92),rgba(59,130,246,0.92))]"
+                />
+                <SignalProgressRow
+                  label="Failure fallback"
+                  value={formatPercentNullable(item.postDowngradeFailureRate)}
+                  ratio={item.postDowngradeFailureRate ?? 0}
+                  gradient="bg-[linear-gradient(90deg,rgba(244,63,94,0.92),rgba(168,85,247,0.92))]"
                 />
               </div>
 
@@ -2205,6 +2224,22 @@ function CompactSampleLinks({
         </div>
       )}
     </div>
+  );
+}
+
+function PriorityBadge({ score }: { score: number }) {
+  const className =
+    score >= 70
+      ? "border-rose-200 bg-rose-50 text-rose-700"
+      : score >= 45
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-emerald-200 bg-emerald-50 text-emerald-700";
+  const label = score >= 70 ? "High priority" : score >= 45 ? "Watch" : "Stable";
+
+  return (
+    <span className={`rounded-full border px-2 py-1 text-[11px] font-medium ${className}`}>
+      {label} {score}
+    </span>
   );
 }
 
