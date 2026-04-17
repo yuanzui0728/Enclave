@@ -17,7 +17,10 @@ export type ActionRunRetryNextStep =
   | "awaiting_confirmation"
   | "executed";
 
-export type ActionRuntimePlannerMode = "heuristic";
+export type ActionRuntimePlannerMode =
+  | "heuristic"
+  | "llm"
+  | "llm_with_heuristic_fallback";
 
 export type ActionConnectorProviderType =
   | "mock"

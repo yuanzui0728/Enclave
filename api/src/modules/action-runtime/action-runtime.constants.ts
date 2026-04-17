@@ -35,7 +35,7 @@ const DEFAULT_PROMPT_TEMPLATES: ActionRuntimePromptTemplatesValue = {
 };
 
 export const DEFAULT_ACTION_RUNTIME_RULES: ActionRuntimeRulesValue = {
-  plannerMode: 'heuristic',
+  plannerMode: 'llm_with_heuristic_fallback',
   promptTemplates: DEFAULT_PROMPT_TEMPLATES,
   policy: {
     enabled: true,
@@ -107,6 +107,51 @@ const DEFAULT_CONNECTOR_OPERATIONS: Record<string, ActionConnectorOperationValue
 
 export const DEFAULT_ACTION_CONNECTOR_SEEDS: ActionConnectorSeedValue[] = [
   {
+    id: 'connector-http-smart-home',
+    connectorKey: 'http-smart-home',
+    displayName: 'HTTP 智能家居桥',
+    providerType: 'http_bridge',
+    status: 'disabled',
+    endpointConfigPayload: {
+      url: '',
+      method: 'POST',
+      timeoutMs: 12000,
+      headers: {},
+      notes: '接收 action-runtime JSON payload 并返回 resultSummary / result。',
+    },
+    capabilitiesPayload: DEFAULT_CONNECTOR_OPERATIONS['mock-smart-home'],
+  },
+  {
+    id: 'connector-http-food-delivery',
+    connectorKey: 'http-food-delivery',
+    displayName: 'HTTP 外卖桥',
+    providerType: 'http_bridge',
+    status: 'disabled',
+    endpointConfigPayload: {
+      url: '',
+      method: 'POST',
+      timeoutMs: 12000,
+      headers: {},
+      notes: '接收 action-runtime JSON payload 并返回 resultSummary / result。',
+    },
+    capabilitiesPayload: DEFAULT_CONNECTOR_OPERATIONS['mock-food-delivery'],
+  },
+  {
+    id: 'connector-http-ticketing',
+    connectorKey: 'http-ticketing',
+    displayName: 'HTTP 订票桥',
+    providerType: 'http_bridge',
+    status: 'disabled',
+    endpointConfigPayload: {
+      url: '',
+      method: 'POST',
+      timeoutMs: 12000,
+      headers: {},
+      notes: '接收 action-runtime JSON payload 并返回 resultSummary / result。',
+    },
+    capabilitiesPayload: DEFAULT_CONNECTOR_OPERATIONS['mock-ticketing'],
+  },
+  {
     id: 'connector-mock-smart-home',
     connectorKey: 'mock-smart-home',
     displayName: 'Mock 智能家居',
@@ -158,7 +203,11 @@ export function normalizeActionRuntimeRules(
 ): ActionRuntimeRulesValue {
   const defaults = DEFAULT_ACTION_RUNTIME_RULES;
   return {
-    plannerMode: 'heuristic',
+    plannerMode:
+      input?.plannerMode === 'heuristic' ||
+      input?.plannerMode === 'llm'
+        ? input.plannerMode
+        : 'llm_with_heuristic_fallback',
     promptTemplates: {
       plannerSystemPrompt: sanitizeTemplate(
         input?.promptTemplates?.plannerSystemPrompt,

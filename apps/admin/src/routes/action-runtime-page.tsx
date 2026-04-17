@@ -23,6 +23,7 @@ import {
   AdminInfoRows,
   AdminPageHero,
   AdminRecordCard,
+  AdminSelectField,
   AdminSectionHeader,
   AdminTextArea,
   AdminTextField,
@@ -56,6 +57,24 @@ const RISK_LEVEL_OPTIONS: Array<{
     value: "cost_or_irreversible",
     label: "付费/不可逆",
     description: "涉及下单、预订、付款，默认必须确认。",
+  },
+];
+
+const PLANNER_MODE_OPTIONS: Array<{
+  value: ActionRuntimeRules["plannerMode"];
+  label: string;
+}> = [
+  {
+    value: "llm_with_heuristic_fallback",
+    label: "LLM 优先，失败回退规则",
+  },
+  {
+    value: "llm",
+    label: "纯 LLM planner",
+  },
+  {
+    value: "heuristic",
+    label: "纯规则 planner",
   },
 ];
 
@@ -418,6 +437,18 @@ export function ActionRuntimePage() {
               }
             />
             <div className="mt-4 space-y-6">
+              <AdminSelectField
+                label="Planner Mode"
+                value={rulesDraft.plannerMode}
+                onChange={(value) =>
+                  patchRules((current) => ({
+                    ...current,
+                    plannerMode: value as ActionRuntimeRules["plannerMode"],
+                  }))
+                }
+                options={PLANNER_MODE_OPTIONS}
+              />
+
               <div className="grid gap-4 md:grid-cols-2">
                 <AdminToggle
                   label="启用动作入口"
@@ -669,6 +700,13 @@ export function ActionRuntimePage() {
                       .join(" / ")}
                     details={
                       <div className="space-y-4">
+                        {connector.providerType === "http_bridge" ? (
+                          <AdminCallout
+                            tone="info"
+                            title="HTTP Bridge 契约"
+                            description='服务端会向 `endpointConfig.url` 发送 JSON：`{ connectorKey, operationKey, domain, title, goal, riskLevel, requiresConfirmation, previewOnly, slots, missingSlots, sentAt }`。返回 JSON 时优先读取 `resultSummary` / `summary`、`result`、`execution`。'
+                          />
+                        ) : null}
                         <AdminTextField
                           label="显示名称"
                           value={draft.displayName}

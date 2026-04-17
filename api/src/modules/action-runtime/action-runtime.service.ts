@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { DEFAULT_ACTION_CONNECTOR_SEEDS } from './action-runtime.constants';
 import { ActionConnectorEntity } from './action-connector.entity';
@@ -58,6 +59,19 @@ function normalizeUserMessage(input: string) {
   return input.trim();
 }
 
+function rankConnectorProvider(providerType: ActionConnectorEntity['providerType']) {
+  if (providerType === 'official_api') {
+    return 4;
+  }
+  if (providerType === 'http_bridge') {
+    return 3;
+  }
+  if (providerType === 'browser_operator') {
+    return 2;
+  }
+  return 1;
+}
+
 @Injectable()
 export class ActionRuntimeService {
   private connectorsSeeded = false;
@@ -69,6 +83,7 @@ export class ActionRuntimeService {
     private readonly runRepo: Repository<ActionRunEntity>,
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
+    private readonly ai: AiOrchestratorService,
     private readonly rulesService: ActionRuntimeRulesService,
   ) {}
 
@@ -106,7 +121,14 @@ export class ActionRuntimeService {
       });
     }
 
-    const preview = this.planActionFromMessage(userMessage, connectors, rules);
+    const preview = await this.planAction({
+      message: userMessage,
+      conversationId: input.conversationId,
+      ownerId: input.ownerId,
+      characterId: input.character.id,
+      connectors,
+      rules,
+    });
     if (!preview.handled || !preview.plan) {
       return { handled: false };
     }
@@ -130,6 +152,7 @@ export class ActionRuntimeService {
       tracePayload: appendTrace(null, {
         phase: 'plan_created',
         plannerMode: rules.plannerMode,
+        plannerReason: preview.reason,
         matchedKeywords: plan.matchedKeywords,
         promptPreview: plan.promptPreview,
       }),
@@ -307,22 +330,14 @@ export class ActionRuntimeService {
       let executionPayload: Record<string, unknown> | null = null;
       let resultPayload: Record<string, unknown> | null = null;
       let summary: string;
-      if (connector.providerType === 'mock') {
-        const execution = this.executeMockOperation(samplePlan, connector, true);
-        executionPayload = execution.executionPayload;
-        resultPayload = execution.resultPayload;
-        summary = execution.resultSummary;
-      } else {
-        executionPayload = {
-          providerType: connector.providerType,
-          previewOnly: true,
-          testedAt: testedAt.toISOString(),
-        };
-        resultPayload = {
-          mode: 'connectivity_only',
-        };
-        summary = `${connector.displayName} 已完成一次基础连通性自检。`;
-      }
+      const execution = await this.executeConnectorOperation(
+        samplePlan,
+        connector,
+        true,
+      );
+      executionPayload = execution.executionPayload;
+      resultPayload = execution.resultPayload;
+      summary = execution.resultSummary;
 
       connector.lastHealthCheckAt = testedAt;
       connector.lastError = null;
@@ -478,7 +493,11 @@ export class ActionRuntimeService {
     await this.ensureDefaultConnectors();
     const rules = await this.rulesService.getRules();
     const connectors = await this.listReadyConnectorEntities();
-    const preview = this.planActionFromMessage(message, connectors, rules);
+    const preview = await this.planAction({
+      message,
+      connectors,
+      rules,
+    });
     if (!preview.handled || !preview.plan) {
       return {
         handled: false,
@@ -701,7 +720,11 @@ export class ActionRuntimeService {
     }
 
     try {
-      const execution = this.executeMockOperation(plan, connector, false);
+      const execution = await this.executeConnectorOperation(
+        plan,
+        connector,
+        false,
+      );
       run.status = 'succeeded';
       run.executionPayload = execution.executionPayload;
       run.resultPayload = execution.resultPayload;
@@ -742,6 +765,93 @@ export class ActionRuntimeService {
         responseText: this.renderFailure(plan, message, rules),
       };
     }
+  }
+
+  private async planAction(input: {
+    message: string;
+    connectors: ActionConnectorEntity[];
+    rules: ActionRuntimeRulesValue;
+    ownerId?: string;
+    characterId?: string;
+    conversationId?: string;
+  }) {
+    const {
+      message,
+      connectors,
+      rules,
+      ownerId,
+      characterId,
+      conversationId,
+    } = input;
+
+    if (rules.plannerMode === 'heuristic') {
+      return this.planActionFromMessage(message, connectors, rules);
+    }
+
+    try {
+      const llmResult = await this.planActionWithLlm({
+        message,
+        connectors,
+        rules,
+        ownerId,
+        characterId,
+        conversationId,
+      });
+      if (llmResult.handled || rules.plannerMode === 'llm') {
+        return llmResult;
+      }
+    } catch (error) {
+      if (rules.plannerMode === 'llm') {
+        throw error;
+      }
+    }
+
+    return this.planActionFromMessage(message, connectors, rules);
+  }
+
+  private async planActionWithLlm(input: {
+    message: string;
+    connectors: ActionConnectorEntity[];
+    rules: ActionRuntimeRulesValue;
+    ownerId?: string;
+    characterId?: string;
+    conversationId?: string;
+  }): Promise<{
+    handled: boolean;
+    reason: string;
+    plan?: ActionPlanValue;
+  }> {
+    const { message, connectors, rules, ownerId, characterId, conversationId } =
+      input;
+    if (!connectors.length) {
+      return {
+        handled: false,
+        reason: '当前没有就绪连接器，LLM planner 跳过。',
+      };
+    }
+
+    const prompt = this.buildLlmPlannerPrompt(message, connectors, rules);
+    const raw = await this.ai.generateJsonObject({
+      prompt,
+      usageContext: {
+        surface: 'app',
+        scene: 'action_runtime_plan',
+        scopeType: conversationId ? 'conversation' : 'admin_task',
+        scopeId: conversationId,
+        scopeLabel: conversationId ?? 'action-runtime-plan',
+        ownerId,
+        characterId,
+        conversationId,
+      },
+      maxTokens: 900,
+      temperature: 0.1,
+      fallback: {
+        handled: false,
+        reason: 'planner_failed',
+      },
+    });
+
+    return this.normalizeLlmPlan(raw, message, connectors, rules);
   }
 
   private planActionFromMessage(
@@ -810,8 +920,9 @@ export class ActionRuntimeService {
       return null;
     }
 
-    const connector = connectors.find(
-      (item) => item.connectorKey === 'mock-smart-home',
+    const connector = this.findPreferredConnectorForOperation(
+      connectors,
+      'smart_home_control',
     );
     if (!connector) {
       return null;
@@ -867,21 +978,25 @@ export class ActionRuntimeService {
       return null;
     }
 
-    const connector = connectors.find(
-      (item) => item.connectorKey === 'mock-food-delivery',
-    );
-    if (!connector) {
-      return null;
-    }
-
     const submitIntent =
       message.includes('下单') ||
       message.includes('直接点') ||
       message.includes('帮我点') ||
       message.includes('现在点');
+    const requestedOperationKey = submitIntent
+      ? 'food_delivery_submit'
+      : 'food_delivery_prepare';
+    const connector = this.findPreferredConnectorForOperation(
+      connectors,
+      requestedOperationKey,
+    );
+    if (!connector) {
+      return null;
+    }
+
     const operation = this.findOperation(
       connector,
-      submitIntent ? 'food_delivery_submit' : 'food_delivery_prepare',
+      requestedOperationKey,
     );
     if (!operation) {
       return null;
@@ -939,21 +1054,25 @@ export class ActionRuntimeService {
       return null;
     }
 
-    const connector = connectors.find(
-      (item) => item.connectorKey === 'mock-ticketing',
-    );
-    if (!connector) {
-      return null;
-    }
-
     const submitIntent =
       message.includes('直接订') ||
       message.includes('帮我订') ||
       message.includes('买这张') ||
       message.includes('就订这个');
+    const requestedOperationKey = submitIntent
+      ? 'ticket_booking_submit'
+      : 'ticket_booking_prepare';
+    const connector = this.findPreferredConnectorForOperation(
+      connectors,
+      requestedOperationKey,
+    );
+    if (!connector) {
+      return null;
+    }
+
     const operation = this.findOperation(
       connector,
-      submitIntent ? 'ticket_booking_submit' : 'ticket_booking_prepare',
+      requestedOperationKey,
     );
     if (!operation) {
       return null;
@@ -987,6 +1106,44 @@ export class ActionRuntimeService {
     };
   }
 
+  private findPreferredConnectorForOperation(
+    connectors: ActionConnectorEntity[],
+    operationKey: string,
+  ) {
+    return [...connectors]
+      .filter((connector) => this.findOperation(connector, operationKey))
+      .sort((left, right) => {
+        const priorityDiff =
+          rankConnectorProvider(right.providerType) -
+          rankConnectorProvider(left.providerType);
+        if (priorityDiff !== 0) {
+          return priorityDiff;
+        }
+        return left.displayName.localeCompare(right.displayName, 'zh-CN');
+      })[0];
+  }
+
+  private findPreferredConnectorForDomain(
+    connectors: ActionConnectorEntity[],
+    domain: string,
+  ) {
+    return [...connectors]
+      .filter((connector) =>
+        (connector.capabilitiesPayload ?? []).some(
+          (capability) => capability.domain === domain,
+        ),
+      )
+      .sort((left, right) => {
+        const priorityDiff =
+          rankConnectorProvider(right.providerType) -
+          rankConnectorProvider(left.providerType);
+        if (priorityDiff !== 0) {
+          return priorityDiff;
+        }
+        return left.displayName.localeCompare(right.displayName, 'zh-CN');
+      })[0];
+  }
+
   private buildPromptPreview(
     message: string,
     connectors: ActionConnectorEntity[],
@@ -1014,17 +1171,159 @@ export class ActionRuntimeService {
     ].join('\n\n');
   }
 
-  private buildDefaultConnectorTestMessage(connector: ActionConnectorEntity) {
-    switch (connector.connectorKey) {
-      case 'mock-smart-home':
-        return '帮我把客厅空调调到24度';
-      case 'mock-food-delivery':
-        return '帮我点个轻食外卖，送到公司前台';
-      case 'mock-ticketing':
-        return '帮我订明天上海到杭州的高铁票';
-      default:
-        return `测试 ${connector.displayName} 的连接状态`;
+  private buildLlmPlannerPrompt(
+    message: string,
+    connectors: ActionConnectorEntity[],
+    rules: ActionRuntimeRulesValue,
+  ) {
+    const connectorCatalog = connectors.map((connector) => ({
+      connectorKey: connector.connectorKey,
+      displayName: connector.displayName,
+      providerType: connector.providerType,
+      operations: (connector.capabilitiesPayload ?? []).map((operation) => ({
+        operationKey: operation.operationKey,
+        domain: operation.domain,
+        label: operation.label,
+        description: operation.description,
+        riskLevel: operation.riskLevel,
+        requiresConfirmation: operation.requiresConfirmation,
+        requiredSlots: operation.requiredSlots,
+      })),
+    }));
+
+    return [
+      rules.promptTemplates.plannerSystemPrompt,
+      '你必须严格输出 JSON object，不要输出 markdown。',
+      '如果当前消息不是明确要你处理真实世界动作，handled=false。',
+      '只能从给定连接器和 operationKey 中选择，不允许编造新的 connectorKey / operationKey。',
+      '你负责识别意图、选择最合适的 operation、提取 slots、列出 missingSlots。',
+      '后端会再次校验缺参、风险和确认逻辑，所以不要把动作结果写成已执行。',
+      '输出格式：{"handled":boolean,"reason":"...","connectorKey":"...","operationKey":"...","title":"...","goal":"...","rationale":"...","slots":{},"missingSlots":[],"matchedKeywords":[]}',
+      `用户消息：${message}`,
+      `可用连接器目录：${JSON.stringify(connectorCatalog, null, 2)}`,
+    ].join('\n\n');
+  }
+
+  private normalizeLlmPlan(
+    raw: Record<string, unknown>,
+    message: string,
+    connectors: ActionConnectorEntity[],
+    rules: ActionRuntimeRulesValue,
+  ): {
+    handled: boolean;
+    reason: string;
+    plan?: ActionPlanValue;
+  } {
+    const handled = raw.handled === true;
+    const reason =
+      typeof raw.reason === 'string' && raw.reason.trim()
+        ? raw.reason.trim()
+        : handled
+          ? 'LLM planner 命中了真实世界动作。'
+          : 'LLM planner 判断当前消息不属于真实世界动作。';
+    if (!handled) {
+      return {
+        handled: false,
+        reason,
+      };
     }
+
+    const requestedOperationKey =
+      typeof raw.operationKey === 'string' ? raw.operationKey.trim() : '';
+    if (!requestedOperationKey) {
+      return {
+        handled: false,
+        reason: 'LLM planner 未返回 operationKey。',
+      };
+    }
+
+    const requestedConnectorKey =
+      typeof raw.connectorKey === 'string' ? raw.connectorKey.trim() : '';
+    const connector =
+      connectors.find(
+        (item) =>
+          item.connectorKey === requestedConnectorKey &&
+          Boolean(this.findOperation(item, requestedOperationKey)),
+      ) ?? this.findPreferredConnectorForOperation(connectors, requestedOperationKey);
+    if (!connector) {
+      return {
+        handled: false,
+        reason: `当前没有可用连接器支持 ${requestedOperationKey}。`,
+      };
+    }
+
+    const operation = this.findOperation(connector, requestedOperationKey);
+    if (!operation) {
+      return {
+        handled: false,
+        reason: `连接器 ${connector.connectorKey} 不支持 ${requestedOperationKey}。`,
+      };
+    }
+
+    const slots =
+      raw.slots && typeof raw.slots === 'object' && !Array.isArray(raw.slots)
+        ? { ...(raw.slots as Record<string, unknown>) }
+        : {};
+    const missingSlots = this.resolveMissingSlots(
+      operation.operationKey,
+      operation.domain,
+      slots,
+    );
+    const matchedKeywords = Array.isArray(raw.matchedKeywords)
+      ? raw.matchedKeywords
+          .map((item) => String(item).trim())
+          .filter(Boolean)
+      : this.extractMatchedKeywords(operation.domain, message);
+
+    return {
+      handled: true,
+      reason,
+      plan: {
+        connectorKey: connector.connectorKey,
+        operationKey: operation.operationKey,
+        domain: operation.domain,
+        title:
+          typeof raw.title === 'string' && raw.title.trim()
+            ? raw.title.trim()
+            : operation.label,
+        goal:
+          typeof raw.goal === 'string' && raw.goal.trim()
+            ? raw.goal.trim()
+            : message,
+        rationale:
+          typeof raw.rationale === 'string' && raw.rationale.trim()
+            ? raw.rationale.trim()
+            : reason,
+        riskLevel: operation.riskLevel,
+        requiresConfirmation: operation.requiresConfirmation,
+        slots,
+        missingSlots,
+        matchedKeywords,
+        promptPreview: this.buildLlmPlannerPrompt(message, connectors, rules),
+      },
+    };
+  }
+
+  private buildDefaultConnectorTestMessage(connector: ActionConnectorEntity) {
+    const operationKeys = (connector.capabilitiesPayload ?? []).map(
+      (item) => item.operationKey,
+    );
+    if (operationKeys.includes('smart_home_control')) {
+        return '帮我把客厅空调调到24度';
+    }
+    if (
+      operationKeys.includes('food_delivery_submit') ||
+      operationKeys.includes('food_delivery_prepare')
+    ) {
+        return '帮我点个轻食外卖，送到公司前台';
+    }
+    if (
+      operationKeys.includes('ticket_booking_submit') ||
+      operationKeys.includes('ticket_booking_prepare')
+    ) {
+        return '帮我订明天上海到杭州的高铁票';
+    }
+    return `测试 ${connector.displayName} 的连接状态`;
   }
 
   private buildConnectorTestPlan(
@@ -1042,8 +1341,11 @@ export class ActionRuntimeService {
       return preview.plan;
     }
 
-    switch (connector.connectorKey) {
-      case 'mock-smart-home':
+    const operationKeys = (connector.capabilitiesPayload ?? []).map(
+      (item) => item.operationKey,
+    );
+
+    if (operationKeys.includes('smart_home_control')) {
         return {
           connectorKey: connector.connectorKey,
           operationKey: 'smart_home_control',
@@ -1063,7 +1365,8 @@ export class ActionRuntimeService {
           matchedKeywords: ['客厅', '空调', '温度'],
           promptPreview: this.buildPromptPreview(sampleMessage, [connector], rules),
         };
-      case 'mock-food-delivery':
+    }
+    if (operationKeys.includes('food_delivery_submit')) {
         return {
           connectorKey: connector.connectorKey,
           operationKey: 'food_delivery_submit',
@@ -1082,7 +1385,8 @@ export class ActionRuntimeService {
           matchedKeywords: ['轻食', '地址'],
           promptPreview: this.buildPromptPreview(sampleMessage, [connector], rules),
         };
-      case 'mock-ticketing':
+    }
+    if (operationKeys.includes('ticket_booking_submit')) {
         return {
           connectorKey: connector.connectorKey,
           operationKey: 'ticket_booking_submit',
@@ -1101,11 +1405,10 @@ export class ActionRuntimeService {
           matchedKeywords: ['上海 -> 杭州', '明天'],
           promptPreview: this.buildPromptPreview(sampleMessage, [connector], rules),
         };
-      default:
-        throw new BadRequestException(
-          `尚未为 ${connector.connectorKey} 定义测试样例。`,
-        );
     }
+    throw new BadRequestException(
+      `尚未为 ${connector.connectorKey} 定义测试样例。`,
+    );
   }
 
   private mergePlanWithMessage(
@@ -1371,6 +1674,150 @@ export class ActionRuntimeService {
 
   private matchesKeyword(message: string, keywords: string[]) {
     return keywords.some((keyword) => message.includes(keyword));
+  }
+
+  private async executeConnectorOperation(
+    plan: ActionPlanValue,
+    connector: ActionConnectorEntity | undefined,
+    previewOnly: boolean,
+  ): Promise<ActionExecutionResultValue> {
+    if (!connector) {
+      throw new Error('连接器不存在。');
+    }
+
+    if (connector.providerType === 'http_bridge') {
+      return this.executeHttpBridgeOperation(plan, connector, previewOnly);
+    }
+
+    if (connector.providerType === 'mock') {
+      return this.executeMockOperation(plan, connector, previewOnly);
+    }
+
+    throw new Error(
+      `当前尚未支持 ${connector.providerType} 类型的真实执行器。`,
+    );
+  }
+
+  private async executeHttpBridgeOperation(
+    plan: ActionPlanValue,
+    connector: ActionConnectorEntity,
+    previewOnly: boolean,
+  ): Promise<ActionExecutionResultValue> {
+    const endpointConfig =
+      connector.endpointConfigPayload &&
+      typeof connector.endpointConfigPayload === 'object'
+        ? connector.endpointConfigPayload
+        : null;
+    const url =
+      typeof endpointConfig?.url === 'string' ? endpointConfig.url.trim() : '';
+    if (!url) {
+      throw new Error(`连接器 ${connector.displayName} 缺少 endpointConfig.url。`);
+    }
+
+    const method =
+      typeof endpointConfig?.method === 'string' &&
+      ['POST', 'PUT', 'PATCH'].includes(endpointConfig.method.toUpperCase())
+        ? endpointConfig.method.toUpperCase()
+        : 'POST';
+    const timeoutMs =
+      typeof endpointConfig?.timeoutMs === 'number' && endpointConfig.timeoutMs > 0
+        ? Math.min(endpointConfig.timeoutMs, 60000)
+        : 15000;
+    const configuredHeaders =
+      endpointConfig?.headers &&
+      typeof endpointConfig.headers === 'object' &&
+      !Array.isArray(endpointConfig.headers)
+        ? Object.entries(endpointConfig.headers as Record<string, unknown>).reduce(
+            (accumulator, [key, value]) => {
+              if (typeof value === 'string' && key.trim()) {
+                accumulator[key.trim()] = value;
+              }
+              return accumulator;
+            },
+            {} as Record<string, string>,
+          )
+        : {};
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...configuredHeaders,
+      },
+      body: JSON.stringify({
+        connectorKey: connector.connectorKey,
+        operationKey: plan.operationKey,
+        domain: plan.domain,
+        title: plan.title,
+        goal: plan.goal,
+        riskLevel: plan.riskLevel,
+        requiresConfirmation: plan.requiresConfirmation,
+        previewOnly,
+        slots: plan.slots,
+        missingSlots: plan.missingSlots,
+        sentAt: new Date().toISOString(),
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+
+    const rawText = await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `HTTP bridge 返回 ${response.status}：${rawText.slice(0, 280) || response.statusText}`,
+      );
+    }
+
+    let parsedBody: Record<string, unknown> | null = null;
+    if (rawText.trim()) {
+      try {
+        parsedBody = JSON.parse(rawText) as Record<string, unknown>;
+      } catch {
+        parsedBody = {
+          raw: rawText,
+        };
+      }
+    }
+
+    if (parsedBody?.ok === false) {
+      throw new Error(
+        typeof parsedBody.errorMessage === 'string'
+          ? parsedBody.errorMessage
+          : typeof parsedBody.message === 'string'
+            ? parsedBody.message
+            : 'HTTP bridge 显式返回失败。',
+      );
+    }
+
+    const resultSummary =
+      typeof parsedBody?.resultSummary === 'string' && parsedBody.resultSummary.trim()
+        ? parsedBody.resultSummary.trim()
+        : typeof parsedBody?.summary === 'string' && parsedBody.summary.trim()
+          ? parsedBody.summary.trim()
+          : typeof parsedBody?.message === 'string' && parsedBody.message.trim()
+            ? parsedBody.message.trim()
+            : `${connector.displayName} 已完成 ${plan.title}`;
+
+    return {
+      resultSummary,
+      executionPayload:
+        parsedBody?.execution &&
+        typeof parsedBody.execution === 'object' &&
+        !Array.isArray(parsedBody.execution)
+          ? (parsedBody.execution as Record<string, unknown>)
+          : {
+              providerType: connector.providerType,
+              previewOnly,
+              httpStatus: response.status,
+              url,
+              method,
+            },
+      resultPayload:
+        parsedBody?.result &&
+        typeof parsedBody.result === 'object' &&
+        !Array.isArray(parsedBody.result)
+          ? (parsedBody.result as Record<string, unknown>)
+          : parsedBody ?? {},
+    };
   }
 
   private executeMockOperation(

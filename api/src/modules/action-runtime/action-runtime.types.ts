@@ -12,7 +12,10 @@ export type ActionRunStatusValue =
   | 'failed'
   | 'cancelled';
 
-export type ActionRuntimePlannerModeValue = 'heuristic';
+export type ActionRuntimePlannerModeValue =
+  | 'heuristic'
+  | 'llm'
+  | 'llm_with_heuristic_fallback';
 
 export type ActionConnectorProviderTypeValue =
   | 'mock'
