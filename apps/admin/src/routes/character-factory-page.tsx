@@ -857,6 +857,9 @@ export function CharacterFactoryPage() {
             <Card className="bg-[color:var(--surface-console)]">
               <SectionHeading>记忆底稿与生活策略</SectionHeading>
               <div className="mt-4 space-y-4">
+                <InlineNotice tone="muted">
+                  这里的记忆提示词是给系统自动整理记忆时用的。写法尽量像这个角色自己会留下的记事笔记，别写成提取助手或汇报模板。
+                </InlineNotice>
                 <TextAreaBlock
                   label="记忆摘要"
                   value={draft.memorySeed.memorySummary}
@@ -881,7 +884,7 @@ export function CharacterFactoryPage() {
                   }
                 />
                 <TextAreaBlock
-                  label="近期摘要初始值"
+                  label="近期记忆初始值"
                   value={draft.memorySeed.recentSummarySeed}
                   onChange={(value) =>
                     patchDraft((current) => ({
@@ -894,7 +897,7 @@ export function CharacterFactoryPage() {
                   }
                 />
                 <TextAreaBlock
-                  label="近期摘要提取提示词"
+                  label="近期记忆提示词"
                   value={draft.memorySeed.recentSummaryPrompt}
                   onChange={(value) =>
                     patchDraft((current) => ({
@@ -907,7 +910,7 @@ export function CharacterFactoryPage() {
                   }
                 />
                 <TextAreaBlock
-                  label="核心记忆提取提示词"
+                  label="长期记忆提示词"
                   value={draft.memorySeed.coreMemoryPrompt}
                   onChange={(value) =>
                     patchDraft((current) => ({

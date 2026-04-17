@@ -635,7 +635,7 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_NOTE_TEMPLATES: ReplyLogicRuntimeNoteTe
     zeroChannelFrequency: '视频号频率为 0，视频号调度会持续跳过该角色。',
     missingTriggerScenes: '未配置触发场景，场景加好友调度不会命中该角色。',
     missingMemorySeed:
-      '缺少核心记忆或近期摘要，主动提醒调度不会为该角色生成消息。',
+      '缺少长期记忆或近期记忆，主动提醒调度不会为该角色生成消息。',
     memoryProactiveEnabled:
       '已具备记忆种子，晚间主动提醒调度会判断是否需要发消息。',
     memoryProactiveDisabled: '当前缺少足够的记忆种子，主动提醒不会触发。',
@@ -655,9 +655,9 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_DESCRIPTIONS: ReplyLogicSchedulerDesc
     update_character_status: '根据时间段刷新角色当前活动状态。',
     trigger_memory_proactive_messages:
       '扫描角色记忆，在合适时机主动给用户发提醒。',
-    update_recent_memory_daily: '每日从近7天互动记录中自动提取并更新近期摘要。',
+    update_recent_memory_daily: '每日从近7天互动记录中自动整理并更新近期记忆。',
     update_core_memory_weekly:
-      '每周从近30天全量交互数据中自动提取并更新核心记忆。',
+      '每周从近30天全量交互数据中自动整理并更新长期记忆。',
   });
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTextTemplates =
@@ -707,9 +707,9 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTe
     jobSummaryTriggerMemoryProactiveMessages:
       '检查 {{memorySeededCount}} 个有记忆种子的角色，发送 {{sentMessages}} 条主动提醒消息。',
     jobSummaryUpdateRecentMemoryDaily:
-      '近期摘要日更：检查 {{characterCount}} 个角色，更新 {{updatedCount}} 个，跳过 {{skippedCount}} 个（无近期消息）。',
+      '近期记忆日更：检查 {{characterCount}} 个角色，更新 {{updatedCount}} 个，跳过 {{skippedCount}} 个（无近期消息）。',
     jobSummaryUpdateCoreMemoryWeekly:
-      '核心记忆周更：检查 {{characterCount}} 个角色，更新 {{updatedCount}} 个，跳过 {{skippedCount}} 个（无足够交互数据）。',
+      '长期记忆周更：检查 {{characterCount}} 个角色，更新 {{updatedCount}} 个，跳过 {{skippedCount}} 个（无足够交互数据）。',
     jobSummarySkippedNoInteractions: '近期无互动记录，跳过记忆更新。',
     proactiveReminderCheckPrompt: `以下是{{characterName}}对用户的记忆：
 {{memoryText}}
@@ -732,8 +732,8 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_NAMES: ReplyLogicSchedulerNames =
     check_channels_schedule: '视频号调度',
     update_character_status: '活动状态调度',
     trigger_memory_proactive_messages: '主动提醒调度',
-    update_recent_memory_daily: '近期摘要日更',
-    update_core_memory_weekly: '核心记忆周更',
+    update_recent_memory_daily: '近期记忆日更',
+    update_core_memory_weekly: '长期记忆周更',
   });
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_NEXT_RUN_HINTS: ReplyLogicSchedulerNextRunHints =

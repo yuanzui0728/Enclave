@@ -314,7 +314,7 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     readCharacter: (character) => character.profile?.memory?.coreMemory ?? '',
   },
   {
-    label: '近期摘要初始值',
+    label: '近期记忆初始值',
     recipeField: 'memorySeed.recentSummarySeed',
     targetField: 'profile.memory.recentSummary',
     readRecipe: (recipe) => recipe.memorySeed.recentSummarySeed,
@@ -330,7 +330,7 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
       character.profile?.memory?.forgettingCurve ?? 70,
   },
   {
-    label: '近期摘要提取提示词',
+    label: '近期记忆提示词',
     recipeField: 'memorySeed.recentSummaryPrompt',
     targetField: 'profile.memory.recentSummaryPrompt',
     readRecipe: (recipe) => recipe.memorySeed.recentSummaryPrompt,
@@ -338,7 +338,7 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
       character.profile?.memory?.recentSummaryPrompt ?? '',
   },
   {
-    label: '核心记忆提取提示词',
+    label: '长期记忆提示词',
     recipeField: 'memorySeed.coreMemoryPrompt',
     targetField: 'profile.memory.coreMemoryPrompt',
     readRecipe: (recipe) => recipe.memorySeed.coreMemoryPrompt,

@@ -1119,19 +1119,19 @@ export function ReplyLogicPage() {
 
                       <ConfigSection title="记忆（当前值）">
                         <p className="text-xs text-[color:var(--text-secondary)]">
-                          核心记忆每周一自动更新，近期摘要每日自动更新。在运行台中可查看和手动覆盖当前值。
+                          长期记忆每周一自动更新，近期记忆每日自动更新。在运行台中可查看和手动覆盖当前值。
                         </p>
                         <div className="rounded border border-[color:var(--border-faint)] px-3 py-2 text-xs text-[color:var(--text-secondary)]">
                           <p>
                             <span className="font-medium text-[color:var(--text-primary)]">
-                              核心记忆：
+                              长期记忆：
                             </span>
                             {characterDraft.profile.memory.coreMemory ||
                               "（暂无）"}
                           </p>
                           <p className="mt-1">
                             <span className="font-medium text-[color:var(--text-primary)]">
-                              近期摘要：
+                              近期记忆：
                             </span>
                             {characterDraft.profile.memory.recentSummary ||
                               "（暂无）"}
@@ -1185,7 +1185,7 @@ export function ReplyLogicPage() {
                             }))
                           }
                         >
-                          清空近期摘要
+                          清空近期记忆
                         </Button>
                         <Button
                           variant="primary"
@@ -3719,7 +3719,7 @@ function RuntimeRulesEditorCard({
                 }
               />
               <TextAreaBlock
-                label="记忆压缩模板（{{name}} / {{chatHistory}}）"
+                label="近期记忆整理模板（{{name}} / {{chatHistory}}）"
                 value={draft.promptTemplates.memoryCompressionPrompt}
                 onChange={(value) =>
                   onPatch((current) => ({
@@ -3727,6 +3727,19 @@ function RuntimeRulesEditorCard({
                     promptTemplates: {
                       ...current.promptTemplates,
                       memoryCompressionPrompt: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="长期记忆整理模板（{{name}} / {{interactionHistory}}）"
+                value={draft.promptTemplates.coreMemoryExtractionPrompt}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      coreMemoryExtractionPrompt: value,
                     },
                   }))
                 }
@@ -4868,7 +4881,8 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       朋友圈生成模板: constants.promptTemplates.momentPrompt,
       人格提取模板: constants.promptTemplates.personalityExtractionPrompt,
       意图分类模板: constants.promptTemplates.intentClassificationPrompt,
-      记忆压缩模板: constants.promptTemplates.memoryCompressionPrompt,
+      近期记忆整理模板: constants.promptTemplates.memoryCompressionPrompt,
+      长期记忆整理模板: constants.promptTemplates.coreMemoryExtractionPrompt,
       拉群说明模板: constants.promptTemplates.groupCoordinatorPrompt,
     },
     语义标签: {

@@ -208,7 +208,7 @@ export class PromptBuilderService {
       let memContent = '';
       if (coreMemory) memContent += `【核心记忆，始终牢记】\n${coreMemory}`;
       if (recentSummary)
-        memContent += `${coreMemory ? '\n' : ''}【近期摘要】\n${recentSummary}`;
+        memContent += `${coreMemory ? '\n' : ''}【近期记忆】\n${recentSummary}`;
       parts.push(`<memory>\n${memContent.trim()}\n</memory>`);
     }
 
@@ -405,7 +405,7 @@ export class PromptBuilderService {
       let memContent = '';
       if (coreMemory) memContent += `【核心记忆，始终牢记】\n${coreMemory}`;
       if (recentSummary)
-        memContent += `${coreMemory ? '\n' : ''}【近期摘要】\n${recentSummary}`;
+        memContent += `${coreMemory ? '\n' : ''}【近期记忆】\n${recentSummary}`;
       memoryPrefix = `<memory>\n${memContent.trim()}\n</memory>\n\n`;
     }
 
@@ -613,7 +613,7 @@ export class PromptBuilderService {
       memorySection += `\n【你对用户的长期了解（核心记忆，始终牢记）】\n${coreMemory}`;
     }
     if (recentSummary) {
-      memorySection += `\n【你最近的印象（近期摘要）】\n${recentSummary}`;
+      memorySection += `\n【你最近的印象（近期记忆）】\n${recentSummary}`;
     }
     if (!coreMemory && !recentSummary) {
       memorySection += `\n${templates.emptyMemory}`;
@@ -879,7 +879,7 @@ ${templates.behavioralGuideline}
         memContent += `【核心记忆，始终牢记】\n${coreMemory}`;
       }
       if (recentSummary) {
-        memContent += `${coreMemory ? '\n' : ''}【近期摘要】\n${recentSummary}`;
+        memContent += `${coreMemory ? '\n' : ''}【近期记忆】\n${recentSummary}`;
       }
       parts.push(`<memory>\n${memContent.trim()}\n</memory>`);
     }

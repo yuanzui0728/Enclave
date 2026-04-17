@@ -208,23 +208,22 @@ const DEFAULT_PROMPTS = {
   recentSummaryPrompt: `以下是{{name}}和用户的对话片段：
 {{chatHistory}}
 
-请从{{name}}的视角，用100字以内总结：
-1. 用户是什么样的人（性格、喜好、习惯）
-2. 两人聊过什么重要的事
-3. {{name}}对用户的印象
+请从{{name}}的视角，用100字以内记下这次对后续最有用的近期记忆：
+1. 用户最近具体卡在哪件事上，或反复回到什么话题
+2. 哪个偏好、情绪走向或关系张力这轮特别明显
+3. 哪件事还没过去，下次接话时最好直接续上
 
-只输出总结文字，不要加标题或格式。`,
+只输出最终内容，不要加标题，不要写成助手总结。`,
 
   coreMemoryPrompt: `以下是{{name}}与用户近期的完整互动记录：
 {{interactionHistory}}
 
-请从{{name}}的视角，用200字以内提炼对用户的核心认知：
-1. 用户的性格特质、价值观和生活方式
-2. 两人之间最重要的共同经历或情感纽带
-3. 用户的核心关切、习惯性话题和喜好
-4. {{name}}对这段关系的整体感受和定位
+请从{{name}}的视角，用200字以内提炼长期值得留下的核心记忆：
+1. 用户稳定的偏好、边界、决策习惯或反复出现的问题
+2. 两人之间已经形成的共同语境、长期张力或重要经历
+3. 哪些认识以后还会影响{{name}}怎么接他的话、怎么判断他的处境
 
-这是长期记忆，应当简练、准确、有温度。只输出总结文字，不要加标题或格式。`,
+这是长期记忆，应当简练、具体、经得起后续反复验证。只输出最终内容，不要加标题，不要写成关系汇报。`,
 };
 
 function csvToList(value: string) {
@@ -925,9 +924,12 @@ export function CharacterEditorPage() {
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>记忆提示词</SectionHeading>
           <div className="mt-4 space-y-4">
+            <InlineNotice tone="muted">
+              这些提示词是给后台自动整理记忆时用的。尽量写成这个角色会怎么记人、记事，别写成摘要助手、人格分析或关系汇报。
+            </InlineNotice>
             <TextAreaField
-              label="近期摘要提取提示词"
-              description="每日自动提取近期摘要时使用。留空则使用全局默认模板。可用变量：{{name}}（角色名）、{{chatHistory}}（对话记录）。"
+              label="近期记忆提示词"
+              description="每日自动整理近期记忆时使用。留空则使用全局默认模板。可用变量：{{name}}（角色名）、{{chatHistory}}（对话记录）。"
               defaultPrompt={DEFAULT_PROMPTS.recentSummaryPrompt}
               value={profile.memory?.recentSummaryPrompt ?? ""}
               onChange={(value) =>
@@ -941,8 +943,8 @@ export function CharacterEditorPage() {
               }
             />
             <TextAreaField
-              label="核心记忆提取提示词"
-              description="每周自动提取核心记忆时使用。留空则使用全局默认模板。可用变量：{{name}}（角色名）、{{interactionHistory}}（近30天全量互动记录）。"
+              label="长期记忆提示词"
+              description="每周自动整理长期记忆时使用。留空则使用全局默认模板。可用变量：{{name}}（角色名）、{{interactionHistory}}（近30天全量互动记录）。"
               defaultPrompt={DEFAULT_PROMPTS.coreMemoryPrompt}
               value={profile.memory?.coreMemoryPrompt ?? ""}
               onChange={(value) =>

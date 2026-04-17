@@ -185,9 +185,9 @@ export interface PersonalityProfile {
     coreMemory: string;
     recentSummary: string;
     forgettingCurve: number;
-    /** 近期摘要提取提示词，留空使用全局默认。变量：{{name}}、{{chatHistory}} */
+    /** 近期记忆提示词，留空使用全局默认。变量：{{name}}、{{chatHistory}} */
     recentSummaryPrompt?: string;
-    /** 核心记忆提取提示词，留空使用全局默认。变量：{{name}}、{{interactionHistory}} */
+    /** 长期记忆提示词，留空使用全局默认。变量：{{name}}、{{interactionHistory}} */
     coreMemoryPrompt?: string;
   };
   realWorldContext?: RealWorldRuntimeContextValue;

@@ -106,16 +106,16 @@ export function CharacterRuntimePage() {
 
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>记忆与状态</SectionHeading>
-          <p className="mt-2 text-sm text-[color:var(--text-muted)]">核心记忆每周一自动更新，近期摘要每日自动更新。</p>
+          <p className="mt-2 text-sm text-[color:var(--text-muted)]">长期记忆每周一自动更新，近期记忆每日自动更新。</p>
           <div className="mt-4 space-y-4">
             <div>
-              <p className="mb-1 text-xs font-medium text-[color:var(--text-secondary)]">核心记忆</p>
+              <p className="mb-1 text-xs font-medium text-[color:var(--text-secondary)]">长期记忆</p>
               <pre className="whitespace-pre-wrap rounded-md bg-[color:var(--surface-inset)] p-3 text-sm text-[color:var(--text-primary)]">
                 {character.profile.memory?.coreMemory || "（尚未生成）"}
               </pre>
             </div>
             <div>
-              <p className="mb-1 text-xs font-medium text-[color:var(--text-secondary)]">近期摘要</p>
+              <p className="mb-1 text-xs font-medium text-[color:var(--text-secondary)]">近期记忆</p>
               <pre className="whitespace-pre-wrap rounded-md bg-[color:var(--surface-inset)] p-3 text-sm text-[color:var(--text-primary)]">
                 {character.profile.memory?.recentSummary || "（尚未生成）"}
               </pre>
@@ -310,36 +310,6 @@ export function CharacterRuntimePage() {
 
 function formatMode(value?: string | null) {
   return value === "manual" ? "人工锁定" : "自动调度";
-}
-
-function formatCharacterSourceType(sourceType?: string | null) {
-  switch (sourceType) {
-    case "default_seed":
-      return "默认保底";
-    case "preset_catalog":
-      return "名人预设";
-    case "wechat_import":
-      return "微信同步";
-    case "shake_generated":
-      return "摇一摇生成";
-    case "ai_generated":
-      return "AI 生成";
-    case "manual_admin":
-      return "后台手工";
-    default:
-      return "后台手工";
-  }
-}
-
-function formatDeletionPolicy(policy?: string | null) {
-  switch (policy) {
-    case "protected":
-      return "受保护";
-    case "archive_allowed":
-      return "允许删除";
-    default:
-      return "允许删除";
-  }
 }
 
 function formatActivity(value?: string | null) {
