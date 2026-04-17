@@ -27,6 +27,18 @@ export class AdminGamesController {
     return this.gamesService.getAdminCatalogRevisions(id);
   }
 
+  @Post(':id/revisions/:revisionId/restore')
+  restoreAdminCatalogRevision(
+    @Param('id') id: string,
+    @Param('revisionId') revisionId: string,
+    @Body()
+    body: {
+      summary?: string;
+    },
+  ) {
+    return this.gamesService.restoreAdminCatalogRevision(id, revisionId, body);
+  }
+
   @Get(':id')
   getAdminCatalogItem(@Param('id') id: string) {
     return this.gamesService.getAdminCatalogItem(id);

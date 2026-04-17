@@ -60,6 +60,7 @@ export type GameCatalogRevisionChangeSource =
   | "draft_created"
   | "draft_updated"
   | "publish"
+  | "restore"
   | "submission_ingest"
   | "seed_backfill";
 
@@ -390,4 +391,8 @@ export interface AdminImportGameSubmissionRequest {
 export interface AdminImportGameSubmissionResult {
   submission: AdminGameSubmission;
   game: AdminGameCatalogDetail;
+}
+
+export interface AdminRestoreGameCatalogRevisionRequest {
+  summary?: string;
 }

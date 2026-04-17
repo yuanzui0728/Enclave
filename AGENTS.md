@@ -341,6 +341,7 @@
 - `POST /api/admin/games/submissions`
 - `POST /api/admin/games/submissions/:id/import`
 - `POST /api/admin/games/:id/publish`
+- `POST /api/admin/games/:id/revisions/:revisionId/restore`
 - `PATCH /api/admin/games/curation`
 - `PATCH /api/admin/games/submissions/:id`
 - `PATCH /api/admin/games/:id`

@@ -110,6 +110,10 @@ type PublishAdminGameInput = {
   visibilityScope?: string;
 };
 
+type RestoreAdminGameRevisionInput = {
+  summary?: string;
+};
+
 type UpdateAdminGameCenterCurationInput = {
   featuredGameIds?: string[];
   shelves?: Array<{
@@ -204,6 +208,7 @@ type GameCatalogRevisionChangeSource =
   | 'draft_created'
   | 'draft_updated'
   | 'publish'
+  | 'restore'
   | 'submission_ingest'
   | 'seed_backfill';
 
@@ -458,6 +463,29 @@ export class GamesService {
     await this.getCatalogEntryOrThrow(id);
     const revisions = await this.listCatalogRevisions(id);
     return revisions.map((revision) => this.toRevisionContract(revision));
+  }
+
+  async restoreAdminCatalogRevision(
+    id: string,
+    revisionId: string,
+    input: RestoreAdminGameRevisionInput,
+  ) {
+    const [entry, revision] = await Promise.all([
+      this.getCatalogEntryOrThrow(id),
+      this.getCatalogRevisionOrThrow(id, revisionId),
+    ]);
+
+    this.applyCatalogSnapshot(entry, revision.snapshotPayload);
+    const saved = await this.catalogRepo.save(entry);
+    await this.createCatalogRevision(
+      saved,
+      'restore',
+      this.normalizeNullableText(input.summary) ??
+        `恢复到修订 #${revision.revisionSequence}`,
+      null,
+    );
+
+    return this.getAdminCatalogItem(saved.id);
   }
 
   async createAdminCatalogItem(input: CreateAdminGameInput) {
@@ -1012,6 +1040,21 @@ export class GamesService {
     return entry;
   }
 
+  private async getCatalogRevisionOrThrow(gameId: string, revisionId: string) {
+    const revision = await this.revisionRepo.findOne({
+      where: {
+        id: revisionId,
+        gameId,
+      },
+    });
+
+    if (!revision) {
+      throw new NotFoundException('修订不存在');
+    }
+
+    return revision;
+  }
+
   private async ensureCatalogRevisions(entries: GameCatalogEntity[]) {
     const gameIds = entries.map((entry) => entry.id);
     if (gameIds.length === 0) {
@@ -1093,6 +1136,37 @@ export class GamesService {
     });
 
     return this.revisionRepo.save(revision);
+  }
+
+  private applyCatalogSnapshot(
+    entry: GameCatalogEntity,
+    snapshot: SerializedGameCatalogSnapshot | GameCatalogRevisionEntity['snapshotPayload'],
+  ) {
+    entry.name = snapshot.name;
+    entry.slogan = snapshot.slogan;
+    entry.description = snapshot.description;
+    entry.studio = snapshot.studio;
+    entry.badge = snapshot.badge;
+    entry.heroLabel = snapshot.heroLabel;
+    entry.category = snapshot.category;
+    entry.tone = snapshot.tone;
+    entry.playersLabel = snapshot.playersLabel;
+    entry.friendsLabel = snapshot.friendsLabel;
+    entry.updateNote = snapshot.updateNote;
+    entry.deckLabel = snapshot.deckLabel;
+    entry.estimatedDuration = snapshot.estimatedDuration;
+    entry.rewardLabel = snapshot.rewardLabel;
+    entry.sessionObjective = snapshot.sessionObjective;
+    entry.tagsPayload = [...snapshot.tags];
+    entry.publisherKind = snapshot.publisherKind;
+    entry.productionKind = snapshot.productionKind;
+    entry.runtimeMode = snapshot.runtimeMode;
+    entry.reviewStatus = snapshot.reviewStatus;
+    entry.visibilityScope = snapshot.visibilityScope;
+    entry.sourceCharacterId = snapshot.sourceCharacterId ?? null;
+    entry.sourceCharacterName = snapshot.sourceCharacterName ?? null;
+    entry.aiHighlightsPayload = [...snapshot.aiHighlights];
+    entry.sortOrder = snapshot.sortOrder;
   }
 
   private async ensureCurationEntity() {

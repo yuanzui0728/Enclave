@@ -4,6 +4,7 @@ import type {
   AdminCreateGameSubmissionRequest,
   AdminGameSubmission,
   AdminUpdateGameSubmissionRequest,
+  Character,
 } from "@yinjie/contracts";
 import {
   Button,
@@ -139,6 +140,42 @@ function createEmptySubmissionDraft(): SubmissionDraft {
   };
 }
 
+function applyCharacterToDraft(
+  draft: SubmissionDraft,
+  character: Character,
+): SubmissionDraft {
+  const expertDomains = character.expertDomains.filter(Boolean);
+
+  return {
+    ...draft,
+    sourceKind: "character_creator",
+    productionKind: "character_generated",
+    runtimeMode:
+      draft.runtimeMode === "workspace_mock" ? "chat_native" : draft.runtimeMode,
+    proposedGameId: draft.proposedGameId.trim() || `character-${character.id}`,
+    proposedName: draft.proposedName.trim() || `${character.name} 出品新作`,
+    slogan:
+      draft.slogan.trim() || `由 ${character.name} 主持推进的 AI 互动游戏提案。`,
+    description:
+      draft.description.trim() ||
+      character.bio.trim() ||
+      `${character.name} 发起的角色出品游戏，待补充完整玩法说明。`,
+    studio: draft.studio.trim() || "角色工坊",
+    sourceCharacterId: character.id,
+    sourceCharacterName: character.name,
+    submitterName: draft.submitterName.trim() || character.name,
+    submitterContact:
+      draft.submitterContact.trim() || `world://${character.id}`,
+    submissionNote:
+      draft.submissionNote.trim() ||
+      `${character.name} 以角色身份提交的游戏提案，建议重点评估可持续更新能力与角色运营空间。`,
+    aiHighlightsText:
+      draft.aiHighlightsText.trim() || expertDomains.join("，"),
+    tagsText:
+      draft.tagsText.trim() || expertDomains.slice(0, 3).join("，"),
+  };
+}
+
 function draftFromSubmission(submission: AdminGameSubmission): SubmissionDraft {
   return {
     sourceKind: submission.sourceKind,
@@ -219,6 +256,7 @@ export function GameSubmissionWorkbench({
   const queryClient = useQueryClient();
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedCharacterId, setSelectedCharacterId] = useState("");
   const [draft, setDraft] = useState<SubmissionDraft>(() =>
     createEmptySubmissionDraft(),
   );
@@ -226,6 +264,12 @@ export function GameSubmissionWorkbench({
   const submissionsQuery = useQuery({
     queryKey: ["admin-game-submissions"],
     queryFn: () => adminApi.getGameSubmissions(),
+  });
+
+  const charactersQuery = useQuery({
+    queryKey: ["admin-game-submission-characters"],
+    queryFn: () => adminApi.getCharacters(),
+    enabled: draft.sourceKind === "character_creator",
   });
 
   useEffect(() => {
@@ -251,6 +295,24 @@ export function GameSubmissionWorkbench({
     setDraft(draftFromSubmission(selectedSubmission));
   }, [isCreating, selectedSubmission]);
 
+  useEffect(() => {
+    if (draft.sourceKind !== "character_creator") {
+      return;
+    }
+
+    setSelectedCharacterId((current) => {
+      if (draft.sourceCharacterId && current !== draft.sourceCharacterId) {
+        return draft.sourceCharacterId;
+      }
+
+      if (current) {
+        return current;
+      }
+
+      return charactersQuery.data?.[0]?.id ?? "";
+    });
+  }, [charactersQuery.data, draft.sourceCharacterId, draft.sourceKind]);
+
   const metrics = useMemo(() => {
     const items = submissionsQuery.data ?? [];
     return {
@@ -260,6 +322,13 @@ export function GameSubmissionWorkbench({
       approved: items.filter((item) => item.status === "approved").length,
     };
   }, [submissionsQuery.data]);
+
+  const selectedCharacter = useMemo(
+    () =>
+      charactersQuery.data?.find((character) => character.id === selectedCharacterId) ??
+      null,
+    [charactersQuery.data, selectedCharacterId],
+  );
 
   const createMutation = useMutation({
     mutationFn: (payload: AdminCreateGameSubmissionRequest) =>
@@ -329,6 +398,22 @@ export function GameSubmissionWorkbench({
   function handleSelectSubmission(submissionId: string) {
     setIsCreating(false);
     setSelectedSubmissionId(submissionId);
+  }
+
+  function handleApplyCharacter() {
+    if (!selectedCharacter) {
+      onFeedback({
+        tone: "info",
+        message: "先选择一个角色，再带入角色资料。",
+      });
+      return;
+    }
+
+    setDraft((current) => applyCharacterToDraft(current, selectedCharacter));
+    onFeedback({
+      tone: "success",
+      message: `已把角色 ${selectedCharacter.name} 的资料带入投稿草稿。`,
+    });
   }
 
   async function handleSaveSubmission() {
@@ -599,6 +684,93 @@ export function GameSubmissionWorkbench({
                   className="md:col-span-2"
                 />
               </div>
+
+              {draft.sourceKind === "character_creator" ? (
+                <div className="rounded-[20px] border border-[rgba(7,193,96,0.14)] bg-[linear-gradient(180deg,rgba(240,253,244,0.96),rgba(255,255,255,0.98))] p-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                        Character Intake
+                      </div>
+                      <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
+                        角色资料快速带入
+                      </div>
+                      <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+                        选一个现有世界角色，把身份、简介、擅长领域和联系方式直接带进投稿草稿。
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="secondary"
+                      onClick={handleApplyCharacter}
+                      disabled={editorBusy || !selectedCharacter}
+                    >
+                      带入角色资料
+                    </Button>
+                  </div>
+
+                  {charactersQuery.isLoading ? (
+                    <div className="mt-4">
+                      <LoadingBlock label="正在加载角色列表..." />
+                    </div>
+                  ) : null}
+                  {charactersQuery.isError && charactersQuery.error instanceof Error ? (
+                    <div className="mt-4">
+                      <ErrorBlock message={charactersQuery.error.message} />
+                    </div>
+                  ) : null}
+
+                  {!charactersQuery.isLoading &&
+                  !(charactersQuery.data?.length ?? 0) ? (
+                    <div className="mt-4">
+                      <AdminEmptyState
+                        title="当前还没有可用角色"
+                        description="先在角色页创建或导入角色，再把角色产游稿件带进投稿池。"
+                      />
+                    </div>
+                  ) : null}
+
+                  {(charactersQuery.data?.length ?? 0) > 0 ? (
+                    <div className="mt-4 space-y-4">
+                      <label className="block">
+                        <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                          选择角色
+                        </div>
+                        <SelectField
+                          value={selectedCharacterId}
+                          onChange={(event) =>
+                            setSelectedCharacterId(event.target.value)
+                          }
+                        >
+                          {charactersQuery.data?.map((character) => (
+                            <option key={character.id} value={character.id}>
+                              {character.name}
+                            </option>
+                          ))}
+                        </SelectField>
+                      </label>
+
+                      {selectedCharacter ? (
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <SummaryField label="角色名" value={selectedCharacter.name} />
+                          <SummaryField
+                            label="关系"
+                            value={selectedCharacter.relationship}
+                          />
+                          <SummaryField
+                            label="擅长领域"
+                            value={
+                              selectedCharacter.expertDomains.length > 0
+                                ? selectedCharacter.expertDomains.join(" / ")
+                                : "未填写"
+                            }
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               <EditorTextArea
                 label="游戏说明"

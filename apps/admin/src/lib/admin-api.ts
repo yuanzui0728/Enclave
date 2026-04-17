@@ -4,6 +4,7 @@ import type {
   AdminGameCatalogRevision,
   AdminGameCenterCuration,
   AdminGameCatalogItem,
+  AdminRestoreGameCatalogRevisionRequest,
   AdminGameSubmission,
   AdminImportGameSubmissionRequest,
   AdminImportGameSubmissionResult,
@@ -301,6 +302,18 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  restoreGameCatalogRevision: (
+    id: string,
+    revisionId: string,
+    payload: AdminRestoreGameCatalogRevisionRequest,
+  ) =>
+    adminFetch<AdminGameCatalogDetail>(
+      `/games/${id}/revisions/${revisionId}/restore`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
   updateGameCenterCuration: (payload: AdminUpdateGameCenterCurationRequest) =>
     adminFetch<AdminGameCenterCuration>("/games/curation", {
       method: "PATCH",
