@@ -541,6 +541,10 @@
   - `providerSnapshotId`
   - `launchConfig`
   - `lastOperationAt`
+- Cloud alert delivery now includes outbound webhook notifications in `apps/cloud-api/src/alerts/`:
+  - `CloudAlertNotifierService` sends structured JSON webhooks for critical platform failures
+  - current automatic events: `world_job_failed` and `world_provider_error`
+  - webhook delivery is best-effort and does not block lifecycle processing
 - Cloud console world detail now supports provider-catalog based editing for `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.
 - Cloud bootstrap packages are now provider-aware and include `providerLabel`, `deploymentMode`, `image`, `containerName`, `volumeName`, plus a manual-docker compose snippet that can be applied on the target host.
 - Bootstrap packages for `manual-docker` now also expose `executorMode`, `projectName`, and `remoteDeployPath` so ops can see the exact remote deployment location used by the SSH executor.
@@ -562,6 +566,11 @@
   - `CLOUD_WORLD_ALERT_RETRY_THRESHOLD` upgrades repeated recovery drift into a critical alert after enough failed retries
   - `CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS` upgrades long-running stale heartbeat conditions into a critical alert
   - cloud console now distinguishes warning vs critical worlds and shows whether an alert has already been escalated
+- Cloud alert webhook env vars:
+  - `CLOUD_ALERT_WEBHOOK_URL`
+  - `CLOUD_ALERT_WEBHOOK_TOKEN`
+  - `CLOUD_ALERT_WEBHOOK_EVENTS`
+  - `CLOUD_ALERT_WEBHOOK_TIMEOUT_MS`
 - Cloud alert ops now also cover recovery and shareable views:
   - silence expiry automatically emits `alert_resurfaced`
   - manual takeover timeout automatically emits `manual_takeover_escalated`

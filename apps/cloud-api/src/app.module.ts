@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminCloudController } from "./admin/admin-cloud.controller";
+import { CloudAlertNotifierService } from "./alerts/cloud-alert-notifier.service";
 import { AdminGuard } from "./auth/admin.guard";
 import { CloudAuthController } from "./auth/cloud-auth.controller";
 import { CloudClientAuthGuard } from "./auth/cloud-client-auth.guard";
@@ -68,6 +69,7 @@ import { WorldAccessService } from "./world-access/world-access.service";
   providers: [
     PhoneAuthService,
     MockSmsProviderService,
+    CloudAlertNotifierService,
     CloudService,
     CloudClientAuthGuard,
     AdminGuard,

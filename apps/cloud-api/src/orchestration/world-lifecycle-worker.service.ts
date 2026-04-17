@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import type { CloudInstancePowerState, WorldLifecycleJobType } from "@yinjie/contracts";
+import { CloudAlertNotifierService } from "../alerts/cloud-alert-notifier.service";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { WorldAccessSessionEntity } from "../entities/world-access-session.entity";
@@ -31,6 +32,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     @InjectRepository(WorldAccessSessionEntity)
     private readonly accessSessionRepo: Repository<WorldAccessSessionEntity>,
     private readonly configService: ConfigService,
+    private readonly cloudAlertNotifier: CloudAlertNotifierService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
     private readonly worldAccessService: WorldAccessService,
   ) {
@@ -167,6 +169,14 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         world.failureMessage = message;
         world.retryCount += 1;
         await this.worldRepo.save(world);
+        await this.cloudAlertNotifier.notifyJobFailed(world, {
+          jobId: job.id,
+          jobType: job.jobType,
+          failureCode: job.failureCode,
+          failureMessage: message,
+          attempt: job.attempt,
+          maxAttempts: job.maxAttempts,
+        });
 
         const instance = await this.instanceRepo.findOne({
           where: { worldId: world.id },
@@ -488,8 +498,11 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     let worldDirty = false;
     let queuedJobType: "provision" | "resume" | null = null;
     let reconcileAction = "none";
+    let shouldNotifyProviderError = false;
 
     if (observedStatus.deploymentState === "error") {
+      const previousFailureMessage = world.failureMessage;
+      const nextFailureMessage = observedStatus.providerMessage ?? "Provider reported a deployment error.";
       if (world.status !== "failed") {
         world.status = "failed";
         worldDirty = true;
@@ -498,18 +511,20 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         world.healthStatus = "failed";
         worldDirty = true;
       }
-      if (world.healthMessage !== (observedStatus.providerMessage ?? "Provider reported a deployment error.")) {
-        world.healthMessage = observedStatus.providerMessage ?? "Provider reported a deployment error.";
+      if (world.healthMessage !== nextFailureMessage) {
+        world.healthMessage = nextFailureMessage;
         worldDirty = true;
       }
       if (world.failureCode !== "provider_error") {
         world.failureCode = "provider_error";
         worldDirty = true;
       }
-      if (world.failureMessage !== (observedStatus.providerMessage ?? "Provider reported a deployment error.")) {
-        world.failureMessage = observedStatus.providerMessage ?? "Provider reported a deployment error.";
+      if (world.failureMessage !== nextFailureMessage) {
+        world.failureMessage = nextFailureMessage;
         worldDirty = true;
       }
+      shouldNotifyProviderError =
+        worldStatusBefore !== "failed" || previousFailureMessage !== nextFailureMessage;
       reconcileAction = "mark_failed";
     } else if (world.desiredState === "running") {
       if (observedStatus.deploymentState === "running") {
@@ -629,6 +644,14 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     }
     if (worldDirty) {
       await this.worldRepo.save(world);
+      if (shouldNotifyProviderError) {
+        await this.cloudAlertNotifier.notifyProviderError(world, {
+          source,
+          deploymentState: observedStatus.deploymentState,
+          providerMessage: observedStatus.providerMessage ?? null,
+          rawStatus: observedStatus.rawStatus ?? null,
+        });
+      }
       await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
       if (queuedJobType) {
         this.logger.warn(
