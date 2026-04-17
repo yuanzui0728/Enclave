@@ -318,6 +318,7 @@ export class NeedDiscoveryService {
             character.id,
             generatedDraft.greeting || buildDefaultGreeting(character.name),
             {
+              initiator: 'character',
               triggerScene: `need_discovery_${input.cadenceType}`,
               expiresAt,
             },

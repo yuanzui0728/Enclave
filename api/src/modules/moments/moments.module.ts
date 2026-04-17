@@ -11,6 +11,7 @@ import { CharactersModule } from '../characters/characters.module';
 import { AuthModule } from '../auth/auth.module';
 import { SocialModule } from '../social/social.module';
 import { FeedModule } from '../feed/feed.module';
+import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { FeedModule } from '../feed/feed.module';
     AuthModule,
     SocialModule,
     FeedModule,
+    CyberAvatarModule,
   ],
   providers: [MomentsService],
   controllers: [MomentsController],

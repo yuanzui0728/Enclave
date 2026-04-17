@@ -10,6 +10,7 @@ import { AiModule } from '../ai/ai.module';
 import { CharactersModule } from '../characters/characters.module';
 import { AuthModule } from '../auth/auth.module';
 import { SocialModule } from '../social/social.module';
+import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { SocialModule } from '../social/social.module';
     CharactersModule,
     AuthModule,
     SocialModule,
+    CyberAvatarModule,
   ],
   providers: [FeedService],
   controllers: [FeedController],

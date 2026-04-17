@@ -458,6 +458,7 @@ export class SocialService {
       autoAccept?: boolean;
       expiresAt?: Date | null;
       triggerScene?: string;
+      initiator?: 'user' | 'character';
     },
   ): Promise<FriendRequestEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
@@ -555,20 +556,33 @@ export class SocialService {
         occurredAt: new Date(),
       });
     } else {
+      const initiator = options?.initiator === 'character' ? 'character' : 'user';
       await this.cyberAvatar.captureSignal({
         ownerId: owner.id,
         signalType: 'friendship_event',
         sourceSurface: 'social',
-        sourceEntityType: 'friend_request_send',
+        sourceEntityType:
+          initiator === 'character'
+            ? 'friend_request_receive'
+            : 'friend_request_send',
         sourceEntityId: saved.id,
-        dedupeKey: `friendship:send-request:${saved.id}`,
-        summaryText: `用户向 ${char.name} 发送了好友申请。`,
+        dedupeKey: `friendship:${
+          initiator === 'character' ? 'receive-request' : 'send-request'
+        }:${saved.id}`,
+        summaryText:
+          initiator === 'character'
+            ? `${char.name} 向用户发起了好友申请。`
+            : `用户向 ${char.name} 发送了好友申请。`,
         payload: {
-          action: 'send_friend_request',
+          action:
+            initiator === 'character'
+              ? 'receive_friend_request'
+              : 'send_friend_request',
           requestId: saved.id,
           characterId: char.id,
           characterName: char.name,
           triggerScene: req.triggerScene,
+          initiator,
           greeting,
         },
         occurredAt: new Date(),
