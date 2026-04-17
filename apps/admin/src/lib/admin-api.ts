@@ -23,6 +23,8 @@ import type {
   CyberAvatarRunSummary,
   CyberAvatarRuntimeRules,
   CyberAvatarSignal,
+  FollowupRuntimeOverview,
+  FollowupRuntimeRules,
   InstallCharacterPresetsResult,
   NeedDiscoveryConfig,
   NeedDiscoveryOverview,
@@ -553,6 +555,15 @@ export const adminApi = {
     adminFetch<NeedDiscoveryOverview>("/need-discovery/overview"),
   setNeedDiscoveryConfig: (payload: Partial<NeedDiscoveryConfig>) =>
     adminFetch<NeedDiscoveryConfig>("/need-discovery/config", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  getFollowupRuntimeOverview: () =>
+    adminFetch<FollowupRuntimeOverview>("/followup-runtime/overview"),
+  getFollowupRuntimeRules: () =>
+    adminFetch<FollowupRuntimeRules>("/followup-runtime/rules"),
+  setFollowupRuntimeRules: (payload: Partial<FollowupRuntimeRules>) =>
+    adminFetch<FollowupRuntimeRules>("/followup-runtime/rules", {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),

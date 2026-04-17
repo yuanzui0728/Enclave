@@ -169,14 +169,23 @@ export interface GameCenterHomeResponse {
 export interface AdminGameCatalogItem {
   id: string;
   name: string;
+  slogan: string;
+  description: string;
+  studio: string;
+  heroLabel: string;
   category: GameCenterCategoryId;
+  tone: GameCenterTone;
   badge: string;
+  deckLabel: string;
+  estimatedDuration: string;
+  rewardLabel: string;
+  sessionObjective: string;
   publisherKind: GamePublisherKind;
   productionKind: GameProductionKind;
   runtimeMode: GameRuntimeMode;
   reviewStatus: GameReviewStatus;
   visibilityScope: GameVisibilityScope;
-  studio: string;
+  sortOrder: number;
   sourceCharacterId?: string | null;
   sourceCharacterName?: string | null;
   aiHighlights: string[];
@@ -184,4 +193,65 @@ export interface AdminGameCatalogItem {
   updateNote: string;
   playersLabel: string;
   friendsLabel: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminGameCatalogDetail extends AdminGameCatalogItem {}
+
+export interface AdminCreateGameCatalogRequest {
+  id: string;
+  name: string;
+  slogan?: string;
+  description?: string;
+  studio?: string;
+  heroLabel?: string;
+  category?: GameCenterCategoryId;
+  tone?: GameCenterTone;
+  badge?: string;
+  deckLabel?: string;
+  estimatedDuration?: string;
+  rewardLabel?: string;
+  sessionObjective?: string;
+  publisherKind?: GamePublisherKind;
+  productionKind?: GameProductionKind;
+  runtimeMode?: GameRuntimeMode;
+  reviewStatus?: GameReviewStatus;
+  visibilityScope?: GameVisibilityScope;
+  sourceCharacterId?: string | null;
+  sourceCharacterName?: string | null;
+  aiHighlights?: string[];
+  tags?: string[];
+  updateNote?: string;
+  playersLabel?: string;
+  friendsLabel?: string;
+  sortOrder?: number;
+}
+
+export interface AdminUpdateGameCatalogRequest {
+  name?: string;
+  slogan?: string;
+  description?: string;
+  studio?: string;
+  heroLabel?: string;
+  category?: GameCenterCategoryId;
+  tone?: GameCenterTone;
+  badge?: string;
+  deckLabel?: string;
+  estimatedDuration?: string;
+  rewardLabel?: string;
+  sessionObjective?: string;
+  publisherKind?: GamePublisherKind;
+  productionKind?: GameProductionKind;
+  runtimeMode?: GameRuntimeMode;
+  reviewStatus?: GameReviewStatus;
+  visibilityScope?: GameVisibilityScope;
+  sourceCharacterId?: string | null;
+  sourceCharacterName?: string | null;
+  aiHighlights?: string[];
+  tags?: string[];
+  updateNote?: string;
+  playersLabel?: string;
+  friendsLabel?: string;
+  sortOrder?: number;
 }
