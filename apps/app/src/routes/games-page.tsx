@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getConversations,
+  getGameCenterHome,
   sendGroupMessage,
   type ConversationListItem,
 } from "@yinjie/contracts";
@@ -29,19 +30,15 @@ import {
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopGamesWorkspace } from "../features/desktop/games/desktop-games-workspace";
 import {
-  gameCenterCategoryTabs,
-  gameCenterEvents,
-  gameCenterFeaturedGameIds,
-  gameCenterFriendActivities,
-  gameCenterGames,
-  gameCenterHotRankings,
-  gameCenterNewRankings,
+  defaultGameCenterHomeResponse,
   getGameCenterEventActionLabel,
   getGameCenterGame,
   getGameCenterEventStatusLabel,
   getGameCenterToneStyle,
   type GameCenterCategoryId,
+  type GameCenterFriendActivity,
   type GameCenterGame,
+  type GameCenterRankingEntry,
 } from "../features/games/game-center-data";
 import { GameCenterSessionPanel } from "../features/games/game-center-session-panel";
 import { useGameCenterState } from "../features/games/use-game-center-state";
@@ -70,17 +67,20 @@ import {
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
-function resolveGames(ids: string[]) {
+function resolveGames(ids: string[], games: GameCenterGame[]) {
   return ids
-    .map((id) => getGameCenterGame(id))
+    .map((id) => getGameCenterGame(id, games))
     .filter((game): game is GameCenterGame => Boolean(game));
 }
 
-function resolveDefaultGameSelection() {
-  return gameCenterFeaturedGameIds[0] ?? "signal-squad";
+function resolveDefaultGameSelection(featuredGameIds: string[]) {
+  return featuredGameIds[0] ?? "signal-squad";
 }
 
-function resolveGameInviteActivityFromSearch(search: unknown) {
+function resolveGameInviteActivityFromSearch(
+  search: unknown,
+  friendActivities: GameCenterFriendActivity[],
+) {
   const params = new URLSearchParams(typeof search === "string" ? search : "");
   const inviteId = params.get("invite")?.trim();
 
@@ -88,15 +88,22 @@ function resolveGameInviteActivityFromSearch(search: unknown) {
     return null;
   }
 
-  return gameCenterFriendActivities.find((item) => item.id === inviteId) ?? null;
+  return friendActivities.find((item) => item.id === inviteId) ?? null;
 }
 
-function resolveGameSelectionFromSearch(search: unknown) {
+function resolveGameSelectionFromSearch(
+  search: unknown,
+  friendActivities: GameCenterFriendActivity[],
+  games: GameCenterGame[],
+) {
   const params = new URLSearchParams(typeof search === "string" ? search : "");
-  const inviteActivity = resolveGameInviteActivityFromSearch(search);
+  const inviteActivity = resolveGameInviteActivityFromSearch(
+    search,
+    friendActivities,
+  );
   const gameId = inviteActivity?.gameId ?? params.get("game")?.trim() ?? "";
 
-  return getGameCenterGame(gameId) ? gameId : null;
+  return getGameCenterGame(gameId, games) ? gameId : null;
 }
 
 export function GamesPage() {
@@ -114,6 +121,10 @@ export function GamesPage() {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const locationSearch = useRouterState({
     select: (state) => state.location.search,
+  });
+  const gameCenterHomeQuery = useQuery({
+    queryKey: ["app-game-center-home", baseUrl],
+    queryFn: () => getGameCenterHome(baseUrl),
   });
   const {
     activeGameId,
@@ -133,18 +144,26 @@ export function GamesPage() {
     launchGame,
     togglePinned,
   } = useGameCenterState();
+  const gameCenterHome = gameCenterHomeQuery.data ?? defaultGameCenterHomeResponse;
+  const categoryTabs = gameCenterHome.categoryTabs;
+  const events = gameCenterHome.events;
+  const featuredGameIds = gameCenterHome.featuredGameIds;
+  const friendActivities = gameCenterHome.friendActivities;
+  const games = gameCenterHome.games;
+  const hotRankings = gameCenterHome.hotRankings;
+  const newRankings = gameCenterHome.newRankings;
   const [activeCategory, setActiveCategory] =
     useState<GameCenterCategoryId>("featured");
   const selectedGameFromSearch = useMemo(
-    () => resolveGameSelectionFromSearch(locationSearch),
-    [locationSearch],
+    () => resolveGameSelectionFromSearch(locationSearch, friendActivities, games),
+    [friendActivities, games, locationSearch],
   );
   const inviteActivityFromSearch = useMemo(
-    () => resolveGameInviteActivityFromSearch(locationSearch),
-    [locationSearch],
+    () => resolveGameInviteActivityFromSearch(locationSearch, friendActivities),
+    [friendActivities, locationSearch],
   );
   const [selectedGameId, setSelectedGameId] = useState(
-    selectedGameFromSearch ?? resolveDefaultGameSelection(),
+    selectedGameFromSearch ?? resolveDefaultGameSelection(featuredGameIds),
   );
   const [activeInviteActivityId, setActiveInviteActivityId] = useState<string | null>(
     null,
@@ -159,10 +178,10 @@ export function GamesPage() {
   });
 
   useEffect(() => {
-    if (!getGameCenterGame(selectedGameId)) {
-      setSelectedGameId(gameCenterFeaturedGameIds[0] ?? "signal-squad");
+    if (!getGameCenterGame(selectedGameId, games)) {
+      setSelectedGameId(resolveDefaultGameSelection(featuredGameIds));
     }
-  }, [selectedGameId]);
+  }, [featuredGameIds, games, selectedGameId]);
 
   useEffect(() => {
     if (!successNotice) {
@@ -175,30 +194,30 @@ export function GamesPage() {
 
   useEffect(() => {
     const nextSelectedGameId =
-      selectedGameFromSearch ?? resolveDefaultGameSelection();
+      selectedGameFromSearch ?? resolveDefaultGameSelection(featuredGameIds);
 
     setSelectedGameId((current) =>
       current === nextSelectedGameId ? current : nextSelectedGameId,
     );
-  }, [selectedGameFromSearch]);
+  }, [featuredGameIds, selectedGameFromSearch]);
 
   useEffect(() => {
     if (inviteActivityFromSearch) {
       setNoticeTone("info");
       setSuccessNotice(
-        `已带上 ${inviteActivityFromSearch.friendName} 的组局邀约，可继续查看 ${getGameCenterGame(inviteActivityFromSearch.gameId)?.name ?? "当前游戏"}。`,
+        `已带上 ${inviteActivityFromSearch.friendName} 的组局邀约，可继续查看 ${getGameCenterGame(inviteActivityFromSearch.gameId, games)?.name ?? "当前游戏"}。`,
       );
     }
-  }, [inviteActivityFromSearch]);
+  }, [games, inviteActivityFromSearch]);
 
-  const featuredGames = resolveGames(gameCenterFeaturedGameIds);
+  const featuredGames = resolveGames(featuredGameIds, games);
   const selectedGame =
-    getGameCenterGame(selectedGameId) ?? featuredGames[0] ?? gameCenterGames[0];
+    getGameCenterGame(selectedGameId, games) ?? featuredGames[0] ?? games[0];
   const mobileBrowseGames =
     activeCategory === "featured"
-      ? gameCenterGames.slice(0, 5)
-      : gameCenterGames.filter((game) => game.category === activeCategory);
-  const recentGames = resolveGames(recentGameIds);
+      ? games.slice(0, 5)
+      : games.filter((game) => game.category === activeCategory);
+  const recentGames = resolveGames(recentGameIds, games);
   const inviteConversationCandidates = useMemo(
     () =>
       [...(conversationsQuery.data ?? [])]
@@ -228,7 +247,7 @@ export function GamesPage() {
   });
 
   function handleLaunchGame(gameId: string) {
-    const game = getGameCenterGame(gameId);
+    const game = getGameCenterGame(gameId, games);
     launchGame(gameId);
     setSelectedGameId(gameId);
     setNoticeTone("success");
@@ -238,7 +257,7 @@ export function GamesPage() {
   }
 
   function handleTogglePinnedGame(gameId: string) {
-    const game = getGameCenterGame(gameId);
+    const game = getGameCenterGame(gameId, games);
     const pinned = pinnedGameIds.includes(gameId);
     togglePinned(gameId);
     setNoticeTone("success");
@@ -248,7 +267,7 @@ export function GamesPage() {
   }
 
   function handleCompleteEventAction(eventId: string) {
-    const event = gameCenterEvents.find((item) => item.id === eventId);
+    const event = events.find((item) => item.id === eventId);
     if (!event) {
       return;
     }
@@ -265,12 +284,12 @@ export function GamesPage() {
   }
 
   function handleInviteFriend(activityId: string) {
-    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    const activity = friendActivities.find((item) => item.id === activityId);
     if (!activity) {
       return;
     }
 
-    const game = getGameCenterGame(activity.gameId);
+    const game = getGameCenterGame(activity.gameId, games);
     const alreadyInvited = Boolean(friendInviteStatusByActivityId[activityId]);
     applyFriendInvite(activityId, "invited");
     setSelectedGameId(activity.gameId);
@@ -289,7 +308,7 @@ export function GamesPage() {
   }
 
   function buildInviteMessage(
-    activity: (typeof gameCenterFriendActivities)[number],
+    activity: GameCenterFriendActivity,
     game: GameCenterGame | null,
   ) {
     return [
@@ -310,7 +329,7 @@ export function GamesPage() {
     activityId: string,
     conversationId: string,
   ) {
-    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    const activity = friendActivities.find((item) => item.id === activityId);
     const conversation = inviteConversationCandidates.find(
       (item) => item.id === conversationId,
     );
@@ -319,7 +338,7 @@ export function GamesPage() {
       return;
     }
 
-    const game = getGameCenterGame(activity.gameId);
+    const game = getGameCenterGame(activity.gameId, games);
     const text = buildInviteMessage(activity, game);
     const conversationPath = buildGameInvitePath(
       resolveConversationPath(conversation),
@@ -382,12 +401,12 @@ export function GamesPage() {
   }
 
   async function handleCopyInviteToMobile(activityId: string) {
-    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    const activity = friendActivities.find((item) => item.id === activityId);
     if (!activity) {
       return;
     }
 
-    const game = getGameCenterGame(activity.gameId);
+    const game = getGameCenterGame(activity.gameId, games);
     const path = `/discover/games?game=${activity.gameId}&invite=${activity.id}`;
     const link = resolveMobileHandoffLink(path);
 
@@ -479,7 +498,7 @@ export function GamesPage() {
   }
 
   async function handleCopyGameToMobile(gameId: string) {
-    const game = getGameCenterGame(gameId);
+    const game = getGameCenterGame(gameId, games);
     const path = buildGameInvitePath("/discover/games", { gameId });
     const link = resolveMobileHandoffLink(path);
 
@@ -570,9 +589,14 @@ export function GamesPage() {
         activeCategory={activeCategory}
         activeGameId={activeGameId}
         activeInviteActivityId={activeInviteActivityId}
+        categoryTabs={categoryTabs}
         eventActionStatusById={eventActionStatusById}
+        events={events}
+        friendActivities={friendActivities}
         friendInviteSentAtByActivityId={friendInviteSentAtByActivityId}
         friendInviteStatusByActivityId={friendInviteStatusByActivityId}
+        games={games}
+        hotRankings={hotRankings}
         lastInviteConversationPathByActivityId={
           lastInviteConversationPathByActivityId
         }
@@ -582,6 +606,7 @@ export function GamesPage() {
         inviteConversationCandidates={inviteConversationCandidates}
         inviteConversationCandidatesLoading={conversationsQuery.isLoading}
         launchCountById={launchCountById}
+        newRankings={newRankings}
         pinnedGameIds={pinnedGameIds}
         recentGameIds={recentGameIds}
         selectedGameId={selectedGameId}
@@ -721,7 +746,7 @@ export function GamesPage() {
       </section>
 
       <div className="flex gap-1.25 overflow-x-auto pb-0.5">
-        {gameCenterCategoryTabs.map((tab) => (
+        {categoryTabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -803,8 +828,8 @@ export function GamesPage() {
           好友在玩
         </div>
         <div className="space-y-2">
-          {gameCenterFriendActivities.map((activity) => {
-            const game = getGameCenterGame(activity.gameId);
+          {friendActivities.map((activity) => {
+            const game = getGameCenterGame(activity.gameId, games);
             if (!game) {
               return null;
             }
@@ -863,13 +888,15 @@ export function GamesPage() {
       <div className="grid gap-2.5 sm:grid-cols-2">
         <MobileRankingSection
           title="热门榜"
-          entries={gameCenterHotRankings}
+          entries={hotRankings}
+          games={games}
           icon={<Flame size={16} className="text-[#15803d]" />}
           onSelectGame={setSelectedGameId}
         />
         <MobileRankingSection
           title="新游榜"
-          entries={gameCenterNewRankings}
+          entries={newRankings}
+          games={games}
           icon={<Sparkles size={16} className="text-[#15803d]" />}
           onSelectGame={setSelectedGameId}
         />
@@ -951,7 +978,7 @@ export function GamesPage() {
           福利活动
         </div>
         <div className="space-y-2">
-          {gameCenterEvents.map((event) => {
+          {events.map((event) => {
             const tone = getGameCenterToneStyle(event.tone);
             const engaged = Boolean(eventActionStatusById[event.id]);
             return (
@@ -1016,11 +1043,13 @@ function MobileMetric({ label, value }: { label: string; value: string }) {
 function MobileRankingSection({
   title,
   entries,
+  games,
   icon,
   onSelectGame,
 }: {
   title: string;
-  entries: typeof gameCenterHotRankings;
+  entries: GameCenterRankingEntry[];
+  games: GameCenterGame[];
   icon: ReactNode;
   onSelectGame: (gameId: string) => void;
 }) {
@@ -1032,7 +1061,7 @@ function MobileRankingSection({
       </div>
       <div className="space-y-2">
         {entries.map((entry) => {
-          const game = getGameCenterGame(entry.gameId);
+          const game = getGameCenterGame(entry.gameId, games);
           if (!game) {
             return null;
           }

@@ -26,31 +26,36 @@ import {
 import { EmptyState } from "../../../components/empty-state";
 import { GameCenterSessionPanel } from "../../games/game-center-session-panel";
 import {
-  gameCenterCategoryTabs,
-  gameCenterEvents,
   getGameCenterEventActionLabel,
   getGameCenterEventStatusLabel,
-  gameCenterFriendActivities,
-  gameCenterGames,
-  gameCenterHotRankings,
-  gameCenterNewRankings,
   getGameCenterGame,
   getGameCenterToneStyle,
   type GameCenterCategoryId,
+  type GameCenterCategoryTab,
+  type GameCenterEvent,
+  type GameCenterFriendActivity,
+  type GameCenterGame,
+  type GameCenterRankingEntry,
 } from "../../games/game-center-data";
 
 type DesktopGamesWorkspaceProps = {
   activeCategory: GameCenterCategoryId;
   activeGameId: string | null;
   activeInviteActivityId: string | null;
+  categoryTabs: GameCenterCategoryTab[];
   eventActionStatusById: Record<string, string>;
+  events: GameCenterEvent[];
+  friendActivities: GameCenterFriendActivity[];
   friendInviteSentAtByActivityId: Record<string, string>;
   friendInviteStatusByActivityId: Record<string, string>;
+  games: GameCenterGame[];
+  hotRankings: GameCenterRankingEntry[];
   lastInviteConversationPathByActivityId: Record<string, string>;
   lastInviteConversationTitleByActivityId: Record<string, string>;
   inviteConversationCandidates: ConversationListItem[];
   inviteConversationCandidatesLoading: boolean;
   launchCountById: Record<string, number>;
+  newRankings: GameCenterRankingEntry[];
   pinnedGameIds: string[];
   recentGameIds: string[];
   selectedGameId: string;
@@ -74,9 +79,9 @@ type DesktopGamesWorkspaceProps = {
   onTogglePinnedGame: (gameId: string) => void;
 };
 
-function resolveGames(ids: string[]) {
+function resolveGames(ids: string[], games: GameCenterGame[]) {
   return ids
-    .map((id) => getGameCenterGame(id))
+    .map((id) => getGameCenterGame(id, games))
     .filter((game): game is NonNullable<typeof game> => Boolean(game));
 }
 
@@ -84,14 +89,20 @@ export function DesktopGamesWorkspace({
   activeCategory,
   activeGameId,
   activeInviteActivityId,
+  categoryTabs,
   eventActionStatusById,
+  events,
+  friendActivities,
   friendInviteSentAtByActivityId,
   friendInviteStatusByActivityId,
+  games,
+  hotRankings,
   lastInviteConversationPathByActivityId,
   lastInviteConversationTitleByActivityId,
   inviteConversationCandidates,
   inviteConversationCandidatesLoading,
   launchCountById,
+  newRankings,
   pinnedGameIds,
   recentGameIds,
   selectedGameId,
@@ -113,21 +124,21 @@ export function DesktopGamesWorkspace({
 }: DesktopGamesWorkspaceProps) {
   const localMessageActionState = useLocalChatMessageActionState();
   const selectedGame =
-    getGameCenterGame(selectedGameId) ?? getGameCenterGame("signal-squad");
+    getGameCenterGame(selectedGameId, games) ?? getGameCenterGame("signal-squad", games);
   const activeInviteActivity = activeInviteActivityId
-    ? (gameCenterFriendActivities.find(
+    ? (friendActivities.find(
         (item) => item.id === activeInviteActivityId,
       ) ?? null)
     : null;
   const activeInviteGame = activeInviteActivity
-    ? getGameCenterGame(activeInviteActivity.gameId)
+    ? getGameCenterGame(activeInviteActivity.gameId, games)
     : null;
-  const pinnedGames = resolveGames(pinnedGameIds);
-  const recentGames = resolveGames(recentGameIds);
+  const pinnedGames = resolveGames(pinnedGameIds, games);
+  const recentGames = resolveGames(recentGameIds, games);
   const browseGames =
     activeCategory === "featured"
-      ? gameCenterGames.slice(0, 6)
-      : gameCenterGames.filter((game) => game.category === activeCategory);
+      ? games.slice(0, 6)
+      : games.filter((game) => game.category === activeCategory);
 
   if (!selectedGame) {
     return null;
@@ -161,7 +172,7 @@ export function DesktopGamesWorkspace({
               浏览频道
             </div>
             <div className="mt-3 space-y-2">
-              {gameCenterCategoryTabs.map((tab) => (
+              {categoryTabs.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
@@ -479,7 +490,8 @@ export function DesktopGamesWorkspace({
                       className="text-[color:var(--brand-primary)]"
                     />
                   }
-                  entries={gameCenterHotRankings}
+                  entries={hotRankings}
+                  games={games}
                   onSelectGame={onSelectGame}
                 />
                 <DesktopRankingPanel
@@ -490,7 +502,8 @@ export function DesktopGamesWorkspace({
                       className="text-[color:var(--brand-secondary)]"
                     />
                   }
-                  entries={gameCenterNewRankings}
+                  entries={newRankings}
+                  games={games}
                   onSelectGame={onSelectGame}
                 />
               </div>
@@ -520,8 +533,8 @@ export function DesktopGamesWorkspace({
                   好友在玩
                 </div>
                 <div className="mt-4 space-y-3">
-                  {gameCenterFriendActivities.map((activity) => {
-                    const game = getGameCenterGame(activity.gameId);
+                  {friendActivities.map((activity) => {
+                    const game = getGameCenterGame(activity.gameId, games);
                     if (!game) {
                       return null;
                     }
@@ -686,7 +699,7 @@ export function DesktopGamesWorkspace({
                   活动与福利
                 </div>
                 <div className="mt-4 space-y-3">
-                  {gameCenterEvents.map((event) => {
+                  {events.map((event) => {
                     const tone = getGameCenterToneStyle(event.tone);
                     const engaged = Boolean(eventActionStatusById[event.id]);
                     return (
@@ -833,11 +846,13 @@ function DesktopRankingPanel({
   title,
   icon,
   entries,
+  games,
   onSelectGame,
 }: {
   title: string;
   icon: ReactNode;
-  entries: typeof gameCenterHotRankings;
+  entries: GameCenterRankingEntry[];
+  games: GameCenterGame[];
   onSelectGame: (gameId: string) => void;
 }) {
   return (
@@ -848,7 +863,7 @@ function DesktopRankingPanel({
       </div>
       <div className="mt-4 space-y-3">
         {entries.map((entry) => {
-          const game = getGameCenterGame(entry.gameId);
+          const game = getGameCenterGame(entry.gameId, games);
           if (!game) {
             return null;
           }

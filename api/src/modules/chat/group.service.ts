@@ -44,6 +44,7 @@ import {
 import { type GroupUserMessageContext } from './group-reply.types';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyTaskService } from './group-reply-task.service';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -143,6 +144,7 @@ export class GroupService {
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly chatGateway: ChatGateway,
     private readonly customStickersService: CustomStickersService,
+    private readonly cyberAvatar: CyberAvatarService,
     private readonly groupReplyPlanner: GroupReplyPlannerService,
     private readonly groupReplyTaskService: GroupReplyTaskService,
   ) {}
@@ -630,6 +632,24 @@ export class GroupService {
       message.createdAt ?? new Date(),
       senderType === 'user',
     );
+    if (senderType === 'user') {
+      void this.cyberAvatar.captureSignal({
+        ownerId: senderId,
+        signalType: 'group_message',
+        sourceSurface: 'group',
+        sourceEntityType: 'group_message',
+        sourceEntityId: message.id,
+        dedupeKey: `group_message:${message.id}`,
+        summaryText: `群聊 ${group.name} 发言：${normalizedInput.promptText.slice(0, 120)}`,
+        payload: {
+          groupId,
+          groupName: group.name,
+          messageType: normalizedInput.type,
+          text: normalizedInput.promptText,
+        },
+        occurredAt: message.createdAt ?? new Date(),
+      });
+    }
     const nextMessage = this.toGroupMessage(message);
     this.chatGateway.emitThreadMessage(groupId, nextMessage);
     return nextMessage;

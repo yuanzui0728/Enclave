@@ -1,70 +1,25 @@
-export type GameCenterTone =
-  | "forest"
-  | "gold"
-  | "ocean"
-  | "violet"
-  | "sunset"
-  | "mint";
-
-export type GameCenterCategoryId =
-  | "featured"
-  | "party"
-  | "competitive"
-  | "relax"
-  | "strategy";
-
-export type GameCenterGame = {
-  id: string;
-  name: string;
-  slogan: string;
-  description: string;
-  studio: string;
-  badge: string;
-  heroLabel: string;
-  category: GameCenterCategoryId;
-  tone: GameCenterTone;
-  playersLabel: string;
-  friendsLabel: string;
-  updateNote: string;
-  deckLabel: string;
-  estimatedDuration: string;
-  rewardLabel: string;
-  sessionObjective: string;
-  tags: string[];
-};
-
-export type GameCenterRankingEntry = {
-  gameId: string;
-  rank: number;
-  note: string;
-};
-
-export type GameCenterFriendActivity = {
-  id: string;
-  friendName: string;
-  friendAvatar?: string;
-  gameId: string;
-  status: string;
-  updatedAt: string;
-};
-
-export type GameCenterEvent = {
-  id: string;
-  title: string;
-  description: string;
-  meta: string;
-  ctaLabel: string;
-  relatedGameId: string;
-  actionKind: "mission" | "reminder" | "join";
-  tone: GameCenterTone;
-};
-
-export type GameCenterShelf = {
-  id: string;
-  title: string;
-  description: string;
-  gameIds: string[];
-};
+import type {
+  GameCenterCategoryId,
+  GameCenterCategoryTab,
+  GameCenterEvent,
+  GameCenterFriendActivity,
+  GameCenterGame,
+  GameCenterHomeResponse,
+  GameCenterRankingEntry,
+  GameCenterShelf,
+  GameCenterTone,
+} from "@yinjie/contracts";
+export type {
+  GameCenterCategoryId,
+  GameCenterCategoryTab,
+  GameCenterEvent,
+  GameCenterFriendActivity,
+  GameCenterGame,
+  GameCenterHomeResponse,
+  GameCenterRankingEntry,
+  GameCenterShelf,
+  GameCenterTone,
+} from "@yinjie/contracts";
 
 export type GameCenterToneStyle = {
   badgeClassName: string;
@@ -74,11 +29,7 @@ export type GameCenterToneStyle = {
   softTextClassName: string;
 };
 
-export const gameCenterCategoryTabs: Array<{
-  id: GameCenterCategoryId;
-  label: string;
-  description: string;
-}> = [
+export const gameCenterCategoryTabs: GameCenterCategoryTab[] = [
   {
     id: "featured",
     label: "推荐",
@@ -126,6 +77,12 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "赛季徽章 + 团队积分",
     sessionObjective: "本局目标是完成两次协同压制并稳住终点信号塔。",
     tags: ["组队", "3 分钟", "赛季"],
+    publisherKind: "platform_official",
+    productionKind: "ai_assisted",
+    runtimeMode: "chat_native",
+    reviewStatus: "internal_seed",
+    visibilityScope: "featured",
+    aiHighlights: ["AI 陪玩队友", "AI 赛后复盘", "AI 匹配建议"],
   },
   {
     id: "night-market",
@@ -146,6 +103,12 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "夜市券 + 新摊位许可",
     sessionObjective: "这次营业优先把甜品摊升级到 5 级并拉满周末客流。",
     tags: ["摆摊", "经营", "互访"],
+    publisherKind: "platform_official",
+    productionKind: "ai_assisted",
+    runtimeMode: "embedded_web",
+    reviewStatus: "internal_seed",
+    visibilityScope: "featured",
+    aiHighlights: ["AI 顾客对话", "AI 摊位生成", "AI 周末事件"],
   },
   {
     id: "sky-rally",
@@ -166,6 +129,12 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "冲榜星章 + 极光喷漆",
     sessionObjective: "利用极光赛道的两段加速门，争取把本周圈速压进前 10%。",
     tags: ["竞速", "榜单", "极光赛道"],
+    publisherKind: "third_party",
+    productionKind: "ai_generated",
+    runtimeMode: "embedded_web",
+    reviewStatus: "approved",
+    visibilityScope: "published",
+    aiHighlights: ["AI 赛道变体", "AI 对手幽灵", "AI 回放点评"],
   },
   {
     id: "cat-inn",
@@ -186,6 +155,12 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "春季家具票 + 顾客好感",
     sessionObjective: "把一楼休息区布置成春季主题，再接待今晚的第一批住客。",
     tags: ["猫咪", "布置", "剧情"],
+    publisherKind: "platform_official",
+    productionKind: "ai_generated",
+    runtimeMode: "embedded_web",
+    reviewStatus: "approved",
+    visibilityScope: "published",
+    aiHighlights: ["AI 客人剧情", "AI 布置建议", "AI 家具组合"],
   },
   {
     id: "forest-train",
@@ -206,6 +181,14 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "乘客故事碎片 + 海边车票",
     sessionObjective: "本次旅程优先跑完海边支线，把新乘客的故事碎片补齐。",
     tags: ["冒险", "收集", "剧情"],
+    publisherKind: "character_creator",
+    productionKind: "character_generated",
+    runtimeMode: "chat_native",
+    reviewStatus: "approved",
+    visibilityScope: "published",
+    sourceCharacterId: "character-conductor-01",
+    sourceCharacterName: "星野乘务长",
+    aiHighlights: ["角色即席叙事", "AI 支线生成", "AI 旅途播报"],
   },
   {
     id: "pixel-arena",
@@ -226,6 +209,12 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "擂台连胜章 + 双人皮肤券",
     sessionObjective: "先和好友打完一轮双人同屏，再冲一波 3 连胜奖励。",
     tags: ["对打", "同屏", "组局"],
+    publisherKind: "third_party",
+    productionKind: "ai_assisted",
+    runtimeMode: "embedded_web",
+    reviewStatus: "approved",
+    visibilityScope: "published",
+    aiHighlights: ["AI 陪练", "AI 连招提示", "AI 观战点评"],
   },
   {
     id: "cloud-farm",
@@ -246,6 +235,12 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "花圃币 + 联营订单",
     sessionObjective: "先收完成熟作物，再去邻居花圃里把本周联营订单补齐。",
     tags: ["农场", "互助", "长线"],
+    publisherKind: "platform_official",
+    productionKind: "ai_assisted",
+    runtimeMode: "embedded_web",
+    reviewStatus: "approved",
+    visibilityScope: "published",
+    aiHighlights: ["AI 订单生成", "AI 邻居事件", "AI 作物建议"],
   },
   {
     id: "island-concert",
@@ -266,6 +261,14 @@ export const gameCenterGames: GameCenterGame[] = [
     rewardLabel: "舞台海报 + 合奏积分",
     sessionObjective: "今晚先排一场海边合奏，把返场舞台的限定海报拿到手。",
     tags: ["派对", "装扮", "合奏"],
+    publisherKind: "character_creator",
+    productionKind: "character_generated",
+    runtimeMode: "chat_native",
+    reviewStatus: "pending_review",
+    visibilityScope: "coming_soon",
+    sourceCharacterId: "character-sea-host-01",
+    sourceCharacterName: "浅海主持人",
+    aiHighlights: ["角色主持", "AI 合奏编排", "AI 海报生成"],
   },
 ];
 
@@ -459,12 +462,23 @@ export const gameCenterToneStyles: Record<GameCenterTone, GameCenterToneStyle> =
   },
 };
 
-const gameCenterGameMap = new Map(
-  gameCenterGames.map((game) => [game.id, game] as const),
-);
+export const defaultGameCenterHomeResponse: GameCenterHomeResponse = {
+  categoryTabs: gameCenterCategoryTabs,
+  featuredGameIds: gameCenterFeaturedGameIds,
+  shelves: gameCenterShelves,
+  hotRankings: gameCenterHotRankings,
+  newRankings: gameCenterNewRankings,
+  friendActivities: gameCenterFriendActivities,
+  events: gameCenterEvents,
+  games: gameCenterGames,
+  generatedAt: "2026-04-17T00:00:00.000Z",
+};
 
-export function getGameCenterGame(gameId: string) {
-  return gameCenterGameMap.get(gameId) ?? null;
+export function getGameCenterGame(
+  gameId: string,
+  games: GameCenterGame[] = gameCenterGames,
+) {
+  return games.find((game) => game.id === gameId) ?? null;
 }
 
 export function getGameCenterToneStyle(tone: GameCenterTone) {

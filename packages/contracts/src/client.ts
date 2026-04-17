@@ -64,6 +64,9 @@ import type {
   FeedViewRequest,
 } from "./feed";
 import type {
+  GameCenterHomeResponse,
+} from "./games";
+import type {
   CreateMessageFavoriteRequest,
   FavoriteNoteDocument,
   FavoriteNoteSummary,
@@ -2435,6 +2438,14 @@ export function getFeed(
     undefined,
     baseUrl,
   ).then((response) => normalizeFeedListResponse(response, resolvedBaseUrl));
+}
+
+export function getGameCenterHome(baseUrl?: string) {
+  return requestLegacyApi<GameCenterHomeResponse>(
+    "/games/home",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function getFeedPost(id: string, baseUrl?: string) {
