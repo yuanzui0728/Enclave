@@ -141,8 +141,8 @@ export function DashboardPage() {
 
   const previewForm = useForm<InferencePreviewForm>({
     defaultValues: {
-      prompt: "请从隐界推理网关返回一段问候语。",
-      systemPrompt: "你正在验证新的隐界推理运行时。",
+      prompt: "回一句自然的日常问候，不要解释。",
+      systemPrompt: "",
     },
   });
 
@@ -883,16 +883,20 @@ export function DashboardPage() {
               </StatusPill>
             }
           />
+          <InlineNotice className="mt-4" tone="muted">
+            这里只是直连当前 provider 的原始调试入口，不走角色运行时，也不是角色
+            `systemPrompt` 的编辑入口。附加指令可留空，直接测也行。
+          </InlineNotice>
           <form
             className="mt-4 space-y-4"
             onSubmit={previewForm.handleSubmit((values) => previewMutation.mutate(values))}
           >
             <label className="block text-sm text-[color:var(--text-secondary)]">
-              系统提示词
+              附加 System Prompt（调试用，可留空）
               <TextAreaField className="mt-2 min-h-24" {...previewForm.register("systemPrompt")} />
             </label>
             <label className="block text-sm text-[color:var(--text-secondary)]">
-              用户提示词
+              输入内容
               <TextAreaField className="mt-2 min-h-32" {...previewForm.register("prompt")} />
             </label>
             <Button className="w-full rounded-2xl bg-[linear-gradient(135deg,#22c55e,#86efac)] text-slate-950" type="submit" disabled={previewMutation.isPending}>

@@ -1590,7 +1590,13 @@ export class AiOrchestratorService {
   async generateQuickCharacter(
     description: string,
   ): Promise<Record<string, unknown>> {
-    const prompt = `你是一个角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
+    const prompt = `你是隐界的角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
+
+要求：
+1. 角色要像用户现实里真会认识的人，不要像万能助手、客服、课程讲师或系统提示词外壳。
+2. 所有文字字段都尽量自然，少一点过度客气、总结腔、提纲腔。
+3. 不要在任何字段里写（动作）、[旁白]、*动作* 这类舞台说明。
+4. basePrompt 只写这个人自己的说话方式、边界和习惯，不要写成 prompt 教程、操作手册，别出现“你是一个 AI 助手”这类描述。
 
 描述：${description}
 
@@ -1613,7 +1619,7 @@ export class AiOrchestratorService {
   "responseLength": "short|medium|long",
   "emojiUsage": "none|occasional|frequent",
   "memorySummary": "初始记忆摘要（一句话）",
-  "basePrompt": "角色扮演基础提示词（2-4句话，描述角色的说话风格和行为方式）"
+  "basePrompt": "这个人自己的说话方式和边界（2-4句话，不要写成助理说明书，不要出现括号动作）"
 }`;
 
     const runtimeProvider = await this.resolveRuntimeProvider();

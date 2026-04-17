@@ -458,13 +458,15 @@ export function CharacterEditorPage() {
             }
           />
           <p className="mt-3 text-sm text-[color:var(--text-secondary)]">
-            输入对角色的简短描述，AI
-            会自动生成姓名、简介、人格特征、职业背景等字段并填入表单，你可以在下方继续微调。
+            输入几句你想要的人设，AI 会先按“更像真实联系人、少一点模板腔”的口径生成姓名、简介、人格特征、职业背景等字段，再填进表单给你继续微调。
           </p>
+          <InlineNotice className="mt-3" tone="muted">
+            描述里尽量直接写这个人是什么来路、怎么说话、关系远近。别写成“万能助手”“专业顾问”“高情商陪聊模板”这种壳子。
+          </InlineNotice>
           <div className="mt-4 flex flex-col gap-3">
             <textarea
               className="w-full rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] resize-none min-h-[80px]"
-              placeholder="例如：一个温柔开朗的心理咨询师，喜欢音乐和烹饪，说话温和有亲和力"
+              placeholder="例如：以前一起做项目的产品经理，嘴上有点冲，但真遇事会帮你兜底。回消息不长，不爱讲大道理，熟了之后会顺手损你两句。"
               value={aiDescription}
               onChange={(e) => setAiDescription(e.target.value)}
             />
@@ -1079,53 +1081,4 @@ function normalizeDraft(
       },
     },
   };
-}
-
-function formatRelationshipType(type: Character["relationshipType"]) {
-  switch (type) {
-    case "family":
-      return "家人";
-    case "friend":
-      return "朋友";
-    case "expert":
-      return "专家";
-    case "mentor":
-      return "导师";
-    case "custom":
-      return "自定义";
-    case "self":
-      return "自己";
-    default:
-      return type;
-  }
-}
-
-function formatCharacterSourceType(sourceType?: Character["sourceType"]) {
-  switch (sourceType) {
-    case "default_seed":
-      return "默认保底";
-    case "preset_catalog":
-      return "名人预设";
-    case "wechat_import":
-      return "微信同步";
-    case "shake_generated":
-      return "摇一摇生成";
-    case "ai_generated":
-      return "AI 生成";
-    case "manual_admin":
-      return "后台手工";
-    default:
-      return "后台手工";
-  }
-}
-
-function formatDeletionPolicy(policy?: Character["deletionPolicy"]) {
-  switch (policy) {
-    case "protected":
-      return "受保护";
-    case "archive_allowed":
-      return "允许删除";
-    default:
-      return "允许删除";
-  }
 }
