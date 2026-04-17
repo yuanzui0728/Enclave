@@ -1,7 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThan, MoreThanOrEqual, MoreThan, Repository } from 'typeorm';
+import {
+  Between,
+  LessThan,
+  MoreThanOrEqual,
+  MoreThan,
+  Repository,
+} from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
@@ -199,49 +205,71 @@ export class SchedulerService {
   private async executeManualJob(jobId: SchedulerJobId) {
     switch (jobId) {
       case 'world_context_snapshot':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleUpdateWorldContext(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleUpdateWorldContext(),
+          )
+        ).summary;
       case 'expire_friend_requests':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleExpireFriendRequests(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleExpireFriendRequests(),
+          )
+        ).summary;
       case 'update_ai_active_status':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleUpdateAiActiveStatus(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleUpdateAiActiveStatus(),
+          )
+        ).summary;
       case 'check_moment_schedule':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleCheckMomentSchedule(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleCheckMomentSchedule(),
+          )
+        ).summary;
       case 'trigger_scene_friend_requests':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleTriggerSceneFriendRequests(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleTriggerSceneFriendRequests(),
+          )
+        ).summary;
       case 'process_pending_feed_reactions':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleProcessPendingFeedReactions(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleProcessPendingFeedReactions(),
+          )
+        ).summary;
       case 'check_channels_schedule':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleCheckChannelsSchedule(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleCheckChannelsSchedule(),
+          )
+        ).summary;
       case 'update_character_status':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleUpdateCharacterStatus(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleUpdateCharacterStatus(),
+          )
+        ).summary;
       case 'trigger_memory_proactive_messages':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleTriggerMemoryProactiveMessages(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleTriggerMemoryProactiveMessages(),
+          )
+        ).summary;
       case 'update_recent_memory_daily':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleUpdateRecentMemoryDaily(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleUpdateRecentMemoryDaily(),
+          )
+        ).summary;
       case 'update_core_memory_weekly':
-        return (await this.executeTrackedJob(jobId, () =>
-          this.handleUpdateCoreMemoryWeekly(),
-        )).summary;
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleUpdateCoreMemoryWeekly(),
+          )
+        ).summary;
       default:
         throw new Error('Unknown scheduler job');
     }
@@ -317,9 +345,12 @@ export class SchedulerService {
               characterId: char.id,
               characterName: char.name,
               kind: 'online_status_changed',
-              title: runtimeRules.schedulerTextTemplates.eventTitleOnlineStatusChanged,
+              title:
+                runtimeRules.schedulerTextTemplates
+                  .eventTitleOnlineStatusChanged,
               summary: renderTemplate(
-                runtimeRules.schedulerTextTemplates.eventSummaryDefaultOnlineKept,
+                runtimeRules.schedulerTextTemplates
+                  .eventSummaryDefaultOnlineKept,
                 { onlineState: nextOnline ? '在线' : '离线' },
               ),
               jobId: 'update_ai_active_status',
@@ -334,9 +365,11 @@ export class SchedulerService {
               characterId: char.id,
               characterName: char.name,
               kind: 'activity_changed',
-              title: runtimeRules.schedulerTextTemplates.eventTitleActivityChanged,
+              title:
+                runtimeRules.schedulerTextTemplates.eventTitleActivityChanged,
               summary: renderTemplate(
-                runtimeRules.schedulerTextTemplates.eventSummaryDefaultActivityReset,
+                runtimeRules.schedulerTextTemplates
+                  .eventSummaryDefaultActivityReset,
                 { activity: activityLabel },
               ),
               jobId: 'update_ai_active_status',
@@ -363,11 +396,14 @@ export class SchedulerService {
           characterId: char.id,
           characterName: char.name,
           kind: 'online_status_changed',
-          title: runtimeRules.schedulerTextTemplates.eventTitleOnlineStatusChanged,
+          title:
+            runtimeRules.schedulerTextTemplates.eventTitleOnlineStatusChanged,
           summary: renderTemplate(
             shouldBeOnline
-              ? runtimeRules.schedulerTextTemplates.eventSummaryOnlineWindowEntered
-              : runtimeRules.schedulerTextTemplates.eventSummaryOnlineWindowExited,
+              ? runtimeRules.schedulerTextTemplates
+                  .eventSummaryOnlineWindowEntered
+              : runtimeRules.schedulerTextTemplates
+                  .eventSummaryOnlineWindowExited,
             {
               startHour: start,
               endHour: end,
@@ -407,7 +443,8 @@ export class SchedulerService {
     if (!chars.length) {
       return {
         summary: renderTemplate(
-          runtimeRules.schedulerTextTemplates.jobSummaryNoFriendCharactersForMoments,
+          runtimeRules.schedulerTextTemplates
+            .jobSummaryNoFriendCharactersForMoments,
           {},
         ),
       };
@@ -528,7 +565,8 @@ export class SchedulerService {
 
     return {
       summary: renderTemplate(
-        runtimeRules.schedulerTextTemplates.jobSummaryProcessPendingFeedReactions,
+        runtimeRules.schedulerTextTemplates
+          .jobSummaryProcessPendingFeedReactions,
         { processedCount },
       ),
     };
@@ -583,7 +621,9 @@ export class SchedulerService {
           ),
           jobId: 'check_channels_schedule',
         });
-        this.logger.debug(`Generated channels post ${post.id} for ${char.name}`);
+        this.logger.debug(
+          `Generated channels post ${post.id} for ${char.name}`,
+        );
       }
     }
 
@@ -648,9 +688,11 @@ export class SchedulerService {
               characterId: char.id,
               characterName: char.name,
               kind: 'activity_changed',
-              title: runtimeRules.schedulerTextTemplates.eventTitleActivityChanged,
+              title:
+                runtimeRules.schedulerTextTemplates.eventTitleActivityChanged,
               summary: renderTemplate(
-                runtimeRules.schedulerTextTemplates.eventSummaryDefaultActivityReset,
+                runtimeRules.schedulerTextTemplates
+                  .eventSummaryDefaultActivityReset,
                 { activity: activityLabel },
               ),
               jobId: 'update_character_status',
@@ -711,7 +753,8 @@ export class SchedulerService {
     if (now.getHours() !== runtimeRules.proactiveReminderHour) {
       return {
         summary: renderTemplate(
-          runtimeRules.schedulerTextTemplates.jobSummaryProactiveReminderSkipped,
+          runtimeRules.schedulerTextTemplates
+            .jobSummaryProactiveReminderSkipped,
           {
             currentHour: now.getHours(),
             targetHour: runtimeRules.proactiveReminderHour,
@@ -779,7 +822,8 @@ export class SchedulerService {
             characterId: char.id,
             characterName: char.name,
             kind: 'proactive_message',
-            title: runtimeRules.schedulerTextTemplates.eventTitleProactiveMessage,
+            title:
+              runtimeRules.schedulerTextTemplates.eventTitleProactiveMessage,
             summary: renderTemplate(
               runtimeRules.schedulerTextTemplates.eventSummaryProactiveMessage,
               { sentCount: sentForCharacter },
@@ -798,7 +842,8 @@ export class SchedulerService {
 
     return {
       summary: renderTemplate(
-        runtimeRules.schedulerTextTemplates.jobSummaryTriggerMemoryProactiveMessages,
+        runtimeRules.schedulerTextTemplates
+          .jobSummaryTriggerMemoryProactiveMessages,
         {
           memorySeededCount,
           sentMessages,
@@ -844,7 +889,12 @@ export class SchedulerService {
           );
           await this.aiRelationshipRepo.save(existing);
           updates += 1;
-          this.recordRelationshipEvent(left, right, existing.strength, runtimeRules);
+          this.recordRelationshipEvent(
+            left,
+            right,
+            existing.strength,
+            runtimeRules,
+          );
           continue;
         }
 
@@ -938,6 +988,9 @@ export class SchedulerService {
         text,
       });
       await this.momentPostRepo.save(post);
+      await this.feedService.syncMomentPostToFeed(post, {
+        sourceKind: 'character_generated',
+      });
       this.logger.debug(`Auto-posted moment for ${char.name}`);
       return post;
     } catch (error) {
@@ -993,7 +1046,10 @@ export class SchedulerService {
 
         const newSummary = await this.ai.compressMemory(
           recentMessages.map((m) => ({
-            role: m.senderType === 'character' ? ('assistant' as const) : ('user' as const),
+            role:
+              m.senderType === 'character'
+                ? ('assistant' as const)
+                : ('user' as const),
             content: m.text,
           })),
           char.profile as any,

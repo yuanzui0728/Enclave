@@ -10,14 +10,21 @@ import { AiModule } from '../ai/ai.module';
 import { CharactersModule } from '../characters/characters.module';
 import { AuthModule } from '../auth/auth.module';
 import { SocialModule } from '../social/social.module';
+import { FeedModule } from '../feed/feed.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MomentEntity, MomentPostEntity, MomentCommentEntity, MomentLikeEntity]),
+    TypeOrmModule.forFeature([
+      MomentEntity,
+      MomentPostEntity,
+      MomentCommentEntity,
+      MomentLikeEntity,
+    ]),
     AiModule,
     CharactersModule,
     AuthModule,
     SocialModule,
+    FeedModule,
   ],
   providers: [MomentsService],
   controllers: [MomentsController],

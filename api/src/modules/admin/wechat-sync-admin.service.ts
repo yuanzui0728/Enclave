@@ -8,6 +8,7 @@ import { CharacterEntity } from '../characters/character.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialService } from '../social/social.service';
+import { FeedService } from '../feed/feed.service';
 import type {
   WechatSyncContactBundleValue,
   WechatSyncImportRequestValue,
@@ -31,6 +32,7 @@ export class WechatSyncAdminService {
     private readonly ai: AiOrchestratorService,
     private readonly socialService: SocialService,
     private readonly worldOwnerService: WorldOwnerService,
+    private readonly feedService: FeedService,
   ) {}
 
   async preview(
@@ -55,8 +57,8 @@ export class WechatSyncAdminService {
   async import(
     input: WechatSyncImportRequestValue,
   ): Promise<WechatSyncImportResponseValue> {
-    const normalizedItems = (input.items ?? []).filter(
-      (item) => item?.contact?.username?.trim(),
+    const normalizedItems = (input.items ?? []).filter((item) =>
+      item?.contact?.username?.trim(),
     );
     if (!normalizedItems.length) {
       throw new BadRequestException('至少选择一个预览通过的微信联系人。');
@@ -141,7 +143,9 @@ export class WechatSyncAdminService {
           friendship.remarkName = contact.remarkName || friendship.remarkName;
           friendship.region = contact.region || friendship.region;
           friendship.source = contact.source || 'wechat_import';
-          friendship.tags = contact.tags.length ? contact.tags : friendship.tags;
+          friendship.tags = contact.tags.length
+            ? contact.tags
+            : friendship.tags;
           await this.friendshipRepo.save(friendship);
         }
 
@@ -203,9 +207,7 @@ export class WechatSyncAdminService {
     contact: WechatSyncContactBundleValue,
     forcedId?: string,
   ): CharacterEntity {
-    const profile = readRecord(
-      isRecord(raw) ? raw.profile : undefined,
-    );
+    const profile = readRecord(isRecord(raw) ? raw.profile : undefined);
     const identity = readRecord(profile.identity);
     const traits = readRecord(profile.traits);
     const memory = readRecord(profile.memory);
@@ -227,7 +229,8 @@ export class WechatSyncAdminService {
       normalizeText(isRecord(raw) ? raw.bio : undefined) ||
       buildFallbackBio(contact, name);
     const expertDomains =
-      normalizeStringList(isRecord(raw) ? raw.expertDomains : undefined).length > 0
+      normalizeStringList(isRecord(raw) ? raw.expertDomains : undefined)
+        .length > 0
         ? normalizeStringList(isRecord(raw) ? raw.expertDomains : undefined)
         : inferExpertDomains(contact);
     const basePrompt =
@@ -239,15 +242,16 @@ export class WechatSyncAdminService {
       normalizeText(contact.chatSummary) ||
       buildFallbackMemorySummary(contact, name);
     const coreMemory =
-      normalizeText(memory.coreMemory) || buildFallbackCoreMemory(contact, name);
-    const recentSummary =
-      normalizeText(memory.recentSummary) || memorySummary;
+      normalizeText(memory.coreMemory) ||
+      buildFallbackCoreMemory(contact, name);
+    const recentSummary = normalizeText(memory.recentSummary) || memorySummary;
 
     return {
       id,
       name,
       avatar:
-        normalizeText(isRecord(raw) ? raw.avatar : undefined) || name.slice(0, 1),
+        normalizeText(isRecord(raw) ? raw.avatar : undefined) ||
+        name.slice(0, 1),
       relationship,
       relationshipType: 'friend',
       personality: normalizeText(isRecord(raw) ? raw.personality : undefined),
@@ -310,9 +314,11 @@ export class WechatSyncAdminService {
         },
         behavioralPatterns: {
           workStyle:
-            normalizeText(behavioralPatterns.workStyle) || '自然随和，按熟人节奏聊天。',
+            normalizeText(behavioralPatterns.workStyle) ||
+            '自然随和，按熟人节奏聊天。',
           socialStyle:
-            normalizeText(behavioralPatterns.socialStyle) || '微信熟人式社交，真实、不端着。',
+            normalizeText(behavioralPatterns.socialStyle) ||
+            '微信熟人式社交，真实、不端着。',
           taboos: normalizeStringList(behavioralPatterns.taboos),
           quirks: normalizeStringList(behavioralPatterns.quirks),
         },
@@ -359,7 +365,9 @@ export class WechatSyncAdminService {
     };
   }
 
-  private buildQuickCharacterDescription(contact: WechatSyncContactBundleValue) {
+  private buildQuickCharacterDescription(
+    contact: WechatSyncContactBundleValue,
+  ) {
     const topicHint = contact.topicKeywords.length
       ? `- 常聊话题关键词：${contact.topicKeywords.join('、')}`
       : '- 常聊话题关键词：暂无明确标签';
@@ -391,7 +399,9 @@ export class WechatSyncAdminService {
       '',
       `- 微信 username：${contact.username}`,
       `- 微信显示名：${contact.displayName}`,
-      contact.remarkName ? `- 微信备注：${contact.remarkName}` : '- 微信备注：无',
+      contact.remarkName
+        ? `- 微信备注：${contact.remarkName}`
+        : '- 微信备注：无',
       contact.nickname ? `- 微信昵称：${contact.nickname}` : '- 微信昵称：无',
       tagHint,
       `- 消息总数：${contact.messageCount}`,
@@ -412,9 +422,11 @@ export class WechatSyncAdminService {
   }
 
   private async hasCharacterMoments(characterId: string) {
-    return (await this.momentPostRepo.count({
-      where: { authorId: characterId, authorType: 'character' },
-    })) > 0;
+    return (
+      (await this.momentPostRepo.count({
+        where: { authorId: characterId, authorType: 'character' },
+      })) > 0
+    );
   }
 
   private async seedMomentHighlights(
@@ -430,7 +442,7 @@ export class WechatSyncAdminService {
       .slice(0, 3);
 
     for (const highlight of highlights) {
-      await this.momentPostRepo.save(
+      const post = await this.momentPostRepo.save(
         this.momentPostRepo.create({
           authorId: character.id,
           authorName: character.name,
@@ -442,6 +454,9 @@ export class WechatSyncAdminService {
           mediaPayload: JSON.stringify([]),
         }),
       );
+      await this.feedService.syncMomentPostToFeed(post, {
+        sourceKind: 'seed',
+      });
     }
 
     return highlights.length;
@@ -452,7 +467,9 @@ export class WechatSyncAdminService {
   }
 }
 
-function normalizeContactBundles(input: WechatSyncContactBundleValue[] | null | undefined) {
+function normalizeContactBundles(
+  input: WechatSyncContactBundleValue[] | null | undefined,
+) {
   const seen = new Set<string>();
   const contacts: WechatSyncContactBundleValue[] = [];
 
@@ -577,7 +594,9 @@ function buildFallbackMemorySummary(
     return contact.chatSummary.trim();
   }
 
-  const tags = contact.tags.length ? `，常见标签有 ${contact.tags.join('、')}` : '';
+  const tags = contact.tags.length
+    ? `，常见标签有 ${contact.tags.join('、')}`
+    : '';
   return `${name} 是你从微信同步来的熟人朋友，双方已经通过微信积累了真实互动${tags}。`;
 }
 
@@ -685,7 +704,9 @@ function normalizeResponseLength(value: unknown): 'short' | 'medium' | 'long' {
   return 'medium';
 }
 
-function normalizeEmojiUsage(value: unknown): 'none' | 'occasional' | 'frequent' {
+function normalizeEmojiUsage(
+  value: unknown,
+): 'none' | 'occasional' | 'frequent' {
   if (value === 'none' || value === 'frequent') {
     return value;
   }

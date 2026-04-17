@@ -18,10 +18,17 @@ import type {
   MomentMediaAsset,
   MomentVideoAsset,
 } from '../moments/moment-media.types';
+import { MomentPostEntity } from '../moments/moment-post.entity';
 
 type FeedSurface = 'feed' | 'channels';
 type FeedChannelHomeSection = 'recommended' | 'friends' | 'following' | 'live';
 type FeedMediaType = 'text' | 'image' | 'video';
+type FeedSourceKind =
+  | 'seed'
+  | 'ai_generated'
+  | 'owner_upload'
+  | 'character_generated'
+  | 'live_clip';
 type FeedOwnerState = {
   hasLiked: boolean;
   hasFavorited: boolean;
@@ -343,12 +350,7 @@ export class FeedService {
     viewCount?: number;
     watchCount?: number;
     completeCount?: number;
-    sourceKind?:
-      | 'seed'
-      | 'ai_generated'
-      | 'owner_upload'
-      | 'character_generated'
-      | 'live_clip';
+    sourceKind?: FeedSourceKind;
     recommendationScore?: number;
     statsPayload?: Record<string, unknown> | null;
     surface?: FeedSurface;
@@ -380,6 +382,41 @@ export class FeedService {
       surface: input.surface ?? 'feed',
     });
     return this.postRepo.save(post);
+  }
+
+  async syncMomentPostToFeed(
+    post: MomentPostEntity,
+    options?: {
+      sourceKind?: FeedSourceKind;
+      recommendationScore?: number;
+    },
+  ): Promise<FeedPostEntity | null> {
+    if (post.authorType !== 'character') {
+      return null;
+    }
+
+    const existing = await this.findFeedPostSyncedFromMoment(post.id);
+    if (existing) {
+      return existing;
+    }
+
+    return this.createPost({
+      authorAvatar: post.authorAvatar,
+      authorId: post.authorId,
+      authorName: post.authorName,
+      authorType: 'character',
+      text: post.text ?? '',
+      media: this.parseFeedMediaPayload(post.mediaPayload),
+      sourceKind: options?.sourceKind ?? 'character_generated',
+      recommendationScore: options?.recommendationScore ?? 0,
+      statsPayload: {
+        momentPostId: post.id,
+        momentContentType: post.contentType ?? 'text',
+        momentLocation: post.location ?? null,
+        syncedFrom: 'moments',
+      },
+      surface: 'feed',
+    });
   }
 
   async addOwnerComment(
@@ -1563,6 +1600,17 @@ export class FeedService {
       throw new NotFoundException('Feed post not found');
     }
     return post;
+  }
+
+  private async findFeedPostSyncedFromMoment(momentPostId: string) {
+    return this.postRepo
+      .createQueryBuilder('post')
+      .where('post.surface = :surface', { surface: 'feed' })
+      .andWhere('post.statsPayload LIKE :marker', {
+        marker: `%\"momentPostId\":\"${momentPostId}\"%`,
+      })
+      .orderBy('post.createdAt', 'DESC')
+      .getOne();
   }
 
   private async decrementPostCounter(postId: string, key: 'favoriteCount') {

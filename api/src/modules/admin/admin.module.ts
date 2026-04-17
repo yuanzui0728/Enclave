@@ -26,6 +26,7 @@ import { AdminConversationReviewEntity } from './admin-conversation-review.entit
 import { SchedulerModule } from '../scheduler/scheduler.module';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
+import { FeedModule } from '../feed/feed.module';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialModule } from '../social/social.module';
@@ -41,6 +42,7 @@ import { WechatSyncAdminService } from './wechat-sync-admin.service';
     SystemConfigModule,
     SchedulerModule,
     SocialModule,
+    FeedModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CharacterEntity,
