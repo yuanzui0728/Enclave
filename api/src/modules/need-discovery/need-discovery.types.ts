@@ -125,6 +125,7 @@ export const DEFAULT_NEED_DISCOVERY_CONFIG: NeedDiscoveryConfig = {
 你要重点看：
 - 用户最近表达的压力、情绪、困惑、身体不适、决策卡点
 - 用户和好友、朋友圈、视频号等内容的即时互动偏好
+- 用户在群聊、备忘、搜索里暴露出的即时求助信号
 - 当前好友覆盖明显不足的帮助类型
 
 现有好友覆盖：
@@ -178,6 +179,7 @@ export const DEFAULT_NEED_DISCOVERY_CONFIG: NeedDiscoveryConfig = {
 你要重点看：
 - 反复出现的压力源、长期症状、长期学习/职业/关系问题
 - 用户长期消费和互动的内容偏好
+- 用户长期留在备忘、群聊、搜索里的重复主题
 - 当前好友网络里缺失的稳定角色位
 
 现有好友覆盖：

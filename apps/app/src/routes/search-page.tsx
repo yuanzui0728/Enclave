@@ -150,7 +150,11 @@ export function SearchPage() {
     }
 
     if (normalizedKeyword) {
-      setHistory(pushSearchHistory(normalizedKeyword));
+      setHistory(
+        pushSearchHistory(normalizedKeyword, {
+          source: "search_page",
+        }),
+      );
     }
   }
 
@@ -159,7 +163,11 @@ export function SearchPage() {
     if (isDesktopLayout) {
       setCommittedSearchText(keyword);
     }
-    setHistory(pushSearchHistory(keyword));
+    setHistory(
+      pushSearchHistory(keyword, {
+        source: "search_history",
+      }),
+    );
   }
 
   function handleRemoveHistory(keyword: string) {

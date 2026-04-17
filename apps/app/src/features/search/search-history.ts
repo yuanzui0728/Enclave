@@ -1,9 +1,15 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+import { resolveCoreApiBaseUrl } from "@yinjie/contracts";
 import type { SearchHistoryItem } from "./search-types";
 
 const SEARCH_HISTORY_STORAGE_KEY = "yinjie.app.search-history";
 const SEARCH_HISTORY_LIMIT = 8;
 let searchHistoryNativeWriteQueue: Promise<void> = Promise.resolve();
+
+type SearchHistorySource =
+  | "search_page"
+  | "search_history"
+  | "desktop_launcher";
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -100,7 +106,12 @@ export function loadSearchHistory() {
   return readSearchHistoryFromLocal();
 }
 
-export function pushSearchHistory(keyword: string) {
+export function pushSearchHistory(
+  keyword: string,
+  options?: {
+    source?: SearchHistorySource;
+  },
+) {
   const trimmedKeyword = keyword.trim();
   if (!trimmedKeyword) {
     return loadSearchHistory();
@@ -112,6 +123,7 @@ export function pushSearchHistory(keyword: string) {
   ].slice(0, SEARCH_HISTORY_LIMIT);
 
   writeSearchHistory(nextHistory);
+  void recordSearchHistoryToCore(trimmedKeyword, options?.source);
   return nextHistory;
 }
 
@@ -165,5 +177,32 @@ export async function hydrateSearchHistoryFromNative() {
     return nativeHistory;
   } catch {
     return localHistory;
+  }
+}
+
+async function recordSearchHistoryToCore(
+  keyword: string,
+  source?: SearchHistorySource,
+) {
+  const baseUrl = resolveCoreApiBaseUrl(undefined, {
+    allowDefault: false,
+  });
+  if (!baseUrl) {
+    return;
+  }
+
+  try {
+    await fetch(`${baseUrl.replace(/\/$/, "")}/api/search/history`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: keyword,
+        source: source ?? null,
+      }),
+    });
+  } catch {
+    // 搜索历史仍以本地体验为主，后台记录失败时不打断前端交互。
   }
 }

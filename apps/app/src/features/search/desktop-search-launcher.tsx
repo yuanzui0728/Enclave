@@ -252,7 +252,11 @@ export function useDesktopSearchLauncher({
     const normalizedKeyword = nextKeyword.trim();
 
     if (normalizedKeyword) {
-      setHistory(pushSearchHistory(normalizedKeyword));
+      setHistory(
+        pushSearchHistory(normalizedKeyword, {
+          source: "desktop_launcher",
+        }),
+      );
     }
 
     setIsOpen(false);

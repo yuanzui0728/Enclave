@@ -238,6 +238,8 @@
   - `DELETE /api/favorites/notes/:id`
   - `POST /api/favorites/messages`
   - `DELETE /api/favorites/:sourceId`
+- 搜索行为路由：
+  - `POST /api/search/history`
 - 消息提醒路由：
   - `GET /api/reminders/messages`
   - `POST /api/reminders/messages`

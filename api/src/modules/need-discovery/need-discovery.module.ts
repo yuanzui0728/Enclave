@@ -5,13 +5,18 @@ import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersModule } from '../characters/characters.module';
+import { ChatModule } from '../chat/chat.module';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { GroupEntity } from '../chat/group.entity';
+import { GroupMemberEntity } from '../chat/group-member.entity';
+import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { SystemConfigModule } from '../config/config.module';
 import { EventsModule } from '../events/events.module';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { MomentCommentEntity } from '../moments/moment-comment.entity';
+import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialModule } from '../social/social.module';
@@ -28,9 +33,13 @@ import { NeedDiscoveryService } from './need-discovery.service';
       NeedDiscoveryCandidateEntity,
       CharacterEntity,
       ConversationEntity,
+      GroupEntity,
+      GroupMemberEntity,
+      GroupMessageEntity,
       MessageEntity,
       MomentPostEntity,
       MomentCommentEntity,
+      MomentLikeEntity,
       FeedPostEntity,
       FeedCommentEntity,
       UserFeedInteractionEntity,
@@ -39,6 +48,7 @@ import { NeedDiscoveryService } from './need-discovery.service';
     AiModule,
     AuthModule,
     CharactersModule,
+    ChatModule,
     SystemConfigModule,
     SocialModule,
     EventsModule,

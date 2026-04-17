@@ -13,10 +13,17 @@ import { CharacterBlueprintService } from '../characters/character-blueprint.ser
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersService } from '../characters/characters.service';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { FavoritesService } from '../chat/favorites.service';
+import { GroupEntity } from '../chat/group.entity';
+import { GroupMemberEntity } from '../chat/group-member.entity';
+import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
+import { SearchActivityService } from '../chat/search-activity.service';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { MomentCommentEntity } from '../moments/moment-comment.entity';
+import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialService } from '../social/social.service';
@@ -55,12 +62,20 @@ export class NeedDiscoveryService {
     private readonly characterRepo: Repository<CharacterEntity>,
     @InjectRepository(ConversationEntity)
     private readonly conversationRepo: Repository<ConversationEntity>,
+    @InjectRepository(GroupEntity)
+    private readonly groupRepo: Repository<GroupEntity>,
+    @InjectRepository(GroupMemberEntity)
+    private readonly groupMemberRepo: Repository<GroupMemberEntity>,
+    @InjectRepository(GroupMessageEntity)
+    private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(MessageEntity)
     private readonly messageRepo: Repository<MessageEntity>,
     @InjectRepository(MomentPostEntity)
     private readonly momentPostRepo: Repository<MomentPostEntity>,
     @InjectRepository(MomentCommentEntity)
     private readonly momentCommentRepo: Repository<MomentCommentEntity>,
+    @InjectRepository(MomentLikeEntity)
+    private readonly momentLikeRepo: Repository<MomentLikeEntity>,
     @InjectRepository(FeedPostEntity)
     private readonly feedPostRepo: Repository<FeedPostEntity>,
     @InjectRepository(FeedCommentEntity)
@@ -75,6 +90,8 @@ export class NeedDiscoveryService {
     private readonly socialService: SocialService,
     private readonly characterBlueprintService: CharacterBlueprintService,
     private readonly charactersService: CharactersService,
+    private readonly favoritesService: FavoritesService,
+    private readonly searchActivityService: SearchActivityService,
   ) {}
 
   async getOverview(): Promise<NeedDiscoveryOverview> {
@@ -366,25 +383,51 @@ export class NeedDiscoveryService {
     windowEndedAt: Date,
   ): Promise<NeedDiscoverySignalSnapshot> {
     const entries: NeedDiscoverySignalEntry[] = [];
-    const conversations = await this.conversationRepo.find({
-      where: {
-        ownerId,
-        type: 'direct',
-        lastActivityAt: MoreThanOrEqual(windowStartedAt),
-      },
-      order: { lastActivityAt: 'DESC' },
-      take: 10,
-    });
+    const [conversations, userGroupMemberships, favoriteNotes, searchHistory] =
+      await Promise.all([
+        this.conversationRepo.find({
+          where: {
+            ownerId,
+            type: 'direct',
+            lastActivityAt: MoreThanOrEqual(windowStartedAt),
+          },
+          order: { lastActivityAt: 'DESC' },
+          take: 10,
+        }),
+        this.groupMemberRepo.find({
+          where: {
+            memberId: ownerId,
+            memberType: 'user',
+          },
+        }),
+        this.favoritesService.listFavoriteNotes(),
+        this.searchActivityService.listSearchHistory(),
+      ]);
     const conversationIds = conversations.map((item) => item.id);
+    const conversationMap = new Map(
+      conversations.map((item) => [item.id, item] as const),
+    );
     const characterIds = conversations
       .flatMap((item) => item.participants ?? [])
       .filter(Boolean);
-    const characterMap = new Map(
-      (characterIds.length
-        ? await this.characterRepo.find({ where: { id: In(characterIds) } })
-        : []
-      ).map((item) => [item.id, item.name]),
-    );
+    const userGroupIds = [...new Set(userGroupMemberships.map((item) => item.groupId))];
+    const [characters, activeGroups] = await Promise.all([
+      characterIds.length
+        ? this.characterRepo.find({ where: { id: In(characterIds) } })
+        : Promise.resolve([] as CharacterEntity[]),
+      userGroupIds.length
+        ? this.groupRepo.find({
+            where: {
+              id: In(userGroupIds),
+              lastActivityAt: MoreThanOrEqual(windowStartedAt),
+            },
+            order: { lastActivityAt: 'DESC' },
+            take: 8,
+          })
+        : Promise.resolve([] as GroupEntity[]),
+    ]);
+    const characterMap = new Map(characters.map((item) => [item.id, item.name]));
+    const groupMap = new Map(activeGroups.map((item) => [item.id, item.name]));
 
     if (conversationIds.length > 0) {
       const messages = await this.messageRepo.find({
@@ -402,28 +445,44 @@ export class NeedDiscoveryService {
             message.senderType === 'user' || message.senderType === 'character',
         )
         .forEach((message) => {
-          const conversation = conversations.find(
-            (item) => item.id === message.conversationId,
-          );
+          const conversation = conversationMap.get(message.conversationId);
           const counterpartId = conversation?.participants?.[0] ?? '';
+          const isSelfConversation = counterpartId === SELF_CHARACTER_ID;
           const counterpartName =
-            characterMap.get(counterpartId) ?? message.senderName ?? '联系人';
+            isSelfConversation
+              ? '自己'
+              : (characterMap.get(counterpartId) ?? message.senderName ?? '联系人');
           entries.push({
             timestamp: message.createdAt,
-            text: `[聊天][${formatTimestamp(message.createdAt)}][${counterpartName}] ${
+            text: `[${isSelfConversation ? '和自己聊天' : '聊天'}][${formatTimestamp(
+              message.createdAt,
+            )}][${counterpartName}] ${
               message.senderType === 'user' ? '用户' : counterpartName
             }：${truncateText(message.text, 120)}`,
           });
         });
     }
 
+    const activeGroupIds = activeGroups.map((item) => item.id);
     const [
+      groupMessages,
       momentPosts,
       momentComments,
+      momentLikes,
       feedPosts,
       feedComments,
       feedInteractions,
     ] = await Promise.all([
+      activeGroupIds.length
+        ? this.groupMessageRepo.find({
+            where: {
+              groupId: In(activeGroupIds),
+              createdAt: Between(windowStartedAt, windowEndedAt),
+            },
+            order: { createdAt: 'DESC' },
+            take: 32,
+          })
+        : Promise.resolve([] as GroupMessageEntity[]),
       this.momentPostRepo.find({
         where: {
           authorId: ownerId,
@@ -441,6 +500,15 @@ export class NeedDiscoveryService {
         },
         order: { createdAt: 'DESC' },
         take: 8,
+      }),
+      this.momentLikeRepo.find({
+        where: {
+          authorId: ownerId,
+          authorType: 'user',
+          createdAt: Between(windowStartedAt, windowEndedAt),
+        },
+        order: { createdAt: 'DESC' },
+        take: 10,
       }),
       this.feedPostRepo.find({
         where: {
@@ -470,6 +538,23 @@ export class NeedDiscoveryService {
       }),
     ]);
 
+    groupMessages
+      .filter(
+        (message) =>
+          message.senderType === 'user' || message.senderType === 'character',
+      )
+      .forEach((message) => {
+        entries.push({
+          timestamp: message.createdAt,
+          text: `[群聊][${formatTimestamp(message.createdAt)}][${
+            groupMap.get(message.groupId) ?? '群聊'
+          }] ${message.senderType === 'user' ? '用户' : message.senderName}：${truncateText(
+            message.text,
+            120,
+          )}`,
+        });
+      });
+
     momentPosts.forEach((post) => {
       entries.push({
         timestamp: post.postedAt,
@@ -489,6 +574,34 @@ export class NeedDiscoveryService {
         )}`,
       });
     });
+
+    if (momentLikes.length > 0) {
+      const likedPostIds = [...new Set(momentLikes.map((item) => item.postId))];
+      const likedPostMap = new Map(
+        (likedPostIds.length
+          ? await this.momentPostRepo.find({
+              where: { id: In(likedPostIds) },
+            })
+          : []
+        ).map((item) => [item.id, item]),
+      );
+      momentLikes.forEach((like) => {
+        const post = likedPostMap.get(like.postId);
+        const postOwner = post?.authorName?.trim() || '某人';
+        const postText = truncateText(
+          post?.text ||
+            describeMomentContent(post?.contentType, post?.mediaPayload),
+          80,
+        );
+        entries.push({
+          timestamp: like.createdAt,
+          text: `[朋友圈点赞][${formatTimestamp(
+            like.createdAt,
+          )}] 点赞了 ${postOwner} 的朋友圈：${postText}`,
+        });
+      });
+    }
+
     feedPosts.forEach((post) => {
       entries.push({
         timestamp: post.createdAt,
@@ -534,6 +647,60 @@ export class NeedDiscoveryService {
         });
       });
     }
+
+    favoriteNotes
+      .map((note) => ({
+        note,
+        timestamp: new Date(note.updatedAt),
+      }))
+      .filter(
+        ({ timestamp }) =>
+          !Number.isNaN(timestamp.getTime()) &&
+          timestamp >= windowStartedAt &&
+          timestamp <= windowEndedAt,
+      )
+      .sort((left, right) => right.timestamp.getTime() - left.timestamp.getTime())
+      .slice(0, 8)
+      .forEach(({ note, timestamp }) => {
+        const isEdited = note.updatedAt !== note.createdAt;
+        entries.push({
+          timestamp,
+          text: `[${isEdited ? '备忘更新' : '备忘记录'}][${formatTimestamp(
+            timestamp,
+          )}] ${truncateText(note.title, 36)}：${truncateText(
+            note.excerpt,
+            100,
+          )}${
+            note.tags.length > 0
+              ? `；标签：${note.tags.slice(0, 4).join('、')}`
+              : ''
+          }`,
+        });
+      });
+
+    searchHistory
+      .map((item) => ({
+        ...item,
+        timestamp: new Date(item.usedAt),
+      }))
+      .filter(
+        (item) =>
+          !Number.isNaN(item.timestamp.getTime()) &&
+          item.timestamp >= windowStartedAt &&
+          item.timestamp <= windowEndedAt,
+      )
+      .slice(0, 12)
+      .forEach((item) => {
+        entries.push({
+          timestamp: item.timestamp,
+          text: `[搜索行为][${formatTimestamp(item.timestamp)}] ${truncateText(
+            item.query,
+            80,
+          )}${
+            item.source ? `（来源：${formatSearchHistorySource(item.source)}）` : ''
+          }`,
+        });
+      });
 
     entries.sort(
       (left, right) => right.timestamp.getTime() - left.timestamp.getTime(),
@@ -948,6 +1115,19 @@ function normalizeInteractionType(type: string) {
       return '点赞评论';
     default:
       return type;
+  }
+}
+
+function formatSearchHistorySource(source: string) {
+  switch (source) {
+    case 'search_page':
+      return '搜一搜页面';
+    case 'search_history':
+      return '搜索历史';
+    case 'desktop_launcher':
+      return '桌面搜索入口';
+    default:
+      return source;
   }
 }
 
