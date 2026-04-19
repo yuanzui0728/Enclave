@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Clapperboard,
@@ -25,6 +25,11 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { RouteRedirectState } from "../components/route-redirect-state";
+import {
+  buildDesktopChannelsRouteHash,
+  parseDesktopChannelsRouteHash,
+} from "../features/channels/channels-route-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
@@ -40,7 +45,11 @@ export function ChannelAuthorPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const routeState = useMemo(() => parseDesktopChannelsRouteHash(hash), [hash]);
   const [notice, setNotice] = useState<{
     message: string;
     tone: "success" | "info";
@@ -51,6 +60,7 @@ export function ChannelAuthorPage() {
   const profileQuery = useQuery({
     queryKey: ["app-channel-author", baseUrl, authorId],
     queryFn: () => getChannelAuthorProfile(authorId, baseUrl),
+    enabled: !isDesktopLayout,
   });
   const followMutation = useMutation({
     mutationFn: () =>
@@ -81,6 +91,21 @@ export function ChannelAuthorPage() {
   useEffect(() => {
     writeStoredChannelAuthorCollection(authorId, activeCollection);
   }, [activeCollection, authorId]);
+
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/channels",
+      hash: buildDesktopChannelsRouteHash({
+        postId: routeState.postId,
+        authorId,
+      }),
+      replace: true,
+    });
+  }, [authorId, isDesktopLayout, navigate, routeState.postId]);
 
   function navigateBackToChannels() {
     if (isDesktopLayout) {
@@ -148,6 +173,16 @@ export function ChannelAuthorPage() {
       null,
     [profile?.recentPosts],
   );
+
+  if (isDesktopLayout) {
+    return (
+      <RouteRedirectState
+        title="正在切换到桌面视频号"
+        description="正在把作者页收回桌面视频号工作区，并恢复当前内容上下文。"
+        loadingLabel="切换桌面视频号..."
+      />
+    );
+  }
 
   return (
     <AppPage

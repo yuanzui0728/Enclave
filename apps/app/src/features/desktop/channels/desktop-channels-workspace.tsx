@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import type { FeedComment, FeedPostListItem } from "@yinjie/contracts";
+import type {
+  FeedChannelAuthorProfile,
+  FeedComment,
+  FeedPostListItem,
+} from "@yinjie/contracts";
 import {
   Button,
   ErrorBlock,
@@ -32,6 +36,9 @@ import {
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopChannelsWorkspaceProps = {
+  authorProfile: FeedChannelAuthorProfile | null;
+  authorProfileErrorMessage?: string | null;
+  authorProfileLoading: boolean;
   comments: FeedComment[];
   commentsErrorMessage?: string | null;
   commentsLoading: boolean;
@@ -48,18 +55,22 @@ type DesktopChannelsWorkspaceProps = {
   isLoading: boolean;
   likePendingPostId: string | null;
   posts: FeedPostListItem[];
+  routeSelectedAuthorId?: string | null;
   routeSelectedPostId?: string | null;
   successNotice?: string;
   isPostFavorite: (postId: string) => boolean;
+  onCloseAuthor: () => void;
   onCancelCommentReply: () => void;
   onCommentChange: (postId: string, value: string) => void;
   onCommentSubmit: (postId: string) => void;
   onLike: (postId: string) => void;
   onLikeComment: (comment: FeedComment) => void;
+  onOpenAuthor: (authorId: string) => void;
+  onOpenAuthorPost: (postId: string, authorId: string) => void;
   onRefresh: () => void;
   onReplyToComment: (comment: FeedComment) => void;
   onSelectedPostChange: (postId: string | null) => void;
-  onToggleFollowAuthor: (post: FeedPostListItem) => void;
+  onToggleAuthorFollow: (authorId: string, following: boolean) => void;
   onToggleFavorite: (post: FeedPostListItem) => void;
   onViewPost: (postId: string) => void;
 };
@@ -68,6 +79,9 @@ const DESKTOP_CHANNEL_COMMENT_THREAD_STORAGE_KEY =
   "yinjie:channels:desktop-comment-threads";
 
 export function DesktopChannelsWorkspace({
+  authorProfile,
+  authorProfileErrorMessage,
+  authorProfileLoading,
   comments,
   commentsErrorMessage,
   commentsLoading,
@@ -79,18 +93,22 @@ export function DesktopChannelsWorkspace({
   isLoading,
   likePendingPostId,
   posts,
+  routeSelectedAuthorId = null,
   routeSelectedPostId = null,
   successNotice,
   isPostFavorite,
+  onCloseAuthor,
   onCancelCommentReply,
   onCommentChange,
   onCommentSubmit,
   onLike,
   onLikeComment,
+  onOpenAuthor,
+  onOpenAuthorPost,
   onRefresh,
   onReplyToComment,
   onSelectedPostChange,
-  onToggleFollowAuthor,
+  onToggleAuthorFollow,
   onToggleFavorite,
   onViewPost,
 }: DesktopChannelsWorkspaceProps) {
@@ -169,6 +187,7 @@ export function DesktopChannelsWorkspace({
     posts.find((post) => post.id === liveCompanionReferencePostId) ?? null;
   const activeFavoriteActionClassName =
     "border-[rgba(180,123,23,0.18)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_rgba(180,123,23,0.78)]";
+  const authorPanelVisible = Boolean(routeSelectedAuthorId);
 
   useEffect(() => {
     onSelectedPostChange(selectedPost?.id ?? null);
@@ -277,12 +296,7 @@ export function DesktopChannelsWorkspace({
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
-                          onClick={() =>
-                            void navigate({
-                              to: "/channels/authors/$authorId",
-                              params: { authorId: selectedPost.authorId },
-                            })
-                          }
+                          onClick={() => onOpenAuthor(selectedPost.authorId)}
                           className="flex min-w-0 flex-1 items-center gap-3 text-left"
                         >
                           <AvatarChip
@@ -307,7 +321,12 @@ export function DesktopChannelsWorkspace({
                               : "primary"
                           }
                           size="sm"
-                          onClick={() => onToggleFollowAuthor(selectedPost)}
+                          onClick={() =>
+                            onToggleAuthorFollow(
+                              selectedPost.authorId,
+                              Boolean(selectedPost.ownerState?.isFollowingAuthor),
+                            )
+                          }
                           className={
                             selectedPost.ownerState?.isFollowingAuthor
                               ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
@@ -396,57 +415,70 @@ export function DesktopChannelsWorkspace({
             </section>
 
             <aside className="space-y-4">
-              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-                <div className="flex items-start gap-3">
-                  <AvatarChip
-                    name={selectedPost.authorName}
-                    src={selectedPost.authorAvatar}
-                    size="wechat"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]">
-                      {selectedPost.authorName}
-                    </div>
-                    <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
-                      {formatTimestamp(selectedPost.createdAt)} ·{" "}
-                      {selectedPost.viewCount} 播放
+              {authorPanelVisible ? (
+                <DesktopChannelAuthorPanel
+                  authorId={routeSelectedAuthorId}
+                  errorMessage={authorProfileErrorMessage}
+                  isLoading={authorProfileLoading}
+                  profile={authorProfile}
+                  selectedPostId={selectedPost.id}
+                  onClose={onCloseAuthor}
+                  onOpenPost={onOpenAuthorPost}
+                  onToggleFollow={onToggleAuthorFollow}
+                />
+              ) : (
+                <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                  <div className="flex items-start gap-3">
+                    <AvatarChip
+                      name={selectedPost.authorName}
+                      src={selectedPost.authorAvatar}
+                      size="wechat"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]">
+                        {selectedPost.authorName}
+                      </div>
+                      <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+                        {formatTimestamp(selectedPost.createdAt)} ·{" "}
+                        {selectedPost.viewCount} 播放
+                      </div>
                     </div>
                   </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onOpenAuthor(selectedPost.authorId)}
+                    >
+                      <PlaySquare size={14} />
+                      作者主页
+                    </Button>
+                    <Button
+                      variant={
+                        selectedPost.ownerState?.isFollowingAuthor
+                          ? "secondary"
+                          : "primary"
+                      }
+                      size="sm"
+                      onClick={() =>
+                        onToggleAuthorFollow(
+                          selectedPost.authorId,
+                          Boolean(selectedPost.ownerState?.isFollowingAuthor),
+                        )
+                      }
+                      className={
+                        selectedPost.ownerState?.isFollowingAuthor
+                          ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                          : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                      }
+                    >
+                      {selectedPost.ownerState?.isFollowingAuthor
+                        ? "已关注"
+                        : "+关注"}
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                      void navigate({
-                        to: "/channels/authors/$authorId",
-                        params: { authorId: selectedPost.authorId },
-                      })
-                    }
-                  >
-                    <PlaySquare size={14} />
-                    作者主页
-                  </Button>
-                  <Button
-                    variant={
-                      selectedPost.ownerState?.isFollowingAuthor
-                        ? "secondary"
-                        : "primary"
-                    }
-                    size="sm"
-                    onClick={() => onToggleFollowAuthor(selectedPost)}
-                    className={
-                      selectedPost.ownerState?.isFollowingAuthor
-                        ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                        : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-                    }
-                  >
-                    {selectedPost.ownerState?.isFollowingAuthor
-                      ? "已关注"
-                      : "+关注"}
-                  </Button>
-                </div>
-              </div>
+              )}
 
               <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
                 <div className="flex items-center justify-between gap-3">
@@ -591,6 +623,198 @@ export function DesktopChannelsWorkspace({
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function DesktopChannelAuthorPanel({
+  authorId,
+  errorMessage,
+  isLoading,
+  profile,
+  selectedPostId,
+  onClose,
+  onOpenPost,
+  onToggleFollow,
+}: {
+  authorId: string | null;
+  errorMessage?: string | null;
+  isLoading: boolean;
+  profile: FeedChannelAuthorProfile | null;
+  selectedPostId: string | null;
+  onClose: () => void;
+  onOpenPost: (postId: string, authorId: string) => void;
+  onToggleFollow: (authorId: string, following: boolean) => void;
+}) {
+  const fallbackBio =
+    profile?.authorType === "character"
+      ? "这位居民暂时还没有填写视频号简介。"
+      : "这个视频号作者暂时还没有填写简介。";
+  const recentPosts = profile?.recentPosts.slice(0, 5) ?? [];
+  const liveClipCount = (profile?.recentPosts ?? []).filter(
+    (post) => post.sourceKind === "live_clip",
+  ).length;
+
+  return (
+    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            作者主页
+          </div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+            桌面端把作者资料收进当前工作区，避免单开整页后丢掉当前内容上下文。
+          </div>
+        </div>
+        <Button variant="secondary" size="sm" onClick={onClose}>
+          回到内容
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="mt-4">
+          <LoadingBlock label="正在读取作者主页..." />
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <div className="mt-4">
+          <ErrorBlock message={errorMessage} />
+        </div>
+      ) : null}
+
+      {!isLoading && !errorMessage && !profile ? (
+        <div className="mt-4">
+          <EmptyState
+            title="作者主页暂时不可用"
+            description="这位作者的信息还没有准备好，稍后再试。"
+          />
+        </div>
+      ) : null}
+
+      {!isLoading && !errorMessage && profile ? (
+        <>
+          <div className="mt-4 flex items-start gap-3">
+            <AvatarChip
+              name={profile.authorName}
+              src={profile.authorAvatar}
+              size="wechat"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]">
+                  {profile.authorName}
+                </div>
+                <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                  {profile.authorType === "character" ? "居民作者" : "世界主人"}
+                </span>
+              </div>
+              <div className="mt-2 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+                {profile.bio?.trim() || fallbackBio}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+              {profile.followerCount} 关注者
+            </span>
+            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+              {profile.recentPosts.length} 条内容
+            </span>
+            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+              {liveClipCount} 条直播回放
+            </span>
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <Button
+              variant={profile.isFollowing ? "secondary" : "primary"}
+              size="sm"
+              onClick={() =>
+                onToggleFollow(profile.authorId, profile.isFollowing)
+              }
+              className={
+                profile.isFollowing
+                  ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                  : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+              }
+            >
+              {profile.isFollowing ? "已关注" : "+关注"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!selectedPostId}
+              onClick={onClose}
+            >
+              当前内容
+            </Button>
+          </div>
+
+          <div className="mt-5">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              最近内容
+            </div>
+            <div className="mt-3 space-y-2">
+              {recentPosts.length ? (
+                recentPosts.map((post) => (
+                  <button
+                    key={post.id}
+                    type="button"
+                    onClick={() => onOpenPost(post.id, profile.authorId)}
+                    className={cn(
+                      "w-full rounded-[16px] border px-3 py-3 text-left transition",
+                      selectedPostId === post.id
+                        ? "border-[rgba(7,193,96,0.14)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        {post.title?.trim() || "查看这条内容"}
+                      </div>
+                      <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                        {post.sourceKind === "live_clip"
+                          ? "直播回放"
+                          : post.mediaType === "video"
+                            ? "视频"
+                            : "动态"}
+                      </span>
+                    </div>
+                    <div className="mt-2 line-clamp-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                      {post.text}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+                      <span>{formatTimestamp(post.createdAt)}</span>
+                      <span>·</span>
+                      <span>{formatChannelMeta(post)}</span>
+                      {selectedPostId === post.id ? (
+                        <>
+                          <span>·</span>
+                          <span className="font-medium text-[color:var(--brand-primary)]">
+                            当前内容
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+                  这位作者暂时还没有可以展示的内容。
+                </div>
+              )}
+            </div>
+          </div>
+
+          {authorId && profile.authorId !== authorId ? (
+            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
+              当前路由和作者数据还在同步，稍后会自动收敛到最新作者资料。
+            </div>
+          ) : null}
+        </>
+      ) : null}
     </div>
   );
 }
