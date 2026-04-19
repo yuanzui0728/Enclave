@@ -12,12 +12,9 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BookText,
   BookUser,
-  LoaderCircle,
-  Mic,
   Plus,
   QrCode,
   Search,
-  Square,
   Star,
   UserPlus,
   Users,
@@ -43,9 +40,7 @@ import {
 import {
   AppPage,
   Button,
-  ErrorBlock,
   InlineNotice,
-  LoadingBlock,
   cn,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -1770,7 +1765,7 @@ function FriendListRow({
   );
 }
 
-function WorldCharacterRow({
+export function WorldCharacterRow({
   item,
   index,
   desktop = false,

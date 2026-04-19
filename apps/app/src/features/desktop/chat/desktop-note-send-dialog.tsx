@@ -4,7 +4,7 @@ import {
   type ConversationListItem,
   type FavoriteNoteAsset,
 } from "@yinjie/contracts";
-import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
+import { Button, ErrorBlock, LoadingBlock, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";

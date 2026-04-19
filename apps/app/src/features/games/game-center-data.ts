@@ -1,5 +1,4 @@
 import type {
-  GameCenterCategoryId,
   GameCenterCategoryTab,
   GameCenterEvent,
   GameCenterFriendActivity,
@@ -7,7 +6,6 @@ import type {
   GameCenterHomeResponse,
   GameCenterOwnerState,
   GameCenterPrimarySection,
-  GameCenterPrimarySectionId,
   GameCenterRankingEntry,
   GameCenterShelf,
   GameCenterStory,

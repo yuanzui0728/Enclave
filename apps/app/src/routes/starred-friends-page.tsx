@@ -1,30 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Search, Star, Tag } from "lucide-react";
-import {
-  getFriends,
-  getOrCreateConversation,
-  setFriendStarred,
-  type FriendListItem,
-} from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  ErrorBlock,
-  InlineNotice,
-  LoadingBlock,
-  cn,
-} from "@yinjie/ui";
+import { getFriends, type FriendListItem } from "@yinjie/contracts";
+import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
-import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
 import {
   getFriendDisplayName,
   matchesFriendSearch,
 } from "../features/contacts/contact-utils";
-import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";

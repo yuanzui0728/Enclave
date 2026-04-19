@@ -79,14 +79,6 @@ export function DesktopOfficialArticleWindowPage() {
   });
 
   const article = articleQuery.data;
-  const articlePath = article
-    ? buildDesktopOfficialArticleWindowPath({
-        articleId: article.id,
-        accountId: article.account.id,
-        title: article.title,
-        returnTo: routeState?.returnTo,
-      })
-    : null;
   const articleSourceId = article ? `official-article-${article.id}` : null;
   const fallbackPath = routeState?.returnTo ?? "/tabs/chat";
 

@@ -142,11 +142,6 @@ export function DesktopSubscriptionWorkspace({
       ]);
     },
   });
-  const hasReaderSurface =
-    Boolean(activeArticleId) ||
-    articleQuery.isLoading ||
-    articleQuery.isError ||
-    markArticleReadMutation.isError;
 
   useEffect(() => {
     if (

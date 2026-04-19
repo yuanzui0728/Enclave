@@ -16,7 +16,6 @@ import {
   Smile,
   Star,
   Square,
-  WandSparkles,
   X,
 } from "lucide-react";
 import { getFavorites, type StickerAttachment } from "@yinjie/contracts";

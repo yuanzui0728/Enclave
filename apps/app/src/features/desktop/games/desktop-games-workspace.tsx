@@ -19,10 +19,7 @@ import {
   formatTimestamp,
 } from "../../../lib/format";
 import { getConversationPreviewParts } from "../../../lib/conversation-preview";
-import {
-  getConversationThreadLabel,
-  isPersistedGroupConversation,
-} from "../../../lib/conversation-route";
+import { getConversationThreadLabel } from "../../../lib/conversation-route";
 import { EmptyState } from "../../../components/empty-state";
 import { GameCenterSessionPanel } from "../../games/game-center-session-panel";
 import {

@@ -215,7 +215,7 @@ function MobileGroupContactsPage() {
   );
 }
 
-function DesktopGroupContactsPage() {
+export function DesktopGroupContactsPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;

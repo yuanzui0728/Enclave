@@ -291,12 +291,6 @@ export function ChatMessageSearchPanel({
   ).length;
   const isKeywordSearch = Boolean(trimmedKeyword);
   const isPartialResult = results.length > visibleResults.length;
-  const activeFilterCount =
-    (trimmedKeyword ? 1 : 0) +
-    (senderFilter !== "all" ? 1 : 0) +
-    (messageTypeFilter !== "all" ? 1 : 0) +
-    (dateFilter !== "all" ? 1 : 0) +
-    (specificDate ? 1 : 0);
   const activeFilterLabels = useMemo(() => {
     const labels: string[] = [];
 
