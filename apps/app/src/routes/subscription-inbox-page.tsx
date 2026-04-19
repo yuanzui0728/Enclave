@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, BookOpenText } from "lucide-react";
@@ -14,12 +14,16 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { parseDesktopOfficialMessageRouteHash } from "../features/desktop/chat/desktop-official-message-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+
+const DesktopChatWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/chat/desktop-chat-workspace");
+  return { default: mod.DesktopChatWorkspace };
+});
 
 export function SubscriptionInboxPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -33,10 +37,12 @@ export function SubscriptionInboxPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopChatWorkspace
-        selectedSpecialView="subscription-inbox"
-        selectedOfficialArticleId={routeState.articleId}
-      />
+      <Suspense fallback={null}>
+        <DesktopChatWorkspace
+          selectedSpecialView="subscription-inbox"
+          selectedOfficialArticleId={routeState.articleId}
+        />
+      </Suspense>
     );
   }
 

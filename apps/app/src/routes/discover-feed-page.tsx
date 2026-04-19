@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -26,7 +34,6 @@ import {
   upsertDesktopFavorite,
 } from "../features/desktop/favorites/desktop-favorites-storage";
 import { SocialPostCard } from "../components/social-post-card";
-import { DesktopFeedWorkspace } from "../features/desktop/feed/desktop-feed-workspace";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
@@ -46,6 +53,10 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 
 const FEED_COMPOSER_SECTION_ID = "discover-feed-composer-card";
 const FEED_COMPOSER_TEXTAREA_ID = "discover-feed-composer-input";
+const DesktopFeedWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/feed/desktop-feed-workspace");
+  return { default: mod.DesktopFeedWorkspace };
+});
 
 export function DiscoverFeedPage() {
   const navigate = useNavigate();
@@ -67,6 +78,9 @@ export function DiscoverFeedPage() {
     isDesktopLayout,
   });
   const composeDraft = useMomentComposeDraft();
+  const resetComposeDraft = useEffectEvent(() => {
+    composeDraft.reset();
+  });
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
@@ -162,11 +176,11 @@ export function DiscoverFeedPage() {
   );
 
   useEffect(() => {
-    composeDraft.reset();
+    resetComposeDraft();
     setCommentDrafts({});
     setShowCompose(false);
     setNotice("");
-  }, [baseUrl]);
+  }, [baseUrl, resetComposeDraft]);
 
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
@@ -348,97 +362,99 @@ export function DiscoverFeedPage() {
     }
 
     return (
-      <DesktopFeedWorkspace
-        baseUrl={baseUrl}
-        canAddImages={composeDraft.canAddImages}
-        canAddVideo={composeDraft.canAddVideo}
-        commentDrafts={commentDrafts}
-        commentErrorMessage={
-          commentMutation.isError && commentMutation.error instanceof Error
-            ? commentMutation.error.message
-            : null
-        }
-        commentPendingPostId={pendingCommentPostId}
-        composeErrorMessage={
-          composeDraft.mediaError ??
-          (createMutation.isError && createMutation.error instanceof Error
-            ? createMutation.error.message
-            : null)
-        }
-        createPending={createMutation.isPending}
-        errors={errors}
-        imageDrafts={composeDraft.imageDrafts}
-        isLoading={feedQuery.isLoading}
-        likeErrorMessage={
-          likeMutation.isError && likeMutation.error instanceof Error
-            ? likeMutation.error.message
-            : null
-        }
-        likePendingPostId={pendingLikePostId}
-        ownerAvatar={ownerAvatar}
-        ownerUsername={ownerUsername}
-        posts={visiblePosts}
-        routeSelectedPostId={routeSelectedPostId}
-        showCompose={showCompose}
-        successNotice={notice}
-        text={composeDraft.text}
-        videoDraft={composeDraft.videoDraft}
-        isPostFavorite={(postId) =>
-          favoriteSourceIds.includes(`feed-${postId}`)
-        }
-        setShowCompose={setShowCompose}
-        onCommentChange={(postId, value) =>
-          setCommentDrafts((current) => ({
-            ...current,
-            [postId]: value,
-          }))
-        }
-        onCommentSubmit={(postId) => commentMutation.mutate(postId)}
-        onCreate={() => createMutation.mutate()}
-        onImageFilesSelected={(files) => {
-          void handleImageFilesSelected(files);
-        }}
-        onLike={(postId) => likeMutation.mutate(postId)}
-        onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
-        onRemoveVideo={() => composeDraft.clearVideoDraft()}
-        onRefresh={() => {
-          void feedQuery.refetch();
-          if (ownerId) {
-            void blockedQuery.refetch();
+      <Suspense fallback={null}>
+        <DesktopFeedWorkspace
+          baseUrl={baseUrl}
+          canAddImages={composeDraft.canAddImages}
+          canAddVideo={composeDraft.canAddVideo}
+          commentDrafts={commentDrafts}
+          commentErrorMessage={
+            commentMutation.isError && commentMutation.error instanceof Error
+              ? commentMutation.error.message
+              : null
           }
-        }}
-        onTextChange={composeDraft.setText}
-        onToggleFavorite={(postId) => {
-          const post = visiblePosts.find((item) => item.id === postId);
-          if (!post) {
-            return;
+          commentPendingPostId={pendingCommentPostId}
+          composeErrorMessage={
+            composeDraft.mediaError ??
+            (createMutation.isError && createMutation.error instanceof Error
+              ? createMutation.error.message
+              : null)
           }
+          createPending={createMutation.isPending}
+          errors={errors}
+          imageDrafts={composeDraft.imageDrafts}
+          isLoading={feedQuery.isLoading}
+          likeErrorMessage={
+            likeMutation.isError && likeMutation.error instanceof Error
+              ? likeMutation.error.message
+              : null
+          }
+          likePendingPostId={pendingLikePostId}
+          ownerAvatar={ownerAvatar}
+          ownerUsername={ownerUsername}
+          posts={visiblePosts}
+          routeSelectedPostId={routeSelectedPostId}
+          showCompose={showCompose}
+          successNotice={notice}
+          text={composeDraft.text}
+          videoDraft={composeDraft.videoDraft}
+          isPostFavorite={(postId) =>
+            favoriteSourceIds.includes(`feed-${postId}`)
+          }
+          setShowCompose={setShowCompose}
+          onCommentChange={(postId, value) =>
+            setCommentDrafts((current) => ({
+              ...current,
+              [postId]: value,
+            }))
+          }
+          onCommentSubmit={(postId) => commentMutation.mutate(postId)}
+          onCreate={() => createMutation.mutate()}
+          onImageFilesSelected={(files) => {
+            void handleImageFilesSelected(files);
+          }}
+          onLike={(postId) => likeMutation.mutate(postId)}
+          onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+          onRemoveVideo={() => composeDraft.clearVideoDraft()}
+          onRefresh={() => {
+            void feedQuery.refetch();
+            if (ownerId) {
+              void blockedQuery.refetch();
+            }
+          }}
+          onTextChange={composeDraft.setText}
+          onToggleFavorite={(postId) => {
+            const post = visiblePosts.find((item) => item.id === postId);
+            if (!post) {
+              return;
+            }
 
-          const sourceId = `feed-${post.id}`;
-          const collected = favoriteSourceIds.includes(sourceId);
-          const nextFavorites = collected
-            ? removeDesktopFavorite(sourceId)
-            : upsertDesktopFavorite({
-                id: `favorite-${sourceId}`,
-                sourceId,
-                category: "feed",
-                title: post.authorName,
-                description: getFeedSummaryText(post),
-                meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
-                to: `/tabs/feed${buildDesktopFeedRouteHash(post.id) ? `#${buildDesktopFeedRouteHash(post.id)}` : ""}`,
-                badge: "广场动态",
-                avatarName: post.authorName,
-                avatarSrc: post.authorAvatar,
-              });
+            const sourceId = `feed-${post.id}`;
+            const collected = favoriteSourceIds.includes(sourceId);
+            const nextFavorites = collected
+              ? removeDesktopFavorite(sourceId)
+              : upsertDesktopFavorite({
+                  id: `favorite-${sourceId}`,
+                  sourceId,
+                  category: "feed",
+                  title: post.authorName,
+                  description: getFeedSummaryText(post),
+                  meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
+                  to: `/tabs/feed${buildDesktopFeedRouteHash(post.id) ? `#${buildDesktopFeedRouteHash(post.id)}` : ""}`,
+                  badge: "广场动态",
+                  avatarName: post.authorName,
+                  avatarSrc: post.authorAvatar,
+                });
 
-          setFavoriteSourceIds(
-            nextFavorites.map((favorite) => favorite.sourceId),
-          );
-        }}
-        onVideoFileSelected={(file) => {
-          void handleVideoFileSelected(file);
-        }}
-      />
+            setFavoriteSourceIds(
+              nextFavorites.map((favorite) => favorite.sourceId),
+            );
+          }}
+          onVideoFileSelected={(file) => {
+            void handleVideoFileSelected(file);
+          }}
+        />
+      </Suspense>
     );
   }
 

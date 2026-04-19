@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -27,7 +34,6 @@ import {
   UsersRound,
 } from "lucide-react";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { DesktopGamesWorkspace } from "../features/desktop/games/desktop-games-workspace";
 import {
   gameCenterCategoryTabs,
   gameCenterEvents,
@@ -69,6 +75,11 @@ import {
 } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+
+const DesktopGamesWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/games/desktop-games-workspace");
+  return { default: mod.DesktopGamesWorkspace };
+});
 
 function resolveGames(ids: string[]) {
   return ids
@@ -566,41 +577,43 @@ export function GamesPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopGamesWorkspace
-        activeCategory={activeCategory}
-        activeGameId={activeGameId}
-        activeInviteActivityId={activeInviteActivityId}
-        eventActionStatusById={eventActionStatusById}
-        friendInviteSentAtByActivityId={friendInviteSentAtByActivityId}
-        friendInviteStatusByActivityId={friendInviteStatusByActivityId}
-        lastInviteConversationPathByActivityId={
-          lastInviteConversationPathByActivityId
-        }
-        lastInviteConversationTitleByActivityId={
-          lastInviteConversationTitleByActivityId
-        }
-        inviteConversationCandidates={inviteConversationCandidates}
-        inviteConversationCandidatesLoading={conversationsQuery.isLoading}
-        launchCountById={launchCountById}
-        pinnedGameIds={pinnedGameIds}
-        recentGameIds={recentGameIds}
-        selectedGameId={selectedGameId}
-        lastOpenedAtById={lastOpenedAtById}
-        successNotice={successNotice}
-        noticeTone={noticeTone}
-        onCategoryChange={setActiveCategory}
-        onCompleteEventAction={handleCompleteEventAction}
-        onCopyInviteToMobile={handleCopyInviteToMobile}
-        onOpenInviteToChat={handleOpenInviteToChat}
-        onOpenDeliveredConversation={handleOpenDeliveredConversation}
-        onSendInviteToConversation={handleSendInviteToConversation}
-        onInviteFriend={handleInviteFriend}
-        onCopyGameToMobile={handleCopyGameToMobile}
-        onDismissActiveGame={dismissActiveGame}
-        onLaunchGame={handleLaunchGame}
-        onSelectGame={setSelectedGameId}
-        onTogglePinnedGame={handleTogglePinnedGame}
-      />
+      <Suspense fallback={null}>
+        <DesktopGamesWorkspace
+          activeCategory={activeCategory}
+          activeGameId={activeGameId}
+          activeInviteActivityId={activeInviteActivityId}
+          eventActionStatusById={eventActionStatusById}
+          friendInviteSentAtByActivityId={friendInviteSentAtByActivityId}
+          friendInviteStatusByActivityId={friendInviteStatusByActivityId}
+          lastInviteConversationPathByActivityId={
+            lastInviteConversationPathByActivityId
+          }
+          lastInviteConversationTitleByActivityId={
+            lastInviteConversationTitleByActivityId
+          }
+          inviteConversationCandidates={inviteConversationCandidates}
+          inviteConversationCandidatesLoading={conversationsQuery.isLoading}
+          launchCountById={launchCountById}
+          pinnedGameIds={pinnedGameIds}
+          recentGameIds={recentGameIds}
+          selectedGameId={selectedGameId}
+          lastOpenedAtById={lastOpenedAtById}
+          successNotice={successNotice}
+          noticeTone={noticeTone}
+          onCategoryChange={setActiveCategory}
+          onCompleteEventAction={handleCompleteEventAction}
+          onCopyInviteToMobile={handleCopyInviteToMobile}
+          onOpenInviteToChat={handleOpenInviteToChat}
+          onOpenDeliveredConversation={handleOpenDeliveredConversation}
+          onSendInviteToConversation={handleSendInviteToConversation}
+          onInviteFriend={handleInviteFriend}
+          onCopyGameToMobile={handleCopyGameToMobile}
+          onDismissActiveGame={dismissActiveGame}
+          onLaunchGame={handleLaunchGame}
+          onSelectGame={setSelectedGameId}
+          onTogglePinnedGame={handleTogglePinnedGame}
+        />
+      </Suspense>
     );
   }
 

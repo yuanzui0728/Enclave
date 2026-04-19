@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -41,7 +49,6 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { DesktopChannelsWorkspace } from "../features/desktop/channels/desktop-channels-workspace";
 import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
@@ -56,6 +63,13 @@ import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const EMPTY_CHANNEL_POSTS: FeedPostListItem[] = [];
+const DesktopChannelsWorkspace = lazy(async () => {
+  const mod = await import(
+    "../features/desktop/channels/desktop-channels-workspace"
+  );
+  return { default: mod.DesktopChannelsWorkspace };
+});
+
 type FeedCommentReplyTarget = {
   authorId: string;
   authorName: string;
@@ -507,54 +521,54 @@ export function ChannelsPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopChannelsWorkspace
-        commentDrafts={commentDrafts}
-        commentPendingPostId={pendingCommentPostId}
-        errorMessage={errorMessage}
-        isLoading={channelsQuery.isLoading}
-        likePendingPostId={pendingLikePostId}
-        posts={visiblePosts}
-        routeSelectedPostId={routeSelectedPostId}
-        successNotice={notice}
-        isPostFavorite={(postId) =>
-          visiblePosts.find((post) => post.id === postId)?.ownerState
-            ?.hasFavorited ?? false
-        }
-        onCommentChange={updateCommentDraft}
-        onCommentSubmit={(postId) =>
-          submitComment(postId, { replyTarget: desktopReplyTarget })
-        }
-        onLike={(postId) => likeMutation.mutate(postId)}
-        onRefresh={() =>
-          generateMutation.mutate()
-        }
-        comments={desktopCommentsQuery.data ?? []}
-        commentsErrorMessage={desktopCommentPanelErrorMessage}
-        commentsLoading={desktopCommentsQuery.isLoading}
-        commentReplyTarget={desktopReplyTarget}
-        commentLikePendingId={pendingLikeCommentId}
-        onCancelCommentReply={() => setDesktopReplyTarget(null)}
-        onToggleFollowAuthor={toggleFollowAuthor}
-        onToggleFavorite={toggleFavorite}
-        onLikeComment={(comment) =>
-          likeCommentMutation.mutate({
-            commentId: comment.id,
-            postId: comment.postId,
-          })
-        }
-        onReplyToComment={(comment) =>
-          setDesktopReplyTarget({
-            authorId: comment.authorId,
-            authorName: comment.authorName,
-            commentId: comment.id,
-            postId: comment.postId,
-          })
-        }
-        onSelectedPostChange={setDesktopSelectedPostId}
-        onViewPost={(postId) => {
-          void viewFeedPost(postId, { progressSeconds: 3 }, baseUrl);
-        }}
-      />
+      <Suspense fallback={null}>
+        <DesktopChannelsWorkspace
+          commentDrafts={commentDrafts}
+          commentPendingPostId={pendingCommentPostId}
+          errorMessage={errorMessage}
+          isLoading={channelsQuery.isLoading}
+          likePendingPostId={pendingLikePostId}
+          posts={visiblePosts}
+          routeSelectedPostId={routeSelectedPostId}
+          successNotice={notice}
+          isPostFavorite={(postId) =>
+            visiblePosts.find((post) => post.id === postId)?.ownerState
+              ?.hasFavorited ?? false
+          }
+          onCommentChange={updateCommentDraft}
+          onCommentSubmit={(postId) =>
+            submitComment(postId, { replyTarget: desktopReplyTarget })
+          }
+          onLike={(postId) => likeMutation.mutate(postId)}
+          onRefresh={() => generateMutation.mutate()}
+          comments={desktopCommentsQuery.data ?? []}
+          commentsErrorMessage={desktopCommentPanelErrorMessage}
+          commentsLoading={desktopCommentsQuery.isLoading}
+          commentReplyTarget={desktopReplyTarget}
+          commentLikePendingId={pendingLikeCommentId}
+          onCancelCommentReply={() => setDesktopReplyTarget(null)}
+          onToggleFollowAuthor={toggleFollowAuthor}
+          onToggleFavorite={toggleFavorite}
+          onLikeComment={(comment) =>
+            likeCommentMutation.mutate({
+              commentId: comment.id,
+              postId: comment.postId,
+            })
+          }
+          onReplyToComment={(comment) =>
+            setDesktopReplyTarget({
+              authorId: comment.authorId,
+              authorName: comment.authorName,
+              commentId: comment.id,
+              postId: comment.postId,
+            })
+          }
+          onSelectedPostChange={setDesktopSelectedPostId}
+          onViewPost={(postId) => {
+            void viewFeedPost(postId, { progressSeconds: 3 }, baseUrl);
+          }}
+        />
+      </Suspense>
     );
   }
 

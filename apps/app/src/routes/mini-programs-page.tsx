@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { sendGroupMessage } from "@yinjie/contracts";
-import { DesktopMiniProgramsWorkspace } from "../features/desktop/mini-programs/desktop-mini-programs-workspace";
 import {
   featuredMiniProgramIds,
   getMiniProgramEntry,
@@ -28,6 +27,13 @@ import {
   isMobileWebShareSurface,
   isNativeMobileShareSurface,
 } from "../runtime/mobile-share-surface";
+
+const DesktopMiniProgramsWorkspace = lazy(async () => {
+  const mod = await import(
+    "../features/desktop/mini-programs/desktop-mini-programs-workspace"
+  );
+  return { default: mod.DesktopMiniProgramsWorkspace };
+});
 
 function resolveDefaultMiniProgramId() {
   return featuredMiniProgramIds[0] ?? miniProgramEntries[0]?.id ?? "";
@@ -387,49 +393,51 @@ export function MiniProgramsPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopMiniProgramsWorkspace
-        activeCategory={activeCategory}
-        activeMiniProgramId={activeMiniProgramId}
-        completedTaskIdsByMiniProgramId={completedTaskIdsByMiniProgramId}
-        launchCountById={launchCountById}
-        lastOpenedAtById={lastOpenedAtById}
-        panelMiniProgramId={routeMiniProgramId}
-        pinnedMiniProgramIds={pinnedMiniProgramIds}
-        recentMiniProgramIds={recentMiniProgramIds}
-        searchText={searchText}
-        selectedMiniProgramId={selectedMiniProgramId}
-        successNotice={successNotice}
-        noticeTone={noticeTone}
-        visibleMiniPrograms={visibleMiniPrograms}
-        onCategoryChange={setActiveCategory}
-        onCopyMiniProgramToMobile={handleCopyMiniProgramToMobile}
-        onDismissActiveMiniProgram={dismissActiveMiniProgram}
-        onOpenMiniProgram={handleOpenMiniProgram}
-        onSearchTextChange={setSearchText}
-        onSelectMiniProgram={setSelectedMiniProgramId}
-        onToggleMiniProgramTask={handleToggleMiniProgramTask}
-        onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
-        launchContext={launchContext}
-        relaySummaryMessage={relaySummaryMessage}
-        relaySummaryPending={sendRelaySummaryMutation.isPending}
-        onSendRelaySummaryToGroup={
-          launchContext
-            ? () => {
-                void sendRelaySummaryMutation.mutateAsync();
-              }
-            : undefined
-        }
-        onReturnToGroup={
-          launchContext
-            ? () => {
-                void navigate({
-                  to: "/group/$groupId",
-                  params: { groupId: launchContext.sourceGroupId },
-                });
-              }
-            : undefined
-        }
-      />
+      <Suspense fallback={null}>
+        <DesktopMiniProgramsWorkspace
+          activeCategory={activeCategory}
+          activeMiniProgramId={activeMiniProgramId}
+          completedTaskIdsByMiniProgramId={completedTaskIdsByMiniProgramId}
+          launchCountById={launchCountById}
+          lastOpenedAtById={lastOpenedAtById}
+          panelMiniProgramId={routeMiniProgramId}
+          pinnedMiniProgramIds={pinnedMiniProgramIds}
+          recentMiniProgramIds={recentMiniProgramIds}
+          searchText={searchText}
+          selectedMiniProgramId={selectedMiniProgramId}
+          successNotice={successNotice}
+          noticeTone={noticeTone}
+          visibleMiniPrograms={visibleMiniPrograms}
+          onCategoryChange={setActiveCategory}
+          onCopyMiniProgramToMobile={handleCopyMiniProgramToMobile}
+          onDismissActiveMiniProgram={dismissActiveMiniProgram}
+          onOpenMiniProgram={handleOpenMiniProgram}
+          onSearchTextChange={setSearchText}
+          onSelectMiniProgram={setSelectedMiniProgramId}
+          onToggleMiniProgramTask={handleToggleMiniProgramTask}
+          onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
+          launchContext={launchContext}
+          relaySummaryMessage={relaySummaryMessage}
+          relaySummaryPending={sendRelaySummaryMutation.isPending}
+          onSendRelaySummaryToGroup={
+            launchContext
+              ? () => {
+                  void sendRelaySummaryMutation.mutateAsync();
+                }
+              : undefined
+          }
+          onReturnToGroup={
+            launchContext
+              ? () => {
+                  void navigate({
+                    to: "/group/$groupId",
+                    params: { groupId: launchContext.sourceGroupId },
+                  });
+                }
+              : undefined
+          }
+        />
+      </Suspense>
     );
   }
 
