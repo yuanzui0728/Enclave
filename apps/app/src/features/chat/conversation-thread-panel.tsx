@@ -53,6 +53,7 @@ type ConversationThreadPanelProps = {
   onToggleDesktopDetails?: () => void;
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
   highlightedMessageId?: string;
+  buildMessageReturnTo?: (messageId: string) => string | undefined;
   routeContextNotice?: ChatRouteContextNotice;
   routeMobileShortcutAction?: ChatComposeShortcutAction | null;
   onRouteMobileShortcutHandled?: () => void;
@@ -77,6 +78,7 @@ export function ConversationThreadPanel({
   onToggleDesktopDetails,
   onDesktopCallAction,
   highlightedMessageId,
+  buildMessageReturnTo,
   routeContextNotice,
   routeMobileShortcutAction = null,
   onRouteMobileShortcutHandled,
@@ -618,6 +620,7 @@ export function ConversationThreadPanel({
                 type: "direct",
                 title: conversationTitle,
               }}
+              buildMessageReturnTo={buildMessageReturnTo}
               groupMode={conversationType === "group"}
               variant={isDesktop ? "desktop" : "mobile"}
               highlightedMessageId={highlightedMessageId}

@@ -147,6 +147,7 @@ type DesktopChatWorkspaceProps = {
   selectedOfficialArticleId?: string;
   selectedOfficialDisplayMode?: "feed" | "accounts";
   highlightedMessageId?: string;
+  buildMessageReturnTo?: (messageId: string) => string | undefined;
   routeContextNotice?: ChatRouteContextNotice;
   selectedSpecialView?: "subscription-inbox" | "official-accounts";
   standaloneWindow?: boolean;
@@ -185,6 +186,7 @@ export function DesktopChatWorkspace({
   selectedOfficialArticleId,
   selectedOfficialDisplayMode,
   highlightedMessageId,
+  buildMessageReturnTo,
   routeContextNotice,
   selectedSpecialView,
   standaloneWindow = false,
@@ -1615,6 +1617,7 @@ export function DesktopChatWorkspace({
                   ? highlightedMessageId
                   : undefined
               }
+              buildMessageReturnTo={buildMessageReturnTo}
               routeContextNotice={
                 activeConversation.id === selectedConversationId
                   ? routeContextNotice
@@ -1636,6 +1639,7 @@ export function DesktopChatWorkspace({
                   ? highlightedMessageId
                   : undefined
               }
+              buildMessageReturnTo={buildMessageReturnTo}
               routeContextNotice={
                 activeConversation.id === selectedConversationId
                   ? routeContextNotice

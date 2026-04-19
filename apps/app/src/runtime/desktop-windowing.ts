@@ -186,6 +186,42 @@ export async function focusMainDesktopWindow(targetPath?: string) {
   }
 }
 
+export async function focusStandaloneDesktopWindow(
+  label: string,
+  targetPath?: string,
+) {
+  if (!isDesktopRuntimeAvailable()) {
+    return false;
+  }
+
+  try {
+    const [{ emitTo }, { WebviewWindow }] = await Promise.all([
+      import("@tauri-apps/api/event"),
+      import("@tauri-apps/api/webviewWindow"),
+    ]);
+    const targetWindow = await WebviewWindow.getByLabel(label);
+
+    if (!targetWindow) {
+      return false;
+    }
+
+    if (targetPath?.trim()) {
+      await emitTo<DesktopStandaloneWindowNavigatePayload>(
+        label,
+        DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
+        {
+          targetPath: targetPath.trim(),
+        },
+      );
+    }
+
+    await focusDesktopWindow(targetWindow);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function closeCurrentDesktopWindow() {
   if (!isDesktopRuntimeAvailable()) {
     return false;

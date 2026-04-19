@@ -6,7 +6,10 @@ import { getConversations } from "@yinjie/contracts";
 import { Button } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
-import { parseDesktopChatWindowRouteHash } from "../features/desktop/chat/desktop-chat-window-route-state";
+import {
+  buildDesktopChatWindowPath,
+  parseDesktopChatWindowRouteHash,
+} from "../features/desktop/chat/desktop-chat-window-route-state";
 import {
   closeCurrentDesktopWindow,
   DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
@@ -193,6 +196,16 @@ export function DesktopChatWindowPage() {
       <div className="min-h-0 flex-1 bg-[rgba(255,255,255,0.62)]">
         <DesktopChatWorkspace
           selectedConversationId={routeState.conversationId}
+          highlightedMessageId={routeState.highlightedMessageId}
+          buildMessageReturnTo={(messageId) =>
+            buildDesktopChatWindowPath({
+              conversationId: routeState.conversationId,
+              conversationType: routeState.conversationType,
+              title: routeState.title,
+              returnTo: routeState.returnTo,
+              highlightedMessageId: messageId,
+            })
+          }
           standaloneWindow
         />
       </div>

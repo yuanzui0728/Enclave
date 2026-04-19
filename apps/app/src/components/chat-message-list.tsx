@@ -181,6 +181,7 @@ type ChatMessageListProps = {
     type: "direct" | "group";
     title?: string;
   };
+  buildMessageReturnTo?: (messageId: string) => string | undefined;
   groupMode?: boolean;
   showGroupMemberNicknames?: boolean;
   variant?: "mobile" | "desktop";
@@ -247,6 +248,7 @@ function SelectionModeActionButton({
 export function ChatMessageList({
   messages,
   threadContext,
+  buildMessageReturnTo,
   groupMode = false,
   showGroupMemberNicknames = true,
   variant = "mobile",
@@ -1223,11 +1225,13 @@ export function ChatMessageList({
         message.attachment.fileName ||
         sanitizeDisplayedChatText(message.text) ||
         "[图片]";
-      const returnTo = threadContext
-        ? threadContext.type === "group"
-          ? `/group/${threadContext.id}#chat-message-${message.id}`
-          : `/chat/${threadContext.id}#chat-message-${message.id}`
-        : undefined;
+      const returnTo =
+        buildMessageReturnTo?.(message.id) ??
+        (threadContext
+          ? threadContext.type === "group"
+            ? `/group/${threadContext.id}#chat-message-${message.id}`
+            : `/chat/${threadContext.id}#chat-message-${message.id}`
+          : undefined);
       const meta = threadContext?.title?.trim()
         ? `${threadContext.title} · ${formatMessageTimestamp(message.createdAt)}`
         : formatMessageTimestamp(message.createdAt);

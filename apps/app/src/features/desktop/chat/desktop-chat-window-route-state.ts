@@ -11,6 +11,7 @@ export type DesktopChatWindowRouteState = {
   conversationType: "direct" | "group";
   title: string;
   returnTo?: string;
+  highlightedMessageId?: string;
 };
 
 export function buildDesktopChatWindowRouteHash(
@@ -23,6 +24,10 @@ export function buildDesktopChatWindowRouteHash(
 
   if (input.returnTo?.trim()) {
     params.set("returnTo", input.returnTo.trim());
+  }
+
+  if (input.highlightedMessageId?.trim()) {
+    params.set("messageId", input.highlightedMessageId.trim());
   }
 
   return params.toString();
@@ -52,19 +57,21 @@ export function parseDesktopChatWindowRouteHash(hash: string) {
   }
 
   const returnTo = params.get("returnTo")?.trim();
+  const highlightedMessageId = params.get("messageId")?.trim();
 
   return {
     conversationId,
     conversationType,
     title,
     returnTo: returnTo || undefined,
+    highlightedMessageId: highlightedMessageId || undefined,
   } satisfies DesktopChatWindowRouteState;
 }
 
-function buildDesktopChatWindowLabel(input: DesktopChatWindowRouteState) {
+export function buildDesktopChatWindowLabel(conversationId: string) {
   return buildDesktopStandaloneWindowLabel(
     "desktop-chat-window",
-    input.conversationId,
+    conversationId,
   );
 }
 
@@ -95,7 +102,7 @@ export async function openDesktopChatWindow(input: DesktopChatWindowRouteState) 
 
   if (
     await openDesktopStandaloneWindow({
-      label: buildDesktopChatWindowLabel(input),
+      label: buildDesktopChatWindowLabel(input.conversationId),
       url: routePath,
       title: input.title.trim() || "聊天",
       width,

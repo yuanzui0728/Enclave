@@ -88,6 +88,7 @@ type GroupChatThreadPanelProps = {
   onOpenDesktopMemberSearch?: () => void;
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
   highlightedMessageId?: string;
+  buildMessageReturnTo?: (messageId: string) => string | undefined;
   routeContextNotice?: ChatRouteContextNotice;
   routeMobileShortcutAction?: ChatComposeShortcutAction | null;
   onRouteMobileShortcutHandled?: () => void;
@@ -104,6 +105,7 @@ export function GroupChatThreadPanel({
   onOpenDesktopAnnouncementDetails,
   onDesktopCallAction,
   highlightedMessageId,
+  buildMessageReturnTo,
   routeContextNotice,
   routeMobileShortcutAction = null,
   onRouteMobileShortcutHandled,
@@ -1208,6 +1210,7 @@ export function GroupChatThreadPanel({
                 type: "group",
                 title: groupQuery.data?.name ?? "群聊",
               }}
+              buildMessageReturnTo={buildMessageReturnTo}
               groupMode
               showGroupMemberNicknames={
                 groupQuery.data?.showMemberNicknames ?? true
