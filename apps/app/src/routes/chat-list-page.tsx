@@ -1,5 +1,7 @@
 import {
+  Suspense,
   useEffect,
+  lazy,
   useMemo,
   useRef,
   useState,
@@ -67,7 +69,6 @@ import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
-import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { parseDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
@@ -127,6 +128,10 @@ type PendingHideConversation = {
 
 const SWIPE_ACTION_BUTTON_WIDTH = 68;
 const HIDE_UNDO_WINDOW_MS = 5_000;
+const DesktopChatWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/chat/desktop-chat-workspace");
+  return { default: mod.DesktopChatWorkspace };
+});
 
 export function ChatListPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -138,27 +143,29 @@ export function ChatListPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopChatWorkspace
-        selectedServiceAccountId={
-          desktopRouteState.officialView === "service-account"
-            ? desktopRouteState.accountId
-            : undefined
-        }
-        selectedOfficialArticleId={desktopRouteState.articleId}
-        selectedOfficialDisplayMode={desktopRouteState.officialMode}
-        selectedSpecialView={
-          desktopRouteState.officialView === "subscription-inbox"
-            ? "subscription-inbox"
-            : desktopRouteState.officialView === "official-accounts"
-              ? "official-accounts"
+      <Suspense fallback={null}>
+        <DesktopChatWorkspace
+          selectedServiceAccountId={
+            desktopRouteState.officialView === "service-account"
+              ? desktopRouteState.accountId
               : undefined
-        }
-        selectedOfficialAccountId={
-          desktopRouteState.officialView === "official-accounts"
-            ? desktopRouteState.accountId
-            : undefined
-        }
-      />
+          }
+          selectedOfficialArticleId={desktopRouteState.articleId}
+          selectedOfficialDisplayMode={desktopRouteState.officialMode}
+          selectedSpecialView={
+            desktopRouteState.officialView === "subscription-inbox"
+              ? "subscription-inbox"
+              : desktopRouteState.officialView === "official-accounts"
+                ? "official-accounts"
+                : undefined
+          }
+          selectedOfficialAccountId={
+            desktopRouteState.officialView === "official-accounts"
+              ? desktopRouteState.accountId
+              : undefined
+          }
+        />
+      </Suspense>
     );
   }
 

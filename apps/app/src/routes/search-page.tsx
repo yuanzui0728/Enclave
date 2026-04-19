@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { DesktopSearchWorkspace } from "../features/search/desktop-search-workspace";
 import {
   clearSearchHistory,
   hydrateSearchHistoryFromNative,
@@ -21,6 +20,11 @@ import { useSearchIndex } from "../features/search/use-search-index";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+
+const DesktopSearchWorkspace = lazy(async () => {
+  const mod = await import("../features/search/desktop-search-workspace");
+  return { default: mod.DesktopSearchWorkspace };
+});
 
 export function SearchPage() {
   const navigate = useNavigate();
@@ -205,36 +209,38 @@ export function SearchPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopSearchWorkspace
-        activeCategory={activeCategory}
-        error={error}
-        groupedResults={groupedResults}
-        hasKeyword={hasKeyword}
-        history={history}
-        loading={loading}
-        matchedCounts={matchedCounts}
-        messageGroups={messageGroups}
-        officialAccountGroups={officialAccountGroups}
-        onApplyHistory={handleApplyHistory}
-        onClearHistory={handleClearHistory}
-        onClearKeyword={() => {
-          setSearchText("");
-          setCommittedSearchText("");
-        }}
-        onCommitSearch={handleCommitSearch}
-        committedSearchText={committedSearchText}
-        onOpenQuickLink={handleOpenQuickLink}
-        onOpenResult={handleOpenResult}
-        onRemoveHistory={handleRemoveHistory}
-        recentFavorites={recentFavorites}
-        recentMiniPrograms={recentMiniPrograms}
-        scopeCounts={scopeCounts}
-        searchText={searchText}
-        searchingMessages={searchingMessages}
-        setActiveCategory={setActiveCategory}
-        setSearchText={setSearchText}
-        visibleResults={filteredResults}
-      />
+      <Suspense fallback={null}>
+        <DesktopSearchWorkspace
+          activeCategory={activeCategory}
+          error={error}
+          groupedResults={groupedResults}
+          hasKeyword={hasKeyword}
+          history={history}
+          loading={loading}
+          matchedCounts={matchedCounts}
+          messageGroups={messageGroups}
+          officialAccountGroups={officialAccountGroups}
+          onApplyHistory={handleApplyHistory}
+          onClearHistory={handleClearHistory}
+          onClearKeyword={() => {
+            setSearchText("");
+            setCommittedSearchText("");
+          }}
+          onCommitSearch={handleCommitSearch}
+          committedSearchText={committedSearchText}
+          onOpenQuickLink={handleOpenQuickLink}
+          onOpenResult={handleOpenResult}
+          onRemoveHistory={handleRemoveHistory}
+          recentFavorites={recentFavorites}
+          recentMiniPrograms={recentMiniPrograms}
+          scopeCounts={scopeCounts}
+          searchText={searchText}
+          searchingMessages={searchingMessages}
+          setActiveCategory={setActiveCategory}
+          setSearchText={setSearchText}
+          visibleResults={filteredResults}
+        />
+      </Suspense>
     );
   }
 

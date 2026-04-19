@@ -1,7 +1,9 @@
 import {
+  Suspense,
   useCallback,
   useDeferredValue,
   useEffect,
+  lazy,
   useMemo,
   useRef,
   useState,
@@ -53,10 +55,6 @@ import {
   ContactShortcutList,
   type ContactShortcutListItem,
 } from "../features/contacts/contact-shortcut-list";
-import { DesktopContactsWorkspace } from "../features/desktop/contacts/desktop-contacts-workspace";
-import { DesktopContactsFriendRequestsPane } from "../features/desktop/contacts/desktop-contacts-friend-requests-pane";
-import { DesktopContactsGroupsPane } from "../features/desktop/contacts/desktop-contacts-groups-pane";
-import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import {
   buildDesktopContactsRouteHash,
   parseDesktopContactsRouteState,
@@ -80,6 +78,23 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+
+const DesktopContactsWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/contacts/desktop-contacts-workspace");
+  return { default: mod.DesktopContactsWorkspace };
+});
+const DesktopContactsFriendRequestsPane = lazy(async () => {
+  const mod = await import("../features/desktop/contacts/desktop-contacts-friend-requests-pane");
+  return { default: mod.DesktopContactsFriendRequestsPane };
+});
+const DesktopContactsGroupsPane = lazy(async () => {
+  const mod = await import("../features/desktop/contacts/desktop-contacts-groups-pane");
+  return { default: mod.DesktopContactsGroupsPane };
+});
+const DesktopOfficialAccountsWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/official-accounts/desktop-official-accounts-workspace");
+  return { default: mod.DesktopOfficialAccountsWorkspace };
+});
 
 type ShortcutRoute =
   | "/contacts/groups"

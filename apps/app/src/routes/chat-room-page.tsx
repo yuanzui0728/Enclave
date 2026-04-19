@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { getConversations } from "@yinjie/contracts";
@@ -12,7 +12,6 @@ import {
   type ChatComposeShortcutAction,
 } from "../features/chat/chat-compose-shortcut-route";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
-import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
@@ -22,6 +21,11 @@ import {
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+
+const DesktopChatWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/chat/desktop-chat-workspace");
+  return { default: mod.DesktopChatWorkspace };
+});
 
 export function ChatRoomPage() {
   const { conversationId } = useParams({ from: "/chat/$conversationId" });
@@ -184,22 +188,24 @@ export function ChatRoomPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopChatWorkspace
-        selectedConversationId={conversationId}
-        highlightedMessageId={highlightedMessageId}
-        routeContextNotice={
-          callReturnNotice ??
-          (routeContext
-            ? {
-                actionLabel: routeContext.actionLabel,
-                description: routeContext.description,
-                onAction: () => {
-                  void navigate({ to: routeContext.returnPath });
-                },
-              }
-            : undefined)
-        }
-      />
+      <Suspense fallback={null}>
+        <DesktopChatWorkspace
+          selectedConversationId={conversationId}
+          highlightedMessageId={highlightedMessageId}
+          routeContextNotice={
+            callReturnNotice ??
+            (routeContext
+              ? {
+                  actionLabel: routeContext.actionLabel,
+                  description: routeContext.description,
+                  onAction: () => {
+                    void navigate({ to: routeContext.returnPath });
+                  },
+                }
+              : undefined)
+          }
+        />
+      </Suspense>
     );
   }
 

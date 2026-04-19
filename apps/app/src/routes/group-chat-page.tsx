@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
 import {
@@ -10,13 +10,17 @@ import {
   type ChatComposeShortcutAction,
 } from "../features/chat/chat-compose-shortcut-route";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
-import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
   resolveGroupInviteRouteContext,
 } from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+
+const DesktopChatWorkspace = lazy(async () => {
+  const mod = await import("../features/desktop/chat/desktop-chat-workspace");
+  return { default: mod.DesktopChatWorkspace };
+});
 
 export function GroupChatPage() {
   const { groupId } = useParams({ from: "/group/$groupId" });
@@ -157,22 +161,24 @@ export function GroupChatPage() {
 
   if (isDesktopLayout) {
     return (
-      <DesktopChatWorkspace
-        selectedConversationId={groupId}
-        highlightedMessageId={highlightedMessageId}
-        routeContextNotice={
-          callReturnNotice ??
-          (routeContext
-            ? {
-                actionLabel: routeContext.actionLabel,
-                description: routeContext.description,
-                onAction: () => {
-                  void navigate({ to: routeContext.returnPath });
-                },
-              }
-            : undefined)
-        }
-      />
+      <Suspense fallback={null}>
+        <DesktopChatWorkspace
+          selectedConversationId={groupId}
+          highlightedMessageId={highlightedMessageId}
+          routeContextNotice={
+            callReturnNotice ??
+            (routeContext
+              ? {
+                  actionLabel: routeContext.actionLabel,
+                  description: routeContext.description,
+                  onAction: () => {
+                    void navigate({ to: routeContext.returnPath });
+                  },
+                }
+              : undefined)
+          }
+        />
+      </Suspense>
     );
   }
 
