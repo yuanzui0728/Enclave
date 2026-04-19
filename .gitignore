@@ -70,6 +70,7 @@ Thumbs.db
 .claude/
 .Codex/
 .git-rewrite/
+.github/
 jieshao/
 
 # Cache & build artifacts

@@ -8,6 +8,7 @@ import {
 } from "@yinjie/contracts";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../components/official-article-viewer";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildOfficialArticleFavoriteRecord } from "../features/favorites/official-account-favorite-records";
 import {
@@ -23,9 +24,8 @@ import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopOfficialArticleRouteShell = lazy(async () => {
-  const mod = await import(
-    "../features/official-accounts/official-article-route-shell"
-  );
+  const mod =
+    await import("../features/official-accounts/official-article-route-shell");
   return { default: mod.OfficialArticleRouteShell };
 });
 
@@ -37,7 +37,15 @@ export function OfficialAccountArticlePage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面公众号文章"
+            description="正在载入桌面文章阅读视图，马上显示当前内容。"
+            loadingLabel="载入桌面公众号文章..."
+          />
+        }
+      >
         <DesktopOfficialArticleRouteShell articleId={articleId} />
       </Suspense>
     );

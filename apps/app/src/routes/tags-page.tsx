@@ -5,6 +5,7 @@ import { ArrowLeft, Search, Star, Tag } from "lucide-react";
 import { getFriends } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildContactTagGroups } from "../features/contacts/contact-tag-groups";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
@@ -28,7 +29,13 @@ export function TagsPage() {
   }, [isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
-    return null;
+    return (
+      <RouteRedirectState
+        title="正在回到桌面通讯录"
+        description="标签页在桌面布局里并入了通讯录工作区，这里会自动带你返回桌面入口。"
+        loadingLabel="正在打开通讯录..."
+      />
+    );
   }
 
   return <MobileTagsPage />;

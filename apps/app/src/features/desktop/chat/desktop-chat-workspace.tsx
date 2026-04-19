@@ -134,7 +134,11 @@ import {
   buildDesktopMessageEntries,
   type DesktopMessageEntry,
 } from "./desktop-message-entry-types";
-import { buildDesktopChatRouteHash } from "./desktop-chat-route-state";
+import {
+  buildDesktopChatRouteHash,
+  type DesktopChatDetailsAction,
+  type DesktopChatRouteState,
+} from "./desktop-chat-route-state";
 import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
 import { buildDesktopNoteWindowRouteHash } from "./desktop-note-window-route-state";
 import { createDesktopNoteDraft } from "./desktop-notes-storage";
@@ -142,6 +146,8 @@ import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
 
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
+  selectedSidePanelMode?: DesktopChatSidePanelMode;
+  selectedDetailsAction?: DesktopChatDetailsAction;
   selectedServiceAccountId?: string;
   selectedOfficialAccountId?: string;
   selectedOfficialArticleId?: string;
@@ -181,6 +187,8 @@ const desktopQuickActionItems: DesktopQuickActionItem[] = [
 
 export function DesktopChatWorkspace({
   selectedConversationId,
+  selectedSidePanelMode,
+  selectedDetailsAction,
   selectedServiceAccountId,
   selectedOfficialAccountId,
   selectedOfficialArticleId,
@@ -206,12 +214,10 @@ export function DesktopChatWorkspace({
   const [historyPanelFocusKey, setHistoryPanelFocusKey] = useState(0);
   const [historyPanelCanReturnToDetails, setHistoryPanelCanReturnToDetails] =
     useState(false);
-  const [detailsAnnouncementRequest, setDetailsAnnouncementRequest] = useState<
-    number | null
-  >(null);
-  const [detailsMemberSearchRequest, setDetailsMemberSearchRequest] = useState<
-    number | null
-  >(null);
+  const [detailsActionRequest, setDetailsActionRequest] = useState<{
+    kind: DesktopChatDetailsAction;
+    token: number;
+  } | null>(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [conversationContextMenu, setConversationContextMenu] = useState<{
@@ -271,29 +277,8 @@ export function DesktopChatWorkspace({
   const closeRightPanel = useCallback(() => {
     setRightPanelMode(null);
     setHistoryPanelCanReturnToDetails(false);
-    setDetailsAnnouncementRequest(null);
-    setDetailsMemberSearchRequest(null);
+    setDetailsActionRequest(null);
   }, []);
-
-  const handleWorkspacePointerDownCapture = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (!rightPanelMode) {
-        return;
-      }
-
-      const target = event.target as Node;
-      if (sidePanelRef.current?.contains(target)) {
-        return;
-      }
-
-      if (desktopHeaderActionsRef.current?.contains(target)) {
-        return;
-      }
-
-      closeRightPanel();
-    },
-    [closeRightPanel, rightPanelMode],
-  );
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -446,6 +431,95 @@ export function DesktopChatWorkspace({
     subscriptionInboxActive,
   ]);
 
+  const buildCurrentChatRouteHash = useCallback(
+    (
+      overrides: Partial<
+        Pick<DesktopChatRouteState, "panel" | "detailsAction" | "messageId">
+      > = {},
+    ) => {
+      const baseState: DesktopChatRouteState =
+        selectedSpecialView === "subscription-inbox"
+          ? {
+              officialView: "subscription-inbox",
+              articleId: selectedOfficialArticleId,
+            }
+          : selectedSpecialView === "official-accounts"
+            ? {
+                officialView: "official-accounts",
+                officialMode: selectedOfficialDisplayMode,
+                accountId: selectedOfficialAccountId,
+                articleId: selectedOfficialArticleId,
+              }
+            : selectedServiceAccountId
+              ? {
+                  officialView: "service-account",
+                  accountId: selectedServiceAccountId,
+                  articleId: selectedOfficialArticleId,
+                }
+              : activeConversation
+                ? {
+                    conversationId: activeConversation.id,
+                    messageId:
+                      activeConversation.id === selectedConversationId
+                        ? highlightedMessageId
+                        : undefined,
+                  }
+                : selectedConversationId
+                  ? {
+                      conversationId: selectedConversationId,
+                      messageId: highlightedMessageId,
+                    }
+                  : {};
+
+      return buildDesktopChatRouteHash({
+        ...baseState,
+        panel: overrides.panel,
+        detailsAction:
+          overrides.panel === "details" ? overrides.detailsAction : undefined,
+        messageId:
+          "messageId" in overrides ? overrides.messageId : baseState.messageId,
+      });
+    },
+    [
+      activeConversation,
+      highlightedMessageId,
+      selectedConversationId,
+      selectedOfficialAccountId,
+      selectedOfficialArticleId,
+      selectedOfficialDisplayMode,
+      selectedServiceAccountId,
+      selectedSpecialView,
+    ],
+  );
+
+  const dismissSidePanel = useCallback(() => {
+    closeRightPanel();
+    navigateToChatWorkspace({
+      hash: buildCurrentChatRouteHash(),
+      replace: true,
+    });
+  }, [buildCurrentChatRouteHash, closeRightPanel, navigateToChatWorkspace]);
+
+  const handleWorkspacePointerDownCapture = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!rightPanelMode) {
+        return;
+      }
+
+      const target = event.target as Node;
+      if (sidePanelRef.current?.contains(target)) {
+        return;
+      }
+
+      if (desktopHeaderActionsRef.current?.contains(target)) {
+        return;
+      }
+
+      dismissSidePanel();
+    },
+    [dismissSidePanel, rightPanelMode],
+  );
+
   useEffect(() => {
     if (
       !selectedServiceAccountId ||
@@ -509,13 +583,52 @@ export function DesktopChatWorkspace({
       officialAccountsActive ||
       serviceConversationActive
     ) {
-      setRightPanelMode(null);
-      setDetailsAnnouncementRequest(null);
-      setDetailsMemberSearchRequest(null);
+      closeRightPanel();
+      return;
+    }
+
+    if (!selectedSidePanelMode) {
+      closeRightPanel();
+      return;
+    }
+  }, [
+    activeConversation,
+    closeRightPanel,
+    officialAccountsActive,
+    serviceConversationActive,
+    selectedSidePanelMode,
+    subscriptionInboxActive,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activeConversation ||
+      !selectedSidePanelMode ||
+      subscriptionInboxActive ||
+      officialAccountsActive ||
+      serviceConversationActive
+    ) {
+      return;
+    }
+
+    setRightPanelMode(selectedSidePanelMode);
+    setHistoryPanelCanReturnToDetails(false);
+    setDetailsActionRequest(
+      selectedSidePanelMode === "details" && selectedDetailsAction
+        ? {
+            kind: selectedDetailsAction,
+            token: Date.now(),
+          }
+        : null,
+    );
+    if (selectedSidePanelMode === "history") {
+      setHistoryPanelFocusKey(Date.now());
     }
   }, [
     activeConversation,
     officialAccountsActive,
+    selectedDetailsAction,
+    selectedSidePanelMode,
     serviceConversationActive,
     subscriptionInboxActive,
   ]);
@@ -613,14 +726,14 @@ export function DesktopChatWorkspace({
         return;
       }
 
-      closeRightPanel();
+      dismissSidePanel();
     };
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape") {
         return;
       }
 
-      closeRightPanel();
+      dismissSidePanel();
     };
 
     document.addEventListener("pointerdown", handlePointerDown, true);
@@ -630,7 +743,7 @@ export function DesktopChatWorkspace({
       document.removeEventListener("pointerdown", handlePointerDown, true);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [closeRightPanel, rightPanelMode]);
+  }, [dismissSidePanel, rightPanelMode]);
 
   useEffect(() => {
     const hasActiveThread = Boolean(activeConversation);
@@ -974,42 +1087,86 @@ export function DesktopChatWorkspace({
     mode: Exclude<DesktopChatSidePanelMode, null>,
   ) {
     if (mode === "history") {
-      setRightPanelMode((current) =>
-        current === "history" ? null : "history",
-      );
+      if (rightPanelMode === "history") {
+        dismissSidePanel();
+        return;
+      }
+
+      setRightPanelMode("history");
       setHistoryPanelCanReturnToDetails(false);
       setHistoryPanelFocusKey(Date.now());
-      setDetailsAnnouncementRequest(null);
-      setDetailsMemberSearchRequest(null);
+      setDetailsActionRequest(null);
+      navigateToChatWorkspace({
+        hash: buildCurrentChatRouteHash({
+          panel: "history",
+          detailsAction: undefined,
+        }),
+        replace: true,
+      });
       return;
     }
 
-    setRightPanelMode((current) => (current === "details" ? null : "details"));
+    if (rightPanelMode === "details") {
+      dismissSidePanel();
+      return;
+    }
+
+    setRightPanelMode("details");
     setHistoryPanelCanReturnToDetails(false);
-    setDetailsAnnouncementRequest(null);
-    setDetailsMemberSearchRequest(null);
+    setDetailsActionRequest(null);
+    navigateToChatWorkspace({
+      hash: buildCurrentChatRouteHash({
+        panel: "details",
+        detailsAction: undefined,
+      }),
+      replace: true,
+    });
   }
 
   function handleOpenHistoryPanel(source: "header" | "details" = "header") {
     setRightPanelMode("history");
     setHistoryPanelCanReturnToDetails(source === "details");
     setHistoryPanelFocusKey(Date.now());
-    setDetailsAnnouncementRequest(null);
-    setDetailsMemberSearchRequest(null);
+    setDetailsActionRequest(null);
+    navigateToChatWorkspace({
+      hash: buildCurrentChatRouteHash({
+        panel: "history",
+        detailsAction: undefined,
+      }),
+      replace: true,
+    });
   }
 
   function handleOpenGroupAnnouncementDetails() {
     setRightPanelMode("details");
     setHistoryPanelCanReturnToDetails(false);
-    setDetailsAnnouncementRequest(Date.now());
-    setDetailsMemberSearchRequest(null);
+    setDetailsActionRequest({
+      kind: "announcement",
+      token: Date.now(),
+    });
+    navigateToChatWorkspace({
+      hash: buildCurrentChatRouteHash({
+        panel: "details",
+        detailsAction: "announcement",
+      }),
+      replace: true,
+    });
   }
 
   function handleOpenGroupMemberSearch() {
     setRightPanelMode("details");
     setHistoryPanelCanReturnToDetails(false);
-    setDetailsMemberSearchRequest(Date.now());
-    setDetailsAnnouncementRequest(null);
+    setDetailsActionRequest({
+      kind: "member-search",
+      token: Date.now(),
+    });
+    navigateToChatWorkspace({
+      hash: buildCurrentChatRouteHash({
+        panel: "details",
+        detailsAction: "member-search",
+      }),
+      replace: true,
+    });
   }
 
   function handleSearchFieldKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -1073,14 +1230,22 @@ export function DesktopChatWorkspace({
       setRightPanelMode("history");
       setHistoryPanelCanReturnToDetails(false);
       setHistoryPanelFocusKey(Date.now());
-      setDetailsAnnouncementRequest(null);
-      setDetailsMemberSearchRequest(null);
+      setDetailsActionRequest(null);
+      navigateToChatWorkspace({
+        hash: buildCurrentChatRouteHash({
+          panel: "history",
+          detailsAction: undefined,
+        }),
+        replace: true,
+      });
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     activeConversation,
+    buildCurrentChatRouteHash,
+    navigateToChatWorkspace,
     officialAccountsActive,
     selectedServiceAccountId,
     subscriptionInboxActive,
@@ -1691,13 +1856,19 @@ export function DesktopChatWorkspace({
               ? () => {
                   setRightPanelMode("details");
                   setHistoryPanelCanReturnToDetails(false);
-                  setDetailsAnnouncementRequest(null);
-                  setDetailsMemberSearchRequest(null);
+                  setDetailsActionRequest(null);
+                  navigateToChatWorkspace({
+                    hash: buildCurrentChatRouteHash({
+                      panel: "details",
+                      detailsAction: undefined,
+                    }),
+                    replace: true,
+                  });
                 }
               : undefined
           }
           onClose={() => {
-            closeRightPanel();
+            dismissSidePanel();
           }}
         >
           {rightPanelMode === "history" ? (
@@ -1705,15 +1876,21 @@ export function DesktopChatWorkspace({
               conversation={activeConversation}
               focusRequestKey={historyPanelFocusKey}
               onClose={() => {
-                closeRightPanel();
+                dismissSidePanel();
               }}
               onBackToDetails={
                 historyPanelCanReturnToDetails
                   ? () => {
                       setRightPanelMode("details");
                       setHistoryPanelCanReturnToDetails(false);
-                      setDetailsAnnouncementRequest(null);
-                      setDetailsMemberSearchRequest(null);
+                      setDetailsActionRequest(null);
+                      navigateToChatWorkspace({
+                        hash: buildCurrentChatRouteHash({
+                          panel: "details",
+                          detailsAction: undefined,
+                        }),
+                        replace: true,
+                      });
                     }
                   : undefined
               }
@@ -1742,8 +1919,7 @@ export function DesktopChatWorkspace({
           ) : (
             <DesktopChatDetailsPanel
               conversation={activeConversation}
-              announcementRequest={detailsAnnouncementRequest}
-              memberSearchRequest={detailsMemberSearchRequest}
+              actionRequest={detailsActionRequest}
               onOpenHistory={() => {
                 handleOpenHistoryPanel("details");
               }}

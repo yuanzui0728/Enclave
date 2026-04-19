@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import {
   buildChatCallReturnSearch,
   buildChatComposeShortcutSearch,
@@ -161,7 +162,15 @@ export function GroupChatPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面群聊"
+            description="正在载入桌面聊天工作区，马上恢复当前群聊。"
+            loadingLabel="载入桌面群聊..."
+          />
+        }
+      >
         <DesktopChatWorkspace
           selectedConversationId={groupId}
           highlightedMessageId={highlightedMessageId}

@@ -16,6 +16,12 @@ export function ChatTabShell({ hash }: ChatTabShellProps) {
       highlightedMessageId={
         routeState.officialView ? undefined : routeState.messageId
       }
+      selectedSidePanelMode={
+        routeState.officialView ? undefined : routeState.panel
+      }
+      selectedDetailsAction={
+        routeState.officialView ? undefined : routeState.detailsAction
+      }
       selectedServiceAccountId={
         routeState.officialView === "service-account"
           ? routeState.accountId

@@ -9,7 +9,6 @@ import {
   getBlockedCharacters,
   getCharacter,
   getConversations,
-  getFriendRequests,
   getFriends,
   hideConversation,
   sendFriendRequest,
@@ -35,6 +34,7 @@ import { ChatDetailsSection } from "../features/chat-details/chat-details-sectio
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
+import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { navigateBackOrFallback } from "../lib/history-back";
@@ -47,28 +47,33 @@ import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
-async function buildDesktopAddFriendRouteHashOnDemand(input: {
-  keyword: string;
-  characterId?: string;
-  openCompose?: boolean;
-  recommendationId?: string;
-}) {
-  const { buildDesktopAddFriendRouteHash } = await import(
-    "../features/contacts/add-friend-route-state"
-  );
-  return buildDesktopAddFriendRouteHash(input);
-}
-
 export function ChatDetailsPage() {
   const { conversationId } = useParams({
     from: "/chat/$conversationId/details",
   });
+  const isDesktopLayout = useDesktopLayout();
+
+  if (isDesktopLayout) {
+    return (
+      <DesktopChatRouteRedirectShell
+        conversationId={conversationId}
+        panel="details"
+        title="正在打开桌面聊天信息"
+        description="正在切换到桌面聊天工作区中的聊天信息侧栏。"
+        loadingLabel="打开桌面聊天信息..."
+      />
+    );
+  }
+
+  return <MobileChatDetailsPage conversationId={conversationId} />;
+}
+
+function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
-  const isDesktopLayout = useDesktopLayout();
   const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
@@ -118,12 +123,6 @@ export function ChatDetailsPage() {
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
   });
-  const friendRequestsQuery = useQuery({
-    queryKey: ["app-friend-requests", baseUrl],
-    queryFn: () => getFriendRequests(baseUrl),
-    enabled: isDesktopLayout && Boolean(targetCharacterId),
-  });
-
   const blockedQuery = useQuery({
     queryKey: ["app-chat-details-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
@@ -178,10 +177,6 @@ export function ChatDetailsPage() {
   );
   const friendship = friendRecord?.friendship ?? null;
   const isFriend = Boolean(friendship);
-  const hasPendingFriendRequest = (friendRequestsQuery.data ?? []).some(
-    (item) =>
-      item.characterId === targetCharacterId && item.status === "pending",
-  );
   const isBlocked = (blockedQuery.data ?? []).some(
     (item) => item.characterId === targetCharacterId,
   );
@@ -600,31 +595,6 @@ export function ChatDetailsPage() {
       return;
     }
 
-    if (isDesktopLayout) {
-      if (hasPendingFriendRequest) {
-        void navigate({ to: "/friend-requests" });
-        return;
-      }
-
-      void buildDesktopAddFriendRouteHashOnDemand({
-        keyword: targetCharacter?.name ?? conversation?.title ?? "",
-        characterId: targetCharacterId,
-        openCompose: true,
-      })
-        .then((desktopHash) => {
-          void navigate({
-            to: "/desktop/add-friend",
-            hash: desktopHash,
-          });
-        })
-        .catch(() => {
-          void navigate({
-            to: "/desktop/add-friend",
-          });
-        });
-      return;
-    }
-
     saveToContactsMutation.mutate();
   };
 
@@ -677,17 +647,6 @@ export function ChatDetailsPage() {
             badge="读取失败"
             title="通讯录信息暂时不可用"
             description={friendsQuery.error.message}
-            tone="danger"
-          />
-        </div>
-      ) : null}
-      {friendRequestsQuery.isError &&
-      friendRequestsQuery.error instanceof Error ? (
-        <div className="px-2.5">
-          <MobileChatDetailsStatusCard
-            badge="读取失败"
-            title="好友申请信息暂时不可用"
-            description={friendRequestsQuery.error.message}
             tone="danger"
           />
         </div>
@@ -889,13 +848,7 @@ export function ChatDetailsPage() {
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="保存到通讯录"
-                value={
-                  isFriend
-                    ? "已添加"
-                    : isDesktopLayout && hasPendingFriendRequest
-                      ? "待处理"
-                      : undefined
-                }
+                value={isFriend ? "已添加" : undefined}
                 variant="wechat"
                 disabled={isFriend || !targetCharacterId}
                 onClick={handleSaveToContacts}

@@ -20,16 +20,34 @@ import { ChatDetailsSection } from "../features/chat-details/chat-details-sectio
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
+import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupChatDetailsPage() {
   const { groupId } = useParams({ from: "/group/$groupId/details" });
+  const isDesktopLayout = useDesktopLayout();
+
+  if (isDesktopLayout) {
+    return (
+      <DesktopChatRouteRedirectShell
+        conversationId={groupId}
+        panel="details"
+        title="正在打开桌面群聊信息"
+        description="正在切换到桌面聊天工作区中的群聊信息侧栏。"
+        loadingLabel="打开桌面群聊信息..."
+      />
+    );
+  }
+
+  return <MobileGroupChatDetailsPage groupId={groupId} />;
+}
+
+function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
@@ -61,7 +79,10 @@ export function GroupChatDetailsPage() {
   }, [groupId]);
 
   useEffect(() => {
-    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+    if (
+      groupQuery.isLoading ||
+      !isMissingGroupError(groupQuery.error, groupId)
+    ) {
       return;
     }
 
@@ -216,7 +237,9 @@ export function GroupChatDetailsPage() {
 
     return {
       title: `${group.name} 群聊`,
-      text: [`${group.name} 群聊`, `${totalMemberCount} 人群聊`, groupUrl].join("\n"),
+      text: [`${group.name} 群聊`, `${totalMemberCount} 人群聊`, groupUrl].join(
+        "\n",
+      ),
       url: groupUrl,
     };
   }, [groupId, groupQuery.data, totalMemberCount]);
@@ -356,9 +379,15 @@ export function GroupChatDetailsPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
-            aria-label={nativeMobileShareSupported ? "分享群聊" : "复制群聊摘要"}
+            aria-label={
+              nativeMobileShareSupported ? "分享群聊" : "复制群聊摘要"
+            }
           >
-            {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
+            {nativeMobileShareSupported ? (
+              <Share2 size={18} />
+            ) : (
+              <Copy size={18} />
+            )}
           </Button>
         ) : undefined
       }

@@ -9,24 +9,32 @@ import {
 } from "@yinjie/contracts";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
-  const mod = await import(
-    "../features/contacts/contacts-route-redirect-shell"
-  );
+  const mod =
+    await import("../features/contacts/contacts-route-redirect-shell");
   return { default: mod.ContactsRouteRedirectShell };
 });
 
 export function FriendRequestsPage() {
   const isDesktopLayout = useDesktopLayout();
-  
+
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在切换到桌面新的朋友"
+            description="正在跳转到桌面通讯录工作区中的好友请求视图。"
+            loadingLabel="切换桌面好友请求..."
+          />
+        }
+      >
         <DesktopContactsRouteRedirectShell pane="new-friends" />
       </Suspense>
     );

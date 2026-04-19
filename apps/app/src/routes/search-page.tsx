@@ -12,6 +12,7 @@ import {
   parseSearchRouteState,
 } from "../features/search/search-route-state";
 import { resolveSearchNavigationTarget } from "../features/search/search-navigation";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { MobileSearchWorkspace } from "../features/search/mobile-search-workspace";
 import type {
   SearchCategory,
@@ -231,7 +232,15 @@ export function SearchPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面搜索"
+            description="正在载入桌面搜索工作区，马上同步当前搜索条件。"
+            loadingLabel="载入桌面搜索..."
+          />
+        }
+      >
         <DesktopSearchWorkspace
           activeCategory={activeCategory}
           error={error}

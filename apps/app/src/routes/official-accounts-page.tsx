@@ -5,15 +5,15 @@ import { ArrowLeft, Newspaper, Search } from "lucide-react";
 import { listOfficialAccounts } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { OfficialAccountListItem } from "../components/official-account-list-item";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
-  const mod = await import(
-    "../features/contacts/contacts-route-redirect-shell"
-  );
+  const mod =
+    await import("../features/contacts/contacts-route-redirect-shell");
   return { default: mod.ContactsRouteRedirectShell };
 });
 
@@ -22,7 +22,15 @@ export function OfficialAccountsPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在切换到桌面公众号"
+            description="正在跳转到桌面通讯录工作区中的公众号视图。"
+            loadingLabel="切换桌面公众号视图..."
+          />
+        }
+      >
         <DesktopContactsRouteRedirectShell pane="official-accounts" />
       </Suspense>
     );
@@ -66,7 +74,9 @@ function MobileOfficialAccountsPage() {
     () => filteredAccounts.filter((account) => !account.isFollowing),
     [filteredAccounts],
   );
-  const browseAccounts = followedAccounts.length ? otherAccounts : filteredAccounts;
+  const browseAccounts = followedAccounts.length
+    ? otherAccounts
+    : filteredAccounts;
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">

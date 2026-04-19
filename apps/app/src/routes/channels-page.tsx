@@ -41,13 +41,9 @@ import {
   type FeedChannelHomeSection,
   type FeedPostListItem,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  cn,
-  InlineNotice,
-} from "@yinjie/ui";
+import { AppPage, Button, cn, InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import {
   removeDesktopFavorite,
@@ -56,17 +52,14 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const EMPTY_CHANNEL_POSTS: FeedPostListItem[] = [];
 const DesktopChannelsWorkspace = lazy(async () => {
-  const mod = await import(
-    "../features/desktop/channels/desktop-channels-workspace"
-  );
+  const mod =
+    await import("../features/desktop/channels/desktop-channels-workspace");
   return { default: mod.DesktopChannelsWorkspace };
 });
 
@@ -125,7 +118,9 @@ export function ChannelsPage() {
     onSuccess: async () => {
       setNoticeTone("success");
       setNotice("视频号互动已更新。");
-      await queryClient.invalidateQueries({ queryKey: ["app-channels-home", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
     },
   });
 
@@ -172,7 +167,9 @@ export function ChannelsPage() {
         current?.postId === input.postId ? null : current,
       );
       setNoticeTone("success");
-      setNotice(input.replyTarget ? "视频号回复已发送。" : "视频号评论已发送。");
+      setNotice(
+        input.replyTarget ? "视频号回复已发送。" : "视频号评论已发送。",
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-channels-home", baseUrl],
@@ -188,7 +185,9 @@ export function ChannelsPage() {
     onSuccess: async () => {
       setNoticeTone("success");
       setNotice("已生成一条新的 AI 视频号内容。");
-      await queryClient.invalidateQueries({ queryKey: ["app-channels-home", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
     },
   });
   const favoriteMutation = useMutation({
@@ -199,7 +198,9 @@ export function ChannelsPage() {
     onSuccess: async (_, input) => {
       setNoticeTone("success");
       setNotice(input.favorited ? "已取消收藏。" : "已收藏这条视频号内容。");
-      await queryClient.invalidateQueries({ queryKey: ["app-channels-home", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
     },
   });
   const followMutation = useMutation({
@@ -210,7 +211,9 @@ export function ChannelsPage() {
     onSuccess: async (_, input) => {
       setNoticeTone("success");
       setNotice(input.following ? "已取消关注。" : "已关注该视频号作者。");
-      await queryClient.invalidateQueries({ queryKey: ["app-channels-home", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
     },
   });
   const notInterestedMutation = useMutation({
@@ -218,7 +221,9 @@ export function ChannelsPage() {
     onSuccess: async () => {
       setNoticeTone("success");
       setNotice("这类内容会减少推荐。");
-      await queryClient.invalidateQueries({ queryKey: ["app-channels-home", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
     },
   });
   const likeCommentMutation = useMutation({
@@ -240,7 +245,8 @@ export function ChannelsPage() {
 
   const visiblePosts = channelsQuery.data?.posts ?? EMPTY_CHANNEL_POSTS;
   const desktopSelectedPost = useMemo(
-    () => visiblePosts.find((post) => post.id === desktopSelectedPostId) ?? null,
+    () =>
+      visiblePosts.find((post) => post.id === desktopSelectedPostId) ?? null,
     [desktopSelectedPostId, visiblePosts],
   );
   const mobileCommentSheetPost = useMemo(
@@ -285,7 +291,8 @@ export function ChannelsPage() {
     (followMutation.isError && followMutation.error instanceof Error
       ? followMutation.error.message
       : null) ??
-    (notInterestedMutation.isError && notInterestedMutation.error instanceof Error
+    (notInterestedMutation.isError &&
+    notInterestedMutation.error instanceof Error
       ? notInterestedMutation.error.message
       : null) ??
     (generateMutation.isError && generateMutation.error instanceof Error
@@ -326,10 +333,10 @@ export function ChannelsPage() {
     ? likeMutation.variables
     : null;
   const pendingCommentPostId = commentMutation.isPending
-    ? commentMutation.variables?.postId ?? null
+    ? (commentMutation.variables?.postId ?? null)
     : null;
   const pendingLikeCommentId = likeCommentMutation.isPending
-    ? likeCommentMutation.variables?.commentId ?? null
+    ? (likeCommentMutation.variables?.commentId ?? null)
     : null;
 
   useEffect(() => {
@@ -457,17 +464,17 @@ export function ChannelsPage() {
       removeDesktopFavorite(sourceId);
     } else {
       upsertDesktopFavorite({
-          id: `favorite-${sourceId}`,
-          sourceId,
-          category: "channels",
-          title: post.authorName,
-          description: post.text,
-          meta: `视频号 · ${formatTimestamp(post.createdAt)}`,
-          to: `/tabs/channels${routeHash ? `#${routeHash}` : ""}`,
-          badge: "视频号",
-          avatarName: post.authorName,
-          avatarSrc: post.authorAvatar,
-        });
+        id: `favorite-${sourceId}`,
+        sourceId,
+        category: "channels",
+        title: post.authorName,
+        description: post.text,
+        meta: `视频号 · ${formatTimestamp(post.createdAt)}`,
+        to: `/tabs/channels${routeHash ? `#${routeHash}` : ""}`,
+        badge: "视频号",
+        avatarName: post.authorName,
+        avatarSrc: post.authorAvatar,
+      });
     }
 
     favoriteMutation.mutate({
@@ -521,7 +528,15 @@ export function ChannelsPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面视频号"
+            description="正在载入桌面视频号工作区，马上显示当前频道内容。"
+            loadingLabel="载入桌面视频号..."
+          />
+        }
+      >
         <DesktopChannelsWorkspace
           commentDrafts={commentDrafts}
           commentPendingPostId={pendingCommentPostId}
@@ -712,7 +727,7 @@ export function ChannelsPage() {
         comments={mobileCommentsQuery.data ?? []}
         draft={
           mobileCommentSheetPost
-            ? commentDrafts[mobileCommentSheetPost.id] ?? ""
+            ? (commentDrafts[mobileCommentSheetPost.id] ?? "")
             : ""
         }
         errorMessage={mobileCommentSheetErrorMessage}
@@ -883,7 +898,9 @@ function MobileChannelsViewport({
       (entries) => {
         const nextEntry = entries
           .filter((entry) => entry.isIntersecting)
-          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+          .sort(
+            (left, right) => right.intersectionRatio - left.intersectionRatio,
+          )[0];
         const nextPostId = nextEntry?.target.getAttribute("data-post-id");
         if (nextPostId) {
           setActivePostId(nextPostId);
@@ -1171,7 +1188,9 @@ function MobileChannelsCard({
                   <div className="space-y-1">
                     {post.commentsPreview.slice(0, 2).map((comment) => (
                       <div key={comment.id}>
-                        <span className="font-medium">{comment.authorName}</span>
+                        <span className="font-medium">
+                          {comment.authorName}
+                        </span>
                         {`：${comment.text}`}
                       </div>
                     ))}
@@ -1322,9 +1341,7 @@ function MobileChannelCommentsSheet({
         <div className="flex items-start justify-between gap-3 px-4 pb-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="text-[14px] font-medium text-[#111827]">
-                评论
-              </div>
+              <div className="text-[14px] font-medium text-[#111827]">评论</div>
               <div className="rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
                 {post.commentCount} 条
               </div>
@@ -1365,7 +1382,7 @@ function MobileChannelCommentsSheet({
             <div className="space-y-3">
               {comments.map((comment) => {
                 const replyTargetName = comment.replyToCommentId
-                  ? commentAuthorNameMap.get(comment.replyToCommentId) ?? null
+                  ? (commentAuthorNameMap.get(comment.replyToCommentId) ?? null)
                   : null;
 
                 return (
@@ -1439,9 +1456,7 @@ function MobileChannelCommentsSheet({
         <div className="border-t border-[color:var(--border-subtle)] bg-white px-4 pb-2 pt-3">
           {replyTarget ? (
             <div className="mb-2 flex items-center justify-between gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[11px] text-[#166534]">
-              <div className="truncate">
-                正在回复 {replyTarget.authorName}
-              </div>
+              <div className="truncate">正在回复 {replyTarget.authorName}</div>
               <button
                 type="button"
                 onClick={onCancelReply}

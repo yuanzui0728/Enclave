@@ -5,6 +5,7 @@ import { ArrowLeft, MessageSquarePlus, Search } from "lucide-react";
 import { getGroups, type Group } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
@@ -13,9 +14,8 @@ import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
-  const mod = await import(
-    "../features/contacts/contacts-route-redirect-shell"
-  );
+  const mod =
+    await import("../features/contacts/contacts-route-redirect-shell");
   return { default: mod.ContactsRouteRedirectShell };
 });
 
@@ -24,7 +24,15 @@ export function GroupContactsPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在切换到桌面群聊"
+            description="正在跳转到桌面通讯录工作区中的群聊视图。"
+            loadingLabel="切换桌面群聊视图..."
+          />
+        }
+      >
         <DesktopContactsRouteRedirectShell pane="groups" />
       </Suspense>
     );
@@ -139,11 +147,7 @@ function MobileGroupContactsPage() {
           <div className="px-4 pt-4">
             <MobileGroupContactsStatusCard
               badge={hasSearchText ? "暂无结果" : "群聊"}
-              title={
-                hasSearchText
-                  ? "没有找到匹配的群聊"
-                  : "还没有群聊"
-              }
+              title={hasSearchText ? "没有找到匹配的群聊" : "还没有群聊"}
               description={
                 hasSearchText
                   ? "换个群名称或公告关键词试试。"

@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ImagePlus, Video } from "lucide-react";
 import { AppPage, Button, InlineNotice, TextAreaField, cn } from "@yinjie/ui";
 import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { storeMomentPublishFlash } from "../features/moments/moment-publish-flash";
@@ -90,7 +91,13 @@ export function MobileMomentsPublishPage() {
   }
 
   if (isDesktopLayout) {
-    return null;
+    return (
+      <RouteRedirectState
+        title="正在回到桌面朋友圈"
+        description="发朋友圈在桌面布局里已经并入朋友圈工作区，这里会自动带你返回桌面入口。"
+        loadingLabel="正在打开朋友圈..."
+      />
+    );
   }
 
   return (
@@ -129,8 +136,8 @@ export function MobileMomentsPublishPage() {
       />
 
       <div className="space-y-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] pt-3">
-        {(composeDraft.mediaError ||
-          (createMutation.isError && createMutation.error instanceof Error)) ? (
+        {composeDraft.mediaError ||
+        (createMutation.isError && createMutation.error instanceof Error) ? (
           <InlineNotice
             tone="info"
             className="rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[12px] shadow-none"
@@ -178,7 +185,9 @@ export function MobileMomentsPublishPage() {
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={!composeDraft.canAddImages || createMutation.isPending}
+                disabled={
+                  !composeDraft.canAddImages || createMutation.isPending
+                }
                 className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
                 onClick={() => imageInputRef.current?.click()}
               >
@@ -215,7 +224,8 @@ export function MobileMomentsPublishPage() {
             </span>
           </div>
           <div className="border-t border-[rgba(15,23,42,0.06)] px-4 py-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
-            图片最多 9 张，视频当前支持 1 条且不超过 5 分钟，暂不支持图片和视频混发。
+            图片最多 9 张，视频当前支持 1 条且不超过 5
+            分钟，暂不支持图片和视频混发。
           </div>
         </section>
       </div>

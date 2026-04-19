@@ -26,6 +26,7 @@ import {
   cn,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { EmptyState } from "../components/empty-state";
 import {
   defaultLiveDraft,
@@ -78,11 +79,13 @@ export function LiveCompanionPage() {
   const statusQuery = useQuery({
     queryKey: ["desktop-live-companion-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
+    enabled: isDesktopLayout,
   });
 
   const channelsQuery = useQuery({
     queryKey: ["desktop-live-companion-channels", baseUrl],
     queryFn: () => getFeed(1, 8, baseUrl, { surface: "channels" }),
+    enabled: isDesktopLayout,
   });
 
   useEffect(() => {
@@ -127,9 +130,7 @@ export function LiveCompanionPage() {
         areLiveDraftsEqual(current, store.draft) ? current : store.draft,
       );
       setLiveHistory((current) =>
-        areLiveHistoriesEqual(current, store.history)
-          ? current
-          : store.history,
+        areLiveHistoriesEqual(current, store.history) ? current : store.history,
       );
     }
 
@@ -155,12 +156,12 @@ export function LiveCompanionPage() {
   }, [nativeDesktopLiveCompanion]);
 
   useEffect(() => {
-    if (!liveStoreReady) {
+    if (!isDesktopLayout || !liveStoreReady) {
       return;
     }
 
     writeLiveDraft(draft);
-  }, [draft, liveStoreReady]);
+  }, [draft, isDesktopLayout, liveStoreReady]);
 
   useEffect(() => {
     if (!notice) {
@@ -233,7 +234,14 @@ export function LiveCompanionPage() {
   }
 
   if (!isDesktopLayout) {
-    return null;
+    return (
+      <DesktopLayoutRequiredState
+        title="直播伴侣当前仅提供桌面布局"
+        description="直播伴侣工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到视频号继续查看内容。"
+        actionLabel="前往视频号"
+        fallbackTo="/discover/channels"
+      />
+    );
   }
 
   return (
@@ -327,441 +335,438 @@ export function LiveCompanionPage() {
             {error}
           </InlineNotice>
         ) : null}
-          {statusQuery.isError && statusQuery.error instanceof Error ? (
-            <ErrorBlock message={statusQuery.error.message} />
-          ) : null}
-          {channelsQuery.isError && channelsQuery.error instanceof Error ? (
-            <ErrorBlock message={channelsQuery.error.message} />
-          ) : null}
+        {statusQuery.isError && statusQuery.error instanceof Error ? (
+          <ErrorBlock message={statusQuery.error.message} />
+        ) : null}
+        {channelsQuery.isError && channelsQuery.error instanceof Error ? (
+          <ErrorBlock message={channelsQuery.error.message} />
+        ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
           <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                <RadioTower
-                  size={16}
-                  className="text-[color:var(--brand-primary)]"
-                />
-                <span>开播准备</span>
-              </div>
-              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                先把直播标题、主题、封面钩子和桌面策略准备好，后面接真推流时这层不用再推倒。
-              </div>
+            <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+              <RadioTower
+                size={16}
+                className="text-[color:var(--brand-primary)]"
+              />
+              <span>开播准备</span>
+            </div>
+            <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+              先把直播标题、主题、封面钩子和桌面策略准备好，后面接真推流时这层不用再推倒。
+            </div>
 
-              <div className="mt-4 space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
-                      直播标题
-                    </div>
-                    <TextField
-                      value={draft.title}
-                      onChange={(event) =>
-                        setDraft((current) => ({
-                          ...current,
-                          title: event.target.value,
-                        }))
-                      }
-                      placeholder="例如：今晚一起看 AI 世界的视频号精选"
-                    />
-                  </div>
-                  <div>
-                    <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
-                      直播主题
-                    </div>
-                    <TextField
-                      value={draft.topic}
-                      onChange={(event) =>
-                        setDraft((current) => ({
-                          ...current,
-                          topic: event.target.value,
-                        }))
-                      }
-                      placeholder="例如：晚间内容共看 / AI 角色导览"
-                    />
-                  </div>
-                </div>
-
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
-                    封面钩子
+                    直播标题
                   </div>
                   <TextField
-                    value={draft.coverHook}
+                    value={draft.title}
                     onChange={(event) =>
                       setDraft((current) => ({
                         ...current,
-                        coverHook: event.target.value,
+                        title: event.target.value,
                       }))
                     }
-                    placeholder="例如：今晚只讲 3 条最值得扩写成直播的 AI 视频"
+                    placeholder="例如：今晚一起看 AI 世界的视频号精选"
                   />
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <SelectorCard
-                    label="直播模式"
-                    options={[
-                      { id: "solo", label: "单人控台" },
-                      { id: "product", label: "产品讲解" },
-                      { id: "story", label: "剧情陪看" },
-                    ]}
-                    value={draft.mode}
-                    onChange={(value) =>
-                      setDraft((current) => ({
-                        ...current,
-                        mode: value as LiveDraft["mode"],
-                      }))
-                    }
-                  />
-                  <SelectorCard
-                    label="推流质量"
-                    options={[
-                      { id: "standard", label: "标准" },
-                      { id: "hd", label: "高清" },
-                      { id: "ultra", label: "超清" },
-                    ]}
-                    value={draft.quality}
-                    onChange={(value) =>
-                      setDraft((current) => ({
-                        ...current,
-                        quality: value as LiveDraft["quality"],
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <ToggleCard
-                    checked={draft.syncComments}
-                    label="同步评论控台"
-                    description="保留后续承接弹幕、评论和通知的桌面右栏入口。"
-                    onChange={(checked) =>
-                      setDraft((current) => ({
-                        ...current,
-                        syncComments: checked,
-                      }))
-                    }
-                  />
-                  <ToggleCard
-                    checked={draft.autoClip}
-                    label="自动标记切片"
-                    description="为后续回放与直播精彩片段整理预留标记位。"
-                    onChange={(checked) =>
-                      setDraft((current) => ({
-                        ...current,
-                        autoClip: checked,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      if (!draft.title.trim()) {
-                        setError("请先填写直播标题。");
-                        return;
-                      }
-
-                      const nextHistory = startLocalLiveSession({
-                        draft,
-                        previous: liveHistory,
-                      });
-                      setLiveHistory(nextHistory);
-                      setError(null);
-                      setNotice("直播伴侣已切到直播中状态。");
-                    }}
-                    disabled={Boolean(activeSession)}
-                    className="rounded-xl"
-                  >
-                    <MonitorUp size={15} />
-                    {activeSession ? "直播进行中" : "开始本场直播"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      if (!activeSession) {
-                        setError("当前没有进行中的直播。");
-                        return;
-                      }
-
-                      const nextHistory = endLocalLiveSession(liveHistory);
-                      setLiveHistory(nextHistory);
-                      setError(null);
-                      setNotice("直播已结束，并记录到本地历史。");
-                    }}
-                    className="rounded-xl"
-                  >
-                    <Clapperboard size={15} />
-                    结束直播
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      setDraft({ ...defaultLiveDraft });
-                      writeLiveDraft({ ...defaultLiveDraft });
-                      setNotice("直播准备草稿已清空。");
-                      setError(null);
-                    }}
-                    className="rounded-xl"
-                  >
-                    <RefreshCcw size={15} />
-                    清空准备
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={!draft.title.trim()}
-                    onClick={() =>
-                      void copyLiveToMobile({
-                        description: draft.topic.trim()
-                          ? `${draft.title} · ${draft.topic}`
-                          : `${draft.title}，切到手机继续处理视频号直播准备。`,
-                        label: draft.title.trim() || "直播准备",
-                      })
-                    }
-                    className="rounded-xl"
-                  >
-                    <Copy size={15} />
-                    发准备到手机
-                  </Button>
-                </div>
-              </div>
-            </section>
-
-          <section className="space-y-5">
-            <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <BadgeCheck
-                    size={16}
-                    className="text-[color:var(--brand-primary)]"
-                  />
-                  <span>开播检查</span>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {preflightChecks.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3"
-                    >
-                      <div className="text-sm text-[color:var(--text-primary)]">
-                        {item.label}
-                      </div>
-                      <div
-                        className={cn(
-                          "rounded-md px-2.5 py-1 text-[11px] font-medium",
-                          item.passed
-                            ? "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
-                            : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
-                        )}
-                      >
-                        {item.passed ? "通过" : "待处理"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  当前实例状态
-                </div>
-                <div className="mt-4">
-                  {statusQuery.isLoading ? (
-                    <LoadingBlock label="正在读取状态..." />
-                  ) : (
-                    <div className="space-y-3">
-                      <StatusRow
-                        label="Core API"
-                        value={
-                          statusQuery.data?.coreApi.healthy ? "在线" : "异常"
-                        }
-                      />
-                      <StatusRow
-                        label="推理网关"
-                        value={
-                          statusQuery.data?.inferenceGateway.healthy
-                            ? "可用"
-                            : "待恢复"
-                        }
-                      />
-                      <StatusRow
-                        label="世界模式"
-                        value={statusQuery.data?.appMode ?? "未知"}
-                      />
-                      <StatusRow
-                        label="最近快照"
-                        value={
-                          statusQuery.data?.scheduler.lastWorldSnapshotAt
-                            ? formatTimestamp(
-                                statusQuery.data.scheduler.lastWorldSnapshotAt,
-                              )
-                            : "暂无"
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-          </div>
-
-        <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-          <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    最近视频号内容
+                  <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
+                    直播主题
                   </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    直接从现有视频号内容流里拿直播参考，不和主频道内容割裂。
-                  </div>
+                  <TextField
+                    value={draft.topic}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        topic: event.target.value,
+                      }))
+                    }
+                    placeholder="例如：晚间内容共看 / AI 角色导览"
+                  />
                 </div>
-                <Link
-                  to="/tabs/channels"
-                  className="inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+              </div>
+
+              <div>
+                <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
+                  封面钩子
+                </div>
+                <TextField
+                  value={draft.coverHook}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      coverHook: event.target.value,
+                    }))
+                  }
+                  placeholder="例如：今晚只讲 3 条最值得扩写成直播的 AI 视频"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <SelectorCard
+                  label="直播模式"
+                  options={[
+                    { id: "solo", label: "单人控台" },
+                    { id: "product", label: "产品讲解" },
+                    { id: "story", label: "剧情陪看" },
+                  ]}
+                  value={draft.mode}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      mode: value as LiveDraft["mode"],
+                    }))
+                  }
+                />
+                <SelectorCard
+                  label="推流质量"
+                  options={[
+                    { id: "standard", label: "标准" },
+                    { id: "hd", label: "高清" },
+                    { id: "ultra", label: "超清" },
+                  ]}
+                  value={draft.quality}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      quality: value as LiveDraft["quality"],
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <ToggleCard
+                  checked={draft.syncComments}
+                  label="同步评论控台"
+                  description="保留后续承接弹幕、评论和通知的桌面右栏入口。"
+                  onChange={(checked) =>
+                    setDraft((current) => ({
+                      ...current,
+                      syncComments: checked,
+                    }))
+                  }
+                />
+                <ToggleCard
+                  checked={draft.autoClip}
+                  label="自动标记切片"
+                  description="为后续回放与直播精彩片段整理预留标记位。"
+                  onChange={(checked) =>
+                    setDraft((current) => ({
+                      ...current,
+                      autoClip: checked,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (!draft.title.trim()) {
+                      setError("请先填写直播标题。");
+                      return;
+                    }
+
+                    const nextHistory = startLocalLiveSession({
+                      draft,
+                      previous: liveHistory,
+                    });
+                    setLiveHistory(nextHistory);
+                    setError(null);
+                    setNotice("直播伴侣已切到直播中状态。");
+                  }}
+                  disabled={Boolean(activeSession)}
+                  className="rounded-xl"
                 >
-                  打开视频号
-                </Link>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {channelsQuery.isLoading ? (
-                  <LoadingBlock label="正在读取视频号内容..." />
-                ) : recentPosts.length ? (
-                  recentPosts.map((post) => (
-                    <PostReferenceCard
-                      key={post.id}
-                      post={post}
-                      onUse={() => {
-                        setDraft((current) => ({
-                          ...current,
-                          title:
-                            current.title.trim() ||
-                            `${post.authorName} 主题直播`,
-                          topic:
-                            current.topic.trim() || createTopicFromPost(post),
-                          coverHook:
-                            current.coverHook.trim() ||
-                            createCoverHookFromPost(post),
-                          referencePostAuthorName: post.authorName,
-                          referencePostId: post.id,
-                        }));
-                        setNotice("已把这条视频号内容带入直播准备草稿。");
-                        setError(null);
-                      }}
-                    />
-                  ))
-                ) : (
-                  <EmptyState
-                    title="还没有视频号内容"
-                    description="先去视频号生成几条内容，这里才能作为直播参考池。"
-                  />
-                )}
-              </div>
-            </section>
-
-          <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    直播记录
-                  </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    当前先保留桌面本地历史，后面接真直播接口时继续沿用这块时间线。
-                  </div>
-                </div>
+                  <MonitorUp size={15} />
+                  {activeSession ? "直播进行中" : "开始本场直播"}
+                </Button>
                 <Button
                   type="button"
                   variant="secondary"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      await generateChannelPost(baseUrl);
-                      await channelsQuery.refetch();
-                      setNotice(
-                        "已生成一条新的视频号内容，可继续作为直播参考。",
-                      );
-                      setError(null);
-                    } catch (reason) {
-                      setError(
-                        reason instanceof Error
-                          ? reason.message
-                          : "生成视频号内容失败。",
-                      );
+                  onClick={() => {
+                    if (!activeSession) {
+                      setError("当前没有进行中的直播。");
+                      return;
                     }
+
+                    const nextHistory = endLocalLiveSession(liveHistory);
+                    setLiveHistory(nextHistory);
+                    setError(null);
+                    setNotice("直播已结束，并记录到本地历史。");
                   }}
                   className="rounded-xl"
                 >
-                  <Wand2 size={14} />
-                  生成预热内容
+                  <Clapperboard size={15} />
+                  结束直播
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setDraft({ ...defaultLiveDraft });
+                    writeLiveDraft({ ...defaultLiveDraft });
+                    setNotice("直播准备草稿已清空。");
+                    setError(null);
+                  }}
+                  className="rounded-xl"
+                >
+                  <RefreshCcw size={15} />
+                  清空准备
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!draft.title.trim()}
+                  onClick={() =>
+                    void copyLiveToMobile({
+                      description: draft.topic.trim()
+                        ? `${draft.title} · ${draft.topic}`
+                        : `${draft.title}，切到手机继续处理视频号直播准备。`,
+                      label: draft.title.trim() || "直播准备",
+                    })
+                  }
+                  className="rounded-xl"
+                >
+                  <Copy size={15} />
+                  发准备到手机
                 </Button>
               </div>
+            </div>
+          </section>
 
+          <section className="space-y-5">
+            <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                <BadgeCheck
+                  size={16}
+                  className="text-[color:var(--brand-primary)]"
+                />
+                <span>开播检查</span>
+              </div>
               <div className="mt-4 space-y-3">
-                {liveHistory.length ? (
-                  liveHistory.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                          {item.title}
-                        </div>
-                        <span
-                          className={cn(
-                            "rounded-md px-2.5 py-1 text-[11px] font-medium",
-                            item.status === "live"
-                              ? "bg-[rgba(239,68,68,0.10)] text-[#b91c1c]"
-                              : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-                          )}
-                        >
-                          {item.status === "live" ? "直播中" : "已结束"}
-                        </span>
-                      </div>
-                      <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                        {item.topic || "未填写直播主题"}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[color:var(--text-muted)]">
-                        <span>开播 {formatTimestamp(item.startedAt)}</span>
-                        <span>模式 {resolveModeLabel(item.mode)}</span>
-                        <span>质量 {resolveQualityLabel(item.quality)}</span>
-                        {item.endedAt ? (
-                          <span>下播 {formatTimestamp(item.endedAt)}</span>
-                        ) : null}
-                      </div>
-                      <div className="mt-3">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() =>
-                            void copyLiveToMobile({
-                              description:
-                                item.status === "live"
-                                  ? `${item.title} 正在直播中，切到手机继续跟进频道表现。`
-                                  : `${item.title} 已结束，切到手机继续跟进视频号内容。`,
-                              label: item.title,
-                            })
-                          }
-                          className="rounded-xl"
-                        >
-                          <Copy size={14} />
-                          发到手机继续
-                        </Button>
-                      </div>
+                {preflightChecks.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3"
+                  >
+                    <div className="text-sm text-[color:var(--text-primary)]">
+                      {item.label}
                     </div>
-                  ))
+                    <div
+                      className={cn(
+                        "rounded-md px-2.5 py-1 text-[11px] font-medium",
+                        item.passed
+                          ? "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                          : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
+                      )}
+                    >
+                      {item.passed ? "通过" : "待处理"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                当前实例状态
+              </div>
+              <div className="mt-4">
+                {statusQuery.isLoading ? (
+                  <LoadingBlock label="正在读取状态..." />
                 ) : (
-                  <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
-                    还没有直播记录。先准备一场直播并切到“直播中”，这里就会开始积累桌面伴侣历史。
+                  <div className="space-y-3">
+                    <StatusRow
+                      label="Core API"
+                      value={
+                        statusQuery.data?.coreApi.healthy ? "在线" : "异常"
+                      }
+                    />
+                    <StatusRow
+                      label="推理网关"
+                      value={
+                        statusQuery.data?.inferenceGateway.healthy
+                          ? "可用"
+                          : "待恢复"
+                      }
+                    />
+                    <StatusRow
+                      label="世界模式"
+                      value={statusQuery.data?.appMode ?? "未知"}
+                    />
+                    <StatusRow
+                      label="最近快照"
+                      value={
+                        statusQuery.data?.scheduler.lastWorldSnapshotAt
+                          ? formatTimestamp(
+                              statusQuery.data.scheduler.lastWorldSnapshotAt,
+                            )
+                          : "暂无"
+                      }
+                    />
                   </div>
                 )}
               </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
+          <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  最近视频号内容
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  直接从现有视频号内容流里拿直播参考，不和主频道内容割裂。
+                </div>
+              </div>
+              <Link
+                to="/tabs/channels"
+                className="inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+              >
+                打开视频号
+              </Link>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {channelsQuery.isLoading ? (
+                <LoadingBlock label="正在读取视频号内容..." />
+              ) : recentPosts.length ? (
+                recentPosts.map((post) => (
+                  <PostReferenceCard
+                    key={post.id}
+                    post={post}
+                    onUse={() => {
+                      setDraft((current) => ({
+                        ...current,
+                        title:
+                          current.title.trim() || `${post.authorName} 主题直播`,
+                        topic:
+                          current.topic.trim() || createTopicFromPost(post),
+                        coverHook:
+                          current.coverHook.trim() ||
+                          createCoverHookFromPost(post),
+                        referencePostAuthorName: post.authorName,
+                        referencePostId: post.id,
+                      }));
+                      setNotice("已把这条视频号内容带入直播准备草稿。");
+                      setError(null);
+                    }}
+                  />
+                ))
+              ) : (
+                <EmptyState
+                  title="还没有视频号内容"
+                  description="先去视频号生成几条内容，这里才能作为直播参考池。"
+                />
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  直播记录
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  当前先保留桌面本地历史，后面接真直播接口时继续沿用这块时间线。
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await generateChannelPost(baseUrl);
+                    await channelsQuery.refetch();
+                    setNotice("已生成一条新的视频号内容，可继续作为直播参考。");
+                    setError(null);
+                  } catch (reason) {
+                    setError(
+                      reason instanceof Error
+                        ? reason.message
+                        : "生成视频号内容失败。",
+                    );
+                  }
+                }}
+                className="rounded-xl"
+              >
+                <Wand2 size={14} />
+                生成预热内容
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {liveHistory.length ? (
+                liveHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        {item.title}
+                      </div>
+                      <span
+                        className={cn(
+                          "rounded-md px-2.5 py-1 text-[11px] font-medium",
+                          item.status === "live"
+                            ? "bg-[rgba(239,68,68,0.10)] text-[#b91c1c]"
+                            : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
+                        )}
+                      >
+                        {item.status === "live" ? "直播中" : "已结束"}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                      {item.topic || "未填写直播主题"}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[color:var(--text-muted)]">
+                      <span>开播 {formatTimestamp(item.startedAt)}</span>
+                      <span>模式 {resolveModeLabel(item.mode)}</span>
+                      <span>质量 {resolveQualityLabel(item.quality)}</span>
+                      {item.endedAt ? (
+                        <span>下播 {formatTimestamp(item.endedAt)}</span>
+                      ) : null}
+                    </div>
+                    <div className="mt-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          void copyLiveToMobile({
+                            description:
+                              item.status === "live"
+                                ? `${item.title} 正在直播中，切到手机继续跟进频道表现。`
+                                : `${item.title} 已结束，切到手机继续跟进视频号内容。`,
+                            label: item.title,
+                          })
+                        }
+                        className="rounded-xl"
+                      >
+                        <Copy size={14} />
+                        发到手机继续
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
+                  还没有直播记录。先准备一场直播并切到“直播中”，这里就会开始积累桌面伴侣历史。
+                </div>
+              )}
+            </div>
           </section>
         </div>
       </div>

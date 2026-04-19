@@ -12,6 +12,7 @@ import {
   type Message,
 } from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
+import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
@@ -62,6 +63,7 @@ export function DesktopChatHistoryPage() {
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    enabled: isDesktopLayout,
   });
 
   const conversations = useMemo(
@@ -107,6 +109,10 @@ export function DesktopChatHistoryPage() {
   }, [conversations, routeState.conversationId, selectedConversationId]);
 
   useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
     const routeStateApplied =
       (routeState.conversationId ?? null) === selectedConversationId;
 
@@ -129,7 +135,13 @@ export function DesktopChatHistoryPage() {
       hash: nextHash,
       replace: true,
     });
-  }, [hash, navigate, routeState.conversationId, selectedConversationId]);
+  }, [
+    hash,
+    isDesktopLayout,
+    navigate,
+    routeState.conversationId,
+    selectedConversationId,
+  ]);
 
   const selectedConversation =
     conversations.find((item) => item.id === selectedConversationId) ?? null;
@@ -159,7 +171,7 @@ export function DesktopChatHistoryPage() {
         limit: historyLimit,
       });
     },
-    enabled: Boolean(selectedConversation),
+    enabled: isDesktopLayout && Boolean(selectedConversation),
     placeholderData: (previousData, previousQuery) => {
       const previousConversationId = previousQuery?.queryKey[2];
       const previousConversationType = previousQuery?.queryKey[3];
@@ -260,7 +272,14 @@ export function DesktopChatHistoryPage() {
   }, [notice]);
 
   if (!isDesktopLayout) {
-    return null;
+    return (
+      <DesktopLayoutRequiredState
+        title="聊天记录当前仅提供桌面布局"
+        description="聊天记录工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续查看会话。"
+        actionLabel="返回消息"
+        fallbackTo="/tabs/chat"
+      />
+    );
   }
 
   return (

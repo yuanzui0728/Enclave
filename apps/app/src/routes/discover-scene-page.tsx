@@ -10,12 +10,11 @@ import {
 } from "lucide-react";
 import { triggerSceneFriendRequest } from "@yinjie/contracts";
 import {
-  AppPage,
   InlineNotice,
-  LoadingBlock,
   cn,
 } from "@yinjie/ui";
 import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shell";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -61,9 +60,11 @@ export function DiscoverScenePage() {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="px-6 py-6">
-        <LoadingBlock label="正在切换到桌面发现页..." />
-      </AppPage>
+      <RouteRedirectState
+        title="正在切换到桌面发现页"
+        description="桌面端的场景相遇入口已经收口到桌面发现工作区，先回到主发现页。"
+        loadingLabel="正在切换到桌面发现页..."
+      />
     );
   }
 

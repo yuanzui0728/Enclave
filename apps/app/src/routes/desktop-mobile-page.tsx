@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { EmptyState } from "../components/empty-state";
 import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import {
@@ -207,16 +208,19 @@ export function DesktopMobilePage() {
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    enabled: isDesktopLayout,
   });
 
   const officialAccountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
     queryFn: () => listOfficialAccounts(baseUrl),
+    enabled: isDesktopLayout,
   });
 
   const systemStatusQuery = useQuery({
     queryKey: ["desktop-mobile-system-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
+    enabled: isDesktopLayout,
   });
 
   const recentConversations = useMemo(
@@ -307,7 +311,7 @@ export function DesktopMobilePage() {
   }, [nativeDesktopHandoff]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!isDesktopLayout || typeof window === "undefined") {
       return;
     }
 
@@ -345,10 +349,10 @@ export function DesktopMobilePage() {
       window.removeEventListener("storage", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [isDesktopLayout]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!isDesktopLayout || typeof window === "undefined") {
       return;
     }
 
@@ -385,16 +389,16 @@ export function DesktopMobilePage() {
       window.removeEventListener("storage", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [isDesktopLayout]);
   const callHandoffTitle =
     callHandoffState?.title?.trim() ||
     (callHandoffState?.conversationType === "group" ? "当前群聊" : "当前聊天");
   const officialHandoffAccount = useMemo(
     () =>
       officialHandoffState?.accountId
-        ? (officialAccountsQuery.data ?? []).find(
+        ? ((officialAccountsQuery.data ?? []).find(
             (account) => account.id === officialHandoffState.accountId,
-          ) ?? null
+          ) ?? null)
         : null,
     [officialAccountsQuery.data, officialHandoffState?.accountId],
   );
@@ -403,16 +407,15 @@ export function DesktopMobilePage() {
     officialHandoffState?.accountName?.trim() ||
     officialHandoffAccount?.name ||
     "公众号";
-  const officialHandoffTypeLabel =
-    officialHandoffState?.articleId
-      ? "公众号文章"
-      : officialHandoffState?.surface === "service"
-        ? "服务号消息"
-        : officialHandoffState?.surface === "subscription"
-          ? "订阅号消息"
-          : officialHandoffState?.accountType === "service"
-            ? "服务号主页"
-            : "公众号主页";
+  const officialHandoffTypeLabel = officialHandoffState?.articleId
+    ? "公众号文章"
+    : officialHandoffState?.surface === "service"
+      ? "服务号消息"
+      : officialHandoffState?.surface === "subscription"
+        ? "订阅号消息"
+        : officialHandoffState?.accountType === "service"
+          ? "服务号主页"
+          : "公众号主页";
   const officialHandoffDescription = officialHandoffState
     ? officialHandoffState.articleId
       ? `把 ${officialHandoffTitle} 发到手机继续阅读。`
@@ -480,7 +483,10 @@ export function DesktopMobilePage() {
       return;
     }
 
-    if (officialHandoffState.surface === "service" && officialHandoffState.accountId) {
+    if (
+      officialHandoffState.surface === "service" &&
+      officialHandoffState.accountId
+    ) {
       void navigate({
         to: "/official-accounts/service/$accountId",
         params: { accountId: officialHandoffState.accountId },
@@ -537,6 +543,10 @@ export function DesktopMobilePage() {
   );
 
   useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
     if (
       !callHandoffState ||
       conversationsQuery.isLoading ||
@@ -556,6 +566,7 @@ export function DesktopMobilePage() {
     callHandoffState,
     conversationsQuery.isError,
     conversationsQuery.isLoading,
+    isDesktopLayout,
     navigate,
   ]);
 
@@ -569,6 +580,10 @@ export function DesktopMobilePage() {
   }, [notice]);
 
   useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
     if (!currentGroupInviteId) {
       setCurrentGroupInviteDelivery(null);
       setCurrentGroupInviteReopens([]);
@@ -604,10 +619,17 @@ export function DesktopMobilePage() {
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("storage", handleFocus);
     };
-  }, [currentGroupInviteId]);
+  }, [currentGroupInviteId, isDesktopLayout]);
 
   if (!isDesktopLayout) {
-    return null;
+    return (
+      <DesktopLayoutRequiredState
+        title="手机接力当前仅提供桌面布局"
+        description="手机接力面板目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续处理会话。"
+        actionLabel="返回消息"
+        fallbackTo="/tabs/chat"
+      />
+    );
   }
 
   return (
@@ -697,65 +719,67 @@ export function DesktopMobilePage() {
           </InlineNotice>
         ) : null}
 
-        {callHandoffState && callHandoffPath && callHandoffConversationExists ? (
+        {callHandoffState &&
+        callHandoffPath &&
+        callHandoffConversationExists ? (
           <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                    <RadioTower
-                      size={16}
-                      className="text-[color:var(--brand-primary)]"
-                    />
-                    <span>{callHandoffKindLabel}接力</span>
-                  </div>
-                  <div className="mt-2 text-sm text-[color:var(--text-primary)]">
-                    把 <span className="font-medium">{callHandoffTitle}</span>{" "}
-                    的通话入口带到手机继续。
-                  </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    桌面端先不假做本地通话，直接把当前聊天接力到手机，更贴近微信电脑端“到手机继续”的真实工作流。
-                  </div>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                  <RadioTower
+                    size={16}
+                    className="text-[color:var(--brand-primary)]"
+                  />
+                  <span>{callHandoffKindLabel}接力</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void navigate({
-                      to: "/desktop/mobile",
-                      hash: "",
-                      replace: true,
-                    })
-                  }
-                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
-                >
-                  收起
-                </button>
+                <div className="mt-2 text-sm text-[color:var(--text-primary)]">
+                  把 <span className="font-medium">{callHandoffTitle}</span>{" "}
+                  的通话入口带到手机继续。
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  桌面端先不假做本地通话，直接把当前聊天接力到手机，更贴近微信电脑端“到手机继续”的真实工作流。
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() =>
+                  void navigate({
+                    to: "/desktop/mobile",
+                    hash: "",
+                    replace: true,
+                  })
+                }
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
+              >
+                收起
+              </button>
+            </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    void handleCopyHandoff({
-                      description: `从桌面把 ${callHandoffTitle} 的${callHandoffKindLabel}接力到手机继续。`,
-                      label: `${callHandoffTitle} ${callHandoffKindLabel}`,
-                      path: callHandoffPath,
-                      setHistory: setHandoffHistory,
-                      setNotice,
-                    })
-                  }
-                  className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
-                >
-                  <Copy size={14} />
-                  复制到手机
-                </Button>
-                <Link
-                  to={callHandoffPath as never}
-                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                >
-                  桌面打开聊天
-                </Link>
-              </div>
-            </section>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                onClick={() =>
+                  void handleCopyHandoff({
+                    description: `从桌面把 ${callHandoffTitle} 的${callHandoffKindLabel}接力到手机继续。`,
+                    label: `${callHandoffTitle} ${callHandoffKindLabel}`,
+                    path: callHandoffPath,
+                    setHistory: setHandoffHistory,
+                    setNotice,
+                  })
+                }
+                className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              >
+                <Copy size={14} />
+                复制到手机
+              </Button>
+              <Link
+                to={callHandoffPath as never}
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+              >
+                桌面打开聊天
+              </Link>
+            </div>
+          </section>
         ) : null}
 
         {officialHandoffState && officialHandoffPath ? (
@@ -829,259 +853,417 @@ export function DesktopMobilePage() {
           </section>
         ) : null}
 
-          {conversationsQuery.isError &&
-          conversationsQuery.error instanceof Error ? (
-            <ErrorBlock message={conversationsQuery.error.message} />
-          ) : null}
-          {officialAccountsQuery.isError &&
-          officialAccountsQuery.error instanceof Error ? (
-            <ErrorBlock message={officialAccountsQuery.error.message} />
-          ) : null}
-          {systemStatusQuery.isError &&
-          systemStatusQuery.error instanceof Error ? (
-            <ErrorBlock message={systemStatusQuery.error.message} />
-          ) : null}
+        {conversationsQuery.isError &&
+        conversationsQuery.error instanceof Error ? (
+          <ErrorBlock message={conversationsQuery.error.message} />
+        ) : null}
+        {officialAccountsQuery.isError &&
+        officialAccountsQuery.error instanceof Error ? (
+          <ErrorBlock message={officialAccountsQuery.error.message} />
+        ) : null}
+        {systemStatusQuery.isError &&
+        systemStatusQuery.error instanceof Error ? (
+          <ErrorBlock message={systemStatusQuery.error.message} />
+        ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
           <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                <Smartphone
-                  size={16}
-                  className="text-[color:var(--brand-primary)]"
-                />
-                <span>手机入口</span>
-              </div>
-              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                常用手机端入口先固定在这里，点击即可复制深链接，发到手机后继续浏览。
-              </div>
+            <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+              <Smartphone
+                size={16}
+                className="text-[color:var(--brand-primary)]"
+              />
+              <span>手机入口</span>
+            </div>
+            <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+              常用手机端入口先固定在这里，点击即可复制深链接，发到手机后继续浏览。
+            </div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {quickEntries.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
-                  >
-                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                      {item.label}
-                    </div>
-                    <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                      {item.description}
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          void handleCopyHandoff({
-                            description: item.description,
-                            label: item.label,
-                            path: item.to,
-                            setHistory: setHandoffHistory,
-                            setNotice,
-                          })
-                        }
-                        className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
-                      >
-                        <Copy size={14} />
-                        复制到手机
-                      </Button>
-                      <Link
-                        to={item.to as never}
-                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                      >
-                        桌面打开
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                <Wifi size={16} className="text-[color:var(--brand-primary)]" />
-                <span>同步概览</span>
-              </div>
-              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                这里不新造设备接口，先用当前世界的真实运行状态来判断手机接力是否值得继续。
-              </div>
-
-              {systemStatusQuery.isLoading ? (
-                <div className="mt-4">
-                  <LoadingBlock label="正在检查同步状态..." />
-                </div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  <StatusRow
-                    label="Core API"
-                    value={
-                      systemStatusQuery.data?.coreApi.healthy
-                        ? "世界在线"
-                        : "连接异常"
-                    }
-                  />
-                  <StatusRow
-                    label="数据库"
-                    value={
-                      systemStatusQuery.data?.database.connected
-                        ? "已连接"
-                        : "未连接"
-                    }
-                  />
-                  <StatusRow
-                    label="推理网关"
-                    value={
-                      systemStatusQuery.data?.inferenceGateway.healthy
-                        ? "可用"
-                        : "待恢复"
-                    }
-                  />
-                  <StatusRow
-                    label="世界主人"
-                    value={`${systemStatusQuery.data?.worldSurface.ownerCount ?? 0} / 1`}
-                  />
-                  <StatusRow
-                    label="最近快照"
-                    value={
-                      systemStatusQuery.data?.scheduler.lastWorldSnapshotAt
-                        ? formatTimestamp(
-                            systemStatusQuery.data.scheduler
-                              .lastWorldSnapshotAt,
-                          )
-                        : "暂无"
-                    }
-                  />
-                </div>
-              )}
-            </section>
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    最近会话
-                  </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    先按最近活跃会话做接力，桌面和手机之间切换会更顺。
-                  </div>
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => void conversationsQuery.refetch()}
-                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {quickEntries.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                 >
-                  <RefreshCw size={14} />
-                  刷新
-                </Button>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {conversationsQuery.isLoading ? (
-                  <LoadingBlock label="正在读取会话..." />
-                ) : recentConversations.length ? (
-                  recentConversations.map((item) => {
-                    const preview = getConversationPreviewParts(
-                      item,
-                      localMessageActionState,
-                    );
-                    const description = `${preview.prefix}${preview.text}`;
-
-                    return (
-                      <RecentConversationRow
-                        key={item.id}
-                        item={item}
-                        description={description}
-                        onCopy={() =>
-                          void handleCopyHandoff({
-                            description,
-                            label: item.title,
-                            path: isPersistedGroupConversation(item)
-                              ? `/group/${item.id}`
-                              : `/chat/${item.id}`,
-                            setHistory: setHandoffHistory,
-                            setNotice,
-                          })
-                        }
-                      />
-                    );
-                  })
-                ) : (
-                  <EmptyState
-                    title="还没有最近会话"
-                    description="先回消息里产生一些对话，这里就会开始出现手机接力入口。"
-                  />
-                )}
-              </div>
-            </section>
-
-          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-              <div className="flex items-center justify-between gap-3">
-                <div>
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    最近公众号内容
+                    {item.label}
                   </div>
-                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                    公众号阅读在手机上更顺手，这里直接复制最近文章或账号主页。
+                  <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                    {item.description}
                   </div>
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => void officialAccountsQuery.refetch()}
-                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                >
-                  <RefreshCw size={14} />
-                  刷新
-                </Button>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {officialAccountsQuery.isLoading ? (
-                  <LoadingBlock label="正在读取公众号..." />
-                ) : recentArticles.length ? (
-                  recentArticles.map((account) => (
-                    <RecentArticleRow
-                      key={account.id}
-                      account={account}
-                      onOpenAccount={() => {
-                        void navigate({
-                          to: "/tabs/contacts",
-                          hash: buildDesktopContactsRouteHash({
-                            pane: "official-accounts",
-                            accountId: account.id,
-                            showWorldCharacters: false,
-                          }),
-                        });
-                      }}
-                      onOpenArticle={() => {
-                        void navigate({
-                          to: "/tabs/contacts",
-                          hash: buildDesktopContactsRouteHash({
-                            pane: "official-accounts",
-                            accountId: account.id,
-                            articleId: account.recentArticle?.id,
-                            showWorldCharacters: false,
-                          }),
-                        });
-                      }}
-                      onCopyAccount={() =>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() =>
                         void handleCopyHandoff({
-                          description: "继续查看账号资料与最近推送。",
-                          label: `${account.name} 主页`,
-                          path: `/official-accounts/${account.id}`,
+                          description: item.description,
+                          label: item.label,
+                          path: item.to,
                           setHistory: setHandoffHistory,
                           setNotice,
                         })
                       }
-                      onCopyArticle={() =>
+                      className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                    >
+                      <Copy size={14} />
+                      复制到手机
+                    </Button>
+                    <Link
+                      to={item.to as never}
+                      className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                    >
+                      桌面打开
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+            <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+              <Wifi size={16} className="text-[color:var(--brand-primary)]" />
+              <span>同步概览</span>
+            </div>
+            <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+              这里不新造设备接口，先用当前世界的真实运行状态来判断手机接力是否值得继续。
+            </div>
+
+            {systemStatusQuery.isLoading ? (
+              <div className="mt-4">
+                <LoadingBlock label="正在检查同步状态..." />
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <StatusRow
+                  label="Core API"
+                  value={
+                    systemStatusQuery.data?.coreApi.healthy
+                      ? "世界在线"
+                      : "连接异常"
+                  }
+                />
+                <StatusRow
+                  label="数据库"
+                  value={
+                    systemStatusQuery.data?.database.connected
+                      ? "已连接"
+                      : "未连接"
+                  }
+                />
+                <StatusRow
+                  label="推理网关"
+                  value={
+                    systemStatusQuery.data?.inferenceGateway.healthy
+                      ? "可用"
+                      : "待恢复"
+                  }
+                />
+                <StatusRow
+                  label="世界主人"
+                  value={`${systemStatusQuery.data?.worldSurface.ownerCount ?? 0} / 1`}
+                />
+                <StatusRow
+                  label="最近快照"
+                  value={
+                    systemStatusQuery.data?.scheduler.lastWorldSnapshotAt
+                      ? formatTimestamp(
+                          systemStatusQuery.data.scheduler.lastWorldSnapshotAt,
+                        )
+                      : "暂无"
+                  }
+                />
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  最近会话
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  先按最近活跃会话做接力，桌面和手机之间切换会更顺。
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void conversationsQuery.refetch()}
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              >
+                <RefreshCw size={14} />
+                刷新
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {conversationsQuery.isLoading ? (
+                <LoadingBlock label="正在读取会话..." />
+              ) : recentConversations.length ? (
+                recentConversations.map((item) => {
+                  const preview = getConversationPreviewParts(
+                    item,
+                    localMessageActionState,
+                  );
+                  const description = `${preview.prefix}${preview.text}`;
+
+                  return (
+                    <RecentConversationRow
+                      key={item.id}
+                      item={item}
+                      description={description}
+                      onCopy={() =>
                         void handleCopyHandoff({
-                          description:
-                            account.recentArticle?.summary ||
-                            "继续阅读这篇公众号文章。",
-                          label: account.recentArticle?.title ?? account.name,
-                          path: `/official-accounts/articles/${account.recentArticle?.id}`,
+                          description,
+                          label: item.title,
+                          path: isPersistedGroupConversation(item)
+                            ? `/group/${item.id}`
+                            : `/chat/${item.id}`,
+                          setHistory: setHandoffHistory,
+                          setNotice,
+                        })
+                      }
+                    />
+                  );
+                })
+              ) : (
+                <EmptyState
+                  title="还没有最近会话"
+                  description="先回消息里产生一些对话，这里就会开始出现手机接力入口。"
+                />
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  最近公众号内容
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  公众号阅读在手机上更顺手，这里直接复制最近文章或账号主页。
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void officialAccountsQuery.refetch()}
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              >
+                <RefreshCw size={14} />
+                刷新
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {officialAccountsQuery.isLoading ? (
+                <LoadingBlock label="正在读取公众号..." />
+              ) : recentArticles.length ? (
+                recentArticles.map((account) => (
+                  <RecentArticleRow
+                    key={account.id}
+                    account={account}
+                    onOpenAccount={() => {
+                      void navigate({
+                        to: "/tabs/contacts",
+                        hash: buildDesktopContactsRouteHash({
+                          pane: "official-accounts",
+                          accountId: account.id,
+                          showWorldCharacters: false,
+                        }),
+                      });
+                    }}
+                    onOpenArticle={() => {
+                      void navigate({
+                        to: "/tabs/contacts",
+                        hash: buildDesktopContactsRouteHash({
+                          pane: "official-accounts",
+                          accountId: account.id,
+                          articleId: account.recentArticle?.id,
+                          showWorldCharacters: false,
+                        }),
+                      });
+                    }}
+                    onCopyAccount={() =>
+                      void handleCopyHandoff({
+                        description: "继续查看账号资料与最近推送。",
+                        label: `${account.name} 主页`,
+                        path: `/official-accounts/${account.id}`,
+                        setHistory: setHandoffHistory,
+                        setNotice,
+                      })
+                    }
+                    onCopyArticle={() =>
+                      void handleCopyHandoff({
+                        description:
+                          account.recentArticle?.summary ||
+                          "继续阅读这篇公众号文章。",
+                        label: account.recentArticle?.title ?? account.name,
+                        path: `/official-accounts/articles/${account.recentArticle?.id}`,
+                        setHistory: setHandoffHistory,
+                        setNotice,
+                      })
+                    }
+                  />
+                ))
+              ) : (
+                <EmptyState
+                  title="还没有最近文章"
+                  description="等公众号有推送后，这里会直接出现可接力到手机的阅读入口。"
+                />
+              )}
+            </div>
+          </section>
+        </div>
+
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                <Blocks
+                  size={16}
+                  className="text-[color:var(--brand-primary)]"
+                />
+                <span>小程序接力</span>
+              </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                桌面小程序面板里的当前工作台和最近使用，会从这里直接发到手机继续。
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/tabs/mini-programs"
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+              >
+                打开小程序面板
+              </Link>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void hydrateMiniProgramsStateFromNative().then(
+                    (nextMiniProgramsState) => {
+                      setMiniProgramsState(nextMiniProgramsState);
+                      setNotice(
+                        nextMiniProgramsState.activeMiniProgramId
+                          ? "已刷新小程序接力内容。"
+                          : "小程序面板里还没有可同步到手机的最近使用。",
+                      );
+                    },
+                  );
+                }}
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              >
+                <RefreshCw size={14} />
+                刷新
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                当前小程序工作台
+              </div>
+              {activeMiniProgram ? (
+                <MiniProgramHandoffCard
+                  miniProgram={activeMiniProgram}
+                  launchCount={
+                    miniProgramsState.launchCountById[activeMiniProgram.id] ?? 0
+                  }
+                  lastOpenedAt={
+                    miniProgramsState.lastOpenedAtById[activeMiniProgram.id]
+                  }
+                  completedTaskCount={
+                    getMiniProgramWorkspaceTasks(
+                      activeMiniProgram.id,
+                      miniProgramsState.completedTaskIdsByMiniProgramId[
+                        activeMiniProgram.id
+                      ] ?? [],
+                    ).filter((task) => task.completed).length
+                  }
+                  totalTaskCount={
+                    getMiniProgramWorkspaceTasks(
+                      activeMiniProgram.id,
+                      miniProgramsState.completedTaskIdsByMiniProgramId[
+                        activeMiniProgram.id
+                      ] ?? [],
+                    ).length
+                  }
+                  pinned={miniProgramsState.pinnedMiniProgramIds.includes(
+                    activeMiniProgram.id,
+                  )}
+                  buttonLabel="发当前工作台到手机"
+                  onCopy={() =>
+                    void handleCopyHandoff({
+                      description: `${activeMiniProgram.name} 的当前工作台，带上最近使用和本地待办上下文。`,
+                      label: `${activeMiniProgram.name} 接力`,
+                      path: `/discover/mini-programs?miniProgram=${activeMiniProgram.id}`,
+                      setHistory: setHandoffHistory,
+                      setNotice,
+                    })
+                  }
+                />
+              ) : (
+                <div className="mt-4">
+                  <EmptyState
+                    title="还没有当前小程序"
+                    description="先在桌面小程序面板里打开一个入口，这里就会出现可接力到手机的工作台。"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                最近使用小程序
+              </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                最近在桌面打开过的小程序，会直接形成手机继续入口。
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {recentMiniPrograms.length ? (
+                  recentMiniPrograms.map((miniProgram) => (
+                    <MiniProgramHandoffCard
+                      key={miniProgram.id}
+                      miniProgram={miniProgram}
+                      launchCount={
+                        miniProgramsState.launchCountById[miniProgram.id] ?? 0
+                      }
+                      lastOpenedAt={
+                        miniProgramsState.lastOpenedAtById[miniProgram.id]
+                      }
+                      completedTaskCount={
+                        getMiniProgramWorkspaceTasks(
+                          miniProgram.id,
+                          miniProgramsState.completedTaskIdsByMiniProgramId[
+                            miniProgram.id
+                          ] ?? [],
+                        ).filter((task) => task.completed).length
+                      }
+                      totalTaskCount={
+                        getMiniProgramWorkspaceTasks(
+                          miniProgram.id,
+                          miniProgramsState.completedTaskIdsByMiniProgramId[
+                            miniProgram.id
+                          ] ?? [],
+                        ).length
+                      }
+                      pinned={miniProgramsState.pinnedMiniProgramIds.includes(
+                        miniProgram.id,
+                      )}
+                      buttonLabel="发到手机继续"
+                      onCopy={() =>
+                        void handleCopyHandoff({
+                          description: `${miniProgram.name} 的当前工作台，带上最近使用和本地待办上下文。`,
+                          label: `${miniProgram.name} 接力`,
+                          path: `/discover/mini-programs?miniProgram=${miniProgram.id}`,
                           setHistory: setHandoffHistory,
                           setNotice,
                         })
@@ -1090,530 +1272,287 @@ export function DesktopMobilePage() {
                   ))
                 ) : (
                   <EmptyState
-                    title="还没有最近文章"
-                    description="等公众号有推送后，这里会直接出现可接力到手机的阅读入口。"
+                    title="还没有最近小程序"
+                    description="先在桌面小程序面板里打开几个入口，这里就会开始出现可接力到手机的最近记录。"
                   />
                 )}
               </div>
-            </section>
+            </div>
           </div>
+        </section>
 
         <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <Blocks
-                    size={16}
-                    className="text-[color:var(--brand-primary)]"
-                  />
-                  <span>小程序接力</span>
-                </div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                  桌面小程序面板里的当前工作台和最近使用，会从这里直接发到手机继续。
-                </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                <RadioTower
+                  size={16}
+                  className="text-[color:var(--brand-primary)]"
+                />
+                <span>直播接力</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  to="/tabs/mini-programs"
-                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                >
-                  打开小程序面板
-                </Link>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                桌面直播伴侣里的准备稿和最近直播记录，会优先从这里发到手机继续跟进。
+              </div>
+            </div>
+            <Link
+              to="/desktop/channels/live-companion"
+              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+            >
+              打开直播伴侣
+            </Link>
+          </div>
+
+          <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
+            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                当前直播准备
+              </div>
+              <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                {liveDraft.title.trim()
+                  ? `${liveDraft.title} · ${liveDraft.topic || "未填写主题"}`
+                  : "直播伴侣里还没有填写准备稿。"}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
+                <span>模式 {resolveLiveModeLabel(liveDraft.mode)}</span>
+                <span>质量 {resolveLiveQualityLabel(liveDraft.quality)}</span>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Button
-                  variant="secondary"
                   size="sm"
+                  disabled={!liveDraft.title.trim()}
+                  onClick={() =>
+                    void handleCopyHandoff({
+                      description: liveDraft.topic.trim()
+                        ? `${liveDraft.title} · ${liveDraft.topic}`
+                        : `${liveDraft.title}，在手机上继续直播准备与内容导流。`,
+                      label: liveDraft.title.trim() || "直播准备",
+                      path: "/discover/channels",
+                      setHistory: setHandoffHistory,
+                      setNotice,
+                    })
+                  }
+                  className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                >
+                  <Copy size={14} />
+                  发准备到手机
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
                   onClick={() => {
-                    void hydrateMiniProgramsStateFromNative().then(
-                      (nextMiniProgramsState) => {
-                        setMiniProgramsState(nextMiniProgramsState);
-                        setNotice(
-                          nextMiniProgramsState.activeMiniProgramId
-                            ? "已刷新小程序接力内容。"
-                            : "小程序面板里还没有可同步到手机的最近使用。",
-                        );
-                      },
-                    );
+                    void hydrateLiveCompanionFromNative().then((store) => {
+                      setLiveDraft(store.draft);
+                      setLiveHistory(store.history);
+                      setNotice(
+                        store.history[0]?.title || store.draft.title.trim()
+                          ? "已刷新直播接力内容。"
+                          : "直播伴侣还没有可同步到手机的内容。",
+                      );
+                    });
                   }}
                   className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
                 >
                   <RefreshCw size={14} />
-                  刷新
+                  刷新直播状态
                 </Button>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  当前小程序工作台
-                </div>
-                {activeMiniProgram ? (
-                  <MiniProgramHandoffCard
-                    miniProgram={activeMiniProgram}
-                    launchCount={
-                      miniProgramsState.launchCountById[activeMiniProgram.id] ??
-                      0
-                    }
-                    lastOpenedAt={
-                      miniProgramsState.lastOpenedAtById[activeMiniProgram.id]
-                    }
-                    completedTaskCount={
-                      getMiniProgramWorkspaceTasks(
-                        activeMiniProgram.id,
-                        miniProgramsState.completedTaskIdsByMiniProgramId[
-                          activeMiniProgram.id
-                        ] ?? [],
-                      ).filter((task) => task.completed).length
-                    }
-                    totalTaskCount={
-                      getMiniProgramWorkspaceTasks(
-                        activeMiniProgram.id,
-                        miniProgramsState.completedTaskIdsByMiniProgramId[
-                          activeMiniProgram.id
-                        ] ?? [],
-                      ).length
-                    }
-                    pinned={miniProgramsState.pinnedMiniProgramIds.includes(
-                      activeMiniProgram.id,
-                    )}
-                    buttonLabel="发当前工作台到手机"
-                    onCopy={() =>
-                      void handleCopyHandoff({
-                        description: `${activeMiniProgram.name} 的当前工作台，带上最近使用和本地待办上下文。`,
-                        label: `${activeMiniProgram.name} 接力`,
-                        path: `/discover/mini-programs?miniProgram=${activeMiniProgram.id}`,
-                        setHistory: setHandoffHistory,
-                        setNotice,
-                      })
-                    }
-                  />
-                ) : (
-                  <div className="mt-4">
-                    <EmptyState
-                      title="还没有当前小程序"
-                      description="先在桌面小程序面板里打开一个入口，这里就会出现可接力到手机的工作台。"
-                    />
-                  </div>
-                )}
+            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                最近直播状态
               </div>
-
-              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  最近使用小程序
-                </div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                  最近在桌面打开过的小程序，会直接形成手机继续入口。
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  {recentMiniPrograms.length ? (
-                    recentMiniPrograms.map((miniProgram) => (
-                      <MiniProgramHandoffCard
-                        key={miniProgram.id}
-                        miniProgram={miniProgram}
-                        launchCount={
-                          miniProgramsState.launchCountById[miniProgram.id] ?? 0
-                        }
-                        lastOpenedAt={
-                          miniProgramsState.lastOpenedAtById[miniProgram.id]
-                        }
-                        completedTaskCount={
-                          getMiniProgramWorkspaceTasks(
-                            miniProgram.id,
-                            miniProgramsState.completedTaskIdsByMiniProgramId[
-                              miniProgram.id
-                            ] ?? [],
-                          ).filter((task) => task.completed).length
-                        }
-                        totalTaskCount={
-                          getMiniProgramWorkspaceTasks(
-                            miniProgram.id,
-                            miniProgramsState.completedTaskIdsByMiniProgramId[
-                              miniProgram.id
-                            ] ?? [],
-                          ).length
-                        }
-                        pinned={miniProgramsState.pinnedMiniProgramIds.includes(
-                          miniProgram.id,
-                        )}
-                        buttonLabel="发到手机继续"
-                        onCopy={() =>
-                          void handleCopyHandoff({
-                            description: `${miniProgram.name} 的当前工作台，带上最近使用和本地待办上下文。`,
-                            label: `${miniProgram.name} 接力`,
-                            path: `/discover/mini-programs?miniProgram=${miniProgram.id}`,
-                            setHistory: setHandoffHistory,
-                            setNotice,
-                          })
-                        }
-                      />
-                    ))
-                  ) : (
-                    <EmptyState
-                      title="还没有最近小程序"
-                      description="先在桌面小程序面板里打开几个入口，这里就会开始出现可接力到手机的最近记录。"
-                    />
-                  )}
-                </div>
+              <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                {activeLiveSession
+                  ? `${activeLiveSession.title} 正在直播，可在手机端继续关注频道动线。`
+                  : liveHistory[0]
+                    ? `${liveHistory[0].title} 已结束，可在手机端继续做频道跟进。`
+                    : "还没有直播记录。"}
+              </div>
+              <div className="mt-3 text-[11px] text-[color:var(--text-muted)]">
+                {activeLiveSession
+                  ? `开播于 ${formatTimestamp(activeLiveSession.startedAt)}`
+                  : liveHistory[0]?.startedAt
+                    ? `最近开播于 ${formatTimestamp(liveHistory[0].startedAt)}`
+                    : "先在直播伴侣里启动一场直播。"}
+              </div>
+              <div className="mt-4">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!activeLiveSession && !liveHistory[0]}
+                  onClick={() =>
+                    void handleCopyHandoff({
+                      description: activeLiveSession
+                        ? `${activeLiveSession.title} 正在直播中，切到手机端继续查看频道表现。`
+                        : `${liveHistory[0]?.title ?? "最近直播"} 已结束，切到手机端继续跟进频道内容。`,
+                      label:
+                        activeLiveSession?.title ??
+                        liveHistory[0]?.title ??
+                        "最近直播",
+                      path: "/discover/channels",
+                      setHistory: setHandoffHistory,
+                      setNotice,
+                    })
+                  }
+                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                >
+                  <ArrowUpRight size={14} />
+                  发直播状态到手机
+                </Button>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
         <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <RadioTower
-                    size={16}
-                    className="text-[color:var(--brand-primary)]"
-                  />
-                  <span>直播接力</span>
-                </div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                  桌面直播伴侣里的准备稿和最近直播记录，会优先从这里发到手机继续跟进。
-                </div>
-              </div>
-              <Link
-                to="/desktop/channels/live-companion"
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-              >
-                打开直播伴侣
-              </Link>
-            </div>
-
-            <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
-              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  当前直播准备
-                </div>
-                <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                  {liveDraft.title.trim()
-                    ? `${liveDraft.title} · ${liveDraft.topic || "未填写主题"}`
-                    : "直播伴侣里还没有填写准备稿。"}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
-                  <span>模式 {resolveLiveModeLabel(liveDraft.mode)}</span>
-                  <span>质量 {resolveLiveQualityLabel(liveDraft.quality)}</span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    disabled={!liveDraft.title.trim()}
-                    onClick={() =>
-                      void handleCopyHandoff({
-                        description: liveDraft.topic.trim()
-                          ? `${liveDraft.title} · ${liveDraft.topic}`
-                          : `${liveDraft.title}，在手机上继续直播准备与内容导流。`,
-                        label: liveDraft.title.trim() || "直播准备",
-                        path: "/discover/channels",
-                        setHistory: setHandoffHistory,
-                        setNotice,
-                      })
-                    }
-                    className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
-                  >
-                    <Copy size={14} />
-                    发准备到手机
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      void hydrateLiveCompanionFromNative().then((store) => {
-                        setLiveDraft(store.draft);
-                        setLiveHistory(store.history);
-                        setNotice(
-                          store.history[0]?.title || store.draft.title.trim()
-                            ? "已刷新直播接力内容。"
-                            : "直播伴侣还没有可同步到手机的内容。",
-                        );
-                      });
-                    }}
-                    className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                  >
-                    <RefreshCw size={14} />
-                    刷新直播状态
-                  </Button>
-                </div>
-              </div>
-
-              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  最近直播状态
-                </div>
-                <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                  {activeLiveSession
-                    ? `${activeLiveSession.title} 正在直播，可在手机端继续关注频道动线。`
-                    : liveHistory[0]
-                      ? `${liveHistory[0].title} 已结束，可在手机端继续做频道跟进。`
-                      : "还没有直播记录。"}
-                </div>
-                <div className="mt-3 text-[11px] text-[color:var(--text-muted)]">
-                  {activeLiveSession
-                    ? `开播于 ${formatTimestamp(activeLiveSession.startedAt)}`
-                    : liveHistory[0]?.startedAt
-                      ? `最近开播于 ${formatTimestamp(liveHistory[0].startedAt)}`
-                      : "先在直播伴侣里启动一场直播。"}
-                </div>
-                <div className="mt-4">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={!activeLiveSession && !liveHistory[0]}
-                    onClick={() =>
-                      void handleCopyHandoff({
-                        description: activeLiveSession
-                          ? `${activeLiveSession.title} 正在直播中，切到手机端继续查看频道表现。`
-                          : `${liveHistory[0]?.title ?? "最近直播"} 已结束，切到手机端继续跟进频道内容。`,
-                        label:
-                          activeLiveSession?.title ??
-                          liveHistory[0]?.title ??
-                          "最近直播",
-                        path: "/discover/channels",
-                        setHistory: setHandoffHistory,
-                        setNotice,
-                      })
-                    }
-                    className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                  >
-                    <ArrowUpRight size={14} />
-                    发直播状态到手机
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <CheckCircle2
-                    size={16}
-                    className="text-[color:var(--brand-primary)]"
-                  />
-                  <span>群聊邀请接力</span>
-                </div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                  从群二维码页发到手机的邀请，会先集中展示在这里，方便继续发手机或回桌面群页。
-                </div>
-              </div>
-              <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
-                {recentGroupInviteHandoffs.length} 条最近邀请
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {currentGroupInviteHandoff ? (
-                <>
-                  <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
-                          当前群邀请
-                        </div>
-                        <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
-                          {currentGroupInviteHandoff.label}
-                        </div>
-                        <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-                          {currentGroupInviteHandoff.description}
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
-                          <span>
-                            最近发送于{" "}
-                            {formatTimestamp(currentGroupInviteHandoff.sentAt)}
-                          </span>
-                          <span>已纳入手机接力固定入口</span>
-                        </div>
-                      </div>
-                      <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
-                        群邀请入口
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          void handleCopyHandoff({
-                            description: currentGroupInviteHandoff.description,
-                            label: currentGroupInviteHandoff.label,
-                            path: currentGroupInviteHandoff.path,
-                            setHistory: setHandoffHistory,
-                            setNotice,
-                          })
-                        }
-                        className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
-                      >
-                        <Copy size={14} />
-                        再发一次
-                      </Button>
-                      <Link
-                        to={currentGroupInviteHandoff.path as never}
-                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                      >
-                        桌面打开
-                      </Link>
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
-                        {activeGroupInviteDelivery ? (
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs font-medium text-[color:var(--text-primary)]">
-                                最近投递到{" "}
-                                {activeGroupInviteDelivery.conversationTitle}
-                              </div>
-                              <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-                                {formatConversationTimestamp(
-                                  activeGroupInviteDelivery.deliveredAt,
-                                )}
-                              </div>
-                            </div>
-                            <Link
-                              to={activeGroupInviteDelivery.conversationPath as never}
-                              className="inline-flex h-8 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
-                            >
-                              回到会话
-                            </Link>
-                          </div>
-                        ) : (
-                          <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-                            这条群邀请还没有投递到聊天会话。去群二维码页发到最近会话后，这里会直接显示回跳入口。
-                          </div>
-                        )}
-                      </div>
-
-                      {activeGroupInviteReopens.length ? (
-                        <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
-                          <div className="text-xs font-medium text-[color:var(--text-primary)]">
-                            最近从这些会话回到邀请页
-                          </div>
-                          <div className="mt-3 space-y-2">
-                            {activeGroupInviteReopens
-                              .slice(0, 2)
-                              .map((record) => (
-                                <div
-                                  key={`${record.conversationPath}:${record.reopenedAt}`}
-                                  className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2"
-                                >
-                                  <div className="min-w-0 flex-1">
-                                    <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
-                                      {record.conversationTitle}
-                                    </div>
-                                    <div className="mt-1 text-[10px] text-[color:var(--text-muted)]">
-                                      回流于{" "}
-                                      {formatConversationTimestamp(
-                                        record.reopenedAt,
-                                      )}
-                                    </div>
-                                  </div>
-                                  <Link
-                                    to={record.conversationPath as never}
-                                    className="inline-flex h-7 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                                  >
-                                    回到会话
-                                  </Link>
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {archivedGroupInviteHandoffs.length ? (
-                    <div className="space-y-3">
-                      <div className="text-xs font-medium text-[color:var(--text-muted)]">
-                        最近群邀请记录
-                      </div>
-                      {archivedGroupInviteHandoffs.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-start justify-between gap-4 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                              {item.label}
-                            </div>
-                            <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                              {item.description}
-                            </div>
-                            <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
-                              最近发送于 {formatTimestamp(item.sentAt)}
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap justify-end gap-2">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() =>
-                                void handleCopyHandoff({
-                                  description: item.description,
-                                  label: item.label,
-                                  path: item.path,
-                                  setHistory: setHandoffHistory,
-                                  setNotice,
-                                })
-                              }
-                              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                            >
-                              <Copy size={14} />
-                              再发一次
-                            </Button>
-                            <Link
-                              to={item.path as never}
-                              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                            >
-                              桌面打开
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <EmptyState
-                  title="还没有群聊邀请接力"
-                  description="先去群二维码页发一条邀请到手机，这里就会变成固定入口。"
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                <CheckCircle2
+                  size={16}
+                  className="text-[color:var(--brand-primary)]"
                 />
-              )}
+                <span>群聊邀请接力</span>
+              </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                从群二维码页发到手机的邀请，会先集中展示在这里，方便继续发手机或回桌面群页。
+              </div>
             </div>
-          </section>
+            <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+              {recentGroupInviteHandoffs.length} 条最近邀请
+            </div>
+          </div>
 
-        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-            <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-              <CheckCircle2
-                size={16}
-                className="text-[color:var(--brand-primary)]"
-              />
-              <span>最近发往手机</span>
-            </div>
-            <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-              当前把手机接力记录按内容类型拆开，方便区分消息、群邀请、公众号、小程序和直播链路。
-            </div>
-
-            <div className="mt-4 space-y-5">
-              {groupedHandoffHistory.length ? (
-                groupedHandoffHistory.map((group) => (
-                  <section key={group.id} className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                          {group.label}
-                        </div>
-                        <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                          {group.description}
-                        </div>
+          <div className="mt-4 space-y-3">
+            {currentGroupInviteHandoff ? (
+              <>
+                <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
+                        当前群邀请
                       </div>
-                      <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
-                        {group.items.length} 条
+                      <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
+                        {currentGroupInviteHandoff.label}
+                      </div>
+                      <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                        {currentGroupInviteHandoff.description}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
+                        <span>
+                          最近发送于{" "}
+                          {formatTimestamp(currentGroupInviteHandoff.sentAt)}
+                        </span>
+                        <span>已纳入手机接力固定入口</span>
                       </div>
                     </div>
+                    <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                      群邀请入口
+                    </div>
+                  </div>
 
-                    {group.items.map((item) => (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        void handleCopyHandoff({
+                          description: currentGroupInviteHandoff.description,
+                          label: currentGroupInviteHandoff.label,
+                          path: currentGroupInviteHandoff.path,
+                          setHistory: setHandoffHistory,
+                          setNotice,
+                        })
+                      }
+                      className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                    >
+                      <Copy size={14} />
+                      再发一次
+                    </Button>
+                    <Link
+                      to={currentGroupInviteHandoff.path as never}
+                      className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                    >
+                      桌面打开
+                    </Link>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
+                      {activeGroupInviteDelivery ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-[color:var(--text-primary)]">
+                              最近投递到{" "}
+                              {activeGroupInviteDelivery.conversationTitle}
+                            </div>
+                            <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+                              {formatConversationTimestamp(
+                                activeGroupInviteDelivery.deliveredAt,
+                              )}
+                            </div>
+                          </div>
+                          <Link
+                            to={
+                              activeGroupInviteDelivery.conversationPath as never
+                            }
+                            className="inline-flex h-8 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+                          >
+                            回到会话
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+                          这条群邀请还没有投递到聊天会话。去群二维码页发到最近会话后，这里会直接显示回跳入口。
+                        </div>
+                      )}
+                    </div>
+
+                    {activeGroupInviteReopens.length ? (
+                      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
+                        <div className="text-xs font-medium text-[color:var(--text-primary)]">
+                          最近从这些会话回到邀请页
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {activeGroupInviteReopens
+                            .slice(0, 2)
+                            .map((record) => (
+                              <div
+                                key={`${record.conversationPath}:${record.reopenedAt}`}
+                                className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
+                                    {record.conversationTitle}
+                                  </div>
+                                  <div className="mt-1 text-[10px] text-[color:var(--text-muted)]">
+                                    回流于{" "}
+                                    {formatConversationTimestamp(
+                                      record.reopenedAt,
+                                    )}
+                                  </div>
+                                </div>
+                                <Link
+                                  to={record.conversationPath as never}
+                                  className="inline-flex h-7 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                                >
+                                  回到会话
+                                </Link>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                {archivedGroupInviteHandoffs.length ? (
+                  <div className="space-y-3">
+                    <div className="text-xs font-medium text-[color:var(--text-muted)]">
+                      最近群邀请记录
+                    </div>
+                    {archivedGroupInviteHandoffs.map((item) => (
                       <div
                         key={item.id}
                         className="flex items-start justify-between gap-4 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
@@ -1626,37 +1565,122 @@ export function DesktopMobilePage() {
                             {item.description}
                           </div>
                           <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
-                            {formatTimestamp(item.sentAt)}
+                            最近发送于 {formatTimestamp(item.sentAt)}
                           </div>
                         </div>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() =>
-                            void handleCopyHandoff({
-                              description: item.description,
-                              label: item.label,
-                              path: item.path,
-                              setHistory: setHandoffHistory,
-                              setNotice,
-                            })
-                          }
-                          className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                        >
-                          再发一次
-                        </Button>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              void handleCopyHandoff({
+                                description: item.description,
+                                label: item.label,
+                                path: item.path,
+                                setHistory: setHandoffHistory,
+                                setNotice,
+                              })
+                            }
+                            className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                          >
+                            <Copy size={14} />
+                            再发一次
+                          </Button>
+                          <Link
+                            to={item.path as never}
+                            className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                          >
+                            桌面打开
+                          </Link>
+                        </div>
                       </div>
                     ))}
-                  </section>
-                ))
-              ) : (
-                <EmptyState
-                  title="还没有手机接力记录"
-                  description="先从上面的入口或最近内容复制一个深链接，这里就会开始记录。"
-                />
-              )}
-            </div>
-          </section>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <EmptyState
+                title="还没有群聊邀请接力"
+                description="先去群二维码页发一条邀请到手机，这里就会变成固定入口。"
+              />
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+          <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+            <CheckCircle2
+              size={16}
+              className="text-[color:var(--brand-primary)]"
+            />
+            <span>最近发往手机</span>
+          </div>
+          <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+            当前把手机接力记录按内容类型拆开，方便区分消息、群邀请、公众号、小程序和直播链路。
+          </div>
+
+          <div className="mt-4 space-y-5">
+            {groupedHandoffHistory.length ? (
+              groupedHandoffHistory.map((group) => (
+                <section key={group.id} className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        {group.label}
+                      </div>
+                      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                        {group.description}
+                      </div>
+                    </div>
+                    <div className="rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                      {group.items.length} 条
+                    </div>
+                  </div>
+
+                  {group.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start justify-between gap-4 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                          {item.label}
+                        </div>
+                        <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                          {item.description}
+                        </div>
+                        <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
+                          {formatTimestamp(item.sentAt)}
+                        </div>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          void handleCopyHandoff({
+                            description: item.description,
+                            label: item.label,
+                            path: item.path,
+                            setHistory: setHandoffHistory,
+                            setNotice,
+                          })
+                        }
+                        className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                      >
+                        再发一次
+                      </Button>
+                    </div>
+                  ))}
+                </section>
+              ))
+            ) : (
+              <EmptyState
+                title="还没有手机接力记录"
+                description="先从上面的入口或最近内容复制一个深链接，这里就会开始记录。"
+              />
+            )}
+          </div>
+        </section>
       </div>
     </DesktopUtilityShell>
   );

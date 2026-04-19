@@ -6,15 +6,34 @@ import { getGroup, updateGroup } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
+import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupAnnouncementPage() {
   const { groupId } = useParams({ from: "/group/$groupId/announcement" });
+  const isDesktopLayout = useDesktopLayout();
+
+  if (isDesktopLayout) {
+    return (
+      <DesktopChatRouteRedirectShell
+        conversationId={groupId}
+        panel="details"
+        detailsAction="announcement"
+        title="正在打开桌面群公告"
+        description="正在切换到桌面聊天工作区中的群公告编辑视图。"
+        loadingLabel="打开桌面群公告..."
+      />
+    );
+  }
+
+  return <MobileGroupAnnouncementPage groupId={groupId} />;
+}
+
+function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
@@ -40,7 +59,10 @@ export function GroupAnnouncementPage() {
   }, [groupId]);
 
   useEffect(() => {
-    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+    if (
+      groupQuery.isLoading ||
+      !isMissingGroupError(groupQuery.error, groupId)
+    ) {
       return;
     }
 
@@ -63,7 +85,9 @@ export function GroupAnnouncementPage() {
       typeof window === "undefined"
         ? groupPath
         : `${window.location.origin}${groupPath}`;
-    const summary = [`${group.name} 群公告`, announcement, groupUrl].join("\n\n");
+    const summary = [`${group.name} 群公告`, announcement, groupUrl].join(
+      "\n\n",
+    );
 
     if (nativeMobileShareSupported) {
       const shared = await shareWithNativeShell({
@@ -158,9 +182,15 @@ export function GroupAnnouncementPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
-            aria-label={nativeMobileShareSupported ? "分享群公告" : "复制群公告"}
+            aria-label={
+              nativeMobileShareSupported ? "分享群公告" : "复制群公告"
+            }
           >
-            {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
+            {nativeMobileShareSupported ? (
+              <Share2 size={18} />
+            ) : (
+              <Copy size={18} />
+            )}
           </Button>
         ) : undefined
       }

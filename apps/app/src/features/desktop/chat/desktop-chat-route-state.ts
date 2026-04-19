@@ -3,9 +3,20 @@ export type DesktopChatOfficialView =
   | "service-account"
   | "official-accounts";
 
+export type DesktopChatRoutePanel = "history" | "details";
+export type DesktopChatDetailsAction =
+  | "announcement"
+  | "member-search"
+  | "member-add"
+  | "member-remove"
+  | "group-name"
+  | "group-nickname";
+
 export type DesktopChatRouteState = {
   conversationId?: string;
   messageId?: string;
+  panel?: DesktopChatRoutePanel;
+  detailsAction?: DesktopChatDetailsAction;
   officialView?: DesktopChatOfficialView;
   officialMode?: "feed" | "accounts";
   accountId?: string;
@@ -21,10 +32,23 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
   const params = new URLSearchParams(normalizedHash);
   const conversationId = params.get("conversationId")?.trim() || undefined;
   const messageId = params.get("messageId")?.trim() || undefined;
+  const panel = params.get("panel")?.trim();
+  const detailsAction = params.get("detailsAction")?.trim();
   const officialView = params.get("officialView")?.trim();
   const officialMode = params.get("officialMode")?.trim();
   const accountId = params.get("accountId")?.trim() || undefined;
   const articleId = params.get("articleId")?.trim() || undefined;
+  const normalizedPanel =
+    panel === "history" || panel === "details" ? panel : undefined;
+  const normalizedDetailsAction =
+    detailsAction === "announcement" ||
+    detailsAction === "member-search" ||
+    detailsAction === "member-add" ||
+    detailsAction === "member-remove" ||
+    detailsAction === "group-name" ||
+    detailsAction === "group-nickname"
+      ? detailsAction
+      : undefined;
   const normalizedOfficialView =
     officialView === "subscription-inbox" ||
     officialView === "service-account" ||
@@ -35,6 +59,11 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
   return {
     conversationId,
     messageId,
+    panel: normalizedOfficialView ? undefined : normalizedPanel,
+    detailsAction:
+      normalizedOfficialView || normalizedPanel !== "details"
+        ? undefined
+        : normalizedDetailsAction,
     officialView: normalizedOfficialView,
     officialMode:
       normalizedOfficialView &&
@@ -55,6 +84,14 @@ export function buildDesktopChatRouteHash(state: DesktopChatRouteState) {
 
   if (state.messageId?.trim()) {
     params.set("messageId", state.messageId.trim());
+  }
+
+  if (state.panel) {
+    params.set("panel", state.panel);
+  }
+
+  if (state.panel === "details" && state.detailsAction) {
+    params.set("detailsAction", state.detailsAction);
   }
 
   if (state.officialView) {

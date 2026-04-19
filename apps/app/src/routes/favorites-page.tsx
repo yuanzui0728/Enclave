@@ -1,4 +1,11 @@
-import { Suspense, lazy, useDeferredValue, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
@@ -17,7 +24,9 @@ import {
   cn,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { EmptyState } from "../components/empty-state";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { DesktopUtilityShell } from "../features/shell/desktop-utility-shell";
 import {
   buildDesktopNoteWindowRouteHash,
@@ -78,10 +87,12 @@ export function FavoritesPage() {
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
     queryFn: () => getFavorites(baseUrl),
+    enabled: isDesktopLayout,
   });
   const favoriteNotesQuery = useQuery({
     queryKey: ["favorite-notes", baseUrl],
     queryFn: () => getFavoriteNotes(baseUrl),
+    enabled: isDesktopLayout,
   });
   const noteEditorRouteState = useMemo(
     () => parseDesktopNoteEditorRouteHash(hash),
@@ -258,7 +269,14 @@ export function FavoritesPage() {
   );
 
   if (!isDesktopLayout) {
-    return null;
+    return (
+      <DesktopLayoutRequiredState
+        title="收藏当前仅提供桌面布局"
+        description="收藏工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续浏览和发送收藏内容。"
+        actionLabel="返回消息"
+        fallbackTo="/tabs/chat"
+      />
+    );
   }
 
   function openInlineNoteEditor(input?: {
@@ -501,7 +519,15 @@ export function FavoritesPage() {
       }
     >
       {noteEditorRouteState ? (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <RouteRedirectState
+              title="正在打开桌面笔记"
+              description="正在载入桌面笔记工作区，马上恢复当前笔记内容。"
+              loadingLabel="载入桌面笔记工作区..."
+            />
+          }
+        >
           <DesktopNotesWorkspace
             selectedNoteId={noteEditorRouteState.noteId}
             draftId={noteEditorRouteState.draftId}

@@ -9,16 +9,8 @@ import {
   removeGroupMember,
 } from "@yinjie/contracts";
 import { ArrowLeft, Check, Search, X } from "lucide-react";
-import {
-  AppPage,
-  Button,
-  ErrorBlock,
-  InlineNotice,
-  LoadingBlock,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
-import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import {
   buildContactSections,
@@ -26,6 +18,7 @@ import {
   getFriendDisplayName,
   matchesFriendSearch,
 } from "../features/contacts/contact-utils";
+import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -57,9 +50,39 @@ function GroupMemberPickerPage({
   groupId: string;
   mode: GroupMemberPickerMode;
 }) {
+  const isDesktopLayout = useDesktopLayout();
+
+  if (isDesktopLayout) {
+    return (
+      <DesktopChatRouteRedirectShell
+        conversationId={groupId}
+        panel="details"
+        detailsAction={mode === "add" ? "member-add" : "member-remove"}
+        title={mode === "add" ? "正在打开桌面添加成员" : "正在打开桌面移除成员"}
+        description={
+          mode === "add"
+            ? "正在切换到桌面聊天工作区中的添加成员弹层。"
+            : "正在切换到桌面聊天工作区中的移除成员弹层。"
+        }
+        loadingLabel={
+          mode === "add" ? "打开桌面添加成员..." : "打开桌面移除成员..."
+        }
+      />
+    );
+  }
+
+  return <MobileGroupMemberPickerPage groupId={groupId} mode={mode} />;
+}
+
+function MobileGroupMemberPickerPage({
+  groupId,
+  mode,
+}: {
+  groupId: string;
+  mode: GroupMemberPickerMode;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [keyword, setKeyword] = useState("");
@@ -96,7 +119,9 @@ function GroupMemberPickerPage({
   );
   const friendMap = useMemo(
     () =>
-      new Map((friendsQuery.data ?? []).map((item) => [item.character.id, item])),
+      new Map(
+        (friendsQuery.data ?? []).map((item) => [item.character.id, item]),
+      ),
     [friendsQuery.data],
   );
 
@@ -254,267 +279,6 @@ function GroupMemberPickerPage({
       : "这个群目前没有可移除的角色成员。";
   const loadingLabel =
     mode === "add" ? "正在读取联系人..." : "正在读取群成员...";
-  const desktopSubmitLabel =
-    mode === "add"
-      ? submitMutation.isPending
-        ? "正在添加成员..."
-        : "确认添加"
-      : submitMutation.isPending
-        ? "正在移除成员..."
-        : "确认移除";
-
-  if (isDesktopLayout) {
-    return (
-      <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
-        <header className="flex items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              onClick={() => {
-                void navigate({
-                  to: "/group/$groupId/details",
-                  params: { groupId },
-                });
-              }}
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-console)]"
-            >
-              <ArrowLeft size={18} />
-            </Button>
-            <div>
-              <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-                {pageTitle}
-              </div>
-              <div className="mt-1 text-[18px] font-medium text-[color:var(--text-primary)]">
-                {pageTitle}
-              </div>
-              <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                {groupQuery.data?.name
-                  ? `${groupQuery.data.name} · ${
-                      mode === "add"
-                        ? "选择联系人加入当前群聊"
-                        : "选择成员移出当前群聊"
-                    }`
-                  : mode === "add"
-                    ? "选择联系人加入当前群聊。"
-                    : "选择成员移出当前群聊。"}
-              </div>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            onClick={() => submitMutation.mutate()}
-            disabled={!selectedIds.length || submitMutation.isPending}
-            variant="primary"
-            size="lg"
-            className={cn(
-              "rounded-[10px] px-6 text-white",
-              mode === "add"
-                ? "bg-[#07c160] hover:bg-[#06ad56]"
-                : "bg-[#e14c45] hover:bg-[#cf433d]",
-            )}
-          >
-            {desktopSubmitLabel}
-          </Button>
-        </header>
-
-        <div className="min-h-0 flex-1 p-6">
-          <div className="mx-auto flex h-full min-h-0 max-w-[1200px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
-            <section className="flex w-[400px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
-              <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
-                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-                  {mode === "add" ? "选择联系人" : "选择成员"}
-                </div>
-                <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                  {mode === "add"
-                    ? "已在群里的联系人不会重复出现。"
-                    : "世界主人不会出现在移除列表里。"}
-                </div>
-
-                <label className="relative mt-4 block">
-                  <Search
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
-                  />
-                  <input
-                    type="search"
-                    value={keyword}
-                    onChange={(event) => setKeyword(event.target.value)}
-                    placeholder={mode === "add" ? "搜索联系人" : "搜索群成员"}
-                    className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)]"
-                  />
-                </label>
-
-                <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
-                  已选择 {selectedIds.length} 位
-                  {mode === "add" ? "联系人" : "成员"}
-                </div>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
-                {groupQuery.isLoading ||
-                membersQuery.isLoading ||
-                (mode === "add" && friendsQuery.isLoading) ? (
-                  <LoadingBlock
-                    className="px-2 py-4 text-left"
-                    label={loadingLabel}
-                  />
-                ) : null}
-                {groupQuery.isError && groupQuery.error instanceof Error ? (
-                  <div className="px-2 py-2">
-                    <ErrorBlock message={groupQuery.error.message} />
-                  </div>
-                ) : null}
-                {membersQuery.isError && membersQuery.error instanceof Error ? (
-                  <div className="px-2 py-2">
-                    <ErrorBlock message={membersQuery.error.message} />
-                  </div>
-                ) : null}
-                {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-                  mode === "add" ? (
-                  <div className="px-2 py-2">
-                    <ErrorBlock message={friendsQuery.error.message} />
-                  </div>
-                  ) : null
-                ) : null}
-
-                {!groupQuery.isLoading &&
-                !membersQuery.isLoading &&
-                !(mode === "add" && friendsQuery.isLoading) &&
-                !filteredCandidateItems.length &&
-                !submitMutation.isPending ? (
-                  <div className="px-2 py-8">
-                    <EmptyState
-                      title={emptyStateTitle}
-                      description={emptyStateDescription}
-                    />
-                  </div>
-                ) : null}
-
-                <div className="space-y-1">
-                  {filteredCandidateItems.map((item) => (
-                    <CandidateRow
-                      key={item.id}
-                      checked={selectedIds.includes(item.id)}
-                      disabled={submitMutation.isPending}
-                      name={item.name}
-                      subtitle={item.subtitle}
-                      src={item.avatar}
-                      variant="desktop"
-                      onClick={() => toggleSelection(item.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="flex min-w-0 flex-1 flex-col bg-[rgba(245,248,247,0.92)]">
-              <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-                <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-                  {mode === "add" ? "待添加成员" : "待移除成员"}
-                </div>
-                <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
-                  已选择 {selectedIds.length} 位
-                  {mode === "add" ? "联系人" : "成员"}
-                </div>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
-                {selectedItems.length ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {selectedItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]"
-                      >
-                        <AvatarChip name={item.name} src={item.avatar} />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                            {item.name}
-                          </div>
-                          <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">
-                            {item.subtitle}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => toggleSelection(item.id)}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                          aria-label={`移除 ${item.name}`}
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex h-full items-center justify-center px-8">
-                    <div className="max-w-[320px] text-center">
-                      <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
-                        {mode === "add"
-                          ? "右侧显示待添加联系人"
-                          : "右侧显示待移除成员"}
-                      </div>
-                      <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
-                        {mode === "add"
-                          ? "从左侧勾选联系人后，就能在这里确认并加入当前群聊。"
-                          : "从左侧勾选成员后，就能在这里确认并移出当前群聊。"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-                <div className="text-[12px] text-[color:var(--text-muted)]">
-                  {mode === "add"
-                    ? `已选择 ${selectedIds.length} 位联系人，确认后会直接加入当前群聊。`
-                    : `已选择 ${selectedIds.length} 位成员，确认后会直接从当前群聊移除。`}
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      void navigate({
-                        to: "/group/$groupId/details",
-                        params: { groupId },
-                      });
-                    }}
-                    className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                  >
-                    取消
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => submitMutation.mutate()}
-                    disabled={!selectedIds.length || submitMutation.isPending}
-                    variant="primary"
-                    className={cn(
-                      "rounded-[10px] px-6 text-white",
-                      mode === "add"
-                        ? "bg-[#07c160] hover:bg-[#06ad56]"
-                        : "bg-[#e14c45] hover:bg-[#cf433d]",
-                    )}
-                  >
-                    {desktopSubmitLabel}
-                  </Button>
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        {submitMutation.isError && submitMutation.error instanceof Error ? (
-          <div className="px-6 pb-6">
-            <ErrorBlock message={submitMutation.error.message} />
-          </div>
-        ) : null}
-      </div>
-    );
-  }
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">

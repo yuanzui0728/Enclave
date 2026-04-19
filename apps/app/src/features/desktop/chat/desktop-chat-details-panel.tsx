@@ -46,6 +46,7 @@ import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 import { DesktopMessageAvatarPopover } from "./desktop-message-avatar-popover";
 import { DesktopChatTextEditDialog } from "./desktop-chat-text-edit-dialog";
 import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state";
+import { type DesktopChatDetailsAction } from "./desktop-chat-route-state";
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
 import { DesktopGroupMemberRemovalPicker } from "./desktop-group-member-removal-picker";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
@@ -71,8 +72,10 @@ import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments
 
 type DesktopChatDetailsPanelProps = {
   conversation: ConversationListItem;
-  announcementRequest?: number | null;
-  memberSearchRequest?: number | null;
+  actionRequest?: {
+    kind: DesktopChatDetailsAction;
+    token: number;
+  } | null;
   onOpenHistory: () => void;
   onCreateGroup?: (input: {
     conversationId: string;
@@ -130,8 +133,7 @@ const DESKTOP_GROUP_MEMBER_PREVIEW_COUNT = 10;
 
 export function DesktopChatDetailsPanel({
   conversation,
-  announcementRequest = null,
-  memberSearchRequest = null,
+  actionRequest = null,
   onOpenHistory,
   onCreateGroup,
 }: DesktopChatDetailsPanelProps) {
@@ -139,8 +141,7 @@ export function DesktopChatDetailsPanel({
     return (
       <GroupChatDetailsPanel
         conversation={conversation}
-        announcementRequest={announcementRequest}
-        memberSearchRequest={memberSearchRequest}
+        actionRequest={actionRequest}
         onOpenHistory={onOpenHistory}
       />
     );
@@ -896,8 +897,7 @@ function DirectChatDetailsPanel({
 
 function GroupChatDetailsPanel({
   conversation,
-  announcementRequest,
-  memberSearchRequest,
+  actionRequest,
   onOpenHistory,
 }: DesktopChatDetailsPanelProps) {
   const navigate = useNavigate();
@@ -953,21 +953,41 @@ function GroupChatDetailsPanel({
   }, [notice]);
 
   useEffect(() => {
-    if (!memberSearchRequest) {
+    if (!actionRequest) {
       return;
     }
 
-    setMemberBrowserAutoFocusSearch(true);
-    setMemberBrowserOpen(true);
-  }, [memberSearchRequest]);
-
-  useEffect(() => {
-    if (!announcementRequest) {
+    if (
+      actionRequest.kind === "member-add" ||
+      actionRequest.kind === "member-remove"
+    ) {
+      setMemberBrowserOpen(false);
+      setMemberBrowserAutoFocusSearch(false);
+      setMemberPickerMode(actionRequest.kind === "member-add" ? "add" : "remove");
+      setMemberPickerOpen(true);
       return;
     }
 
-    setEditorMode("announcement");
-  }, [announcementRequest]);
+    if (actionRequest.kind === "member-search") {
+      setMemberBrowserAutoFocusSearch(true);
+      setMemberBrowserOpen(true);
+      return;
+    }
+
+    if (actionRequest.kind === "announcement") {
+      setEditorMode("announcement");
+      return;
+    }
+
+    if (actionRequest.kind === "group-name") {
+      setEditorMode("name");
+      return;
+    }
+
+    if (actionRequest.kind === "group-nickname") {
+      setEditorMode("nickname");
+    }
+  }, [actionRequest]);
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, conversation.id],

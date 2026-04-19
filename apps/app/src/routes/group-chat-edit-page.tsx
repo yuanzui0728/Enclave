@@ -10,6 +10,8 @@ import {
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
+import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -26,6 +28,37 @@ export function GroupChatNicknameEditPage() {
 }
 
 function GroupChatEditPage({
+  groupId,
+  mode,
+}: {
+  groupId: string;
+  mode: GroupChatEditMode;
+}) {
+  const isDesktopLayout = useDesktopLayout();
+
+  if (isDesktopLayout) {
+    return (
+      <DesktopChatRouteRedirectShell
+        conversationId={groupId}
+        panel="details"
+        detailsAction={mode === "name" ? "group-name" : "group-nickname"}
+        title={mode === "name" ? "正在打开桌面群聊名称" : "正在打开桌面群昵称"}
+        description={
+          mode === "name"
+            ? "正在切换到桌面聊天工作区中的群聊名称编辑视图。"
+            : "正在切换到桌面聊天工作区中的群昵称编辑视图。"
+        }
+        loadingLabel={
+          mode === "name" ? "打开桌面群聊名称..." : "打开桌面群昵称..."
+        }
+      />
+    );
+  }
+
+  return <MobileGroupChatEditPage groupId={groupId} mode={mode} />;
+}
+
+function MobileGroupChatEditPage({
   groupId,
   mode,
 }: {
@@ -58,8 +91,8 @@ function GroupChatEditPage({
 
   const initialValue =
     mode === "name"
-      ? groupQuery.data?.name ?? ""
-      : ownerMember?.memberName?.trim() ?? "";
+      ? (groupQuery.data?.name ?? "")
+      : (ownerMember?.memberName?.trim() ?? "");
   const [draft, setDraft] = useState("");
 
   useEffect(() => {
@@ -67,7 +100,10 @@ function GroupChatEditPage({
   }, [initialValue]);
 
   useEffect(() => {
-    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+    if (
+      groupQuery.isLoading ||
+      !isMissingGroupError(groupQuery.error, groupId)
+    ) {
       return;
     }
 
@@ -132,7 +168,8 @@ function GroupChatEditPage({
         void navigate({ to: "/group/$groupId/details", params: { groupId } });
       }}
     >
-      {groupQuery.isLoading || (mode === "nickname" && membersQuery.isLoading) ? (
+      {groupQuery.isLoading ||
+      (mode === "nickname" && membersQuery.isLoading) ? (
         <div className="px-4">
           <MobileGroupEditStatusCard
             badge="读取中"

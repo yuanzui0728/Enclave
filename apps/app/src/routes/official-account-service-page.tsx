@@ -1,18 +1,14 @@
 import { Suspense, lazy } from "react";
-import {
-  useNavigate,
-  useParams,
-  useRouterState,
-} from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { OfficialAccountServiceThread } from "../features/official-accounts/service/official-account-service-thread";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 
 const DesktopChatWorkspace = lazy(async () => {
-  const mod = await import(
-    "../features/official-accounts/official-message-workspace-shell"
-  );
+  const mod =
+    await import("../features/official-accounts/official-message-workspace-shell");
   return { default: mod.OfficialMessageWorkspaceShell };
 });
 
@@ -28,7 +24,15 @@ export function OfficialAccountServicePage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面服务号会话"
+            description="正在载入桌面消息工作区中的服务号会话。"
+            loadingLabel="载入桌面服务号会话..."
+          />
+        }
+      >
         <DesktopChatWorkspace
           hash={hash}
           selectedServiceAccountId={accountId}

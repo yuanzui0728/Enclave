@@ -3,12 +3,32 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { getGroup, getGroupMessages } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
+import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupMessageSearchPage() {
   const { groupId } = useParams({ from: "/group/$groupId/search" });
+  const isDesktopLayout = useDesktopLayout();
+
+  if (isDesktopLayout) {
+    return (
+      <DesktopChatRouteRedirectShell
+        conversationId={groupId}
+        panel="history"
+        title="正在打开桌面群聊记录"
+        description="正在切换到桌面聊天工作区中的群聊记录搜索侧栏。"
+        loadingLabel="打开桌面群聊记录..."
+      />
+    );
+  }
+
+  return <MobileGroupMessageSearchPage groupId={groupId} />;
+}
+
+function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -24,7 +44,10 @@ export function GroupMessageSearchPage() {
   });
 
   useEffect(() => {
-    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+    if (
+      groupQuery.isLoading ||
+      !isMissingGroupError(groupQuery.error, groupId)
+    ) {
       return;
     }
 

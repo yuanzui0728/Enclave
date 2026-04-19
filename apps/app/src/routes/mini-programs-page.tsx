@@ -9,6 +9,7 @@ import {
   getMiniProgramWorkspaceTasks,
   type MiniProgramCategoryId,
 } from "../features/mini-programs/mini-programs-data";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { MobileMiniProgramsWorkspace } from "../features/mini-programs/mobile-mini-programs-workspace";
 import { useMiniProgramsState } from "../features/mini-programs/use-mini-programs-state";
 import {
@@ -16,23 +17,18 @@ import {
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import {
-  buildGroupRelaySummaryMessage,
-} from "../features/mini-programs/group-relay-message";
+import { buildGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import {
   isMobileWebShareSurface,
   isNativeMobileShareSurface,
 } from "../runtime/mobile-share-surface";
 
 const DesktopMiniProgramsWorkspace = lazy(async () => {
-  const mod = await import(
-    "../features/desktop/mini-programs/desktop-mini-programs-workspace"
-  );
+  const mod =
+    await import("../features/desktop/mini-programs/desktop-mini-programs-workspace");
   return { default: mod.DesktopMiniProgramsWorkspace };
 });
 
@@ -127,11 +123,10 @@ export function MiniProgramsPage() {
     launchContext && lastOpenedAtById["group-relay"]
       ? lastOpenedAtById["group-relay"]
       : relaySummaryPublishedAt;
-  const relayPublishCount =
-    launchContext?.sourceGroupId
-      ? (groupRelayPublishCountBySourceGroupId[launchContext.sourceGroupId] ??
-          0) + 1
-      : 1;
+  const relayPublishCount = launchContext?.sourceGroupId
+    ? (groupRelayPublishCountBySourceGroupId[launchContext.sourceGroupId] ??
+        0) + 1
+    : 1;
   const relaySummaryMessage = launchContext
     ? buildGroupRelaySummaryMessage(
         launchContext.sourceGroupName,
@@ -183,9 +178,7 @@ export function MiniProgramsPage() {
     }
 
     setSelectedMiniProgramId((current) =>
-      current === routeMiniProgramId
-        ? current
-        : routeMiniProgramId,
+      current === routeMiniProgramId ? current : routeMiniProgramId,
     );
   }, [routeMiniProgramId]);
 
@@ -331,7 +324,9 @@ export function MiniProgramsPage() {
         path,
       });
       setNoticeTone("success");
-      setSuccessNotice(`${miniProgram?.name ?? "该小程序"} 已复制到手机接力链接。`);
+      setSuccessNotice(
+        `${miniProgram?.name ?? "该小程序"} 已复制到手机接力链接。`,
+      );
     } catch {
       setNoticeTone("info");
       setSuccessNotice("复制到手机失败，请稍后重试。");
@@ -373,10 +368,16 @@ export function MiniProgramsPage() {
       recordGroupRelayPublish(launchContext.sourceGroupId);
 
       setNoticeTone("success");
-      setSuccessNotice(`群接龙结果已回填到“${launchContext.sourceGroupName}”。`);
+      setSuccessNotice(
+        `群接龙结果已回填到“${launchContext.sourceGroupName}”。`,
+      );
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["app-group-messages", baseUrl, launchContext.sourceGroupId],
+          queryKey: [
+            "app-group-messages",
+            baseUrl,
+            launchContext.sourceGroupId,
+          ],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -391,7 +392,15 @@ export function MiniProgramsPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面小程序"
+            description="正在载入桌面小程序工作区，马上恢复当前小程序上下文。"
+            loadingLabel="载入桌面小程序..."
+          />
+        }
+      >
         <DesktopMiniProgramsWorkspace
           activeCategory={activeCategory}
           activeMiniProgramId={activeMiniProgramId}

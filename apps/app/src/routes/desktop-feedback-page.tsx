@@ -20,6 +20,7 @@ import {
   TextField,
   cn,
 } from "@yinjie/ui";
+import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import {
@@ -130,6 +131,7 @@ export function DesktopFeedbackPage() {
   const systemStatusQuery = useQuery({
     queryKey: ["desktop-feedback-system-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
+    enabled: isDesktopLayout,
   });
 
   useEffect(() => {
@@ -243,7 +245,14 @@ export function DesktopFeedbackPage() {
   ).length;
 
   if (!isDesktopLayout) {
-    return null;
+    return (
+      <DesktopLayoutRequiredState
+        title="意见反馈当前仅提供桌面布局"
+        description="反馈工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到设置继续排查或记录问题。"
+        actionLabel="前往设置"
+        fallbackTo="/profile/settings"
+      />
+    );
   }
 
   return (
@@ -750,19 +759,18 @@ export function DesktopFeedbackPage() {
       message: result.message,
       tone: result.status === "failed" ? "danger" : "success",
       actionLabel: canRevealSavedFile ? "打开位置" : undefined,
-      onAction:
-        savedPath
-          ? () => {
-              void revealSavedFile(savedPath).then((revealed) => {
-                setNotice({
-                  message: revealed
-                    ? "已打开反馈包所在位置。"
-                    : "打开所在位置失败，请稍后再试。",
-                  tone: revealed ? "success" : "danger",
-                });
+      onAction: savedPath
+        ? () => {
+            void revealSavedFile(savedPath).then((revealed) => {
+              setNotice({
+                message: revealed
+                  ? "已打开反馈包所在位置。"
+                  : "打开所在位置失败，请稍后再试。",
+                tone: revealed ? "success" : "danger",
               });
-            }
-          : undefined,
+            });
+          }
+        : undefined,
     });
     setError(null);
   }

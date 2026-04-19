@@ -17,12 +17,14 @@ import {
   matchesFriendSearch,
   type FriendDirectoryItem,
 } from "../features/contacts/contact-utils";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { parseCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopCreateGroupDialog = lazy(async () => {
-  const mod = await import("../features/desktop/chat/desktop-create-group-dialog");
+  const mod =
+    await import("../features/desktop/chat/desktop-create-group-dialog");
   return { default: mod.DesktopCreateGroupDialog };
 });
 
@@ -205,7 +207,15 @@ export function CreateGroupPage() {
   if (isDesktopLayout) {
     return (
       <div className="relative flex h-full min-h-0 bg-[color:var(--bg-app)]">
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <RouteRedirectState
+              title="正在打开桌面发起群聊"
+              description="正在载入桌面发起群聊对话框，马上恢复当前选择。"
+              loadingLabel="载入桌面发起群聊..."
+            />
+          }
+        >
           <DesktopCreateGroupDialog
             open
             conversationId={routeState.conversationId}

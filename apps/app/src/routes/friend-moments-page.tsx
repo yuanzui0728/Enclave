@@ -7,11 +7,7 @@ import {
   useState,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  useNavigate,
-  useParams,
-  useRouterState,
-} from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   addMomentComment,
   getBlockedCharacters,
@@ -21,6 +17,7 @@ import {
   toggleMomentLike,
 } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import {
   hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
@@ -45,9 +42,8 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 const DesktopFriendMomentsWorkspace = lazy(async () => {
-  const mod = await import(
-    "../features/desktop/moments/desktop-friend-moments-workspace"
-  );
+  const mod =
+    await import("../features/desktop/moments/desktop-friend-moments-workspace");
   return { default: mod.DesktopFriendMomentsWorkspace };
 });
 
@@ -83,19 +79,22 @@ export function FriendMomentsPage() {
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId, baseUrl),
+    enabled: isDesktopLayout,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
+    enabled: isDesktopLayout,
   });
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
     queryFn: () => getMoments(baseUrl),
+    enabled: isDesktopLayout,
   });
   const blockedQuery = useQuery({
     queryKey: ["app-moments-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
-    enabled: Boolean(ownerId),
+    enabled: isDesktopLayout && Boolean(ownerId),
   });
 
   const createMutation = useMutation({
@@ -150,8 +149,9 @@ export function FriendMomentsPage() {
 
   const friendItem = useMemo(
     () =>
-      (friendsQuery.data ?? []).find((item) => item.character.id === characterId) ??
-      null,
+      (friendsQuery.data ?? []).find(
+        (item) => item.character.id === characterId,
+      ) ?? null,
     [characterId, friendsQuery.data],
   );
   const character = characterQuery.data ?? friendItem?.character ?? null;
@@ -191,11 +191,15 @@ export function FriendMomentsPage() {
   }, [baseUrl, characterId, resetComposeDraft]);
 
   useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
-  }, []);
+  }, [isDesktopLayout]);
 
   useEffect(() => {
-    if (!nativeDesktopFavorites) {
+    if (!isDesktopLayout || !nativeDesktopFavorites) {
       return;
     }
 
@@ -235,7 +239,7 @@ export function FriendMomentsPage() {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [nativeDesktopFavorites]);
+  }, [isDesktopLayout, nativeDesktopFavorites]);
 
   useEffect(() => {
     if (!notice) {
@@ -289,7 +293,9 @@ export function FriendMomentsPage() {
       }
 
       if (routeState.source === "starred-friends") {
-        void navigate({ to: isDesktopLayout ? "/tabs/contacts" : "/contacts/starred" });
+        void navigate({
+          to: isDesktopLayout ? "/tabs/contacts" : "/contacts/starred",
+        });
         return;
       }
 
@@ -375,7 +381,10 @@ export function FriendMomentsPage() {
             <Button variant="secondary" onClick={handleBack}>
               返回上一页
             </Button>
-            <Button variant="primary" onClick={() => void navigate({ to: "/tabs/moments" })}>
+            <Button
+              variant="primary"
+              onClick={() => void navigate({ to: "/tabs/moments" })}
+            >
               去朋友圈主页
             </Button>
           </div>
@@ -385,124 +394,132 @@ export function FriendMomentsPage() {
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <RouteRedirectState
+          title="正在打开桌面好友朋友圈"
+          description="正在载入桌面好友朋友圈工作区，马上显示角色动态详情。"
+          loadingLabel="载入桌面好友朋友圈..."
+        />
+      }
+    >
       <DesktopFriendMomentsWorkspace
-      character={character}
-      commentDrafts={commentDrafts}
-      commentErrorMessage={
-        commentMutation.isError && commentMutation.error instanceof Error
-          ? commentMutation.error.message
-          : null
-      }
-      commentPendingMomentId={pendingCommentMomentId}
-      composeErrorMessage={
-        composeDraft.mediaError ??
-        (createMutation.isError && createMutation.error instanceof Error
-          ? createMutation.error.message
-          : null)
-      }
-      createPending={createMutation.isPending}
-      displayName={displayName}
-      errors={errors}
-      imageDrafts={composeDraft.imageDrafts}
-      isBlocked={isBlocked}
-      isLoading={momentsQuery.isLoading}
-      likeErrorMessage={
-        likeMutation.isError && likeMutation.error instanceof Error
-          ? likeMutation.error.message
-          : null
-      }
-      likePendingMomentId={pendingLikeMomentId}
-      moments={friendMoments}
-      ownerAvatar={ownerAvatar}
-      ownerId={ownerId}
-      ownerUsername={ownerUsername}
-      routeSelectedMomentId={routeSelectedMomentId}
-      showCompose={showCompose}
-      signature={signature}
-      successNotice={notice}
-      text={composeDraft.text}
-      videoDraft={composeDraft.videoDraft}
-      isMomentFavorite={(momentId) =>
-        favoriteSourceIds.includes(`moment-${momentId}`)
-      }
-      setShowCompose={setShowCompose}
-      onBack={handleBack}
-      onCommentChange={(momentId, value) =>
-        setCommentDrafts((current) => ({
-          ...current,
-          [momentId]: value,
-        }))
-      }
-      onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
-      onCreate={() => createMutation.mutate()}
-      onImageFilesSelected={(files) => {
-        void handleImageFilesSelected(files);
-      }}
-      onLike={(momentId) => likeMutation.mutate(momentId)}
-      onOpenMomentsHome={() => {
-        void navigate({ to: "/tabs/moments" });
-      }}
-      onOpenProfile={() => {
-        void navigate({
-          to: "/character/$characterId",
-          params: { characterId },
-        });
-      }}
-      onRouteStateChange={(state) => {
-        const nextHash = buildDesktopFriendMomentsRouteHash({
-          ...state,
-          source: routeState.source,
-        });
-        const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-
-        if (normalizedHash === (nextHash ?? "")) {
-          return;
+        character={character}
+        commentDrafts={commentDrafts}
+        commentErrorMessage={
+          commentMutation.isError && commentMutation.error instanceof Error
+            ? commentMutation.error.message
+            : null
         }
-
-        void navigate({
-          to: "/desktop/friend-moments/$characterId",
-          params: { characterId },
-          hash: nextHash,
-          replace: true,
-        });
-      }}
-      onTextChange={composeDraft.setText}
-      onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
-      onRemoveVideo={() => composeDraft.clearVideoDraft()}
-      onToggleFavorite={(momentId) => {
-        const moment = friendMoments.find((item) => item.id === momentId);
-        if (!moment) {
-          return;
+        commentPendingMomentId={pendingCommentMomentId}
+        composeErrorMessage={
+          composeDraft.mediaError ??
+          (createMutation.isError && createMutation.error instanceof Error
+            ? createMutation.error.message
+            : null)
         }
+        createPending={createMutation.isPending}
+        displayName={displayName}
+        errors={errors}
+        imageDrafts={composeDraft.imageDrafts}
+        isBlocked={isBlocked}
+        isLoading={momentsQuery.isLoading}
+        likeErrorMessage={
+          likeMutation.isError && likeMutation.error instanceof Error
+            ? likeMutation.error.message
+            : null
+        }
+        likePendingMomentId={pendingLikeMomentId}
+        moments={friendMoments}
+        ownerAvatar={ownerAvatar}
+        ownerId={ownerId}
+        ownerUsername={ownerUsername}
+        routeSelectedMomentId={routeSelectedMomentId}
+        showCompose={showCompose}
+        signature={signature}
+        successNotice={notice}
+        text={composeDraft.text}
+        videoDraft={composeDraft.videoDraft}
+        isMomentFavorite={(momentId) =>
+          favoriteSourceIds.includes(`moment-${momentId}`)
+        }
+        setShowCompose={setShowCompose}
+        onBack={handleBack}
+        onCommentChange={(momentId, value) =>
+          setCommentDrafts((current) => ({
+            ...current,
+            [momentId]: value,
+          }))
+        }
+        onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
+        onCreate={() => createMutation.mutate()}
+        onImageFilesSelected={(files) => {
+          void handleImageFilesSelected(files);
+        }}
+        onLike={(momentId) => likeMutation.mutate(momentId)}
+        onOpenMomentsHome={() => {
+          void navigate({ to: "/tabs/moments" });
+        }}
+        onOpenProfile={() => {
+          void navigate({
+            to: "/character/$characterId",
+            params: { characterId },
+          });
+        }}
+        onRouteStateChange={(state) => {
+          const nextHash = buildDesktopFriendMomentsRouteHash({
+            ...state,
+            source: routeState.source,
+          });
+          const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
 
-        const sourceId = `moment-${moment.id}`;
-        const collected = favoriteSourceIds.includes(sourceId);
-        const nextFavorites = collected
-          ? removeDesktopFavorite(sourceId)
-          : upsertDesktopFavorite({
-              id: `favorite-${sourceId}`,
-              sourceId,
-              category: "moments",
-              title: moment.authorName,
-              description: getMomentSummaryText(moment),
-              meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
-              to: buildDesktopFriendMomentsPath(characterId, {
-                momentId: moment.id,
-                source: "moments",
-              }),
-              badge: "朋友圈",
-              avatarName: moment.authorName,
-              avatarSrc: moment.authorAvatar,
-            });
+          if (normalizedHash === (nextHash ?? "")) {
+            return;
+          }
 
-        setFavoriteSourceIds(
-          nextFavorites.map((favorite) => favorite.sourceId),
-        );
-      }}
-      onVideoFileSelected={(file) => {
-        void handleVideoFileSelected(file);
-      }}
+          void navigate({
+            to: "/desktop/friend-moments/$characterId",
+            params: { characterId },
+            hash: nextHash,
+            replace: true,
+          });
+        }}
+        onTextChange={composeDraft.setText}
+        onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+        onRemoveVideo={() => composeDraft.clearVideoDraft()}
+        onToggleFavorite={(momentId) => {
+          const moment = friendMoments.find((item) => item.id === momentId);
+          if (!moment) {
+            return;
+          }
+
+          const sourceId = `moment-${moment.id}`;
+          const collected = favoriteSourceIds.includes(sourceId);
+          const nextFavorites = collected
+            ? removeDesktopFavorite(sourceId)
+            : upsertDesktopFavorite({
+                id: `favorite-${sourceId}`,
+                sourceId,
+                category: "moments",
+                title: moment.authorName,
+                description: getMomentSummaryText(moment),
+                meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
+                to: buildDesktopFriendMomentsPath(characterId, {
+                  momentId: moment.id,
+                  source: "moments",
+                }),
+                badge: "朋友圈",
+                avatarName: moment.authorName,
+                avatarSrc: moment.authorAvatar,
+              });
+
+          setFavoriteSourceIds(
+            nextFavorites.map((favorite) => favorite.sourceId),
+          );
+        }}
+        onVideoFileSelected={(file) => {
+          void handleVideoFileSelected(file);
+        }}
       />
     </Suspense>
   );

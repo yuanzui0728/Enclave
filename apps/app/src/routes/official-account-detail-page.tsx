@@ -7,15 +7,11 @@ import {
   getOfficialAccount,
   unfollowOfficialAccount,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  InlineNotice,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { OfficialArticleCard } from "../components/official-article-card";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import {
   buildOfficialAccountFavoriteRecord,
   buildOfficialArticleSummaryFavoriteRecord,
@@ -27,16 +23,13 @@ import {
 } from "../features/favorites/favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
-  const mod = await import(
-    "../features/contacts/contacts-route-redirect-shell"
-  );
+  const mod =
+    await import("../features/contacts/contacts-route-redirect-shell");
   return { default: mod.ContactsRouteRedirectShell };
 });
 
@@ -46,7 +39,15 @@ export function OfficialAccountDetailPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在切换到桌面公众号详情"
+            description="正在跳转到桌面通讯录工作区中的公众号详情。"
+            loadingLabel="切换桌面公众号详情..."
+          />
+        }
+      >
         <DesktopContactsRouteRedirectShell
           pane="official-accounts"
           accountId={accountId}
@@ -239,9 +240,15 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
-              aria-label={nativeMobileShareSupported ? "分享公众号" : "复制公众号摘要"}
+              aria-label={
+                nativeMobileShareSupported ? "分享公众号" : "复制公众号摘要"
+              }
             >
-              {nativeMobileShareSupported ? <Share2 size={17} /> : <Copy size={17} />}
+              {nativeMobileShareSupported ? (
+                <Share2 size={17} />
+              ) : (
+                <Copy size={17} />
+              )}
             </Button>
           ) : undefined
         }
@@ -283,7 +290,11 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
           <>
             <section className="mx-3.5 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 pb-4 pt-5">
               <div className="flex flex-col items-center text-center">
-                <AvatarChip name={account.name} src={account.avatar} size="xl" />
+                <AvatarChip
+                  name={account.name}
+                  src={account.avatar}
+                  size="xl"
+                />
                 <div className="mt-3 truncate text-[19px] font-semibold text-[color:var(--text-primary)]">
                   {account.name}
                 </div>
@@ -337,7 +348,8 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                 </Button>
               </div>
 
-              {followMutation.isError && followMutation.error instanceof Error ? (
+              {followMutation.isError &&
+              followMutation.error instanceof Error ? (
                 <div className="mt-3">
                   <InlineNotice
                     className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"

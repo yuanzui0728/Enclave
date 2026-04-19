@@ -11,6 +11,7 @@ import {
   type ChatCallReturnKind,
   type ChatComposeShortcutAction,
 } from "../features/chat/chat-compose-shortcut-route";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
 import { navigateBackOrFallback } from "../lib/history-back";
@@ -55,7 +56,10 @@ export function ChatRoomPage() {
   }, [conversationId]);
 
   useEffect(() => {
-    if (!activeConversation || !isPersistedGroupConversation(activeConversation)) {
+    if (
+      !activeConversation ||
+      !isPersistedGroupConversation(activeConversation)
+    ) {
       return;
     }
 
@@ -188,7 +192,15 @@ export function ChatRoomPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面对话"
+            description="正在载入桌面聊天工作区，马上恢复当前会话。"
+            loadingLabel="载入桌面对话..."
+          />
+        }
+      >
         <DesktopChatWorkspace
           selectedConversationId={conversationId}
           highlightedMessageId={highlightedMessageId}

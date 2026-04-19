@@ -4,12 +4,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { Compass, Sparkles } from "lucide-react";
 import { keepShakeSession, shake } from "@yinjie/contracts";
 import {
-  AppPage,
   Button,
   InlineNotice,
-  LoadingBlock,
 } from "@yinjie/ui";
 import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shell";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -28,9 +27,11 @@ export function DiscoverEncounterPage() {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="px-6 py-6">
-        <LoadingBlock label="正在切换到桌面发现页..." />
-      </AppPage>
+      <RouteRedirectState
+        title="正在切换到桌面发现页"
+        description="桌面端的发现入口已经收口到桌面发现工作区，先回到主发现页。"
+        loadingLabel="正在切换到桌面发现页..."
+      />
     );
   }
 

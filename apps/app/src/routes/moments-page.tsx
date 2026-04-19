@@ -15,13 +15,9 @@ import {
   getMoments,
   toggleMomentLike,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  InlineNotice,
-  TextField,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, TextField } from "@yinjie/ui";
 import { MomentMediaGallery } from "../components/moment-media-gallery";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { SocialPostCard } from "../components/social-post-card";
 import {
   hydrateDesktopFavoritesFromNative,
@@ -29,9 +25,7 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
-import {
-  buildDesktopFriendMomentsRouteHash,
-} from "../features/moments/friend-moments-route-state";
+import { buildDesktopFriendMomentsRouteHash } from "../features/moments/friend-moments-route-state";
 import {
   buildDesktopMomentsRouteHash,
   parseDesktopMomentsRouteState,
@@ -46,15 +40,14 @@ import {
 import { getMomentSummaryText } from "../features/moments/moment-content";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 const DesktopMomentsWorkspace = lazy(async () => {
-  const mod = await import("../features/desktop/moments/desktop-moments-workspace");
+  const mod =
+    await import("../features/desktop/moments/desktop-moments-workspace");
   return { default: mod.DesktopMomentsWorkspace };
 });
 
@@ -256,12 +249,7 @@ export function MomentsPage() {
       }),
       replace: true,
     });
-  }, [
-    isDesktopLayout,
-    navigate,
-    routeSelectedAuthorId,
-    routeSelectedMomentId,
-  ]);
+  }, [isDesktopLayout, navigate, routeSelectedAuthorId, routeSelectedMomentId]);
 
   async function handleImageFilesSelected(files: FileList | null) {
     try {
@@ -380,122 +368,130 @@ export function MomentsPage() {
     }
 
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面朋友圈"
+            description="正在载入桌面朋友圈工作区，马上显示动态和详情。"
+            loadingLabel="载入桌面朋友圈..."
+          />
+        }
+      >
         <DesktopMomentsWorkspace
-        commentDrafts={commentDrafts}
-        commentErrorMessage={
-          commentMutation.isError && commentMutation.error instanceof Error
-            ? commentMutation.error.message
-            : null
-        }
-        commentPendingMomentId={pendingCommentMomentId}
-        composeErrorMessage={
-          composeDraft.mediaError ??
-          (createMutation.isError && createMutation.error instanceof Error
-            ? createMutation.error.message
-            : null)
-        }
-        createPending={createMutation.isPending}
-        errors={errors}
-        imageDrafts={composeDraft.imageDrafts}
-        isLoading={momentsQuery.isLoading}
-        likeErrorMessage={
-          likeMutation.isError && likeMutation.error instanceof Error
-            ? likeMutation.error.message
-            : null
-        }
-        likePendingMomentId={pendingLikeMomentId}
-        moments={visibleMoments}
-        ownerAvatar={ownerAvatar}
-        ownerId={ownerId}
-        ownerUsername={ownerUsername}
-        routeSelectedMomentId={routeSelectedMomentId}
-        showCompose={showCompose}
-        successNotice={notice}
-        text={composeDraft.text}
-        videoDraft={composeDraft.videoDraft}
-        isMomentFavorite={(momentId) =>
-          favoriteSourceIds.includes(`moment-${momentId}`)
-        }
-        setShowCompose={setShowCompose}
-        onCommentChange={(momentId, value) =>
-          setCommentDrafts((current) => ({
-            ...current,
-            [momentId]: value,
-          }))
-        }
-        onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
-        onCreate={() => createMutation.mutate()}
-        onImageFilesSelected={(files) => {
-          void handleImageFilesSelected(files);
-        }}
-        onLike={(momentId) => likeMutation.mutate(momentId)}
-        onOpenAuthorMoments={({ authorId, momentId }) => {
-          void navigate({
-            to: "/desktop/friend-moments/$characterId",
-            params: { characterId: authorId },
-            hash: buildDesktopFriendMomentsRouteHash({
-              momentId,
-              source: "moments",
-            }),
-          });
-        }}
-        onToggleFavorite={(momentId) => {
-          const moment = visibleMoments.find((item) => item.id === momentId);
-          if (!moment) {
-            return;
+          commentDrafts={commentDrafts}
+          commentErrorMessage={
+            commentMutation.isError && commentMutation.error instanceof Error
+              ? commentMutation.error.message
+              : null
           }
-
-          const sourceId = `moment-${moment.id}`;
-          const collected = favoriteSourceIds.includes(sourceId);
-          const routeHash = buildDesktopMomentsRouteHash({
-            momentId: moment.id,
-          });
-          const nextFavorites = collected
-            ? removeDesktopFavorite(sourceId)
-            : upsertDesktopFavorite({
-                id: `favorite-${sourceId}`,
-                sourceId,
-                category: "moments",
-                title: moment.authorName,
-                description: getMomentSummaryText(moment),
-                meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
-                to: `/tabs/moments${routeHash ? `#${routeHash}` : ""}`,
-                badge: "朋友圈",
-                avatarName: moment.authorName,
-                avatarSrc: moment.authorAvatar,
-              });
-
-          setFavoriteSourceIds(
-            nextFavorites.map((favorite) => favorite.sourceId),
-          );
-        }}
-        onRefresh={() => {
-          void momentsQuery.refetch();
-          if (ownerId) {
-            void blockedQuery.refetch();
+          commentPendingMomentId={pendingCommentMomentId}
+          composeErrorMessage={
+            composeDraft.mediaError ??
+            (createMutation.isError && createMutation.error instanceof Error
+              ? createMutation.error.message
+              : null)
           }
-        }}
-        onRouteStateChange={(state) => {
-          const nextHash = buildDesktopMomentsRouteHash(state);
-          const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-
-          if (normalizedHash === (nextHash ?? "")) {
-            return;
+          createPending={createMutation.isPending}
+          errors={errors}
+          imageDrafts={composeDraft.imageDrafts}
+          isLoading={momentsQuery.isLoading}
+          likeErrorMessage={
+            likeMutation.isError && likeMutation.error instanceof Error
+              ? likeMutation.error.message
+              : null
           }
+          likePendingMomentId={pendingLikeMomentId}
+          moments={visibleMoments}
+          ownerAvatar={ownerAvatar}
+          ownerId={ownerId}
+          ownerUsername={ownerUsername}
+          routeSelectedMomentId={routeSelectedMomentId}
+          showCompose={showCompose}
+          successNotice={notice}
+          text={composeDraft.text}
+          videoDraft={composeDraft.videoDraft}
+          isMomentFavorite={(momentId) =>
+            favoriteSourceIds.includes(`moment-${momentId}`)
+          }
+          setShowCompose={setShowCompose}
+          onCommentChange={(momentId, value) =>
+            setCommentDrafts((current) => ({
+              ...current,
+              [momentId]: value,
+            }))
+          }
+          onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
+          onCreate={() => createMutation.mutate()}
+          onImageFilesSelected={(files) => {
+            void handleImageFilesSelected(files);
+          }}
+          onLike={(momentId) => likeMutation.mutate(momentId)}
+          onOpenAuthorMoments={({ authorId, momentId }) => {
+            void navigate({
+              to: "/desktop/friend-moments/$characterId",
+              params: { characterId: authorId },
+              hash: buildDesktopFriendMomentsRouteHash({
+                momentId,
+                source: "moments",
+              }),
+            });
+          }}
+          onToggleFavorite={(momentId) => {
+            const moment = visibleMoments.find((item) => item.id === momentId);
+            if (!moment) {
+              return;
+            }
 
-          void navigate({
-            to: isDiscoverSubPage ? "/discover/moments" : "/tabs/moments",
-            hash: nextHash,
-            replace: true,
-          });
-        }}
-        onTextChange={composeDraft.setText}
-        onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
-        onRemoveVideo={() => composeDraft.clearVideoDraft()}
-        onVideoFileSelected={(file) => {
-          void handleVideoFileSelected(file);
-        }}
+            const sourceId = `moment-${moment.id}`;
+            const collected = favoriteSourceIds.includes(sourceId);
+            const routeHash = buildDesktopMomentsRouteHash({
+              momentId: moment.id,
+            });
+            const nextFavorites = collected
+              ? removeDesktopFavorite(sourceId)
+              : upsertDesktopFavorite({
+                  id: `favorite-${sourceId}`,
+                  sourceId,
+                  category: "moments",
+                  title: moment.authorName,
+                  description: getMomentSummaryText(moment),
+                  meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
+                  to: `/tabs/moments${routeHash ? `#${routeHash}` : ""}`,
+                  badge: "朋友圈",
+                  avatarName: moment.authorName,
+                  avatarSrc: moment.authorAvatar,
+                });
+
+            setFavoriteSourceIds(
+              nextFavorites.map((favorite) => favorite.sourceId),
+            );
+          }}
+          onRefresh={() => {
+            void momentsQuery.refetch();
+            if (ownerId) {
+              void blockedQuery.refetch();
+            }
+          }}
+          onRouteStateChange={(state) => {
+            const nextHash = buildDesktopMomentsRouteHash(state);
+            const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+            if (normalizedHash === (nextHash ?? "")) {
+              return;
+            }
+
+            void navigate({
+              to: isDiscoverSubPage ? "/discover/moments" : "/tabs/moments",
+              hash: nextHash,
+              replace: true,
+            });
+          }}
+          onTextChange={composeDraft.setText}
+          onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+          onRemoveVideo={() => composeDraft.clearVideoDraft()}
+          onVideoFileSelected={(file) => {
+            void handleVideoFileSelected(file);
+          }}
         />
       </Suspense>
     );
@@ -559,7 +555,9 @@ export function MomentsPage() {
       <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         <section className="space-y-2">
           <div className="px-1">
-            <div className="text-[11px] text-[color:var(--text-muted)]">最近动态</div>
+            <div className="text-[11px] text-[color:var(--text-muted)]">
+              最近动态
+            </div>
             <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
               这里会展示世界里的角色和你最近发布的朋友圈内容。
             </div>
@@ -620,7 +618,11 @@ export function MomentsPage() {
                     size="icon"
                     className="h-8 w-8 rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)]"
                     onClick={() => void handleShareMoment(moment)}
-                    aria-label={nativeMobileShareSupported ? "分享这条朋友圈" : "复制这条动态摘要"}
+                    aria-label={
+                      nativeMobileShareSupported
+                        ? "分享这条朋友圈"
+                        : "复制这条动态摘要"
+                    }
                   >
                     {nativeMobileShareSupported ? (
                       <Share2 size={15} />
@@ -760,7 +762,9 @@ export function MomentsPage() {
                   variant="primary"
                   size="sm"
                   className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
-                  onClick={() => void navigate({ to: "/discover/moments/publish" })}
+                  onClick={() =>
+                    void navigate({ to: "/discover/moments/publish" })
+                  }
                 >
                   发一条朋友圈
                 </Button>

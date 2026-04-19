@@ -13,13 +13,7 @@ import {
   sendGroupMessage,
   type ConversationListItem,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  AppSection,
-  Button,
-  InlineNotice,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, AppSection, Button, InlineNotice, cn } from "@yinjie/ui";
 import {
   ArrowLeft,
   Clock3,
@@ -34,6 +28,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import {
   gameCenterCategoryTabs,
   gameCenterEvents,
@@ -66,9 +61,7 @@ import {
   parseTimestamp,
 } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import {
   isMobileWebShareSurface,
   isNativeMobileShareSurface,
@@ -99,7 +92,9 @@ function resolveGameInviteActivityFromSearch(search: unknown) {
     return null;
   }
 
-  return gameCenterFriendActivities.find((item) => item.id === inviteId) ?? null;
+  return (
+    gameCenterFriendActivities.find((item) => item.id === inviteId) ?? null
+  );
 }
 
 function resolveGameSelectionFromSearch(search: unknown) {
@@ -157,9 +152,9 @@ export function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState(
     selectedGameFromSearch ?? resolveDefaultGameSelection(),
   );
-  const [activeInviteActivityId, setActiveInviteActivityId] = useState<string | null>(
-    null,
-  );
+  const [activeInviteActivityId, setActiveInviteActivityId] = useState<
+    string | null
+  >(null);
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
 
@@ -265,7 +260,11 @@ export function GamesPage() {
     }
 
     const nextStatus =
-      event.actionKind === "reminder" ? "reminder_set" : event.actionKind === "join" ? "joined" : "task_started";
+      event.actionKind === "reminder"
+        ? "reminder_set"
+        : event.actionKind === "join"
+          ? "joined"
+          : "task_started";
 
     applyEventAction(eventId, nextStatus);
     setSelectedGameId(event.relatedGameId);
@@ -276,7 +275,9 @@ export function GamesPage() {
   }
 
   function handleInviteFriend(activityId: string) {
-    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    const activity = gameCenterFriendActivities.find(
+      (item) => item.id === activityId,
+    );
     if (!activity) {
       return;
     }
@@ -321,7 +322,9 @@ export function GamesPage() {
     activityId: string,
     conversationId: string,
   ) {
-    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    const activity = gameCenterFriendActivities.find(
+      (item) => item.id === activityId,
+    );
     const conversation = inviteConversationCandidates.find(
       (item) => item.id === conversationId,
     );
@@ -375,7 +378,9 @@ export function GamesPage() {
     setSelectedGameId(activity.gameId);
     setActiveInviteActivityId(null);
     setNoticeTone("success");
-    setSuccessNotice(`已把 ${activity.friendName} 的组局邀约发到 ${conversation.title}。`);
+    setSuccessNotice(
+      `已把 ${activity.friendName} 的组局邀约发到 ${conversation.title}。`,
+    );
   }
 
   function handleOpenDeliveredConversation(activityId: string) {
@@ -389,11 +394,15 @@ export function GamesPage() {
 
     void navigate({ to: path });
     setNoticeTone("success");
-    setSuccessNotice(title ? `正在回到 ${title}。` : "正在回到最近投递的会话。");
+    setSuccessNotice(
+      title ? `正在回到 ${title}。` : "正在回到最近投递的会话。",
+    );
   }
 
   async function handleCopyInviteToMobile(activityId: string) {
-    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    const activity = gameCenterFriendActivities.find(
+      (item) => item.id === activityId,
+    );
     if (!activity) {
       return;
     }
@@ -577,7 +586,15 @@ export function GamesPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面游戏"
+            description="正在载入桌面游戏工作区，马上显示当前游戏中心内容。"
+            loadingLabel="载入桌面游戏中心..."
+          />
+        }
+      >
         <DesktopGamesWorkspace
           activeCategory={activeCategory}
           activeGameId={activeGameId}
@@ -655,359 +672,380 @@ export function GamesPage() {
               nativeMobileShareSupported ? "分享当前游戏" : "复制游戏入口"
             }
           >
-            {nativeMobileShareSupported ? <Share2 size={15} /> : <Copy size={15} />}
+            {nativeMobileShareSupported ? (
+              <Share2 size={15} />
+            ) : (
+              <Copy size={15} />
+            )}
             {nativeMobileShareSupported ? "系统分享" : "复制入口"}
           </Button>
         }
       />
 
       <div className="space-y-2 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
-      <section
-        className={cn(
-          "relative overflow-hidden rounded-[18px] p-4 shadow-none",
-          selectedTone.heroCardClassName,
-        )}
-      >
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-10 top-0 h-36 w-36 rounded-full bg-white/12 blur-3xl" />
-          <div className="absolute bottom-0 left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
-        </div>
-        <div className="relative">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2.5 py-1 text-[10px] font-medium tracking-[0.12em] text-white/82">
-                {selectedGame.badge}
-              </div>
-              <div className="mt-3 text-[24px] font-semibold leading-tight text-white">
-                {selectedGame.name}
-              </div>
-              <div className="mt-1.5 text-[13px] leading-[1.35rem] text-white/82">
-                {selectedGame.slogan}
-              </div>
-            </div>
-            <div className="rounded-[16px] border border-white/18 bg-white/12 px-3 py-2.5 text-right backdrop-blur-sm">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-white/68">
-                热度
-              </div>
-              <div className="mt-1.5 text-[13px] font-medium leading-5 text-white">
-                {selectedGame.playersLabel}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <MobileMetric label="好友在玩" value={selectedGame.friendsLabel} />
-            <MobileMetric label="更新状态" value={selectedGame.updateNote} />
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {selectedGame.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[10px] text-white/82"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-4 flex gap-2.5">
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => handleLaunchGame(selectedGame.id)}
-              className="h-9 flex-1 border-white/18 bg-white px-3.5 text-[12px] text-[color:var(--text-primary)] hover:bg-white/92"
-            >
-              <Play size={16} />
-              开始游戏
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => handleTogglePinnedGame(selectedGame.id)}
-              className="h-9 border-white/18 bg-white/10 px-3 text-[12px] text-white hover:bg-white/18"
-            >
-              <Pin size={15} />
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <div className="flex gap-1.25 overflow-x-auto pb-0.5">
-        {gameCenterCategoryTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveCategory(tab.id)}
-            className={cn(
-              "shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-medium transition",
-              activeCategory === tab.id
-                ? "bg-[#07c160] text-white"
-                : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {successNotice ? (
-        <InlineNotice
-          className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
-          tone={noticeTone}
+        <section
+          className={cn(
+            "relative overflow-hidden rounded-[18px] p-4 shadow-none",
+            selectedTone.heroCardClassName,
+          )}
         >
-          {successNotice}
-        </InlineNotice>
-      ) : null}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -right-10 top-0 h-36 w-36 rounded-full bg-white/12 blur-3xl" />
+            <div className="absolute bottom-0 left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
+          </div>
+          <div className="relative">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2.5 py-1 text-[10px] font-medium tracking-[0.12em] text-white/82">
+                  {selectedGame.badge}
+                </div>
+                <div className="mt-3 text-[24px] font-semibold leading-tight text-white">
+                  {selectedGame.name}
+                </div>
+                <div className="mt-1.5 text-[13px] leading-[1.35rem] text-white/82">
+                  {selectedGame.slogan}
+                </div>
+              </div>
+              <div className="rounded-[16px] border border-white/18 bg-white/12 px-3 py-2.5 text-right backdrop-blur-sm">
+                <div className="text-[10px] uppercase tracking-[0.12em] text-white/68">
+                  热度
+                </div>
+                <div className="mt-1.5 text-[13px] font-medium leading-5 text-white">
+                  {selectedGame.playersLabel}
+                </div>
+              </div>
+            </div>
 
-      <GameCenterSessionPanel
-        game={selectedGame}
-        isActive={activeGameId === selectedGame.id}
-        launchCount={launchCountById[selectedGame.id] ?? 0}
-        lastOpenedAt={lastOpenedAtById[selectedGame.id]}
-        compact
-        onDismiss={activeGameId === selectedGame.id ? dismissActiveGame : undefined}
-        onCopyToMobile={handleCopyGameToMobile}
-        copyActionIcon={
-          nativeMobileShareSupported ? <Share2 size={16} /> : <Copy size={16} />
-        }
-        copyActionLabel={nativeMobileShareSupported ? "系统分享" : "复制入口"}
-        onLaunch={handleLaunchGame}
-      />
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              <MobileMetric
+                label="好友在玩"
+                value={selectedGame.friendsLabel}
+              />
+              <MobileMetric label="更新状态" value={selectedGame.updateNote} />
+            </div>
 
-      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-          <Clock3 size={15} className="text-[#15803d]" />
-          最近玩过
-        </div>
-        <div className="flex gap-2.5 overflow-x-auto pb-0.5">
-          {recentGames.map((game) => {
-            const tone = getGameCenterToneStyle(game.tone);
-            return (
-              <button
-                key={game.id}
-                type="button"
-                onClick={() => setSelectedGameId(game.id)}
-                className={cn(
-                  "w-[210px] shrink-0 rounded-[18px] border px-3.5 py-3.5 text-left shadow-none",
-                  tone.mutedPanelClassName,
-                )}
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {selectedGame.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[10px] text-white/82"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-4 flex gap-2.5">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => handleLaunchGame(selectedGame.id)}
+                className="h-9 flex-1 border-white/18 bg-white px-3.5 text-[12px] text-[color:var(--text-primary)] hover:bg-white/92"
               >
-                <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
-                  {game.name}
-                </div>
-                <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
-                  {game.slogan}
-                </div>
-                <div className="mt-2 text-[10px] text-[color:var(--text-muted)]">
-                  {lastOpenedAtById[game.id]
-                    ? `上次打开 ${formatConversationTimestamp(lastOpenedAtById[game.id])}`
-                    : "尚未打开"}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </AppSection>
-
-      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-          <UsersRound size={15} className="text-[#15803d]" />
-          好友在玩
-        </div>
-        <div className="space-y-2">
-          {gameCenterFriendActivities.map((activity) => {
-            const game = getGameCenterGame(activity.gameId);
-            if (!game) {
-              return null;
-            }
-
-            return (
-              <div
-                key={activity.id}
-                className="flex w-full items-start gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3.5 text-left shadow-none"
+                <Play size={16} />
+                开始游戏
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => handleTogglePinnedGame(selectedGame.id)}
+                className="h-9 border-white/18 bg-white/10 px-3 text-[12px] text-white hover:bg-white/18"
               >
+                <Pin size={15} />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <div className="flex gap-1.25 overflow-x-auto pb-0.5">
+          {gameCenterCategoryTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveCategory(tab.id)}
+              className={cn(
+                "shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-medium transition",
+                activeCategory === tab.id
+                  ? "bg-[#07c160] text-white"
+                  : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {successNotice ? (
+          <InlineNotice
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            tone={noticeTone}
+          >
+            {successNotice}
+          </InlineNotice>
+        ) : null}
+
+        <GameCenterSessionPanel
+          game={selectedGame}
+          isActive={activeGameId === selectedGame.id}
+          launchCount={launchCountById[selectedGame.id] ?? 0}
+          lastOpenedAt={lastOpenedAtById[selectedGame.id]}
+          compact
+          onDismiss={
+            activeGameId === selectedGame.id ? dismissActiveGame : undefined
+          }
+          onCopyToMobile={handleCopyGameToMobile}
+          copyActionIcon={
+            nativeMobileShareSupported ? (
+              <Share2 size={16} />
+            ) : (
+              <Copy size={16} />
+            )
+          }
+          copyActionLabel={nativeMobileShareSupported ? "系统分享" : "复制入口"}
+          onLaunch={handleLaunchGame}
+        />
+
+        <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+          <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+            <Clock3 size={15} className="text-[#15803d]" />
+            最近玩过
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto pb-0.5">
+            {recentGames.map((game) => {
+              const tone = getGameCenterToneStyle(game.tone);
+              return (
                 <button
+                  key={game.id}
                   type="button"
                   onClick={() => setSelectedGameId(game.id)}
-                  className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                  className={cn(
+                    "w-[210px] shrink-0 rounded-[18px] border px-3.5 py-3.5 text-left shadow-none",
+                    tone.mutedPanelClassName,
+                  )}
                 >
-                  <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[13px] font-medium text-[color:var(--text-primary)]">
-                        {activity.friendName}
-                      </span>
-                      <span className="text-[10px] text-[color:var(--text-muted)]">
-                        正在玩 {game.name}
-                      </span>
-                      {friendInviteStatusByActivityId[activity.id] ? (
-                        <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-0.5 text-[9px] text-[#2f7a3f]">
-                          已邀约
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
-                      {activity.status}
-                    </div>
-                    <div className="mt-1 text-[10px] text-[color:var(--text-dim)]">
-                      {friendInviteSentAtByActivityId[activity.id]
-                        ? `上次邀约 ${formatConversationTimestamp(friendInviteSentAtByActivityId[activity.id])} · ${formatTimestamp(activity.updatedAt)}`
-                        : formatTimestamp(activity.updatedAt)}
-                    </div>
+                  <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
+                    {game.name}
+                  </div>
+                  <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+                    {game.slogan}
+                  </div>
+                  <div className="mt-2 text-[10px] text-[color:var(--text-muted)]">
+                    {lastOpenedAtById[game.id]
+                      ? `上次打开 ${formatConversationTimestamp(lastOpenedAtById[game.id])}`
+                      : "尚未打开"}
                   </div>
                 </button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleInviteFriend(activity.id)}
-                  className="h-8 shrink-0 rounded-full px-3 text-[11px]"
+              );
+            })}
+          </div>
+        </AppSection>
+
+        <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+          <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+            <UsersRound size={15} className="text-[#15803d]" />
+            好友在玩
+          </div>
+          <div className="space-y-2">
+            {gameCenterFriendActivities.map((activity) => {
+              const game = getGameCenterGame(activity.gameId);
+              if (!game) {
+                return null;
+              }
+
+              return (
+                <div
+                  key={activity.id}
+                  className="flex w-full items-start gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3.5 text-left shadow-none"
                 >
-                  {friendInviteStatusByActivityId[activity.id]
-                    ? "再邀一次"
-                    : "邀请一起玩"}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      </AppSection>
-
-      <div className="grid gap-2.5 sm:grid-cols-2">
-        <MobileRankingSection
-          title="热门榜"
-          entries={gameCenterHotRankings}
-          icon={<Flame size={16} className="text-[#15803d]" />}
-          onSelectGame={setSelectedGameId}
-        />
-        <MobileRankingSection
-          title="新游榜"
-          entries={gameCenterNewRankings}
-          icon={<Sparkles size={16} className="text-[#15803d]" />}
-          onSelectGame={setSelectedGameId}
-        />
-      </div>
-
-      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-          <Play size={15} className="text-[#15803d]" />
-          为你推荐
-        </div>
-        <div className="space-y-2">
-          {mobileBrowseGames.map((game) => {
-            const tone = getGameCenterToneStyle(game.tone);
-            const pinned = pinnedGameIds.includes(game.id);
-            return (
-              <article
-                key={game.id}
-                className={cn(
-                  "rounded-[18px] border px-3.5 py-3.5 shadow-none",
-                  tone.mutedPanelClassName,
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => setSelectedGameId(game.id)}
-                    className="min-w-0 flex-1 text-left"
+                    className="flex min-w-0 flex-1 items-start gap-3 text-left"
                   >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={cn(
-                          "rounded-full border px-2 py-0.5 text-[9px] font-medium",
-                          tone.badgeClassName,
-                        )}
-                      >
-                        {game.deckLabel}
-                      </div>
-                      {pinned ? (
-                        <div className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-0.5 text-[9px] text-[#2f7a3f]">
-                          常玩
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="mt-2.5 text-[13px] font-semibold text-[color:var(--text-primary)]">
-                      {game.name}
-                    </div>
-                    <div className="mt-1.5 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
-                      {game.description}
-                    </div>
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      {game.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-white/84 px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
-                        >
-                          {tag}
+                    <AvatarChip
+                      name={activity.friendName}
+                      src={activity.friendAvatar}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                          {activity.friendName}
                         </span>
-                      ))}
+                        <span className="text-[10px] text-[color:var(--text-muted)]">
+                          正在玩 {game.name}
+                        </span>
+                        {friendInviteStatusByActivityId[activity.id] ? (
+                          <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-0.5 text-[9px] text-[#2f7a3f]">
+                            已邀约
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+                        {activity.status}
+                      </div>
+                      <div className="mt-1 text-[10px] text-[color:var(--text-dim)]">
+                        {friendInviteSentAtByActivityId[activity.id]
+                          ? `上次邀约 ${formatConversationTimestamp(friendInviteSentAtByActivityId[activity.id])} · ${formatTimestamp(activity.updatedAt)}`
+                          : formatTimestamp(activity.updatedAt)}
+                      </div>
                     </div>
                   </button>
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => handleLaunchGame(game.id)}
+                    onClick={() => handleInviteFriend(activity.id)}
                     className="h-8 shrink-0 rounded-full px-3 text-[11px]"
                   >
-                    秒开
+                    {friendInviteStatusByActivityId[activity.id]
+                      ? "再邀一次"
+                      : "邀请一起玩"}
                   </Button>
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      </AppSection>
+              );
+            })}
+          </div>
+        </AppSection>
 
-      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-          <Gift size={15} className="text-[#15803d]" />
-          福利活动
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <MobileRankingSection
+            title="热门榜"
+            entries={gameCenterHotRankings}
+            icon={<Flame size={16} className="text-[#15803d]" />}
+            onSelectGame={setSelectedGameId}
+          />
+          <MobileRankingSection
+            title="新游榜"
+            entries={gameCenterNewRankings}
+            icon={<Sparkles size={16} className="text-[#15803d]" />}
+            onSelectGame={setSelectedGameId}
+          />
         </div>
-        <div className="space-y-2">
-          {gameCenterEvents.map((event) => {
-            const tone = getGameCenterToneStyle(event.tone);
-            const engaged = Boolean(eventActionStatusById[event.id]);
-            return (
-              <article
-                key={event.id}
-                className={cn(
-                  "rounded-[18px] border px-3.5 py-3.5 shadow-none",
-                  tone.mutedPanelClassName,
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
-                        {event.title}
-                      </div>
-                      {engaged ? (
-                        <div className="rounded-full bg-white/84 px-2 py-0.5 text-[9px] text-[color:var(--text-muted)]">
-                          {getGameCenterEventStatusLabel(event)}
+
+        <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+          <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+            <Play size={15} className="text-[#15803d]" />
+            为你推荐
+          </div>
+          <div className="space-y-2">
+            {mobileBrowseGames.map((game) => {
+              const tone = getGameCenterToneStyle(game.tone);
+              const pinned = pinnedGameIds.includes(game.id);
+              return (
+                <article
+                  key={game.id}
+                  className={cn(
+                    "rounded-[18px] border px-3.5 py-3.5 shadow-none",
+                    tone.mutedPanelClassName,
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGameId(game.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            "rounded-full border px-2 py-0.5 text-[9px] font-medium",
+                            tone.badgeClassName,
+                          )}
+                        >
+                          {game.deckLabel}
                         </div>
-                      ) : null}
-                    </div>
-                    <div className="mt-1.5 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
-                      {event.description}
-                    </div>
-                    <div className={cn("mt-1.5 text-[10px]", tone.softTextClassName)}>
-                      {event.meta}
-                    </div>
+                        {pinned ? (
+                          <div className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-0.5 text-[9px] text-[#2f7a3f]">
+                            常玩
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="mt-2.5 text-[13px] font-semibold text-[color:var(--text-primary)]">
+                        {game.name}
+                      </div>
+                      <div className="mt-1.5 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+                        {game.description}
+                      </div>
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        {game.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full bg-white/84 px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleLaunchGame(game.id)}
+                      className="h-8 shrink-0 rounded-full px-3 text-[11px]"
+                    >
+                      秒开
+                    </Button>
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleCompleteEventAction(event.id)}
-                    className="h-8 rounded-full px-3 text-[11px]"
-                  >
-                    {getGameCenterEventActionLabel(event, engaged)}
-                  </Button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </AppSection>
+                </article>
+              );
+            })}
+          </div>
+        </AppSection>
+
+        <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+          <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+            <Gift size={15} className="text-[#15803d]" />
+            福利活动
+          </div>
+          <div className="space-y-2">
+            {gameCenterEvents.map((event) => {
+              const tone = getGameCenterToneStyle(event.tone);
+              const engaged = Boolean(eventActionStatusById[event.id]);
+              return (
+                <article
+                  key={event.id}
+                  className={cn(
+                    "rounded-[18px] border px-3.5 py-3.5 shadow-none",
+                    tone.mutedPanelClassName,
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
+                          {event.title}
+                        </div>
+                        {engaged ? (
+                          <div className="rounded-full bg-white/84 px-2 py-0.5 text-[9px] text-[color:var(--text-muted)]">
+                            {getGameCenterEventStatusLabel(event)}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="mt-1.5 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+                        {event.description}
+                      </div>
+                      <div
+                        className={cn(
+                          "mt-1.5 text-[10px]",
+                          tone.softTextClassName,
+                        )}
+                      >
+                        {event.meta}
+                      </div>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleCompleteEventAction(event.id)}
+                      className="h-8 rounded-full px-3 text-[11px]"
+                    >
+                      {getGameCenterEventActionLabel(event, engaged)}
+                    </Button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </AppSection>
       </div>
     </AppPage>
   );

@@ -6,13 +6,9 @@ import {
   getOfficialAccountSubscriptionInbox,
   markOfficialAccountSubscriptionInboxRead,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  InlineNotice,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
@@ -20,9 +16,8 @@ import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopChatWorkspace = lazy(async () => {
-  const mod = await import(
-    "../features/official-accounts/official-message-workspace-shell"
-  );
+  const mod =
+    await import("../features/official-accounts/official-message-workspace-shell");
   return { default: mod.OfficialMessageWorkspaceShell };
 });
 
@@ -34,7 +29,15 @@ export function SubscriptionInboxPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面订阅号消息"
+            description="正在载入桌面消息工作区中的订阅号消息视图。"
+            loadingLabel="载入桌面订阅号消息..."
+          />
+        }
+      >
         <DesktopChatWorkspace
           hash={hash}
           selectedSpecialView="subscription-inbox"

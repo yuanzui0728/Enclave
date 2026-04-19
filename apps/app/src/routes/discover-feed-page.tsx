@@ -27,6 +27,7 @@ import { AppPage, Button, InlineNotice, TextField } from "@yinjie/ui";
 import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
 import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
 import { MomentMediaGallery } from "../components/moment-media-gallery";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import {
   hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
@@ -362,7 +363,15 @@ export function DiscoverFeedPage() {
     }
 
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面发现"
+            description="正在载入桌面看一看工作区，马上显示当前动态内容。"
+            loadingLabel="载入桌面发现工作区..."
+          />
+        }
+      >
         <DesktopFeedWorkspace
           baseUrl={baseUrl}
           canAddImages={composeDraft.canAddImages}
