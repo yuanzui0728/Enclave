@@ -42,6 +42,7 @@ import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 
 import { AvatarChip } from "../components/avatar-chip";
 import { OfficialServiceConversationCard } from "../components/official-service-conversation-card";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
@@ -128,8 +129,8 @@ type PendingHideConversation = {
 const SWIPE_ACTION_BUTTON_WIDTH = 68;
 const HIDE_UNDO_WINDOW_MS = 5_000;
 const DesktopChatWorkspace = lazy(async () => {
-  const mod = await import("../features/desktop/chat/desktop-chat-tab-shell");
-  return { default: mod.DesktopChatTabShell };
+  const mod = await import("../features/chat/chat-tab-shell");
+  return { default: mod.ChatTabShell };
 });
 
 export function ChatListPage() {
@@ -138,7 +139,15 @@ export function ChatListPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面消息"
+            description="正在载入桌面消息工作区，马上显示最近会话。"
+            loadingLabel="载入桌面消息工作区..."
+          />
+        }
+      >
         <DesktopChatWorkspace hash={hash} />
       </Suspense>
     );

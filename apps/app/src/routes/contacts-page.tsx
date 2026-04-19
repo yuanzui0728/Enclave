@@ -39,14 +39,10 @@ import {
   setFriendStarred,
   unblockCharacter,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  InlineNotice,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
 import { ContactIndexList } from "../features/contacts/contact-index-list";
@@ -75,19 +71,22 @@ import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsWorkspace = lazy(async () => {
-  const mod = await import("../features/desktop/contacts/desktop-contacts-workspace-shell");
-  return { default: mod.DesktopContactsWorkspaceShell };
+  const mod = await import("../features/contacts/contacts-workspace-shell");
+  return { default: mod.ContactsWorkspaceShell };
 });
 const DesktopContactsFriendRequestsPane = lazy(async () => {
-  const mod = await import("../features/desktop/contacts/desktop-contacts-friend-requests-pane");
+  const mod =
+    await import("../features/desktop/contacts/desktop-contacts-friend-requests-pane");
   return { default: mod.DesktopContactsFriendRequestsPane };
 });
 const DesktopContactsGroupsPane = lazy(async () => {
-  const mod = await import("../features/desktop/contacts/desktop-contacts-groups-pane");
+  const mod =
+    await import("../features/desktop/contacts/desktop-contacts-groups-pane");
   return { default: mod.DesktopContactsGroupsPane };
 });
 const DesktopOfficialAccountsWorkspace = lazy(async () => {
-  const mod = await import("../features/desktop/official-accounts/desktop-official-accounts-workspace");
+  const mod =
+    await import("../features/desktop/official-accounts/desktop-official-accounts-workspace");
   return { default: mod.DesktopOfficialAccountsWorkspace };
 });
 
@@ -457,41 +456,44 @@ export function ContactsPage() {
   );
   const desktopDefaultFriendItem = desktopFriendSections[0]?.items[0] ?? null;
 
-  const commitDesktopRouteState = useCallback((
-    nextSelection: DesktopSelection,
-    nextShowWorldCharacters: boolean,
-    replace = false,
-  ) => {
-    const nextHash = buildDesktopContactsRouteHash({
-      pane: nextSelection?.kind ?? "friend",
-      characterId:
-        nextSelection && "id" in nextSelection ? nextSelection.id : undefined,
-      accountId:
-        nextSelection?.kind === "official-accounts"
-          ? nextSelection.accountId
-          : undefined,
-      articleId:
-        nextSelection?.kind === "official-accounts"
-          ? nextSelection.articleId
-          : undefined,
-      officialMode:
-        nextSelection?.kind === "official-accounts"
-          ? nextSelection.mode
-          : undefined,
-      showWorldCharacters: nextShowWorldCharacters,
-    });
-    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const commitDesktopRouteState = useCallback(
+    (
+      nextSelection: DesktopSelection,
+      nextShowWorldCharacters: boolean,
+      replace = false,
+    ) => {
+      const nextHash = buildDesktopContactsRouteHash({
+        pane: nextSelection?.kind ?? "friend",
+        characterId:
+          nextSelection && "id" in nextSelection ? nextSelection.id : undefined,
+        accountId:
+          nextSelection?.kind === "official-accounts"
+            ? nextSelection.accountId
+            : undefined,
+        articleId:
+          nextSelection?.kind === "official-accounts"
+            ? nextSelection.articleId
+            : undefined,
+        officialMode:
+          nextSelection?.kind === "official-accounts"
+            ? nextSelection.mode
+            : undefined,
+        showWorldCharacters: nextShowWorldCharacters,
+      });
+      const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
 
-    if ((nextHash ?? "") === normalizedHash) {
-      return;
-    }
+      if ((nextHash ?? "") === normalizedHash) {
+        return;
+      }
 
-    void navigate({
-      to: "/tabs/contacts",
-      hash: nextHash,
-      replace,
-    });
-  }, [hash, navigate]);
+      void navigate({
+        to: "/tabs/contacts",
+        hash: nextHash,
+        replace,
+      });
+    },
+    [hash, navigate],
+  );
 
   useEffect(() => {
     startChatResetRef.current = startChatMutation.reset;
@@ -1123,7 +1125,15 @@ export function ContactsPage() {
 
   if (isDesktopLayout) {
     return (
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <RouteRedirectState
+            title="正在打开桌面通讯录"
+            description="正在载入桌面通讯录工作区，马上显示联系人和详情。"
+            loadingLabel="载入桌面通讯录..."
+          />
+        }
+      >
         <DesktopContactsWorkspace
           directoryCountLabel={`${filteredFriendItems.length} 位联系人${
             showWorldCharacters || normalizedSearchText
@@ -1352,7 +1362,9 @@ export function ContactsPage() {
                   void navigate({ to: "/group/$groupId", params: { groupId } });
                 }}
                 onOpenMoments={
-                  selectedFriendItem ? handleOpenSelectedFriendMoments : undefined
+                  selectedFriendItem
+                    ? handleOpenSelectedFriendMoments
+                    : undefined
                 }
                 onStartChat={
                   selectedFriendItem
@@ -1410,7 +1422,9 @@ export function ContactsPage() {
                   blockMutation.isPending &&
                   blockMutation.variables?.characterId === selectedCharacterId
                 }
-                onToggleBlock={selectedFriendItem ? handleToggleBlock : undefined}
+                onToggleBlock={
+                  selectedFriendItem ? handleToggleBlock : undefined
+                }
                 deletePending={
                   deleteFriendMutation.isPending &&
                   deleteFriendMutation.variables === selectedCharacterId
@@ -1738,7 +1752,6 @@ function FriendListRow({
     </button>
   );
 }
-
 
 function SectionHeader({
   title,
