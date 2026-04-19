@@ -22,7 +22,6 @@ import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
@@ -367,9 +366,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         membersQuery.data ? `${membersQuery.data.length} 人群聊` : "群聊信息"
       }
       onBack={() => {
-        navigateBackOrFallback(() => {
-          void navigate({ to: "/group/$groupId", params: { groupId } });
-        });
+        void navigate({ to: "/group/$groupId", params: { groupId } });
       }}
       rightActions={
         groupSummary ? (

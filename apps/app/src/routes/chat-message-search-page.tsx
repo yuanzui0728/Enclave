@@ -5,7 +5,6 @@ import { getConversationMessages, getConversations } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function ChatMessageSearchPage() {
@@ -86,11 +85,9 @@ function MobileChatMessageSearchPage({
         void messagesQuery.refetch();
       }}
       onBack={() => {
-        navigateBackOrFallback(() => {
-          void navigate({
-            to: "/chat/$conversationId/details",
-            params: { conversationId },
-          });
+        void navigate({
+          to: "/chat/$conversationId/details",
+          params: { conversationId },
         });
       }}
       onOpenMessage={(messageId) => {
@@ -98,6 +95,7 @@ function MobileChatMessageSearchPage({
           to: "/chat/$conversationId",
           params: { conversationId },
           hash: `chat-message-${messageId}`,
+          replace: true,
         });
       }}
     />

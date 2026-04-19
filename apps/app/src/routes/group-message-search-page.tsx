@@ -5,7 +5,6 @@ import { getGroup, getGroupMessages } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -72,15 +71,14 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
         void messagesQuery.refetch();
       }}
       onBack={() => {
-        navigateBackOrFallback(() => {
-          void navigate({ to: "/group/$groupId/details", params: { groupId } });
-        });
+        void navigate({ to: "/group/$groupId/details", params: { groupId } });
       }}
       onOpenMessage={(messageId) => {
         void navigate({
           to: "/group/$groupId",
           params: { groupId },
           hash: `chat-message-${messageId}`,
+          replace: true,
         });
       }}
     />

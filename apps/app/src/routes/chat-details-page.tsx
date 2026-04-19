@@ -37,7 +37,6 @@ import { MobileDetailsActionSheet } from "../features/chat-details/mobile-detail
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
-import { navigateBackOrFallback } from "../lib/history-back";
 import {
   openAppSettings,
   requestNotificationPermission,
@@ -602,11 +601,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     <ChatDetailsShell
       title={conversation?.title ?? "聊天信息"}
       onBack={() => {
-        navigateBackOrFallback(() => {
-          void navigate({
-            to: "/chat/$conversationId",
-            params: { conversationId },
-          });
+        void navigate({
+          to: "/chat/$conversationId",
+          params: { conversationId },
         });
       }}
     >
