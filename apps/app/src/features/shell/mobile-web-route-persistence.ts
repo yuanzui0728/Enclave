@@ -69,11 +69,6 @@ function getStorage() {
   }
 }
 
-function resolvePathname(path: string) {
-  const [pathname] = path.split(/[?#]/, 1);
-  return pathname || "/";
-}
-
 function normalizePersistablePath(path: string) {
   if (!path.startsWith("/")) {
     return null;

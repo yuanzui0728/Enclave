@@ -1,4 +1,5 @@
 import type { FavoriteNoteAsset } from "./favorites";
+import type { FollowupRecommendationAttachmentMetadata } from "./followup-runtime";
 
 export interface StickerAttachment {
   kind: "sticker";
@@ -46,6 +47,7 @@ export interface ContactCardAttachment {
   avatar?: string;
   relationship?: string;
   bio?: string;
+  recommendationMetadata?: FollowupRecommendationAttachmentMetadata;
 }
 
 export interface LocationCardAttachment {

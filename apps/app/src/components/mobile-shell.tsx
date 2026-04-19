@@ -19,6 +19,7 @@ import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
 import { persistMobileWebRoute } from "../features/shell/mobile-web-route-persistence";
+import { recordAppNavigation } from "../lib/history-back";
 import { isMobileWebRuntime } from "../runtime/platform";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -79,7 +80,9 @@ export function MobileShell({ children }: PropsWithChildren) {
       return;
     }
 
-    persistMobileWebRoute(`${pathname}${search}${hash}`);
+    const currentPath = `${pathname}${search}${hash}`;
+    recordAppNavigation(currentPath);
+    persistMobileWebRoute(currentPath);
   }, [hash, pathname, runtimeConfig.appPlatform, search]);
 
   useEffect(() => {

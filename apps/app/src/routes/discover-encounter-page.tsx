@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Compass, Sparkles } from "lucide-react";
-import { sendFriendRequest, shake } from "@yinjie/contracts";
+import { keepShakeSession, shake } from "@yinjie/contracts";
 import {
   AppPage,
   Button,
@@ -46,20 +46,13 @@ function MobileDiscoverEncounterPage() {
 
   const shakeMutation = useMutation({
     mutationFn: async () => {
-      const result = await shake(baseUrl);
-      if (!result) {
+      const preview = await shake(undefined, baseUrl);
+      if (!preview) {
         return null;
       }
 
-      await sendFriendRequest(
-        {
-          characterId: result.character.id,
-          greeting: result.greeting,
-        },
-        baseUrl,
-      );
-
-      return result;
+      await keepShakeSession(preview.id, baseUrl);
+      return preview;
     },
     onSuccess: (result) => {
       if (!result) {
@@ -67,8 +60,12 @@ function MobileDiscoverEncounterPage() {
         return;
       }
 
-      setMessage(`${result.character.name} 向你发来了好友申请：${result.greeting}`);
-      void queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] });
+      setMessage(`${result.character.name} 已加入通讯录：${result.greeting}`);
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+      ]);
     },
   });
 
@@ -81,9 +78,9 @@ function MobileDiscoverEncounterPage() {
       title="摇一摇"
       subtitle="随机遇见新的世界居民"
       shareTitle="摇一摇"
-      shareSummary="随机遇见新的世界居民，点一下就会尝试安排一次新的相遇，并自动写入好友申请。"
+      shareSummary="随机遇见新的世界居民，点一下就会尝试安排一次新的相遇，并直接保留到你的通讯录。"
       heroTitle="随机相遇"
-      heroDescription="每次摇一摇都会尝试为你安排一次新的相遇，并自动写入一条好友申请。"
+      heroDescription="每次摇一摇都会先生成一个新的相遇结果；当前页面会直接保留这次结果，并把对方加入你的通讯录。"
       heroVisual={<Compass size={28} />}
       heroAction={
         <Button
@@ -123,12 +120,12 @@ function MobileDiscoverEncounterPage() {
           <div className="px-4 py-4">
             <div className="text-[12px] text-[#8c8c8c]">结果处理</div>
             <div className="mt-1 text-[15px] font-medium text-[#111827]">
-              自动申请
+              直接保留
             </div>
           </div>
         </div>
         <div className="border-t border-black/5 px-4 py-3 text-[13px] leading-6 text-[#6b7280]">
-          更像微信里“摇一摇”的轻入口：点一下就出结果，不要求你先填资料或做多步确认。
+          当前先采用轻入口方案：点一下就完成一次相遇并保留结果，后续再补更细的预览与确认流程。
         </div>
       </section>
 

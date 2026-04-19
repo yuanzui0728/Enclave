@@ -19,6 +19,7 @@ import type {
 } from "../features/search/search-types";
 import { useSearchIndex } from "../features/search/use-search-index";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function SearchPage() {
@@ -190,13 +191,10 @@ export function SearchPage() {
   }
 
   function handleBack() {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    void navigate({
-      to: routeState.source === "contacts" ? "/tabs/contacts" : "/tabs/chat",
+    navigateBackOrFallback(() => {
+      void navigate({
+        to: routeState.source === "contacts" ? "/tabs/contacts" : "/tabs/chat",
+      });
     });
   }
 

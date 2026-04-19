@@ -19,6 +19,7 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
   buildGroupRelaySummaryMessage,
 } from "../features/mini-programs/group-relay-message";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import {
   shareWithNativeShell,
@@ -338,12 +339,9 @@ export function MiniProgramsPage() {
   }
 
   function handleBack() {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    void navigate({ to: "/tabs/discover" });
+    navigateBackOrFallback(() => {
+      void navigate({ to: "/tabs/discover" });
+    });
   }
 
   const sendRelaySummaryMutation = useMutation({

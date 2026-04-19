@@ -30,6 +30,9 @@ export type AppRuntimeContext = {
   capabilities: AppRuntimeCapabilities;
 };
 
+const MOBILE_WEB_BROWSER_PATTERN =
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Windows Phone/i;
+
 export function detectAppPlatform(): AppPlatform {
   if (isDesktopPlatform()) {
     return "desktop";
@@ -57,6 +60,18 @@ export function getAppRuntimeCapabilities(platform = detectAppPlatform()): AppRu
     default:
       return getWebRuntimeCapabilities();
   }
+}
+
+export function isMobileWebRuntime(platform = detectAppPlatform()) {
+  if (platform !== "web" || typeof window === "undefined") {
+    return false;
+  }
+
+  const userAgent =
+    typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+
+  return MOBILE_WEB_BROWSER_PATTERN.test(userAgent) || coarsePointer;
 }
 
 function resolveAppChannel(platform: AppPlatform): AppChannel {
