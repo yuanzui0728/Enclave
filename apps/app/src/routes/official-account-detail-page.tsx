@@ -16,13 +16,15 @@ import {
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { OfficialArticleCard } from "../components/official-article-card";
-import { buildOfficialAccountFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
-import { buildOfficialArticleSummaryFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
+import {
+  buildOfficialAccountFavoriteRecord,
+  buildOfficialArticleSummaryFavoriteRecord,
+} from "../features/favorites/official-account-favorite-records";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
-} from "../features/desktop/favorites/desktop-favorites-storage";
+} from "../features/favorites/favorites-storage";
 import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";

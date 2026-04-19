@@ -9,12 +9,12 @@ import {
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../components/official-article-viewer";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { buildOfficialArticleFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
+import { buildOfficialArticleFavoriteRecord } from "../features/favorites/official-account-favorite-records";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
-} from "../features/desktop/favorites/desktop-favorites-storage";
+} from "../features/favorites/favorites-storage";
 import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { buildDesktopOfficialArticleWindowRouteHash } from "../features/desktop/official-accounts/desktop-official-article-window-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
