@@ -4,6 +4,8 @@ export type DesktopChatOfficialView =
   | "official-accounts";
 
 export type DesktopChatRouteState = {
+  conversationId?: string;
+  messageId?: string;
   officialView?: DesktopChatOfficialView;
   officialMode?: "feed" | "accounts";
   accountId?: string;
@@ -17,52 +19,81 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
   }
 
   const params = new URLSearchParams(normalizedHash);
+  const conversationId = params.get("conversationId")?.trim() || undefined;
+  const messageId = params.get("messageId")?.trim() || undefined;
   const officialView = params.get("officialView")?.trim();
   const officialMode = params.get("officialMode")?.trim();
   const accountId = params.get("accountId")?.trim() || undefined;
   const articleId = params.get("articleId")?.trim() || undefined;
-
-  if (
-    officialView !== "subscription-inbox" &&
-    officialView !== "service-account" &&
-    officialView !== "official-accounts"
-  ) {
-    return {};
-  }
+  const normalizedOfficialView =
+    officialView === "subscription-inbox" ||
+    officialView === "service-account" ||
+    officialView === "official-accounts"
+      ? officialView
+      : undefined;
 
   return {
-    officialView,
+    conversationId,
+    messageId,
+    officialView: normalizedOfficialView,
     officialMode:
-      officialMode === "feed" || officialMode === "accounts"
+      normalizedOfficialView &&
+      (officialMode === "feed" || officialMode === "accounts")
         ? officialMode
         : undefined,
-    accountId,
-    articleId,
+    accountId: normalizedOfficialView ? accountId : undefined,
+    articleId: normalizedOfficialView ? articleId : undefined,
   };
 }
 
 export function buildDesktopChatRouteHash(state: DesktopChatRouteState) {
-  if (!state.officialView) {
-    return undefined;
+  const params = new URLSearchParams();
+
+  if (state.conversationId?.trim()) {
+    params.set("conversationId", state.conversationId.trim());
   }
 
-  const params = new URLSearchParams();
-  params.set("officialView", state.officialView);
+  if (state.messageId?.trim()) {
+    params.set("messageId", state.messageId.trim());
+  }
+
+  if (state.officialView) {
+    params.set("officialView", state.officialView);
+  }
 
   if (
-    state.officialMode === "feed" ||
-    state.officialMode === "accounts"
+    state.officialView &&
+    (state.officialMode === "feed" || state.officialMode === "accounts")
   ) {
     params.set("officialMode", state.officialMode);
   }
 
-  if (state.accountId?.trim()) {
+  if (state.officialView && state.accountId?.trim()) {
     params.set("accountId", state.accountId.trim());
   }
 
-  if (state.articleId?.trim()) {
+  if (state.officialView && state.articleId?.trim()) {
     params.set("articleId", state.articleId.trim());
   }
 
-  return params.toString();
+  return params.toString() || undefined;
+}
+
+export function buildDesktopChatThreadHash(input: {
+  conversationId: string;
+  messageId?: string;
+}) {
+  return buildDesktopChatRouteHash({
+    conversationId: input.conversationId,
+    messageId: input.messageId,
+  });
+}
+
+export function buildDesktopChatThreadPath(input: {
+  conversationId: string;
+  messageId?: string;
+}) {
+  const hash = buildDesktopChatThreadHash(input);
+
+  return hash ? `/tabs/chat#${hash}` : "/tabs/chat";
 }

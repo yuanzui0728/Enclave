@@ -28,6 +28,9 @@ import {
   type DesktopChatImageViewerSessionItem,
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import {
+  parseDesktopChatRouteHash,
+} from "../features/desktop/chat/desktop-chat-route-state";
+import {
   buildDesktopChatWindowLabel,
   parseDesktopChatWindowRouteHash,
 } from "../features/desktop/chat/desktop-chat-window-route-state";
@@ -632,6 +635,21 @@ function resolveChatImageViewerReturnPath(
         : `/chat/${standaloneWindowRouteState.conversationId}`;
 
     return conversationPathSet.has(conversationPath) ? normalizedPath : undefined;
+  }
+
+  if (basePath === "/tabs/chat") {
+    const desktopChatRouteState = parseDesktopChatRouteHash(
+      hashIndex === -1 ? "" : normalizedPath.slice(hashIndex),
+    );
+    if (!desktopChatRouteState.conversationId) {
+      return normalizedPath;
+    }
+
+    const hasConversation =
+      conversationPathSet.has(`/chat/${desktopChatRouteState.conversationId}`) ||
+      conversationPathSet.has(`/group/${desktopChatRouteState.conversationId}`);
+
+    return hasConversation ? normalizedPath : undefined;
   }
 
   return conversationPathSet.has(basePath) ? normalizedPath : undefined;

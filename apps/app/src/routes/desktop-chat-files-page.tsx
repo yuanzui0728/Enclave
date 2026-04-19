@@ -34,6 +34,10 @@ import {
   parseDesktopChatFilesRouteState,
 } from "../features/desktop/chat/desktop-chat-files-route-state";
 import {
+  buildDesktopChatThreadHash,
+  buildDesktopChatThreadPath,
+} from "../features/desktop/chat/desktop-chat-route-state";
+import {
   openDesktopChatImageViewerWindow,
   type DesktopChatImageViewerSessionItem,
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
@@ -52,7 +56,6 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatMessageTimestamp, parseTimestamp } from "../lib/format";
 import {
   getConversationThreadLabel,
-  getConversationThreadPath,
   getConversationThreadType,
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
@@ -106,29 +109,12 @@ export function DesktopChatFilesPage() {
   const localMessageActionState = useLocalChatMessageActionState();
 
   const navigateToAttachmentMessage = (item: AttachmentRow) => {
-    const messageHash = `chat-message-${item.id}`;
-    if (
-      getConversationThreadType({
-        type: item.conversationType,
-        source: item.conversationSource,
-      }) === "group"
-    ) {
-      void navigate({
-        to: "/group/$groupId",
-        params: { groupId: item.conversationId },
-        search: {},
-        hash: messageHash,
-      });
-      return;
-    }
-
     void navigate({
-      to: "/chat/$conversationId",
-      params: {
+      to: "/tabs/chat",
+      hash: buildDesktopChatThreadHash({
         conversationId: item.conversationId,
-      },
-      search: {},
-      hash: messageHash,
+        messageId: item.id,
+      }),
     });
   };
 
@@ -945,11 +931,10 @@ function InfoCard({ label, value }: { label: string; value: string }) {
 }
 
 function buildAttachmentMessagePath(item: AttachmentRow) {
-  return `${getConversationThreadPath({
-    id: item.conversationId,
-    type: item.conversationType,
-    source: item.conversationSource,
-  })}#chat-message-${item.id}`;
+  return buildDesktopChatThreadPath({
+    conversationId: item.conversationId,
+    messageId: item.id,
+  });
 }
 
 function resolveFileFilterLabel(filter: FileFilter) {

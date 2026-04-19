@@ -10,6 +10,12 @@ export function DesktopChatTabShell({ hash }: DesktopChatTabShellProps) {
 
   return (
     <DesktopChatWorkspace
+      selectedConversationId={
+        routeState.officialView ? undefined : routeState.conversationId
+      }
+      highlightedMessageId={
+        routeState.officialView ? undefined : routeState.messageId
+      }
       selectedServiceAccountId={
         routeState.officialView === "service-account"
           ? routeState.accountId
