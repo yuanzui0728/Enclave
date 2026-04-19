@@ -40,6 +40,7 @@ import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatTimestamp } from "../lib/format";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -397,12 +398,9 @@ export function CharacterDetailPage() {
   });
 
   const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    void navigate({ to: "/tabs/contacts" });
+    navigateBackOrFallback(() => {
+      void navigate({ to: "/tabs/contacts" });
+    });
   };
 
   const handleSaveProfile = async () => {

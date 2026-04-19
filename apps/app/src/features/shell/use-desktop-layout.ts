@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
-import type { AppPlatform } from "../../runtime/platform";
+import { isMobileWebRuntime, type AppPlatform } from "../../runtime/platform";
 
 const DESKTOP_LAYOUT_MIN_WIDTH = 960;
-const MOBILE_BROWSER_PATTERN =
-  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Windows Phone/i;
 
 function shouldUseDesktopLayout(platform: AppPlatform) {
   if (platform === "desktop") {
@@ -19,11 +17,7 @@ function shouldUseDesktopLayout(platform: AppPlatform) {
     return false;
   }
 
-  const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent;
-  const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches ?? false;
-  const mobileBrowser = MOBILE_BROWSER_PATTERN.test(userAgent);
-
-  if (mobileBrowser || coarsePointer) {
+  if (isMobileWebRuntime(platform)) {
     return false;
   }
 

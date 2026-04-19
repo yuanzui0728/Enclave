@@ -68,7 +68,6 @@ import {
   matchesCharacterSearch,
   matchesFriendSearch,
   type FriendDirectoryItem,
-  type WorldCharacterDirectoryItem,
 } from "../features/contacts/contact-utils";
 import {
   DesktopSearchDropdownPanel,
@@ -1765,59 +1764,6 @@ function FriendListRow({
   );
 }
 
-export function WorldCharacterRow({
-  item,
-  index,
-  desktop = false,
-  active = false,
-  onClick,
-}: {
-  item: WorldCharacterDirectoryItem;
-  index: number;
-  desktop?: boolean;
-  active?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
-        desktop
-          ? "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
-          : "px-4 py-2.5 hover:bg-[color:var(--surface-card-hover)]",
-        index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
-        active
-          ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(240,247,243,0.94)] shadow-[0_8px_22px_rgba(15,23,42,0.03)]"
-          : undefined,
-      )}
-    >
-      <AvatarChip
-        name={item.character.name}
-        src={item.character.avatar}
-        size="wechat"
-      />
-      <div className="min-w-0 flex-1">
-        <div
-          className={cn(
-            "truncate text-[color:var(--text-primary)]",
-            desktop ? "text-[16px]" : "text-[14px]",
-          )}
-        >
-          {item.character.name}
-        </div>
-        {desktop ? (
-          <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
-            {item.character.relationship ||
-              item.character.currentStatus?.trim() ||
-              "查看角色资料"}
-          </div>
-        ) : null}
-      </div>
-    </button>
-  );
-}
 
 function SectionHeader({
   title,

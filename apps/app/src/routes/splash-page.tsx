@@ -5,7 +5,7 @@ import { AppPage, AppSection, InlineNotice } from "@yinjie/ui";
 import { readPersistedMobileWebRoute } from "../features/shell/mobile-web-route-persistence";
 import { requiresRemoteServiceConfiguration } from "../lib/runtime-config";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
-import { resolveAppRuntimeContext } from "../runtime/platform";
+import { isMobileWebRuntime, resolveAppRuntimeContext } from "../runtime/platform";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function SplashPage() {
@@ -35,7 +35,7 @@ export function SplashPage() {
         if (!cancelled) {
           hydrateOwner(owner);
           const restoredRoute =
-            runtimeConfig.appPlatform !== "desktop"
+            isMobileWebRuntime(runtimeConfig.appPlatform)
               ? readPersistedMobileWebRoute()
               : null;
           void navigate({
