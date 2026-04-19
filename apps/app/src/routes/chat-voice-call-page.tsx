@@ -1,5 +1,5 @@
 import { useParams } from "@tanstack/react-router";
-import { DesktopChatRouteRedirectShell } from "../features/desktop/chat/desktop-chat-route-redirect-shell";
+import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { MobileAiCallScreen } from "../features/chat/mobile-ai-call-screen";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 

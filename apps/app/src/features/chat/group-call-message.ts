@@ -1,4 +1,4 @@
-import type { DesktopChatCallKind } from "../desktop/chat/desktop-chat-header-actions";
+import type { DesktopChatCallKind } from "./chat-header-actions";
 
 const DIRECT_VOICE_CALL_PREFIX = "[语音通话]";
 const DIRECT_VIDEO_CALL_PREFIX = "[视频通话]";

@@ -24,8 +24,8 @@ import {
   DesktopChatHeaderActions,
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
-} from "../desktop/chat/desktop-chat-header-actions";
-import { DesktopDirectCallPanel } from "../desktop/chat/desktop-direct-call-panel";
+} from "./chat-header-actions";
+import { DesktopDirectCallPanel } from "./direct-call-panel-shell";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { DigitalHumanEntryNotice } from "./digital-human-entry-notice";

@@ -35,9 +35,9 @@ import {
   DesktopChatHeaderActions,
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
-} from "../desktop/chat/desktop-chat-header-actions";
-import { buildDesktopMobileCallHandoffHash } from "../desktop/chat/desktop-mobile-call-handoff-route-state";
-import { DesktopGroupCallPanel } from "../desktop/chat/desktop-group-call-panel";
+} from "./chat-header-actions";
+import { buildDesktopMobileCallHandoffHash } from "./mobile-call-handoff-route-state";
+import { DesktopGroupCallPanel } from "./group-call-panel-shell";
 import { type ChatRenderableMessage } from "../../components/chat-message-list";
 import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
