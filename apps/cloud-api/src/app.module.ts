@@ -32,7 +32,7 @@ import { WorldAccessService } from "./world-access/world-access.service";
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register({
       global: true,
-      secret: process.env.CLOUD_JWT_SECRET ?? "yinjie-cloud-jwt-secret",
+      secret: process.env.CLOUD_JWT_SECRET || (() => { throw new Error("CLOUD_JWT_SECRET is required"); })(),
       signOptions: {
         expiresIn: (process.env.CLOUD_AUTH_TOKEN_TTL ?? "7d") as never,
       },

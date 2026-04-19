@@ -8,7 +8,11 @@ type StoredApiKeyEnvelope = {
 };
 
 function resolveEncryptionSecret() {
-  return process.env.USER_API_KEY_ENCRYPTION_SECRET?.trim() || 'dev_secret_yinjie_user_api_key';
+  const secret = process.env.USER_API_KEY_ENCRYPTION_SECRET?.trim();
+  if (!secret) {
+    throw new Error('USER_API_KEY_ENCRYPTION_SECRET is required');
+  }
+  return secret;
 }
 
 function buildEncryptionKey() {
