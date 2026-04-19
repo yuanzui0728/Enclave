@@ -46,7 +46,6 @@ import {
   resolveFeedMomentContentType,
 } from "../features/feed/feed-media";
 import { formatTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -476,11 +475,9 @@ export function DiscoverFeedPage() {
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
-            onClick={() =>
-              navigateBackOrFallback(() => {
-                void navigate({ to: "/tabs/discover" });
-              })
-            }
+            onClick={() => {
+              void navigate({ to: "/tabs/discover" });
+            }}
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"

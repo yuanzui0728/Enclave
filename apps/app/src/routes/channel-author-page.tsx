@@ -28,7 +28,6 @@ import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ChannelAuthorCollectionTab = "all" | "videos" | "updates" | "live";
@@ -84,14 +83,12 @@ export function ChannelAuthorPage() {
   }, [activeCollection, authorId]);
 
   function navigateBackToChannels() {
-    navigateBackOrFallback(() => {
-      if (isDesktopLayout) {
-        void navigate({ to: "/tabs/channels" });
-        return;
-      }
+    if (isDesktopLayout) {
+      void navigate({ to: "/tabs/channels" });
+      return;
+    }
 
-      void navigate({ to: "/discover/channels" });
-    });
+    void navigate({ to: "/discover/channels" });
   }
 
   function openChannelPost(post: FeedPostListItem) {
