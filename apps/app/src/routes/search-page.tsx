@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   clearSearchHistory,
@@ -36,6 +36,7 @@ export function SearchPage() {
   });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseSearchRouteState(hash);
+  const syncingRouteStateRef = useRef(false);
   const [searchText, setSearchText] = useState(routeState.keyword);
   const [committedSearchText, setCommittedSearchText] = useState(
     routeState.keyword,
@@ -63,6 +64,7 @@ export function SearchPage() {
   } = useSearchIndex(effectiveSearchText, activeCategory, isDesktopLayout);
 
   useEffect(() => {
+    syncingRouteStateRef.current = true;
     setSearchText(routeState.keyword);
     if (isDesktopLayout) {
       setCommittedSearchText(routeState.keyword);
@@ -70,11 +72,24 @@ export function SearchPage() {
   }, [isDesktopLayout, routeState.keyword]);
 
   useEffect(() => {
+    syncingRouteStateRef.current = true;
     setActiveCategory(routeState.category);
   }, [routeState.category]);
 
   useEffect(() => {
     if (pathname !== "/tabs/search") {
+      return;
+    }
+
+    const routeStateApplied =
+      searchText === routeState.keyword &&
+      activeCategory === routeState.category &&
+      (!isDesktopLayout || committedSearchText === routeState.keyword);
+
+    if (syncingRouteStateRef.current) {
+      if (routeStateApplied) {
+        syncingRouteStateRef.current = false;
+      }
       return;
     }
 
@@ -96,11 +111,16 @@ export function SearchPage() {
     });
   }, [
     activeCategory,
+    committedSearchText,
     effectiveSearchText,
     hash,
+    isDesktopLayout,
     navigate,
     pathname,
+    routeState.category,
+    routeState.keyword,
     routeState.source,
+    searchText,
   ]);
 
   useEffect(() => {

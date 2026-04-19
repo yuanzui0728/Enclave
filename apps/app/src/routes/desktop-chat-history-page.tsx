@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -50,6 +50,7 @@ export function DesktopChatHistoryPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseDesktopChatHistoryRouteState(hash);
+  const syncingRouteStateRef = useRef(false);
   const localMessageActionState = useLocalChatMessageActionState();
   const { reminders } = useMessageReminders();
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -69,6 +70,7 @@ export function DesktopChatHistoryPage() {
   );
 
   useEffect(() => {
+    syncingRouteStateRef.current = true;
     if (routeState.conversationId === selectedConversationId) {
       return;
     }
@@ -105,6 +107,16 @@ export function DesktopChatHistoryPage() {
   }, [conversations, routeState.conversationId, selectedConversationId]);
 
   useEffect(() => {
+    const routeStateApplied =
+      (routeState.conversationId ?? null) === selectedConversationId;
+
+    if (syncingRouteStateRef.current) {
+      if (routeStateApplied) {
+        syncingRouteStateRef.current = false;
+      }
+      return;
+    }
+
     const nextHash = buildDesktopChatHistoryRouteHash(selectedConversationId);
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
 
@@ -117,7 +129,7 @@ export function DesktopChatHistoryPage() {
       hash: nextHash,
       replace: true,
     });
-  }, [hash, navigate, selectedConversationId]);
+  }, [hash, navigate, routeState.conversationId, selectedConversationId]);
 
   const selectedConversation =
     conversations.find((item) => item.id === selectedConversationId) ?? null;
