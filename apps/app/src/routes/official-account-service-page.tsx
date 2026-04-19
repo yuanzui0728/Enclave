@@ -1,18 +1,19 @@
-import { Suspense, lazy, useMemo } from "react";
+import { Suspense, lazy } from "react";
 import {
   useNavigate,
   useParams,
   useRouterState,
 } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
-import { parseDesktopOfficialMessageRouteHash } from "../features/desktop/chat/desktop-official-message-route-state";
 import { OfficialAccountServiceThread } from "../features/official-accounts/service/official-account-service-thread";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 
 const DesktopChatWorkspace = lazy(async () => {
-  const mod = await import("../features/desktop/chat/desktop-chat-workspace");
-  return { default: mod.DesktopChatWorkspace };
+  const mod = await import(
+    "../features/desktop/chat/desktop-official-message-workspace-shell"
+  );
+  return { default: mod.DesktopOfficialMessageWorkspaceShell };
 });
 
 export function OfficialAccountServicePage() {
@@ -24,17 +25,13 @@ export function OfficialAccountServicePage() {
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
-  const routeState = useMemo(
-    () => parseDesktopOfficialMessageRouteHash(hash),
-    [hash],
-  );
 
   if (isDesktopLayout) {
     return (
       <Suspense fallback={null}>
         <DesktopChatWorkspace
+          hash={hash}
           selectedServiceAccountId={accountId}
-          selectedOfficialArticleId={routeState.articleId}
         />
       </Suspense>
     );
