@@ -76,7 +76,7 @@ import { MobileMessageActionSheet } from "../features/chat/mobile-message-action
 import type {
   DesktopMessageForwardMode,
   DesktopMessageForwardPreviewItem,
-} from "../features/desktop/chat/desktop-message-forward-dialog";
+} from "../features/chat/message-forward-dialog-shell";
 import type { DesktopChatImageViewerSessionItem } from "../features/chat/chat-image-viewer-route-state";
 import {
   hydrateDesktopFavoritesFromNative,
@@ -211,14 +211,14 @@ type ChatMessageListProps = {
 
 const DesktopMessageForwardDialog = lazy(async () => {
   const mod = await import(
-    "../features/desktop/chat/desktop-message-forward-dialog"
+    "../features/chat/message-forward-dialog-shell"
   );
   return { default: mod.DesktopMessageForwardDialog };
 });
 
 const DesktopMessageAvatarPopover = lazy(async () => {
   const mod = await import(
-    "../features/desktop/chat/desktop-message-avatar-popover"
+    "../features/chat/message-avatar-popover-shell"
   );
   return { default: mod.DesktopMessageAvatarPopover };
 });
