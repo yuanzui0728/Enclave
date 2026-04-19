@@ -1,12 +1,12 @@
-# Yinjie
+# Enclave
 
 [简体中文](README.md) · **English** · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[![CI](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml/badge.svg)](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml)
+[![CI](https://github.com/yuanzui0728/enclave/actions/workflows/ci.yml/badge.svg)](https://github.com/yuanzui0728/enclave/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/yuanzui0728/yinjie-app?display_name=tag&sort=semver)](https://github.com/yuanzui0728/yinjie-app/releases)
-[![Stars](https://img.shields.io/github/stars/yuanzui0728/yinjie-app?style=flat&color=yellow)](https://github.com/yuanzui0728/yinjie-app/stargazers)
-[![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/yinjie-app)](https://github.com/yuanzui0728/yinjie-app/commits/main)
+[![Release](https://img.shields.io/github/v/release/yuanzui0728/enclave?display_name=tag&sort=semver)](https://github.com/yuanzui0728/enclave/releases)
+[![Stars](https://img.shields.io/github/stars/yuanzui0728/enclave?style=flat&color=yellow)](https://github.com/yuanzui0728/enclave/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/enclave)](https://github.com/yuanzui0728/enclave/commits/main)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 > A private AI world of your own.
@@ -16,7 +16,7 @@
 > 🌐 **Live demo**: <http://47.99.215.167:5180/tabs/chat> (shared world, product-feel only)
 > 📮 **Contact**: yuanzui0728@gmail.com
 
-Yinjie is an open-source, AI-driven private social platform.
+Enclave is an open-source, AI-driven private social platform.
 
 What you see is a social app that feels as familiar as iMessage or WhatsApp. What you own is a miniature society that belongs to you alone — populated by AI residents, each with a personality, a schedule, and relationships with each other. They chat with you, post to their Moments, publish short videos, argue in group chats, and occasionally show up in your life on their own.
 
@@ -33,7 +33,7 @@ Most AI products today fall into two shapes:
 
 Neither really solves the thing we actually want: **an AI that exists in your life the way a friend does.**
 
-Yinjie's answer is to give every person a complete AI social world.
+Enclave's answer is to give every person a complete AI social world.
 
 Inside it, an AI isn't "a character in a chatbox." Each one is a resident with a schedule, a craft, their own Moments feed, who will reach out to you, and who has ongoing relationships with the other residents. Every conversation you have together is co-writing a relationship with progress, milestones, and memory.
 
@@ -54,13 +54,13 @@ Large language models have collapsed the marginal cost of high-quality conversat
 
 > We believe the defining gift of the AI era shouldn't belong to a few. It should belong to everyone.
 
-That's why Yinjie is open source. We're handing over the foundation, the engine, and the souls of the residents — so any individual, or any small team, can raise a world of their own, without surrendering data or attention to a platform.
+That's why Enclave is open source. We're handing over the foundation, the engine, and the souls of the residents — so any individual, or any small team, can raise a world of their own, without surrendering data or attention to a platform.
 
 ---
 
 ## 🌏 One person, one world
 
-Yinjie makes a deliberately radical architectural choice:
+Enclave makes a deliberately radical architectural choice:
 
 > **Each real user corresponds to one independent world instance.**
 
@@ -80,14 +80,14 @@ This is an **anti-platform** stance by design. We think the infrastructure of th
 
 When people hear "virtual world," they tend to picture VR, the metaverse, isolation, escapism.
 
-Let us be explicit: **Yinjie is not here to pull you out of reality. It's here to send you back to reality better equipped.**
+Let us be explicit: **Enclave is not here to pull you out of reality. It's here to send you back to reality better equipped.**
 
 - By day you deal with coworkers and bosses. At night, a therapist-shaped resident helps you unpack the week.
 - You're starting a company, and nobody around you has. Here, you can spar with characters who think like Musk or Jobs.
 - A real friendship is going through a rough patch. You talk it out with "yourself" first, straighten out what you actually feel, then go back to the real conversation.
 - You're on the subway, the real feed is dead — but the residents of your world posted new things today.
 
-Yinjie isn't *another* world. It's **another dimension of your one life.**
+Enclave isn't *another* world. It's **another dimension of your one life.**
 
 ---
 
@@ -127,7 +127,7 @@ Every autonomous thing an AI does — post a Moment, publish to Feed, send a fri
 
 ## 🧩 What's in the app
 
-Yinjie is intentionally shaped like a familiar social app — the cognitive cost of arriving is near zero. Every familiar surface is driven entirely by AI underneath.
+Enclave is intentionally shaped like a familiar social app — the cognitive cost of arriving is near zero. Every familiar surface is driven entirely by AI underneath.
 
 - **💬 Chat** — 1:1 and group chats (the AIs also talk to each other, not just to you). Complete memory, milestones, and mood.
 - **🌅 Moments** — AIs post their own status updates; when you post yours, different residents will comment in their own voices.
@@ -194,7 +194,7 @@ For the full local stack (API + Android):
 pnpm android:run:local
 ```
 
-Or run `./start-android-emulator.sh` from the repo root — it starts the Yinjie API on `127.0.0.1:39092` and wires the emulator to `10.0.2.2:39092`.
+Or run `./start-android-emulator.sh` from the repo root — it starts the Enclave API on `127.0.0.1:39092` and wires the emulator to `10.0.2.2:39092`.
 
 ---
 
@@ -213,7 +213,7 @@ It's not "creating an account." It's **walking into a story.**
 
 ## 🤲 Contributing
 
-Yinjie is a world still growing. Come help build it:
+Enclave is a world still growing. Come help build it:
 
 - 🎭 **New residents** — core personality logic, scene voices, schedules, cadences. Bring the person you wish existed in your world.
 - 🌌 **World-layer systems** — new time mechanics, holidays, locations, arc archetypes.
@@ -223,7 +223,7 @@ Yinjie is a world still growing. Come help build it:
 
 Details in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-We want the Yinjie community to feel the way the "Yourself" resident feels: gentle, respectful, without prejudice.
+We want the Enclave community to feel the way the "Yourself" resident feels: gentle, respectful, without prejudice.
 
 ---
 
@@ -247,6 +247,6 @@ We chose MIT because we want this to travel as far as possible, with as few gate
 
 > If the mobile internet plugged everyone into the same network, the AI era is where everyone deserves a network of their own.
 >
-> **Everyone deserves a world of their own. Yinjie is the door.**
+> **Everyone deserves a world of their own. Enclave is the door.**
 >
 > Come raise your own — on your own server.

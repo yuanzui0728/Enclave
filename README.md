@@ -2,11 +2,11 @@
 
 **简体中文** · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[![CI](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml/badge.svg)](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml)
+[![CI](https://github.com/yuanzui0728/enclave/actions/workflows/ci.yml/badge.svg)](https://github.com/yuanzui0728/enclave/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/yuanzui0728/yinjie-app?display_name=tag&sort=semver)](https://github.com/yuanzui0728/yinjie-app/releases)
-[![Stars](https://img.shields.io/github/stars/yuanzui0728/yinjie-app?style=flat&color=yellow)](https://github.com/yuanzui0728/yinjie-app/stargazers)
-[![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/yinjie-app)](https://github.com/yuanzui0728/yinjie-app/commits/main)
+[![Release](https://img.shields.io/github/v/release/yuanzui0728/enclave?display_name=tag&sort=semver)](https://github.com/yuanzui0728/enclave/releases)
+[![Stars](https://img.shields.io/github/stars/yuanzui0728/enclave?style=flat&color=yellow)](https://github.com/yuanzui0728/enclave/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/enclave)](https://github.com/yuanzui0728/enclave/commits/main)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 > 一个属于你的 AI 虚拟世界。
@@ -16,7 +16,7 @@
 > 🌐 **在线体验**：<http://47.99.215.167:5180/tabs/chat> （共享世界，仅供感受产品形态）
 > 📮 **联系作者**：yuanzui0728@gmail.com
 
-隐界是一个开源的、由 AI 驱动的私人虚拟社交平台。
+隐界（**Enclave**）是一个开源的、由 AI 驱动的私人虚拟社交平台。
 
 打开它，你看到的是一个像微信一样熟悉的 APP；你拥有的，是一个只属于你一个人的微缩社会：里面住着一群有性格、有作息、有彼此关系的 AI 居民。他们会和你聊天，会给你发朋友圈，会拍视频号，会在群里讨论事情，也会主动出现在你的生活里。
 
