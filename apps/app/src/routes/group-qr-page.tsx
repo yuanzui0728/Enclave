@@ -1939,10 +1939,13 @@ export function GroupQrPage() {
               <Button
                 variant="secondary"
                 onClick={() => {
-                  void navigate({ to: "/group/$groupId", params: { groupId } });
+                  void navigate({
+                    to: "/group/$groupId/details",
+                    params: { groupId },
+                  });
                 }}
               >
-                返回群聊
+                返回群聊信息
               </Button>
             </div>
           </div>

@@ -354,7 +354,13 @@ export function MomentsPage() {
 
   if (isDesktopLayout) {
     if (routeSelectedAuthorId) {
-      return null;
+      return (
+        <RouteRedirectState
+          title="正在打开好友朋友圈"
+          description="正在切换到桌面好友朋友圈工作区，马上显示对应居民的动态。"
+          loadingLabel="正在切换到桌面朋友圈..."
+        />
+      );
     }
 
     const errors: string[] = [];

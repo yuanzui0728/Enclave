@@ -495,13 +495,13 @@ export function ChatBackgroundPage() {
               variant="secondary"
               onClick={() => {
                 void navigate({
-                  to: "/chat/$conversationId",
+                  to: "/chat/$conversationId/details",
                   params: { conversationId },
                 });
               }}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
             >
-              返回聊天
+              返回聊天信息
             </Button>
           </div>
           <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)]">

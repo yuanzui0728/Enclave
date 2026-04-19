@@ -479,13 +479,13 @@ export function GroupChatBackgroundPage() {
               variant="secondary"
               onClick={() => {
                 void navigate({
-                  to: "/group/$groupId",
+                  to: "/group/$groupId/details",
                   params: { groupId },
                 });
               }}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
             >
-              返回群聊
+              返回群聊信息
             </Button>
           </div>
           <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)]">
