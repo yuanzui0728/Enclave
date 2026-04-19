@@ -1,4 +1,6 @@
 import {
+  Suspense,
+  lazy,
   useCallback,
   useMemo,
   useEffect,
@@ -71,12 +73,10 @@ import {
 } from "../features/chat/mobile-message-reminder-sheet";
 import { MessageQuoteSelectionSheet } from "../features/chat/message-quote-selection-sheet";
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
-import {
-  DesktopMessageForwardDialog,
-  type DesktopMessageForwardMode,
-  type DesktopMessageForwardPreviewItem,
+import type {
+  DesktopMessageForwardMode,
+  DesktopMessageForwardPreviewItem,
 } from "../features/desktop/chat/desktop-message-forward-dialog";
-import { DesktopMessageAvatarPopover } from "../features/desktop/chat/desktop-message-avatar-popover";
 import type { DesktopChatImageViewerSessionItem } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import {
   hydrateDesktopFavoritesFromNative,
@@ -208,6 +208,20 @@ type ChatMessageListProps = {
   }) => void;
   onSelectionModeChange?: (active: boolean) => void;
 };
+
+const DesktopMessageForwardDialog = lazy(async () => {
+  const mod = await import(
+    "../features/desktop/chat/desktop-message-forward-dialog"
+  );
+  return { default: mod.DesktopMessageForwardDialog };
+});
+
+const DesktopMessageAvatarPopover = lazy(async () => {
+  const mod = await import(
+    "../features/desktop/chat/desktop-message-avatar-popover"
+  );
+  return { default: mod.DesktopMessageAvatarPopover };
+});
 
 async function openDesktopChatImageViewerWindowOnDemand(input: {
   imageUrl: string;
@@ -3325,42 +3339,48 @@ export function ChatMessageList({
           }}
         />
       ) : null}
-      <DesktopMessageForwardDialog
-        open={Boolean(forwardMessages?.length)}
-        messages={forwardPreviewItems}
-        conversations={forwardConversationsQuery.data ?? []}
-        supportsSeparateMode={(forwardMessages ?? []).every(canForwardMessage)}
-        variant={variant}
-        loading={forwardConversationsQuery.isLoading}
-        pending={forwardMutation.isPending}
-        error={
-          forwardConversationsQuery.error instanceof Error
-            ? forwardConversationsQuery.error.message
-            : null
-        }
-        onClose={() => setForwardMessages(null)}
-        onForward={(conversation, mode) => {
-          void forwardMutation.mutateAsync({ conversation, mode });
-        }}
-      />
+      {forwardMessages?.length ? (
+        <Suspense fallback={null}>
+          <DesktopMessageForwardDialog
+            open
+            messages={forwardPreviewItems}
+            conversations={forwardConversationsQuery.data ?? []}
+            supportsSeparateMode={forwardMessages.every(canForwardMessage)}
+            variant={variant}
+            loading={forwardConversationsQuery.isLoading}
+            pending={forwardMutation.isPending}
+            error={
+              forwardConversationsQuery.error instanceof Error
+                ? forwardConversationsQuery.error.message
+                : null
+            }
+            onClose={() => setForwardMessages(null)}
+            onForward={(conversation, mode) => {
+              void forwardMutation.mutateAsync({ conversation, mode });
+            }}
+          />
+        </Suspense>
+      ) : null}
       {isDesktop && desktopAvatarPopover ? (
-        desktopAvatarPopover.kind === "owner" ? (
-          <DesktopMessageAvatarPopover
-            anchorElement={desktopAvatarPopover.anchorElement}
-            kind="owner"
-            onClose={() => setDesktopAvatarPopover(null)}
-          />
-        ) : (
-          <DesktopMessageAvatarPopover
-            anchorElement={desktopAvatarPopover.anchorElement}
-            kind="character"
-            characterId={desktopAvatarPopover.characterId}
-            fallbackName={desktopAvatarPopover.senderName}
-            fallbackAvatar={desktopAvatarPopover.senderAvatar}
-            threadContext={threadContext}
-            onClose={() => setDesktopAvatarPopover(null)}
-          />
-        )
+        <Suspense fallback={null}>
+          {desktopAvatarPopover.kind === "owner" ? (
+            <DesktopMessageAvatarPopover
+              anchorElement={desktopAvatarPopover.anchorElement}
+              kind="owner"
+              onClose={() => setDesktopAvatarPopover(null)}
+            />
+          ) : (
+            <DesktopMessageAvatarPopover
+              anchorElement={desktopAvatarPopover.anchorElement}
+              kind="character"
+              characterId={desktopAvatarPopover.characterId}
+              fallbackName={desktopAvatarPopover.senderName}
+              fallbackAvatar={desktopAvatarPopover.senderAvatar}
+              threadContext={threadContext}
+              onClose={() => setDesktopAvatarPopover(null)}
+            />
+          )}
+        </Suspense>
       ) : null}
     </div>
   );
