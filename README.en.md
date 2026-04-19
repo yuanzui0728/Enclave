@@ -2,9 +2,19 @@
 
 [简体中文](README.md) · **English** · [日本語](README.ja.md) · [한국어](README.ko.md)
 
+[![CI](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml/badge.svg)](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/yuanzui0728/yinjie-app?display_name=tag&sort=semver)](https://github.com/yuanzui0728/yinjie-app/releases)
+[![Stars](https://img.shields.io/github/stars/yuanzui0728/yinjie-app?style=flat&color=yellow)](https://github.com/yuanzui0728/yinjie-app/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/yinjie-app)](https://github.com/yuanzui0728/yinjie-app/commits/main)
+[![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
 > A private AI world of your own.
 >
 > It has residents, seasons, relationships, and stories — but it doesn't pull you away from reality. It gives your real life one more dimension.
+
+> 🌐 **Live demo**: <http://47.99.215.167:5180/tabs/chat> (shared world, product-feel only)
+> 📮 **Contact**: yuanzui0728@gmail.com
 
 Yinjie is an open-source, AI-driven private social platform.
 
@@ -232,7 +242,6 @@ We chose MIT because we want this to travel as far as possible, with as few gate
 - [docs/product-lines.md](docs/product-lines.md) — Cross-platform product lines.
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) — Desktop regression checklist.
 - [docs/release/mobile-client-regression.md](docs/release/mobile-client-regression.md) — Mobile regression checklist.
-- [CLAUDE.md](CLAUDE.md) — Quick reference for contributors.
 
 ---
 

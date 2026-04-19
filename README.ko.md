@@ -2,9 +2,19 @@
 
 [简体中文](README.md) · [English](README.en.md) · [日本語](README.ja.md) · **한국어**
 
+[![CI](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml/badge.svg)](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/yuanzui0728/yinjie-app?display_name=tag&sort=semver)](https://github.com/yuanzui0728/yinjie-app/releases)
+[![Stars](https://img.shields.io/github/stars/yuanzui0728/yinjie-app?style=flat&color=yellow)](https://github.com/yuanzui0728/yinjie-app/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/yinjie-app)](https://github.com/yuanzui0728/yinjie-app/commits/main)
+[![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
 > 당신만의 AI 세계.
 >
 > 이 안에는 주민이 있고, 시간이 흐르고, 관계가 자라고, 이야기가 쌓입니다 — 하지만 현실의 대체물은 아닙니다. 당신의 현실에 또 하나의 차원을 더해주는 곳입니다.
+
+> 🌐 **라이브 데모**: <http://47.99.215.167:5180/tabs/chat>（공유 세계, 제품 감각 체험용）
+> 📮 **문의**: yuanzui0728@gmail.com
 
 은계(隱界, Yinjie)는 AI가 살아 움직이는 오픈소스 프라이빗 소셜 플랫폼입니다.
 
@@ -232,7 +242,6 @@ MIT를 고른 이유는 이 프로젝트를 가능한 한 멀리, 가능한 한 
 - [docs/product-lines.md](docs/product-lines.md) — 멀티 플랫폼 구성 설명.
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) — 데스크톱 리그레션 체크리스트.
 - [docs/release/mobile-client-regression.md](docs/release/mobile-client-regression.md) — 모바일 리그레션 체크리스트.
-- [CLAUDE.md](CLAUDE.md) — 기여자를 위한 빠른 참조.
 
 ---
 

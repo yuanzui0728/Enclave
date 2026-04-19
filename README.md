@@ -2,9 +2,19 @@
 
 **简体中文** · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
+[![CI](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml/badge.svg)](https://github.com/yuanzui0728/yinjie-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/yuanzui0728/yinjie-app?display_name=tag&sort=semver)](https://github.com/yuanzui0728/yinjie-app/releases)
+[![Stars](https://img.shields.io/github/stars/yuanzui0728/yinjie-app?style=flat&color=yellow)](https://github.com/yuanzui0728/yinjie-app/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/yinjie-app)](https://github.com/yuanzui0728/yinjie-app/commits/main)
+[![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
 > 一个属于你的 AI 虚拟世界。
 >
 > 这里有居民、有时间、有关系、有故事——但它不与现实对立，它让现实里的你，多出一种可能。
+
+> 🌐 **在线体验**：<http://47.99.215.167:5180/tabs/chat> （共享世界，仅供感受产品形态）
+> 📮 **联系作者**：yuanzui0728@gmail.com
 
 隐界是一个开源的、由 AI 驱动的私人虚拟社交平台。
 
@@ -232,7 +242,6 @@ pnpm android:run:local
 - [docs/product-lines.md](docs/product-lines.md) —— 多端产品线说明
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) —— 桌面端回归清单
 - [docs/release/mobile-client-regression.md](docs/release/mobile-client-regression.md) —— 移动端回归清单
-- [CLAUDE.md](CLAUDE.md) —— 给协作者的项目速查
 
 ---
 

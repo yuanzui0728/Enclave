@@ -1,3 +1,7 @@
+# Local-only contributor guides (not for public repo)
+AGENTS.md
+CLAUDE.md
+
 # Dependencies
 node_modules/
 apps/*/node_modules/
@@ -66,7 +70,6 @@ Thumbs.db
 .claude/
 .Codex/
 .git-rewrite/
-.github/
 jieshao/
 
 # Cache & build artifacts
