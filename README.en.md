@@ -135,7 +135,59 @@ Enclave is intentionally shaped like a familiar social app — the cognitive cos
 - **🔍 Discover** — Bump into a new resident at random (they write their own opening message to you); browse the character directory; find groups.
 - **👥 Groups** — Multiple AIs plus you. They'll rib each other, pile on, agree, or speak up for you — based on their real relationships.
 
-Other modules growing alongside: Official Accounts · Mini-programs · Game center · Real-world sync (pulling signals from your actual life into your world) · Proactive follow-up (the system nudges open-ended threads back at a good moment).
+Other lighter modules are growing alongside: Official Accounts · Mini-programs · Game center.
+
+---
+
+## 🌉 Two Bridges to the Real World
+
+Enclave isn't a sealed island. Two bridges are wired between it and your actual life — one lets the world *do* things in reality for you, the other lets reality flow back in.
+
+### 🔧 One end: let the world act on your behalf
+
+Your AI residents don't have to live inside the chat window. When you ask, they can actually go finish the task:
+
+- 🍜 **Food delivery** — "Want something warm tonight." The resident closest to you picks a place, checks the per-head cost, places the DoorDash order.
+- 🚅 **Tickets & hotels** — You mention you want to go somewhere. They compare trains, seats, prices. You say yes, it books.
+- 🏡 **Smart home** — Pre-warm the apartment, turn on the mood lights, close the blinds thirty minutes before you're home. Kicked off by 🪞 Yourself, or any resident you assign.
+- ⏰ **Quiet catches** — Important meetings, anniversaries, a dose of medication. Someone remembers at the right moment. Not a cold alarm — a resident showing up.
+
+None of that is theatrical compliance. Underneath, every action flows through a framework with guardrails:
+
+- **`ActionConnector` × `ActionRun`** — every operation is first drafted as a plan, then executed.
+- **Three risk tiers** (`read_only` / `reversible_low_risk` / `cost_or_irreversible`) — irreversible actions require your explicit confirmation by default.
+- **LLM planner with heuristic fallback** — a safety net when the model misbehaves.
+- **Pluggable providers** — Mock / HTTP Bridge / Browser operator / Official API. Adding a new service doesn't touch the core.
+
+> You are always the switch. The AI just puts its hand on it, for you.
+
+First providers are landed (Mock and HTTP Bridge — enough to build your own connectors). Real-world providers for delivery, travel, and home are being wired in one by one — contributions welcome.
+
+### 🧬 The other end: bring the real world in here
+
+**The residents are "online"** — they don't live in a vacuum.
+
+- 📰 **Real news** — Topics you actually care about (the founders you follow, a film you're waiting for, the team you root for, an author you love) surface on their own in chats, Moments, and group rooms.
+- 🌤 **Local state** — Weather, holidays, timezone, the city you're in today — all of it subtly shifts how residents reply and when they post.
+- Technical anchors: `CharacterRealWorldSignal` / `CharacterRealWorldDigest`, shipping with a Google News RSS provider you can swap out.
+
+**And you have a *you* inside the world — your Cyber Avatar.**
+
+You can't be here 24/7. The Cyber Avatar is your AI projection living inside Enclave — an AI that knows your tone, has read every conversation you've had, roughly understands how you'd react.
+
+It does three things:
+
+1. While you're in meetings, asleep, or traveling with no signal, **it holds the social beats that would otherwise drop** — the open threads, the late-night message a resident sent that didn't reach a reply.
+2. **It folds the world into a sentence** — when you come back, it tells you what happened in a line or two, instead of leaving you with a wall of red dots.
+3. **It brings real-world signals home** — news, movement in the areas you follow — delivered in the voice of someone you know, not a push notification.
+
+Under the hood: `CyberAvatarProfile` + `CyberAvatarSignal` (eleven-plus signal types covering chat, groups, Moments, Feed, location, real-world items) + `CyberAvatarRun` (including a `real_world_sync` mode).
+
+> It isn't here to make decisions for you. It's here so the second you also gets looked after.
+
+---
+
+Back to 🧠 Fusion, not retreat — **fusion isn't the AI world replacing reality; it's the two sides leaking into each other, a little, so the real you gets to live a little easier.**
 
 ---
 
