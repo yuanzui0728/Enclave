@@ -6,6 +6,7 @@ import { DesktopNotesWorkspace } from "../features/desktop/chat/desktop-notes-wo
 import { parseDesktopNoteWindowRouteHash } from "../features/desktop/chat/desktop-note-window-route-state";
 import {
   DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
+  shouldNavigateCurrentWindow,
   type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -38,12 +39,7 @@ export function DesktopNoteWindowPage() {
             DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
             ({ payload }) => {
               const nextTarget = payload.targetPath.trim();
-              if (
-                typeof window !== "undefined" &&
-                nextTarget &&
-                `${window.location.pathname}${window.location.hash}` !==
-                  nextTarget
-              ) {
+              if (shouldNavigateCurrentWindow(nextTarget)) {
                 window.location.assign(nextTarget);
                 return;
               }

@@ -32,6 +32,7 @@ import {
   closeCurrentDesktopWindow,
   DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
   focusMainDesktopWindow,
+  shouldNavigateCurrentWindow,
   type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
@@ -356,12 +357,7 @@ export function DesktopChatImageViewerPage() {
             DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
             ({ payload }) => {
               const nextTarget = payload.targetPath.trim();
-              if (
-                typeof window !== "undefined" &&
-                nextTarget &&
-                `${window.location.pathname}${window.location.hash}` !==
-                  nextTarget
-              ) {
+              if (shouldNavigateCurrentWindow(nextTarget)) {
                 window.location.assign(nextTarget);
                 return;
               }

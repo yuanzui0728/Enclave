@@ -21,6 +21,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
   DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT,
+  shouldNavigateCurrentWindow,
   type DesktopMainWindowNavigatePayload,
 } from "../../runtime/desktop-windowing";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
@@ -301,12 +302,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT,
           ({ payload }) => {
             const nextTarget = payload.targetPath?.trim();
-            if (
-              nextTarget &&
-              typeof window !== "undefined" &&
-              `${window.location.pathname}${window.location.hash}` !==
-                nextTarget
-            ) {
+            if (nextTarget && shouldNavigateCurrentWindow(nextTarget)) {
               window.location.assign(nextTarget);
               return;
             }

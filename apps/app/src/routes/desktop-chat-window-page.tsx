@@ -11,6 +11,7 @@ import {
   closeCurrentDesktopWindow,
   DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
   focusMainDesktopWindow,
+  shouldNavigateCurrentWindow,
   type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -72,12 +73,7 @@ export function DesktopChatWindowPage() {
             DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
             ({ payload }) => {
               const nextTarget = payload.targetPath.trim();
-              if (
-                typeof window !== "undefined" &&
-                nextTarget &&
-                `${window.location.pathname}${window.location.hash}` !==
-                  nextTarget
-              ) {
+              if (shouldNavigateCurrentWindow(nextTarget)) {
                 window.location.assign(nextTarget);
                 return;
               }

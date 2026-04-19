@@ -143,6 +143,19 @@ export async function openDesktopStandaloneWindow(
   }
 }
 
+export function getCurrentWindowTargetPath() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+export function shouldNavigateCurrentWindow(targetPath: string) {
+  const nextTarget = targetPath.trim();
+  return Boolean(nextTarget) && getCurrentWindowTargetPath() !== nextTarget;
+}
+
 export async function focusMainDesktopWindow(targetPath?: string) {
   if (!isDesktopRuntimeAvailable()) {
     return false;
