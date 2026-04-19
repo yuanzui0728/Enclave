@@ -31,7 +31,7 @@ export type DesktopContactsShortcutItem = {
   onClick: () => void;
 };
 
-type DesktopContactsWorkspaceProps = {
+export type DesktopContactsWorkspaceProps = {
   directoryCountLabel: string;
   searchContainerRef?: RefObject<HTMLDivElement | null>;
   searchText: string;

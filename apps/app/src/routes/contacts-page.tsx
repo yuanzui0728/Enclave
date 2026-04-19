@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
   type ReactNode,
-  type KeyboardEvent,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -68,10 +67,6 @@ import {
   matchesFriendSearch,
   type FriendDirectoryItem,
 } from "../features/contacts/contact-utils";
-import {
-  DesktopSearchDropdownPanel,
-  useDesktopSearchLauncher,
-} from "../features/search/desktop-search-launcher";
 import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -80,8 +75,8 @@ import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsWorkspace = lazy(async () => {
-  const mod = await import("../features/desktop/contacts/desktop-contacts-workspace");
-  return { default: mod.DesktopContactsWorkspace };
+  const mod = await import("../features/desktop/contacts/desktop-contacts-workspace-shell");
+  return { default: mod.DesktopContactsWorkspaceShell };
 });
 const DesktopContactsFriendRequestsPane = lazy(async () => {
   const mod = await import("../features/desktop/contacts/desktop-contacts-friend-requests-pane");
@@ -257,11 +252,6 @@ export function ContactsPage() {
   >(null);
   const previousBaseUrlRef = useRef(baseUrl);
   const startChatResetRef = useRef<() => void>(() => {});
-  const desktopSearchLauncher = useDesktopSearchLauncher({
-    keyword: searchText,
-    onKeywordChange: setSearchText,
-    source: "contacts",
-  });
   const effectiveSearchText = isDesktopLayout ? searchText : "";
   const deferredSearchText = useDeferredValue(effectiveSearchText);
 
@@ -859,19 +849,6 @@ export function ContactsPage() {
     void navigate({ to });
   }
 
-  function handleDesktopSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.defaultPrevented) {
-      return;
-    }
-
-    if (event.key !== "Enter") {
-      return;
-    }
-
-    event.preventDefault();
-    desktopSearchLauncher.openSearch();
-  }
-
   function handleMobileQuickActionNavigate(to: "/group/new") {
     setIsQuickMenuOpen(false);
     setNotice(null);
@@ -1153,32 +1130,9 @@ export function ContactsPage() {
               ? ` · ${filteredWorldCharacterItems.length} 个世界角色`
               : ""
           }`}
-          searchContainerRef={desktopSearchLauncher.containerRef}
+          searchSource="contacts"
           searchText={searchText}
           onSearchTextChange={setSearchText}
-          onSearchOpen={() => desktopSearchLauncher.setIsOpen(true)}
-          onSearchKeyDown={handleDesktopSearchKeyDown}
-          searchPanel={
-            desktopSearchLauncher.isOpen ? (
-              <DesktopSearchDropdownPanel
-                history={desktopSearchLauncher.history}
-                keyword={searchText}
-                onClose={desktopSearchLauncher.close}
-                onOpenSearch={desktopSearchLauncher.openSearch}
-                speechDisplayText={desktopSearchLauncher.speechDisplayText}
-                speechError={desktopSearchLauncher.speechError}
-                speechStatus={desktopSearchLauncher.speechStatus}
-              />
-            ) : null
-          }
-          speechListening={desktopSearchLauncher.speechListening}
-          speechStatus={desktopSearchLauncher.speechStatus}
-          speechSupported={desktopSearchLauncher.speechSupported}
-          speechButtonDisabled={desktopSearchLauncher.speechButtonDisabled}
-          onSpeechButtonClick={(event) => {
-            event.preventDefault();
-            desktopSearchLauncher.handleSpeechButtonClick();
-          }}
           shortcutList={
             <ContactShortcutList
               items={desktopShortcutItems}
