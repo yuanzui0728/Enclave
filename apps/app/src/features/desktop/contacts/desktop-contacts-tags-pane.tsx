@@ -21,7 +21,7 @@ import { EmptyState } from "../../../components/empty-state";
 import { buildContactTagGroups } from "../../contacts/contact-tag-groups";
 import { ContactDetailPane } from "../../contacts/contact-detail-pane";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
-import { buildDesktopFriendMomentsRouteHash } from "../moments/desktop-friend-moments-route-state";
+import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments-route-state";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 

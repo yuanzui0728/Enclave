@@ -24,8 +24,8 @@ import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
-import { buildDesktopAddFriendRouteHash } from "../contacts/desktop-add-friend-route-state";
-import { buildDesktopFriendMomentsRouteHash } from "../moments/desktop-friend-moments-route-state";
+import { buildDesktopAddFriendRouteHash } from "../../contacts/add-friend-route-state";
+import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments-route-state";
 
 type DesktopMessageAvatarPopoverProps =
   | {

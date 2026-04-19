@@ -57,7 +57,7 @@ import {
   type SearchRouteSource,
 } from "./search-route-state";
 import { resolveSearchNavigationTarget } from "./search-navigation";
-import { buildDesktopAddFriendRouteHash } from "../desktop/contacts/desktop-add-friend-route-state";
+import { buildDesktopAddFriendRouteHash } from "../contacts/add-friend-route-state";
 import {
   hydrateSearchHistoryFromNative,
   loadSearchHistory,

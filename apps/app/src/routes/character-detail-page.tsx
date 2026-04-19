@@ -56,7 +56,7 @@ async function buildDesktopAddFriendRouteHashOnDemand(input: {
   recommendationId?: string;
 }) {
   const { buildDesktopAddFriendRouteHash } = await import(
-    "../features/desktop/contacts/desktop-add-friend-route-state"
+    "../features/contacts/add-friend-route-state"
   );
   return buildDesktopAddFriendRouteHash(input);
 }
@@ -66,7 +66,7 @@ async function buildDesktopFriendMomentsRouteHashOnDemand(input: {
   source?: "character-detail";
 }) {
   const { buildDesktopFriendMomentsRouteHash } = await import(
-    "../features/desktop/moments/desktop-friend-moments-route-state"
+    "../features/moments/friend-moments-route-state"
   );
   return buildDesktopFriendMomentsRouteHash(input);
 }

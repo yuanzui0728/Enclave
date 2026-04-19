@@ -49,7 +49,7 @@ import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
 import { DesktopGroupMemberRemovalPicker } from "./desktop-group-member-removal-picker";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
-import { buildDesktopAddFriendRouteHash } from "../contacts/desktop-add-friend-route-state";
+import { buildDesktopAddFriendRouteHash } from "../../contacts/add-friend-route-state";
 import { DesktopContactTextEditDialog } from "../../contacts/desktop-contact-text-edit-dialog";
 import {
   DesktopContactProfileActionRow,
@@ -59,7 +59,6 @@ import {
   DesktopContactProfileToggleRow,
 } from "../../contacts/desktop-contact-profile-blocks";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
-import { buildDesktopFriendMomentsRouteHash } from "../moments/desktop-friend-moments-route-state";
 import {
   useConversationBackground,
   useGroupBackground,
@@ -68,6 +67,7 @@ import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
+import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments-route-state";
 
 type DesktopChatDetailsPanelProps = {
   conversation: ConversationListItem;

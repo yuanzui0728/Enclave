@@ -54,7 +54,7 @@ async function buildDesktopAddFriendRouteHashOnDemand(input: {
   recommendationId?: string;
 }) {
   const { buildDesktopAddFriendRouteHash } = await import(
-    "../features/desktop/contacts/desktop-add-friend-route-state"
+    "../features/contacts/add-friend-route-state"
   );
   return buildDesktopAddFriendRouteHash(input);
 }

@@ -245,7 +245,7 @@ async function buildDesktopAddFriendRouteHashOnDemand(input: {
   recommendationId?: string;
 }) {
   const { buildDesktopAddFriendRouteHash } = await import(
-    "../features/desktop/contacts/desktop-add-friend-route-state"
+    "../features/contacts/add-friend-route-state"
   );
   return buildDesktopAddFriendRouteHash(input);
 }
@@ -256,8 +256,8 @@ async function buildDesktopNoteWindowRouteHashOnDemand(input: {
 }) {
   const [{ buildDesktopNoteWindowRouteHash }, { createDesktopNoteDraft }] =
     await Promise.all([
-      import("../features/desktop/chat/desktop-note-window-route-state"),
-      import("../features/desktop/chat/desktop-notes-storage"),
+      import("../features/favorites/note-window-route-state"),
+      import("../features/favorites/note-drafts-storage"),
     ]);
   const draft = createDesktopNoteDraft({
     draftId: input.noteId,
