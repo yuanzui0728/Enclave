@@ -19,7 +19,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 const DesktopChatWorkspace = lazy(async () => {
-  const mod = await import("../features/desktop/chat/desktop-chat-workspace");
+  const mod = await import("../features/chat/chat-workspace-shell");
   return { default: mod.DesktopChatWorkspace };
 });
 

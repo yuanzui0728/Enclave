@@ -20,7 +20,7 @@ import {
 import { Button, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
 import { OfficialServiceMessageBubble } from "../../../components/official-service-message-bubble";
-import { buildDesktopMobileOfficialHandoffHash } from "../../desktop/official-accounts/desktop-mobile-official-handoff-route-state";
+import { buildDesktopMobileOfficialHandoffHash } from "../mobile-official-handoff-route-state";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 export function OfficialAccountServiceThread({

@@ -5,7 +5,7 @@ import {
   buildDesktopChatRouteHash,
   type DesktopChatDetailsAction,
   type DesktopChatRoutePanel,
-} from "../desktop/chat/desktop-chat-route-state";
+} from "./chat-route-state";
 
 export type ChatRouteRedirectShellProps = {
   conversationId: string;

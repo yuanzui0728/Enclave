@@ -1,5 +1,5 @@
-import { parseDesktopChatRouteHash } from "../desktop/chat/desktop-chat-route-state";
-import { DesktopChatWorkspace } from "../desktop/chat/desktop-chat-workspace";
+import { parseDesktopChatRouteHash } from "./chat-route-state";
+import { DesktopChatWorkspace } from "./chat-workspace-shell";
 
 export type ChatTabShellProps = {
   hash: string;

@@ -1,4 +1,4 @@
-import { DesktopChatWorkspace } from "../desktop/chat/desktop-chat-workspace";
+import { DesktopChatWorkspace } from "../chat/chat-workspace-shell";
 import { parseDesktopOfficialMessageRouteHash } from "./official-message-route-state";
 
 export type OfficialMessageWorkspaceShellProps = {
