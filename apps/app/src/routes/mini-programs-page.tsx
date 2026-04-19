@@ -63,6 +63,32 @@ function resolveMiniProgramLaunchContextFromSearch(search: unknown) {
   };
 }
 
+function buildMiniProgramsRouteSearch(input: {
+  miniProgramId?: string | null;
+  sourceGroupId?: string | null;
+  sourceGroupName?: string | null;
+}) {
+  const params = new URLSearchParams();
+  const miniProgramId = input.miniProgramId?.trim() ?? "";
+  const sourceGroupId = input.sourceGroupId?.trim() ?? "";
+  const sourceGroupName = input.sourceGroupName?.trim() ?? "";
+
+  if (miniProgramId && getMiniProgramEntry(miniProgramId)) {
+    params.set("miniProgram", miniProgramId);
+  }
+
+  if (sourceGroupId) {
+    params.set("sourceGroupId", sourceGroupId);
+  }
+
+  if (sourceGroupName) {
+    params.set("sourceGroupName", sourceGroupName);
+  }
+
+  const search = params.toString();
+  return search ? `?${search}` : undefined;
+}
+
 export function MiniProgramsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -209,6 +235,35 @@ export function MiniProgramsPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
+  useEffect(() => {
+    if (!isDesktopLayout || !selectedMiniProgramId) {
+      return;
+    }
+
+    const nextSearch = buildMiniProgramsRouteSearch({
+      miniProgramId: selectedMiniProgramId,
+      sourceGroupId: launchContext?.sourceGroupId,
+      sourceGroupName: launchContext?.sourceGroupName,
+    });
+
+    if ((locationSearch || "") === (nextSearch || "")) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/mini-programs",
+      search: nextSearch || undefined,
+      replace: true,
+    });
+  }, [
+    isDesktopLayout,
+    launchContext?.sourceGroupId,
+    launchContext?.sourceGroupName,
+    locationSearch,
+    navigate,
+    selectedMiniProgramId,
+  ]);
+
   function handleOpenMiniProgram(miniProgramId: string) {
     const miniProgram = getMiniProgramEntry(miniProgramId);
     openMiniProgram(miniProgramId);
@@ -246,8 +301,12 @@ export function MiniProgramsPage() {
 
   async function handleCopyMiniProgramToMobile(miniProgramId: string) {
     const miniProgram = getMiniProgramEntry(miniProgramId);
-    const query = new URLSearchParams({ miniProgram: miniProgramId });
-    const path = `/discover/mini-programs?${query.toString()}`;
+    const search = buildMiniProgramsRouteSearch({
+      miniProgramId,
+      sourceGroupId: launchContext?.sourceGroupId,
+      sourceGroupName: launchContext?.sourceGroupName,
+    });
+    const path = `/discover/mini-programs${search ?? ""}`;
     const link = resolveMobileHandoffLink(path);
 
     if (nativeMobileShareSupported) {

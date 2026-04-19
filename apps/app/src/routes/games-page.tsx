@@ -105,6 +105,29 @@ function resolveGameSelectionFromSearch(search: unknown) {
   return getGameCenterGame(gameId) ? gameId : null;
 }
 
+function buildGamesRouteSearch(input: {
+  gameId?: string | null;
+  inviteId?: string | null;
+}) {
+  const params = new URLSearchParams();
+  const gameId = input.gameId?.trim() ?? "";
+  const inviteId = input.inviteId?.trim() ?? "";
+
+  if (gameId && getGameCenterGame(gameId)) {
+    params.set("game", gameId);
+  }
+
+  if (
+    inviteId &&
+    gameCenterFriendActivities.some((activity) => activity.id === inviteId)
+  ) {
+    params.set("invite", inviteId);
+  }
+
+  const search = params.toString();
+  return search ? `?${search}` : undefined;
+}
+
 export function GamesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -196,6 +219,37 @@ export function GamesPage() {
       );
     }
   }, [inviteActivityFromSearch]);
+
+  useEffect(() => {
+    if (!isDesktopLayout || !selectedGameId) {
+      return;
+    }
+
+    const nextSearch = buildGamesRouteSearch({
+      gameId: selectedGameId,
+      inviteId:
+        inviteActivityFromSearch?.gameId === selectedGameId
+          ? inviteActivityFromSearch.id
+          : null,
+    });
+
+    if ((locationSearch || "") === (nextSearch || "")) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/games",
+      search: nextSearch || undefined,
+      replace: true,
+    });
+  }, [
+    inviteActivityFromSearch?.gameId,
+    inviteActivityFromSearch?.id,
+    isDesktopLayout,
+    locationSearch,
+    navigate,
+    selectedGameId,
+  ]);
 
   const featuredGames = resolveGames(gameCenterFeaturedGameIds);
   const selectedGame =
