@@ -1,10 +1,56 @@
 const MOBILE_WEB_LAST_ROUTE_STORAGE_KEY = "yinjie-mobile-web-last-route";
 const MAX_ROUTE_AGE_MS = 1000 * 60 * 60 * 24 * 7;
-const EXCLUDED_PATHNAMES = new Set(["/", "/welcome", "/setup", "/onboarding"]);
+const EXCLUDED_PATHNAMES = new Set([
+  "/",
+  "/welcome",
+  "/setup",
+  "/onboarding",
+  "/group/new",
+]);
 const TRANSIENT_SEARCH_KEYS = new Set(["callReturn", "composeShortcut"]);
 
+const RESTORABLE_STATIC_PATHNAMES = new Set([
+  "/tabs/chat",
+  "/tabs/contacts",
+  "/tabs/discover",
+  "/tabs/profile",
+  "/tabs/search",
+  "/chat/subscription-inbox",
+  "/friend-requests",
+  "/contacts/starred",
+  "/contacts/world-characters",
+  "/contacts/groups",
+  "/contacts/tags",
+  "/contacts/official-accounts",
+  "/discover/moments",
+  "/discover/encounter",
+  "/discover/scene",
+  "/discover/feed",
+  "/discover/channels",
+  "/discover/games",
+  "/discover/mini-programs",
+  "/profile/settings",
+]);
+const RESTORABLE_PATH_PATTERNS = [
+  /^\/chat\/[^/]+$/,
+  /^\/group\/[^/]+$/,
+  /^\/character\/[^/]+$/,
+  /^\/friend-moments\/[^/]+$/,
+  /^\/official-accounts\/[^/]+$/,
+  /^\/official-accounts\/articles\/[^/]+$/,
+  /^\/official-accounts\/service\/[^/]+$/,
+  /^\/channels\/authors\/[^/]+$/,
+];
+const CHAT_TOOL_ROUTE_PATTERN =
+  /^\/chat\/([^/]+)\/(details|background|search)$/;
 const DIRECT_CALL_ROUTE_PATTERN = /^\/chat\/([^/]+)\/(voice-call|video-call)$/;
+const GROUP_TOOL_ROUTE_PATTERN =
+  /^\/group\/([^/]+)\/(details|background|announcement|qr|search)$/;
+const GROUP_EDIT_ROUTE_PATTERN = /^\/group\/([^/]+)\/edit\/(name|nickname)$/;
+const GROUP_MEMBER_ROUTE_PATTERN =
+  /^\/group\/([^/]+)\/members\/(add|remove)$/;
 const GROUP_CALL_ROUTE_PATTERN = /^\/group\/([^/]+)\/(voice-call|video-call)$/;
+const DISCOVER_MOMENTS_PUBLISH_ROUTE_PATTERN = /^\/discover\/moments\/publish$/;
 
 type PersistedMobileWebRoute = {
   path: string;
@@ -58,17 +104,55 @@ function normalizePersistablePathname(pathname: string) {
     return null;
   }
 
+  const chatToolRouteMatch = pathname.match(CHAT_TOOL_ROUTE_PATTERN);
+  if (chatToolRouteMatch) {
+    return normalizeRestorablePathname(`/chat/${chatToolRouteMatch[1]}`);
+  }
+
   const directCallMatch = pathname.match(DIRECT_CALL_ROUTE_PATTERN);
   if (directCallMatch) {
-    return `/chat/${directCallMatch[1]}`;
+    return normalizeRestorablePathname(`/chat/${directCallMatch[1]}`);
+  }
+
+  const groupToolRouteMatch = pathname.match(GROUP_TOOL_ROUTE_PATTERN);
+  if (groupToolRouteMatch) {
+    return normalizeRestorablePathname(`/group/${groupToolRouteMatch[1]}`);
+  }
+
+  const groupEditRouteMatch = pathname.match(GROUP_EDIT_ROUTE_PATTERN);
+  if (groupEditRouteMatch) {
+    return normalizeRestorablePathname(`/group/${groupEditRouteMatch[1]}`);
+  }
+
+  const groupMemberRouteMatch = pathname.match(GROUP_MEMBER_ROUTE_PATTERN);
+  if (groupMemberRouteMatch) {
+    return normalizeRestorablePathname(`/group/${groupMemberRouteMatch[1]}`);
   }
 
   const groupCallMatch = pathname.match(GROUP_CALL_ROUTE_PATTERN);
   if (groupCallMatch) {
-    return `/group/${groupCallMatch[1]}`;
+    return normalizeRestorablePathname(`/group/${groupCallMatch[1]}`);
   }
 
-  return pathname;
+  if (DISCOVER_MOMENTS_PUBLISH_ROUTE_PATTERN.test(pathname)) {
+    return normalizeRestorablePathname("/discover/moments");
+  }
+
+  return normalizeRestorablePathname(pathname);
+}
+
+function normalizeRestorablePathname(pathname: string) {
+  if (RESTORABLE_STATIC_PATHNAMES.has(pathname)) {
+    return pathname;
+  }
+
+  for (const pattern of RESTORABLE_PATH_PATTERNS) {
+    if (pattern.test(pathname)) {
+      return pathname;
+    }
+  }
+
+  return null;
 }
 
 export function persistMobileWebRoute(path: string) {
