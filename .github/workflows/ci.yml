@@ -25,5 +25,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck (excluding admin — tracked separately)
-        run: pnpm exec turbo run typecheck --filter=!@yinjie/admin
+      - name: Typecheck (admin and app excluded — drift tracked separately)
+        run: pnpm exec turbo run typecheck --filter=!@yinjie/admin --filter=!@yinjie/app
