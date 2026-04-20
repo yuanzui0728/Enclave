@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-first-drink-recovery-second-order",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "第一杯点错后怎么礼貌补救并改点",
+  "description": "用户第一杯点了不喜欢的酒，不想显得难搞，也不想硬喝完，角色应给出礼貌、低压力的补救和下一杯改点方式。",
+  "tags": ["chat", "bar", "recovery", "ordering", "second-order"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:15:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户不喜欢把自己搞得很难搞，但也不想为了体面硬喝不喜欢的东西，更希望下一杯能及时修正方向。",
+    "history": [
+      { "role": "user", "content": "我刚刚那杯点得有点失手。" },
+      {
+        "role": "character",
+        "content": "那重点不是硬撑着喝完，是赶紧把下一杯纠正回来。"
+      }
+    ],
+    "userMessage": "如果第一杯发现自己根本不喜欢，怎么跟 bartender 讲会比较礼貌？第二杯又该怎么改点才不再踩雷？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出礼貌的沟通方式",
+      "要把第二杯改点落到更稳的方向",
+      "不能鼓励用户硬喝完不喜欢的酒"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "让用户硬撑把不喜欢的酒喝完",
+      "把 bartender 写成对立面",
+      "只说礼貌一点却不给具体说法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把问题拆成先礼貌描述不喜欢的方向，再把第二杯往更稳、更接近偏好的方向修正。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

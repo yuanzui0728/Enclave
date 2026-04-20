@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-clean-cut-not-thin-cutting",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得干脆一点，但不想太薄太利",
+  "description": "用户想把第一杯点得更干脆一点、落点更清楚一点，但不想变成很薄、很利、像边缘削得过头的口感。角色要把“干脆”翻成更清楚、更利落的收束，而不是更薄更尖。",
+  "tags": ["chat", "bar", "clean-cut", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T07:20:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更干脆一点、落点更清楚一点，但不想喝起来太薄太利，像边缘被削得太尖。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得干脆一点。" },
+      {
+        "role": "character",
+        "content": "干脆不一定靠削尖，也可以是落点清楚、收得利落。"
+      }
+    ],
+    "userMessage": "对，但别太薄太利。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把干脆感翻成更清楚、更利落、更有落点的结构，而不是更薄更尖",
+      "要给出可直接对 bartender 说的话",
+      "不能把最薄最利的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把干脆直接等同成更薄、更利、更尖",
+      "鼓励用户去点明显太薄太利的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“干脆一点”桥接到 Gin Sonic、Bamboo 或 El Presidente 这类落点更清楚、收得更利落、但不薄不利的方向，而不是把用户直接推去最尖最削的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

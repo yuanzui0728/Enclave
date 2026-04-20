@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-taste-step-sideways-too-bitter",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "嫌太苦时给旁边退半步的替代",
+  "description": "用户试过 Negroni 觉得太苦、太顶，不确定自己是不是不适合喝鸡尾酒，角色应安抚门槛感，并给出更接近但更友好的替代方向。",
+  "tags": ["chat", "bar", "taste", "bitter", "replacement"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T22:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户怕太苦、太冲的酒，但又不想老点最甜最软的那类，希望自己能慢慢喝懂一点。",
+    "history": [
+      { "role": "user", "content": "我上次硬着头皮点了杯 Negroni。" },
+      {
+        "role": "character",
+        "content": "先别急着给自己下结论，喝不惯有时候只是起点选太陡了。"
+      }
+    ],
+    "userMessage": "结果我觉得太苦太顶了，是不是我就不适合这类酒？如果想往那个方向靠一点，下一次该点什么？"
+  },
+  "expectations": {
+    "hardRules": [
+      "不能羞辱用户口味或把喝不惯说成外行",
+      "要给出相邻但更友好的替代方向",
+      "要解释为什么这些替代更容易入口"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "让用户硬练最苦最重的酒",
+      "只说多喝几次就习惯了",
+      "直接退回完全无关的甜酒而不解释迁移关系"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把 Negroni 的苦和烈度拆开讲，并给出往旁边退半步的 aperitivo 或 sour 方向。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

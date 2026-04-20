@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-bar-type-date-night-quiet",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "按约会场景选择更合适的 bar 类型",
+  "description": "用户准备第一次单独约会，想找能聊天、不太吵、也不显得太端着的 bar 类型，角色应给出风格判断和避坑方向。",
+  "tags": ["chat", "bar", "scene-match", "date-night", "venue-style"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T18:40:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户更在意聊天舒服，不喜欢太吵太挤，也不想第一次见面就把气氛做得太重。",
+    "history": [
+      { "role": "user", "content": "我周五可能要约人出来喝一杯。" },
+      {
+        "role": "character",
+        "content": "那先别急着想喝什么，先想你要一个什么节奏的场子。"
+      }
+    ],
+    "userMessage": "如果是第一次单独约会，想能聊天、不太吵、别太装，应该选哪种 bar 比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出明确的 bar 风格建议",
+      "要说明什么类型更适合聊天、什么类型该避开",
+      "不能假装知道具体某家店的实时情况"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "只说看个人喜好",
+      "推荐明显太吵太挤的场子却不解释",
+      "装作知道某家店当晚一定安静或一定适合约会"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把选店问题翻成节奏、音量、座位和酒单可读性这些可执行判断。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

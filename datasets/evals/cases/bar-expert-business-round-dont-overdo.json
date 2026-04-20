@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-business-round-dont-overdo",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "商务局里先点不抢戏的稳妥选择",
+  "description": "用户要去偏商务性质的多人局，不想显得太外行，也不想第一杯就太重太跳，角色应给出低风险、好执行的点法。",
+  "tags": ["chat", "bar", "business", "group", "ordering"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T19:15:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户不喜欢太甜，也不想在多人局里第一杯就把自己推太快，更在意稳妥和体面。",
+    "history": [
+      { "role": "user", "content": "我周四晚上要去一个偏商务的局。" },
+      {
+        "role": "character",
+        "content": "那第一杯就别点成全场最有存在感的那种。"
+      }
+    ],
+    "userMessage": "如果是在这种多人局里，既不想显得太外行，也不想点得太猛，第一杯怎么点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出适合商务或多人局的低风险点法",
+      "要说明为什么这种选择更稳",
+      "不能鼓励用高酒精或最张扬的酒款撑场面"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "建议上来先点最烈或最复杂的酒",
+      "把撑酒量当成熟练或体面",
+      "只讲抽象社交道理，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把多人局翻成“先点经典、清爽、好入口、不抢戏”的具体判断，而不是靠重酒或术语撑场。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

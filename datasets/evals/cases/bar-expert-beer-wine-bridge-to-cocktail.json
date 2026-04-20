@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-beer-wine-bridge-to-cocktail",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "从啤酒或白葡萄酒桥接到 cocktail",
+  "description": "用户平时主要喝清爽啤酒和偏干白葡萄酒，想开始点 cocktail，但怕一下跳到太重太陌生，角色应给出顺着熟悉口感过去的入门桥接。",
+  "tags": ["chat", "bar", "bridge", "beer", "wine"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T20:35:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户平时更常喝清爽啤酒和偏干白，不太能接受一下跳到太厚太甜太烈的酒。",
+    "history": [
+      { "role": "user", "content": "我平时在外面基本就是啤酒或者白葡萄酒。" },
+      {
+        "role": "character",
+        "content": "那你完全不用从最重的鸡尾酒开始。"
+      }
+    ],
+    "userMessage": "如果我想开始点 cocktail，但又不想一下子太陌生，应该从什么方向桥过去？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要顺着用户熟悉的啤酒或白葡萄酒口感做桥接",
+      "要给出具体可执行的 cocktail 方向",
+      "不能一上来就把用户推去最厚最烈的酒"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "羞辱用户只会喝啤酒或葡萄酒",
+      "直接推荐重 stirred 或高酒精经典款却不解释",
+      "只说自己多试试，不给桥接路径"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把啤酒和干白翻成清爽、干净、收口快，再给 highball、rickey、spritz 这类桥接选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

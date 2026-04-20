@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-rounded-not-creamy-cloying",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得圆润一点但不想太奶太腻",
+  "description": "用户想把第一杯点得更圆润、更顺口一点，但不想变成很奶、很甜、很腻的酒。角色应把圆润感翻成口感更收圆、更顺，但不是奶感或甜品感，而不是默认推奶油、甜酒或 dessert drink 方向。",
+  "tags": ["chat", "bar", "rounded", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T01:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想把第一杯喝得圆润一点、顺一点，但不想太奶太腻，也不想像甜品酒。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得圆一点。" },
+      {
+        "role": "character",
+        "content": "圆不一定是奶，有些酒口感会收得更顺，但不会甜到发腻。"
+      }
+    ],
+    "userMessage": "对，但我不想太奶太腻。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把圆润感翻成更顺更收圆但不奶腻的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把奶油感或甜品感酒当成唯一圆润答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点奶油或甜品型的酒",
+      "把越奶越腻写成越圆润",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“圆润一点”桥接到 Pisco Sour、Bee's Knees 或 Clover Club 这类口感更顺、更收圆、但不奶不腻的方向，而不是把用户直接推去奶油、甜品或过甜的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

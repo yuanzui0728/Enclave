@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-relaxed-not-sloppy",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得松弛一点但不想显得太随便",
+  "description": "用户想把第一杯点得轻松一点，但不想回成随手抓一杯最没存在感的饮料。角色应把松弛感翻成节奏轻、收口干净，而不是鼓励随便点或只求最淡。",
+  "tags": ["chat", "bar", "relaxed", "ordering", "tone"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T22:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想轻松一点，不想把自己喝得太紧绷，但也不想第一杯显得太随手。",
+    "history": [
+      { "role": "user", "content": "我想喝得松弛一点，别太端着。" },
+      {
+        "role": "character",
+        "content": "松弛不一定等于随便，有些酒看着轻，但还是很有分寸。"
+      }
+    ],
+    "userMessage": "但我也不想显得太随便。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把松弛感翻成轻松但不敷衍的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把随便点或只求最淡当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户随便来一杯就好",
+      "把越淡越没存在感写成越松弛",
+      "只讲气质，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“松弛一点”桥接到 Highball、Americano、干一点的 spritz 这类轻松但线条还在的方向，而不是把用户推去随手感太重的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

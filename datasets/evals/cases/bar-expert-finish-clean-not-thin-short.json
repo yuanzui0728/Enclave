@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-finish-clean-not-thin-short",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得收口利落一点但不想太薄太短",
+  "description": "用户想把第一杯点得收口更利落一点，但不想变成很薄、很短、中段空掉的酒。角色应把这种利落感翻成收得干净、不拖，但口感中段还有内容，而不是默认推最轻最空的方向。",
+  "tags": ["chat", "bar", "finish", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T03:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想把第一杯喝得收口利落一点，但不想太薄、太短，像中段一下就空掉。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得收口利落一点。" },
+      {
+        "role": "character",
+        "content": "收口利落不一定靠把酒做薄，有些酒收得快，但中段还是有东西。"
+      }
+    ],
+    "userMessage": "对，但我不想太薄太短。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把收口利落翻成收得干净但不空掉的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最薄最短的酒当成唯一利落答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最薄最短的酒",
+      "把越空越短写成越利落",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“收口利落一点”桥接到 Americano、El Presidente 或 Bamboo 这类收得干净、但中段不空的方向，而不是把用户直接推去最薄最短的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

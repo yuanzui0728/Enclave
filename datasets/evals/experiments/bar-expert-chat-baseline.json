@@ -1,0 +1,9 @@
+{
+  "id": "bar-expert-chat-baseline",
+  "title": "Bar Expert Chat Baseline",
+  "description": "Run the bar expert chat dataset as a single baseline regression check.",
+  "datasetId": "bar-expert-chat",
+  "mode": "single",
+  "experimentLabel": "bar-expert-chat-baseline",
+  "baseline": {}
+}

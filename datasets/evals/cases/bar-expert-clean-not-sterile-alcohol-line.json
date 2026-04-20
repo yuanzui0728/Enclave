@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-clean-not-sterile-alcohol-line",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得干净一点但不想太寡太像只剩酒精线条",
+  "description": "用户想把第一杯点得更干净、线条更清楚一点，但不想变成很寡、很硬、像只剩酒精线条的酒。角色应把干净感翻成结构利落、风味不杂，但仍然有缓冲和好入口，而不是默认推最干最硬的方向。",
+  "tags": ["chat", "bar", "clean", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T01:25:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想把第一杯喝得更干净一点，但不想太寡、太硬，像只剩酒精线条。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得干净一点。" },
+      {
+        "role": "character",
+        "content": "干净不一定靠发硬，有些酒线条清楚，但不会只剩酒精感。"
+      }
+    ],
+    "userMessage": "对，但我不想太寡，别像只剩酒精线条。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把干净感翻成线条清楚但不发寡的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最干最硬的酒当成唯一干净答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最干最硬像 Martini 那样的酒",
+      "把越寡越像酒精线条写成越干净",
+      "只讲概念，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“干净一点”桥接到 Gin Sonic、Whisky Highball 或 Daiquiri 这类线条清楚、风味不杂、但仍然好入口的方向，而不是把用户直接推去很硬很寡的酒。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

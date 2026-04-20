@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-classic-not-old-fashioned-or-bitter",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想点经典一点但不想太老派或太苦",
+  "description": "用户想把第一杯点得经典一点，但不想显得太老派，也怕太苦太厚。角色应把经典感翻成结构清楚、历史感明确，而不是默认推 Old Fashioned、Negroni 这类重苦方向。",
+  "tags": ["chat", "bar", "classic", "ordering", "bridge"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:30:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户想点得经典一点，但不想靠太老派、太苦太厚的酒来证明自己会喝。",
+    "history": [
+      { "role": "user", "content": "我想点经典一点的，不想太像网红酒。" },
+      {
+        "role": "character",
+        "content": "经典不一定非得从最老派、最苦的那批开始。"
+      }
+    ],
+    "userMessage": "但我也不想显得太老派，最好别太苦。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把经典感翻成结构清楚、可入口的方向",
+      "要给出可执行的第一杯建议",
+      "不能把 Old Fashioned 或 Negroni 当成唯一经典答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接从最苦最厚的经典酒开始",
+      "把老派重口写成经典的唯一标准",
+      "只讲经典史，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“经典一点”桥接到 Whisky Highball、Daiquiri、Tom Collins 这类结构清楚但不压人的方向，而不是把第一杯写成受苦测试。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-presence-not-proof",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得有存在感但酒量一般时别误判成加烈度",
+  "description": "用户想喝点“有存在感”的东西，但自己酒量其实一般，角色应把存在感翻成香气、结构或收口，而不是直接升级成高酒精重酒。",
+  "tags": ["chat", "bar", "presence", "tolerance", "ordering"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T20:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户嘴上会说想来点有存在感的，但实际上酒量一般，不想第一杯就把自己推太快。",
+    "history": [
+      { "role": "user", "content": "我想喝点有存在感的，不想太普通。" },
+      {
+        "role": "character",
+        "content": "有存在感不一定靠烈度，很多时候是靠方向更明确。"
+      }
+    ],
+    "userMessage": "但我酒量其实一般，不想一上来就太猛。那这种“有存在感”该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把存在感翻成不只靠烈度的维度",
+      "要给出可执行的更稳方向",
+      "不能把高酒精重酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接上最烈最重的酒",
+      "把酒量硬撑当成有存在感",
+      "只讲概念，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“存在感”拆成香气更明显、结构更干净、收口更明确，而不是默认提高酒精压力。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

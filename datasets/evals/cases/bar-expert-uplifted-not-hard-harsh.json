@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-uplifted-not-hard-harsh",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得挺拔一点，但不想太硬太冲",
+  "description": "用户想把第一杯点得更挺拔一点、线条更往上站一点，但不想变成很硬、很冲、边缘顶脸的口感。角色要把“挺拔”翻成更提一点的骨架和更向上的轮廓，而不是更烈、更尖或更直。",
+  "tags": ["chat", "bar", "uplifted", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T06:20:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更挺拔一点、线条更往上提一点，但不想喝起来太硬太冲，像边缘直接顶上来。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得挺拔一点。" },
+      {
+        "role": "character",
+        "content": "挺拔不一定靠硬，也可以是骨架更提、线条更往上走。"
+      }
+    ],
+    "userMessage": "对，但别太硬太冲。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把挺拔感翻成更提一点的骨架、更向上的轮廓或更站得住的线条，而不是更硬更冲",
+      "要给出可直接对 bartender 说的话",
+      "不能把最硬最冲的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把挺拔直接等同成更烈、更硬、更冲",
+      "鼓励用户去点明显太硬太冲的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“挺拔一点”桥接到 Gin & Tonic、White Port & Tonic 或 Bamboo Highball 这类线条更往上走、骨架更提、但不硬不冲的方向，而不是把用户直接推去最烈最硬的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "bar-expert-moments-baseline",
+  "title": "Bar Expert Moments Baseline",
+  "description": "Run the bar expert moments dataset as a single baseline regression check.",
+  "datasetId": "bar-expert-moments",
+  "mode": "single",
+  "experimentLabel": "bar-expert-moments-baseline",
+  "baseline": {}
+}

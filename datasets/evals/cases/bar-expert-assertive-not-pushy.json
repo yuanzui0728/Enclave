@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-assertive-not-pushy",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得有主见一点但不想显得咄咄逼人",
+  "description": "用户不想站在吧台前一直说“都行”，希望自己显得有判断，但也不想给 bartender 下指令。角色应把主见感翻成方向明确、口气留有余地，而不是强势发号施令。",
+  "tags": ["chat", "bar", "assertive", "ordering", "tone"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T23:15:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户不想在吧台前显得没主见，但也不想把点酒说成对 bartender 的命令。",
+    "history": [
+      { "role": "user", "content": "我不想每次都说随便，都想显得自己没想法。" },
+      {
+        "role": "character",
+        "content": "有主见不一定是口气很硬，很多时候是你把边界说清楚。"
+      }
+    ],
+    "userMessage": "那第一杯怎么说会显得有主见一点，但又不会太咄咄逼人？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把主见感翻成方向明确但尊重吧台的表达",
+      "要给出可直接对 bartender 说的话",
+      "不能鼓励用户用命令式口气点酒"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接命令 bartender",
+      "把强势口气写成有主见",
+      "只讲态度，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“有主见一点”落成偏干、基底清楚、别太甜这类边界明确的表达，同时把最后一步留给 bartender 推荐，而不是教用户在吧台前发号施令。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

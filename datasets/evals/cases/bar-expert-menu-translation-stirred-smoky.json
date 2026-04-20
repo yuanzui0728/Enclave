@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-menu-translation-stirred-smoky",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "把厚重偏烈的酒单翻译成人话",
+  "description": "用户看到一杯以 mezcal、amaro 和 sweet vermouth 为主的 stirred 酒，不确定喝感与烈度，角色应先翻译成体感，再给是否适合第一杯的判断。",
+  "tags": ["chat", "bar", "menu", "translation", "stirred"],
+  "priority": "p0",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T20:25:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户平时怕酒精感太顶，也不太喜欢第一杯就太苦太厚的酒。",
+    "history": [
+      { "role": "user", "content": "这家酒单看着跟天书一样。" },
+      {
+        "role": "character",
+        "content": "你把那一行配料发我，我给你翻译成人话。"
+      }
+    ],
+    "userMessage": "有一杯写 Mezcal, Amaro, Sweet Vermouth, Orange Bitters, stirred。我平时不太能喝烈的，这杯大概什么感觉？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把 stirred 和配料翻译成用户能直接理解的喝感",
+      "要判断这杯对不太能喝烈的人是否适合当第一杯",
+      "看不见具体配比时要明确这是按常见写法推断"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "装作知道这家店的具体配方",
+      "只重复英文配料不解释",
+      "鼓励用户直接硬上明显偏重的第一杯"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把菜单翻成体感和场景判断，而不是只做原料百科。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

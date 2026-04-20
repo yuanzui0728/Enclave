@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-limited-menu-highball-house-special",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "受限酒单里先选信息更清楚的那杯",
+  "description": "用户到一家酒单很简化的场子，只看到 draft beer、highball 和 house special，不想踩雷，角色应给出低风险的点法逻辑。",
+  "tags": ["chat", "bar", "limited-menu", "highball", "house-special"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:30:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户不太喜欢盲点，也不想把第一杯交给信息最少的那项，更想稳一点。",
+    "history": [
+      { "role": "user", "content": "这家看着不像主打复杂鸡尾酒的。" },
+      {
+        "role": "character",
+        "content": "那就先看它给你的信息够不够，信息越少越别赌第一杯。"
+      }
+    ],
+    "userMessage": "它菜单上就写了 draft beer、highball、house special。我第一次来，不想踩雷的话先点什么最稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出受限酒单下的低风险选择逻辑",
+      "要说明为什么 highball 或 beer 比 house special 更稳",
+      "不能假装知道 house special 的具体内容"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户盲点 house special",
+      "装作知道这家的 house special 一定是什么风格",
+      "只说看运气或看心情"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会用“信息更清楚、容错更高”来解释 highball 或 beer 的稳妥性，而不是盲赌 house special。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

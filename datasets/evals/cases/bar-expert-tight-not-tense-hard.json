@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-tight-not-tense-hard",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得紧一点，但不想太绷太硬",
+  "description": "用户想把第一杯点得更紧一点、结构更收一点，但不想变成很绷、很硬、像边缘拉太满的口感。角色要把“紧”翻成更收、更拢、更利落一点的结构，而不是更烈更硬。",
+  "tags": ["chat", "bar", "tight", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T06:50:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更紧一点、结构更收一点，但不想喝起来太绷太硬，像边缘被拉得太满。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得紧一点。" },
+      {
+        "role": "character",
+        "content": "紧不一定靠硬，也可以是结构更收、更利落。"
+      }
+    ],
+    "userMessage": "对，但别太绷太硬。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把紧感翻成更收、更拢、更利落一点的结构，而不是更烈更硬",
+      "要给出可直接对 bartender 说的话",
+      "不能把最绷最硬的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把紧直接等同成更烈、更硬、更绷",
+      "鼓励用户去点明显太绷太硬的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“紧一点”桥接到 Daiquiri、Tommy's Margarita 或 Bamboo 这类结构更收、更利落、但不绷不硬的方向，而不是把用户直接推去最硬最烈的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-avoid-sour-too-acidic",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "怕酸时先别往 sour 系硬撞",
+  "description": "用户上次点 sour 系觉得酸得太顶，不想再踩一次类似的雷，角色应给出更圆一点、酸感没那么冲的替代方向。",
+  "tags": ["chat", "bar", "taste", "sour", "acid"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T20:55:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户怕酸感太顶，不喜欢那种第一口就缩一下的酒，但也不想每次都只能点最甜的。",
+    "history": [
+      { "role": "user", "content": "我上次点了 Whisky Sour，结果喝起来有点太酸了。" },
+      {
+        "role": "character",
+        "content": "那你不是不能喝，是那条线对你现在来说酸度太靠前了。"
+      }
+    ],
+    "userMessage": "如果我怕 sour 那种酸得太顶的感觉，下次该往什么方向点会更稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "不能把怕酸说成不会喝",
+      "要给出比 sour 更圆一点的替代方向",
+      "要让用户能直接拿去和 bartender 沟通"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "让用户继续硬练更酸的酒",
+      "只说少放点酸不落到具体方向",
+      "直接退回完全无关的甜酒而不解释"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把问题拆成酸度太靠前，再给 rounder、highball 或 stirred-lite 方向，而不是继续硬推 sour 系。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

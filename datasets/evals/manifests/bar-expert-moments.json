@@ -1,0 +1,23 @@
+{
+  "id": "bar-expert-moments",
+  "title": "酒吧专家发圈集",
+  "scope": "generation",
+  "targetType": "turn",
+  "description": "评测酒吧专家在朋友圈生成时是否保持生活化、场景感和专业分寸，而不是滑向酒吧营销号。",
+  "caseIds": [
+    "bar-expert-evening-moment-bar-side-note",
+    "bar-expert-low-abv-moment-not-second-best"
+  ],
+  "rubricIds": [
+    "in-character-v1",
+    "naturalness-v1",
+    "context-fit-v1",
+    "anti-assistant-v1"
+  ],
+  "defaultJudgeConfig": {
+    "judgeModel": "fixed-judge-model",
+    "strategy": "pairwise-preferred"
+  },
+  "owner": "codex",
+  "version": "v1"
+}

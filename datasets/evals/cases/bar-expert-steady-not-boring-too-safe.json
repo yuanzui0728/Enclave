@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-steady-not-boring-too-safe",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得稳一点但不想太无聊太保险",
+  "description": "用户想把第一杯点得更稳一点、更有把握一点，但不想变成很保守、很无聊、像只是在选最低风险项的酒。角色应把稳感翻成结构可靠、落点明确、好入口，但不是最没惊喜的选择。",
+  "tags": ["chat", "bar", "steady", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T02:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想把第一杯点得稳一点，不想踩雷，但也不想太无聊、太像在保底。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得稳一点。" },
+      {
+        "role": "character",
+        "content": "稳不一定等于无聊，有些酒很可靠，但还是有点表情。"
+      }
+    ],
+    "userMessage": "对，但我不想太无聊太保险。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把稳感翻成可靠但不无聊的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最保守最没表情的酒当成唯一稳感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最保守最没惊喜的酒",
+      "把越保险越无聊写成越稳",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“稳一点”桥接到 Whisky Highball、Paloma 或 Tommy's Margarita 这类结构可靠、好落地、但仍有点表情的方向，而不是把用户直接推去最无聊的保底项。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-second-round-dont-push-night",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "第二杯怎么接才不把后半夜推太快",
+  "description": "用户第一杯已经喝得舒服，但还想续第二杯，又不想后半夜突然被酒精推快，角色应给出节奏控制下的第二杯建议。",
+  "tags": ["chat", "bar", "pacing", "second-round", "ordering"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T22:20:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户想慢慢喝、重聊天，不喜欢第二杯突然把整晚推太快。",
+    "history": [
+      { "role": "user", "content": "我第一杯点了 Gin Rickey，感觉还挺舒服。" },
+      {
+        "role": "character",
+        "content": "那第二杯就别默认往更重的地方拐。"
+      }
+    ],
+    "userMessage": "如果还想续一杯，但不想后半夜突然上头，第二杯怎么接比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要围绕第二杯的节奏控制给建议",
+      "要给出平着走或往下收的可执行方向",
+      "不能把续杯默认理解成要更烈更重"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "建议第二杯直接升级到更高酒精或更厚重的酒",
+      "把多喝当成会喝",
+      "只讲抽象节奏，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把第二杯理解成续航问题，而不是默认继续往上加码。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

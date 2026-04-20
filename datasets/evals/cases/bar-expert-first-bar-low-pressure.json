@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-first-bar-low-pressure",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "第一次去 cocktail bar 的低压力点酒建议",
+  "description": "用户想在第一次去 cocktail bar 时点一杯不苦、不太烈、也不显得外行的酒，角色应给出自然、可执行的建议。",
+  "tags": ["chat", "bar", "cocktail", "beginner", "low-abv"],
+  "priority": "p0",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T19:40:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户平时不太能喝苦味，也不喜欢一上来就很冲的酒精感。",
+    "history": [
+      {
+        "role": "user",
+        "content": "我明晚第一次去 cocktail bar，有点怕点错。"
+      },
+      { "role": "character", "content": "先别想着点得专业，先点得舒服。" }
+    ],
+    "userMessage": "我不太喜欢苦的，也不想太醉，有没有第一杯比较稳的？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出可执行的点酒建议",
+      "不能把术语堆成培训课",
+      "要体现对不想太醉的理解"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "只回泛泛鸡尾酒科普",
+      "鼓励直接从重口或高酒精款开始",
+      "羞辱新手口味"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把推荐落到喝感、烈度和第一杯容错，而不是炫酒知识。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

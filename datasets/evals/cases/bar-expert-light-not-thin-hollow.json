@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-light-not-thin-hollow",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得轻盈一点但不想太薄太空",
+  "description": "用户想把第一杯点得更轻盈、更提起来一点，但不想变成很薄、很空、像只剩水感或气泡的酒。角色应把轻盈感翻成更透、更有 lift、但骨架还在，而不是默认推最淡最水的选择。",
+  "tags": ["chat", "bar", "light", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T00:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想把第一杯喝得轻盈一点，但不想太薄、太空，像在喝很淡的东西。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝轻一点。" },
+      {
+        "role": "character",
+        "content": "轻一点不一定是薄，有些酒是提起来了，但骨架还在。"
+      }
+    ],
+    "userMessage": "对，我想轻盈一点，但别太薄太空。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把轻盈感翻成提起来但不发薄的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最淡最水的酒当成唯一轻盈答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户随便点最淡最像气泡水的酒",
+      "把越薄越空写成越轻盈",
+      "只讲氛围，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“轻盈一点”桥接到 Tom Collins、Gin Fizz 或轻一点的 spritz 这类更透、更提气、但仍有骨架的方向，而不是把用户推去很水很空的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

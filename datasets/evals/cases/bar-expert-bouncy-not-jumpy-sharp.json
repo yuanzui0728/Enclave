@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-bouncy-not-jumpy-sharp",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得弹一点，但不想太跳太尖",
+  "description": "用户想把第一杯点得更有弹性、更往上提一点，但不想变成酸度太冲、气泡太炸或香气太跳的口感。角色要把“弹”翻成更轻快的张力和更干净的气泡感，而不是更尖更刺激。",
+  "tags": ["chat", "bar", "bouncy", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T05:35:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更弹一点、更提一点，但不想喝起来太跳太尖，像酸气和气泡一起往前冲。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得弹一点。" },
+      {
+        "role": "character",
+        "content": "弹不一定靠冲，也可以是气泡和结构把口感轻轻提起来。"
+      }
+    ],
+    "userMessage": "对，但别太跳太尖。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把弹感翻成更轻快的张力、细一点的气泡感或更往上提一点的结构，而不是更尖更冲",
+      "要给出可直接对 bartender 说的话",
+      "不能把最炸最冲的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把弹直接等同成更酸、更炸、更刺激",
+      "鼓励用户去点明显太跳太尖的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“弹一点”桥接到 Gin Sonic、Ranch Water 或一杯更细气泡的 Gin Fizz 这类更提、更有张力、但不太跳不太尖的方向，而不是把用户直接推去最冲最炸的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

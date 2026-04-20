@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-fine-not-light-gripless",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得细一点但不想太轻太没抓手",
+  "description": "用户想把第一杯点得更细一点、线条更细一点，但不想变成很轻、很空、没抓手的酒。角色应把细感翻成香气和线条更精细、边缘更细，但口感仍然立得住，而不是默认推最淡最轻的方向。",
+  "tags": ["chat", "bar", "fine", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T04:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更细一点、更精一点，但不想太轻、太空，喝起来没抓手。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得细一点。" },
+      {
+        "role": "character",
+        "content": "细不一定等于轻，有些酒线条更细，但口感还是抓得住。"
+      }
+    ],
+    "userMessage": "对，但我不想太轻太没抓手。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把细感翻成更精细但不发空的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最轻最淡的酒当成唯一细感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最轻最淡最没抓手的酒",
+      "把越轻越空写成越细",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“细一点”桥接到 Tuxedo No.2、50/50 Martini 或 White Negroni 这类线条更细、香气更精、但口感仍有抓手的方向，而不是把用户直接推去最轻最淡的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

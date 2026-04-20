@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-loose-not-scattered-boneless",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得松一点但不想太散太没骨架",
+  "description": "用户想把第一杯点得更松一点、更打开一点，但不想变成很散、很水、没骨架的酒。角色应把松感翻成更舒展、更好进，但结构还在，而不是默认推最水最散的 long drink。",
+  "tags": ["chat", "bar", "loose", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T02:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想把第一杯喝得更松一点、更打开一点，但不想太散、太水，像没有骨架。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得松一点。" },
+      {
+        "role": "character",
+        "content": "松不一定等于散，有些酒会更打开，但轮廓还在。"
+      }
+    ],
+    "userMessage": "对，但我不想太散太没骨架。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把松感翻成更打开但不散架的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最水最散的酒当成唯一松感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最水最散的 long drink",
+      "把越散越没骨架写成越松",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“松一点”桥接到 Cynar & Soda、Sherry & Tonic 或 Bamboo Highball 这类更打开、更舒展、但骨架还在的方向，而不是把用户直接推去很水很散的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

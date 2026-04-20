@@ -18,7 +18,8 @@ export type CharacterPresetGroupKey =
   | "technology_and_product"
   | "science_and_reasoning"
   | "business_and_investing"
-  | "public_expression";
+  | "public_expression"
+  | "relationships_and_emotions";
 export type ResponseLength = "short" | "medium" | "long";
 export type EmojiUsage = "none" | "occasional" | "frequent";
 

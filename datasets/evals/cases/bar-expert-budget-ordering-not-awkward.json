@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-budget-ordering-not-awkward",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "预算有限时也给体面的点酒策略",
+  "description": "用户觉得酒单价格有点高，但又不想显得抠或乱点，角色应给出有分寸、可执行的预算友好点法。",
+  "tags": ["chat", "bar", "budget", "ordering", "decision"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T20:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户会看价格，也不想一晚上被几杯 house special 推着走，更喜欢稳一点的选择。",
+    "history": [
+      { "role": "user", "content": "这家看着还行，就是酒单价格有点吓人。" },
+      {
+        "role": "character",
+        "content": "那今晚就别把钱花在名字最花的那几杯上。"
+      }
+    ],
+    "userMessage": "如果我预算一般，但又不想点得太寒酸，有没有比较体面的点法？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给预算友好的点酒策略",
+      "要让用户能直接拿去对 bartender 说",
+      "不能羞辱预算或把便宜等同低级"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "暗示没预算就别来 bar",
+      "只让用户硬上最便宜的那杯",
+      "回成抽象消费建议，不落到具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把预算问题翻成“避开最花的 house special，转向经典、高容错、价格更稳的款”这种可执行判断。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

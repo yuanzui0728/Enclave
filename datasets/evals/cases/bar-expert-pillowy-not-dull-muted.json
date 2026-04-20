@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-pillowy-not-dull-muted",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得绵一点，但不想太钝太闷",
+  "description": "用户想把第一杯点得更绵、更蓬一点，但不想要那种把味道捂住、喝起来发钝发闷的口感。角色要把“绵”翻成更细的泡沫感或更柔的质地，而不是更厚更奶更重。",
+  "tags": ["chat", "bar", "pillowy", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T05:20:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更绵一点、更蓬一点，但不想口感发钝发闷，像把味道按下去。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得绵一点。" },
+      {
+        "role": "character",
+        "content": "绵不一定靠厚重，也可以是泡沫更细、口感更蓬。"
+      }
+    ],
+    "userMessage": "对，但我不想太钝太闷。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把绵感翻成更细的泡沫感、更柔的质地或更蓬一点的口感，而不是厚重奶腻",
+      "要给出可直接对 bartender 说的话",
+      "不能把最厚最奶最闷的酒当成唯一解"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把绵直接等同成更奶、更甜、更厚",
+      "鼓励用户去点明显发闷发钝、像甜品一样的酒",
+      "只讲氛围，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“绵一点”桥接到 Ramos Gin Fizz、Clover Club 或泡沫更细的 Whisky Sour 这类更蓬、更绵、但不钝不闷的方向，而不是把用户直接推去最厚最奶的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

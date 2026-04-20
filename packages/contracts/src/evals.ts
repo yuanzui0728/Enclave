@@ -4,6 +4,8 @@ export type EvalRunStatus = "queued" | "running" | "completed" | "failed";
 
 export type GenerationTraceStatus = "success" | "fallback" | "error";
 
+export type EvalJudgeSource = "llm" | "heuristic" | "scaffolded";
+
 export interface GenerationTraceInput {
   trigger?: string;
   worldContextSnapshot?: Record<string, unknown> | null;
@@ -21,6 +23,7 @@ export interface GenerationTraceOutput {
   normalizedOutput?: string | null;
   fallbackReason?: string | null;
   errorMessage?: string | null;
+  judgePayload?: Record<string, unknown> | null;
 }
 
 export interface EvalScore {
@@ -58,6 +61,9 @@ export interface GenerationTrace {
   evaluationSummary?: {
     scores: EvalScore[];
     failureTags: EvalFailureTag[];
+    judgeSource?: EvalJudgeSource;
+    judgeRationale?: string | null;
+    ruleViolations?: string[];
   } | null;
 }
 
@@ -145,9 +151,11 @@ export interface EvalCaseResult {
   output?: string;
   scores: EvalScore[];
   failureTags: EvalFailureTag[];
+  judgeSource?: EvalJudgeSource;
   judgeRationale?: string;
   ruleViolations: string[];
   traceIds: string[];
+  judgeTraceIds?: string[];
   comparison?: {
     outcome: "win" | "lose" | "tie";
     baselineRunId?: string;

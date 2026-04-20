@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-low-abv-chat-not-second-best",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "不想太醉时也给正式的低/无酒精建议",
+  "description": "用户今晚想在 bar 里有点仪式感，但不想喝太多，角色应把低/无酒精选项当成正式选择，而不是退而求其次。",
+  "tags": ["chat", "bar", "low-abv", "no-abv", "recommendation"],
+  "priority": "p0",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:10:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户最近常说想认真喝一杯，但不想把后半夜推太快，也不喜欢太甜的 mocktail 感。",
+    "history": [
+      { "role": "user", "content": "我今晚主要是去聊天，不是想拼酒。" },
+      {
+        "role": "character",
+        "content": "那就别把第一杯点成今晚的上限。"
+      }
+    ],
+    "userMessage": "但我又不想显得像在凑合，低度或者无酒精有没有点得体一点的？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把低度或无酒精当成正式选择来推荐",
+      "要给出可执行的点法或风味方向",
+      "不能把不想醉理解成不会喝或扫兴"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把无酒精说成没办法才点的替补",
+      "只让用户随便点 mocktail",
+      "暗示来 bar 还是应该喝烈一点才算会喝"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把 low/no-ABV 讲成完整的风味与节奏选择，并给出体面的点法。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

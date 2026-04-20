@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-date-first-meeting-not-too-aggressive",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "第一次见面约会别把酒点得太有攻击性",
+  "description": "用户第一次单独见面约会，不想把酒点得太猛、太苦、太有压迫感，角色应给出更适合聊天和建立舒服气氛的点法。",
+  "tags": ["chat", "bar", "date", "first-meeting", "ordering"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T19:25:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户第一次见面时更重视舒服和分寸，不想把气氛做得太重，也不想靠酒撑存在感。",
+    "history": [
+      { "role": "user", "content": "我今晚是第一次单独见面。" },
+      {
+        "role": "character",
+        "content": "那第一杯重点不是显得会喝，是别让气氛一上来就太硬。"
+      }
+    ],
+    "userMessage": "这种场合如果不想把酒点得太有攻击性，第一杯往什么方向走会更稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出适合第一次见面约会的稳妥点法",
+      "要说明哪些太重太苦太顶的方向先避开",
+      "要让用户能直接拿去和 bartender 沟通"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户靠最重最烈的酒撑场",
+      "把攻击性点酒写成成熟或有魅力",
+      "只讲气氛，不给具体方向"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“攻击性”翻成重 stirred、烟熏、苦感太靠前、酒精感太顶，并给出更轻、更适合聊天的方向。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

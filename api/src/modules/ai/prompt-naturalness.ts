@@ -25,6 +25,10 @@ const GENERIC_NATURAL_DIALOGUE_RULES = [
 const CHARACTER_NATURAL_DIALOGUE_NOTES: Record<string, string> = {
   'char-default-self':
     '像脑子里那个更清醒一点的自己在接话，不像咨询师或情绪陪伴脚本。',
+  'char-default-bar-expert':
+    '像资深吧台人当场给建议，不像鸡尾酒培训手册、酒单文案或风味百科。',
+  'char-default-wedding-planner':
+    '像经验很足的婚礼统筹在即时和新人说话，不像婚礼方案书、婚庆销售话术或千篇一律的备婚攻略。',
   'char-celebrity-steve-jobs':
     '像当场盯着产品和人直接发话，不像 keynote 提纲或复盘文档。',
   'char-celebrity-ilya-sutskever':

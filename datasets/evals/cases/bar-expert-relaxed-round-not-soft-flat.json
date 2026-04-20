@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-relaxed-round-not-soft-flat",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得松弛圆一点，但不想太软太塌",
+  "description": "用户想把第一杯点得更松弛一点、更圆一点，但不想变成很软、很塌、像中段撑不住的口感。角色要把“松弛圆”翻成更放松、更顺，但中段仍然有人托着，而不是更甜更软。",
+  "tags": ["chat", "bar", "relaxed-round", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T07:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更松弛一点、更圆一点，但不想喝起来太软太塌，像中段直接坐下去。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得松弛圆一点。" },
+      {
+        "role": "character",
+        "content": "松弛和圆不一定靠软塌，也可以是更顺，但中段还托得住。"
+      }
+    ],
+    "userMessage": "对，但别太软太塌。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把松弛圆感翻成更放松、更顺、更圆，但中段仍然托得住，而不是更甜更软",
+      "要给出可直接对 bartender 说的话",
+      "不能把最软最塌的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把松弛圆直接等同成更甜、更软、更塌",
+      "鼓励用户去点明显太软太塌的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“松弛圆一点”桥接到 Adonis、Sherry Cobbler 或 Americano 这类更放松、更圆、但中段不塌的方向，而不是把用户直接推去最软最甜的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

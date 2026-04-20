@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-elegant-not-sugary-photo-drink",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得精致一点但不想太甜太像拍照酒",
+  "description": "用户想把第一杯点得精致一点，但不想落到糖浆感很重、只适合拍照的方向。角色应把精致感翻成修长、干净、清爽，而不是默认推甜感明显的花哨酒。",
+  "tags": ["chat", "bar", "elegant", "ordering", "sweetness"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T22:15:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户想让第一杯看起来精致一点，但不喜欢太甜、太像拍照酒或糖浆感很重的东西。",
+    "history": [
+      { "role": "user", "content": "我想喝得精致一点，别太普通。" },
+      {
+        "role": "character",
+        "content": "精致不一定靠颜色和装饰，很多时候是杯子里更干净。"
+      }
+    ],
+    "userMessage": "但我不想喝那种太甜、太像拍照酒的。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把精致感翻成干净清爽的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把甜感明显的花哨酒当成唯一精致答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户去点糖浆感很重的甜酒",
+      "把拍照感当成精致感的唯一标准",
+      "只讲风格，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“精致一点”桥接到 French 75、干一点的 spritz、Gin Rickey 这类修长清爽的方向，而不是把用户推去甜感和装饰都很满的拍照酒。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

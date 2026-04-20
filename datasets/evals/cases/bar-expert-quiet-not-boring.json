@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-quiet-not-boring",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得安静一点但不想太闷太无聊",
+  "description": "用户想把第一杯点得更安静、更低声部一点，但不想变成很闷、很平、像在应付时间的酒。角色应把安静感翻成收口稳、气质安静，而不是默认推最没存在感的选择。",
+  "tags": ["chat", "bar", "quiet", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T00:15:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让节奏安静一点，但不想第一杯喝得很闷、很平，没有存在感。",
+    "history": [
+      { "role": "user", "content": "我想喝得安静一点，别太吵。" },
+      {
+        "role": "character",
+        "content": "安静不一定等于无聊，有些酒是低声部，但很耐喝。"
+      }
+    ],
+    "userMessage": "但我也不想太闷太无聊。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把安静感翻成低声部但不无聊的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最没存在感的酒当成唯一安静答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户随便点最平最没存在感的酒",
+      "把越闷越安静写成越高级",
+      "只讲氛围，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“安静一点”桥接到 Americano、竹子型 highball 或轻一点的 aperitivo 这类低声部但仍有层次的方向，而不是把用户推去很平很闷的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

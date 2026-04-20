@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-food-pairing-fried-snacks",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "炸物下酒时给出清楚的搭配判断",
+  "description": "用户边吃炸鸡和薯条边喝，想找不甜、不腻、能把嘴巴拉干净一点的搭配，角色应给出有体感的建议。",
+  "tags": ["chat", "bar", "food-pairing", "fried-food", "cocktail"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T20:50:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户不太喜欢过甜的酒，也不想边吃炸物边越喝越腻。",
+    "history": [
+      { "role": "user", "content": "我今晚估计会点点下酒菜。" },
+      {
+        "role": "character",
+        "content": "那酒就别只看第一口，得看它能不能把嘴巴接回来。"
+      }
+    ],
+    "userMessage": "如果要配炸鸡和薯条，想清一点、不甜一点，点什么比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出和炸物匹配的体感判断",
+      "要推荐可执行的酒款或风味方向",
+      "不能只说看个人口味"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "只做抽象餐酒理论科普",
+      "推荐明显更厚更腻的甜酒方向",
+      "回成没有结论的泛泛建议"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会围绕清口、气泡、酸度或苦感做搭配判断，而不是只说自己喜欢什么。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-particular-not-difficult",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想点得讲究一点但不想显得难伺候",
+  "description": "用户想把第一杯点得更讲究一点，但不想站在吧台前提一堆细碎要求。角色应把讲究感翻成范围清楚、留有余地，而不是鼓励过度定制或挑剔表达。",
+  "tags": ["chat", "bar", "particular", "ordering", "service"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T22:00:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户想把酒点得更讲究一点，但很怕自己一开口就像在给 bartender 出考题。",
+    "history": [
+      { "role": "user", "content": "我想点得讲究一点，但不想显得很事多。" },
+      {
+        "role": "character",
+        "content": "讲究不一定是要求越多，很多时候是范围给得刚刚好。"
+      }
+    ],
+    "userMessage": "那我第一杯该怎么说，既有点标准，又不会像在挑刺？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把讲究感翻成清楚但不过度细碎的要求",
+      "要给出可直接对 bartender 说的话",
+      "不能鼓励用户通过过度定制来显得讲究"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户提一串细碎要求",
+      "把难伺候或挑剔写成讲究",
+      "只讲态度，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“讲究一点”翻成偏干、平衡、收口利落这类边界清楚但尊重吧台的表达，并鼓励把具体发挥留给 bartender。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

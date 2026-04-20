@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-ritual-not-fussy",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得有仪式感但不想太隆重太累",
+  "description": "用户想让第一杯有点仪式感，但不想点成太正式、太费力或者太有负担的酒。角色应把仪式感翻成杯型、气泡或节奏上的体面，而不是默认推最隆重的酒。",
+  "tags": ["chat", "bar", "ritual", "ordering", "tone"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T23:00:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想有一点仪式感，但不想把第一杯点成过于正式、过于隆重的场面。",
+    "history": [
+      { "role": "user", "content": "我想喝得有点仪式感，但别太隆重。" },
+      {
+        "role": "character",
+        "content": "仪式感不一定要靠很重或很复杂，有时候是杯子一上来就对了。"
+      }
+    ],
+    "userMessage": "那第一杯该往什么方向点，既有点感觉，又不会太累？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把仪式感翻成轻一点但有体面的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最隆重最费力的酒当成唯一有仪式感的答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最隆重最复杂的酒",
+      "把越费力越正式写成越有仪式感",
+      "只讲氛围，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“有仪式感”桥接到 French 75、Champagne highball、干净一点的 aperitivo spritz 这类一上桌就有感觉但不沉重的方向，而不是把用户推去过于正式或费力的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-mature-not-trying-too-hard",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝成熟一点但不想显得太用力",
+  "description": "用户想把第一杯点得成熟一点，但不想显得在摆谱。角色应把成熟感翻成干净、利落、克制，而不是默认推最苦最重或最考人设的酒。",
+  "tags": ["chat", "bar", "maturity", "ordering", "tone"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:10:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户希望第一杯显得成熟一点，但不想靠摆谱或装懂来撑场。",
+    "history": [
+      { "role": "user", "content": "我想点得成熟一点，不想太学生气。" },
+      {
+        "role": "character",
+        "content": "成熟不一定靠把酒点得越重越难。"
+      }
+    ],
+    "userMessage": "但我也不想显得太用力。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把成熟感翻成分寸和克制",
+      "要给出可执行的更稳方向",
+      "不能把最苦最重或最考人设的酒当唯一成熟答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户靠摆谱或背酒名显成熟",
+      "把最苦最烈当成成熟的唯一答案",
+      "只讲抽象气质，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“成熟一点”拆成干净、利落、收口克制，并给出稳妥的第一杯，而不是把点酒写成表演题。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

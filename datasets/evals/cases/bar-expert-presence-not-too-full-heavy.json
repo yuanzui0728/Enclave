@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-presence-not-too-full-heavy",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得有存在感一点但不想太满太撑",
+  "description": "用户想把第一杯点得更有存在感、更有轮廓一点，但不想变成很满、很厚、很撑人的酒。角色应把存在感翻成边缘更清楚、香气或苦感更立得住，而不是默认往体积更大、更压人的方向走。",
+  "tags": ["chat", "bar", "presence", "body", "ordering"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T03:25:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更有存在感一点，但不想太满、太厚，喝起来太撑。",
+    "history": [
+      { "role": "user", "content": "我想喝得有存在感一点。" },
+      {
+        "role": "character",
+        "content": "存在感不一定靠把酒做厚，有时候是轮廓更清楚。"
+      }
+    ],
+    "userMessage": "对，但我不想太满太撑。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把存在感翻成轮廓更清楚但不太满的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最厚最满的酒当成唯一存在感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最满最厚最撑的酒",
+      "把越满越撑写成越有存在感",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“有存在感一点”桥接到 Americano、Campari & Soda 或更有轮廓的 Paloma 这类边缘更清楚、但不太满太撑的方向，而不是把用户直接推去很厚很压的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

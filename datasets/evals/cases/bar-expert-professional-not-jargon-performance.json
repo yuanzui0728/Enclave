@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-professional-not-jargon-performance",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想点得专业一点但不想变成术语表演",
+  "description": "用户希望点酒时看起来更懂一点，但不想靠背术语撑场。角色应把专业感翻成偏好表达清楚、判断利落，而不是鼓励堆砌行业词。",
+  "tags": ["chat", "bar", "professional", "ordering", "tone"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户希望自己点酒时看起来更懂一点，但不想靠装懂或背术语来显得专业。",
+    "history": [
+      { "role": "user", "content": "我想点得专业一点，别太像第一次来。" },
+      {
+        "role": "character",
+        "content": "专业感不一定靠术语，很多时候是你把方向说得够清楚。"
+      }
+    ],
+    "userMessage": "但我也不想站在吧台前像背词汇表。那第一杯怎么点会比较像真的懂？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把专业感翻成偏好表达清楚",
+      "要给出可直接对 bartender 说的话",
+      "不能鼓励用户靠术语堆砌来显得懂酒"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户背行业术语显得专业",
+      "把术语密度当成会点酒",
+      "只讲姿态，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“专业一点”翻成偏干、结构清楚、别太甜这类人话表达，并给出稳妥的经典方向，而不是教用户去表演酒单黑话。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

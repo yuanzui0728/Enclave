@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-crisp-not-harsh-cold",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得利落一点但不想太硬太冷",
+  "description": "用户想把第一杯点得线条更利落一点，但不想喝成太硬、太冷、太拒人的方向。角色应把利落感翻成干净、收口快，而不是默认推最硬的 stirred 或极端干冷风格。",
+  "tags": ["chat", "bar", "crisp", "ordering", "tone"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T23:30:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想喝得利落一点，但不想第一杯显得太硬、太冷、太不好接近。",
+    "history": [
+      { "role": "user", "content": "我想喝得利落一点，别太黏糊。" },
+      {
+        "role": "character",
+        "content": "利落不一定靠把酒点得很硬，有时候是收口够干净。"
+      }
+    ],
+    "userMessage": "但我也不想太硬太冷。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把利落感翻成干净、收口快的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最硬最冷的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最硬最冷的酒",
+      "把越硬越冷写成越利落",
+      "只讲气质，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“利落一点”桥接到 Gin Rickey、Tom Collins、干净一点的 Daiquiri 这类线条清楚但不发硬的方向，而不是把用户推去太冷太硬的极端选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

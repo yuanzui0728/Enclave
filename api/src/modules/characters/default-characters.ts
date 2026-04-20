@@ -1,9 +1,25 @@
 import type { CharacterEntity } from './character.entity';
+import {
+  BAR_EXPERT_CHARACTER_ID,
+  buildBarExpertCharacter,
+} from './bar-expert-character';
 import { DEFAULT_CHARACTER_BIOS } from './character-bios';
+import { buildDoctorCharacter, DOCTOR_CHARACTER_ID } from './doctor-character';
+import { buildLawyerCharacter, LAWYER_CHARACTER_ID } from './lawyer-character';
+import {
+  buildWeddingPlannerCharacter,
+  WEDDING_PLANNER_CHARACTER_ID,
+} from './wedding-planner-character';
 
 export const SELF_CHARACTER_ID = 'char-default-self';
 
-export const DEFAULT_CHARACTER_IDS = [SELF_CHARACTER_ID] as const;
+export const DEFAULT_CHARACTER_IDS = [
+  SELF_CHARACTER_ID,
+  BAR_EXPERT_CHARACTER_ID,
+  DOCTOR_CHARACTER_ID,
+  LAWYER_CHARACTER_ID,
+  WEDDING_PLANNER_CHARACTER_ID,
+] as const;
 
 export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
   return [
@@ -199,5 +215,9 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
       intimacyLevel: 100,
       currentActivity: 'free',
     },
+    buildBarExpertCharacter(),
+    buildDoctorCharacter(),
+    buildLawyerCharacter(),
+    buildWeddingPlannerCharacter(),
   ];
 }

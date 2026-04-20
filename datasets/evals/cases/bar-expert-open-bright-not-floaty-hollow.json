@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-open-bright-not-floaty-hollow",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得松亮一点，但不想太飘太空",
+  "description": "用户想把第一杯点得更松亮一点、更打开一点，但不想变成很飘、很空、像只剩气泡和亮点挂在上面的口感。角色要把“松亮”翻成更透一点、更打开一点，但中段仍然留得住，而不是越轻越空。",
+  "tags": ["chat", "bar", "open-bright", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T06:35:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更松亮一点、更透一点，但不想喝起来太飘太空，像只剩气泡和亮点飘在上面。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得松亮一点。" },
+      {
+        "role": "character",
+        "content": "松亮不一定靠发空，也可以是更打开、更透，但中段还在。"
+      }
+    ],
+    "userMessage": "对，但别太飘太空。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把松亮感翻成更打开、更透一点、但中段仍然留得住的方向，而不是越轻越空",
+      "要给出可直接对 bartender 说的话",
+      "不能把最飘最空的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把松亮直接等同成更空、更飘、更像汽水",
+      "鼓励用户去点明显太飘太空的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“松亮一点”桥接到 Aperol Spritz、White Port & Tonic 或 Sherry & Tonic 这类更打开、更透、但中段不空的方向，而不是把用户直接推去最像气泡水的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

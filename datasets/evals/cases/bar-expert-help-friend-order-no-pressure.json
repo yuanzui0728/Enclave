@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-help-friend-order-no-pressure",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "带朋友第一次来时帮点酒别让人尴尬",
+  "description": "用户带一个不常去 bar 的朋友来喝，想帮对方点得稳一点，但又不想替朋友装懂或把对方搞得更紧张，角色应给出低压力的帮点方式。",
+  "tags": ["chat", "bar", "friend", "ordering", "beginner"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T20:10:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户自己不喜欢装懂，也不想带朋友出来时让对方有被考酒单的感觉。",
+    "history": [
+      { "role": "user", "content": "我今晚会带个不太常去 bar 的朋友一起。" },
+      {
+        "role": "character",
+        "content": "那你帮他的方式，最好是把门槛降下来，不是替他表演会点酒。"
+      }
+    ],
+    "userMessage": "如果他看酒单会紧张，我想帮他点得不尴尬一点，怎么开口最稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出低压力的帮朋友点酒方式",
+      "要让用户能直接拿去对 bartender 说",
+      "不能替朋友装懂或逼朋友硬上不适合的酒"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户替朋友硬点重酒或展示型酒款",
+      "把不懂酒写成丢脸",
+      "只说看朋友口味却不给具体开口方式"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“帮朋友点酒”理解成替对方降低门槛、给 bartender 报方向，而不是替人炫技。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

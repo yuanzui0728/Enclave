@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-lively-not-too-loud",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得热闹一点但不想太闹太炸",
+  "description": "用户想把第一杯点得更有气氛、更热闹一点，但不想变成又甜又炸、一下把夜晚推太快的派对饮料。角色应把热闹感翻成气泡、柑橘和香气，而不是默认推最重最甜的方向。",
+  "tags": ["chat", "bar", "lively", "ordering", "party"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T00:00:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让气氛活一点，但不想第一杯就被甜度和酒精一起往上推。",
+    "history": [
+      { "role": "user", "content": "我想喝得热闹一点，别太平。" },
+      {
+        "role": "character",
+        "content": "热闹不一定靠把酒精和糖分一起往上堆。"
+      }
+    ],
+    "userMessage": "但我也不想点成太闹太炸的。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把热闹感翻成更活、更亮但不过火的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把又甜又炸的派对饮料当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最炸最甜的酒",
+      "把越闹越烈写成越热闹",
+      "只讲气氛，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“热闹一点”桥接到 Paloma、Hugo spritz、轻一点的 Moscow Mule 这类气泡和香气更活但不会一下把夜晚推太快的方向，而不是把用户推去派对炸弹。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

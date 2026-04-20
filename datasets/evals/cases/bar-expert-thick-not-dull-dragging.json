@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-thick-not-dull-dragging",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得厚一点但不想太闷太拖",
+  "description": "用户想把第一杯点得更厚一点、更有重量一点，但不想变成很闷、很拖、尾巴发黏的酒。角色应把厚感翻成中段更有内容、重量更稳，但收尾别太拖，而不是默认推最甜最厚的方向。",
+  "tags": ["chat", "bar", "thick", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T03:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更厚一点、更有重量一点，但不想太闷、太拖，尾巴发黏。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得厚一点。" },
+      {
+        "role": "character",
+        "content": "厚不一定靠把酒做得很闷，有些酒中段更扎实，但收尾还是干净的。"
+      }
+    ],
+    "userMessage": "对，但我不想太闷太拖。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把厚感翻成更有重量但不拖尾的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最甜最厚最闷的酒当成唯一厚感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最甜最厚最拖的酒",
+      "把越闷越拖写成越有厚度",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“厚一点”桥接到 Martinez、Aged Rum Daiquiri 或 Perfect Manhattan 这类中段更有重量、但收尾不拖的方向，而不是把用户直接推去又甜又闷的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

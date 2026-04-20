@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-snappy-not-thin-sharp",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得脆一点，但不想太薄太尖",
+  "description": "用户想把第一杯点得更脆一点、轮廓更清楚一点，但不想变成很薄、很尖、像线条刮嘴的口感。角色要把“脆”翻成更有咬口的气泡感和更清楚的结构，而不是更酸更薄。",
+  "tags": ["chat", "bar", "snappy", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T06:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更脆一点、咬口更清楚一点，但不想喝起来太薄太尖，像线条直接刮上来。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得脆一点。" },
+      {
+        "role": "character",
+        "content": "脆不一定靠尖，也可以是气泡和骨架把轮廓敲清楚。"
+      }
+    ],
+    "userMessage": "对，但别太薄太尖。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把脆感翻成更有咬口的气泡感、更清楚的结构或更脆的入口，而不是更薄更尖",
+      "要给出可直接对 bartender 说的话",
+      "不能把最薄最尖的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把脆直接等同成更酸、更薄、更尖",
+      "鼓励用户去点明显太薄太尖的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“脆一点”桥接到 Whisky Highball、Gin Buck 或 Paloma 这类更有咬口、轮廓更清楚、但不薄不尖的方向，而不是把用户直接推去最酸最薄的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

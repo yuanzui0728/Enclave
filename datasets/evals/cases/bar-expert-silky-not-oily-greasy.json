@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-silky-not-oily-greasy",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得滑一点但不想太油太腻",
+  "description": "用户想把第一杯点得更滑一点、更顺一点，但不想变成很油、很腻、挂口太久的酒。角色应把滑感翻成更顺、更丝滑，但不能默认往油感或甜腻感更重的方向走。",
+  "tags": ["chat", "bar", "silky", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T05:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更滑一点、更顺一点，但不想太油太腻，像口腔里挂着不走。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得滑一点。" },
+      {
+        "role": "character",
+        "content": "滑不一定靠油感，有些酒打得更细、更顺，但不会腻。"
+      }
+    ],
+    "userMessage": "对，但我不想太油太腻。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把滑感翻成更顺更丝滑但不发油的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最油最腻的酒当成唯一滑感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最油最腻的酒",
+      "把越油越腻写成越滑",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“滑一点”桥接到 White Lady、Silver Fizz 或打得更细的 Pisco Sour 这类更顺、更丝滑、但不油不腻的方向，而不是把用户直接推去最油最腻的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-no-alcohol-not-like-juice",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "无酒精但不想点得像果汁",
+  "description": "用户今晚不喝酒，但也不想点成甜甜的 mocktail 或果汁感饮料，角色应给出更成熟、偏干净的无酒精点法。",
+  "tags": ["chat", "bar", "no-abv", "mocktail", "ordering"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚不打算喝酒，但也不喜欢太甜、太软饮、太像果汁的无酒精饮料。",
+    "history": [
+      { "role": "user", "content": "我今晚不喝酒，明天还得早起。" },
+      {
+        "role": "character",
+        "content": "那就别让自己在吧台前拿着一杯像儿童饮料的东西。"
+      }
+    ],
+    "userMessage": "但我也不想点得像果汁，想像在认真喝一杯，无酒精怎么点会稳一点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要给出成熟一点的无酒精点法",
+      "要明确避开太甜太像果汁的方向",
+      "要让用户能直接拿去对 bartender 说"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "只让用户随便点果汁或汽水",
+      "把无酒精默认等同甜 mocktail",
+      "不给具体风味或点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把 no-alcohol 往偏干、草本、tonic 或 tea-based 方向带，而不是直接推成果汁感。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

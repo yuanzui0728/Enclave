@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-special-not-too-experimental",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝点特别的但不想踩成实验性太强的雷",
+  "description": "用户想让第一杯有点新意，但不想直接踩进原料太怪、实验性太强的方向。角色应把特别感翻成基底清楚、只加一点变化，而不是鼓励盲冲最奇怪的 house special 或实验款。",
+  "tags": ["chat", "bar", "special", "ordering", "risk"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T22:30:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚不想太普通，但也不想第一杯就被奇怪原料、发酵味或实验性太强的东西吓住。",
+    "history": [
+      { "role": "user", "content": "我想喝点特别的，不想太常规。" },
+      {
+        "role": "character",
+        "content": "特别不一定靠把原料堆得很怪，有时候只是比经典多半步。"
+      }
+    ],
+    "userMessage": "但我也不想点成那种实验性太强、第一口就懵掉的。那第一杯该怎么点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把特别感翻成基底清楚、变化有限的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能鼓励用户盲冲实验性最强的酒"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最怪的 house special",
+      "把实验性越强写成越高级",
+      "只讲抽象新意，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“特别一点”桥接到经典 twist、seasonal sour、带一点草本或轻烟熏的 highball 这类基底清楚的方向，而不是把用户推去实验性太强的奇怪原料组合。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-layered-not-heavy-oppressive",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得有层次一点但不想太重太压人",
+  "description": "用户想把第一杯点得更有层次、更有展开感一点，但不想变成很重、很厚、很压人的酒。角色应把层次感翻成香气和结构有展开、但重量别太靠前，而不是默认推最厚最苦的 stirred 酒。",
+  "tags": ["chat", "bar", "layered", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T01:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更有层次一点，但不想太重、太厚，像一上来就被酒压住。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得有点层次。" },
+      {
+        "role": "character",
+        "content": "层次不一定靠重量，有些酒是展开感好，但不会压人。"
+      }
+    ],
+    "userMessage": "对，但我不想太重太压人。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把层次感翻成展开感好但不压人的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最厚最苦的酒当成唯一有层次答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最厚最苦的 stirred 酒",
+      "把越重越压人写成越有层次",
+      "只讲概念，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“有层次一点”桥接到 Bamboo、Adonis 或 Sherry Cobbler 这类香气和结构有展开、但重量不压人的方向，而不是把用户直接推去很厚很重的 stirred 酒。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

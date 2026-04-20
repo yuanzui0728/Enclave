@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-supple-not-muddy-dragging",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得润一点，但不想太糊太拖",
+  "description": "用户想把第一杯点得更润一点、中段更顺一点，但不想变成很糊、很拖、尾巴黏住不走的口感。角色要把“润”翻成更顺的流动感和更舒展的中段，而不是厚甜或发黏。",
+  "tags": ["chat", "bar", "supple", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T05:50:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更润一点、更顺一点，但不想喝起来太糊太拖，像尾巴黏在嘴里不走。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得润一点。" },
+      {
+        "role": "character",
+        "content": "润不一定靠厚，也可以是中段更顺、更舒展。"
+      }
+    ],
+    "userMessage": "对，但别太糊太拖。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把润感翻成更顺的流动感、更舒展的中段或更顺着下去的口感，而不是厚甜发黏",
+      "要给出可直接对 bartender 说的话",
+      "不能把最糊最拖的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把润直接等同成更甜、更厚、更黏",
+      "鼓励用户去点明显太糊太拖的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“润一点”桥接到 Tommy's Margarita、Eastside 或 White Lady 这类中段更顺、更舒展、但不糊不拖的方向，而不是把用户直接推去最厚最黏的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

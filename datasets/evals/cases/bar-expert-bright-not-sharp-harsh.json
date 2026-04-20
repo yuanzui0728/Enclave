@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-bright-not-sharp-harsh",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得亮一点但不想太尖太冲",
+  "description": "用户想把第一杯点得更亮一点、更提起来一点，但不想变成很尖、很冲、酸度顶很前的酒。角色应把亮感翻成柑橘、草本或香气上的 lift，而不是默认推最酸最冲的方向。",
+  "tags": ["chat", "bar", "bright", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T02:25:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想把第一杯喝得更亮一点、更提一点，但不想太尖、太冲，像酸度一下顶到前面。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得亮一点。" },
+      {
+        "role": "character",
+        "content": "亮不一定靠酸度顶很前，有些酒是香气先起来，但不会扎口。"
+      }
+    ],
+    "userMessage": "对，但我不想太尖太冲。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把亮感翻成更提起来但不发尖的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最酸最冲的酒当成唯一亮感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最酸最冲的 sour",
+      "把越尖越冲写成越亮",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“亮一点”桥接到 Southside、White Port & Tonic 或带柑橘 lift 的 Gin Highball 这类更提气、但不发尖的方向，而不是把用户直接推去酸度很冲的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

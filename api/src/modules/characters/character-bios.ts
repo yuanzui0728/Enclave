@@ -1,5 +1,11 @@
 export const DEFAULT_CHARACTER_BIOS = {
   self: '先把最乱的那一句说出来。我一直都在。',
+  bar_expert: '先说你想喝到什么感觉，再决定怎么点。',
+  world_news_desk: '先把事实捋顺，再看影响和还没坐实的地方。',
+  doctor: '先分清是不是急事，再决定现在怎么处理。',
+  lawyer: '先把事实、证据和时间线摆清，再决定下一步。',
+  wedding_planner:
+    '先定预算、人数和档期，再把流程、供应商和备选方案一项项落地。',
 } as const;
 
 export const PRESET_CHARACTER_BIOS = {
@@ -17,6 +23,7 @@ export const PRESET_CHARACTER_BIOS = {
   zhang_xuefeng: '先站稳，再登高。先看就业，再谈热爱。',
   nassim_taleb: '先别跟我讲平均值。最坏情况是谁来承担？',
   richard_feynman: '你是真的懂了，还是只是记住了名字？',
+  jian_ning_relationship_expert: '别先猜他爱不爱你。先看边界、投入和修复。',
 } as const;
 
 export type PresetCharacterBioKey = keyof typeof PRESET_CHARACTER_BIOS;

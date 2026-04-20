@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-upright-not-hard-straight",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得挺一点但不想太硬太直",
+  "description": "用户想把第一杯点得更挺一点、骨架更立一点，但不想变成很硬、很直、没缓冲的酒。角色应把“挺”翻成结构更立、线条更站得住，但不是把酒做得发硬发直。",
+  "tags": ["chat", "bar", "upright", "ordering", "mood"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T04:25:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更挺一点、更有骨架一点，但不想太硬、太直，像没有缓冲。",
+    "history": [
+      { "role": "user", "content": "我今天想喝得挺一点。" },
+      {
+        "role": "character",
+        "content": "挺不一定靠发硬，有些酒骨架更立，但不会太直。"
+      }
+    ],
+    "userMessage": "对，但我不想太硬太直。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把挺感翻成骨架更立但不发硬的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把最硬最直的酒当成唯一挺感答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点最硬最直的酒",
+      "把越硬越直写成越挺",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“挺一点”桥接到 50/50 Martini、Bamboo 或 Reverse Manhattan 这类骨架更立、但仍有缓冲的方向，而不是把用户直接推去最硬最直的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

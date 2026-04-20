@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-soft-not-mushy-sweet",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得柔和一点但不想太软太甜",
+  "description": "用户想把第一杯点得更柔和一点，但不想变成太甜、太软、没骨架的方向。角色应把柔和感翻成口感更圆、更顺，而不是默认推糖感或奶油感很重的酒。",
+  "tags": ["chat", "bar", "soft", "ordering", "sweetness"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T23:45:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想喝得柔和一点，但不喜欢太甜、太奶、太软到没有线条的酒。",
+    "history": [
+      { "role": "user", "content": "我想喝得柔和一点，别那么冲。" },
+      {
+        "role": "character",
+        "content": "柔和不一定靠甜，很多时候是边角被收圆了。"
+      }
+    ],
+    "userMessage": "但我也不想太软太甜。第一杯该往什么方向点？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把柔和感翻成圆一点、顺一点的方向",
+      "要给出可直接对 bartender 说的话",
+      "不能把太甜太软当成唯一柔和答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "鼓励用户直接点很甜很软的酒",
+      "把越甜越柔和写成唯一标准",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“柔和一点”桥接到 Whisky Sour、Southside、Gin Sour 这类口感更圆但还保留骨架的方向，而不是把用户推去甜腻或奶感很重的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

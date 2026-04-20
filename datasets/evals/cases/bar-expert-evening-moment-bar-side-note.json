@@ -1,0 +1,40 @@
+{
+  "id": "bar-expert-evening-moment-bar-side-note",
+  "datasetId": "bar-expert-moments",
+  "targetType": "turn",
+  "title": "晚上发一条吧台边的小观察",
+  "description": "角色在晚上工作时发朋友圈，应像吧台人顺手记下一条观察，不像酒吧宣传文案，也不像鸡尾酒科普长帖。",
+  "tags": ["moments", "bar", "evening", "lifestyle"],
+  "priority": "p0",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "scene": "moment_post_generate",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:25:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "最近常和用户聊第一次去 cocktail bar 怎么点，用户更在意舒服和分寸，不喜欢装懂。",
+    "history": [],
+    "userMessage": "请现在发一条朋友圈。"
+  },
+  "expectations": {
+    "hardRules": [
+      "要像真人在晚上会发的一条朋友圈",
+      "要有具体观察或状态，不要空泛",
+      "不能写成酒吧宣传文案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "像品牌海报文案",
+      "像培训课或酒类百科",
+      "序号式三点总结"
+    ]
+  },
+  "baselineNotes": "重点检查有没有“今晚营业中”“欢迎来喝”等营销口吻，以及是否保留吧台人的细节观察。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}
