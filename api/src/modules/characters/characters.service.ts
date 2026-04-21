@@ -37,8 +37,11 @@ import {
   getCelebrityCharacterPreset,
   getCelebrityCharacterPresetGroup,
   listCelebrityCharacterPresets,
-  CELEBRITY_CHARACTER_PRESETS,
 } from './celebrity-character-presets';
+import {
+  BUILT_IN_CHARACTER_PRESETS,
+  getBuiltInCharacterPreset,
+} from './built-in-character-presets';
 import { maybeGetCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 export type Character = CharacterEntity;
@@ -120,7 +123,7 @@ export class CharactersService implements OnModuleInit {
    */
   listPresetCatalog(): CharacterEntity[] {
     return this.normalizeCharacterAvatars(
-      CELEBRITY_CHARACTER_PRESETS.map(
+      BUILT_IN_CHARACTER_PRESETS.map(
         (preset) => preset.character as CharacterEntity,
       ),
     );
@@ -138,12 +141,10 @@ export class CharactersService implements OnModuleInit {
     const existing = await this.repo.findOneBy({ id: characterId });
     if (existing) return this.normalizeCharacterAvatar(existing);
 
-    const preset = CELEBRITY_CHARACTER_PRESETS.find(
-      (p) => p.id === characterId,
-    );
+    const preset = BUILT_IN_CHARACTER_PRESETS.find((p) => p.id === characterId);
     if (!preset) return null;
 
-    return this.installCelebrityPreset(preset.presetKey);
+    return this.materializePresetCharacter(preset);
   }
 
   async listCelebrityPresets() {
@@ -187,6 +188,12 @@ export class CharactersService implements OnModuleInit {
       throw new NotFoundException(`Preset ${presetKey} not found`);
     }
 
+    return this.materializePresetCharacter(preset);
+  }
+
+  private async materializePresetCharacter(
+    preset: NonNullable<ReturnType<typeof getBuiltInCharacterPreset>>,
+  ): Promise<CharacterEntity> {
     const existing = await this.repo.findOne({
       where: [
         { id: preset.id },
@@ -194,7 +201,7 @@ export class CharactersService implements OnModuleInit {
       ],
     });
     if (existing) {
-      return this.normalizeCharacterAvatar(existing);
+      return this.normalizeCharacterAvatar(existing) ?? existing;
     }
 
     return this.repo.save(

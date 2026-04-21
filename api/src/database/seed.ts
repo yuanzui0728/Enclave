@@ -6,7 +6,7 @@ import {
   isLegacyPresetCharacterBio,
 } from '../modules/characters/character-bios';
 import { buildDefaultCharacters } from '../modules/characters/default-characters';
-import { listCelebrityCharacterPresets } from '../modules/characters/celebrity-character-presets';
+import { listBuiltInCharacterPresets } from '../modules/characters/built-in-character-presets';
 
 const SEED_CHARACTERS = buildDefaultCharacters().map((character) => ({
   ...character,
@@ -29,8 +29,8 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     `✓ Reconciled ${SEED_CHARACTERS.length} built-in characters without touching custom characters`,
   );
 
-  // 自动确保所有预置名人角色存在
-  const presets = listCelebrityCharacterPresets();
+  // 自动确保所有内置目录角色存在
+  const presets = listBuiltInCharacterPresets();
   const repo = dataSource.getRepository(CharacterEntity);
   let seeded = 0;
   let refreshedBios = 0;
@@ -87,7 +87,7 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     }
   }
   if (seeded > 0) {
-    console.log(`✓ Auto-seeded ${seeded} celebrity preset characters`);
+    console.log(`✓ Auto-seeded ${seeded} built-in catalog characters`);
   }
   if (refreshedBios > 0) {
     console.log(`✓ Refreshed ${refreshedBios} built-in preset bios`);
