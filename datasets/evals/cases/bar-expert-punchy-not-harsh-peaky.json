@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-punchy-not-harsh-peaky",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得有劲一点，但不想太冲太顶",
+  "description": "用户想把第一杯点得更有劲一点、更有力量感一点，但不想变成很冲、很顶、像酒精感直接往上撞的口感。角色要把“有劲”翻成更有骨架、更有推力，而不是更烈更冲。",
+  "tags": ["chat", "bar", "punchy", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T07:50:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更有劲一点、更有力量感一点，但不想喝起来太冲太顶，像酒精感一下子冲到脸上。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得有劲一点。" },
+      {
+        "role": "character",
+        "content": "有劲不一定靠更烈，也可以是骨架更立、推力更明显。"
+      }
+    ],
+    "userMessage": "对，但别太冲太顶。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把劲感翻成更有骨架、更有推力、更站得住，而不是更烈更冲",
+      "要给出可直接对 bartender 说的话",
+      "不能把最冲最顶的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把有劲直接等同成更烈、更冲、更顶",
+      "鼓励用户去点明显太冲太顶的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“有劲一点”桥接到 Tommy's Margarita、Whisky Highball 或 Gin Buck 这类更有骨架、更有推力、但不冲不顶的方向，而不是把用户直接推去最烈最冲的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

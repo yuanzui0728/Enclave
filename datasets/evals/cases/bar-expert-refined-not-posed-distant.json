@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-refined-not-posed-distant",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得雅一点，但不想太端太远",
+  "description": "用户想把第一杯点得更雅一点、更有分寸一点，但不想变成很端、很远、像整杯酒先把距离感摆出来的口感。角色要把“雅”翻成更干净、更克制、更有分寸，而不是更冷更端。",
+  "tags": ["chat", "bar", "refined", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T09:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更雅一点、更有分寸一点，但不想喝起来太端太远，像整杯酒先把距离感摆出来。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得雅一点。" },
+      {
+        "role": "character",
+        "content": "雅不一定靠端着，也可以是更干净、更克制一点。"
+      }
+    ],
+    "userMessage": "对，但别太端太远。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把雅感翻成更干净、更克制、更有分寸，而不是更端更远",
+      "要给出可直接对 bartender 说的话",
+      "不能把最冷最远的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把雅直接等同成更端、更远、更像摆架子",
+      "鼓励用户去点明显太端太远的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“雅一点”桥接到 Bamboo、El Presidente 或 White Port & Tonic 这类更干净、更有分寸、但不冷不远的方向，而不是把用户直接推去最端最远的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

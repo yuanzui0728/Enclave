@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-graceful-upright-not-thin-floaty",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得挺秀一点，但不想太薄太飘",
+  "description": "用户想把第一杯点得更挺秀一点、线条更往上走一点，但不想变成很薄、很飘、像中段托不住的口感。角色要把“挺秀”翻成线条更立、姿态更秀气，而不是更薄更飘。",
+  "tags": ["chat", "bar", "graceful-upright", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T08:35:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更挺秀一点、线条更往上走一点，但不想喝起来太薄太飘，像中段没有东西托着。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得挺秀一点。" },
+      {
+        "role": "character",
+        "content": "挺秀不一定靠做薄做飘，也可以是线条更立、姿态更秀一点。"
+      }
+    ],
+    "userMessage": "对，但别太薄太飘。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把挺秀感翻成线条更立、姿态更秀、更往上走一点，而不是更薄更飘",
+      "要给出可直接对 bartender 说的话",
+      "不能把最薄最飘的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把挺秀直接等同成更薄、更飘、更像只剩轮廓",
+      "鼓励用户去点明显太薄太飘的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“挺秀一点”桥接到 White Port & Tonic、Gin Sonic 或 Bamboo Highball 这类线条更立、姿态更秀、但中段不空不飘的方向，而不是把用户直接推去最薄最飘的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

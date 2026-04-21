@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-bright-chic-not-sweet-jumpy",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得俏一点，但不想太甜太跳",
+  "description": "用户想把第一杯点得更俏一点、更灵一点，但不想变成很甜、很跳、像香气和糖感一起往上蹦的口感。角色要把“俏”翻成更提气、更灵、更有神，而不是更甜更炸。",
+  "tags": ["chat", "bar", "bright-chic", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T08:50:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更俏一点、更灵一点，但不想喝起来太甜太跳，像整杯酒往上蹦得太快。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得俏一点。" },
+      {
+        "role": "character",
+        "content": "俏不一定靠糖和炸，也可以是更提气、更有神。"
+      }
+    ],
+    "userMessage": "对，但别太甜太跳。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把俏感翻成更提气、更灵、更有神，而不是更甜更跳",
+      "要给出可直接对 bartender 说的话",
+      "不能把最甜最跳的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把俏直接等同成更甜、更跳、更像拍照饮料",
+      "鼓励用户去点明显太甜太跳的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“俏一点”桥接到 French 75、Paloma 或 Southside 这类更提气、更灵、但不甜不炸的方向，而不是把用户直接推去最甜最跳的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

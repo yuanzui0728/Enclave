@@ -205,6 +205,27 @@ describe('bar expert chat baselines', () => {
     const cleanCutBaseline = BAR_EXPERT_CHAT_BASELINES.find(
       (item) => item.caseId === 'bar-expert-clean-cut-not-thin-cutting',
     );
+    const refreshingBaseline = BAR_EXPERT_CHAT_BASELINES.find(
+      (item) => item.caseId === 'bar-expert-refreshing-not-thin-floaty',
+    );
+    const punchyBaseline = BAR_EXPERT_CHAT_BASELINES.find(
+      (item) => item.caseId === 'bar-expert-punchy-not-harsh-peaky',
+    );
+    const robustBaseline = BAR_EXPERT_CHAT_BASELINES.find(
+      (item) => item.caseId === 'bar-expert-robust-not-bitter-rigid',
+    );
+    const deepBaseline = BAR_EXPERT_CHAT_BASELINES.find(
+      (item) => item.caseId === 'bar-expert-deep-not-stuffy-dark',
+    );
+    const gracefulUprightBaseline = BAR_EXPERT_CHAT_BASELINES.find(
+      (item) => item.caseId === 'bar-expert-graceful-upright-not-thin-floaty',
+    );
+    const brightChicBaseline = BAR_EXPERT_CHAT_BASELINES.find(
+      (item) => item.caseId === 'bar-expert-bright-chic-not-sweet-jumpy',
+    );
+    const refinedBaseline = BAR_EXPERT_CHAT_BASELINES.find(
+      (item) => item.caseId === 'bar-expert-refined-not-posed-distant',
+    );
     const helpFriendBaseline = BAR_EXPERT_CHAT_BASELINES.find(
       (item) => item.caseId === 'bar-expert-help-friend-order-no-pressure',
     );
@@ -597,6 +618,66 @@ describe('bar expert chat baselines', () => {
     expect(cleanCutBaseline?.text).toMatch(/干脆|干净一点|别太薄|别太利/u);
     expect(cleanCutBaseline?.text).not.toMatch(
       /越薄越干脆|直接点最利最削的|像刀口一样才算干脆/u,
+    );
+
+    expect(refreshingBaseline?.text).toContain('爽一点');
+    expect(refreshingBaseline?.text).toContain('bartender');
+    expect(refreshingBaseline?.text).toMatch(/Paloma|Gin Buck|Ranch Water/u);
+    expect(refreshingBaseline?.text).toMatch(/爽|清口一点|别太淡|别太飘/u);
+    expect(refreshingBaseline?.text).not.toMatch(
+      /越淡越爽|直接点最像气泡水的|飘起来才叫清爽/u,
+    );
+
+    expect(punchyBaseline?.text).toContain('有劲一点');
+    expect(punchyBaseline?.text).toContain('bartender');
+    expect(punchyBaseline?.text).toMatch(/Tommy's Margarita|Whisky Highball|Gin Buck/u);
+    expect(punchyBaseline?.text).toMatch(/有劲|力量感|别太冲|别太顶/u);
+    expect(punchyBaseline?.text).not.toMatch(
+      /越烈越有劲|直接点最冲最顶的|顶脸才算有力量/u,
+    );
+
+    expect(robustBaseline?.text).toContain('硬朗一点');
+    expect(robustBaseline?.text).toContain('bartender');
+    expect(robustBaseline?.text).toMatch(/Whisky Highball|Horse's Neck|Presbyterian/u);
+    expect(robustBaseline?.text).toMatch(/硬朗|线条直一点|别太苦|别太板/u);
+    expect(robustBaseline?.text).not.toMatch(
+      /越苦越硬朗|直接点最板最苦的|板起来才显得有骨气/u,
+    );
+
+    expect(deepBaseline?.text).toContain('沉一点');
+    expect(deepBaseline?.text).toContain('bartender');
+    expect(deepBaseline?.text).toMatch(/Aged Rum Daiquiri|El Presidente|Adonis/u);
+    expect(deepBaseline?.text).toMatch(/沉|往下坐一点|别太闷|别太黑/u);
+    expect(deepBaseline?.text).not.toMatch(
+      /越黑越沉|直接点最闷最黑的|压到最底才显得有深度/u,
+    );
+
+    expect(gracefulUprightBaseline?.text).toContain('挺秀一点');
+    expect(gracefulUprightBaseline?.text).toContain('bartender');
+    expect(gracefulUprightBaseline?.text).toMatch(
+      /White Port & Tonic|Gin Sonic|Bamboo Highball/u,
+    );
+    expect(gracefulUprightBaseline?.text).toMatch(
+      /挺秀|线条往上走一点|别太薄|别太飘/u,
+    );
+    expect(gracefulUprightBaseline?.text).not.toMatch(
+      /越薄越秀气|直接点最飘最空的|飘起来才显得轻巧/u,
+    );
+
+    expect(brightChicBaseline?.text).toContain('俏一点');
+    expect(brightChicBaseline?.text).toContain('bartender');
+    expect(brightChicBaseline?.text).toMatch(/French 75|Paloma|Southside/u);
+    expect(brightChicBaseline?.text).toMatch(/俏|灵一点|别太甜|别太跳/u);
+    expect(brightChicBaseline?.text).not.toMatch(
+      /越甜越俏|直接点最跳最甜的|蹦起来才显得机灵/u,
+    );
+
+    expect(refinedBaseline?.text).toContain('雅一点');
+    expect(refinedBaseline?.text).toContain('bartender');
+    expect(refinedBaseline?.text).toMatch(/Bamboo|El Presidente|White Port & Tonic/u);
+    expect(refinedBaseline?.text).toMatch(/雅|干净一点|别太端|别太远/u);
+    expect(refinedBaseline?.text).not.toMatch(
+      /越端越雅|直接点最冷最远的|摆出距离感才显得有品位/u,
     );
 
     expect(helpFriendBaseline?.text).toContain('朋友第一次来');

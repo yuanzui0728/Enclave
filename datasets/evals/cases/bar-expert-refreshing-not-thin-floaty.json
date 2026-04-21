@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-refreshing-not-thin-floaty",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得爽一点，但不想太淡太飘",
+  "description": "用户想把第一杯点得更爽一点、更清口一点，但不想变成很淡、很飘、像中段抓不住的口感。角色要把“爽”翻成更清口、更提一点的结构，而不是更水更空。",
+  "tags": ["chat", "bar", "refreshing", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T07:35:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更爽一点、更清口一点，但不想喝起来太淡太飘，像中段一下子散掉。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得爽一点。" },
+      {
+        "role": "character",
+        "content": "爽不一定靠做淡，也可以是更清口、更提一点，但中段还抓得住。"
+      }
+    ],
+    "userMessage": "对，但别太淡太飘。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把爽感翻成更清口、更提一点、更有回弹的结构，而不是更淡更飘",
+      "要给出可直接对 bartender 说的话",
+      "不能把最淡最飘的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把爽直接等同成更淡、更飘、更像气泡水",
+      "鼓励用户去点明显太淡太飘的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“爽一点”桥接到 Paloma、Gin Buck 或 Ranch Water 这类更清口、更提一点、但中段还抓得住的方向，而不是把用户直接推去最淡最飘的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

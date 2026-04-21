@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-robust-not-bitter-rigid",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得硬朗一点，但不想太苦太板",
+  "description": "用户想把第一杯点得更硬朗一点、线条更立一点，但不想变成很苦、很板、像整杯酒直挺挺立住不转弯的口感。角色要把“硬朗”翻成骨架更立、线条更直，而不是更苦更板。",
+  "tags": ["chat", "bar", "robust", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T08:05:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更硬朗一点、线条更立一点，但不想喝起来太苦太板，像整杯酒一下子板起来。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得硬朗一点。" },
+      {
+        "role": "character",
+        "content": "硬朗不一定靠苦和板，也可以是骨架更立、线条更直。"
+      }
+    ],
+    "userMessage": "对，但别太苦太板。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把硬朗感翻成骨架更立、线条更直、更站得住，而不是更苦更板",
+      "要给出可直接对 bartender 说的话",
+      "不能把最苦最板的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把硬朗直接等同成更苦、更板、更像训人",
+      "鼓励用户去点明显太苦太板的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“硬朗一点”桥接到 Whisky Highball、Horse's Neck 或 Presbyterian 这类骨架更立、线条更直、但不苦不板的方向，而不是把用户直接推去最苦最板的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

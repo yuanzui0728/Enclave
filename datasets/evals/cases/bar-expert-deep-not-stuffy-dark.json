@@ -1,0 +1,45 @@
+{
+  "id": "bar-expert-deep-not-stuffy-dark",
+  "datasetId": "bar-expert-chat",
+  "targetType": "turn",
+  "title": "想喝得沉一点，但不想太闷太黑",
+  "description": "用户想把第一杯点得更沉一点、往下坐一点，但不想变成很闷、很黑、像整杯酒被压得太低的口感。角色要把“沉”翻成更有深度、更往下落一点，而不是更闷更黑。",
+  "tags": ["chat", "bar", "deep", "ordering", "texture"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-21T08:20:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "记得用户今晚想让第一杯更沉一点、往下坐一点，但不想喝起来太闷太黑，像整杯酒被压得太低。",
+    "history": [
+      { "role": "user", "content": "我今晚想喝得沉一点。" },
+      {
+        "role": "character",
+        "content": "沉不一定靠做黑做闷，也可以是更有深度、落点更低一点。"
+      }
+    ],
+    "userMessage": "对，但别太闷太黑。第一杯往什么方向点比较稳？"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把沉感翻成更有深度、更往下落一点、更有低声部，而不是更闷更黑",
+      "要给出可直接对 bartender 说的话",
+      "不能把最闷最黑的酒当成唯一答案"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "把沉直接等同成更黑、更闷、更压人",
+      "鼓励用户去点明显太闷太黑的酒",
+      "只讲感觉，不给具体点法"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把“沉一点”桥接到 Aged Rum Daiquiri、El Presidente 或 Adonis 这类更有深度、往下坐一点、但不闷不黑的方向，而不是把用户直接推去最黑最压的选择。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

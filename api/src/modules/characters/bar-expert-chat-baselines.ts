@@ -307,6 +307,48 @@ export const BAR_EXPERT_CHAT_BASELINES: BarExpertChatBaseline[] = [
     text: '想喝得干脆一点，不等于把第一杯点成很薄很利、像边缘被削得太尖的东西。你可以先往 Gin Sonic、Bamboo，或者一杯更收得利落的 El Presidente 走，整体会更干脆一点、落点更清楚一点，但不会薄到只剩线条；直接跟 bartender 说“想要干脆一点、干净一点，但别太薄、别太利”就够了。',
   },
   {
+    id: 'refreshing-not-thin-floaty-reply',
+    caseId: 'bar-expert-refreshing-not-thin-floaty',
+    title: '爽感靠清口，不靠发飘',
+    text: '想喝得爽一点，不等于把第一杯点成很淡很飘、像中段一下子散掉的东西。你可以先往 Paloma、Gin Buck，或者一杯更有抓手的 Ranch Water 走，整体会更爽一点、更清口一点，但不会淡到抓不住；直接跟 bartender 说“想要爽一点、清口一点，但别太淡、别太飘”就够了。',
+  },
+  {
+    id: 'punchy-not-harsh-peaky-reply',
+    caseId: 'bar-expert-punchy-not-harsh-peaky',
+    title: '劲感靠骨架，不靠顶脸',
+    text: '想喝得有劲一点，不等于把第一杯点成很冲很顶、酒精感直接往上撞的东西。你可以先往 Tommy\'s Margarita、Whisky Highball，或者一杯更有推力的 Gin Buck 走，整体会更有劲一点、更站得住一点，但不会顶到脸上；直接跟 bartender 说“想要有劲一点、有点力量感，但别太冲、别太顶”就够了。',
+  },
+  {
+    id: 'robust-not-bitter-rigid-reply',
+    caseId: 'bar-expert-robust-not-bitter-rigid',
+    title: '硬朗感靠立住，不靠发板',
+    text: '想喝得硬朗一点，不等于把第一杯点成很苦很板、像整杯酒直挺挺立在那里的东西。你可以先往 Whisky Highball、Horse\'s Neck，或者一杯更干净利落的 Presbyterian 走，整体会更硬朗一点、线条更直一点，但不会苦到板住；直接跟 bartender 说“想要硬朗一点、线条直一点，但别太苦、别太板”就够了。',
+  },
+  {
+    id: 'deep-not-stuffy-dark-reply',
+    caseId: 'bar-expert-deep-not-stuffy-dark',
+    title: '沉感靠深度，不靠压黑',
+    text: '想喝得沉一点，不等于把第一杯点成很闷很黑、像整杯酒被压得太低的东西。你可以先往 Aged Rum Daiquiri、El Presidente，或者一杯更往下坐一点的 Adonis 走，整体会更沉一点、更有深度一点，但不会黑到发闷；直接跟 bartender 说“想要沉一点、往下坐一点，但别太闷、别太黑”就够了。',
+  },
+  {
+    id: 'graceful-upright-not-thin-floaty-reply',
+    caseId: 'bar-expert-graceful-upright-not-thin-floaty',
+    title: '挺秀感靠线条，不靠发飘',
+    text: '想喝得挺秀一点，不等于把第一杯点成很薄很飘、像只剩轮廓挂在上面的东西。你可以先往 White Port & Tonic、Gin Sonic，或者一杯更有托举感的 Bamboo Highball 走，整体会更挺秀一点、线条更往上走一点，但不会飘到中段发空；直接跟 bartender 说“想要挺秀一点、线条往上走一点，但别太薄、别太飘”就够了。',
+  },
+  {
+    id: 'bright-chic-not-sweet-jumpy-reply',
+    caseId: 'bar-expert-bright-chic-not-sweet-jumpy',
+    title: '俏感靠提气，不靠发甜',
+    text: '想喝得俏一点，不等于把第一杯点成很甜很跳、像香气和糖感一起往上蹦的东西。你可以先往 French 75、Paloma，或者一杯更灵一点的 Southside 走，整体会更俏一点、更有神一点，但不会甜到发腻、跳到抢戏；直接跟 bartender 说“想要俏一点、灵一点，但别太甜、别太跳”就够了。',
+  },
+  {
+    id: 'refined-not-posed-distant-reply',
+    caseId: 'bar-expert-refined-not-posed-distant',
+    title: '雅感靠分寸，不靠摆远',
+    text: '想喝得雅一点，不等于把第一杯点成很端很远、像先把距离感摆出来的东西。你可以先往 Bamboo、El Presidente，或者一杯更轻一点的 White Port & Tonic 走，整体会更雅一点、更干净一点，但不会冷到难靠近；直接跟 bartender 说“想要雅一点、干净一点，但别太端、别太远”就够了。',
+  },
+  {
     id: 'help-friend-order-no-pressure-reply',
     caseId: 'bar-expert-help-friend-order-no-pressure',
     title: '帮朋友点酒别点成展示题',
