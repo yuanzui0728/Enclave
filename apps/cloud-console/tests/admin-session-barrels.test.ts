@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import * as adminSessionControls from "../src/components/admin-session-controls";
 import { AdminSessionActionButton } from "../src/components/admin-session-action-button";
+import { AdminSessionBrandBadge } from "../src/components/admin-session-brand-badge";
+import { AdminSessionBrandEyebrow } from "../src/components/admin-session-brand-eyebrow";
 import { AdminSessionFilterControls } from "../src/components/admin-session-filter-controls";
 import { AdminSessionQuickViewButtons } from "../src/components/admin-session-quick-view-buttons";
 import { AdminSessionSourceGroupFilterControls } from "../src/components/admin-session-source-group-filter-controls";
@@ -15,6 +17,8 @@ describe("admin session barrels", () => {
   it("keeps the admin-session-controls barrel aligned with the shared admin-session components", () => {
     expect(Object.keys(adminSessionControls).sort()).toEqual([
       "AdminSessionActionButton",
+      "AdminSessionBrandBadge",
+      "AdminSessionBrandEyebrow",
       "AdminSessionFilterControls",
       "AdminSessionQuickViewButtons",
       "AdminSessionSourceGroupFilterControls",
@@ -26,6 +30,12 @@ describe("admin session barrels", () => {
 
     expect(adminSessionControls.AdminSessionActionButton).toBe(
       AdminSessionActionButton,
+    );
+    expect(adminSessionControls.AdminSessionBrandBadge).toBe(
+      AdminSessionBrandBadge,
+    );
+    expect(adminSessionControls.AdminSessionBrandEyebrow).toBe(
+      AdminSessionBrandEyebrow,
     );
     expect(adminSessionControls.AdminSessionFilterControls).toBe(
       AdminSessionFilterControls,
