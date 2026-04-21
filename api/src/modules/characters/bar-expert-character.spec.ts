@@ -22,6 +22,11 @@ describe('bar expert character', () => {
     expect(profile?.coreLogic).toContain('不教人怎么更快喝醉');
     expect(profile?.coreLogic).toContain('如果用户怀疑被下药');
     expect(profile?.scenePrompts?.chat).toContain('如果涉及安全');
+    expect(profile?.scenePrompts?.chat).toContain('咨询腔开头');
+    expect(profile?.scenePrompts?.chat).toContain('Dry Martini');
+    expect(profile?.scenePrompts?.chat).toContain('Vesper');
+    expect(profile?.scenePrompts?.chat).toContain('慢慢喝一点');
+    expect(profile?.scenePrompts?.chat).toContain('不想硬撑');
     expect(profile?.cognitiveBoundaries?.refusalStyle).toContain('会直接拒绝');
   });
 

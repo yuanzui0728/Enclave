@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { BAR_EXPERT_CHAT_BASELINES } from '../characters/bar-expert-chat-baselines';
+import { BAR_EXPERT_MOMENT_BASELINES } from '../characters/bar-expert-moment-baselines';
 import { buildDefaultCharacters } from '../characters/default-characters';
 import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
@@ -1430,9 +1431,18 @@ export class SystemService {
             (baseline) => baseline.caseId === caseRecord.id,
           ) ?? null
         : null;
+    const barExpertMomentBaseline =
+      caseRecord.datasetId === 'bar-expert-moments'
+        ? BAR_EXPERT_MOMENT_BASELINES.find(
+            (baseline) => baseline.caseId === caseRecord.id,
+          ) ?? null
+        : null;
 
     if (barExpertChatBaseline) {
       return barExpertChatBaseline.text;
+    }
+    if (barExpertMomentBaseline) {
+      return barExpertMomentBaseline.text;
     }
 
     switch (caseRecord.id) {
@@ -1679,10 +1689,14 @@ export class SystemService {
         }
         break;
       case 'bar-expert-first-bar-low-pressure':
-        if (!/sour|highball|偏酸|果香|第一杯|舒服/u.test(normalizedOutput)) {
+        if (
+          !/daiquiri|mule|spritz|collins|highball|gin\s*&\s*tonic|g&t|sour|第一杯|直接点|可以点|稳妥的选择|经典款/u.test(
+            normalizedOutput,
+          )
+        ) {
           registerFailure('context.missing', '没有给出可执行的第一杯建议');
         }
-        if (!/不想太醉|别太冲|低压力/u.test(normalizedOutput)) {
+        if (!/不想太醉|别太冲|低压力|不太烈|酒精压力|低酒精/u.test(normalizedOutput)) {
           registerFailure('context.missing', '没有体现对不想太醉的理解');
         }
         break;
@@ -2840,6 +2854,12 @@ export class SystemService {
             (baseline) => baseline.caseId === caseRecord.id,
           ) ?? null
         : null;
+    const barExpertMomentBaseline =
+      caseRecord.datasetId === 'bar-expert-moments'
+        ? BAR_EXPERT_MOMENT_BASELINES.find(
+            (baseline) => baseline.caseId === caseRecord.id,
+          ) ?? null
+        : null;
 
     if (traceSource === 'memory.summary') {
       output = '暂无可复用近期记忆。';
@@ -2859,6 +2879,8 @@ export class SystemService {
       output = '你好，先认识一下。';
     } else if (barExpertChatBaseline) {
       output = barExpertChatBaseline.text;
+    } else if (barExpertMomentBaseline) {
+      output = barExpertMomentBaseline.text;
     }
 
     const normalizedOutput = normalizeOutputText(output);

@@ -114,6 +114,26 @@ describe('SystemService eval runtime execution', () => {
     expect(menuCase?.output).not.toContain('先说结论：这件事别急着脑补');
   });
 
+  it('uses bar expert case baselines when moment evals fall back to scaffolded output', async () => {
+    const service = createSystemService();
+
+    const result = await service.runEvalExperimentPreset(
+      'bar-expert-moments-baseline',
+    );
+    const serviceCase = result.singleRun?.caseResults.find(
+      (caseResult) => caseResult.caseId === 'bar-expert-bar-service-catch-people',
+    );
+
+    expect(result.singleRun?.datasetId).toBe('bar-expert-moments');
+    expect(result.singleRun?.summary.scaffoldedCases).toBe(
+      result.singleRun?.summary.caseCount,
+    );
+    expect(serviceCase?.status).toBe('scaffolded');
+    expect(serviceCase?.output).toContain('“随便”');
+    expect(serviceCase?.output).toContain('先把人接住');
+    expect(serviceCase?.output).not.toContain('最舒服的，不一定是最重的那杯');
+  });
+
   it('runs a pairwise eval, stores a comparison, and updates report decisions', async () => {
     const service = createSystemService();
 

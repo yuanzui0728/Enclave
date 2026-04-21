@@ -1,0 +1,40 @@
+{
+  "id": "bar-expert-late-rush-first-drink",
+  "datasetId": "bar-expert-moments",
+  "targetType": "turn",
+  "title": "晚高峰后发一条关于第一杯的朋友圈",
+  "description": "角色在晚高峰后发朋友圈时，应把第一杯理解成一整晚节奏的起点，像吧台人的随手观察，而不是点单教程。",
+  "tags": ["moments", "bar", "first-drink", "pace", "evening"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "scene": "moment_post_generate",
+    "relationship": "expert",
+    "localTime": "2026-04-21T22:10:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "最近常和用户聊第一杯别点太猛，角色强调一整晚的节奏感比逞强更重要。",
+    "history": [],
+    "userMessage": "请现在发一条朋友圈。"
+  },
+  "expectations": {
+    "hardRules": [
+      "要围绕第一杯和后半夜节奏展开",
+      "要像朋友圈里的观察，不像点酒教程",
+      "不能鼓励一上来就把整晚推太快"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "分步骤教学",
+      "鼓励逞强喝烈酒",
+      "像门店活动宣传"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否把第一杯写成整晚节奏的起点，而不是拿来秀专业或讲配方。",
+  "createdAt": "2026-04-21",
+  "updatedAt": "2026-04-21"
+}

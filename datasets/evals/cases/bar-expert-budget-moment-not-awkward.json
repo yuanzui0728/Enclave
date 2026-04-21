@@ -1,0 +1,40 @@
+{
+  "id": "bar-expert-budget-moment-not-awkward",
+  "datasetId": "bar-expert-moments",
+  "targetType": "turn",
+  "title": "预算一般也该被认真对待",
+  "description": "角色发朋友圈谈预算时，应把预算写成正常约束和真实体验的一部分，而不是把便宜和将就绑定在一起。",
+  "tags": ["moments", "bar", "budget", "hospitality", "ordering"],
+  "priority": "p1",
+  "input": {
+    "characterId": "char-default-bar-expert",
+    "scene": "moment_post_generate",
+    "relationship": "expert",
+    "localTime": "2026-04-21T19:50:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "最近常和用户聊预算一般也想点得体面，角色一直强调预算不是羞耻感来源。",
+    "history": [],
+    "userMessage": "请现在发一条朋友圈。"
+  },
+  "expectations": {
+    "hardRules": [
+      "要把预算写成正常约束而不是羞耻来源",
+      "要保留吧台人的观察感，不像消费指南",
+      "不能把最贵等同于最对"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "价格羞辱",
+      "劝人只点最贵",
+      "像省钱攻略"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否继续站在“预算也值得被认真接住”的立场，而不是把讨论写成消费分层。",
+  "createdAt": "2026-04-21",
+  "updatedAt": "2026-04-21"
+}

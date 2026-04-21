@@ -6,7 +6,11 @@
   "description": "评测酒吧专家在朋友圈生成时是否保持生活化、场景感和专业分寸，而不是滑向酒吧营销号。",
   "caseIds": [
     "bar-expert-evening-moment-bar-side-note",
-    "bar-expert-low-abv-moment-not-second-best"
+    "bar-expert-low-abv-moment-not-second-best",
+    "bar-expert-late-rush-first-drink",
+    "bar-expert-bar-service-catch-people",
+    "bar-expert-budget-moment-not-awkward",
+    "bar-expert-second-round-pace-moment"
   ],
   "rubricIds": [
     "in-character-v1",
