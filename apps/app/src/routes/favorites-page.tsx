@@ -74,6 +74,9 @@ export function FavoritesPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = useMemo(() => parseDesktopFavoritesRouteState(hash), [hash]);
   const [favorites, setFavorites] = useState(() =>
@@ -172,7 +175,7 @@ export function FavoritesPage() {
   }, [notice]);
 
   useEffect(() => {
-    if (noteEditorRouteState) {
+    if (pathname !== "/tabs/favorites" || noteEditorRouteState) {
       return;
     }
 
@@ -181,7 +184,7 @@ export function FavoritesPage() {
         ? current
         : workspaceRouteState.category,
     );
-  }, [noteEditorRouteState, workspaceRouteState.category]);
+  }, [noteEditorRouteState, pathname, workspaceRouteState.category]);
 
   useEffect(() => {
     if (noteEditorRouteState) {
@@ -294,6 +297,7 @@ export function FavoritesPage() {
     hash,
     navigate,
     noteEditorRouteState,
+    pathname,
     selectedFavoriteSourceId,
   ]);
 

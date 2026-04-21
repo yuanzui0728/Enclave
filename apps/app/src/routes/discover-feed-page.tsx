@@ -96,13 +96,18 @@ export function DiscoverFeedPage() {
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
   const routeState = parseFeedRouteHash(hash);
+  const normalizedDesktopReturnPath =
+    isDesktopLayout && routeState.returnPath === "/discover/feed"
+      ? "/tabs/feed"
+      : routeState.returnPath;
   const routeSelectedPostId = routeState.postId;
   const [desktopSelectedPostId, setDesktopSelectedPostId] = useState<
     string | null
   >(routeSelectedPostId);
   const safeReturnPath =
-    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
-      ? routeState.returnPath
+    normalizedDesktopReturnPath &&
+    !isDesktopOnlyPath(normalizedDesktopReturnPath)
+      ? normalizedDesktopReturnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
 
@@ -288,7 +293,11 @@ export function DiscoverFeedPage() {
   }, [routeSelectedPostId]);
 
   useEffect(() => {
-    if (!isDesktopLayout || routeSelectedPostId === desktopSelectedPostId) {
+    if (
+      !isDesktopLayout ||
+      pathname !== "/discover/feed" ||
+      routeSelectedPostId === desktopSelectedPostId
+    ) {
       return;
     }
 
@@ -305,6 +314,7 @@ export function DiscoverFeedPage() {
     desktopSelectedPostId,
     isDesktopLayout,
     navigate,
+    pathname,
     routeSelectedPostId,
     safeReturnHash,
     safeReturnPath,

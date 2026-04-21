@@ -149,9 +149,18 @@ export function GamesPage() {
   >(inviteActivityFromSearch?.id ?? null);
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const isDesktopGamesRoute =
+    pathname === "/tabs/games" || pathname === "/discover/games";
+  const normalizedDesktopReturnPath =
+    isDesktopLayout &&
+    (routeState.returnPath === "/games" ||
+      routeState.returnPath === "/discover/games")
+      ? "/tabs/games"
+      : routeState.returnPath;
   const safeReturnPath =
-    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
-      ? routeState.returnPath
+    normalizedDesktopReturnPath &&
+    !isDesktopOnlyPath(normalizedDesktopReturnPath)
+      ? normalizedDesktopReturnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const activeInviteActivity = useMemo(
@@ -226,7 +235,7 @@ export function GamesPage() {
   }, [inviteActivityFromSearch]);
 
   useEffect(() => {
-    if (!isDesktopLayout || !selectedGameId) {
+    if (!isDesktopLayout || !isDesktopGamesRoute || !selectedGameId) {
       return;
     }
 
@@ -236,11 +245,14 @@ export function GamesPage() {
         activeInviteActivity?.gameId === selectedGameId
           ? activeInviteActivity?.id
           : undefined,
-      returnPath: routeState.returnPath,
-      returnHash: routeState.returnHash,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
     });
 
-    if ((locationSearch || "") === (nextSearch || "")) {
+    if (
+      pathname === "/tabs/games" &&
+      (locationSearch || "") === (nextSearch || "")
+    ) {
       return;
     }
 
@@ -252,16 +264,18 @@ export function GamesPage() {
   }, [
     activeInviteActivity?.gameId,
     activeInviteActivity?.id,
+    isDesktopGamesRoute,
     isDesktopLayout,
     locationSearch,
     navigate,
-    routeState.returnHash,
-    routeState.returnPath,
+    pathname,
+    safeReturnHash,
+    safeReturnPath,
     selectedGameId,
   ]);
 
   useEffect(() => {
-    if (isDesktopLayout || !selectedGameId) {
+    if (isDesktopLayout || pathname !== "/discover/games" || !selectedGameId) {
       return;
     }
 
@@ -271,8 +285,8 @@ export function GamesPage() {
         activeInviteActivity?.gameId === selectedGameId
           ? activeInviteActivity?.id
           : undefined,
-      returnPath: routeState.returnPath,
-      returnHash: routeState.returnHash,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
     });
 
     if ((locationSearch || "") === (nextSearch || "")) {
@@ -291,8 +305,8 @@ export function GamesPage() {
     locationSearch,
     navigate,
     pathname,
-    routeState.returnHash,
-    routeState.returnPath,
+    safeReturnHash,
+    safeReturnPath,
     selectedGameId,
   ]);
 
@@ -447,8 +461,8 @@ export function GamesPage() {
       {
         gameId: activity.gameId,
         inviteId: activity.id,
-        returnPath: routeState.returnPath,
-        returnHash: routeState.returnHash,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
       },
     );
 

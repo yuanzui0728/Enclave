@@ -93,10 +93,17 @@ export function ChannelsPage() {
     isDesktopLayout,
   });
   const routeState = useMemo(() => parseDesktopChannelsRouteHash(hash), [hash]);
+  const normalizedDesktopReturnPath =
+    isDesktopLayout && routeState.returnPath === "/discover/channels"
+      ? "/tabs/channels"
+      : routeState.returnPath;
+  const isDesktopChannelsRoute =
+    pathname === "/tabs/channels" || pathname === "/discover/channels";
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const safeReturnPath =
-    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
-      ? routeState.returnPath
+    normalizedDesktopReturnPath &&
+    !isDesktopOnlyPath(normalizedDesktopReturnPath)
+      ? normalizedDesktopReturnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const routeSelectedPostId = routeState.postId;
@@ -477,7 +484,7 @@ export function ChannelsPage() {
   }, [desktopRoutePostPending, desktopSelectedPostId, desktopWorkspacePosts]);
 
   useEffect(() => {
-    if (!isDesktopLayout) {
+    if (!isDesktopLayout || !isDesktopChannelsRoute) {
       return;
     }
 
@@ -486,7 +493,10 @@ export function ChannelsPage() {
       authorId: syncedRouteSelectedAuthorId,
       section: activeSection,
     });
-    if ((nextHash ?? "") === normalizedHash) {
+    if (
+      pathname === "/tabs/channels" &&
+      (nextHash ?? "") === normalizedHash
+    ) {
       return;
     }
 
@@ -497,15 +507,17 @@ export function ChannelsPage() {
     });
   }, [
     activeSection,
+    isDesktopChannelsRoute,
     syncedRouteSelectedAuthorId,
     normalizedHash,
     desktopSelectedPostId,
     isDesktopLayout,
     navigate,
+    pathname,
   ]);
 
   useEffect(() => {
-    if (isDesktopLayout) {
+    if (isDesktopLayout || pathname !== "/discover/channels") {
       return;
     }
 
@@ -530,6 +542,7 @@ export function ChannelsPage() {
     isDesktopLayout,
     navigate,
     normalizedHash,
+    pathname,
     routeSelectedPostId,
     routeState.section,
     safeReturnHash,
@@ -943,7 +956,20 @@ export function ChannelsPage() {
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
-            {notice}
+            {noticeTone === "info" ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">{notice}</span>
+                <button
+                  type="button"
+                  onClick={handleStatusBack}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  {safeReturnPath ? "返回上一页" : "重新加载"}
+                </button>
+              </div>
+            ) : (
+              notice
+            )}
           </InlineNotice>
         ) : null}
         {errorMessage ? (

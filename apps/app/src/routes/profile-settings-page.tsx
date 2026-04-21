@@ -156,12 +156,25 @@ export function ProfileSettingsPage() {
   const canSaveProfile = draftName.trim().length > 0;
   const aiSettingsBusy =
     saveApiKeyMutation.isPending || clearApiKeyMutation.isPending;
+  const desktopSettingsPath = "/desktop/settings";
+  const desktopLegacySettingsRoute = pathname === "/profile/settings";
   const desktopSettingsRoute = pathname.startsWith("/desktop/settings");
   const desktopMode = isDesktopLayout;
   const backTo = desktopMode ? "/tabs/chat" : "/tabs/profile";
   const desktopBackTo = desktopSettingsRoute ? "/tabs/chat" : "/tabs/profile";
   const desktopBackLabel = desktopSettingsRoute ? "返回消息" : "返回资料";
   const mobileBackLabel = backTo === "/tabs/profile" ? "返回资料页" : "返回消息";
+
+  useEffect(() => {
+    if (!desktopMode || !desktopLegacySettingsRoute) {
+      return;
+    }
+
+    void navigate({
+      to: desktopSettingsPath,
+      replace: true,
+    });
+  }, [desktopLegacySettingsRoute, desktopMode, desktopSettingsPath, navigate]);
 
   function handleMobileBack() {
     void navigate({ to: backTo });

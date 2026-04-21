@@ -109,9 +109,17 @@ export function MiniProgramsPage() {
   const groupRelayEntry = getMiniProgramEntry("group-relay");
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const isDesktopMiniProgramsRoute =
+    pathname === "/tabs/mini-programs" ||
+    pathname === "/discover/mini-programs";
+  const normalizedDesktopReturnPath =
+    isDesktopLayout && routeState.returnPath === "/discover/mini-programs"
+      ? "/tabs/mini-programs"
+      : routeState.returnPath;
   const safeReturnPath =
-    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
-      ? routeState.returnPath
+    normalizedDesktopReturnPath &&
+    !isDesktopOnlyPath(normalizedDesktopReturnPath)
+      ? normalizedDesktopReturnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const [relaySummaryPublishedAt, setRelaySummaryPublishedAt] = useState(() =>
@@ -223,7 +231,11 @@ export function MiniProgramsPage() {
   }, [successNotice]);
 
   useEffect(() => {
-    if (!isDesktopLayout || !selectedMiniProgramId) {
+    if (
+      !isDesktopLayout ||
+      !isDesktopMiniProgramsRoute ||
+      !selectedMiniProgramId
+    ) {
       return;
     }
 
@@ -231,11 +243,14 @@ export function MiniProgramsPage() {
       miniProgramId: selectedMiniProgramId,
       sourceGroupId: activeLaunchContext?.sourceGroupId,
       sourceGroupName: activeLaunchContext?.sourceGroupName,
-      returnPath: routeState.returnPath,
-      returnHash: routeState.returnHash,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
     });
 
-    if ((locationSearch || "") === (nextSearch || "")) {
+    if (
+      pathname === "/tabs/mini-programs" &&
+      (locationSearch || "") === (nextSearch || "")
+    ) {
       return;
     }
 
@@ -247,16 +262,22 @@ export function MiniProgramsPage() {
   }, [
     activeLaunchContext?.sourceGroupId,
     activeLaunchContext?.sourceGroupName,
+    isDesktopMiniProgramsRoute,
     isDesktopLayout,
     locationSearch,
     navigate,
-    routeState.returnHash,
-    routeState.returnPath,
+    pathname,
+    safeReturnHash,
+    safeReturnPath,
     selectedMiniProgramId,
   ]);
 
   useEffect(() => {
-    if (isDesktopLayout || !selectedMiniProgramId) {
+    if (
+      isDesktopLayout ||
+      pathname !== "/discover/mini-programs" ||
+      !selectedMiniProgramId
+    ) {
       return;
     }
 
@@ -264,8 +285,8 @@ export function MiniProgramsPage() {
       miniProgramId: selectedMiniProgramId,
       sourceGroupId: activeLaunchContext?.sourceGroupId,
       sourceGroupName: activeLaunchContext?.sourceGroupName,
-      returnPath: routeState.returnPath,
-      returnHash: routeState.returnHash,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
     });
 
     if ((locationSearch || "") === (nextSearch || "")) {
@@ -283,9 +304,9 @@ export function MiniProgramsPage() {
     isDesktopLayout,
     locationSearch,
     navigate,
-    routeState.returnHash,
-    routeState.returnPath,
     pathname,
+    safeReturnHash,
+    safeReturnPath,
     selectedMiniProgramId,
   ]);
 

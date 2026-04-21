@@ -202,6 +202,9 @@ export function MomentsPage() {
       ? routeSelectedAuthorId
       : undefined;
   const isDiscoverSubPage = pathname === "/discover/moments";
+  const desktopMomentsPath = "/tabs/moments";
+  const isDesktopMomentsRoute =
+    pathname === desktopMomentsPath || pathname === "/discover/moments";
   const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试";
 
   function openMobileMomentsPublishPage() {
@@ -325,18 +328,49 @@ export function MomentsPage() {
   }, [notice]);
 
   useEffect(() => {
-    if (!isDesktopLayout || !syncedRouteSelectedAuthorId) {
+    const desktopPathMismatch = pathname !== desktopMomentsPath;
+
+    if (
+      !isDesktopLayout ||
+      !isDesktopMomentsRoute ||
+      syncedRouteSelectedAuthorId ||
+      (!desktopPathMismatch && currentRouteHash === normalizedHash)
+    ) {
       return;
     }
 
-    const returnPath = isDiscoverSubPage ? "/discover/moments" : "/tabs/moments";
+    void navigate({
+      to: desktopMomentsPath,
+      hash: currentRouteHash || undefined,
+      replace: true,
+    });
+  }, [
+    currentRouteHash,
+    isDesktopLayout,
+    isDesktopMomentsRoute,
+    navigate,
+    normalizedHash,
+    pathname,
+    syncedRouteSelectedAuthorId,
+    desktopMomentsPath,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isDesktopLayout ||
+      !isDesktopMomentsRoute ||
+      !syncedRouteSelectedAuthorId
+    ) {
+      return;
+    }
+
     void navigate({
       to: "/desktop/friend-moments/$characterId",
       params: { characterId: syncedRouteSelectedAuthorId },
       hash: buildDesktopFriendMomentsRouteHash({
         momentId: routeSelectedMomentId ?? undefined,
         source: "moments",
-        returnPath,
+        returnPath: desktopMomentsPath,
         returnHash: buildDesktopMomentsRouteHash({
           momentId: routeSelectedMomentId ?? undefined,
         }),
