@@ -56,9 +56,14 @@ export function DesktopAddFriendWorkspace() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hash = useRouterState({ select: (state) => state.location.hash });
-  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-  const routeState = parseDesktopAddFriendRouteState(hash);
+  const routeHash = useRouterState({ select: (state) => state.location.hash });
+  const liveHash =
+    routeHash ||
+    (typeof window !== "undefined" ? window.location.hash : "");
+  const normalizedHash = liveHash.startsWith("#")
+    ? liveHash.slice(1)
+    : liveHash;
+  const routeState = parseDesktopAddFriendRouteState(liveHash);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
@@ -232,7 +237,8 @@ export function DesktopAddFriendWorkspace() {
     ? buildCharacterIdentifier(sendDialogCharacter.id)
     : "";
   const pendingRequestCount = pendingRequestMap.size;
-  const hasSearched = submittedKeyword.length > 0;
+  const hasSearchContext =
+    submittedKeyword.length > 0 || Boolean(routeCharacterId);
   const loading =
     charactersQuery.isLoading ||
     friendsQuery.isLoading ||
@@ -280,13 +286,16 @@ export function DesktopAddFriendWorkspace() {
   }, [searchResults, selectedCharacterId]);
 
   useEffect(() => {
-    if (routeState.openCompose) {
+    if (routeState.openCompose || loading || !submittedKeyword) {
       return;
     }
 
+    const nextCharacterId =
+      selectedCharacterId ??
+      (!submittedKeyword && routeCharacterId ? routeCharacterId : undefined);
     const nextHash = buildDesktopAddFriendRouteHash({
       keyword: routeState.keyword,
-      characterId: selectedCharacterId ?? undefined,
+      characterId: nextCharacterId,
       recommendationId: routeState.recommendationId,
     });
 
@@ -305,7 +314,10 @@ export function DesktopAddFriendWorkspace() {
     routeState.keyword,
     routeState.openCompose,
     routeState.recommendationId,
+    routeCharacterId,
     selectedCharacterId,
+    submittedKeyword,
+    loading,
   ]);
 
   useEffect(() => {
@@ -363,6 +375,8 @@ export function DesktopAddFriendWorkspace() {
 
   const clearSearch = () => {
     setSearchText("");
+    setSelectedCharacterId(null);
+    setSendDialogCharacterId(null);
     void navigate({
       to: "/desktop/add-friend",
       hash: undefined,
@@ -391,9 +405,13 @@ export function DesktopAddFriendWorkspace() {
     <DesktopUtilityShell
       title="添加朋友"
       subtitle={
-        hasSearched
+        submittedKeyword
           ? `搜索“${submittedKeyword}”`
-          : "通过隐界号、角色名或资料关键词查找世界角色"
+          : routeSelectedResult
+            ? `查看“${getSearchResultDisplayName(routeSelectedResult)}”`
+            : routeCharacterId
+              ? "查看角色资料"
+              : "通过隐界号、角色名或资料关键词查找世界角色"
       }
       toolbar={
         <Button
@@ -560,7 +578,7 @@ export function DesktopAddFriendWorkspace() {
             >
               搜索
             </Button>
-            {searchText || submittedKeyword ? (
+            {searchText || submittedKeyword || routeCharacterId ? (
               <button
                 type="button"
                 onClick={clearSearch}
@@ -602,7 +620,7 @@ export function DesktopAddFriendWorkspace() {
               <div className="w-full px-6 py-6">
                 <ErrorBlock message={loadingError.message} />
               </div>
-            ) : !hasSearched ? (
+            ) : !hasSearchContext ? (
               <DesktopAddFriendWelcomeState
                 onFocusSearch={() => inputRef.current?.focus()}
                 onQuickSearch={(keyword) => {
@@ -613,6 +631,7 @@ export function DesktopAddFriendWorkspace() {
             ) : !searchResults.length ? (
               <DesktopAddFriendNoResultsState
                 keyword={submittedKeyword}
+                routeCharacterId={routeCharacterId}
                 onRetry={() => {
                   setSearchText("");
                   inputRef.current?.focus();
@@ -793,13 +812,17 @@ function DesktopAddFriendWelcomeState({
 
 function DesktopAddFriendNoResultsState({
   keyword,
+  routeCharacterId,
   onRetry,
   onQuickSearch,
 }: {
   keyword: string;
+  routeCharacterId?: string | null;
   onRetry: () => void;
   onQuickSearch: (keyword: string) => void;
 }) {
+  const missingDirectTarget = !keyword && Boolean(routeCharacterId);
+
   return (
     <div className="flex h-full w-full items-center justify-center px-6 py-6">
       <div className="w-full max-w-[560px] text-center">
@@ -807,10 +830,12 @@ function DesktopAddFriendNoResultsState({
           <Search size={28} />
         </div>
         <div className="mt-5 text-[22px] font-medium text-[color:var(--text-primary)]">
-          没有找到“{keyword}”
+          {missingDirectTarget ? "没有找到该角色" : `没有找到“${keyword}”`}
         </div>
         <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
-          请检查隐界号是否完整，或者尝试使用角色名、签名和资料关键词重新搜索。
+          {missingDirectTarget
+            ? "这个角色可能已被移除，或者当前世界里还没有同步到该资料。你可以重新搜索其他角色。"
+            : "请检查隐界号是否完整，或者尝试使用角色名、签名和资料关键词重新搜索。"}
         </div>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {["yinjie_", "角色名", "关系描述"].map((item) => (
