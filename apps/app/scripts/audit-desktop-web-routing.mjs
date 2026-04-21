@@ -198,9 +198,15 @@ const expectations = [
   {
     file: "src/routes/create-group-page.tsx",
     description:
-      "desktop create-group route keeps desktop dialog close and post-create flows on the desktop chat workspace instead of legacy /chat and /group routes",
+      "desktop create-group route keeps desktop dialog close and post-create flows on desktop chat or contacts workspaces instead of legacy /chat, /group, and /contacts/groups routes",
     includes: [
-      'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
+      "buildDesktopChatRouteHash,",
+      "buildDesktopChatThreadPath,",
+      "buildDesktopContactsRouteHash",
+      'to: "/tabs/chat",',
+      'panel: "details",',
+      'to: "/tabs/contacts",',
+      'pane: "groups",',
       'to: buildDesktopChatThreadPath({',
       "conversationId: routeState.conversationId,",
       "conversationId: groupId,",

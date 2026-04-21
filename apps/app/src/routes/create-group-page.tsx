@@ -27,7 +27,11 @@ import {
 } from "../features/contacts/contact-utils";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { buildMobileGroupRouteHash } from "../features/chat/mobile-group-route-state";
-import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+} from "../features/desktop/chat/desktop-chat-route-state";
+import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { parseCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { isDesktopOnlyPath } from "../lib/history-back";
@@ -207,6 +211,17 @@ export function CreateGroupPage() {
       return;
     }
 
+    if (isDesktopLayout && routeState.source === "chat-details" && routeState.conversationId) {
+      void navigate({
+        to: "/tabs/chat",
+        hash: buildDesktopChatRouteHash({
+          conversationId: routeState.conversationId,
+          panel: "details",
+        }),
+      });
+      return;
+    }
+
     if (routeState.source === "chat-details" && routeState.conversationId) {
       void navigate({
         to: "/chat/$conversationId/details",
@@ -219,6 +234,17 @@ export function CreateGroupPage() {
       void navigate({
         to: buildDesktopChatThreadPath({
           conversationId: routeState.conversationId,
+        }),
+      });
+      return;
+    }
+
+    if (isDesktopLayout && routeState.source === "group-contacts") {
+      void navigate({
+        to: "/tabs/contacts",
+        hash: buildDesktopContactsRouteHash({
+          pane: "groups",
+          showWorldCharacters: false,
         }),
       });
       return;

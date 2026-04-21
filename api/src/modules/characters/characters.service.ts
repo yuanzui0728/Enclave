@@ -385,7 +385,9 @@ export class CharactersService implements OnModuleInit {
   }
 
   private normalizeCharacterAvatars(characters: CharacterEntity[]) {
-    return characters.map((character) => this.normalizeCharacterAvatar(character));
+    return characters.map(
+      (character) => this.normalizeCharacterAvatar(character) ?? character,
+    );
   }
 
   private normalizeCharacterAvatar(
@@ -449,12 +451,17 @@ export class CharactersService implements OnModuleInit {
         sourceType: In(['default_seed', 'preset_catalog']),
       },
     });
-    const pendingUpdates = characters
-      .map((character) => this.normalizeCharacterAvatar(character))
-      .filter(
-        (character): character is CharacterEntity =>
-          Boolean(character && character.avatar !== characters.find((item) => item.id === character.id)?.avatar),
-      );
+    const pendingUpdates: CharacterEntity[] = [];
+
+    for (const character of characters) {
+      const normalizedCharacter = this.normalizeCharacterAvatar(character);
+      if (
+        normalizedCharacter &&
+        normalizedCharacter.avatar !== character.avatar
+      ) {
+        pendingUpdates.push(normalizedCharacter);
+      }
+    }
 
     if (pendingUpdates.length === 0) {
       return;
