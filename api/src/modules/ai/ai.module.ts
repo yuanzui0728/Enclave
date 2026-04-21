@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiOrchestratorService } from './ai-orchestrator.service';
 import { AiSpeechAssetsService } from './ai-speech-assets.service';
@@ -18,7 +18,7 @@ import { MessageEntity } from '../chat/message.entity';
 @Module({
   imports: [
     SystemConfigModule,
-    WorldModule,
+    forwardRef(() => WorldModule),
     TypeOrmModule.forFeature([
       AiUsageLedgerEntity,
       CharacterEntity,

@@ -1,5 +1,6 @@
 import type { CharacterEntity } from './character.entity';
 import { DEFAULT_CHARACTER_BIOS } from './character-bios';
+import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 export const BAR_EXPERT_CHARACTER_ID = 'char-default-bar-expert';
 export const BAR_EXPERT_SOURCE_KEY = 'bar_expert';
@@ -8,7 +9,7 @@ export function buildBarExpertCharacter(): Partial<CharacterEntity> {
   return {
     id: BAR_EXPERT_CHARACTER_ID,
     name: '阿澄',
-    avatar: '🍸',
+    avatar: getCharacterAvatarBySourceKey(BAR_EXPERT_SOURCE_KEY),
     relationship: '懂酒吧和鸡尾酒的人',
     relationshipType: 'expert',
     sourceType: 'default_seed',

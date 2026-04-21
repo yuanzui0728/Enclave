@@ -1,12 +1,16 @@
 import { Suspense, lazy, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, MessageSquarePlus, Search } from "lucide-react";
 import { getGroups, type Group } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
@@ -43,9 +47,31 @@ export function GroupContactsPage() {
 
 function MobileGroupContactsPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchText, setSearchText] = useState("");
+  const routeState = useMemo(() => parseMobileGroupRouteState(hash), [hash]);
+  const safeReturnPath = routeState.returnPath;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [
+      routeState.highlightedMessageId,
+      safeReturnHash,
+      safeReturnPath,
+    ],
+  );
 
   const groupsQuery = useQuery({
     queryKey: ["app-contact-groups", baseUrl],
@@ -54,6 +80,26 @@ function MobileGroupContactsPage() {
 
   const filteredGroups = useFilteredGroups(groupsQuery.data ?? [], searchText);
   const hasSearchText = searchText.trim().length > 0;
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/contacts" });
+  }
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
@@ -69,6 +115,10 @@ function MobileGroupContactsPage() {
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 void navigate({ to: "/tabs/contacts" });
               })
             }
@@ -86,7 +136,11 @@ function MobileGroupContactsPage() {
             onClick={() => {
               void navigate({
                 to: "/group/new",
-                hash: buildCreateGroupRouteHash({ source: "group-contacts" }),
+                hash: buildCreateGroupRouteHash({
+                  source: "group-contacts",
+                  returnPath: pathname,
+                  returnHash: currentRouteHash || undefined,
+                }),
               });
             }}
             aria-label="发起群聊"
@@ -132,9 +186,9 @@ function MobileGroupContactsPage() {
                   variant="secondary"
                   size="sm"
                   className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={() => void groupsQuery.refetch()}
+                  onClick={handleStatusBack}
                 >
-                  重新加载
+                  {safeReturnPath ? "返回上一页" : "返回通讯录"}
                 </Button>
               }
             />
@@ -163,6 +217,8 @@ function MobileGroupContactsPage() {
                       to: "/group/new",
                       hash: buildCreateGroupRouteHash({
                         source: "group-contacts",
+                        returnPath: pathname,
+                        returnHash: currentRouteHash || undefined,
                       }),
                     });
                   }}
@@ -184,6 +240,10 @@ function MobileGroupContactsPage() {
                   void navigate({
                     to: "/group/$groupId",
                     params: { groupId: group.id },
+                    hash: buildMobileGroupRouteHash({
+                      returnPath: pathname,
+                      returnHash: currentRouteHash || undefined,
+                    }),
                   });
                 }}
                 className={cn(

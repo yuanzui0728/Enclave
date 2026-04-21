@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NarrativeArcEntity } from './narrative-arc.entity';
 import { NarrativeController } from './narrative.controller';
@@ -7,7 +7,7 @@ import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([NarrativeArcEntity]), AuthModule, AiModule],
+  imports: [TypeOrmModule.forFeature([NarrativeArcEntity]), AuthModule, forwardRef(() => AiModule)],
   providers: [NarrativeService],
   controllers: [NarrativeController],
   exports: [NarrativeService],

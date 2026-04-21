@@ -11,6 +11,10 @@ import {
 } from "../features/mini-programs/mini-programs-data";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { MobileMiniProgramsWorkspace } from "../features/mini-programs/mobile-mini-programs-workspace";
+import {
+  buildMobileMiniProgramsRouteSearch,
+  parseMobileMiniProgramsRouteSearch,
+} from "../features/mini-programs/mobile-mini-programs-route-state";
 import { useMiniProgramsState } from "../features/mini-programs/use-mini-programs-state";
 import {
   pushMobileHandoffRecord,
@@ -18,13 +22,14 @@ import {
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import {
   isMobileWebShareSurface,
   isNativeMobileShareSurface,
 } from "../runtime/mobile-share-surface";
+import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
 
 const DesktopMiniProgramsWorkspace = lazy(async () => {
   const mod =
@@ -36,63 +41,13 @@ function resolveDefaultMiniProgramId() {
   return featuredMiniProgramIds[0] ?? miniProgramEntries[0]?.id ?? "";
 }
 
-function resolveMiniProgramSelectionFromSearch(search: unknown) {
-  const miniProgramId = new URLSearchParams(
-    typeof search === "string" ? search : "",
-  ).get("miniProgram");
-
-  return miniProgramId && getMiniProgramEntry(miniProgramId)
-    ? miniProgramId
-    : null;
-}
-
-function resolveMiniProgramLaunchContextFromSearch(search: unknown) {
-  const searchParams = new URLSearchParams(
-    typeof search === "string" ? search : "",
-  );
-  const sourceGroupId = searchParams.get("sourceGroupId")?.trim() ?? "";
-  const sourceGroupName = searchParams.get("sourceGroupName")?.trim() ?? "";
-
-  if (!sourceGroupId) {
-    return null;
-  }
-
-  return {
-    sourceGroupId,
-    sourceGroupName: sourceGroupName || "当前群聊",
-  };
-}
-
-function buildMiniProgramsRouteSearch(input: {
-  miniProgramId?: string | null;
-  sourceGroupId?: string | null;
-  sourceGroupName?: string | null;
-}) {
-  const params = new URLSearchParams();
-  const miniProgramId = input.miniProgramId?.trim() ?? "";
-  const sourceGroupId = input.sourceGroupId?.trim() ?? "";
-  const sourceGroupName = input.sourceGroupName?.trim() ?? "";
-
-  if (miniProgramId && getMiniProgramEntry(miniProgramId)) {
-    params.set("miniProgram", miniProgramId);
-  }
-
-  if (sourceGroupId) {
-    params.set("sourceGroupId", sourceGroupId);
-  }
-
-  if (sourceGroupName) {
-    params.set("sourceGroupName", sourceGroupName);
-  }
-
-  const search = params.toString();
-  return search ? `?${search}` : undefined;
-}
-
 export function MiniProgramsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
@@ -102,8 +57,12 @@ export function MiniProgramsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const locationSearch = useRouterState({
-    select: (state) => state.location.search,
+    select: (state) => state.location.searchStr,
   });
+  const routeState = useMemo(
+    () => parseMobileMiniProgramsRouteSearch(locationSearch),
+    [locationSearch],
+  );
   const {
     activeMiniProgramId,
     completedTaskIdsByMiniProgramId,
@@ -121,41 +80,56 @@ export function MiniProgramsPage() {
   const [activeCategory, setActiveCategory] =
     useState<MiniProgramCategoryId>("all");
   const [searchText, setSearchText] = useState("");
-  const selectedMiniProgramFromSearch = useMemo(
-    () => resolveMiniProgramSelectionFromSearch(locationSearch),
-    [locationSearch],
-  );
+  const selectedMiniProgramFromSearch = routeState.miniProgramId ?? null;
   const [selectedMiniProgramId, setSelectedMiniProgramId] = useState(
     selectedMiniProgramFromSearch ?? resolveDefaultMiniProgramId(),
   );
-  const launchContext = useMemo(
-    () => resolveMiniProgramLaunchContextFromSearch(locationSearch),
-    [locationSearch],
+  const routeLaunchContext = useMemo(
+    () =>
+      routeState.sourceGroupId
+        ? {
+            sourceGroupId: routeState.sourceGroupId,
+            sourceGroupName: routeState.sourceGroupName || "当前群聊",
+          }
+        : null,
+    [routeState.sourceGroupId, routeState.sourceGroupName],
+  );
+  const [groupRelayLaunchContext, setGroupRelayLaunchContext] = useState(
+    routeLaunchContext,
   );
   const routeMiniProgramId = useMemo(() => {
     if (selectedMiniProgramFromSearch) {
       return selectedMiniProgramFromSearch;
     }
 
-    return launchContext ? "group-relay" : null;
-  }, [launchContext, selectedMiniProgramFromSearch]);
+    return routeLaunchContext ? "group-relay" : null;
+  }, [routeLaunchContext, selectedMiniProgramFromSearch]);
+  const activeLaunchContext =
+    selectedMiniProgramId === "group-relay" ? groupRelayLaunchContext : null;
   const groupRelayEntry = getMiniProgramEntry("group-relay");
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const [relaySummaryPublishedAt, setRelaySummaryPublishedAt] = useState(() =>
     new Date().toISOString(),
   );
   const relaySummaryStartedAt =
-    launchContext && lastOpenedAtById["group-relay"]
+    groupRelayLaunchContext && lastOpenedAtById["group-relay"]
       ? lastOpenedAtById["group-relay"]
       : relaySummaryPublishedAt;
-  const relayPublishCount = launchContext?.sourceGroupId
-    ? (groupRelayPublishCountBySourceGroupId[launchContext.sourceGroupId] ??
+  const relayPublishCount = groupRelayLaunchContext?.sourceGroupId
+    ? (groupRelayPublishCountBySourceGroupId[
+        groupRelayLaunchContext.sourceGroupId
+      ] ??
         0) + 1
     : 1;
-  const relaySummaryMessage = launchContext
+  const relaySummaryMessage = groupRelayLaunchContext
     ? buildGroupRelaySummaryMessage(
-        launchContext.sourceGroupName,
+        groupRelayLaunchContext.sourceGroupName,
         "published",
         relaySummaryStartedAt,
         relaySummaryPublishedAt,
@@ -195,8 +169,21 @@ export function MiniProgramsPage() {
   }, [activeCategory, searchText]);
 
   useEffect(() => {
+    if (!routeLaunchContext) {
+      return;
+    }
+
+    setGroupRelayLaunchContext((current) =>
+      current?.sourceGroupId === routeLaunchContext.sourceGroupId &&
+      current?.sourceGroupName === routeLaunchContext.sourceGroupName
+        ? current
+        : routeLaunchContext,
+    );
+  }, [routeLaunchContext]);
+
+  useEffect(() => {
     setRelaySummaryPublishedAt(new Date().toISOString());
-  }, [launchContext?.sourceGroupId]);
+  }, [groupRelayLaunchContext?.sourceGroupId]);
 
   useEffect(() => {
     if (!routeMiniProgramId) {
@@ -240,10 +227,12 @@ export function MiniProgramsPage() {
       return;
     }
 
-    const nextSearch = buildMiniProgramsRouteSearch({
+    const nextSearch = buildMobileMiniProgramsRouteSearch({
       miniProgramId: selectedMiniProgramId,
-      sourceGroupId: launchContext?.sourceGroupId,
-      sourceGroupName: launchContext?.sourceGroupName,
+      sourceGroupId: activeLaunchContext?.sourceGroupId,
+      sourceGroupName: activeLaunchContext?.sourceGroupName,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
     });
 
     if ((locationSearch || "") === (nextSearch || "")) {
@@ -256,11 +245,47 @@ export function MiniProgramsPage() {
       replace: true,
     });
   }, [
+    activeLaunchContext?.sourceGroupId,
+    activeLaunchContext?.sourceGroupName,
     isDesktopLayout,
-    launchContext?.sourceGroupId,
-    launchContext?.sourceGroupName,
     locationSearch,
     navigate,
+    routeState.returnHash,
+    routeState.returnPath,
+    selectedMiniProgramId,
+  ]);
+
+  useEffect(() => {
+    if (isDesktopLayout || !selectedMiniProgramId) {
+      return;
+    }
+
+    const nextSearch = buildMobileMiniProgramsRouteSearch({
+      miniProgramId: selectedMiniProgramId,
+      sourceGroupId: activeLaunchContext?.sourceGroupId,
+      sourceGroupName: activeLaunchContext?.sourceGroupName,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
+    });
+
+    if ((locationSearch || "") === (nextSearch || "")) {
+      return;
+    }
+
+    void navigate({
+      to: pathname,
+      search: nextSearch || undefined,
+      replace: true,
+    });
+  }, [
+    activeLaunchContext?.sourceGroupId,
+    activeLaunchContext?.sourceGroupName,
+    isDesktopLayout,
+    locationSearch,
+    navigate,
+    routeState.returnHash,
+    routeState.returnPath,
+    pathname,
     selectedMiniProgramId,
   ]);
 
@@ -301,10 +326,12 @@ export function MiniProgramsPage() {
 
   async function handleCopyMiniProgramToMobile(miniProgramId: string) {
     const miniProgram = getMiniProgramEntry(miniProgramId);
-    const search = buildMiniProgramsRouteSearch({
+    const miniProgramLaunchContext =
+      miniProgramId === "group-relay" ? groupRelayLaunchContext : null;
+    const search = buildMobileMiniProgramsRouteSearch({
       miniProgramId,
-      sourceGroupId: launchContext?.sourceGroupId,
-      sourceGroupName: launchContext?.sourceGroupName,
+      sourceGroupId: miniProgramLaunchContext?.sourceGroupId,
+      sourceGroupName: miniProgramLaunchContext?.sourceGroupName,
     });
     const path = `/discover/mini-programs${search ?? ""}`;
     const link = resolveMobileHandoffLink(path);
@@ -394,18 +421,40 @@ export function MiniProgramsPage() {
 
   function handleBack() {
     navigateBackOrFallback(() => {
+      if (activeLaunchContext) {
+        void navigate({
+          to: "/group/$groupId",
+          params: { groupId: activeLaunchContext.sourceGroupId },
+        });
+        return;
+      }
+
+      if (safeReturnPath) {
+        void navigate({
+          to: safeReturnPath,
+          ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        });
+        return;
+      }
+
       void navigate({ to: "/tabs/discover" });
     });
   }
 
+  const statusBackLabel = activeLaunchContext
+    ? "返回群聊"
+    : safeReturnPath
+      ? "返回上一页"
+      : null;
+
   const sendRelaySummaryMutation = useMutation({
     mutationFn: async () => {
-      if (!launchContext) {
+      if (!groupRelayLaunchContext) {
         return null;
       }
 
       return sendGroupMessage(
-        launchContext.sourceGroupId,
+        groupRelayLaunchContext.sourceGroupId,
         {
           text: relaySummaryMessage,
         },
@@ -413,7 +462,7 @@ export function MiniProgramsPage() {
       );
     },
     onSuccess: async () => {
-      if (!launchContext) {
+      if (!groupRelayLaunchContext) {
         return;
       }
 
@@ -424,18 +473,18 @@ export function MiniProgramsPage() {
       ) {
         toggleTaskCompletion("group-relay", "publish-result");
       }
-      recordGroupRelayPublish(launchContext.sourceGroupId);
+      recordGroupRelayPublish(groupRelayLaunchContext.sourceGroupId);
 
       setNoticeTone("success");
       setSuccessNotice(
-        `群接龙结果已回填到“${launchContext.sourceGroupName}”。`,
+        `群接龙结果已回填到“${groupRelayLaunchContext.sourceGroupName}”。`,
       );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: [
             "app-group-messages",
             baseUrl,
-            launchContext.sourceGroupId,
+            groupRelayLaunchContext.sourceGroupId,
           ],
         }),
         queryClient.invalidateQueries({
@@ -482,22 +531,23 @@ export function MiniProgramsPage() {
           onSelectMiniProgram={setSelectedMiniProgramId}
           onToggleMiniProgramTask={handleToggleMiniProgramTask}
           onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
-          launchContext={launchContext}
+          launchContext={activeLaunchContext}
           relaySummaryMessage={relaySummaryMessage}
           relaySummaryPending={sendRelaySummaryMutation.isPending}
           onSendRelaySummaryToGroup={
-            launchContext
+            activeLaunchContext
               ? () => {
                   void sendRelaySummaryMutation.mutateAsync();
                 }
               : undefined
           }
           onReturnToGroup={
-            launchContext
+            activeLaunchContext
               ? () => {
                   void navigate({
-                    to: "/group/$groupId",
-                    params: { groupId: launchContext.sourceGroupId },
+                    to: buildDesktopChatThreadPath({
+                      conversationId: activeLaunchContext.sourceGroupId,
+                    }),
                   });
                 }
               : undefined
@@ -521,6 +571,7 @@ export function MiniProgramsPage() {
       selectedMiniProgramId={selectedMiniProgramId}
       successNotice={successNotice}
       noticeTone={noticeTone}
+      statusBackLabel={statusBackLabel}
       visibleMiniPrograms={visibleMiniPrograms}
       onCopyMiniProgramToMobile={handleCopyMiniProgramToMobile}
       onBack={handleBack}
@@ -529,6 +580,7 @@ export function MiniProgramsPage() {
       onOpenMiniProgram={handleOpenMiniProgram}
       onSearchTextChange={setSearchText}
       onSelectMiniProgram={setSelectedMiniProgramId}
+      onStatusBack={statusBackLabel ? handleBack : undefined}
       onToggleMiniProgramTask={handleToggleMiniProgramTask}
       onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
     />

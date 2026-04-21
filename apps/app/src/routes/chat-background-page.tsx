@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   clearConversationBackground,
   clearWorldOwnerChatBackground,
@@ -32,8 +32,13 @@ import { CHAT_BACKGROUND_PRESETS } from "../features/chat/backgrounds/background
 import { compressChatBackgroundImage } from "../features/chat/backgrounds/compress-chat-background-image";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
+import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "../features/chat/mobile-chat-route-state";
+import { buildDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type UploadTarget = "default" | "conversation";
@@ -43,6 +48,7 @@ export function ChatBackgroundPage() {
     from: "/chat/$conversationId/background",
   });
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -57,6 +63,29 @@ export function ChatBackgroundPage() {
     useState<ConversationBackgroundMode>("inherit");
   const [conversationDraft, setConversationDraft] =
     useState<ChatBackgroundAsset | null>(null);
+  const routeState = parseMobileChatRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileChatRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
+  const desktopDetailsFallbackHash = useMemo(
+    () =>
+      buildDesktopChatRouteHash({
+        conversationId,
+        panel: "details",
+      }),
+    [conversationId],
+  );
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -92,12 +121,23 @@ export function ChatBackgroundPage() {
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
   }, [
     conversation,
     conversationsQuery.isError,
     conversationsQuery.isLoading,
     navigate,
+    safeReturnHash,
+    safeReturnPath,
   ]);
 
   const uploadMutation = useMutation({
@@ -227,6 +267,38 @@ export function ChatBackgroundPage() {
     fileInputRef.current?.click();
   };
 
+  const navigateToRouteStateReturn = () => {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  };
+
+  const handleErrorStateAction = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({
+      to: "/chat/$conversationId/details",
+      params: { conversationId },
+      ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+    });
+  };
+
+  const handleMissingConversationAction = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat" });
+  };
+
   const handlePresetSelect = (
     target: UploadTarget,
     background: ChatBackgroundAsset,
@@ -277,6 +349,16 @@ export function ChatBackgroundPage() {
             title="聊天背景暂时不可用"
             description={conversationsQuery.error.message}
             tone="danger"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                onClick={handleErrorStateAction}
+              >
+                {safeReturnPath ? "返回上一页" : "返回聊天信息"}
+              </Button>
+            }
           />
         )
       ) : null}
@@ -289,6 +371,16 @@ export function ChatBackgroundPage() {
             title="聊天背景暂时不可用"
             description={backgroundQuery.error.message}
             tone="danger"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                onClick={handleErrorStateAction}
+              >
+                {safeReturnPath ? "返回上一页" : "返回聊天信息"}
+              </Button>
+            }
           />
         )
       ) : null}
@@ -300,7 +392,22 @@ export function ChatBackgroundPage() {
             tone="danger"
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
-            {pageError}
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 flex-1">{pageError}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate({
+                    to: "/chat/$conversationId/details",
+                    params: { conversationId },
+                    ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+                  });
+                }}
+                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+              >
+                返回聊天信息
+              </button>
+            </div>
           </InlineNotice>
         )
       ) : null}
@@ -328,6 +435,16 @@ export function ChatBackgroundPage() {
             badge="会话"
             title="会话不存在"
             description="这段聊天暂时不可用，返回聊天页后再试一次。"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                onClick={handleMissingConversationAction}
+              >
+                {safeReturnPath ? "返回上一页" : "返回消息列表"}
+              </Button>
+            }
           />
         )
       ) : null}
@@ -495,8 +612,15 @@ export function ChatBackgroundPage() {
               variant="secondary"
               onClick={() => {
                 void navigate({
-                  to: "/chat/$conversationId/details",
-                  params: { conversationId },
+                  to: safeReturnPath ?? "/tabs/chat",
+                  ...((safeReturnPath ? safeReturnHash : desktopDetailsFallbackHash)
+                    ? {
+                        hash:
+                          (safeReturnPath
+                            ? safeReturnHash
+                            : desktopDetailsFallbackHash) || undefined,
+                      }
+                    : {}),
                 });
               }}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
@@ -530,6 +654,7 @@ export function ChatBackgroundPage() {
           void navigate({
             to: "/chat/$conversationId/details",
             params: { conversationId },
+            ...(currentRouteHash ? { hash: currentRouteHash } : {}),
           });
         });
       }}
@@ -656,11 +781,13 @@ function MobileBackgroundStatusCard({
   title,
   description,
   tone = "default",
+  action,
 }: {
   badge: string;
   title: string;
   description: string;
   tone?: "default" | "danger" | "loading";
+  action?: ReactNode;
 }) {
   return (
     <section
@@ -694,6 +821,7 @@ function MobileBackgroundStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

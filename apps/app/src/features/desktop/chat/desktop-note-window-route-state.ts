@@ -1,6 +1,7 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import {
   buildDesktopStandaloneWindowLabel,
+  openBrowserStandaloneWindow,
   openDesktopStandaloneWindow,
 } from "../../../runtime/desktop-windowing";
 import { createDesktopNoteDraft } from "../../favorites/note-drafts-storage";
@@ -42,6 +43,7 @@ export async function openDesktopNoteWindow(input?: {
     noteId: input?.noteId?.trim() || undefined,
     returnTo: input?.returnTo?.trim() || undefined,
   };
+  const windowLabel = buildDesktopNoteWindowLabel(routeState);
   const routePath = buildDesktopNoteWindowPath(routeState);
   const width = Math.max(980, Math.min(window.screen.availWidth - 120, 1100));
   const height = Math.max(780, Math.min(window.screen.availHeight - 96, 920));
@@ -59,12 +61,16 @@ export async function openDesktopNoteWindow(input?: {
   ].join(",");
 
   if (!isDesktopRuntimeAvailable()) {
-    return Boolean(window.open(routePath, "_blank", features));
+    return openBrowserStandaloneWindow({
+      label: windowLabel,
+      url: routePath,
+      features,
+    });
   }
 
   if (
     await openDesktopStandaloneWindow({
-      label: buildDesktopNoteWindowLabel(routeState),
+      label: windowLabel,
       url: routePath,
       title: "笔记",
       width,
@@ -76,5 +82,9 @@ export async function openDesktopNoteWindow(input?: {
     return true;
   }
 
-  return Boolean(window.open(routePath, "_blank", features));
+  return openBrowserStandaloneWindow({
+    label: windowLabel,
+    url: routePath,
+    features,
+  });
 }

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getOfficialAccount,
   getOfficialAccountArticle,
@@ -21,6 +21,11 @@ import { Button, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
 import { OfficialServiceMessageBubble } from "../../../components/official-service-message-bubble";
 import { buildDesktopMobileOfficialHandoffHash } from "../mobile-official-handoff-route-state";
+import {
+  buildMobileOfficialRouteHash,
+  parseMobileOfficialRouteState,
+} from "../mobile-official-route-state";
+import { isDesktopOnlyPath } from "../../../lib/history-back";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 export function OfficialAccountServiceThread({
@@ -44,11 +49,31 @@ export function OfficialAccountServiceThread({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const lastAutoReadMessageRef = useRef<string | null>(null);
   const lastMarkedArticleIdRef = useRef<string | null>(null);
   const desktopThreadScrollTopRef = useRef(0);
   const desktopThreadScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isDesktop = variant === "desktop";
+  const routeState = parseMobileOfficialRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileOfficialRouteHash({
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath],
+  );
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
 
   const accountQuery = useQuery({
@@ -65,6 +90,16 @@ export function OfficialAccountServiceThread({
     queryFn: () => getOfficialAccountArticle(selectedArticleId!, baseUrl),
     enabled: isDesktop && Boolean(selectedArticleId),
   });
+  const missingSelectedArticle =
+    Boolean(selectedArticleId) &&
+    isOfficialAccountArticleMissingError(articleQuery.error);
+  const selectedArticleMatchesAccount =
+    articleQuery.data?.account.id === accountId;
+  const invalidSelectedArticle =
+    Boolean(selectedArticleId) &&
+    (missingSelectedArticle ||
+      (Boolean(articleQuery.data?.account.id) && !selectedArticleMatchesAccount));
+  const activeArticleId = invalidSelectedArticle ? undefined : selectedArticleId;
 
   const markReadMutation = useMutation({
     mutationFn: () => markOfficialAccountServiceMessagesRead(accountId, baseUrl),
@@ -126,7 +161,7 @@ export function OfficialAccountServiceThread({
   });
 
   useEffect(() => {
-    if (!isDesktop || selectedArticleId) {
+    if (!isDesktop || activeArticleId) {
       return;
     }
 
@@ -136,7 +171,7 @@ export function OfficialAccountServiceThread({
     }
 
     scrollContainer.scrollTop = desktopThreadScrollTopRef.current;
-  }, [isDesktop, selectedArticleId]);
+  }, [activeArticleId, isDesktop]);
 
   useEffect(() => {
     if (!isDesktop) {
@@ -161,6 +196,7 @@ export function OfficialAccountServiceThread({
   useEffect(() => {
     if (
       !articleQuery.data?.id ||
+      !selectedArticleMatchesAccount ||
       lastMarkedArticleIdRef.current === articleQuery.data.id
     ) {
       return;
@@ -168,7 +204,15 @@ export function OfficialAccountServiceThread({
 
     lastMarkedArticleIdRef.current = articleQuery.data.id;
     markArticleReadMutation.mutate(articleQuery.data.id);
-  }, [articleQuery.data?.id, markArticleReadMutation]);
+  }, [articleQuery.data?.id, markArticleReadMutation, selectedArticleMatchesAccount]);
+
+  useEffect(() => {
+    if (!isDesktop || !invalidSelectedArticle) {
+      return;
+    }
+
+    onCloseArticle?.(accountId);
+  }, [accountId, invalidSelectedArticle, isDesktop, onCloseArticle]);
 
   const pageErrorMessage =
     (accountQuery.isError && accountQuery.error instanceof Error
@@ -208,6 +252,14 @@ export function OfficialAccountServiceThread({
     void navigate({
       to: "/official-accounts/$accountId",
       params: { accountId: nextAccountId },
+      ...(isDesktop
+        ? {}
+        : {
+            hash: buildMobileOfficialRouteHash({
+              returnPath: pathname,
+              returnHash: currentRouteHash || undefined,
+            }),
+          }),
     });
   }
 
@@ -232,12 +284,54 @@ export function OfficialAccountServiceThread({
       hash: buildDesktopMobileOfficialHandoffHash({
         surface: "service",
         accountId,
-        articleId: selectedArticleId ?? undefined,
+        articleId: activeArticleId ?? undefined,
         accountName: accountQuery.data?.name,
         articleTitle: articleQuery.data?.title,
         accountType: "service",
       }),
     });
+  }
+
+  function handleOpenMobileArticle(articleId: string) {
+    void navigate({
+      to: "/official-accounts/articles/$articleId",
+      params: { articleId },
+      hash: buildMobileOfficialRouteHash({
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function openOfficialAccountDetail() {
+    void navigate({
+      to: "/official-accounts/$accountId",
+      params: { accountId },
+      hash: buildMobileOfficialRouteHash({
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    openOfficialAccountDetail();
   }
 
   if (isDesktop) {
@@ -254,7 +348,7 @@ export function OfficialAccountServiceThread({
         <header className="border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              {selectedArticleId ? (
+              {activeArticleId ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -294,7 +388,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     onClick={() => {
                       setIsDesktopMenuOpen(false);
-                      handleOpenAccount(accountId, selectedArticleId ?? undefined);
+                      handleOpenAccount(accountId, activeArticleId ?? undefined);
                     }}
                     className="flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                   >
@@ -347,13 +441,13 @@ export function OfficialAccountServiceThread({
         </header>
 
         <div
-          ref={selectedArticleId ? undefined : desktopThreadScrollContainerRef}
+          ref={activeArticleId ? undefined : desktopThreadScrollContainerRef}
           className={cn(
             "min-h-0 flex-1 overflow-auto",
-            selectedArticleId ? "bg-white" : "bg-[#ededed]",
+            activeArticleId ? "bg-white" : "bg-[#ededed]",
           )}
         >
-          {selectedArticleId ? (
+          {activeArticleId ? (
             <div className="min-h-full bg-white">
               {articleQuery.isLoading ? (
                 <ServiceDesktopStatusPane
@@ -362,7 +456,9 @@ export function OfficialAccountServiceThread({
                   tone="loading"
                 />
               ) : null}
-              {articleQuery.isError && articleQuery.error instanceof Error ? (
+              {articleQuery.isError &&
+              articleQuery.error instanceof Error &&
+              !missingSelectedArticle ? (
                 <ServiceDesktopStatusPane
                   title="文章暂时不可用"
                   description={articleQuery.error.message}
@@ -415,7 +511,7 @@ export function OfficialAccountServiceThread({
                       key={message.id}
                       message={message}
                       variant="desktop"
-                      activeArticleId={selectedArticleId ?? null}
+                      activeArticleId={activeArticleId ?? null}
                       onOpenArticle={handleOpenDesktopArticle}
                     />
                   ))}
@@ -444,6 +540,10 @@ export function OfficialAccountServiceThread({
                 return;
               }
 
+              if (navigateToRouteStateReturn()) {
+                return;
+              }
+
               void navigate({ to: "/tabs/chat" });
             }}
             variant="ghost"
@@ -468,10 +568,7 @@ export function OfficialAccountServiceThread({
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
             onClick={() => {
-              void navigate({
-                to: "/official-accounts/$accountId",
-                params: { accountId },
-              });
+              handleOpenAccount(accountId);
             }}
             aria-label="查看公众号资料"
           >
@@ -498,6 +595,17 @@ export function OfficialAccountServiceThread({
               title="服务号消息暂时不可用"
               description={pageErrorMessage}
               tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "查看公众号主页"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -508,6 +616,17 @@ export function OfficialAccountServiceThread({
               title="消息状态暂未同步"
               description={actionErrorMessage}
               tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "查看公众号主页"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -519,12 +638,7 @@ export function OfficialAccountServiceThread({
                 key={message.id}
                 message={message}
                 variant="mobile"
-                onOpenArticle={(articleId) => {
-                  void navigate({
-                    to: "/official-accounts/articles/$articleId",
-                    params: { articleId },
-                  });
-                }}
+                onOpenArticle={handleOpenMobileArticle}
               />
             ))}
           </div>
@@ -534,6 +648,17 @@ export function OfficialAccountServiceThread({
               badge="服务号"
               title="还没有服务消息"
               description="关注服务号后，通知和文章卡片会出现在这里。"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "查看公众号主页"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -676,11 +801,13 @@ function MobileOfficialStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -715,6 +842,16 @@ function MobileOfficialStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
+  );
+}
+
+function isOfficialAccountArticleMissingError(error: unknown) {
+  return (
+    error instanceof Error &&
+    /文章不存在。?|official account article not found|article not found/i.test(
+      error.message.trim(),
+    )
   );
 }

@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   getCharacter,
   getConversations,
@@ -49,6 +49,14 @@ import { resolveDigitalHumanGatewayStatusCopy } from "./digital-human-gateway-co
 import { useDigitalHumanCallSession } from "./use-digital-human-call-session";
 import { useVoiceCallSession } from "./use-voice-call-session";
 import { buildChatCallReturnSearch } from "./chat-compose-shortcut-route";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+} from "../desktop/chat/desktop-chat-route-state";
+import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "./mobile-chat-route-state";
 
 type MobileAiCallScreenProps = {
   mode: "voice" | "video";
@@ -61,6 +69,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     conversationId?: string;
   };
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
@@ -68,6 +77,26 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     isDesktopLayout,
   });
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const resolvedConversationId = conversationId ?? "";
+  const currentMobileRouteHash = useMemo(
+    () => buildMobileChatRouteHash(parseMobileChatRouteState(hash)),
+    [hash],
+  );
+  const desktopThreadPath = useMemo(
+    () =>
+      buildDesktopChatThreadPath({
+        conversationId: resolvedConversationId,
+      }),
+    [resolvedConversationId],
+  );
+  const desktopDetailsHash = useMemo(
+    () =>
+      buildDesktopChatRouteHash({
+        conversationId: resolvedConversationId,
+        panel: "details",
+      }),
+    [resolvedConversationId],
+  );
   const [recordButtonHolding, setRecordButtonHolding] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(mode === "video");
   const [cameraRestartKey, setCameraRestartKey] = useState(0);
@@ -94,7 +123,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const conversation = conversationsQuery.data?.find(
     (item) => item.id === conversationId,
   );
-  const resolvedConversationId = conversationId ?? "";
   const characterId =
     conversation?.type === "direct" ? conversation.participants[0] : undefined;
   const characterQuery = useQuery({
@@ -560,6 +588,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         await sendCallStatusMessage("ended");
       }
     } finally {
+      if (isDesktopLayout) {
+        void navigate({
+          to: desktopThreadPath,
+          replace: true,
+        });
+        return;
+      }
+
       void navigate({
         to: "/chat/$conversationId",
         params: { conversationId: resolvedConversationId },
@@ -567,6 +603,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           buildChatCallReturnSearch({
             kind: mode,
           }) || undefined,
+        ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
         replace: true,
       });
     }
@@ -589,6 +626,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       void navigate({
         to: "/chat/$conversationId/voice-call",
         params: { conversationId: resolvedConversationId },
+        ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
         replace: true,
       });
     }
@@ -892,11 +930,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             action={
               <MobileCallActionButton
                 onClick={() => {
-                  void conversationsQuery.refetch();
+                  void handleBack();
                 }}
                 className="min-w-[132px]"
               >
-                重新加载
+                返回聊天
               </MobileCallActionButton>
             }
           />
@@ -1062,8 +1100,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   variant="secondary"
                   onClick={() => {
                     void navigate({
-                      to: "/chat/$conversationId/details",
-                      params: { conversationId: resolvedConversationId },
+                      to: "/tabs/chat",
+                      ...(desktopDetailsHash
+                        ? { hash: desktopDetailsHash }
+                        : {}),
                     });
                   }}
                   className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"

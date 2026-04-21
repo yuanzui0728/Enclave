@@ -5,7 +5,9 @@
   "windows": [
     "main",
     "desktop-chat-window:*",
-    "desktop-chat-image-viewer:*"
+    "desktop-chat-image-viewer:*",
+    "desktop-note-window:*",
+    "desktop-official-article-window:*"
   ],
   "permissions": ["core:default", "core:window:default", "opener:default"]
 }

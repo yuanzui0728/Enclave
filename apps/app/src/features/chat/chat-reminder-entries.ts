@@ -2,6 +2,7 @@ import type {
   ConversationListItem,
   MessageReminderRecord,
 } from "@yinjie/contracts";
+import { buildDesktopChatRouteHash } from "./chat-route-state";
 import { formatMessageTimestamp, parseTimestamp } from "../../lib/format";
 
 export type ChatReminderEntry = {
@@ -106,7 +107,22 @@ export function buildChatReminderHref(entry: ChatReminderTarget) {
   return `${buildChatReminderPath(entry)}#${buildChatReminderHashValue(entry.messageId)}`;
 }
 
-export function buildChatReminderNavigation(entry: ChatReminderTarget) {
+export function buildChatReminderNavigation(
+  entry: ChatReminderTarget,
+  options?: {
+    desktopLayout?: boolean;
+  },
+) {
+  if (options?.desktopLayout) {
+    return {
+      to: "/tabs/chat" as const,
+      hash: buildDesktopChatRouteHash({
+        conversationId: entry.threadId,
+        messageId: entry.messageId,
+      }),
+    };
+  }
+
   const hash = buildChatReminderHashValue(entry.messageId);
 
   return entry.threadType === "group"

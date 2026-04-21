@@ -8,7 +8,7 @@ import {
   type Ref,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Phone, Video } from "lucide-react";
 import {
   getConversations,
@@ -74,7 +74,13 @@ import {
   replaceGroupLocalMessage,
   upsertIncomingGroupMessage,
 } from "./chat-message-delivery";
+import { parseMobileGroupRouteState } from "./mobile-group-route-state";
+import { buildMobileGroupRouteHash } from "./mobile-group-route-state";
 import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
+import {
+  buildDesktopChatRouteHash,
+  type DesktopChatCallAction,
+} from "../desktop/chat/desktop-chat-route-state";
 
 type GroupChatThreadPanelProps = {
   groupId: string;
@@ -87,6 +93,11 @@ type GroupChatThreadPanelProps = {
   onOpenDesktopAnnouncementDetails?: () => void;
   onOpenDesktopMemberSearch?: () => void;
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
+  desktopCallRequest?: {
+    kind: DesktopChatCallAction;
+    token: number;
+  } | null;
+  onDesktopCallRequestHandled?: (token: number) => void;
   highlightedMessageId?: string;
   buildMessageReturnTo?: (messageId: string) => string | undefined;
   routeContextNotice?: ChatRouteContextNotice;
@@ -104,6 +115,8 @@ export function GroupChatThreadPanel({
   onToggleDesktopDetails,
   onOpenDesktopAnnouncementDetails,
   onDesktopCallAction,
+  desktopCallRequest = null,
+  onDesktopCallRequestHandled,
   highlightedMessageId,
   buildMessageReturnTo,
   routeContextNotice,
@@ -111,6 +124,7 @@ export function GroupChatThreadPanel({
   onRouteMobileShortcutHandled,
 }: GroupChatThreadPanelProps) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -145,12 +159,34 @@ export function GroupChatThreadPanel({
   const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const [loadingAnchorWindow, setLoadingAnchorWindow] = useState(false);
   const isDesktop = variant === "desktop";
+  const statusBackAction =
+    !isDesktop && onBack ? (
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+        onClick={onBack}
+      >
+        返回上一页
+      </Button>
+    ) : null;
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const currentGroupRouteState = useMemo(
+    () => parseMobileGroupRouteState(hash),
+    [hash],
+  );
+  const currentMobileGroupRouteHash = useMemo(
+    () => buildMobileGroupRouteHash(currentGroupRouteState),
+    [currentGroupRouteState],
+  );
   const loadMoreRequestRef = useRef<{
     previousCount: number;
     scrollHeight: number;
     scrollTop: number;
   } | null>(null);
   const highlightedWindowRequestRef = useRef<string | null>(null);
+  const handledDesktopCallRequestTokenRef = useRef<number | null>(null);
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -848,9 +884,31 @@ export function GroupChatThreadPanel({
           ? "/group/$groupId/voice-call"
           : "/group/$groupId/video-call",
       params: { groupId },
+      ...(currentMobileGroupRouteHash
+        ? { hash: currentMobileGroupRouteHash }
+        : {}),
     });
     onDesktopCallAction?.(kind);
   };
+
+  useEffect(() => {
+    if (!isDesktop || !desktopCallRequest) {
+      return;
+    }
+
+    if (handledDesktopCallRequestTokenRef.current === desktopCallRequest.token) {
+      return;
+    }
+
+    handledDesktopCallRequestTokenRef.current = desktopCallRequest.token;
+    handleDesktopCallAction(desktopCallRequest.kind);
+    onDesktopCallRequestHandled?.(desktopCallRequest.token);
+  }, [
+    desktopCallRequest,
+    handleDesktopCallAction,
+    isDesktop,
+    onDesktopCallRequestHandled,
+  ]);
 
   return (
     <div
@@ -904,6 +962,9 @@ export function GroupChatThreadPanel({
             void navigate({
               to: "/group/$groupId/details",
               params: { groupId },
+              ...(currentMobileGroupRouteHash
+                ? { hash: currentMobileGroupRouteHash }
+                : {}),
             });
           }}
         />
@@ -935,9 +996,18 @@ export function GroupChatThreadPanel({
           <button
             type="button"
             onClick={() => {
+              if (onOpenDesktopAnnouncementDetails) {
+                onOpenDesktopAnnouncementDetails();
+                return;
+              }
+
               void navigate({
-                to: "/group/$groupId/announcement",
-                params: { groupId },
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  conversationId: groupId,
+                  panel: "details",
+                  detailsAction: "announcement",
+                }),
               });
             }}
             className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
@@ -957,6 +1027,9 @@ export function GroupChatThreadPanel({
               void navigate({
                 to: "/group/$groupId/details",
                 params: { groupId },
+                ...(currentMobileGroupRouteHash
+                  ? { hash: currentMobileGroupRouteHash }
+                  : {}),
               });
             }}
             className="flex w-full items-center gap-2 rounded-[12px] border border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-left active:bg-white"
@@ -1160,6 +1233,7 @@ export function GroupChatThreadPanel({
                   title="群聊信息暂时不可用"
                   description={groupQuery.error.message}
                   tone="danger"
+                  action={statusBackAction}
                 />
               )
             ) : null}
@@ -1175,6 +1249,7 @@ export function GroupChatThreadPanel({
                   title="群成员信息暂时不可用"
                   description={membersQuery.error.message}
                   tone="danger"
+                  action={statusBackAction}
                 />
               )
             ) : null}
@@ -1199,6 +1274,7 @@ export function GroupChatThreadPanel({
                   title="群消息暂时不可用"
                   description={messagesQuery.error.message}
                   tone="danger"
+                  action={statusBackAction}
                 />
               )
             ) : null}
@@ -1246,6 +1322,10 @@ export function GroupChatThreadPanel({
                     totalCount: input.totalCount,
                     recordedAt: input.recordedAt ?? undefined,
                     snapshotRecordedAt: input.snapshotRecordedAt ?? undefined,
+                    highlightedMessageId:
+                      currentGroupRouteState.highlightedMessageId,
+                    returnPath: currentGroupRouteState.returnPath,
+                    returnHash: currentGroupRouteState.returnHash,
                   }),
                 });
               }}
@@ -1311,12 +1391,18 @@ export function GroupChatThreadPanel({
             void navigate({
               to: "/group/$groupId/voice-call",
               params: { groupId },
+              ...(currentMobileGroupRouteHash
+                ? { hash: currentMobileGroupRouteHash }
+                : {}),
             });
           }}
           onStartVideoCall={() => {
             void navigate({
               to: "/group/$groupId/video-call",
               params: { groupId },
+              ...(currentMobileGroupRouteHash
+                ? { hash: currentMobileGroupRouteHash }
+                : {}),
             });
           }}
           onSubmit={() => void handleSubmit()}

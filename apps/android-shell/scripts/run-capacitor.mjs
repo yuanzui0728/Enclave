@@ -1,5 +1,14 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { delimiter, dirname, resolve } from "node:path";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
@@ -12,6 +21,9 @@ const shellConfigPath = resolve(shellDir, "android-shell.config.json");
 const shellConfigLocalPath = resolve(shellDir, "android-shell.config.local.json");
 const capacitorConfigPath = resolve(shellDir, "capacitor.config.json");
 const appBundledRuntimeConfigPath = resolve(appDir, "dist/runtime-config.json");
+const localToolsDir = resolve(workspaceDir, ".cache/tools");
+const localJdkDir = resolve(localToolsDir, "jdk-21");
+const localJdkDownloadDir = resolve(localToolsDir, "downloads");
 const signingPropertiesPath = resolve(shellDir, "android-signing.local.properties");
 const androidBuildGradlePath = resolve(androidProjectDir, "app/build.gradle");
 const androidManifestPath = resolve(androidProjectDir, "app/src/main/AndroidManifest.xml");
@@ -21,10 +33,25 @@ const androidRuntimePluginPath = resolve(
   "app/src/main/java/com/yinjie/mobile/YinjieRuntimePlugin.java",
 );
 const androidGradleWrapperPath = resolve(androidProjectDir, "gradlew");
+const androidDebugApkOutputPath = resolve(
+  androidProjectDir,
+  "app/build/outputs/apk/debug/app-debug.apk",
+);
+const androidReleaseBundleOutputPath = resolve(
+  androidProjectDir,
+  "app/build/outputs/bundle/release/app-release.aab",
+);
 const requiredAndroidManifestPermissions = [
   "android.permission.CAMERA",
   "android.permission.RECORD_AUDIO",
   "android.permission.MODIFY_AUDIO_SETTINGS",
+];
+const androidSdkCandidatePaths = [
+  resolve(homedir(), "Android/Sdk"),
+  "/usr/lib/android-sdk",
+  "/opt/android-sdk",
+  "/opt/android-sdk-linux",
+  "/usr/local/android-sdk",
 ];
 
 const [command = "doctor", ...restArgs] = process.argv.slice(2);
@@ -45,19 +72,21 @@ function run(commandName, args, options = {}) {
   }
 }
 
-function hasCommand(commandName, args = ["--version"]) {
+function hasCommand(commandName, args = ["--version"], env = process.env) {
   const result = spawnSync(commandName, args, {
     cwd: shellDir,
     stdio: "ignore",
+    env,
   });
 
   return result.status === 0;
 }
 
-function readJavaMajorVersion() {
+function readJavaMajorVersion(env = process.env) {
   const result = spawnSync("java", ["-version"], {
     cwd: shellDir,
     encoding: "utf8",
+    env,
   });
 
   if (result.status !== 0) {
@@ -78,6 +107,125 @@ function readJavaMajorVersion() {
 
   const majorVersion = Number(rawVersion.split(".")[0]);
   return Number.isFinite(majorVersion) ? majorVersion : null;
+}
+
+function prependToPath(pathEntry, env = process.env) {
+  const currentPath = env.PATH ?? process.env.PATH ?? "";
+  if (!currentPath) {
+    return pathEntry;
+  }
+
+  return `${pathEntry}${delimiter}${currentPath}`;
+}
+
+function resolveAndroidSdkRoot(env = process.env) {
+  const candidates = [
+    env.ANDROID_SDK_ROOT,
+    env.ANDROID_HOME,
+    ...androidSdkCandidatePaths,
+  ];
+  const seenPaths = new Set();
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeOptionalString(candidate);
+    if (!normalizedCandidate || seenPaths.has(normalizedCandidate)) {
+      continue;
+    }
+    seenPaths.add(normalizedCandidate);
+
+    if (!existsSync(normalizedCandidate)) {
+      continue;
+    }
+
+    if (
+      existsSync(resolve(normalizedCandidate, "platform-tools")) ||
+      existsSync(resolve(normalizedCandidate, "platforms")) ||
+      existsSync(resolve(normalizedCandidate, "build-tools"))
+    ) {
+      return normalizedCandidate;
+    }
+  }
+
+  return null;
+}
+
+function ensureLocalJdk21() {
+  const localJavaPath = resolve(localJdkDir, "bin/java");
+  if (existsSync(localJavaPath)) {
+    return localJdkDir;
+  }
+
+  mkdirSync(localJdkDownloadDir, { recursive: true });
+
+  const archivePath = resolve(localJdkDownloadDir, "temurin-21.tar.gz");
+  const tempExtractDir = resolve(localToolsDir, "jdk-extract");
+
+  rmSync(tempExtractDir, { recursive: true, force: true });
+  mkdirSync(tempExtractDir, { recursive: true });
+
+  console.log(`info  downloading local JDK 21 to ${localJdkDir}`);
+  run("curl", [
+    "-fsSL",
+    "https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jdk/hotspot/normal/eclipse?project=jdk",
+    "-o",
+    archivePath,
+  ]);
+  run("tar", ["-xzf", archivePath, "-C", tempExtractDir]);
+
+  const extractedDirEntry = readdirSync(tempExtractDir, { withFileTypes: true }).find((entry) =>
+    entry.isDirectory(),
+  );
+  if (!extractedDirEntry) {
+    throw new Error("failed to extract JDK 21 archive");
+  }
+
+  rmSync(localJdkDir, { recursive: true, force: true });
+  renameSync(resolve(tempExtractDir, extractedDirEntry.name), localJdkDir);
+  rmSync(tempExtractDir, { recursive: true, force: true });
+
+  return localJdkDir;
+}
+
+function buildExecutionEnvironment(options = {}) {
+  const { ensureAndroidSdk = false, ensureJava21 = false } = options;
+  const env = {
+    ...process.env,
+  };
+
+  const resolvedAndroidSdkRoot = resolveAndroidSdkRoot(env);
+  if (resolvedAndroidSdkRoot) {
+    env.ANDROID_SDK_ROOT = resolvedAndroidSdkRoot;
+    env.ANDROID_HOME = env.ANDROID_HOME || resolvedAndroidSdkRoot;
+    env.PATH = prependToPath(resolve(resolvedAndroidSdkRoot, "platform-tools"), env);
+    env.PATH = prependToPath(resolve(resolvedAndroidSdkRoot, "emulator"), env);
+  } else if (ensureAndroidSdk) {
+    throw new Error(
+      "Android SDK not found. Set ANDROID_SDK_ROOT or install the SDK under ~/Android/Sdk.",
+    );
+  }
+
+  let javaMajorVersion = readJavaMajorVersion(env);
+  let usingLocalJdk = false;
+
+  if (ensureJava21 && (javaMajorVersion === null || javaMajorVersion < 21)) {
+    const resolvedLocalJdkDir = ensureLocalJdk21();
+    env.JAVA_HOME = resolvedLocalJdkDir;
+    env.PATH = prependToPath(resolve(resolvedLocalJdkDir, "bin"), env);
+    javaMajorVersion = readJavaMajorVersion(env);
+    usingLocalJdk = true;
+
+    if (javaMajorVersion === null || javaMajorVersion < 21) {
+      throw new Error("Java 21+ is required, but no usable JDK was found.");
+    }
+  }
+
+  return {
+    env,
+    resolvedAndroidSdkRoot,
+    javaMajorVersion,
+    usingLocalJdk,
+    resolvedLocalJdkDir: usingLocalJdk ? env.JAVA_HOME ?? null : null,
+  };
 }
 
 function ensureAndroidProject(action) {
@@ -165,30 +313,152 @@ function normalizeOptionalString(value) {
   return value.trim();
 }
 
-function loadShellConfig() {
-  if (!existsSync(shellConfigPath)) {
-    throw new Error("missing apps/android-shell/android-shell.config.json");
+function normalizeOptionalInteger(value) {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 1) {
+    return value;
   }
 
-  const baseConfig = readJson(shellConfigPath);
-  const localConfig = existsSync(shellConfigLocalPath) ? readJson(shellConfigLocalPath) : null;
-  const mergedConfig = {
-    ...baseConfig,
-    ...localConfig,
-    runtime: {
-      ...(baseConfig.runtime ?? {}),
-      ...(localConfig?.runtime ?? {}),
-    },
-  };
+  if (typeof value !== "string") {
+    return null;
+  }
 
-  const appId = normalizeOptionalString(mergedConfig.appId);
-  const appName = normalizeOptionalString(mergedConfig.appName);
-  const versionName = normalizeOptionalString(mergedConfig.versionName);
-  const versionCode = Number(mergedConfig.versionCode);
-  const allowCleartextTraffic = Boolean(mergedConfig.allowCleartextTraffic);
-  const environment = normalizeOptionalString(mergedConfig.runtime?.environment) || "production";
-  const apiBaseUrl = normalizeOptionalString(mergedConfig.runtime?.apiBaseUrl);
-  const socketBaseUrl = normalizeOptionalString(mergedConfig.runtime?.socketBaseUrl);
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function normalizeOptionalBoolean(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  if (["1", "true", "yes", "y", "on"].includes(normalized)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "n", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return null;
+}
+
+function buildReleaseEnvShellConfigOverride(env = process.env) {
+  const runtimeEnvironment = normalizeOptionalString(env.YINJIE_ANDROID_ENVIRONMENT);
+  const apiBaseUrl = normalizeOptionalString(env.YINJIE_ANDROID_CORE_API_BASE_URL);
+  const socketBaseUrl = normalizeOptionalString(env.YINJIE_ANDROID_SOCKET_BASE_URL);
+  const appId = normalizeOptionalString(env.YINJIE_ANDROID_APP_ID);
+  const appName = normalizeOptionalString(env.YINJIE_ANDROID_APP_NAME);
+  const versionName = normalizeOptionalString(env.YINJIE_ANDROID_VERSION_NAME);
+  const versionCode = normalizeOptionalInteger(env.YINJIE_ANDROID_VERSION_CODE);
+  const allowCleartextTraffic = normalizeOptionalBoolean(
+    env.YINJIE_ANDROID_ALLOW_CLEARTEXT_TRAFFIC,
+  );
+
+  const override = {};
+
+  if (appId) {
+    override.appId = appId;
+  }
+
+  if (appName) {
+    override.appName = appName;
+  }
+
+  if (versionName) {
+    override.versionName = versionName;
+  }
+
+  if (versionCode !== null) {
+    override.versionCode = versionCode;
+  }
+
+  if (allowCleartextTraffic !== null) {
+    override.allowCleartextTraffic = allowCleartextTraffic;
+  }
+
+  if (runtimeEnvironment || apiBaseUrl || socketBaseUrl) {
+    override.runtime = {};
+  }
+
+  if (runtimeEnvironment) {
+    override.runtime.environment = runtimeEnvironment;
+  }
+
+  if (apiBaseUrl) {
+    override.runtime.apiBaseUrl = apiBaseUrl;
+  }
+
+  if (socketBaseUrl) {
+    override.runtime.socketBaseUrl = socketBaseUrl;
+  }
+
+  return override;
+}
+
+function hasShellConfigOverride(override) {
+  if (!override || typeof override !== "object") {
+    return false;
+  }
+
+  return Object.keys(override).some((key) => {
+    if (key !== "runtime") {
+      return true;
+    }
+
+    const runtimeOverride = override.runtime;
+    return Boolean(
+      runtimeOverride &&
+        typeof runtimeOverride === "object" &&
+        Object.keys(runtimeOverride).length > 0,
+    );
+  });
+}
+
+function buildReleaseSigningEnv(env = process.env) {
+  return {
+    storeFile: normalizeOptionalString(env.YINJIE_UPLOAD_STORE_FILE),
+    storePassword: normalizeOptionalString(env.YINJIE_UPLOAD_STORE_PASSWORD),
+    keyAlias: normalizeOptionalString(env.YINJIE_UPLOAD_KEY_ALIAS),
+    keyPassword: normalizeOptionalString(env.YINJIE_UPLOAD_KEY_PASSWORD),
+  };
+}
+
+function hasReleaseSigningEnv(signingEnv) {
+  return Boolean(
+    signingEnv.storeFile ||
+      signingEnv.storePassword ||
+      signingEnv.keyAlias ||
+      signingEnv.keyPassword,
+  );
+}
+
+function normalizeShellConfig(rawConfig) {
+  const appId = normalizeOptionalString(rawConfig.appId);
+  const appName = normalizeOptionalString(rawConfig.appName);
+  const versionName = normalizeOptionalString(rawConfig.versionName);
+  const versionCode = Number(rawConfig.versionCode);
+  const allowCleartextTraffic = Boolean(rawConfig.allowCleartextTraffic);
+  const environment = normalizeOptionalString(rawConfig.runtime?.environment) || "production";
+  const apiBaseUrl = normalizeOptionalString(rawConfig.runtime?.apiBaseUrl);
+  const socketBaseUrl = normalizeOptionalString(rawConfig.runtime?.socketBaseUrl);
 
   if (!appId) {
     throw new Error("android-shell config requires a non-empty appId");
@@ -222,6 +492,53 @@ function loadShellConfig() {
       socketBaseUrl,
     },
   };
+}
+
+function loadShellConfig(options = {}) {
+  const {
+    includeLocalOverride = true,
+    envOverride = null,
+  } = options;
+
+  if (!existsSync(shellConfigPath)) {
+    throw new Error("missing apps/android-shell/android-shell.config.json");
+  }
+
+  const baseConfig = readJson(shellConfigPath);
+  const localConfig =
+    includeLocalOverride && existsSync(shellConfigLocalPath) ? readJson(shellConfigLocalPath) : null;
+  const mergedConfig = {
+    ...baseConfig,
+    ...localConfig,
+    ...envOverride,
+    runtime: {
+      ...(baseConfig.runtime ?? {}),
+      ...(localConfig?.runtime ?? {}),
+      ...(envOverride?.runtime ?? {}),
+    },
+  };
+
+  return normalizeShellConfig(mergedConfig);
+}
+
+function validateReleaseShellConfig(config) {
+  if (config.runtime.environment !== "production") {
+    throw new Error(
+      "release android bundle requires runtime.environment=production in tracked config or YINJIE_ANDROID_ENVIRONMENT",
+    );
+  }
+
+  if (!config.runtime.apiBaseUrl) {
+    throw new Error(
+      "release android bundle requires runtime.apiBaseUrl from tracked config or YINJIE_ANDROID_CORE_API_BASE_URL",
+    );
+  }
+
+  if (config.allowCleartextTraffic) {
+    throw new Error(
+      "release android bundle requires allowCleartextTraffic=false in tracked config or YINJIE_ANDROID_ALLOW_CLEARTEXT_TRAFFIC=false",
+    );
+  }
 }
 
 function updateCapacitorConfig(config) {
@@ -330,8 +647,8 @@ function updateAndroidProjectConfig(config) {
   return Boolean(changed);
 }
 
-function configureAndroidShell() {
-  const config = loadShellConfig();
+function configureAndroidShell(options = {}) {
+  const config = loadShellConfig(options);
   const changedPaths = [];
 
   if (updateCapacitorConfig(config)) {
@@ -345,38 +662,88 @@ function configureAndroidShell() {
   return { config, changedPaths };
 }
 
-function ensureWebBuild() {
+function ensureWebBuild(options = {}) {
   run("node", [resolve(workspaceDir, "scripts/build-mobile-shell-web.mjs")], {
     cwd: workspaceDir,
   });
 
-  const config = loadShellConfig();
+  const config = loadShellConfig(options);
   if (writeBundledAppRuntimeConfig(config)) {
     console.log(`updated  ${appBundledRuntimeConfigPath}`);
   }
+
+  return config;
 }
 
-function runGradle(taskName) {
+function runGradle(taskName, env = process.env) {
   run(androidGradleWrapperPath, [taskName], {
     cwd: androidProjectDir,
+    env,
   });
 }
 
+function reportBuildArtifact(label, artifactPath) {
+  if (!existsSync(artifactPath)) {
+    console.log(`note  expected ${label} output not found at ${artifactPath}`);
+    return;
+  }
+
+  console.log(`built  ${label}: ${artifactPath}`);
+}
+
 if (command === "doctor") {
-  let shellConfig = null;
-  let shellConfigError = null;
+  let activeShellConfig = null;
+  let activeShellConfigError = null;
+  let trackedShellConfig = null;
+  let trackedShellConfigError = null;
+  let releaseEnvShellConfig = null;
+  let releaseEnvShellConfigError = null;
   let signingProperties = null;
+  const releaseEnvOverride = buildReleaseEnvShellConfigOverride();
+  const hasReleaseEnvOverride = hasShellConfigOverride(releaseEnvOverride);
+  const signingEnv = buildReleaseSigningEnv();
+  const hasSigningEnv = hasReleaseSigningEnv(signingEnv);
   const javaMajorVersion = readJavaMajorVersion();
+  const resolvedAndroidSdkRoot = resolveAndroidSdkRoot();
+  const cachedLocalJdkPath = existsSync(resolve(localJdkDir, "bin/java")) ? localJdkDir : null;
+  const cachedLocalJdkEnv = cachedLocalJdkPath
+    ? {
+        ...process.env,
+        JAVA_HOME: cachedLocalJdkPath,
+        PATH: prependToPath(resolve(cachedLocalJdkPath, "bin")),
+      }
+    : null;
+  const cachedLocalJdkJavaMajorVersion = cachedLocalJdkEnv
+    ? readJavaMajorVersion(cachedLocalJdkEnv)
+    : null;
   const androidManifest = readTextFileIfExists(androidManifestPath);
   const androidRuntimePlugin = readTextFileIfExists(androidRuntimePluginPath);
   const capacitorConfig = existsSync(capacitorConfigPath)
     ? readJson(capacitorConfigPath)
     : null;
+  const hasLocalShellConfig = existsSync(shellConfigLocalPath);
 
   try {
-    shellConfig = loadShellConfig();
+    activeShellConfig = loadShellConfig();
   } catch (error) {
-    shellConfigError = error instanceof Error ? error.message : String(error);
+    activeShellConfigError = error instanceof Error ? error.message : String(error);
+  }
+
+  try {
+    trackedShellConfig = loadShellConfig({ includeLocalOverride: false });
+  } catch (error) {
+    trackedShellConfigError = error instanceof Error ? error.message : String(error);
+  }
+
+  if (hasReleaseEnvOverride) {
+    try {
+      releaseEnvShellConfig = loadShellConfig({
+        includeLocalOverride: false,
+        envOverride: releaseEnvOverride,
+      });
+    } catch (error) {
+      releaseEnvShellConfigError = error instanceof Error ? error.message : String(error);
+    }
   }
 
   if (existsSync(signingPropertiesPath)) {
@@ -388,7 +755,9 @@ if (command === "doctor") {
   }
 
   const checks = [
-    ["android-shell.config.json", existsSync(shellConfigPath) && !shellConfigError],
+    ["android-shell.config.json", existsSync(shellConfigPath) && !trackedShellConfigError],
+    ...(hasLocalShellConfig ? [["android-shell active config", !activeShellConfigError]] : []),
+    ...(hasReleaseEnvOverride ? [["android-shell release env override", !releaseEnvShellConfigError]] : []),
     ["capacitor.config.json", existsSync(resolve(shellDir, "capacitor.config.json"))],
     ["apps/app/dist", existsSync(resolve(appDir, "dist"))],
     ["apps/app/dist/runtime-config.json", existsSync(appBundledRuntimeConfigPath)],
@@ -405,13 +774,36 @@ if (command === "doctor") {
       capacitorConfig?.plugins?.Keyboard?.resizeOnFullScreen === true,
     ],
     ["java runtime", hasCommand("java", ["-version"])],
-    ["java runtime >= 21", javaMajorVersion !== null && javaMajorVersion >= 21],
-    ["ANDROID_HOME or ANDROID_SDK_ROOT", Boolean(process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT)],
+    [
+      "java runtime >= 21",
+      (javaMajorVersion !== null && javaMajorVersion >= 21) ||
+        (cachedLocalJdkJavaMajorVersion !== null && cachedLocalJdkJavaMajorVersion >= 21),
+    ],
+    ["android sdk", Boolean(resolvedAndroidSdkRoot)],
   ];
 
-  if (shellConfig?.runtime.environment === "production") {
-    checks.push(["production apiBaseUrl", Boolean(shellConfig.runtime.apiBaseUrl)]);
-    checks.push(["production cleartext traffic disabled", !shellConfig.allowCleartextTraffic]);
+  if (activeShellConfig?.runtime.environment === "production") {
+    checks.push(["active production apiBaseUrl", Boolean(activeShellConfig.runtime.apiBaseUrl)]);
+    checks.push([
+      "active production cleartext traffic disabled",
+      !activeShellConfig.allowCleartextTraffic,
+    ]);
+  }
+
+  if (hasLocalShellConfig && trackedShellConfig?.runtime.environment === "production") {
+    checks.push(["tracked production apiBaseUrl", Boolean(trackedShellConfig.runtime.apiBaseUrl)]);
+    checks.push([
+      "tracked production cleartext traffic disabled",
+      !trackedShellConfig.allowCleartextTraffic,
+    ]);
+  }
+
+  if (hasReleaseEnvOverride && releaseEnvShellConfig?.runtime.environment === "production") {
+    checks.push(["release env production apiBaseUrl", Boolean(releaseEnvShellConfig.runtime.apiBaseUrl)]);
+    checks.push([
+      "release env production cleartext traffic disabled",
+      !releaseEnvShellConfig.allowCleartextTraffic,
+    ]);
   }
 
   if (androidManifest) {
@@ -439,35 +831,95 @@ if (command === "doctor") {
     checks.push(["release keystore file", Boolean(resolvedStoreFile && existsSync(resolvedStoreFile))]);
   }
 
+  if (hasSigningEnv) {
+    const hasSigningKeys = Boolean(
+      signingEnv.storeFile &&
+        signingEnv.storePassword &&
+        signingEnv.keyAlias &&
+        signingEnv.keyPassword,
+    );
+    const resolvedStoreFile = signingEnv.storeFile
+      ? resolve(shellDir, signingEnv.storeFile)
+      : null;
+    checks.push(["release signing env complete", hasSigningKeys]);
+    checks.push(["release signing env keystore file", Boolean(resolvedStoreFile && existsSync(resolvedStoreFile))]);
+  }
+
   for (const [label, ok] of checks) {
     console.log(`${ok ? "ok" : "missing"}  ${label}`);
   }
 
-  if (shellConfigError) {
-    console.log(`error  ${shellConfigError}`);
+  if (trackedShellConfigError) {
+    console.log(`error  ${trackedShellConfigError}`);
+  }
+
+  if (activeShellConfigError && activeShellConfigError !== trackedShellConfigError) {
+    console.log(`error  android-shell active config: ${activeShellConfigError}`);
+  }
+
+  if (
+    releaseEnvShellConfigError &&
+    releaseEnvShellConfigError !== trackedShellConfigError &&
+    releaseEnvShellConfigError !== activeShellConfigError
+  ) {
+    console.log(`error  android-shell release env override: ${releaseEnvShellConfigError}`);
   }
 
   if (javaMajorVersion !== null) {
     console.log(`info  detected java major version: ${javaMajorVersion}`);
   }
 
+  if (resolvedAndroidSdkRoot) {
+    console.log(`info  resolved android sdk: ${resolvedAndroidSdkRoot}`);
+  }
+
+  if (cachedLocalJdkPath && cachedLocalJdkJavaMajorVersion !== null) {
+    console.log(`info  resolved local jdk cache: ${cachedLocalJdkPath} (java ${cachedLocalJdkJavaMajorVersion})`);
+  } else if (javaMajorVersion === null || javaMajorVersion < 21) {
+    console.log(`note  local JDK 21 cache not found; android:apk/android:bundle will download one into ${localJdkDir}`);
+  }
+
   if (!existsSync(androidProjectDir)) {
     console.log("next  run `pnpm android:init` to generate the native Android project");
   }
 
-  if (existsSync(shellConfigLocalPath)) {
+  if (hasLocalShellConfig) {
     console.log("ok  android-shell.config.local.json");
   } else {
     console.log("note  android-shell.config.local.json not found; using repository defaults");
   }
 
+  if (
+    hasLocalShellConfig &&
+    activeShellConfig &&
+    trackedShellConfig &&
+    (
+      activeShellConfig.allowCleartextTraffic !== trackedShellConfig.allowCleartextTraffic ||
+      activeShellConfig.runtime.environment !== trackedShellConfig.runtime.environment ||
+      activeShellConfig.runtime.apiBaseUrl !== trackedShellConfig.runtime.apiBaseUrl ||
+      activeShellConfig.runtime.socketBaseUrl !== trackedShellConfig.runtime.socketBaseUrl
+    )
+  ) {
+    console.log("note  android-shell.config.local.json overrides tracked runtime defaults during doctor");
+  }
+
+  if (hasReleaseEnvOverride) {
+    console.log("note  YINJIE_ANDROID_* environment variables are overriding tracked release runtime config");
+  } else {
+    console.log("note  set YINJIE_ANDROID_CORE_API_BASE_URL to override tracked release runtime config for bundle builds");
+  }
+
   if (existsSync(signingPropertiesPath)) {
     console.log("ok  android-signing.local.properties");
   } else {
-    console.log("note  android-signing.local.properties not found; release build will use unsigned/default signing");
+    console.log("note  android-signing.local.properties not found; release signing can also come from YINJIE_UPLOAD_* env vars");
   }
 
-  if (shellConfig?.allowCleartextTraffic) {
+  if (hasSigningEnv) {
+    console.log("note  YINJIE_UPLOAD_* environment variables are overriding local signing file requirements");
+  }
+
+  if (activeShellConfig?.allowCleartextTraffic) {
     console.log("note  allowCleartextTraffic is enabled; use only for local or explicitly trusted environments");
   }
 
@@ -488,8 +940,19 @@ if (command === "configure") {
   process.exit(0);
 }
 
-configureAndroidShell();
+const shouldUseTrackedConfigOnly = command === "bundle";
+const releaseEnvOverride = buildReleaseEnvShellConfigOverride();
+const hasReleaseEnvOverride = hasShellConfigOverride(releaseEnvOverride);
+configureAndroidShell({
+  includeLocalOverride: !shouldUseTrackedConfigOnly,
+  envOverride: shouldUseTrackedConfigOnly && hasReleaseEnvOverride ? releaseEnvOverride : null,
+});
 ensureAndroidProject(command);
+
+const executionEnvironment = buildExecutionEnvironment({
+  ensureAndroidSdk: ["add", "sync", "open", "apk", "bundle"].includes(command),
+  ensureJava21: ["apk", "bundle"].includes(command),
+});
 
 if (command === "sync") {
   ensureWebBuild();
@@ -499,22 +962,41 @@ if (command === "apk") {
   ensureWebBuild();
   run("pnpm", ["exec", "cap", "sync", "android"], {
     cwd: shellDir,
+    env: executionEnvironment.env,
   });
-  runGradle("assembleDebug");
+  if (executionEnvironment.usingLocalJdk && executionEnvironment.resolvedLocalJdkDir) {
+    console.log(`info  using local JDK for apk build: ${executionEnvironment.resolvedLocalJdkDir}`);
+  }
+  runGradle("assembleDebug", executionEnvironment.env);
+  reportBuildArtifact("android debug apk", androidDebugApkOutputPath);
   process.exit(0);
 }
 
 if (command === "bundle") {
-  ensureWebBuild();
+  const releaseConfig = loadShellConfig({
+    includeLocalOverride: false,
+    envOverride: hasReleaseEnvOverride ? releaseEnvOverride : null,
+  });
+  validateReleaseShellConfig(releaseConfig);
+  ensureWebBuild({
+    includeLocalOverride: false,
+    envOverride: hasReleaseEnvOverride ? releaseEnvOverride : null,
+  });
   run("pnpm", ["exec", "cap", "sync", "android"], {
     cwd: shellDir,
+    env: executionEnvironment.env,
   });
-  runGradle("bundleRelease");
+  if (executionEnvironment.usingLocalJdk && executionEnvironment.resolvedLocalJdkDir) {
+    console.log(`info  using local JDK for bundle build: ${executionEnvironment.resolvedLocalJdkDir}`);
+  }
+  runGradle("bundleRelease", executionEnvironment.env);
+  reportBuildArtifact("android release bundle", androidReleaseBundleOutputPath);
   process.exit(0);
 }
 
 run("pnpm", ["exec", "cap", command, ...restArgs], {
   cwd: shellDir,
+  env: executionEnvironment.env,
 });
 
 if (command === "add" && restArgs[0] === "android") {

@@ -442,6 +442,10 @@ export class ShakeDiscoveryService {
       }
     }
 
+    if (!character) {
+      throw new BadRequestException('当前摇一摇结果无法创建对应角色。');
+    }
+
     if (session.characterId !== character.id) {
       session.characterId = character.id;
       await this.writeSessions(owner.id, sessions);

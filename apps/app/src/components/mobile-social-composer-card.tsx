@@ -18,6 +18,8 @@ type MobileSocialComposerCardProps = {
   pending?: boolean;
   disabled?: boolean;
   errorMessage?: string | null;
+  errorActionLabel?: string;
+  onErrorAction?: () => void;
   onChange: (value: string) => void;
   onSubmit: () => void;
 };
@@ -39,6 +41,8 @@ export function MobileSocialComposerCard({
   pending = false,
   disabled = false,
   errorMessage,
+  errorActionLabel,
+  onErrorAction,
   onChange,
   onSubmit,
 }: MobileSocialComposerCardProps) {
@@ -100,7 +104,20 @@ export function MobileSocialComposerCard({
 
         {errorMessage ? (
           <div className="mt-2.5 rounded-[14px] border border-[#f2c6c3] bg-[#fff7f5] px-3.5 py-3 text-[11px] leading-[1.35rem] text-[#b42318]">
-            {errorMessage}
+            {errorActionLabel && onErrorAction ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">{errorMessage}</span>
+                <button
+                  type="button"
+                  onClick={onErrorAction}
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                >
+                  {errorActionLabel}
+                </button>
+              </div>
+            ) : (
+              errorMessage
+            )}
           </div>
         ) : null}
       </div>

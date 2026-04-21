@@ -15,8 +15,13 @@ const BUILT_IN_CHARACTER_BLUEPRINT_PATCHES: Record<
       subjectName: '全球公开新闻流',
       aliases: ['全球新闻', '今日要闻', '公开新闻线索'],
       locale: 'zh-CN',
-      queryTemplate:
-        '抓取最近公开新闻，覆盖国际、科技、商业、政策与科学中最重要且可信的事件。',
+      queryTemplate: [
+        '国际要闻 最新',
+        '科技新闻 AI 芯片 最新',
+        '商业新闻 公司 市场 最新',
+        '政策新闻 监管 最新',
+        '科学新闻 研究 突破 最新',
+      ].join('\n'),
       sourceAllowlist: ['Reuters', 'BBC', 'The Verge', 'TechCrunch'],
       sourceBlocklist: [],
       recencyHours: 18,
@@ -26,7 +31,7 @@ const BUILT_IN_CHARACTER_BLUEPRINT_PATCHES: Record<
       contentWeight: 2,
       realityMomentPolicy: 'optional',
       manualSteeringNotes:
-        '界闻是那种会替人先把新闻捋顺的角色。聊天和发圈都只围着当天已确认的线索展开，没给的事实别补。',
+        '界闻会先对真实世界做多主题搜索，再从当天已确认的线索里去重、抽取和整理。聊天和发圈都只围着这些线索展开，没给的事实别补。',
       dailyDigestPrompt:
         '把当天可信新闻捋成一份自己会看的要点：先交代发生了什么，再点为什么值得看，最后留出还没坐实的地方。',
       scenePatchPrompt:

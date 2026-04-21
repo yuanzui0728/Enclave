@@ -31,6 +31,7 @@ import {
   SnapshotPanel,
   StatusPill,
   TagBadge,
+  TextAreaField,
 } from "@yinjie/ui";
 import {
   AdminCallout,
@@ -149,6 +150,7 @@ export function EvalsPage() {
   const [pairwisePromptVariant, setPairwisePromptVariant] = useState("warmer");
   const [pairwiseMemoryPolicyVariant, setPairwiseMemoryPolicyVariant] = useState("default");
   const [presetName, setPresetName] = useState("");
+  const [reportDecisionNote, setReportDecisionNote] = useState("");
   const [savedPresets, setSavedPresets] = useState<EvalsPreset[]>([]);
   const [successNotice, setSuccessNotice] = useState("");
   const digitalHumanSummary = buildDigitalHumanAdminSummary(
@@ -220,7 +222,25 @@ export function EvalsPage() {
     () => experimentReportsQuery.data ?? EMPTY_LIST,
     [experimentReportsQuery.data],
   );
-  const selectedReport = experimentReports.find((report) => report.id === selectedReportId) ?? experimentReports[0] ?? null;
+  const visibleExperimentReports = useMemo(() => {
+    const normalizedExperimentLabel = experimentLabel.trim();
+    return experimentReports.filter((report) => {
+      if (selectedDatasetId && report.datasetId !== selectedDatasetId) {
+        return false;
+      }
+      if (
+        normalizedExperimentLabel &&
+        (report.experimentLabel ?? "") !== normalizedExperimentLabel
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [experimentLabel, experimentReports, selectedDatasetId]);
+  const selectedReport =
+    visibleExperimentReports.find((report) => report.id === selectedReportId) ??
+    visibleExperimentReports[0] ??
+    null;
 
   const runsQuery = useQuery({
     queryKey: [
@@ -344,6 +364,8 @@ export function EvalsPage() {
       ),
     onSuccess: async (result) => {
       setSuccessNotice(`数据集运行完成：${result.id}`);
+      setSelectedDatasetId(result.datasetId);
+      setSelectedRunId(result.id);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-eval-overview", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-eval-runs", baseUrl] }),
@@ -369,13 +391,16 @@ export function EvalsPage() {
       ),
     onSuccess: async (result) => {
       setSuccessNotice(`成对评测已完成：${result.comparison.id}`);
+      setSelectedDatasetId(result.candidateRun.datasetId);
       setBaselineRunId(result.baselineRun.id);
       setCandidateRunId(result.candidateRun.id);
       setSelectedRunId(result.candidateRun.id);
+      setSelectedReportId(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-eval-overview", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-eval-runs", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-eval-comparisons", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-eval-experiment-reports", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-eval-traces", baseUrl] }),
       ]);
     },
@@ -385,6 +410,7 @@ export function EvalsPage() {
     onSuccess: async (result) => {
       setSuccessNotice(`实验预设已执行完成：${result.preset.id}`);
       if (result.pairwiseRun) {
+        setSelectedDatasetId(result.pairwiseRun.candidateRun.datasetId);
         setBaselineRunId(result.pairwiseRun.baselineRun.id);
         setCandidateRunId(result.pairwiseRun.candidateRun.id);
         setSelectedRunId(result.pairwiseRun.candidateRun.id);
@@ -392,10 +418,12 @@ export function EvalsPage() {
         setSelectedRunId(result.singleRun.id);
         setSelectedDatasetId(result.singleRun.datasetId);
       }
+      setSelectedReportId(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-eval-overview", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-eval-runs", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-eval-comparisons", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-eval-experiment-reports", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-eval-traces", baseUrl] }),
       ]);
     },
@@ -405,6 +433,7 @@ export function EvalsPage() {
       id: string;
       decisionStatus: "keep-testing" | "promote" | "rollback" | "archive";
       appliedAction: string;
+      note: string;
     }) =>
       updateEvalReportDecision(
         payload.id,
@@ -412,12 +441,14 @@ export function EvalsPage() {
           decisionStatus: payload.decisionStatus,
           appliedAction: payload.appliedAction,
           decidedBy: "admin",
+          note: payload.note.trim() || undefined,
         },
         baseUrl,
       ),
     onSuccess: async (report) => {
       setSuccessNotice(`报告决策已更新：${formatDecisionStatus(report.decisionStatus)}`);
       setSelectedReportId(report.id);
+      setReportDecisionNote("");
       await queryClient.invalidateQueries({ queryKey: ["admin-eval-experiment-reports", baseUrl] });
     },
   });
@@ -450,7 +481,9 @@ export function EvalsPage() {
     resetEvalMutations();
   }, [baseUrl, resetEvalMutations]);
 
-  const selectedRunTraceIds = new Set((runDetailQuery.data?.caseResults ?? []).flatMap((caseResult) => caseResult.traceIds));
+  const selectedRunTraceIds = new Set(
+    (runDetailQuery.data?.caseResults ?? []).flatMap((caseResult) => collectCaseTraceIds(caseResult)),
+  );
   const compareTraceIds = new Set((compareQuery.data?.caseComparisons ?? []).flatMap((comparison) => [
     ...comparison.baselineTraceIds,
     ...comparison.candidateTraceIds,
@@ -458,7 +491,7 @@ export function EvalsPage() {
   const traceCaseMap = new Map<string, Set<string>>();
   const traceFailureTagMap = new Map<string, Set<string>>();
   for (const caseResult of runDetailQuery.data?.caseResults ?? []) {
-    for (const traceId of caseResult.traceIds) {
+    for (const traceId of collectCaseTraceIds(caseResult)) {
       const caseIds = traceCaseMap.get(traceId) ?? new Set<string>();
       caseIds.add(caseResult.caseId);
       traceCaseMap.set(traceId, caseIds);
@@ -484,6 +517,10 @@ export function EvalsPage() {
     }
   }
   const tracePool = useMemo(() => tracesQuery.data ?? EMPTY_LIST, [tracesQuery.data]);
+  const traceSourceById = useMemo(
+    () => new Map(tracePool.map((trace) => [trace.id, trace.source])),
+    [tracePool],
+  );
   const scopedTraces =
     traceScopeFilter === "run"
       ? tracePool.filter((trace) => selectedRunTraceIds.has(trace.id))
@@ -595,7 +632,7 @@ export function EvalsPage() {
   const selectedTraceCaseIds = selectedTraceId ? Array.from(traceCaseMap.get(selectedTraceId) ?? []) : [];
   const selectedTraceFailureTags = selectedTraceId ? Array.from(traceFailureTagMap.get(selectedTraceId) ?? []) : [];
   const selectedTraceLinkedRunCases = (runDetailQuery.data?.caseResults ?? [])
-    .filter((caseResult) => selectedTraceId && caseResult.traceIds.includes(selectedTraceId))
+    .filter((caseResult) => selectedTraceId && collectCaseTraceIds(caseResult).includes(selectedTraceId))
     .map((caseResult) => caseResult.caseId);
   const selectedTraceComparisonMatches = (compareQuery.data?.caseComparisons ?? [])
     .flatMap((comparison) => {
@@ -722,10 +759,17 @@ export function EvalsPage() {
   ]);
 
   useEffect(() => {
-    if (selectedReportId && !experimentReports.some((report) => report.id === selectedReportId)) {
+    if (
+      selectedReportId &&
+      !visibleExperimentReports.some((report) => report.id === selectedReportId)
+    ) {
       setSelectedReportId(null);
     }
-  }, [experimentReports, selectedReportId]);
+  }, [selectedReportId, visibleExperimentReports]);
+
+  useEffect(() => {
+    setReportDecisionNote("");
+  }, [selectedReport?.id]);
 
   useEffect(() => {
     if (selectedRunId && !allRuns.some((run) => run.id === selectedRunId)) {
@@ -1607,7 +1651,7 @@ export function EvalsPage() {
           <SectionHeading>实验报告</SectionHeading>
           <div className="mt-4 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
             <div className="space-y-3">
-            {experimentReports.slice(0, 8).map((report) => (
+            {visibleExperimentReports.slice(0, 8).map((report) => (
               <ListItemCard
                 key={report.id}
                 onClick={() => setSelectedReportId(report.id)}
@@ -1695,10 +1739,14 @@ export function EvalsPage() {
                 }
               />
             ))}
-            {experimentReports.length === 0 ? (
+            {visibleExperimentReports.length === 0 ? (
               <AdminEmptyState
-                title="当前还没有实验报告"
-                description="先运行一次实验预设，系统才会生成建议、回退点和决策依据。"
+                title={experimentReports.length === 0 ? "当前还没有实验报告" : "当前筛选下没有实验报告"}
+                description={
+                  experimentReports.length === 0
+                    ? "先运行一次实验预设，系统才会生成建议、回退点和决策依据。"
+                    : "换一个数据集或实验标签，或者先清空当前筛选。"
+                }
               />
             ) : null}
             </div>
@@ -1726,6 +1774,17 @@ export function EvalsPage() {
                     <div>决策时间：{selectedReport.decidedAt ?? "无"}</div>
                     <div>决策人：{selectedReport.decidedBy ?? "无"}</div>
                   </div>
+                  <div className="mt-4">
+                    <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      决策备注
+                    </div>
+                    <TextAreaField
+                      className="min-h-24"
+                      value={reportDecisionNote}
+                      onChange={(event) => setReportDecisionNote(event.target.value)}
+                      placeholder="补一条这次继续测试、采用、回滚或归档的依据。"
+                    />
+                  </div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button
                       variant="secondary"
@@ -1735,6 +1794,7 @@ export function EvalsPage() {
                           id: selectedReport.id,
                           decisionStatus: "keep-testing",
                           appliedAction: "continue-evaluating",
+                          note: reportDecisionNote,
                         })
                       }
                       disabled={reportDecisionBusy}
@@ -1750,6 +1810,7 @@ export function EvalsPage() {
                           id: selectedReport.id,
                           decisionStatus: "promote",
                           appliedAction: "promote-candidate",
+                          note: reportDecisionNote,
                         })
                       }
                       disabled={reportDecisionBusy}
@@ -1765,6 +1826,7 @@ export function EvalsPage() {
                           id: selectedReport.id,
                           decisionStatus: "rollback",
                           appliedAction: "rollback-to-baseline",
+                          note: reportDecisionNote,
                         })
                       }
                       disabled={reportDecisionBusy}
@@ -1780,6 +1842,7 @@ export function EvalsPage() {
                           id: selectedReport.id,
                           decisionStatus: "archive",
                           appliedAction: "archive-report",
+                          note: reportDecisionNote,
                         })
                       }
                       disabled={reportDecisionBusy}
@@ -1974,16 +2037,23 @@ export function EvalsPage() {
                 {runDetailQuery.data.caseResults.map((caseResult) => (
                   <div
                     key={caseResult.caseId}
-                    onClick={() => focusCase(caseResult.caseId, caseResult.traceIds)}
+                    onClick={() => focusCase(caseResult.caseId, collectCaseTraceIds(caseResult))}
                     className={`cursor-pointer rounded-2xl border bg-[color:var(--surface-card)] px-4 py-4 text-left text-sm text-[color:var(--text-secondary)] ${
                       focusedCaseId === caseResult.caseId ? "border-[color:var(--border-subtle)]" : "border-[color:var(--border-faint)]"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-[color:var(--text-primary)]">{caseResult.caseId}</div>
-                      <StatusPill tone={caseResult.status === "failed" ? "warning" : caseResult.status === "scaffolded" ? "warning" : "healthy"}>
-                        {formatEvalStatus(caseResult.status)}
-                      </StatusPill>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <StatusPill tone={caseResult.status === "failed" ? "warning" : caseResult.status === "scaffolded" ? "warning" : "healthy"}>
+                          {formatEvalStatus(caseResult.status)}
+                        </StatusPill>
+                        {caseResult.judgeSource ? (
+                          <TagBadge tone={caseResult.judgeSource === "llm" ? "success" : caseResult.judgeSource === "heuristic" ? "warning" : "info"}>
+                            裁判：{formatJudgeSource(caseResult.judgeSource)}
+                          </TagBadge>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="mt-3 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">
                       {caseResult.output || "空"}
@@ -2028,20 +2098,41 @@ export function EvalsPage() {
                         </div>
                       </div>
                     ) : null}
-                    {caseResult.traceIds.length > 0 ? (
+                    {collectGenerationTraceIds(caseResult).length > 0 ? (
                       <div className="mt-3">
-                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">链路关联</div>
+                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">生成链路</div>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {caseResult.traceIds.map((traceId) => (
+                          {collectGenerationTraceIds(caseResult).map((traceId) => (
                             <button
                               type="button"
                               key={traceId}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                focusCase(caseResult.caseId, caseResult.traceIds);
+                                focusCase(caseResult.caseId, collectCaseTraceIds(caseResult));
                                 setSelectedTraceId(traceId);
                               }}
                               className="rounded-full border border-[color:var(--border-faint)] px-3 py-1 text-xs text-[color:var(--text-primary)] transition hover:border-[color:var(--border-faint)]"
+                            >
+                              {traceId}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {collectJudgeTraceIds(caseResult).length > 0 ? (
+                      <div className="mt-3">
+                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">裁判链路</div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {collectJudgeTraceIds(caseResult).map((traceId) => (
+                            <button
+                              type="button"
+                              key={traceId}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                focusCase(caseResult.caseId, collectCaseTraceIds(caseResult));
+                                setSelectedTraceId(traceId);
+                              }}
+                              className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-xs text-sky-100 transition hover:border-sky-300/40"
                             >
                               {traceId}
                             </button>
@@ -2226,7 +2317,7 @@ export function EvalsPage() {
                                   focusCase(comparison.caseId, comparison.baselineTraceIds);
                                 }}
                               >
-                                基线链路
+                                基线 · {formatTraceSource(traceSourceById.get(traceId) ?? traceId)}
                               </Button>
                             ))}
                           </div>
@@ -2275,7 +2366,7 @@ export function EvalsPage() {
                                   focusCase(comparison.caseId, comparison.candidateTraceIds);
                                 }}
                               >
-                                候选链路
+                                候选 · {formatTraceSource(traceSourceById.get(traceId) ?? traceId)}
                               </Button>
                             ))}
                           </div>
@@ -2310,7 +2401,7 @@ export function EvalsPage() {
           </div>
         </div>
         <InlineNotice className="mt-4" tone="muted">
-          生成链路用于下钻提示词链、回退路径和失败标签。可以按运行、对比、用例和来源逐层收窄。
+          评测链路用于下钻生成提示词、judge 输出、回退路径和失败标签。可以按运行、对比、用例和来源逐层收窄。
         </InlineNotice>
         {traceFiltersExpanded ? (
         <div className="mt-4 flex flex-wrap gap-3">
@@ -2338,6 +2429,7 @@ export function EvalsPage() {
           <AdminPillSelectField value={traceSource} onChange={setTraceSource}>
             <option value="">全部来源</option>
             <option value="chat.reply">聊天直回</option>
+            <option value="eval.judge">评测裁判</option>
             <option value="social.greeting">社交打招呼</option>
             <option value="group.intent">群聊意图判断</option>
             <option value="group.coordinator">群聊协调回复</option>
@@ -2445,9 +2537,16 @@ export function EvalsPage() {
               <AdminDetailPanel title="链路输出" contentClassName="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-semibold text-[color:var(--text-primary)]">{formatTraceSource(traceDetailQuery.data.source)}</div>
-                  <StatusPill tone={traceDetailQuery.data.status === "error" ? "warning" : traceDetailQuery.data.status === "fallback" ? "warning" : "healthy"}>
-                    {formatEvalStatus(traceDetailQuery.data.status)}
-                  </StatusPill>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <StatusPill tone={traceDetailQuery.data.status === "error" ? "warning" : traceDetailQuery.data.status === "fallback" ? "warning" : "healthy"}>
+                      {formatEvalStatus(traceDetailQuery.data.status)}
+                    </StatusPill>
+                    {traceDetailQuery.data.evaluationSummary?.judgeSource ? (
+                      <TagBadge tone={traceDetailQuery.data.evaluationSummary.judgeSource === "llm" ? "success" : traceDetailQuery.data.evaluationSummary.judgeSource === "heuristic" ? "warning" : "info"}>
+                        裁判：{formatJudgeSource(traceDetailQuery.data.evaluationSummary.judgeSource)}
+                      </TagBadge>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <div>链路：{traceDetailQuery.data.id}</div>
@@ -2521,6 +2620,9 @@ export function EvalsPage() {
                       "空"}
                   </div>
                 </div>
+                {traceDetailQuery.data.output.judgePayload ? (
+                  <SnapshotPanel title="Judge JSON" value={traceDetailQuery.data.output.judgePayload} />
+                ) : null}
               </AdminDetailPanel>
             ) : (
               <AdminEmptyState
@@ -2566,6 +2668,16 @@ export function EvalsPage() {
                           )}
                         </div>
                       </AdminMiniPanel>
+                      <AdminMiniPanel title="裁判信息">
+                        <div className="mt-2 space-y-2 text-sm text-[color:var(--text-secondary)]">
+                          <div>来源：{traceDetailQuery.data.evaluationSummary.judgeSource ? formatJudgeSource(traceDetailQuery.data.evaluationSummary.judgeSource) : "无"}</div>
+                          <div>结论：{traceDetailQuery.data.evaluationSummary.judgeRationale || "无"}</div>
+                          <div>
+                            规则违背：
+                            {traceDetailQuery.data.evaluationSummary.ruleViolations?.length ? ` ${traceDetailQuery.data.evaluationSummary.ruleViolations.join("；")}` : " 无"}
+                          </div>
+                        </div>
+                      </AdminMiniPanel>
                     </div>
                   </>
                 ) : null}
@@ -2575,18 +2687,18 @@ export function EvalsPage() {
                 {runDetailQuery.data ? (
                   <div className="flex flex-wrap gap-2">
                     {runDetailQuery.data.caseResults
-                      .filter((caseResult) => caseResult.traceIds.includes(traceDetailQuery.data.id))
+                      .filter((caseResult) => collectCaseTraceIds(caseResult).includes(traceDetailQuery.data.id))
                       .map((caseResult) => (
                         <Button
                           variant="secondary"
                           size="sm"
                           key={caseResult.caseId}
-                          onClick={() => focusCase(caseResult.caseId, caseResult.traceIds)}
+                          onClick={() => focusCase(caseResult.caseId, collectCaseTraceIds(caseResult))}
                         >
                           {caseResult.caseId}
                         </Button>
                       ))}
-                    {runDetailQuery.data.caseResults.every((caseResult) => !caseResult.traceIds.includes(traceDetailQuery.data.id)) ? (
+                    {runDetailQuery.data.caseResults.every((caseResult) => !collectCaseTraceIds(caseResult).includes(traceDetailQuery.data.id)) ? (
                       <span className="text-[color:var(--text-secondary)]">当前所选运行中无关联用例</span>
                     ) : null}
                   </div>
@@ -2705,6 +2817,8 @@ function formatTraceSource(source: string) {
   switch (source) {
     case "chat.reply":
       return "聊天直回";
+    case "eval.judge":
+      return "评测裁判";
     case "social.greeting":
       return "社交打招呼";
     case "group.intent":
@@ -2716,6 +2830,32 @@ function formatTraceSource(source: string) {
     default:
       return source;
   }
+}
+
+function formatJudgeSource(source: string) {
+  switch (source) {
+    case "llm":
+      return "LLM 裁判";
+    case "heuristic":
+      return "启发式兜底";
+    case "scaffolded":
+      return "未正式判分";
+    default:
+      return source;
+  }
+}
+
+function collectCaseTraceIds(caseResult: { traceIds: string[]; judgeTraceIds?: string[] | null }) {
+  return Array.from(new Set([...(caseResult.traceIds ?? []), ...(caseResult.judgeTraceIds ?? [])]));
+}
+
+function collectJudgeTraceIds(caseResult: { judgeTraceIds?: string[] | null }) {
+  return Array.from(new Set(caseResult.judgeTraceIds ?? []));
+}
+
+function collectGenerationTraceIds(caseResult: { traceIds: string[]; judgeTraceIds?: string[] | null }) {
+  const judgeTraceIds = new Set(caseResult.judgeTraceIds ?? []);
+  return collectCaseTraceIds(caseResult).filter((traceId) => !judgeTraceIds.has(traceId));
 }
 
 function formatEvalTargetType(targetType: string) {

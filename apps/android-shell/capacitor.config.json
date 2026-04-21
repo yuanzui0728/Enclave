@@ -3,7 +3,7 @@
   "appName": "Yinjie",
   "webDir": "../app/dist",
   "server": {
-    "androidScheme": "http"
+    "androidScheme": "https"
   },
   "plugins": {
     "Keyboard": {

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage, LoadingBlock } from "@yinjie/ui";
+import { coerceToMobileFriendMomentsRouteHash } from "../features/moments/mobile-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function LegacyFriendMomentsRedirectPage() {
@@ -17,6 +18,7 @@ export function LegacyFriendMomentsRedirectPage() {
 
   useEffect(() => {
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+    const mobileRedirectHash = coerceToMobileFriendMomentsRouteHash(hash);
 
     if (!characterId) {
       void navigate({
@@ -39,7 +41,7 @@ export function LegacyFriendMomentsRedirectPage() {
     void navigate({
       to: "/friend-moments/$characterId",
       params: { characterId },
-      ...(normalizedHash ? { hash: normalizedHash } : {}),
+      ...(mobileRedirectHash ? { hash: mobileRedirectHash } : {}),
       replace: true,
     });
   }, [characterId, hash, isDesktopLayout, navigate]);

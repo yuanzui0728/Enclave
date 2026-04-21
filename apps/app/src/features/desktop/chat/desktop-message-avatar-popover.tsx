@@ -25,7 +25,12 @@ import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import { buildDesktopAddFriendRouteHash } from "../../contacts/add-friend-route-state";
+import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
 import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments-route-state";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+} from "./desktop-chat-route-state";
 
 type DesktopMessageAvatarPopoverProps =
   | {
@@ -122,8 +127,9 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
     onSuccess: (conversation) => {
       onClose();
       void navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: conversation.id },
+        to: buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }),
       });
     },
   });
@@ -416,9 +422,19 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
               return;
             }
 
+            const returnHash = threadContext
+              ? buildDesktopChatRouteHash({
+                  conversationId: threadContext.id,
+                })
+              : undefined;
+
             void navigate({
               to: "/character/$characterId",
               params: { characterId },
+              hash: buildCharacterDetailRouteHash({
+                returnPath: "/tabs/chat",
+                returnHash,
+              }),
             });
           }}
         >
@@ -432,11 +448,18 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             disabled={!characterId}
             onClick={() => {
               onClose();
+              const returnHash = threadContext
+                ? buildDesktopChatRouteHash({
+                    conversationId: threadContext.id,
+                  })
+                : undefined;
               void navigate({
                 to: "/desktop/friend-moments/$characterId",
                 params: { characterId },
                 hash: buildDesktopFriendMomentsRouteHash({
                   source: "avatar-popover",
+                  returnPath: "/tabs/chat",
+                  returnHash,
                 }),
               });
             }}

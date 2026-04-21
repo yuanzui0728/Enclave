@@ -26,6 +26,15 @@ type RevisionChangeSource =
   | 'seed_backfill'
   | 'manual_snapshot';
 
+type CreateCharacterFromRecipeInput = {
+  id: string;
+  sourceType: CharacterBlueprintSourceTypeValue;
+  sourceKey?: string | null;
+  deletionPolicy?: string | null;
+  recipe: CharacterBlueprintRecipeValue;
+  dormantRuntime?: boolean;
+};
+
 type CharacterFieldMapping = {
   label: string;
   recipeField: string;
@@ -872,6 +881,94 @@ export class CharacterBlueprintService {
     return this.getFactorySnapshot(characterId);
   }
 
+  async syncPublishedRecipeToRuntime(characterId: string) {
+    const blueprint = await this.ensureBlueprint(characterId);
+    const recipe = cloneRecipe(
+      blueprint.publishedRecipe ?? blueprint.draftRecipe,
+    );
+    const character = await this.getCharacterOrThrow(characterId);
+    await this.characterRepo.save(this.applyRecipeToCharacter(character, recipe));
+    return this.getCharacterOrThrow(characterId);
+  }
+
+  async createCharacterFromRecipe(
+    input: CreateCharacterFromRecipeInput,
+  ): Promise<CharacterEntity> {
+    const existingById = await this.characterRepo.findOneBy({ id: input.id });
+    if (existingById) {
+      throw new BadRequestException(`Character ${input.id} already exists`);
+    }
+
+    if (input.sourceKey?.trim()) {
+      const existingBySourceKey = await this.characterRepo.findOneBy({
+        sourceKey: input.sourceKey.trim(),
+      });
+      if (existingBySourceKey) {
+        return existingBySourceKey;
+      }
+    }
+
+    const recipe = cloneRecipe(input.recipe);
+    const nextCharacter = this.characterRepo.create({
+      id: input.id,
+      name: recipe.identity.name.trim(),
+      avatar: recipe.identity.avatar.trim(),
+      relationship: recipe.identity.relationship.trim(),
+      relationshipType: recipe.identity.relationshipType.trim(),
+      personality: undefined,
+      bio: recipe.identity.bio.trim(),
+      isOnline: input.dormantRuntime ? false : recipe.publishMapping.initialOnline,
+      onlineMode: recipe.publishMapping.onlineModeDefault,
+      sourceType: input.sourceType,
+      sourceKey: input.sourceKey?.trim() || null,
+      deletionPolicy: input.deletionPolicy?.trim() || 'archive_allowed',
+      isTemplate: recipe.publishMapping.isTemplate,
+      expertDomains: recipe.expertise.expertDomains.length
+        ? [...recipe.expertise.expertDomains]
+        : ['general'],
+      profile: {} as CharacterEntity['profile'],
+      activityFrequency: recipe.lifeStrategy.activityFrequency.trim() || 'normal',
+      momentsFrequency: recipe.lifeStrategy.momentsFrequency,
+      feedFrequency: recipe.lifeStrategy.feedFrequency,
+      activeHoursStart: recipe.lifeStrategy.activeHoursStart ?? undefined,
+      activeHoursEnd: recipe.lifeStrategy.activeHoursEnd ?? undefined,
+      triggerScenes: [...recipe.lifeStrategy.triggerScenes],
+      intimacyLevel: 0,
+      currentActivity: recipe.publishMapping.initialActivity ?? undefined,
+      activityMode: recipe.publishMapping.activityModeDefault,
+    });
+    const character = this.applyRecipeToCharacter(nextCharacter, recipe);
+    if (input.dormantRuntime) {
+      character.isOnline = false;
+    }
+
+    await this.characterRepo.save(character);
+
+    const blueprint = await this.blueprintRepo.save(
+      this.blueprintRepo.create({
+        id: `blueprint_${character.id}`,
+        characterId: character.id,
+        sourceType: input.sourceType,
+        status: 'published',
+        draftRecipe: cloneRecipe(recipe),
+        publishedRecipe: cloneRecipe(recipe),
+        publishedVersion: 1,
+      }),
+    );
+
+    const revision = await this.createRevision(
+      blueprint,
+      recipe,
+      1,
+      'publish',
+      'Created from recipe.',
+    );
+    blueprint.publishedRevisionId = revision.id;
+    await this.blueprintRepo.save(blueprint);
+
+    return character;
+  }
+
   private async ensureBlueprint(characterId: string) {
     const existing = await this.blueprintRepo.findOneBy({ characterId });
     if (existing) {
@@ -1050,6 +1147,7 @@ export class CharacterBlueprintService {
         initialOnline: character.isOnline ?? false,
         initialActivity: character.currentActivity ?? null,
       },
+      realityLink: null,
     };
   }
 
@@ -1116,6 +1214,8 @@ export class CharacterBlueprintService {
             ? recipe.memorySeed.coreMemoryPrompt
             : (currentProfile?.memory?.coreMemoryPrompt ?? ''),
       },
+      realityLink:
+        recipe.realityLink === undefined ? normalized.realityLink ?? null : recipe.realityLink,
     };
   }
 

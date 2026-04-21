@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FeedService } from './feed.service';
 import { FeedController } from './feed.controller';
@@ -20,11 +20,11 @@ import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
       UserFeedInteractionEntity,
       VideoChannelFollowEntity,
     ]),
-    AiModule,
+    forwardRef(() => AiModule),
     CharactersModule,
     AuthModule,
     SocialModule,
-    CyberAvatarModule,
+    forwardRef(() => CyberAvatarModule),
   ],
   providers: [FeedService],
   controllers: [FeedController],

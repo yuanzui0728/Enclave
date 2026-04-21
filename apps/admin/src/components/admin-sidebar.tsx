@@ -7,9 +7,16 @@ type SidebarLink = {
   label: string;
   to:
     | "/"
+    | "/setup"
     | "/characters"
+    | "/games"
     | "/chat-records"
+    | "/need-discovery"
+    | "/followup-runtime"
     | "/token-usage"
+    | "/action-runtime"
+    | "/cyber-avatar"
+    | "/real-world-sync"
     | "/evals";
   hint: string;
 };

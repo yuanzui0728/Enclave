@@ -10,8 +10,9 @@ import {
   type ChatCallReturnKind,
   type ChatComposeShortcutAction,
 } from "../features/chat/chat-compose-shortcut-route";
+import { parseMobileGroupRouteState } from "../features/chat/mobile-group-route-state";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
   resolveGroupInviteRouteContext,
@@ -29,7 +30,8 @@ export function GroupChatPage() {
   const isDesktopLayout = useDesktopLayout();
   const search = useRouterState({ select: (state) => state.location.search });
   const hash = useRouterState({ select: (state) => state.location.hash });
-  const highlightedMessageId = parseHighlightedMessageId(hash);
+  const routeState = parseMobileGroupRouteState(hash);
+  const highlightedMessageId = routeState.highlightedMessageId;
   const [routeContext, setRouteContext] = useState(() =>
     resolveRouteContext(groupId),
   );
@@ -160,6 +162,21 @@ export function GroupChatPage() {
           },
         };
 
+  function navigateToRouteStateReturn() {
+    if (
+      !routeState.returnPath ||
+      isDesktopOnlyPath(routeState.returnPath)
+    ) {
+      return false;
+    }
+
+    void navigate({
+      to: routeState.returnPath,
+      ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+    });
+    return true;
+  }
+
   if (isDesktopLayout) {
     return (
       <Suspense
@@ -214,6 +231,10 @@ export function GroupChatPage() {
           }
           onBack={() => {
             navigateBackOrFallback(() => {
+              if (navigateToRouteStateReturn()) {
+                return;
+              }
+
               void navigate({
                 to: routeContext?.returnPath ?? "/tabs/chat",
               });
@@ -231,12 +252,4 @@ function resolveRouteContext(groupId: string) {
   }
 
   return resolveGroupInviteRouteContext(`/group/${groupId}`);
-}
-
-function parseHighlightedMessageId(hash: string) {
-  const normalized = hash.startsWith("#") ? hash.slice(1) : hash;
-  const prefix = "chat-message-";
-  return normalized.startsWith(prefix)
-    ? normalized.slice(prefix.length)
-    : undefined;
 }

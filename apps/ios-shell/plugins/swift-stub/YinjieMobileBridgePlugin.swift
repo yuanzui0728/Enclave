@@ -6,7 +6,26 @@ import UIKit
 import UserNotifications
 
 @objc(YinjieMobileBridgePlugin)
-public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIDocumentPickerDelegate, UIDocumentInteractionControllerDelegate {
+public class YinjieMobileBridgePlugin: CAPPlugin, CAPBridgedPlugin, PHPickerViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIDocumentPickerDelegate, UIDocumentInteractionControllerDelegate {
+    public let identifier = "YinjieMobileBridgePlugin"
+    public let jsName = "YinjieMobileBridge"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "openExternalUrl", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openAppSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "shareFile", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openFile", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pickImages", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pickFile", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "captureImage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getPushToken", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getNotificationPermissionState", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestNotificationPermission", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "showLocalNotification", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getPendingLaunchTarget", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearPendingLaunchTarget", returnType: CAPPluginReturnPromise)
+    ]
+
     private var pendingImagePickerCall: CAPPluginCall?
     private var pendingFilePickerCall: CAPPluginCall?
     private var pendingCameraCaptureCall: CAPPluginCall?
@@ -71,6 +90,7 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         DispatchQueue.main.async {
             let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
             if let presenter = self.bridge?.viewController {
+                self.configurePopoverPresentation(for: controller, presenter: presenter)
                 presenter.present(controller, animated: true) {
                     call.resolve()
                 }
@@ -101,6 +121,7 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
             if let title, !title.isEmpty {
                 controller.setValue(title, forKey: "subject")
             }
+            self.configurePopoverPresentation(for: controller, presenter: presenter)
 
             presenter.present(controller, animated: true) {
                 call.resolve()
@@ -482,9 +503,12 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
 
                 var asset: [String: Any] = [
                     "path": destination.path,
-                    "webPath": destination.absoluteString,
                     "fileName": fileName
                 ]
+
+                if let webPath = self.resolvePortableWebPath(for: destination) {
+                    asset["webPath"] = webPath
+                }
 
                 if let mimeType = mimeType(forExtension: ext) {
                     asset["mimeType"] = mimeType
@@ -658,9 +682,12 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
     private func buildFileAsset(destination: URL, fileName: String, mimeType: String?) -> [String: Any] {
         var asset: [String: Any] = [
             "path": destination.path,
-            "webPath": destination.absoluteString,
             "fileName": fileName
         ]
+
+        if let webPath = resolvePortableWebPath(for: destination) {
+            asset["webPath"] = webPath
+        }
 
         if let mimeType, !mimeType.isEmpty {
             asset["mimeType"] = mimeType
@@ -702,5 +729,25 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         }
         let sanitized = String(sanitizedScalars).trimmingCharacters(in: .whitespacesAndNewlines)
         return sanitized.isEmpty ? "shared-file" : sanitized
+    }
+
+    private func resolvePortableWebPath(for localUrl: URL) -> String? {
+        if let portableUrl = bridge?.portablePath(fromLocalURL: localUrl) {
+            return portableUrl.absoluteString
+        }
+
+        return nil
+    }
+
+    private func configurePopoverPresentation(
+        for controller: UIActivityViewController,
+        presenter: UIViewController
+    ) {
+        guard let popover = controller.popoverPresentationController else {
+            return
+        }
+
+        popover.sourceView = presenter.view
+        popover.sourceRect = presenter.view.bounds
     }
 }

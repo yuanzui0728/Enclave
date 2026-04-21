@@ -18,10 +18,10 @@ export class CharacterRealWorldSyncRunEntity {
   @Column()
   characterId: string;
 
-  @Column()
+  @Column('text')
   runType: RealWorldSyncRunTypeValue;
 
-  @Column()
+  @Column('text')
   status: RealWorldSyncRunStatusValue;
 
   @Column({ type: 'datetime' })

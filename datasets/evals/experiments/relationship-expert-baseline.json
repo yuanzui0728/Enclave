@@ -1,0 +1,9 @@
+{
+  "id": "relationship-expert-baseline",
+  "title": "Relationship Expert Baseline",
+  "description": "Run the relationship expert dataset as a single baseline regression check.",
+  "datasetId": "relationship-expert-chat",
+  "mode": "single",
+  "experimentLabel": "relationship-expert-baseline",
+  "baseline": {}
+}

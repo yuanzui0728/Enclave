@@ -1,6 +1,14 @@
-import { Suspense, lazy, useEffect, useEffectEvent, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Copy, Share2 } from "lucide-react";
 import {
   followOfficialAccount,
@@ -21,8 +29,12 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
+import {
+  buildMobileOfficialRouteHash,
+  parseMobileOfficialRouteState,
+} from "../features/official-accounts/mobile-official-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -61,10 +73,17 @@ export function OfficialAccountDetailPage() {
 
 function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeMobileShareSupported = isNativeMobileShareSurface();
+  const routeState = useMemo(() => parseMobileOfficialRouteState(hash), [hash]);
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
   );
@@ -72,6 +91,19 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
     tone: "success" | "info";
     message: string;
   } | null>(null);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileOfficialRouteHash({
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath],
+  );
 
   const accountQuery = useQuery({
     queryKey: ["app-official-account", baseUrl, accountId],
@@ -110,6 +142,26 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         account.handle
       }${account.isVerified ? " · 已认证" : ""}`
     : undefined;
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/contacts/official-accounts" });
+  }
 
   async function handleShareAccount() {
     if (!account) {
@@ -222,6 +274,10 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 void navigate({ to: "/contacts/official-accounts" });
               })
             }
@@ -272,6 +328,37 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               title="公众号主页暂时不可用"
               description={accountQuery.error.message}
               tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                </Button>
+              }
+            />
+          </div>
+        ) : null}
+        {!accountQuery.isLoading && !accountQuery.isError && !account ? (
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
+            <MobileOfficialStatusCard
+              badge="公众号"
+              title="这个公众号暂时不可用"
+              description="可以先回上一页，稍后再试。"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -355,7 +442,20 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
                     tone="danger"
                   >
-                    {followMutation.error.message}
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="min-w-0 flex-1">
+                        {followMutation.error.message}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                        onClick={handleStatusBack}
+                      >
+                        {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                      </Button>
+                    </div>
                   </InlineNotice>
                 </div>
               ) : null}
@@ -370,11 +470,21 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     void navigate({
                       to: "/official-accounts/service/$accountId",
                       params: { accountId: account.id },
+                      hash: buildMobileOfficialRouteHash({
+                        returnPath: pathname,
+                        returnHash: currentRouteHash || undefined,
+                      }),
                     });
                     return;
                   }
 
-                  void navigate({ to: "/chat/subscription-inbox" });
+                  void navigate({
+                    to: "/chat/subscription-inbox",
+                    hash: buildMobileOfficialRouteHash({
+                      returnPath: pathname,
+                      returnHash: currentRouteHash || undefined,
+                    }),
+                  });
                 }}
                 className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:cursor-default disabled:opacity-80"
               >
@@ -425,6 +535,10 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     void navigate({
                       to: "/official-accounts/articles/$articleId",
                       params: { articleId: article.id },
+                      hash: buildMobileOfficialRouteHash({
+                        returnPath: pathname,
+                        returnHash: currentRouteHash || undefined,
+                      }),
                     });
                   }}
                   onToggleFavorite={() => toggleArticleFavorite(article.id)}
@@ -442,11 +556,13 @@ function MobileOfficialStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -481,6 +597,7 @@ function MobileOfficialStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

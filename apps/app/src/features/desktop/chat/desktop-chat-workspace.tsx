@@ -104,12 +104,12 @@ import {
   getConversationVisibleLastMessage,
 } from "../../../lib/conversation-preview";
 import {
-  getConversationThreadPath,
   getConversationThreadType,
   isPersistedGroupConversation,
 } from "../../../lib/conversation-route";
 import { formatConversationTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
+import { getCurrentWindowTargetPath } from "../../../runtime/desktop-windowing";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import {
   ConversationThreadPanel,
@@ -136,6 +136,8 @@ import {
 } from "./desktop-message-entry-types";
 import {
   buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+  type DesktopChatCallAction,
   type DesktopChatDetailsAction,
   type DesktopChatRouteState,
 } from "./desktop-chat-route-state";
@@ -147,6 +149,7 @@ import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
   selectedSidePanelMode?: DesktopChatSidePanelMode;
+  selectedCallAction?: DesktopChatCallAction;
   selectedDetailsAction?: DesktopChatDetailsAction;
   selectedServiceAccountId?: string;
   selectedOfficialAccountId?: string;
@@ -188,6 +191,7 @@ const desktopQuickActionItems: DesktopQuickActionItem[] = [
 export function DesktopChatWorkspace({
   selectedConversationId,
   selectedSidePanelMode,
+  selectedCallAction,
   selectedDetailsAction,
   selectedServiceAccountId,
   selectedOfficialAccountId,
@@ -216,6 +220,11 @@ export function DesktopChatWorkspace({
     useState(false);
   const [detailsActionRequest, setDetailsActionRequest] = useState<{
     kind: DesktopChatDetailsAction;
+    token: number;
+  } | null>(null);
+  const [desktopCallRequest, setDesktopCallRequest] = useState<{
+    kind: DesktopChatCallAction;
+    conversationId: string;
     token: number;
   } | null>(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
@@ -251,6 +260,7 @@ export function DesktopChatWorkspace({
   const quickMenuRef = useRef<HTMLDivElement | null>(null);
   const sidePanelRef = useRef<HTMLElement | null>(null);
   const desktopHeaderActionsRef = useRef<HTMLDivElement | null>(null);
+  const handledRouteCallActionKeyRef = useRef<string | null>(null);
   const desktopSearchLauncher = useDesktopSearchLauncher({
     keyword: searchTerm,
     onKeywordChange: setSearchTerm,
@@ -329,7 +339,11 @@ export function DesktopChatWorkspace({
   );
   const { openReminder, completeReminder } = useChatReminderActions({
     navigateToReminder: (entry) => {
-      void navigate(buildChatReminderNavigation(entry));
+      void navigate(
+        buildChatReminderNavigation(entry, {
+          desktopLayout: true,
+        }),
+      );
     },
     onNoticeChange: setNotice,
     onCompleteReminder: clearReminder,
@@ -632,6 +646,68 @@ export function DesktopChatWorkspace({
     serviceConversationActive,
     subscriptionInboxActive,
   ]);
+
+  useEffect(() => {
+    if (!selectedCallAction) {
+      handledRouteCallActionKeyRef.current = null;
+    }
+  }, [selectedCallAction]);
+
+  useEffect(() => {
+    if (
+      !selectedCallAction ||
+      !selectedConversationId ||
+      !activeConversation ||
+      activeConversation.id !== selectedConversationId ||
+      subscriptionInboxActive ||
+      officialAccountsActive ||
+      serviceConversationActive
+    ) {
+      return;
+    }
+
+    const requestKey = `${selectedConversationId}:${selectedCallAction}`;
+    if (handledRouteCallActionKeyRef.current === requestKey) {
+      return;
+    }
+
+    handledRouteCallActionKeyRef.current = requestKey;
+    setDesktopCallRequest({
+      kind: selectedCallAction,
+      conversationId: selectedConversationId,
+      token: Date.now(),
+    });
+    navigateToChatWorkspace({
+      hash: buildCurrentChatRouteHash({
+        panel: selectedSidePanelMode ?? undefined,
+        detailsAction:
+          selectedSidePanelMode === "details" ? selectedDetailsAction : undefined,
+      }),
+      replace: true,
+    });
+  }, [
+    activeConversation,
+    buildCurrentChatRouteHash,
+    navigateToChatWorkspace,
+    officialAccountsActive,
+    selectedCallAction,
+    selectedConversationId,
+    selectedDetailsAction,
+    selectedSidePanelMode,
+    serviceConversationActive,
+    subscriptionInboxActive,
+  ]);
+
+  useEffect(() => {
+    if (
+      !desktopCallRequest ||
+      activeConversation?.id === desktopCallRequest.conversationId
+    ) {
+      return;
+    }
+
+    setDesktopCallRequest(null);
+  }, [activeConversation, desktopCallRequest]);
 
   useEffect(() => {
     if (!notice) {
@@ -1077,7 +1153,7 @@ export function DesktopChatWorkspace({
         draftId: draft.draftId,
         returnTo:
           typeof window !== "undefined"
-            ? `${window.location.pathname}${window.location.hash}`
+            ? getCurrentWindowTargetPath()
             : "/tabs/chat",
       }),
     });
@@ -1299,7 +1375,9 @@ export function DesktopChatWorkspace({
       conversationId: conversation.id,
       conversationType: getConversationThreadType(conversation),
       title: conversation.title,
-      returnTo: getConversationThreadPath(conversation),
+      returnTo: buildDesktopChatThreadPath({
+        conversationId: conversation.id,
+      }),
     });
 
     setConversationContextMenu(null);
@@ -1650,6 +1728,16 @@ export function DesktopChatWorkspace({
             selectedAccountId={selectedOfficialAccountId}
             selectedArticleId={selectedOfficialArticleId}
             selectedMode={selectedOfficialDisplayMode}
+            onHighlightFeedArticle={(articleId) => {
+              navigateToChatWorkspace({
+                hash: buildDesktopChatRouteHash({
+                  officialView: "official-accounts",
+                  officialMode: "feed",
+                  articleId: articleId ?? undefined,
+                }),
+                replace: true,
+              });
+            }}
             onOpenAccount={(accountId) => {
               navigateToChatWorkspace({
                 hash: buildDesktopChatRouteHash({
@@ -1769,6 +1857,11 @@ export function DesktopChatWorkspace({
               groupId={activeConversation.id}
               variant="desktop"
               desktopSidePanelMode={rightPanelMode}
+              desktopCallRequest={
+                activeConversation.id === desktopCallRequest?.conversationId
+                  ? desktopCallRequest
+                  : null
+              }
               desktopHeaderActionsRef={desktopHeaderActionsRef}
               onToggleDesktopHistory={() => handleToggleSidePanel("history")}
               onToggleDesktopDetails={() => handleToggleSidePanel("details")}
@@ -1777,6 +1870,11 @@ export function DesktopChatWorkspace({
               }
               onOpenDesktopMemberSearch={handleOpenGroupMemberSearch}
               onDesktopCallAction={handleDesktopCallAction}
+              onDesktopCallRequestHandled={(token) => {
+                setDesktopCallRequest((current) =>
+                  current?.token === token ? null : current,
+                );
+              }}
               highlightedMessageId={
                 activeConversation.id === selectedConversationId
                   ? highlightedMessageId
@@ -1795,10 +1893,20 @@ export function DesktopChatWorkspace({
               conversationId={activeConversation.id}
               variant="desktop"
               desktopSidePanelMode={rightPanelMode}
+              desktopCallRequest={
+                activeConversation.id === desktopCallRequest?.conversationId
+                  ? desktopCallRequest
+                  : null
+              }
               desktopHeaderActionsRef={desktopHeaderActionsRef}
               onToggleDesktopHistory={() => handleToggleSidePanel("history")}
               onToggleDesktopDetails={() => handleToggleSidePanel("details")}
               onDesktopCallAction={handleDesktopCallAction}
+              onDesktopCallRequestHandled={(token) => {
+                setDesktopCallRequest((current) =>
+                  current?.token === token ? null : current,
+                );
+              }}
               highlightedMessageId={
                 activeConversation.id === selectedConversationId
                   ? highlightedMessageId
@@ -1898,21 +2006,11 @@ export function DesktopChatWorkspace({
                 setRightPanelMode(null);
                 setHistoryPanelCanReturnToDetails(false);
 
-                if (isPersistedGroupConversation(activeConversation)) {
-                  void navigate({
-                    to: "/group/$groupId",
-                    params: { groupId: activeConversation.id },
-                    search: {},
-                    hash: `chat-message-${messageId}`,
-                  });
-                  return;
-                }
-
                 void navigate({
-                  to: "/chat/$conversationId",
-                  params: { conversationId: activeConversation.id },
-                  search: {},
-                  hash: `chat-message-${messageId}`,
+                  to: buildDesktopChatThreadPath({
+                    conversationId: activeConversation.id,
+                    messageId,
+                  }),
                 });
               }}
             />
@@ -2582,10 +2680,11 @@ function ConversationCardLink({
   if (isPersistedGroupConversation(conversation)) {
     return (
       <Link
-        to="/group/$groupId"
-        params={{ groupId: conversation.id }}
-        search={{}}
-        hash={undefined}
+        to={
+          buildDesktopChatThreadPath({
+            conversationId: conversation.id,
+          }) as never
+        }
         className={className}
         onContextMenu={(event) => onContextMenu(event, conversation)}
       >
@@ -2596,10 +2695,11 @@ function ConversationCardLink({
 
   return (
     <Link
-      to="/chat/$conversationId"
-      params={{ conversationId: conversation.id }}
-      search={{}}
-      hash={undefined}
+      to={
+        buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }) as never
+      }
       className={className}
       onContextMenu={(event) => onContextMenu(event, conversation)}
     >

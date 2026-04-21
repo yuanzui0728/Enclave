@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { MockComputeProviderService } from "../orchestration/mock-compute-provider.service";
 import { ManualDockerComputeProviderService } from "./manual-docker-compute-provider.service";
@@ -14,25 +14,35 @@ export class ComputeProviderRegistryService {
 
   getDefaultProviderKey() {
     const configuredProviderKey = this.configService.get<string>("CLOUD_DEFAULT_PROVIDER_KEY")?.trim();
-    return configuredProviderKey ? this.getProvider(configuredProviderKey).key : this.mockComputeProvider.key;
+    if (!configuredProviderKey) {
+      return this.mockComputeProvider.key;
+    }
+
+    return this.requireProvider(configuredProviderKey).key;
   }
 
   listProviders() {
     return [this.mockComputeProvider.summary, this.manualDockerComputeProvider.summary];
   }
 
-  getProvider(providerKey?: string | null): WorldComputeProvider {
-    const normalizedProviderKey = providerKey?.trim() || this.getDefaultProviderKey();
+  requireProvider(providerKey?: string | null): WorldComputeProvider {
+    const normalizedProviderKey = providerKey?.trim();
+    if (!normalizedProviderKey) {
+      return this.requireProvider(this.getDefaultProviderKey());
+    }
 
     switch (normalizedProviderKey) {
       case "manual":
       case this.manualDockerComputeProvider.key:
         return this.manualDockerComputeProvider;
       case this.mockComputeProvider.key:
-      case "":
         return this.mockComputeProvider;
       default:
-        return this.mockComputeProvider;
+        throw new BadRequestException(`Unsupported compute provider: ${normalizedProviderKey}`);
     }
+  }
+
+  getProvider(providerKey?: string | null): WorldComputeProvider {
+    return this.requireProvider(providerKey);
   }
 }

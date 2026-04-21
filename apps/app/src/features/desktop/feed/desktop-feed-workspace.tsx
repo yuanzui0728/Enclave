@@ -31,6 +31,7 @@ type DesktopFeedWorkspaceProps = {
   ownerAvatar?: string | null;
   ownerUsername?: string | null;
   posts: FeedPostListItem[];
+  onSelectedPostChange?: (postId: string | null) => void;
   routeSelectedPostId?: string | null;
   showCompose: boolean;
   successNotice?: string;
@@ -68,6 +69,7 @@ export function DesktopFeedWorkspace({
   ownerAvatar,
   ownerUsername,
   posts,
+  onSelectedPostChange,
   routeSelectedPostId = null,
   showCompose,
   successNotice,
@@ -147,10 +149,18 @@ export function DesktopFeedWorkspace({
   }, [posts]);
 
   useEffect(() => {
-    if (selectedPostId && !posts.some((post) => post.id === selectedPostId)) {
+    if (!selectedPostId) {
+      return;
+    }
+
+    if (!posts.some((post) => post.id === selectedPostId)) {
       setSelectedPostId(null);
     }
   }, [posts, selectedPostId]);
+
+  useEffect(() => {
+    onSelectedPostChange?.(selectedPostId);
+  }, [onSelectedPostChange, selectedPostId]);
 
   const residentPostsCount = useMemo(
     () => posts.filter((post) => post.authorType === "character").length,

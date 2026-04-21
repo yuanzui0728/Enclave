@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   blockCharacter,
   deleteFriend,
@@ -18,6 +18,12 @@ import { Search, Tag } from "lucide-react";
 import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
+import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
+import {
+  buildDesktopContactsRouteHash,
+  parseDesktopContactsRouteState,
+} from "../../contacts/contacts-route-state";
+import { buildDesktopChatThreadPath } from "../chat/desktop-chat-route-state";
 import { buildContactTagGroups } from "../../contacts/contact-tag-groups";
 import { ContactDetailPane } from "../../contacts/contact-detail-pane";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
@@ -27,15 +33,23 @@ import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 export function DesktopContactsTagsPane() {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const routeState = useMemo(() => parseDesktopContactsRouteState(hash), [hash]);
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const routeSelectedTag = routeState.pane === "tags" ? (routeState.tag ?? null) : null;
+  const routeSelectedCharacterId =
+    routeState.pane === "tags" ? (routeState.characterId ?? null) : null;
   const [searchText, setSearchText] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(
-    null,
+  const [selectedTag, setSelectedTag] = useState<string | null>(
+    () => routeSelectedTag,
   );
+  const [selectedCharacterId, setSelectedCharacterId] = useState<
+    string | null
+  >(() => routeSelectedCharacterId);
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -55,8 +69,9 @@ export function DesktopContactsTagsPane() {
       getOrCreateConversation({ characterId }, baseUrl),
     onSuccess: (conversation) => {
       void navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: conversation.id },
+        to: buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }),
       });
     },
   });
@@ -192,6 +207,17 @@ export function DesktopContactsTagsPane() {
     () => buildContactTagGroups(friendsQuery.data ?? [], searchText),
     [friendsQuery.data, searchText],
   );
+  const routeCharacterGroup = useMemo(
+    () =>
+      routeSelectedCharacterId
+        ? (tagGroups.find((group) =>
+            group.items.some(
+              (item) => item.character.id === routeSelectedCharacterId,
+            ),
+          ) ?? null)
+        : null,
+    [routeSelectedCharacterId, tagGroups],
+  );
   const selectedGroup =
     tagGroups.find((group) => group.tag === selectedTag) ?? null;
   const selectedFriend =
@@ -242,6 +268,18 @@ export function DesktopContactsTagsPane() {
   );
 
   useEffect(() => {
+    setSelectedTag((current) =>
+      current === routeSelectedTag ? current : routeSelectedTag,
+    );
+  }, [routeSelectedTag]);
+
+  useEffect(() => {
+    setSelectedCharacterId((current) =>
+      current === routeSelectedCharacterId ? current : routeSelectedCharacterId,
+    );
+  }, [routeSelectedCharacterId]);
+
+  useEffect(() => {
     if (
       selectedGroup &&
       tagGroups.some((group) => group.tag === selectedGroup.tag)
@@ -249,8 +287,8 @@ export function DesktopContactsTagsPane() {
       return;
     }
 
-    setSelectedTag(tagGroups[0]?.tag ?? null);
-  }, [selectedGroup, tagGroups]);
+    setSelectedTag(routeCharacterGroup?.tag ?? tagGroups[0]?.tag ?? null);
+  }, [routeCharacterGroup, selectedGroup, tagGroups]);
 
   useEffect(() => {
     if (
@@ -264,6 +302,36 @@ export function DesktopContactsTagsPane() {
 
     setSelectedCharacterId(selectedGroup?.items[0]?.character.id ?? null);
   }, [selectedFriend, selectedGroup]);
+
+  useEffect(() => {
+    if (routeState.pane !== "tags") {
+      return;
+    }
+
+    const nextHash = buildDesktopContactsRouteHash({
+      pane: "tags",
+      tag: selectedTag ?? undefined,
+      characterId: selectedCharacterId ?? undefined,
+      showWorldCharacters: routeState.showWorldCharacters,
+    });
+
+    if ((nextHash ?? "") === normalizedHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/contacts",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [
+    navigate,
+    normalizedHash,
+    routeState.pane,
+    routeState.showWorldCharacters,
+    selectedCharacterId,
+    selectedTag,
+  ]);
 
   const taggedFriendCount = useMemo(
     () =>
@@ -369,7 +437,10 @@ export function DesktopContactsTagsPane() {
                   <button
                     key={group.tag}
                     type="button"
-                    onClick={() => setSelectedTag(group.tag)}
+                    onClick={() => {
+                      setSelectedTag(group.tag);
+                      setSelectedCharacterId(group.items[0]?.character.id ?? null);
+                    }}
                     className={cn(
                       "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                       index > 0
@@ -451,7 +522,11 @@ export function DesktopContactsTagsPane() {
           friendship={selectedFriend?.friendship ?? null}
           commonGroups={commonGroups}
           onOpenGroup={(groupId) => {
-            void navigate({ to: "/group/$groupId", params: { groupId } });
+            void navigate({
+              to: buildDesktopChatThreadPath({
+                conversationId: groupId,
+              }),
+            });
           }}
           onStartChat={
             selectedFriend
@@ -536,6 +611,13 @@ export function DesktopContactsTagsPane() {
                     params: { characterId: selectedFriend.character.id },
                     hash: buildDesktopFriendMomentsRouteHash({
                       source: "tags",
+                      returnPath: "/tabs/contacts",
+                      returnHash: buildDesktopContactsRouteHash({
+                        pane: "tags",
+                        tag: selectedTag ?? undefined,
+                        characterId: selectedFriend.character.id,
+                        showWorldCharacters: routeState.showWorldCharacters,
+                      }),
                     }),
                   });
                 }
@@ -549,6 +631,15 @@ export function DesktopContactsTagsPane() {
             void navigate({
               to: "/character/$characterId",
               params: { characterId: selectedFriend.character.id },
+              hash: buildCharacterDetailRouteHash({
+                returnPath: "/tabs/contacts",
+                returnHash: buildDesktopContactsRouteHash({
+                  pane: "tags",
+                  tag: selectedTag ?? undefined,
+                  characterId: selectedFriend.character.id,
+                  showWorldCharacters: routeState.showWorldCharacters,
+                }),
+              }),
             });
           }}
         />

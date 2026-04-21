@@ -43,7 +43,7 @@ export function MobileShell({ children }: PropsWithChildren) {
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
-  const showTabs = pathname.startsWith("/tabs/") && pathname !== "/tabs/search";
+  const showTabs = KEEP_ALIVE_TAB_PATHS.has(pathname);
   const activeKeepAlivePath = KEEP_ALIVE_TAB_PATHS.has(pathname)
     ? pathname
     : null;

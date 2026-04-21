@@ -2,7 +2,13 @@ import Foundation
 import Capacitor
 
 @objc(YinjieRuntimePlugin)
-public class YinjieRuntimePlugin: CAPPlugin {
+public class YinjieRuntimePlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "YinjieRuntimePlugin"
+    public let jsName = "YinjieRuntime"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "getConfig", returnType: CAPPluginReturnPromise)
+    ]
+
     @objc func getConfig(_ call: CAPPluginCall) {
         let info = Bundle.main.infoDictionary ?? [:]
         let bundledConfig = readBundledRuntimeConfig()

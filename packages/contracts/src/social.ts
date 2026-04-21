@@ -1,4 +1,17 @@
 import type { Character, CharacterDraft } from "./characters";
+export type {
+  ShakeDiscoveryConfig,
+  ShakeDiscoveryOverview,
+  ShakeDiscoverySessionPreview,
+  ShakeDiscoverySessionRecord,
+  ShakeDiscoverySessionStatus,
+  ShakeDiscoveryStats,
+} from "./shake-discovery";
+export {
+  DEFAULT_SHAKE_DISCOVERY_CONFIG,
+  SHAKE_DISCOVERY_CONFIG_KEY,
+  SHAKE_DISCOVERY_SESSIONS_KEY,
+} from "./shake-discovery";
 
 export interface FriendRequest {
   id: string;

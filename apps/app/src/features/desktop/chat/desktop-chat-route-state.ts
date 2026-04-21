@@ -4,6 +4,7 @@ export type DesktopChatOfficialView =
   | "official-accounts";
 
 export type DesktopChatRoutePanel = "history" | "details";
+export type DesktopChatCallAction = "voice" | "video";
 export type DesktopChatDetailsAction =
   | "announcement"
   | "member-search"
@@ -16,6 +17,7 @@ export type DesktopChatRouteState = {
   conversationId?: string;
   messageId?: string;
   panel?: DesktopChatRoutePanel;
+  callAction?: DesktopChatCallAction;
   detailsAction?: DesktopChatDetailsAction;
   officialView?: DesktopChatOfficialView;
   officialMode?: "feed" | "accounts";
@@ -33,6 +35,7 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
   const conversationId = params.get("conversationId")?.trim() || undefined;
   const messageId = params.get("messageId")?.trim() || undefined;
   const panel = params.get("panel")?.trim();
+  const callAction = params.get("callAction")?.trim();
   const detailsAction = params.get("detailsAction")?.trim();
   const officialView = params.get("officialView")?.trim();
   const officialMode = params.get("officialMode")?.trim();
@@ -40,6 +43,8 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
   const articleId = params.get("articleId")?.trim() || undefined;
   const normalizedPanel =
     panel === "history" || panel === "details" ? panel : undefined;
+  const normalizedCallAction =
+    callAction === "voice" || callAction === "video" ? callAction : undefined;
   const normalizedDetailsAction =
     detailsAction === "announcement" ||
     detailsAction === "member-search" ||
@@ -60,6 +65,7 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
     conversationId,
     messageId,
     panel: normalizedOfficialView ? undefined : normalizedPanel,
+    callAction: normalizedOfficialView ? undefined : normalizedCallAction,
     detailsAction:
       normalizedOfficialView || normalizedPanel !== "details"
         ? undefined
@@ -88,6 +94,10 @@ export function buildDesktopChatRouteHash(state: DesktopChatRouteState) {
 
   if (state.panel) {
     params.set("panel", state.panel);
+  }
+
+  if (state.callAction) {
+    params.set("callAction", state.callAction);
   }
 
   if (state.panel === "details" && state.detailsAction) {
@@ -131,6 +141,42 @@ export function buildDesktopChatThreadPath(input: {
   messageId?: string;
 }) {
   const hash = buildDesktopChatThreadHash(input);
+
+  return hash ? `/tabs/chat#${hash}` : "/tabs/chat";
+}
+
+export function buildDesktopChatThreadPathFromConversationPath(path: string) {
+  const conversationId = path.match(/^\/(?:chat|group)\/([^/?#]+)/)?.[1]?.trim();
+
+  if (!conversationId) {
+    return null;
+  }
+
+  return buildDesktopChatThreadPath({
+    conversationId,
+  });
+}
+
+export function buildDesktopOfficialServiceThreadPath(input: {
+  accountId: string;
+  articleId?: string;
+}) {
+  const hash = buildDesktopChatRouteHash({
+    officialView: "service-account",
+    accountId: input.accountId,
+    articleId: input.articleId,
+  });
+
+  return hash ? `/tabs/chat#${hash}` : "/tabs/chat";
+}
+
+export function buildDesktopSubscriptionInboxPath(input?: {
+  articleId?: string;
+}) {
+  const hash = buildDesktopChatRouteHash({
+    officialView: "subscription-inbox",
+    articleId: input?.articleId,
+  });
 
   return hash ? `/tabs/chat#${hash}` : "/tabs/chat";
 }

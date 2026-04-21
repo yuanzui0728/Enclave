@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
@@ -32,7 +32,7 @@ import { FollowupRuntimeService } from './followup-runtime.service';
       FriendshipEntity,
       FriendRequestEntity,
     ]),
-    AiModule,
+    forwardRef(() => AiModule),
     AuthModule,
     CharactersModule,
     ChatModule,

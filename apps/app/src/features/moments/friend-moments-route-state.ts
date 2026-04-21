@@ -12,6 +12,8 @@ export type DesktopFriendMomentsRouteSource =
 export type DesktopFriendMomentsRouteState = {
   momentId?: string;
   source?: DesktopFriendMomentsRouteSource;
+  returnPath?: string;
+  returnHash?: string;
 };
 
 const desktopFriendMomentsRouteSources = new Set<DesktopFriendMomentsRouteSource>(
@@ -26,10 +28,28 @@ const desktopFriendMomentsRouteSources = new Set<DesktopFriendMomentsRouteSource
   ],
 );
 
+function normalizeReturnPath(value?: string | null) {
+  const nextValue = value?.trim();
+  if (!nextValue || !nextValue.startsWith("/")) {
+    return undefined;
+  }
+
+  return nextValue;
+}
+
+function normalizeHash(value?: string | null) {
+  const nextValue = value?.trim();
+  if (!nextValue) {
+    return undefined;
+  }
+
+  return nextValue.startsWith("#") ? nextValue.slice(1) : nextValue;
+}
+
 export function parseDesktopFriendMomentsRouteState(
   hash: string,
 ): DesktopFriendMomentsRouteState {
-  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const normalizedHash = normalizeHash(hash);
   if (!normalizedHash) {
     return {};
   }
@@ -37,11 +57,16 @@ export function parseDesktopFriendMomentsRouteState(
   const params = new URLSearchParams(normalizedHash);
   const momentId = params.get("moment")?.trim();
   const source = params.get("source")?.trim();
+  const returnPath = normalizeReturnPath(params.get("returnPath"));
 
   return {
     ...(momentId ? { momentId } : {}),
     ...(source && desktopFriendMomentsRouteSources.has(source as DesktopFriendMomentsRouteSource)
       ? { source: source as DesktopFriendMomentsRouteSource }
+      : {}),
+    ...(returnPath ? { returnPath } : {}),
+    ...(returnPath && normalizeHash(params.get("returnHash"))
+      ? { returnHash: normalizeHash(params.get("returnHash")) }
       : {}),
   };
 }
@@ -57,6 +82,16 @@ export function buildDesktopFriendMomentsRouteHash(
 
   if (state.source?.trim()) {
     params.set("source", state.source.trim());
+  }
+
+  const returnPath = normalizeReturnPath(state.returnPath);
+  if (returnPath) {
+    params.set("returnPath", returnPath);
+  }
+
+  const returnHash = normalizeHash(state.returnHash);
+  if (returnPath && returnHash) {
+    params.set("returnHash", returnHash);
   }
 
   return params.toString() || undefined;

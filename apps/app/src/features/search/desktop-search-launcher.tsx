@@ -33,7 +33,6 @@ import { getConversationPreviewParts } from "../../lib/conversation-preview";
 import { formatMessageTimestamp } from "../../lib/format";
 import {
   getConversationThreadLabel,
-  getConversationThreadPath,
   isPersistedGroupConversation,
 } from "../../lib/conversation-route";
 import {
@@ -58,6 +57,8 @@ import {
 } from "./search-route-state";
 import { resolveSearchNavigationTarget } from "./search-navigation";
 import { buildDesktopAddFriendRouteHash } from "../contacts/add-friend-route-state";
+import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
+import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";
 import {
   hydrateSearchHistoryFromNative,
   loadSearchHistory,
@@ -149,6 +150,21 @@ const searchLauncherFocusRegionLabels: Record<
 
 function buildSearchLauncherHistoryActionId(keyword: string) {
   return `history-${keyword}`;
+}
+
+function buildDesktopOfficialAccountSearchPath(
+  accountId: string,
+  articleId?: string,
+) {
+  const hash = buildDesktopContactsRouteHash({
+    pane: "official-accounts",
+    accountId,
+    articleId,
+    officialMode: "accounts",
+    showWorldCharacters: false,
+  });
+
+  return hash ? `/tabs/contacts#${hash}` : "/tabs/contacts";
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -415,7 +431,9 @@ export function DesktopSearchDropdownPanel({
         description: `${preview.prefix}${preview.text}`,
         meta: `${getConversationThreadLabel(conversation)} · ${conversation.participants.length} 位参与者`,
         badge: getConversationThreadLabel(conversation),
-        to: getConversationThreadPath(conversation),
+        to: buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }),
         avatarName: conversation.title,
       };
 
@@ -535,11 +553,13 @@ export function DesktopSearchDropdownPanel({
             message.text,
             normalizedKeyword,
           )}`,
-          hash: `chat-message-${message.messageId}`,
           id: `conversation-message-${message.messageId}`,
           meta: `聊天记录 · ${formatMessageTimestamp(message.createdAt)}`,
           title: header.title,
-          to: header.to,
+          to: buildDesktopChatThreadPath({
+            conversationId,
+            messageId: message.messageId,
+          }),
         })),
         sortTime: Number.isNaN(latestTime) ? 0 : latestTime,
         totalHits: messages.length,
@@ -598,7 +618,7 @@ export function DesktopSearchDropdownPanel({
           account.handle
         }`,
         badge: account.accountType === "service" ? "服务号" : "订阅号",
-        to: `/official-accounts/${account.id}`,
+        to: buildDesktopOfficialAccountSearchPath(account.id),
         avatarName: account.name,
         avatarSrc: account.avatar,
       } satisfies DesktopSearchQuickLink;
@@ -611,7 +631,10 @@ export function DesktopSearchDropdownPanel({
               `来自 ${account.name} 的最近文章`,
             meta: `公众号文章 · ${account.name}`,
             badge: "公众号文章",
-            to: `/official-accounts/articles/${account.recentArticle.id}`,
+            to: buildDesktopOfficialAccountSearchPath(
+              account.id,
+              account.recentArticle.id,
+            ),
             avatarName: account.name,
             avatarSrc: account.avatar,
           } satisfies DesktopSearchQuickLink)
@@ -678,7 +701,9 @@ export function DesktopSearchDropdownPanel({
 
   const handleOpenQuickLink = useCallback(
     (item: DesktopSearchQuickLink) => {
-      const navigationTarget = resolveSearchNavigationTarget(item);
+      const navigationTarget = resolveSearchNavigationTarget(item, {
+        desktopLayout: true,
+      });
       onClose?.();
       void navigate({
         hash: navigationTarget.hash,

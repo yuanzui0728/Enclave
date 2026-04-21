@@ -5437,6 +5437,14 @@ async function readNativeBridgeFileAsset(
 function resolveNativeBridgeFileAssetSource(asset: MobileBridgeFileAsset) {
   const webPath = normalizeAssetValue(asset.webPath);
   if (webPath) {
+    if (
+      webPath.startsWith("file://") ||
+      webPath.startsWith("/") ||
+      webPath.startsWith("content://")
+    ) {
+      return Capacitor.convertFileSrc(webPath);
+    }
+
     return webPath;
   }
 

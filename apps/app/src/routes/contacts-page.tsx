@@ -18,6 +18,7 @@ import {
   QrCode,
   Search,
   Star,
+  Tag,
   UserPlus,
   Users,
   WalletCards,
@@ -54,6 +55,9 @@ import {
   buildDesktopContactsRouteHash,
   parseDesktopContactsRouteState,
 } from "../features/contacts/contacts-route-state";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
+import { buildContactTagGroups } from "../features/contacts/contact-tag-groups";
 import {
   buildContactSections,
   buildDesktopFriendSections,
@@ -63,7 +67,14 @@ import {
   matchesFriendSearch,
   type FriendDirectoryItem,
 } from "../features/contacts/contact-utils";
+import { buildWorldCharactersRouteHash } from "../features/contacts/world-characters-route-state";
+import { buildMobileGroupRouteHash } from "../features/chat/mobile-group-route-state";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+} from "../features/desktop/chat/desktop-chat-route-state";
 import { buildDesktopFriendMomentsRouteHash } from "../features/moments/friend-moments-route-state";
+import { buildMobileOfficialRouteHash } from "../features/official-accounts/mobile-official-route-state";
 import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
@@ -83,6 +94,16 @@ const DesktopContactsGroupsPane = lazy(async () => {
   const mod =
     await import("../features/desktop/contacts/desktop-contacts-groups-pane");
   return { default: mod.DesktopContactsGroupsPane };
+});
+const DesktopContactsStarredFriendsPane = lazy(async () => {
+  const mod =
+    await import("../features/desktop/contacts/desktop-contacts-starred-friends-pane");
+  return { default: mod.DesktopContactsStarredFriendsPane };
+});
+const DesktopContactsTagsPane = lazy(async () => {
+  const mod =
+    await import("../features/desktop/contacts/desktop-contacts-tags-pane");
+  return { default: mod.DesktopContactsTagsPane };
 });
 const DesktopOfficialAccountsWorkspace = lazy(async () => {
   const mod =
@@ -112,6 +133,9 @@ type DesktopSelection =
   | {
       kind: "starred-friends";
       id?: string;
+    }
+  | {
+      kind: "tags";
     }
   | {
       kind: "groups";
@@ -158,6 +182,12 @@ function buildDesktopSelectionFromRouteState(hash: string): DesktopSelection {
     return {
       kind: "starred-friends",
       ...(routeState.characterId ? { id: routeState.characterId } : {}),
+    };
+  }
+
+  if (routeState.pane === "tags") {
+    return {
+      kind: "tags",
     };
   }
 
@@ -232,6 +262,9 @@ export function ContactsPage() {
   const pageRef = useRef<HTMLDivElement | null>(null);
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
@@ -295,8 +328,14 @@ export function ContactsPage() {
       }
 
       navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: conversation.id },
+        to: isDesktopLayout
+          ? buildDesktopChatThreadPath({
+              conversationId: conversation.id,
+            })
+          : "/chat/$conversationId",
+        params: isDesktopLayout
+          ? undefined
+          : { conversationId: conversation.id },
       });
     },
   });
@@ -455,6 +494,15 @@ export function ContactsPage() {
     [conversationsQuery.data, selectedFriendItem],
   );
   const desktopDefaultFriendItem = desktopFriendSections[0]?.items[0] ?? null;
+  const starredFriends = useMemo(
+    () =>
+      (friendsQuery.data ?? []).filter((item) => item.friendship.isStarred),
+    [friendsQuery.data],
+  );
+  const tagGroupCount = useMemo(
+    () => buildContactTagGroups(friendsQuery.data ?? [], "").length,
+    [friendsQuery.data],
+  );
 
   const commitDesktopRouteState = useCallback(
     (
@@ -757,39 +805,10 @@ export function ContactsPage() {
       return;
     }
 
-    if (desktopSelection?.kind !== "starred-friends") {
-      return;
-    }
-
-    const nextSelection = desktopSelection.id
-      ? ({
-          kind: "friend",
-          id: desktopSelection.id,
-        } satisfies DesktopSelection)
-      : desktopDefaultFriendItem
-        ? ({
-            kind: "friend",
-            id: desktopDefaultFriendItem.character.id,
-          } satisfies DesktopSelection)
-        : null;
-
-    setDesktopSelection(nextSelection);
-    commitDesktopRouteState(nextSelection, showWorldCharacters, true);
-  }, [
-    commitDesktopRouteState,
-    desktopDefaultFriendItem,
-    desktopSelection,
-    isDesktopLayout,
-    showWorldCharacters,
-  ]);
-
-  useEffect(() => {
-    if (!isDesktopLayout) {
-      return;
-    }
-
     if (
       desktopSelection?.kind === "new-friends" ||
+      desktopSelection?.kind === "starred-friends" ||
+      desktopSelection?.kind === "tags" ||
       desktopSelection?.kind === "groups" ||
       desktopSelection?.kind === "official-accounts"
     ) {
@@ -811,6 +830,16 @@ export function ContactsPage() {
         (item) => item.character.id === desktopSelection.id,
       )
     ) {
+      return;
+    }
+
+    if (routeState.pane === "world-character" && filteredWorldCharacterItems[0]) {
+      const nextSelection = {
+        kind: "world-character",
+        id: filteredWorldCharacterItems[0].character.id,
+      } satisfies DesktopSelection;
+      setDesktopSelection(nextSelection);
+      commitDesktopRouteState(nextSelection, true, true);
       return;
     }
 
@@ -843,25 +872,60 @@ export function ContactsPage() {
     filteredFriendItems,
     filteredWorldCharacterItems,
     isDesktopLayout,
+    routeState.pane,
     showWorldCharacters,
   ]);
 
   function handleShortcutNavigate(to: ShortcutRoute) {
     setNotice(null);
-    void navigate({ to });
+    const mobileHash =
+      to === "/friend-requests"
+        ? buildMobileFriendRequestsRouteHash({
+            returnPath: pathname,
+          })
+        : to === "/contacts/groups"
+          ? buildMobileGroupRouteHash({
+              returnPath: pathname,
+            })
+          : to === "/contacts/world-characters"
+            ? buildWorldCharactersRouteHash({
+                keyword: "",
+                returnPath: pathname,
+              })
+            : to === "/contacts/official-accounts"
+              ? buildMobileOfficialRouteHash({
+                  returnPath: pathname,
+                })
+              : undefined;
+
+    void navigate({
+      to,
+      ...(mobileHash ? { hash: mobileHash } : {}),
+    });
   }
 
   function handleMobileQuickActionNavigate(to: "/group/new") {
     setIsQuickMenuOpen(false);
     setNotice(null);
-    void navigate({ to });
+    void navigate({
+      to,
+      hash: buildCreateGroupRouteHash({
+        returnPath: pathname,
+      }),
+    });
   }
 
   function handleOpenWorldCharacters() {
     setNotice(null);
 
     if (!isDesktopLayout) {
-      void navigate({ to: "/contacts/world-characters" });
+      void navigate({
+        to: "/contacts/world-characters",
+        hash: buildWorldCharactersRouteHash({
+          keyword: "",
+          returnPath: pathname,
+        }),
+      });
       return;
     }
 
@@ -908,7 +972,45 @@ export function ContactsPage() {
   }
 
   function handleOpenProfile(characterId: string) {
-    void navigate({ to: "/character/$characterId", params: { characterId } });
+    if (!isDesktopLayout) {
+      void navigate({
+        to: "/character/$characterId",
+        params: { characterId },
+        hash: buildCharacterDetailRouteHash({
+          returnPath: pathname,
+        }),
+      });
+      return;
+    }
+
+    const returnPane =
+      desktopSelection?.kind === "world-character"
+        ? "world-character"
+        : desktopSelection?.kind === "starred-friends"
+          ? "starred-friends"
+          : desktopSelection?.kind === "tags"
+            ? "tags"
+            : "friend";
+    const returnHash = buildDesktopContactsRouteHash({
+      pane: returnPane,
+      characterId:
+        returnPane === "friend" ||
+        returnPane === "world-character" ||
+        returnPane === "starred-friends"
+          ? characterId
+          : undefined,
+      showWorldCharacters:
+        returnPane === "world-character" ? true : showWorldCharacters,
+    });
+
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId },
+      hash: buildCharacterDetailRouteHash({
+        returnPath: "/tabs/contacts",
+        returnHash,
+      }),
+    });
   }
 
   function handleOpenSelectedFriendMoments() {
@@ -917,11 +1019,14 @@ export function ContactsPage() {
     }
 
     setNotice(null);
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
     void navigate({
       to: "/desktop/friend-moments/$characterId",
       params: { characterId: selectedFriendItem.character.id },
       hash: buildDesktopFriendMomentsRouteHash({
         source: "contacts",
+        returnPath: "/tabs/contacts",
+        returnHash: normalizedHash || undefined,
       }),
     });
   }
@@ -1044,7 +1149,49 @@ export function ContactsPage() {
       onClick: handleOpenWorldCharacters,
     },
   ];
-  const desktopShortcutItems = shortcutItems;
+  const desktopShortcutItems: ContactShortcutListItem[] = [
+    shortcutItems[0],
+    {
+      key: "starred-friends",
+      label: "星标朋友",
+      subtitle:
+        starredFriends.length > 0
+          ? `${starredFriends.length} 位常联系好友`
+          : "快速查看设为星标的联系人",
+      active: desktopSelection?.kind === "starred-friends",
+      icon: Star,
+      iconClassName: "bg-[linear-gradient(135deg,#f59e0b,#d97706)]",
+      onClick: () => {
+        const nextSelection = {
+          kind: "starred-friends",
+          ...(starredFriends[0]?.character.id
+            ? { id: starredFriends[0].character.id }
+            : {}),
+        } satisfies DesktopSelection;
+        setDesktopSelection(nextSelection);
+        commitDesktopRouteState(nextSelection, showWorldCharacters);
+      },
+    },
+    {
+      key: "tags",
+      label: "标签",
+      subtitle:
+        tagGroupCount > 0
+          ? `${tagGroupCount} 个标签分组`
+          : "按标签整理联系人",
+      active: desktopSelection?.kind === "tags",
+      icon: Tag,
+      iconClassName: "bg-[linear-gradient(135deg,#22c55e,#15803d)]",
+      onClick: () => {
+        const nextSelection = {
+          kind: "tags",
+        } satisfies DesktopSelection;
+        setDesktopSelection(nextSelection);
+        commitDesktopRouteState(nextSelection, showWorldCharacters);
+      },
+    },
+    ...shortcutItems.slice(1),
+  ];
   const mobileShortcutItems = shortcutItems;
   const mobileErrorItems = [
     friendsQuery.isError && friendsQuery.error instanceof Error
@@ -1255,6 +1402,68 @@ export function ContactsPage() {
                   declineFriendRequestMutation.mutate(requestId)
                 }
               />
+            ) : desktopSelection?.kind === "starred-friends" ? (
+              <DesktopContactsStarredFriendsPane
+                friends={starredFriends}
+                selectedCharacterId={desktopSelection.id ?? null}
+                loading={friendsQuery.isLoading}
+                error={
+                  friendsQuery.error instanceof Error
+                    ? friendsQuery.error.message
+                    : null
+                }
+                actionError={
+                  startChatMutation.error instanceof Error
+                    ? startChatMutation.error.message
+                    : setStarredMutation.error instanceof Error
+                      ? setStarredMutation.error.message
+                      : null
+                }
+                notice={notice}
+                startChatPendingId={pendingCharacterId}
+                starPendingId={
+                  setStarredMutation.isPending
+                    ? (setStarredMutation.variables?.characterId ?? null)
+                    : null
+                }
+                onSelectCharacter={(characterId) => {
+                  const nextSelection = {
+                    kind: "starred-friends",
+                    ...(characterId ? { id: characterId } : {}),
+                  } satisfies DesktopSelection;
+                  setDesktopSelection(nextSelection);
+                  commitDesktopRouteState(
+                    nextSelection,
+                    showWorldCharacters,
+                    true,
+                  );
+                }}
+                onStartChat={handleStartChat}
+                onToggleStarred={(characterId, starred) => {
+                  setStarredMutation.mutate({
+                    characterId,
+                    starred,
+                  });
+                }}
+                onOpenProfile={handleOpenProfile}
+                onOpenMoments={(characterId) => {
+                  void navigate({
+                    to: "/desktop/friend-moments/$characterId",
+                    params: { characterId },
+                    hash: buildDesktopFriendMomentsRouteHash({
+                      source: "starred-friends",
+                      returnPath: "/tabs/contacts",
+                      returnHash: buildDesktopContactsRouteHash({
+                        pane: "starred-friends",
+                        characterId,
+                        showWorldCharacters,
+                      }),
+                    }),
+                  });
+                }}
+              />
+            ) : desktopSelection?.kind === "tags" ? (
+              <DesktopContactsTagsPane />
             ) : desktopSelection?.kind === "groups" ? (
               <DesktopContactsGroupsPane
                 groups={contactGroupsQuery.data ?? []}
@@ -1287,14 +1496,18 @@ export function ContactsPage() {
                 }}
                 onOpenGroup={(groupId) => {
                   void navigate({
-                    to: "/group/$groupId",
-                    params: { groupId },
+                    to: buildDesktopChatThreadPath({
+                      conversationId: groupId,
+                    }),
                   });
                 }}
                 onOpenGroupDetails={(groupId) => {
                   void navigate({
-                    to: "/group/$groupId/details",
-                    params: { groupId },
+                    to: "/tabs/chat",
+                    hash: buildDesktopChatRouteHash({
+                      conversationId: groupId,
+                      panel: "details",
+                    }),
                   });
                 }}
               />
@@ -1303,6 +1516,19 @@ export function ContactsPage() {
                 selectedMode={desktopSelection.mode}
                 selectedAccountId={desktopSelection.accountId}
                 selectedArticleId={desktopSelection.articleId}
+                onHighlightFeedArticle={(articleId) => {
+                  const nextSelection = {
+                    kind: "official-accounts",
+                    mode: "feed",
+                    ...(articleId ? { articleId } : {}),
+                  } satisfies DesktopSelection;
+                  setDesktopSelection(nextSelection);
+                  commitDesktopRouteState(
+                    nextSelection,
+                    showWorldCharacters,
+                    true,
+                  );
+                }}
                 onModeChange={(mode) => {
                   const nextSelection = {
                     kind: "official-accounts",
@@ -1359,7 +1585,11 @@ export function ContactsPage() {
                 friendship={selectedFriendItem?.friendship ?? null}
                 commonGroups={commonGroups}
                 onOpenGroup={(groupId) => {
-                  void navigate({ to: "/group/$groupId", params: { groupId } });
+                  void navigate({
+                    to: buildDesktopChatThreadPath({
+                      conversationId: groupId,
+                    }),
+                  });
                 }}
                 onOpenMoments={
                   selectedFriendItem

@@ -1,11 +1,17 @@
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
 type ErrorBlockProps = HTMLAttributes<HTMLDivElement> & {
   message: string;
+  children?: ReactNode;
 };
 
-export function ErrorBlock({ className, message, ...props }: ErrorBlockProps) {
+export function ErrorBlock({
+  children,
+  className,
+  message,
+  ...props
+}: ErrorBlockProps) {
   return (
     <div
       className={cn(
@@ -14,7 +20,8 @@ export function ErrorBlock({ className, message, ...props }: ErrorBlockProps) {
       )}
       {...props}
     >
-      {message}
+      <div>{message}</div>
+      {children}
     </div>
   );
 }

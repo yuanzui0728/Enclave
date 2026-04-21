@@ -11,10 +11,11 @@ import {
   type ChatCallReturnKind,
   type ChatComposeShortcutAction,
 } from "../features/chat/chat-compose-shortcut-route";
+import { parseMobileChatRouteState } from "../features/chat/mobile-chat-route-state";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
   resolveGroupInviteRouteContext,
@@ -36,7 +37,8 @@ export function ChatRoomPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const search = useRouterState({ select: (state) => state.location.search });
   const hash = useRouterState({ select: (state) => state.location.hash });
-  const highlightedMessageId = parseHighlightedMessageId(hash);
+  const routeState = parseMobileChatRouteState(hash);
+  const highlightedMessageId = routeState.highlightedMessageId;
   const [routeContext, setRouteContext] = useState(() =>
     resolveRouteContext(conversationId),
   );
@@ -190,6 +192,21 @@ export function ChatRoomPage() {
           },
         };
 
+  function navigateToRouteStateReturn() {
+    if (
+      !routeState.returnPath ||
+      isDesktopOnlyPath(routeState.returnPath)
+    ) {
+      return false;
+    }
+
+    void navigate({
+      to: routeState.returnPath,
+      ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+    });
+    return true;
+  }
+
   if (isDesktopLayout) {
     return (
       <Suspense
@@ -244,6 +261,10 @@ export function ChatRoomPage() {
           }
           onBack={() => {
             navigateBackOrFallback(() => {
+              if (navigateToRouteStateReturn()) {
+                return;
+              }
+
               void navigate({
                 to: routeContext?.returnPath ?? "/tabs/chat",
               });
@@ -264,12 +285,4 @@ function resolveRouteContext(conversationId: string) {
     resolveGameInviteRouteContext(window.location.search) ??
     resolveGroupInviteRouteContext(`/chat/${conversationId}`)
   );
-}
-
-function parseHighlightedMessageId(hash: string) {
-  const normalized = hash.startsWith("#") ? hash.slice(1) : hash;
-  const prefix = "chat-message-";
-  return normalized.startsWith(prefix)
-    ? normalized.slice(prefix.length)
-    : undefined;
 }

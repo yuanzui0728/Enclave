@@ -1,26 +1,35 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import {
   buildDesktopStandaloneWindowLabel,
+  openBrowserStandaloneWindow,
   openDesktopStandaloneWindow,
 } from "../../../runtime/desktop-windowing";
 import {
+  bindDesktopOfficialArticleWindow,
   buildDesktopOfficialArticleWindowPath,
   buildDesktopOfficialArticleWindowRouteHash,
+  clearDesktopOfficialArticleWindowBinding,
+  createDesktopOfficialArticleWindowId,
   parseDesktopOfficialArticleWindowRouteHash,
+  readDesktopOfficialArticleWindowId,
   type DesktopOfficialArticleWindowRouteState,
 } from "../../official-accounts/official-article-window-route-state";
 
 export {
+  bindDesktopOfficialArticleWindow,
   buildDesktopOfficialArticleWindowPath,
   buildDesktopOfficialArticleWindowRouteHash,
+  clearDesktopOfficialArticleWindowBinding,
+  createDesktopOfficialArticleWindowId,
   parseDesktopOfficialArticleWindowRouteHash,
+  readDesktopOfficialArticleWindowId,
   type DesktopOfficialArticleWindowRouteState,
 };
 
-function buildDesktopOfficialArticleWindowLabel(articleId: string) {
+function buildDesktopOfficialArticleWindowLabel(windowId: string) {
   return buildDesktopStandaloneWindowLabel(
     "desktop-official-article-window",
-    articleId,
+    windowId,
   );
 }
 
@@ -31,7 +40,15 @@ export async function openDesktopOfficialArticleWindow(
     return false;
   }
 
-  const routePath = buildDesktopOfficialArticleWindowPath(input);
+  const resolvedWindowId =
+    input.windowId?.trim() ||
+    readDesktopOfficialArticleWindowId(input.articleId) ||
+    createDesktopOfficialArticleWindowId();
+  const windowLabel = buildDesktopOfficialArticleWindowLabel(resolvedWindowId);
+  const routePath = buildDesktopOfficialArticleWindowPath({
+    ...input,
+    windowId: resolvedWindowId,
+  });
   const width = Math.max(980, Math.min(window.screen.availWidth - 120, 1140));
   const height = Math.max(780, Math.min(window.screen.availHeight - 96, 920));
   const left = Math.max(24, Math.round((window.screen.availWidth - width) / 2));
@@ -48,12 +65,21 @@ export async function openDesktopOfficialArticleWindow(
   ].join(",");
 
   if (!isDesktopRuntimeAvailable()) {
-    return Boolean(window.open(routePath, "_blank", features));
+    return openBrowserStandaloneWindow({
+      label: windowLabel,
+      url: routePath,
+      features,
+    });
   }
+
+  bindDesktopOfficialArticleWindow({
+    windowId: resolvedWindowId,
+    articleId: input.articleId,
+  });
 
   if (
     await openDesktopStandaloneWindow({
-      label: buildDesktopOfficialArticleWindowLabel(input.articleId),
+      label: windowLabel,
       url: routePath,
       title: input.title?.trim() || "公众号文章",
       width,
@@ -65,5 +91,9 @@ export async function openDesktopOfficialArticleWindow(
     return true;
   }
 
-  return Boolean(window.open(routePath, "_blank", features));
+  return openBrowserStandaloneWindow({
+    label: windowLabel,
+    url: routePath,
+    features,
+  });
 }

@@ -490,16 +490,26 @@ export function ChatMessageSearchPanel({
             description={error.message}
             tone="danger"
             action={
-              onRetry ? (
+              <div className="flex flex-wrap justify-center gap-2">
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={onRetry}
+                  onClick={onBack}
                   className="rounded-full"
                 >
-                  重新加载
+                  返回上一页
                 </Button>
-              ) : undefined
+                {onRetry ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onRetry}
+                    className="rounded-full"
+                  >
+                    重新加载
+                  </Button>
+                ) : null}
+              </div>
             }
           />
         </div>

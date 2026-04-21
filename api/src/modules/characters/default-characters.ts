@@ -10,6 +10,10 @@ import {
   buildWeddingPlannerCharacter,
   WEDDING_PLANNER_CHARACTER_ID,
 } from './wedding-planner-character';
+import {
+  buildWorldNewsDeskCharacter,
+  WORLD_NEWS_DESK_CHARACTER_ID,
+} from './world-news-desk-character';
 
 export const SELF_CHARACTER_ID = 'char-default-self';
 
@@ -19,6 +23,7 @@ export const DEFAULT_CHARACTER_IDS = [
   DOCTOR_CHARACTER_ID,
   LAWYER_CHARACTER_ID,
   WEDDING_PLANNER_CHARACTER_ID,
+  WORLD_NEWS_DESK_CHARACTER_ID,
 ] as const;
 
 export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
@@ -219,5 +224,6 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
     buildDoctorCharacter(),
     buildLawyerCharacter(),
     buildWeddingPlannerCharacter(),
+    buildWorldNewsDeskCharacter(),
   ];
 }

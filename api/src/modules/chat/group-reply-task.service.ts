@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { type AiMessagePart, type ChatMessage } from '../ai/ai.types';
 import { CharacterEntity } from '../characters/character.entity';
+import { CharactersService } from '../characters/characters.service';
 import { SystemConfigService } from '../config/config.service';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { ChatGateway } from './chat.gateway';
@@ -54,6 +55,7 @@ export class GroupReplyTaskService {
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
+    private readonly charactersService: CharactersService,
     private readonly systemConfig: SystemConfigService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly chatGateway: ChatGateway,
@@ -377,6 +379,10 @@ export class GroupReplyTaskService {
         await this.markTaskCancelled(task, 'actor_missing');
         return;
       }
+      const runtimeProfile =
+        (await this.charactersService.getRuntimeProfileFromCharacter(
+          character,
+        )) ?? character.profile;
 
       const conversationHistory = this.parseHistoryPayload(
         task.conversationHistoryPayload,
@@ -396,7 +402,7 @@ export class GroupReplyTaskService {
       const reply = await this.groupReplyOrchestrator.generateTaskReply({
         actor: {
           character,
-          profile: character.profile,
+          profile: runtimeProfile,
           score: 0,
           randomPassed: true,
           isExplicitTarget: false,

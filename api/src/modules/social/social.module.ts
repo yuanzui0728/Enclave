@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { SocialService } from './social.service';
@@ -46,14 +46,14 @@ import { MomentLikeEntity } from '../moments/moment-like.entity';
       FeedCommentEntity,
       UserFeedInteractionEntity,
     ]),
-    AiModule,
+    forwardRef(() => AiModule),
     NarrativeModule,
     AuthModule,
     ChatModule,
     CharactersModule,
     EventsModule,
     SystemConfigModule,
-    CyberAvatarModule,
+    forwardRef(() => CyberAvatarModule),
   ],
   providers: [SocialService, ShakeDiscoveryService],
   controllers: [SocialController],

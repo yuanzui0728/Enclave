@@ -1,14 +1,18 @@
 import { Suspense, lazy, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Newspaper, Search } from "lucide-react";
 import { listOfficialAccounts } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { OfficialAccountListItem } from "../components/official-account-list-item";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import {
+  buildMobileOfficialRouteHash,
+  parseMobileOfficialRouteState,
+} from "../features/official-accounts/mobile-official-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
@@ -41,9 +45,29 @@ export function OfficialAccountsPage() {
 
 function MobileOfficialAccountsPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchText, setSearchText] = useState("");
+  const routeState = useMemo(() => parseMobileOfficialRouteState(hash), [hash]);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileOfficialRouteHash({
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath],
+  );
 
   const accountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
@@ -77,6 +101,50 @@ function MobileOfficialAccountsPage() {
   const browseAccounts = followedAccounts.length
     ? otherAccounts
     : filteredAccounts;
+  const hasSearchText = searchText.trim().length > 0;
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function openSubscriptionInbox() {
+    void navigate({
+      to: "/chat/subscription-inbox",
+      hash: buildMobileOfficialRouteHash({
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/contacts" });
+  }
+
+  function handleEmptyStateAction() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    if (hasSearchText) {
+      setSearchText("");
+      return;
+    }
+
+    openSubscriptionInbox();
+  }
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
@@ -88,6 +156,10 @@ function MobileOfficialAccountsPage() {
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 void navigate({ to: "/tabs/contacts" });
               })
             }
@@ -104,9 +176,7 @@ function MobileOfficialAccountsPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
-            onClick={() => {
-              void navigate({ to: "/chat/subscription-inbox" });
-            }}
+            onClick={openSubscriptionInbox}
             aria-label="打开订阅号消息"
           >
             <Newspaper size={17} />
@@ -151,9 +221,9 @@ function MobileOfficialAccountsPage() {
                   variant="secondary"
                   size="sm"
                   className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={() => void accountsQuery.refetch()}
+                  onClick={handleStatusBack}
                 >
-                  重新加载
+                  {safeReturnPath ? "返回上一页" : "返回通讯录"}
                 </Button>
               }
             />
@@ -174,6 +244,10 @@ function MobileOfficialAccountsPage() {
                   void navigate({
                     to: "/official-accounts/$accountId",
                     params: { accountId: account.id },
+                    hash: buildMobileOfficialRouteHash({
+                      returnPath: pathname,
+                      returnHash: currentRouteHash || undefined,
+                    }),
                   });
                 }}
               />
@@ -195,6 +269,10 @@ function MobileOfficialAccountsPage() {
                   void navigate({
                     to: "/official-accounts/$accountId",
                     params: { accountId: account.id },
+                    hash: buildMobileOfficialRouteHash({
+                      returnPath: pathname,
+                      returnHash: currentRouteHash || undefined,
+                    }),
                   });
                 }}
               />
@@ -210,6 +288,20 @@ function MobileOfficialAccountsPage() {
               badge="暂无结果"
               title="没有找到匹配的公众号"
               description="换个名字、简称或关键词试试。"
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleEmptyStateAction}
+                >
+                  {safeReturnPath
+                    ? "返回上一页"
+                    : hasSearchText
+                      ? "清空搜索"
+                      : "打开订阅号消息"}
+                </Button>
+              }
             />
           </div>
         ) : null}

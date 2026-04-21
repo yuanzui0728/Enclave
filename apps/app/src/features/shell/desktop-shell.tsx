@@ -18,6 +18,7 @@ import {
 import { getOrCreateConversation, listCharacters } from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
+import { recordAppNavigation } from "../../lib/history-back";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
   DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT,
@@ -27,6 +28,7 @@ import {
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 import { formatTimestamp } from "../../lib/format";
 import { hydrateDesktopFavoritesFromNative } from "../desktop/favorites/desktop-favorites-storage";
+import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";
 import {
   desktopBottomNavItems,
   desktopMoreMenuItems,
@@ -116,6 +118,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
+  const search = useRouterState({
+    select: (state) => state.location.searchStr,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const standaloneDesktopRoute = isStandaloneDesktopRoute(pathname);
   const profileRouteActive = isDesktopProfileRoute(pathname);
   const runtimeConfig = useAppRuntimeConfig();
@@ -154,6 +162,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const [setupPasscodeConfirm, setSetupPasscodeConfirm] = useState("");
   const [lockError, setLockError] = useState<string | null>(null);
   const [lockNotice, setLockNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    recordAppNavigation(`${pathname}${search}${hash}`);
+  }, [hash, pathname, search]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -524,8 +536,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
       setIsOwnerCardOpen(false);
       void navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: conversation.id },
+        to: buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }),
       });
     } catch (error) {
       setOwnerCardNotice(

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
@@ -41,16 +41,16 @@ import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.modu
 @Module({
   imports: [
     AuthModule,
-    AiModule,
+    forwardRef(() => AiModule),
     CharactersModule,
     ChatModule,
-    WorldModule,
+    forwardRef(() => WorldModule),
     SystemConfigModule,
     SchedulerModule,
     SocialModule,
     FeedModule,
     ActionRuntimeModule,
-    CyberAvatarModule,
+    forwardRef(() => CyberAvatarModule),
     NeedDiscoveryModule,
     RealWorldSyncModule,
     FollowupRuntimeModule,

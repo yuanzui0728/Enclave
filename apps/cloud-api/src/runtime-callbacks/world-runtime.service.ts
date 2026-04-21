@@ -8,7 +8,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
-import { WorldAccessService } from "../world-access/world-access.service";
+import { isRequestGatePlaceholderWorld } from "../request-gate-placeholder";
+import { WaitingSessionSyncService } from "../world-access/waiting-session-sync.service";
 
 type RuntimeCallbackPayload = {
   callbackToken?: string | null;
@@ -35,7 +36,7 @@ export class WorldRuntimeService {
     private readonly worldRepo: Repository<CloudWorldEntity>,
     @InjectRepository(CloudInstanceEntity)
     private readonly instanceRepo: Repository<CloudInstanceEntity>,
-    private readonly worldAccessService: WorldAccessService,
+    private readonly waitingSessionSyncService: WaitingSessionSyncService,
   ) {}
 
   async reportBootstrap(worldId: string, payload: RuntimeCallbackPayload, headerToken?: string) {
@@ -88,7 +89,10 @@ export class WorldRuntimeService {
     }
 
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "runtime.reportFailure",
+    );
     return {
       ok: true,
       worldId: world.id,
@@ -169,7 +173,10 @@ export class WorldRuntimeService {
     if (instance) {
       await this.instanceRepo.save(instance);
     }
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      `runtime.${signal}`,
+    );
 
     return {
       ok: true,
@@ -182,7 +189,7 @@ export class WorldRuntimeService {
     const world = await this.worldRepo.findOne({
       where: { id: worldId },
     });
-    if (!world) {
+    if (!world || isRequestGatePlaceholderWorld(world)) {
       throw new NotFoundException("World not found.");
     }
 
@@ -239,10 +246,10 @@ export class WorldRuntimeService {
 
   private applyWorldMetadata(world: CloudWorldEntity, payload: RuntimeCallbackPayload) {
     if (payload.apiBaseUrl !== undefined) {
-      world.apiBaseUrl = this.trimToNull(payload.apiBaseUrl);
+      world.apiBaseUrl = this.normalizeOptionalUrl(payload.apiBaseUrl);
     }
     if (payload.adminUrl !== undefined) {
-      world.adminUrl = this.trimToNull(payload.adminUrl);
+      world.adminUrl = this.normalizeOptionalUrl(payload.adminUrl);
     }
     if (payload.runtimeVersion !== undefined) {
       world.runtimeVersion = this.trimToNull(payload.runtimeVersion);
@@ -276,5 +283,14 @@ export class WorldRuntimeService {
   private trimToNull(value: string | null | undefined) {
     const normalizedValue = value?.trim();
     return normalizedValue ? normalizedValue : null;
+  }
+
+  private normalizeOptionalUrl(value: string | null | undefined) {
+    const normalizedValue = this.trimToNull(value);
+    if (!normalizedValue) {
+      return null;
+    }
+
+    return normalizedValue.replace(/\/+$/, "");
   }
 }

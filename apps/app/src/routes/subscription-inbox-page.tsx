@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, BookOpenText } from "lucide-react";
@@ -10,9 +10,13 @@ import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import {
+  buildMobileOfficialRouteHash,
+  parseMobileOfficialRouteState,
+} from "../features/official-accounts/mobile-official-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopChatWorkspace = lazy(async () => {
@@ -51,10 +55,17 @@ export function SubscriptionInboxPage() {
 
 function MobileSubscriptionInboxPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastAutoReadDeliveryRef = useRef<string | null>(null);
+  const routeState = useMemo(() => parseMobileOfficialRouteState(hash), [hash]);
 
   const inboxQuery = useQuery({
     queryKey: ["app-official-subscription-inbox", baseUrl],
@@ -102,6 +113,49 @@ function MobileSubscriptionInboxPage() {
         unreadCount ? ` · ${unreadCount}条未读` : ""
       }`
     : undefined;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileOfficialRouteHash({
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath],
+  );
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function openOfficialAccountsDirectory() {
+    void navigate({
+      to: "/contacts/official-accounts",
+      hash: buildMobileOfficialRouteHash({
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    openOfficialAccountsDirectory();
+  }
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
@@ -114,6 +168,10 @@ function MobileSubscriptionInboxPage() {
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 void navigate({ to: "/tabs/chat" });
               })
             }
@@ -131,7 +189,13 @@ function MobileSubscriptionInboxPage() {
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() => {
-              void navigate({ to: "/contacts/official-accounts" });
+              void navigate({
+                to: "/contacts/official-accounts",
+                hash: buildMobileOfficialRouteHash({
+                  returnPath: pathname,
+                  returnHash: currentRouteHash || undefined,
+                }),
+              });
             }}
             aria-label="打开公众号列表"
           >
@@ -158,6 +222,17 @@ function MobileSubscriptionInboxPage() {
               title="订阅号消息暂时不可用"
               description={inboxQuery.error.message}
               tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "打开公众号列表"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -167,7 +242,20 @@ function MobileSubscriptionInboxPage() {
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone="danger"
             >
-              {markReadMutation.error.message}
+              <div className="flex items-start justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {markReadMutation.error.message}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "打开公众号列表"}
+                </Button>
+              </div>
             </InlineNotice>
           </div>
         ) : null}
@@ -184,6 +272,10 @@ function MobileSubscriptionInboxPage() {
                   void navigate({
                     to: "/official-accounts/$accountId",
                     params: { accountId: group.account.id },
+                    hash: buildMobileOfficialRouteHash({
+                      returnPath: pathname,
+                      returnHash: currentRouteHash || undefined,
+                    }),
                   });
                 }}
                 className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(15,23,42,0.02)]"
@@ -218,6 +310,10 @@ function MobileSubscriptionInboxPage() {
                     void navigate({
                       to: "/official-accounts/articles/$articleId",
                       params: { articleId: delivery.article.id },
+                      hash: buildMobileOfficialRouteHash({
+                        returnPath: pathname,
+                        returnHash: currentRouteHash || undefined,
+                      }),
                     });
                   }}
                 />
@@ -230,6 +326,17 @@ function MobileSubscriptionInboxPage() {
               badge="暂时空白"
               title="还没有订阅号消息"
               description="先关注一个订阅号，后续推送会汇总到这里。"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "打开公众号列表"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -292,11 +399,13 @@ function MobileSubscriptionInboxStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -331,6 +440,7 @@ function MobileSubscriptionInboxStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

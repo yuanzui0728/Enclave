@@ -54,11 +54,17 @@
 
 方法：
 - `openExternalUrl({ url })`
+- `openAppSettings()`
 - `share({ title?, text?, url? })`
+- `shareFile({ base64Data, fileName, mimeType?, title? })`
+- `openFile({ base64Data, fileName, mimeType?, title? })`
 - `pickImages({ multiple? })`
+- `pickFile()`
+- `captureImage()`
 - `getPushToken()`
 - `getNotificationPermissionState()`
 - `requestNotificationPermission()`
+- `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
 - `getPendingLaunchTarget()`
 - `clearPendingLaunchTarget()`
 
@@ -78,15 +84,19 @@
 - `apps/ios-shell/xcode-template/AppDelegatePush.example.swift`
 - `apps/ios-shell/scripts/configure-ios-project.mjs`
 - `apps/ios-shell/scripts/doctor-ios.mjs`
+- `apps/ios-shell/xcode-template/App.entitlements.example`
+- `apps/ios-shell/xcode-template/PrivacyInfo.xcprivacy.example`
 
 接线顺序：
 1. `pnpm ios:sync`
 2. `pnpm ios:configure`
-3. 把 `Plugins/*.swift` 加入 Xcode target
-4. 把 `AppDelegatePush.example.swift` 的 APNs token 缓存逻辑并入真实 `AppDelegate`
-5. 先实现 `YinjieRuntime`
-6. 再实现 `YinjieSecureStorage`
-7. 最后实现 `YinjieMobileBridge`
+3. 确认 `App.xcodeproj` 已包含 `Plugins/*.swift`，且三个 plugin 处于 `App` target 的 `Sources` build phase
+4. 确认 `App.entitlements` 与 `PrivacyInfo.xcprivacy` 已存在，并分别接入 `CODE_SIGN_ENTITLEMENTS` 与 `Resources`
+5. 把 `AppDelegatePush.example.swift` 的 APNs token 缓存逻辑并入真实 `AppDelegate`
+6. 确认三个 plugin 均实现 `CAPBridgedPlugin`，`jsName` 分别为 `YinjieRuntime` / `YinjieSecureStorage` / `YinjieMobileBridge`
+7. 先实现 `YinjieRuntime`
+8. 再实现 `YinjieSecureStorage`
+9. 最后实现 `YinjieMobileBridge`
 
 ## Android 执行面
 

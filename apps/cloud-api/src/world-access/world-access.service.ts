@@ -1,21 +1,31 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
   ResolveWorldAccessRequest,
   ResolveWorldAccessResponse,
   WorldAccessSessionSummary,
+  WorldAccessSessionStatus,
   WorldLifecycleJobType,
+  WorldAccessPhase,
+  CloudWorldRequestStatus,
 } from "@yinjie/contracts";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { In, Repository } from "typeorm";
 import { PhoneAuthService } from "../auth/phone-auth.service";
+import { createCloudWorldSlug } from "../cloud-world-slug";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
+import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
 import { WorldAccessSessionEntity } from "../entities/world-access-session.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
 import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
-import { buildWorldAccessSnapshot } from "./world-access-state";
+import { isRequestGatePlaceholderWorld } from "../request-gate-placeholder";
+import { getRequestGateState } from "../request-gate-state";
+import { getRequestVisibleWorldProjection } from "../request-world-sync-state";
+import { buildWorldAccessSnapshot, type WorldAccessSnapshot } from "./world-access-state";
+
+const PHONE_CHANGE_INVALIDATED_ACCESS_SESSION_REASON =
+  "该申请绑定的手机号已变更，请使用新的手机号重新发起进入。";
 
 @Injectable()
 export class WorldAccessService {
@@ -24,11 +34,12 @@ export class WorldAccessService {
     private readonly worldRepo: Repository<CloudWorldEntity>,
     @InjectRepository(CloudInstanceEntity)
     private readonly instanceRepo: Repository<CloudInstanceEntity>,
+    @InjectRepository(CloudWorldRequestEntity)
+    private readonly requestRepo: Repository<CloudWorldRequestEntity>,
     @InjectRepository(WorldLifecycleJobEntity)
     private readonly jobRepo: Repository<WorldLifecycleJobEntity>,
     @InjectRepository(WorldAccessSessionEntity)
     private readonly accessSessionRepo: Repository<WorldAccessSessionEntity>,
-    private readonly configService: ConfigService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
     private readonly phoneAuthService: PhoneAuthService,
   ) {}
@@ -37,9 +48,42 @@ export class WorldAccessService {
     const normalizedPhone = this.phoneAuthService.normalizePhone(phone);
     const now = new Date();
 
-    let world = await this.worldRepo.findOne({
-      where: { phone: normalizedPhone },
-    });
+    let [world, latestRequest] = await Promise.all([
+      this.worldRepo.findOne({
+        where: { phone: normalizedPhone },
+      }),
+      this.requestRepo.findOne({
+        where: { phone: normalizedPhone },
+        order: { updatedAt: "DESC" },
+      }),
+    ]);
+
+    if (this.shouldGateWorldAccess(latestRequest)) {
+      if (!world || isRequestGatePlaceholderWorld(world)) {
+        world = await this.ensureRequestGatePlaceholderWorld(
+          normalizedPhone,
+          latestRequest,
+          world,
+        );
+      }
+
+      const session = await this.createAccessSession(
+        world,
+        payload,
+        now,
+        this.buildRequestGateSnapshot(latestRequest),
+      );
+      return this.serializeAccessSession(session, world, {
+        hideWorldId: true,
+      });
+    }
+
+    if (world && isRequestGatePlaceholderWorld(world)) {
+      world = await this.restoreRequestGatePlaceholderWorld(
+        world,
+        latestRequest,
+      );
+    }
 
     if (!world) {
       const defaultProvider = this.computeProviderRegistry.getProvider(this.resolveDefaultProviderKey());
@@ -47,7 +91,7 @@ export class WorldAccessService {
         this.worldRepo.create({
           phone: normalizedPhone,
           name: this.createDefaultWorldName(normalizedPhone),
-          slug: this.createWorldSlug(normalizedPhone),
+          slug: createCloudWorldSlug(normalizedPhone),
           status: "queued",
           desiredState: "running",
           provisionStrategy: defaultProvider.summary.provisionStrategy,
@@ -80,7 +124,7 @@ export class WorldAccessService {
     }
 
     const session = await this.createAccessSession(world, payload, now);
-    return this.serializeAccessSession(session);
+    return this.serializeAccessSession(session, world);
   }
 
   async getWorldAccessSessionByPhone(phone: string, sessionId: string): Promise<WorldAccessSessionSummary> {
@@ -98,7 +142,75 @@ export class WorldAccessService {
       await this.accessSessionRepo.save(session);
     }
 
-    return this.serializeAccessSession(session);
+    const [world, latestRequest] = await Promise.all([
+      this.worldRepo.findOne({
+        where: { id: session.worldId },
+      }),
+      this.requestRepo.findOne({
+        where: { phone: normalizedPhone },
+        order: { updatedAt: "DESC" },
+      }),
+    ]);
+
+    return this.serializeAccessSession(session, world, {
+      hideWorldId:
+        session.failureReason === PHONE_CHANGE_INVALIDATED_ACCESS_SESSION_REASON ||
+        (!world && !!latestRequest && this.shouldGateWorldAccess(latestRequest)) ||
+        (!!world && isRequestGatePlaceholderWorld(world)),
+    });
+  }
+
+  async invalidateWaitingSessionsForPhone(phone: string) {
+    const normalizedPhone = this.phoneAuthService.normalizePhone(phone);
+    const sessions = await this.accessSessionRepo.find({
+      where: {
+        phone: normalizedPhone,
+        status: In(["pending", "resolving", "waiting"]),
+      },
+    });
+    if (!sessions.length) {
+      return;
+    }
+
+    await this.applySnapshotToSessions(
+      sessions,
+      this.buildPhoneChangeInvalidationSnapshot(),
+    );
+  }
+
+  async refreshWaitingSessionsForPhone(phone: string) {
+    const normalizedPhone = this.phoneAuthService.normalizePhone(phone);
+    const [world, latestRequest, sessions] = await Promise.all([
+      this.worldRepo.findOne({
+        where: { phone: normalizedPhone },
+      }),
+      this.requestRepo.findOne({
+        where: { phone: normalizedPhone },
+        order: { updatedAt: "DESC" },
+      }),
+      this.accessSessionRepo.find({
+        where: {
+          phone: normalizedPhone,
+          status: In(["pending", "resolving", "waiting"]),
+        },
+      }),
+    ]);
+
+    if (!sessions.length) {
+      return;
+    }
+
+    const snapshot =
+      latestRequest && this.shouldGateWorldAccess(latestRequest)
+        ? this.buildRequestGateSnapshot(latestRequest)
+        : world
+          ? buildWorldAccessSnapshot(world)
+          : null;
+    if (!snapshot) {
+      return;
+    }
+
+    await this.applySnapshotToSessions(sessions, snapshot);
   }
 
   async refreshWaitingSessionsForWorld(worldId: string) {
@@ -119,23 +231,18 @@ export class WorldAccessService {
       return;
     }
 
-    const snapshot = buildWorldAccessSnapshot(world);
-    const resolvedAt = snapshot.status === "ready" ? new Date() : null;
+    const latestRequest = isRequestGatePlaceholderWorld(world)
+      ? await this.requestRepo.findOne({
+          where: { phone: world.phone },
+          order: { updatedAt: "DESC" },
+        })
+      : null;
+    const snapshot =
+      latestRequest && this.shouldGateWorldAccess(latestRequest)
+        ? this.buildRequestGateSnapshot(latestRequest)
+        : buildWorldAccessSnapshot(world);
 
-    for (const session of sessions) {
-      session.status = snapshot.status;
-      session.phase = snapshot.phase;
-      session.displayStatus = snapshot.displayStatus;
-      session.resolvedApiBaseUrl = snapshot.resolvedApiBaseUrl;
-      session.retryAfterSeconds = snapshot.retryAfterSeconds;
-      session.estimatedWaitSeconds = snapshot.estimatedWaitSeconds;
-      session.failureReason = snapshot.failureReason;
-      if (resolvedAt) {
-        session.resolvedAt = resolvedAt;
-      }
-    }
-
-    await this.accessSessionRepo.save(sessions);
+    await this.applySnapshotToSessions(sessions, snapshot);
   }
 
   private async prepareWorldForAccess(world: CloudWorldEntity, now: Date) {
@@ -228,7 +335,7 @@ export class WorldAccessService {
     }
 
     if (!world.slug) {
-      world.slug = this.createWorldSlug(world.phone);
+      world.slug = createCloudWorldSlug(world.phone);
       dirty = true;
     }
     if (!world.callbackToken) {
@@ -259,8 +366,12 @@ export class WorldAccessService {
     return world;
   }
 
-  private async createAccessSession(world: CloudWorldEntity, payload: ResolveWorldAccessRequest, now: Date) {
-    const snapshot = buildWorldAccessSnapshot(world);
+  private async createAccessSession(
+    world: CloudWorldEntity,
+    payload: ResolveWorldAccessRequest,
+    now: Date,
+    snapshot = buildWorldAccessSnapshot(world),
+  ) {
     return this.accessSessionRepo.save(
       this.accessSessionRepo.create({
         worldId: world.id,
@@ -323,10 +434,14 @@ export class WorldAccessService {
     return instance ? "resume" : "provision";
   }
 
-  private serializeAccessSession(session: WorldAccessSessionEntity): WorldAccessSessionSummary {
+  private serializeAccessSession(
+    session: WorldAccessSessionEntity,
+    world?: CloudWorldEntity | null,
+    options?: { hideWorldId?: boolean },
+  ): WorldAccessSessionSummary {
     return {
       id: session.id,
-      worldId: session.worldId,
+      worldId: options?.hideWorldId ? null : session.worldId,
       phone: session.phone,
       status: session.status as WorldAccessSessionSummary["status"],
       phase: session.phase as WorldAccessSessionSummary["phase"],
@@ -342,21 +457,191 @@ export class WorldAccessService {
     };
   }
 
+  private async applySnapshotToSessions(
+    sessions: WorldAccessSessionEntity[],
+    snapshot: WorldAccessSnapshot,
+  ) {
+    const resolvedAt = snapshot.status === "ready" ? new Date() : null;
+
+    for (const session of sessions) {
+      session.status = snapshot.status;
+      session.phase = snapshot.phase;
+      session.displayStatus = snapshot.displayStatus;
+      session.resolvedApiBaseUrl = snapshot.resolvedApiBaseUrl;
+      session.retryAfterSeconds = snapshot.retryAfterSeconds;
+      session.estimatedWaitSeconds = snapshot.estimatedWaitSeconds;
+      session.failureReason = snapshot.failureReason;
+      if (resolvedAt) {
+        session.resolvedAt = resolvedAt;
+      }
+    }
+
+    await this.accessSessionRepo.save(sessions);
+  }
+
+  private buildPhoneChangeInvalidationSnapshot(): WorldAccessSnapshot {
+    return {
+      status: "failed",
+      phase: "failed",
+      displayStatus: "这次进入世界会话已失效。",
+      resolvedApiBaseUrl: null,
+      retryAfterSeconds: 0,
+      estimatedWaitSeconds: null,
+      failureReason: PHONE_CHANGE_INVALIDATED_ACCESS_SESSION_REASON,
+    };
+  }
+
   private createDefaultWorldName(phone: string) {
     return `隐界世界-${phone.slice(-4)}`;
   }
 
-  private createWorldSlug(phone: string) {
-    const digits = phone.replace(/\D+/g, "");
-    const suffix = createHash("sha1").update(phone).digest("hex").slice(0, 8);
-    return `world-${digits.slice(-4)}-${suffix}`;
+  private shouldGateWorldAccess(
+    latestRequest: Pick<CloudWorldRequestEntity, "status"> | null,
+  ): latestRequest is Pick<CloudWorldRequestEntity, "status"> {
+    return Boolean(
+      latestRequest &&
+        (latestRequest.status === "pending" ||
+          latestRequest.status === "rejected" ||
+          latestRequest.status === "disabled"),
+    );
+  }
+
+  private buildRequestGateSnapshot(
+    request: Pick<CloudWorldRequestEntity, "status" | "note">,
+  ): WorldAccessSnapshot {
+    const state = getRequestGateState(
+      request.status as CloudWorldRequestStatus,
+      request.note,
+    );
+    return {
+      status: state.accessStatus,
+      phase: state.accessPhase,
+      displayStatus: state.displayStatus,
+      resolvedApiBaseUrl: null,
+      retryAfterSeconds: state.retryAfterSeconds,
+      estimatedWaitSeconds: state.estimatedWaitSeconds,
+      failureReason: state.failureReason,
+    };
+  }
+
+  private async ensureRequestGatePlaceholderWorld(
+    phone: string,
+    request: Pick<CloudWorldRequestEntity, "worldName" | "status" | "note">,
+    existingWorld?: CloudWorldEntity | null,
+  ) {
+    const defaultProvider = this.computeProviderRegistry.getProvider(
+      this.resolveDefaultProviderKey(),
+    );
+    const snapshot = this.buildRequestGateSnapshot(request);
+    const state = getRequestGateState(
+      request.status as CloudWorldRequestStatus,
+      request.note,
+    );
+
+    const world =
+      existingWorld && isRequestGatePlaceholderWorld(existingWorld)
+        ? existingWorld
+        : this.worldRepo.create({
+            phone,
+            slug: createCloudWorldSlug(phone),
+            callbackToken: randomUUID(),
+          });
+    world.phone = phone;
+    world.name = request.worldName;
+    world.slug = world.slug || createCloudWorldSlug(phone);
+    world.status = "disabled";
+    world.desiredState = "sleeping";
+    world.provisionStrategy =
+      world.provisionStrategy || defaultProvider.summary.provisionStrategy;
+    world.providerKey = world.providerKey || defaultProvider.key;
+    world.providerRegion =
+      world.providerRegion ?? defaultProvider.summary.defaultRegion ?? null;
+    world.providerZone =
+      world.providerZone ?? defaultProvider.summary.defaultZone ?? null;
+    world.apiBaseUrl = null;
+    world.adminUrl = null;
+    world.runtimeVersion =
+      world.runtimeVersion ??
+      (defaultProvider.key === "mock" ? "mock-runtime-v1" : null);
+    world.callbackToken = world.callbackToken || randomUUID();
+    world.healthStatus = state.placeholderHealthStatus;
+    world.healthMessage = snapshot.displayStatus;
+    world.lastAccessedAt = null;
+    world.lastInteractiveAt = null;
+    world.lastBootedAt = null;
+    world.lastHeartbeatAt = null;
+    world.lastSuspendedAt = null;
+    world.failureCode = state.failureCode;
+    world.failureMessage = snapshot.failureReason;
+    world.retryCount = 0;
+    world.note = request.note ?? null;
+
+    return this.worldRepo.save(
+      world,
+    );
+  }
+
+  private async restoreRequestGatePlaceholderWorld(
+    world: CloudWorldEntity,
+    latestRequest: Pick<
+      CloudWorldRequestEntity,
+      "status" | "worldName" | "note"
+    > | null,
+  ) {
+    const provider = this.computeProviderRegistry.getProvider(
+      world.providerKey ?? this.resolveDefaultProviderKey(),
+    );
+    const queuedProjection = getRequestVisibleWorldProjection("pending");
+    const nextProjection =
+      latestRequest?.status === "active" && !this.trimToNull(world.apiBaseUrl)
+        ? queuedProjection
+        : latestRequest
+          ? getRequestVisibleWorldProjection(
+              latestRequest.status as CloudWorldRequestStatus,
+              latestRequest.note,
+            )
+          : queuedProjection;
+
+    world.name =
+      latestRequest?.worldName?.trim() || world.name || this.createDefaultWorldName(world.phone);
+    world.status = nextProjection.worldStatus;
+    world.desiredState = nextProjection.desiredState;
+    world.provisionStrategy =
+      world.provisionStrategy || provider.summary.provisionStrategy;
+    world.providerKey = world.providerKey || provider.key;
+    world.providerRegion = world.providerRegion ?? provider.summary.defaultRegion ?? null;
+    world.providerZone = world.providerZone ?? provider.summary.defaultZone ?? null;
+    world.slug = world.slug || createCloudWorldSlug(world.phone);
+    world.callbackToken = world.callbackToken || randomUUID();
+    world.failureCode = nextProjection.failureCode;
+    world.failureMessage = nextProjection.failureMessage;
+    world.note = latestRequest?.note ?? null;
+
+    if (
+      nextProjection.worldStatus === "ready" &&
+      this.trimToNull(world.apiBaseUrl)
+    ) {
+      world.healthStatus = world.healthStatus || nextProjection.healthStatus;
+      world.healthMessage =
+        this.trimToNull(world.healthMessage) || nextProjection.healthMessage;
+    } else {
+      world.healthStatus = nextProjection.healthStatus;
+      world.healthMessage = nextProjection.healthMessage;
+    }
+
+    return this.worldRepo.save(world);
   }
 
   private resolveDefaultProviderKey() {
-    return this.configService.get<string>("CLOUD_DEFAULT_PROVIDER_KEY")?.trim() || this.computeProviderRegistry.getDefaultProviderKey();
+    return this.computeProviderRegistry.getDefaultProviderKey();
   }
 
   private isFinalSessionStatus(status: string) {
     return status === "ready" || status === "failed" || status === "disabled" || status === "expired";
+  }
+
+  private trimToNull(value?: string | null) {
+    const normalized = value?.trim();
+    return normalized ? normalized : null;
   }
 }

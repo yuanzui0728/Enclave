@@ -11,6 +11,8 @@
     "android:apk": "node ./scripts/run-capacitor.mjs apk",
     "android:bundle": "node ./scripts/run-capacitor.mjs bundle",
     "android:doctor": "node ./scripts/run-capacitor.mjs doctor",
+    "android:doctor:release": "node ./scripts/run-release-command.mjs doctor",
+    "android:bundle:release": "node ./scripts/run-release-command.mjs bundle",
     "typecheck": "node -e \"console.log('Android shell is managed by Capacitor config and native Android project files.')\"",
     "lint": "node -e \"console.log('Android shell linting is handled by the web app lint plus Android Studio/Gradle tooling.')\""
   },

@@ -1,4 +1,12 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Check, Search, X } from "lucide-react";
@@ -18,8 +26,11 @@ import {
   type FriendDirectoryItem,
 } from "../features/contacts/contact-utils";
 import { RouteRedirectState } from "../components/route-redirect-state";
+import { buildMobileGroupRouteHash } from "../features/chat/mobile-group-route-state";
+import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { parseCreateGroupRouteHash } from "../lib/create-group-route-state";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopCreateGroupDialog = lazy(async () => {
@@ -41,6 +52,11 @@ export function CreateGroupPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const previousBaseUrlRef = useRef(baseUrl);
   const seededSelectionRef = useRef("");
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
 
   const friendsQuery = useQuery({
     queryKey: ["app-group-friends", baseUrl],
@@ -95,9 +111,20 @@ export function CreateGroupPage() {
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+      const returnPath =
+        safeReturnPath ??
+        (routeState.source === "chat-details" && routeState.conversationId
+          ? `/chat/${routeState.conversationId}/details`
+          : routeState.source === "group-contacts"
+            ? "/contacts/groups"
+            : undefined);
       void navigate({
         to: "/group/$groupId",
         params: { groupId: group.id },
+        hash: buildMobileGroupRouteHash({
+          returnPath,
+          returnHash: safeReturnPath ? safeReturnHash : undefined,
+        }),
         replace: true,
       });
     },
@@ -172,6 +199,14 @@ export function CreateGroupPage() {
   );
 
   const handleBack = () => {
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+      });
+      return;
+    }
+
     if (routeState.source === "chat-details" && routeState.conversationId) {
       void navigate({
         to: "/chat/$conversationId/details",
@@ -182,8 +217,9 @@ export function CreateGroupPage() {
 
     if (routeState.source === "desktop-chat" && routeState.conversationId) {
       void navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: routeState.conversationId },
+        to: buildDesktopChatThreadPath({
+          conversationId: routeState.conversationId,
+        }),
       });
       return;
     }
@@ -195,6 +231,16 @@ export function CreateGroupPage() {
 
     void navigate({ to: "/tabs/chat" });
   };
+
+  const statusBackLabel = safeReturnPath
+    ? "返回上一页"
+    : routeState.source === "group-contacts"
+      ? "返回群聊列表"
+      : routeState.source === "chat-details"
+        ? "返回聊天信息"
+        : routeState.source === "desktop-chat"
+          ? "返回聊天"
+          : "返回消息列表";
 
   const toggleSelection = (characterId: string) => {
     setSelectedIds((current) =>
@@ -223,8 +269,9 @@ export function CreateGroupPage() {
             onClose={handleBack}
             onCreated={(groupId) => {
               void navigate({
-                to: "/group/$groupId",
-                params: { groupId },
+                to: buildDesktopChatThreadPath({
+                  conversationId: groupId,
+                }),
                 replace: true,
               });
             }}
@@ -356,6 +403,16 @@ export function CreateGroupPage() {
               badge="读取失败"
               title="联系人列表暂时不可用"
               description={friendsQuery.error.message}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={handleBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
               tone="danger"
             />
           </div>
@@ -366,7 +423,18 @@ export function CreateGroupPage() {
               tone="danger"
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
-              {createMutation.error.message}
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {createMutation.error.message}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                >
+                  {statusBackLabel}
+                </button>
+              </div>
             </InlineNotice>
           </div>
         ) : null}
@@ -379,6 +447,16 @@ export function CreateGroupPage() {
               badge="联系人"
               title="还没有可拉进群的人"
               description="先去通讯录里建立一些关系，再回来创建群聊。"
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={handleBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -392,6 +470,16 @@ export function CreateGroupPage() {
               badge="暂无结果"
               title="没有找到联系人"
               description="换个名字、备注名或关系关键词试试。"
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={handleBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -524,11 +612,13 @@ function MobileCreateGroupStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -563,6 +653,7 @@ function MobileCreateGroupStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

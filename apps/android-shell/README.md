@@ -20,6 +20,9 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 - `pnpm android:run:local` also starts the Nest API locally on `127.0.0.1:39092` and rewrites `android-shell.config.local.json` to `10.0.2.2:39092`.
 - It will auto-detect `ANDROID_SDK_ROOT`, reuse a connected device or start the first available emulator, and install-launch the debug app.
 - If the current Java runtime is lower than 21, it downloads a local JDK 21 into `.cache/tools/jdk-21` and uses it only for this repository.
+- `pnpm android:apk` and `pnpm android:bundle` now also auto-detect the Android SDK and can reuse/download the same local JDK 21 cache for Gradle builds.
+- `apps/android-shell/android-release.env.example` contains a release env template for `android:bundle`.
+- `pnpm android:doctor:release` and `pnpm android:bundle:release` load `apps/android-shell/android-release.env.local` automatically when present.
 
 - The Android shell targets remote Core API mode.
 - `apps/app/dist` is used as the web bundle source.
@@ -31,11 +34,37 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 - The current Capacitor Android dependency graph compiles with Java 21.
 - `android:configure` writes app id, app name, version, and Android shell metadata; local runtime endpoints are no longer flushed back into tracked `AndroidManifest.xml`.
 - `android:sync` / `android:apk` / `android:bundle` build `apps/app` with the shared mobile-shell entry and inject `apps/app/dist/runtime-config.json`.
-- `pnpm android:doctor` will fail the production endpoint check until `runtime.apiBaseUrl` is configured.
+- `pnpm android:doctor` checks the active config and, when `android-shell.config.local.json` exists, still checks tracked production defaults so local overrides do not hide release issues.
 - `pnpm android:doctor` now also checks whether the active Java runtime is at least 21.
+- `pnpm android:bundle` ignores `android-shell.config.local.json`; it can use `YINJIE_ANDROID_*` environment variables as release overrides, and still fails fast when the resulting release runtime config is incomplete.
 - Production defaults disable cleartext traffic; local debugging can override it in `android-shell.config.local.json`.
 - Android backup and device-transfer extraction are explicitly disabled in the generated manifest resources.
 - Chat voice/video capture in the WebView relies on Capacitor's built-in `BridgeWebChromeClient` permission flow, so the shell manifest must keep `CAMERA`, `RECORD_AUDIO`, and `MODIFY_AUDIO_SETTINGS`.
+- Release signing can come from `apps/android-shell/android-signing.local.properties` or from `YINJIE_UPLOAD_STORE_FILE` / `YINJIE_UPLOAD_STORE_PASSWORD` / `YINJIE_UPLOAD_KEY_ALIAS` / `YINJIE_UPLOAD_KEY_PASSWORD`.
+
+## Release Environment Variables
+
+- Copy `apps/android-shell/android-release.env.example` to `apps/android-shell/android-release.env.local` for local release builds, or set `YINJIE_ANDROID_RELEASE_ENV_FILE` to point to another env file.
+- `YINJIE_ANDROID_CORE_API_BASE_URL` for the release Core API base URL
+- `YINJIE_ANDROID_SOCKET_BASE_URL` for the release socket base URL; defaults to the Core API URL when omitted
+- `YINJIE_ANDROID_ENVIRONMENT` optional, defaults to tracked config
+- `YINJIE_ANDROID_APP_NAME` optional, overrides the bundled app name metadata for the build
+- `YINJIE_ANDROID_VERSION_NAME` optional
+- `YINJIE_ANDROID_VERSION_CODE` optional
+- `YINJIE_ANDROID_ALLOW_CLEARTEXT_TRAFFIC` optional, should stay `false` for release
+
+For release signing, Gradle also accepts:
+
+- `YINJIE_UPLOAD_STORE_FILE`
+- `YINJIE_UPLOAD_STORE_PASSWORD`
+- `YINJIE_UPLOAD_KEY_ALIAS`
+- `YINJIE_UPLOAD_KEY_PASSWORD`
+
+Recommended local release flow:
+
+1. Create `apps/android-shell/android-release.env.local`
+2. Run `pnpm android:release:doctor`
+3. Run `pnpm android:release:bundle`
 
 ## Web-to-Shell Contract
 
@@ -60,6 +89,7 @@ Current Android-side implementation status:
   - falls back to private app `SharedPreferences` if encrypted storage cannot be created
 - `YinjieMobileBridge`
   - `openExternalUrl` is wired
+  - `openAppSettings` is wired
   - `share` is wired
   - `shareFile` writes a temp file into app cache and opens the Android share sheet through `FileProvider`
   - `openFile` writes a temp file into app cache and opens Android file preview apps through `ACTION_VIEW`
@@ -77,6 +107,7 @@ Current Android-side implementation status:
 Expected `YinjieMobileBridge` methods:
 
 - `openExternalUrl({ url })`
+- `openAppSettings()`
 - `share({ title?, text?, url? })`
 - `shareFile({ base64Data, fileName, mimeType?, title? })`
 - `openFile({ base64Data, fileName, mimeType?, title? })`

@@ -27,6 +27,14 @@ import { formatDetailedMessageTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+} from "../desktop/chat/desktop-chat-route-state";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "./mobile-group-route-state";
+import {
   buildGroupCallInviteMessage,
   buildGroupCallSummaryLines,
   formatGroupCallStatusLabel,
@@ -52,8 +60,45 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const resolvedGroupId = groupId ?? "";
   const routeState = useMemo(() => parseMobileGroupCallRouteHash(hash), [hash]);
+  const fallbackGroupRouteState = useMemo(
+    () => parseMobileGroupRouteState(hash),
+    [hash],
+  );
   const effectiveSource = routeState?.source ?? "mobile";
   const sourceLabel = effectiveSource === "desktop" ? "桌面端" : "手机端";
+  const desktopThreadPath = useMemo(
+    () =>
+      buildDesktopChatThreadPath({
+        conversationId: resolvedGroupId,
+      }),
+    [resolvedGroupId],
+  );
+  const desktopDetailsHash = useMemo(
+    () =>
+      buildDesktopChatRouteHash({
+        conversationId: resolvedGroupId,
+        panel: "details",
+      }),
+    [resolvedGroupId],
+  );
+  const groupRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId:
+          routeState?.highlightedMessageId ??
+          fallbackGroupRouteState.highlightedMessageId,
+        returnPath:
+          routeState?.returnPath ?? fallbackGroupRouteState.returnPath,
+        returnHash:
+          routeState?.returnHash ?? fallbackGroupRouteState.returnHash,
+      }),
+    [
+      fallbackGroupRouteState.highlightedMessageId,
+      fallbackGroupRouteState.returnHash,
+      fallbackGroupRouteState.returnPath,
+      routeState,
+    ],
+  );
   const resumeCounts = useMemo(() => {
     if (
       routeState === null ||
@@ -349,9 +394,18 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     }
 
     setLeavingScreen(true);
+    if (isDesktopLayout) {
+      void navigate({
+        to: desktopThreadPath,
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({
       to: "/group/$groupId",
       params: { groupId: resolvedGroupId },
+      ...(groupRouteHash ? { hash: groupRouteHash } : {}),
       replace: true,
     });
   };
@@ -366,6 +420,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       void navigate({
         to: "/group/$groupId",
         params: { groupId: resolvedGroupId },
+        ...(groupRouteHash ? { hash: groupRouteHash } : {}),
         replace: true,
       });
       return;
@@ -386,6 +441,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           buildChatCallReturnSearch({
             kind: mode,
           }) || undefined,
+        ...(groupRouteHash ? { hash: groupRouteHash } : {}),
         replace: true,
       });
     } catch {
@@ -472,12 +528,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             tone="danger"
             action={
               <MobileCallActionButton
-                onClick={() => {
-                  void groupQuery.refetch();
-                }}
+                onClick={handleBack}
                 className="min-w-[132px]"
               >
-                重新加载
+                返回群聊
               </MobileCallActionButton>
             }
           />
@@ -504,12 +558,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             tone="danger"
             action={
               <MobileCallActionButton
-                onClick={() => {
-                  void membersQuery.refetch();
-                }}
+                onClick={handleBack}
                 className="min-w-[132px]"
               >
-                重新加载
+                返回群聊
               </MobileCallActionButton>
             }
           />
@@ -665,8 +717,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                   variant="secondary"
                   onClick={() => {
                     void navigate({
-                      to: "/group/$groupId/details",
-                      params: { groupId: resolvedGroupId },
+                      to: "/tabs/chat",
+                      ...(desktopDetailsHash
+                        ? { hash: desktopDetailsHash }
+                        : {}),
                     });
                   }}
                   className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"

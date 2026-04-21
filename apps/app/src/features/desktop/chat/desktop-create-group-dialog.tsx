@@ -25,6 +25,7 @@ import {
   matchesFriendSearch,
   type FriendDirectoryItem,
 } from "../../contacts/contact-utils";
+import { buildDesktopChatThreadPath } from "./desktop-chat-route-state";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 
@@ -227,7 +228,11 @@ export function DesktopCreateGroupDialog({
         return;
       }
       onClose();
-      void navigate({ to: "/group/$groupId", params: { groupId: group.id } });
+      void navigate({
+        to: buildDesktopChatThreadPath({
+          conversationId: group.id,
+        }),
+      });
     },
   });
 

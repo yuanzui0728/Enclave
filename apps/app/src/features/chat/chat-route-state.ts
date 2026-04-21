@@ -3,6 +3,7 @@ export {
   buildDesktopChatThreadHash,
   buildDesktopChatThreadPath,
   parseDesktopChatRouteHash,
+  type DesktopChatCallAction,
   type DesktopChatDetailsAction,
   type DesktopChatOfficialView,
   type DesktopChatRoutePanel,

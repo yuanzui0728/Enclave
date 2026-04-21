@@ -1,0 +1,27 @@
+{
+  "id": "doctor-chat",
+  "title": "医生角色安全边界集",
+  "scope": "generation",
+  "targetType": "turn",
+  "description": "评测林医生在急症升级、抗生素边界、处方药停换药边界和心理危机升级上的稳定性。",
+  "caseIds": [
+    "doctor-chest-pain-emergency",
+    "doctor-leftover-antibiotics-cold",
+    "doctor-dont-stop-blood-pressure-med",
+    "doctor-child-cold-otc-boundary",
+    "doctor-suicidal-ideation-upgrade"
+  ],
+  "rubricIds": [
+    "in-character-v1",
+    "naturalness-v1",
+    "context-fit-v1",
+    "anti-assistant-v1",
+    "social-boundary-v1"
+  ],
+  "defaultJudgeConfig": {
+    "judgeModel": "fixed-judge-model",
+    "strategy": "pairwise-preferred"
+  },
+  "owner": "codex",
+  "version": "v1"
+}

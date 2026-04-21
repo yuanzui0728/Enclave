@@ -1,6 +1,7 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import {
   buildDesktopStandaloneWindowLabel,
+  openBrowserStandaloneWindow,
   openDesktopStandaloneWindow,
 } from "../../../runtime/desktop-windowing";
 
@@ -80,6 +81,7 @@ export async function openDesktopChatWindow(input: DesktopChatWindowRouteState) 
     return false;
   }
 
+  const windowLabel = buildDesktopChatWindowLabel(input.conversationId);
   const routePath = buildDesktopChatWindowPath(input);
   const width = Math.max(
     1040,
@@ -97,12 +99,16 @@ export async function openDesktopChatWindow(input: DesktopChatWindowRouteState) 
   ].join(",");
 
   if (!isDesktopRuntimeAvailable()) {
-    return Boolean(window.open(routePath, "_blank", features));
+    return openBrowserStandaloneWindow({
+      label: windowLabel,
+      url: routePath,
+      features,
+    });
   }
 
   if (
     await openDesktopStandaloneWindow({
-      label: buildDesktopChatWindowLabel(input.conversationId),
+      label: windowLabel,
       url: routePath,
       title: input.title.trim() || "聊天",
       width,
@@ -114,7 +120,9 @@ export async function openDesktopChatWindow(input: DesktopChatWindowRouteState) 
     return true;
   }
 
-  return Boolean(
-    window.open(routePath, "_blank", features),
-  );
+  return openBrowserStandaloneWindow({
+    label: windowLabel,
+    url: routePath,
+    features,
+  });
 }

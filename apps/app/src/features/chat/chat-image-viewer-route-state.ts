@@ -1,6 +1,7 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import {
   buildDesktopStandaloneWindowLabel,
+  openBrowserStandaloneWindow,
   openDesktopStandaloneWindow,
 } from "../../runtime/desktop-windowing";
 
@@ -112,8 +113,8 @@ function buildDesktopChatImageViewerWindowLabel(
   input: DesktopChatImageViewerRouteState,
 ) {
   const identifier =
-    input.activeId?.trim() ||
     input.sessionId?.trim() ||
+    input.activeId?.trim() ||
     hashDesktopWindowLabel(input.imageUrl);
 
   return buildDesktopStandaloneWindowLabel(
@@ -149,6 +150,14 @@ export async function openDesktopChatImageViewerWindow(
     printToken,
   });
   const routePath = `${DESKTOP_CHAT_IMAGE_VIEWER_PATH}#${routeHash}`;
+  const windowLabel = buildDesktopChatImageViewerWindowLabel({
+    imageUrl: input.imageUrl,
+    title: input.title,
+    meta: input.meta,
+    returnTo: input.returnTo,
+    sessionId: sessionId ?? undefined,
+    activeId: sessionId ? input.activeId?.trim() || undefined : undefined,
+  });
 
   const width = Math.max(
     1120,
@@ -172,7 +181,11 @@ export async function openDesktopChatImageViewerWindow(
   ].join(",");
 
   if (!isDesktopRuntimeAvailable()) {
-    return Boolean(window.open(routePath, "_blank", features));
+    return openBrowserStandaloneWindow({
+      label: windowLabel,
+      url: routePath,
+      features,
+    });
   }
 
   if (sessionId) {
@@ -183,14 +196,7 @@ export async function openDesktopChatImageViewerWindow(
 
   if (
     await openDesktopStandaloneWindow({
-      label: buildDesktopChatImageViewerWindowLabel({
-        imageUrl: input.imageUrl,
-        title: input.title,
-        meta: input.meta,
-        returnTo: input.returnTo,
-        sessionId: sessionId ?? undefined,
-        activeId: sessionId ? input.activeId?.trim() || undefined : undefined,
-      }),
+      label: windowLabel,
       url: routePath,
       title: input.title.trim() || "图片",
       width,
@@ -202,7 +208,11 @@ export async function openDesktopChatImageViewerWindow(
     return true;
   }
 
-  return Boolean(window.open(routePath, "_blank", features));
+  return openBrowserStandaloneWindow({
+    label: windowLabel,
+    url: routePath,
+    features,
+  });
 }
 
 export function readDesktopChatImageViewerSession(sessionId: string) {
@@ -274,19 +284,26 @@ function saveDesktopChatImageViewerSession(
   }
 
   const sessions = readLocalSessionStore();
-  const sessionId =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `session-${Date.now()}`;
+  const existingSession = sessions.find((session) =>
+    hasSameDesktopChatImageViewerSessionShape(session.items, normalizedItems),
+  );
   const nextSession: DesktopChatImageViewerStoredSession = {
-    id: sessionId,
+    id:
+      existingSession?.id ??
+      (typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `session-${Date.now()}`),
     updatedAt: new Date().toISOString(),
     items: normalizedItems,
   };
-  const nextSessions = [nextSession, ...sessions].slice(0, MAX_SESSION_COUNT);
+  const nextSessions = [
+    nextSession,
+    ...sessions.filter((session) => session.id !== nextSession.id),
+  ].slice(0, MAX_SESSION_COUNT);
 
   writeLocalSessionStore(nextSessions);
-  return sessionId;
+  return nextSession.id;
 }
 
 function readLocalSessionStore() {
@@ -432,4 +449,22 @@ function normalizeSessionItems(input: unknown) {
       meta: item.meta?.trim() || undefined,
       returnTo: item.returnTo?.trim() || undefined,
     }));
+}
+
+function hasSameDesktopChatImageViewerSessionShape(
+  left: readonly DesktopChatImageViewerSessionItem[],
+  right: readonly DesktopChatImageViewerSessionItem[],
+) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((item, index) => {
+    const other = right[index];
+    return (
+      other &&
+      item.id === other.id &&
+      item.imageUrl === other.imageUrl
+    );
+  });
 }

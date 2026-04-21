@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type {
   FeedChannelAuthorProfile,
+  FeedChannelHomeSection,
   FeedComment,
   FeedPostListItem,
 } from "@yinjie/contracts";
@@ -36,6 +37,7 @@ import {
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopChannelsWorkspaceProps = {
+  activeSection: FeedChannelHomeSection;
   authorProfile: FeedChannelAuthorProfile | null;
   authorProfileErrorMessage?: string | null;
   authorProfileLoading: boolean;
@@ -69,16 +71,23 @@ type DesktopChannelsWorkspaceProps = {
   onOpenAuthorPost: (postId: string, authorId: string) => void;
   onRefresh: () => void;
   onReplyToComment: (comment: FeedComment) => void;
+  onSectionChange: (section: FeedChannelHomeSection) => void;
   onSelectedPostChange: (postId: string | null) => void;
   onToggleAuthorFollow: (authorId: string, following: boolean) => void;
   onToggleFavorite: (post: FeedPostListItem) => void;
   onViewPost: (postId: string) => void;
+  sections: Array<{
+    key: FeedChannelHomeSection;
+    label: string;
+    count: number;
+  }>;
 };
 
 const DESKTOP_CHANNEL_COMMENT_THREAD_STORAGE_KEY =
   "yinjie:channels:desktop-comment-threads";
 
 export function DesktopChannelsWorkspace({
+  activeSection,
   authorProfile,
   authorProfileErrorMessage,
   authorProfileLoading,
@@ -107,10 +116,12 @@ export function DesktopChannelsWorkspace({
   onOpenAuthorPost,
   onRefresh,
   onReplyToComment,
+  onSectionChange,
   onSelectedPostChange,
   onToggleAuthorFollow,
   onToggleFavorite,
   onViewPost,
+  sections,
 }: DesktopChannelsWorkspaceProps) {
   const navigate = useNavigate();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -188,6 +199,8 @@ export function DesktopChannelsWorkspace({
   const activeFavoriteActionClassName =
     "border-[rgba(180,123,23,0.18)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_rgba(180,123,23,0.78)]";
   const authorPanelVisible = Boolean(routeSelectedAuthorId);
+  const activeSectionLabel =
+    sections.find((section) => section.key === activeSection)?.label ?? "推荐";
 
   useEffect(() => {
     onSelectedPostChange(selectedPost?.id ?? null);
@@ -232,10 +245,30 @@ export function DesktopChannelsWorkspace({
           </div>
         </div>
 
+        <div className="mt-4 flex flex-wrap gap-2">
+          {sections.map((section) => (
+            <button
+              key={section.key}
+              type="button"
+              aria-pressed={activeSection === section.key}
+              onClick={() => onSectionChange(section.key)}
+              className={cn(
+                "rounded-full border px-3.5 py-1.5 text-[12px] transition",
+                activeSection === section.key
+                  ? "border-[rgba(7,193,96,0.22)] bg-[rgba(7,193,96,0.12)] font-medium text-[#07c160]"
+                  : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.2)] hover:text-[color:var(--text-primary)]",
+              )}
+            >
+              {section.label}
+              {section.count > 0 ? ` ${section.count}` : ""}
+            </button>
+          ))}
+        </div>
+
         {selectedPost ? (
           <div className="mt-4 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
             <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
-              推荐流 {posts.length} 条
+              {activeSectionLabel} {posts.length} 条
             </span>
             <span>当前播放：{selectedPost.authorName}</span>
             <span>·</span>

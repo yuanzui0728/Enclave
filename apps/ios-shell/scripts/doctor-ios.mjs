@@ -13,6 +13,19 @@ const runtimePluginPath = path.join(
   "Plugins",
   "YinjieRuntimePlugin.swift",
 );
+const secureStoragePluginPath = path.join(
+  iosAppRoot,
+  "Plugins",
+  "YinjieSecureStoragePlugin.swift",
+);
+const mobileBridgePluginPath = path.join(
+  iosAppRoot,
+  "Plugins",
+  "YinjieMobileBridgePlugin.swift",
+);
+const projectPath = path.join(shellRoot, "ios", "App", "App.xcodeproj", "project.pbxproj");
+const entitlementsPath = path.join(iosAppRoot, "App.entitlements");
+const privacyManifestPath = path.join(iosAppRoot, "PrivacyInfo.xcprivacy");
 
 function fileIncludes(filePath, pattern) {
   if (!fs.existsSync(filePath)) {
@@ -20,6 +33,10 @@ function fileIncludes(filePath, pattern) {
   }
 
   return fs.readFileSync(filePath, "utf8").includes(pattern);
+}
+
+function fileIncludesAll(filePath, patterns) {
+  return patterns.every((pattern) => fileIncludes(filePath, pattern));
 }
 
 const checks = [
@@ -60,9 +77,25 @@ const checks = [
     ok:
       !fs.existsSync(infoPlistPath) ||
       (fileIncludes(infoPlistPath, "NSCameraUsageDescription") &&
+        fileIncludes(infoPlistPath, "NSPhotoLibraryUsageDescription") &&
+        fileIncludes(infoPlistPath, "NSPhotoLibraryAddUsageDescription") &&
         fileIncludes(infoPlistPath, "NSMicrophoneUsageDescription")),
     detail: fs.existsSync(infoPlistPath)
-      ? "Info.plist includes camera and microphone usage descriptions"
+      ? "Info.plist includes camera, photo library, and microphone usage descriptions"
+      : "Info.plist not found yet; run `pnpm ios:sync` first",
+  },
+  {
+    label: "info-plist-runtime-keys",
+    ok:
+      !fs.existsSync(infoPlistPath) ||
+      fileIncludesAll(infoPlistPath, [
+        "YinjieApiBaseUrl",
+        "YinjieSocketBaseUrl",
+        "YinjieEnvironment",
+        "YinjiePublicAppName",
+      ]),
+    detail: fs.existsSync(infoPlistPath)
+      ? "Info.plist includes runtime fallback keys for native config injection"
       : "Info.plist not found yet; run `pnpm ios:sync` first",
   },
   {
@@ -75,6 +108,88 @@ const checks = [
     detail: fs.existsSync(appDelegatePath)
       ? "AppDelegate caches push token and notification launch target"
       : "AppDelegate not found yet; run `pnpm ios:sync` first",
+  },
+  {
+    label: "plugin-bridge-metadata",
+    ok:
+      (!fs.existsSync(runtimePluginPath) ||
+        fileIncludesAll(runtimePluginPath, [
+          "CAPBridgedPlugin",
+          "jsName = \"YinjieRuntime\"",
+          "CAPPluginMethod(name: \"getConfig\"",
+        ])) &&
+      (!fs.existsSync(secureStoragePluginPath) ||
+        fileIncludesAll(secureStoragePluginPath, [
+          "CAPBridgedPlugin",
+          "jsName = \"YinjieSecureStorage\"",
+          "CAPPluginMethod(name: \"get\"",
+          "CAPPluginMethod(name: \"set\"",
+          "CAPPluginMethod(name: \"remove\"",
+        ])) &&
+      (!fs.existsSync(mobileBridgePluginPath) ||
+        fileIncludesAll(mobileBridgePluginPath, [
+          "CAPBridgedPlugin",
+          "jsName = \"YinjieMobileBridge\"",
+          "CAPPluginMethod(name: \"openAppSettings\"",
+          "CAPPluginMethod(name: \"shareFile\"",
+          "CAPPluginMethod(name: \"openFile\"",
+          "CAPPluginMethod(name: \"pickFile\"",
+          "CAPPluginMethod(name: \"captureImage\"",
+          "CAPPluginMethod(name: \"showLocalNotification\"",
+        ])),
+    detail:
+      fs.existsSync(runtimePluginPath) ||
+      fs.existsSync(secureStoragePluginPath) ||
+      fs.existsSync(mobileBridgePluginPath)
+        ? "Swift plugins expose CAPBridgedPlugin metadata for Capacitor 7"
+        : "plugin files not found yet; run `pnpm ios:configure` after sync",
+  },
+  {
+    label: "plugin-target-membership",
+    ok:
+      !fs.existsSync(projectPath) ||
+      fileIncludesAll(projectPath, [
+        "YinjieRuntimePlugin.swift in Sources */,",
+        "YinjieSecureStoragePlugin.swift in Sources */,",
+        "YinjieMobileBridgePlugin.swift in Sources */,",
+        "path = Plugins;",
+      ]),
+    detail: fs.existsSync(projectPath)
+      ? "App.xcodeproj includes the Yinjie Swift plugins in the App target"
+      : "Xcode project not found yet; run `pnpm ios:sync` first",
+  },
+  {
+    label: "entitlements-config",
+    ok:
+      (!fs.existsSync(entitlementsPath) ||
+        fileIncludesAll(entitlementsPath, [
+          "aps-environment",
+          "keychain-access-groups",
+        ])) &&
+      (!fs.existsSync(projectPath) ||
+        fileIncludes(projectPath, "CODE_SIGN_ENTITLEMENTS = App/App.entitlements;")),
+    detail:
+      fs.existsSync(entitlementsPath) && fs.existsSync(projectPath)
+        ? "App.entitlements exists and Xcode build settings point CODE_SIGN_ENTITLEMENTS to it"
+        : "App.entitlements not seeded yet; run `pnpm ios:configure` to prepare Push/Keychain defaults",
+  },
+  {
+    label: "privacy-manifest",
+    ok:
+      (!fs.existsSync(privacyManifestPath) ||
+        fileIncludesAll(privacyManifestPath, [
+          "NSPrivacyTracking",
+          "NSPrivacyCollectedDataTypes",
+        ])) &&
+      (!fs.existsSync(projectPath) ||
+        fileIncludesAll(projectPath, [
+          "PrivacyInfo.xcprivacy in Resources",
+          "path = PrivacyInfo.xcprivacy;",
+        ])),
+    detail:
+      fs.existsSync(privacyManifestPath) && fs.existsSync(projectPath)
+        ? "PrivacyInfo.xcprivacy exists and is added to app resources"
+        : "PrivacyInfo.xcprivacy not seeded yet; run `pnpm ios:configure` to prepare App Store privacy defaults",
   },
   {
     label: "runtime-plugin-sync",
@@ -107,5 +222,5 @@ console.log("");
 console.log("Next steps:");
 console.log("1. Run this command on macOS.");
 console.log("2. Set YINJIE_IOS_CORE_API_BASE_URL before `pnpm ios:sync`.");
-console.log("3. After sync, run `pnpm ios:configure` to copy Xcode templates and seed any missing plugin files.");
+console.log("3. After sync, run `pnpm ios:configure` to copy Xcode templates, seed any missing plugin files, and patch target membership.");
 console.log(`4. Hostname: ${os.hostname()}`);

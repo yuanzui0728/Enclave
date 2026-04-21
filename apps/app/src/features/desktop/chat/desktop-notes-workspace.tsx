@@ -39,9 +39,14 @@ import {
 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
+import { resolveDesktopWindowReturnTarget } from "../../../lib/desktop-window-return-target";
 import { emitChatMessage, joinConversationRoom } from "../../../lib/socket";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
-import { closeCurrentDesktopWindow } from "../../../runtime/desktop-windowing";
+import {
+  closeCurrentDesktopWindow,
+  focusMainDesktopWindow,
+  focusStandaloneDesktopWindow,
+} from "../../../runtime/desktop-windowing";
 import {
   clearDesktopNoteDraft,
   createDesktopNoteDraft,
@@ -128,6 +133,8 @@ export function DesktopNotesWorkspace({
   });
 
   const sessionKey = `${selectedNoteId ?? "new"}:${draftId ?? ""}`;
+  const missingSelectedNote =
+    selectedNoteId && isFavoriteNoteMissingError(noteQuery.error);
 
   const currentSnapshot = useMemo(
     () => buildNoteSnapshot(editorState),
@@ -246,12 +253,7 @@ export function DesktopNotesWorkspace({
         });
       }
 
-      if (standaloneWindow) {
-        void handleClose();
-        return;
-      }
-
-      void navigate({ to: "/tabs/favorites" });
+      void handleClose();
     },
     onError: (error) => {
       setNotice({
@@ -348,12 +350,19 @@ export function DesktopNotesWorkspace({
         readDesktopNoteDraftByNoteId(selectedNoteId) ??
         readDesktopNoteDraft(nextDraftId);
       if (localDraft) {
+        const treatLocalDraftAsNewNote = Boolean(missingSelectedNote);
         applyNoteSource({
           draftId: localDraft.draftId,
-          noteId: selectedNoteId,
+          noteId: treatLocalDraftAsNewNote ? undefined : selectedNoteId,
           state: buildEditorStateFromDraft(localDraft),
-          savedSource: noteQuery.data ?? null,
+          savedSource: treatLocalDraftAsNewNote ? null : (noteQuery.data ?? null),
         });
+        if (treatLocalDraftAsNewNote) {
+          setNotice({
+            tone: "danger",
+            message: "原笔记已不存在，当前草稿会按新笔记保存。",
+          });
+        }
         initializedSessionKeyRef.current = sessionKey;
         return;
       }
@@ -395,6 +404,7 @@ export function DesktopNotesWorkspace({
   }, [
     activeDraftId,
     draftId,
+    missingSelectedNote,
     noteQuery.data,
     noteQuery.isLoading,
     selectedNoteId,
@@ -679,19 +689,20 @@ export function DesktopNotesWorkspace({
   }, [saveMutation]);
 
   const handleClose = useCallback(async () => {
+    const fallbackPath = returnTo || "/tabs/favorites";
     if (standaloneWindow) {
       const closed = await closeCurrentDesktopWindow();
       if (closed) {
         return;
       }
 
-      if (window.opener && !window.opener.closed) {
-        window.close();
-        return;
-      }
+      closeCurrentWindow(() => {
+        void focusReturnTargetWindow(fallbackPath);
+      });
+      return;
     }
 
-    void navigate({ to: returnTo || "/tabs/favorites" });
+    void navigate({ to: fallbackPath });
   }, [navigate, returnTo, standaloneWindow]);
 
   async function handleSaveAndClose() {
@@ -828,10 +839,10 @@ export function DesktopNotesWorkspace({
           <div className="mt-5 flex justify-end">
             <Button
               variant="secondary"
-              onClick={() => void navigate({ to: "/tabs/favorites" })}
+              onClick={() => void handleClose()}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
             >
-              返回收藏
+              回到来源
             </Button>
           </div>
         </div>
@@ -1429,6 +1440,13 @@ function buildFavoriteNoteSourceId(noteId: string) {
   return `favorite-note-${noteId}`;
 }
 
+function isFavoriteNoteMissingError(error: unknown) {
+  return (
+    error instanceof Error &&
+    /favorite note .+ not found/i.test(error.message.trim())
+  );
+}
+
 function formatFavoriteTimestamp(iso: string) {
   const date = new Date(iso);
   const month = date.getMonth() + 1;
@@ -1449,4 +1467,58 @@ function escapeHtml(value: string) {
 
 function escapeHtmlAttribute(value: string) {
   return escapeHtml(value);
+}
+
+async function focusReturnTargetWindow(targetPath: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const resolvedTarget = resolveDesktopWindowReturnTarget(targetPath);
+  if (resolvedTarget.standaloneWindowLabel) {
+    const focusedStandalone = await focusStandaloneDesktopWindow(
+      resolvedTarget.standaloneWindowLabel,
+      targetPath,
+    );
+    if (focusedStandalone) {
+      void closeCurrentDesktopWindow();
+      return;
+    }
+  }
+
+  const nextMainWindowPath = resolvedTarget.mainWindowPath || targetPath;
+
+  void focusMainDesktopWindow(nextMainWindowPath).then((focused) => {
+    if (focused) {
+      void closeCurrentDesktopWindow();
+      return;
+    }
+
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.location.assign(nextMainWindowPath);
+        window.opener.focus?.();
+        closeCurrentWindow();
+        return;
+      }
+    } catch {
+      // Ignore opener access failures and fall back to local navigation.
+    }
+
+    window.location.assign(nextMainWindowPath);
+  });
+}
+
+function closeCurrentWindow(onBlocked?: () => void) {
+  window.close();
+
+  if (!onBlocked) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!window.closed) {
+      onBlocked();
+    }
+  }, 120);
 }

@@ -87,6 +87,219 @@ export interface VerifyPhoneCodeResponse {
   expiresAt: string;
 }
 
+export interface IssueCloudAdminAccessTokenResponse {
+  accessToken: string;
+  expiresAt: string;
+  refreshToken: string;
+  refreshExpiresAt: string;
+  tokenType: "Bearer";
+}
+
+export interface RefreshCloudAdminAccessTokenRequest {
+  refreshToken: string;
+}
+
+export interface RevokeCloudAdminSessionRequest {
+  refreshToken: string;
+}
+
+export interface RevokeCloudAdminSessionResponse {
+  success: true;
+}
+
+export interface RevokeCloudAdminSessionsByIdRequest {
+  sessionIds: string[];
+}
+
+export interface RevokeCloudAdminSessionsByIdResponse {
+  success: true;
+  revokedSessionIds: string[];
+  skippedSessionIds: string[];
+}
+
+export interface RevokeCloudAdminSessionsByFilterRequest {
+  status?: CloudAdminSessionStatus;
+  revocationReason?: CloudAdminSessionRevocationReason;
+  currentOnly?: boolean;
+  query?: string;
+  sourceKey?: string;
+}
+
+export interface RevokeCloudAdminSessionsByFilterResponse {
+  success: true;
+  revokedCount: number;
+  skippedCount: number;
+  revokedCurrentSession: boolean;
+}
+
+export interface CloudAdminSessionSourceGroupQuery {
+  status?: CloudAdminSessionStatus;
+  revocationReason?: CloudAdminSessionRevocationReason;
+  currentOnly?: boolean;
+  query?: string;
+  sourceKey?: string;
+  riskLevel?: CloudAdminSessionSourceGroupRiskLevel;
+  sortBy?: CloudAdminSessionSourceGroupSortField;
+  sortDirection?: CloudAdminSessionSortDirection;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CloudAdminSessionSourceGroupSummary {
+  sourceKey: string;
+  issuedFromIp?: string | null;
+  issuedUserAgent?: string | null;
+  totalSessions: number;
+  activeSessions: number;
+  expiredSessions: number;
+  revokedSessions: number;
+  refreshTokenReuseRevocations: number;
+  currentSessions: number;
+  riskLevel: CloudAdminSessionSourceGroupRiskLevel;
+  riskSignals: CloudAdminSessionSourceGroupRiskSignal[];
+  latestCreatedAt: string;
+  latestLastUsedAt?: string | null;
+  latestRevokedAt?: string | null;
+}
+
+export interface RevokeCloudAdminSessionSourceGroupRequest
+  extends CloudAdminSessionSourceGroupQuery {
+  sourceKey: string;
+}
+
+export type RevokeCloudAdminSessionSourceGroupResponse =
+  RevokeCloudAdminSessionsByFilterResponse;
+
+export interface CreateCloudAdminSessionSourceGroupSnapshotRequest
+  extends RevokeCloudAdminSessionSourceGroupRequest {}
+
+export interface CreateCloudAdminSessionSourceGroupRiskSnapshotRequest
+  extends RevokeCloudAdminSessionsByFilterRequest {
+  riskLevel: CloudAdminSessionSourceGroupRiskLevel;
+}
+
+export interface RevokeCloudAdminSessionSourceGroupsByRiskRequest
+  extends RevokeCloudAdminSessionsByFilterRequest {
+  riskLevel: CloudAdminSessionSourceGroupRiskLevel;
+}
+
+export interface RevokeCloudAdminSessionSourceGroupsByRiskResponse {
+  success: true;
+  matchedGroupCount: number;
+  revokedGroupCount: number;
+  revokedSessionCount: number;
+  skippedSessionCount: number;
+  revokedCurrentSession: boolean;
+}
+
+export interface CloudAdminSessionSourceGroupSnapshotSummary {
+  sourceKey: string;
+  issuedFromIp?: string | null;
+  issuedUserAgent?: string | null;
+  totalSessions: number;
+  activeSessions: number;
+  expiredSessions: number;
+  revokedSessions: number;
+  refreshTokenReuseRevocations: number;
+  currentSessions: number;
+  riskLevel: CloudAdminSessionSourceGroupRiskLevel;
+  riskSignals: CloudAdminSessionSourceGroupRiskSignal[];
+  latestCreatedAt?: string | null;
+  latestLastUsedAt?: string | null;
+  latestRevokedAt?: string | null;
+}
+
+export interface CloudAdminSessionSourceGroupSnapshot {
+  generatedAt: string;
+  filters: RevokeCloudAdminSessionsByFilterRequest;
+  group: CloudAdminSessionSourceGroupSnapshotSummary;
+  sessions: CloudAdminSessionSummary[];
+}
+
+export interface CloudAdminSessionSourceGroupRiskSnapshot {
+  generatedAt: string;
+  filters: RevokeCloudAdminSessionsByFilterRequest & {
+    riskLevel: CloudAdminSessionSourceGroupRiskLevel;
+  };
+  totalGroups: number;
+  totalSessions: number;
+  groups: CloudAdminSessionSourceGroupSnapshotSummary[];
+  sessions: CloudAdminSessionSummary[];
+}
+
+export type CloudAdminSessionStatus = "active" | "expired" | "revoked";
+export type CloudAdminSessionRevocationReason =
+  | "logout"
+  | "manual-revocation"
+  | "refresh-token-reuse";
+export type CloudAdminSessionSourceGroupSortField =
+  | "activeSessions"
+  | "totalSessions"
+  | "latestCreatedAt"
+  | "latestLastUsedAt"
+  | "latestRevokedAt";
+export type CloudAdminSessionSourceGroupRiskLevel =
+  | "normal"
+  | "watch"
+  | "critical";
+export type CloudAdminSessionSourceGroupRiskSignal =
+  | "multiple-active-sessions"
+  | "repeated-revocations"
+  | "refresh-token-reuse";
+export type CloudAdminSessionSortField =
+  | "updatedAt"
+  | "createdAt"
+  | "expiresAt"
+  | "lastUsedAt"
+  | "revokedAt";
+export type CloudAdminSessionSortDirection = "asc" | "desc";
+
+export interface CloudAdminSessionListQuery {
+  status?: CloudAdminSessionStatus;
+  revocationReason?: CloudAdminSessionRevocationReason;
+  currentOnly?: boolean;
+  query?: string;
+  sourceKey?: string;
+  sortBy?: CloudAdminSessionSortField;
+  sortDirection?: CloudAdminSessionSortDirection;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CloudAdminSessionSummary {
+  id: string;
+  status: CloudAdminSessionStatus;
+  isCurrent: boolean;
+  expiresAt: string;
+  issuedFromIp?: string | null;
+  issuedUserAgent?: string | null;
+  lastUsedAt?: string | null;
+  lastUsedIp?: string | null;
+  lastUsedUserAgent?: string | null;
+  lastRefreshedAt?: string | null;
+  revokedAt?: string | null;
+  revokedBySessionId?: string | null;
+  revocationReason?: CloudAdminSessionRevocationReason | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CloudAdminSessionListResponse {
+  items: CloudAdminSessionSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface CloudAdminSessionSourceGroupListResponse {
+  items: CloudAdminSessionSourceGroupSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface CreateCloudWorldRequest {
   worldName: string;
 }
@@ -128,6 +341,10 @@ export interface CloudWorldRequestRecord {
   phone: string;
   worldName: string;
   status: CloudWorldRequestStatus;
+  displayStatus?: string | null;
+  failureReason?: string | null;
+  projectedWorldStatus?: CloudWorldLifecycleStatus;
+  projectedDesiredState?: "running" | "sleeping";
   apiBaseUrl?: string | null;
   adminUrl?: string | null;
   note?: string | null;
@@ -157,6 +374,11 @@ export interface CloudInstanceSummary {
   lastOperationAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CloudWorldInstanceFleetItem {
+  world: CloudWorldSummary;
+  instance: CloudInstanceSummary | null;
 }
 
 export interface CloudWorldCallbackEndpoints {
@@ -295,6 +517,10 @@ export interface WorldLifecycleJobSummary {
   status: WorldLifecycleJobStatus;
   attempt: number;
   maxAttempts: number;
+  availableAt?: string | null;
+  leaseOwner?: string | null;
+  leaseExpiresAt?: string | null;
+  leaseRemainingSeconds?: number | null;
   failureCode?: string | null;
   failureMessage?: string | null;
   createdAt: string;
@@ -307,7 +533,7 @@ export interface WorldLifecycleJobSummary {
 
 export interface WorldAccessSessionSummary {
   id: string;
-  worldId: string;
+  worldId: string | null;
   phone: string;
   status: WorldAccessSessionStatus;
   phase: WorldAccessPhase;

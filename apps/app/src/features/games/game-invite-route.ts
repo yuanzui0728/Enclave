@@ -2,10 +2,14 @@ import {
   gameCenterFriendActivities,
   getGameCenterGame,
 } from "./game-center-data";
+import { isDesktopOnlyPath } from "../../lib/history-back";
+import { parseMobileGamesRouteSearch } from "./mobile-games-route-state";
 
 type BuildGameInvitePathInput = {
   gameId?: string;
   inviteId?: string;
+  returnHash?: string;
+  returnPath?: string;
 };
 
 export type GameInviteRouteContext = {
@@ -16,11 +20,35 @@ export type GameInviteRouteContext = {
   returnPath: string;
 };
 
+function normalizeReturnPath(value?: string | null) {
+  const nextValue = value?.trim();
+  if (
+    !nextValue ||
+    !nextValue.startsWith("/") ||
+    isDesktopOnlyPath(nextValue)
+  ) {
+    return undefined;
+  }
+
+  return nextValue;
+}
+
+function normalizeHash(value?: string | null) {
+  const nextValue = value?.trim();
+  if (!nextValue) {
+    return undefined;
+  }
+
+  return nextValue.startsWith("#") ? nextValue.slice(1) : nextValue;
+}
+
 export function buildGameInvitePath(
   basePath: string,
   input: BuildGameInvitePathInput,
 ) {
   const params = new URLSearchParams();
+  const returnPath = normalizeReturnPath(input.returnPath);
+  const returnHash = normalizeHash(input.returnHash);
 
   if (input.gameId) {
     params.set("game", input.gameId);
@@ -30,6 +58,14 @@ export function buildGameInvitePath(
     params.set("invite", input.inviteId);
   }
 
+  if (returnPath) {
+    params.set("returnPath", returnPath);
+  }
+
+  if (returnPath && returnHash) {
+    params.set("returnHash", returnHash);
+  }
+
   const search = params.toString();
   return search ? `${basePath}?${search}` : basePath;
 }
@@ -37,6 +73,7 @@ export function buildGameInvitePath(
 export function resolveGameInviteRouteContext(
   search: string,
 ): GameInviteRouteContext | null {
+  const routeState = parseMobileGamesRouteSearch(search);
   const params = new URLSearchParams(search);
   const inviteId = params.get("invite")?.trim() || undefined;
   const activity = inviteId
@@ -58,6 +95,8 @@ export function resolveGameInviteRouteContext(
       returnPath: buildGameInvitePath("/discover/games", {
         gameId: game.id,
         inviteId: activity.id,
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
       }),
     };
   }
@@ -68,6 +107,8 @@ export function resolveGameInviteRouteContext(
     gameId: game.id,
     returnPath: buildGameInvitePath("/discover/games", {
       gameId: game.id,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
     }),
   };
 }

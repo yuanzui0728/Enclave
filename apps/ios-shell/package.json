@@ -6,6 +6,7 @@
   "scripts": {
     "build:web": "node ../../scripts/build-mobile-shell-web.mjs",
     "prepare:web": "pnpm run build:web && node ./scripts/inject-runtime-config.mjs",
+    "audit": "pnpm run prepare:web && pnpm run doctor",
     "sync": "pnpm run prepare:web && cap sync ios",
     "configure": "node ./scripts/configure-ios-project.mjs",
     "doctor": "node ./scripts/doctor-ios.mjs",

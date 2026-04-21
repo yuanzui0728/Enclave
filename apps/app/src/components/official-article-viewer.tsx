@@ -26,7 +26,13 @@ export function OfficialArticleViewer({
   favorite?: boolean;
   showShareAction?: boolean;
   onOpenAccount?: (accountId: string) => void;
-  onOpenArticle?: (articleId: string) => void;
+  onOpenArticle?: (
+    articleId: string,
+    options?: {
+      accountId?: string;
+      title?: string;
+    },
+  ) => void;
   onToggleFavorite?: (article: OfficialAccountArticleDetail) => void;
 }) {
   const [shareNotice, setShareNotice] = useState<{
@@ -378,7 +384,12 @@ export function OfficialArticleViewer({
               <button
                 key={relatedArticle.id}
                 type="button"
-                onClick={() => onOpenArticle?.(relatedArticle.id)}
+                onClick={() =>
+                  onOpenArticle?.(relatedArticle.id, {
+                    accountId: relatedArticle.accountId,
+                    title: relatedArticle.title,
+                  })
+                }
                 className={
                   mobile
                     ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[rgba(15,23,42,0.03)]"

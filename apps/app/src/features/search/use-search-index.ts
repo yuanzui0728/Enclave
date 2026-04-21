@@ -30,7 +30,9 @@ import {
   shouldHideSearchableChatMessage,
   useLocalChatMessageActionState,
 } from "../chat/local-chat-message-actions";
+import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
 import { getFriendDisplayName } from "../contacts/contact-utils";
+import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";
 import {
   emptySearchScopeCounts,
   type SearchCategory,
@@ -58,6 +60,21 @@ type SearchMessageRow = {
   text: string;
   createdAt: string;
 };
+
+function buildDesktopOfficialAccountSearchPath(
+  accountId: string,
+  articleId?: string,
+) {
+  const hash = buildDesktopContactsRouteHash({
+    pane: "official-accounts",
+    accountId,
+    articleId,
+    officialMode: "accounts",
+    showWorldCharacters: false,
+  });
+
+  return hash ? `/tabs/contacts#${hash}` : "/tabs/contacts";
+}
 
 export function useSearchIndex(
   searchText: string,
@@ -233,7 +250,11 @@ export function useSearchIndex(
             .filter(Boolean)
             .join(" ")
             .toLowerCase(),
-          to: getConversationThreadPath(conversation),
+          to: isDesktopLayout
+            ? buildDesktopChatThreadPath({
+                conversationId: conversation.id,
+              })
+            : getConversationThreadPath(conversation),
           badge: conversationLabel,
           avatarName: conversation.title,
           sortTime: parseTimestamp(conversation.lastActivityAt) ?? 0,
@@ -264,12 +285,17 @@ export function useSearchIndex(
           .filter(Boolean)
           .join(" ")
           .toLowerCase(),
-        to: getConversationThreadPath({
-          id: message.conversationId,
-          type: message.conversationType,
-          source: message.conversationSource,
-        }),
-        hash: `chat-message-${message.messageId}`,
+        to: isDesktopLayout
+          ? buildDesktopChatThreadPath({
+              conversationId: message.conversationId,
+              messageId: message.messageId,
+            })
+          : getConversationThreadPath({
+              id: message.conversationId,
+              type: message.conversationType,
+              source: message.conversationSource,
+            }),
+        hash: isDesktopLayout ? undefined : `chat-message-${message.messageId}`,
         badge:
           getConversationThreadType({
             type: message.conversationType,
@@ -350,7 +376,9 @@ export function useSearchIndex(
           .filter(Boolean)
           .join(" ")
           .toLowerCase(),
-        to: `/official-accounts/${account.id}`,
+        to: isDesktopLayout
+          ? buildDesktopOfficialAccountSearchPath(account.id)
+          : `/official-accounts/${account.id}`,
         badge: account.accountType === "service" ? "服务号" : "订阅号",
         avatarName: account.name,
         avatarSrc: account.avatar,
@@ -375,7 +403,9 @@ export function useSearchIndex(
         .filter(Boolean)
         .join(" ")
         .toLowerCase(),
-      to: `/official-accounts/articles/${article.id}`,
+      to: isDesktopLayout
+        ? buildDesktopOfficialAccountSearchPath(account.id, article.id)
+        : `/official-accounts/articles/${article.id}`,
       badge: "公众号文章",
       avatarName: account.name,
       avatarSrc: account.avatar,

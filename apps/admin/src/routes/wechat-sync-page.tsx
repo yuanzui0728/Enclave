@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import type {
   CharacterDraft,
   WechatSyncContactBundle,
+  WechatSyncHistoryItem,
   WechatSyncImportResponse,
   WechatSyncPreviewItem,
 } from "@yinjie/contracts";
@@ -20,7 +21,7 @@ import {
   AdminTextField,
   AdminToggle,
 } from "../components/admin-workbench";
-import { adminApi, type WechatSyncHistoryItem } from "../lib/admin-api";
+import { adminApi } from "../lib/admin-api";
 import {
   buildWechatConnectorContactBundles,
   getWechatConnectorHealth,
@@ -2385,6 +2386,9 @@ function HistoryDetailPanel({
   onLoadTemplateToManualInput?: () => void;
   restoringSnapshotKey: string | null;
 }) {
+  const snapshotSectionRef = useRef<HTMLDivElement | null>(null);
+  const changeHistorySectionRef = useRef<HTMLDivElement | null>(null);
+
   if (!item) {
     return (
       <Card className="bg-[color:var(--surface-card)]">
@@ -2404,8 +2408,6 @@ function HistoryDetailPanel({
     item.character.profile?.wechatSyncImport?.previousSnapshot ?? null;
   const importSnapshots = getImportSnapshotsFromHistoryItem(item);
   const importChangeHistory = getImportChangeHistoryFromHistoryItem(item);
-  const snapshotSectionRef = useRef<HTMLDivElement | null>(null);
-  const changeHistorySectionRef = useRef<HTMLDivElement | null>(null);
   const annotationEntries = buildWechatSyncAnnotationSummaryEntries(
     item.character.id,
     importChangeHistory,
@@ -6695,7 +6697,11 @@ function buildWechatSyncAnnotationSummaryEntries(
       (left, right) =>
         Date.parse(right.recordedAtValue) - Date.parse(left.recordedAtValue),
     )
-    .map(({ recordedAtValue: _recordedAtValue, ...entry }) => entry);
+    .map((entry) => {
+      const { recordedAtValue, ...rest } = entry;
+      void recordedAtValue;
+      return rest;
+    });
 }
 
 function buildWechatSyncAnnotationSummaryKeyword(

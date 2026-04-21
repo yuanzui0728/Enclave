@@ -21,6 +21,15 @@ import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+  buildDesktopChatThreadPathFromConversationPath,
+} from "../features/desktop/chat/desktop-chat-route-state";
+import {
   getConversationThreadLabel,
   getConversationThreadPath,
   isPersistedGroupConversation,
@@ -47,6 +56,7 @@ import {
   formatConversationTimestamp,
   parseTimestamp,
 } from "../lib/format";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
 import {
@@ -73,7 +83,8 @@ export function GroupQrPage() {
   const mobileWebCopyFallback = isMobileWebShareSurface({
     isDesktopLayout,
   });
-  const search = useRouterState({ select: (state) => state.location.search });
+  const search = useRouterState({ select: (state) => state.location.searchStr });
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const [notice, setNotice] = useState<{
     message: string;
     tone: "success" | "danger";
@@ -97,6 +108,36 @@ export function GroupQrPage() {
   const [groupInviteStoreReady, setGroupInviteStoreReady] = useState(
     !nativeDesktopGroupInvite,
   );
+  const routeState = parseMobileGroupRouteState(hash);
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
+  const detailsRouteHash = isDesktopLayout
+    ? normalizedHash || undefined
+    : currentRouteHash || undefined;
+  const inviteRouteHash = isDesktopLayout
+    ? normalizedHash || undefined
+    : currentRouteHash || undefined;
+  const desktopDetailsFallbackHash = useMemo(
+    () =>
+      buildDesktopChatRouteHash({
+        conversationId: groupId,
+        panel: "details",
+      }),
+    [groupId],
+  );
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -116,8 +157,24 @@ export function GroupQrPage() {
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
-  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+  }, [
+    groupId,
+    groupQuery.error,
+    groupQuery.isLoading,
+    navigate,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
 
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined") {
@@ -164,6 +221,18 @@ export function GroupQrPage() {
         (conversationsQuery.data ?? []).map((conversation) => [
           buildConversationPath(conversation),
           conversation,
+        ]),
+      ),
+    [conversationsQuery.data],
+  );
+  const conversationDesktopPathMap = useMemo(
+    () =>
+      new Map(
+        (conversationsQuery.data ?? []).map((conversation) => [
+          buildConversationPath(conversation),
+          buildDesktopChatThreadPath({
+            conversationId: conversation.id,
+          }),
         ]),
       ),
     [conversationsQuery.data],
@@ -227,6 +296,18 @@ export function GroupQrPage() {
     conversationPathMap.has(deliveredConversation.conversationPath)
       ? deliveredConversation
       : null;
+  const buildConversationOpenPath = (conversation: ConversationListItem) =>
+    isDesktopLayout
+      ? buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        })
+      : buildConversationPath(conversation);
+  const resolveConversationOpenPath = (conversationPath: string) =>
+    isDesktopLayout
+      ? conversationDesktopPathMap.get(conversationPath) ??
+        buildDesktopChatThreadPathFromConversationPath(conversationPath) ??
+        conversationPath
+      : conversationPath;
   const reopenedPaths = useMemo(
     () => new Set(validReopenRecords.map((record) => record.conversationPath)),
     [validReopenRecords],
@@ -567,6 +648,35 @@ export function GroupQrPage() {
     });
   }
 
+  const navigateToRouteStateReturn = () => {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  };
+
+  const handleStatusErrorAction = (refetch: () => Promise<unknown>) => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    if (!isDesktopLayout) {
+      void navigate({
+        to: "/group/$groupId/details",
+        params: { groupId },
+        ...(detailsRouteHash ? { hash: detailsRouteHash } : {}),
+      });
+      return;
+    }
+
+    void refetch();
+  };
+
   async function copyText(value: string, successMessage: string) {
     if (
       typeof navigator === "undefined" ||
@@ -736,6 +846,7 @@ export function GroupQrPage() {
           conversationPath,
           conversationTitle: conversation.title,
           groupName: groupQuery.data?.name,
+          inviteRouteHash,
           batchId: deliveryBatch.id,
           batchStartedAt: deliveryBatch.startedAt,
         }),
@@ -771,6 +882,7 @@ export function GroupQrPage() {
         conversationPath,
         conversationTitle: conversation.title,
         groupName: groupQuery.data?.name,
+        inviteRouteHash,
         batchId: deliveryBatch.id,
         batchStartedAt: deliveryBatch.startedAt,
       }),
@@ -806,12 +918,10 @@ export function GroupQrPage() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => {
-                  void groupQuery.refetch();
-                }}
+                onClick={() => handleStatusErrorAction(groupQuery.refetch)}
                 className="rounded-full"
               >
-                重新加载
+                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
               </Button>
             }
           />
@@ -830,12 +940,10 @@ export function GroupQrPage() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => {
-                  void membersQuery.refetch();
-                }}
+                onClick={() => handleStatusErrorAction(membersQuery.refetch)}
                 className="rounded-full"
               >
-                重新加载
+                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
               </Button>
             }
           />
@@ -914,7 +1022,9 @@ export function GroupQrPage() {
                   size="sm"
                   onClick={() => {
                     void navigate({
-                      to: buildConversationPath(currentReturnSourceConversation),
+                      to: buildConversationOpenPath(
+                        currentReturnSourceConversation,
+                      ),
                     });
                   }}
                   className="shrink-0 rounded-full"
@@ -1053,7 +1163,9 @@ export function GroupQrPage() {
                 size="sm"
                 onClick={() => {
                   void navigate({
-                    to: activeDeliveredConversation.conversationPath,
+                    to: resolveConversationOpenPath(
+                      activeDeliveredConversation.conversationPath,
+                    ),
                   });
                 }}
                 className="shrink-0 rounded-full"
@@ -1126,7 +1238,11 @@ export function GroupQrPage() {
                           variant="secondary"
                           size="sm"
                           onClick={() => {
-                            void navigate({ to: record.conversationPath });
+                            void navigate({
+                              to: resolveConversationOpenPath(
+                                record.conversationPath,
+                              ),
+                            });
                           }}
                           className="shrink-0 rounded-full"
                         >
@@ -1185,7 +1301,11 @@ export function GroupQrPage() {
                       variant="secondary"
                       size="sm"
                       onClick={() => {
-                        void navigate({ to: record.conversationPath });
+                        void navigate({
+                          to: resolveConversationOpenPath(
+                            record.conversationPath,
+                          ),
+                        });
                       }}
                       className="shrink-0 rounded-full"
                     >
@@ -1242,12 +1362,12 @@ export function GroupQrPage() {
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => {
-                          void conversationsQuery.refetch();
-                        }}
+                        onClick={() =>
+                          handleStatusErrorAction(conversationsQuery.refetch)
+                        }
                         className="rounded-full"
                       >
-                        重新加载
+                        {safeReturnPath ? "返回上一页" : "返回群聊信息"}
                       </Button>
                     }
                   />
@@ -1928,7 +2048,9 @@ export function GroupQrPage() {
                   variant="ghost"
                   onClick={() => {
                     void navigate({
-                      to: buildConversationPath(currentReturnSourceConversation),
+                      to: buildConversationOpenPath(
+                        currentReturnSourceConversation,
+                      ),
                     });
                   }}
                   className="rounded-full"
@@ -1940,8 +2062,15 @@ export function GroupQrPage() {
                 variant="secondary"
                 onClick={() => {
                   void navigate({
-                    to: "/group/$groupId/details",
-                    params: { groupId },
+                    to: safeReturnPath ?? "/tabs/chat",
+                    ...((safeReturnPath ? safeReturnHash : desktopDetailsFallbackHash)
+                      ? {
+                          hash:
+                            (safeReturnPath
+                              ? safeReturnHash
+                              : desktopDetailsFallbackHash) || undefined,
+                        }
+                      : {}),
                   });
                 }}
               >
@@ -1963,6 +2092,7 @@ export function GroupQrPage() {
         void navigate({
           to: "/group/$groupId/details",
           params: { groupId },
+          ...(detailsRouteHash ? { hash: detailsRouteHash } : {}),
         });
       }}
     >

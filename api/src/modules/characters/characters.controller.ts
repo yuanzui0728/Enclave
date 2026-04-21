@@ -26,12 +26,6 @@ export class CharactersController {
     return this.charactersService.listPresetCatalog();
   }
 
-  /** 返回硬编码预设目录（不查 DB），供前台发现页使用 */
-  @Get('preset-catalog')
-  listPresetCatalog() {
-    return this.charactersService.listPresetCatalog();
-  }
-
   @Get(':id')
   async findOne(@Param('id') id: string) {
     // 优先读 DB；若不存在则尝试从预设目录懒安装（支持在未添加好友时浏览角色详情）

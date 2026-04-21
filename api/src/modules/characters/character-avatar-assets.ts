@@ -1,0 +1,48 @@
+export const CHARACTER_AVATAR_ASSET_ROUTE = '/api/character-assets';
+
+const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
+  self: 'self-reflection.svg',
+  bar_expert: 'bar-expert-acheng.svg',
+  doctor: 'doctor-lin.svg',
+  lawyer_jianheng: 'lawyer-jianheng.svg',
+  wedding_planner: 'wedding-planner-lixu.svg',
+  world_news_desk: 'world-news-desk.svg',
+  steve_jobs: 'steve-jobs.svg',
+  ilya_sutskever: 'ilya-sutskever.svg',
+  elon_musk: 'elon-musk.svg',
+  zhang_yiming: 'zhang-yiming.svg',
+  donald_trump: 'donald-trump.svg',
+  andrej_karpathy: 'andrej-karpathy.svg',
+  mrbeast: 'mrbeast.svg',
+  x_twitter_full_stack_mentor: 'x-twitter-mentor.svg',
+  paul_graham: 'paul-graham.svg',
+  charlie_munger: 'charlie-munger.svg',
+  naval_ravikant: 'naval-ravikant.svg',
+  zhang_xuefeng: 'zhang-xuefeng.svg',
+  nassim_taleb: 'nassim-taleb.svg',
+  jian_ning_relationship_expert: 'jian-ning-relationship-expert.svg',
+  richard_feynman: 'richard-feynman.svg',
+} as const;
+
+export type CharacterAvatarSourceKey =
+  keyof typeof CHARACTER_AVATAR_FILE_BY_SOURCE_KEY;
+
+export function getCharacterAvatarBySourceKey(
+  sourceKey: CharacterAvatarSourceKey,
+) {
+  return `${CHARACTER_AVATAR_ASSET_ROUTE}/${CHARACTER_AVATAR_FILE_BY_SOURCE_KEY[sourceKey]}`;
+}
+
+export function maybeGetCharacterAvatarBySourceKey(
+  sourceKey?: string | null,
+) {
+  if (!sourceKey) {
+    return null;
+  }
+
+  if (!(sourceKey in CHARACTER_AVATAR_FILE_BY_SOURCE_KEY)) {
+    return null;
+  }
+
+  return getCharacterAvatarBySourceKey(sourceKey as CharacterAvatarSourceKey);
+}

@@ -12,7 +12,7 @@ import {
   type TouchEvent,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   RotateCcw,
   ChevronLeft,
@@ -85,6 +85,7 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import {
   extractChatReplyMetadata,
   sanitizeDisplayedChatText,
@@ -108,6 +109,7 @@ import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { openRemoteFile } from "../runtime/open-remote-file";
 import { saveRemoteFile } from "../runtime/save-remote-file";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
+import { getCurrentWindowTargetPath } from "../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
@@ -115,6 +117,7 @@ import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-no
 import { ResultCardBadge } from "../features/chat/result-card-badge";
 import { prepareRemoteCustomStickerUpload } from "../features/chat/stickers/prepare-custom-sticker-upload";
 import { resolveResultCardFooterActionClassName } from "../features/chat/result-card-footer";
+import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
 import {
   resolveDirectCallFooterCopy,
   resolveDirectCallStatusLabel,
@@ -324,6 +327,12 @@ export function ChatMessageList({
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "";
@@ -364,11 +373,31 @@ export function ChatMessageList({
   const [locationViewerMessageId, setLocationViewerMessageId] = useState<
     string | null
   >(null);
+  const [noteViewerMessageId, setNoteViewerMessageId] = useState<string | null>(
+    null,
+  );
+  const normalizedCurrentHash = useMemo(
+    () => (hash.startsWith("#") ? hash.slice(1) : hash) || undefined,
+    [hash],
+  );
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
   const [selectionAnchorMessageId, setSelectionAnchorMessageId] = useState<
     string | null
   >(null);
+  const buildCharacterProfileHash = useCallback(
+    ({
+      recommendationId,
+    }: {
+      recommendationId?: string;
+    } = {}) =>
+      buildCharacterDetailRouteHash({
+        recommendationId,
+        returnPath: pathname,
+        returnHash: normalizedCurrentHash,
+      }),
+    [normalizedCurrentHash, pathname],
+  );
   const [selectionActionPending, setSelectionActionPending] = useState<
     "favorite" | "delete" | "recall" | null
   >(null);
@@ -500,6 +529,11 @@ export function ChatMessageList({
         : null,
     );
     setLocationViewerMessageId((current) =>
+      current && messages.some((message) => message.id === current)
+        ? current
+        : null,
+    );
+    setNoteViewerMessageId((current) =>
       current && messages.some((message) => message.id === current)
         ? current
         : null,
@@ -1082,6 +1116,55 @@ export function ChatMessageList({
     }
   };
 
+  const shareNoteSummary = async (
+    attachment: Extract<MessageAttachment, { kind: "note_card" }>,
+  ) => {
+    const summary = buildNoteAttachmentSummary(attachment);
+
+    if (!isNativeMobileShareSurface()) {
+      await copyToClipboard(summary, "笔记摘要已复制。");
+      return;
+    }
+
+    const shared = await shareWithNativeShell({
+      title: attachment.title,
+      text: summary,
+    });
+
+    if (shared) {
+      setActionNotice({
+        message: "已打开系统分享面板。",
+        tone: "success",
+      });
+      return;
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setActionNotice({
+        message: "当前设备暂时无法打开系统分享，请稍后重试。",
+        tone: "danger",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setActionNotice({
+        message: "系统分享暂时不可用，已复制笔记摘要。",
+        tone: "success",
+      });
+    } catch {
+      setActionNotice({
+        message: "系统分享失败，请稍后重试。",
+        tone: "danger",
+      });
+    }
+  };
+
   const handleMessageContextMenu = (
     event: MouseEvent<HTMLDivElement>,
     message: ChatRenderableMessage,
@@ -1131,6 +1214,7 @@ export function ChatMessageList({
     void navigate({
       to: "/character/$characterId",
       params: { characterId },
+      hash: buildCharacterProfileHash(),
     });
   };
 
@@ -1338,6 +1422,22 @@ export function ChatMessageList({
           attachment: activeLocationMessage.attachment,
         }
       : null;
+  const activeNoteMessage = noteViewerMessageId
+    ? visibleMessages.find((message) => message.id === noteViewerMessageId)
+    : null;
+  const activeNote =
+    activeNoteMessage?.type === "note_card" &&
+    activeNoteMessage.attachment?.kind === "note_card" &&
+    !recalledMessageIdSet.has(activeNoteMessage.id)
+      ? {
+          id: activeNoteMessage.id,
+          attachment: activeNoteMessage.attachment,
+          previewImageUrl: resolveNotePreviewImageUrl(
+            activeNoteMessage.attachment,
+            resolveAttachmentUrl,
+          ),
+        }
+      : null;
 
   const openImageByIndex = (nextIndex: number) => {
     const target = imageMessages[nextIndex];
@@ -1527,10 +1627,9 @@ export function ChatMessageList({
                 ).catch(() => undefined);
               }
               void navigate({
-                to: "/chat/$conversationId",
-                params: {
+                to: buildDesktopChatThreadPath({
                   conversationId: conversation.id,
-                },
+                }),
               });
             })
             .catch(() => undefined);
@@ -1564,9 +1663,9 @@ export function ChatMessageList({
         params: {
           characterId: attachment.characterId,
         },
-        hash: recommendationId
-          ? `recommendationId=${encodeURIComponent(recommendationId)}`
-          : undefined,
+        hash: buildCharacterProfileHash({
+          recommendationId,
+        }),
       });
       return;
     }
@@ -1582,7 +1681,7 @@ export function ChatMessageList({
           noteId: attachment.noteId,
           returnTo:
             typeof window !== "undefined"
-              ? `${window.location.pathname}${window.location.hash}`
+              ? getCurrentWindowTargetPath()
               : "/tabs/favorites",
         })
           .then((desktopHash) => {
@@ -1600,10 +1699,7 @@ export function ChatMessageList({
         return;
       }
 
-      void navigate({
-        to: "/notes",
-        hash: attachment.noteId,
-      });
+      setNoteViewerMessageId(message.id);
       return;
     }
 
@@ -3339,6 +3435,20 @@ export function ChatMessageList({
           }}
         />
       ) : null}
+      {activeNote ? (
+        <NoteViewerOverlay
+          attachment={activeNote.attachment}
+          previewImageUrl={activeNote.previewImageUrl}
+          onClose={() => setNoteViewerMessageId(null)}
+          onLocate={() => {
+            setNoteViewerMessageId(null);
+            jumpToMessage(activeNote.id);
+          }}
+          onShareOrCopy={() => {
+            void shareNoteSummary(activeNote.attachment);
+          }}
+        />
+      ) : null}
       {forwardMessages?.length ? (
         <Suspense fallback={null}>
           <DesktopMessageForwardDialog
@@ -3850,7 +3960,7 @@ function resolveOpenAttachmentLabel(
   }
 
   if (message.type === "note_card") {
-    return "打开笔记";
+    return variant === "desktop" ? "打开笔记" : "查看笔记摘要";
   }
 
   return "打开附件";
@@ -4704,7 +4814,7 @@ function NoteCardMessage({
       type="button"
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
-      aria-label={`打开笔记 ${attachment.title}`}
+      aria-label={`${variant === "desktop" ? "打开笔记" : "查看笔记摘要"} ${attachment.title}`}
     >
       {card}
     </button>
@@ -5944,6 +6054,153 @@ function LocationViewerOverlay({
   );
 }
 
+function NoteViewerOverlay({
+  attachment,
+  previewImageUrl,
+  onClose,
+  onLocate,
+  onShareOrCopy,
+}: {
+  attachment: Extract<MessageAttachment, { kind: "note_card" }>;
+  previewImageUrl: string | null;
+  onClose: () => void;
+  onLocate: () => void;
+  onShareOrCopy: () => void;
+}) {
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
+  const imageCount = attachment.assets.filter(
+    (asset) => asset.kind === "image",
+  ).length;
+  const fileCount = attachment.assets.filter(
+    (asset) => asset.kind === "file",
+  ).length;
+  const updatedAtLabel = formatMessageTimestamp(attachment.updatedAt);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+        aria-label="关闭笔记预览"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(7,193,96,0.18),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.12),rgba(15,23,42,0.74))]" />
+      <div className="relative flex h-full flex-col">
+        <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-white">
+          <div>
+            <div className="text-[12px] uppercase tracking-[0.18em] text-white/60">
+              聊天笔记
+            </div>
+            <div className="mt-1 text-[18px] font-medium">笔记摘要</div>
+          </div>
+          <ViewerActionButton compact label="关闭笔记预览" onClick={onClose}>
+            <X size={18} />
+          </ViewerActionButton>
+        </div>
+
+        <div className="min-h-0 flex-1 px-4 pb-5 pt-2">
+          <div className="mx-auto flex h-full max-w-xl flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[rgba(10,15,28,0.56)] shadow-[0_32px_80px_rgba(0,0,0,0.28)]">
+            {previewImageUrl ? (
+              <div className="relative h-48 overflow-hidden border-b border-white/10 bg-black/20">
+                <img
+                  src={previewImageUrl}
+                  alt={attachment.title}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0.32))]" />
+              </div>
+            ) : (
+              <div className="flex h-40 items-end border-b border-white/10 bg-[linear-gradient(160deg,rgba(243,246,245,0.2),rgba(221,230,227,0.1))] px-5 py-5">
+                <div className="rounded-[16px] border border-white/12 bg-white/10 px-4 py-2 text-[12px] tracking-[0.18em] text-white/72">
+                  收藏笔记
+                </div>
+              </div>
+            )}
+
+            <div className="min-h-0 flex-1 overflow-auto px-5 py-5 text-white">
+              <div className="text-[22px] font-semibold leading-8">
+                {attachment.title}
+              </div>
+              <div className="mt-2 text-[12px] text-white/62">
+                最近更新于 {updatedAtLabel}
+              </div>
+
+              <div className="mt-4 rounded-[20px] border border-white/10 bg-white/6 px-4 py-4 text-[14px] leading-7 text-white/82">
+                {attachment.excerpt?.trim() || "这条笔记暂时没有可展示的摘要内容。"}
+              </div>
+
+              {attachment.tags.length ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {attachment.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-[rgba(255,255,255,0.12)] bg-white/8 px-3 py-1 text-[11px] text-white/78"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="mt-5 grid grid-cols-3 gap-2.5">
+                <NoteViewerMetric
+                  label="图片"
+                  value={imageCount > 0 ? `${imageCount} 张` : "无"}
+                />
+                <NoteViewerMetric
+                  label="文件"
+                  value={fileCount > 0 ? `${fileCount} 个` : "无"}
+                />
+                <NoteViewerMetric
+                  label="内容"
+                  value={attachment.excerpt?.trim() ? "有摘要" : "待补充"}
+                />
+              </div>
+
+              <div className="mt-5 rounded-[18px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.06)] px-4 py-3 text-[12px] leading-6 text-white/70">
+                手机端当前提供笔记摘要预览；完整编辑与详情工作区仍需在桌面布局中打开。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2">
+          <ViewerActionButton
+            label={nativeMobileShareSupported ? "系统分享" : "复制摘要"}
+            onClick={onShareOrCopy}
+          >
+            {nativeMobileShareSupported ? (
+              <Share2 size={16} />
+            ) : (
+              <Copy size={16} />
+            )}
+          </ViewerActionButton>
+          <ViewerActionButton label="定位消息" onClick={onLocate}>
+            <FileText size={16} />
+          </ViewerActionButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NoteViewerMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[18px] border border-white/10 bg-white/6 px-3.5 py-3 text-center">
+      <div className="text-[10px] uppercase tracking-[0.16em] text-white/52">
+        {label}
+      </div>
+      <div className="mt-2 text-[14px] font-medium text-white">{value}</div>
+    </div>
+  );
+}
+
 function buildLocationAttachmentSummary(
   attachment: Extract<MessageAttachment, { kind: "location_card" }>,
 ) {
@@ -5962,6 +6219,38 @@ function buildContactAttachmentSummary(
     `隐界号：yinjie_${attachment.characterId.slice(0, 8)}`,
     profileUrl,
   ].join("\n");
+}
+
+function buildNoteAttachmentSummary(
+  attachment: Extract<MessageAttachment, { kind: "note_card" }>,
+) {
+  const imageCount = attachment.assets.filter(
+    (asset) => asset.kind === "image",
+  ).length;
+  const fileCount = attachment.assets.filter(
+    (asset) => asset.kind === "file",
+  ).length;
+
+  return [
+    `${attachment.title}`,
+    attachment.excerpt?.trim() || "这是一条来自聊天中的收藏笔记。",
+    attachment.tags.length
+      ? `标签：${attachment.tags.map((tag) => `#${tag}`).join(" ")}`
+      : null,
+    imageCount > 0 ? `图片：${imageCount} 张` : null,
+    fileCount > 0 ? `文件：${fileCount} 个` : null,
+    `更新于 ${formatMessageTimestamp(attachment.updatedAt)}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function resolveNotePreviewImageUrl(
+  attachment: Extract<MessageAttachment, { kind: "note_card" }>,
+  resolveAttachmentUrl: (url: string) => string,
+) {
+  const previewImage = attachment.assets.find((asset) => asset.kind === "image");
+  return previewImage?.url ? resolveAttachmentUrl(previewImage.url) : null;
 }
 
 function formatVoiceDurationLabel(durationMs?: number) {

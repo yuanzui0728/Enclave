@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getConversations,
+  getOfficialAccountArticle,
   getSystemStatus,
   listOfficialAccounts,
   type ConversationListItem,
@@ -43,12 +44,22 @@ import {
   readMiniProgramsState,
 } from "../features/mini-programs/mini-programs-storage";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
-import { parseDesktopMobileCallHandoffHash } from "../features/desktop/chat/desktop-mobile-call-handoff-route-state";
 import {
+  buildDesktopMobileCallHandoffHash,
+  parseDesktopMobileCallHandoffHash,
+} from "../features/desktop/chat/desktop-mobile-call-handoff-route-state";
+import {
+  buildDesktopMobileOfficialHandoffHash,
+  type DesktopMobileOfficialHandoffState,
   parseDesktopMobileOfficialHandoffHash,
   resolveDesktopMobileOfficialHandoffPath,
 } from "../features/desktop/official-accounts/desktop-mobile-official-handoff-route-state";
-import { buildDesktopOfficialMessageRouteHash } from "../features/desktop/chat/desktop-official-message-route-state";
+import {
+  buildDesktopChatThreadPath,
+  buildDesktopChatThreadPathFromConversationPath,
+  buildDesktopOfficialServiceThreadPath,
+  buildDesktopSubscriptionInboxPath,
+} from "../features/desktop/chat/desktop-chat-route-state";
 import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { getConversationPreviewParts } from "../lib/conversation-preview";
@@ -216,6 +227,16 @@ export function DesktopMobilePage() {
     queryFn: () => listOfficialAccounts(baseUrl),
     enabled: isDesktopLayout,
   });
+  const officialHandoffArticleQuery = useQuery({
+    queryKey: [
+      "desktop-mobile-official-handoff-article",
+      baseUrl,
+      officialHandoffState?.articleId,
+    ],
+    queryFn: () => getOfficialAccountArticle(officialHandoffState!.articleId!, baseUrl),
+    enabled: isDesktopLayout && Boolean(officialHandoffState?.articleId),
+    retry: false,
+  });
 
   const systemStatusQuery = useQuery({
     queryKey: ["desktop-mobile-system-status", baseUrl],
@@ -245,6 +266,20 @@ export function DesktopMobilePage() {
       ),
     [conversationsQuery.data],
   );
+  const conversationDesktopPathMap = useMemo(
+    () =>
+      new Map(
+        (conversationsQuery.data ?? []).map((conversation) => [
+          isPersistedGroupConversation(conversation)
+            ? `/group/${conversation.id}`
+            : `/chat/${conversation.id}`,
+          buildDesktopChatThreadPath({
+            conversationId: conversation.id,
+          }),
+        ]),
+      ),
+    [conversationsQuery.data],
+  );
 
   const recentArticles = useMemo(
     () =>
@@ -258,34 +293,81 @@ export function DesktopMobilePage() {
         .slice(0, 4),
     [officialAccountsQuery.data],
   );
-  const callHandoffConversationExists = useMemo(() => {
+  const callHandoffConversation = useMemo(() => {
     if (!callHandoffState) {
-      return false;
+      return null;
     }
 
-    return (conversationsQuery.data ?? []).some((conversation) => {
-      if (conversation.id !== callHandoffState.conversationId) {
-        return false;
-      }
+    return (
+      (conversationsQuery.data ?? []).find((conversation) => {
+        if (conversation.id !== callHandoffState.conversationId) {
+          return false;
+        }
 
-      return callHandoffState.conversationType === "group"
-        ? isPersistedGroupConversation(conversation)
-        : !isPersistedGroupConversation(conversation);
-    });
+        return callHandoffState.conversationType === "group"
+          ? isPersistedGroupConversation(conversation)
+          : !isPersistedGroupConversation(conversation);
+      }) ?? null
+    );
   }, [callHandoffState, conversationsQuery.data]);
-  const callHandoffPath = callHandoffState
-    ? callHandoffState.conversationType === "group"
-      ? `/group/${callHandoffState.conversationId}`
-      : `/chat/${callHandoffState.conversationId}`
-    : null;
+  const callHandoffConversationExists = Boolean(callHandoffConversation);
+  const callHandoffMobilePath = callHandoffConversation
+    ? isPersistedGroupConversation(callHandoffConversation)
+      ? `/group/${callHandoffConversation.id}`
+      : `/chat/${callHandoffConversation.id}`
+    : callHandoffState
+      ? callHandoffState.conversationType === "group"
+        ? `/group/${callHandoffState.conversationId}`
+        : `/chat/${callHandoffState.conversationId}`
+      : null;
+  const callHandoffDesktopPath = callHandoffConversation
+    ? buildDesktopChatThreadPath({
+        conversationId: callHandoffConversation.id,
+      })
+    : callHandoffState
+      ? buildDesktopChatThreadPath({
+          conversationId: callHandoffState.conversationId,
+        })
+      : null;
   const callHandoffKindLabel = callHandoffState
     ? callHandoffState.kind === "video"
       ? "视频通话"
       : "语音通话"
     : "";
-  const officialHandoffPath = officialHandoffState
-    ? resolveDesktopMobileOfficialHandoffPath(officialHandoffState)
-    : null;
+  const officialHandoffAccountId =
+    officialHandoffArticleQuery.data?.account.id ?? officialHandoffState?.accountId;
+
+  useEffect(() => {
+    if (!isDesktopLayout || !callHandoffState || !callHandoffConversation) {
+      return;
+    }
+
+    const nextHash = buildDesktopMobileCallHandoffHash({
+      kind: callHandoffState.kind,
+      conversationId: callHandoffConversation.id,
+      conversationType: isPersistedGroupConversation(callHandoffConversation)
+        ? "group"
+        : "direct",
+      title: callHandoffConversation.title,
+    });
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    if (normalizedHash === nextHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/mobile",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [
+    callHandoffConversation,
+    callHandoffState,
+    hash,
+    isDesktopLayout,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (!nativeDesktopHandoff) {
@@ -391,37 +473,108 @@ export function DesktopMobilePage() {
     };
   }, [isDesktopLayout]);
   const callHandoffTitle =
+    callHandoffConversation?.title?.trim() ||
     callHandoffState?.title?.trim() ||
     (callHandoffState?.conversationType === "group" ? "当前群聊" : "当前聊天");
   const officialHandoffAccount = useMemo(
     () =>
-      officialHandoffState?.accountId
+      officialHandoffAccountId
         ? ((officialAccountsQuery.data ?? []).find(
-            (account) => account.id === officialHandoffState.accountId,
+            (account) => account.id === officialHandoffAccountId,
           ) ?? null)
         : null,
-    [officialAccountsQuery.data, officialHandoffState?.accountId],
+    [officialAccountsQuery.data, officialHandoffAccountId],
   );
+  const officialHandoffArticleMissing = isOfficialAccountArticleMissingError(
+    officialHandoffArticleQuery.error,
+  );
+  const resolvedOfficialHandoffState = useMemo(() => {
+    if (!officialHandoffState) {
+      return null;
+    }
+
+    if (officialHandoffArticleQuery.data) {
+      return {
+        surface: officialHandoffState.surface,
+        accountId: officialHandoffArticleQuery.data.account.id,
+        articleId: officialHandoffArticleQuery.data.id,
+        accountName: officialHandoffArticleQuery.data.account.name,
+        articleTitle: officialHandoffArticleQuery.data.title,
+        accountType: officialHandoffArticleQuery.data.account.accountType,
+      } as DesktopMobileOfficialHandoffState;
+    }
+
+    if (officialHandoffState.articleId && officialHandoffArticleMissing) {
+      if (officialHandoffState.surface === "subscription") {
+        return {
+          surface: "subscription",
+        } as DesktopMobileOfficialHandoffState;
+      }
+
+      if (!officialHandoffAccount) {
+        return null;
+      }
+
+      return {
+        surface: officialHandoffState.surface,
+        accountId: officialHandoffAccount.id,
+        accountName: officialHandoffAccount.name,
+        accountType: officialHandoffAccount.accountType,
+      } as DesktopMobileOfficialHandoffState;
+    }
+
+    if (
+      !officialHandoffState.articleId &&
+      officialHandoffState.surface !== "subscription" &&
+      officialHandoffState.accountId &&
+      !officialHandoffAccount &&
+      !officialAccountsQuery.isLoading &&
+      !officialAccountsQuery.isError
+    ) {
+      return null;
+    }
+
+    if (officialHandoffAccount) {
+      return {
+        ...officialHandoffState,
+        accountId: officialHandoffAccount.id,
+        accountName: officialHandoffAccount.name,
+        accountType: officialHandoffAccount.accountType,
+      } as DesktopMobileOfficialHandoffState;
+    }
+
+    return officialHandoffState;
+  }, [
+    officialAccountsQuery.isError,
+    officialAccountsQuery.isLoading,
+    officialHandoffAccount,
+    officialHandoffArticleMissing,
+    officialHandoffArticleQuery.data,
+    officialHandoffState,
+  ]);
+  const officialHandoffPath = resolvedOfficialHandoffState
+    ? resolveDesktopMobileOfficialHandoffPath(resolvedOfficialHandoffState)
+    : null;
   const officialHandoffTitle =
-    officialHandoffState?.articleTitle?.trim() ||
-    officialHandoffState?.accountName?.trim() ||
+    resolvedOfficialHandoffState?.articleTitle?.trim() ||
     officialHandoffAccount?.name ||
+    resolvedOfficialHandoffState?.accountName?.trim() ||
     "公众号";
-  const officialHandoffTypeLabel = officialHandoffState?.articleId
+  const officialHandoffTypeLabel = resolvedOfficialHandoffState?.articleId
     ? "公众号文章"
-    : officialHandoffState?.surface === "service"
+    : resolvedOfficialHandoffState?.surface === "service"
       ? "服务号消息"
-      : officialHandoffState?.surface === "subscription"
+      : resolvedOfficialHandoffState?.surface === "subscription"
         ? "订阅号消息"
-        : officialHandoffState?.accountType === "service"
+        : resolvedOfficialHandoffState?.accountType === "service"
           ? "服务号主页"
           : "公众号主页";
-  const officialHandoffDescription = officialHandoffState
-    ? officialHandoffState.articleId
+  const officialHandoffDescription = resolvedOfficialHandoffState
+    ? resolvedOfficialHandoffState.articleId
       ? `把 ${officialHandoffTitle} 发到手机继续阅读。`
-      : officialHandoffState.surface === "service"
+      : resolvedOfficialHandoffState.surface === "service"
         ? `把 ${officialHandoffTitle} 的服务消息入口带到手机继续。`
-        : officialHandoffState.surface === "subscription"
+        : resolvedOfficialHandoffState.surface === "subscription"
           ? "把当前订阅号聚合阅读入口带到手机继续。"
           : `把 ${officialHandoffTitle} 的公众号主页带到手机继续查看。`
     : "";
@@ -479,29 +632,27 @@ export function DesktopMobilePage() {
   );
 
   function handleOpenOfficialHandoffOnDesktop() {
-    if (!officialHandoffState) {
+    if (!resolvedOfficialHandoffState) {
       return;
     }
 
     if (
-      officialHandoffState.surface === "service" &&
-      officialHandoffState.accountId
+      resolvedOfficialHandoffState.surface === "service" &&
+      resolvedOfficialHandoffState.accountId
     ) {
       void navigate({
-        to: "/official-accounts/service/$accountId",
-        params: { accountId: officialHandoffState.accountId },
-        hash: buildDesktopOfficialMessageRouteHash({
-          articleId: officialHandoffState.articleId,
+        to: buildDesktopOfficialServiceThreadPath({
+          accountId: resolvedOfficialHandoffState.accountId,
+          articleId: resolvedOfficialHandoffState.articleId,
         }),
       });
       return;
     }
 
-    if (officialHandoffState.surface === "subscription") {
+    if (resolvedOfficialHandoffState.surface === "subscription") {
       void navigate({
-        to: "/chat/subscription-inbox",
-        hash: buildDesktopOfficialMessageRouteHash({
-          articleId: officialHandoffState.articleId,
+        to: buildDesktopSubscriptionInboxPath({
+          articleId: resolvedOfficialHandoffState.articleId,
         }),
       });
       return;
@@ -511,8 +662,8 @@ export function DesktopMobilePage() {
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "official-accounts",
-        accountId: officialHandoffState.accountId,
-        articleId: officialHandoffState.articleId,
+        accountId: resolvedOfficialHandoffState.accountId,
+        articleId: resolvedOfficialHandoffState.articleId,
         showWorldCharacters: false,
       }),
     });
@@ -529,11 +680,20 @@ export function DesktopMobilePage() {
   const currentGroupInviteId = currentGroupInviteHandoff
     ? resolveGroupIdFromHandoffPath(currentGroupInviteHandoff.path)
     : null;
+  const currentGroupInviteDesktopPath = currentGroupInviteHandoff
+    ? resolveGroupInviteDesktopOpenPath(currentGroupInviteHandoff.path)
+    : null;
   const activeGroupInviteDelivery =
     currentGroupInviteDelivery &&
     conversationPathSet.has(currentGroupInviteDelivery.conversationPath)
       ? currentGroupInviteDelivery
       : null;
+  const activeGroupInviteDeliveryDesktopPath = activeGroupInviteDelivery
+    ? conversationDesktopPathMap.get(activeGroupInviteDelivery.conversationPath) ??
+      buildDesktopChatThreadPath({
+        conversationId: activeGroupInviteDelivery.conversationId,
+      })
+    : null;
   const activeGroupInviteReopens = useMemo(
     () =>
       currentGroupInviteReopens.filter((record) =>
@@ -541,6 +701,10 @@ export function DesktopMobilePage() {
       ),
     [conversationPathSet, currentGroupInviteReopens],
   );
+  const resolveGroupInviteDesktopConversationPath = (conversationPath: string) =>
+    conversationDesktopPathMap.get(conversationPath) ??
+    buildDesktopChatThreadPathFromConversationPath(conversationPath) ??
+    conversationPath;
 
   useEffect(() => {
     if (!isDesktopLayout) {
@@ -568,6 +732,49 @@ export function DesktopMobilePage() {
     conversationsQuery.isLoading,
     isDesktopLayout,
     navigate,
+  ]);
+
+  useEffect(() => {
+    if (!isDesktopLayout || !officialHandoffState) {
+      return;
+    }
+
+    if (officialHandoffState.articleId && officialHandoffArticleQuery.isLoading) {
+      return;
+    }
+
+    if (
+      !officialHandoffState.articleId &&
+      officialHandoffState.surface !== "subscription" &&
+      officialHandoffState.accountId &&
+      (officialAccountsQuery.isLoading || officialAccountsQuery.isError)
+    ) {
+      return;
+    }
+
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+    const nextHash = resolvedOfficialHandoffState
+      ? buildDesktopMobileOfficialHandoffHash(resolvedOfficialHandoffState)
+      : "";
+
+    if (normalizedHash === nextHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/mobile",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [
+    hash,
+    isDesktopLayout,
+    navigate,
+    officialAccountsQuery.isError,
+    officialAccountsQuery.isLoading,
+    officialHandoffArticleQuery.isLoading,
+    officialHandoffState,
+    resolvedOfficialHandoffState,
   ]);
 
   useEffect(() => {
@@ -720,7 +927,8 @@ export function DesktopMobilePage() {
         ) : null}
 
         {callHandoffState &&
-        callHandoffPath &&
+        callHandoffMobilePath &&
+        callHandoffDesktopPath &&
         callHandoffConversationExists ? (
           <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-start justify-between gap-4">
@@ -762,7 +970,7 @@ export function DesktopMobilePage() {
                   void handleCopyHandoff({
                     description: `从桌面把 ${callHandoffTitle} 的${callHandoffKindLabel}接力到手机继续。`,
                     label: `${callHandoffTitle} ${callHandoffKindLabel}`,
-                    path: callHandoffPath,
+                    path: callHandoffMobilePath,
                     setHistory: setHandoffHistory,
                     setNotice,
                   })
@@ -773,7 +981,7 @@ export function DesktopMobilePage() {
                 复制到手机
               </Button>
               <Link
-                to={callHandoffPath as never}
+                to={callHandoffDesktopPath as never}
                 className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
               >
                 桌面打开聊天
@@ -782,12 +990,12 @@ export function DesktopMobilePage() {
           </section>
         ) : null}
 
-        {officialHandoffState && officialHandoffPath ? (
+        {resolvedOfficialHandoffState && officialHandoffPath ? (
           <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  {officialHandoffState.surface === "service" ? (
+                  {resolvedOfficialHandoffState.surface === "service" ? (
                     <MessageSquareText
                       size={16}
                       className="text-[color:var(--brand-primary)]"
@@ -860,6 +1068,11 @@ export function DesktopMobilePage() {
         {officialAccountsQuery.isError &&
         officialAccountsQuery.error instanceof Error ? (
           <ErrorBlock message={officialAccountsQuery.error.message} />
+        ) : null}
+        {officialHandoffArticleQuery.isError &&
+        !officialHandoffArticleMissing &&
+        officialHandoffArticleQuery.error instanceof Error ? (
+          <ErrorBlock message={officialHandoffArticleQuery.error.message} />
         ) : null}
         {systemStatusQuery.isError &&
         systemStatusQuery.error instanceof Error ? (
@@ -1471,7 +1684,7 @@ export function DesktopMobilePage() {
                       再发一次
                     </Button>
                     <Link
-                      to={currentGroupInviteHandoff.path as never}
+                      to={currentGroupInviteDesktopPath as never}
                       className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                     >
                       桌面打开
@@ -1494,9 +1707,7 @@ export function DesktopMobilePage() {
                             </div>
                           </div>
                           <Link
-                            to={
-                              activeGroupInviteDelivery.conversationPath as never
-                            }
+                            to={activeGroupInviteDeliveryDesktopPath as never}
                             className="inline-flex h-8 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
                           >
                             回到会话
@@ -1534,7 +1745,11 @@ export function DesktopMobilePage() {
                                   </div>
                                 </div>
                                 <Link
-                                  to={record.conversationPath as never}
+                                  to={
+                                    resolveGroupInviteDesktopConversationPath(
+                                      record.conversationPath,
+                                    ) as never
+                                  }
                                   className="inline-flex h-7 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                                 >
                                   回到会话
@@ -1587,7 +1802,7 @@ export function DesktopMobilePage() {
                             再发一次
                           </Button>
                           <Link
-                            to={item.path as never}
+                            to={resolveGroupInviteDesktopOpenPath(item.path) as never}
                             className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                           >
                             桌面打开
@@ -1981,6 +2196,10 @@ function resolveGroupIdFromHandoffPath(path: string) {
   return match?.[1] ?? null;
 }
 
+function resolveGroupInviteDesktopOpenPath(path: string) {
+  return buildDesktopChatThreadPathFromConversationPath(path) ?? path;
+}
+
 function resolveConversationRootPath(path: string) {
   const match = path.match(/^\/(chat|group)\/([^/?#]+)/);
   if (!match) {
@@ -2026,4 +2245,13 @@ async function handleCopyHandoff({
   } catch {
     setNotice("复制失败，请稍后重试。");
   }
+}
+
+function isOfficialAccountArticleMissingError(error: unknown) {
+  return (
+    error instanceof Error &&
+    /文章不存在。?|official account article not found|article not found/i.test(
+      error.message.trim(),
+    )
+  );
 }

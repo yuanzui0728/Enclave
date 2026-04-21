@@ -1,11 +1,16 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { getGroup, getGroupMessages } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupMessageSearchPage() {
@@ -29,8 +34,21 @@ export function GroupMessageSearchPage() {
 
 function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const routeState = parseMobileGroupRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const searchRouteHash =
+    buildMobileGroupRouteHash({
+      highlightedMessageId: routeState.highlightedMessageId,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
+    }) || undefined;
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -50,8 +68,24 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
-  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+  }, [
+    groupId,
+    groupQuery.error,
+    groupQuery.isLoading,
+    navigate,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
 
   return (
     <ChatMessageSearchPanel
@@ -71,13 +105,21 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
         void messagesQuery.refetch();
       }}
       onBack={() => {
-        void navigate({ to: "/group/$groupId/details", params: { groupId } });
+        void navigate({
+          to: "/group/$groupId/details",
+          params: { groupId },
+          ...(searchRouteHash ? { hash: searchRouteHash } : {}),
+        });
       }}
       onOpenMessage={(messageId) => {
         void navigate({
           to: "/group/$groupId",
           params: { groupId },
-          hash: `chat-message-${messageId}`,
+          hash: buildMobileGroupRouteHash({
+            highlightedMessageId: messageId,
+            returnPath: safeReturnPath,
+            returnHash: safeReturnHash,
+          }),
           replace: true,
         });
       }}

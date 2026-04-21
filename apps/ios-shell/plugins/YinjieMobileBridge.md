@@ -47,7 +47,7 @@
 {
   "asset": {
     "path": "/native/path/to/captured.jpg",
-    "webPath": "file:///native/path/to/captured.jpg",
+    "webPath": "capacitor://localhost/_capacitor_file_/native/path/to/captured.jpg",
     "mimeType": "image/jpeg",
     "fileName": "captured.jpg"
   }
@@ -82,7 +82,7 @@
 {
   "asset": {
     "path": "/native/path/to/file.pdf",
-    "webPath": "file:///native/path/to/file.pdf",
+    "webPath": "capacitor://localhost/_capacitor_file_/native/path/to/file.pdf",
     "mimeType": "application/pdf",
     "fileName": "需求文档.pdf"
   }
@@ -151,7 +151,7 @@
 数据来源建议：
 
 1. 打开外链：`UIApplication.shared.open`
-2. 分享：`UIActivityViewController`
+2. 分享：`UIActivityViewController`，iPad 需要同时配置 `popoverPresentationController`
 3. 文件分享：把 base64 文件落到临时目录，再通过 `UIActivityViewController` 交给系统“存储到文件/转发”
 4. 文件预览：把 base64 文件落到临时目录，再通过 `UIDocumentInteractionController` 打开系统预览/“在其他应用中打开”
 5. 图片选择：`PHPickerViewController`
@@ -170,6 +170,7 @@
 - `pickFile` 会通过 `UIDocumentPickerViewController` 选择文件，并把结果复制到临时目录再返回给 Web 层
 - `captureImage` 会通过系统相机拍照，并把结果写到临时目录再返回给 Web 层
 - 选中的资源会复制到临时目录，再以 `path / webPath / fileName / mimeType` 返回给 Web 层
+- iOS 的 `webPath` 应优先返回 Capacitor portable path，而不是裸 `file://`，避免 WebView 内 `fetch/预览` 失败
 - `getPendingLaunchTarget` / `clearPendingLaunchTarget` 当前读取和清理 `UserDefaults["YinjiePendingLaunchTarget"]`
 
 ## 失败策略

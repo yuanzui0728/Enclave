@@ -227,11 +227,23 @@ function isProtectedCharacter(character: Character) {
 function CharacterAvatar({ name, src, size = "md" }: { name: string; src?: string | null; size?: "sm" | "md" }) {
   const dim = size === "sm" ? "h-10 w-10 text-base" : "h-12 w-12 text-xl";
   if (src?.trim()) {
-    return <img src={src} alt={name} className={`${dim} rounded-full object-cover shrink-0`} />;
+    return <img src={resolveAdminAvatarSrc(src)} alt={name} className={`${dim} rounded-full object-cover shrink-0`} />;
   }
   return (
     <div className={`${dim} flex items-center justify-center rounded-full bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] shrink-0`}>
       {name.slice(0, 1)}
     </div>
   );
+}
+
+function resolveAdminAvatarSrc(src: string) {
+  if (!src.startsWith("/api/")) {
+    return src;
+  }
+
+  try {
+    return new URL(src, `${resolveAdminCoreApiBaseUrl()}/`).toString();
+  } catch {
+    return src;
+  }
 }

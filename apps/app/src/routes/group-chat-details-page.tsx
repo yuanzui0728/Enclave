@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Copy, Share2 } from "lucide-react";
 import {
   clearGroupMessages,
@@ -21,8 +21,14 @@ import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { buildGroupInviteReturnSearch } from "../lib/group-invite-delivery";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -48,10 +54,17 @@ export function GroupChatDetailsPage() {
 
 function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeMobileShareSupported = isNativeMobileShareSurface();
+  const routeState = useMemo(() => parseMobileGroupRouteState(hash), [hash]);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const [notice, setNotice] = useState<string | null>(null);
   const [memberGridExpanded, setMemberGridExpanded] = useState(false);
   const [managementSheetOpen, setManagementSheetOpen] = useState(false);
@@ -59,6 +72,15 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     "hide" | "clear" | "leave" | null
   >(null);
   const ownerQuery = useDefaultChatBackground();
+  const groupRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }) || undefined,
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -69,6 +91,56 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
   });
+
+  const navigateToRouteStateReturn = ({
+    replace = false,
+  }: {
+    replace?: boolean;
+  } = {}) => {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+      replace,
+    });
+    return true;
+  };
+  const statusBackAction = (
+    <Button
+      type="button"
+      variant="secondary"
+      onClick={() => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
+
+        void navigate({ to: "/tabs/chat" });
+      }}
+      className="rounded-full"
+    >
+      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+    </Button>
+  );
+  const renderOperationBackAction = () => (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+      onClick={() => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
+
+        void navigate({ to: "/tabs/chat" });
+      }}
+    >
+      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+    </Button>
+  );
 
   useEffect(() => {
     setNotice(null);
@@ -85,8 +157,24 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
-  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+  }, [
+    groupId,
+    groupQuery.error,
+    groupQuery.isLoading,
+    navigate,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
 
   const pinMutation = useMutation({
     mutationFn: (pinned: boolean) =>
@@ -191,6 +279,10 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+      if (navigateToRouteStateReturn({ replace: true })) {
+        return;
+      }
+
       void navigate({ to: "/tabs/chat", replace: true });
     },
   });
@@ -206,6 +298,10 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+      if (navigateToRouteStateReturn({ replace: true })) {
+        return;
+      }
+
       void navigate({ to: "/tabs/chat", replace: true });
     },
   });
@@ -303,6 +399,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           void navigate({
             to: "/group/$groupId/members/add",
             params: { groupId },
+            ...(groupRouteHash ? { hash: groupRouteHash } : {}),
           });
         },
       },
@@ -314,11 +411,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           void navigate({
             to: "/group/$groupId/members/remove",
             params: { groupId },
+            ...(groupRouteHash ? { hash: groupRouteHash } : {}),
           });
         },
       },
     ];
-  }, [groupId, membersQuery.data, navigate, visibleMemberCount]);
+  }, [groupId, groupRouteHash, membersQuery.data, navigate, visibleMemberCount]);
 
   const hasCollapsedMembers = totalMemberCount > COLLAPSED_MEMBER_PREVIEW_COUNT;
   const dangerSheetConfig =
@@ -366,7 +464,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         membersQuery.data ? `${membersQuery.data.length} 人群聊` : "群聊信息"
       }
       onBack={() => {
-        void navigate({ to: "/group/$groupId", params: { groupId } });
+        void navigate({
+          to: "/group/$groupId",
+          params: { groupId },
+          ...(groupRouteHash ? { hash: groupRouteHash } : {}),
+        });
       }}
       rightActions={
         groupSummary ? (
@@ -406,6 +508,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             title="群聊信息暂时不可用"
             description={groupQuery.error.message}
             tone="danger"
+            action={statusBackAction}
           />
         </div>
       ) : null}
@@ -416,6 +519,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             title="群成员信息暂时不可用"
             description={membersQuery.error.message}
             tone="danger"
+            action={statusBackAction}
           />
         </div>
       ) : null}
@@ -441,11 +545,14 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 type="button"
                 variant="secondary"
                 onClick={() => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
                   void navigate({ to: "/tabs/chat" });
                 }}
                 className="rounded-full"
               >
-                返回消息列表
+                {safeReturnPath ? "返回上一页" : "返回消息列表"}
               </Button>
             }
           />
@@ -503,6 +610,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/edit/name",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 }}
               />
@@ -514,6 +622,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/announcement",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 }}
               />
@@ -525,6 +634,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/qr",
                     params: { groupId },
+                    search: buildGroupInviteReturnSearch({
+                      conversationPath: `/group/${groupId}`,
+                      conversationTitle: groupQuery.data?.name ?? "当前群聊",
+                    }),
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 }}
               />
@@ -535,6 +649,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/search",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 }}
               />
@@ -548,6 +663,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/background",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 }}
               />
@@ -616,6 +732,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/edit/nickname",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 }}
               />
@@ -643,6 +760,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     ? "/group/$groupId/voice-call"
                     : "/group/$groupId/video-call",
                 params: { groupId },
+                ...(groupRouteHash ? { hash: groupRouteHash } : {}),
               });
             }}
           />
@@ -678,7 +796,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
-                {pinMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {pinMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -689,7 +812,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
-                {preferencesMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {preferencesMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -699,7 +827,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
-                {clearMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {clearMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -709,7 +842,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
-                {leaveMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {leaveMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -719,7 +857,12 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 tone="danger"
                 className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
               >
-                {hideMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {hideMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -758,6 +901,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/members/add",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 },
               },
@@ -770,6 +914,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/members/remove",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 },
               },
@@ -782,6 +927,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/announcement",
                     params: { groupId },
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 },
               },
@@ -794,6 +940,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                   void navigate({
                     to: "/group/$groupId/qr",
                     params: { groupId },
+                    search: buildGroupInviteReturnSearch({
+                      conversationPath: `/group/${groupId}`,
+                      conversationTitle: groupQuery.data?.name ?? "当前群聊",
+                    }),
+                    ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 },
               },

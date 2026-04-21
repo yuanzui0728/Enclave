@@ -45,12 +45,19 @@ import { AvatarChip } from "../../../components/avatar-chip";
 import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 import { DesktopMessageAvatarPopover } from "./desktop-message-avatar-popover";
 import { DesktopChatTextEditDialog } from "./desktop-chat-text-edit-dialog";
+import { buildMobileChatRouteHash } from "../../chat/mobile-chat-route-state";
+import { buildMobileGroupRouteHash } from "../../chat/mobile-group-route-state";
 import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state";
-import { type DesktopChatDetailsAction } from "./desktop-chat-route-state";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+  type DesktopChatDetailsAction,
+} from "./desktop-chat-route-state";
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
 import { DesktopGroupMemberRemovalPicker } from "./desktop-group-member-removal-picker";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
 import { buildDesktopAddFriendRouteHash } from "../../contacts/add-friend-route-state";
+import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
 import { DesktopContactTextEditDialog } from "../../contacts/desktop-contact-text-edit-dialog";
 import {
   DesktopContactProfileActionRow,
@@ -67,6 +74,7 @@ import {
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import { formatTimestamp } from "../../../lib/format";
+import { buildGroupInviteReturnSearch } from "../../../lib/group-invite-delivery";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { buildDesktopFriendMomentsRouteHash } from "../../moments/friend-moments-route-state";
 
@@ -434,6 +442,11 @@ function DirectChatDetailsPanel({
       params: { characterId: targetCharacterId },
       hash: buildDesktopFriendMomentsRouteHash({
         source: "chat-details",
+        returnPath: "/tabs/chat",
+        returnHash: buildDesktopChatRouteHash({
+          conversationId: conversation.id,
+          panel: "details",
+        }),
       }),
     });
   };
@@ -674,8 +687,9 @@ function DirectChatDetailsPanel({
                 }
 
                 void navigate({
-                  to: "/group/$groupId",
-                  params: { groupId: commonGroups[0].id },
+                  to: buildDesktopChatThreadPath({
+                    conversationId: commonGroups[0].id,
+                  }),
                 });
               }}
               disabled={!commonGroups.length}
@@ -692,6 +706,13 @@ function DirectChatDetailsPanel({
                 void navigate({
                   to: "/character/$characterId",
                   params: { characterId: targetCharacterId },
+                  hash: buildCharacterDetailRouteHash({
+                    returnPath: "/tabs/chat",
+                    returnHash: buildDesktopChatRouteHash({
+                      conversationId: conversation.id,
+                      panel: "details",
+                    }),
+                  }),
                 });
               }}
               disabled={!targetCharacterId}
@@ -733,6 +754,13 @@ function DirectChatDetailsPanel({
                 void navigate({
                   to: "/chat/$conversationId/background",
                   params: { conversationId: conversation.id },
+                  hash: buildMobileChatRouteHash({
+                    returnPath: "/tabs/chat",
+                    returnHash: buildDesktopChatRouteHash({
+                      conversationId: conversation.id,
+                      panel: "details",
+                    }),
+                  }),
                 });
               }}
             />
@@ -1463,6 +1491,17 @@ function GroupChatDetailsPanel({
             void navigate({
               to: "/group/$groupId/qr",
               params: { groupId: conversation.id },
+              search: buildGroupInviteReturnSearch({
+                conversationPath: `/group/${conversation.id}`,
+                conversationTitle: groupQuery.data?.name ?? conversation.title,
+              }),
+              hash: buildMobileGroupRouteHash({
+                returnPath: "/tabs/chat",
+                returnHash: buildDesktopChatRouteHash({
+                  conversationId: conversation.id,
+                  panel: "details",
+                }),
+              }),
             });
           }}
         />
@@ -1557,6 +1596,13 @@ function GroupChatDetailsPanel({
             void navigate({
               to: "/group/$groupId/background",
               params: { groupId: conversation.id },
+              hash: buildMobileGroupRouteHash({
+                returnPath: "/tabs/chat",
+                returnHash: buildDesktopChatRouteHash({
+                  conversationId: conversation.id,
+                  panel: "details",
+                }),
+              }),
             });
           }}
         />

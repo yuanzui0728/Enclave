@@ -52,7 +52,7 @@ export function parseDesktopNoteEditorRouteHash(hash: string) {
   }
 
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-  if (!normalizedHash) {
+  if (!normalizedHash || normalizedHash.includes("=")) {
     return null;
   }
 

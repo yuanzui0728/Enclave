@@ -1,3 +1,10 @@
+import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopOfficialServiceThreadPath,
+  buildDesktopSubscriptionInboxPath,
+} from "../desktop/chat/desktop-chat-route-state";
+
 type SearchNavigationTargetInput = {
   to: string;
   search?: string;
@@ -10,15 +17,20 @@ type SearchNavigationTarget = {
   hash?: string;
 };
 
+type SearchNavigationOptions = {
+  desktopLayout?: boolean;
+};
+
 const SEARCH_NAVIGATION_BASE_URL = "https://yinjie.local";
+const LEGACY_CHAT_MESSAGE_HASH_PREFIX = "chat-message-";
 
 export function resolveSearchNavigationTarget(
   input: SearchNavigationTargetInput,
+  options?: SearchNavigationOptions,
 ): SearchNavigationTarget {
   const normalizedTo = input.to.trim() || "/";
   const embeddedTarget = parseEmbeddedNavigationTarget(normalizedTo);
-
-  return {
+  const normalizedTarget = {
     to: embeddedTarget?.to ?? normalizedTo,
     search:
       normalizeSearchString(input.search) ??
@@ -27,6 +39,16 @@ export function resolveSearchNavigationTarget(
       normalizeHashString(input.hash) ??
       normalizeHashString(embeddedTarget?.hash),
   };
+
+  if (!options?.desktopLayout) {
+    return normalizedTarget;
+  }
+
+  return (
+    resolveDesktopConversationNavigationTarget(normalizedTarget) ??
+    resolveDesktopOfficialNavigationTarget(normalizedTarget) ??
+    normalizedTarget
+  );
 }
 
 function parseEmbeddedNavigationTarget(path: string) {
@@ -62,4 +84,107 @@ function normalizeHashString(value: string | undefined) {
   }
 
   return normalized.startsWith("#") ? normalized.slice(1) || undefined : normalized;
+}
+
+function resolveDesktopConversationNavigationTarget(
+  target: SearchNavigationTarget,
+) {
+  const conversationMatch = target.to.match(/^\/(?:chat|group)\/([^/?#]+)$/);
+  if (conversationMatch) {
+    const conversationId = conversationMatch[1]?.trim();
+    if (!conversationId) {
+      return null;
+    }
+
+    return {
+      to: "/tabs/chat",
+      hash: buildDesktopChatRouteHash({
+        conversationId,
+        messageId: parseLegacyHighlightedMessageId(target.hash),
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/chat/subscription-inbox") {
+    return buildNormalizedTargetFromPath(buildDesktopSubscriptionInboxPath());
+  }
+
+  return null;
+}
+
+function resolveDesktopOfficialNavigationTarget(
+  target: SearchNavigationTarget,
+) {
+  if (target.to === "/contacts/official-accounts") {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        showWorldCharacters: false,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  const serviceMatch = target.to.match(
+    /^\/official-accounts\/service\/([^/?#]+)$/,
+  );
+  if (serviceMatch?.[1]?.trim()) {
+    return buildNormalizedTargetFromPath(
+      buildDesktopOfficialServiceThreadPath({
+        accountId: serviceMatch[1].trim(),
+      }),
+    );
+  }
+
+  const articleMatch = target.to.match(
+    /^\/official-accounts\/articles\/([^/?#]+)$/,
+  );
+  if (articleMatch?.[1]?.trim()) {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        articleId: articleMatch[1].trim(),
+        officialMode: "accounts",
+        showWorldCharacters: false,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  const accountMatch = target.to.match(/^\/official-accounts\/([^/?#]+)$/);
+  if (accountMatch?.[1]?.trim()) {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        accountId: accountMatch[1].trim(),
+        officialMode: "accounts",
+        showWorldCharacters: false,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  return null;
+}
+
+function parseLegacyHighlightedMessageId(hash: string | undefined) {
+  const normalizedHash = normalizeHashString(hash);
+  if (!normalizedHash?.startsWith(LEGACY_CHAT_MESSAGE_HASH_PREFIX)) {
+    return undefined;
+  }
+
+  const messageId = normalizedHash
+    .slice(LEGACY_CHAT_MESSAGE_HASH_PREFIX.length)
+    .trim();
+  return messageId || undefined;
+}
+
+function buildNormalizedTargetFromPath(path: string): SearchNavigationTarget {
+  const embeddedTarget = parseEmbeddedNavigationTarget(path);
+
+  return {
+    to: embeddedTarget?.to ?? path,
+    search: normalizeSearchString(embeddedTarget?.search),
+    hash: normalizeHashString(embeddedTarget?.hash),
+  };
 }

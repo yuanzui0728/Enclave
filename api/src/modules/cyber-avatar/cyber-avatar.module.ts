@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CyberAvatarAdminService } from './cyber-avatar-admin.service';
 import { CyberAvatarProfileEntity } from './cyber-avatar-profile.entity';
@@ -25,8 +25,8 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
     ]),
     SystemConfigModule,
     AuthModule,
-    AiModule,
-    NeedDiscoveryModule,
+    forwardRef(() => AiModule),
+    forwardRef(() => NeedDiscoveryModule),
   ],
   providers: [
     CyberAvatarRulesService,

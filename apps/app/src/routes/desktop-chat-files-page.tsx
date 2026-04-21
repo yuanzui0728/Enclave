@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -91,7 +91,6 @@ export function DesktopChatFilesPage() {
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseDesktopChatFilesRouteState(hash);
-  const syncingRouteStateRef = useRef(false);
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(routeState.conversationId ?? null);
@@ -194,13 +193,11 @@ export function DesktopChatFilesPage() {
   );
 
   useEffect(() => {
-    syncingRouteStateRef.current = true;
-    if (routeState.conversationId === selectedConversationId) {
-      return;
-    }
-
-    setSelectedConversationId(routeState.conversationId ?? null);
-  }, [routeState.conversationId, selectedConversationId]);
+    const nextRouteConversationId = routeState.conversationId ?? null;
+    setSelectedConversationId((current) =>
+      current === nextRouteConversationId ? current : nextRouteConversationId,
+    );
+  }, [routeState.conversationId]);
 
   useEffect(() => {
     if (!conversations.length) {
@@ -237,16 +234,6 @@ export function DesktopChatFilesPage() {
       return;
     }
 
-    const routeStateApplied =
-      (routeState.conversationId ?? null) === selectedConversationId;
-
-    if (syncingRouteStateRef.current) {
-      if (routeStateApplied) {
-        syncingRouteStateRef.current = false;
-      }
-      return;
-    }
-
     const nextHash = buildDesktopChatFilesRouteHash(selectedConversationId);
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
 
@@ -263,7 +250,6 @@ export function DesktopChatFilesPage() {
     hash,
     isDesktopLayout,
     navigate,
-    routeState.conversationId,
     selectedConversationId,
   ]);
 

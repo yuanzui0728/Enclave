@@ -10,6 +10,7 @@ export type DesktopContactsPane =
 export type DesktopContactsRouteState = {
   pane: DesktopContactsPane;
   characterId?: string;
+  tag?: string;
   accountId?: string;
   articleId?: string;
   officialMode?: "feed" | "accounts";
@@ -43,6 +44,7 @@ export function parseDesktopContactsRouteState(
   const params = new URLSearchParams(normalizedHash);
   const pane = params.get("pane")?.trim();
   const characterId = params.get("characterId")?.trim() || undefined;
+  const tag = params.get("tag")?.trim() || undefined;
   const accountId = params.get("accountId")?.trim() || undefined;
   const articleId = params.get("articleId")?.trim() || undefined;
   const officialMode = params.get("officialMode")?.trim();
@@ -53,6 +55,7 @@ export function parseDesktopContactsRouteState(
         ? (pane as DesktopContactsPane)
         : DEFAULT_DESKTOP_CONTACTS_ROUTE_STATE.pane,
     characterId,
+    tag,
     accountId,
     articleId,
     officialMode:
@@ -78,6 +81,10 @@ export function buildDesktopContactsRouteHash(
 
   if (state.characterId?.trim()) {
     params.set("characterId", state.characterId.trim());
+  }
+
+  if (state.tag?.trim()) {
+    params.set("tag", state.tag.trim());
   }
 
   if (state.accountId?.trim()) {

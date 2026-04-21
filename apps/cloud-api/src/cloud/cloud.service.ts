@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
@@ -9,6 +13,7 @@ import type {
   CloudWorldBootstrapConfig,
   CloudWorldDeploymentState,
   CloudWorldDriftSummary,
+  CloudWorldInstanceFleetItem,
   CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
@@ -21,16 +26,34 @@ import type {
   WorldLifecycleJobType,
 } from "@yinjie/contracts";
 import { randomUUID } from "node:crypto";
-import { In, Repository } from "typeorm";
+import { EntityManager, In, Repository } from "typeorm";
 import { PhoneAuthService } from "../auth/phone-auth.service";
+import { createCloudWorldSlug } from "../cloud-world-slug";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
-import { buildWorldBootstrapConfig, resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "../orchestration/world-bootstrap-config";
+import {
+  buildWorldBootstrapConfig,
+  resolveSuggestedWorldAdminUrl,
+  resolveSuggestedWorldApiBaseUrl,
+} from "../orchestration/world-bootstrap-config";
 import { WorldLifecycleWorkerService } from "../orchestration/world-lifecycle-worker.service";
 import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
-import { WorldAccessService } from "../world-access/world-access.service";
+import { isRequestGatePlaceholderWorld as isRequestGatePlaceholder } from "../request-gate-placeholder";
+import { getRequestPhoneAvailability } from "../request-phone-availability";
+import { getRequestGateState } from "../request-gate-state";
+import {
+  getRequestRecordProjection,
+  getRequestWorldSyncDecision,
+  getRequestVisibleWorldProjection,
+} from "../request-world-sync-state";
+import { WaitingSessionSyncService } from "../world-access/waiting-session-sync.service";
+
+type CloudRequestWriteRepositories = {
+  worldRepo: Repository<CloudWorldEntity>;
+  requestRepo: Repository<CloudWorldRequestEntity>;
+};
 
 @Injectable()
 export class CloudService {
@@ -51,22 +74,28 @@ export class CloudService {
     private readonly phoneAuthService: PhoneAuthService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
     private readonly worldLifecycleWorker: WorldLifecycleWorkerService,
-    private readonly worldAccessService: WorldAccessService,
+    private readonly waitingSessionSyncService: WaitingSessionSyncService,
   ) {
     this.staleHeartbeatSeconds = this.parsePositiveInteger(
-      this.configService.get<string>("CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS"),
+      this.configService.get<string>(
+        "CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS",
+      ),
     );
     this.alertRetryThreshold = this.parsePositiveInteger(
       this.configService.get<string>("CLOUD_WORLD_ALERT_RETRY_THRESHOLD"),
       3,
     );
     this.criticalHeartbeatStaleSeconds = this.parsePositiveInteger(
-      this.configService.get<string>("CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS"),
+      this.configService.get<string>(
+        "CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS",
+      ),
       this.staleHeartbeatSeconds > 0 ? this.staleHeartbeatSeconds * 3 : 0,
     );
   }
 
-  async getWorldLookupByPhone(phone: string): Promise<CloudWorldLookupResponse> {
+  async getWorldLookupByPhone(
+    phone: string,
+  ): Promise<CloudWorldLookupResponse> {
     const normalizedPhone = this.phoneAuthService.normalizePhone(phone);
     const [world, latestRequest] = await Promise.all([
       this.worldRepo.findOne({
@@ -77,16 +106,25 @@ export class CloudService {
         order: { updatedAt: "DESC" },
       }),
     ]);
+    const visibleWorld = this.toVisibleWorld(world);
+    const hasHiddenPlaceholder = !!world && !visibleWorld;
 
     return {
       phone: normalizedPhone,
-      status: world
-        ? this.toWorldStatus(world.status)
+      status: hasHiddenPlaceholder && latestRequest
+        ? this.toRequestStatus(latestRequest.status)
+        : visibleWorld
+        ? this.toWorldStatus(visibleWorld.status)
         : latestRequest
           ? this.toRequestStatus(latestRequest.status)
           : "none",
-      world: world ? this.serializeWorld(world) : null,
-      latestRequest: latestRequest ? this.serializeRequest(latestRequest, world) : null,
+      world: visibleWorld ? this.serializeWorld(visibleWorld) : null,
+      latestRequest: latestRequest
+        ? this.serializeRequest(
+            latestRequest,
+            visibleWorld,
+          )
+        : null,
     };
   }
 
@@ -100,9 +138,11 @@ export class CloudService {
       return null;
     }
 
-    const world = await this.worldRepo.findOne({
-      where: { phone: normalizedPhone },
-    });
+    const world = this.toVisibleWorld(
+      await this.worldRepo.findOne({
+        where: { phone: normalizedPhone },
+      }),
+    );
     return this.serializeRequest(latestRequest, world);
   }
 
@@ -113,21 +153,10 @@ export class CloudService {
       throw new BadRequestException("世界名称不能为空。");
     }
 
-    const [world, latestRequest] = await Promise.all([
-      this.worldRepo.findOne({
-        where: { phone: normalizedPhone },
-      }),
-      this.requestRepo.findOne({
-        where: { phone: normalizedPhone },
-        order: { updatedAt: "DESC" },
-      }),
-    ]);
-    if (world) {
-      throw new BadRequestException("该手机号已经存在云世界记录，不能重复创建。");
-    }
-    if (latestRequest && latestRequest.status !== "rejected") {
-      throw new BadRequestException("该手机号已经存在待处理申请，不能重复创建。");
-    }
+    await this.assertRequestPhoneAvailable(normalizedPhone, {
+      duplicateWorldMessage: "该手机号已经存在云世界记录，不能重复创建。",
+      duplicateRequestMessage: "该手机号已经存在待处理申请，不能重复创建。",
+    });
 
     const entity = this.requestRepo.create({
       phone: normalizedPhone,
@@ -146,8 +175,12 @@ export class CloudService {
       where,
       order: { updatedAt: "DESC" },
     });
-    const worldsByPhone = await this.loadWorldsByPhone(items.map((item) => item.phone));
-    return items.map((item) => this.serializeRequest(item, worldsByPhone.get(item.phone)));
+    const worldsByPhone = await this.loadWorldsByPhone(
+      items.map((item) => item.phone),
+    );
+    return items.map((item) =>
+      this.serializeRequest(item, worldsByPhone.get(item.phone)),
+    );
   }
 
   async getRequestById(id: string) {
@@ -155,9 +188,11 @@ export class CloudService {
     if (!request) {
       throw new NotFoundException("找不到该云世界申请。");
     }
-    const world = await this.worldRepo.findOne({
-      where: { phone: request.phone },
-    });
+    const world = this.toVisibleWorld(
+      await this.worldRepo.findOne({
+        where: { phone: request.phone },
+      }),
+    );
     return this.serializeRequest(request, world);
   }
 
@@ -172,55 +207,132 @@ export class CloudService {
       adminUrl?: string | null;
     },
   ) {
-    const request = await this.requestRepo.findOne({ where: { id } });
-    if (!request) {
-      throw new NotFoundException("找不到该云世界申请。");
+    const normalizedApiBaseUrl =
+      payload.apiBaseUrl === undefined
+        ? undefined
+        : this.normalizeOptionalUrl(payload.apiBaseUrl);
+    const normalizedAdminUrl =
+      payload.adminUrl === undefined
+        ? undefined
+        : this.normalizeOptionalUrl(payload.adminUrl);
+    const normalizedNote =
+      payload.note === undefined
+        ? undefined
+        : this.normalizeOptionalText(payload.note);
+    const { previousPhone, request } = await this.requestRepo.manager.transaction(
+      async (manager: EntityManager) => {
+        const repos = this.getCloudRequestWriteRepositories(manager);
+        const request = await repos.requestRepo.findOne({ where: { id } });
+        if (!request) {
+          throw new NotFoundException("找不到该云世界申请。");
+        }
+
+        const previousPhone = request.phone;
+        const nextPhone = payload.phone
+          ? this.phoneAuthService.normalizePhone(payload.phone)
+          : request.phone;
+        const nextWorldName = payload.worldName?.trim() || request.worldName;
+        const nextStatus = payload.status ?? this.toRequestStatus(request.status);
+
+        if (previousPhone !== nextPhone) {
+          await this.assertRequestPhoneAvailable(
+            nextPhone,
+            {
+              excludeRequestId: request.id,
+              duplicateWorldMessage:
+                "该手机号已经存在云世界记录，不能改绑到这个手机号。",
+              duplicateRequestMessage:
+                "该手机号已经存在待处理申请，不能改绑到这个手机号。",
+            },
+            repos,
+          );
+        }
+
+        request.phone = nextPhone;
+        request.worldName = nextWorldName;
+        request.status = nextStatus;
+        request.note =
+          normalizedNote !== undefined ? normalizedNote : request.note;
+        await repos.requestRepo.save(request);
+
+        await this.syncWorldForRequest(
+          request,
+          {
+            apiBaseUrl: normalizedApiBaseUrl,
+            adminUrl: normalizedAdminUrl,
+            previousPhone,
+          },
+          repos,
+        );
+
+        return {
+          previousPhone,
+          request,
+        };
+      },
+    );
+
+    if (previousPhone !== request.phone) {
+      await this.waitingSessionSyncService.invalidateWaitingSessionsForPhone(
+        previousPhone,
+        "cloud.updateRequest",
+      );
     }
-
-    const nextPhone = payload.phone ? this.phoneAuthService.normalizePhone(payload.phone) : request.phone;
-    const nextWorldName = payload.worldName?.trim() || request.worldName;
-    const nextStatus = payload.status ?? this.toRequestStatus(request.status);
-    const normalizedApiBaseUrl = this.normalizeUrl(payload.apiBaseUrl);
-    const normalizedAdminUrl = this.normalizeUrl(payload.adminUrl);
-
-    request.phone = nextPhone;
-    request.worldName = nextWorldName;
-    request.status = nextStatus;
-    request.note = payload.note?.trim() || null;
-    await this.requestRepo.save(request);
-
-    await this.syncWorldForRequest(request, {
-      apiBaseUrl: normalizedApiBaseUrl,
-      adminUrl: normalizedAdminUrl,
-    });
-
+    await this.waitingSessionSyncService.refreshWaitingSessionsForPhone(
+      request.phone,
+      "cloud.updateRequest",
+    );
     const world = await this.worldRepo.findOne({
       where: { phone: request.phone },
     });
-    return this.serializeRequest(request, world);
+    return this.serializeRequest(request, this.toVisibleWorld(world));
   }
 
   async listWorlds(status?: CloudWorldLifecycleStatus) {
     const where = status ? { status } : undefined;
-    const items = await this.worldRepo.find({
+    const items = this.filterVisibleWorlds(await this.worldRepo.find({
       where,
       order: { updatedAt: "DESC" },
-    });
+    }));
     return items.map((item) => this.serializeWorld(item));
   }
 
+  async listWorldInstances(
+    status?: CloudWorldLifecycleStatus,
+  ): Promise<CloudWorldInstanceFleetItem[]> {
+    const where = status ? { status } : undefined;
+    const worlds = this.filterVisibleWorlds(await this.worldRepo.find({
+      where,
+      order: { updatedAt: "DESC" },
+    }));
+    const worldIds = worlds.map((world) => world.id);
+    const instances = worldIds.length
+      ? await this.instanceRepo.find({
+          where: { worldId: In(worldIds) },
+          order: { updatedAt: "DESC" },
+        })
+      : [];
+    const instanceByWorldId = new Map(
+      instances.map((instance) => [instance.worldId, instance] as const),
+    );
+
+    return worlds.map((world) => ({
+      world: this.serializeWorld(world),
+      instance: instanceByWorldId.get(world.id)
+        ? this.serializeInstance(instanceByWorldId.get(world.id)!)
+        : null,
+    }));
+  }
+
   async getWorldById(id: string) {
-    const world = await this.worldRepo.findOne({ where: { id } });
-    if (!world) {
-      throw new NotFoundException("找不到该云世界。");
-    }
+    const world = await this.requireWorld(id);
     return this.serializeWorld(world);
   }
 
   async getWorldDriftSummary(): Promise<CloudWorldDriftSummary> {
-    const worlds = await this.worldRepo.find({
+    const worlds = this.filterVisibleWorlds(await this.worldRepo.find({
       order: { updatedAt: "DESC" },
-    });
+    }));
     const worldIds = worlds.map((world) => world.id);
     const [instances, activeJobs] = await Promise.all([
       worldIds.length
@@ -261,15 +373,23 @@ export class CloudService {
 
     await Promise.all(
       worlds.map(async (world) => {
-        const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
+        const provider = this.computeProviderRegistry.getProvider(
+          world.providerKey ?? this.resolveDefaultProviderKey(),
+        );
         try {
-          const observed = await provider.inspectInstance(instanceByWorldId.get(world.id) ?? null, world);
+          const observed = await provider.inspectInstance(
+            instanceByWorldId.get(world.id) ?? null,
+            world,
+          );
           observedByWorldId.set(world.id, {
             deploymentState: observed.deploymentState,
             providerMessage: observed.providerMessage ?? null,
           });
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Failed to inspect provider runtime state.";
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Failed to inspect provider runtime state.";
           observedByWorldId.set(world.id, {
             deploymentState: "error",
             providerMessage: message,
@@ -300,14 +420,21 @@ export class CloudService {
         failedWorlds += 1;
       }
 
-      const desiredState = world.desiredState === "sleeping" ? "sleeping" : "running";
+      const desiredState =
+        world.desiredState === "sleeping" ? "sleeping" : "running";
       const observed = observedByWorldId.get(world.id);
       const activeJob = activeJobByWorldId.get(world.id);
-      const hasRecoveryJob = activeJob?.jobType === "resume" || activeJob?.jobType === "provision";
+      const hasRecoveryJob =
+        activeJob?.jobType === "resume" || activeJob?.jobType === "provision";
       const isHeartbeatStale = this.isHeartbeatStale(world.lastHeartbeatAt);
-      const providerRunning = observed?.deploymentState === "running" || observed?.deploymentState === "starting";
-      const providerMissingOrStopped = observed?.deploymentState === "missing" || observed?.deploymentState === "stopped";
-      const hasRunningDrift = desiredState === "running" && providerMissingOrStopped;
+      const providerRunning =
+        observed?.deploymentState === "running" ||
+        observed?.deploymentState === "starting";
+      const providerMissingOrStopped =
+        observed?.deploymentState === "missing" ||
+        observed?.deploymentState === "stopped";
+      const hasRunningDrift =
+        desiredState === "running" && providerMissingOrStopped;
       const hasSleepingDrift = desiredState === "sleeping" && providerRunning;
       const shouldCountHeartbeatStale =
         desiredState === "running" &&
@@ -350,12 +477,16 @@ export class CloudService {
     }
 
     attentionItems.sort((left, right) => {
-      const severityScore = this.getAttentionSeverityScore(right.severity) - this.getAttentionSeverityScore(left.severity);
+      const severityScore =
+        this.getAttentionSeverityScore(right.severity) -
+        this.getAttentionSeverityScore(left.severity);
       if (severityScore !== 0) {
         return severityScore;
       }
 
-      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+      return (
+        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+      );
     });
 
     return {
@@ -389,7 +520,9 @@ export class CloudService {
         createdAt: "DESC",
       },
     });
-    const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
+    const provider = this.computeProviderRegistry.getProvider(
+      world.providerKey ?? this.resolveDefaultProviderKey(),
+    );
 
     let observedDeploymentState: CloudWorldDeploymentState | undefined;
     let observedMessage: string | null = null;
@@ -399,7 +532,10 @@ export class CloudService {
       observedMessage = observed.providerMessage ?? null;
     } catch (error) {
       observedDeploymentState = "error";
-      observedMessage = error instanceof Error ? error.message : "Failed to inspect provider runtime state.";
+      observedMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to inspect provider runtime state.";
     }
 
     return {
@@ -410,14 +546,18 @@ export class CloudService {
       },
       item: this.buildWorldAttentionItem({
         world,
-        desiredState: world.desiredState === "sleeping" ? "sleeping" : "running",
+        desiredState:
+          world.desiredState === "sleeping" ? "sleeping" : "running",
         observedDeploymentState,
         observedMessage,
         activeJobType: activeJob ? this.toJobType(activeJob.jobType) : null,
         isHeartbeatStale:
-          (world.desiredState === "sleeping" ? "sleeping" : "running") === "running" &&
+          (world.desiredState === "sleeping" ? "sleeping" : "running") ===
+            "running" &&
           this.isHeartbeatStale(world.lastHeartbeatAt) &&
-          (observedDeploymentState === "running" || observedDeploymentState === "starting" || observedDeploymentState === "package_only") &&
+          (observedDeploymentState === "running" ||
+            observedDeploymentState === "starting" ||
+            observedDeploymentState === "package_only") &&
           world.status !== "failed" &&
           world.status !== "disabled" &&
           world.status !== "deleting",
@@ -444,26 +584,50 @@ export class CloudService {
       note?: string | null;
     },
   ) {
-    const world = await this.worldRepo.findOne({ where: { id } });
-    if (!world) {
-      throw new NotFoundException("找不到该云世界。");
-    }
+    const world = await this.requireWorld(id);
+    const previousPhone = world.phone;
 
     const hasExplicitProviderChange = payload.providerKey !== undefined;
     const nextProvider = hasExplicitProviderChange
-      ? this.computeProviderRegistry.getProvider(payload.providerKey)
-      : this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
-    const nextPhone = payload.phone ? this.phoneAuthService.normalizePhone(payload.phone) : world.phone;
+      ? this.computeProviderRegistry.requireProvider(payload.providerKey)
+      : this.computeProviderRegistry.getProvider(
+          world.providerKey ?? this.resolveDefaultProviderKey(),
+        );
+    const nextPhone = payload.phone
+      ? this.phoneAuthService.normalizePhone(payload.phone)
+      : world.phone;
+    if (previousPhone !== nextPhone) {
+      await this.assertRequestPhoneAvailable(nextPhone, {
+        duplicateWorldMessage: "该手机号已经存在云世界记录，不能改绑到这个手机号。",
+        duplicateRequestMessage: "该手机号已经存在待处理申请，不能改绑到这个手机号。",
+      });
+    }
     const nextStatus = payload.status ?? this.toWorldStatus(world.status);
-    const nextApiBaseUrl = payload.apiBaseUrl !== undefined ? this.normalizeUrl(payload.apiBaseUrl) : world.apiBaseUrl;
+    let nextApiBaseUrl = world.apiBaseUrl;
+    if (payload.apiBaseUrl !== undefined) {
+      nextApiBaseUrl = this.normalizeOptionalUrl(payload.apiBaseUrl);
+    }
+
+    let nextAdminUrl = world.adminUrl;
+    if (payload.adminUrl !== undefined) {
+      nextAdminUrl = this.normalizeOptionalUrl(payload.adminUrl);
+    }
+
+    let nextNote = world.note;
+    if (payload.note !== undefined) {
+      nextNote = this.normalizeOptionalText(payload.note);
+    }
     const nextProvisionStrategy =
       payload.provisionStrategy !== undefined
-        ? payload.provisionStrategy?.trim() || nextProvider.summary.provisionStrategy
+        ? payload.provisionStrategy?.trim() ||
+          nextProvider.summary.provisionStrategy
         : hasExplicitProviderChange
           ? nextProvider.summary.provisionStrategy
           : world.provisionStrategy || nextProvider.summary.provisionStrategy;
     if (nextStatus === "ready" && !nextApiBaseUrl) {
-      throw new BadRequestException("世界进入 ready 状态时必须提供 apiBaseUrl。");
+      throw new BadRequestException(
+        "世界进入 ready 状态时必须提供 apiBaseUrl。",
+      );
     }
 
     world.phone = nextPhone;
@@ -475,22 +639,40 @@ export class CloudService {
       payload.providerRegion !== undefined
         ? payload.providerRegion?.trim() || null
         : hasExplicitProviderChange
-          ? nextProvider.summary.defaultRegion ?? null
+          ? (nextProvider.summary.defaultRegion ?? null)
           : world.providerRegion;
     world.providerZone =
       payload.providerZone !== undefined
         ? payload.providerZone?.trim() || null
         : hasExplicitProviderChange
-          ? nextProvider.summary.defaultZone ?? null
+          ? (nextProvider.summary.defaultZone ?? null)
           : world.providerZone;
     world.apiBaseUrl = nextApiBaseUrl;
-    world.adminUrl = payload.adminUrl !== undefined ? this.normalizeUrl(payload.adminUrl) : world.adminUrl;
-    world.note = payload.note?.trim() || null;
-    world.failureCode = nextStatus === "failed" ? world.failureCode ?? "manual_failure" : null;
-    world.failureMessage = nextStatus === "failed" ? world.failureMessage ?? "管理员手动将世界标记为失败。" : null;
-    world.healthStatus = nextStatus === "ready" ? "healthy" : nextStatus === "sleeping" ? "sleeping" : world.healthStatus;
+    world.adminUrl = nextAdminUrl;
+    world.note = nextNote;
+    world.failureCode =
+      nextStatus === "failed" ? (world.failureCode ?? "manual_failure") : null;
+    world.failureMessage =
+      nextStatus === "failed"
+        ? (world.failureMessage ?? "管理员手动将世界标记为失败。")
+        : null;
+    world.healthStatus =
+      nextStatus === "ready"
+        ? "healthy"
+        : nextStatus === "sleeping"
+          ? "sleeping"
+          : world.healthStatus;
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    if (previousPhone !== world.phone) {
+      await this.waitingSessionSyncService.invalidateWaitingSessionsForPhone(
+        previousPhone,
+        "cloud.updateWorld",
+      );
+    }
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "cloud.updateWorld",
+    );
 
     return this.serializeWorld(world);
   }
@@ -507,6 +689,7 @@ export class CloudService {
     } = {};
 
     if (filters?.worldId) {
+      await this.requireWorld(filters.worldId);
       where.worldId = filters.worldId;
     }
     if (filters?.status) {
@@ -524,7 +707,16 @@ export class CloudService {
       take: filters?.worldId ? 20 : 100,
     });
 
-    return jobs.map((job) => this.serializeJob(job));
+    if (filters?.worldId || jobs.length === 0) {
+      return jobs.map((job) => this.serializeJob(job));
+    }
+
+    const visibleWorldIds = await this.loadVisibleWorldIdSet(
+      jobs.map((job) => job.worldId),
+    );
+    return jobs
+      .filter((job) => visibleWorldIds.has(job.worldId))
+      .map((job) => this.serializeJob(job));
   }
 
   async getJobById(id: string) {
@@ -533,39 +725,50 @@ export class CloudService {
       throw new NotFoundException("找不到该生命周期任务。");
     }
 
+    try {
+      await this.requireWorld(job.worldId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException("找不到该生命周期任务。");
+      }
+      throw error;
+    }
     return this.serializeJob(job);
   }
 
   async getWorldInstance(worldId: string) {
-    const world = await this.worldRepo.findOne({ where: { id: worldId } });
-    if (!world) {
-      throw new NotFoundException("找不到该云世界。");
-    }
-
+    await this.requireWorld(worldId);
     const instance = await this.instanceRepo.findOne({
       where: { worldId },
     });
     return instance ? this.serializeInstance(instance) : null;
   }
 
-  async getWorldBootstrapConfig(worldId: string): Promise<CloudWorldBootstrapConfig> {
+  async getWorldBootstrapConfig(
+    worldId: string,
+  ): Promise<CloudWorldBootstrapConfig> {
     const world = await this.requireWorld(worldId);
     const preparedWorld = await this.ensureWorldBootstrapCredentials(world);
     return buildWorldBootstrapConfig(preparedWorld, this.configService);
   }
 
-  async getWorldRuntimeStatus(worldId: string): Promise<CloudWorldRuntimeStatusSummary> {
+  async getWorldRuntimeStatus(
+    worldId: string,
+  ): Promise<CloudWorldRuntimeStatusSummary> {
     const world = await this.requireWorld(worldId);
     const instance = await this.instanceRepo.findOne({
       where: { worldId },
     });
-    const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
+    const provider = this.computeProviderRegistry.getProvider(
+      world.providerKey ?? this.resolveDefaultProviderKey(),
+    );
     const observedStatus = await provider.inspectInstance(instance, world);
 
     return {
       worldId: world.id,
       providerKey: observedStatus.providerKey ?? provider.key,
-      deploymentMode: observedStatus.deploymentMode ?? provider.summary.deploymentMode,
+      deploymentMode:
+        observedStatus.deploymentMode ?? provider.summary.deploymentMode,
       executorMode: observedStatus.executorMode ?? null,
       remoteHost: observedStatus.remoteHost ?? null,
       remoteDeployPath: observedStatus.remoteDeployPath ?? null,
@@ -579,19 +782,23 @@ export class CloudService {
   }
 
   async reconcileWorld(worldId: string) {
-    const reconciledWorld = await this.worldLifecycleWorker.reconcileWorldNow(worldId);
+    await this.requireWorld(worldId);
+    const reconciledWorld =
+      await this.worldLifecycleWorker.reconcileWorldNow(worldId);
     if (!reconciledWorld) {
-      throw new NotFoundException("鎵句笉鍒拌浜戜笘鐣屻€?");
+      throw new NotFoundException("找不到该云世界。");
     }
 
     return this.serializeWorld(reconciledWorld);
   }
 
-  async rotateWorldCallbackToken(worldId: string): Promise<CloudWorldBootstrapConfig> {
+  async rotateWorldCallbackToken(
+    worldId: string,
+  ): Promise<CloudWorldBootstrapConfig> {
     const world = await this.requireWorld(worldId);
     world.callbackToken = randomUUID();
     if (!world.slug) {
-      world.slug = this.createWorldSlug(world.phone);
+      world.slug = createCloudWorldSlug(world.phone);
     }
     const savedWorld = await this.worldRepo.save(world);
     return buildWorldBootstrapConfig(savedWorld, this.configService);
@@ -602,7 +809,12 @@ export class CloudService {
     if (world.status === "disabled" || world.status === "deleting") {
       throw new BadRequestException("当前世界不可唤起。");
     }
-    if (world.status === "ready" || world.status === "starting" || world.status === "bootstrapping" || world.status === "creating") {
+    if (
+      world.status === "ready" ||
+      world.status === "starting" ||
+      world.status === "bootstrapping" ||
+      world.status === "creating"
+    ) {
       return this.serializeWorld(world);
     }
 
@@ -610,24 +822,34 @@ export class CloudService {
     world.status = jobType === "resume" ? "starting" : "queued";
     world.desiredState = "running";
     world.healthStatus = jobType === "resume" ? "starting" : "queued";
-    world.healthMessage = jobType === "resume" ? "管理员手动唤起该世界。" : "管理员手动重建该世界。";
+    world.healthMessage =
+      jobType === "resume"
+        ? "管理员手动唤起该世界。"
+        : "管理员手动重建该世界。";
     world.failureCode = null;
     world.failureMessage = null;
     await this.worldRepo.save(world);
     await this.ensureLifecycleJob(world.id, jobType, {
       source: "admin-resume",
     });
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "cloud.resumeWorld",
+    );
     return this.serializeWorld(world);
   }
 
   async suspendWorld(id: string) {
     const world = await this.requireWorld(id);
-    if (world.status === "disabled" || world.status === "deleting") {
+    const currentStatus = this.toWorldStatus(world.status);
+    if (currentStatus === "disabled" || currentStatus === "deleting") {
       throw new BadRequestException("当前世界不可休眠。");
     }
-    if (world.status === "sleeping" || world.status === "stopping") {
+    if (currentStatus === "sleeping" || currentStatus === "stopping") {
       return this.serializeWorld(world);
+    }
+    if (currentStatus !== "ready" && currentStatus !== "starting") {
+      throw new BadRequestException("只有处于活跃中的世界才可以进入休眠。");
     }
 
     world.status = "stopping";
@@ -638,28 +860,45 @@ export class CloudService {
     await this.ensureLifecycleJob(world.id, "suspend", {
       source: "admin-suspend",
     });
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "cloud.suspendWorld",
+    );
     return this.serializeWorld(world);
   }
 
   async retryWorld(id: string) {
     const world = await this.requireWorld(id);
-    if (world.status === "disabled" || world.status === "deleting") {
+    const currentStatus = this.toWorldStatus(world.status);
+    if (currentStatus === "disabled" || currentStatus === "deleting") {
       throw new BadRequestException("当前世界不可重试。");
+    }
+    if (
+      currentStatus !== "failed" &&
+      currentStatus !== "queued" &&
+      currentStatus !== "creating" &&
+      currentStatus !== "bootstrapping" &&
+      currentStatus !== "starting"
+    ) {
+      throw new BadRequestException("当前世界状态不支持重试。");
     }
 
     const jobType = await this.chooseRecoveryJobType(world.id);
     world.status = jobType === "resume" ? "starting" : "queued";
     world.desiredState = "running";
     world.healthStatus = jobType === "resume" ? "starting" : "queued";
-    world.healthMessage = jobType === "resume" ? "正在重试唤起该世界。" : "正在重试创建该世界。";
+    world.healthMessage =
+      jobType === "resume" ? "正在重试唤起该世界。" : "正在重试创建该世界。";
     world.failureCode = null;
     world.failureMessage = null;
     await this.worldRepo.save(world);
     await this.ensureLifecycleJob(world.id, jobType, {
       source: "admin-retry",
     });
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "cloud.retryWorld",
+    );
     return this.serializeWorld(world);
   }
 
@@ -668,24 +907,73 @@ export class CloudService {
     payload: {
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
+      previousPhone?: string;
+    },
+    repos: Pick<CloudRequestWriteRepositories, "worldRepo"> = {
+      worldRepo: this.worldRepo,
     },
   ) {
-    if (request.status === "pending") {
+    const [currentWorld, previousWorld] = await Promise.all([
+      repos.worldRepo.findOne({
+        where: { phone: request.phone },
+      }),
+      payload.previousPhone && payload.previousPhone !== request.phone
+        ? repos.worldRepo.findOne({
+            where: { phone: payload.previousPhone },
+          })
+        : Promise.resolve(null),
+    ]);
+    let world = currentWorld ?? previousWorld;
+    const requestStatus = this.toRequestStatus(request.status);
+
+    if (
+      currentWorld &&
+      previousWorld &&
+      previousWorld.id !== currentWorld.id &&
+      this.isRequestGatePlaceholderWorld(previousWorld)
+    ) {
+      await repos.worldRepo.delete({ id: previousWorld.id });
+    }
+
+    const syncDecision = getRequestWorldSyncDecision({
+      requestStatus,
+      hasWorld: !!world,
+      hasGatePlaceholderWorld: !!world && this.isRequestGatePlaceholderWorld(world),
+    });
+
+    if (syncDecision.action === "sync_gate_placeholder") {
+      if (world) {
+        await this.syncRequestGatePlaceholderWorld(world, request, repos.worldRepo);
+      }
       return;
     }
 
-    let world = await this.worldRepo.findOne({
-      where: { phone: request.phone },
-    });
+    if (syncDecision.action === "delete_gate_placeholder") {
+      if (world) {
+        await repos.worldRepo.delete({ id: world.id });
+      }
+      return;
+    }
+
+    if (syncDecision.action === "skip") {
+      return;
+    }
+
+    const worldProjection = getRequestVisibleWorldProjection(
+      requestStatus,
+      request.note,
+    );
 
     if (!world) {
-      const provider = this.computeProviderRegistry.getProvider("manual-docker");
+      const provider = this.computeProviderRegistry.getProvider(
+        this.resolveDefaultProviderKey(),
+      );
       world = this.worldRepo.create({
         phone: request.phone,
         name: request.worldName,
-        status: this.mapRequestStatusToWorldStatus(this.toRequestStatus(request.status)),
-        slug: this.createWorldSlug(request.phone),
-        desiredState: request.status === "disabled" ? "sleeping" : "running",
+        status: worldProjection.worldStatus,
+        slug: createCloudWorldSlug(request.phone),
+        desiredState: worldProjection.desiredState,
         provisionStrategy: provider.summary.provisionStrategy,
         providerKey: provider.key,
         providerRegion: provider.summary.defaultRegion ?? null,
@@ -710,44 +998,40 @@ export class CloudService {
 
     world.phone = request.phone;
     world.name = request.worldName;
-    world.status = this.mapRequestStatusToWorldStatus(this.toRequestStatus(request.status));
+    world.status = worldProjection.worldStatus;
+    world.desiredState = worldProjection.desiredState;
     world.note = request.note ?? null;
-    world.adminUrl = payload.adminUrl ?? world.adminUrl ?? null;
 
     if (!world.slug) {
-      world.slug = this.createWorldSlug(request.phone);
+      world.slug = createCloudWorldSlug(request.phone);
     }
     if (!world.callbackToken) {
       world.callbackToken = randomUUID();
     }
 
-    if (request.status === "active") {
-      if (!payload.apiBaseUrl && !world.apiBaseUrl) {
+    if (payload.adminUrl !== undefined) {
+      world.adminUrl = payload.adminUrl;
+    }
+
+    if (requestStatus === "active") {
+      const nextApiBaseUrl =
+        payload.apiBaseUrl !== undefined
+          ? payload.apiBaseUrl
+          : world.apiBaseUrl;
+      if (!nextApiBaseUrl) {
         throw new BadRequestException("激活云世界时必须提供 apiBaseUrl。");
       }
-      world.apiBaseUrl = payload.apiBaseUrl ?? world.apiBaseUrl;
-      world.healthStatus = "healthy";
-      world.healthMessage = "人工交付的世界已准备好。";
+      world.apiBaseUrl = nextApiBaseUrl;
     } else if (payload.apiBaseUrl !== undefined) {
       world.apiBaseUrl = payload.apiBaseUrl;
     }
 
-    if (request.status === "rejected") {
-      world.failureCode = "request_rejected";
-      world.failureMessage = request.note ?? "申请已被拒绝。";
-      world.healthStatus = "failed";
-      world.healthMessage = world.failureMessage;
-    } else if (request.status === "disabled") {
-      world.failureCode = "manually_disabled";
-      world.failureMessage = request.note ?? "该世界已被停用。";
-      world.healthStatus = "disabled";
-      world.healthMessage = world.failureMessage;
-    } else {
-      world.failureCode = null;
-      world.failureMessage = null;
-    }
+    world.healthStatus = worldProjection.healthStatus;
+    world.healthMessage = worldProjection.healthMessage;
+      world.failureCode = worldProjection.failureCode;
+      world.failureMessage = worldProjection.failureMessage;
 
-    await this.worldRepo.save(world);
+    await repos.worldRepo.save(world);
   }
 
   private serializeWorld(world: CloudWorldEntity): CloudWorldSummary {
@@ -778,14 +1062,27 @@ export class CloudService {
     };
   }
 
-  private serializeRequest(request: CloudWorldRequestEntity, world?: CloudWorldEntity | null): CloudWorldRequestRecord {
+  private serializeRequest(
+    request: CloudWorldRequestEntity,
+    world?: CloudWorldEntity | null,
+  ): CloudWorldRequestRecord {
+    const visibleWorld = this.toVisibleWorld(world);
+    const requestStatus = this.toRequestStatus(request.status);
+    const requestProjection = getRequestRecordProjection(
+      requestStatus,
+      request.note,
+    );
     return {
       id: request.id,
       phone: request.phone,
       worldName: request.worldName,
-      status: this.toRequestStatus(request.status),
-      apiBaseUrl: world?.apiBaseUrl ?? null,
-      adminUrl: world?.adminUrl ?? null,
+      status: requestStatus,
+      displayStatus: requestProjection.displayStatus,
+      failureReason: requestProjection.failureReason,
+      projectedWorldStatus: requestProjection.projectedWorldStatus,
+      projectedDesiredState: requestProjection.projectedDesiredState,
+      apiBaseUrl: visibleWorld?.apiBaseUrl ?? null,
+      adminUrl: visibleWorld?.adminUrl ?? null,
       note: request.note,
       createdAt: request.createdAt.toISOString(),
       updatedAt: request.updatedAt.toISOString(),
@@ -793,6 +1090,13 @@ export class CloudService {
   }
 
   private serializeJob(job: WorldLifecycleJobEntity): WorldLifecycleJobSummary {
+    const leaseRemainingSeconds = job.leaseExpiresAt
+      ? Math.max(
+          0,
+          Math.ceil((job.leaseExpiresAt.getTime() - Date.now()) / 1000),
+        )
+      : null;
+
     return {
       id: job.id,
       worldId: job.worldId,
@@ -800,6 +1104,10 @@ export class CloudService {
       status: this.toJobStatus(job.status),
       attempt: job.attempt,
       maxAttempts: job.maxAttempts,
+      availableAt: job.availableAt?.toISOString() ?? null,
+      leaseOwner: job.leaseOwner,
+      leaseExpiresAt: job.leaseExpiresAt?.toISOString() ?? null,
+      leaseRemainingSeconds,
       failureCode: job.failureCode,
       failureMessage: job.failureMessage,
       createdAt: job.createdAt.toISOString(),
@@ -811,7 +1119,9 @@ export class CloudService {
     };
   }
 
-  private serializeInstance(instance: CloudInstanceEntity): CloudInstanceSummary {
+  private serializeInstance(
+    instance: CloudInstanceEntity,
+  ): CloudInstanceSummary {
     return {
       id: instance.id,
       worldId: instance.worldId,
@@ -837,16 +1147,27 @@ export class CloudService {
     };
   }
 
-  private async requireWorld(id: string) {
+  private async requireWorld(
+    id: string,
+    options?: { includePlaceholder?: boolean },
+  ) {
     const world = await this.worldRepo.findOne({ where: { id } });
-    if (!world) {
+    if (
+      !world ||
+      (!options?.includePlaceholder &&
+        this.isRequestGatePlaceholderWorld(world))
+    ) {
       throw new NotFoundException("找不到该云世界。");
     }
 
     return world;
   }
 
-  private async ensureLifecycleJob(worldId: string, jobType: WorldLifecycleJobType, payload: Record<string, unknown>) {
+  private async ensureLifecycleJob(
+    worldId: string,
+    jobType: WorldLifecycleJobType,
+    payload: Record<string, unknown>,
+  ) {
     const existing = await this.jobRepo.findOne({
       where: {
         worldId,
@@ -882,7 +1203,9 @@ export class CloudService {
     );
   }
 
-  private async chooseRecoveryJobType(worldId: string): Promise<WorldLifecycleJobType> {
+  private async chooseRecoveryJobType(
+    worldId: string,
+  ): Promise<WorldLifecycleJobType> {
     const instance = await this.instanceRepo.findOne({
       where: { worldId },
     });
@@ -900,7 +1223,73 @@ export class CloudService {
       .where("world.phone IN (:...phones)", { phones: uniquePhones })
       .getMany();
 
-    return new Map(worlds.map((world) => [world.phone, world]));
+    return new Map(
+      this.filterVisibleWorlds(worlds).map((world) => [world.phone, world]),
+    );
+  }
+
+  private toVisibleWorld(world?: CloudWorldEntity | null) {
+    if (!world || this.isRequestGatePlaceholderWorld(world)) {
+      return null;
+    }
+
+    return world;
+  }
+
+  private filterVisibleWorlds(worlds: CloudWorldEntity[]) {
+    return worlds.filter((world) => !this.isRequestGatePlaceholderWorld(world));
+  }
+
+  private async loadVisibleWorldIdSet(worldIds: string[]) {
+    const uniqueWorldIds = Array.from(new Set(worldIds));
+    if (uniqueWorldIds.length === 0) {
+      return new Set<string>();
+    }
+
+    const worlds = await this.worldRepo.find({
+      where: { id: In(uniqueWorldIds) },
+    });
+    return new Set(this.filterVisibleWorlds(worlds).map((world) => world.id));
+  }
+
+  private async assertRequestPhoneAvailable(
+    phone: string,
+    options: {
+      excludeRequestId?: string;
+      duplicateWorldMessage: string;
+      duplicateRequestMessage: string;
+    },
+    repos: CloudRequestWriteRepositories = {
+      worldRepo: this.worldRepo,
+      requestRepo: this.requestRepo,
+    },
+  ) {
+    let [world, requests] = await Promise.all([
+      repos.worldRepo.findOne({
+        where: { phone },
+      }),
+      repos.requestRepo.find({
+        where: { phone },
+        order: { updatedAt: "DESC" },
+      }),
+    ]);
+    const latestRequest =
+      requests.find((item) => item.id !== options?.excludeRequestId) ?? null;
+
+    switch (getRequestPhoneAvailability({ world, latestRequest })) {
+      case "cleanup_rejected_placeholder":
+        if (world) {
+          await repos.worldRepo.delete({ id: world.id });
+        }
+        return;
+      case "conflict_world":
+        throw new BadRequestException(options.duplicateWorldMessage);
+      case "conflict_request":
+        throw new BadRequestException(options.duplicateRequestMessage);
+      case "available":
+      default:
+        return;
+    }
   }
 
   private toRequestStatus(value: string): CloudWorldRequestStatus {
@@ -939,22 +1328,6 @@ export class CloudService {
         return "failed";
       default:
         throw new BadRequestException("不支持的云世界状态。");
-    }
-  }
-
-  private mapRequestStatusToWorldStatus(status: CloudWorldRequestStatus): CloudWorldLifecycleStatus {
-    switch (status) {
-      case "active":
-        return "ready";
-      case "disabled":
-        return "disabled";
-      case "rejected":
-        return "failed";
-      case "provisioning":
-        return "creating";
-      case "pending":
-      default:
-        return "queued";
     }
   }
 
@@ -999,7 +1372,9 @@ export class CloudService {
 
   private async ensureWorldBootstrapCredentials(world: CloudWorldEntity) {
     let dirty = false;
-    const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
+    const provider = this.computeProviderRegistry.getProvider(
+      world.providerKey ?? this.resolveDefaultProviderKey(),
+    );
 
     if (world.providerKey !== provider.key) {
       world.providerKey = provider.key;
@@ -1018,7 +1393,7 @@ export class CloudService {
       dirty = true;
     }
     if (!world.slug) {
-      world.slug = this.createWorldSlug(world.phone);
+      world.slug = createCloudWorldSlug(world.phone);
       dirty = true;
     }
     if (!world.callbackToken) {
@@ -1026,14 +1401,20 @@ export class CloudService {
       dirty = true;
     }
     if (!world.apiBaseUrl) {
-      const suggestedApiBaseUrl = resolveSuggestedWorldApiBaseUrl(world, this.configService);
+      const suggestedApiBaseUrl = resolveSuggestedWorldApiBaseUrl(
+        world,
+        this.configService,
+      );
       if (suggestedApiBaseUrl) {
         world.apiBaseUrl = suggestedApiBaseUrl;
         dirty = true;
       }
     }
     if (!world.adminUrl) {
-      const suggestedAdminUrl = resolveSuggestedWorldAdminUrl(world, this.configService);
+      const suggestedAdminUrl = resolveSuggestedWorldAdminUrl(
+        world,
+        this.configService,
+      );
       if (suggestedAdminUrl) {
         world.adminUrl = suggestedAdminUrl;
         dirty = true;
@@ -1047,11 +1428,18 @@ export class CloudService {
     return this.worldRepo.save(world);
   }
 
-  private normalizeUrl(value?: string | null) {
+  private normalizeOptionalUrl(value: string | null): string | null;
+  private normalizeOptionalUrl(value: undefined): undefined;
+  private normalizeOptionalUrl(value?: string | null) {
+    if (value === undefined) {
+      return undefined;
+    }
+
     const normalized = value?.trim();
     if (!normalized) {
       return null;
     }
+
     return normalized.replace(/\/+$/, "");
   }
 
@@ -1059,9 +1447,71 @@ export class CloudService {
     return this.computeProviderRegistry.getDefaultProviderKey();
   }
 
-  private createWorldSlug(phone: string) {
-    const digits = phone.replace(/\D+/g, "");
-    return `world-${digits.slice(-4)}-${digits.slice(0, 4) || "0000"}`;
+  private isRequestGatePlaceholderWorld(
+    world: CloudWorldEntity,
+  ) {
+    return isRequestGatePlaceholder(world);
+  }
+
+  private async syncRequestGatePlaceholderWorld(
+    world: CloudWorldEntity,
+    request: Pick<
+      CloudWorldRequestEntity,
+      "phone" | "worldName" | "note" | "status"
+    >,
+    worldRepo: Repository<CloudWorldEntity> = this.worldRepo,
+  ) {
+    const state = getRequestGateState(this.toRequestStatus(request.status), request.note);
+    const provider = this.computeProviderRegistry.getProvider(
+      world.providerKey ?? this.resolveDefaultProviderKey(),
+    );
+    world.phone = request.phone;
+    world.name = request.worldName;
+    world.status = "disabled";
+    world.desiredState = "sleeping";
+    world.provisionStrategy =
+      world.provisionStrategy || provider.summary.provisionStrategy;
+    world.providerKey = world.providerKey || provider.key;
+    world.providerRegion =
+      world.providerRegion ?? provider.summary.defaultRegion ?? null;
+    world.providerZone =
+      world.providerZone ?? provider.summary.defaultZone ?? null;
+    world.slug = world.slug || createCloudWorldSlug(request.phone);
+    world.callbackToken = world.callbackToken || randomUUID();
+    world.apiBaseUrl = null;
+    world.adminUrl = null;
+    world.healthStatus = state.placeholderHealthStatus;
+    world.healthMessage = state.displayStatus;
+    world.failureCode = state.failureCode;
+    world.failureMessage = state.failureReason;
+    world.lastAccessedAt = null;
+    world.lastInteractiveAt = null;
+    world.lastBootedAt = null;
+    world.lastHeartbeatAt = null;
+    world.lastSuspendedAt = null;
+    world.retryCount = 0;
+    world.note = request.note ?? null;
+    await worldRepo.save(world);
+  }
+
+  private getCloudRequestWriteRepositories(
+    manager: EntityManager,
+  ): CloudRequestWriteRepositories {
+    return {
+      worldRepo: manager.getRepository(CloudWorldEntity),
+      requestRepo: manager.getRepository(CloudWorldRequestEntity),
+    };
+  }
+
+  private normalizeOptionalText(value: string | null): string | null;
+  private normalizeOptionalText(value: undefined): undefined;
+  private normalizeOptionalText(value?: string | null) {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    const normalized = value?.trim();
+    return normalized ? normalized : null;
   }
 
   private buildWorldAttentionItem(params: {
@@ -1072,9 +1522,20 @@ export class CloudService {
     activeJobType: WorldLifecycleJobType | null;
     isHeartbeatStale: boolean;
   }): CloudWorldAttentionItem | null {
-    const { world, desiredState, observedDeploymentState, observedMessage, activeJobType, isHeartbeatStale } = params;
-    const staleHeartbeatSeconds = this.getHeartbeatAgeSeconds(world.lastHeartbeatAt);
-    const retryThresholdReached = this.alertRetryThreshold > 0 && world.retryCount >= this.alertRetryThreshold;
+    const {
+      world,
+      desiredState,
+      observedDeploymentState,
+      observedMessage,
+      activeJobType,
+      isHeartbeatStale,
+    } = params;
+    const staleHeartbeatSeconds = this.getHeartbeatAgeSeconds(
+      world.lastHeartbeatAt,
+    );
+    const retryThresholdReached =
+      this.alertRetryThreshold > 0 &&
+      world.retryCount >= this.alertRetryThreshold;
     const heartbeatThresholdReached =
       isHeartbeatStale &&
       this.criticalHeartbeatStaleSeconds > 0 &&
@@ -1095,7 +1556,10 @@ export class CloudService {
       staleHeartbeatSeconds,
       lastHeartbeatAt: world.lastHeartbeatAt?.toISOString() ?? null,
       updatedAt: world.updatedAt.toISOString(),
-    } satisfies Omit<CloudWorldAttentionItem, "severity" | "reason" | "message">;
+    } satisfies Omit<
+      CloudWorldAttentionItem,
+      "severity" | "reason" | "message"
+    >;
 
     if (world.status === "failed" || world.healthStatus === "failed") {
       return {
@@ -1104,7 +1568,10 @@ export class CloudService {
         reason: "failed_world",
         escalated: true,
         escalationReason: "world_failed",
-        message: world.failureMessage ?? world.healthMessage ?? "World is currently marked as failed.",
+        message:
+          world.failureMessage ??
+          world.healthMessage ??
+          "World is currently marked as failed.",
       };
     }
 
@@ -1115,18 +1582,33 @@ export class CloudService {
         reason: "provider_error",
         escalated: true,
         escalationReason: "provider_error",
-        message: observedMessage ?? "Provider inspection reported a deployment error.",
+        message:
+          observedMessage ?? "Provider inspection reported a deployment error.",
       };
     }
 
-    if (desiredState === "running" && (observedDeploymentState === "missing" || observedDeploymentState === "stopped")) {
+    if (
+      desiredState === "running" &&
+      (observedDeploymentState === "missing" ||
+        observedDeploymentState === "stopped")
+    ) {
       const escalated = retryThresholdReached;
       return {
         ...baseItem,
-        severity: escalated ? "critical" : activeJobType === "resume" || activeJobType === "provision" ? "warning" : "critical",
-        reason: activeJobType === "resume" || activeJobType === "provision" ? "recovery_queued" : "deployment_drift",
+        severity: escalated
+          ? "critical"
+          : activeJobType === "resume" || activeJobType === "provision"
+            ? "warning"
+            : "critical",
+        reason:
+          activeJobType === "resume" || activeJobType === "provision"
+            ? "recovery_queued"
+            : "deployment_drift",
         escalated,
-        escalationReason: this.resolveEscalationReason(escalated, "retry_threshold"),
+        escalationReason: this.resolveEscalationReason(
+          escalated,
+          "retry_threshold",
+        ),
         message:
           activeJobType === "resume" || activeJobType === "provision"
             ? escalated
@@ -1138,14 +1620,19 @@ export class CloudService {
       };
     }
 
-    if (desiredState === "sleeping" && (observedDeploymentState === "running" || observedDeploymentState === "starting")) {
+    if (
+      desiredState === "sleeping" &&
+      (observedDeploymentState === "running" ||
+        observedDeploymentState === "starting")
+    ) {
       return {
         ...baseItem,
         severity: "warning",
         reason: "sleep_drift",
         escalated: false,
         escalationReason: null,
-        message: "Provider reports the deployment is still active while desired state is sleeping.",
+        message:
+          "Provider reports the deployment is still active while desired state is sleeping.",
       };
     }
 
@@ -1153,10 +1640,14 @@ export class CloudService {
       const escalated = heartbeatThresholdReached;
       return {
         ...baseItem,
-        severity: escalated || world.status === "ready" ? "critical" : "warning",
+        severity:
+          escalated || world.status === "ready" ? "critical" : "warning",
         reason: "heartbeat_stale",
         escalated,
-        escalationReason: this.resolveEscalationReason(escalated, "heartbeat_duration"),
+        escalationReason: this.resolveEscalationReason(
+          escalated,
+          "heartbeat_duration",
+        ),
         message:
           escalated && staleHeartbeatSeconds !== null
             ? `Runtime heartbeat has been stale for ${staleHeartbeatSeconds}s and crossed the critical threshold.`
@@ -1169,7 +1660,9 @@ export class CloudService {
     return null;
   }
 
-  private getAttentionSeverityScore(severity: CloudWorldAttentionItem["severity"]) {
+  private getAttentionSeverityScore(
+    severity: CloudWorldAttentionItem["severity"],
+  ) {
     switch (severity) {
       case "critical":
         return 3;
@@ -1189,7 +1682,9 @@ export class CloudService {
       return true;
     }
 
-    return Date.now() - lastHeartbeatAt.getTime() > this.staleHeartbeatSeconds * 1000;
+    return (
+      Date.now() - lastHeartbeatAt.getTime() > this.staleHeartbeatSeconds * 1000
+    );
   }
 
   private getHeartbeatAgeSeconds(lastHeartbeatAt: Date | null) {
@@ -1197,10 +1692,16 @@ export class CloudService {
       return null;
     }
 
-    return Math.max(0, Math.floor((Date.now() - lastHeartbeatAt.getTime()) / 1000));
+    return Math.max(
+      0,
+      Math.floor((Date.now() - lastHeartbeatAt.getTime()) / 1000),
+    );
   }
 
-  private resolveEscalationReason(escalated: boolean, reason: CloudWorldAttentionEscalationReason) {
+  private resolveEscalationReason(
+    escalated: boolean,
+    reason: CloudWorldAttentionEscalationReason,
+  ) {
     return escalated ? reason : null;
   }
 

@@ -22,7 +22,7 @@ export class CharacterRealWorldDigestEntity {
   @Column()
   syncDate: string;
 
-  @Column()
+  @Column('text')
   status: RealWorldDigestStatusValue;
 
   @Column('simple-json')
@@ -49,7 +49,7 @@ export class CharacterRealWorldDigestEntity {
   @Column('text', { nullable: true })
   realityMomentBrief?: string | null;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   appliedMode?: RealWorldDigestApplyModeValue | null;
 
   @Column({ type: 'datetime', nullable: true })

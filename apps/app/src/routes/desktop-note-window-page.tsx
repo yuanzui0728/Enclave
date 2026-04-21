@@ -3,9 +3,14 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Button } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { DesktopNotesWorkspace } from "../features/desktop/chat/desktop-notes-workspace";
-import { parseDesktopNoteWindowRouteHash } from "../features/desktop/chat/desktop-note-window-route-state";
 import {
+  buildDesktopNoteWindowRouteHash,
+  parseDesktopNoteEditorRouteHash,
+} from "../features/desktop/chat/desktop-note-window-route-state";
+import {
+  closeCurrentDesktopWindow,
   DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
+  focusMainDesktopWindow,
   shouldNavigateCurrentWindow,
   type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
@@ -17,9 +22,27 @@ export function DesktopNoteWindowPage() {
   const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = useMemo(
-    () => parseDesktopNoteWindowRouteHash(hash),
+    () => parseDesktopNoteEditorRouteHash(hash),
     [hash],
   );
+
+  useEffect(() => {
+    if (!routeState) {
+      return;
+    }
+
+    const nextHash = buildDesktopNoteWindowRouteHash(routeState);
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+    if (normalizedHash === nextHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/note-window",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [hash, navigate, routeState]);
 
   useEffect(() => {
     if (!nativeDesktopShell) {
@@ -81,7 +104,7 @@ export function DesktopNoteWindowPage() {
           <div className="mt-6 flex justify-center">
             <Button
               type="button"
-              onClick={() => void navigate({ to: "/tabs/favorites" })}
+              onClick={() => closeStandaloneWindow("/tabs/favorites")}
               className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
             >
               回到收藏
@@ -101,12 +124,62 @@ export function DesktopNoteWindowPage() {
       onSavedNote={(noteId, draftId) => {
         void navigate({
           to: "/desktop/note-window",
-          hash: `draftId=${encodeURIComponent(draftId)}&noteId=${encodeURIComponent(
+          hash: buildDesktopNoteWindowRouteHash({
+            draftId,
             noteId,
-          )}${routeState.returnTo ? `&returnTo=${encodeURIComponent(routeState.returnTo)}` : ""}`,
+            returnTo: routeState.returnTo,
+          }),
           replace: true,
         });
       }}
     />
   );
+}
+
+function closeStandaloneWindow(targetPath: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  void closeCurrentDesktopWindow().then((closed) => {
+    if (closed) {
+      return;
+    }
+
+    closeCurrentWindow(() => {
+      void focusMainDesktopWindow(targetPath).then((focused) => {
+        if (focused) {
+          void closeCurrentDesktopWindow();
+          return;
+        }
+
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.location.assign(targetPath);
+            window.opener.focus?.();
+            closeCurrentWindow();
+            return;
+          }
+        } catch {
+          // Ignore opener access failures and fall back to local navigation.
+        }
+
+        window.location.assign(targetPath);
+      });
+    });
+  });
+}
+
+function closeCurrentWindow(onBlocked?: () => void) {
+  window.close();
+
+  if (!onBlocked) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!window.closed) {
+      onBlocked();
+    }
+  }, 120);
 }

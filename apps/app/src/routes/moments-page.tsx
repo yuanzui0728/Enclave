@@ -3,6 +3,7 @@ import {
   lazy,
   useEffect,
   useEffectEvent,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -26,6 +27,8 @@ import {
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
 import { buildDesktopFriendMomentsRouteHash } from "../features/moments/friend-moments-route-state";
+import { buildMobileFriendMomentsRouteHash } from "../features/moments/mobile-friend-moments-route-state";
+import { buildMobileMomentsPublishRouteHash } from "../features/moments/mobile-moments-publish-route-state";
 import {
   buildDesktopMomentsRouteHash,
   parseDesktopMomentsRouteState,
@@ -39,7 +42,7 @@ import {
 } from "../features/moments/moment-compose-media";
 import { getMomentSummaryText } from "../features/moments/moment-content";
 import { formatTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -81,9 +84,30 @@ export function MomentsPage() {
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const routeState = parseDesktopMomentsRouteState(hash);
   const routeSelectedAuthorId = routeState.authorId ?? null;
   const routeSelectedMomentId = routeState.momentId ?? null;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildDesktopMomentsRouteHash({
+        authorId: routeSelectedAuthorId ?? undefined,
+        momentId: routeSelectedMomentId ?? undefined,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [
+      routeSelectedAuthorId,
+      routeSelectedMomentId,
+      safeReturnHash,
+      safeReturnPath,
+    ],
+  );
 
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
@@ -163,7 +187,72 @@ export function MomentsPage() {
       moment.authorType !== "character" ||
       !blockedCharacterIds.has(moment.authorId),
   );
+  const routeSelectedMoment = routeSelectedMomentId
+    ? visibleMoments.find((moment) => moment.id === routeSelectedMomentId) ?? null
+    : null;
+  const routeSelectedAuthorMoment = routeSelectedAuthorId
+    ? routeSelectedMoment?.authorId === routeSelectedAuthorId
+      ? routeSelectedMoment
+      : visibleMoments.find((moment) => moment.authorId === routeSelectedAuthorId) ??
+        null
+    : null;
+  const syncedRouteSelectedAuthorId =
+    routeSelectedAuthorId &&
+    routeSelectedAuthorMoment?.authorType === "character"
+      ? routeSelectedAuthorId
+      : undefined;
   const isDiscoverSubPage = pathname === "/discover/moments";
+  const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试";
+
+  function openMobileMomentsPublishPage() {
+    void navigate({
+      to: "/discover/moments/publish",
+      hash: buildMobileMomentsPublishRouteHash({
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function openMobileFriendMoments(characterId: string) {
+    void navigate({
+      to: "/friend-moments/$characterId",
+      params: { characterId },
+      hash: buildMobileFriendMomentsRouteHash({
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void momentsQuery.refetch();
+    void blockedQuery.refetch();
+  }
+
+  function handleEmptyStateAction() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    openMobileMomentsPublishPage();
+  }
 
   useEffect(() => {
     resetComposeDraft();
@@ -236,20 +325,67 @@ export function MomentsPage() {
   }, [notice]);
 
   useEffect(() => {
-    if (!isDesktopLayout || !routeSelectedAuthorId) {
+    if (!isDesktopLayout || !syncedRouteSelectedAuthorId) {
+      return;
+    }
+
+    const returnPath = isDiscoverSubPage ? "/discover/moments" : "/tabs/moments";
+    void navigate({
+      to: "/desktop/friend-moments/$characterId",
+      params: { characterId: syncedRouteSelectedAuthorId },
+      hash: buildDesktopFriendMomentsRouteHash({
+        momentId: routeSelectedMomentId ?? undefined,
+        source: "moments",
+        returnPath,
+        returnHash: buildDesktopMomentsRouteHash({
+          momentId: routeSelectedMomentId ?? undefined,
+        }),
+      }),
+      replace: true,
+    });
+  }, [
+    isDesktopLayout,
+    isDiscoverSubPage,
+    navigate,
+    routeSelectedMomentId,
+    syncedRouteSelectedAuthorId,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isDesktopLayout ||
+      !routeSelectedAuthorId ||
+      syncedRouteSelectedAuthorId === routeSelectedAuthorId
+    ) {
+      return;
+    }
+
+    const nextHash = buildDesktopMomentsRouteHash({
+      momentId: routeSelectedMomentId ?? undefined,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
+    });
+
+    if ((nextHash ?? "") === normalizedHash) {
       return;
     }
 
     void navigate({
-      to: "/desktop/friend-moments/$characterId",
-      params: { characterId: routeSelectedAuthorId },
-      hash: buildDesktopFriendMomentsRouteHash({
-        momentId: routeSelectedMomentId ?? undefined,
-        source: "moments",
-      }),
+      to: pathname,
+      hash: nextHash,
       replace: true,
     });
-  }, [isDesktopLayout, navigate, routeSelectedAuthorId, routeSelectedMomentId]);
+  }, [
+    isDesktopLayout,
+    navigate,
+    normalizedHash,
+    pathname,
+    routeSelectedAuthorId,
+    routeSelectedMomentId,
+    safeReturnHash,
+    safeReturnPath,
+    syncedRouteSelectedAuthorId,
+  ]);
 
   async function handleImageFilesSelected(files: FileList | null) {
     try {
@@ -353,7 +489,7 @@ export function MomentsPage() {
   }
 
   if (isDesktopLayout) {
-    if (routeSelectedAuthorId) {
+    if (syncedRouteSelectedAuthorId) {
       return (
         <RouteRedirectState
           title="正在打开好友朋友圈"
@@ -433,12 +569,38 @@ export function MomentsPage() {
           }}
           onLike={(momentId) => likeMutation.mutate(momentId)}
           onOpenAuthorMoments={({ authorId, momentId }) => {
+            const targetMoment =
+              (momentId
+                ? visibleMoments.find((item) => item.id === momentId)
+                : visibleMoments.find((item) => item.authorId === authorId)) ??
+              null;
+            const returnPath = isDiscoverSubPage
+              ? "/discover/moments"
+              : "/tabs/moments";
+
+            if (targetMoment?.authorType !== "character") {
+              void navigate({
+                to: pathname,
+                hash: buildDesktopMomentsRouteHash({
+                  momentId: targetMoment?.id ?? momentId ?? undefined,
+                  returnPath: safeReturnPath,
+                  returnHash: safeReturnHash,
+                }),
+                replace: true,
+              });
+              return;
+            }
+
             void navigate({
               to: "/desktop/friend-moments/$characterId",
-              params: { characterId: authorId },
+              params: { characterId: targetMoment.authorId },
               hash: buildDesktopFriendMomentsRouteHash({
-                momentId,
+                momentId: targetMoment.id,
                 source: "moments",
+                returnPath,
+                returnHash: buildDesktopMomentsRouteHash({
+                  momentId: targetMoment.id,
+                }),
               }),
             });
           }}
@@ -515,6 +677,14 @@ export function MomentsPage() {
             <Button
               onClick={() =>
                 navigateBackOrFallback(() => {
+                  if (safeReturnPath) {
+                    void navigate({
+                      to: safeReturnPath,
+                      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+                    });
+                    return;
+                  }
+
                   void navigate({ to: "/tabs/discover" });
                 })
               }
@@ -531,7 +701,7 @@ export function MomentsPage() {
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
-              onClick={() => void navigate({ to: "/discover/moments/publish" })}
+              onClick={openMobileMomentsPublishPage}
               aria-label="发一条朋友圈"
             >
               <PenSquare size={17} />
@@ -549,7 +719,7 @@ export function MomentsPage() {
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
-              onClick={() => void navigate({ to: "/discover/moments/publish" })}
+              onClick={openMobileMomentsPublishPage}
               aria-label="发一条朋友圈"
             >
               <PenSquare size={17} />
@@ -592,12 +762,9 @@ export function MomentsPage() {
                   variant="secondary"
                   size="sm"
                   className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={() => {
-                    void momentsQuery.refetch();
-                    void blockedQuery.refetch();
-                  }}
+                  onClick={handleStatusBack}
                 >
-                  重新加载
+                  {safeReturnPath ? "返回上一页" : "重新加载"}
                 </Button>
               }
             />
@@ -616,7 +783,17 @@ export function MomentsPage() {
                 key={moment.id}
                 authorName={moment.authorName}
                 authorAvatar={moment.authorAvatar}
+                authorActionAriaLabel={
+                  moment.authorType === "character"
+                    ? `查看 ${moment.authorName} 的朋友圈`
+                    : undefined
+                }
                 meta={formatTimestamp(moment.postedAt)}
+                onAuthorClick={
+                  moment.authorType === "character"
+                    ? () => openMobileFriendMoments(moment.authorId)
+                    : undefined
+                }
                 headerActions={
                   <Button
                     type="button"
@@ -659,6 +836,15 @@ export function MomentsPage() {
                 summary={`${moment.likeCount} 赞 · ${moment.commentCount} 评论`}
                 actions={
                   <div className="flex flex-wrap gap-2">
+                    {moment.authorType === "character" ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => openMobileFriendMoments(moment.authorId)}
+                      >
+                        Ta 的朋友圈
+                      </Button>
+                    ) : null}
                     <Button
                       disabled={likeMutation.isPending}
                       onClick={() => likeMutation.mutate(moment.id)}
@@ -746,12 +932,34 @@ export function MomentsPage() {
           })}
 
           {likeMutation.isError && likeMutation.error instanceof Error ? (
-            <MobileMomentsInlineNotice tone="info">
+            <MobileMomentsInlineNotice
+              tone="info"
+              action={
+                <button
+                  type="button"
+                  onClick={handleStatusBack}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  {interactionActionLabel}
+                </button>
+              }
+            >
               {likeMutation.error.message}
             </MobileMomentsInlineNotice>
           ) : null}
           {commentMutation.isError && commentMutation.error instanceof Error ? (
-            <MobileMomentsInlineNotice tone="info">
+            <MobileMomentsInlineNotice
+              tone="info"
+              action={
+                <button
+                  type="button"
+                  onClick={handleStatusBack}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  {interactionActionLabel}
+                </button>
+              }
+            >
               {commentMutation.error.message}
             </MobileMomentsInlineNotice>
           ) : null}
@@ -768,11 +976,9 @@ export function MomentsPage() {
                   variant="primary"
                   size="sm"
                   className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
-                  onClick={() =>
-                    void navigate({ to: "/discover/moments/publish" })
-                  }
+                  onClick={handleEmptyStateAction}
                 >
-                  发一条朋友圈
+                  {safeReturnPath ? "返回上一页" : "发一条朋友圈"}
                 </Button>
               }
             />
@@ -835,16 +1041,25 @@ function MobileMomentsStatusCard({
 function MobileMomentsInlineNotice({
   children,
   tone,
+  action,
 }: {
   children: ReactNode;
   tone: "success" | "info";
+  action?: ReactNode;
 }) {
   return (
     <InlineNotice
       tone={tone}
       className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
     >
-      {children}
+      {action ? (
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 flex-1">{children}</span>
+          {action}
+        </div>
+      ) : (
+        children
+      )}
     </InlineNotice>
   );
 }

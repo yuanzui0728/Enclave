@@ -1,6 +1,6 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, BookUser } from "lucide-react";
 import {
   acceptFriendRequest,
@@ -11,8 +11,13 @@ import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import {
+  buildMobileFriendRequestsRouteHash,
+  parseMobileFriendRequestsRouteState,
+} from "../features/contacts/mobile-friend-requests-route-state";
+import { buildWorldCharactersRouteHash } from "../features/contacts/world-characters-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
@@ -45,10 +50,26 @@ export function FriendRequestsPage() {
 
 function MobileFriendRequestsPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [successNotice, setSuccessNotice] = useState("");
+  const routeState = parseMobileFriendRequestsRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = buildMobileFriendRequestsRouteHash({
+    returnPath: safeReturnPath,
+    returnHash: safeReturnHash,
+  });
 
   const requestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl],
@@ -100,6 +121,37 @@ function MobileFriendRequestsPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function openWorldCharacters() {
+    void navigate({
+      to: "/contacts/world-characters",
+      hash: buildWorldCharactersRouteHash({
+        keyword: "",
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    openWorldCharacters();
+  }
+
   return (
     <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
       <TabPageTopBar
@@ -110,6 +162,10 @@ function MobileFriendRequestsPage() {
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 void navigate({ to: "/tabs/contacts" });
               })
             }
@@ -126,9 +182,7 @@ function MobileFriendRequestsPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
-            onClick={() => {
-              void navigate({ to: "/contacts/world-characters" });
-            }}
+            onClick={openWorldCharacters}
             aria-label="浏览世界角色"
           >
             <BookUser size={17} />
@@ -154,6 +208,17 @@ function MobileFriendRequestsPage() {
               title="新的朋友暂时不可用"
               description={requestsQuery.error.message}
               tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "浏览世界角色"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -248,7 +313,20 @@ function MobileFriendRequestsPage() {
               tone="danger"
               className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
-              {acceptMutation.error.message}
+              <div className="flex items-start justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {acceptMutation.error.message}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "浏览世界角色"}
+                </Button>
+              </div>
             </InlineNotice>
           </div>
         ) : null}
@@ -258,7 +336,20 @@ function MobileFriendRequestsPage() {
               tone="danger"
               className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
-              {declineMutation.error.message}
+              <div className="flex items-start justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {declineMutation.error.message}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "浏览世界角色"}
+                </Button>
+              </div>
             </InlineNotice>
           </div>
         ) : null}
@@ -271,6 +362,17 @@ function MobileFriendRequestsPage() {
               badge="新的朋友"
               title="暂时没有新的好友请求"
               description="去发现页摇一摇，或等待场景触发新的相遇。"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "浏览世界角色"}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -317,11 +419,13 @@ function MobileFriendRequestsStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -356,6 +460,7 @@ function MobileFriendRequestsStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

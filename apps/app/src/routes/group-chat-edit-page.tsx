@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   getGroup,
   getGroupMembers,
@@ -11,8 +11,13 @@ import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type GroupChatEditMode = "name" | "nickname";
@@ -66,9 +71,25 @@ function MobileGroupChatEditPage({
   mode: GroupChatEditMode;
 }) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const routeState = parseMobileGroupRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -107,8 +128,24 @@ function MobileGroupChatEditPage({
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
-  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+  }, [
+    groupId,
+    groupQuery.error,
+    groupQuery.isLoading,
+    navigate,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
 
   const saveGroupNameMutation = useMutation({
     mutationFn: (name: string) => updateGroup(groupId, { name }, baseUrl),
@@ -127,6 +164,7 @@ function MobileGroupChatEditPage({
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
+        ...(currentRouteHash ? { hash: currentRouteHash } : {}),
         replace: true,
       });
     },
@@ -147,6 +185,7 @@ function MobileGroupChatEditPage({
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
+        ...(currentRouteHash ? { hash: currentRouteHash } : {}),
         replace: true,
       });
     },
@@ -160,13 +199,31 @@ function MobileGroupChatEditPage({
     !trimmedDraft ||
     trimmedDraft === initialValue.trim();
 
+  function openGroupDetails() {
+    void navigate({
+      to: "/group/$groupId/details",
+      params: { groupId },
+      ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+    });
+  }
+
+  function handleMissingGroupBack() {
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+      });
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat" });
+  }
+
   return (
     <ChatDetailsShell
       title={mode === "name" ? "群聊名称" : "我在本群的昵称"}
       subtitle={groupQuery.data?.name ?? "群聊信息"}
-      onBack={() => {
-        void navigate({ to: "/group/$groupId/details", params: { groupId } });
-      }}
+      onBack={openGroupDetails}
     >
       {groupQuery.isLoading ||
       (mode === "nickname" && membersQuery.isLoading) ? (
@@ -185,6 +242,16 @@ function MobileGroupChatEditPage({
             badge="读取失败"
             title="群聊信息暂时不可用"
             description={groupQuery.error.message}
+            action={
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 rounded-full px-3 text-[11px]"
+                onClick={openGroupDetails}
+              >
+                返回群聊信息
+              </Button>
+            }
             tone="danger"
           />
         </div>
@@ -195,6 +262,16 @@ function MobileGroupChatEditPage({
             badge="读取失败"
             title="群成员信息暂时不可用"
             description={membersQuery.error.message}
+            action={
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 rounded-full px-3 text-[11px]"
+                onClick={openGroupDetails}
+              >
+                返回群聊信息
+              </Button>
+            }
             tone="danger"
           />
         </div>
@@ -205,7 +282,16 @@ function MobileGroupChatEditPage({
             tone="danger"
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
-            {saveMutation.error.message}
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 flex-1">{saveMutation.error.message}</span>
+              <button
+                type="button"
+                onClick={openGroupDetails}
+                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+              >
+                返回群聊信息
+              </button>
+            </div>
           </InlineNotice>
         </div>
       ) : null}
@@ -216,6 +302,16 @@ function MobileGroupChatEditPage({
             badge="群聊"
             title="群聊不存在"
             description="这个群聊暂时不可用，返回上一页再试一次。"
+            action={
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 rounded-full px-3 text-[11px]"
+                onClick={handleMissingGroupBack}
+              >
+                {safeReturnPath ? "返回上一页" : "返回消息列表"}
+              </Button>
+            }
           />
         </div>
       ) : null}
@@ -278,11 +374,13 @@ function MobileGroupEditStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -317,6 +415,7 @@ function MobileGroupEditStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

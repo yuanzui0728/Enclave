@@ -27,3 +27,112 @@ jobs:
 
       - name: Typecheck (admin and app excluded — drift tracked separately)
         run: pnpm exec turbo run typecheck --filter=!@yinjie/admin --filter=!@yinjie/app
+
+  cloud-smoke:
+    name: cloud-smoke
+    runs-on: ubuntu-latest
+    outputs:
+      diagnosis_highest_severity: ${{ steps.cloud_smoke_diagnosis.outputs.highest_severity }}
+      diagnosis_primary_candidate_id: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_id }}
+      diagnosis_primary_candidate_title: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_title }}
+      diagnosis_primary_candidate_recommended_artifacts: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_recommended_artifacts }}
+      diagnosis_primary_candidate_next_step: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_next_step }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test cloud smoke artifact collector
+        run: pnpm test:cloud-smoke-artifacts
+
+      - name: Test cloud smoke manifest diagnosis
+        run: pnpm test:cloud-smoke-diagnosis
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @yinjie/cloud-console exec playwright install --with-deps chromium
+
+      - name: Cloud smoke validation
+        env:
+          YINJIE_TEST_PRESERVE_TMP: "1"
+        run: |
+          rm -rf /tmp/yinjie-cloud-console-browser-*
+          pnpm ci:cloud:browser
+
+      - name: Collect cloud smoke artifacts
+        if: failure()
+        run: node ./scripts/collect-cloud-smoke-artifacts.mjs
+
+      - name: Analyze cloud smoke manifest
+        if: failure()
+        id: cloud_smoke_diagnosis
+        run: node ./scripts/analyze-cloud-smoke-manifest.mjs
+
+      - name: Publish cloud smoke verdict annotation
+        if: failure() && steps.cloud_smoke_diagnosis.outcome == 'success'
+        env:
+          DIAG_SEVERITY: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_severity }}
+          DIAG_TITLE: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_title }}
+          DIAG_ARTIFACTS: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_recommended_artifacts }}
+          DIAG_NEXT_STEP: ${{ steps.cloud_smoke_diagnosis.outputs.primary_candidate_next_step }}
+        run: |
+          annotation_level=notice
+          case "$DIAG_SEVERITY" in
+            high) annotation_level=error ;;
+            medium) annotation_level=warning ;;
+          esac
+
+          message="$DIAG_TITLE"
+          if [ -n "$DIAG_ARTIFACTS" ]; then
+            message="$message | Start with: $DIAG_ARTIFACTS"
+          fi
+          if [ -n "$DIAG_NEXT_STEP" ]; then
+            message="$message | Next step: $DIAG_NEXT_STEP"
+          fi
+
+          echo "::${annotation_level} title=Cloud smoke verdict::${message}"
+
+      - name: Upload cloud smoke diagnosis
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-smoke-diagnosis
+          retention-days: 7
+          if-no-files-found: error
+          path: .artifacts/cloud-smoke/diagnosis.json
+
+      - name: Upload cloud smoke manifest
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-smoke-manifest
+          retention-days: 7
+          if-no-files-found: error
+          path: .artifacts/cloud-smoke/manifest.json
+
+      - name: Upload cloud smoke Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-smoke-playwright-artifacts
+          retention-days: 7
+          if-no-files-found: ignore
+          path: .artifacts/cloud-smoke/playwright
+
+      - name: Upload cloud smoke browser harness artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-smoke-browser-harness
+          retention-days: 7
+          if-no-files-found: ignore
+          path: .artifacts/cloud-smoke/browser-harness

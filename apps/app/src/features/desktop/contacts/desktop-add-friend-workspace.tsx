@@ -27,9 +27,11 @@ import { AvatarChip } from "../../../components/avatar-chip";
 import { DesktopLayoutRequiredState } from "../../../components/desktop-layout-required-state";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
+import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
 import { useDesktopLayout } from "../../shell/use-desktop-layout";
 import { DesktopUtilityShell } from "../desktop-utility-shell";
+import { buildDesktopChatThreadPath } from "../chat/desktop-chat-route-state";
 import {
   buildDesktopAddFriendRouteHash,
   parseDesktopAddFriendRouteState,
@@ -55,6 +57,7 @@ export function DesktopAddFriendWorkspace() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const hash = useRouterState({ select: (state) => state.location.hash });
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const routeState = parseDesktopAddFriendRouteState(hash);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -106,8 +109,9 @@ export function DesktopAddFriendWorkspace() {
       getOrCreateConversation({ characterId }, baseUrl),
     onSuccess: (conversation) => {
       void navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: conversation.id },
+        to: buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }),
       });
     },
   });
@@ -276,30 +280,74 @@ export function DesktopAddFriendWorkspace() {
   }, [searchResults, selectedCharacterId]);
 
   useEffect(() => {
-    if (!routeState.openCompose || !routeSelectedResult) {
+    if (routeState.openCompose) {
       return;
     }
 
-    setSelectedCharacterId(routeSelectedResult.character.id);
+    const nextHash = buildDesktopAddFriendRouteHash({
+      keyword: routeState.keyword,
+      characterId: selectedCharacterId ?? undefined,
+      recommendationId: routeState.recommendationId,
+    });
 
-    if (routeSelectedResult.status === "available") {
-      setSendDialogCharacterId(routeSelectedResult.character.id);
+    if ((nextHash ?? "") === normalizedHash) {
+      return;
     }
 
     void navigate({
       to: "/desktop/add-friend",
-      hash: buildDesktopAddFriendRouteHash({
-        keyword: routeState.keyword,
-        characterId: routeState.characterId,
-      }),
+      hash: nextHash,
       replace: true,
     });
   }, [
     navigate,
-    routeSelectedResult,
-    routeState.characterId,
+    normalizedHash,
     routeState.keyword,
     routeState.openCompose,
+    routeState.recommendationId,
+    selectedCharacterId,
+  ]);
+
+  useEffect(() => {
+    if (!routeState.openCompose || loading) {
+      return;
+    }
+
+    if (routeSelectedResult) {
+      setSelectedCharacterId(routeSelectedResult.character.id);
+
+      if (routeSelectedResult.status === "available") {
+        setSendDialogCharacterId(routeSelectedResult.character.id);
+      }
+    }
+
+    const nextHash = buildDesktopAddFriendRouteHash({
+      keyword: routeState.keyword,
+      characterId:
+        routeSelectedResult?.character.id ??
+        selectedResult?.character.id ??
+        undefined,
+      recommendationId: routeState.recommendationId,
+    });
+
+    if ((nextHash ?? "") === normalizedHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/add-friend",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [
+    loading,
+    navigate,
+    normalizedHash,
+    routeSelectedResult,
+    routeState.keyword,
+    routeState.openCompose,
+    routeState.recommendationId,
+    selectedResult?.character.id,
   ]);
 
   const submitKeywordSearch = (keyword: string) => {
@@ -644,6 +692,10 @@ export function DesktopAddFriendWorkspace() {
                             params: {
                               characterId: selectedResult.character.id,
                             },
+                            hash: buildCharacterDetailRouteHash({
+                              returnPath: "/desktop/add-friend",
+                              returnHash: normalizedHash || undefined,
+                            }),
                           });
                         }}
                         onPrimaryAction={() => {

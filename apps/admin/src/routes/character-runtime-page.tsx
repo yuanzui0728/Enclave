@@ -312,30 +312,6 @@ function formatMode(value?: string | null) {
   return value === "manual" ? "人工锁定" : "自动调度";
 }
 
-function formatCharacterSourceType(sourceType?: string | null) {
-  switch (sourceType) {
-    case "default_seed":
-      return "默认保底";
-    case "preset_catalog":
-      return "名人预设";
-    case "manual_admin":
-      return "后台手工";
-    default:
-      return "后台手工";
-  }
-}
-
-function formatDeletionPolicy(policy?: string | null) {
-  switch (policy) {
-    case "protected":
-      return "受保护";
-    case "archive_allowed":
-      return "允许删除";
-    default:
-      return "允许删除";
-  }
-}
-
 function formatActivity(value?: string | null) {
   return ACTIVITY_OPTIONS.find((item) => item.value === (value ?? ""))?.label ?? "未设置";
 }

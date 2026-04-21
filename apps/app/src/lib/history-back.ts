@@ -28,6 +28,11 @@ function normalizeAppPath(path: string) {
   return `${normalizedUrl.pathname}${normalizedUrl.search}${normalizedUrl.hash}`;
 }
 
+export function isDesktopOnlyPath(path?: string | null) {
+  const normalizedPath = path?.trim();
+  return Boolean(normalizedPath?.startsWith("/desktop/"));
+}
+
 function readAppNavigationState(storage = getStorage()) {
   const rawValue = storage?.getItem(APP_NAVIGATION_STATE_STORAGE_KEY);
   if (!rawValue) {

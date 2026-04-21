@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SchedulerService } from './scheduler.service';
 import { MomentPostEntity } from '../moments/moment-post.entity';
@@ -33,8 +33,8 @@ import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.modu
       MessageEntity,
       AIRelationshipEntity,
     ]),
-    WorldModule,
-    AiModule,
+    forwardRef(() => WorldModule),
+    forwardRef(() => AiModule),
     SocialModule,
     FeedModule,
     ChatModule,

@@ -21,7 +21,7 @@ export class CharacterRealWorldSignalEntity {
   @Column()
   syncDate: string;
 
-  @Column()
+  @Column('text')
   signalType: RealWorldSignalTypeValue;
 
   @Column('text')
@@ -57,7 +57,7 @@ export class CharacterRealWorldSignalEntity {
   @Column()
   dedupeHash: string;
 
-  @Column()
+  @Column('text')
   status: RealWorldSignalStatusValue;
 
   @Column('simple-json', { nullable: true })

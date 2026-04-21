@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { AiModule } from '../ai/ai.module';
@@ -49,10 +49,10 @@ import { NeedDiscoveryService } from './need-discovery.service';
       UserFeedInteractionEntity,
       FriendshipEntity,
     ]),
-    AiModule,
+    forwardRef(() => AiModule),
     AuthModule,
     CharactersModule,
-    ChatModule,
+    forwardRef(() => ChatModule),
     SystemConfigModule,
     SocialModule,
     EventsModule,

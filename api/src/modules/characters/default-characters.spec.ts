@@ -8,6 +8,10 @@ import {
 } from './default-characters';
 import { DOCTOR_CHARACTER_ID, DOCTOR_SOURCE_KEY } from './doctor-character';
 import { LAWYER_CHARACTER_ID, LAWYER_SOURCE_KEY } from './lawyer-character';
+import {
+  WORLD_NEWS_DESK_CHARACTER_ID,
+  WORLD_NEWS_DESK_SOURCE_KEY,
+} from './world-news-desk-character';
 
 describe('default characters', () => {
   it('keeps default character ids unique', () => {
@@ -87,6 +91,29 @@ describe('default characters', () => {
     expect(character?.profile?.scenePrompts?.chat).toContain('输出结构固定');
     expect(character?.profile?.cognitiveBoundaries?.refusalStyle).toContain(
       '合法替代路径',
+    );
+  });
+
+  it('includes the world news desk with expected runtime defaults', () => {
+    const character = buildDefaultCharacters().find(
+      (item) => item.id === WORLD_NEWS_DESK_CHARACTER_ID,
+    );
+
+    expect(character).toBeDefined();
+    expect(character).toMatchObject({
+      id: WORLD_NEWS_DESK_CHARACTER_ID,
+      sourceType: 'default_seed',
+      sourceKey: WORLD_NEWS_DESK_SOURCE_KEY,
+      relationshipType: 'expert',
+      momentsFrequency: 0,
+      currentActivity: 'working',
+      expertDomains: ['general', 'tech', 'management'],
+    });
+
+    expect(character?.profile?.coreLogic).toContain('你是“界闻”');
+    expect(character?.profile?.scenePrompts?.chat).toContain('上来先说判断');
+    expect(character?.profile?.memory?.coreMemory).toContain(
+      '替用户先把新闻捋顺的人',
     );
   });
 });

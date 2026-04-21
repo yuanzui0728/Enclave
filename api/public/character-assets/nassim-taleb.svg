@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-nassim-taleb-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111827" />
+      <stop offset="1" stop-color="#4B5563" />
+    </linearGradient>
+    <radialGradient id="glow-nassim-taleb-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(213, 165, 77, 0.5)" />
+      <stop offset="1" stop-color="rgba(213, 165, 77, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-nassim-taleb-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-nassim-taleb-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-nassim-taleb-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(255, 255, 255, 0.08)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(213, 165, 77, 0.12)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-nassim-taleb-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <circle cx="512" cy="438" r="224" fill="rgba(255, 255, 255, 0.12)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M154 766C220 702 314 662 408 662H616C738 662 834 742 870 862" stroke="rgba(255, 255, 255, 0.12)" stroke-width="28" stroke-linecap="round" />
+  <rect x="650" y="676" width="206" height="206" rx="76" fill="rgba(255, 255, 255, 0.14)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="820" cy="164" r="32" fill="rgba(213, 165, 77, 0.32)" />
+  <circle cx="206" cy="200" r="18" fill="rgba(255, 255, 255, 0.18)" />
+  <g transform="translate(364.00 290.00) scale(12.3333)" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="1"><path d="M12.67 19a2 2 0 0 0 1.416-.588l6.154-6.172a6 6 0 0 0-8.49-8.49L5.586 9.914A2 2 0 0 0 5 11.328V18a1 1 0 0 0 1 1z" key="18jl4k" /><path d="M16 8 2 22" key="vp34q" /><path d="M17.5 15H9" key="1oz8nu" /></g>
+  <g transform="translate(695.00 720.00) scale(4.8333)" fill="none" stroke="#D5A54D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="0.98"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" key="1m3agn" /><path d="M16 8h.01" key="cr5u4v" /><path d="M8 8h.01" key="1e4136" /><path d="M8 16h.01" key="18s6g9" /><path d="M16 16h.01" key="1f9h7w" /><path d="M12 12h.01" key="1mp3jc" /></g>
+</svg>

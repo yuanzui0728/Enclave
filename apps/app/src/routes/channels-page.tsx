@@ -58,7 +58,7 @@ import {
 } from "../features/favorites/favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -93,10 +93,16 @@ export function ChannelsPage() {
     isDesktopLayout,
   });
   const routeState = useMemo(() => parseDesktopChannelsRouteHash(hash), [hash]);
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const routeSelectedPostId = routeState.postId;
   const routeSelectedAuthorId = routeState.authorId;
   const [activeSection, setActiveSection] =
-    useState<FeedChannelHomeSection>("recommended");
+    useState<FeedChannelHomeSection>(routeState.section ?? "recommended");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -300,6 +306,11 @@ export function ChannelsPage() {
       null,
     [desktopSelectedPostId, desktopWorkspacePosts],
   );
+  const syncedRouteSelectedAuthorId =
+    routeSelectedAuthorId &&
+    desktopSelectedPost?.authorId === routeSelectedAuthorId
+      ? routeSelectedAuthorId
+      : undefined;
   const mobileCommentSheetPost = useMemo(
     () =>
       visiblePosts.find((post) => post.id === mobileCommentSheetPostId) ?? null,
@@ -318,9 +329,9 @@ export function ChannelsPage() {
     placeholderData: desktopSelectedPost?.commentsPreview ?? [],
   });
   const desktopAuthorProfileQuery = useQuery({
-    queryKey: ["app-channel-author", baseUrl, routeSelectedAuthorId],
-    queryFn: () => getChannelAuthorProfile(routeSelectedAuthorId!, baseUrl),
-    enabled: Boolean(isDesktopLayout && routeSelectedAuthorId),
+    queryKey: ["app-channel-author", baseUrl, syncedRouteSelectedAuthorId],
+    queryFn: () => getChannelAuthorProfile(syncedRouteSelectedAuthorId!, baseUrl),
+    enabled: Boolean(isDesktopLayout && syncedRouteSelectedAuthorId),
   });
   const channelSections = useMemo<
     Array<{ key: FeedChannelHomeSection; label: string; count: number }>
@@ -400,6 +411,34 @@ export function ChannelsPage() {
     ? (likeCommentMutation.variables?.commentId ?? null)
     : null;
 
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void channelsQuery.refetch();
+  }
+
+  function handleEmptyStateAction() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    generateMutation.mutate();
+  }
+
   useEffect(() => {
     const baseUrlChanged = previousBaseUrlRef.current !== baseUrl;
     previousBaseUrlRef.current = baseUrl;
@@ -414,6 +453,13 @@ export function ChannelsPage() {
     setMobileCommentSheetPostId(null);
     setMobileReplyTarget(null);
   }, [baseUrl, routeSelectedPostId]);
+
+  useEffect(() => {
+    const routeSection = routeState.section ?? "recommended";
+    setActiveSection((current) =>
+      current === routeSection ? current : routeSection,
+    );
+  }, [routeState.section]);
 
   useEffect(() => {
     if (!desktopSelectedPostId) {
@@ -431,24 +477,63 @@ export function ChannelsPage() {
   }, [desktopRoutePostPending, desktopSelectedPostId, desktopWorkspacePosts]);
 
   useEffect(() => {
-    if (!isDesktopLayout || routeSelectedPostId === desktopSelectedPostId) {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    const nextHash = buildDesktopChannelsRouteHash({
+      postId: desktopSelectedPostId,
+      authorId: syncedRouteSelectedAuthorId,
+      section: activeSection,
+    });
+    if ((nextHash ?? "") === normalizedHash) {
       return;
     }
 
     void navigate({
       to: "/tabs/channels",
-      hash: buildDesktopChannelsRouteHash({
-        postId: desktopSelectedPostId,
-        authorId: routeSelectedAuthorId,
-      }),
+      hash: nextHash,
       replace: true,
     });
   }, [
-    routeSelectedAuthorId,
+    activeSection,
+    syncedRouteSelectedAuthorId,
+    normalizedHash,
     desktopSelectedPostId,
     isDesktopLayout,
     navigate,
+  ]);
+
+  useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+
+    const nextHash = buildDesktopChannelsRouteHash({
+      postId:
+        routeState.section === activeSection ? routeSelectedPostId : undefined,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
+      section: activeSection,
+    });
+    if ((nextHash ?? "") === normalizedHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/discover/channels",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [
+    activeSection,
+    isDesktopLayout,
+    navigate,
+    normalizedHash,
     routeSelectedPostId,
+    routeState.section,
+    safeReturnHash,
+    safeReturnPath,
   ]);
 
   useEffect(() => {
@@ -492,7 +577,10 @@ export function ChannelsPage() {
   }, [notice]);
 
   async function handleSharePost(post: (typeof visiblePosts)[number]) {
-    const shareHash = buildDesktopChannelsRouteHash({ postId: post.id });
+    const shareHash = buildDesktopChannelsRouteHash({
+      postId: post.id,
+      section: activeSection,
+    });
     const sharePath = `${pathname}${shareHash ? `#${shareHash}` : ""}`;
     const shareUrl =
       typeof window === "undefined"
@@ -550,7 +638,10 @@ export function ChannelsPage() {
 
   function toggleFavorite(post: (typeof visiblePosts)[number]) {
     const sourceId = `channels-${post.id}`;
-    const routeHash = buildDesktopChannelsRouteHash({ postId: post.id });
+    const routeHash = buildDesktopChannelsRouteHash({
+      postId: post.id,
+      section: activeSection,
+    });
     const alreadyFavorited = Boolean(post.ownerState?.hasFavorited);
     if (alreadyFavorited) {
       removeDesktopFavorite(sourceId);
@@ -586,13 +677,47 @@ export function ChannelsPage() {
     notInterestedMutation.mutate(postId);
   }
 
-  function openChannelAuthor(authorId: string) {
+  function handleSectionChange(section: FeedChannelHomeSection) {
+    if (section === activeSection) {
+      return;
+    }
+
     if (isDesktopLayout) {
       void navigate({
         to: "/tabs/channels",
         hash: buildDesktopChannelsRouteHash({
-          postId: desktopSelectedPostId,
+          section,
+        }),
+        replace: true,
+      });
+      return;
+    }
+
+    setActiveSection(section);
+  }
+
+  function openChannelAuthor(
+    authorId: string,
+    options?: {
+      sourcePostId?: string | null;
+    },
+  ) {
+    const sourcePostId =
+      options?.sourcePostId ?? desktopSelectedPostId ?? routeSelectedPostId;
+    const sourceHash = buildDesktopChannelsRouteHash({
+      postId: sourcePostId,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
+      section: activeSection,
+    });
+
+    if (isDesktopLayout) {
+      void navigate({
+        to: "/tabs/channels",
+        hash: buildDesktopChannelsRouteHash({
+          postId: sourcePostId,
           authorId,
+          section: activeSection,
         }),
       });
       return;
@@ -601,6 +726,12 @@ export function ChannelsPage() {
     void navigate({
       to: "/channels/authors/$authorId",
       params: { authorId },
+      hash: buildDesktopChannelsRouteHash({
+        postId: sourcePostId,
+        returnPath: pathname,
+        returnHash: sourceHash,
+        section: activeSection,
+      }),
     });
   }
 
@@ -609,6 +740,7 @@ export function ChannelsPage() {
       to: "/tabs/channels",
       hash: buildDesktopChannelsRouteHash({
         postId: desktopSelectedPostId,
+        section: activeSection,
       }),
       replace: true,
     });
@@ -620,6 +752,7 @@ export function ChannelsPage() {
       hash: buildDesktopChannelsRouteHash({
         postId,
         authorId,
+        section: activeSection,
       }),
     });
   }
@@ -671,6 +804,7 @@ export function ChannelsPage() {
         }
       >
         <DesktopChannelsWorkspace
+          activeSection={activeSection}
           authorProfile={desktopAuthorProfileQuery.data ?? null}
           authorProfileErrorMessage={
             desktopAuthorProfileQuery.isError &&
@@ -685,8 +819,9 @@ export function ChannelsPage() {
           isLoading={channelsQuery.isLoading}
           likePendingPostId={pendingLikePostId}
           posts={desktopWorkspacePosts}
-          routeSelectedAuthorId={routeSelectedAuthorId}
+          routeSelectedAuthorId={syncedRouteSelectedAuthorId}
           routeSelectedPostId={routeSelectedPostId}
+          sections={channelSections}
           successNotice={notice}
           isPostFavorite={(postId) =>
             desktopWorkspacePosts.find((post) => post.id === postId)
@@ -710,6 +845,7 @@ export function ChannelsPage() {
           onToggleAuthorFollow={(authorId, following) =>
             followMutation.mutate({ authorId, following })
           }
+          onSectionChange={handleSectionChange}
           onToggleFavorite={toggleFavorite}
           onLikeComment={(comment) =>
             likeCommentMutation.mutate({
@@ -743,11 +879,19 @@ export function ChannelsPage() {
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
-            onClick={() =>
+            onClick={() => {
               navigateBackOrFallback(() => {
+                if (safeReturnPath) {
+                  void navigate({
+                    to: safeReturnPath,
+                    ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+                  });
+                  return;
+                }
+
                 void navigate({ to: "/tabs/discover" });
-              })
-            }
+              });
+            }}
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
@@ -772,7 +916,7 @@ export function ChannelsPage() {
             <button
               key={section.key}
               type="button"
-              onClick={() => setActiveSection(section.key)}
+              onClick={() => handleSectionChange(section.key)}
               className={cn(
                 "rounded-full px-2 py-0.5 text-[8px] transition",
                 activeSection === section.key
@@ -813,11 +957,9 @@ export function ChannelsPage() {
                 variant="secondary"
                 size="sm"
                 className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                onClick={() => {
-                  void channelsQuery.refetch();
-                }}
+                onClick={handleStatusBack}
               >
-                重新加载
+                {safeReturnPath ? "返回上一页" : "重新加载"}
               </Button>
             }
           />
@@ -842,9 +984,13 @@ export function ChannelsPage() {
                 size="sm"
                 className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
                 disabled={generateMutation.isPending}
-                onClick={() => generateMutation.mutate()}
+                onClick={handleEmptyStateAction}
               >
-                {generateMutation.isPending ? "生成中..." : "换一批"}
+                {safeReturnPath
+                  ? "返回上一页"
+                  : generateMutation.isPending
+                    ? "生成中..."
+                    : "换一批"}
               </Button>
             }
           />
@@ -855,7 +1001,9 @@ export function ChannelsPage() {
             posts={visiblePosts}
             routeSelectedPostId={routeSelectedPostId}
             onLike={(postId) => likeMutation.mutate(postId)}
-            onOpenAuthor={(post) => openChannelAuthor(post.authorId)}
+            onOpenAuthor={(post) =>
+              openChannelAuthor(post.authorId, { sourcePostId: post.id })
+            }
             onOpenComments={(post) => {
               setMobileCommentSheetPostId(post.id);
               setMobileReplyTarget(null);
@@ -1501,7 +1649,16 @@ function MobileChannelCommentsSheet({
               tone="warning"
               className="rounded-[14px] border-[color:var(--border-danger)] bg-white"
             >
-              {errorMessage}
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">{errorMessage}</span>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
+                >
+                  返回视频号
+                </button>
+              </div>
             </InlineNotice>
           ) : null}
           {isLoading && !comments.length ? (

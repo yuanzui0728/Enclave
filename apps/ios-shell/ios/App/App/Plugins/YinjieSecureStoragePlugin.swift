@@ -3,7 +3,15 @@ import Capacitor
 import Security
 
 @objc(YinjieSecureStoragePlugin)
-public class YinjieSecureStoragePlugin: CAPPlugin {
+public class YinjieSecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "YinjieSecureStoragePlugin"
+    public let jsName = "YinjieSecureStorage"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "get", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "set", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise)
+    ]
+
     private let serviceName = "com.yinjie.session"
 
     @objc func get(_ call: CAPPluginCall) {

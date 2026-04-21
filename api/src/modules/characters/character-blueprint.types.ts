@@ -1,11 +1,14 @@
 import type { CharacterEntity } from './character.entity';
+import type { RealityLinkConfigValue } from '../real-world-sync/real-world-sync.types';
 
 export type CharacterBlueprintSourceTypeValue =
   | 'default_seed'
   | 'preset_catalog'
   | 'manual_admin'
   | 'template_clone'
-  | 'ai_generated';
+  | 'ai_generated'
+  | 'need_generated'
+  | 'shake_generated';
 
 export type CharacterBlueprintStatusValue = 'draft' | 'published' | 'archived';
 
@@ -100,6 +103,7 @@ export interface CharacterBlueprintRecipeValue {
     initialOnline: boolean;
     initialActivity: string | null;
   };
+  realityLink?: RealityLinkConfigValue | null;
 }
 
 export interface CharacterBlueprintContract {

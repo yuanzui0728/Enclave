@@ -1,6 +1,14 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Share2 } from "lucide-react";
 import {
   getOfficialAccountArticle,
@@ -16,9 +24,13 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
+import {
+  buildMobileOfficialRouteHash,
+  parseMobileOfficialRouteState,
+} from "../features/official-accounts/mobile-official-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -60,10 +72,17 @@ function MobileOfficialAccountArticlePage({
   articleId: string;
 }) {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastMarkedArticleIdRef = useRef<string | null>(null);
+  const routeState = useMemo(() => parseMobileOfficialRouteState(hash), [hash]);
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
   );
@@ -115,6 +134,19 @@ function MobileOfficialAccountArticlePage({
     typeof window === "undefined"
       ? articlePath
       : `${window.location.origin}${articlePath}`;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileOfficialRouteHash({
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath],
+  );
 
   useEffect(() => {
     if (!article?.id || lastMarkedArticleIdRef.current === article.id) {
@@ -124,6 +156,40 @@ function MobileOfficialAccountArticlePage({
     lastMarkedArticleIdRef.current = article.id;
     markReadMutation.mutate(article.id);
   }, [article?.id, markReadMutation]);
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    if (article?.account.id) {
+      void navigate({
+        to: "/official-accounts/$accountId",
+        params: { accountId: article.account.id },
+      });
+      return;
+    }
+
+    void navigate({ to: "/contacts/official-accounts" });
+  }
+
+  const statusBackLabel = safeReturnPath
+    ? "返回上一页"
+    : article?.account.id
+      ? "返回公众号主页"
+      : "返回公众号列表";
 
   function toggleArticleFavorite() {
     if (!article) {
@@ -213,6 +279,10 @@ function MobileOfficialAccountArticlePage({
           <Button
             onClick={() => {
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 if (article?.account.id) {
                   void navigate({
                     to: "/official-accounts/$accountId",
@@ -271,6 +341,17 @@ function MobileOfficialAccountArticlePage({
               title="文章暂时不可用"
               description={articleQuery.error.message}
               tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -281,6 +362,17 @@ function MobileOfficialAccountArticlePage({
               title="阅读状态暂未同步"
               description={markReadMutation.error.message}
               tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -292,6 +384,26 @@ function MobileOfficialAccountArticlePage({
             >
               {shareNotice.message}
             </InlineNotice>
+          </div>
+        ) : null}
+        {!articleQuery.isLoading && !articleQuery.isError && !article ? (
+          <div className="mx-auto max-w-[24rem] px-4 pt-2">
+            <MobileOfficialArticleStatusCard
+              badge="公众号文章"
+              title="这篇文章暂时不可用"
+              description="可以先回上一页，稍后再试。"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
+            />
           </div>
         ) : null}
 
@@ -309,12 +421,20 @@ function MobileOfficialAccountArticlePage({
               void navigate({
                 to: "/official-accounts/$accountId",
                 params: { accountId },
+                hash: buildMobileOfficialRouteHash({
+                  returnPath: pathname,
+                  returnHash: currentRouteHash || undefined,
+                }),
               });
             }}
             onOpenArticle={(nextArticleId) => {
               void navigate({
                 to: "/official-accounts/articles/$articleId",
                 params: { articleId: nextArticleId },
+                hash: buildMobileOfficialRouteHash({
+                  returnPath: pathname,
+                  returnHash: currentRouteHash || undefined,
+                }),
               });
             }}
             onToggleFavorite={toggleArticleFavorite}
@@ -329,11 +449,13 @@ function MobileOfficialArticleStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -368,6 +490,7 @@ function MobileOfficialArticleStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

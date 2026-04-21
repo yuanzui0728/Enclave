@@ -18,6 +18,7 @@ import {
 } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { RouteRedirectState } from "../components/route-redirect-state";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import {
   hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
@@ -29,13 +30,14 @@ import {
   buildDesktopFriendMomentsRouteHash,
   parseDesktopFriendMomentsRouteState,
 } from "../features/moments/friend-moments-route-state";
+import { coerceToMobileFriendMomentsRouteHash } from "../features/moments/mobile-friend-moments-route-state";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import { getMomentSummaryText } from "../features/moments/moment-content";
 import {
   publishMomentComposeDraft,
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { formatTimestamp } from "../lib/format";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -275,18 +277,38 @@ export function FriendMomentsPage() {
       return;
     }
 
-    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+    const mobileRedirectHash = coerceToMobileFriendMomentsRouteHash(hash);
 
     void navigate({
       to: "/friend-moments/$characterId",
       params: { characterId },
-      ...(normalizedHash ? { hash: normalizedHash } : {}),
+      ...(mobileRedirectHash ? { hash: mobileRedirectHash } : {}),
       replace: true,
     });
   }, [characterId, hash, isDesktopLayout, navigate]);
 
+  function navigateToRouteStateReturn() {
+    if (!routeState.returnPath) {
+      return false;
+    }
+
+    if (!isDesktopLayout && isDesktopOnlyPath(routeState.returnPath)) {
+      return false;
+    }
+
+    void navigate({
+      to: routeState.returnPath,
+      ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+    });
+    return true;
+  }
+
   function handleBack() {
     navigateBackOrFallback(() => {
+      if (navigateToRouteStateReturn()) {
+        return;
+      }
+
       if (routeState.source === "contacts") {
         void navigate({ to: "/tabs/contacts" });
         return;
@@ -464,12 +486,18 @@ export function FriendMomentsPage() {
           void navigate({
             to: "/character/$characterId",
             params: { characterId },
+            hash: buildCharacterDetailRouteHash({
+              returnPath: `/desktop/friend-moments/${characterId}`,
+              returnHash: hash,
+            }),
           });
         }}
         onRouteStateChange={(state) => {
           const nextHash = buildDesktopFriendMomentsRouteHash({
             ...state,
             source: routeState.source,
+            returnPath: routeState.returnPath,
+            returnHash: routeState.returnHash,
           });
           const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
 

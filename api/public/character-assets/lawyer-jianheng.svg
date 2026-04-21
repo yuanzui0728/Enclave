@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-lawyer-jianheng-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#18493F" />
+      <stop offset="1" stop-color="#93B6A6" />
+    </linearGradient>
+    <radialGradient id="glow-lawyer-jianheng-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(229, 201, 142, 0.5)" />
+      <stop offset="1" stop-color="rgba(229, 201, 142, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-lawyer-jianheng-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-lawyer-jianheng-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-lawyer-jianheng-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(255, 255, 255, 0.08)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(229, 201, 142, 0.12)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-lawyer-jianheng-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <circle cx="512" cy="438" r="224" fill="rgba(255, 255, 255, 0.12)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M154 766C220 702 314 662 408 662H616C738 662 834 742 870 862" stroke="rgba(255, 255, 255, 0.12)" stroke-width="28" stroke-linecap="round" />
+  <rect x="650" y="676" width="206" height="206" rx="76" fill="rgba(255, 255, 255, 0.14)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="820" cy="164" r="32" fill="rgba(229, 201, 142, 0.32)" />
+  <circle cx="206" cy="200" r="18" fill="rgba(255, 255, 255, 0.18)" />
+  <g transform="translate(364.00 290.00) scale(12.3333)" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="1"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" key="7g6ntu" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" key="ijws7r" /><path d="M7 21h10" key="1b0cd5" /><path d="M12 3v18" key="108xh3" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" key="3gwbw2" /></g>
+  <g transform="translate(695.00 720.00) scale(4.8333)" fill="none" stroke="#E5C98E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="0.98"><path d="M12 20h9" key="t2du7b" /><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" key="1ykcvy" /></g>
+</svg>

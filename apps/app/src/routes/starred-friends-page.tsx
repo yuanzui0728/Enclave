@@ -1,18 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Search, Star, Tag } from "lucide-react";
 import { getFriends, type FriendListItem } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";
+import {
+  buildMobileContactDirectoryRouteHash,
+  parseMobileContactDirectoryRouteState,
+} from "../features/contacts/mobile-contact-directory-route-state";
 import {
   getFriendDisplayName,
   matchesFriendSearch,
 } from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function StarredFriendsPage() {
@@ -26,6 +32,9 @@ export function StarredFriendsPage() {
 
     void navigate({
       to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "starred-friends",
+      }),
       replace: true,
     });
   }, [isDesktopLayout, navigate]);
@@ -33,9 +42,9 @@ export function StarredFriendsPage() {
   if (isDesktopLayout) {
     return (
       <RouteRedirectState
-        title="正在回到桌面通讯录"
-        description="星标朋友在桌面布局里并入了通讯录工作区，这里会自动带你返回桌面入口。"
-        loadingLabel="正在打开通讯录..."
+        title="正在切换到桌面星标朋友"
+        description="星标朋友在桌面布局里并入了通讯录工作区，这里会自动带你打开对应视图。"
+        loadingLabel="正在打开桌面星标朋友..."
       />
     );
   }
@@ -45,9 +54,31 @@ export function StarredFriendsPage() {
 
 function MobileStarredFriendsPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const [searchText, setSearchText] = useState("");
+  const routeState = parseMobileContactDirectoryRouteState(hash);
+  const [searchText, setSearchText] = useState(routeState.keyword);
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileContactDirectoryRouteHash({
+        keyword: searchText,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath, searchText],
+  );
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -72,6 +103,61 @@ function MobileStarredFriendsPage() {
     );
   }, [normalizedSearchText, starredFriends]);
 
+  useEffect(() => {
+    if (searchText !== routeState.keyword) {
+      setSearchText(routeState.keyword);
+    }
+  }, [routeState.keyword, searchText]);
+
+  useEffect(() => {
+    if (normalizedHash === (currentRouteHash ?? "")) {
+      return;
+    }
+
+    void navigate({
+      to: "/contacts/starred",
+      hash: currentRouteHash,
+      replace: true,
+    });
+  }, [
+    currentRouteHash,
+    navigate,
+    normalizedHash,
+  ]);
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function openTags() {
+    void navigate({
+      to: "/contacts/tags",
+      hash: buildMobileContactDirectoryRouteHash({
+        keyword: "",
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    openTags();
+  }
+
+  const statusBackLabel = safeReturnPath ? "返回上一页" : "查看联系人标签";
+
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
@@ -86,6 +172,10 @@ function MobileStarredFriendsPage() {
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 void navigate({ to: "/tabs/contacts" });
               })
             }
@@ -100,9 +190,7 @@ function MobileStarredFriendsPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
-            onClick={() => {
-              void navigate({ to: "/contacts/tags" });
-            }}
+            onClick={openTags}
             aria-label="查看联系人标签"
           >
             <Tag size={17} />
@@ -140,6 +228,16 @@ function MobileStarredFriendsPage() {
               badge="读取失败"
               title="星标朋友暂时不可用"
               description={friendsQuery.error.message}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
               tone="danger"
             />
           </div>
@@ -161,6 +259,16 @@ function MobileStarredFriendsPage() {
                   ? "换个关键词再试试。"
                   : "先去联系人资料里把常联系的好友设为星标朋友。"
               }
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -175,6 +283,10 @@ function MobileStarredFriendsPage() {
                   void navigate({
                     to: "/character/$characterId",
                     params: { characterId: item.character.id },
+                    hash: buildCharacterDetailRouteHash({
+                      returnPath: pathname,
+                      returnHash: currentRouteHash || undefined,
+                    }),
                   });
                 }}
                 className={cn(
@@ -246,11 +358,13 @@ function MobileStarredFriendsStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -285,6 +399,7 @@ function MobileStarredFriendsStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

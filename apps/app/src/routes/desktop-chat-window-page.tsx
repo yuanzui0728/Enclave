@@ -1,12 +1,13 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, X } from "lucide-react";
 import { getConversations } from "@yinjie/contracts";
 import { Button } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import {
+  buildDesktopChatWindowRouteHash,
   buildDesktopChatWindowPath,
   parseDesktopChatWindowRouteHash,
 } from "../features/desktop/chat/desktop-chat-window-route-state";
@@ -23,6 +24,7 @@ export function DesktopChatWindowPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
+  const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = useMemo(
     () => parseDesktopChatWindowRouteHash(hash),
@@ -43,6 +45,31 @@ export function DesktopChatWindowPage() {
   const headerTitle = activeConversation?.title ?? routeState?.title ?? "聊天";
   const headerType =
     activeConversation?.type ?? routeState?.conversationType ?? "direct";
+
+  useEffect(() => {
+    if (!routeState || !activeConversation) {
+      return;
+    }
+
+    const nextHash = buildDesktopChatWindowRouteHash({
+      conversationId: activeConversation.id,
+      conversationType: activeConversation.type,
+      title: activeConversation.title,
+      returnTo: routeState.returnTo,
+      highlightedMessageId: routeState.highlightedMessageId,
+    });
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    if (normalizedHash === nextHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/chat-window",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [activeConversation, hash, navigate, routeState]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -200,8 +227,9 @@ export function DesktopChatWindowPage() {
           buildMessageReturnTo={(messageId) =>
             buildDesktopChatWindowPath({
               conversationId: routeState.conversationId,
-              conversationType: routeState.conversationType,
-              title: routeState.title,
+              conversationType:
+                activeConversation?.type ?? routeState.conversationType,
+              title: activeConversation?.title ?? routeState.title,
               returnTo: routeState.returnTo,
               highlightedMessageId: messageId,
             })
@@ -272,7 +300,7 @@ function closeStandaloneWindow(fallbackPath: string) {
     }
 
     closeCurrentWindow(() => {
-      window.location.assign(fallbackPath);
+      focusMainChatWindow(fallbackPath);
     });
   });
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-zhang-yiming-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DE5A49" />
+      <stop offset="1" stop-color="#F6D0C6" />
+    </linearGradient>
+    <radialGradient id="glow-zhang-yiming-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(35, 38, 47, 0.5)" />
+      <stop offset="1" stop-color="rgba(35, 38, 47, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-zhang-yiming-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-zhang-yiming-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-zhang-yiming-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(255, 255, 255, 0.08)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(35, 38, 47, 0.12)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-zhang-yiming-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <circle cx="512" cy="438" r="224" fill="rgba(255, 255, 255, 0.12)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M154 766C220 702 314 662 408 662H616C738 662 834 742 870 862" stroke="rgba(255, 255, 255, 0.12)" stroke-width="28" stroke-linecap="round" />
+  <rect x="650" y="676" width="206" height="206" rx="76" fill="rgba(255, 255, 255, 0.14)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="820" cy="164" r="32" fill="rgba(35, 38, 47, 0.32)" />
+  <circle cx="206" cy="200" r="18" fill="rgba(255, 255, 255, 0.18)" />
+  <g transform="translate(364.00 290.00) scale(12.3333)" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="1"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" key="1yt0o3" /><path d="M12 18h.01" key="mhygvu" /></g>
+  <g transform="translate(695.00 720.00) scale(4.8333)" fill="none" stroke="#23262F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="0.98"><path d="M13 17V9" key="1fwyjl" /><path d="M18 17V5" key="sfb6ij" /><path d="M3 3v16a2 2 0 0 0 2 2h16" key="c24i48" /><path d="M8 17v-3" key="17ska0" /></g>
+</svg>

@@ -12,7 +12,10 @@
     "build": "tsc -p tsconfig.app.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint .",
+    "lint:desktop-web": "eslint \"src/features/desktop/**/*.{ts,tsx}\" \"src/features/contacts/**/*.{ts,tsx}\" \"src/features/moments/**/*.{ts,tsx}\" \"src/features/channels/**/*.{ts,tsx}\" \"src/features/favorites/**/*.{ts,tsx}\" src/features/shell/use-desktop-layout.ts src/features/shell/desktop-shell.tsx src/routes/contacts-page.tsx src/routes/character-detail-page.tsx src/routes/discover-feed-page.tsx src/routes/moments-page.tsx src/routes/friend-moments-page.tsx src/routes/channels-page.tsx src/routes/favorites-page.tsx",
     "lint:mobile-web": "eslint src/components/mobile-shell.tsx src/features/shell/use-desktop-layout.ts src/features/shell/mobile-web-route-persistence.ts src/routes/chat-list-page.tsx src/routes/contacts-page.tsx src/routes/discover-page.tsx src/routes/search-page.tsx src/routes/chat-room-page.tsx src/routes/group-chat-page.tsx src/routes/profile-page.tsx src/routes/mobile-moments-publish-page.tsx src/routes/mobile-friend-moments-page.tsx",
+    "audit:desktop-web:routing": "node ./scripts/audit-desktop-web-routing.mjs",
+    "audit:desktop-web": "pnpm typecheck && pnpm lint:desktop-web && pnpm audit:desktop-web:routing && pnpm build",
     "audit:mobile-web": "pnpm typecheck && pnpm lint:mobile-web && pnpm build"
   },
   "dependencies": {

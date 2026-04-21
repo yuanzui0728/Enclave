@@ -3,6 +3,7 @@ import defaultAvatarDusk from "../assets/default-avatar-dusk.svg";
 import defaultAvatarEmber from "../assets/default-avatar-ember.svg";
 import defaultAvatarMint from "../assets/default-avatar-mint.svg";
 import defaultOwnerAvatar from "../assets/default-owner-avatar.svg";
+import { resolveAppCoreApiBaseUrl } from "../lib/runtime-config";
 
 const fallbackAvatars = [
   defaultOwnerAvatar,
@@ -33,7 +34,10 @@ export function AvatarChip({
             : "h-11 w-11 rounded-full text-base";
   const trimmedSrc = src?.trim() ?? "";
   const fallbackSrc = pickFallbackAvatar(name, trimmedSrc);
-  const resolvedSrc = !loadFailed && isLikelyImageSource(trimmedSrc) ? trimmedSrc : fallbackSrc;
+  const resolvedSrc =
+    !loadFailed && isLikelyImageSource(trimmedSrc)
+      ? resolveAvatarSource(trimmedSrc)
+      : fallbackSrc;
 
   useEffect(() => {
     setLoadFailed(false);
@@ -68,6 +72,18 @@ function isLikelyImageSource(value: string) {
     /^data:image\//i.test(value) ||
     /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(value)
   );
+}
+
+function resolveAvatarSource(value: string) {
+  if (!value.startsWith("/api/")) {
+    return value;
+  }
+
+  try {
+    return new URL(value, `${resolveAppCoreApiBaseUrl()}/`).toString();
+  } catch {
+    return value;
+  }
 }
 
 function pickFallbackAvatar(name?: string | null, src?: string | null) {

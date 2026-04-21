@@ -24,7 +24,7 @@ export function DesktopSubscriptionWorkspace({
 }: {
   selectedArticleId?: string;
   onOpenAccount?: (accountId: string, articleId?: string) => void;
-  onOpenArticle?: (articleId: string) => void;
+  onOpenArticle?: (articleId?: string) => void;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -32,9 +32,8 @@ export function DesktopSubscriptionWorkspace({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastMarkedDeliveryIdRef = useRef<string | null>(null);
   const lastMarkedArticleIdRef = useRef<string | null>(null);
-  const [activeArticleId, setActiveArticleId] = useState<string | null>(
-    selectedArticleId ?? null,
-  );
+  const autoSyncedRouteArticleRef = useRef<string | null>(null);
+  const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
 
   const inboxQuery = useQuery({
     queryKey: ["app-official-subscription-inbox", baseUrl],
@@ -59,6 +58,14 @@ export function DesktopSubscriptionWorkspace({
     () => inboxQuery.data?.feedItems ?? [],
     [inboxQuery.data?.feedItems],
   );
+  const currentFeedArticleIds = useMemo(
+    () => new Set(feedItems.map((delivery) => delivery.articleId)),
+    [feedItems],
+  );
+  const routeSelectedArticleId =
+    selectedArticleId && currentFeedArticleIds.has(selectedArticleId)
+      ? selectedArticleId
+      : null;
   const activeDelivery = useMemo(
     () =>
       feedItems.find((delivery) => delivery.articleId === activeArticleId) ?? null,
@@ -71,43 +78,79 @@ export function DesktopSubscriptionWorkspace({
     : "暂无更新";
 
   useEffect(() => {
-    if (
-      selectedArticleId === undefined ||
-      selectedArticleId === activeArticleId
-    ) {
+    if (!selectedArticleId || currentFeedArticleIds.has(selectedArticleId)) {
+      autoSyncedRouteArticleRef.current = null;
+    }
+  }, [currentFeedArticleIds, selectedArticleId]);
+
+  useEffect(() => {
+    if (selectedArticleId === undefined || inboxQuery.isLoading) {
       return;
     }
 
-    setActiveArticleId(selectedArticleId);
-  }, [activeArticleId, selectedArticleId]);
+    const nextArticleId = routeSelectedArticleId ?? feedItems[0]?.articleId ?? null;
+    if (activeArticleId === nextArticleId) {
+      return;
+    }
+
+    setActiveArticleId(nextArticleId);
+  }, [
+    activeArticleId,
+    feedItems,
+    inboxQuery.isLoading,
+    routeSelectedArticleId,
+    selectedArticleId,
+  ]);
 
   useEffect(() => {
+    if (selectedArticleId !== undefined) {
+      return;
+    }
+
     if (!activeArticleId && feedItems[0]?.articleId) {
       setActiveArticleId(feedItems[0].articleId);
       return;
     }
 
     if (
-      !selectedArticleId &&
       activeArticleId &&
       feedItems.length > 0 &&
-      !feedItems.some((delivery) => delivery.articleId === activeArticleId)
+      !currentFeedArticleIds.has(activeArticleId)
     ) {
       setActiveArticleId(feedItems[0]?.articleId ?? null);
+      return;
     }
-  }, [activeArticleId, feedItems, selectedArticleId]);
+
+    if (!feedItems.length && activeArticleId) {
+      setActiveArticleId(null);
+    }
+  }, [activeArticleId, currentFeedArticleIds, feedItems, selectedArticleId]);
 
   useEffect(() => {
-    if (selectedArticleId) {
+    if (
+      selectedArticleId === undefined ||
+      inboxQuery.isLoading ||
+      !selectedArticleId ||
+      routeSelectedArticleId
+    ) {
       return;
     }
 
-    if (feedItems.length > 0) {
+    const fallbackArticleId = feedItems[0]?.articleId ?? null;
+    const syncKey = `${selectedArticleId}->${fallbackArticleId ?? "empty"}`;
+    if (autoSyncedRouteArticleRef.current === syncKey) {
       return;
     }
 
-    setActiveArticleId(null);
-  }, [feedItems.length, selectedArticleId]);
+    autoSyncedRouteArticleRef.current = syncKey;
+    onOpenArticle?.(fallbackArticleId ?? undefined);
+  }, [
+    feedItems,
+    inboxQuery.isLoading,
+    onOpenArticle,
+    routeSelectedArticleId,
+    selectedArticleId,
+  ]);
 
   useEffect(() => {
     if (

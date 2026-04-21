@@ -42,10 +42,15 @@ import {
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
 import {
+  buildFeedRouteHash,
+  parseFeedRouteHash,
+} from "../features/feed/feed-route-state";
+import {
   getFeedSummaryText,
   resolveFeedMomentContentType,
 } from "../features/feed/feed-media";
 import { formatTimestamp } from "../lib/format";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -90,7 +95,16 @@ export function DiscoverFeedPage() {
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
-  const routeSelectedPostId = parseDesktopFeedRouteHash(hash);
+  const routeState = parseFeedRouteHash(hash);
+  const routeSelectedPostId = routeState.postId;
+  const [desktopSelectedPostId, setDesktopSelectedPostId] = useState<
+    string | null
+  >(routeSelectedPostId);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
 
   const feedQuery = useQuery({
     queryKey: ["app-feed", baseUrl],
@@ -175,6 +189,37 @@ export function DiscoverFeedPage() {
       !blockedCharacterIds.has(post.authorId),
   );
 
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void feedQuery.refetch();
+    void blockedQuery.refetch();
+  }
+
+  function handleEmptyStateAction() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    focusComposer();
+  }
+  const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试";
+  const composerErrorActionLabel = safeReturnPath ? "返回上一页" : "继续编辑";
+
   useEffect(() => {
     resetComposeDraft();
     setCommentDrafts({});
@@ -238,6 +283,33 @@ export function DiscoverFeedPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    setDesktopSelectedPostId(routeSelectedPostId);
+  }, [routeSelectedPostId]);
+
+  useEffect(() => {
+    if (!isDesktopLayout || routeSelectedPostId === desktopSelectedPostId) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/feed",
+      hash: buildFeedRouteHash({
+        postId: desktopSelectedPostId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+      replace: true,
+    });
+  }, [
+    desktopSelectedPostId,
+    isDesktopLayout,
+    navigate,
+    routeSelectedPostId,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
+
   function focusComposer() {
     if (typeof document === "undefined") {
       return;
@@ -295,7 +367,9 @@ export function DiscoverFeedPage() {
   }, [isDesktopLayout, routeSelectedPostId, visiblePosts.length]);
 
   async function handleSharePost(post: (typeof visiblePosts)[number]) {
-    const shareHash = buildDesktopFeedRouteHash(post.id);
+    const shareHash = buildFeedRouteHash({
+      postId: post.id,
+    });
     const sharePath = `${pathname}${shareHash ? `#${shareHash}` : ""}`;
     const shareUrl =
       typeof window === "undefined"
@@ -401,6 +475,7 @@ export function DiscoverFeedPage() {
           ownerAvatar={ownerAvatar}
           ownerUsername={ownerUsername}
           posts={visiblePosts}
+          onSelectedPostChange={setDesktopSelectedPostId}
           routeSelectedPostId={routeSelectedPostId}
           showCompose={showCompose}
           successNotice={notice}
@@ -448,7 +523,7 @@ export function DiscoverFeedPage() {
                   title: post.authorName,
                   description: getFeedSummaryText(post),
                   meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
-                  to: `/tabs/feed${buildDesktopFeedRouteHash(post.id) ? `#${buildDesktopFeedRouteHash(post.id)}` : ""}`,
+                  to: `/tabs/feed${buildFeedRouteHash({ postId: post.id }) ? `#${buildFeedRouteHash({ postId: post.id })}` : ""}`,
                   badge: "广场动态",
                   avatarName: post.authorName,
                   avatarSrc: post.authorAvatar,
@@ -475,9 +550,19 @@ export function DiscoverFeedPage() {
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
-            onClick={() => {
-              void navigate({ to: "/tabs/discover" });
-            }}
+            onClick={() =>
+              navigateBackOrFallback(() => {
+                if (safeReturnPath) {
+                  void navigate({
+                    to: safeReturnPath,
+                    ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+                  });
+                  return;
+                }
+
+                void navigate({ to: "/tabs/discover" });
+              })
+            }
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
@@ -560,6 +645,16 @@ export function DiscoverFeedPage() {
               ? createMutation.error.message
               : null)
           }
+          errorActionLabel={composerErrorActionLabel}
+          onErrorAction={() => {
+            if (safeReturnPath) {
+              handleStatusBack();
+              return;
+            }
+
+            composeDraft.setMediaError(null);
+            createMutation.reset();
+          }}
           onSubmit={() => createMutation.mutate()}
         />
 
@@ -599,12 +694,9 @@ export function DiscoverFeedPage() {
                   variant="secondary"
                   size="sm"
                   className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={() => {
-                    void feedQuery.refetch();
-                    void blockedQuery.refetch();
-                  }}
+                  onClick={handleStatusBack}
                 >
-                  重新加载
+                  {safeReturnPath ? "返回上一页" : "重新加载"}
                 </Button>
               }
             />
@@ -756,7 +848,18 @@ export function DiscoverFeedPage() {
               tone="info"
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
-              {likeMutation.error.message}
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {likeMutation.error.message}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleStatusBack}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  {interactionActionLabel}
+                </button>
+              </div>
             </InlineNotice>
           ) : null}
           {commentMutation.isError && commentMutation.error instanceof Error ? (
@@ -764,7 +867,18 @@ export function DiscoverFeedPage() {
               tone="info"
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
-              {commentMutation.error.message}
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {commentMutation.error.message}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleStatusBack}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  {interactionActionLabel}
+                </button>
+              </div>
             </InlineNotice>
           ) : null}
 
@@ -780,9 +894,9 @@ export function DiscoverFeedPage() {
                   variant="primary"
                   size="sm"
                   className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
-                  onClick={focusComposer}
+                  onClick={handleEmptyStateAction}
                 >
-                  发一条广场动态
+                  {safeReturnPath ? "返回上一页" : "发一条广场动态"}
                 </Button>
               }
             />
@@ -813,26 +927,6 @@ export function DiscoverFeedPage() {
       />
     </AppPage>
   );
-}
-
-function parseDesktopFeedRouteHash(hash: string) {
-  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-  if (!normalizedHash) {
-    return null;
-  }
-
-  const params = new URLSearchParams(normalizedHash);
-  return params.get("post")?.trim() || null;
-}
-
-function buildDesktopFeedRouteHash(postId?: string | null) {
-  if (!postId) {
-    return undefined;
-  }
-
-  const params = new URLSearchParams();
-  params.set("post", postId);
-  return params.toString();
 }
 
 function MobileFeedStatusCard({

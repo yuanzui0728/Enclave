@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
 import { CloudClientAuthGuard } from "../auth/cloud-client-auth.guard";
+import { CreateWorldRequestDto } from "../http-dto/cloud-api.dto";
 import { CloudService } from "./cloud.service";
 
 type CloudRequest = {
@@ -17,8 +18,8 @@ export class CloudController {
   }
 
   @Post("world-requests")
-  createWorldRequest(@Req() req: CloudRequest, @Body() body: { worldName?: string }) {
-    return this.cloudService.createWorldRequest(req.cloudPhone ?? "", body.worldName ?? "");
+  createWorldRequest(@Req() req: CloudRequest, @Body() body: CreateWorldRequestDto) {
+    return this.cloudService.createWorldRequest(req.cloudPhone ?? "", body.worldName);
   }
 
   @Get("world-requests/latest")

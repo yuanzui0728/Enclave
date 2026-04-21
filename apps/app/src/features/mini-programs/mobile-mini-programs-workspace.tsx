@@ -37,6 +37,7 @@ type MobileMiniProgramsWorkspaceProps = {
   selectedMiniProgramId: string;
   successNotice?: string;
   noticeTone?: "success" | "info";
+  statusBackLabel?: string | null;
   visibleMiniPrograms: MiniProgramEntry[];
   onCopyMiniProgramToMobile?: (miniProgramId: string) => void;
   onBack: () => void;
@@ -45,6 +46,7 @@ type MobileMiniProgramsWorkspaceProps = {
   onOpenMiniProgram: (miniProgramId: string) => void;
   onSearchTextChange: (value: string) => void;
   onSelectMiniProgram: (miniProgramId: string) => void;
+  onStatusBack?: () => void;
   onToggleMiniProgramTask: (miniProgramId: string, taskId: string) => void;
   onTogglePinnedMiniProgram: (miniProgramId: string) => void;
 };
@@ -62,6 +64,7 @@ export function MobileMiniProgramsWorkspace({
   selectedMiniProgramId,
   successNotice,
   noticeTone = "success",
+  statusBackLabel = null,
   visibleMiniPrograms,
   onCopyMiniProgramToMobile,
   onBack,
@@ -70,6 +73,7 @@ export function MobileMiniProgramsWorkspace({
   onOpenMiniProgram,
   onSearchTextChange,
   onSelectMiniProgram,
+  onStatusBack,
   onToggleMiniProgramTask,
   onTogglePinnedMiniProgram,
 }: MobileMiniProgramsWorkspaceProps) {
@@ -168,7 +172,20 @@ export function MobileMiniProgramsWorkspace({
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
-            {successNotice}
+            {noticeTone === "info" && statusBackLabel && onStatusBack ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">{successNotice}</span>
+                <button
+                  type="button"
+                  onClick={onStatusBack}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  {statusBackLabel}
+                </button>
+              </div>
+            ) : (
+              successNotice
+            )}
           </InlineNotice>
         ) : null}
 
@@ -342,9 +359,16 @@ export function MobileMiniProgramsWorkspace({
                   variant="secondary"
                   size="sm"
                   className="h-7.5 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                  onClick={() => onSelectMiniProgram(selectedMiniProgram.id)}
+                  onClick={() => {
+                    if (statusBackLabel && onStatusBack) {
+                      onStatusBack();
+                      return;
+                    }
+
+                    onSelectMiniProgram(selectedMiniProgram.id);
+                  }}
                 >
-                  先看看当前推荐
+                  {statusBackLabel ?? "先看看当前推荐"}
                 </Button>
               }
             />
@@ -432,11 +456,16 @@ export function MobileMiniProgramsWorkspace({
                   size="sm"
                   className="h-7.5 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
                   onClick={() => {
+                    if (statusBackLabel && onStatusBack) {
+                      onStatusBack();
+                      return;
+                    }
+
                     onSearchTextChange("");
                     onCategoryChange("all");
                   }}
                 >
-                  清空筛选
+                  {statusBackLabel ?? "清空筛选"}
                 </Button>
               }
             />

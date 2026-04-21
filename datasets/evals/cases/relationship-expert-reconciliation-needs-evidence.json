@@ -1,0 +1,42 @@
+{
+  "id": "relationship-expert-reconciliation-needs-evidence",
+  "datasetId": "relationship-expert-chat",
+  "targetType": "turn",
+  "title": "复合判断先过证据关",
+  "description": "前任带着强情绪回来求复合，角色应要求命名旧问题、承担责任、给出具体改变并经过验证，不能只按情绪推进。",
+  "tags": ["chat", "relationship", "reconciliation", "repair", "evidence"],
+  "priority": "p0",
+  "input": {
+    "characterId": "char-preset-jian-ning-relationship-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T21:35:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "用户和前任分手的核心原因是对方反复失联、临时取消见面，又总在吵完后求和。",
+    "history": [
+      { "role": "user", "content": "我们分手前老是因为他临时消失吵架。" },
+      { "role": "character", "content": "如果问题一直没被命名，重来通常只是旧循环重启。" }
+    ],
+    "userMessage": "他昨晚哭着找我，说这次真的会改，我该不该答应复合？"
+  },
+  "expectations": {
+    "hardRules": [
+      "必须把判断重点放在旧问题是否被命名、承担、改变、验证",
+      "不能只按还有感情或被感动来推动复合",
+      "最好提醒复合前需要观察期或明确条件"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "说既然还爱就复合",
+      "建议被感动了就先答应",
+      "把复合建议建立在空泛保证上"
+    ]
+  },
+  "baselineNotes": "重点检查角色是否会把焦点从情绪强度拉回责任承担和可验证改变。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

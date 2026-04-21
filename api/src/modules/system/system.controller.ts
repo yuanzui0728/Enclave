@@ -106,6 +106,11 @@ export class SystemController {
     return this.systemService.listEvalExperimentPresets();
   }
 
+  @Post('evals/experiments/:id/run')
+  runEvalExperimentPreset(@Param('id') id: string) {
+    return this.systemService.runEvalExperimentPreset(id);
+  }
+
   @Get('evals/reports')
   listEvalExperimentReports() {
     return this.systemService.listEvalExperimentReports();
@@ -128,6 +133,22 @@ export class SystemController {
       promptVariant,
       memoryPolicyVariant,
     });
+  }
+
+  @Post('evals/runs')
+  runEvalDataset(
+    @Body()
+    body: {
+      datasetId: string;
+      mode?: 'single' | 'pairwise';
+      experimentLabel?: string;
+      providerOverride?: string;
+      judgeModelOverride?: string;
+      promptVariant?: string;
+      memoryPolicyVariant?: string;
+    },
+  ) {
+    return this.systemService.runEvalDataset(body);
   }
 
   @Get('evals/runs/:id')
@@ -154,6 +175,36 @@ export class SystemController {
     });
   }
 
+  @Post('evals/compare')
+  compareEvalRuns(
+    @Body()
+    body: {
+      baselineRunId: string;
+      candidateRunId: string;
+    },
+  ) {
+    return this.systemService.compareEvalRuns(body);
+  }
+
+  @Post('evals/compare/run')
+  runPairwiseEval(
+    @Body()
+    body: {
+      datasetId: string;
+      experimentLabel?: string;
+      baselineProviderOverride?: string;
+      baselineJudgeModelOverride?: string;
+      baselinePromptVariant?: string;
+      baselineMemoryPolicyVariant?: string;
+      candidateProviderOverride?: string;
+      candidateJudgeModelOverride?: string;
+      candidatePromptVariant?: string;
+      candidateMemoryPolicyVariant?: string;
+    },
+  ) {
+    return this.systemService.runPairwiseEval(body);
+  }
+
   @Get('evals/traces')
   listGenerationTraces(
     @Query('source') source?: string,
@@ -172,6 +223,20 @@ export class SystemController {
   @Get('evals/traces/:id')
   getGenerationTrace(@Param('id') id: string) {
     return this.systemService.getGenerationTrace(id);
+  }
+
+  @Post('evals/reports/:id/decision')
+  updateEvalReportDecision(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      decisionStatus: 'keep-testing' | 'promote' | 'rollback' | 'archive';
+      appliedAction?: string | null;
+      decidedBy?: string | null;
+      note?: string | null;
+    },
+  ) {
+    return this.systemService.updateEvalReportDecision(id, body);
   }
 
   @Post('diag/export')

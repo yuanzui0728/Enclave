@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type ReactNode,
   type SetStateAction,
 } from "react";
 import {
@@ -185,6 +186,15 @@ export function MobileSearchWorkspace({
             title="搜一搜暂时不可用"
             description={error}
             tone="danger"
+            action={
+              <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px] text-[color:var(--text-primary)]"
+              >
+                返回上一页
+              </button>
+            }
           />
         ) : null}
 
@@ -397,11 +407,13 @@ function MobileSearchStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -436,6 +448,7 @@ function MobileSearchStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

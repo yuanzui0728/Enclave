@@ -1,6 +1,6 @@
-import { useEffect, useEffectEvent, useRef } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ImagePlus, Video } from "lucide-react";
 import { AppPage, Button, InlineNotice, TextAreaField, cn } from "@yinjie/ui";
 import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
@@ -9,19 +9,35 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { storeMomentPublishFlash } from "../features/moments/moment-publish-flash";
 import {
+  parseMobileMomentsPublishRouteState,
+} from "../features/moments/mobile-moments-publish-route-state";
+import {
   publishMomentComposeDraft,
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function MobileMomentsPublishPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const composeDraft = useMomentComposeDraft();
+  const routeState = useMemo(
+    () => parseMobileMomentsPublishRouteState(hash),
+    [hash],
+  );
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const statusBackLabel = safeReturnPath ? "返回上一页" : "返回朋友圈";
   const resetComposeDraft = useEffectEvent(() => {
     composeDraft.reset();
   });
@@ -43,7 +59,8 @@ export function MobileMomentsPublishPage() {
         queryKey: ["app-moments", baseUrl],
       });
       void navigate({
-        to: "/discover/moments",
+        to: safeReturnPath ?? "/discover/moments",
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
         replace: true,
       });
     },
@@ -66,6 +83,14 @@ export function MobileMomentsPublishPage() {
 
   function handleBack() {
     navigateBackOrFallback(() => {
+      if (safeReturnPath) {
+        void navigate({
+          to: safeReturnPath,
+          ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        });
+        return;
+      }
+
       void navigate({ to: "/discover/moments" });
     });
   }
@@ -142,10 +167,21 @@ export function MobileMomentsPublishPage() {
             tone="info"
             className="rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[12px] shadow-none"
           >
-            {composeDraft.mediaError ??
-              (createMutation.error instanceof Error
-                ? createMutation.error.message
-                : "")}
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 flex-1">
+                {composeDraft.mediaError ??
+                  (createMutation.error instanceof Error
+                    ? createMutation.error.message
+                    : "")}
+              </span>
+              <button
+                type="button"
+                onClick={handleBack}
+                className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+              >
+                {statusBackLabel}
+              </button>
+            </div>
           </InlineNotice>
         ) : null}
 

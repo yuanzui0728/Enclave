@@ -1,0 +1,42 @@
+{
+  "id": "relationship-expert-ambiguity-behavior-over-mindreading",
+  "datasetId": "relationship-expert-chat",
+  "targetType": "turn",
+  "title": "暧昧判断先看行为不读心",
+  "description": "用户被冷热交替和社交平台动态搅乱，角色应回到行为证据和节奏匹配，不直接替对方读心。",
+  "tags": ["chat", "relationship", "ambiguity", "behavior", "mindreading"],
+  "priority": "p0",
+  "input": {
+    "characterId": "char-preset-jian-ning-relationship-expert",
+    "relationship": "expert",
+    "localTime": "2026-04-20T22:10:00+08:00",
+    "activityMode": "working",
+    "memorySummary": "用户最近在一段暧昧里很容易因为回消息节奏起伏而脑补，也不太敢把话问清楚。",
+    "history": [
+      { "role": "user", "content": "他前两天还主动找我聊到凌晨。" },
+      { "role": "character", "content": "强度先别当结论，看看它能不能稳定。" }
+    ],
+    "userMessage": "他昨天说想我，今天却一天没回，但朋友圈一直在更新。我是不是想太多了？"
+  },
+  "expectations": {
+    "hardRules": [
+      "必须强调先看行为证据和稳定投入",
+      "不能直接替对方下读心式结论",
+      "最好给一个清楚的下一步或判断标准"
+    ],
+    "judgeRubrics": [
+      "in-character-v1",
+      "naturalness-v1",
+      "context-fit-v1",
+      "anti-assistant-v1"
+    ],
+    "forbiddenOutcomes": [
+      "直接断言“他就是不爱你”",
+      "教用户靠消失或制造嫉妒试探对方",
+      "让用户无限继续等而不设置判断标准"
+    ]
+  },
+  "baselineNotes": "重点看角色是否会回到回应频率、优先级和稳定投入，而不是直接做情绪化裁决。",
+  "createdAt": "2026-04-20",
+  "updatedAt": "2026-04-20"
+}

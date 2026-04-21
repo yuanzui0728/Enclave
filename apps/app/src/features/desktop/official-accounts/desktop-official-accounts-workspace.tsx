@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -18,7 +18,10 @@ import { EmptyState } from "../../../components/empty-state";
 import { OfficialAccountListItem } from "../../../components/official-account-list-item";
 import { OfficialArticleCard } from "../../../components/official-article-card";
 import { formatDesktopMessageTimestamp } from "../../../lib/format";
-import { buildDesktopOfficialMessageRouteHash } from "../chat/desktop-official-message-route-state";
+import {
+  buildDesktopOfficialServiceThreadPath,
+  buildDesktopSubscriptionInboxPath,
+} from "../chat/desktop-chat-route-state";
 import {
   buildOfficialAccountFavoriteRecord,
   buildOfficialArticleSummaryFavoriteRecord,
@@ -33,6 +36,7 @@ import {
   buildDesktopOfficialArticleWindowPath,
   openDesktopOfficialArticleWindow,
 } from "./desktop-official-article-window-route-state";
+import { getCurrentWindowTargetPath } from "../../../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 type DesktopOfficialDisplayMode = "feed" | "accounts";
@@ -51,6 +55,7 @@ export function DesktopOfficialAccountsWorkspace({
   selectedArticleId,
   selectedMode,
   onOpenAccount,
+  onHighlightFeedArticle,
   onOpenArticle,
   onModeChange,
   onOpenServiceMessages,
@@ -60,6 +65,7 @@ export function DesktopOfficialAccountsWorkspace({
   selectedArticleId?: string;
   selectedMode?: "feed" | "accounts";
   onOpenAccount?: (accountId: string) => void;
+  onHighlightFeedArticle?: (articleId?: string) => void;
   onOpenArticle?: (articleId: string, accountId: string) => void;
   onModeChange?: (mode: "feed" | "accounts") => void;
   onOpenServiceMessages?: (
@@ -81,6 +87,7 @@ export function DesktopOfficialAccountsWorkspace({
   const [displayMode, setDisplayMode] = useState<DesktopOfficialDisplayMode>(
     selectedMode ?? (selectedAccountId ? "accounts" : "feed"),
   );
+  const autoSyncedFeedSelectionRef = useRef<string | null>(null);
   const [focusedArticleId, setFocusedArticleId] = useState<string | null>(
     selectedArticleId ?? null,
   );
@@ -155,10 +162,43 @@ export function DesktopOfficialAccountsWorkspace({
     setDisplayMode("accounts");
   }, [selectedAccountId, selectedMode]);
 
+  useEffect(() => {
+    if (
+      displayMode !== "accounts" ||
+      !selectedAccountId ||
+      selectedMode ||
+      !onModeChange
+    ) {
+      return;
+    }
+
+    onModeChange("accounts");
+  }, [displayMode, onModeChange, selectedAccountId, selectedMode]);
+
   function handleDisplayModeChange(mode: DesktopOfficialDisplayMode) {
     setDisplayMode(mode);
     onModeChange?.(mode);
   }
+
+  const syncAccountRouteSelection = useCallback(
+    (accountId: string, articleId?: string | null) => {
+      if (articleId && onOpenArticle) {
+        onOpenArticle(articleId, accountId);
+        return;
+      }
+
+      if (onOpenAccount) {
+        onOpenAccount(accountId);
+        return;
+      }
+
+      void navigate({
+        to: "/official-accounts/$accountId",
+        params: { accountId },
+      });
+    },
+    [navigate, onOpenAccount, onOpenArticle],
+  );
 
   const accountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
@@ -261,6 +301,10 @@ export function DesktopOfficialAccountsWorkspace({
       ].some((field) => field.toLowerCase().includes(normalizedSearchTerm)),
     );
   }, [feedItems, normalizedSearchTerm]);
+  const currentFeedArticleIds = useMemo(
+    () => new Set(filteredFeedItems.map((item) => item.article.id)),
+    [filteredFeedItems],
+  );
 
   const frequentAccounts = useMemo(() => {
     const unreadAccountIds = new Set(
@@ -352,16 +396,118 @@ export function DesktopOfficialAccountsWorkspace({
 
   const account = accountDetailQuery.data;
   const accountFavoriteSourceId = account ? `official-${account.id}` : null;
+  const currentAccountArticleIds = useMemo(
+    () => new Set((account?.articles ?? []).map((article) => article.id)),
+    [account?.articles],
+  );
   const activeAccountArticleId =
-    focusedArticleId ?? selectedArticleId ?? account?.articles[0]?.id ?? null;
+    (focusedArticleId && currentAccountArticleIds.has(focusedArticleId)
+      ? focusedArticleId
+      : null) ??
+    (selectedArticleId && currentAccountArticleIds.has(selectedArticleId)
+      ? selectedArticleId
+      : null) ??
+    account?.articles[0]?.id ??
+    null;
+
+  useEffect(() => {
+    if (displayMode !== "accounts" || !effectiveAccountId || !account) {
+      return;
+    }
+
+    const selectedAccountMatches = selectedAccountId === effectiveAccountId;
+    const selectedArticleMatchesAccount = selectedArticleId
+      ? currentAccountArticleIds.has(selectedArticleId)
+      : false;
+
+    if (
+      selectedAccountMatches &&
+      (!selectedArticleId || selectedArticleMatchesAccount)
+    ) {
+      return;
+    }
+
+    if (selectedArticleId) {
+      syncAccountRouteSelection(
+        effectiveAccountId,
+        selectedArticleMatchesAccount
+          ? selectedArticleId
+          : activeAccountArticleId,
+      );
+      return;
+    }
+
+    syncAccountRouteSelection(effectiveAccountId);
+  }, [
+    account,
+    activeAccountArticleId,
+    currentAccountArticleIds,
+    displayMode,
+    effectiveAccountId,
+    selectedAccountId,
+    selectedArticleId,
+    syncAccountRouteSelection,
+  ]);
+
   const highlightedFeedArticleId =
-    focusedArticleId ??
-    selectedArticleId ??
+    (focusedArticleId && currentFeedArticleIds.has(focusedArticleId)
+      ? focusedArticleId
+      : null) ??
+    (selectedArticleId && currentFeedArticleIds.has(selectedArticleId)
+      ? selectedArticleId
+      : null) ??
     filteredFeedItems[0]?.article.id ??
     null;
   const feedUnreadCount = filteredFeedItems.filter(
     (item) => item.unread,
   ).length;
+
+  useEffect(() => {
+    if (
+      displayMode !== "feed" ||
+      !focusedArticleId ||
+      currentFeedArticleIds.has(focusedArticleId)
+    ) {
+      return;
+    }
+
+    setFocusedArticleId(null);
+  }, [currentFeedArticleIds, displayMode, focusedArticleId]);
+
+  useEffect(() => {
+    if (displayMode !== "feed" || !onHighlightFeedArticle) {
+      autoSyncedFeedSelectionRef.current = null;
+      return;
+    }
+
+    const nextArticleId = highlightedFeedArticleId ?? undefined;
+    const routeAlreadyMatchesFeedSelection =
+      selectedMode === "feed" &&
+      !selectedAccountId &&
+      (selectedArticleId ?? undefined) === nextArticleId;
+
+    if (routeAlreadyMatchesFeedSelection) {
+      autoSyncedFeedSelectionRef.current = null;
+      return;
+    }
+
+    const syncKey = `${selectedMode ?? "unset"}:${selectedAccountId ?? "none"}:${
+      selectedArticleId ?? "none"
+    }->${nextArticleId ?? "empty"}`;
+    if (autoSyncedFeedSelectionRef.current === syncKey) {
+      return;
+    }
+
+    autoSyncedFeedSelectionRef.current = syncKey;
+    onHighlightFeedArticle(nextArticleId);
+  }, [
+    displayMode,
+    highlightedFeedArticleId,
+    onHighlightFeedArticle,
+    selectedAccountId,
+    selectedArticleId,
+    selectedMode,
+  ]);
 
   const followMutation = useMutation({
     mutationFn: () => {
@@ -452,7 +598,7 @@ export function DesktopOfficialAccountsWorkspace({
             accountId,
             title,
           })
-        : `${window.location.pathname}${window.location.hash}`;
+        : getCurrentWindowTargetPath();
 
     await openDesktopOfficialArticleWindow({
       articleId,
@@ -469,9 +615,8 @@ export function DesktopOfficialAccountsWorkspace({
     }
 
     void navigate({
-      to: "/official-accounts/service/$accountId",
-      params: { accountId },
-      hash: buildDesktopOfficialMessageRouteHash({
+      to: buildDesktopOfficialServiceThreadPath({
+        accountId,
         articleId: articleId ?? undefined,
       }),
     });
@@ -484,8 +629,7 @@ export function DesktopOfficialAccountsWorkspace({
     }
 
     void navigate({
-      to: "/chat/subscription-inbox",
-      hash: buildDesktopOfficialMessageRouteHash({
+      to: buildDesktopSubscriptionInboxPath({
         articleId: articleId ?? undefined,
       }),
     });

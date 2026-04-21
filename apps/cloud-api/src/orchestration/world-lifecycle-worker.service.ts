@@ -1,7 +1,9 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
+import { randomUUID } from "node:crypto";
 import { In, Repository } from "typeorm";
+import type { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import type { CloudInstancePowerState, WorldLifecycleJobType } from "@yinjie/contracts";
 import { CloudAlertNotifierService } from "../alerts/cloud-alert-notifier.service";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
@@ -10,17 +12,21 @@ import { WorldAccessSessionEntity } from "../entities/world-access-session.entit
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
 import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
 import type { InspectWorldInstanceResult } from "../providers/compute-provider.types";
-import { WorldAccessService } from "../world-access/world-access.service";
+import { WaitingSessionSyncService } from "../world-access/waiting-session-sync.service";
 import { resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "./world-bootstrap-config";
 
 @Injectable()
 export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestroy {
+  private static readonly DEFAULT_JOB_LEASE_SECONDS = 10 * 60;
+  private static readonly MAX_JOB_CLAIM_ATTEMPTS = 5;
   private readonly logger = new Logger(WorldLifecycleWorkerService.name);
   private timer: NodeJS.Timeout | null = null;
   private ticking = false;
   private lastMaintenanceAt = 0;
   private readonly idleSuspendSeconds: number;
   private readonly staleHeartbeatSeconds: number;
+  private readonly jobLeaseSeconds: number;
+  private readonly workerId = randomUUID();
 
   constructor(
     @InjectRepository(CloudWorldEntity)
@@ -34,13 +40,17 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     private readonly configService: ConfigService,
     private readonly cloudAlertNotifier: CloudAlertNotifierService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
-    private readonly worldAccessService: WorldAccessService,
+    private readonly waitingSessionSyncService: WaitingSessionSyncService,
   ) {
     this.idleSuspendSeconds = this.parsePositiveInteger(
       this.configService.get<string>("CLOUD_WORLD_IDLE_SUSPEND_SECONDS"),
     );
     this.staleHeartbeatSeconds = this.parsePositiveInteger(
       this.configService.get<string>("CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS"),
+    );
+    this.jobLeaseSeconds = this.parsePositiveInteger(
+      this.configService.get<string>("CLOUD_WORLD_JOB_LEASE_SECONDS"),
+      WorldLifecycleWorkerService.DEFAULT_JOB_LEASE_SECONDS,
     );
   }
 
@@ -66,13 +76,8 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
 
     this.ticking = true;
     try {
-      const job = await this.jobRepo
-        .createQueryBuilder("job")
-        .where("job.status = :status", { status: "pending" })
-        .andWhere("(job.availableAt IS NULL OR job.availableAt <= :now)", { now: new Date() })
-        .orderBy("job.priority", "ASC")
-        .addOrderBy("job.createdAt", "ASC")
-        .getOne();
+      await this.recoverExpiredRunningJobs();
+      const job = await this.claimNextPendingJob();
 
       if (job) {
         await this.runJob(job);
@@ -107,21 +112,19 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
       where: { id: job.worldId },
     });
     if (!world) {
-      job.status = "cancelled";
-      job.failureCode = "world_missing";
-      job.failureMessage = "Target world no longer exists, so the job was cancelled.";
-      job.finishedAt = new Date();
-      await this.jobRepo.save(job);
+      const persisted = await this.persistClaimedJob(job, {
+        status: "cancelled",
+        failureCode: "world_missing",
+        failureMessage: "Target world no longer exists, so the job was cancelled.",
+        finishedAt: new Date(),
+        leaseOwner: null,
+        leaseExpiresAt: null,
+      });
+      if (!persisted) {
+        return;
+      }
       return;
     }
-
-    job.status = "running";
-    job.attempt += 1;
-    job.startedAt = new Date();
-    job.finishedAt = null;
-    job.failureCode = null;
-    job.failureMessage = null;
-    await this.jobRepo.save(job);
 
     try {
       switch (job.jobType) {
@@ -137,30 +140,52 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           break;
       }
 
-      job.status = "succeeded";
-      job.finishedAt = new Date();
-      job.resultPayload = {
-        worldStatus: world.status,
-        apiBaseUrl: world.apiBaseUrl,
-      };
-      await this.jobRepo.save(job);
+      const persisted = await this.persistClaimedJob(job, {
+        status: "succeeded",
+        finishedAt: new Date(),
+        resultPayload: {
+          worldStatus: world.status,
+          apiBaseUrl: world.apiBaseUrl ?? undefined,
+        },
+        leaseOwner: null,
+        leaseExpiresAt: null,
+      });
+      if (!persisted) {
+        return;
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown orchestration error.";
       this.logger.error(`World lifecycle job failed: ${job.id} ${message}`);
 
       const canRetry = job.attempt < job.maxAttempts;
-      job.failureCode = "job_failed";
-      job.failureMessage = message;
 
       if (canRetry) {
-        job.status = "pending";
-        job.finishedAt = null;
-        job.availableAt = new Date(Date.now() + job.attempt * 10_000);
-        await this.jobRepo.save(job);
+        const persisted = await this.persistClaimedJob(job, {
+          status: "pending",
+          startedAt: null,
+          finishedAt: null,
+          availableAt: new Date(Date.now() + job.attempt * 10_000),
+          failureCode: "job_failed",
+          failureMessage: message,
+          resultPayload: null,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+        });
+        if (!persisted) {
+          return;
+        }
       } else {
-        job.status = "failed";
-        job.finishedAt = new Date();
-        await this.jobRepo.save(job);
+        const persisted = await this.persistClaimedJob(job, {
+          status: "failed",
+          finishedAt: new Date(),
+          failureCode: "job_failed",
+          failureMessage: message,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+        });
+        if (!persisted) {
+          return;
+        }
 
         world.status = "failed";
         world.healthStatus = "failed";
@@ -186,9 +211,206 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           await this.instanceRepo.save(instance);
         }
 
-        await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+        await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+          world.id,
+          "world-lifecycle.final-failure",
+        );
       }
     }
+  }
+
+  private async claimNextPendingJob() {
+    for (let attempt = 0; attempt < WorldLifecycleWorkerService.MAX_JOB_CLAIM_ATTEMPTS; attempt += 1) {
+      const now = new Date();
+      const candidate = await this.jobRepo
+        .createQueryBuilder("job")
+        .where("job.status = :status", { status: "pending" })
+        .andWhere("job.attempt < job.maxAttempts")
+        .andWhere("(job.availableAt IS NULL OR job.availableAt <= :now)", { now })
+        .andWhere("(job.leaseExpiresAt IS NULL OR job.leaseExpiresAt <= :now)", { now })
+        .orderBy("job.priority", "ASC")
+        .addOrderBy("job.createdAt", "ASC")
+        .getOne();
+
+      if (!candidate) {
+        return null;
+      }
+
+      const leaseExpiresAt = this.createJobLeaseExpiry(now);
+      const result = await this.jobRepo
+        .createQueryBuilder()
+        .update(WorldLifecycleJobEntity)
+        .set({
+          status: "running",
+          attempt: () => "attempt + 1",
+          startedAt: now,
+          finishedAt: null,
+          availableAt: null,
+          failureCode: null,
+          failureMessage: null,
+          resultPayload: null,
+          leaseOwner: this.workerId,
+          leaseExpiresAt,
+        })
+        .where("id = :id", { id: candidate.id })
+        .andWhere("status = :status", { status: "pending" })
+        .andWhere("attempt < maxAttempts")
+        .andWhere("(availableAt IS NULL OR availableAt <= :now)", { now })
+        .andWhere("(leaseExpiresAt IS NULL OR leaseExpiresAt <= :now)", { now })
+        .execute();
+
+      if ((result.affected ?? 0) !== 1) {
+        continue;
+      }
+
+      candidate.status = "running";
+      candidate.attempt += 1;
+      candidate.startedAt = now;
+      candidate.finishedAt = null;
+      candidate.availableAt = null;
+      candidate.failureCode = null;
+      candidate.failureMessage = null;
+      candidate.resultPayload = null;
+      candidate.leaseOwner = this.workerId;
+      candidate.leaseExpiresAt = leaseExpiresAt;
+      return candidate;
+    }
+
+    return null;
+  }
+
+  private async recoverExpiredRunningJobs() {
+    const now = new Date();
+    const expiredJobs = await this.jobRepo
+      .createQueryBuilder("job")
+      .where("job.status = :status", { status: "running" })
+      .andWhere("job.leaseExpiresAt IS NOT NULL")
+      .andWhere("job.leaseExpiresAt <= :now", { now })
+      .getMany();
+
+    let recoveredCount = 0;
+    let failedCount = 0;
+
+    for (const job of expiredJobs) {
+      const reachedRetryLimit = job.attempt >= job.maxAttempts;
+      const failureMessage = reachedRetryLimit
+        ? "Worker lease expired during the final lifecycle attempt. The job reached its retry limit and was marked failed."
+        : "Worker lease expired while the lifecycle job was running. The job was re-queued.";
+      const patch: QueryDeepPartialEntity<WorldLifecycleJobEntity> = reachedRetryLimit
+        ? {
+            status: "failed",
+            finishedAt: now,
+            availableAt: null,
+            failureCode: "lease_expired",
+            failureMessage,
+            leaseOwner: null,
+            leaseExpiresAt: null,
+          }
+        : {
+            status: "pending",
+            startedAt: null,
+            finishedAt: null,
+            availableAt: now,
+            failureCode: "lease_expired",
+            failureMessage,
+            leaseOwner: null,
+            leaseExpiresAt: null,
+          };
+      const result = await this.jobRepo
+        .createQueryBuilder()
+        .update(WorldLifecycleJobEntity)
+        .set(patch)
+        .where("id = :id", { id: job.id })
+        .andWhere("status = :status", { status: "running" })
+        .andWhere("leaseExpiresAt IS NOT NULL")
+        .andWhere("leaseExpiresAt <= :now", { now })
+        .execute();
+
+      if ((result.affected ?? 0) !== 1) {
+        continue;
+      }
+
+      if (reachedRetryLimit) {
+        failedCount += 1;
+        await this.markLeaseExpiredJobFailed(job, failureMessage);
+      } else {
+        recoveredCount += 1;
+      }
+    }
+
+    if (recoveredCount > 0) {
+      this.logger.warn(`Recovered ${recoveredCount} expired world lifecycle job lease(s).`);
+    }
+    if (failedCount > 0) {
+      this.logger.error(
+        `Marked ${failedCount} expired world lifecycle job lease(s) failed after reaching the retry limit.`,
+      );
+    }
+  }
+
+  private async markLeaseExpiredJobFailed(
+    job: Pick<
+      WorldLifecycleJobEntity,
+      "id" | "worldId" | "jobType" | "attempt" | "maxAttempts"
+    >,
+    failureMessage: string,
+  ) {
+    const world = await this.worldRepo.findOne({
+      where: { id: job.worldId },
+    });
+    if (!world) {
+      return;
+    }
+
+    world.status = "failed";
+    world.healthStatus = "failed";
+    world.healthMessage = failureMessage;
+    world.failureCode = "lease_expired";
+    world.failureMessage = failureMessage;
+    world.retryCount += 1;
+    await this.worldRepo.save(world);
+    await this.cloudAlertNotifier.notifyJobFailed(world, {
+      jobId: job.id,
+      jobType: job.jobType,
+      failureCode: "lease_expired",
+      failureMessage,
+      attempt: job.attempt,
+      maxAttempts: job.maxAttempts,
+    });
+
+    const instance = await this.instanceRepo.findOne({
+      where: { worldId: world.id },
+    });
+    if (instance) {
+      instance.powerState = "error";
+      await this.instanceRepo.save(instance);
+    }
+
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "world-lifecycle.lease-expired-failure",
+    );
+  }
+
+  private async persistClaimedJob(
+    job: WorldLifecycleJobEntity,
+    patch: QueryDeepPartialEntity<WorldLifecycleJobEntity>,
+  ) {
+    const result = await this.jobRepo
+      .createQueryBuilder()
+      .update(WorldLifecycleJobEntity)
+      .set(patch)
+      .where("id = :id", { id: job.id })
+      .andWhere("leaseOwner = :leaseOwner", { leaseOwner: this.workerId })
+      .execute();
+
+    if ((result.affected ?? 0) !== 1) {
+      this.logger.warn(`Skipped lifecycle job update after losing lease ownership for job ${job.id}.`);
+      return false;
+    }
+
+    Object.assign(job, patch as Partial<WorldLifecycleJobEntity>);
+    return true;
   }
 
   private async handleProvision(world: CloudWorldEntity) {
@@ -201,7 +423,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.failureMessage = null;
     world.providerKey = provider.key;
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "world-lifecycle.provision.creating",
+    );
 
     await this.sleep(600);
 
@@ -264,7 +489,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         ? "Compose stack was pushed to the Docker host. Waiting for the world runtime to report bootstrap."
         : "Bootstrap package is ready. Waiting for the world runtime to report bootstrap.";
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "world-lifecycle.provision.bootstrapping",
+    );
 
     if (!provider.summary.capabilities.managedProvisioning) {
       instance.powerState = "starting";
@@ -292,7 +520,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.failureCode = null;
     world.failureMessage = null;
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "world-lifecycle.provision.ready",
+    );
   }
 
   private async handleResume(world: CloudWorldEntity) {
@@ -312,7 +543,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.failureCode = null;
     world.failureMessage = null;
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "world-lifecycle.resume.starting",
+    );
 
     instance.powerState = "starting";
     instance.lastOperationAt = new Date();
@@ -335,7 +569,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           ? "Resume command sent to the Docker host. Waiting for the world runtime heartbeat."
           : "Resume requested. Waiting for the world runtime heartbeat.";
       await this.worldRepo.save(world);
-      await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+      await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+        world.id,
+        "world-lifecycle.resume.waiting-heartbeat",
+      );
       return;
     }
 
@@ -354,7 +591,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.failureCode = null;
     world.failureMessage = null;
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "world-lifecycle.resume.ready",
+    );
   }
 
   private async handleSuspend(world: CloudWorldEntity) {
@@ -383,7 +623,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.healthMessage = "World is sleeping.";
     world.lastSuspendedAt = new Date();
     await this.worldRepo.save(world);
-    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+    await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+      world.id,
+      "world-lifecycle.suspend.sleeping",
+    );
   }
 
   private async autoSuspendIdleWorlds() {
@@ -440,7 +683,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         idleSeconds: this.idleSuspendSeconds,
         lastInteractiveAt: lastInteractiveAt.toISOString(),
       });
-      await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+      await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+        world.id,
+        "world-lifecycle.auto-suspend",
+      );
 
       this.logger.log(
         `Queued idle suspend for world ${world.id} after ${this.idleSuspendSeconds}s of inactivity.`,
@@ -652,7 +898,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           rawStatus: observedStatus.rawStatus ?? null,
         });
       }
-      await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+      await this.waitingSessionSyncService.refreshWaitingSessionsForWorld(
+        world.id,
+        "world-lifecycle.reconcile",
+      );
       if (queuedJobType) {
         this.logger.warn(
           `Queued ${queuedJobType} during reconcile for world ${world.id} after observing ${observedStatus.deploymentState}.`,
@@ -780,10 +1029,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     return instance ? "resume" : "provision";
   }
 
-  private parsePositiveInteger(rawValue: string | undefined) {
+  private parsePositiveInteger(rawValue: string | undefined, fallback = 0) {
     const parsed = Number(rawValue ?? "0");
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      return 0;
+      return fallback;
     }
 
     return Math.floor(parsed);
@@ -793,6 +1042,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     return new Promise((resolve) => {
       setTimeout(resolve, ms);
     });
+  }
+
+  private createJobLeaseExpiry(referenceTime = new Date()) {
+    return new Date(referenceTime.getTime() + this.jobLeaseSeconds * 1000);
   }
 
   private isHeartbeatStale(lastHeartbeatAt: Date | null) {

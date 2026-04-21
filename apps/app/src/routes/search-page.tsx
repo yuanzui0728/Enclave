@@ -12,6 +12,32 @@ import {
   parseSearchRouteState,
 } from "../features/search/search-route-state";
 import { resolveSearchNavigationTarget } from "../features/search/search-navigation";
+import {
+  buildCharacterDetailRouteHash,
+  parseCharacterDetailRouteState,
+} from "../features/contacts/character-detail-route-state";
+import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "../features/chat/mobile-chat-route-state";
+import {
+  buildDesktopMomentsRouteHash,
+  parseDesktopMomentsRouteState,
+} from "../features/moments/moments-route-state";
+import {
+  buildFeedRouteHash,
+  parseFeedRouteHash,
+} from "../features/feed/feed-route-state";
+import {
+  buildDesktopChannelsRouteHash,
+  parseDesktopChannelsRouteHash,
+} from "../features/channels/channels-route-state";
+import {
+  buildMobileMiniProgramsRouteSearch,
+  parseMobileMiniProgramsRouteSearch,
+} from "../features/mini-programs/mobile-mini-programs-route-state";
+import { buildMobileOfficialRouteHash } from "../features/official-accounts/mobile-official-route-state";
+import { buildMobileGroupRouteHash, parseMobileGroupRouteState } from "../features/chat/mobile-group-route-state";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { MobileSearchWorkspace } from "../features/search/mobile-search-workspace";
 import type {
@@ -37,6 +63,7 @@ export function SearchPage() {
     select: (state) => state.location.pathname,
   });
   const hash = useRouterState({ select: (state) => state.location.hash });
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const routeState = parseSearchRouteState(hash);
   const syncingRouteStateRef = useRef(false);
   const [searchText, setSearchText] = useState(routeState.keyword);
@@ -50,6 +77,11 @@ export function SearchPage() {
   const effectiveSearchText = isDesktopLayout
     ? committedSearchText
     : searchText;
+  const currentSearchRouteHash = buildSearchRouteHash({
+    category: activeCategory,
+    keyword: effectiveSearchText,
+    source: routeState.source,
+  });
   const {
     error,
     filteredResults,
@@ -89,18 +121,14 @@ export function SearchPage() {
       (!isDesktopLayout || committedSearchText === routeState.keyword);
 
     if (syncingRouteStateRef.current) {
-      if (routeStateApplied) {
-        syncingRouteStateRef.current = false;
+      if (!routeStateApplied) {
+        return;
       }
-      return;
+
+      syncingRouteStateRef.current = false;
     }
 
-    const nextHash = buildSearchRouteHash({
-      category: activeCategory,
-      keyword: effectiveSearchText,
-      source: routeState.source,
-    });
-    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+    const nextHash = currentSearchRouteHash;
 
     if (normalizedHash === (nextHash ?? "")) {
       return;
@@ -114,10 +142,12 @@ export function SearchPage() {
   }, [
     activeCategory,
     committedSearchText,
+    currentSearchRouteHash,
     effectiveSearchText,
     hash,
     isDesktopLayout,
     navigate,
+    normalizedHash,
     pathname,
     routeState.category,
     routeState.keyword,
@@ -199,8 +229,137 @@ export function SearchPage() {
     setHistory(clearSearchHistory());
   }
 
+  function applyMobileSearchReturn(
+    navigationTarget: ReturnType<typeof resolveSearchNavigationTarget>,
+  ) {
+    if (isDesktopLayout) {
+      return navigationTarget;
+    }
+
+    if (navigationTarget.to === "/discover/moments") {
+      const targetRouteState = parseDesktopMomentsRouteState(
+        navigationTarget.hash ?? "",
+      );
+      return {
+        ...navigationTarget,
+        hash: buildDesktopMomentsRouteHash({
+          ...targetRouteState,
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
+    if (navigationTarget.to === "/discover/feed") {
+      const targetRouteState = parseFeedRouteHash(navigationTarget.hash ?? "");
+      return {
+        ...navigationTarget,
+        hash: buildFeedRouteHash({
+          postId: targetRouteState.postId,
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
+    if (
+      navigationTarget.to === "/discover/channels" ||
+      navigationTarget.to === "/tabs/channels"
+    ) {
+      const targetRouteState = parseDesktopChannelsRouteHash(
+        navigationTarget.hash ?? "",
+      );
+      return {
+        ...navigationTarget,
+        to: "/discover/channels",
+        hash: buildDesktopChannelsRouteHash({
+          authorId: targetRouteState.authorId,
+          postId: targetRouteState.postId,
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+          section: targetRouteState.section,
+        }),
+      };
+    }
+
+    if (navigationTarget.to === "/discover/mini-programs") {
+      const targetRouteState = parseMobileMiniProgramsRouteSearch(
+        navigationTarget.search ?? "",
+      );
+      return {
+        ...navigationTarget,
+        search: buildMobileMiniProgramsRouteSearch({
+          ...targetRouteState,
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
+    if (navigationTarget.to.startsWith("/chat/")) {
+      const targetRouteState = parseMobileChatRouteState(
+        navigationTarget.hash ?? "",
+      );
+      return {
+        ...navigationTarget,
+        hash: buildMobileChatRouteHash({
+          highlightedMessageId: targetRouteState.highlightedMessageId,
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
+    if (navigationTarget.to.startsWith("/group/")) {
+      const targetRouteState = parseMobileGroupRouteState(
+        navigationTarget.hash ?? "",
+      );
+      return {
+        ...navigationTarget,
+        hash: buildMobileGroupRouteHash({
+          highlightedMessageId: targetRouteState.highlightedMessageId,
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
+    if (navigationTarget.to.startsWith("/character/")) {
+      const targetRouteState = parseCharacterDetailRouteState(
+        navigationTarget.hash ?? "",
+      );
+      return {
+        ...navigationTarget,
+        hash: buildCharacterDetailRouteHash({
+          ...targetRouteState,
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
+    if (
+      navigationTarget.to.startsWith("/official-accounts/") &&
+      navigationTarget.to !== "/contacts/official-accounts"
+    ) {
+      return {
+        ...navigationTarget,
+        hash: buildMobileOfficialRouteHash({
+          returnPath: pathname,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
+    return navigationTarget;
+  }
+
   function handleOpenResult(item: SearchResultItem) {
-    const navigationTarget = resolveSearchNavigationTarget(item);
+    const navigationTarget = applyMobileSearchReturn(
+      resolveSearchNavigationTarget(item, {
+        desktopLayout: isDesktopLayout,
+      }),
+    );
     handleCommitSearch(effectiveSearchText);
     void navigate({
       to: navigationTarget.to as never,
@@ -214,7 +373,11 @@ export function SearchPage() {
     search?: string;
     hash?: string;
   }) {
-    const navigationTarget = resolveSearchNavigationTarget(item);
+    const navigationTarget = applyMobileSearchReturn(
+      resolveSearchNavigationTarget(item, {
+        desktopLayout: isDesktopLayout,
+      }),
+    );
     void navigate({
       to: navigationTarget.to as never,
       search: navigationTarget.search as never,

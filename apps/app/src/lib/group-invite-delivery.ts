@@ -6,6 +6,7 @@ export type GroupInviteDeliveryRecord = {
   conversationTitle: string;
   deliveredAt: string;
   groupName?: string;
+  inviteRouteHash?: string;
 };
 
 export type GroupInviteRouteContext = {
@@ -62,7 +63,9 @@ function isGroupInviteDeliveryRecord(
       typeof (value as GroupInviteDeliveryRecord).conversationTitle === "string" &&
       typeof (value as GroupInviteDeliveryRecord).deliveredAt === "string" &&
       ((value as GroupInviteDeliveryRecord).groupName === undefined ||
-        typeof (value as GroupInviteDeliveryRecord).groupName === "string"),
+        typeof (value as GroupInviteDeliveryRecord).groupName === "string") &&
+      ((value as GroupInviteDeliveryRecord).inviteRouteHash === undefined ||
+        typeof (value as GroupInviteDeliveryRecord).inviteRouteHash === "string"),
   );
 }
 
@@ -387,6 +390,7 @@ export function writeGroupInviteDeliveryRecord(
     conversationPath: string;
     conversationTitle: string;
     groupName?: string;
+    inviteRouteHash?: string;
     batchId?: string;
     batchStartedAt?: string;
   },
@@ -398,6 +402,7 @@ export function writeGroupInviteDeliveryRecord(
     conversationTitle: input.conversationTitle,
     deliveredAt,
     groupName: input.groupName?.trim() || undefined,
+    inviteRouteHash: normalizeHash(input.inviteRouteHash),
   };
 
   const nextStore = readLocalGroupInviteDeliveryStore();
@@ -445,6 +450,7 @@ export function resolveGroupInviteRouteContext(
     returnPath: buildGroupInviteReturnPath(groupId, {
       conversationPath,
       conversationTitle: record.conversationTitle,
+      inviteRouteHash: record.inviteRouteHash,
     }),
   };
 }
@@ -486,13 +492,10 @@ export function createGroupInviteDeliveryBatchId() {
     .slice(2, 8)}`;
 }
 
-function buildGroupInviteReturnPath(
-  groupId: string,
-  input?: {
-    conversationPath?: string;
-    conversationTitle?: string;
-  },
-) {
+export function buildGroupInviteReturnSearch(input?: {
+  conversationPath?: string;
+  conversationTitle?: string;
+}) {
   const params = new URLSearchParams();
 
   if (input?.conversationPath) {
@@ -504,5 +507,28 @@ function buildGroupInviteReturnPath(
   }
 
   const search = params.toString();
-  return search ? `/group/${groupId}/qr?${search}` : `/group/${groupId}/qr`;
+  return search ? `?${search}` : undefined;
+}
+
+function normalizeHash(value?: string | null) {
+  const nextValue = value?.trim();
+  if (!nextValue) {
+    return undefined;
+  }
+
+  return nextValue.startsWith("#") ? nextValue.slice(1) : nextValue;
+}
+
+function buildGroupInviteReturnPath(
+  groupId: string,
+  input?: {
+    conversationPath?: string;
+    conversationTitle?: string;
+    inviteRouteHash?: string;
+  },
+) {
+  const search = buildGroupInviteReturnSearch(input);
+  const hash = normalizeHash(input?.inviteRouteHash);
+  const path = search ? `/group/${groupId}/qr${search}` : `/group/${groupId}/qr`;
+  return hash ? `${path}#${hash}` : path;
 }

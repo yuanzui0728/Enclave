@@ -32,13 +32,24 @@ import {
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
+import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-state";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
+import {
+  buildCharacterDetailRouteHash,
+  parseCharacterDetailRouteState,
+} from "../features/contacts/character-detail-route-state";
+import {
+  buildDesktopChatRouteHash,
+  buildDesktopChatThreadPath,
+} from "../features/desktop/chat/desktop-chat-route-state";
+import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
+import { buildMobileFriendMomentsRouteHash } from "../features/moments/mobile-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -64,6 +75,8 @@ async function buildDesktopAddFriendRouteHashOnDemand(input: {
 async function buildDesktopFriendMomentsRouteHashOnDemand(input: {
   momentId?: string;
   source?: "character-detail";
+  returnPath?: string;
+  returnHash?: string;
 }) {
   const { buildDesktopFriendMomentsRouteHash } = await import(
     "../features/moments/friend-moments-route-state"
@@ -71,9 +84,26 @@ async function buildDesktopFriendMomentsRouteHashOnDemand(input: {
   return buildDesktopFriendMomentsRouteHash(input);
 }
 
+async function buildDesktopContactsRouteHashOnDemand(input: {
+  characterId?: string;
+  isFriend: boolean;
+}) {
+  const { buildDesktopContactsRouteHash } = await import(
+    "../features/contacts/contacts-route-state"
+  );
+  return buildDesktopContactsRouteHash({
+    pane: input.isFriend ? "friend" : "world-character",
+    characterId: input.characterId,
+    showWorldCharacters: !input.isFriend,
+  });
+}
+
 export function CharacterDetailPage() {
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
@@ -99,9 +129,24 @@ export function CharacterDetailPage() {
     remarkName: "",
     tags: "",
   });
-  const recommendationId = useMemo(
-    () => parseRecommendationRouteHash(hash),
-    [hash],
+  const routeState = useMemo(() => parseCharacterDetailRouteState(hash), [hash]);
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const recommendationId = routeState.recommendationId;
+  const safeMobileReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeMobileReturnHash = safeMobileReturnPath
+    ? routeState.returnHash
+    : undefined;
+  const mobileCurrentRouteHash = useMemo(
+    () =>
+      buildCharacterDetailRouteHash({
+        recommendationId,
+        returnPath: safeMobileReturnPath,
+        returnHash: safeMobileReturnHash,
+      }),
+    [recommendationId, safeMobileReturnHash, safeMobileReturnPath],
   );
 
   const characterQuery = useQuery({
@@ -134,8 +179,24 @@ export function CharacterDetailPage() {
       return;
     }
 
+    if (routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)) {
+      void navigate({
+        to: routeState.returnPath,
+        ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/contacts", replace: true });
-  }, [characterId, characterQuery.error, characterQuery.isLoading, navigate]);
+  }, [
+    characterId,
+    characterQuery.error,
+    characterQuery.isLoading,
+    navigate,
+    routeState.returnHash,
+    routeState.returnPath,
+  ]);
 
   const character = characterQuery.data;
   const friendship = useMemo(
@@ -195,6 +256,67 @@ export function CharacterDetailPage() {
     ? friendship.tags.join("、")
     : "未设置";
 
+  const navigateToDesktopContactsSelection = ({
+    replace = false,
+    isFriend: nextIsFriend = isFriend,
+  }: {
+    replace?: boolean;
+    isFriend?: boolean;
+  } = {}) => {
+    void buildDesktopContactsRouteHashOnDemand({
+      characterId,
+      isFriend: nextIsFriend,
+    })
+      .then((desktopHash) => {
+        void navigate({
+          to: "/tabs/contacts",
+          hash: desktopHash,
+          replace,
+        });
+      })
+      .catch(() => {
+        void navigate({ to: "/tabs/contacts", replace });
+      });
+  };
+
+  const navigateToRouteStateReturn = ({
+    replace = false,
+  }: {
+    replace?: boolean;
+  } = {}) => {
+    if (!routeState.returnPath) {
+      return false;
+    }
+
+    if (!isDesktopLayout && isDesktopOnlyPath(routeState.returnPath)) {
+      return false;
+    }
+
+    void navigate({
+      to: routeState.returnPath,
+      ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+      replace,
+    });
+    return true;
+  };
+  const renderMobileErrorBackAction = () => (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+      onClick={() => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
+
+        void navigate({ to: "/tabs/contacts" });
+      }}
+    >
+      {safeMobileReturnPath ? "返回上一页" : "返回通讯录"}
+    </Button>
+  );
+
   useEffect(() => {
     setNotice(null);
     setMobileSheetAction(null);
@@ -212,7 +334,7 @@ export function CharacterDetailPage() {
         return null;
       }
 
-      return getOrCreateConversation({ characterId: character.id }, baseUrl);
+      return getOrCreateConversation({ characterId }, baseUrl);
     },
     onSuccess: async (conversation) => {
       if (!conversation) {
@@ -226,8 +348,20 @@ export function CharacterDetailPage() {
         ).catch(() => undefined);
       }
       void navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: conversation.id },
+        to: isDesktopLayout
+          ? buildDesktopChatThreadPath({
+              conversationId: conversation.id,
+            })
+          : "/chat/$conversationId",
+        params: isDesktopLayout
+          ? undefined
+          : { conversationId: conversation.id },
+        hash: isDesktopLayout
+          ? undefined
+          : buildMobileChatRouteHash({
+              returnPath: `/character/${characterId}`,
+              returnHash: mobileCurrentRouteHash || undefined,
+            }),
       });
     },
   });
@@ -238,7 +372,7 @@ export function CharacterDetailPage() {
       }
 
       const conversation = await getOrCreateConversation(
-        { characterId: character.id },
+        { characterId },
         baseUrl,
       );
 
@@ -253,11 +387,23 @@ export function CharacterDetailPage() {
       }
 
       void navigate({
-        to:
-          result.kind === "voice"
+        to: isDesktopLayout
+          ? "/tabs/chat"
+          : result.kind === "voice"
             ? "/chat/$conversationId/voice-call"
             : "/chat/$conversationId/video-call",
-        params: { conversationId: result.conversation.id },
+        params: isDesktopLayout
+          ? undefined
+          : { conversationId: result.conversation.id },
+        hash: isDesktopLayout
+          ? buildDesktopChatRouteHash({
+              conversationId: result.conversation.id,
+              callAction: result.kind,
+            })
+          : buildMobileChatRouteHash({
+              returnPath: `/character/${characterId}`,
+              returnHash: mobileCurrentRouteHash || undefined,
+            }),
       });
     },
   });
@@ -413,12 +559,30 @@ export function CharacterDetailPage() {
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+      if (navigateToRouteStateReturn({ replace: true })) {
+        return;
+      }
+
+      if (isDesktopLayout) {
+        navigateToDesktopContactsSelection({ isFriend: false });
+        return;
+      }
+
       void navigate({ to: "/tabs/contacts" });
     },
   });
 
   const handleBack = () => {
     navigateBackOrFallback(() => {
+      if (navigateToRouteStateReturn()) {
+        return;
+      }
+
+      if (isDesktopLayout) {
+        navigateToDesktopContactsSelection();
+        return;
+      }
+
       void navigate({ to: "/tabs/contacts" });
     });
   };
@@ -541,7 +705,17 @@ export function CharacterDetailPage() {
   };
   const handleAddToContacts = () => {
     if (hasPendingFriendRequest) {
-      void navigate({ to: "/friend-requests" });
+      void navigate({
+        to: "/friend-requests",
+        ...(isDesktopLayout
+          ? {}
+          : {
+              hash: buildMobileFriendRequestsRouteHash({
+                returnPath: pathname,
+                returnHash: mobileCurrentRouteHash || undefined,
+              }),
+            }),
+      });
       return;
     }
 
@@ -576,6 +750,8 @@ export function CharacterDetailPage() {
     if (isDesktopLayout) {
       void buildDesktopFriendMomentsRouteHashOnDemand({
         source: "character-detail",
+        returnPath: `/character/${character.id}`,
+        returnHash: normalizedHash || undefined,
       })
         .then((desktopHash) => {
           void navigate({
@@ -596,6 +772,10 @@ export function CharacterDetailPage() {
     void navigate({
       to: "/friend-moments/$characterId",
       params: { characterId: character.id },
+      hash: buildMobileFriendMomentsRouteHash({
+        returnPath: `/character/${character.id}`,
+        returnHash: mobileCurrentRouteHash || undefined,
+      }),
     });
   };
   const mobileSheetConfig =
@@ -660,8 +840,8 @@ export function CharacterDetailPage() {
 
   if (isDesktopLayout && character && friendship) {
     return (
-      <AppPage className="min-h-full bg-[#ededed] px-0 py-0">
-        <header className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-3 py-2 backdrop-blur-xl">
+      <AppPage className="flex h-full min-h-0 flex-col overflow-hidden bg-[#ededed] px-0 py-0">
+        <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-3 py-2 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[640px] items-center gap-2">
             <button
               type="button"
@@ -679,155 +859,171 @@ export function CharacterDetailPage() {
           </div>
         </header>
 
-        <div className="space-y-3 py-3">
-          {notice ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
-            </div>
-          ) : null}
-          {entryNotice ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <DigitalHumanEntryNotice
-                tone={entryNotice.tone}
-                message={entryNotice.message}
-                onDismiss={() => {
-                  resetEntryGuard();
-                }}
-                onContinue={() => {
-                  resetEntryGuard();
-                  openCallMutation.mutate("video");
-                }}
-                onSwitchToVoice={() => {
-                  resetEntryGuard();
-                  openCallMutation.mutate("voice");
-                }}
-                continueLabel={
-                  openCallMutation.isPending
-                    ? "正在接通视频..."
-                    : entryNotice.continueLabel
-                }
-                voiceLabel={
-                  openCallMutation.isPending
-                    ? "正在接通语音..."
-                    : entryNotice.voiceLabel
-                }
-                compact={false}
-              />
-            </div>
-          ) : null}
-          {characterQuery.isLoading ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <LoadingBlock label="正在读取朋友资料..." />
-            </div>
-          ) : null}
-          {characterQuery.isError && characterQuery.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={characterQuery.error.message} />
-            </div>
-          ) : null}
-          {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={friendsQuery.error.message} />
-            </div>
-          ) : null}
-          {conversationsQuery.isError &&
-          conversationsQuery.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={conversationsQuery.error.message} />
-            </div>
-          ) : null}
-          {startChatMutation.isError &&
-          startChatMutation.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={startChatMutation.error.message} />
-            </div>
-          ) : null}
-          {openCallMutation.isError &&
-          openCallMutation.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={openCallMutation.error.message} />
-            </div>
-          ) : null}
-          {setStarredMutation.isError &&
-          setStarredMutation.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={setStarredMutation.error.message} />
-            </div>
-          ) : null}
-          {pinMutation.isError && pinMutation.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={pinMutation.error.message} />
-            </div>
-          ) : null}
-          {muteMutation.isError && muteMutation.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={muteMutation.error.message} />
-            </div>
-          ) : null}
-          {blockMutation.isError && blockMutation.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={blockMutation.error.message} />
-            </div>
-          ) : null}
-          {deleteFriendMutation.isError &&
-          deleteFriendMutation.error instanceof Error ? (
-            <div className="mx-auto w-full max-w-[640px] px-3">
-              <ErrorBlock message={deleteFriendMutation.error.message} />
-            </div>
-          ) : null}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className="space-y-3 py-3">
+            {notice ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+              </div>
+            ) : null}
+            {entryNotice ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <DigitalHumanEntryNotice
+                  tone={entryNotice.tone}
+                  message={entryNotice.message}
+                  onDismiss={() => {
+                    resetEntryGuard();
+                  }}
+                  onContinue={() => {
+                    resetEntryGuard();
+                    openCallMutation.mutate("video");
+                  }}
+                  onSwitchToVoice={() => {
+                    resetEntryGuard();
+                    openCallMutation.mutate("voice");
+                  }}
+                  continueLabel={
+                    openCallMutation.isPending
+                      ? "正在接通视频..."
+                      : entryNotice.continueLabel
+                  }
+                  voiceLabel={
+                    openCallMutation.isPending
+                      ? "正在接通语音..."
+                      : entryNotice.voiceLabel
+                  }
+                  compact={false}
+                />
+              </div>
+            ) : null}
+            {characterQuery.isLoading ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <LoadingBlock label="正在读取朋友资料..." />
+              </div>
+            ) : null}
+            {characterQuery.isError && characterQuery.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={characterQuery.error.message} />
+              </div>
+            ) : null}
+            {friendsQuery.isError && friendsQuery.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={friendsQuery.error.message} />
+              </div>
+            ) : null}
+            {conversationsQuery.isError &&
+            conversationsQuery.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={conversationsQuery.error.message} />
+              </div>
+            ) : null}
+            {startChatMutation.isError &&
+            startChatMutation.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={startChatMutation.error.message} />
+              </div>
+            ) : null}
+            {openCallMutation.isError &&
+            openCallMutation.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={openCallMutation.error.message} />
+              </div>
+            ) : null}
+            {setStarredMutation.isError &&
+            setStarredMutation.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={setStarredMutation.error.message} />
+              </div>
+            ) : null}
+            {pinMutation.isError && pinMutation.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={pinMutation.error.message} />
+              </div>
+            ) : null}
+            {muteMutation.isError && muteMutation.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={muteMutation.error.message} />
+              </div>
+            ) : null}
+            {blockMutation.isError && blockMutation.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={blockMutation.error.message} />
+              </div>
+            ) : null}
+            {deleteFriendMutation.isError &&
+            deleteFriendMutation.error instanceof Error ? (
+              <div className="mx-auto w-full max-w-[640px] px-3">
+                <ErrorBlock message={deleteFriendMutation.error.message} />
+              </div>
+            ) : null}
 
-          <ContactDetailPane
-            character={character}
-            friendship={friendship}
-            commonGroups={commonGroups}
-            onOpenGroup={(groupId) => {
-              void navigate({ to: "/group/$groupId", params: { groupId } });
-            }}
-            onOpenMoments={handleOpenMoments}
-            onOpenProfile={() => {}}
-            showProfileEntry={false}
-            onStartChat={() => {
-              setNotice(null);
-              startChatMutation.mutate();
-            }}
-            chatPending={startChatMutation.isPending}
-            isPinned={selectedConversation?.isPinned ?? false}
-            pinPending={pinMutation.isPending}
-            onTogglePinned={() => {
-              setNotice(null);
-              pinMutation.mutate(!(selectedConversation?.isPinned ?? false));
-            }}
-            isMuted={selectedConversation?.isMuted ?? false}
-            mutePending={muteMutation.isPending}
-            onToggleMuted={() => {
-              setNotice(null);
-              muteMutation.mutate(!(selectedConversation?.isMuted ?? false));
-            }}
-            isStarred={friendship.isStarred}
-            starPending={setStarredMutation.isPending}
-            onToggleStarred={() => {
-              setNotice(null);
-              setStarredMutation.mutate(!friendship.isStarred);
-            }}
-            isBlocked={isBlocked}
-            blockPending={blockMutation.isPending}
-            onToggleBlock={() => {
-              setNotice(null);
-              blockMutation.mutate(isBlocked);
-            }}
-            deletePending={deleteFriendMutation.isPending}
-            onDeleteFriend={() => {
-              handleDeleteFriendAction();
-            }}
-          />
+            <ContactDetailPane
+              character={character}
+              friendship={friendship}
+              commonGroups={commonGroups}
+              onOpenGroup={(groupId) => {
+                void navigate({
+                  to: buildDesktopChatThreadPath({
+                    conversationId: groupId,
+                  }),
+                });
+              }}
+              onOpenMoments={handleOpenMoments}
+              onOpenProfile={() => {}}
+              showProfileEntry={false}
+              onStartChat={() => {
+                setNotice(null);
+                startChatMutation.mutate();
+              }}
+              chatPending={startChatMutation.isPending}
+              isPinned={selectedConversation?.isPinned ?? false}
+              pinPending={pinMutation.isPending}
+              onTogglePinned={() => {
+                setNotice(null);
+                pinMutation.mutate(!(selectedConversation?.isPinned ?? false));
+              }}
+              isMuted={selectedConversation?.isMuted ?? false}
+              mutePending={muteMutation.isPending}
+              onToggleMuted={() => {
+                setNotice(null);
+                muteMutation.mutate(!(selectedConversation?.isMuted ?? false));
+              }}
+              isStarred={friendship.isStarred}
+              starPending={setStarredMutation.isPending}
+              onToggleStarred={() => {
+                setNotice(null);
+                setStarredMutation.mutate(!friendship.isStarred);
+              }}
+              isBlocked={isBlocked}
+              blockPending={blockMutation.isPending}
+              onToggleBlock={() => {
+                setNotice(null);
+                blockMutation.mutate(isBlocked);
+              }}
+              deletePending={deleteFriendMutation.isPending}
+              onDeleteFriend={() => {
+                handleDeleteFriendAction();
+              }}
+            />
+          </div>
         </div>
       </AppPage>
     );
   }
 
   return (
-    <AppPage className="min-h-full space-y-0 bg-[#ededed] px-0 py-0 text-[color:var(--text-primary)]">
-      <header className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-2 py-2 backdrop-blur-xl">
+    <AppPage
+      className={cn(
+        "min-h-full space-y-0 bg-[#ededed] px-0 py-0 text-[color:var(--text-primary)]",
+        !isDesktopLayout ? "flex h-full min-h-0 flex-col overflow-hidden" : undefined,
+      )}
+    >
+      <header
+        className={cn(
+          "z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-2 py-2 backdrop-blur-xl",
+          isDesktopLayout ? "sticky top-0" : "shrink-0",
+        )}
+      >
         <div className="relative flex min-h-10 items-center gap-1.5">
           <button
             type="button"
@@ -851,85 +1047,101 @@ export function CharacterDetailPage() {
         </div>
       </header>
 
-      {characterQuery.isLoading ? (
-        <div className="px-4 py-3">
-          {isDesktopLayout ? (
-            <LoadingBlock label="正在读取朋友资料..." />
-          ) : (
-            <MobileCharacterStatusCard
-              badge="读取中"
-              title="正在读取朋友资料"
-              description="稍等一下，正在同步这个联系人的资料和关系状态。"
-              tone="loading"
-            />
-          )}
-        </div>
-      ) : null}
+      <div
+        className={cn(
+          !isDesktopLayout ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : undefined,
+        )}
+      >
+        {characterQuery.isLoading ? (
+          <div className="px-4 py-3">
+            {isDesktopLayout ? (
+              <LoadingBlock label="正在读取朋友资料..." />
+            ) : (
+              <MobileCharacterStatusCard
+                badge="读取中"
+                title="正在读取朋友资料"
+                description="稍等一下，正在同步这个联系人的资料和关系状态。"
+                tone="loading"
+              />
+            )}
+          </div>
+        ) : null}
 
-      {characterQuery.isError && characterQuery.error instanceof Error ? (
-        <div className="px-4 py-3">
-          {isDesktopLayout ? (
-            <ErrorBlock message={characterQuery.error.message} />
-          ) : (
-            <MobileCharacterStatusCard
-              badge="联系人"
-              title="联系人资料暂时不可用"
-              description={characterQuery.error.message}
-              tone="danger"
-              action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    void characterQuery.refetch();
-                  }}
-                  className="rounded-full"
-                >
-                  重新加载
-                </Button>
-              }
-            />
-          )}
-        </div>
-      ) : null}
+        {characterQuery.isError && characterQuery.error instanceof Error ? (
+          <div className="px-4 py-3">
+            {isDesktopLayout ? (
+              <ErrorBlock message={characterQuery.error.message} />
+            ) : (
+              <MobileCharacterStatusCard
+                badge="联系人"
+                title="联系人资料暂时不可用"
+                description={characterQuery.error.message}
+                tone="danger"
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      if (navigateToRouteStateReturn()) {
+                        return;
+                      }
 
-      {!characterQuery.isLoading && !character ? (
-        <div className="px-4 py-3">
-          {isDesktopLayout ? (
-            <EmptyState
-              title="角色不存在"
-              description="这个资料暂时不可用，返回通讯录再试一次。"
-            />
-          ) : (
-            <MobileCharacterStatusCard
-              badge="联系人"
-              title="角色不存在"
-              description="这个资料暂时不可用，返回通讯录再试一次。"
-              action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    void navigate({ to: "/tabs/contacts" });
-                  }}
-                  className="rounded-full"
-                >
-                  返回通讯录
-                </Button>
-              }
-            />
-          )}
-        </div>
-      ) : null}
+                      void navigate({ to: "/tabs/contacts" });
+                    }}
+                    className="rounded-full"
+                  >
+                    {safeMobileReturnPath ? "返回上一页" : "返回通讯录"}
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        ) : null}
 
-      {character ? (
-        <>
+        {!characterQuery.isLoading && !character ? (
+          <div className="px-4 py-3">
+            {isDesktopLayout ? (
+              <EmptyState
+                title="角色不存在"
+                description="这个资料暂时不可用，返回通讯录再试一次。"
+              />
+            ) : (
+              <MobileCharacterStatusCard
+                badge="联系人"
+                title="角色不存在"
+                description={
+                  safeMobileReturnPath
+                    ? "这个资料暂时不可用，返回上一页再试一次。"
+                    : "这个资料暂时不可用，返回通讯录再试一次。"
+                }
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      if (navigateToRouteStateReturn()) {
+                        return;
+                      }
+
+                      void navigate({ to: "/tabs/contacts" });
+                    }}
+                    className="rounded-full"
+                  >
+                    {safeMobileReturnPath ? "返回上一页" : "返回通讯录"}
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        ) : null}
+
+        {character ? (
           <div
             className={cn(
-              "space-y-2.5 px-3 pb-28 pt-2",
+              "space-y-2.5 px-3 pt-2",
               isDesktopLayout
                 ? "mx-auto w-full max-w-[720px] pb-8 pt-3"
-                : undefined,
+                : "pb-4",
             )}
           >
             {notice ? (
@@ -976,7 +1188,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={friendsQuery.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {friendsQuery.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -986,7 +1200,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={friendRequestsQuery.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {friendRequestsQuery.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -995,7 +1211,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={blockedQuery.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {blockedQuery.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1005,7 +1223,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={startChatMutation.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {startChatMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1015,7 +1235,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={openCallMutation.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {openCallMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1025,7 +1247,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={sendFriendRequestMutation.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {sendFriendRequestMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1035,7 +1259,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={setStarredMutation.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {setStarredMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1045,7 +1271,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={updateProfileMutation.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {updateProfileMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1054,7 +1282,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={blockMutation.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {blockMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1064,7 +1294,9 @@ export function CharacterDetailPage() {
               isDesktopLayout ? (
                 <ErrorBlock message={deleteFriendMutation.error.message} />
               ) : (
-                <MobileCharacterErrorNotice>
+                <MobileCharacterErrorNotice
+                  action={renderMobileErrorBackAction()}
+                >
                   {deleteFriendMutation.error.message}
                 </MobileCharacterErrorNotice>
               )
@@ -1348,8 +1580,14 @@ export function CharacterDetailPage() {
                     }
 
                     void navigate({
-                      to: "/group/$groupId",
-                      params: { groupId: firstGroup.id },
+                      to: isDesktopLayout
+                        ? buildDesktopChatThreadPath({
+                            conversationId: firstGroup.id,
+                          })
+                        : "/group/$groupId",
+                      params: isDesktopLayout
+                        ? undefined
+                        : { groupId: firstGroup.id },
                     });
                   }}
                   compact={!isDesktopLayout}
@@ -1471,95 +1709,86 @@ export function CharacterDetailPage() {
               ) : null}
             </ProfileSection>
           </div>
+        ) : null}
+      </div>
 
-          {!isDesktopLayout ? (
-            <>
-              <div className="sticky bottom-0 z-20 border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 backdrop-blur-xl">
-                <div
-                  className={cn(
-                    "grid gap-2",
-                    isFriend ? "grid-cols-2" : "grid-cols-1",
-                  )}
-                >
-                  {isFriend ? (
-                    <>
-                      <MobileProfileActionButton
-                        primary
-                        label={
-                          startChatMutation.isPending ? "正在打开..." : "发消息"
-                        }
-                        disabled={startChatMutation.isPending}
-                        onClick={() => {
-                          setNotice(null);
-                          startChatMutation.mutate();
-                        }}
-                      />
-                      <MobileProfileActionButton
-                        label={
-                          openCallMutation.isPending
-                            ? "正在接通..."
-                            : "音视频通话"
-                        }
-                        disabled={openCallMutation.isPending}
-                        onClick={() => {
-                          setNotice(null);
-                          setMobileSheetAction("call");
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <MobileProfileActionButton
-                      primary
-                      label={
-                        hasPendingFriendRequest
-                          ? "查看好友申请"
-                          : sendFriendRequestMutation.isPending
-                            ? "发送中..."
-                            : "添加到通讯录"
-                      }
-                      disabled={
-                        sendFriendRequestMutation.isPending &&
-                        !hasPendingFriendRequest
-                      }
-                      onClick={() => {
-                        setNotice(null);
-                        handleAddToContacts();
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-              <MobileDetailsActionSheet
-                open={mobileSheetConfig !== null}
-                title={mobileSheetConfig?.title ?? ""}
-                description={mobileSheetConfig?.description}
-                onClose={() => setMobileSheetAction(null)}
-                actions={
-                  mobileSheetConfig?.actions.map((action) => ({
-                    ...action,
-                    onClick: () => {
-                      setMobileSheetAction(null);
-                      action.onClick();
-                    },
-                  })) ?? []
+      {!isDesktopLayout && character ? (
+        <div className="shrink-0 border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 backdrop-blur-xl">
+          <div
+            className={cn(
+              "grid gap-2",
+              isFriend ? "grid-cols-2" : "grid-cols-1",
+            )}
+          >
+            {isFriend ? (
+              <>
+                <MobileProfileActionButton
+                  primary
+                  label={
+                    startChatMutation.isPending ? "正在打开..." : "发消息"
+                  }
+                  disabled={startChatMutation.isPending}
+                  onClick={() => {
+                    setNotice(null);
+                    startChatMutation.mutate();
+                  }}
+                />
+                <MobileProfileActionButton
+                  label={
+                    openCallMutation.isPending
+                      ? "正在接通..."
+                      : "音视频通话"
+                  }
+                  disabled={openCallMutation.isPending}
+                  onClick={() => {
+                    setNotice(null);
+                    setMobileSheetAction("call");
+                  }}
+                />
+              </>
+            ) : (
+              <MobileProfileActionButton
+                primary
+                label={
+                  hasPendingFriendRequest
+                    ? "查看好友申请"
+                    : sendFriendRequestMutation.isPending
+                      ? "发送中..."
+                      : "添加到通讯录"
                 }
+                disabled={
+                  sendFriendRequestMutation.isPending &&
+                  !hasPendingFriendRequest
+                }
+                onClick={() => {
+                  setNotice(null);
+                  handleAddToContacts();
+                }}
               />
-            </>
-          ) : null}
-        </>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {!isDesktopLayout ? (
+        <MobileDetailsActionSheet
+          open={mobileSheetConfig !== null}
+          title={mobileSheetConfig?.title ?? ""}
+          description={mobileSheetConfig?.description}
+          onClose={() => setMobileSheetAction(null)}
+          actions={
+            mobileSheetConfig?.actions.map((action) => ({
+              ...action,
+              onClick: () => {
+                setMobileSheetAction(null);
+                action.onClick();
+              },
+            })) ?? []
+          }
+        />
       ) : null}
     </AppPage>
   );
-}
-
-function parseRecommendationRouteHash(hash: string) {
-  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-  if (!normalizedHash) {
-    return undefined;
-  }
-
-  const params = new URLSearchParams(normalizedHash);
-  return params.get("recommendationId")?.trim() || undefined;
 }
 
 function MobileCharacterStatusCard({
@@ -1612,13 +1841,26 @@ function MobileCharacterStatusCard({
   );
 }
 
-function MobileCharacterErrorNotice({ children }: { children: ReactNode }) {
+function MobileCharacterErrorNotice({
+  children,
+  action,
+}: {
+  children: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <InlineNotice
       tone="danger"
       className="rounded-[11px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
     >
-      {children}
+      {action ? (
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">{children}</div>
+          {action}
+        </div>
+      ) : (
+        children
+      )}
     </InlineNotice>
   );
 }

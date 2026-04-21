@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
@@ -48,13 +48,13 @@ import { CharacterEntity } from '../characters/character.entity';
 
 @Module({
   imports: [
-    AiModule,
+    forwardRef(() => AiModule),
     AuthModule,
     CharactersModule,
     NarrativeModule,
     SystemConfigModule,
     ActionRuntimeModule,
-    CyberAvatarModule,
+    forwardRef(() => CyberAvatarModule),
     TypeOrmModule.forFeature([
       ConversationEntity,
       MessageEntity,

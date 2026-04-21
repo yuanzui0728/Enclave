@@ -6,11 +6,21 @@ if (signingPropertiesFile.exists()) {
     signingProperties.load(new FileInputStream(signingPropertiesFile))
 }
 
+def envSigningStoreFile = System.getenv('YINJIE_UPLOAD_STORE_FILE')
+def envSigningStorePassword = System.getenv('YINJIE_UPLOAD_STORE_PASSWORD')
+def envSigningKeyAlias = System.getenv('YINJIE_UPLOAD_KEY_ALIAS')
+def envSigningKeyPassword = System.getenv('YINJIE_UPLOAD_KEY_PASSWORD')
+
+def signingStoreFile = signingProperties['YINJIE_UPLOAD_STORE_FILE'] ?: envSigningStoreFile
+def signingStorePassword = signingProperties['YINJIE_UPLOAD_STORE_PASSWORD'] ?: envSigningStorePassword
+def signingKeyAlias = signingProperties['YINJIE_UPLOAD_KEY_ALIAS'] ?: envSigningKeyAlias
+def signingKeyPassword = signingProperties['YINJIE_UPLOAD_KEY_PASSWORD'] ?: envSigningKeyPassword
+
 def hasReleaseSigning =
-    signingProperties['YINJIE_UPLOAD_STORE_FILE'] &&
-    signingProperties['YINJIE_UPLOAD_STORE_PASSWORD'] &&
-    signingProperties['YINJIE_UPLOAD_KEY_ALIAS'] &&
-    signingProperties['YINJIE_UPLOAD_KEY_PASSWORD']
+    signingStoreFile &&
+    signingStorePassword &&
+    signingKeyAlias &&
+    signingKeyPassword
 
 android {
     namespace "com.yinjie.mobile"
@@ -30,10 +40,10 @@ android {
     signingConfigs {
         release {
             if (hasReleaseSigning) {
-                storeFile file(signingProperties['YINJIE_UPLOAD_STORE_FILE'])
-                storePassword signingProperties['YINJIE_UPLOAD_STORE_PASSWORD']
-                keyAlias signingProperties['YINJIE_UPLOAD_KEY_ALIAS']
-                keyPassword signingProperties['YINJIE_UPLOAD_KEY_PASSWORD']
+                storeFile file(signingStoreFile)
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
             }
         }
     }

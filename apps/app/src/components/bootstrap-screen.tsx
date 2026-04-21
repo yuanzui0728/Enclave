@@ -6,7 +6,15 @@ export function BootstrapScreen({
   message = "正在整理这次进入世界的路径，马上带你回到上次停留的地方。",
 }: BootstrapScreenProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f5f5f5] px-4 py-10 text-center">
+    <div
+      className="flex min-h-screen min-h-dvh items-center justify-center bg-[#f5f5f5] px-4 py-10 text-center"
+      style={{
+        paddingTop: "max(2.5rem, env(safe-area-inset-top, 0px))",
+        paddingRight: "max(1rem, env(safe-area-inset-right, 0px))",
+        paddingBottom: "max(2.5rem, env(safe-area-inset-bottom, 0px))",
+        paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))",
+      }}
+    >
       <div className="w-full max-w-md rounded-[32px] border border-black/5 bg-white px-8 py-10 shadow-none">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[#15803d]">
           Beyond Reality

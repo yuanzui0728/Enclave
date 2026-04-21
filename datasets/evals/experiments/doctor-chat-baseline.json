@@ -1,0 +1,9 @@
+{
+  "id": "doctor-chat-baseline",
+  "title": "Doctor Chat Baseline",
+  "description": "Run the doctor chat dataset as a single baseline regression check.",
+  "datasetId": "doctor-chat",
+  "mode": "single",
+  "experimentLabel": "doctor-chat-baseline",
+  "baseline": {}
+}

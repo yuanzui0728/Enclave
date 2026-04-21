@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Compass, Sparkles } from "lucide-react";
 import { keepShakeSession, shake } from "@yinjie/contracts";
 import {
@@ -9,8 +9,9 @@ import {
 } from "@yinjie/ui";
 import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shell";
 import { RouteRedirectState } from "../components/route-redirect-state";
+import { parseMobileDiscoverToolRouteState } from "../features/discover/mobile-discover-tool-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function DiscoverEncounterPage() {
@@ -40,10 +41,17 @@ export function DiscoverEncounterPage() {
 
 function MobileDiscoverEncounterPage() {
   const navigate = useNavigate();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [message, setMessage] = useState("");
+  const routeState = useMemo(
+    () => parseMobileDiscoverToolRouteState(hash),
+    [hash],
+  );
 
   const shakeMutation = useMutation({
     mutationFn: async () => {
@@ -73,6 +81,29 @@ function MobileDiscoverEncounterPage() {
   useEffect(() => {
     setMessage("");
   }, [baseUrl]);
+
+  function navigateToRouteStateReturn() {
+    if (
+      !routeState.returnPath ||
+      isDesktopOnlyPath(routeState.returnPath)
+    ) {
+      return false;
+    }
+
+    void navigate({
+      to: routeState.returnPath,
+      ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+    });
+    return true;
+  }
+
+  const handleErrorNoticeBack = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/discover" });
+  };
 
   return (
     <MobileDiscoverToolShell
@@ -106,6 +137,10 @@ function MobileDiscoverEncounterPage() {
       }
       onBack={() =>
         navigateBackOrFallback(() => {
+          if (navigateToRouteStateReturn()) {
+            return;
+          }
+
           void navigate({ to: "/tabs/discover" });
         })
       }
@@ -135,7 +170,18 @@ function MobileDiscoverEncounterPage() {
           className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           tone="danger"
         >
-          {shakeMutation.error.message}
+          <div className="flex items-center justify-between gap-2">
+            <span className="min-w-0 flex-1">{shakeMutation.error.message}</span>
+            <button
+              type="button"
+              onClick={handleErrorNoticeBack}
+              className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+            >
+              {routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+                ? "返回上一页"
+                : "回发现页"}
+            </button>
+          </div>
         </InlineNotice>
       ) : null}
     </MobileDiscoverToolShell>

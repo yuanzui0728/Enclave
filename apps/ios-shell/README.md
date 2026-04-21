@@ -9,10 +9,13 @@
 - 已接通 `sync` / `open` / `doctor` / `configure` 脚本
 - 预期复用 `apps/app/dist` 作为 Web UI 产物
 - `ios/App/App/Plugins/` 已有 `YinjieRuntime` / `YinjieSecureStorage` / `YinjieMobileBridge` 实现
+- 三个 Swift plugin 现已补齐 Capacitor 7 `CAPBridgedPlugin` 元数据，`configure` 会尝试把它们补入 `App.xcodeproj`
 - `YinjieMobileBridge` 当前已接通系统图片选择、系统文件选择、系统相机拍照、外链、文本分享、文件分享、文件预览、通知权限与通知落点恢复
 - 真实 `AppDelegate.swift` 已缓存 APNs token 与通知点击落点
-- 真实 `Info.plist` 已补运行时键位和相机 / 麦克风权限文案
-- `doctor` 会检查是否在 macOS、是否已生成 `ios/` 工程、`Info.plist` 权限文案、`AppDelegate` push 缓存逻辑以及远程 Core API 地址
+- 真实 `Info.plist` 已补运行时键位和相机 / 相册 / 麦克风权限文案
+- `configure` 现在还会在缺失时补实际 `App.entitlements` / `PrivacyInfo.xcprivacy`，并把它们接入 Xcode 工程
+- `configure` 还会在缺失时给真实 `AppDelegate.swift` 补 push token / pending launch target 缓存逻辑，已有实现不覆盖
+- `doctor` 会检查是否在 macOS、是否已生成 `ios/` 工程、`Info.plist` 权限文案、`AppDelegate` push 缓存逻辑、plugin bridge 元数据、Xcode target membership、entitlements、privacy manifest 以及远程 Core API 地址
 
 ## 后续接入顺序
 
@@ -24,7 +27,7 @@
 6. 执行 `pnpm --dir apps/ios-shell run open`
 7. 参考 `xcode-template/` 与 `docs/ios-xcode-integration-checklist.md`
 8. 在 Xcode 中补齐签名、Capabilities、Keychain、Push、Privacy 文案
-9. 按需把 `xcode-template/` 里的示例能力同步到真实工程；`configure` 现在只会补种子，不会覆盖已有 plugin
+9. 按需把 `xcode-template/` 里的示例能力同步到真实工程；`configure` 会刷新示例、补缺失 plugin，并尝试把 plugin 注册进 `App.xcodeproj`，但不会覆盖已有 plugin 实现
 
 ## iOS Runtime 注入
 
@@ -70,3 +73,12 @@ Push token 约定：
 
 - `pnpm ios:configure` 会始终刷新 `xcode-template/` 下的示例文件
 - `ios/App/App/Plugins/` 下的三个 plugin 文件只会在缺失时补种子，不会覆盖现有实现
+- 若 `ios/App/App.xcodeproj/project.pbxproj` 存在，`configure` 还会确保三个 plugin 文件处于 `App/Plugins` group，并加入 `Sources` build phase
+- `ios/App/App/App.entitlements` 与 `ios/App/App/PrivacyInfo.xcprivacy` 会在缺失时按模板补种子，并接入 `CODE_SIGN_ENTITLEMENTS` / `Resources`
+- `ios/App/App/Info.plist` 与 `ios/App/App/AppDelegate.swift` 会在缺少关键键位或 push 落点缓存逻辑时补齐，但不会覆盖已有实现
+
+## 建议检查命令
+
+- `pnpm ios:audit`
+- 等价于 `pnpm --dir apps/ios-shell run audit`
+- 该命令会顺序执行 `prepare:web` 与 `doctor`

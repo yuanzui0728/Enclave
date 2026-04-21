@@ -26,6 +26,7 @@ import { setAppRuntimeConfig, useAppRuntimeConfig } from "../runtime/runtime-con
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 type WorldAccessMode = "cloud" | "local";
+type LocalWorldApiAdjustment = "api-path" | "app-dev-port";
 
 const LOCAL_APP_DEV_PORT = "5180";
 const LOCAL_CORE_API_PORT = "3000";
@@ -67,6 +68,11 @@ function isLoopbackBaseUrl(value: string) {
   }
 }
 
+type LocalWorldApiResolution = {
+  adjustment?: LocalWorldApiAdjustment;
+  value: string;
+};
+
 function resolveLocalWorldApiBaseUrl(value?: string) {
   if (!value) {
     return undefined;
@@ -74,14 +80,26 @@ function resolveLocalWorldApiBaseUrl(value?: string) {
 
   try {
     const url = new URL(value);
-    if (url.port === LOCAL_APP_DEV_PORT) {
-      url.port = LOCAL_CORE_API_PORT;
-      return url.toString().replace(/\/+$/, "");
+    let adjustment: LocalWorldApiAdjustment | undefined;
+
+    if (/\/api\/?$/.test(url.pathname)) {
+      url.pathname = url.pathname.replace(/\/api\/?$/, "") || "/";
+      adjustment = "api-path";
     }
 
-    return value;
+    if (url.port === LOCAL_APP_DEV_PORT) {
+      url.port = LOCAL_CORE_API_PORT;
+      adjustment = "app-dev-port";
+    }
+
+    return {
+      adjustment,
+      value: url.toString().replace(/\/+$/, ""),
+    } satisfies LocalWorldApiResolution;
   } catch {
-    return value;
+    return {
+      value,
+    } satisfies LocalWorldApiResolution;
   }
 }
 
@@ -92,11 +110,11 @@ function resolveDefaultLocalApiBaseUrl(configuredApiBaseUrl?: string) {
       return browserBaseUrl;
     }
 
-    return resolveLocalWorldApiBaseUrl(configuredApiBaseUrl);
+    return resolveLocalWorldApiBaseUrl(configuredApiBaseUrl)?.value ?? configuredApiBaseUrl;
   }
 
   if (browserBaseUrl) {
-    return resolveLocalWorldApiBaseUrl(browserBaseUrl);
+    return resolveLocalWorldApiBaseUrl(browserBaseUrl)?.value ?? browserBaseUrl;
   }
 
   return DEFAULT_CORE_API_BASE_URL;
@@ -213,11 +231,13 @@ export function WelcomePage() {
   const cloudConnectKeyRef = useRef<string | null>(null);
 
   const normalizedTypedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
+  const resolvedLocalApiBaseUrl = resolveLocalWorldApiBaseUrl(normalizedTypedLocalApiBaseUrl);
   const normalizedLocalApiBaseUrl =
-    resolveLocalWorldApiBaseUrl(normalizedTypedLocalApiBaseUrl) ?? normalizedTypedLocalApiBaseUrl;
+    resolvedLocalApiBaseUrl?.value ?? normalizedTypedLocalApiBaseUrl;
   const localApiBaseUrlAdjusted =
     Boolean(normalizedTypedLocalApiBaseUrl) &&
     normalizedLocalApiBaseUrl !== normalizedTypedLocalApiBaseUrl;
+  const localApiBaseUrlAdjustment = resolvedLocalApiBaseUrl?.adjustment;
   const normalizedCloudApiBaseUrl = normalizeBaseUrl(runtimeConfig.cloudApiBaseUrl ?? "");
   const showOwnerStep = Boolean(readyBaseUrl) && !onboardingCompleted;
 
@@ -340,7 +360,7 @@ export function WelcomePage() {
         worldAccessMode: "cloud",
         cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
         cloudPhone: verifiedPhone,
-        cloudWorldId: session.worldId,
+        cloudWorldId: session.worldId ?? undefined,
         bootstrapSource: "user",
         configStatus: "configured",
       });
@@ -530,7 +550,7 @@ export function WelcomePage() {
         worldAccessMode: "cloud",
         cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
         cloudPhone: verifiedPhone,
-        cloudWorldId: session.worldId,
+        cloudWorldId: session.worldId ?? undefined,
         bootstrapSource: "user",
       });
 
@@ -681,7 +701,7 @@ export function WelcomePage() {
     return (
       <div className="space-y-4">
         <label className="block space-y-2">
-          <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">本地世界 API</span>
+          <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">本地世界地址</span>
           <TextField
             value={localApiBaseUrl}
             onChange={(event) => {
@@ -694,7 +714,9 @@ export function WelcomePage() {
 
         {localApiBaseUrlAdjusted ? (
           <InlineNotice tone="muted">
-            检测到你输入的是本机应用地址，已自动换算为对应的 Core API 地址：{normalizedLocalApiBaseUrl}
+            {localApiBaseUrlAdjustment === "api-path"
+              ? `检测到你输入的是 /api 路径，已自动换算为对应的世界入口地址：${normalizedLocalApiBaseUrl}`
+              : `检测到你输入的是本机应用地址，已自动换算为对应的 Core API 地址：${normalizedLocalApiBaseUrl}`}
           </InlineNotice>
         ) : null}
 
@@ -805,7 +827,7 @@ export function WelcomePage() {
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">本地世界</div>
             <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-              输入已知的世界 API 地址并直接连接。
+              输入世界入口地址并直接连接。若你拿到的是 /api 地址，也可以直接粘贴。
             </div>
           </button>
         </div>

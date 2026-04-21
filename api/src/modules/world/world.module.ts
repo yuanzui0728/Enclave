@@ -1,4 +1,5 @@
 import {
+  forwardRef,
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -18,7 +19,7 @@ import { WorldContextMiddleware } from './world-context.middleware';
     TypeOrmModule.forFeature([WorldContextEntity]),
     AuthModule,
     SystemConfigModule,
-    CyberAvatarModule,
+    forwardRef(() => CyberAvatarModule),
   ],
   providers: [WorldService, WorldContextMiddleware],
   controllers: [WorldController],

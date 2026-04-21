@@ -1,12 +1,13 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   clearGroupBackground,
   clearWorldOwnerChatBackground,
@@ -31,8 +32,13 @@ import { ChatBackgroundPreview } from "../features/chat/backgrounds/chat-backgro
 import { compressChatBackgroundImage } from "../features/chat/backgrounds/compress-chat-background-image";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useGroupBackground } from "../features/chat/backgrounds/use-conversation-background";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
+import { buildDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -43,6 +49,7 @@ export function GroupChatBackgroundPage() {
     from: "/group/$groupId/background",
   });
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -57,6 +64,29 @@ export function GroupChatBackgroundPage() {
     useState<ConversationBackgroundMode>("inherit");
   const [groupDraft, setGroupDraft] = useState<ChatBackgroundAsset | null>(
     null,
+  );
+  const routeState = parseMobileGroupRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
+  const desktopDetailsFallbackHash = useMemo(
+    () =>
+      buildDesktopChatRouteHash({
+        conversationId: groupId,
+        panel: "details",
+      }),
+    [groupId],
   );
 
   const groupQuery = useQuery({
@@ -84,8 +114,24 @@ export function GroupChatBackgroundPage() {
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
-  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+  }, [
+    groupId,
+    groupQuery.error,
+    groupQuery.isLoading,
+    navigate,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
 
   const uploadMutation = useMutation({
     mutationFn: async ({ file }: { file: File }) => {
@@ -212,6 +258,38 @@ export function GroupChatBackgroundPage() {
     fileInputRef.current?.click();
   };
 
+  const navigateToRouteStateReturn = () => {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  };
+
+  const handleErrorStateAction = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({
+      to: "/group/$groupId/details",
+      params: { groupId },
+      ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+    });
+  };
+
+  const handleMissingGroupAction = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat" });
+  };
+
   const handlePresetSelect = (
     target: UploadTarget,
     background: ChatBackgroundAsset,
@@ -261,6 +339,16 @@ export function GroupChatBackgroundPage() {
             title="群聊背景暂时不可用"
             description={groupQuery.error.message}
             tone="danger"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                onClick={handleErrorStateAction}
+              >
+                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+              </Button>
+            }
           />
         )
       ) : null}
@@ -273,6 +361,16 @@ export function GroupChatBackgroundPage() {
             title="群聊背景暂时不可用"
             description={backgroundQuery.error.message}
             tone="danger"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                onClick={handleErrorStateAction}
+              >
+                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+              </Button>
+            }
           />
         )
       ) : null}
@@ -284,7 +382,22 @@ export function GroupChatBackgroundPage() {
             tone="danger"
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
-            {pageError}
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 flex-1">{pageError}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate({
+                    to: "/group/$groupId/details",
+                    params: { groupId },
+                    ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+                  });
+                }}
+                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+              >
+                返回群聊信息
+              </button>
+            </div>
           </InlineNotice>
         )
       ) : null}
@@ -312,6 +425,16 @@ export function GroupChatBackgroundPage() {
             badge="群聊"
             title="群聊不存在"
             description="这个群聊暂时不可用，返回上一页后再试一次。"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                onClick={handleMissingGroupAction}
+              >
+                {safeReturnPath ? "返回上一页" : "返回消息列表"}
+              </Button>
+            }
           />
         )
       ) : null}
@@ -479,8 +602,15 @@ export function GroupChatBackgroundPage() {
               variant="secondary"
               onClick={() => {
                 void navigate({
-                  to: "/group/$groupId/details",
-                  params: { groupId },
+                  to: safeReturnPath ?? "/tabs/chat",
+                  ...((safeReturnPath ? safeReturnHash : desktopDetailsFallbackHash)
+                    ? {
+                        hash:
+                          (safeReturnPath
+                            ? safeReturnHash
+                            : desktopDetailsFallbackHash) || undefined,
+                      }
+                    : {}),
                 });
               }}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
@@ -514,6 +644,7 @@ export function GroupChatBackgroundPage() {
           void navigate({
             to: "/group/$groupId/details",
             params: { groupId },
+            ...(currentRouteHash ? { hash: currentRouteHash } : {}),
           });
         });
       }}
@@ -682,11 +813,13 @@ function MobileGroupBackgroundStatusCard({
   title,
   description,
   tone = "default",
+  action,
 }: {
   badge: string;
   title: string;
   description: string;
   tone?: "default" | "danger" | "loading";
+  action?: ReactNode;
 }) {
   return (
     <section
@@ -720,6 +853,7 @@ function MobileGroupBackgroundStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }

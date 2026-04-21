@@ -169,6 +169,13 @@ export interface RealWorldSyncRunRequest {
   characterId?: string | null;
 }
 
+export interface RealWorldSyncRunResult {
+  success: boolean;
+  successCount: number;
+  failedCount: number;
+  touchedCharacterIds: string[];
+}
+
 export interface RealWorldNewsBulletinPublishRequest {
   slot?: RealWorldNewsBulletinSlot | null;
 }

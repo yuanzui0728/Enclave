@@ -19,6 +19,9 @@ export function ChatTabShell({ hash }: ChatTabShellProps) {
       selectedSidePanelMode={
         routeState.officialView ? undefined : routeState.panel
       }
+      selectedCallAction={
+        routeState.officialView ? undefined : routeState.callAction
+      }
       selectedDetailsAction={
         routeState.officialView ? undefined : routeState.detailsAction
       }

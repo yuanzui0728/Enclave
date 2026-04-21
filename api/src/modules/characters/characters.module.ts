@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CharactersService } from './characters.service';
 import { CharactersController } from './characters.controller';
@@ -13,7 +13,7 @@ import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 
 @Module({
   imports: [
-    AiModule,
+    forwardRef(() => AiModule),
     AuthModule,
     RealWorldSyncModule,
     TypeOrmModule.forFeature([

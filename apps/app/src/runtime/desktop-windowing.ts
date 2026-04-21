@@ -65,6 +65,33 @@ export function buildDesktopStandaloneWindowLabel(
   return `${normalizeWindowLabelSegment(prefix)}:${normalizeWindowLabelSegment(identifier)}`;
 }
 
+export function openBrowserStandaloneWindow(options: {
+  label: string;
+  url: string;
+  features: string;
+}) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const openedWindow = window.open(
+    options.url,
+    options.label.trim() || "_blank",
+    options.features,
+  );
+  if (!openedWindow) {
+    return false;
+  }
+
+  try {
+    openedWindow.focus();
+  } catch {
+    // Ignore browser focus failures.
+  }
+
+  return true;
+}
+
 export async function openDesktopStandaloneWindow(
   options: DesktopStandaloneWindowOptions,
 ) {

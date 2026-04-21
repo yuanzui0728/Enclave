@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import {
   blockCharacter,
@@ -35,8 +35,14 @@ import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "../features/chat/mobile-chat-route-state";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import {
   openAppSettings,
   requestNotificationPermission,
@@ -69,9 +75,25 @@ export function ChatDetailsPage() {
 
 function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const routeState = useMemo(() => parseMobileChatRouteState(hash), [hash]);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const chatRouteHash = useMemo(
+    () =>
+      buildMobileChatRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }) || undefined,
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
   const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<{
@@ -128,6 +150,56 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     enabled: Boolean(targetCharacterId),
   });
 
+  const navigateToRouteStateReturn = ({
+    replace = false,
+  }: {
+    replace?: boolean;
+  } = {}) => {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+      replace,
+    });
+    return true;
+  };
+  const statusBackAction = (
+    <Button
+      type="button"
+      variant="secondary"
+      onClick={() => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
+
+        void navigate({ to: "/tabs/chat" });
+      }}
+      className="rounded-full"
+    >
+      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+    </Button>
+  );
+  const renderOperationBackAction = () => (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+      onClick={() => {
+        if (navigateToRouteStateReturn()) {
+          return;
+        }
+
+        void navigate({ to: "/tabs/chat" });
+      }}
+    >
+      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+    </Button>
+  );
+
   useEffect(() => {
     if (
       conversationsQuery.isLoading ||
@@ -137,12 +209,23 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
   }, [
     conversation,
     conversationsQuery.isError,
     conversationsQuery.isLoading,
     navigate,
+    safeReturnHash,
+    safeReturnPath,
   ]);
 
   useEffect(() => {
@@ -153,9 +236,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     void navigate({
       to: "/group/$groupId/details",
       params: { groupId: conversation.id },
+      ...(chatRouteHash ? { hash: chatRouteHash } : {}),
       replace: true,
     });
-  }, [conversation, navigate]);
+  }, [chatRouteHash, conversation, navigate]);
 
   const targetCharacter = characterQuery.data;
   const isPinned = conversation?.isPinned ?? false;
@@ -244,6 +328,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     void navigate({
       to: "/character/$characterId",
       params: { characterId: targetCharacterId },
+      hash: buildCharacterDetailRouteHash({
+        returnPath: `/chat/${conversationId}/details`,
+        returnHash: chatRouteHash,
+      }),
     });
   };
 
@@ -443,6 +531,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
+      if (navigateToRouteStateReturn({ replace: true })) {
+        return;
+      }
+
       void navigate({ to: "/tabs/chat", replace: true });
     },
   });
@@ -543,6 +635,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           hash: buildCreateGroupRouteHash({
             source: "chat-details",
             conversationId,
+            returnPath: `/chat/${conversationId}/details`,
+            returnHash: chatRouteHash,
             seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
           }),
         });
@@ -604,6 +698,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         void navigate({
           to: "/chat/$conversationId",
           params: { conversationId },
+          ...(chatRouteHash ? { hash: chatRouteHash } : {}),
         });
       }}
     >
@@ -625,6 +720,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="聊天信息暂时不可用"
             description={conversationsQuery.error.message}
             tone="danger"
+            action={statusBackAction}
           />
         </div>
       ) : null}
@@ -635,6 +731,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="联系人资料暂时不可用"
             description={characterQuery.error.message}
             tone="danger"
+            action={statusBackAction}
           />
         </div>
       ) : null}
@@ -645,6 +742,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="通讯录信息暂时不可用"
             description={friendsQuery.error.message}
             tone="danger"
+            action={statusBackAction}
           />
         </div>
       ) : null}
@@ -655,6 +753,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="黑名单状态暂时不可用"
             description={blockedQuery.error.message}
             tone="danger"
+            action={statusBackAction}
           />
         </div>
       ) : null}
@@ -689,6 +788,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               void navigate({
                 to: "/chat/$conversationId/video-call",
                 params: { conversationId },
+                ...(chatRouteHash ? { hash: chatRouteHash } : {}),
               });
             }}
             onSwitchToVoice={() => {
@@ -696,6 +796,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               void navigate({
                 to: "/chat/$conversationId/voice-call",
                 params: { conversationId },
+                ...(chatRouteHash ? { hash: chatRouteHash } : {}),
               });
             }}
             compact
@@ -714,11 +815,14 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 type="button"
                 variant="secondary"
                 onClick={() => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
                   void navigate({ to: "/tabs/chat" });
                 }}
                 className="rounded-full"
               >
-                返回消息列表
+                {safeReturnPath ? "返回上一页" : "返回消息列表"}
               </Button>
             }
           />
@@ -788,6 +892,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                   void navigate({
                     to: "/chat/$conversationId/search",
                     params: { conversationId },
+                    ...(chatRouteHash ? { hash: chatRouteHash } : {}),
                   });
                 }}
               />
@@ -837,6 +942,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                     ? "/chat/$conversationId/voice-call"
                     : "/chat/$conversationId/video-call",
                 params: { conversationId },
+                ...(chatRouteHash ? { hash: chatRouteHash } : {}),
               });
             }}
           />
@@ -860,6 +966,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                   void navigate({
                     to: "/chat/$conversationId/background",
                     params: { conversationId },
+                    ...(chatRouteHash ? { hash: chatRouteHash } : {}),
                   });
                 }}
               />
@@ -886,7 +993,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 tone="danger"
                 className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
-                {clearMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {clearMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -896,7 +1008,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 tone="danger"
                 className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
-                {hideMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {hideMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -906,7 +1023,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 tone="danger"
                 className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
-                {pinMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {pinMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -916,7 +1038,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 tone="danger"
                 className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
-                {muteMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {muteMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -927,7 +1054,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 tone="danger"
                 className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
-                {saveToContactsMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {saveToContactsMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -937,7 +1069,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 tone="danger"
                 className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
-                {reportMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {reportMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}
@@ -947,7 +1084,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 tone="danger"
                 className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
-                {blockMutation.error.message}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {blockMutation.error.message}
+                  </span>
+                  {renderOperationBackAction()}
+                </div>
               </InlineNotice>
             </div>
           ) : null}

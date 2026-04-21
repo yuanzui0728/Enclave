@@ -1,10 +1,15 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { getConversationMessages, getConversations } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
+import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "../features/chat/mobile-chat-route-state";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function ChatMessageSearchPage() {
@@ -34,8 +39,21 @@ function MobileChatMessageSearchPage({
   conversationId: string;
 }) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const routeState = parseMobileChatRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const searchRouteHash =
+    buildMobileChatRouteHash({
+      highlightedMessageId: routeState.highlightedMessageId,
+      returnPath: safeReturnPath,
+      returnHash: safeReturnHash,
+    }) || undefined;
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -60,12 +78,23 @@ function MobileChatMessageSearchPage({
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
   }, [
     conversation,
     conversationsQuery.isError,
     conversationsQuery.isLoading,
     navigate,
+    safeReturnHash,
+    safeReturnPath,
   ]);
 
   return (
@@ -88,13 +117,18 @@ function MobileChatMessageSearchPage({
         void navigate({
           to: "/chat/$conversationId/details",
           params: { conversationId },
+          ...(searchRouteHash ? { hash: searchRouteHash } : {}),
         });
       }}
       onOpenMessage={(messageId) => {
         void navigate({
           to: "/chat/$conversationId",
           params: { conversationId },
-          hash: `chat-message-${messageId}`,
+          hash: buildMobileChatRouteHash({
+            highlightedMessageId: messageId,
+            returnPath: safeReturnPath,
+            returnHash: safeReturnHash,
+          }),
           replace: true,
         });
       }}

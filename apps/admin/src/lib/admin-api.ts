@@ -1,9 +1,44 @@
 import type {
+  ActionConnectorDiscoveryResult,
+  ActionConnectorSummary,
+  ActionConnectorTestResult,
+  ActionRunDetail,
+  ActionRunRetryResult,
+  ActionRuntimeOverview,
+  ActionRuntimePreviewResult,
+  ActionRuntimeRules,
+  AdminCreateGameCatalogRequest,
+  AdminCreateGameSubmissionRequest,
+  AdminGameCatalogDetail,
+  AdminGameCatalogItem,
+  AdminGameCatalogRevision,
+  AdminGameCenterCuration,
+  AdminGameSubmission,
+  AdminImportGameSubmissionRequest,
+  AdminImportGameSubmissionResult,
+  AdminPublishGameCatalogRequest,
+  AdminRestoreGameCatalogRevisionRequest,
+  AdminUpdateGameCatalogRequest,
+  AdminUpdateGameCenterCurationRequest,
+  AdminUpdateGameSubmissionRequest,
   Character,
   CharacterBlueprintRevision,
-  CharacterPresetSummary,
   CharacterFactorySnapshot,
+  CharacterPresetSummary,
+  CyberAvatarOverview,
+  CyberAvatarRunDetail,
+  CyberAvatarRuntimeRules,
+  FollowupRuntimeOverview,
+  FollowupRuntimeRules,
   InstallCharacterPresetsResult,
+  NeedDiscoveryConfig,
+  NeedDiscoveryOverview,
+  RealWorldNewsBulletinPublishRequest,
+  RealWorldNewsBulletinPublishResult,
+  RealWorldSyncCharacterDetail,
+  RealWorldSyncOverview,
+  RealWorldSyncRunResult,
+  RealWorldSyncRules,
   ReplyLogicConstantSummary,
   ReplyLogicCharacterSnapshot,
   ReplyLogicConversationSnapshot,
@@ -22,6 +57,14 @@ import type {
   TokenUsageQuery,
   TokenUsageRecordListResponse,
   TokenUsageTrendPoint,
+  UpdateActionConnectorRequest,
+  WechatSyncHistoryResponse,
+  WechatSyncImportRequest,
+  WechatSyncImportResponse,
+  WechatSyncPreviewRequest,
+  WechatSyncPreviewResponse,
+  WechatSyncRetryFriendshipResponse,
+  WechatSyncRollbackResponse,
 } from "@yinjie/contracts";
 
 const ADMIN_SECRET_KEY = "yinjie_admin_secret";
@@ -199,6 +242,198 @@ export const adminApi = {
     adminFetch<CharacterFactorySnapshot>(
       `/characters/${id}/factory/revisions/${revisionId}/restore`,
       { method: "POST" },
+    ),
+  getGamesCatalog: () =>
+    adminFetch<AdminGameCatalogItem[]>("/games"),
+  getGameCatalogItem: (id: string) =>
+    adminFetch<AdminGameCatalogDetail>(`/games/${id}`),
+  createGameCatalogItem: (payload: AdminCreateGameCatalogRequest) =>
+    adminFetch<AdminGameCatalogDetail>("/games", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateGameCatalogItem: (id: string, payload: AdminUpdateGameCatalogRequest) =>
+    adminFetch<AdminGameCatalogDetail>(`/games/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  getGameCatalogRevisions: (id: string) =>
+    adminFetch<AdminGameCatalogRevision[]>(`/games/${id}/revisions`),
+  publishGameCatalogItem: (id: string, payload?: AdminPublishGameCatalogRequest) =>
+    adminFetch<AdminGameCatalogDetail>(`/games/${id}/publish`, {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    }),
+  restoreGameCatalogRevision: (
+    id: string,
+    revisionId: string,
+    payload?: AdminRestoreGameCatalogRevisionRequest,
+  ) =>
+    adminFetch<AdminGameCatalogDetail>(`/games/${id}/revisions/${revisionId}/restore`, {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    }),
+  getGameCenterCuration: () =>
+    adminFetch<AdminGameCenterCuration>("/games/curation"),
+  updateGameCenterCuration: (payload: AdminUpdateGameCenterCurationRequest) =>
+    adminFetch<AdminGameCenterCuration>("/games/curation", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  getGameSubmissions: () =>
+    adminFetch<AdminGameSubmission[]>("/games/submissions"),
+  createGameSubmission: (payload: AdminCreateGameSubmissionRequest) =>
+    adminFetch<AdminGameSubmission>("/games/submissions", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateGameSubmission: (id: string, payload: AdminUpdateGameSubmissionRequest) =>
+    adminFetch<AdminGameSubmission>(`/games/submissions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  importGameSubmission: (id: string, payload?: AdminImportGameSubmissionRequest) =>
+    adminFetch<AdminImportGameSubmissionResult>(`/games/submissions/${id}/import`, {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    }),
+  previewWechatSync: (payload: WechatSyncPreviewRequest) =>
+    adminFetch<WechatSyncPreviewResponse>("/wechat-sync/preview", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  importWechatSync: (payload: WechatSyncImportRequest) =>
+    adminFetch<WechatSyncImportResponse>("/wechat-sync/import", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getWechatSyncHistory: () =>
+    adminFetch<WechatSyncHistoryResponse>("/wechat-sync/history"),
+  retryWechatSyncFriendship: (characterId: string) =>
+    adminFetch<WechatSyncRetryFriendshipResponse>(
+      `/wechat-sync/history/${characterId}/retry-friendship`,
+      { method: "POST" },
+    ),
+  rollbackWechatSyncImport: (characterId: string) =>
+    adminFetch<WechatSyncRollbackResponse>(`/wechat-sync/history/${characterId}`, {
+      method: "DELETE",
+    }),
+  getNeedDiscoveryOverview: () =>
+    adminFetch<NeedDiscoveryOverview>("/need-discovery/overview"),
+  setNeedDiscoveryConfig: (payload: Partial<NeedDiscoveryConfig>) =>
+    adminFetch<NeedDiscoveryConfig>("/need-discovery/config", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  getFollowupRuntimeOverview: () =>
+    adminFetch<FollowupRuntimeOverview>("/followup-runtime/overview"),
+  setFollowupRuntimeRules: (payload: Partial<FollowupRuntimeRules>) =>
+    adminFetch<FollowupRuntimeRules>("/followup-runtime/rules", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  getActionRuntimeOverview: () =>
+    adminFetch<ActionRuntimeOverview>("/action-runtime/overview"),
+  getActionRuntimeRun: (id: string) =>
+    adminFetch<ActionRunDetail>(`/action-runtime/runs/${id}`),
+  setActionRuntimeRules: (payload: Partial<ActionRuntimeRules>) =>
+    adminFetch<ActionRuntimeRules>("/action-runtime/rules", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  previewActionRuntime: (message: string) =>
+    adminFetch<ActionRuntimePreviewResult>("/action-runtime/preview", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }),
+  updateActionRuntimeConnector: (
+    id: string,
+    payload: UpdateActionConnectorRequest,
+  ) =>
+    adminFetch<ActionConnectorSummary>(`/action-runtime/connectors/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  testActionRuntimeConnector: (
+    id: string,
+    payload?: { sampleMessage?: string | null },
+  ) =>
+    adminFetch<ActionConnectorTestResult>(`/action-runtime/connectors/${id}/test`, {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    }),
+  discoverActionRuntimeConnector: (
+    id: string,
+    payload?: {
+      query?: string | null;
+      limit?: number | null;
+      endpointConfig?: Record<string, unknown> | null;
+      credential?: string | null;
+    },
+  ) =>
+    adminFetch<ActionConnectorDiscoveryResult>(
+      `/action-runtime/connectors/${id}/discover`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
+  retryActionRuntimeRun: (id: string) =>
+    adminFetch<ActionRunRetryResult>(`/action-runtime/runs/${id}/retry`, {
+      method: "POST",
+    }),
+  getCyberAvatarOverview: () =>
+    adminFetch<CyberAvatarOverview>("/cyber-avatar/overview"),
+  getCyberAvatarRun: (id: string) =>
+    adminFetch<CyberAvatarRunDetail>(`/cyber-avatar/runs/${id}`),
+  setCyberAvatarRules: (payload: Partial<CyberAvatarRuntimeRules>) =>
+    adminFetch<CyberAvatarRuntimeRules>("/cyber-avatar/rules", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  runCyberAvatarIncremental: () =>
+    adminFetch<CyberAvatarRunDetail>("/cyber-avatar/run/incremental", {
+      method: "POST",
+    }),
+  runCyberAvatarDeepRefresh: () =>
+    adminFetch<CyberAvatarRunDetail>("/cyber-avatar/run/deep-refresh", {
+      method: "POST",
+    }),
+  runCyberAvatarFullRebuild: () =>
+    adminFetch<CyberAvatarRunDetail>("/cyber-avatar/run/full-rebuild", {
+      method: "POST",
+    }),
+  runCyberAvatarProjection: () =>
+    adminFetch<CyberAvatarRunDetail>("/cyber-avatar/run/project", {
+      method: "POST",
+    }),
+  runCyberAvatarRealWorldSync: () =>
+    adminFetch<CyberAvatarRunDetail>("/cyber-avatar/run/real-world", {
+      method: "POST",
+    }),
+  getRealWorldSyncOverview: () =>
+    adminFetch<RealWorldSyncOverview>("/real-world-sync/overview"),
+  getRealWorldSyncCharacterDetail: (id: string) =>
+    adminFetch<RealWorldSyncCharacterDetail>(`/real-world-sync/characters/${id}`),
+  setRealWorldSyncRules: (payload: Partial<RealWorldSyncRules>) =>
+    adminFetch<RealWorldSyncRules>("/real-world-sync/rules", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  runRealWorldSync: (payload?: { characterId?: string | null }) =>
+    adminFetch<RealWorldSyncRunResult>("/real-world-sync/run", {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    }),
+  publishRealWorldNewsBulletin: (
+    payload?: RealWorldNewsBulletinPublishRequest,
+  ) =>
+    adminFetch<RealWorldNewsBulletinPublishResult>(
+      "/real-world-sync/news-bulletins/publish",
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
     ),
   getReplyLogicOverview: () => adminFetch<ReplyLogicOverview>("/reply-logic/overview"),
   getReplyLogicRules: () => adminFetch<ReplyLogicConstantSummary>("/reply-logic/rules"),

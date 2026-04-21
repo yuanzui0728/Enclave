@@ -18,7 +18,6 @@ import {
 import {
   AppPage,
   Button,
-  ErrorBlock,
   InlineNotice,
   LoadingBlock,
   cn,
@@ -33,6 +32,7 @@ import {
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ChannelAuthorCollectionTab = "all" | "videos" | "updates" | "live";
@@ -50,6 +50,22 @@ export function ChannelAuthorPage() {
   });
   const baseUrl = runtimeConfig.apiBaseUrl;
   const routeState = useMemo(() => parseDesktopChannelsRouteHash(hash), [hash]);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const sourceChannelsRouteState = useMemo(
+    () => parseDesktopChannelsRouteHash(safeReturnHash ?? ""),
+    [safeReturnHash],
+  );
+  const fallbackChannelsHash = useMemo(
+    () =>
+      buildDesktopChannelsRouteHash({
+        section: routeState.section ?? sourceChannelsRouteState.section,
+      }),
+    [routeState.section, sourceChannelsRouteState.section],
+  );
   const [notice, setNotice] = useState<{
     message: string;
     tone: "success" | "info";
@@ -102,10 +118,21 @@ export function ChannelAuthorPage() {
       hash: buildDesktopChannelsRouteHash({
         postId: routeState.postId,
         authorId,
+        returnHash: routeState.returnHash,
+        returnPath: routeState.returnPath,
+        section: routeState.section,
       }),
       replace: true,
     });
-  }, [authorId, isDesktopLayout, navigate, routeState.postId]);
+  }, [
+    authorId,
+    isDesktopLayout,
+    navigate,
+    routeState.postId,
+    routeState.returnHash,
+    routeState.returnPath,
+    routeState.section,
+  ]);
 
   function navigateBackToChannels() {
     if (isDesktopLayout) {
@@ -113,11 +140,41 @@ export function ChannelAuthorPage() {
       return;
     }
 
-    void navigate({ to: "/discover/channels" });
+    navigateBackOrFallback(() => {
+      if (safeReturnPath) {
+        void navigate({
+          to: safeReturnPath,
+          ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        });
+        return;
+      }
+
+      void navigate({ to: "/discover/channels" });
+    });
+  }
+
+  function handleStatusBack() {
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+      });
+      return;
+    }
+
+    void navigate({
+      to: "/discover/channels",
+      ...(fallbackChannelsHash ? { hash: fallbackChannelsHash } : {}),
+    });
   }
 
   function openChannelPost(post: FeedPostListItem) {
-    const hash = buildChannelsRouteHash(post.id);
+    const hash = buildDesktopChannelsRouteHash({
+      postId: post.id,
+      returnPath: sourceChannelsRouteState.returnPath,
+      returnHash: sourceChannelsRouteState.returnHash,
+      section: routeState.section ?? sourceChannelsRouteState.section,
+    });
 
     if (isDesktopLayout) {
       void navigate({
@@ -128,7 +185,7 @@ export function ChannelAuthorPage() {
     }
 
     void navigate({
-      to: "/discover/channels",
+      to: safeReturnPath ?? "/discover/channels",
       hash,
     });
   }
@@ -224,12 +281,42 @@ export function ChannelAuthorPage() {
         ) : null}
         {profileQuery.isError && profileQuery.error instanceof Error ? (
           <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white px-5 py-8 shadow-[var(--shadow-section)]">
-            <ErrorBlock message={profileQuery.error.message} />
+            <MobileChannelAuthorStatusCard
+              badge="读取失败"
+              title="作者主页暂时不可用"
+              description={profileQuery.error.message}
+              tone="danger"
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回视频号"}
+                </Button>
+              }
+            />
           </div>
         ) : null}
         {followMutation.isError && followMutation.error instanceof Error ? (
           <div className="mb-4 rounded-[22px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]">
-            <ErrorBlock message={followMutation.error.message} />
+            <MobileChannelAuthorStatusCard
+              badge="关注失败"
+              title="作者状态暂未更新"
+              description={followMutation.error.message}
+              tone="danger"
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回视频号"}
+                </Button>
+              }
+            />
           </div>
         ) : null}
 
@@ -551,16 +638,6 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
   );
 }
 
-function buildChannelsRouteHash(postId?: string | null) {
-  if (!postId) {
-    return undefined;
-  }
-
-  const params = new URLSearchParams();
-  params.set("post", postId);
-  return params.toString();
-}
-
 function matchesChannelAuthorCollection(
   post: FeedPostListItem,
   tab: ChannelAuthorCollectionTab,
@@ -715,4 +792,47 @@ function writeStoredChannelAuthorCollection(
   } catch {
     return;
   }
+}
+
+function MobileChannelAuthorStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+  action,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger";
+  action?: ReactNode;
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[18px] border px-4 py-5 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+        )}
+      >
+        {badge}
+      </div>
+      <div className="mt-3 text-[16px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </section>
+  );
 }

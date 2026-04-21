@@ -161,6 +161,11 @@ export function ProfileSettingsPage() {
   const backTo = desktopMode ? "/tabs/chat" : "/tabs/profile";
   const desktopBackTo = desktopSettingsRoute ? "/tabs/chat" : "/tabs/profile";
   const desktopBackLabel = desktopSettingsRoute ? "返回消息" : "返回资料";
+  const mobileBackLabel = backTo === "/tabs/profile" ? "返回资料页" : "返回消息";
+
+  function handleMobileBack() {
+    void navigate({ to: backTo });
+  }
 
   const content = (
     <>
@@ -356,9 +361,9 @@ export function ProfileSettingsPage() {
                     variant="secondary"
                     size="sm"
                     className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                    onClick={() => void ownerQuery.refetch()}
+                    onClick={handleMobileBack}
                   >
-                    重新加载
+                    {mobileBackLabel}
                   </Button>
                 }
               />
@@ -456,7 +461,18 @@ export function ProfileSettingsPage() {
             desktopMode ? (
               <ErrorBlock message={saveApiKeyMutation.error.message} />
             ) : (
-              <MobileSettingsInlineNotice tone="danger">
+              <MobileSettingsInlineNotice
+                tone="danger"
+                action={
+                  <button
+                    type="button"
+                    onClick={handleMobileBack}
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  >
+                    {mobileBackLabel}
+                  </button>
+                }
+              >
                 {saveApiKeyMutation.error.message}
               </MobileSettingsInlineNotice>
             )
@@ -466,7 +482,18 @@ export function ProfileSettingsPage() {
             desktopMode ? (
               <ErrorBlock message={clearApiKeyMutation.error.message} />
             ) : (
-              <MobileSettingsInlineNotice tone="danger">
+              <MobileSettingsInlineNotice
+                tone="danger"
+                action={
+                  <button
+                    type="button"
+                    onClick={handleMobileBack}
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  >
+                    {mobileBackLabel}
+                  </button>
+                }
+              >
                 {clearApiKeyMutation.error.message}
               </MobileSettingsInlineNotice>
             )
@@ -698,7 +725,7 @@ export function ProfileSettingsPage() {
       className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
-            onClick={() => navigate({ to: backTo })}
+            onClick={handleMobileBack}
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none active:bg-black/[0.05]"
@@ -765,16 +792,25 @@ function MobileSettingsSection({
 function MobileSettingsInlineNotice({
   children,
   tone,
+  action,
 }: {
   children: ReactNode;
   tone: "muted" | "success" | "danger";
+  action?: ReactNode;
 }) {
   return (
     <InlineNotice
       tone={tone}
       className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
     >
-      {children}
+      {action ? (
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 flex-1">{children}</span>
+          {action}
+        </div>
+      ) : (
+        children
+      )}
     </InlineNotice>
   );
 }

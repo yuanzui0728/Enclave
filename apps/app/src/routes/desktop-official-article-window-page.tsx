@@ -17,12 +17,18 @@ import {
 import {
   buildDesktopOfficialArticleWindowPath,
   buildDesktopOfficialArticleWindowRouteHash,
+  bindDesktopOfficialArticleWindow,
+  clearDesktopOfficialArticleWindowBinding,
+  createDesktopOfficialArticleWindowId,
   parseDesktopOfficialArticleWindowRouteHash,
 } from "../features/desktop/official-accounts/desktop-official-article-window-route-state";
+import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
+import { resolveDesktopWindowReturnTarget } from "../lib/desktop-window-return-target";
 import {
   closeCurrentDesktopWindow,
   DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
   focusMainDesktopWindow,
+  focusStandaloneDesktopWindow,
   shouldNavigateCurrentWindow,
   type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
@@ -40,6 +46,7 @@ export function DesktopOfficialArticleWindowPage() {
     () => parseDesktopOfficialArticleWindowRouteHash(hash),
     [hash],
   );
+  const fallbackWindowIdRef = useRef(createDesktopOfficialArticleWindowId());
   const lastMarkedArticleIdRef = useRef<string | null>(null);
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
@@ -83,6 +90,7 @@ export function DesktopOfficialArticleWindowPage() {
   const article = articleQuery.data;
   const articleSourceId = article ? `official-article-${article.id}` : null;
   const fallbackPath = routeState?.returnTo ?? "/tabs/chat";
+  const effectiveWindowId = routeState?.windowId ?? fallbackWindowIdRef.current;
 
   useEffect(() => {
     if (
@@ -96,6 +104,51 @@ export function DesktopOfficialArticleWindowPage() {
     lastMarkedArticleIdRef.current = article.id;
     markReadMutation.mutate(article.id);
   }, [article?.id, markReadMutation]);
+
+  useEffect(() => {
+    if (!routeState || !article) {
+      return;
+    }
+
+    const nextHash = buildDesktopOfficialArticleWindowRouteHash({
+      articleId: article.id,
+      accountId: article.account.id,
+      title: article.title,
+      returnTo: routeState.returnTo,
+      windowId: effectiveWindowId,
+    });
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+    if (normalizedHash === nextHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/official-article-window",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [article, effectiveWindowId, hash, navigate, routeState]);
+
+  useEffect(() => {
+    if (!effectiveWindowId || !routeState?.articleId) {
+      return;
+    }
+
+    bindDesktopOfficialArticleWindow({
+      windowId: effectiveWindowId,
+      articleId: routeState.articleId,
+    });
+
+    const handleBeforeUnload = () => {
+      clearDesktopOfficialArticleWindowBinding(effectiveWindowId);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      clearDesktopOfficialArticleWindowBinding(effectiveWindowId);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [effectiveWindowId, routeState?.articleId]);
 
   useEffect(() => {
     if (!notice) {
@@ -193,31 +246,47 @@ export function DesktopOfficialArticleWindowPage() {
   }
 
   function handleOpenAccount(accountId: string) {
-    void focusMainDesktopWindow(`/official-accounts/${accountId}`).then(
-      (focused) => {
-        if (!focused && typeof window !== "undefined") {
-          window.location.assign(`/official-accounts/${accountId}`);
-        }
-      },
-    );
+    const targetPath = `/tabs/contacts#${
+      buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        accountId,
+        showWorldCharacters: false,
+      }) ?? ""
+    }`;
+
+    void focusMainDesktopWindow(targetPath).then((focused) => {
+      if (!focused && typeof window !== "undefined") {
+        window.location.assign(targetPath);
+      }
+    });
   }
 
-  function handleOpenRelatedArticle(articleId: string) {
+  function handleOpenRelatedArticle(
+    articleId: string,
+    options?: {
+      accountId?: string;
+      title?: string;
+    },
+  ) {
     if (!article) {
       return;
     }
 
     const nextPath = buildDesktopOfficialArticleWindowPath({
       articleId,
-      accountId: article.account.id,
+      accountId: options?.accountId ?? article.account.id,
+      title: options?.title,
       returnTo: routeState?.returnTo,
+      windowId: effectiveWindowId,
     });
     void navigate({
       to: "/desktop/official-article-window",
       hash: buildDesktopOfficialArticleWindowRouteHash({
         articleId,
-        accountId: article.account.id,
+        accountId: options?.accountId ?? article.account.id,
+        title: options?.title,
         returnTo: routeState?.returnTo,
+        windowId: effectiveWindowId,
       }),
       replace: true,
     });
@@ -421,15 +490,62 @@ function closeStandaloneWindow(fallbackPath: string) {
       return;
     }
 
-    window.close();
-    window.setTimeout(() => {
-      if (!window.closed) {
-        void focusMainDesktopWindow(fallbackPath).then((focused) => {
-          if (!focused) {
-            window.location.assign(fallbackPath);
-          }
-        });
-      }
-    }, 120);
+    closeCurrentWindow(() => {
+      void focusReturnTargetWindow(fallbackPath);
+    });
   });
+}
+
+async function focusReturnTargetWindow(targetPath: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const resolvedTarget = resolveDesktopWindowReturnTarget(targetPath);
+  if (resolvedTarget.standaloneWindowLabel) {
+    const focusedStandalone = await focusStandaloneDesktopWindow(
+      resolvedTarget.standaloneWindowLabel,
+      targetPath,
+    );
+    if (focusedStandalone) {
+      void closeCurrentDesktopWindow();
+      return;
+    }
+  }
+
+  const nextMainWindowPath = resolvedTarget.mainWindowPath || targetPath;
+
+  void focusMainDesktopWindow(nextMainWindowPath).then((focused) => {
+    if (focused) {
+      void closeCurrentDesktopWindow();
+      return;
+    }
+
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.location.assign(nextMainWindowPath);
+        window.opener.focus?.();
+        closeCurrentWindow();
+        return;
+      }
+    } catch {
+      // Ignore opener access failures and fall back to local navigation.
+    }
+
+    window.location.assign(nextMainWindowPath);
+  });
+}
+
+function closeCurrentWindow(onBlocked?: () => void) {
+  window.close();
+
+  if (!onBlocked) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!window.closed) {
+      onBlocked();
+    }
+  }, 120);
 }

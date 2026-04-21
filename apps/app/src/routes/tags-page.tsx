@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Search, Star, Tag } from "lucide-react";
 import { getFriends } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";
 import { buildContactTagGroups } from "../features/contacts/contact-tag-groups";
+import {
+  buildMobileContactDirectoryRouteHash,
+  parseMobileContactDirectoryRouteState,
+} from "../features/contacts/mobile-contact-directory-route-state";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function TagsPage() {
@@ -24,6 +30,9 @@ export function TagsPage() {
 
     void navigate({
       to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "tags",
+      }),
       replace: true,
     });
   }, [isDesktopLayout, navigate]);
@@ -31,9 +40,9 @@ export function TagsPage() {
   if (isDesktopLayout) {
     return (
       <RouteRedirectState
-        title="正在回到桌面通讯录"
-        description="标签页在桌面布局里并入了通讯录工作区，这里会自动带你返回桌面入口。"
-        loadingLabel="正在打开通讯录..."
+        title="正在切换到桌面标签"
+        description="标签页在桌面布局里并入了通讯录工作区，这里会自动带你打开标签视图。"
+        loadingLabel="正在打开桌面标签..."
       />
     );
   }
@@ -43,9 +52,31 @@ export function TagsPage() {
 
 function MobileTagsPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const [searchText, setSearchText] = useState("");
+  const routeState = parseMobileContactDirectoryRouteState(hash);
+  const [searchText, setSearchText] = useState(routeState.keyword);
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileContactDirectoryRouteHash({
+        keyword: searchText,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath, searchText],
+  );
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -57,6 +88,61 @@ function MobileTagsPage() {
     [friendsQuery.data, searchText],
   );
   const hasSearchText = searchText.trim().length > 0;
+
+  useEffect(() => {
+    if (searchText !== routeState.keyword) {
+      setSearchText(routeState.keyword);
+    }
+  }, [routeState.keyword, searchText]);
+
+  useEffect(() => {
+    if (normalizedHash === (currentRouteHash ?? "")) {
+      return;
+    }
+
+    void navigate({
+      to: "/contacts/tags",
+      hash: currentRouteHash,
+      replace: true,
+    });
+  }, [
+    currentRouteHash,
+    navigate,
+    normalizedHash,
+  ]);
+
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function openStarredFriends() {
+    void navigate({
+      to: "/contacts/starred",
+      hash: buildMobileContactDirectoryRouteHash({
+        keyword: "",
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function handleStatusBack() {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    openStarredFriends();
+  }
+
+  const statusBackLabel = safeReturnPath ? "返回上一页" : "查看星标朋友";
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
@@ -72,6 +158,10 @@ function MobileTagsPage() {
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (navigateToRouteStateReturn()) {
+                  return;
+                }
+
                 void navigate({ to: "/tabs/contacts" });
               })
             }
@@ -86,9 +176,7 @@ function MobileTagsPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
-            onClick={() => {
-              void navigate({ to: "/contacts/starred" });
-            }}
+            onClick={openStarredFriends}
             aria-label="查看星标朋友"
           >
             <Star size={17} />
@@ -126,6 +214,16 @@ function MobileTagsPage() {
               badge="读取失败"
               title="标签页暂时不可用"
               description={friendsQuery.error.message}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {statusBackLabel}
+                </Button>
+              }
               tone="danger"
             />
           </div>
@@ -142,6 +240,16 @@ function MobileTagsPage() {
                 hasSearchText
                   ? "换个标签名或联系人名称试试。"
                   : "先在联系人资料里补上标签，通讯录标签页就会自动聚合。"
+              }
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {statusBackLabel}
+                </Button>
               }
             />
           </div>
@@ -172,6 +280,10 @@ function MobileTagsPage() {
                       void navigate({
                         to: "/character/$characterId",
                         params: { characterId: item.character.id },
+                        hash: buildCharacterDetailRouteHash({
+                          returnPath: pathname,
+                          returnHash: currentRouteHash || undefined,
+                        }),
                       });
                     }}
                     className={cn(

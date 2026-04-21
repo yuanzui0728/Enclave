@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-mrbeast-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#134C8B" />
+      <stop offset="1" stop-color="#38BDF8" />
+    </linearGradient>
+    <radialGradient id="glow-mrbeast-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(253, 230, 138, 0.5)" />
+      <stop offset="1" stop-color="rgba(253, 230, 138, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-mrbeast-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-mrbeast-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-mrbeast-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(255, 255, 255, 0.08)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(253, 230, 138, 0.12)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-mrbeast-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <circle cx="512" cy="438" r="224" fill="rgba(255, 255, 255, 0.12)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M154 766C220 702 314 662 408 662H616C738 662 834 742 870 862" stroke="rgba(255, 255, 255, 0.12)" stroke-width="28" stroke-linecap="round" />
+  <rect x="650" y="676" width="206" height="206" rx="76" fill="rgba(255, 255, 255, 0.14)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="820" cy="164" r="32" fill="rgba(253, 230, 138, 0.32)" />
+  <circle cx="206" cy="200" r="18" fill="rgba(255, 255, 255, 0.18)" />
+  <g transform="translate(364.00 290.00) scale(12.3333)" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="1"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" key="1tc9qg" /><circle cx="12" cy="13" r="3" key="1vg3eu" /></g>
+  <g transform="translate(695.00 720.00) scale(4.8333)" fill="none" stroke="#FDE68A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="0.98"><rect x="3" y="8" width="18" height="4" rx="1" key="bkv52" /><path d="M12 8v13" key="1c76mn" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" key="6wjy6b" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" key="1ihvrl" /></g>
+</svg>

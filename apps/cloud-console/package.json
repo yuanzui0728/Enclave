@@ -11,7 +11,14 @@
     "dev:status": "node ../../scripts/dev-services.mjs status cloud-console",
     "build": "tsc -p tsconfig.app.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "lint": "tsc --noEmit -p tsconfig.app.json"
+    "lint": "tsc --noEmit -p tsconfig.app.json",
+    "test": "vitest run --environment jsdom tests/router.smoke.test.tsx tests/interactions.test.tsx tests/world-lifecycle-actions.test.ts tests/request-status-meta.test.ts tests/request-barrels.test.ts tests/request-route-search.test.ts tests/job-route-search.test.ts tests/world-route-search.test.ts tests/admin-sessions-route-search.test.ts tests/request-scoped-notice.test.ts tests/admin-session-meta.test.ts tests/admin-session-barrels.test.ts",
+    "test:smoke": "vitest run --environment jsdom tests/router.smoke.test.tsx",
+    "test:live-api": "pnpm --filter @yinjie/cloud-api build && pnpm run test:live-api:raw",
+    "test:live-api:raw": "vitest run --environment jsdom tests/live-api.smoke.test.tsx",
+    "test:browser": "pnpm --filter @yinjie/cloud-api build && pnpm run test:browser:raw",
+    "test:browser:raw": "playwright test --config playwright.config.ts",
+    "test:browser:install": "playwright install chromium"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.8",
@@ -22,13 +29,18 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.0",
     "@tailwindcss/vite": "^4.0.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.4.1",
     "@yinjie/tooling": "workspace:*",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4.0.9",
     "typescript": "^5.9.3",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "vitest": "^3.2.4"
   }
 }

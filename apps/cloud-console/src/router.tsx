@@ -1,6 +1,14 @@
 import { lazy } from "react";
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from "@tanstack/react-router";
 import { RootLayout } from "./components/root-layout";
+import { validateAdminSessionsRouteSearch } from "./lib/admin-sessions-route-search";
+import { validateJobsRouteSearch } from "./lib/job-route-search";
+import { validateRequestsRouteSearch } from "./lib/request-route-search";
+import { validateWorldsRouteSearch } from "./lib/world-route-search";
 
 const DashboardPage = lazy(async () => {
   const mod = await import("./routes/dashboard-page");
@@ -32,6 +40,11 @@ const JobsPage = lazy(async () => {
   return { default: mod.JobsPage };
 });
 
+const AdminSessionsPage = lazy(async () => {
+  const mod = await import("./routes/admin-sessions-page");
+  return { default: mod.AdminSessionsPage };
+});
+
 const rootRoute = createRootRoute({
   component: RootLayout,
 });
@@ -45,6 +58,7 @@ const indexRoute = createRoute({
 const requestsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/requests",
+  validateSearch: validateRequestsRouteSearch,
   component: RequestsPage,
 });
 
@@ -57,6 +71,7 @@ const requestDetailRoute = createRoute({
 const worldsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/worlds",
+  validateSearch: validateWorldsRouteSearch,
   component: WorldsPage,
 });
 
@@ -69,21 +84,39 @@ const worldDetailRoute = createRoute({
 const jobsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/jobs",
+  validateSearch: validateJobsRouteSearch,
   component: JobsPage,
 });
 
-const routeTree = rootRoute.addChildren([
+const adminSessionsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sessions",
+  validateSearch: validateAdminSessionsRouteSearch,
+  component: AdminSessionsPage,
+});
+
+export const routeTree = rootRoute.addChildren([
   indexRoute,
   requestsRoute,
   requestDetailRoute,
   worldsRoute,
   worldDetailRoute,
   jobsRoute,
+  adminSessionsRoute,
 ]);
 
-export const router = createRouter({
-  routeTree,
-});
+type AppRouterOptions = {
+  history?: Parameters<typeof createRouter>[0]["history"];
+};
+
+export function createAppRouter(options?: AppRouterOptions) {
+  return createRouter({
+    routeTree,
+    ...(options?.history ? { history: options.history } : {}),
+  });
+}
+
+export const router = createAppRouter();
 
 declare module "@tanstack/react-router" {
   interface Register {

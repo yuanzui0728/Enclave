@@ -1,14 +1,19 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Copy, Share2 } from "lucide-react";
 import { getGroup, updateGroup } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -35,6 +40,7 @@ export function GroupAnnouncementPage() {
 
 function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -43,6 +49,21 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
     tone: "success" | "info";
     message: string;
   } | null>(null);
+  const routeState = parseMobileGroupRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -66,8 +87,56 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
-  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+  }, [
+    groupId,
+    groupQuery.error,
+    groupQuery.isLoading,
+    navigate,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
+
+  const navigateToRouteStateReturn = () => {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  };
+
+  const handleErrorStateAction = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({
+      to: "/group/$groupId/details",
+      params: { groupId },
+      ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+    });
+  };
+
+  const handleMissingGroupAction = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat" });
+  };
 
   async function handleShareAnnouncement() {
     const group = groupQuery.data;
@@ -159,6 +228,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
+        ...(currentRouteHash ? { hash: currentRouteHash } : {}),
         replace: true,
       });
     },
@@ -172,6 +242,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
         void navigate({
           to: "/group/$groupId/details",
           params: { groupId },
+          ...(currentRouteHash ? { hash: currentRouteHash } : {}),
         });
       }}
       rightActions={
@@ -216,12 +287,10 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => {
-                  void groupQuery.refetch();
-                }}
+                onClick={handleErrorStateAction}
                 className="rounded-full"
               >
-                重新加载
+                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
               </Button>
             }
           />
@@ -243,7 +312,22 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             tone="danger"
             className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
           >
-            {saveMutation.error.message}
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 flex-1">{saveMutation.error.message}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate({
+                    to: "/group/$groupId/details",
+                    params: { groupId },
+                    ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+                  });
+                }}
+                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+              >
+                返回群聊信息
+              </button>
+            </div>
           </InlineNotice>
         </div>
       ) : null}
@@ -258,12 +342,10 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => {
-                  void navigate({ to: "/tabs/chat" });
-                }}
+                onClick={handleMissingGroupAction}
                 className="rounded-full"
               >
-                返回消息列表
+                {safeReturnPath ? "返回上一页" : "返回消息列表"}
               </Button>
             }
           />

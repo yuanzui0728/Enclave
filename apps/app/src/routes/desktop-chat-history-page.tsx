@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -20,6 +20,7 @@ import {
   buildDesktopChatHistoryRouteHash,
   parseDesktopChatHistoryRouteState,
 } from "../features/desktop/chat/desktop-chat-history-route-state";
+import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
 import {
   filterSearchableChatMessages,
   useLocalChatMessageActionState,
@@ -51,7 +52,6 @@ export function DesktopChatHistoryPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseDesktopChatHistoryRouteState(hash);
-  const syncingRouteStateRef = useRef(false);
   const localMessageActionState = useLocalChatMessageActionState();
   const { reminders } = useMessageReminders();
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -72,13 +72,11 @@ export function DesktopChatHistoryPage() {
   );
 
   useEffect(() => {
-    syncingRouteStateRef.current = true;
-    if (routeState.conversationId === selectedConversationId) {
-      return;
-    }
-
-    setSelectedConversationId(routeState.conversationId ?? null);
-  }, [routeState.conversationId, selectedConversationId]);
+    const nextRouteConversationId = routeState.conversationId ?? null;
+    setSelectedConversationId((current) =>
+      current === nextRouteConversationId ? current : nextRouteConversationId,
+    );
+  }, [routeState.conversationId]);
 
   useEffect(() => {
     if (!conversations.length) {
@@ -113,16 +111,6 @@ export function DesktopChatHistoryPage() {
       return;
     }
 
-    const routeStateApplied =
-      (routeState.conversationId ?? null) === selectedConversationId;
-
-    if (syncingRouteStateRef.current) {
-      if (routeStateApplied) {
-        syncingRouteStateRef.current = false;
-      }
-      return;
-    }
-
     const nextHash = buildDesktopChatHistoryRouteHash(selectedConversationId);
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
 
@@ -139,7 +127,6 @@ export function DesktopChatHistoryPage() {
     hash,
     isDesktopLayout,
     navigate,
-    routeState.conversationId,
     selectedConversationId,
   ]);
 
@@ -239,22 +226,11 @@ export function DesktopChatHistoryPage() {
     conversation: ConversationListItem,
     messageId: string,
   ) => {
-    const messageHash = `chat-message-${messageId}`;
-    if (isPersistedGroupConversation(conversation)) {
-      void navigate({
-        to: "/group/$groupId",
-        params: { groupId: conversation.id },
-        search: {},
-        hash: messageHash,
-      });
-      return;
-    }
-
     void navigate({
-      to: "/chat/$conversationId",
-      params: { conversationId: conversation.id },
-      search: {},
-      hash: messageHash,
+      to: buildDesktopChatThreadPath({
+        conversationId: conversation.id,
+        messageId,
+      }),
     });
   };
 

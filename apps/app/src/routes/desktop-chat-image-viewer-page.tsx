@@ -31,10 +31,10 @@ import {
   parseDesktopChatRouteHash,
 } from "../features/desktop/chat/desktop-chat-route-state";
 import {
-  buildDesktopChatWindowLabel,
   parseDesktopChatWindowRouteHash,
 } from "../features/desktop/chat/desktop-chat-window-route-state";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
+import { resolveDesktopWindowReturnTarget } from "../lib/desktop-window-return-target";
 import {
   closeCurrentDesktopWindow,
   DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
@@ -243,6 +243,39 @@ export function DesktopChatImageViewerPage() {
     },
     [navigate, routeState],
   );
+
+  useEffect(() => {
+    if (!routeState || !activeItem || !sessionItems.length) {
+      return;
+    }
+
+    const nextHash = buildDesktopChatImageViewerRouteHash({
+      imageUrl: activeItem.imageUrl,
+      title: activeItem.title,
+      meta: activeItem.meta,
+      returnTo: activeItem.returnTo,
+      sessionId: routeState.sessionId,
+      activeId: activeItem.id,
+      printToken: routeState.printToken,
+    });
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    if (normalizedHash === nextHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/chat-image-viewer",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [
+    activeItem,
+    hash,
+    navigate,
+    routeState,
+    sessionItems.length,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -680,10 +713,10 @@ async function focusReturnTargetWindow(targetPath: string) {
     return;
   }
 
-  const standaloneWindowLabel = resolveStandaloneChatWindowLabel(targetPath);
-  if (standaloneWindowLabel) {
+  const resolvedTarget = resolveDesktopWindowReturnTarget(targetPath);
+  if (resolvedTarget.standaloneWindowLabel) {
     const focusedStandalone = await focusStandaloneDesktopWindow(
-      standaloneWindowLabel,
+      resolvedTarget.standaloneWindowLabel,
       targetPath,
     );
     if (focusedStandalone) {
@@ -692,7 +725,9 @@ async function focusReturnTargetWindow(targetPath: string) {
     }
   }
 
-  void focusMainDesktopWindow(targetPath).then((focused) => {
+  const nextMainWindowPath = resolvedTarget.mainWindowPath || targetPath;
+
+  void focusMainDesktopWindow(nextMainWindowPath).then((focused) => {
     if (focused) {
       void closeCurrentDesktopWindow();
       return;
@@ -700,7 +735,7 @@ async function focusReturnTargetWindow(targetPath: string) {
 
     try {
       if (window.opener && !window.opener.closed) {
-        window.opener.location.assign(targetPath);
+        window.opener.location.assign(nextMainWindowPath);
         window.opener.focus?.();
         closeCurrentWindow();
         return;
@@ -709,32 +744,8 @@ async function focusReturnTargetWindow(targetPath: string) {
       // Ignore opener access failures and fall back to local navigation.
     }
 
-    window.location.assign(targetPath);
+    window.location.assign(nextMainWindowPath);
   });
-}
-
-function resolveStandaloneChatWindowLabel(targetPath: string) {
-  const normalizedPath = targetPath.trim();
-  if (!normalizedPath) {
-    return null;
-  }
-
-  const hashIndex = normalizedPath.indexOf("#");
-  const basePath =
-    hashIndex === -1 ? normalizedPath : normalizedPath.slice(0, hashIndex);
-
-  if (basePath !== "/desktop/chat-window") {
-    return null;
-  }
-
-  const routeState = parseDesktopChatWindowRouteHash(
-    hashIndex === -1 ? "" : normalizedPath.slice(hashIndex),
-  );
-  if (!routeState) {
-    return null;
-  }
-
-  return buildDesktopChatWindowLabel(routeState.conversationId);
 }
 
 function closeCurrentWindow(onBlocked?: () => void) {

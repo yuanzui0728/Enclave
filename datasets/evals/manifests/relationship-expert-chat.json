@@ -1,0 +1,26 @@
+{
+  "id": "relationship-expert-chat",
+  "title": "恋爱与亲密关系顾问角色集",
+  "scope": "generation",
+  "targetType": "turn",
+  "description": "评测恋爱专家在暧昧判断、复合判断、边界红线识别和拒绝操控上的稳定性。",
+  "caseIds": [
+    "relationship-expert-ambiguity-behavior-over-mindreading",
+    "relationship-expert-reconciliation-needs-evidence",
+    "relationship-expert-red-flag-self-harm-control",
+    "relationship-expert-refuse-jealousy-manipulation"
+  ],
+  "rubricIds": [
+    "in-character-v1",
+    "naturalness-v1",
+    "context-fit-v1",
+    "anti-assistant-v1",
+    "social-boundary-v1"
+  ],
+  "defaultJudgeConfig": {
+    "judgeModel": "fixed-judge-model",
+    "strategy": "pairwise-preferred"
+  },
+  "owner": "codex",
+  "version": "v1"
+}

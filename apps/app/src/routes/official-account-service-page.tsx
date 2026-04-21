@@ -1,10 +1,11 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useMemo } from "react";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { OfficialAccountServiceThread } from "../features/official-accounts/service/official-account-service-thread";
+import { parseMobileOfficialRouteState } from "../features/official-accounts/mobile-official-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 
 const DesktopChatWorkspace = lazy(async () => {
   const mod =
@@ -21,6 +22,7 @@ export function OfficialAccountServicePage() {
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
+  const routeState = useMemo(() => parseMobileOfficialRouteState(hash), [hash]);
 
   if (isDesktopLayout) {
     return (
@@ -47,6 +49,17 @@ export function OfficialAccountServicePage() {
         accountId={accountId}
         onBack={() => {
           navigateBackOrFallback(() => {
+            if (
+              routeState.returnPath &&
+              !isDesktopOnlyPath(routeState.returnPath)
+            ) {
+              void navigate({
+                to: routeState.returnPath,
+                ...(routeState.returnHash ? { hash: routeState.returnHash } : {}),
+              });
+              return;
+            }
+
             void navigate({ to: "/tabs/chat" });
           });
         }}

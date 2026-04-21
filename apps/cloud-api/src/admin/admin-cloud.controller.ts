@@ -1,47 +1,70 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
-import type {
-  CloudWorldLifecycleStatus,
-  CloudWorldRequestStatus,
-  WorldLifecycleJobStatus,
-  WorldLifecycleJobType,
-} from "@yinjie/contracts";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 import { AdminGuard } from "../auth/admin.guard";
+import type { AdminRequest } from "../auth/admin.guard";
+import { AdminAuthService } from "../auth/admin-auth.service";
 import { CloudService } from "../cloud/cloud.service";
+import {
+  CreateAdminSessionSourceGroupRiskSnapshotDto,
+  CreateAdminSessionSourceGroupSnapshotDto,
+  ListAdminSessionSourceGroupsQueryDto,
+  ListAdminSessionsQueryDto,
+  ListJobsQueryDto,
+  ListWorldInstancesQueryDto,
+  ListWorldRequestsQueryDto,
+  RevokeAdminSessionSourceGroupDto,
+  RevokeAdminSessionSourceGroupsByRiskDto,
+  RevokeAdminSessionsByIdDto,
+  RevokeFilteredAdminSessionsDto,
+  ListWorldsQueryDto,
+  UpdateWorldDto,
+  UpdateWorldRequestDto,
+} from "../http-dto/cloud-api.dto";
 
 @Controller("admin/cloud")
 @UseGuards(AdminGuard)
 export class AdminCloudController {
-  constructor(private readonly cloudService: CloudService) {}
+  constructor(
+    private readonly cloudService: CloudService,
+    private readonly adminAuthService: AdminAuthService,
+  ) {}
 
   @Get("world-requests")
-  listWorldRequests(@Query("status") status?: CloudWorldRequestStatus) {
-    return this.cloudService.listRequests(status);
+  listWorldRequests(@Query() query: ListWorldRequestsQueryDto) {
+    return this.cloudService.listRequests(query.status);
   }
 
   @Get("world-requests/:id")
-  getWorldRequest(@Param("id") id: string) {
+  getWorldRequest(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getRequestById(id);
   }
 
   @Patch("world-requests/:id")
   updateWorldRequest(
-    @Param("id") id: string,
-    @Body()
-    body: {
-      phone?: string;
-      worldName?: string;
-      status?: CloudWorldRequestStatus;
-      note?: string | null;
-      apiBaseUrl?: string | null;
-      adminUrl?: string | null;
-    },
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() body: UpdateWorldRequestDto,
   ) {
     return this.cloudService.updateRequest(id, body);
   }
 
   @Get("worlds")
-  listWorlds(@Query("status") status?: CloudWorldLifecycleStatus) {
-    return this.cloudService.listWorlds(status);
+  listWorlds(@Query() query: ListWorldsQueryDto) {
+    return this.cloudService.listWorlds(query.status);
+  }
+
+  @Get("instances")
+  listWorldInstances(@Query() query: ListWorldInstancesQueryDto) {
+    return this.cloudService.listWorldInstances(query.status);
   }
 
   @Get("drift-summary")
@@ -50,7 +73,7 @@ export class AdminCloudController {
   }
 
   @Get("worlds/:id")
-  getWorld(@Param("id") id: string) {
+  getWorld(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getWorldById(id);
   }
 
@@ -59,86 +82,213 @@ export class AdminCloudController {
     return this.cloudService.listProviders();
   }
 
-  @Patch("worlds/:id")
-  updateWorld(
-    @Param("id") id: string,
-    @Body()
-    body: {
-      phone?: string;
-      name?: string;
-      status?: CloudWorldLifecycleStatus;
-      provisionStrategy?: string;
-      providerKey?: string | null;
-      providerRegion?: string | null;
-      providerZone?: string | null;
-      apiBaseUrl?: string | null;
-      adminUrl?: string | null;
-      note?: string | null;
-    },
+  @Get("admin-sessions")
+  listAdminSessions(
+    @Req() request: AdminRequest,
+    @Query() query: ListAdminSessionsQueryDto,
   ) {
+    return this.adminAuthService.listSessions(request.cloudAdminSessionId, {
+      status: query.status,
+      revocationReason: query.revocationReason,
+      currentOnly: query.currentOnly,
+      query: query.query,
+      sourceKey: query.sourceKey,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
+      page: query.page,
+      pageSize: query.pageSize,
+    });
+  }
+
+  @Post("admin-sessions/revoke")
+  revokeAdminSessionsById(
+    @Body() body: RevokeAdminSessionsByIdDto,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminAuthService.revokeSessionsById(
+      body.sessionIds,
+      request.cloudAdminSessionId,
+    );
+  }
+
+  @Get("admin-session-source-groups")
+  listAdminSessionSourceGroups(
+    @Req() request: AdminRequest,
+    @Query() query: ListAdminSessionSourceGroupsQueryDto,
+  ) {
+    return this.adminAuthService.listSessionSourceGroups(
+      request.cloudAdminSessionId,
+      {
+        status: query.status,
+        revocationReason: query.revocationReason,
+        currentOnly: query.currentOnly,
+        query: query.query,
+        sourceKey: query.sourceKey,
+        riskLevel: query.riskLevel,
+        sortBy: query.sortBy,
+        sortDirection: query.sortDirection,
+        page: query.page,
+        pageSize: query.pageSize,
+      },
+    );
+  }
+
+  @Post("admin-session-source-groups/revoke")
+  revokeAdminSessionSourceGroup(
+    @Body() body: RevokeAdminSessionSourceGroupDto,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminAuthService.revokeSessionSourceGroup(
+      request.cloudAdminSessionId,
+      {
+        sourceKey: body.sourceKey,
+        status: body.status,
+        revocationReason: body.revocationReason,
+        currentOnly: body.currentOnly,
+        query: body.query,
+      },
+    );
+  }
+
+  @Post("admin-session-source-groups/snapshot")
+  createAdminSessionSourceGroupSnapshot(
+    @Body() body: CreateAdminSessionSourceGroupSnapshotDto,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminAuthService.createSessionSourceGroupSnapshot(
+      request.cloudAdminSessionId,
+      {
+        sourceKey: body.sourceKey,
+        status: body.status,
+        revocationReason: body.revocationReason,
+        currentOnly: body.currentOnly,
+        query: body.query,
+      },
+    );
+  }
+
+  @Post("admin-session-source-groups/risk-snapshot")
+  createAdminSessionSourceGroupRiskSnapshot(
+    @Body() body: CreateAdminSessionSourceGroupRiskSnapshotDto,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminAuthService.createSessionSourceGroupRiskSnapshot(
+      request.cloudAdminSessionId,
+      {
+        status: body.status,
+        revocationReason: body.revocationReason,
+        currentOnly: body.currentOnly,
+        query: body.query,
+        sourceKey: body.sourceKey,
+        riskLevel: body.riskLevel,
+      },
+    );
+  }
+
+  @Post("admin-session-source-groups/revoke-risk")
+  revokeAdminSessionSourceGroupsByRisk(
+    @Body() body: RevokeAdminSessionSourceGroupsByRiskDto,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminAuthService.revokeSessionSourceGroupsByRisk(
+      request.cloudAdminSessionId,
+      {
+        status: body.status,
+        revocationReason: body.revocationReason,
+        currentOnly: body.currentOnly,
+        query: body.query,
+        sourceKey: body.sourceKey,
+        riskLevel: body.riskLevel,
+      },
+    );
+  }
+
+  @Post("admin-sessions/revoke-filtered")
+  revokeFilteredAdminSessions(
+    @Body() body: RevokeFilteredAdminSessionsDto,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminAuthService.revokeFilteredSessions(
+      request.cloudAdminSessionId,
+      {
+        status: body.status,
+        revocationReason: body.revocationReason,
+        currentOnly: body.currentOnly,
+        query: body.query,
+        sourceKey: body.sourceKey,
+      },
+    );
+  }
+
+  @Post("admin-sessions/:id/revoke")
+  revokeAdminSessionById(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminAuthService.revokeSessionById(id, request.cloudAdminSessionId);
+  }
+
+  @Patch("worlds/:id")
+  updateWorld(@Param("id", new ParseUUIDPipe()) id: string, @Body() body: UpdateWorldDto) {
     return this.cloudService.updateWorld(id, body);
   }
 
   @Get("jobs")
-  listJobs(
-    @Query("worldId") worldId?: string,
-    @Query("status") status?: WorldLifecycleJobStatus,
-    @Query("jobType") jobType?: WorldLifecycleJobType,
-  ) {
+  listJobs(@Query() query: ListJobsQueryDto) {
     return this.cloudService.listJobs({
-      worldId,
-      status,
-      jobType,
+      worldId: query.worldId,
+      status: query.status,
+      jobType: query.jobType,
     });
   }
 
   @Get("jobs/:id")
-  getJob(@Param("id") id: string) {
+  getJob(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getJobById(id);
   }
 
   @Get("worlds/:id/instance")
-  getWorldInstance(@Param("id") id: string) {
+  getWorldInstance(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getWorldInstance(id);
   }
 
   @Get("worlds/:id/bootstrap-config")
-  getWorldBootstrapConfig(@Param("id") id: string) {
+  getWorldBootstrapConfig(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getWorldBootstrapConfig(id);
   }
 
   @Get("worlds/:id/runtime-status")
-  getWorldRuntimeStatus(@Param("id") id: string) {
+  getWorldRuntimeStatus(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getWorldRuntimeStatus(id);
   }
 
   @Get("worlds/:id/alert-summary")
-  getWorldAlertSummary(@Param("id") id: string) {
+  getWorldAlertSummary(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.getWorldAlertSummary(id);
   }
 
   @Post("worlds/:id/reconcile")
-  reconcileWorld(@Param("id") id: string) {
+  reconcileWorld(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.reconcileWorld(id);
   }
 
   @Post("worlds/:id/resume")
-  resumeWorld(@Param("id") id: string) {
+  resumeWorld(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.resumeWorld(id);
   }
 
   @Post("worlds/:id/suspend")
-  suspendWorld(@Param("id") id: string) {
+  suspendWorld(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.suspendWorld(id);
   }
 
   @Post("worlds/:id/retry")
-  retryWorld(@Param("id") id: string) {
+  retryWorld(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.retryWorld(id);
   }
 
   @Post("worlds/:id/rotate-callback-token")
-  rotateWorldCallbackToken(@Param("id") id: string) {
+  rotateWorldCallbackToken(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.cloudService.rotateWorldCallbackToken(id);
   }
 }

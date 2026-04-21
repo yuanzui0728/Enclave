@@ -6,7 +6,7 @@ import {
   useState,
   type Ref,
 } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Phone, Users, Video } from "lucide-react";
 import { type StickerAttachment } from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
@@ -26,6 +26,7 @@ import {
   type DesktopChatSidePanelMode,
 } from "./chat-header-actions";
 import { DesktopDirectCallPanel } from "./direct-call-panel-shell";
+import { type DesktopChatCallAction } from "../desktop/chat/desktop-chat-route-state";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { DigitalHumanEntryNotice } from "./digital-human-entry-notice";
@@ -42,6 +43,10 @@ import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
 import { useDigitalHumanEntryGuard } from "./use-digital-human-entry-guard";
 import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
+import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "./mobile-chat-route-state";
 
 type ConversationThreadPanelProps = {
   conversationId: string;
@@ -52,6 +57,11 @@ type ConversationThreadPanelProps = {
   onToggleDesktopHistory?: () => void;
   onToggleDesktopDetails?: () => void;
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
+  desktopCallRequest?: {
+    kind: DesktopChatCallAction;
+    token: number;
+  } | null;
+  onDesktopCallRequestHandled?: (token: number) => void;
   highlightedMessageId?: string;
   buildMessageReturnTo?: (messageId: string) => string | undefined;
   routeContextNotice?: ChatRouteContextNotice;
@@ -77,6 +87,8 @@ export function ConversationThreadPanel({
   onToggleDesktopHistory,
   onToggleDesktopDetails,
   onDesktopCallAction,
+  desktopCallRequest = null,
+  onDesktopCallRequestHandled,
   highlightedMessageId,
   buildMessageReturnTo,
   routeContextNotice,
@@ -84,6 +96,11 @@ export function ConversationThreadPanel({
   onRouteMobileShortcutHandled,
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const currentMobileRouteHash = useMemo(
+    () => buildMobileChatRouteHash(parseMobileChatRouteState(hash)),
+    [hash],
+  );
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
   const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
     kind: DesktopChatCallKind;
@@ -124,7 +141,20 @@ export function ConversationThreadPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const backgroundQuery = useConversationBackground(conversationId);
   const isDesktop = variant === "desktop";
+  const statusBackAction =
+    !isDesktop && onBack ? (
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+        onClick={onBack}
+      >
+        返回上一页
+      </Button>
+    ) : null;
   const highlightedWindowRequestRef = useRef<string | null>(null);
+  const handledDesktopCallRequestTokenRef = useRef<number | null>(null);
   const { entryNotice, clearEntryNotice, guardVideoEntry, resetEntryGuard } =
     useDigitalHumanEntryGuard({
       baseUrl,
@@ -300,6 +330,7 @@ export function ConversationThreadPanel({
           ? "/chat/$conversationId/voice-call"
           : "/chat/$conversationId/video-call",
       params: { conversationId },
+      ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
     });
     onDesktopCallAction?.(kind);
   };
@@ -334,6 +365,25 @@ export function ConversationThreadPanel({
     });
     onRouteMobileShortcutHandled?.();
   }, [isDesktop, onRouteMobileShortcutHandled, routeMobileShortcutAction]);
+
+  useEffect(() => {
+    if (!isDesktop || !desktopCallRequest) {
+      return;
+    }
+
+    if (handledDesktopCallRequestTokenRef.current === desktopCallRequest.token) {
+      return;
+    }
+
+    handledDesktopCallRequestTokenRef.current = desktopCallRequest.token;
+    handleDesktopCallAction(desktopCallRequest.kind);
+    onDesktopCallRequestHandled?.(desktopCallRequest.token);
+  }, [
+    desktopCallRequest,
+    handleDesktopCallAction,
+    isDesktop,
+    onDesktopCallRequestHandled,
+  ]);
 
   return (
     <div
@@ -392,6 +442,9 @@ export function ConversationThreadPanel({
             void navigate({
               to: "/chat/$conversationId/details",
               params: { conversationId },
+              ...(currentMobileRouteHash
+                ? { hash: currentMobileRouteHash }
+                : {}),
             });
           }}
         />
@@ -585,6 +638,7 @@ export function ConversationThreadPanel({
                   title="会话暂时不可用"
                   description={messagesQuery.error.message}
                   tone="danger"
+                  action={statusBackAction}
                 />
               )
             ) : null}
@@ -714,12 +768,18 @@ export function ConversationThreadPanel({
             void navigate({
               to: "/chat/$conversationId/voice-call",
               params: { conversationId },
+              ...(currentMobileRouteHash
+                ? { hash: currentMobileRouteHash }
+                : {}),
             });
           }}
           onStartVideoCall={() => {
             void navigate({
               to: "/chat/$conversationId/video-call",
               params: { conversationId },
+              ...(currentMobileRouteHash
+                ? { hash: currentMobileRouteHash }
+                : {}),
             });
           }}
           replyPreview={replyPreview}

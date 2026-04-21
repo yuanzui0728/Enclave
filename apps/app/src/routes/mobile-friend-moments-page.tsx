@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   addMomentComment,
   getBlockedCharacters,
@@ -23,9 +23,14 @@ import { ArrowLeft, Heart, MapPin, MessageCircle } from "lucide-react";
 import { AvatarChip } from "../components/avatar-chip";
 import { MomentMediaGallery } from "../components/moment-media-gallery";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
+import {
+  buildMobileFriendMomentsRouteHash,
+  parseMobileFriendMomentsRouteState,
+} from "../features/moments/mobile-friend-moments-route-state";
 import { formatTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function MobileFriendMomentsPage() {
@@ -35,10 +40,33 @@ export function MobileFriendMomentsPage() {
     characterId?: string;
   };
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const resolvedCharacterId = characterId ?? "";
+  const routeState = useMemo(
+    () => parseMobileFriendMomentsRouteState(hash),
+    [hash],
+  );
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const statusBackLabel = safeReturnPath
+    ? "返回上一页"
+    : resolvedCharacterId
+      ? "查看角色资料"
+      : "回朋友圈主页";
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileFriendMomentsRouteHash({
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [safeReturnHash, safeReturnPath],
+  );
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -125,6 +153,7 @@ export function MobileFriendMomentsPage() {
     character?.currentStatus?.trim() ||
     character?.bio?.trim() ||
     "这个角色还没有个性签名。";
+  const profileActionAriaLabel = `查看 ${displayName} 的资料`;
   const blockedCharacterIds = useMemo(
     () => new Set((blockedQuery.data ?? []).map((item) => item.characterId)),
     [blockedQuery.data],
@@ -182,13 +211,41 @@ export function MobileFriendMomentsPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  function navigateToRouteStateReturn() {
+    if (!safeReturnPath) {
+      return false;
+    }
+
+    void navigate({
+      to: safeReturnPath,
+      ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+    });
+    return true;
+  }
+
+  function openCharacterDetail() {
+    if (!resolvedCharacterId) {
+      return false;
+    }
+
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId: resolvedCharacterId },
+      hash: buildCharacterDetailRouteHash({
+        returnPath: `/friend-moments/${resolvedCharacterId}`,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+    return true;
+  }
+
   function handleBack() {
     navigateBackOrFallback(() => {
-      if (resolvedCharacterId) {
-        void navigate({
-          to: "/character/$characterId",
-          params: { characterId: resolvedCharacterId },
-        });
+      if (navigateToRouteStateReturn()) {
+        return;
+      }
+
+      if (openCharacterDetail()) {
         return;
       }
 
@@ -254,16 +311,32 @@ export function MobileFriendMomentsPage() {
         <section className="overflow-hidden rounded-[26px] border border-[rgba(0,0,0,0.05)] bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
           <div className="relative h-44 overflow-hidden bg-[linear-gradient(135deg,#778f7c_0%,#a8b9a1_46%,#d6c8b1_100%)]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(20,83,45,0.18),transparent_42%)]" />
-            <div className="absolute bottom-6 right-[5.9rem] left-4 text-right">
+            <button
+              type="button"
+              onClick={() => {
+                openCharacterDetail();
+              }}
+              className="absolute bottom-6 right-[5.9rem] left-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              aria-label={profileActionAriaLabel}
+            >
               <div className="truncate text-[22px] font-semibold tracking-[0.01em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.18)]">
                 {displayName}
               </div>
               <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-white/85 [text-shadow:0_2px_12px_rgba(0,0,0,0.16)]">
                 {signature}
               </div>
-            </div>
+            </button>
             <div className="absolute bottom-4 right-4">
-              <AvatarChip name={displayName} src={character?.avatar} size="xl" />
+              <button
+                type="button"
+                onClick={() => {
+                  openCharacterDetail();
+                }}
+                className="rounded-full transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                aria-label={profileActionAriaLabel}
+              >
+                <AvatarChip name={displayName} src={character?.avatar} size="xl" />
+              </button>
             </div>
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3.5 text-[12px] text-[color:var(--text-secondary)]">
@@ -285,12 +358,9 @@ export function MobileFriendMomentsPage() {
               variant="secondary"
               size="sm"
               className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
-              onClick={() =>
-                void navigate({
-                  to: "/character/$characterId",
-                  params: { characterId: resolvedCharacterId },
-                })
-              }
+              onClick={() => {
+                openCharacterDetail();
+              }}
             >
               查看资料
             </Button>
@@ -329,9 +399,23 @@ export function MobileFriendMomentsPage() {
               </Button>
               <Button
                 variant="primary"
-                onClick={() => void navigate({ to: "/discover/moments" })}
+                onClick={() => {
+                  if (navigateToRouteStateReturn()) {
+                    return;
+                  }
+
+                  if (openCharacterDetail()) {
+                    return;
+                  }
+
+                  void navigate({ to: "/discover/moments" });
+                }}
               >
-                去朋友圈主页
+                {safeReturnPath
+                  ? "回到来源页"
+                  : resolvedCharacterId
+                    ? "查看角色资料"
+                    : "去朋友圈主页"}
               </Button>
             </div>
           </section>
@@ -366,12 +450,9 @@ export function MobileFriendMomentsPage() {
                     variant="secondary"
                     size="sm"
                     className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                    onClick={() => {
-                      void momentsQuery.refetch();
-                      void blockedQuery.refetch();
-                    }}
+                    onClick={handleBack}
                   >
-                    重新加载
+                    {statusBackLabel}
                   </Button>
                 }
               />
@@ -428,7 +509,18 @@ export function MobileFriendMomentsPage() {
                 tone="info"
                 className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[12px] shadow-none"
               >
-                {likeMutation.error.message}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {likeMutation.error.message}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  >
+                    {statusBackLabel}
+                  </button>
+                </div>
               </InlineNotice>
             ) : null}
 
@@ -437,7 +529,18 @@ export function MobileFriendMomentsPage() {
                 tone="info"
                 className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[12px] shadow-none"
               >
-                {commentMutation.error.message}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {commentMutation.error.message}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  >
+                    {statusBackLabel}
+                  </button>
+                </div>
               </InlineNotice>
             ) : null}
           </section>

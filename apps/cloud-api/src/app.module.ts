@@ -1,9 +1,12 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminCloudController } from "./admin/admin-cloud.controller";
 import { CloudAlertNotifierService } from "./alerts/cloud-alert-notifier.service";
+import { AdminAuthController } from "./auth/admin-auth.controller";
+import { AdminAuthService } from "./auth/admin-auth.service";
 import { AdminGuard } from "./auth/admin.guard";
 import { CloudAuthController } from "./auth/cloud-auth.controller";
 import { CloudClientAuthGuard } from "./auth/cloud-client-auth.guard";
@@ -11,6 +14,9 @@ import { MockSmsProviderService } from "./auth/mock-sms-provider.service";
 import { PhoneAuthService } from "./auth/phone-auth.service";
 import { CloudController } from "./cloud/cloud.controller";
 import { CloudService } from "./cloud/cloud.service";
+import { CloudRuntimeConfigValidator } from "./config/cloud-runtime-config.validator";
+import { resolveCloudAuthTokenTtl, resolveCloudJwtSecret } from "./config/cloud-runtime-config";
+import { buildCloudTypeOrmOptions, cloudEntities } from "./database/cloud-database.config";
 import { CloudInstanceEntity } from "./entities/cloud-instance.entity";
 import { CloudWorldEntity } from "./entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "./entities/cloud-world-request.entity";
@@ -26,40 +32,29 @@ import { WorldRuntimeController } from "./runtime-callbacks/world-runtime.contro
 import { WorldRuntimeService } from "./runtime-callbacks/world-runtime.service";
 import { WorldAccessController } from "./world-access/world-access.controller";
 import { WorldAccessService } from "./world-access/world-access.service";
+import { WaitingSessionSyncService } from "./world-access/waiting-session-sync.service";
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    JwtModule.register({
+    JwtModule.registerAsync({
       global: true,
-      secret: process.env.CLOUD_JWT_SECRET ?? "yinjie-cloud-jwt-secret",
-      signOptions: {
-        expiresIn: (process.env.CLOUD_AUTH_TOKEN_TTL ?? "7d") as never,
-      },
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: resolveCloudJwtSecret(configService),
+        signOptions: {
+          expiresIn: resolveCloudAuthTokenTtl(configService) as never,
+        },
+      }),
     }),
-    TypeOrmModule.forRoot({
-      type: "better-sqlite3",
-      database: process.env.CLOUD_DATABASE_PATH ?? "cloud-platform.sqlite",
-      entities: [
-        PhoneVerificationSessionEntity,
-        CloudWorldEntity,
-        CloudWorldRequestEntity,
-        CloudInstanceEntity,
-        WorldAccessSessionEntity,
-        WorldLifecycleJobEntity,
-      ],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => buildCloudTypeOrmOptions(configService),
     }),
-    TypeOrmModule.forFeature([
-      PhoneVerificationSessionEntity,
-      CloudWorldEntity,
-      CloudWorldRequestEntity,
-      CloudInstanceEntity,
-      WorldAccessSessionEntity,
-      WorldLifecycleJobEntity,
-    ]),
+    TypeOrmModule.forFeature([...cloudEntities]),
   ],
   controllers: [
+    AdminAuthController,
     CloudAuthController,
     CloudController,
     AdminCloudController,
@@ -67,6 +62,7 @@ import { WorldAccessService } from "./world-access/world-access.service";
     WorldRuntimeController,
   ],
   providers: [
+    AdminAuthService,
     PhoneAuthService,
     MockSmsProviderService,
     CloudAlertNotifierService,
@@ -74,10 +70,12 @@ import { WorldAccessService } from "./world-access/world-access.service";
     CloudClientAuthGuard,
     AdminGuard,
     WorldAccessService,
+    WaitingSessionSyncService,
     MockComputeProviderService,
     ManualDockerComputeProviderService,
     ManualDockerRemoteExecutorService,
     ComputeProviderRegistryService,
+    CloudRuntimeConfigValidator,
     WorldLifecycleWorkerService,
     WorldRuntimeService,
   ],

@@ -1,6 +1,8 @@
+import * as express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { getDataSourceToken } from '@nestjs/typeorm';
+import { resolveApiPath } from './database/database-path';
 import { seedCharacters } from './database/seed';
 import { ensureAiRelationshipSeed } from './database/relationship-seed';
 import { WorldOwnerService } from './modules/auth/world-owner.service';
@@ -24,6 +26,10 @@ async function bootstrap() {
   app.getHttpAdapter().getInstance().set('trust proxy', true);
   app.enableCors({ origin: resolveCorsOrigins(), credentials: true });
   app.setGlobalPrefix('api', { exclude: ['health'] });
+  app.use(
+    '/api/character-assets',
+    express.static(resolveApiPath('public/character-assets')),
+  );
 
   // Health check endpoint for Docker / load balancer
   const httpAdapter = app.getHttpAdapter();

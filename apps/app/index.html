@@ -13,20 +13,27 @@
       body {
         margin: 0;
         min-height: 100vh;
+        min-height: 100dvh;
         background: #f5f5f5;
         color: #111827;
       }
 
       #root {
         min-height: 100vh;
+        min-height: 100dvh;
       }
 
       .boot-screen {
         min-height: 100vh;
+        min-height: 100dvh;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 24px;
+        padding:
+          max(24px, env(safe-area-inset-top, 0px))
+          max(24px, env(safe-area-inset-right, 0px))
+          max(24px, env(safe-area-inset-bottom, 0px))
+          max(24px, env(safe-area-inset-left, 0px));
         box-sizing: border-box;
       }
 

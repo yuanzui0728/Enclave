@@ -66,6 +66,11 @@ import {
   ChatReminderSummaryText,
   ChatReminderToggleButton,
 } from "../features/chat/chat-reminder-summary-text";
+import {
+  buildMobileOfficialRouteHash,
+  parseMobileOfficialRouteState,
+} from "../features/official-accounts/mobile-official-route-state";
+import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
 import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
@@ -76,6 +81,7 @@ import {
   getConversationVisibleLastMessage,
 } from "../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
+import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -162,6 +168,9 @@ function MobileChatListPage() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
@@ -178,6 +187,18 @@ function MobileChatListPage() {
   const hideTimeoutRef = useRef<number | null>(null);
   const pendingHideRef = useRef<PendingHideConversation | null>(null);
   const isActiveTab = pathname === "/tabs/chat";
+  const officialRouteState = useMemo(
+    () => parseMobileOfficialRouteState(hash),
+    [hash],
+  );
+  const currentOfficialRouteHash = useMemo(
+    () =>
+      buildMobileOfficialRouteHash({
+        returnPath: officialRouteState.returnPath,
+        returnHash: officialRouteState.returnHash,
+      }),
+    [officialRouteState.returnHash, officialRouteState.returnPath],
+  );
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -406,7 +427,18 @@ function MobileChatListPage() {
   function handleNavigate(to: "/group/new" | "/friend-requests") {
     setIsQuickMenuOpen(false);
     setNotice(null);
-    void navigate({ to });
+    const nextHash =
+      to === "/group/new"
+        ? buildCreateGroupRouteHash({
+            returnPath: pathname,
+          })
+        : buildMobileFriendRequestsRouteHash({
+            returnPath: pathname,
+          });
+    void navigate({
+      to,
+      ...(nextHash ? { hash: nextHash } : {}),
+    });
   }
 
   function handleScheduleHideConversation(conversation: ConversationListEntry) {
@@ -857,7 +889,13 @@ function MobileChatListPage() {
                 <SubscriptionInboxCard
                   summary={subscriptionInboxSummary}
                   onClick={() => {
-                    void navigate({ to: "/chat/subscription-inbox" });
+                    void navigate({
+                      to: "/chat/subscription-inbox",
+                      hash: buildMobileOfficialRouteHash({
+                        returnPath: pathname,
+                        returnHash: currentOfficialRouteHash || undefined,
+                      }),
+                    });
                   }}
                 />
               ) : null}
@@ -875,6 +913,10 @@ function MobileChatListPage() {
                     void navigate({
                       to: "/official-accounts/service/$accountId",
                       params: { accountId: conversation.accountId },
+                      hash: buildMobileOfficialRouteHash({
+                        returnPath: pathname,
+                        returnHash: currentOfficialRouteHash || undefined,
+                      }),
                     });
                   }}
                 />

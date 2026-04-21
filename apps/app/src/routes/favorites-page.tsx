@@ -28,10 +28,11 @@ import { DesktopLayoutRequiredState } from "../components/desktop-layout-require
 import { EmptyState } from "../components/empty-state";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { DesktopUtilityShell } from "../features/shell/desktop-utility-shell";
+import { buildDesktopNoteWindowRouteHash } from "../features/favorites/note-window-route-state";
 import {
-  buildDesktopNoteWindowRouteHash,
-  parseDesktopNoteEditorRouteHash,
-} from "../features/favorites/note-window-route-state";
+  buildDesktopFavoritesWorkspaceRouteHash,
+  parseDesktopFavoritesRouteState,
+} from "../features/favorites/favorites-route-state";
 import { createDesktopNoteDraft } from "../features/favorites/note-drafts-storage";
 import {
   hydrateDesktopFavoritesFromNative,
@@ -41,8 +42,10 @@ import {
   type DesktopFavoriteCategory,
   type DesktopFavoriteRecord,
 } from "../features/favorites/favorites-storage";
+import { resolveSearchNavigationTarget } from "../features/search/search-navigation";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
+import { getCurrentWindowTargetPath } from "../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopNotesWorkspace = lazy(async () => {
@@ -72,16 +75,17 @@ export function FavoritesPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const hash = useRouterState({ select: (state) => state.location.hash });
+  const routeState = useMemo(() => parseDesktopFavoritesRouteState(hash), [hash]);
   const [favorites, setFavorites] = useState(() =>
     mergeDesktopFavoriteRecords([], readDesktopFavorites()),
   );
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState<
     "all" | DesktopFavoriteCategory
-  >("all");
+  >(routeState.workspace.category);
   const [selectedFavoriteSourceId, setSelectedFavoriteSourceId] = useState<
     string | null
-  >(null);
+  >(routeState.workspace.sourceId ?? null);
   const [notice, setNotice] = useState<string | null>(null);
   const deferredSearchText = useDeferredValue(searchText);
   const favoritesQuery = useQuery({
@@ -94,10 +98,8 @@ export function FavoritesPage() {
     queryFn: () => getFavoriteNotes(baseUrl),
     enabled: isDesktopLayout,
   });
-  const noteEditorRouteState = useMemo(
-    () => parseDesktopNoteEditorRouteHash(hash),
-    [hash],
-  );
+  const noteEditorRouteState = routeState.noteEditor;
+  const workspaceRouteState = routeState.workspace;
 
   const normalizedSearchText = deferredSearchText.trim().toLowerCase();
   const favoriteNoteSummaryMap = useMemo(() => {
@@ -168,6 +170,29 @@ export function FavoritesPage() {
     const timer = window.setTimeout(() => setNotice(null), 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (noteEditorRouteState) {
+      return;
+    }
+
+    setActiveCategory((current) =>
+      current === workspaceRouteState.category
+        ? current
+        : workspaceRouteState.category,
+    );
+  }, [noteEditorRouteState, workspaceRouteState.category]);
+
+  useEffect(() => {
+    if (noteEditorRouteState) {
+      return;
+    }
+
+    const nextSourceId = workspaceRouteState.sourceId ?? null;
+    setSelectedFavoriteSourceId((current) =>
+      current === nextSourceId ? current : nextSourceId,
+    );
+  }, [noteEditorRouteState, workspaceRouteState.sourceId]);
 
   useEffect(() => {
     if (!noteEditorRouteState) {
@@ -244,10 +269,48 @@ export function FavoritesPage() {
     setSelectedFavoriteSourceId(filteredFavorites[0]?.sourceId ?? null);
   }, [filteredFavorites, selectedFavoriteSourceId]);
 
+  useEffect(() => {
+    if (noteEditorRouteState) {
+      return;
+    }
+
+    const nextHash = buildDesktopFavoritesWorkspaceRouteHash({
+      category: activeCategory,
+      sourceId: selectedFavoriteSourceId ?? undefined,
+    });
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    if ((nextHash ?? "") === normalizedHash) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/favorites",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [
+    activeCategory,
+    hash,
+    navigate,
+    noteEditorRouteState,
+    selectedFavoriteSourceId,
+  ]);
+
   const selectedFavorite =
     filteredFavorites.find(
       (item) => item.sourceId === selectedFavoriteSourceId,
     ) ?? null;
+  const selectedFavoriteNavigationTarget = useMemo(
+    () =>
+      selectedFavorite && selectedFavorite.category !== "notes"
+        ? resolveSearchNavigationTarget(
+            { to: selectedFavorite.to },
+            { desktopLayout: true },
+          )
+        : null,
+    [selectedFavorite],
+  );
   const selectedFavoriteNoteSummary = selectedFavorite
     ? resolveFavoriteNoteSummary(selectedFavorite, favoriteNoteSummaryMap)
     : null;
@@ -293,7 +356,21 @@ export function FavoritesPage() {
       hash: buildDesktopNoteWindowRouteHash({
         draftId: draft.draftId,
         noteId: input?.noteId?.trim() || undefined,
-        returnTo: input?.returnTo?.trim() || undefined,
+        returnTo:
+          input?.returnTo?.trim() ||
+          (typeof window !== "undefined"
+            ? getCurrentWindowTargetPath()
+            : `/tabs/favorites${
+                buildDesktopFavoritesWorkspaceRouteHash({
+                  category: activeCategory,
+                  sourceId: selectedFavoriteSourceId ?? undefined,
+                })
+                  ? `#${buildDesktopFavoritesWorkspaceRouteHash({
+                      category: activeCategory,
+                      sourceId: selectedFavoriteSourceId ?? undefined,
+                    })}`
+                  : ""
+              }`),
       }),
     });
   }
@@ -314,7 +391,7 @@ export function FavoritesPage() {
         <Button
           variant="primary"
           size="sm"
-          onClick={() => openInlineNoteEditor({ returnTo: "/tabs/favorites" })}
+          onClick={() => openInlineNoteEditor()}
           className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
         >
           <FileText size={15} />
@@ -469,7 +546,6 @@ export function FavoritesPage() {
 
                           openInlineNoteEditor({
                             noteId,
-                            returnTo: "/tabs/favorites",
                           });
                         }}
                         className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
@@ -478,7 +554,9 @@ export function FavoritesPage() {
                       </button>
                     ) : (
                       <Link
-                        to={selectedFavorite.to as never}
+                        to={selectedFavoriteNavigationTarget?.to as never}
+                        search={selectedFavoriteNavigationTarget?.search as never}
+                        hash={selectedFavoriteNavigationTarget?.hash}
                         className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
                       >
                         打开内容

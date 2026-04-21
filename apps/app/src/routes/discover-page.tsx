@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   addFeedComment,
   getBlockedCharacters,
@@ -43,6 +43,15 @@ import {
   publishFeedComposeDraft,
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
+import { buildFeedRouteHash } from "../features/feed/feed-route-state";
+import { buildDesktopMomentsRouteHash } from "../features/moments/moments-route-state";
+import { buildDesktopChannelsRouteHash } from "../features/channels/channels-route-state";
+import {
+  buildMobileDiscoverToolRouteHash,
+  parseMobileDiscoverToolRouteState,
+} from "../features/discover/mobile-discover-tool-route-state";
+import { buildMobileGamesRouteSearch } from "../features/games/mobile-games-route-state";
+import { buildMobileMiniProgramsRouteSearch } from "../features/mini-programs/mobile-mini-programs-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -76,6 +85,14 @@ type MobileDiscoverEntry = {
     | "/discover/channels"
     | "/discover/games"
     | "/discover/mini-programs";
+  buildSearch?: (context: {
+    hash: string;
+    pathname: string;
+  }) => string | undefined;
+  buildHash?: (context: {
+    hash: string;
+    pathname: string;
+  }) => string | undefined;
 };
 
 const socialDiscoverEntries: MobileDiscoverEntry[] = [
@@ -86,6 +103,11 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     icon: Users,
     iconClassName: "bg-[linear-gradient(135deg,#38b16d,#1f9d55)] text-white",
     to: "/discover/moments",
+    buildHash: ({ hash, pathname }) =>
+      buildDesktopMomentsRouteHash({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
   },
   {
     key: "encounter",
@@ -95,6 +117,11 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     iconClassName:
       "bg-[linear-gradient(135deg,#22c55e,#07c160)] text-[color:var(--text-on-brand)]",
     to: "/discover/encounter",
+    buildHash: ({ hash, pathname }) =>
+      buildMobileDiscoverToolRouteHash({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
   },
   {
     key: "scene",
@@ -103,6 +130,11 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     icon: Sparkles,
     iconClassName: "bg-[linear-gradient(135deg,#16a34a,#0f766e)] text-white",
     to: "/discover/scene",
+    buildHash: ({ hash, pathname }) =>
+      buildMobileDiscoverToolRouteHash({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
   },
   {
     key: "feed",
@@ -111,6 +143,11 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     icon: Newspaper,
     iconClassName: "bg-[linear-gradient(135deg,#4f7cff,#2f5fe6)] text-white",
     to: "/discover/feed",
+    buildHash: ({ hash, pathname }) =>
+      buildFeedRouteHash({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
   },
 ];
 
@@ -122,6 +159,11 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     icon: PlaySquare,
     iconClassName: "bg-[linear-gradient(135deg,#ff8a3d,#ff5f45)] text-white",
     to: "/discover/channels",
+    buildHash: ({ hash, pathname }) =>
+      buildDesktopChannelsRouteHash({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
   },
   {
     key: "games",
@@ -130,6 +172,11 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     icon: Gamepad2,
     iconClassName: "bg-[linear-gradient(135deg,#1f6d42,#49a36e)] text-white",
     to: "/discover/games",
+    buildSearch: ({ hash, pathname }) =>
+      buildMobileGamesRouteSearch({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
   },
   {
     key: "miniPrograms",
@@ -138,12 +185,24 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     icon: Blocks,
     iconClassName: "bg-[linear-gradient(135deg,#d56c18,#ffab3d)] text-white",
     to: "/discover/mini-programs",
+    buildSearch: ({ hash, pathname }) =>
+      buildMobileMiniProgramsRouteSearch({
+        returnPath: pathname,
+        returnHash: hash || undefined,
+      }),
   },
 ];
 
 export function DiscoverPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
@@ -383,7 +442,15 @@ export function DiscoverPage() {
 
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={() => void navigate({ to: "/discover/encounter" })}
+                  onClick={() =>
+                    void navigate({
+                      to: "/discover/encounter",
+                      hash: buildMobileDiscoverToolRouteHash({
+                        returnPath: pathname,
+                        returnHash: normalizedHash || undefined,
+                      }),
+                    })
+                  }
                   variant="primary"
                 >
                   摇一摇
@@ -759,10 +826,49 @@ function DiscoverMobileEntryRow({
   index: number;
 }) {
   const Icon = item.icon;
+  const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
+  const routeState = useMemo(
+    () => parseMobileDiscoverToolRouteState(hash),
+    [hash],
+  );
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileDiscoverToolRouteHash({
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
+      }),
+    [routeState.returnHash, routeState.returnPath],
+  );
+  const nextSearch = item.buildSearch?.({
+    hash: currentRouteHash ?? "",
+    pathname,
+  });
+  const nextHash = item.buildHash?.({
+    hash: currentRouteHash ?? "",
+    pathname,
+  });
 
   return (
     <Link
       to={item.to}
+      onClick={(event) => {
+        if (!nextSearch && !nextHash) {
+          return;
+        }
+
+        event.preventDefault();
+        void navigate({
+          to: item.to,
+          search: nextSearch,
+          hash: nextHash,
+        });
+      }}
       className={cn(
         "flex items-center gap-2 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,

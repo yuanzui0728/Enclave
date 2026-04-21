@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MomentsService } from './moments.service';
 import { MomentsController } from './moments.controller';
@@ -21,12 +21,12 @@ import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
       MomentCommentEntity,
       MomentLikeEntity,
     ]),
-    AiModule,
+    forwardRef(() => AiModule),
     CharactersModule,
     AuthModule,
     SocialModule,
     FeedModule,
-    CyberAvatarModule,
+    forwardRef(() => CyberAvatarModule),
   ],
   providers: [MomentsService],
   controllers: [MomentsController],

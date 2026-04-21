@@ -60,7 +60,7 @@ import {
   formatTimestamp,
   parseTimestamp,
 } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import {
   isMobileWebShareSurface,
@@ -68,6 +68,10 @@ import {
 } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+import {
+  buildMobileGamesRouteSearch,
+  parseMobileGamesRouteSearch,
+} from "../features/games/mobile-games-route-state";
 
 const DesktopGamesWorkspace = lazy(async () => {
   const mod = await import("../features/desktop/games/desktop-games-workspace");
@@ -84,54 +88,13 @@ function resolveDefaultGameSelection() {
   return gameCenterFeaturedGameIds[0] ?? "signal-squad";
 }
 
-function resolveGameInviteActivityFromSearch(search: unknown) {
-  const params = new URLSearchParams(typeof search === "string" ? search : "");
-  const inviteId = params.get("invite")?.trim();
-
-  if (!inviteId) {
-    return null;
-  }
-
-  return (
-    gameCenterFriendActivities.find((item) => item.id === inviteId) ?? null
-  );
-}
-
-function resolveGameSelectionFromSearch(search: unknown) {
-  const params = new URLSearchParams(typeof search === "string" ? search : "");
-  const inviteActivity = resolveGameInviteActivityFromSearch(search);
-  const gameId = inviteActivity?.gameId ?? params.get("game")?.trim() ?? "";
-
-  return getGameCenterGame(gameId) ? gameId : null;
-}
-
-function buildGamesRouteSearch(input: {
-  gameId?: string | null;
-  inviteId?: string | null;
-}) {
-  const params = new URLSearchParams();
-  const gameId = input.gameId?.trim() ?? "";
-  const inviteId = input.inviteId?.trim() ?? "";
-
-  if (gameId && getGameCenterGame(gameId)) {
-    params.set("game", gameId);
-  }
-
-  if (
-    inviteId &&
-    gameCenterFriendActivities.some((activity) => activity.id === inviteId)
-  ) {
-    params.set("invite", inviteId);
-  }
-
-  const search = params.toString();
-  return search ? `?${search}` : undefined;
-}
-
 export function GamesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
@@ -142,8 +105,12 @@ export function GamesPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerId = useWorldOwnerStore((state) => state.id);
   const locationSearch = useRouterState({
-    select: (state) => state.location.search,
+    select: (state) => state.location.searchStr,
   });
+  const routeState = useMemo(
+    () => parseMobileGamesRouteSearch(locationSearch),
+    [locationSearch],
+  );
   const {
     activeGameId,
     eventActionStatusById,
@@ -164,22 +131,38 @@ export function GamesPage() {
   } = useGameCenterState();
   const [activeCategory, setActiveCategory] =
     useState<GameCenterCategoryId>("featured");
-  const selectedGameFromSearch = useMemo(
-    () => resolveGameSelectionFromSearch(locationSearch),
-    [locationSearch],
-  );
+  const selectedGameFromSearch = routeState.gameId ?? null;
   const inviteActivityFromSearch = useMemo(
-    () => resolveGameInviteActivityFromSearch(locationSearch),
-    [locationSearch],
+    () =>
+      routeState.inviteId
+        ? gameCenterFriendActivities.find(
+            (item) => item.id === routeState.inviteId,
+          ) ?? null
+        : null,
+    [routeState.inviteId],
   );
   const [selectedGameId, setSelectedGameId] = useState(
     selectedGameFromSearch ?? resolveDefaultGameSelection(),
   );
   const [activeInviteActivityId, setActiveInviteActivityId] = useState<
     string | null
-  >(null);
+  >(inviteActivityFromSearch?.id ?? null);
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const activeInviteActivity = useMemo(
+    () =>
+      activeInviteActivityId
+        ? (gameCenterFriendActivities.find(
+            (item) => item.id === activeInviteActivityId,
+          ) ?? null)
+        : null,
+    [activeInviteActivityId],
+  );
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -212,6 +195,28 @@ export function GamesPage() {
   }, [selectedGameFromSearch]);
 
   useEffect(() => {
+    const nextInviteActivityId = inviteActivityFromSearch?.id ?? null;
+    setActiveInviteActivityId((current) =>
+      current === nextInviteActivityId ? current : nextInviteActivityId,
+    );
+  }, [inviteActivityFromSearch?.id]);
+
+  useEffect(() => {
+    if (!activeInviteActivityId) {
+      return;
+    }
+
+    const activity = gameCenterFriendActivities.find(
+      (item) => item.id === activeInviteActivityId,
+    );
+    if (activity && activity.gameId === selectedGameId) {
+      return;
+    }
+
+    setActiveInviteActivityId(null);
+  }, [activeInviteActivityId, selectedGameId]);
+
+  useEffect(() => {
     if (inviteActivityFromSearch) {
       setNoticeTone("info");
       setSuccessNotice(
@@ -225,12 +230,14 @@ export function GamesPage() {
       return;
     }
 
-    const nextSearch = buildGamesRouteSearch({
+    const nextSearch = buildMobileGamesRouteSearch({
       gameId: selectedGameId,
       inviteId:
-        inviteActivityFromSearch?.gameId === selectedGameId
-          ? inviteActivityFromSearch.id
-          : null,
+        activeInviteActivity?.gameId === selectedGameId
+          ? activeInviteActivity?.id
+          : undefined,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
     });
 
     if ((locationSearch || "") === (nextSearch || "")) {
@@ -243,11 +250,49 @@ export function GamesPage() {
       replace: true,
     });
   }, [
-    inviteActivityFromSearch?.gameId,
-    inviteActivityFromSearch?.id,
+    activeInviteActivity?.gameId,
+    activeInviteActivity?.id,
     isDesktopLayout,
     locationSearch,
     navigate,
+    routeState.returnHash,
+    routeState.returnPath,
+    selectedGameId,
+  ]);
+
+  useEffect(() => {
+    if (isDesktopLayout || !selectedGameId) {
+      return;
+    }
+
+    const nextSearch = buildMobileGamesRouteSearch({
+      gameId: selectedGameId,
+      inviteId:
+        activeInviteActivity?.gameId === selectedGameId
+          ? activeInviteActivity?.id
+          : undefined,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
+    });
+
+    if ((locationSearch || "") === (nextSearch || "")) {
+      return;
+    }
+
+    void navigate({
+      to: pathname,
+      search: nextSearch || undefined,
+      replace: true,
+    });
+  }, [
+    activeInviteActivity?.gameId,
+    activeInviteActivity?.id,
+    isDesktopLayout,
+    locationSearch,
+    navigate,
+    pathname,
+    routeState.returnHash,
+    routeState.returnPath,
     selectedGameId,
   ]);
 
@@ -349,6 +394,14 @@ export function GamesPage() {
   }
 
   function handleOpenInviteToChat(activityId: string) {
+    const activity = gameCenterFriendActivities.find(
+      (item) => item.id === activityId,
+    );
+    if (!activity) {
+      return;
+    }
+
+    setSelectedGameId(activity.gameId);
     setActiveInviteActivityId((current) =>
       current === activityId ? null : activityId,
     );
@@ -394,6 +447,8 @@ export function GamesPage() {
       {
         gameId: activity.gameId,
         inviteId: activity.id,
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
       },
     );
 
@@ -705,6 +760,14 @@ export function GamesPage() {
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
+                if (safeReturnPath) {
+                  void navigate({
+                    to: safeReturnPath,
+                    ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+                  });
+                  return;
+                }
+
                 void navigate({ to: "/tabs/discover" });
               })
             }

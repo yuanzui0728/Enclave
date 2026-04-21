@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   addGroupMember,
   getFriends,
@@ -19,8 +19,13 @@ import {
   matchesFriendSearch,
 } from "../features/contacts/contact-utils";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../features/chat/mobile-group-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import { isDesktopOnlyPath } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type GroupMemberPickerMode = "add" | "remove";
@@ -82,11 +87,27 @@ function MobileGroupMemberPickerPage({
   mode: GroupMemberPickerMode;
 }) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [keyword, setKeyword] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const routeState = parseMobileGroupRouteState(hash);
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
+  const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
+  const currentRouteHash = useMemo(
+    () =>
+      buildMobileGroupRouteHash({
+        highlightedMessageId: routeState.highlightedMessageId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
+    [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
+  );
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -110,8 +131,24 @@ function MobileGroupMemberPickerPage({
       return;
     }
 
+    if (safeReturnPath) {
+      void navigate({
+        to: safeReturnPath,
+        ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ to: "/tabs/chat", replace: true });
-  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+  }, [
+    groupId,
+    groupQuery.error,
+    groupQuery.isLoading,
+    navigate,
+    safeReturnHash,
+    safeReturnPath,
+  ]);
 
   const memberIds = useMemo(
     () => new Set((membersQuery.data ?? []).map((item) => item.memberId)),
@@ -265,6 +302,7 @@ function MobileGroupMemberPickerPage({
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
+        ...(currentRouteHash ? { hash: currentRouteHash } : {}),
         replace: true,
       });
     },
@@ -280,6 +318,14 @@ function MobileGroupMemberPickerPage({
   const loadingLabel =
     mode === "add" ? "正在读取联系人..." : "正在读取群成员...";
 
+  function openGroupDetails() {
+    void navigate({
+      to: "/group/$groupId/details",
+      params: { groupId },
+      ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+    });
+  }
+
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
@@ -292,12 +338,7 @@ function MobileGroupMemberPickerPage({
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
-            onClick={() => {
-              void navigate({
-                to: "/group/$groupId/details",
-                params: { groupId },
-              });
-            }}
+            onClick={openGroupDetails}
             aria-label="返回"
           >
             <ArrowLeft size={18} />
@@ -408,6 +449,16 @@ function MobileGroupMemberPickerPage({
               badge="读取失败"
               title="群聊信息暂时不可用"
               description={groupQuery.error.message}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={openGroupDetails}
+                >
+                  返回群聊信息
+                </Button>
+              }
               tone="danger"
             />
           </div>
@@ -418,6 +469,16 @@ function MobileGroupMemberPickerPage({
               badge="读取失败"
               title="群成员信息暂时不可用"
               description={membersQuery.error.message}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={openGroupDetails}
+                >
+                  返回群聊信息
+                </Button>
+              }
               tone="danger"
             />
           </div>
@@ -428,6 +489,16 @@ function MobileGroupMemberPickerPage({
               badge="读取失败"
               title="联系人列表暂时不可用"
               description={friendsQuery.error.message}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={openGroupDetails}
+                >
+                  返回群聊信息
+                </Button>
+              }
               tone="danger"
             />
           </div>
@@ -438,7 +509,18 @@ function MobileGroupMemberPickerPage({
               tone="danger"
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             >
-              {submitMutation.error.message}
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  {submitMutation.error.message}
+                </span>
+                <button
+                  type="button"
+                  onClick={openGroupDetails}
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                >
+                  返回群聊信息
+                </button>
+              </div>
             </InlineNotice>
           </div>
         ) : null}
@@ -453,6 +535,16 @@ function MobileGroupMemberPickerPage({
               badge={mode === "add" ? "联系人" : "群成员"}
               title={emptyStateTitle}
               description={emptyStateDescription}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={openGroupDetails}
+                >
+                  返回群聊信息
+                </Button>
+              }
             />
           </div>
         ) : null}
@@ -568,11 +660,13 @@ function MobileGroupMemberPickerStatusCard({
   badge,
   title,
   description,
+  action,
   tone = "default",
 }: {
   badge: string;
   title: string;
   description: string;
+  action?: ReactNode;
   tone?: "default" | "danger" | "loading";
 }) {
   return (
@@ -607,6 +701,7 @@ function MobileGroupMemberPickerStatusCard({
       <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }
