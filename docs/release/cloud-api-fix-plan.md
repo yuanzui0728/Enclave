@@ -48,6 +48,7 @@
 - 已补：`PhoneAuthService.sendCode` 现在会在短信 provider 失败时清理刚创建的验证码 session，并返回明确的 `503`，不再白白消耗 resend cooldown 和窗口限额。
 - 已补：默认 provider 配置改成统一走显式校验；非法 `CLOUD_DEFAULT_PROVIDER_KEY` 会在启动期和运行期直接报错，不再静默回落到 mock provider。
 - 已补：`updateRequest` 的 `request -> world` 写路径已收进同一事务；world 同步失败时，request 变更不会再留下半更新状态。
+- 已补：waiting access session 的刷新/失效已切到 `WaitingSessionSyncService`；主流程会先提交 request/world/runtime/job 状态，再对 session 做“同步尝试一次 + 失败后台重试”，不再因为 access session 刷新失败把主状态写入一起打回。
 
 ## 修复优先级
 
@@ -90,3 +91,4 @@
 - 给生命周期任务补“单世界串行锁”或 lease，防止多实例部署时重复消费。
 - 将 `synchronize: true` 替换成正式 migration。
 - 区分 dev/prod 安全策略，移除默认管理员密钥和弱默认 JWT secret。
+- 可按需调节 `CLOUD_WAITING_SESSION_SYNC_RETRY_ATTEMPTS` / `CLOUD_WAITING_SESSION_SYNC_RETRY_DELAY_MS`，控制 waiting session 后台补偿次数和间隔。

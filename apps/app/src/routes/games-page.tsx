@@ -693,6 +693,20 @@ export function GamesPage() {
     }
   }
 
+  function handleBack() {
+    navigateBackOrFallback(() => {
+      if (safeReturnPath) {
+        void navigate({
+          to: safeReturnPath,
+          ...(safeReturnHash ? { hash: safeReturnHash } : {}),
+        });
+        return;
+      }
+
+      void navigate({ to: "/tabs/discover" });
+    });
+  }
+
   if (isDesktopLayout) {
     return (
       <Suspense
@@ -748,6 +762,7 @@ export function GamesPage() {
   }
 
   const selectedTone = getGameCenterToneStyle(selectedGame.tone);
+  const statusBackLabel = safeReturnPath ? "返回上一页" : null;
 
   return (
     <AppPage className="space-y-0 px-0 pb-0 pt-0">
@@ -758,19 +773,7 @@ export function GamesPage() {
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
-            onClick={() =>
-              navigateBackOrFallback(() => {
-                if (safeReturnPath) {
-                  void navigate({
-                    to: safeReturnPath,
-                    ...(safeReturnHash ? { hash: safeReturnHash } : {}),
-                  });
-                  return;
-                }
-
-                void navigate({ to: "/tabs/discover" });
-              })
-            }
+            onClick={handleBack}
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
@@ -897,7 +900,20 @@ export function GamesPage() {
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
-            {successNotice}
+            {noticeTone === "info" && statusBackLabel ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">{successNotice}</span>
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  {statusBackLabel}
+                </button>
+              </div>
+            ) : (
+              successNotice
+            )}
           </InlineNotice>
         ) : null}
 
