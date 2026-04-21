@@ -103,6 +103,7 @@ export function FavoritesPage() {
   });
   const noteEditorRouteState = routeState.noteEditor;
   const workspaceRouteState = routeState.workspace;
+  const desktopFavoritesPath = "/tabs/favorites";
 
   const normalizedSearchText = deferredSearchText.trim().toLowerCase();
   const favoriteNoteSummaryMap = useMemo(() => {
@@ -175,7 +176,7 @@ export function FavoritesPage() {
   }, [notice]);
 
   useEffect(() => {
-    if (pathname !== "/tabs/favorites" || noteEditorRouteState) {
+    if (pathname !== desktopFavoritesPath || noteEditorRouteState) {
       return;
     }
 
@@ -184,10 +185,15 @@ export function FavoritesPage() {
         ? current
         : workspaceRouteState.category,
     );
-  }, [noteEditorRouteState, pathname, workspaceRouteState.category]);
+  }, [
+    desktopFavoritesPath,
+    noteEditorRouteState,
+    pathname,
+    workspaceRouteState.category,
+  ]);
 
   useEffect(() => {
-    if (noteEditorRouteState) {
+    if (pathname !== desktopFavoritesPath || noteEditorRouteState) {
       return;
     }
 
@@ -195,7 +201,7 @@ export function FavoritesPage() {
     setSelectedFavoriteSourceId((current) =>
       current === nextSourceId ? current : nextSourceId,
     );
-  }, [noteEditorRouteState, workspaceRouteState.sourceId]);
+  }, [desktopFavoritesPath, noteEditorRouteState, pathname, workspaceRouteState.sourceId]);
 
   useEffect(() => {
     if (!noteEditorRouteState) {
@@ -273,7 +279,7 @@ export function FavoritesPage() {
   }, [filteredFavorites, selectedFavoriteSourceId]);
 
   useEffect(() => {
-    if (noteEditorRouteState) {
+    if (pathname !== desktopFavoritesPath || noteEditorRouteState) {
       return;
     }
 
@@ -294,6 +300,7 @@ export function FavoritesPage() {
     });
   }, [
     activeCategory,
+    desktopFavoritesPath,
     hash,
     navigate,
     noteEditorRouteState,
@@ -355,26 +362,23 @@ export function FavoritesPage() {
       draftId: input?.draftId,
       noteId: input?.noteId,
     });
+    const workspaceHash = buildDesktopFavoritesWorkspaceRouteHash({
+      category: activeCategory,
+      sourceId: selectedFavoriteSourceId ?? undefined,
+    });
+    const fallbackReturnTo = `${desktopFavoritesPath}${
+      workspaceHash ? `#${workspaceHash}` : ""
+    }`;
     void navigate({
-      to: "/tabs/favorites",
+      to: desktopFavoritesPath,
       hash: buildDesktopNoteWindowRouteHash({
         draftId: draft.draftId,
         noteId: input?.noteId?.trim() || undefined,
         returnTo:
           input?.returnTo?.trim() ||
-          (typeof window !== "undefined"
+          (typeof window !== "undefined" && pathname === desktopFavoritesPath
             ? getCurrentWindowTargetPath()
-            : `/tabs/favorites${
-                buildDesktopFavoritesWorkspaceRouteHash({
-                  category: activeCategory,
-                  sourceId: selectedFavoriteSourceId ?? undefined,
-                })
-                  ? `#${buildDesktopFavoritesWorkspaceRouteHash({
-                      category: activeCategory,
-                      sourceId: selectedFavoriteSourceId ?? undefined,
-                    })}`
-                  : ""
-              }`),
+            : fallbackReturnTo),
       }),
     });
   }

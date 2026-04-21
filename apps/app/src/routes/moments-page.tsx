@@ -206,6 +206,22 @@ export function MomentsPage() {
   const isDesktopMomentsRoute =
     pathname === desktopMomentsPath || pathname === "/discover/moments";
   const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试";
+  const handleDesktopRouteStateChange = useEffectEvent(
+    (state: { momentId?: string }) => {
+      const nextHash = buildDesktopMomentsRouteHash(state);
+      const currentNormalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+      if (currentNormalizedHash === (nextHash ?? "")) {
+        return;
+      }
+
+      void navigate({
+        to: desktopMomentsPath,
+        hash: nextHash,
+        replace: true,
+      });
+    },
+  );
 
   function openMobileMomentsPublishPage() {
     void navigate({
@@ -269,7 +285,7 @@ export function MomentsPage() {
     }
 
     setNotice("");
-  }, [baseUrl, resetComposeDraft]);
+  }, [baseUrl]);
 
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
@@ -334,7 +350,7 @@ export function MomentsPage() {
       !isDesktopLayout ||
       !isDesktopMomentsRoute ||
       syncedRouteSelectedAuthorId ||
-      (!desktopPathMismatch && currentRouteHash === normalizedHash)
+      (!desktopPathMismatch && (currentRouteHash ?? "") === normalizedHash)
     ) {
       return;
     }
@@ -379,10 +395,11 @@ export function MomentsPage() {
     });
   }, [
     isDesktopLayout,
-    isDiscoverSubPage,
+    isDesktopMomentsRoute,
     navigate,
     routeSelectedMomentId,
     syncedRouteSelectedAuthorId,
+    desktopMomentsPath,
   ]);
 
   useEffect(() => {
@@ -674,20 +691,7 @@ export function MomentsPage() {
               void blockedQuery.refetch();
             }
           }}
-          onRouteStateChange={(state) => {
-            const nextHash = buildDesktopMomentsRouteHash(state);
-            const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-
-            if (normalizedHash === (nextHash ?? "")) {
-              return;
-            }
-
-            void navigate({
-              to: isDiscoverSubPage ? "/discover/moments" : "/tabs/moments",
-              hash: nextHash,
-              replace: true,
-            });
-          }}
+          onRouteStateChange={handleDesktopRouteStateChange}
           onTextChange={composeDraft.setText}
           onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
           onRemoveVideo={() => composeDraft.clearVideoDraft()}

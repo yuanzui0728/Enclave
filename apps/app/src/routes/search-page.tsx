@@ -77,6 +77,8 @@ export function SearchPage() {
   const effectiveSearchText = isDesktopLayout
     ? committedSearchText
     : searchText;
+  const desktopSearchPath = "/tabs/search";
+  const isDesktopSearchRoute = pathname === desktopSearchPath;
   const currentSearchRouteHash = buildSearchRouteHash({
     category: activeCategory,
     keyword: effectiveSearchText,
@@ -111,14 +113,14 @@ export function SearchPage() {
   }, [routeState.category]);
 
   useEffect(() => {
-    if (pathname !== "/tabs/search") {
+    if (!isDesktopLayout || !isDesktopSearchRoute) {
       return;
     }
 
     const routeStateApplied =
       searchText === routeState.keyword &&
       activeCategory === routeState.category &&
-      (!isDesktopLayout || committedSearchText === routeState.keyword);
+      committedSearchText === routeState.keyword;
 
     if (syncingRouteStateRef.current) {
       if (!routeStateApplied) {
@@ -129,13 +131,12 @@ export function SearchPage() {
     }
 
     const nextHash = currentSearchRouteHash;
-
     if (normalizedHash === (nextHash ?? "")) {
       return;
     }
 
     void navigate({
-      to: "/tabs/search",
+      to: desktopSearchPath,
       hash: nextHash,
       replace: true,
     });
@@ -143,8 +144,9 @@ export function SearchPage() {
     activeCategory,
     committedSearchText,
     currentSearchRouteHash,
+    desktopSearchPath,
     effectiveSearchText,
-    hash,
+    isDesktopSearchRoute,
     isDesktopLayout,
     navigate,
     normalizedHash,
