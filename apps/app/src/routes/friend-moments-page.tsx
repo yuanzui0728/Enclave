@@ -18,7 +18,7 @@ import {
 } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { RouteRedirectState } from "../components/route-redirect-state";
-import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";
 import {
   hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
@@ -484,11 +484,11 @@ export function FriendMomentsPage() {
         }}
         onOpenProfile={() => {
           void navigate({
-            to: "/character/$characterId",
-            params: { characterId },
-            hash: buildCharacterDetailRouteHash({
-              returnPath: `/desktop/friend-moments/${characterId}`,
-              returnHash: hash,
+            to: "/tabs/contacts",
+            hash: buildDesktopContactsRouteHash({
+              pane: friendItem ? "friend" : "world-character",
+              characterId,
+              showWorldCharacters: !friendItem,
             }),
           });
         }}

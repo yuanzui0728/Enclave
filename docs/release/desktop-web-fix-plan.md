@@ -50,7 +50,7 @@
 - 桌面通讯录里好友详情、星标联系人这些“发消息”动作现在也会在 `contacts-page` 这层统一留在桌面消息工作区：桌面布局下创建或打开会话后直接回 `/tabs/chat#conversationId=...`，不再从这里漏回移动 `/chat/$conversationId`。
 - 桌面角色资料页这条链路也对齐了：桌面布局下点“发消息”会直接回 `/tabs/chat#conversationId=...`，点“共同群聊”会回对应群会话的 `/tabs/chat#conversationId=...`。之前这页还会把桌面用户带去移动 `/chat/$conversationId` 和 `/group/$groupId`。
 - 桌面角色资料页里的“语音通话 / 视频通话”现在也不再先落旧 `/chat/$conversationId/voice-call|video-call`。桌面布局下会先把一次性的 `callAction=voice|video` 写进 `/tabs/chat#conversationId=...`，桌面消息工作区接到后直接拉起当前线程里的桌面通话面板，并立刻清掉这层路由 flag，避免刷新后反复卡回旧通话页。
-- `/group/new` 这条桌面分支也已经收口：桌面发起群聊对话框关闭时会回原桌面会话，创建成功后会直接进入新群的 `/tabs/chat#conversationId=...`。之前这条桌面分支还会把用户带去旧 `/chat/$conversationId` 和 `/group/$groupId`。
+- `/group/new` 这条桌面分支也已经继续收口：桌面发起群聊对话框关闭时不只会回原桌面会话，像桌面通讯录“群聊”视图和旧 `source=chat-details` hash 这类入口，也会直接回 `/tabs/contacts#pane=groups` 或 `/tabs/chat#conversationId=...&panel=details`；创建成功后会直接进入新群的 `/tabs/chat#conversationId=...`。之前这条桌面分支还会把用户带去旧 `/contacts/groups`、`/chat/$conversationId/details` 和 `/group/$groupId`。
 - 桌面小程序里的群接龙返回按钮也已经对齐：桌面工作区里点“返回群聊”会直接回 `/tabs/chat#conversationId=...`。之前这里还会把桌面用户带去移动 `/group/$groupId`；手机复制继续这条链路仍保留移动协议，不受影响。
 - 桌面“聊天背景 / 群背景”两页的顶部返回按钮也已经改成直接回桌面消息详情侧栏：优先遵守现有 `returnPath/returnHash`，没有的话就兜底回 `/tabs/chat#conversationId=...&panel=details`。之前这里还会先落旧 `/chat/$conversationId/details`、`/group/$groupId/details`。
 - 桌面群二维码页顶部的“返回群聊信息”按钮现在也直接回桌面消息详情侧栏：优先走已有 `returnPath/returnHash`，没有就兜底回 `/tabs/chat#conversationId=...&panel=details`。之前这里还会先落旧 `/group/$groupId/details`。
