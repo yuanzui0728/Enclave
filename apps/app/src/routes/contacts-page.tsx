@@ -65,6 +65,7 @@ import {
   createWorldCharacterDirectoryItems,
   matchesCharacterSearch,
   matchesFriendSearch,
+  shouldIncludeInWorldCharacterDirectory,
   type FriendDirectoryItem,
 } from "../features/contacts/contact-utils";
 import { buildWorldCharactersRouteHash } from "../features/contacts/world-characters-route-state";
@@ -359,8 +360,8 @@ export function ContactsPage() {
   const worldCharacterDirectoryItems = useMemo(
     () =>
       createWorldCharacterDirectoryItems(
-        (charactersQuery.data ?? []).filter(
-          (character) => !friendIds.has(character.id),
+        (charactersQuery.data ?? []).filter((character) =>
+          shouldIncludeInWorldCharacterDirectory(character, friendIds),
         ),
       ),
     [charactersQuery.data, friendIds],
@@ -495,8 +496,7 @@ export function ContactsPage() {
   );
   const desktopDefaultFriendItem = desktopFriendSections[0]?.items[0] ?? null;
   const starredFriends = useMemo(
-    () =>
-      (friendsQuery.data ?? []).filter((item) => item.friendship.isStarred),
+    () => (friendsQuery.data ?? []).filter((item) => item.friendship.isStarred),
     [friendsQuery.data],
   );
   const tagGroupCount = useMemo(
@@ -833,7 +833,10 @@ export function ContactsPage() {
       return;
     }
 
-    if (routeState.pane === "world-character" && filteredWorldCharacterItems[0]) {
+    if (
+      routeState.pane === "world-character" &&
+      filteredWorldCharacterItems[0]
+    ) {
       const nextSelection = {
         kind: "world-character",
         id: filteredWorldCharacterItems[0].character.id,
@@ -1136,10 +1139,10 @@ export function ContactsPage() {
         ? showWorldCharacters
           ? "收起角色目录"
           : worldCharacterDirectoryItems.length > 0
-            ? `还有 ${worldCharacterDirectoryItems.length} 个角色可认识`
-            : "当前没有新的角色可认识"
+            ? `还有 ${worldCharacterDirectoryItems.length} 个世界角色可浏览`
+            : "当前没有可浏览的世界角色"
         : worldCharacterDirectoryItems.length > 0
-          ? `还有 ${worldCharacterDirectoryItems.length} 个角色可认识`
+          ? `还有 ${worldCharacterDirectoryItems.length} 个世界角色可浏览`
           : "查看世界角色目录",
       active:
         (isDesktopLayout && showWorldCharacters) ||
@@ -1176,9 +1179,7 @@ export function ContactsPage() {
       key: "tags",
       label: "标签",
       subtitle:
-        tagGroupCount > 0
-          ? `${tagGroupCount} 个标签分组`
-          : "按标签整理联系人",
+        tagGroupCount > 0 ? `${tagGroupCount} 个标签分组` : "按标签整理联系人",
       active: desktopSelection?.kind === "tags",
       icon: Tag,
       iconClassName: "bg-[linear-gradient(135deg,#22c55e,#15803d)]",
@@ -1350,7 +1351,7 @@ export function ContactsPage() {
             ) : null
           }
           worldCharacterTitle={
-            normalizedSearchText ? "世界角色搜索结果" : "尚未成为联系人"
+            normalizedSearchText ? "世界角色搜索结果" : "世界角色目录"
           }
           worldCharacterItems={filteredWorldCharacterItems}
           activeWorldCharacterId={

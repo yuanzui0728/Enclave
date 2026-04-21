@@ -32,7 +32,10 @@ import { ModerationReportEntity } from '../moderation/moderation-report.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { NeedDiscoveryCandidateEntity } from '../need-discovery/need-discovery-candidate.entity';
 import { RealWorldRuntimeProfileService } from '../real-world-sync/real-world-runtime-profile.service';
-import { DEFAULT_CHARACTER_IDS } from './default-characters';
+import {
+  buildDefaultCharacters,
+  DEFAULT_CHARACTER_IDS,
+} from './default-characters';
 import {
   getCelebrityCharacterPreset,
   getCelebrityCharacterPresetGroup,
@@ -118,15 +121,26 @@ export class CharactersService implements OnModuleInit {
   }
 
   /**
-   * 返回硬编码预设目录中所有角色的完整数据（不查 DB）。
-   * 供前台发现页使用——用户加好友前不需要管理员先"安装"。
+   * 返回世界角色目录中所有内置角色的完整数据（不查 DB）。
+   * 默认保底角色和内置目录角色都会包含在内。
    */
   listPresetCatalog(): CharacterEntity[] {
-    return this.normalizeCharacterAvatars(
-      BUILT_IN_CHARACTER_PRESETS.map(
+    const seen = new Set<string>();
+    const catalogCharacters = [
+      ...buildDefaultCharacters(),
+      ...BUILT_IN_CHARACTER_PRESETS.map(
         (preset) => preset.character as CharacterEntity,
       ),
-    );
+    ].filter((character): character is CharacterEntity => {
+      if (!character?.id || seen.has(character.id)) {
+        return false;
+      }
+
+      seen.add(character.id);
+      return true;
+    });
+
+    return this.normalizeCharacterAvatars(catalogCharacters);
   }
 
   /**

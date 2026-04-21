@@ -1,4 +1,11 @@
-import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Search, UserPlus } from "lucide-react";
@@ -13,6 +20,7 @@ import {
   buildContactSections,
   createWorldCharacterDirectoryItems,
   matchesCharacterSearch,
+  shouldIncludeInWorldCharacterDirectory,
 } from "../features/contacts/contact-utils";
 import {
   buildWorldCharactersRouteHash,
@@ -93,8 +101,8 @@ function MobileWorldCharactersPage() {
   const worldCharacterItems = useMemo(
     () =>
       createWorldCharacterDirectoryItems(
-        (charactersQuery.data ?? []).filter(
-          (character) => !friendIds.has(character.id),
+        (charactersQuery.data ?? []).filter((character) =>
+          shouldIncludeInWorldCharacterDirectory(character, friendIds),
         ),
       ),
     [charactersQuery.data, friendIds],
@@ -130,11 +138,7 @@ function MobileWorldCharactersPage() {
       hash: currentRouteHash,
       replace: true,
     });
-  }, [
-    currentRouteHash,
-    navigate,
-    normalizedHash,
-  ]);
+  }, [currentRouteHash, navigate, normalizedHash]);
 
   function navigateToRouteStateReturn() {
     if (!safeReturnPath) {
@@ -225,7 +229,7 @@ function MobileWorldCharactersPage() {
             <MobileWorldCharactersStatusCard
               badge="读取中"
               title="正在读取世界角色"
-              description="稍等一下，正在同步尚未加入通讯录的世界角色。"
+              description="稍等一下，正在同步世界角色目录。"
               tone="loading"
             />
           </div>
@@ -284,12 +288,12 @@ function MobileWorldCharactersPage() {
               title={
                 normalizedSearchText
                   ? "没有找到匹配的世界角色"
-                  : "当前没有新的世界角色"
+                  : "当前没有可展示的世界角色"
               }
               description={
                 normalizedSearchText
                   ? "换个关键词再试试。"
-                  : "当前世界里的角色都已经在通讯录里了。"
+                  : "稍后再回来看看，或者先去新的朋友里处理申请。"
               }
               action={
                 <Button

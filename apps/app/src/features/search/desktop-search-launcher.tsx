@@ -41,6 +41,7 @@ import {
   getFriendDisplayName,
   matchesCharacterSearch,
   matchesFriendSearch,
+  shouldIncludeInWorldCharacterDirectory,
   type FriendDirectoryItem,
   type WorldCharacterDirectoryItem,
 } from "../contacts/contact-utils";
@@ -395,8 +396,8 @@ export function DesktopSearchDropdownPanel({
     );
 
     return createWorldCharacterDirectoryItems(
-      (charactersQuery.data ?? []).filter(
-        (character) => !friendIds.has(character.id),
+      (charactersQuery.data ?? []).filter((character) =>
+        shouldIncludeInWorldCharacterDirectory(character, friendIds),
       ),
     )
       .filter((item) =>
