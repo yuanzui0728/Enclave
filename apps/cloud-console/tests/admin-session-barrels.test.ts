@@ -5,11 +5,13 @@ import { AdminSessionBrandBadge } from "../src/components/admin-session-brand-ba
 import { AdminSessionBrandEyebrow } from "../src/components/admin-session-brand-eyebrow";
 import { AdminSessionFilterControls } from "../src/components/admin-session-filter-controls";
 import { AdminSessionQuickViewButtons } from "../src/components/admin-session-quick-view-buttons";
+import { AdminSessionSectionHeader } from "../src/components/admin-session-section-header";
 import { AdminSessionSourceGroupFilterControls } from "../src/components/admin-session-source-group-filter-controls";
 import { AdminSessionSourceGroupRiskBadge } from "../src/components/admin-session-source-group-risk-badge";
 import { AdminSessionSourceGroupRiskSignals } from "../src/components/admin-session-source-group-risk-signals";
 import { AdminSessionSourceGroupSummaryPills } from "../src/components/admin-session-source-group-summary-pills";
 import { AdminSessionStatusBadge } from "../src/components/admin-session-status-badge";
+import { AdminSessionSummaryChip } from "../src/components/admin-session-summary-chip";
 import * as adminSessionHelpers from "../src/lib/admin-session-helpers";
 import * as adminSessionMeta from "../src/lib/admin-session-meta";
 
@@ -21,11 +23,13 @@ describe("admin session barrels", () => {
       "AdminSessionBrandEyebrow",
       "AdminSessionFilterControls",
       "AdminSessionQuickViewButtons",
+      "AdminSessionSectionHeader",
       "AdminSessionSourceGroupFilterControls",
       "AdminSessionSourceGroupRiskBadge",
       "AdminSessionSourceGroupRiskSignals",
       "AdminSessionSourceGroupSummaryPills",
       "AdminSessionStatusBadge",
+      "AdminSessionSummaryChip",
     ]);
 
     expect(adminSessionControls.AdminSessionActionButton).toBe(
@@ -43,6 +47,9 @@ describe("admin session barrels", () => {
     expect(adminSessionControls.AdminSessionQuickViewButtons).toBe(
       AdminSessionQuickViewButtons,
     );
+    expect(adminSessionControls.AdminSessionSectionHeader).toBe(
+      AdminSessionSectionHeader,
+    );
     expect(adminSessionControls.AdminSessionSourceGroupFilterControls).toBe(
       AdminSessionSourceGroupFilterControls,
     );
@@ -57,6 +64,9 @@ describe("admin session barrels", () => {
     );
     expect(adminSessionControls.AdminSessionStatusBadge).toBe(
       AdminSessionStatusBadge,
+    );
+    expect(adminSessionControls.AdminSessionSummaryChip).toBe(
+      AdminSessionSummaryChip,
     );
   });
 
