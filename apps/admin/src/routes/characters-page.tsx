@@ -226,9 +226,21 @@ function isProtectedCharacter(character: Character) {
 
 function CharacterAvatar({ name, src, size = "md" }: { name: string; src?: string | null; size?: "sm" | "md" }) {
   const dim = size === "sm" ? "h-10 w-10 text-base" : "h-12 w-12 text-xl";
-  if (src?.trim()) {
-    return <img src={resolveAdminAvatarSrc(src)} alt={name} className={`${dim} rounded-full object-cover shrink-0`} />;
+  const trimmedSrc = src?.trim() ?? "";
+
+  if (isLikelyAdminAvatarImageSource(trimmedSrc)) {
+    return <img src={resolveAdminAvatarSrc(trimmedSrc)} alt={name} className={`${dim} rounded-full object-cover shrink-0`} />;
   }
+
+  const fallbackLabel = resolveAdminAvatarFallbackLabel(name, trimmedSrc);
+  if (fallbackLabel) {
+    return (
+      <div className={`${dim} flex items-center justify-center rounded-full bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] shrink-0`}>
+        {fallbackLabel}
+      </div>
+    );
+  }
+
   return (
     <div className={`${dim} flex items-center justify-center rounded-full bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] shrink-0`}>
       {name.slice(0, 1)}
@@ -246,4 +258,33 @@ function resolveAdminAvatarSrc(src: string) {
   } catch {
     return src;
   }
+}
+
+function isLikelyAdminAvatarImageSource(value: string) {
+  if (!value) {
+    return false;
+  }
+
+  return (
+    value.startsWith("/") ||
+    value.startsWith("./") ||
+    value.startsWith("../") ||
+    value.startsWith("blob:") ||
+    /^https?:\/\//i.test(value) ||
+    /^data:image\//i.test(value) ||
+    /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(value)
+  );
+}
+
+function resolveAdminAvatarFallbackLabel(name: string, src: string) {
+  const normalized = src.trim();
+  if (!normalized) {
+    return name.slice(0, 1);
+  }
+
+  if (normalized.length <= 4) {
+    return normalized;
+  }
+
+  return name.slice(0, 1);
 }

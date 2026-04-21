@@ -17,11 +17,13 @@ import {
   AdminSessionBrandEyebrow,
   AdminSessionFilterControls,
   AdminSessionQuickViewButtons,
+  AdminSessionSectionHeader,
   AdminSessionSourceGroupFilterControls,
   AdminSessionSourceGroupRiskBadge,
   AdminSessionSourceGroupRiskSignals,
   AdminSessionSourceGroupSummaryPills,
   AdminSessionStatusBadge,
+  AdminSessionSummaryChip,
 } from "../components/admin-session-controls";
 import {
   CloudAdminErrorBlock,
@@ -2118,17 +2120,14 @@ export function AdminSessionsPage() {
       className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="text-xl font-semibold text-[color:var(--text-primary)]">
-            Admin sessions
-          </div>
-          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-            Review live admin sessions, inspect where they were issued from, filter by revocation path, and page through longer audit history.
-          </div>
-        </div>
-        <div className="rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
+        <AdminSessionSectionHeader
+          title="Admin sessions"
+          description="Review live admin sessions, inspect where they were issued from, filter by revocation path, and page through longer audit history."
+          variant="page"
+        />
+        <AdminSessionSummaryChip className="tracking-[0.2em]">
           {summary}
-        </div>
+        </AdminSessionSummaryChip>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
@@ -2167,17 +2166,13 @@ export function AdminSessionsPage() {
 
       <div className="mt-5 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-              Source groups
-            </div>
-            <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-              Aggregate sessions by issue IP and client under the current filters, then revoke an entire source in one action.
-            </div>
-          </div>
-          <div className="rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+          <AdminSessionSectionHeader
+            title="Source groups"
+            description="Aggregate sessions by issue IP and client under the current filters, then revoke an entire source in one action."
+          />
+          <AdminSessionSummaryChip>
             {sourceGroupSummary}
-          </div>
+          </AdminSessionSummaryChip>
         </div>
 
         <AdminSessionSourceGroupFilterControls
@@ -2426,12 +2421,10 @@ export function AdminSessionsPage() {
         <div className="mt-5 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                Risk timeline
-              </div>
-              <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-                Derived from session issue, expiry, and revoke events inside the focused source group under the current filters.
-              </div>
+              <AdminSessionSectionHeader
+                title="Risk timeline"
+                description="Derived from session issue, expiry, and revoke events inside the focused source group under the current filters."
+              />
               {focusedSourceTimelineSummary ? (
                 <div className="mt-2 text-xs text-[color:var(--text-muted)]">
                   {focusedSourceTimelineSummary}
@@ -2449,9 +2442,10 @@ export function AdminSessionsPage() {
               </div>
               {latestFocusedSourceRiskPoint ? (
                 <div className="mt-3">
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
-                    Current rationale
-                  </div>
+                  <AdminSessionSectionHeader
+                    title="Current rationale"
+                    variant="subsection"
+                  />
                   <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-secondary)]">
                     {latestFocusedSourceRiskReasons.map((reason) => (
                       <span
@@ -2987,14 +2981,11 @@ export function AdminSessionsPage() {
                                 className="mt-3 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3"
                               >
                                 <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div>
-                                    <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
-                                      Recent operation receipts
-                                    </div>
-                                    <div className="mt-1 text-[11px] text-[color:var(--text-secondary)]">
-                                      Showing the latest {visibleHighlightedOperationReceipts.length} of up to {HIGHLIGHTED_OPERATION_RECEIPT_LIMIT} receipt(s) for this focused session.
-                                    </div>
-                                  </div>
+                                  <AdminSessionSectionHeader
+                                    title="Recent operation receipts"
+                                    description={`Showing the latest ${visibleHighlightedOperationReceipts.length} of up to ${HIGHLIGHTED_OPERATION_RECEIPT_LIMIT} receipt(s) for this focused session.`}
+                                    variant="subsection"
+                                  />
                                   <AdminSessionActionButton
                                     size="compact"
                                     onClick={clearVisibleHighlightedOperationReceipts}
