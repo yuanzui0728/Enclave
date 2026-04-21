@@ -101,13 +101,12 @@ export function DiscoverFeedPage() {
       ? "/tabs/feed"
       : routeState.returnPath;
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-  const desktopFeedPath = "/tabs/feed";
-  const isDesktopFeedRoute =
-    pathname === desktopFeedPath || pathname === "/discover/feed";
   const routeSelectedPostId = routeState.postId;
   const [desktopSelectedPostId, setDesktopSelectedPostId] = useState<
     string | null
   >(routeSelectedPostId);
+  const routeSelectionAlreadySynced =
+    routeSelectedPostId === desktopSelectedPostId;
   const safeReturnPath =
     normalizedDesktopReturnPath &&
     !isDesktopOnlyPath(normalizedDesktopReturnPath)
@@ -299,34 +298,34 @@ export function DiscoverFeedPage() {
   useEffect(() => {
     if (
       !isDesktopLayout ||
-      !isDesktopFeedRoute
+      pathname !== "/tabs/feed" ||
+      (routeSelectionAlreadySynced &&
+        normalizedHash ===
+          (buildFeedRouteHash({
+            postId: desktopSelectedPostId,
+            returnPath: safeReturnPath,
+            returnHash: safeReturnHash,
+          }) ?? ""))
     ) {
       return;
     }
 
-    const nextHash = buildFeedRouteHash({
-      postId: desktopSelectedPostId,
-      returnPath: safeReturnPath,
-      returnHash: safeReturnHash,
-    });
-
-    if (pathname === desktopFeedPath && normalizedHash === (nextHash ?? "")) {
-      return;
-    }
-
     void navigate({
-      to: desktopFeedPath,
-      hash: nextHash,
+      to: "/tabs/feed",
+      hash: buildFeedRouteHash({
+        postId: desktopSelectedPostId,
+        returnPath: safeReturnPath,
+        returnHash: safeReturnHash,
+      }),
       replace: true,
     });
   }, [
     desktopSelectedPostId,
-    desktopFeedPath,
-    isDesktopFeedRoute,
     isDesktopLayout,
     navigate,
     normalizedHash,
     pathname,
+    routeSelectionAlreadySynced,
     safeReturnHash,
     safeReturnPath,
   ]);

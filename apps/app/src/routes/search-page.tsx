@@ -78,7 +78,6 @@ export function SearchPage() {
     ? committedSearchText
     : searchText;
   const desktopSearchPath = "/tabs/search";
-  const isDesktopSearchRoute = pathname === desktopSearchPath;
   const currentSearchRouteHash = buildSearchRouteHash({
     category: activeCategory,
     keyword: effectiveSearchText,
@@ -113,7 +112,7 @@ export function SearchPage() {
   }, [routeState.category]);
 
   useEffect(() => {
-    if (!isDesktopLayout || !isDesktopSearchRoute) {
+    if (!isDesktopLayout || pathname !== desktopSearchPath) {
       return;
     }
 
@@ -146,7 +145,6 @@ export function SearchPage() {
     currentSearchRouteHash,
     desktopSearchPath,
     effectiveSearchText,
-    isDesktopSearchRoute,
     isDesktopLayout,
     navigate,
     normalizedHash,
