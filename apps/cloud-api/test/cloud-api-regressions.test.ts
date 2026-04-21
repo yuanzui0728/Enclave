@@ -3730,6 +3730,87 @@ test("AdminCloudController forwards source-group risk snapshot requests with the
   ]);
 });
 
+test("reconcileWorldNow keeps world state updates when waiting session refresh falls back to retry", async (t) => {
+  const dataSource = await createTestDataSource();
+  let refreshCalls = 0;
+  const waitingSessionSyncService = createWaitingSessionSyncService(
+    {
+      refreshWaitingSessionsForWorld: async () => {
+        refreshCalls += 1;
+        throw new Error("refresh failed");
+      },
+      refreshWaitingSessionsForPhone: async () => undefined,
+      invalidateWaitingSessionsForPhone: async () => undefined,
+    },
+    {
+      CLOUD_WAITING_SESSION_SYNC_RETRY_ATTEMPTS: "2",
+      CLOUD_WAITING_SESSION_SYNC_RETRY_DELAY_MS: "0",
+    },
+  );
+  t.after(async () => {
+    waitingSessionSyncService.onModuleDestroy();
+    await dataSource.destroy();
+  });
+
+  const worker = createWorkerService(
+    dataSource,
+    {
+      CLOUD_WORLD_JOB_LEASE_SECONDS: "120",
+    },
+    {
+      waitingSessionSyncService,
+    },
+  );
+  const worldRepo = dataSource.getRepository(CloudWorldEntity);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+
+  const world = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138088",
+      name: "Reconcile Retry World",
+      status: "ready",
+      slug: "world-8088-reconcile-retry",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: providerSummary.key,
+      providerRegion: "manual",
+      providerZone: "docker-host-a",
+      runtimeVersion: "runtime-v1",
+      apiBaseUrl: "https://reconcile-retry-world.example.com",
+      adminUrl: "https://reconcile-retry-world-admin.example.com",
+      callbackToken: "reconcile-retry-token",
+      healthStatus: "healthy",
+      healthMessage: "ready",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+
+  const reconciled = await worker.reconcileWorldNow(world.id);
+
+  assert.ok(reconciled);
+  assert.equal(reconciled.status, "queued");
+  assert.equal(reconciled.healthStatus, "queued");
+  assert.match(reconciled.healthMessage ?? "", /Queued recovery\./);
+  const queuedJob = await jobRepo.findOne({
+    where: {
+      worldId: world.id,
+      jobType: "provision",
+      status: "pending",
+    },
+  });
+  assert.ok(queuedJob);
+
+  await waitForCondition(() => refreshCalls >= 2);
+});
+
 test("claimNextPendingJob acquires a lease and marks the job running once", async (t) => {
   const dataSource = await createTestDataSource();
   t.after(async () => {

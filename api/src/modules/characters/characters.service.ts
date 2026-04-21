@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
@@ -38,11 +39,12 @@ import {
   listCelebrityCharacterPresets,
   CELEBRITY_CHARACTER_PRESETS,
 } from './celebrity-character-presets';
+import { maybeGetCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 export type Character = CharacterEntity;
 
 @Injectable()
-export class CharactersService {
+export class CharactersService implements OnModuleInit {
   constructor(
     @InjectRepository(CharacterEntity)
     private repo: Repository<CharacterEntity>,
@@ -53,12 +55,18 @@ export class CharactersService {
     private readonly realWorldRuntimeProfile: RealWorldRuntimeProfileService,
   ) {}
 
-  findAll(): Promise<CharacterEntity[]> {
-    return this.repo.find({ order: { name: 'ASC' } });
+  async onModuleInit() {
+    await this.backfillCharacterAvatarAssets();
   }
 
-  findById(id: string): Promise<CharacterEntity | null> {
-    return this.repo.findOneBy({ id });
+  async findAll(): Promise<CharacterEntity[]> {
+    const characters = await this.repo.find({ order: { name: 'ASC' } });
+    return this.normalizeCharacterAvatars(characters);
+  }
+
+  async findById(id: string): Promise<CharacterEntity | null> {
+    const character = await this.repo.findOneBy({ id });
+    return this.normalizeCharacterAvatar(character);
   }
 
   async findAllVisibleToOwner(ownerId?: string): Promise<CharacterEntity[]> {
@@ -111,8 +119,10 @@ export class CharactersService {
    * 供前台发现页使用——用户加好友前不需要管理员先"安装"。
    */
   listPresetCatalog(): CharacterEntity[] {
-    return CELEBRITY_CHARACTER_PRESETS.map(
-      (preset) => preset.character as CharacterEntity,
+    return this.normalizeCharacterAvatars(
+      CELEBRITY_CHARACTER_PRESETS.map(
+        (preset) => preset.character as CharacterEntity,
+      ),
     );
   }
 
@@ -126,7 +136,7 @@ export class CharactersService {
     characterId: string,
   ): Promise<CharacterEntity | null> {
     const existing = await this.repo.findOneBy({ id: characterId });
-    if (existing) return existing;
+    if (existing) return this.normalizeCharacterAvatar(existing);
 
     const preset = CELEBRITY_CHARACTER_PRESETS.find(
       (p) => p.id === characterId,
@@ -184,7 +194,7 @@ export class CharactersService {
       ],
     });
     if (existing) {
-      return existing;
+      return this.normalizeCharacterAvatar(existing);
     }
 
     return this.repo.save(
@@ -372,6 +382,85 @@ export class CharactersService {
         .execute();
       await characterRepo.delete(id);
     });
+  }
+
+  private normalizeCharacterAvatars(characters: CharacterEntity[]) {
+    return characters.map((character) => this.normalizeCharacterAvatar(character));
+  }
+
+  private normalizeCharacterAvatar(
+    character: CharacterEntity | null | undefined,
+  ): CharacterEntity | null {
+    if (!character) {
+      return null;
+    }
+
+    const canonicalAvatar = maybeGetCharacterAvatarBySourceKey(
+      character.sourceKey,
+    );
+    if (
+      !canonicalAvatar ||
+      !this.shouldReplaceCharacterAvatar(character.avatar, canonicalAvatar)
+    ) {
+      return character;
+    }
+
+    return {
+      ...character,
+      avatar: canonicalAvatar,
+    };
+  }
+
+  private shouldReplaceCharacterAvatar(
+    currentAvatar: string | null | undefined,
+    canonicalAvatar: string,
+  ) {
+    const normalizedAvatar = currentAvatar?.trim() ?? '';
+    if (!normalizedAvatar) {
+      return true;
+    }
+
+    if (normalizedAvatar === canonicalAvatar) {
+      return false;
+    }
+
+    if (normalizedAvatar.startsWith('/api/character-assets/')) {
+      return true;
+    }
+
+    return !this.isLikelyImageSource(normalizedAvatar);
+  }
+
+  private isLikelyImageSource(value: string) {
+    return (
+      value.startsWith('/') ||
+      value.startsWith('./') ||
+      value.startsWith('../') ||
+      value.startsWith('blob:') ||
+      /^https?:\/\//i.test(value) ||
+      /^data:image\//i.test(value) ||
+      /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(value)
+    );
+  }
+
+  private async backfillCharacterAvatarAssets() {
+    const characters = await this.repo.find({
+      where: {
+        sourceType: In(['default_seed', 'preset_catalog']),
+      },
+    });
+    const pendingUpdates = characters
+      .map((character) => this.normalizeCharacterAvatar(character))
+      .filter(
+        (character): character is CharacterEntity =>
+          Boolean(character && character.avatar !== characters.find((item) => item.id === character.id)?.avatar),
+      );
+
+    if (pendingUpdates.length === 0) {
+      return;
+    }
+
+    await this.repo.save(pendingUpdates);
   }
 
   private async filterNeedGeneratedVisibility(
