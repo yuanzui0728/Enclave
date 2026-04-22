@@ -55,6 +55,13 @@ export type CloudWorldLifecycleJobQueueStateFilter =
   | "running_now"
   | "lease_expired"
   | "delayed";
+export type CloudWorldLifecycleJobSortField =
+  | "updatedAt"
+  | "createdAt"
+  | "availableAt"
+  | "startedAt"
+  | "finishedAt";
+export type CloudWorldLifecycleJobSortDirection = "asc" | "desc";
 
 export type CloudWaitingSessionSyncTaskType =
   | "refresh_phone"
@@ -325,6 +332,8 @@ export interface CloudWorldLifecycleJobListQuery {
   audit?: WorldLifecycleJobAuditFilter;
   supersededBy?: WorldLifecycleJobType;
   query?: string;
+  sortBy?: CloudWorldLifecycleJobSortField;
+  sortDirection?: CloudWorldLifecycleJobSortDirection;
   page?: number;
   pageSize?: number;
 }

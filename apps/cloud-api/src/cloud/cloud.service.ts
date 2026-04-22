@@ -1310,12 +1310,54 @@ export class CloudService {
   }
 
   private createJobQueryBuilder(filters?: WorldLifecycleJobFilters) {
-    const queryBuilder = this.jobRepo
-      .createQueryBuilder("job")
-      .orderBy("job.updatedAt", "DESC")
-      .addOrderBy("job.createdAt", "DESC");
+    const queryBuilder = this.jobRepo.createQueryBuilder("job");
+    this.applyJobSort(
+      queryBuilder,
+      filters?.sortBy,
+      filters?.sortDirection,
+    );
     this.applyJobFilters(queryBuilder, filters);
     return queryBuilder;
+  }
+
+  private applyJobSort(
+    queryBuilder: ReturnType<Repository<WorldLifecycleJobEntity>["createQueryBuilder"]>,
+    sortBy?: WorldLifecycleJobFilters["sortBy"],
+    sortDirection?: WorldLifecycleJobFilters["sortDirection"],
+  ) {
+    const normalizedSortBy = sortBy ?? "updatedAt";
+    const normalizedSortDirection = sortDirection === "asc" ? "ASC" : "DESC";
+
+    const sortableColumns = {
+      updatedAt: "job.updatedAt",
+      createdAt: "job.createdAt",
+      availableAt: "job.availableAt",
+      startedAt: "job.startedAt",
+      finishedAt: "job.finishedAt",
+    } satisfies Record<NonNullable<WorldLifecycleJobFilters["sortBy"]>, string>;
+    const nullableSortFields = new Set<
+      Exclude<NonNullable<WorldLifecycleJobFilters["sortBy"]>, "updatedAt" | "createdAt">
+    >(["availableAt", "startedAt", "finishedAt"]);
+    const column = sortableColumns[normalizedSortBy];
+
+    if (nullableSortFields.has(normalizedSortBy as never)) {
+      queryBuilder.addSelect(
+        `CASE WHEN ${column} IS NULL THEN 1 ELSE 0 END`,
+        "job_sort_null_order",
+      );
+      queryBuilder.orderBy("job_sort_null_order", "ASC");
+      queryBuilder.addOrderBy(column, normalizedSortDirection);
+    } else {
+      queryBuilder.orderBy(column, normalizedSortDirection);
+    }
+
+    if (normalizedSortBy !== "updatedAt") {
+      queryBuilder.addOrderBy("job.updatedAt", "DESC");
+    }
+    if (normalizedSortBy !== "createdAt") {
+      queryBuilder.addOrderBy("job.createdAt", "DESC");
+    }
+    queryBuilder.addOrderBy("job.id", "ASC");
   }
 
   private applyJobFilters(

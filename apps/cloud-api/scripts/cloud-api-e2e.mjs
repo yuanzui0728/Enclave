@@ -672,6 +672,7 @@ async function runScenario() {
     worldId: world.id,
     jobType: "suspend",
     payload: { source: "suspend-request" },
+    finishedAt: "2026-04-20T00:05:00.000Z",
     failureMessage:
       "Pending suspend job was superseded by a newer resume request.",
     resultPayload: {
@@ -680,10 +681,11 @@ async function runScenario() {
       supersededByPayload: { source: "resume-request" },
     },
   });
-  seedLifecycleJob(databasePath, {
+  const supersededSuspendJob = seedLifecycleJob(databasePath, {
     worldId: world.id,
     jobType: "resume",
     payload: { source: "resume-request" },
+    finishedAt: "2026-04-20T00:15:00.000Z",
     failureMessage:
       "Pending resume job was superseded by a newer suspend request.",
     resultPayload: {
@@ -776,6 +778,26 @@ async function runScenario() {
     "paginated job list should return one item for pageSize=1",
   );
 
+  const sortedSupersededJobsResponse = await listJobs(
+    baseUrl,
+    adminHeaders,
+    {
+      audit: "superseded",
+      sortBy: "finishedAt",
+      sortDirection: "asc",
+    },
+  );
+  assert.equal(
+    sortedSupersededJobsResponse.status,
+    200,
+    "sorted superseded job list should succeed",
+  );
+  assert.deepEqual(
+    sortedSupersededJobsResponse.body.items.map((job) => job.id),
+    [supersededResumeJob.id, supersededSuspendJob.id],
+    "sortBy=finishedAt&sortDirection=asc should sort superseded jobs by finishedAt",
+  );
+
   const delayedJob = seedLifecycleJob(databasePath, {
     worldId: world.id,
     jobType: "resume",
@@ -863,6 +885,19 @@ async function runScenario() {
     invalidQueueStateJobFilterResponse.status,
     400,
     "job list should validate queueState filters",
+  );
+
+  const invalidSortByJobFilterResponse = await apiFetch(
+    baseUrl,
+    "/admin/cloud/jobs?sortBy=priority",
+    {
+      headers: adminHeaders,
+    },
+  );
+  assert.equal(
+    invalidSortByJobFilterResponse.status,
+    400,
+    "job list should validate sortBy filters",
   );
 
   const invalidProviderResponse = await apiFetch(

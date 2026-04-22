@@ -545,6 +545,8 @@ export const cloudAdminApi = {
         audit: filters?.audit,
         supersededBy: filters?.supersededBy,
         query: filters?.query,
+        sortBy: filters?.sortBy,
+        sortDirection: filters?.sortDirection,
         page: filters?.page,
         pageSize: filters?.pageSize,
       })}`,

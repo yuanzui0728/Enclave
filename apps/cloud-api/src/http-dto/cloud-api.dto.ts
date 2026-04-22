@@ -48,6 +48,14 @@ const WORLD_LIFECYCLE_JOB_QUEUE_STATE_FILTERS = [
   "lease_expired",
   "delayed",
 ] as const;
+const WORLD_LIFECYCLE_JOB_SORT_FIELDS = [
+  "updatedAt",
+  "createdAt",
+  "availableAt",
+  "startedAt",
+  "finishedAt",
+] as const;
+const WORLD_LIFECYCLE_JOB_SORT_DIRECTIONS = ["asc", "desc"] as const;
 const WAITING_SESSION_SYNC_TASK_STATUSES = ["pending", "running", "failed"] as const;
 const WAITING_SESSION_SYNC_TASK_TYPES = [
   "refresh_phone",
@@ -447,6 +455,20 @@ export class ListJobsQueryDto {
   @IsString({ message: "query 必须是字符串。" })
   @MaxLength(255, { message: "query 不能超过 255 个字符。" })
   query?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WORLD_LIFECYCLE_JOB_SORT_FIELDS, {
+    message: "sortBy 不是合法的生命周期任务排序字段。",
+  })
+  sortBy?: (typeof WORLD_LIFECYCLE_JOB_SORT_FIELDS)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WORLD_LIFECYCLE_JOB_SORT_DIRECTIONS, {
+    message: "sortDirection 不是合法的生命周期任务排序方向。",
+  })
+  sortDirection?: (typeof WORLD_LIFECYCLE_JOB_SORT_DIRECTIONS)[number];
 
   @Type(() => Number)
   @IsOptional()

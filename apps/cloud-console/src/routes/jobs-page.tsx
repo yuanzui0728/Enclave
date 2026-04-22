@@ -24,11 +24,15 @@ import {
 import {
   JOB_AUDIT_FILTERS,
   JOB_PAGE_SIZE_OPTIONS,
+  JOB_SORT_DIRECTIONS,
+  JOB_SORT_FIELDS,
   JOB_SUPERSEDED_BY_FILTERS,
   buildJobsRouteSearch,
   JOB_STATUS_FILTERS,
   JOB_TYPE_FILTERS,
   type JobAuditFilter,
+  type JobSortDirectionFilter,
+  type JobSortFieldFilter,
   type JobSupersededByFilter,
   type JobStatusFilter,
   type JobTypeFilter,
@@ -129,6 +133,8 @@ export function JobsPage() {
   const auditFilter = filters.audit;
   const supersededByFilter = filters.supersededBy;
   const query = filters.query;
+  const sortBy = filters.sortBy;
+  const sortDirection = filters.sortDirection;
   const page = filters.page;
   const pageSize = filters.pageSize;
 
@@ -150,6 +156,8 @@ export function JobsPage() {
       auditFilter,
       supersededByFilter,
       query,
+      sortBy,
+      sortDirection,
       page,
       pageSize,
     ],
@@ -164,6 +172,8 @@ export function JobsPage() {
         supersededBy:
           supersededByFilter === "all" ? undefined : supersededByFilter,
         query: query || undefined,
+        sortBy,
+        sortDirection,
         page,
         pageSize,
       }),
@@ -413,6 +423,40 @@ export function JobsPage() {
             {JOB_SUPERSEDED_BY_FILTERS.map((item) => (
               <option key={item} value={item}>
                 superseded by: {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(event) =>
+              updateFilters({
+                sortBy: event.target.value as JobSortFieldFilter,
+                page: 1,
+              })
+            }
+            className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
+          >
+            {JOB_SORT_FIELDS.map((item) => (
+              <option key={item} value={item}>
+                sort by: {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={sortDirection}
+            onChange={(event) =>
+              updateFilters({
+                sortDirection: event.target.value as JobSortDirectionFilter,
+                page: 1,
+              })
+            }
+            className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
+          >
+            {JOB_SORT_DIRECTIONS.map((item) => (
+              <option key={item} value={item}>
+                direction: {item}
               </option>
             ))}
           </select>

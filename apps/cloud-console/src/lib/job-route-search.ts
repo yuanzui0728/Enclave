@@ -1,4 +1,6 @@
 import type {
+  CloudWorldLifecycleJobSortDirection,
+  CloudWorldLifecycleJobSortField,
   WorldLifecycleJobStatus,
   WorldLifecycleJobType,
 } from "@yinjie/contracts";
@@ -11,6 +13,8 @@ export type JobStatusFilter = WorldLifecycleJobStatus | "all";
 export type JobTypeFilter = WorldLifecycleJobType | "all";
 export type JobAuditFilter = "all" | "superseded";
 export type JobSupersededByFilter = JobTypeFilter;
+export type JobSortFieldFilter = CloudWorldLifecycleJobSortField;
+export type JobSortDirectionFilter = CloudWorldLifecycleJobSortDirection;
 
 export type JobsRouteSearch = {
   status: JobStatusFilter;
@@ -20,6 +24,8 @@ export type JobsRouteSearch = {
   audit: JobAuditFilter;
   supersededBy: JobSupersededByFilter;
   query: string;
+  sortBy: JobSortFieldFilter;
+  sortDirection: JobSortDirectionFilter;
   page: number;
   pageSize: number;
 };
@@ -48,6 +54,14 @@ export const JOB_SUPERSEDED_BY_FILTERS: JobSupersededByFilter[] = [
   "suspend",
   "reconcile",
 ];
+export const JOB_SORT_FIELDS: JobSortFieldFilter[] = [
+  "updatedAt",
+  "createdAt",
+  "availableAt",
+  "startedAt",
+  "finishedAt",
+];
+export const JOB_SORT_DIRECTIONS: JobSortDirectionFilter[] = ["desc", "asc"];
 export const JOB_PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
 
 export const DEFAULT_JOBS_ROUTE_SEARCH: JobsRouteSearch = {
@@ -58,6 +72,8 @@ export const DEFAULT_JOBS_ROUTE_SEARCH: JobsRouteSearch = {
   audit: "all",
   supersededBy: "all",
   query: "",
+  sortBy: "updatedAt",
+  sortDirection: "desc",
   page: 1,
   pageSize: 20,
 };
@@ -68,6 +84,8 @@ const JOB_AUDIT_FILTER_SET = new Set<string>(JOB_AUDIT_FILTERS);
 const JOB_SUPERSEDED_BY_FILTER_SET = new Set<string>(
   JOB_SUPERSEDED_BY_FILTERS,
 );
+const JOB_SORT_FIELD_SET = new Set<string>(JOB_SORT_FIELDS);
+const JOB_SORT_DIRECTION_SET = new Set<string>(JOB_SORT_DIRECTIONS);
 const QUEUE_STATE_FILTER_SET = new Set<string>(
   QUEUE_STATE_FILTERS.map((item) => item.value),
 );
@@ -97,6 +115,8 @@ export function buildJobsRouteSearch(
   const queueState = normalizeRouteString(search?.queueState);
   const audit = normalizeRouteString(search?.audit);
   const supersededBy = normalizeRouteString(search?.supersededBy);
+  const sortBy = normalizeRouteString(search?.sortBy);
+  const sortDirection = normalizeRouteString(search?.sortDirection);
   const pageSize = normalizePositiveInteger(
     search?.pageSize,
     DEFAULT_JOBS_ROUTE_SEARCH.pageSize,
@@ -123,6 +143,12 @@ export function buildJobsRouteSearch(
       typeof search?.query === "string"
         ? search.query
         : DEFAULT_JOBS_ROUTE_SEARCH.query,
+    sortBy: JOB_SORT_FIELD_SET.has(sortBy)
+      ? (sortBy as JobSortFieldFilter)
+      : DEFAULT_JOBS_ROUTE_SEARCH.sortBy,
+    sortDirection: JOB_SORT_DIRECTION_SET.has(sortDirection)
+      ? (sortDirection as JobSortDirectionFilter)
+      : DEFAULT_JOBS_ROUTE_SEARCH.sortDirection,
     page: normalizePositiveInteger(
       search?.page,
       DEFAULT_JOBS_ROUTE_SEARCH.page,
@@ -142,6 +168,8 @@ export function validateJobsRouteSearch(search: Record<string, unknown>) {
     audit: normalizeRouteString(search.audit),
     supersededBy: normalizeRouteString(search.supersededBy),
     query: typeof search.query === "string" ? search.query : "",
+    sortBy: normalizeRouteString(search.sortBy),
+    sortDirection: normalizeRouteString(search.sortDirection),
     page: search.page,
     pageSize: search.pageSize,
   });

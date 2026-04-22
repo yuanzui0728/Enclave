@@ -1116,6 +1116,9 @@ function filterLifecycleJobs(
   const audit = searchParams.get("audit");
   const supersededBy = searchParams.get("supersededBy");
   const query = searchParams.get("query")?.trim().toLowerCase() ?? "";
+  const sortBy = searchParams.get("sortBy") ?? "updatedAt";
+  const sortDirection =
+    searchParams.get("sortDirection") === "asc" ? "asc" : "desc";
   const page = Math.max(
     1,
     Number.parseInt(searchParams.get("page") ?? "1", 10) || 1,
@@ -1194,13 +1197,44 @@ function filterLifecycleJobs(
     return haystack.includes(query);
   });
 
-  const items = filteredJobs.slice((page - 1) * pageSize, page * pageSize);
+  const sortedJobs = [...filteredJobs].sort((left, right) => {
+    const sortKey = sortBy as
+      | "updatedAt"
+      | "createdAt"
+      | "availableAt"
+      | "startedAt"
+      | "finishedAt";
+    const leftValue = left[sortKey] ?? null;
+    const rightValue = right[sortKey] ?? null;
+
+    if (leftValue == null && rightValue == null) {
+      return right.updatedAt.localeCompare(left.updatedAt);
+    }
+    if (leftValue == null) {
+      return 1;
+    }
+    if (rightValue == null) {
+      return -1;
+    }
+
+    const compared =
+      sortDirection === "asc"
+        ? leftValue.localeCompare(rightValue)
+        : rightValue.localeCompare(leftValue);
+    if (compared !== 0) {
+      return compared;
+    }
+
+    return right.updatedAt.localeCompare(left.updatedAt);
+  });
+
+  const items = sortedJobs.slice((page - 1) * pageSize, page * pageSize);
   return {
     items,
-    total: filteredJobs.length,
+    total: sortedJobs.length,
     page,
     pageSize,
-    totalPages: Math.max(1, Math.ceil(filteredJobs.length / pageSize)),
+    totalPages: Math.max(1, Math.ceil(sortedJobs.length / pageSize)),
   };
 }
 

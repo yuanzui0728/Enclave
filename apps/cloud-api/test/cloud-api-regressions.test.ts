@@ -3736,6 +3736,8 @@ test("ListJobsQueryDto transforms valid lifecycle job filters", () => {
     audit: " superseded ",
     supersededBy: " suspend ",
     query: " queued retry ",
+    sortBy: " finishedAt ",
+    sortDirection: " asc ",
     page: "2",
     pageSize: "50",
   });
@@ -3750,8 +3752,24 @@ test("ListJobsQueryDto transforms valid lifecycle job filters", () => {
   assert.equal(query.audit, "superseded");
   assert.equal(query.supersededBy, "suspend");
   assert.equal(query.query, "queued retry");
+  assert.equal(query.sortBy, "finishedAt");
+  assert.equal(query.sortDirection, "asc");
   assert.equal(query.page, 2);
   assert.equal(query.pageSize, 50);
+});
+
+test("ListJobsQueryDto rejects unknown lifecycle job sort parameters", () => {
+  const query = plainToInstance(ListJobsQueryDto, {
+    sortBy: "priority",
+    sortDirection: "sideways",
+  });
+  const errors = validateSync(query);
+
+  assert.equal(errors.length, 2);
+  assert.deepEqual(
+    errors.map((error) => error.property).sort(),
+    ["sortBy", "sortDirection"],
+  );
 });
 
 test("MutateFailedWaitingSessionSyncTasksDto transforms valid task ids", () => {
@@ -4034,6 +4052,8 @@ test("AdminCloudController forwards lifecycle job filters", async () => {
     audit: "superseded",
     supersededBy: "suspend",
     query: "retry",
+    sortBy: "finishedAt",
+    sortDirection: "asc",
     page: 2,
     pageSize: 50,
   });
@@ -4049,6 +4069,8 @@ test("AdminCloudController forwards lifecycle job filters", async () => {
       audit: "superseded",
       supersededBy: "suspend",
       query: "retry",
+      sortBy: "finishedAt",
+      sortDirection: "asc",
       page: 2,
       pageSize: 50,
     },
@@ -5652,5 +5674,122 @@ test("listJobs filters lifecycle jobs by provider queue state and search query",
   assert.deepEqual(
     queryFilteredJobs.items.map((job) => job.id),
     [delayedJob.id],
+  );
+});
+
+test("listJobs sorts lifecycle jobs by nullable timestamps with nulls last", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const service = createCloudService(dataSource);
+  const worldRepo = dataSource.getRepository(CloudWorldEntity);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const world = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138022",
+      name: "Sorted Job World",
+      status: "ready",
+      slug: "world-8022-job-sort",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: providerSummary.key,
+      providerRegion: "manual",
+      providerZone: "docker-host-a",
+      runtimeVersion: "test-runtime",
+      apiBaseUrl: "https://sorted-job-world.example.com",
+      adminUrl: "https://sorted-job-world-admin.example.com",
+      callbackToken: "token",
+      healthStatus: "healthy",
+      healthMessage: "World is ready.",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+
+  const laterAvailableJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "resume",
+      status: "pending",
+      priority: 50,
+      payload: { source: "sort-later" },
+      attempt: 0,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-20T00:20:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+  const earlierAvailableJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "resume",
+      status: "pending",
+      priority: 50,
+      payload: { source: "sort-earlier" },
+      attempt: 0,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-20T00:10:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+  const nullAvailableJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "reconcile",
+      status: "running",
+      priority: 50,
+      payload: { source: "sort-null" },
+      attempt: 1,
+      maxAttempts: 3,
+      availableAt: null,
+      leaseOwner: "worker-sort",
+      leaseExpiresAt: new Date("2026-04-20T00:30:00.000Z"),
+      startedAt: new Date("2026-04-20T00:05:00.000Z"),
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const ascendingResult = await service.listJobs({
+    worldId: world.id,
+    sortBy: "availableAt",
+    sortDirection: "asc",
+  });
+  assert.deepEqual(
+    ascendingResult.items.map((job) => job.id),
+    [earlierAvailableJob.id, laterAvailableJob.id, nullAvailableJob.id],
+  );
+
+  const descendingResult = await service.listJobs({
+    worldId: world.id,
+    sortBy: "availableAt",
+    sortDirection: "desc",
+  });
+  assert.deepEqual(
+    descendingResult.items.map((job) => job.id),
+    [laterAvailableJob.id, earlierAvailableJob.id, nullAvailableJob.id],
   );
 });
