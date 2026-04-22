@@ -18,6 +18,7 @@ export type WorldsRouteSearch = {
   powerState: PowerStateFilter;
   attention: AttentionFilter;
   health: HealthFilter;
+  query: string;
 };
 
 export const WORLD_STATUS_FILTERS: WorldStatusFilter[] = [
@@ -66,6 +67,7 @@ export const DEFAULT_WORLDS_ROUTE_SEARCH: WorldsRouteSearch = {
   powerState: "all",
   attention: "all",
   health: "all",
+  query: "",
 };
 
 const WORLD_STATUS_FILTER_SET = new Set<string>(WORLD_STATUS_FILTERS);
@@ -85,6 +87,7 @@ export function buildWorldsRouteSearch(
   const powerState = normalizeRouteString(search?.powerState);
   const attention = normalizeRouteString(search?.attention);
   const health = normalizeRouteString(search?.health);
+  const query = normalizeRouteString(search?.query);
 
   return {
     status: WORLD_STATUS_FILTER_SET.has(status)
@@ -100,6 +103,7 @@ export function buildWorldsRouteSearch(
     health: HEALTH_FILTER_SET.has(health)
       ? (health as HealthFilter)
       : DEFAULT_WORLDS_ROUTE_SEARCH.health,
+    query,
   };
 }
 
@@ -110,5 +114,6 @@ export function validateWorldsRouteSearch(search: Record<string, unknown>) {
     powerState: normalizeRouteString(search.powerState),
     attention: normalizeRouteString(search.attention),
     health: normalizeRouteString(search.health),
+    query: normalizeRouteString(search.query),
   });
 }

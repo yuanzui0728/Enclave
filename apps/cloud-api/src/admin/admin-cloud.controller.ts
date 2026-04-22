@@ -20,8 +20,11 @@ import {
   ListAdminSessionSourceGroupsQueryDto,
   ListAdminSessionsQueryDto,
   ListJobsQueryDto,
+  ListWaitingSessionSyncTasksQueryDto,
   ListWorldInstancesQueryDto,
   ListWorldRequestsQueryDto,
+  MutateFailedWaitingSessionSyncTasksDto,
+  MutateFilteredFailedWaitingSessionSyncTasksDto,
   RevokeAdminSessionSourceGroupDto,
   RevokeAdminSessionSourceGroupsByRiskDto,
   RevokeAdminSessionsByIdDto,
@@ -239,6 +242,58 @@ export class AdminCloudController {
       worldId: query.worldId,
       status: query.status,
       jobType: query.jobType,
+      provider: query.provider,
+      queueState: query.queueState,
+      audit: query.audit,
+      supersededBy: query.supersededBy,
+      query: query.query,
+    });
+  }
+
+  @Get("waiting-session-sync-tasks")
+  listWaitingSessionSyncTasks(
+    @Query() query: ListWaitingSessionSyncTasksQueryDto,
+  ) {
+    return this.cloudService.listWaitingSessionSyncTasks({
+      status: query.status,
+      taskType: query.taskType,
+      query: query.query,
+      page: query.page,
+      pageSize: query.pageSize,
+    });
+  }
+
+  @Post("waiting-session-sync-tasks/replay-failed")
+  replayFailedWaitingSessionSyncTasks(
+    @Body() body: MutateFailedWaitingSessionSyncTasksDto,
+  ) {
+    return this.cloudService.replayFailedWaitingSessionSyncTasks(body.taskIds);
+  }
+
+  @Post("waiting-session-sync-tasks/clear-failed")
+  clearFailedWaitingSessionSyncTasks(
+    @Body() body: MutateFailedWaitingSessionSyncTasksDto,
+  ) {
+    return this.cloudService.clearFailedWaitingSessionSyncTasks(body.taskIds);
+  }
+
+  @Post("waiting-session-sync-tasks/replay-filtered-failed")
+  replayFilteredFailedWaitingSessionSyncTasks(
+    @Body() body: MutateFilteredFailedWaitingSessionSyncTasksDto,
+  ) {
+    return this.cloudService.replayFilteredFailedWaitingSessionSyncTasks({
+      taskType: body.taskType,
+      query: body.query,
+    });
+  }
+
+  @Post("waiting-session-sync-tasks/clear-filtered-failed")
+  clearFilteredFailedWaitingSessionSyncTasks(
+    @Body() body: MutateFilteredFailedWaitingSessionSyncTasksDto,
+  ) {
+    return this.cloudService.clearFilteredFailedWaitingSessionSyncTasks({
+      taskType: body.taskType,
+      query: body.query,
     });
   }
 

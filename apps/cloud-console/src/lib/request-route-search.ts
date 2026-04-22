@@ -12,6 +12,7 @@ export type RequestsRouteSearch = {
   status: RequestStatusFilter;
   projectedWorldStatus: ProjectedWorldStatusFilter;
   desiredState: ProjectedDesiredStateFilter;
+  query: string;
 };
 
 export const REQUEST_STATUS_FILTERS: RequestStatusFilter[] = ["all", ...REQUEST_STATUSES];
@@ -26,6 +27,7 @@ export const DEFAULT_REQUESTS_ROUTE_SEARCH: RequestsRouteSearch = {
   status: "all",
   projectedWorldStatus: "all",
   desiredState: "all",
+  query: "",
 };
 
 const REQUEST_STATUS_FILTER_SET = new Set<string>(REQUEST_STATUS_FILTERS);
@@ -48,6 +50,7 @@ export function buildRequestsRouteSearch(
     search?.projectedWorldStatus,
   );
   const desiredState = normalizeRouteString(search?.desiredState);
+  const query = normalizeRouteString(search?.query);
 
   return {
     status: REQUEST_STATUS_FILTER_SET.has(status)
@@ -61,6 +64,7 @@ export function buildRequestsRouteSearch(
     desiredState: REQUEST_PROJECTED_DESIRED_STATE_FILTER_SET.has(desiredState)
       ? (desiredState as ProjectedDesiredStateFilter)
       : DEFAULT_REQUESTS_ROUTE_SEARCH.desiredState,
+    query,
   };
 }
 
@@ -69,5 +73,6 @@ export function validateRequestsRouteSearch(search: Record<string, unknown>) {
     status: normalizeRouteString(search.status),
     projectedWorldStatus: normalizeRouteString(search.projectedWorldStatus),
     desiredState: normalizeRouteString(search.desiredState),
+    query: normalizeRouteString(search.query),
   });
 }

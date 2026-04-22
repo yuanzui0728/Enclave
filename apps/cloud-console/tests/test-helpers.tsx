@@ -1,7 +1,13 @@
+import type { WorldLifecycleJobSummary } from "@yinjie/contracts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
+import { matchesQueueStateFilter } from "../src/lib/job-queue-state";
+import {
+  getJobAuditBadgeLabel,
+  getJobSupersededByJobType,
+} from "../src/lib/job-result";
 import { createAppRouter } from "../src/router";
 import type { WorldLifecycleAction } from "../src/lib/world-lifecycle-actions";
 
@@ -75,6 +81,8 @@ export const mockJob = {
   finishedAt: "2026-04-20T00:02:00.000Z",
   payload: { source: "test" },
   resultPayload: { action: "resumed" },
+  supersededByJobType: null,
+  supersededByPayload: null,
 };
 
 export const mockInstance = {
@@ -268,6 +276,63 @@ export const mockAdminSessions = [
   },
 ];
 
+export const mockWaitingSessionSyncTasks = [
+  {
+    id: "44444444-4444-4444-8444-444444444444",
+    taskKey: "refresh-world:world-1",
+    taskType: "refresh_world" as const,
+    targetValue: "world-1",
+    context: "runtime.heartbeat",
+    status: "failed" as const,
+    attempt: 3,
+    maxAttempts: 3,
+    availableAt: "2026-04-20T00:15:00.000Z",
+    leaseOwner: null,
+    leaseExpiresAt: null,
+    leaseRemainingSeconds: null,
+    lastError: "heartbeat callback failed",
+    finishedAt: "2026-04-20T00:16:00.000Z",
+    createdAt: "2026-04-20T00:10:00.000Z",
+    updatedAt: "2026-04-20T00:16:00.000Z",
+  },
+  {
+    id: "55555555-5555-4555-8555-555555555555",
+    taskKey: "refresh-phone:+8613800138001",
+    taskType: "refresh_phone" as const,
+    targetValue: "+8613800138001",
+    context: "cloud.updateRequest",
+    status: "pending" as const,
+    attempt: 1,
+    maxAttempts: 3,
+    availableAt: "2026-04-20T00:20:00.000Z",
+    leaseOwner: null,
+    leaseExpiresAt: null,
+    leaseRemainingSeconds: null,
+    lastError: "temporary phone refresh failure",
+    finishedAt: null,
+    createdAt: "2026-04-20T00:12:00.000Z",
+    updatedAt: "2026-04-20T00:18:00.000Z",
+  },
+  {
+    id: "66666666-6666-4666-8666-666666666666",
+    taskKey: "invalidate-phone:+8613800138002",
+    taskType: "invalidate_phone" as const,
+    targetValue: "+8613800138002",
+    context: "cloud.updateWorld",
+    status: "running" as const,
+    attempt: 2,
+    maxAttempts: 3,
+    availableAt: "2026-04-20T00:11:00.000Z",
+    leaseOwner: "worker-1",
+    leaseExpiresAt: "2026-04-20T00:19:00.000Z",
+    leaseRemainingSeconds: 45,
+    lastError: "invalidating old waiting sessions",
+    finishedAt: null,
+    createdAt: "2026-04-20T00:11:00.000Z",
+    updatedAt: "2026-04-20T00:17:00.000Z",
+  },
+];
+
 let mockResponseRequestIdCounter = 0;
 
 function createMockResponseHeaders() {
@@ -314,6 +379,7 @@ type CloudAdminMockOverrides = {
   requests?: Array<Partial<typeof mockRequest>>;
   world?: Partial<typeof mockWorld>;
   job?: Partial<typeof mockJob>;
+  jobs?: Array<Partial<typeof mockJob>>;
   instance?: Partial<typeof mockInstance>;
   attentionItem?: Partial<typeof mockAttentionItem>;
   driftSummary?: Partial<typeof mockDriftSummary>;
@@ -322,16 +388,22 @@ type CloudAdminMockOverrides = {
   updateWorldError?: string;
   rotateCallbackTokenError?: string;
   adminSessions?: typeof mockAdminSessions;
+  waitingSessionSyncTasks?: typeof mockWaitingSessionSyncTasks;
   revokeAdminSessionError?: string;
   bulkRevokeAdminSessionsError?: string;
   filteredRevokeAdminSessionsError?: string;
   revokeAdminSessionSourceGroupError?: string;
   createAdminSessionSourceGroupSnapshotError?: string;
   createAdminSessionSourceGroupRiskSnapshotError?: string;
+  replayFailedWaitingSessionSyncTasksError?: string;
+  clearFailedWaitingSessionSyncTasksError?: string;
+  replayFilteredFailedWaitingSessionSyncTasksError?: string;
+  clearFilteredFailedWaitingSessionSyncTasksError?: string;
   bulkRevokeUnavailableSessionIds?: string[];
 };
 
 type MockAdminSession = (typeof mockAdminSessions)[number];
+type MockWaitingSessionSyncTask = (typeof mockWaitingSessionSyncTasks)[number];
 type MockAdminSessionSourceGroup = {
   sourceKey: string;
   issuedFromIp?: string | null;
@@ -603,6 +675,111 @@ function listAdminSessions(
   const filteredSessions = filterAdminSessions(sessions, searchParams);
 
   return paginateAdminSessions(filteredSessions, page, pageSize);
+}
+
+function filterWaitingSessionSyncTasks(
+  tasks: typeof mockWaitingSessionSyncTasks,
+  searchParams: URLSearchParams,
+) {
+  const status = searchParams.get("status");
+  const taskType = searchParams.get("taskType");
+  const query = searchParams.get("query")?.trim().toLowerCase() ?? "";
+
+  const filteredTasks = tasks.filter((task) => {
+    if (status && task.status !== status) {
+      return false;
+    }
+    if (taskType && task.taskType !== taskType) {
+      return false;
+    }
+    if (!query) {
+      return true;
+    }
+
+    const haystack = [
+      task.id,
+      task.taskKey,
+      task.taskType,
+      task.targetValue,
+      task.context,
+      task.status,
+      task.lastError,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(query);
+  });
+
+  const sortedTasks = [...filteredTasks].sort((left, right) => {
+    const updatedResult = compareOptionalTimestamps(
+      left.updatedAt,
+      right.updatedAt,
+    );
+    if (updatedResult !== 0) {
+      return updatedResult;
+    }
+
+    const createdResult = compareOptionalTimestamps(
+      left.createdAt,
+      right.createdAt,
+    );
+    if (createdResult !== 0) {
+      return createdResult;
+    }
+
+    return left.id.localeCompare(right.id);
+  });
+
+  return {
+    items: sortedTasks,
+    total: sortedTasks.length,
+  };
+}
+
+function listWaitingSessionSyncTasks(
+  tasks: typeof mockWaitingSessionSyncTasks,
+  searchParams: URLSearchParams,
+) {
+  const page = normalizePositiveInteger(searchParams.get("page"), 1);
+  const pageSize = normalizePositiveInteger(searchParams.get("pageSize"), 20);
+  const filteredTasks = filterWaitingSessionSyncTasks(tasks, searchParams);
+  const start = (page - 1) * pageSize;
+  const items = filteredTasks.items.slice(start, start + pageSize);
+
+  return {
+    items,
+    total: filteredTasks.total,
+    page,
+    pageSize,
+    totalPages:
+      filteredTasks.total === 0
+        ? 1
+        : Math.ceil(filteredTasks.total / pageSize),
+  };
+}
+
+function buildWaitingSessionSyncFilterSearchParams(body?: Record<string, unknown>) {
+  const searchParams = new URLSearchParams();
+  if (typeof body?.taskType === "string") {
+    searchParams.set("taskType", body.taskType);
+  }
+  if (typeof body?.query === "string") {
+    searchParams.set("query", body.query);
+  }
+
+  return searchParams;
+}
+
+function replayMockWaitingSessionSyncTask(task: MockWaitingSessionSyncTask) {
+  task.status = "pending";
+  task.attempt = 0;
+  task.leaseOwner = null;
+  task.leaseExpiresAt = null;
+  task.leaseRemainingSeconds = null;
+  task.finishedAt = null;
+  task.updatedAt = "2026-04-20T02:10:00.000Z";
 }
 
 function listAdminSessionSourceGroups(
@@ -923,6 +1100,90 @@ function pickAdminSessionFilterSearchParams(searchParams: URLSearchParams) {
   return nextSearchParams;
 }
 
+function filterLifecycleJobs(
+  jobs: WorldLifecycleJobSummary[],
+  world: typeof mockWorld,
+  searchParams: URLSearchParams,
+) {
+  const status = searchParams.get("status");
+  const jobType = searchParams.get("jobType");
+  const worldId = searchParams.get("worldId");
+  const provider = searchParams.get("provider");
+  const queueState = searchParams.get("queueState");
+  const audit = searchParams.get("audit");
+  const supersededBy = searchParams.get("supersededBy");
+  const query = searchParams.get("query")?.trim().toLowerCase() ?? "";
+  const providerKey = world.providerKey?.trim() ?? "";
+  const providerLabel =
+    mockProviders.find((item) => item.key === providerKey)?.label ?? providerKey;
+
+  return jobs.filter((job) => {
+    if (worldId && job.worldId !== worldId) {
+      return false;
+    }
+    if (status && job.status !== status) {
+      return false;
+    }
+    if (jobType && job.jobType !== jobType) {
+      return false;
+    }
+    if (provider) {
+      if (provider === "__unassigned__") {
+        if (providerKey) {
+          return false;
+        }
+      } else if (providerKey !== provider) {
+        return false;
+      }
+    }
+    if (
+      queueState &&
+      !matchesQueueStateFilter(
+        job,
+        queueState as "running_now" | "lease_expired" | "delayed",
+      )
+    ) {
+      return false;
+    }
+
+    const auditBadgeLabel = getJobAuditBadgeLabel(job);
+    if (audit === "superseded" && !auditBadgeLabel) {
+      return false;
+    }
+
+    const supersededByJobType = getJobSupersededByJobType(job);
+    if (supersededBy && supersededByJobType !== supersededBy) {
+      return false;
+    }
+
+    if (!query) {
+      return true;
+    }
+
+    const haystack = [
+      job.id,
+      job.worldId,
+      job.jobType,
+      job.status,
+      job.leaseOwner,
+      job.failureCode,
+      job.failureMessage,
+      job.supersededByJobType,
+      supersededByJobType,
+      auditBadgeLabel,
+      world.name,
+      world.phone,
+      providerLabel,
+      providerKey,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(query);
+  });
+}
+
 export function installCloudAdminApiMock(
   overrides?: CloudAdminMockOverrides,
 ) {
@@ -934,6 +1195,9 @@ export function installCloudAdminApiMock(
   const adminSessions = (overrides?.adminSessions ?? mockAdminSessions).map(
     (session) => ({ ...session }),
   );
+  const waitingSessionSyncTasks = (
+    overrides?.waitingSessionSyncTasks ?? mockWaitingSessionSyncTasks
+  ).map((task) => ({ ...task }));
   const bulkRevokeUnavailableSessionIds = new Set(
     overrides?.bulkRevokeUnavailableSessionIds ?? [],
   );
@@ -955,11 +1219,20 @@ export function installCloudAdminApiMock(
     ...mockWorld,
     ...(overrides?.world ?? {}),
   };
-  const resolvedJob = {
-    ...mockJob,
-    worldId: resolvedWorld.id,
-    ...(overrides?.job ?? {}),
-  };
+  const resolvedJobs = (overrides?.jobs?.length
+    ? overrides.jobs.map((job) => ({
+        ...mockJob,
+        worldId: resolvedWorld.id,
+        ...job,
+      }))
+    : [
+        {
+          ...mockJob,
+          worldId: resolvedWorld.id,
+          ...(overrides?.job ?? {}),
+        },
+      ]) as WorldLifecycleJobSummary[];
+  const resolvedJob = resolvedJobs[0];
   const resolvedInstance = {
     ...mockInstance,
     worldId: resolvedWorld.id,
@@ -988,6 +1261,14 @@ export function installCloudAdminApiMock(
     overrides?.createAdminSessionSourceGroupSnapshotError;
   const createAdminSessionSourceGroupRiskSnapshotError =
     overrides?.createAdminSessionSourceGroupRiskSnapshotError;
+  const replayFailedWaitingSessionSyncTasksError =
+    overrides?.replayFailedWaitingSessionSyncTasksError;
+  const clearFailedWaitingSessionSyncTasksError =
+    overrides?.clearFailedWaitingSessionSyncTasksError;
+  const replayFilteredFailedWaitingSessionSyncTasksError =
+    overrides?.replayFilteredFailedWaitingSessionSyncTasksError;
+  const clearFilteredFailedWaitingSessionSyncTasksError =
+    overrides?.clearFilteredFailedWaitingSessionSyncTasksError;
   const fetchMock = vi.fn(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const requestUrl =
@@ -1143,6 +1424,14 @@ export function installCloudAdminApiMock(
       }
       if (
         method === "GET" &&
+        url.pathname === "/admin/cloud/waiting-session-sync-tasks"
+      ) {
+        return jsonResponse(
+          listWaitingSessionSyncTasks(waitingSessionSyncTasks, url.searchParams),
+        );
+      }
+      if (
+        method === "GET" &&
         url.pathname === "/admin/cloud/admin-session-source-groups"
       ) {
         return jsonResponse(
@@ -1182,6 +1471,125 @@ export function installCloudAdminApiMock(
           success: true,
           revokedSessionIds,
           skippedSessionIds,
+        });
+      }
+      if (
+        method === "POST" &&
+        url.pathname === "/admin/cloud/waiting-session-sync-tasks/replay-failed"
+      ) {
+        if (replayFailedWaitingSessionSyncTasksError) {
+          return textResponse(replayFailedWaitingSessionSyncTasksError, 500);
+        }
+        const requestedTaskIds = Array.isArray(body?.taskIds)
+          ? body.taskIds.filter((value): value is string => typeof value === "string")
+          : [];
+        const replayedTaskIds: string[] = [];
+        const skippedTaskIds: string[] = [];
+
+        requestedTaskIds.forEach((taskId) => {
+          const task = waitingSessionSyncTasks.find((item) => item.id === taskId);
+          if (!task || task.status !== "failed") {
+            skippedTaskIds.push(taskId);
+            return;
+          }
+
+          replayMockWaitingSessionSyncTask(task);
+          replayedTaskIds.push(taskId);
+        });
+
+        return jsonResponse({
+          success: true,
+          replayedTaskIds,
+          skippedTaskIds,
+        });
+      }
+      if (
+        method === "POST" &&
+        url.pathname === "/admin/cloud/waiting-session-sync-tasks/clear-failed"
+      ) {
+        if (clearFailedWaitingSessionSyncTasksError) {
+          return textResponse(clearFailedWaitingSessionSyncTasksError, 500);
+        }
+        const requestedTaskIds = Array.isArray(body?.taskIds)
+          ? body.taskIds.filter((value): value is string => typeof value === "string")
+          : [];
+        const clearedTaskIds: string[] = [];
+        const skippedTaskIds: string[] = [];
+
+        requestedTaskIds.forEach((taskId) => {
+          const index = waitingSessionSyncTasks.findIndex((item) => item.id === taskId);
+          if (index < 0 || waitingSessionSyncTasks[index]?.status !== "failed") {
+            skippedTaskIds.push(taskId);
+            return;
+          }
+
+          waitingSessionSyncTasks.splice(index, 1);
+          clearedTaskIds.push(taskId);
+        });
+
+        return jsonResponse({
+          success: true,
+          clearedTaskIds,
+          skippedTaskIds,
+        });
+      }
+      if (
+        method === "POST" &&
+        url.pathname ===
+          "/admin/cloud/waiting-session-sync-tasks/replay-filtered-failed"
+      ) {
+        if (replayFilteredFailedWaitingSessionSyncTasksError) {
+          return textResponse(replayFilteredFailedWaitingSessionSyncTasksError, 500);
+        }
+        const searchParams = buildWaitingSessionSyncFilterSearchParams(body);
+        searchParams.set("status", "failed");
+        const matchingTasks = filterWaitingSessionSyncTasks(
+          waitingSessionSyncTasks,
+          searchParams,
+        ).items;
+
+        matchingTasks.forEach((task) => {
+          const persisted = waitingSessionSyncTasks.find((item) => item.id === task.id);
+          if (persisted && persisted.status === "failed") {
+            replayMockWaitingSessionSyncTask(persisted);
+          }
+        });
+
+        return jsonResponse({
+          success: true,
+          matchedCount: matchingTasks.length,
+          replayedCount: matchingTasks.length,
+          skippedCount: 0,
+        });
+      }
+      if (
+        method === "POST" &&
+        url.pathname ===
+          "/admin/cloud/waiting-session-sync-tasks/clear-filtered-failed"
+      ) {
+        if (clearFilteredFailedWaitingSessionSyncTasksError) {
+          return textResponse(clearFilteredFailedWaitingSessionSyncTasksError, 500);
+        }
+        const searchParams = buildWaitingSessionSyncFilterSearchParams(body);
+        searchParams.set("status", "failed");
+        const matchingTaskIds = new Set(
+          filterWaitingSessionSyncTasks(waitingSessionSyncTasks, searchParams).items.map(
+            (task) => task.id,
+          ),
+        );
+        const matchedCount = matchingTaskIds.size;
+
+        for (let index = waitingSessionSyncTasks.length - 1; index >= 0; index -= 1) {
+          if (matchingTaskIds.has(waitingSessionSyncTasks[index].id)) {
+            waitingSessionSyncTasks.splice(index, 1);
+          }
+        }
+
+        return jsonResponse({
+          success: true,
+          matchedCount,
+          clearedCount: matchedCount,
+          skippedCount: 0,
         });
       }
       if (
@@ -1372,7 +1780,9 @@ export function installCloudAdminApiMock(
         return jsonResponse({ success: true });
       }
       if (method === "GET" && url.pathname === "/admin/cloud/jobs") {
-        return jsonResponse([resolvedJob]);
+        return jsonResponse(
+          filterLifecycleJobs(resolvedJobs, resolvedWorld, url.searchParams),
+        );
       }
       if (
         method === "GET" &&

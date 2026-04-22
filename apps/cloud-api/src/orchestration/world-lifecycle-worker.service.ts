@@ -13,6 +13,7 @@ import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity"
 import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
 import type { InspectWorldInstanceResult } from "../providers/compute-provider.types";
 import { WaitingSessionSyncService } from "../world-access/waiting-session-sync.service";
+import { ensureUniqueActiveLifecycleJob } from "./world-lifecycle-job-queue";
 import { resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "./world-bootstrap-config";
 
 @Injectable()
@@ -228,6 +229,18 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         .andWhere("job.attempt < job.maxAttempts")
         .andWhere("(job.availableAt IS NULL OR job.availableAt <= :now)", { now })
         .andWhere("(job.leaseExpiresAt IS NULL OR job.leaseExpiresAt <= :now)", { now })
+        .andWhere(
+          `NOT EXISTS (
+            SELECT 1
+            FROM "world_lifecycle_jobs" "runningJob"
+            WHERE "runningJob"."worldId" = "job"."worldId"
+              AND "runningJob"."id" != "job"."id"
+              AND "runningJob"."status" = :runningStatus
+              AND "runningJob"."leaseExpiresAt" IS NOT NULL
+              AND "runningJob"."leaseExpiresAt" > :now
+          )`,
+          { runningStatus: "running" },
+        )
         .orderBy("job.priority", "ASC")
         .addOrderBy("job.createdAt", "ASC")
         .getOne();
@@ -257,6 +270,22 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         .andWhere("attempt < maxAttempts")
         .andWhere("(availableAt IS NULL OR availableAt <= :now)", { now })
         .andWhere("(leaseExpiresAt IS NULL OR leaseExpiresAt <= :now)", { now })
+        .andWhere(
+          `NOT EXISTS (
+            SELECT 1
+            FROM "world_lifecycle_jobs" "runningJob"
+            WHERE "runningJob"."worldId" = :candidateWorldId
+              AND "runningJob"."id" != :candidateId
+              AND "runningJob"."status" = :runningStatus
+              AND "runningJob"."leaseExpiresAt" IS NOT NULL
+              AND "runningJob"."leaseExpiresAt" > :now
+          )`,
+          {
+            candidateWorldId: candidate.worldId,
+            candidateId: candidate.id,
+            runningStatus: "running",
+          },
+        )
         .execute();
 
       if ((result.affected ?? 0) !== 1) {
@@ -931,39 +960,29 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     jobType: "provision" | "resume" | "suspend",
     payload: Record<string, unknown>,
   ) {
-    const existing = await this.jobRepo.findOne({
-      where: {
-        worldId,
-        jobType,
-        status: In(["pending", "running"]),
-      },
-      order: {
-        createdAt: "DESC",
-      },
+    return ensureUniqueActiveLifecycleJob(this.jobRepo, {
+      worldId,
+      jobType,
+      create: () =>
+        this.jobRepo.create({
+          worldId,
+          jobType,
+          status: "pending",
+          priority:
+            jobType === "resume" ? 50 : jobType === "suspend" ? 120 : 100,
+          payload,
+          attempt: 0,
+          maxAttempts: jobType === "resume" ? 5 : 3,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          availableAt: new Date(),
+          startedAt: null,
+          finishedAt: null,
+          failureCode: null,
+          failureMessage: null,
+          resultPayload: null,
+        }),
     });
-    if (existing) {
-      return existing;
-    }
-
-    return this.jobRepo.save(
-      this.jobRepo.create({
-        worldId,
-        jobType,
-        status: "pending",
-        priority: jobType === "resume" ? 50 : jobType === "suspend" ? 120 : 100,
-        payload,
-        attempt: 0,
-        maxAttempts: jobType === "resume" ? 5 : 3,
-        leaseOwner: null,
-        leaseExpiresAt: null,
-        availableAt: new Date(),
-        startedAt: null,
-        finishedAt: null,
-        failureCode: null,
-        failureMessage: null,
-        resultPayload: null,
-      }),
-    );
   }
 
   private async recordReconcileAuditJob(params: {

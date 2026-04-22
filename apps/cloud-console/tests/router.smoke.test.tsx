@@ -64,4 +64,11 @@ describe("cloud-console router smoke", () => {
     expect(await screen.findByText("Admin sessions")).toBeTruthy();
     expect(await screen.findByText("Current")).toBeTruthy();
   });
+
+  it("renders the waiting session sync route", async () => {
+    renderRoute("/waiting-sync");
+
+    expect(await screen.findByText("Waiting session sync")).toBeTruthy();
+    expect(await screen.findByText("Batch actions")).toBeTruthy();
+  });
 });

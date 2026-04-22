@@ -200,5 +200,12 @@ describe("cloud-console live api smoke", () => {
     });
     expect(await screen.findByText("Admin sessions")).toBeTruthy();
     expect(await screen.findByText("Current")).toBeTruthy();
+
+    cleanup();
+    renderRoute("/waiting-sync", {
+      adminSecret: liveApiServer.adminSecret,
+    });
+    expect(await screen.findByText("Waiting session sync")).toBeTruthy();
+    expect(await screen.findByText("Batch actions")).toBeTruthy();
   }, 30_000);
 });

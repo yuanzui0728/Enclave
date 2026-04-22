@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import Database from "better-sqlite3";
+import { randomUUID } from "node:crypto";
 import { access, mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import net from "node:net";
@@ -283,6 +285,90 @@ export async function listAdminSessionSourceGroups(baseUrl, headers, query) {
   );
 }
 
+export async function listWaitingSessionSyncTasks(baseUrl, headers, query) {
+  return apiFetch(
+    baseUrl,
+    `/admin/cloud/waiting-session-sync-tasks${buildQueryString(query)}`,
+    {
+      headers,
+    },
+  );
+}
+
+export async function listJobs(baseUrl, headers, query) {
+  return apiFetch(baseUrl, `/admin/cloud/jobs${buildQueryString(query)}`, {
+    headers,
+  });
+}
+
+export async function replayFailedWaitingSessionSyncTasks(
+  baseUrl,
+  taskIds,
+  headers,
+) {
+  return apiFetch(
+    baseUrl,
+    "/admin/cloud/waiting-session-sync-tasks/replay-failed",
+    {
+      method: "POST",
+      headers,
+      body: {
+        taskIds,
+      },
+    },
+  );
+}
+
+export async function clearFailedWaitingSessionSyncTasks(
+  baseUrl,
+  taskIds,
+  headers,
+) {
+  return apiFetch(
+    baseUrl,
+    "/admin/cloud/waiting-session-sync-tasks/clear-failed",
+    {
+      method: "POST",
+      headers,
+      body: {
+        taskIds,
+      },
+    },
+  );
+}
+
+export async function replayFilteredFailedWaitingSessionSyncTasks(
+  baseUrl,
+  payload,
+  headers,
+) {
+  return apiFetch(
+    baseUrl,
+    "/admin/cloud/waiting-session-sync-tasks/replay-filtered-failed",
+    {
+      method: "POST",
+      headers,
+      body: payload ?? {},
+    },
+  );
+}
+
+export async function clearFilteredFailedWaitingSessionSyncTasks(
+  baseUrl,
+  payload,
+  headers,
+) {
+  return apiFetch(
+    baseUrl,
+    "/admin/cloud/waiting-session-sync-tasks/clear-filtered-failed",
+    {
+      method: "POST",
+      headers,
+      body: payload ?? {},
+    },
+  );
+}
+
 export async function revokeAdminSessionById(baseUrl, sessionId, headers) {
   return apiFetch(baseUrl, `/admin/cloud/admin-sessions/${sessionId}/revoke`, {
     method: "POST",
@@ -368,6 +454,160 @@ export async function revokeAdminSessionSourceGroupsByRisk(
   );
 }
 
+export function seedWaitingSessionSyncTask(databasePath, overrides = {}) {
+  const now = new Date().toISOString();
+  const record = {
+    id: randomUUID(),
+    taskKey: `refresh-world:${randomUUID()}`,
+    taskType: "refresh_world",
+    targetValue: `world-${randomUUID()}`,
+    context: "cloud-api-e2e.seed",
+    attempt: 3,
+    maxAttempts: 3,
+    status: "failed",
+    availableAt: now,
+    leaseOwner: null,
+    leaseExpiresAt: null,
+    lastError: "seeded waiting session sync failure",
+    finishedAt: now,
+    ...overrides,
+  };
+  const database = new Database(databasePath);
+
+  try {
+    database
+      .prepare(
+        `INSERT INTO waiting_session_sync_tasks (
+          id,
+          taskKey,
+          taskType,
+          targetValue,
+          context,
+          attempt,
+          maxAttempts,
+          status,
+          availableAt,
+          leaseOwner,
+          leaseExpiresAt,
+          lastError,
+          finishedAt
+        ) VALUES (
+          @id,
+          @taskKey,
+          @taskType,
+          @targetValue,
+          @context,
+          @attempt,
+          @maxAttempts,
+          @status,
+          @availableAt,
+          @leaseOwner,
+          @leaseExpiresAt,
+          @lastError,
+          @finishedAt
+        )`,
+      )
+      .run({
+        ...record,
+        availableAt: normalizeSqliteDateTime(record.availableAt),
+        leaseExpiresAt: normalizeSqliteDateTime(record.leaseExpiresAt),
+        finishedAt: normalizeSqliteDateTime(record.finishedAt),
+      });
+  } finally {
+    database.close();
+  }
+
+  return record;
+}
+
+export function seedLifecycleJob(databasePath, overrides = {}) {
+  const now = new Date().toISOString();
+  const record = {
+    id: randomUUID(),
+    worldId: randomUUID(),
+    jobType: "resume",
+    status: "cancelled",
+    priority: 100,
+    payload: { source: "cloud-api-e2e.seed" },
+    attempt: 0,
+    maxAttempts: 3,
+    leaseOwner: null,
+    leaseExpiresAt: null,
+    availableAt: null,
+    startedAt: null,
+    finishedAt: now,
+    failureCode: "superseded_by_new_job",
+    failureMessage: "Seeded lifecycle job was superseded by a newer request.",
+    resultPayload: {
+      action: "superseded_by_new_job",
+      supersededByJobType: "resume",
+      supersededByPayload: { source: "cloud-api-e2e.seed" },
+    },
+    ...overrides,
+  };
+  const database = new Database(databasePath);
+
+  try {
+    database
+      .prepare(
+        `INSERT INTO world_lifecycle_jobs (
+          id,
+          worldId,
+          jobType,
+          status,
+          priority,
+          payload,
+          attempt,
+          maxAttempts,
+          leaseOwner,
+          leaseExpiresAt,
+          availableAt,
+          startedAt,
+          finishedAt,
+          failureCode,
+          failureMessage,
+          resultPayload
+        ) VALUES (
+          @id,
+          @worldId,
+          @jobType,
+          @status,
+          @priority,
+          @payload,
+          @attempt,
+          @maxAttempts,
+          @leaseOwner,
+          @leaseExpiresAt,
+          @availableAt,
+          @startedAt,
+          @finishedAt,
+          @failureCode,
+          @failureMessage,
+          @resultPayload
+        )`,
+      )
+      .run({
+        ...record,
+        payload:
+          record.payload === null || record.payload === undefined
+            ? null
+            : JSON.stringify(record.payload),
+        leaseExpiresAt: normalizeSqliteDateTime(record.leaseExpiresAt),
+        availableAt: normalizeSqliteDateTime(record.availableAt),
+        startedAt: normalizeSqliteDateTime(record.startedAt),
+        finishedAt: normalizeSqliteDateTime(record.finishedAt),
+        resultPayload:
+          record.resultPayload === null || record.resultPayload === undefined
+            ? null
+            : JSON.stringify(record.resultPayload),
+      });
+  } finally {
+    database.close();
+  }
+
+  return record;
+}
+
 function parseJsonBody(rawBody) {
   if (!rawBody) {
     return null;
@@ -378,6 +618,18 @@ function parseJsonBody(rawBody) {
   } catch {
     return rawBody;
   }
+}
+
+function normalizeSqliteDateTime(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  return value;
 }
 
 async function ensureBuiltServerEntry() {

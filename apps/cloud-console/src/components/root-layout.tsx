@@ -10,6 +10,7 @@ import {
 import { DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH } from "../lib/admin-sessions-route-search";
 import { DEFAULT_JOBS_ROUTE_SEARCH } from "../lib/job-route-search";
 import { DEFAULT_REQUESTS_ROUTE_SEARCH } from "../lib/request-route-search";
+import { DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH } from "../lib/waiting-session-sync-helpers";
 import { DEFAULT_WORLDS_ROUTE_SEARCH } from "../lib/world-route-search";
 import { ConsoleNoticeProvider, useConsoleNotice } from "./console-notice";
 
@@ -145,6 +146,14 @@ function RootLayoutContent() {
               activeProps={{ className: NAV_LINK_ACTIVE }}
             >
               Sessions
+            </Link>
+            <Link
+              to="/waiting-sync"
+              search={DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH}
+              className={NAV_LINK}
+              activeProps={{ className: NAV_LINK_ACTIVE }}
+            >
+              Waiting Sync
             </Link>
           </div>
         </div>

@@ -128,7 +128,7 @@ test("cloud database options run migrations instead of synchronize", async (t) =
   });
 
   const tables = await dataSource.query(
-    "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?, ?, ?, ?, ?, ?, ?)",
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       "cloud_admin_sessions",
       "phone_verification_sessions",
@@ -136,6 +136,7 @@ test("cloud database options run migrations instead of synchronize", async (t) =
       "cloud_world_requests",
       "cloud_instances",
       "world_access_sessions",
+      "waiting_session_sync_tasks",
       "world_lifecycle_jobs",
       "migrations",
     ],
@@ -152,6 +153,7 @@ test("cloud database options run migrations instead of synchronize", async (t) =
       "cloud_worlds",
       "migrations",
       "phone_verification_sessions",
+      "waiting_session_sync_tasks",
       "world_access_sessions",
       "world_lifecycle_jobs",
     ],
@@ -182,5 +184,34 @@ test("cloud database options run migrations instead of synchronize", async (t) =
       "revocationReason",
       "revokedBySessionId",
     ],
+  );
+
+  const waitingSyncTaskColumns = await dataSource.query(
+    "PRAGMA table_info('waiting_session_sync_tasks')",
+  );
+  assert.deepEqual(
+    waitingSyncTaskColumns
+      .map((row: { name: string }) => row.name)
+      .filter((name: string) =>
+        [
+          "status",
+          "finishedAt",
+          "taskKey",
+          "taskType",
+          "targetValue",
+        ].includes(name),
+      )
+      .sort(),
+    ["finishedAt", "status", "targetValue", "taskKey", "taskType"],
+  );
+
+  const activeLifecycleJobIndex = await dataSource.query(
+    "SELECT name, sql FROM sqlite_master WHERE type = 'index' AND name = ?",
+    ["IDX_world_lifecycle_jobs_active_world"],
+  );
+  assert.equal(activeLifecycleJobIndex.length, 1);
+  assert.match(
+    activeLifecycleJobIndex[0]?.sql ?? "",
+    /ON "world_lifecycle_jobs" \("worldId"\) WHERE "status" IN \('pending', 'running'\) AND "jobType" IN \('provision', 'resume', 'suspend'\)/,
   );
 });

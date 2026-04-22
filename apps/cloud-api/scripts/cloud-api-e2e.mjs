@@ -1,12 +1,19 @@
 import assert from "node:assert/strict";
+import { setTimeout as sleep } from "node:timers/promises";
 import {
   apiFetch,
   assertSuccessfulPost,
+  clearFilteredFailedWaitingSessionSyncTasks,
+  clearFailedWaitingSessionSyncTasks,
   createAdminSessionSourceGroupRiskSnapshot,
   createAdminSessionSourceGroupSnapshot,
   issueAdminAccessToken,
+  listJobs,
   listAdminSessionSourceGroups,
   listAdminSessions,
+  listWaitingSessionSyncTasks,
+  replayFilteredFailedWaitingSessionSyncTasks,
+  replayFailedWaitingSessionSyncTasks,
   refreshAdminAccessToken,
   revokeAdminSession,
   revokeAdminSessionSourceGroupsByRisk,
@@ -14,6 +21,8 @@ import {
   revokeFilteredAdminSessions,
   revokeAdminSessionById,
   revokeAdminSessionsById,
+  seedLifecycleJob,
+  seedWaitingSessionSyncTask,
   startEphemeralCloudApi,
 } from "./cloud-api-test-harness.mjs";
 
@@ -26,7 +35,7 @@ const server = await startEphemeralCloudApi({
   jwtSecret: "cloud-e2e-jwt-secret",
   authTokenTtl: "1h",
 });
-const { adminSecret, baseUrl } = server;
+const { adminSecret, baseUrl, databasePath } = server;
 const ADMIN_ISSUE_IP = "198.51.100.10";
 const ADMIN_ISSUE_REQUEST_ID = "cloud-api-e2e-admin-issue-request-id";
 const ADMIN_REFRESH_IP = "198.51.100.11";
@@ -147,6 +156,280 @@ async function runScenario() {
     clientTokenRejectedByAdminResponse.status,
     401,
     "client access token should not authorize admin routes",
+  );
+
+  const waitingSessionSyncTasksResponse = await listWaitingSessionSyncTasks(
+    baseUrl,
+    {
+      "X-Admin-Secret": adminSecret,
+    },
+    {
+      status: "failed",
+    },
+  );
+  assert.equal(
+    waitingSessionSyncTasksResponse.status,
+    200,
+    "waiting session sync task list should succeed",
+  );
+  assert.ok(
+    Array.isArray(waitingSessionSyncTasksResponse.body?.items),
+    "waiting session sync task list should return items",
+  );
+
+  const invalidWaitingSessionSyncTaskFilterResponse = await apiFetch(
+    baseUrl,
+    "/admin/cloud/waiting-session-sync-tasks?status=broken",
+    {
+      headers: {
+        "X-Admin-Secret": adminSecret,
+      },
+    },
+  );
+  assert.equal(
+    invalidWaitingSessionSyncTaskFilterResponse.status,
+    400,
+    "waiting session sync task list should validate filters",
+  );
+
+  const invalidReplayWaitingSessionSyncTaskResponse = await apiFetch(
+    baseUrl,
+    "/admin/cloud/waiting-session-sync-tasks/replay-failed",
+    {
+      method: "POST",
+      headers: {
+        "X-Admin-Secret": adminSecret,
+      },
+      body: {
+        taskIds: ["broken-task-id"],
+      },
+    },
+  );
+  assert.equal(
+    invalidReplayWaitingSessionSyncTaskResponse.status,
+    400,
+    "waiting session sync replay should validate taskIds",
+  );
+
+  const invalidFilteredReplayWaitingSessionSyncTaskResponse = await apiFetch(
+    baseUrl,
+    "/admin/cloud/waiting-session-sync-tasks/replay-filtered-failed",
+    {
+      method: "POST",
+      headers: {
+        "X-Admin-Secret": adminSecret,
+      },
+      body: {
+        taskType: "broken-task-type",
+      },
+    },
+  );
+  assert.equal(
+    invalidFilteredReplayWaitingSessionSyncTaskResponse.status,
+    400,
+    "filtered waiting session sync replay should validate taskType",
+  );
+
+  const replayTask = seedWaitingSessionSyncTask(databasePath, {
+    taskKey: "refresh-world:cloud-api-e2e-replay-task",
+    targetValue: "cloud-api-e2e-replay-world",
+    context: "cloud-api-e2e.replay",
+  });
+  const replayWaitingSessionSyncTaskResponse =
+    await replayFailedWaitingSessionSyncTasks(
+      baseUrl,
+      [replayTask.id],
+      {
+        "X-Admin-Secret": adminSecret,
+      },
+    );
+  assertSuccessfulPost(
+    replayWaitingSessionSyncTaskResponse,
+    "waiting session sync replay should succeed",
+  );
+  assert.equal(
+    replayWaitingSessionSyncTaskResponse.body.success,
+    true,
+    "waiting session sync replay should report success",
+  );
+  assert.deepEqual(
+    replayWaitingSessionSyncTaskResponse.body.replayedTaskIds,
+    [replayTask.id],
+    "waiting session sync replay should return replayed ids",
+  );
+  assert.deepEqual(
+    replayWaitingSessionSyncTaskResponse.body.skippedTaskIds,
+    [],
+    "waiting session sync replay should not skip the seeded task",
+  );
+  await waitForWaitingSessionSyncTaskCount(
+    baseUrl,
+    {
+      "X-Admin-Secret": adminSecret,
+    },
+    {
+      query: replayTask.taskKey,
+    },
+    0,
+  );
+
+  seedWaitingSessionSyncTask(databasePath, {
+    taskKey: "refresh-world:cloud-api-e2e-filtered-replay-task",
+    targetValue: "cloud-api-e2e-filtered-replay-world",
+    context: "cloud-api-e2e.filtered-replay",
+    taskType: "refresh_world",
+  });
+  const filteredReplayUnmatchedTask = seedWaitingSessionSyncTask(databasePath, {
+    taskKey: "refresh-phone:+8613800138999",
+    targetValue: "+8613800138999",
+    context: "cloud-api-e2e.filtered-replay",
+    taskType: "refresh_phone",
+  });
+  const replayFilteredWaitingSessionSyncTaskResponse =
+    await replayFilteredFailedWaitingSessionSyncTasks(
+      baseUrl,
+      {
+        taskType: "refresh_world",
+        query: "filtered-replay",
+      },
+      {
+        "X-Admin-Secret": adminSecret,
+      },
+    );
+  assertSuccessfulPost(
+    replayFilteredWaitingSessionSyncTaskResponse,
+    "filtered waiting session sync replay should succeed",
+  );
+  assert.deepEqual(
+    replayFilteredWaitingSessionSyncTaskResponse.body,
+    {
+      success: true,
+      matchedCount: 1,
+      replayedCount: 1,
+      skippedCount: 0,
+    },
+    "filtered waiting session sync replay should only replay matching failed tasks",
+  );
+  await waitForWaitingSessionSyncTaskCount(
+    baseUrl,
+    {
+      "X-Admin-Secret": adminSecret,
+    },
+    {
+      query: "filtered-replay",
+    },
+    1,
+  );
+  await waitForWaitingSessionSyncTaskCount(
+    baseUrl,
+    {
+      "X-Admin-Secret": adminSecret,
+    },
+    {
+      query: filteredReplayUnmatchedTask.taskKey,
+    },
+    1,
+  );
+
+  const clearTask = seedWaitingSessionSyncTask(databasePath, {
+    taskKey: "refresh-world:cloud-api-e2e-clear-task",
+    targetValue: "cloud-api-e2e-clear-world",
+    context: "cloud-api-e2e.clear",
+  });
+  const clearWaitingSessionSyncTaskResponse =
+    await clearFailedWaitingSessionSyncTasks(
+      baseUrl,
+      [clearTask.id],
+      {
+        "X-Admin-Secret": adminSecret,
+      },
+    );
+  assertSuccessfulPost(
+    clearWaitingSessionSyncTaskResponse,
+    "waiting session sync clear should succeed",
+  );
+  assert.equal(
+    clearWaitingSessionSyncTaskResponse.body.success,
+    true,
+    "waiting session sync clear should report success",
+  );
+  assert.deepEqual(
+    clearWaitingSessionSyncTaskResponse.body.clearedTaskIds,
+    [clearTask.id],
+    "waiting session sync clear should return cleared ids",
+  );
+  assert.deepEqual(
+    clearWaitingSessionSyncTaskResponse.body.skippedTaskIds,
+    [],
+    "waiting session sync clear should not skip the seeded task",
+  );
+  await waitForWaitingSessionSyncTaskCount(
+    baseUrl,
+    {
+      "X-Admin-Secret": adminSecret,
+    },
+    {
+      query: clearTask.taskKey,
+    },
+    0,
+  );
+
+  seedWaitingSessionSyncTask(databasePath, {
+    taskKey: "refresh-world:cloud-api-e2e-filtered-clear-task",
+    targetValue: "cloud-api-e2e-filtered-clear-world",
+    context: "cloud-api-e2e.filtered-clear",
+    taskType: "refresh_world",
+  });
+  const filteredClearUnmatchedTask = seedWaitingSessionSyncTask(databasePath, {
+    taskKey: "invalidate-phone:+8613800138110",
+    targetValue: "+8613800138110",
+    context: "cloud-api-e2e.filtered-clear",
+    taskType: "invalidate_phone",
+  });
+  const clearFilteredWaitingSessionSyncTaskResponse =
+    await clearFilteredFailedWaitingSessionSyncTasks(
+      baseUrl,
+      {
+        taskType: "refresh_world",
+        query: "filtered-clear",
+      },
+      {
+        "X-Admin-Secret": adminSecret,
+      },
+    );
+  assertSuccessfulPost(
+    clearFilteredWaitingSessionSyncTaskResponse,
+    "filtered waiting session sync clear should succeed",
+  );
+  assert.deepEqual(
+    clearFilteredWaitingSessionSyncTaskResponse.body,
+    {
+      success: true,
+      matchedCount: 1,
+      clearedCount: 1,
+      skippedCount: 0,
+    },
+    "filtered waiting session sync clear should only clear matching failed tasks",
+  );
+  await waitForWaitingSessionSyncTaskCount(
+    baseUrl,
+    {
+      "X-Admin-Secret": adminSecret,
+    },
+    {
+      query: "filtered-clear",
+    },
+    1,
+  );
+  await waitForWaitingSessionSyncTaskCount(
+    baseUrl,
+    {
+      "X-Admin-Secret": adminSecret,
+    },
+    {
+      query: filteredClearUnmatchedTask.taskKey,
+    },
+    1,
   );
 
   const firstRequestResponse = await apiFetch(
@@ -383,6 +666,168 @@ async function runScenario() {
     world.adminUrl,
     "https://world.example.com/admin",
     "world adminUrl should stay normalized",
+  );
+
+  const supersededResumeJob = seedLifecycleJob(databasePath, {
+    worldId: world.id,
+    jobType: "suspend",
+    payload: { source: "suspend-request" },
+    failureMessage:
+      "Pending suspend job was superseded by a newer resume request.",
+    resultPayload: {
+      action: "superseded_by_new_job",
+      supersededByJobType: "resume",
+      supersededByPayload: { source: "resume-request" },
+    },
+  });
+  seedLifecycleJob(databasePath, {
+    worldId: world.id,
+    jobType: "resume",
+    payload: { source: "resume-request" },
+    failureMessage:
+      "Pending resume job was superseded by a newer suspend request.",
+    resultPayload: {
+      action: "superseded_by_new_job",
+      supersededByJobType: "suspend",
+      supersededByPayload: { source: "suspend-request" },
+    },
+  });
+
+  const supersededJobsResponse = await listJobs(
+    baseUrl,
+    adminHeaders,
+    {
+      audit: "superseded",
+    },
+  );
+  assert.equal(
+    supersededJobsResponse.status,
+    200,
+    "superseded job list should succeed",
+  );
+  assert.ok(
+    supersededJobsResponse.body.some(
+      (job) =>
+        job.failureCode === "superseded_by_new_job" &&
+        job.supersededByJobType === "resume",
+    ),
+    "superseded job list should include resume-superseded jobs",
+  );
+  assert.ok(
+    supersededJobsResponse.body.some(
+      (job) =>
+        job.failureCode === "superseded_by_new_job" &&
+        job.supersededByJobType === "suspend",
+    ),
+    "superseded job list should include suspend-superseded jobs",
+  );
+
+  const resumeSupersededJobsResponse = await listJobs(
+    baseUrl,
+    adminHeaders,
+    {
+      audit: "superseded",
+      supersededBy: "resume",
+    },
+  );
+  assert.equal(
+    resumeSupersededJobsResponse.status,
+    200,
+    "superseded-by job list should succeed",
+  );
+  assert.deepEqual(
+    resumeSupersededJobsResponse.body.map((job) => job.id),
+    [supersededResumeJob.id],
+    "superseded-by filter should return only matching jobs",
+  );
+
+  const delayedJob = seedLifecycleJob(databasePath, {
+    worldId: world.id,
+    jobType: "resume",
+    status: "pending",
+    availableAt: new Date(Date.now() + 60_000).toISOString(),
+    finishedAt: null,
+    failureCode: null,
+    failureMessage: null,
+    resultPayload: null,
+  });
+  const delayedJobsResponse = await listJobs(
+    baseUrl,
+    adminHeaders,
+    {
+      queueState: "delayed",
+    },
+  );
+  assert.equal(
+    delayedJobsResponse.status,
+    200,
+    "queue-state filtered job list should succeed",
+  );
+  assert.deepEqual(
+    delayedJobsResponse.body.map((job) => job.id),
+    [delayedJob.id],
+    "queueState=delayed should return only delayed jobs",
+  );
+
+  const unassignedProviderJobsResponse = await listJobs(
+    baseUrl,
+    adminHeaders,
+    {
+      provider: "__unassigned__",
+    },
+  );
+  assert.equal(
+    unassignedProviderJobsResponse.status,
+    200,
+    "provider-filtered job list should succeed",
+  );
+  assert.deepEqual(
+    unassignedProviderJobsResponse.body,
+    [],
+    "provider=__unassigned__ should exclude jobs for assigned worlds",
+  );
+
+  const queryFilteredJobsResponse = await listJobs(
+    baseUrl,
+    adminHeaders,
+    {
+      query: phone,
+    },
+  );
+  assert.equal(
+    queryFilteredJobsResponse.status,
+    200,
+    "query-filtered job list should succeed",
+  );
+  assert.ok(
+    queryFilteredJobsResponse.body.every((job) => job.worldId === world.id),
+    "query filter should match jobs by the world phone",
+  );
+
+  const invalidSupersededJobFilterResponse = await apiFetch(
+    baseUrl,
+    "/admin/cloud/jobs?supersededBy=destroy",
+    {
+      headers: adminHeaders,
+    },
+  );
+  assert.equal(
+    invalidSupersededJobFilterResponse.status,
+    400,
+    "job list should validate supersededBy filters",
+  );
+
+  const invalidQueueStateJobFilterResponse = await apiFetch(
+    baseUrl,
+    "/admin/cloud/jobs?queueState=paused",
+    {
+      headers: adminHeaders,
+    },
+  );
+  assert.equal(
+    invalidQueueStateJobFilterResponse.status,
+    400,
+    "job list should validate queueState filters",
   );
 
   const invalidProviderResponse = await apiFetch(
@@ -1323,5 +1768,33 @@ async function runScenario() {
     manuallyRevokedCurrentSession.revokedBySessionId,
     currentSession.id,
     "manual revoke-by-id should record which session performed the revocation",
+  );
+}
+
+async function waitForWaitingSessionSyncTaskCount(
+  baseUrl,
+  headers,
+  query,
+  expectedTotal,
+  timeoutMs = 1_500,
+) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const response = await listWaitingSessionSyncTasks(baseUrl, headers, query);
+    assert.equal(
+      response.status,
+      200,
+      "waiting session sync task polling should succeed",
+    );
+    if (response.body?.total === expectedTotal) {
+      return;
+    }
+
+    await sleep(50);
+  }
+
+  throw new Error(
+    `Timed out waiting for waiting session sync task total=${expectedTotal}`,
   );
 }

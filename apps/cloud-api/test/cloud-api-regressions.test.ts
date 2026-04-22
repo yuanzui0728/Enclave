@@ -3,6 +3,7 @@ import "reflect-metadata";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import type { WorldLifecycleJobType } from "@yinjie/contracts";
 import { plainToInstance } from "class-transformer";
 import { validateSync } from "class-validator";
 import { DataSource } from "typeorm";
@@ -18,11 +19,16 @@ import {
   CreateAdminSessionSourceGroupSnapshotDto,
   ListAdminSessionSourceGroupsQueryDto,
   ListAdminSessionsQueryDto,
+  ListJobsQueryDto,
+  ListWaitingSessionSyncTasksQueryDto,
+  MutateFailedWaitingSessionSyncTasksDto,
+  MutateFilteredFailedWaitingSessionSyncTasksDto,
   RevokeAdminSessionSourceGroupDto,
   RevokeAdminSessionSourceGroupsByRiskDto,
   RevokeFilteredAdminSessionsDto,
 } from "../src/http-dto/cloud-api.dto";
 import { WorldAccessSessionEntity } from "../src/entities/world-access-session.entity";
+import { WaitingSessionSyncTaskEntity } from "../src/entities/waiting-session-sync-task.entity";
 import { WorldLifecycleJobEntity } from "../src/entities/world-lifecycle-job.entity";
 import { WorldLifecycleWorkerService } from "../src/orchestration/world-lifecycle-worker.service";
 import { WorldRuntimeService } from "../src/runtime-callbacks/world-runtime.service";
@@ -118,6 +124,7 @@ async function createTestDataSource() {
       CloudWorldRequestEntity,
       WorldLifecycleJobEntity,
       WorldAccessSessionEntity,
+      WaitingSessionSyncTaskEntity,
     ],
     synchronize: true,
   });
@@ -134,6 +141,8 @@ function createCloudService(
       | "refreshWaitingSessionsForWorld"
       | "refreshWaitingSessionsForPhone"
       | "invalidateWaitingSessionsForPhone"
+      | "replayFailedTasks"
+      | "clearFailedTasks"
     >;
     worldLifecycleWorker?: Pick<WorldLifecycleWorkerService, "reconcileWorldNow">;
   },
@@ -143,6 +152,7 @@ function createCloudService(
     dataSource.getRepository(CloudInstanceEntity),
     dataSource.getRepository(CloudWorldRequestEntity),
     dataSource.getRepository(WorldLifecycleJobEntity),
+    dataSource.getRepository(WaitingSessionSyncTaskEntity),
     {
       get: () => undefined,
     } as never,
@@ -167,6 +177,16 @@ function createCloudService(
       refreshWaitingSessionsForWorld: async () => undefined,
       refreshWaitingSessionsForPhone: async () => undefined,
       invalidateWaitingSessionsForPhone: async () => undefined,
+      replayFailedTasks: async () => ({
+        success: true as const,
+        replayedTaskIds: [],
+        skippedTaskIds: [],
+      }),
+      clearFailedTasks: async () => ({
+        success: true as const,
+        clearedTaskIds: [],
+        skippedTaskIds: [],
+      }),
     }) as never,
   );
 }
@@ -192,6 +212,7 @@ function createWorldAccessService(dataSource: DataSource) {
 }
 
 function createWaitingSessionSyncService(
+  dataSource: DataSource,
   worldAccessService: Pick<
     WorldAccessService,
     | "refreshWaitingSessionsForWorld"
@@ -201,6 +222,7 @@ function createWaitingSessionSyncService(
   config: Record<string, string | undefined> = {},
 ) {
   return new WaitingSessionSyncService(
+    dataSource.getRepository(WaitingSessionSyncTaskEntity),
     worldAccessService as never,
     {
       get: (key: string) => config[key],
@@ -292,12 +314,12 @@ function getPrivateMethod<TArgs extends unknown[], TResult>(
 }
 
 async function waitForCondition(
-  predicate: () => boolean,
+  predicate: () => boolean | Promise<boolean>,
   timeoutMs = 250,
   intervalMs = 5,
 ) {
   const deadline = Date.now() + timeoutMs;
-  while (!predicate()) {
+  while (!(await predicate())) {
     if (Date.now() >= deadline) {
       throw new Error("Timed out waiting for condition.");
     }
@@ -596,6 +618,7 @@ test("updateWorld invalidates waiting sessions on the previous phone when the wo
   const worldAccessService = createWorldAccessService(dataSource);
   const service = createCloudService(dataSource, {
     waitingSessionSyncService: createWaitingSessionSyncService(
+      dataSource,
       worldAccessService,
     ),
   });
@@ -971,6 +994,7 @@ test("updateRequest keeps committed state when waiting session refresh falls bac
   const dataSource = await createTestDataSource();
   let refreshCalls = 0;
   const waitingSessionSyncService = createWaitingSessionSyncService(
+    dataSource,
     {
       refreshWaitingSessionsForWorld: async () => undefined,
       refreshWaitingSessionsForPhone: async () => {
@@ -1202,6 +1226,7 @@ test("updateRequest invalidates waiting sessions on the previous phone when the 
   const worldAccessService = createWorldAccessService(dataSource);
   const cloudService = createCloudService(dataSource, {
     waitingSessionSyncService: createWaitingSessionSyncService(
+      dataSource,
       worldAccessService,
     ),
   });
@@ -1530,6 +1555,7 @@ test("pending request access sessions refresh to ready after the request is appr
   const worldAccessService = createWorldAccessService(dataSource);
   const cloudService = createCloudService(dataSource, {
     waitingSessionSyncService: createWaitingSessionSyncService(
+      dataSource,
       worldAccessService,
     ),
   });
@@ -1613,6 +1639,7 @@ test("pending request access sessions refresh to failed after the request is rej
   const worldAccessService = createWorldAccessService(dataSource);
   const cloudService = createCloudService(dataSource, {
     waitingSessionSyncService: createWaitingSessionSyncService(
+      dataSource,
       worldAccessService,
     ),
   });
@@ -1676,6 +1703,7 @@ test("pending request session refresh keeps the request gate state", async (t) =
   const worldAccessService = createWorldAccessService(dataSource);
   const cloudService = createCloudService(dataSource, {
     waitingSessionSyncService: createWaitingSessionSyncService(
+      dataSource,
       worldAccessService,
     ),
   });
@@ -1749,6 +1777,7 @@ test("pending request session refresh keeps disabled gate placeholders hidden", 
   const worldAccessService = createWorldAccessService(dataSource);
   const cloudService = createCloudService(dataSource, {
     waitingSessionSyncService: createWaitingSessionSyncService(
+      dataSource,
       worldAccessService,
     ),
   });
@@ -2442,10 +2471,461 @@ test("runtime callbacks reject request gate placeholders", async (t) => {
   assert.equal(refreshCount, 0);
 });
 
+test("listWaitingSessionSyncTasks exposes pending running and failed retry tasks", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const service = createCloudService(dataSource);
+  const taskRepo = dataSource.getRepository(WaitingSessionSyncTaskEntity);
+  const now = new Date("2026-04-21T06:00:00.000Z");
+
+  await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-phone:+8613800138111",
+      taskType: "refresh_phone",
+      targetValue: "+8613800138111",
+      context: "cloud.updateRequest",
+      status: "pending",
+      attempt: 1,
+      maxAttempts: 3,
+      availableAt: now,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "first retry failed",
+      finishedAt: null,
+    }),
+  );
+  const runningTask = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:world-running-task",
+      taskType: "refresh_world",
+      targetValue: "world-running-task",
+      context: "runtime.heartbeat",
+      status: "running",
+      attempt: 2,
+      maxAttempts: 3,
+      availableAt: now,
+      leaseOwner: "worker-running",
+      leaseExpiresAt: new Date(Date.now() + 60_000),
+      lastError: "still retrying",
+      finishedAt: null,
+    }),
+  );
+  const failedTask = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "invalidate-phone:+8613800138222",
+      taskType: "invalidate_phone",
+      targetValue: "+8613800138222",
+      context: "cloud.updateWorld",
+      status: "failed",
+      attempt: 3,
+      maxAttempts: 3,
+      availableAt: now,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "retry exhausted",
+      finishedAt: now,
+    }),
+  );
+
+  const failedResult = await service.listWaitingSessionSyncTasks({
+    status: "failed",
+    query: "exhausted",
+    page: 1,
+    pageSize: 5,
+  });
+  assert.equal(failedResult.total, 1);
+  assert.equal(failedResult.items[0]?.id, failedTask.id);
+  assert.equal(failedResult.items[0]?.status, "failed");
+  assert.equal(failedResult.items[0]?.taskType, "invalidate_phone");
+  assert.equal(
+    failedResult.items[0]?.finishedAt,
+    failedTask.finishedAt?.toISOString() ?? null,
+  );
+
+  const runningResult = await service.listWaitingSessionSyncTasks({
+    status: "running",
+    taskType: "refresh_world",
+  });
+  assert.equal(runningResult.total, 1);
+  assert.equal(runningResult.items[0]?.id, runningTask.id);
+  assert.equal(runningResult.items[0]?.leaseOwner, "worker-running");
+  assert.equal(runningResult.items[0]?.status, "running");
+
+  const pagedResult = await service.listWaitingSessionSyncTasks({
+    page: 1,
+    pageSize: 1,
+  });
+  assert.equal(pagedResult.page, 1);
+  assert.equal(pagedResult.pageSize, 1);
+  assert.equal(pagedResult.total, 3);
+  assert.equal(pagedResult.totalPages, 3);
+});
+
+test("replayFilteredFailedWaitingSessionSyncTasks matches failed tasks by current filters", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const taskRepo = dataSource.getRepository(WaitingSessionSyncTaskEntity);
+  const replayCalls: string[][] = [];
+  const service = createCloudService(dataSource, {
+    waitingSessionSyncService: {
+      refreshWaitingSessionsForWorld: async () => undefined,
+      refreshWaitingSessionsForPhone: async () => undefined,
+      invalidateWaitingSessionsForPhone: async () => undefined,
+      replayFailedTasks: async (taskIds: string[]) => {
+        replayCalls.push(taskIds);
+        return {
+          success: true,
+          replayedTaskIds: taskIds.slice(0, 1),
+          skippedTaskIds: taskIds.slice(1),
+        };
+      },
+      clearFailedTasks: async () => ({
+        success: true,
+        clearedTaskIds: [],
+        skippedTaskIds: [],
+      }),
+    },
+  });
+
+  const matchedTaskA = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:filtered-replay-a",
+      taskType: "refresh_world",
+      targetValue: "filtered-replay-a",
+      context: "filtered replay target batch",
+      status: "failed",
+      attempt: 3,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:08:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "batch replay failed",
+      finishedAt: new Date("2026-04-21T06:08:00.000Z"),
+    }),
+  );
+  const matchedTaskB = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:filtered-replay-b",
+      taskType: "refresh_world",
+      targetValue: "filtered-replay-b",
+      context: "filtered replay target batch",
+      status: "failed",
+      attempt: 2,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:09:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "batch replay failed",
+      finishedAt: new Date("2026-04-21T06:09:00.000Z"),
+    }),
+  );
+  await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-phone:+8613800138777",
+      taskType: "refresh_phone",
+      targetValue: "+8613800138777",
+      context: "filtered replay target batch",
+      status: "failed",
+      attempt: 3,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:10:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "batch replay failed",
+      finishedAt: new Date("2026-04-21T06:10:00.000Z"),
+    }),
+  );
+  await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:filtered-replay-pending",
+      taskType: "refresh_world",
+      targetValue: "filtered-replay-pending",
+      context: "filtered replay target batch",
+      status: "pending",
+      attempt: 1,
+      maxAttempts: 3,
+      availableAt: new Date("2099-04-21T06:11:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "not failed yet",
+      finishedAt: null,
+    }),
+  );
+
+  const response = await service.replayFilteredFailedWaitingSessionSyncTasks({
+    taskType: "refresh_world",
+    query: " target batch ",
+  });
+
+  assert.deepEqual(response, {
+    success: true,
+    matchedCount: 2,
+    replayedCount: 1,
+    skippedCount: 1,
+  });
+  assert.deepEqual(
+    replayCalls.map((taskIds) => [...taskIds].sort()),
+    [[matchedTaskA.id, matchedTaskB.id].sort()],
+  );
+});
+
+test("clearFilteredFailedWaitingSessionSyncTasks matches failed tasks by current filters", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const taskRepo = dataSource.getRepository(WaitingSessionSyncTaskEntity);
+  const clearCalls: string[][] = [];
+  const service = createCloudService(dataSource, {
+    waitingSessionSyncService: {
+      refreshWaitingSessionsForWorld: async () => undefined,
+      refreshWaitingSessionsForPhone: async () => undefined,
+      invalidateWaitingSessionsForPhone: async () => undefined,
+      replayFailedTasks: async () => ({
+        success: true,
+        replayedTaskIds: [],
+        skippedTaskIds: [],
+      }),
+      clearFailedTasks: async (taskIds: string[]) => {
+        clearCalls.push(taskIds);
+        return {
+          success: true,
+          clearedTaskIds: taskIds.slice(0, 1),
+          skippedTaskIds: taskIds.slice(1),
+        };
+      },
+    },
+  });
+
+  const matchedTaskA = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:filtered-clear-a",
+      taskType: "refresh_world",
+      targetValue: "filtered-clear-a",
+      context: "filtered clear target batch",
+      status: "failed",
+      attempt: 3,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:12:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "batch clear failed",
+      finishedAt: new Date("2026-04-21T06:12:00.000Z"),
+    }),
+  );
+  const matchedTaskB = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:filtered-clear-b",
+      taskType: "refresh_world",
+      targetValue: "filtered-clear-b",
+      context: "filtered clear target batch",
+      status: "failed",
+      attempt: 2,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:13:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "batch clear failed",
+      finishedAt: new Date("2026-04-21T06:13:00.000Z"),
+    }),
+  );
+  await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:filtered-clear-running",
+      taskType: "refresh_world",
+      targetValue: "filtered-clear-running",
+      context: "filtered clear target batch",
+      status: "running",
+      attempt: 2,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:14:00.000Z"),
+      leaseOwner: "worker-running",
+      leaseExpiresAt: new Date("2026-04-21T06:15:00.000Z"),
+      lastError: "still running",
+      finishedAt: null,
+    }),
+  );
+
+  const response = await service.clearFilteredFailedWaitingSessionSyncTasks({
+    taskType: "refresh_world",
+    query: "clear target batch",
+  });
+
+  assert.deepEqual(response, {
+    success: true,
+    matchedCount: 2,
+    clearedCount: 1,
+    skippedCount: 1,
+  });
+  assert.deepEqual(
+    clearCalls.map((taskIds) => [...taskIds].sort()),
+    [[matchedTaskA.id, matchedTaskB.id].sort()],
+  );
+});
+
+test("replayFailedTasks requeues failed waiting session sync tasks and skips non-failed ids", async (t) => {
+  const dataSource = await createTestDataSource();
+  const taskRepo = dataSource.getRepository(WaitingSessionSyncTaskEntity);
+  let refreshWorldCalls = 0;
+  const waitingSessionSyncService = createWaitingSessionSyncService(
+    dataSource,
+    {
+      refreshWaitingSessionsForWorld: async (worldId: string) => {
+        refreshWorldCalls += 1;
+        assert.equal(worldId, "world-replay-target");
+      },
+      refreshWaitingSessionsForPhone: async () => undefined,
+      invalidateWaitingSessionsForPhone: async () => undefined,
+    },
+    {
+      CLOUD_WAITING_SESSION_SYNC_RETRY_ATTEMPTS: "3",
+      CLOUD_WAITING_SESSION_SYNC_RETRY_DELAY_MS: "0",
+      CLOUD_WAITING_SESSION_SYNC_POLL_INTERVAL_MS: "60000",
+    },
+  );
+  t.after(async () => {
+    waitingSessionSyncService.onModuleDestroy();
+    await dataSource.destroy();
+  });
+
+  const failedTask = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:world-replay-target",
+      taskType: "refresh_world",
+      targetValue: "world-replay-target",
+      context: "worker.reconcile",
+      status: "failed",
+      attempt: 3,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:05:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "retry exhausted",
+      finishedAt: new Date("2026-04-21T06:05:00.000Z"),
+    }),
+  );
+  const pendingTask = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-phone:+8613800138555",
+      taskType: "refresh_phone",
+      targetValue: "+8613800138555",
+      context: "cloud.updateRequest",
+      status: "pending",
+      attempt: 1,
+      maxAttempts: 3,
+      availableAt: new Date("2099-04-21T06:06:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "still retrying",
+      finishedAt: null,
+    }),
+  );
+  const missingTaskId = "f0f0f0f0-1111-4222-8333-444444444444";
+
+  const response = await waitingSessionSyncService.replayFailedTasks([
+    failedTask.id,
+    pendingTask.id,
+    missingTaskId,
+  ]);
+
+  assert.deepEqual(response, {
+    success: true,
+    replayedTaskIds: [failedTask.id],
+    skippedTaskIds: [pendingTask.id, missingTaskId],
+  });
+  await waitForCondition(async () => {
+    return (await taskRepo.findOne({ where: { id: failedTask.id } })) === null;
+  });
+  assert.equal(refreshWorldCalls, 1);
+  assert.equal(
+    (await taskRepo.findOne({ where: { id: pendingTask.id } }))?.status,
+    "pending",
+  );
+});
+
+test("clearFailedTasks deletes only failed waiting session sync tasks", async (t) => {
+  const dataSource = await createTestDataSource();
+  const taskRepo = dataSource.getRepository(WaitingSessionSyncTaskEntity);
+  const waitingSessionSyncService = createWaitingSessionSyncService(
+    dataSource,
+    {
+      refreshWaitingSessionsForWorld: async () => undefined,
+      refreshWaitingSessionsForPhone: async () => undefined,
+      invalidateWaitingSessionsForPhone: async () => undefined,
+    },
+  );
+  t.after(async () => {
+    waitingSessionSyncService.onModuleDestroy();
+    await dataSource.destroy();
+  });
+
+  const failedTask = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "invalidate-phone:+8613800138666",
+      taskType: "invalidate_phone",
+      targetValue: "+8613800138666",
+      context: "cloud.updateWorld",
+      status: "failed",
+      attempt: 3,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:10:00.000Z"),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastError: "retry exhausted",
+      finishedAt: new Date("2026-04-21T06:10:00.000Z"),
+    }),
+  );
+  const runningTask = await taskRepo.save(
+    taskRepo.create({
+      taskKey: "refresh-world:world-running-task",
+      taskType: "refresh_world",
+      targetValue: "world-running-task",
+      context: "runtime.heartbeat",
+      status: "running",
+      attempt: 2,
+      maxAttempts: 3,
+      availableAt: new Date("2026-04-21T06:10:00.000Z"),
+      leaseOwner: "worker-running",
+      leaseExpiresAt: new Date(Date.now() + 60_000),
+      lastError: "still retrying",
+      finishedAt: null,
+    }),
+  );
+  const missingTaskId = "0f0f0f0f-2222-4333-8444-555555555555";
+
+  const response = await waitingSessionSyncService.clearFailedTasks([
+    runningTask.id,
+    failedTask.id,
+    missingTaskId,
+  ]);
+
+  assert.deepEqual(response, {
+    success: true,
+    clearedTaskIds: [failedTask.id],
+    skippedTaskIds: [runningTask.id, missingTaskId],
+  });
+  assert.equal(
+    await taskRepo.findOne({ where: { id: failedTask.id } }),
+    null,
+  );
+  assert.equal(
+    (await taskRepo.findOne({ where: { id: runningTask.id } }))?.status,
+    "running",
+  );
+});
+
 test("runtime heartbeat keeps world updates when waiting session refresh falls back to retry", async (t) => {
   const dataSource = await createTestDataSource();
   let refreshCalls = 0;
   const waitingSessionSyncService = createWaitingSessionSyncService(
+    dataSource,
     {
       refreshWaitingSessionsForWorld: async () => {
         refreshCalls += 1;
@@ -2515,6 +2995,71 @@ test("runtime heartbeat keeps world updates when waiting session refresh falls b
   assert.equal(persistedWorld.healthMessage, "world is ready");
 
   await waitForCondition(() => refreshCalls >= 2);
+});
+
+test("waiting session sync resumes persisted retries after service restart", async (t) => {
+  const dataSource = await createTestDataSource();
+  let refreshCalls = 0;
+  const worldAccessService = {
+    refreshWaitingSessionsForWorld: async () => {
+      refreshCalls += 1;
+      if (refreshCalls === 1) {
+        throw new Error("refresh failed");
+      }
+    },
+    refreshWaitingSessionsForPhone: async () => undefined,
+    invalidateWaitingSessionsForPhone: async () => undefined,
+  };
+  const taskRepo = dataSource.getRepository(WaitingSessionSyncTaskEntity);
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const firstService = createWaitingSessionSyncService(
+    dataSource,
+    worldAccessService,
+    {
+      CLOUD_WAITING_SESSION_SYNC_RETRY_ATTEMPTS: "3",
+      CLOUD_WAITING_SESSION_SYNC_RETRY_DELAY_MS: "25",
+      CLOUD_WAITING_SESSION_SYNC_POLL_INTERVAL_MS: "10",
+    },
+  );
+
+  await firstService.refreshWaitingSessionsForWorld(
+    "world-restart-retry",
+    "restart-test",
+  );
+  assert.equal(
+    await taskRepo.count({
+      where: { taskKey: "refresh-world:world-restart-retry" },
+    }),
+    1,
+  );
+
+  firstService.onModuleDestroy();
+
+  const secondService = createWaitingSessionSyncService(
+    dataSource,
+    worldAccessService,
+    {
+      CLOUD_WAITING_SESSION_SYNC_RETRY_ATTEMPTS: "3",
+      CLOUD_WAITING_SESSION_SYNC_RETRY_DELAY_MS: "25",
+      CLOUD_WAITING_SESSION_SYNC_POLL_INTERVAL_MS: "10",
+    },
+  );
+  secondService.onModuleInit();
+  t.after(() => {
+    secondService.onModuleDestroy();
+  });
+
+  await waitForCondition(() => refreshCalls >= 2, 500);
+  await waitForCondition(
+    async () =>
+      (await taskRepo.count({
+        where: { taskKey: "refresh-world:world-restart-retry" },
+      })) === 0,
+    500,
+  );
 });
 
 test("listSessions returns an empty result for currentOnly without a current session id", async (t) => {
@@ -3163,6 +3708,76 @@ test("ListAdminSessionsQueryDto transforms valid admin session query strings", (
   assert.equal(query.pageSize, 20);
 });
 
+test("ListWaitingSessionSyncTasksQueryDto transforms valid task filters", () => {
+  const query = plainToInstance(ListWaitingSessionSyncTasksQueryDto, {
+    status: "failed",
+    taskType: "refresh_world",
+    query: " retry world ",
+    page: "2",
+    pageSize: "10",
+  });
+  const errors = validateSync(query);
+
+  assert.deepEqual(errors, []);
+  assert.equal(query.status, "failed");
+  assert.equal(query.taskType, "refresh_world");
+  assert.equal(query.query, "retry world");
+  assert.equal(query.page, 2);
+  assert.equal(query.pageSize, 10);
+});
+
+test("ListJobsQueryDto transforms valid lifecycle job filters", () => {
+  const query = plainToInstance(ListJobsQueryDto, {
+    worldId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    status: "pending",
+    jobType: "resume",
+    provider: " manual-docker ",
+    queueState: " delayed ",
+    audit: " superseded ",
+    supersededBy: " suspend ",
+    query: " queued retry ",
+  });
+  const errors = validateSync(query);
+
+  assert.deepEqual(errors, []);
+  assert.equal(query.worldId, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+  assert.equal(query.status, "pending");
+  assert.equal(query.jobType, "resume");
+  assert.equal(query.provider, "manual-docker");
+  assert.equal(query.queueState, "delayed");
+  assert.equal(query.audit, "superseded");
+  assert.equal(query.supersededBy, "suspend");
+  assert.equal(query.query, "queued retry");
+});
+
+test("MutateFailedWaitingSessionSyncTasksDto transforms valid task ids", () => {
+  const body = plainToInstance(MutateFailedWaitingSessionSyncTasksDto, {
+    taskIds: [
+      " aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa ",
+      " bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb ",
+    ],
+  });
+  const errors = validateSync(body);
+
+  assert.deepEqual(errors, []);
+  assert.deepEqual(body.taskIds, [
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  ]);
+});
+
+test("MutateFilteredFailedWaitingSessionSyncTasksDto transforms valid task filters", () => {
+  const body = plainToInstance(MutateFilteredFailedWaitingSessionSyncTasksDto, {
+    taskType: "refresh_world",
+    query: " filtered retry ",
+  });
+  const errors = validateSync(body);
+
+  assert.deepEqual(errors, []);
+  assert.equal(body.taskType, "refresh_world");
+  assert.equal(body.query, "filtered retry");
+});
+
 test("ListAdminSessionsQueryDto rejects unknown admin session sort parameters", () => {
   const query = plainToInstance(ListAdminSessionsQueryDto, {
     sortBy: "priority",
@@ -3344,6 +3959,218 @@ test("AdminCloudController forwards admin session list filters and current sessi
         page: 2,
         pageSize: 20,
       },
+    },
+  ]);
+});
+
+test("AdminCloudController forwards waiting session sync task filters", async () => {
+  const calls: Array<Record<string, unknown>> = [];
+  const expectedResponse = {
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    totalPages: 1,
+  };
+  const controller = new AdminCloudController(
+    {
+      listWaitingSessionSyncTasks: async (query: Record<string, unknown>) => {
+        calls.push(query);
+        return expectedResponse;
+      },
+    } as never,
+    {} as never,
+  );
+
+  const result = await controller.listWaitingSessionSyncTasks({
+    status: "failed",
+    taskType: "refresh_world",
+    query: "retry",
+    page: 2,
+    pageSize: 10,
+  });
+
+  assert.deepEqual(result, expectedResponse);
+  assert.deepEqual(calls, [
+    {
+      status: "failed",
+      taskType: "refresh_world",
+      query: "retry",
+      page: 2,
+      pageSize: 10,
+    },
+  ]);
+});
+
+test("AdminCloudController forwards lifecycle job filters", async () => {
+  const calls: Array<Record<string, unknown>> = [];
+  const expectedResponse = [];
+  const controller = new AdminCloudController(
+    {
+      listJobs: async (query: Record<string, unknown>) => {
+        calls.push(query);
+        return expectedResponse;
+      },
+    } as never,
+    {} as never,
+  );
+
+  const result = await controller.listJobs({
+    worldId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    status: "pending",
+    jobType: "resume",
+    provider: "manual-docker",
+    queueState: "delayed",
+    audit: "superseded",
+    supersededBy: "suspend",
+    query: "retry",
+  });
+
+  assert.deepEqual(result, expectedResponse);
+  assert.deepEqual(calls, [
+    {
+      worldId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      status: "pending",
+      jobType: "resume",
+      provider: "manual-docker",
+      queueState: "delayed",
+      audit: "superseded",
+      supersededBy: "suspend",
+      query: "retry",
+    },
+  ]);
+});
+
+test("AdminCloudController forwards waiting session sync task replay ids", async () => {
+  const calls: string[][] = [];
+  const expectedResponse = {
+    success: true,
+    replayedTaskIds: ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"],
+    skippedTaskIds: ["bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"],
+  };
+  const controller = new AdminCloudController(
+    {
+      replayFailedWaitingSessionSyncTasks: async (taskIds: string[]) => {
+        calls.push(taskIds);
+        return expectedResponse;
+      },
+    } as never,
+    {} as never,
+  );
+
+  const result = await controller.replayFailedWaitingSessionSyncTasks({
+    taskIds: [
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    ],
+  });
+
+  assert.deepEqual(result, expectedResponse);
+  assert.deepEqual(calls, [
+    [
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    ],
+  ]);
+});
+
+test("AdminCloudController forwards waiting session sync task clear ids", async () => {
+  const calls: string[][] = [];
+  const expectedResponse = {
+    success: true,
+    clearedTaskIds: ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"],
+    skippedTaskIds: ["bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"],
+  };
+  const controller = new AdminCloudController(
+    {
+      clearFailedWaitingSessionSyncTasks: async (taskIds: string[]) => {
+        calls.push(taskIds);
+        return expectedResponse;
+      },
+    } as never,
+    {} as never,
+  );
+
+  const result = await controller.clearFailedWaitingSessionSyncTasks({
+    taskIds: [
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    ],
+  });
+
+  assert.deepEqual(result, expectedResponse);
+  assert.deepEqual(calls, [
+    [
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    ],
+  ]);
+});
+
+test("AdminCloudController forwards filtered waiting session sync task replay filters", async () => {
+  const calls: Array<Record<string, unknown>> = [];
+  const expectedResponse = {
+    success: true,
+    matchedCount: 2,
+    replayedCount: 1,
+    skippedCount: 1,
+  };
+  const controller = new AdminCloudController(
+    {
+      replayFilteredFailedWaitingSessionSyncTasks: async (
+        filter: Record<string, unknown>,
+      ) => {
+        calls.push(filter);
+        return expectedResponse;
+      },
+    } as never,
+    {} as never,
+  );
+
+  const result = await controller.replayFilteredFailedWaitingSessionSyncTasks({
+    taskType: "refresh_world",
+    query: "retry batch",
+  });
+
+  assert.deepEqual(result, expectedResponse);
+  assert.deepEqual(calls, [
+    {
+      taskType: "refresh_world",
+      query: "retry batch",
+    },
+  ]);
+});
+
+test("AdminCloudController forwards filtered waiting session sync task clear filters", async () => {
+  const calls: Array<Record<string, unknown>> = [];
+  const expectedResponse = {
+    success: true,
+    matchedCount: 2,
+    clearedCount: 1,
+    skippedCount: 1,
+  };
+  const controller = new AdminCloudController(
+    {
+      clearFilteredFailedWaitingSessionSyncTasks: async (
+        filter: Record<string, unknown>,
+      ) => {
+        calls.push(filter);
+        return expectedResponse;
+      },
+    } as never,
+    {} as never,
+  );
+
+  const result = await controller.clearFilteredFailedWaitingSessionSyncTasks({
+    taskType: "refresh_world",
+    query: "clear batch",
+  });
+
+  assert.deepEqual(result, expectedResponse);
+  assert.deepEqual(calls, [
+    {
+      taskType: "refresh_world",
+      query: "clear batch",
     },
   ]);
 });
@@ -3734,6 +4561,7 @@ test("reconcileWorldNow keeps world state updates when waiting session refresh f
   const dataSource = await createTestDataSource();
   let refreshCalls = 0;
   const waitingSessionSyncService = createWaitingSessionSyncService(
+    dataSource,
     {
       refreshWaitingSessionsForWorld: async () => {
         refreshCalls += 1;
@@ -3869,6 +4697,196 @@ test("claimNextPendingJob acquires a lease and marks the job running once", asyn
   assert.equal(secondClaim, null);
 });
 
+test("ensureLifecycleJob deduplicates concurrent enqueues for the same world and job type", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  await dataSource.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_world_lifecycle_jobs_active_world" ON "world_lifecycle_jobs" ("worldId") WHERE "status" IN ('pending', 'running') AND "jobType" IN ('provision', 'resume', 'suspend')`,
+  );
+
+  const service = createCloudService(dataSource);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const originalFindOne = jobRepo.findOne.bind(jobRepo);
+  let forcedMisses = 0;
+
+  jobRepo.findOne = (async (...args) => {
+    if (forcedMisses < 2) {
+      forcedMisses += 1;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      return null;
+    }
+
+    return originalFindOne(...args);
+  }) as typeof jobRepo.findOne;
+
+  const ensureLifecycleJob = getPrivateMethod<
+    [string, WorldLifecycleJobType, Record<string, unknown>],
+    Promise<WorldLifecycleJobEntity>
+  >(service, "ensureLifecycleJob");
+
+  const [firstJob, secondJob] = await Promise.all([
+    ensureLifecycleJob.call(service, "world-dedup", "resume", {
+      source: "test-a",
+    }),
+    ensureLifecycleJob.call(service, "world-dedup", "resume", {
+      source: "test-b",
+    }),
+  ]);
+
+  assert.equal(firstJob.id, secondJob.id);
+
+  const persistedJobs = await jobRepo.find({
+    where: {
+      worldId: "world-dedup",
+      jobType: "resume",
+    },
+  });
+  assert.equal(persistedJobs.length, 1);
+  assert.equal(persistedJobs[0]?.status, "pending");
+  assert.equal(persistedJobs[0]?.attempt, 0);
+});
+
+test("ensureLifecycleJob replaces conflicting pending jobs for the same world", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  await dataSource.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_world_lifecycle_jobs_active_world" ON "world_lifecycle_jobs" ("worldId") WHERE "status" IN ('pending', 'running') AND "jobType" IN ('provision', 'resume', 'suspend')`,
+  );
+
+  const service = createCloudService(dataSource);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const stalePendingSuspend = await jobRepo.save(
+    jobRepo.create({
+      worldId: "world-replace-pending",
+      jobType: "suspend",
+      status: "pending",
+      priority: 80,
+      payload: { source: "stale-suspend" },
+      attempt: 0,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: new Date(Date.now() - 1_000),
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const ensureLifecycleJob = getPrivateMethod<
+    [string, WorldLifecycleJobType, Record<string, unknown>],
+    Promise<WorldLifecycleJobEntity>
+  >(service, "ensureLifecycleJob");
+  const replacementJob = await ensureLifecycleJob.call(
+    service,
+    "world-replace-pending",
+    "resume",
+    { source: "resume-request" },
+  );
+
+  assert.equal(replacementJob.jobType, "resume");
+
+  const persistedJobs = await jobRepo.find({
+    where: {
+      worldId: "world-replace-pending",
+    },
+  });
+  assert.equal(persistedJobs.length, 2);
+  const persistedReplacementJob = persistedJobs.find(
+    (job) => job.id === replacementJob.id,
+  );
+  assert.ok(persistedReplacementJob);
+  assert.equal(persistedReplacementJob.jobType, "resume");
+  assert.equal(persistedReplacementJob.status, "pending");
+
+  const cancelledPendingSuspend = await jobRepo.findOne({
+    where: { id: stalePendingSuspend.id },
+  });
+  assert.ok(cancelledPendingSuspend);
+  assert.equal(cancelledPendingSuspend.status, "cancelled");
+  assert.equal(
+    cancelledPendingSuspend.failureCode,
+    "superseded_by_new_job",
+  );
+  assert.match(
+    cancelledPendingSuspend.failureMessage ?? "",
+    /superseded by a newer resume request/i,
+  );
+  assert.ok(cancelledPendingSuspend.finishedAt instanceof Date);
+  assert.deepEqual(cancelledPendingSuspend.resultPayload, {
+    action: "superseded_by_new_job",
+    supersededByJobType: "resume",
+    supersededByPayload: {
+      source: "resume-request",
+    },
+    previousJobType: "suspend",
+  });
+});
+
+test("ensureLifecycleJob keeps a conflicting running job in place for the same world", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  await dataSource.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_world_lifecycle_jobs_active_world" ON "world_lifecycle_jobs" ("worldId") WHERE "status" IN ('pending', 'running') AND "jobType" IN ('provision', 'resume', 'suspend')`,
+  );
+
+  const service = createCloudService(dataSource);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const runningSuspend = await jobRepo.save(
+    jobRepo.create({
+      worldId: "world-running-conflict",
+      jobType: "suspend",
+      status: "running",
+      priority: 80,
+      payload: { source: "active-suspend" },
+      attempt: 1,
+      maxAttempts: 3,
+      leaseOwner: "worker-running",
+      leaseExpiresAt: new Date(Date.now() + 60_000),
+      availableAt: null,
+      startedAt: new Date(Date.now() - 5_000),
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const ensureLifecycleJob = getPrivateMethod<
+    [string, WorldLifecycleJobType, Record<string, unknown>],
+    Promise<WorldLifecycleJobEntity>
+  >(service, "ensureLifecycleJob");
+  const returnedJob = await ensureLifecycleJob.call(
+    service,
+    "world-running-conflict",
+    "resume",
+    { source: "resume-request" },
+  );
+
+  assert.equal(returnedJob.id, runningSuspend.id);
+  assert.equal(returnedJob.jobType, "suspend");
+
+  const persistedJobs = await jobRepo.find({
+    where: {
+      worldId: "world-running-conflict",
+    },
+  });
+  assert.equal(persistedJobs.length, 1);
+  assert.equal(persistedJobs[0]?.id, runningSuspend.id);
+  assert.equal(persistedJobs[0]?.jobType, "suspend");
+});
+
 test("claimNextPendingJob skips pending jobs that already exhausted retries", async (t) => {
   const dataSource = await createTestDataSource();
   t.after(async () => {
@@ -3938,6 +4956,107 @@ test("claimNextPendingJob skips pending jobs that already exhausted retries", as
   const persistedClaimedJob = await jobRepo.findOneByOrFail({ id: claimableJob.id });
   assert.equal(persistedClaimedJob.status, "running");
   assert.equal(persistedClaimedJob.attempt, 3);
+});
+
+test("claimNextPendingJob skips pending jobs whose world already has a leased running job", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const worker = createWorkerService(dataSource, {
+    CLOUD_WORLD_JOB_LEASE_SECONDS: "120",
+  });
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+
+  const runningSibling = await jobRepo.save(
+    jobRepo.create({
+      worldId: "world-blocked",
+      jobType: "resume",
+      status: "running",
+      priority: 50,
+      payload: { source: "active-worker" },
+      attempt: 1,
+      maxAttempts: 5,
+      leaseOwner: "worker-active",
+      leaseExpiresAt: new Date(Date.now() + 60_000),
+      availableAt: null,
+      startedAt: new Date(Date.now() - 5_000),
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const blockedPendingJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: "world-blocked",
+      jobType: "suspend",
+      status: "pending",
+      priority: 10,
+      payload: { source: "should-wait" },
+      attempt: 0,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: new Date(Date.now() - 1_000),
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const claimableOtherWorldJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: "world-claimable",
+      jobType: "resume",
+      status: "pending",
+      priority: 20,
+      payload: { source: "safe-world" },
+      attempt: 0,
+      maxAttempts: 5,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: new Date(Date.now() - 1_000),
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const claimNextPendingJob = getPrivateMethod<
+    [],
+    Promise<WorldLifecycleJobEntity | null>
+  >(worker, "claimNextPendingJob");
+  const claimed = await claimNextPendingJob.call(worker);
+
+  assert.ok(claimed);
+  assert.equal(claimed.id, claimableOtherWorldJob.id);
+  assert.equal(claimed.worldId, "world-claimable");
+
+  const persistedBlockedJob = await jobRepo.findOneByOrFail({
+    id: blockedPendingJob.id,
+  });
+  assert.equal(persistedBlockedJob.status, "pending");
+  assert.equal(persistedBlockedJob.leaseOwner, null);
+  assert.equal(persistedBlockedJob.attempt, 0);
+
+  const persistedRunningSibling = await jobRepo.findOneByOrFail({
+    id: runningSibling.id,
+  });
+  assert.equal(persistedRunningSibling.status, "running");
+  assert.equal(persistedRunningSibling.leaseOwner, "worker-active");
+
+  const secondWorker = createWorkerService(dataSource, {
+    CLOUD_WORLD_JOB_LEASE_SECONDS: "120",
+  });
+  const secondClaim = await claimNextPendingJob.call(secondWorker);
+  assert.equal(secondClaim, null);
 });
 
 test("recoverExpiredRunningJobs requeues stale running jobs", async (t) => {
@@ -4174,4 +5293,339 @@ test("listJobs exposes lease and scheduling metadata", async (t) => {
   assert.equal(jobs[0]?.availableAt, availableAt.toISOString());
   assert.ok((jobs[0]?.leaseRemainingSeconds ?? 0) > 0);
   assert.ok((jobs[0]?.leaseRemainingSeconds ?? 9999) <= 5 * 60);
+});
+
+test("listJobs exposes superseded lifecycle audit metadata", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const service = createCloudService(dataSource);
+  const worldRepo = dataSource.getRepository(CloudWorldEntity);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const world = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138018",
+      name: "Superseded Audit World",
+      status: "ready",
+      slug: "world-8018-superseded-audit",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: providerSummary.key,
+      providerRegion: "manual",
+      providerZone: "docker-host-a",
+      runtimeVersion: "test-runtime",
+      apiBaseUrl: "https://superseded-world.example.com",
+      adminUrl: "https://superseded-world-admin.example.com",
+      callbackToken: "token",
+      healthStatus: "healthy",
+      healthMessage: "World is ready.",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "suspend",
+      status: "cancelled",
+      priority: 100,
+      payload: { source: "suspend-request" },
+      attempt: 0,
+      maxAttempts: 3,
+      availableAt: null,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      startedAt: null,
+      finishedAt: new Date(),
+      failureCode: "superseded_by_new_job",
+      failureMessage:
+        "Pending suspend job was superseded by a newer resume request.",
+      resultPayload: {
+        action: "superseded_by_new_job",
+        supersededByJobType: "resume",
+        supersededByPayload: { source: "resume-request" },
+        previousJobType: "suspend",
+      },
+    }),
+  );
+
+  const jobs = await service.listJobs({
+    worldId: world.id,
+  });
+
+  assert.equal(jobs.length, 1);
+  assert.equal(jobs[0]?.failureCode, "superseded_by_new_job");
+  assert.equal(jobs[0]?.supersededByJobType, "resume");
+  assert.deepEqual(jobs[0]?.supersededByPayload, {
+    source: "resume-request",
+  });
+  assert.deepEqual(jobs[0]?.resultPayload, {
+    action: "superseded_by_new_job",
+    supersededByJobType: "resume",
+    supersededByPayload: { source: "resume-request" },
+    previousJobType: "suspend",
+  });
+});
+
+test("listJobs filters superseded lifecycle jobs by audit and superseding job type", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const service = createCloudService(dataSource);
+  const worldRepo = dataSource.getRepository(CloudWorldEntity);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const world = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138019",
+      name: "Superseded Filter World",
+      status: "ready",
+      slug: "world-8019-superseded-filter",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: providerSummary.key,
+      providerRegion: "manual",
+      providerZone: "docker-host-a",
+      runtimeVersion: "test-runtime",
+      apiBaseUrl: "https://superseded-filter-world.example.com",
+      adminUrl: "https://superseded-filter-world-admin.example.com",
+      callbackToken: "token",
+      healthStatus: "healthy",
+      healthMessage: "World is ready.",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+
+  const supersededResumeJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "suspend",
+      status: "cancelled",
+      priority: 100,
+      payload: { source: "suspend-request" },
+      attempt: 0,
+      maxAttempts: 3,
+      availableAt: null,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      startedAt: null,
+      finishedAt: new Date(),
+      failureCode: "superseded_by_new_job",
+      failureMessage:
+        "Pending suspend job was superseded by a newer resume request.",
+      resultPayload: {
+        action: "superseded_by_new_job",
+        supersededByJobType: "resume",
+        supersededByPayload: { source: "resume-request" },
+      },
+    }),
+  );
+  const supersededSuspendJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "resume",
+      status: "cancelled",
+      priority: 100,
+      payload: { source: "resume-request" },
+      attempt: 0,
+      maxAttempts: 3,
+      availableAt: null,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      startedAt: null,
+      finishedAt: new Date(),
+      failureCode: "superseded_by_new_job",
+      failureMessage:
+        "Pending resume job was superseded by a newer suspend request.",
+      resultPayload: {
+        action: "superseded_by_new_job",
+        supersededByJobType: "suspend",
+        supersededByPayload: { source: "suspend-request" },
+      },
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "reconcile",
+      status: "succeeded",
+      priority: 100,
+      payload: { source: "reconcile-request" },
+      attempt: 1,
+      maxAttempts: 3,
+      availableAt: null,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      startedAt: new Date(),
+      finishedAt: new Date(),
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: { action: "reconciled" },
+    }),
+  );
+
+  const supersededJobs = await service.listJobs({
+    audit: "superseded",
+  });
+  assert.deepEqual(
+    new Set(supersededJobs.map((job) => job.id)),
+    new Set([supersededResumeJob.id, supersededSuspendJob.id]),
+  );
+
+  const resumeSupersededJobs = await service.listJobs({
+    audit: "superseded",
+    supersededBy: "resume",
+  });
+  assert.equal(resumeSupersededJobs.length, 1);
+  assert.equal(resumeSupersededJobs[0]?.id, supersededResumeJob.id);
+  assert.equal(resumeSupersededJobs[0]?.supersededByJobType, "resume");
+});
+
+test("listJobs filters lifecycle jobs by provider queue state and search query", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const service = createCloudService(dataSource);
+  const worldRepo = dataSource.getRepository(CloudWorldEntity);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const filteredWorld = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138020",
+      name: "Queue Filter World",
+      status: "ready",
+      slug: "world-8020-queue-filter",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: providerSummary.key,
+      providerRegion: "manual",
+      providerZone: "docker-host-a",
+      runtimeVersion: "test-runtime",
+      apiBaseUrl: "https://queue-filter-world.example.com",
+      adminUrl: "https://queue-filter-world-admin.example.com",
+      callbackToken: "token",
+      healthStatus: "healthy",
+      healthMessage: "World is ready.",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+  const otherWorld = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138021",
+      name: "Other Queue World",
+      status: "ready",
+      slug: "world-8021-queue-filter",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: "other-provider",
+      providerRegion: "manual",
+      providerZone: "docker-host-b",
+      runtimeVersion: "test-runtime",
+      apiBaseUrl: "https://other-queue-world.example.com",
+      adminUrl: "https://other-queue-world-admin.example.com",
+      callbackToken: "token",
+      healthStatus: "healthy",
+      healthMessage: "World is ready.",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+
+  const delayedJob = await jobRepo.save(
+    jobRepo.create({
+      worldId: filteredWorld.id,
+      jobType: "resume",
+      status: "pending",
+      priority: 50,
+      payload: { source: "queue-filter" },
+      attempt: 0,
+      maxAttempts: 3,
+      availableAt: new Date(Date.now() + 60_000),
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: otherWorld.id,
+      jobType: "resume",
+      status: "running",
+      priority: 50,
+      payload: { source: "queue-filter-other" },
+      attempt: 1,
+      maxAttempts: 3,
+      availableAt: null,
+      leaseOwner: "worker-b",
+      leaseExpiresAt: new Date(Date.now() + 60_000),
+      startedAt: new Date(),
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const providerFilteredJobs = await service.listJobs({
+    provider: providerSummary.key,
+  });
+  assert.deepEqual(
+    providerFilteredJobs.map((job) => job.id),
+    [delayedJob.id],
+  );
+
+  const delayedJobs = await service.listJobs({
+    queueState: "delayed",
+  });
+  assert.deepEqual(
+    delayedJobs.map((job) => job.id),
+    [delayedJob.id],
+  );
+
+  const queryFilteredJobs = await service.listJobs({
+    query: filteredWorld.phone,
+  });
+  assert.deepEqual(
+    queryFilteredJobs.map((job) => job.id),
+    [delayedJob.id],
+  );
 });

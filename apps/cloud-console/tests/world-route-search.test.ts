@@ -72,6 +72,7 @@ describe("world route search", () => {
           powerState: "all",
           attention: "all",
           health: "all",
+          query: "",
         },
       },
     ],
@@ -89,6 +90,7 @@ describe("world route search", () => {
           powerState: " running ",
           attention: " warning ",
           health: " unhealthy ",
+          query: " +8613800138000 ",
         },
         expected: {
           status: "ready",
@@ -96,6 +98,7 @@ describe("world route search", () => {
           powerState: "running",
           attention: "warning",
           health: "unhealthy",
+          query: "+8613800138000",
         },
       },
     ],
@@ -145,6 +148,7 @@ describe("world route search", () => {
           powerState: "error",
           attention: "critical",
           health: "unknown",
+          query: "",
         },
       },
       {
@@ -155,6 +159,7 @@ describe("world route search", () => {
           powerState: "",
           attention: undefined,
           health: null,
+          query: " world-1 ",
         },
         expected: {
           status: "sleeping",
@@ -162,6 +167,7 @@ describe("world route search", () => {
           powerState: "all",
           attention: "all",
           health: "all",
+          query: "world-1",
         },
       },
     ],

@@ -4,6 +4,7 @@ import { AdminSessionActionButton } from "../src/components/admin-session-action
 import { AdminSessionBrandBadge } from "../src/components/admin-session-brand-badge";
 import { AdminSessionBrandEyebrow } from "../src/components/admin-session-brand-eyebrow";
 import { AdminSessionFilterControls } from "../src/components/admin-session-filter-controls";
+import { AdminSessionNeutralChip } from "../src/components/admin-session-neutral-chip";
 import { AdminSessionQuickViewButtons } from "../src/components/admin-session-quick-view-buttons";
 import { AdminSessionSectionHeader } from "../src/components/admin-session-section-header";
 import { AdminSessionSourceGroupFilterControls } from "../src/components/admin-session-source-group-filter-controls";
@@ -12,8 +13,10 @@ import { AdminSessionSourceGroupRiskSignals } from "../src/components/admin-sess
 import { AdminSessionSourceGroupSummaryPills } from "../src/components/admin-session-source-group-summary-pills";
 import { AdminSessionStatusBadge } from "../src/components/admin-session-status-badge";
 import { AdminSessionSummaryChip } from "../src/components/admin-session-summary-chip";
+import * as adminSessionDownload from "../src/lib/admin-session-download";
 import * as adminSessionHelpers from "../src/lib/admin-session-helpers";
 import * as adminSessionMeta from "../src/lib/admin-session-meta";
+import * as adminSessionOperations from "../src/lib/admin-session-operations";
 
 describe("admin session barrels", () => {
   it("keeps the admin-session-controls barrel aligned with the shared admin-session components", () => {
@@ -22,6 +25,7 @@ describe("admin session barrels", () => {
       "AdminSessionBrandBadge",
       "AdminSessionBrandEyebrow",
       "AdminSessionFilterControls",
+      "AdminSessionNeutralChip",
       "AdminSessionQuickViewButtons",
       "AdminSessionSectionHeader",
       "AdminSessionSourceGroupFilterControls",
@@ -43,6 +47,9 @@ describe("admin session barrels", () => {
     );
     expect(adminSessionControls.AdminSessionFilterControls).toBe(
       AdminSessionFilterControls,
+    );
+    expect(adminSessionControls.AdminSessionNeutralChip).toBe(
+      AdminSessionNeutralChip,
     );
     expect(adminSessionControls.AdminSessionQuickViewButtons).toBe(
       AdminSessionQuickViewButtons,
@@ -72,6 +79,16 @@ describe("admin session barrels", () => {
 
   it("keeps the admin-session-helpers barrel aligned with admin-session metadata", () => {
     expect(Object.keys(adminSessionHelpers).sort()).toEqual([
+      "ADMIN_SESSION_FOCUSED_SOURCE_SNAPSHOT_UNAVAILABLE_MESSAGE",
+      "HIGHLIGHTED_OPERATION_RECEIPT_LIMIT",
+      "createAdminSessionArtifactDownloadNotice",
+      "createAdminSessionDownloadNotice",
+      "createAdminSessionRiskTimelineNotReadyNotice",
+      "createErrorHighlightedOperationReceipt",
+      "createHighlightedOperationReceipt",
+      "createNoticeHighlightedOperationReceipt",
+      "createRiskGroupRevokeNotice",
+      "createSessionRevokeNotice",
       "formatAdminSessionReasonFilterLabel",
       "formatAdminSessionRevocationReasonLabel",
       "formatAdminSessionScopeLabel",
@@ -84,13 +101,50 @@ describe("admin session barrels", () => {
       "formatAdminSessionSourceGroupSortFieldLabel",
       "formatAdminSessionStatusFilterLabel",
       "formatAdminSessionStatusLabel",
+      "formatHighlightedOperationReceiptLabel",
       "getAdminSessionSourceGroupRiskTone",
       "getAdminSessionSourceGroupRiskToneStyles",
+      "getAdminSessionSourceRiskGuardMessage",
+      "getAdminSessionSourceRiskSelectionPrompt",
       "getAdminSessionStatusTone",
       "getAdminSessionStatusToneStyles",
       "getAdminSessionToneStyles",
+      "getHighlightedOperationReceiptTone",
+      "matchesHighlightedOperationReceiptContext",
+      "prependHighlightedOperationReceipt",
+      "withDownloadedJsonFile",
+      "withDownloadedTextFile",
     ]);
 
+    expect(adminSessionHelpers.createAdminSessionDownloadNotice).toBe(
+      adminSessionDownload.createAdminSessionDownloadNotice,
+    );
+    expect(adminSessionHelpers.createAdminSessionArtifactDownloadNotice).toBe(
+      adminSessionDownload.createAdminSessionArtifactDownloadNotice,
+    );
+    expect(
+      adminSessionHelpers.ADMIN_SESSION_FOCUSED_SOURCE_SNAPSHOT_UNAVAILABLE_MESSAGE,
+    ).toBe(
+      adminSessionOperations.ADMIN_SESSION_FOCUSED_SOURCE_SNAPSHOT_UNAVAILABLE_MESSAGE,
+    );
+    expect(adminSessionHelpers.createAdminSessionRiskTimelineNotReadyNotice).toBe(
+      adminSessionOperations.createAdminSessionRiskTimelineNotReadyNotice,
+    );
+    expect(adminSessionHelpers.createErrorHighlightedOperationReceipt).toBe(
+      adminSessionOperations.createErrorHighlightedOperationReceipt,
+    );
+    expect(adminSessionHelpers.createHighlightedOperationReceipt).toBe(
+      adminSessionOperations.createHighlightedOperationReceipt,
+    );
+    expect(adminSessionHelpers.createNoticeHighlightedOperationReceipt).toBe(
+      adminSessionOperations.createNoticeHighlightedOperationReceipt,
+    );
+    expect(adminSessionHelpers.createRiskGroupRevokeNotice).toBe(
+      adminSessionOperations.createRiskGroupRevokeNotice,
+    );
+    expect(adminSessionHelpers.createSessionRevokeNotice).toBe(
+      adminSessionOperations.createSessionRevokeNotice,
+    );
     expect(adminSessionHelpers.formatAdminSessionStatusLabel).toBe(
       adminSessionMeta.formatAdminSessionStatusLabel,
     );
@@ -127,6 +181,21 @@ describe("admin session barrels", () => {
     expect(adminSessionHelpers.formatAdminSessionSourceGroupRiskSignalLabel).toBe(
       adminSessionMeta.formatAdminSessionSourceGroupRiskSignalLabel,
     );
+    expect(adminSessionHelpers.formatHighlightedOperationReceiptLabel).toBe(
+      adminSessionOperations.formatHighlightedOperationReceiptLabel,
+    );
+    expect(adminSessionHelpers.getHighlightedOperationReceiptTone).toBe(
+      adminSessionOperations.getHighlightedOperationReceiptTone,
+    );
+    expect(adminSessionHelpers.getAdminSessionSourceRiskGuardMessage).toBe(
+      adminSessionOperations.getAdminSessionSourceRiskGuardMessage,
+    );
+    expect(adminSessionHelpers.getAdminSessionSourceRiskSelectionPrompt).toBe(
+      adminSessionOperations.getAdminSessionSourceRiskSelectionPrompt,
+    );
+    expect(adminSessionHelpers.HIGHLIGHTED_OPERATION_RECEIPT_LIMIT).toBe(
+      adminSessionOperations.HIGHLIGHTED_OPERATION_RECEIPT_LIMIT,
+    );
     expect(adminSessionHelpers.getAdminSessionToneStyles).toBe(
       adminSessionMeta.getAdminSessionToneStyles,
     );
@@ -141,6 +210,18 @@ describe("admin session barrels", () => {
     );
     expect(adminSessionHelpers.getAdminSessionSourceGroupRiskToneStyles).toBe(
       adminSessionMeta.getAdminSessionSourceGroupRiskToneStyles,
+    );
+    expect(adminSessionHelpers.matchesHighlightedOperationReceiptContext).toBe(
+      adminSessionOperations.matchesHighlightedOperationReceiptContext,
+    );
+    expect(adminSessionHelpers.prependHighlightedOperationReceipt).toBe(
+      adminSessionOperations.prependHighlightedOperationReceipt,
+    );
+    expect(adminSessionHelpers.withDownloadedJsonFile).toBe(
+      adminSessionDownload.withDownloadedJsonFile,
+    );
+    expect(adminSessionHelpers.withDownloadedTextFile).toBe(
+      adminSessionDownload.withDownloadedTextFile,
     );
   });
 });

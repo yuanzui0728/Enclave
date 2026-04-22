@@ -1,4 +1,7 @@
 import type {
+  ClearFailedCloudWaitingSessionSyncTasksResponse,
+  ClearFilteredFailedCloudWaitingSessionSyncTasksRequest,
+  ClearFilteredFailedCloudWaitingSessionSyncTasksResponse,
   CloudAdminSessionSourceGroupRiskSnapshot,
   CloudAdminSessionSourceGroupSnapshot,
   CloudAdminSessionSourceGroupListResponse,
@@ -9,17 +12,23 @@ import type {
   CloudAdminSessionListQuery,
   CloudAdminSessionSummary,
   CloudComputeProviderSummary,
+  CloudWaitingSessionSyncTaskListQuery,
+  CloudWaitingSessionSyncTaskListResponse,
   CloudWorldAlertSummary,
   CloudWorldDriftSummary,
   CloudWorldBootstrapConfig,
   CloudWorldInstanceFleetItem,
   CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
+  CloudWorldLifecycleJobListQuery,
   CloudWorldLifecycleStatus,
   CloudWorldRequestRecord,
   CloudWorldRequestStatus,
   CloudWorldSummary,
   IssueCloudAdminAccessTokenResponse,
+  ReplayFailedCloudWaitingSessionSyncTasksResponse,
+  ReplayFilteredFailedCloudWaitingSessionSyncTasksRequest,
+  ReplayFilteredFailedCloudWaitingSessionSyncTasksResponse,
   RevokeCloudAdminSessionSourceGroupRequest,
   RevokeCloudAdminSessionSourceGroupResponse,
   RevokeCloudAdminSessionSourceGroupsByRiskRequest,
@@ -27,9 +36,7 @@ import type {
   RevokeCloudAdminSessionsByFilterRequest,
   RevokeCloudAdminSessionsByFilterResponse,
   RevokeCloudAdminSessionsByIdResponse,
-  WorldLifecycleJobStatus,
   WorldLifecycleJobSummary,
-  WorldLifecycleJobType,
 } from "@yinjie/contracts";
 
 const ADMIN_SECRET_KEY = "yinjie_cloud_admin_secret";
@@ -526,20 +533,120 @@ export const cloudAdminApi = {
       body: JSON.stringify(payload),
     }),
 
-  listJobs: (filters?: {
-    worldId?: string;
-    status?: WorldLifecycleJobStatus;
-    jobType?: WorldLifecycleJobType;
-  }) =>
+  listJobs: (filters?: CloudWorldLifecycleJobListQuery) =>
     adminFetch<WorldLifecycleJobSummary[]>(
       `/jobs${buildQueryString({
         worldId: filters?.worldId,
         status: filters?.status,
         jobType: filters?.jobType,
+        provider: filters?.provider,
+        queueState: filters?.queueState,
+        audit: filters?.audit,
+        supersededBy: filters?.supersededBy,
+        query: filters?.query,
       })}`,
     ),
 
   getJob: (id: string) => adminFetch<WorldLifecycleJobSummary>(`/jobs/${id}`),
+
+  listWaitingSessionSyncTasks: (filters?: CloudWaitingSessionSyncTaskListQuery) =>
+    adminFetch<CloudWaitingSessionSyncTaskListResponse>(
+      `/waiting-session-sync-tasks${buildQueryString({
+        status: filters?.status,
+        taskType: filters?.taskType,
+        query: filters?.query,
+        page: filters?.page,
+        pageSize: filters?.pageSize,
+      })}`,
+    ),
+
+  replayFailedWaitingSessionSyncTasks: (taskIds: string[]) =>
+    adminFetch<ReplayFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/replay-failed",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          taskIds,
+        }),
+      },
+    ),
+
+  replayFailedWaitingSessionSyncTasksWithMeta: (taskIds: string[]) =>
+    adminFetchWithMeta<ReplayFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/replay-failed",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          taskIds,
+        }),
+      },
+    ),
+
+  clearFailedWaitingSessionSyncTasks: (taskIds: string[]) =>
+    adminFetch<ClearFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/clear-failed",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          taskIds,
+        }),
+      },
+    ),
+
+  clearFailedWaitingSessionSyncTasksWithMeta: (taskIds: string[]) =>
+    adminFetchWithMeta<ClearFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/clear-failed",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          taskIds,
+        }),
+      },
+    ),
+
+  replayFilteredFailedWaitingSessionSyncTasks: (
+    payload?: ReplayFilteredFailedCloudWaitingSessionSyncTasksRequest,
+  ) =>
+    adminFetch<ReplayFilteredFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/replay-filtered-failed",
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
+
+  replayFilteredFailedWaitingSessionSyncTasksWithMeta: (
+    payload?: ReplayFilteredFailedCloudWaitingSessionSyncTasksRequest,
+  ) =>
+    adminFetchWithMeta<ReplayFilteredFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/replay-filtered-failed",
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
+
+  clearFilteredFailedWaitingSessionSyncTasks: (
+    payload?: ClearFilteredFailedCloudWaitingSessionSyncTasksRequest,
+  ) =>
+    adminFetch<ClearFilteredFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/clear-filtered-failed",
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
+
+  clearFilteredFailedWaitingSessionSyncTasksWithMeta: (
+    payload?: ClearFilteredFailedCloudWaitingSessionSyncTasksRequest,
+  ) =>
+    adminFetchWithMeta<ClearFilteredFailedCloudWaitingSessionSyncTasksResponse>(
+      "/waiting-session-sync-tasks/clear-filtered-failed",
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
 
   getWorldInstance: (worldId: string) =>
     adminFetch<CloudInstanceSummary | null>(`/worlds/${worldId}/instance`).then(

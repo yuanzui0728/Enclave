@@ -6,6 +6,13 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
+  ClearFilteredFailedCloudWaitingSessionSyncTasksResponse,
+  ClearFailedCloudWaitingSessionSyncTasksResponse,
+  CloudWorldLifecycleJobListQuery,
+  CloudWaitingSessionSyncTaskListResponse,
+  CloudWaitingSessionSyncTaskStatus,
+  CloudWaitingSessionSyncTaskSummary,
+  CloudWaitingSessionSyncTaskType,
   CloudWorldAlertSummary,
   CloudComputeProviderSummary,
   CloudWorldAttentionItem,
@@ -21,28 +28,38 @@ import type {
   CloudWorldRequestRecord,
   CloudWorldRequestStatus,
   CloudWorldSummary,
+  ReplayFilteredFailedCloudWaitingSessionSyncTasksResponse,
+  ReplayFailedCloudWaitingSessionSyncTasksResponse,
   WorldLifecycleJobStatus,
   WorldLifecycleJobSummary,
   WorldLifecycleJobType,
 } from "@yinjie/contracts";
 import { randomUUID } from "node:crypto";
-import { EntityManager, In, Repository } from "typeorm";
+import { Brackets, EntityManager, In, Repository } from "typeorm";
 import { PhoneAuthService } from "../auth/phone-auth.service";
 import { createCloudWorldSlug } from "../cloud-world-slug";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
+import { WaitingSessionSyncTaskEntity } from "../entities/waiting-session-sync-task.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
 import {
   buildWorldBootstrapConfig,
   resolveSuggestedWorldAdminUrl,
   resolveSuggestedWorldApiBaseUrl,
 } from "../orchestration/world-bootstrap-config";
+import {
+  ensureUniqueActiveLifecycleJob,
+  getSupersededLifecycleJobMetadata,
+} from "../orchestration/world-lifecycle-job-queue";
 import { WorldLifecycleWorkerService } from "../orchestration/world-lifecycle-worker.service";
 import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
 import { isRequestGatePlaceholderWorld as isRequestGatePlaceholder } from "../request-gate-placeholder";
 import { getRequestPhoneAvailability } from "../request-phone-availability";
-import { getRequestGateState } from "../request-gate-state";
+import {
+  getRequestGateState,
+  REQUEST_GATE_FAILURE_CODES,
+} from "../request-gate-state";
 import {
   getRequestRecordProjection,
   getRequestWorldSyncDecision,
@@ -54,6 +71,15 @@ type CloudRequestWriteRepositories = {
   worldRepo: Repository<CloudWorldEntity>;
   requestRepo: Repository<CloudWorldRequestEntity>;
 };
+
+type WaitingSessionSyncTaskFilters = {
+  status?: CloudWaitingSessionSyncTaskStatus;
+  taskType?: CloudWaitingSessionSyncTaskType;
+  query?: string;
+};
+
+type WorldLifecycleJobFilters = CloudWorldLifecycleJobListQuery;
+const UNASSIGNED_PROVIDER_FILTER = "__unassigned__";
 
 @Injectable()
 export class CloudService {
@@ -70,6 +96,8 @@ export class CloudService {
     private readonly requestRepo: Repository<CloudWorldRequestEntity>,
     @InjectRepository(WorldLifecycleJobEntity)
     private readonly jobRepo: Repository<WorldLifecycleJobEntity>,
+    @InjectRepository(WaitingSessionSyncTaskEntity)
+    private readonly waitingSessionSyncTaskRepo: Repository<WaitingSessionSyncTaskEntity>,
     private readonly configService: ConfigService,
     private readonly phoneAuthService: PhoneAuthService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
@@ -677,46 +705,110 @@ export class CloudService {
     return this.serializeWorld(world);
   }
 
-  async listJobs(filters?: {
-    worldId?: string;
-    status?: WorldLifecycleJobStatus;
-    jobType?: WorldLifecycleJobType;
-  }) {
-    const where: {
-      worldId?: string;
-      status?: WorldLifecycleJobStatus;
-      jobType?: WorldLifecycleJobType;
-    } = {};
-
+  async listJobs(filters?: WorldLifecycleJobFilters) {
     if (filters?.worldId) {
       await this.requireWorld(filters.worldId);
-      where.worldId = filters.worldId;
-    }
-    if (filters?.status) {
-      where.status = filters.status;
-    }
-    if (filters?.jobType) {
-      where.jobType = filters.jobType;
     }
 
-    const jobs = await this.jobRepo.find({
-      where,
-      order: {
-        createdAt: "DESC",
-      },
-      take: filters?.worldId ? 20 : 100,
+    const jobs = await this.createJobQueryBuilder(filters)
+      .take(filters?.worldId ? 20 : 100)
+      .getMany();
+    return jobs.map((job) => this.serializeJob(job));
+  }
+
+  async listWaitingSessionSyncTasks(filters?: {
+    status?: CloudWaitingSessionSyncTaskStatus;
+    taskType?: CloudWaitingSessionSyncTaskType;
+    query?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<CloudWaitingSessionSyncTaskListResponse> {
+    const page = filters?.page && filters.page > 0 ? filters.page : 1;
+    const pageSize =
+      filters?.pageSize && filters.pageSize > 0
+        ? Math.min(filters.pageSize, 100)
+        : 20;
+
+    const queryBuilder = this.createWaitingSessionSyncTaskQueryBuilder(filters)
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
+
+    const [items, total] = await queryBuilder.getManyAndCount();
+    return {
+      items: items.map((item) => this.serializeWaitingSessionSyncTask(item)),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
+  }
+
+  async replayFailedWaitingSessionSyncTasks(
+    taskIds: string[],
+  ): Promise<ReplayFailedCloudWaitingSessionSyncTasksResponse> {
+    return this.waitingSessionSyncService.replayFailedTasks(taskIds);
+  }
+
+  async clearFailedWaitingSessionSyncTasks(
+    taskIds: string[],
+  ): Promise<ClearFailedCloudWaitingSessionSyncTasksResponse> {
+    return this.waitingSessionSyncService.clearFailedTasks(taskIds);
+  }
+
+  async replayFilteredFailedWaitingSessionSyncTasks(filters?: {
+    taskType?: CloudWaitingSessionSyncTaskType;
+    query?: string;
+  }): Promise<ReplayFilteredFailedCloudWaitingSessionSyncTasksResponse> {
+    const matchedTaskIds = await this.listWaitingSessionSyncTaskIds({
+      status: "failed",
+      taskType: filters?.taskType,
+      query: filters?.query,
     });
-
-    if (filters?.worldId || jobs.length === 0) {
-      return jobs.map((job) => this.serializeJob(job));
+    if (matchedTaskIds.length === 0) {
+      return {
+        success: true,
+        matchedCount: 0,
+        replayedCount: 0,
+        skippedCount: 0,
+      };
     }
 
-    const visibleWorldIds = await this.loadVisibleWorldIdSet(
-      jobs.map((job) => job.worldId),
-    );
-    return jobs
-      .filter((job) => visibleWorldIds.has(job.worldId))
-      .map((job) => this.serializeJob(job));
+    const result =
+      await this.waitingSessionSyncService.replayFailedTasks(matchedTaskIds);
+    return {
+      success: true,
+      matchedCount: matchedTaskIds.length,
+      replayedCount: result.replayedTaskIds.length,
+      skippedCount: result.skippedTaskIds.length,
+    };
+  }
+
+  async clearFilteredFailedWaitingSessionSyncTasks(filters?: {
+    taskType?: CloudWaitingSessionSyncTaskType;
+    query?: string;
+  }): Promise<ClearFilteredFailedCloudWaitingSessionSyncTasksResponse> {
+    const matchedTaskIds = await this.listWaitingSessionSyncTaskIds({
+      status: "failed",
+      taskType: filters?.taskType,
+      query: filters?.query,
+    });
+    if (matchedTaskIds.length === 0) {
+      return {
+        success: true,
+        matchedCount: 0,
+        clearedCount: 0,
+        skippedCount: 0,
+      };
+    }
+
+    const result =
+      await this.waitingSessionSyncService.clearFailedTasks(matchedTaskIds);
+    return {
+      success: true,
+      matchedCount: matchedTaskIds.length,
+      clearedCount: result.clearedTaskIds.length,
+      skippedCount: result.skippedTaskIds.length,
+    };
   }
 
   async getJobById(id: string) {
@@ -1096,6 +1188,7 @@ export class CloudService {
           Math.ceil((job.leaseExpiresAt.getTime() - Date.now()) / 1000),
         )
       : null;
+    const supersededMetadata = getSupersededLifecycleJobMetadata(job);
 
     return {
       id: job.id,
@@ -1116,7 +1209,235 @@ export class CloudService {
       finishedAt: job.finishedAt?.toISOString() ?? null,
       payload: job.payload,
       resultPayload: job.resultPayload,
+      supersededByJobType: supersededMetadata?.supersededByJobType ?? null,
+      supersededByPayload: supersededMetadata?.supersededByPayload ?? null,
     };
+  }
+
+  private serializeWaitingSessionSyncTask(
+    task: WaitingSessionSyncTaskEntity,
+  ): CloudWaitingSessionSyncTaskSummary {
+    const leaseRemainingSeconds = task.leaseExpiresAt
+      ? Math.max(
+          0,
+          Math.ceil((task.leaseExpiresAt.getTime() - Date.now()) / 1000),
+        )
+      : null;
+
+    return {
+      id: task.id,
+      taskKey: task.taskKey,
+      taskType: this.toWaitingSessionSyncTaskType(task.taskType),
+      targetValue: task.targetValue,
+      context: task.context,
+      status: this.toWaitingSessionSyncTaskStatus(task.status),
+      attempt: task.attempt,
+      maxAttempts: task.maxAttempts,
+      availableAt: task.availableAt.toISOString(),
+      leaseOwner: task.leaseOwner,
+      leaseExpiresAt: task.leaseExpiresAt?.toISOString() ?? null,
+      leaseRemainingSeconds,
+      lastError: task.lastError,
+      finishedAt: task.finishedAt?.toISOString() ?? null,
+      createdAt: task.createdAt.toISOString(),
+      updatedAt: task.updatedAt.toISOString(),
+    };
+  }
+
+  private createWaitingSessionSyncTaskQueryBuilder(
+    filters?: WaitingSessionSyncTaskFilters,
+  ) {
+    const queryBuilder = this.waitingSessionSyncTaskRepo
+      .createQueryBuilder("task")
+      .orderBy("task.updatedAt", "DESC")
+      .addOrderBy("task.createdAt", "DESC");
+    this.applyWaitingSessionSyncTaskFilters(queryBuilder, filters);
+    return queryBuilder;
+  }
+
+  private applyWaitingSessionSyncTaskFilters(
+    queryBuilder: ReturnType<Repository<WaitingSessionSyncTaskEntity>["createQueryBuilder"]>,
+    filters?: WaitingSessionSyncTaskFilters,
+  ) {
+    if (filters?.status) {
+      queryBuilder.andWhere("task.status = :status", {
+        status: filters.status,
+      });
+    }
+    if (filters?.taskType) {
+      queryBuilder.andWhere("task.taskType = :taskType", {
+        taskType: filters.taskType,
+      });
+    }
+    if (filters?.query?.trim()) {
+      const query = `%${filters.query.trim().toLowerCase()}%`;
+      queryBuilder.andWhere(
+        `(
+          LOWER(task.taskKey) LIKE :query OR
+          LOWER(task.targetValue) LIKE :query OR
+          LOWER(task.context) LIKE :query OR
+          LOWER(COALESCE(task.lastError, '')) LIKE :query
+        )`,
+        { query },
+      );
+    }
+  }
+
+  private async listWaitingSessionSyncTaskIds(
+    filters?: WaitingSessionSyncTaskFilters,
+  ) {
+    const tasks = await this.createWaitingSessionSyncTaskQueryBuilder(filters)
+      .select("task.id", "id")
+      .getRawMany<{ id: string }>();
+    return tasks.map((task) => task.id);
+  }
+
+  private createJobQueryBuilder(filters?: WorldLifecycleJobFilters) {
+    const queryBuilder = this.jobRepo
+      .createQueryBuilder("job")
+      .orderBy("job.updatedAt", "DESC")
+      .addOrderBy("job.createdAt", "DESC");
+    this.applyJobFilters(queryBuilder, filters);
+    return queryBuilder;
+  }
+
+  private applyJobFilters(
+    queryBuilder: ReturnType<Repository<WorldLifecycleJobEntity>["createQueryBuilder"]>,
+    filters?: WorldLifecycleJobFilters,
+  ) {
+    queryBuilder.innerJoin(CloudWorldEntity, "world", "world.id = job.worldId");
+
+    if (!filters?.worldId) {
+      queryBuilder.andWhere(
+        new Brackets((placeholderQuery) => {
+          placeholderQuery.where(
+            `NOT (
+              world.status = :requestGatePlaceholderStatus AND
+              world.failureCode IN (:...requestGateFailureCodes) AND
+              COALESCE(world.apiBaseUrl, '') = '' AND
+              COALESCE(world.adminUrl, '') = '' AND
+              world.lastAccessedAt IS NULL AND
+              world.lastInteractiveAt IS NULL AND
+              world.lastBootedAt IS NULL AND
+              world.lastHeartbeatAt IS NULL AND
+              world.lastSuspendedAt IS NULL
+            )`,
+            {
+              requestGatePlaceholderStatus: "disabled",
+              requestGateFailureCodes: REQUEST_GATE_FAILURE_CODES,
+            },
+          );
+        }),
+      );
+    }
+
+    if (filters?.worldId) {
+      queryBuilder.andWhere("job.worldId = :worldId", {
+        worldId: filters.worldId,
+      });
+    }
+    if (filters?.status) {
+      queryBuilder.andWhere("job.status = :status", {
+        status: filters.status,
+      });
+    }
+    if (filters?.jobType) {
+      queryBuilder.andWhere("job.jobType = :jobType", {
+        jobType: filters.jobType,
+      });
+    }
+    if (filters?.provider) {
+      if (filters.provider === UNASSIGNED_PROVIDER_FILTER) {
+        queryBuilder.andWhere(
+          "(world.providerKey IS NULL OR TRIM(world.providerKey) = '')",
+        );
+      } else {
+        queryBuilder.andWhere("world.providerKey = :providerKey", {
+          providerKey: filters.provider,
+        });
+      }
+    }
+    if (filters?.queueState === "running_now") {
+      queryBuilder.andWhere("job.status = :runningJobStatus", {
+        runningJobStatus: "running",
+      });
+    }
+    if (filters?.queueState === "lease_expired") {
+      queryBuilder.andWhere("job.failureCode = :leaseExpiredFailureCode", {
+        leaseExpiredFailureCode: "lease_expired",
+      });
+    }
+    if (filters?.queueState === "delayed") {
+      queryBuilder
+        .andWhere("job.status = :pendingJobStatus", {
+          pendingJobStatus: "pending",
+        })
+        .andWhere("job.availableAt IS NOT NULL")
+        .andWhere("datetime(job.availableAt) > datetime(:queueDelayedNow)", {
+          queueDelayedNow: new Date().toISOString(),
+        });
+    }
+
+    this.applyJobAuditFilters(queryBuilder, filters);
+    this.applyJobSearchFilter(queryBuilder, filters);
+  }
+
+  private applyJobAuditFilters(
+    queryBuilder: ReturnType<Repository<WorldLifecycleJobEntity>["createQueryBuilder"]>,
+    filters?: Pick<WorldLifecycleJobFilters, "audit" | "supersededBy">,
+  ) {
+    if (filters?.audit === "superseded" || filters?.supersededBy) {
+      queryBuilder.andWhere(
+        new Brackets((auditQuery) => {
+          auditQuery
+            .where("job.failureCode = :supersededFailureCode", {
+              supersededFailureCode: "superseded_by_new_job",
+            })
+            .orWhere(
+              "json_extract(job.resultPayload, '$.action') = :supersededAction",
+              {
+                supersededAction: "superseded_by_new_job",
+              },
+            );
+        }),
+      );
+    }
+
+    if (filters?.supersededBy) {
+      queryBuilder.andWhere(
+        "json_extract(job.resultPayload, '$.supersededByJobType') = :supersededByJobType",
+        {
+          supersededByJobType: filters.supersededBy,
+        },
+      );
+    }
+  }
+
+  private applyJobSearchFilter(
+    queryBuilder: ReturnType<Repository<WorldLifecycleJobEntity>["createQueryBuilder"]>,
+    filters?: Pick<WorldLifecycleJobFilters, "query">,
+  ) {
+    if (!filters?.query?.trim()) {
+      return;
+    }
+
+    const query = `%${filters.query.trim().toLowerCase()}%`;
+    queryBuilder.andWhere(
+      `(
+        LOWER(job.id) LIKE :query OR
+        LOWER(job.worldId) LIKE :query OR
+        LOWER(job.jobType) LIKE :query OR
+        LOWER(job.status) LIKE :query OR
+        LOWER(COALESCE(job.leaseOwner, '')) LIKE :query OR
+        LOWER(COALESCE(job.failureCode, '')) LIKE :query OR
+        LOWER(COALESCE(job.failureMessage, '')) LIKE :query OR
+        LOWER(COALESCE(json_extract(job.resultPayload, '$.supersededByJobType'), '')) LIKE :query OR
+        LOWER(world.name) LIKE :query OR
+        LOWER(world.phone) LIKE :query OR
+        LOWER(COALESCE(world.providerKey, '')) LIKE :query
+      )`,
+      { query },
+    );
   }
 
   private serializeInstance(
@@ -1168,39 +1489,29 @@ export class CloudService {
     jobType: WorldLifecycleJobType,
     payload: Record<string, unknown>,
   ) {
-    const existing = await this.jobRepo.findOne({
-      where: {
-        worldId,
-        jobType,
-        status: In(["pending", "running"]),
-      },
-      order: {
-        createdAt: "DESC",
-      },
+    return ensureUniqueActiveLifecycleJob(this.jobRepo, {
+      worldId,
+      jobType,
+      create: () =>
+        this.jobRepo.create({
+          worldId,
+          jobType,
+          status: "pending",
+          priority:
+            jobType === "resume" ? 50 : jobType === "suspend" ? 80 : 100,
+          payload,
+          attempt: 0,
+          maxAttempts: jobType === "resume" ? 5 : 3,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          availableAt: new Date(),
+          startedAt: null,
+          finishedAt: null,
+          failureCode: null,
+          failureMessage: null,
+          resultPayload: null,
+        }),
     });
-    if (existing) {
-      return existing;
-    }
-
-    return this.jobRepo.save(
-      this.jobRepo.create({
-        worldId,
-        jobType,
-        status: "pending",
-        priority: jobType === "resume" ? 50 : jobType === "suspend" ? 80 : 100,
-        payload,
-        attempt: 0,
-        maxAttempts: jobType === "resume" ? 5 : 3,
-        leaseOwner: null,
-        leaseExpiresAt: null,
-        availableAt: new Date(),
-        startedAt: null,
-        finishedAt: null,
-        failureCode: null,
-        failureMessage: null,
-        resultPayload: null,
-      }),
-    );
   }
 
   private async chooseRecoveryJobType(
@@ -1353,6 +1664,32 @@ export class CloudService {
         return value;
       default:
         throw new BadRequestException("不支持的任务类型。");
+    }
+  }
+
+  private toWaitingSessionSyncTaskStatus(
+    value: string,
+  ): CloudWaitingSessionSyncTaskStatus {
+    switch (value) {
+      case "pending":
+      case "running":
+      case "failed":
+        return value;
+      default:
+        throw new BadRequestException("不支持的 waiting session 补偿任务状态。");
+    }
+  }
+
+  private toWaitingSessionSyncTaskType(
+    value: string,
+  ): CloudWaitingSessionSyncTaskType {
+    switch (value) {
+      case "refresh_phone":
+      case "invalidate_phone":
+      case "refresh_world":
+        return value;
+      default:
+        throw new BadRequestException("不支持的 waiting session 补偿任务类型。");
     }
   }
 

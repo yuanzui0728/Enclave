@@ -8,6 +8,7 @@ import { RootLayout } from "./components/root-layout";
 import { validateAdminSessionsRouteSearch } from "./lib/admin-sessions-route-search";
 import { validateJobsRouteSearch } from "./lib/job-route-search";
 import { validateRequestsRouteSearch } from "./lib/request-route-search";
+import { validateWaitingSessionSyncRouteSearch } from "./lib/waiting-session-sync-helpers";
 import { validateWorldsRouteSearch } from "./lib/world-route-search";
 
 const DashboardPage = lazy(async () => {
@@ -43,6 +44,11 @@ const JobsPage = lazy(async () => {
 const AdminSessionsPage = lazy(async () => {
   const mod = await import("./routes/admin-sessions-page");
   return { default: mod.AdminSessionsPage };
+});
+
+const WaitingSessionSyncPage = lazy(async () => {
+  const mod = await import("./routes/waiting-session-sync-page");
+  return { default: mod.WaitingSessionSyncPage };
 });
 
 const rootRoute = createRootRoute({
@@ -95,6 +101,13 @@ const adminSessionsRoute = createRoute({
   component: AdminSessionsPage,
 });
 
+const waitingSessionSyncRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/waiting-sync",
+  validateSearch: validateWaitingSessionSyncRouteSearch,
+  component: WaitingSessionSyncPage,
+});
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   requestsRoute,
@@ -103,6 +116,7 @@ export const routeTree = rootRoute.addChildren([
   worldDetailRoute,
   jobsRoute,
   adminSessionsRoute,
+  waitingSessionSyncRoute,
 ]);
 
 type AppRouterOptions = {

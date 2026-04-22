@@ -12,7 +12,7 @@
     "build": "tsc -p tsconfig.app.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "tsc --noEmit -p tsconfig.app.json",
-    "test": "vitest run --environment jsdom tests/router.smoke.test.tsx tests/interactions.test.tsx tests/world-lifecycle-actions.test.ts tests/request-status-meta.test.ts tests/request-barrels.test.ts tests/request-route-search.test.ts tests/job-route-search.test.ts tests/world-route-search.test.ts tests/admin-sessions-route-search.test.ts tests/request-scoped-notice.test.ts tests/admin-session-meta.test.ts tests/admin-session-barrels.test.ts",
+    "test": "vitest run --environment jsdom tests/router.smoke.test.tsx tests/interactions.test.tsx tests/world-lifecycle-actions.test.ts tests/job-result.test.ts tests/request-status-meta.test.ts tests/request-barrels.test.ts tests/request-route-search.test.ts tests/job-route-search.test.ts tests/world-route-search.test.ts tests/admin-sessions-route-search.test.ts tests/waiting-session-sync-route-search.test.ts tests/request-scoped-notice.test.ts tests/waiting-session-sync-copy.test.ts tests/waiting-session-sync-notices.test.ts tests/waiting-session-sync-artifacts.test.ts tests/waiting-session-sync-barrels.test.ts tests/admin-session-meta.test.ts tests/admin-session-download.test.ts tests/admin-session-operations.test.ts tests/admin-session-barrels.test.ts",
     "test:smoke": "vitest run --environment jsdom tests/router.smoke.test.tsx",
     "test:live-api": "pnpm --filter @yinjie/cloud-api build && pnpm run test:live-api:raw",
     "test:live-api:raw": "vitest run --environment jsdom tests/live-api.smoke.test.tsx",

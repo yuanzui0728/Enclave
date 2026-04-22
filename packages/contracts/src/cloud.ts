@@ -50,6 +50,22 @@ export type WorldLifecycleJobStatus =
   | "failed"
   | "cancelled";
 
+export type WorldLifecycleJobAuditFilter = "superseded";
+export type CloudWorldLifecycleJobQueueStateFilter =
+  | "running_now"
+  | "lease_expired"
+  | "delayed";
+
+export type CloudWaitingSessionSyncTaskType =
+  | "refresh_phone"
+  | "invalidate_phone"
+  | "refresh_world";
+
+export type CloudWaitingSessionSyncTaskStatus =
+  | "pending"
+  | "running"
+  | "failed";
+
 export type WorldAccessSessionStatus =
   | "pending"
   | "resolving"
@@ -292,6 +308,96 @@ export interface CloudAdminSessionListResponse {
   totalPages: number;
 }
 
+export interface CloudWaitingSessionSyncTaskListQuery {
+  status?: CloudWaitingSessionSyncTaskStatus;
+  taskType?: CloudWaitingSessionSyncTaskType;
+  query?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CloudWorldLifecycleJobListQuery {
+  worldId?: string;
+  status?: WorldLifecycleJobStatus;
+  jobType?: WorldLifecycleJobType;
+  provider?: string;
+  queueState?: CloudWorldLifecycleJobQueueStateFilter;
+  audit?: WorldLifecycleJobAuditFilter;
+  supersededBy?: WorldLifecycleJobType;
+  query?: string;
+}
+
+export interface CloudWaitingSessionSyncTaskSummary {
+  id: string;
+  taskKey: string;
+  taskType: CloudWaitingSessionSyncTaskType;
+  targetValue: string;
+  context: string;
+  status: CloudWaitingSessionSyncTaskStatus;
+  attempt: number;
+  maxAttempts: number;
+  availableAt: string;
+  leaseOwner?: string | null;
+  leaseExpiresAt?: string | null;
+  leaseRemainingSeconds?: number | null;
+  lastError?: string | null;
+  finishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CloudWaitingSessionSyncTaskListResponse {
+  items: CloudWaitingSessionSyncTaskSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ReplayFailedCloudWaitingSessionSyncTasksRequest {
+  taskIds: string[];
+}
+
+export interface ReplayFailedCloudWaitingSessionSyncTasksResponse {
+  success: true;
+  replayedTaskIds: string[];
+  skippedTaskIds: string[];
+}
+
+export interface ClearFailedCloudWaitingSessionSyncTasksRequest {
+  taskIds: string[];
+}
+
+export interface ClearFailedCloudWaitingSessionSyncTasksResponse {
+  success: true;
+  clearedTaskIds: string[];
+  skippedTaskIds: string[];
+}
+
+export interface ReplayFilteredFailedCloudWaitingSessionSyncTasksRequest {
+  taskType?: CloudWaitingSessionSyncTaskType;
+  query?: string;
+}
+
+export interface ReplayFilteredFailedCloudWaitingSessionSyncTasksResponse {
+  success: true;
+  matchedCount: number;
+  replayedCount: number;
+  skippedCount: number;
+}
+
+export interface ClearFilteredFailedCloudWaitingSessionSyncTasksRequest {
+  taskType?: CloudWaitingSessionSyncTaskType;
+  query?: string;
+}
+
+export interface ClearFilteredFailedCloudWaitingSessionSyncTasksResponse {
+  success: true;
+  matchedCount: number;
+  clearedCount: number;
+  skippedCount: number;
+}
+
 export interface CloudAdminSessionSourceGroupListResponse {
   items: CloudAdminSessionSourceGroupSummary[];
   total: number;
@@ -529,6 +635,8 @@ export interface WorldLifecycleJobSummary {
   finishedAt?: string | null;
   payload?: Record<string, unknown> | null;
   resultPayload?: Record<string, unknown> | null;
+  supersededByJobType?: WorldLifecycleJobType | null;
+  supersededByPayload?: Record<string, unknown> | null;
 }
 
 export interface WorldAccessSessionSummary {

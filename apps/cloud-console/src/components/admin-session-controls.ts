@@ -2,6 +2,7 @@ export * from "./admin-session-action-button";
 export * from "./admin-session-brand-badge";
 export * from "./admin-session-brand-eyebrow";
 export * from "./admin-session-filter-controls";
+export * from "./admin-session-neutral-chip";
 export * from "./admin-session-quick-view-buttons";
 export * from "./admin-session-section-header";
 export * from "./admin-session-source-group-risk-badge";

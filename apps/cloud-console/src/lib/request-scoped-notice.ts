@@ -1,3 +1,4 @@
+import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import type {
   ConsoleNoticeTone,
   ShowConsoleNotice,
@@ -51,5 +52,21 @@ export function showRequestScopedNotice(
 ) {
   showNotice(notice.message, notice.tone, {
     requestId: notice.requestId ?? null,
+  });
+}
+
+type ShowRequestScopedNoticeAndInvalidateOptions = {
+  queryClient: Pick<QueryClient, "invalidateQueries">;
+  queryKey: QueryKey;
+};
+
+export function showRequestScopedNoticeAndInvalidate(
+  showNotice: ShowConsoleNotice,
+  notice: RequestScopedNotice,
+  options: ShowRequestScopedNoticeAndInvalidateOptions,
+) {
+  showRequestScopedNotice(showNotice, notice);
+  void options.queryClient.invalidateQueries({
+    queryKey: options.queryKey,
   });
 }

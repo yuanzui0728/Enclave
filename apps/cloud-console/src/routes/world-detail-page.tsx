@@ -23,6 +23,7 @@ import {
   type QueueStateFilter,
 } from "../lib/job-queue-state";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
+import { describeJobResult, getJobAuditBadgeLabel } from "../lib/job-result";
 import {
   createRequestScopedNotice,
   showRequestScopedNotice,
@@ -53,6 +54,8 @@ const WORLD_STATUSES: CloudWorldLifecycleStatus[] = [
 
 const SECONDARY_ACTION_BUTTON =
   "rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-primary)] hover:bg-[color:var(--surface-tertiary)] disabled:opacity-60";
+const JOB_AUDIT_BADGE_CLASS_NAME =
+  "rounded-full border border-amber-300/50 bg-amber-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-amber-100";
 
 function formatDateTime(value?: string | null) {
   if (!value) {
@@ -1274,51 +1277,60 @@ export function WorldDetailPage() {
                     </div>
                   </td>
                 </tr>,
-                ...group.jobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    className="border-t border-[color:var(--border-faint)]"
-                  >
-                    <td className="px-4 py-3 text-[color:var(--text-primary)]">
-                      <div>{job.jobType}</div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {job.id}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${getJobStatusTone(
-                          job.status,
-                        )}`}
-                      >
-                        {job.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
-                      {job.attempt} / {job.maxAttempts}
-                    </td>
-                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
-                      <div>{formatLeaseOwner(job.leaseOwner)}</div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        remaining {formatDuration(job.leaseRemainingSeconds)}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        expires {formatDateTime(job.leaseExpiresAt)}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        available {formatDateTime(job.availableAt)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-[color:var(--text-secondary)]">
-                      {formatDateTime(job.updatedAt)}
-                    </td>
-                    <td className="max-w-[18rem] px-4 py-3 text-[color:var(--text-secondary)]">
-                      {typeof job.resultPayload?.action === "string"
-                        ? job.resultPayload.action
-                        : (job.failureMessage ?? "None")}
-                    </td>
-                  </tr>
-                )),
+                ...group.jobs.map((job) => {
+                  const auditBadgeLabel = getJobAuditBadgeLabel(job);
+
+                  return (
+                    <tr
+                      key={job.id}
+                      className="border-t border-[color:var(--border-faint)]"
+                    >
+                      <td className="px-4 py-3 text-[color:var(--text-primary)]">
+                        <div>{job.jobType}</div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          {job.id}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${getJobStatusTone(
+                            job.status,
+                          )}`}
+                        >
+                          {job.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                        {job.attempt} / {job.maxAttempts}
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                        <div>{formatLeaseOwner(job.leaseOwner)}</div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          remaining {formatDuration(job.leaseRemainingSeconds)}
+                        </div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          expires {formatDateTime(job.leaseExpiresAt)}
+                        </div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          available {formatDateTime(job.availableAt)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--text-secondary)]">
+                        {formatDateTime(job.updatedAt)}
+                      </td>
+                      <td className="max-w-[18rem] px-4 py-3 text-[color:var(--text-secondary)]">
+                        {auditBadgeLabel ? (
+                          <div className="mb-2">
+                            <span className={JOB_AUDIT_BADGE_CLASS_NAME}>
+                              {auditBadgeLabel}
+                            </span>
+                          </div>
+                        ) : null}
+                        <div>{describeJobResult(job)}</div>
+                      </td>
+                    </tr>
+                  );
+                }),
               ])}
             </tbody>
           </table>

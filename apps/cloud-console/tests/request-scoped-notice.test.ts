@@ -3,6 +3,7 @@ import {
   createBooleanOutcomeNotice,
   createRequestScopedNotice,
   showRequestScopedNotice,
+  showRequestScopedNoticeAndInvalidate,
 } from "../src/lib/request-scoped-notice";
 
 describe("request scoped notice", () => {
@@ -50,6 +51,29 @@ describe("request scoped notice", () => {
       message: "Download failed.",
       tone: "warning",
       requestId: undefined,
+    });
+  });
+
+  it("can show notices and invalidate query state in one step", () => {
+    const showNotice = vi.fn();
+    const invalidateQueries = vi.fn();
+
+    showRequestScopedNoticeAndInvalidate(
+      showNotice,
+      createRequestScopedNotice("Revoked.", "success", "req-789"),
+      {
+        queryClient: {
+          invalidateQueries,
+        },
+        queryKey: ["cloud-console"],
+      },
+    );
+
+    expect(showNotice).toHaveBeenCalledWith("Revoked.", "success", {
+      requestId: "req-789",
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["cloud-console"],
     });
   });
 });

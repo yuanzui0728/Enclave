@@ -18,12 +18,47 @@ function formatDateTime(value: string) {
   return new Date(value).toLocaleString();
 }
 
+function matchesRequestQuery(
+  item: {
+    id: string;
+    phone: string;
+    worldName: string;
+    status: string;
+    displayStatus?: string | null;
+    note?: string | null;
+    projectedWorldStatus?: string | null;
+    projectedDesiredState?: string | null;
+  },
+  query: string,
+) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return [
+    item.id,
+    item.phone,
+    item.worldName,
+    item.status,
+    item.displayStatus,
+    item.note,
+    item.projectedWorldStatus,
+    item.projectedDesiredState,
+  ].some((value) =>
+    typeof value === "string"
+      ? value.toLowerCase().includes(normalizedQuery)
+      : false,
+  );
+}
+
 export function RequestsPage() {
   const navigate = useNavigate({ from: "/requests" });
   const filters = useSearch({ from: "/requests" });
   const requestStatusFilter = filters.status;
   const projectedWorldStatusFilter = filters.projectedWorldStatus;
   const desiredStateFilter = filters.desiredState;
+  const queryFilter = filters.query;
 
   function updateFilters(next: Partial<RequestsRouteSearch>) {
     void navigate({
@@ -56,9 +91,14 @@ export function RequestsPage() {
           return false;
         }
 
-        return true;
+        return matchesRequestQuery(item, queryFilter);
       }),
-    [desiredStateFilter, projectedWorldStatusFilter, requestsQuery.data],
+    [
+      desiredStateFilter,
+      projectedWorldStatusFilter,
+      queryFilter,
+      requestsQuery.data,
+    ],
   );
 
   return (
@@ -90,6 +130,21 @@ export function RequestsPage() {
           updateFilters({ desiredState })
         }
       />
+
+      <div className="mt-4 max-w-xl">
+        <label className="text-sm text-[color:var(--text-secondary)]">
+          <div className="mb-2">Search requests</div>
+          <input
+            aria-label="Request search"
+            value={queryFilter}
+            onChange={(event) =>
+              updateFilters({ query: event.target.value })
+            }
+            placeholder="request id, phone, world name, or status detail"
+            className="w-full rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)]"
+          />
+        </label>
+      </div>
 
       <div className="mt-5 overflow-x-auto rounded-2xl border border-[color:var(--border-faint)]">
         <table className="min-w-[56rem] border-collapse text-left text-sm">

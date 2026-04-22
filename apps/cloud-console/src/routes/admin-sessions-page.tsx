@@ -16,6 +16,7 @@ import {
   AdminSessionBrandBadge,
   AdminSessionBrandEyebrow,
   AdminSessionFilterControls,
+  AdminSessionNeutralChip,
   AdminSessionQuickViewButtons,
   AdminSessionSectionHeader,
   AdminSessionSourceGroupFilterControls,
@@ -30,29 +31,42 @@ import {
   showCloudAdminErrorNotice,
 } from "../components/cloud-admin-error-block";
 import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
-import {
-  type ConsoleNoticeTone,
-  useConsoleNotice,
-} from "../components/console-notice";
+import { useConsoleNotice } from "../components/console-notice";
 import {
   DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH,
   buildAdminSessionsRouteSearch,
   type AdminSessionsRouteSearch,
 } from "../lib/admin-sessions-route-search";
 import {
+  createAdminSessionArtifactDownloadNotice,
+  ADMIN_SESSION_FOCUSED_SOURCE_SNAPSHOT_UNAVAILABLE_MESSAGE,
+  createAdminSessionRiskTimelineNotReadyNotice,
+  createErrorHighlightedOperationReceipt,
+  createNoticeHighlightedOperationReceipt,
+  createRiskGroupRevokeNotice,
+  createSessionRevokeNotice,
   formatAdminSessionRevocationReasonLabel as formatRevocationReason,
   formatAdminSessionSourceGroupRiskFilterLabel as formatSourceGroupRiskFilterLabel,
+  formatHighlightedOperationReceiptLabel,
+  getAdminSessionSourceRiskGuardMessage,
+  getAdminSessionSourceRiskSelectionPrompt,
+  getHighlightedOperationReceiptTone,
+  HIGHLIGHTED_OPERATION_RECEIPT_LIMIT,
+  type HighlightedSessionOperationReceipt,
+  matchesHighlightedOperationReceiptContext,
+  prependHighlightedOperationReceipt,
+  withDownloadedJsonFile,
+  withDownloadedTextFile,
 } from "../lib/admin-session-helpers";
 import {
   cloudAdminApi,
   getCloudAdminApiErrorRequestId,
 } from "../lib/cloud-admin-api";
-import { downloadJsonFile, downloadTextFile } from "../lib/download";
 import {
-  createBooleanOutcomeNotice,
   createRequestScopedNotice,
-  showRequestScopedNotice,
   type RequestScopedNotice,
+  showRequestScopedNotice,
+  showRequestScopedNoticeAndInvalidate,
 } from "../lib/request-scoped-notice";
 
 function formatDateTime(value?: string | null) {
@@ -91,87 +105,6 @@ function formatDateRange(startValue?: string | null, endValue?: string | null) {
   }
 
   return `${formatDate(startValue)} - ${formatDate(endValue)}`;
-}
-
-const CURRENT_SESSION_REISSUE_NOTICE =
-  "The current console session was included, so the next admin request will re-issue a short-lived token.";
-
-type SessionRevokeNoticeOptions = {
-  requestId?: string | null;
-  revokedCount: number;
-  skippedCount: number;
-  revokedCurrentSession: boolean;
-  zeroMessage: string;
-  successMessage: (revokedCount: number) => string;
-  skippedMessage: (skippedCount: number) => string;
-};
-
-type RiskGroupRevokeNoticeOptions = {
-  requestId?: string | null;
-  matchedGroupCount: number;
-  revokedGroupCount: number;
-  revokedSessionCount: number;
-  skippedSessionCount: number;
-  revokedCurrentSession: boolean;
-};
-
-function createSessionRevokeNotice({
-  requestId,
-  revokedCount,
-  skippedCount,
-  revokedCurrentSession,
-  zeroMessage,
-  successMessage,
-  skippedMessage,
-}: SessionRevokeNoticeOptions): RequestScopedNotice {
-  if (revokedCount === 0) {
-    return createRequestScopedNotice(zeroMessage, "warning", requestId);
-  }
-
-  const messageParts = [successMessage(revokedCount)];
-  if (skippedCount > 0) {
-    messageParts.push(skippedMessage(skippedCount));
-  }
-  if (revokedCurrentSession) {
-    messageParts.push(CURRENT_SESSION_REISSUE_NOTICE);
-  }
-
-  return createRequestScopedNotice(
-    messageParts.join(" "),
-    revokedCurrentSession ? "warning" : "success",
-    requestId,
-  );
-}
-
-function createRiskGroupRevokeNotice({
-  matchedGroupCount,
-  requestId,
-  revokedCurrentSession,
-  revokedGroupCount,
-  revokedSessionCount,
-  skippedSessionCount,
-}: RiskGroupRevokeNoticeOptions): RequestScopedNotice {
-  if (revokedSessionCount === 0) {
-    return createRequestScopedNotice(
-      matchedGroupCount === 0
-        ? "No source groups matched the selected risk filter."
-        : "No active admin sessions were revoked in the matching risk groups.",
-      "warning",
-      requestId,
-    );
-  }
-
-  return createSessionRevokeNotice({
-    requestId,
-    revokedCount: revokedSessionCount,
-    skippedCount: skippedSessionCount,
-    revokedCurrentSession,
-    zeroMessage: "No active admin sessions were revoked in the matching risk groups.",
-    successMessage: (revokedCount) =>
-      `Revoked ${revokedCount} active session(s) across ${revokedGroupCount} risk group(s).`,
-    skippedMessage: (skippedCount) =>
-      `${skippedCount} session(s) were already unavailable.`,
-  });
 }
 
 function renderSessionSource(ip?: string | null, userAgent?: string | null) {
@@ -252,50 +185,6 @@ function formatTimelinePointTimestampLabel(
   }
 
   return formatDateTime(point.timestamp);
-}
-
-function formatHighlightedOperationReceiptLabel(
-  kind: HighlightedSessionOperationReceiptKind,
-) {
-  switch (kind) {
-    case "focused-source-snapshot":
-      return "Focused source snapshot";
-    case "focused-source-revoke":
-      return "Focused source revoke";
-    case "session-revoke":
-    default:
-      return "Session revoke";
-  }
-}
-
-function getHighlightedOperationReceiptTone(tone: ConsoleNoticeTone) {
-  switch (tone) {
-    case "success":
-      return "border-emerald-300/40 bg-emerald-500/10 text-emerald-100";
-    case "warning":
-      return "border-amber-300/40 bg-amber-500/10 text-amber-100";
-    case "danger":
-      return "border-rose-300/40 bg-rose-500/10 text-rose-200";
-    case "info":
-    default:
-      return "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]";
-  }
-}
-
-function matchesHighlightedOperationReceiptContext(
-  receipt: HighlightedSessionOperationReceipt,
-  highlightedSessionId: string,
-  sourceKey?: string,
-) {
-  if (receipt.sessionId && receipt.sessionId !== highlightedSessionId) {
-    return false;
-  }
-
-  if (receipt.sourceKey && receipt.sourceKey !== sourceKey) {
-    return false;
-  }
-
-  return true;
 }
 
 function describeVisibleRange(total: number, page: number, pageSize: number, count: number) {
@@ -424,23 +313,11 @@ type PendingSourceGroupRevoke = {
   group: CloudAdminSessionSourceGroupSummary;
   mode: PendingSourceGroupRevokeMode;
 };
-type HighlightedSessionOperationReceiptKind =
-  | "session-revoke"
-  | "focused-source-revoke"
-  | "focused-source-snapshot";
-type HighlightedSessionOperationReceipt = {
-  kind: HighlightedSessionOperationReceiptKind;
-  tone: ConsoleNoticeTone;
-  message: string;
-  createdAt: string;
-  requestId?: string | null;
-  sessionId?: string;
-  sourceKey?: string;
-  sourceIssuedFromIp?: string | null;
-  sourceIssuedUserAgent?: string | null;
-};
 
-const HIGHLIGHTED_OPERATION_RECEIPT_LIMIT = 3;
+type HighlightedOperationReceiptContext = Pick<
+  HighlightedSessionOperationReceipt,
+  "sessionId" | "sourceKey" | "sourceIssuedFromIp" | "sourceIssuedUserAgent"
+>;
 
 const WATCH_SOURCE_GROUP_ACTIVE_SESSION_THRESHOLD = 2;
 const CRITICAL_SOURCE_GROUP_ACTIVE_SESSION_THRESHOLD = 4;
@@ -1190,6 +1067,7 @@ const ADMIN_SESSION_PRESETS: Array<{
 ];
 
 export function AdminSessionsPage() {
+  const cloudConsoleQueryKey = ["cloud-console"] as const;
   const navigate = useNavigate({ from: "/sessions" });
   const filters = useSearch({ from: "/sessions" });
   const queryClient = useQueryClient();
@@ -1218,13 +1096,157 @@ export function AdminSessionsPage() {
   function recordHighlightedOperationReceipt(
     receipt: Omit<HighlightedSessionOperationReceipt, "createdAt">,
   ) {
-    setHighlightedOperationReceipts((previous) => [
-      {
-        ...receipt,
-        createdAt: new Date().toISOString(),
-      },
-      ...previous,
-    ].slice(0, HIGHLIGHTED_OPERATION_RECEIPT_LIMIT));
+    setHighlightedOperationReceipts((previous) =>
+      prependHighlightedOperationReceipt(previous, receipt),
+    );
+  }
+
+  function showAdminSessionsMutationNotice(notice: RequestScopedNotice) {
+    showRequestScopedNoticeAndInvalidate(showNotice, notice, {
+      queryClient,
+      queryKey: cloudConsoleQueryKey,
+    });
+  }
+
+  function showAdminSessionsNotice(notice: RequestScopedNotice) {
+    showRequestScopedNotice(showNotice, notice);
+  }
+
+  function showAdminSessionsErrorNotice(error: unknown) {
+    showCloudAdminErrorNotice(showNotice, error);
+  }
+
+  function requireSourceRiskFilter(
+    action: Parameters<typeof getAdminSessionSourceRiskGuardMessage>[0],
+  ) {
+    if (filters.sourceRiskLevel === "all") {
+      throw new Error(getAdminSessionSourceRiskGuardMessage(action));
+    }
+
+    return filters.sourceRiskLevel;
+  }
+
+  function requireFocusedSourceSnapshotSummary() {
+    if (!highlightedFocusedSourceSummary) {
+      throw new Error(ADMIN_SESSION_FOCUSED_SOURCE_SNAPSHOT_UNAVAILABLE_MESSAGE);
+    }
+
+    return highlightedFocusedSourceSummary;
+  }
+
+  function getAdminSessionsErrorMessage(error: unknown) {
+    return error instanceof Error
+      ? error.message
+      : "Unknown admin sessions error.";
+  }
+
+  function buildHighlightedSessionReceiptContext(
+    session: Pick<
+      CloudAdminSessionSummary,
+      "id" | "issuedFromIp" | "issuedUserAgent"
+    >,
+  ): HighlightedOperationReceiptContext {
+    return {
+      sessionId: session.id,
+      sourceKey: sessionFilters.sourceKey,
+      sourceIssuedFromIp: session.issuedFromIp,
+      sourceIssuedUserAgent: session.issuedUserAgent,
+    };
+  }
+
+  function buildHighlightedSourceReceiptContext(
+    group: Pick<
+      CloudAdminSessionSourceGroupSummary,
+      "sourceKey" | "issuedFromIp" | "issuedUserAgent"
+    >,
+  ): HighlightedOperationReceiptContext {
+    return {
+      sourceKey: group.sourceKey,
+      sessionId: highlightedSessionId || undefined,
+      sourceIssuedFromIp: group.issuedFromIp,
+      sourceIssuedUserAgent: group.issuedUserAgent,
+    };
+  }
+
+  function buildFocusedSourceReceiptContext() {
+    return highlightedFocusedSourceSummary
+      ? buildHighlightedSourceReceiptContext(highlightedFocusedSourceSummary)
+      : null;
+  }
+
+  function recordHighlightedNoticeReceipt(
+    kind: HighlightedSessionOperationReceipt["kind"],
+    context: HighlightedOperationReceiptContext,
+    notice: RequestScopedNotice,
+  ) {
+    recordHighlightedOperationReceipt(
+      createNoticeHighlightedOperationReceipt(kind, context, notice),
+    );
+  }
+
+  function recordHighlightedErrorReceipt(
+    kind: HighlightedSessionOperationReceipt["kind"],
+    context: HighlightedOperationReceiptContext,
+    error: unknown,
+  ) {
+    recordHighlightedOperationReceipt(
+      createErrorHighlightedOperationReceipt(
+        kind,
+        context,
+        getAdminSessionsErrorMessage(error),
+        getCloudAdminApiErrorRequestId(error),
+      ),
+    );
+  }
+
+  function describeSourceRiskSelection() {
+    return hasSourceRiskFilter
+      ? `Risk filter: ${formatSourceGroupRiskFilterLabel(filters.sourceRiskLevel)}.`
+      : getAdminSessionSourceRiskSelectionPrompt();
+  }
+
+  function clearSelectedAdminSessions() {
+    setSelectedSessionIds([]);
+  }
+
+  function settlePendingSessionMutation() {
+    setPendingSession(null);
+  }
+
+  function settlePendingBulkRevoke() {
+    setPendingBulkSessionIds([]);
+    clearSelectedAdminSessions();
+  }
+
+  function dismissPendingBulkRevoke() {
+    setPendingBulkSessionIds([]);
+  }
+
+  function settlePendingFilteredRevoke() {
+    setPendingFilteredRevoke(false);
+    clearSelectedAdminSessions();
+  }
+
+  function dismissPendingFilteredRevoke() {
+    setPendingFilteredRevoke(false);
+  }
+
+  function settlePendingSourceGroupRevoke() {
+    setPendingSourceGroup(null);
+    clearSelectedAdminSessions();
+  }
+
+  function dismissPendingSourceGroupRevoke() {
+    setPendingSourceGroup(null);
+  }
+
+  function settlePendingRiskGroupRevoke() {
+    setPendingRiskGroupRevoke(false);
+    clearSelectedAdminSessions();
+  }
+
+  function dismissPendingRiskGroupRevoke() {
+    setPendingRiskGroupRevoke(false);
   }
 
   function updateFilters(next: Partial<AdminSessionsRouteSearch>) {
@@ -1341,7 +1363,7 @@ export function AdminSessionsPage() {
     mutationFn: (session: CloudAdminSessionSummary) =>
       cloudAdminApi.revokeAdminSessionByIdWithMeta(session.id),
     onSuccess: (response, session) => {
-      setPendingSession(null);
+      settlePendingSessionMutation();
       const notice = createRequestScopedNotice(
         session.isCurrent
           ? "Current admin session revoked. Console will re-issue a short-lived token on the next request."
@@ -1349,37 +1371,24 @@ export function AdminSessionsPage() {
         session.isCurrent ? "warning" : "success",
         response.requestId,
       );
-      showRequestScopedNotice(showNotice, notice);
+      showAdminSessionsMutationNotice(notice);
       if (session.id === highlightedSessionId) {
-        recordHighlightedOperationReceipt({
-          kind: "session-revoke",
-          tone: notice.tone,
-          message: notice.message,
-          requestId: notice.requestId,
-          sessionId: session.id,
-          sourceKey: sessionFilters.sourceKey,
-          sourceIssuedFromIp: session.issuedFromIp,
-          sourceIssuedUserAgent: session.issuedUserAgent,
-        });
+        recordHighlightedNoticeReceipt(
+          "session-revoke",
+          buildHighlightedSessionReceiptContext(session),
+          notice,
+        );
       }
-      void queryClient.invalidateQueries({
-        queryKey: ["cloud-console"],
-      });
     },
     onError: (error, session) => {
-      setPendingSession(null);
-      showCloudAdminErrorNotice(showNotice, error);
+      settlePendingSessionMutation();
+      showAdminSessionsErrorNotice(error);
       if (session.id === highlightedSessionId) {
-        recordHighlightedOperationReceipt({
-          kind: "session-revoke",
-          tone: "danger",
-          message: error.message,
-          requestId: getCloudAdminApiErrorRequestId(error),
-          sessionId: session.id,
-          sourceKey: sessionFilters.sourceKey,
-          sourceIssuedFromIp: session.issuedFromIp,
-          sourceIssuedUserAgent: session.issuedUserAgent,
-        });
+        recordHighlightedErrorReceipt(
+          "session-revoke",
+          buildHighlightedSessionReceiptContext(session),
+          error,
+        );
       }
     },
   });
@@ -1394,10 +1403,8 @@ export function AdminSessionsPage() {
         return session?.isCurrent;
       });
 
-      setPendingBulkSessionIds([]);
-      setSelectedSessionIds([]);
-      showRequestScopedNotice(
-        showNotice,
+      settlePendingBulkRevoke();
+      showAdminSessionsMutationNotice(
         createSessionRevokeNotice({
           requestId: response.requestId,
           revokedCount,
@@ -1410,22 +1417,17 @@ export function AdminSessionsPage() {
             `${count} session(s) were already unavailable.`,
         }),
       );
-      void queryClient.invalidateQueries({
-        queryKey: ["cloud-console"],
-      });
     },
     onError: (error) => {
-      setPendingBulkSessionIds([]);
-      showCloudAdminErrorNotice(showNotice, error);
+      dismissPendingBulkRevoke();
+      showAdminSessionsErrorNotice(error);
     },
   });
   const filteredRevokeMutation = useMutation({
     mutationFn: () => cloudAdminApi.revokeFilteredAdminSessionsWithMeta(sessionFilters),
     onSuccess: (response) => {
-      setPendingFilteredRevoke(false);
-      setSelectedSessionIds([]);
-      showRequestScopedNotice(
-        showNotice,
+      settlePendingFilteredRevoke();
+      showAdminSessionsMutationNotice(
         createSessionRevokeNotice({
           requestId: response.requestId,
           revokedCount: response.data.revokedCount,
@@ -1438,14 +1440,10 @@ export function AdminSessionsPage() {
             `${count} session(s) were skipped because they were already unavailable.`,
         }),
       );
-
-      void queryClient.invalidateQueries({
-        queryKey: ["cloud-console"],
-      });
     },
     onError: (error) => {
-      setPendingFilteredRevoke(false);
-      showCloudAdminErrorNotice(showNotice, error);
+      dismissPendingFilteredRevoke();
+      showAdminSessionsErrorNotice(error);
     },
   });
   const sourceGroupRevokeMutation = useMutation({
@@ -1465,8 +1463,7 @@ export function AdminSessionsPage() {
         sourceKey: payload.group.sourceKey,
       }),
     onSuccess: (response, payload) => {
-      setPendingSourceGroup(null);
-      setSelectedSessionIds([]);
+      settlePendingSourceGroupRevoke();
       const notice = createSessionRevokeNotice({
         requestId: response.requestId,
         revokedCount: response.data.revokedCount,
@@ -1479,38 +1476,24 @@ export function AdminSessionsPage() {
         skippedMessage: (count) =>
           `${count} session(s) were skipped because they were already unavailable.`,
       });
-      showRequestScopedNotice(showNotice, notice);
+      showAdminSessionsMutationNotice(notice);
       if (payload.mode === "focused-source") {
-        recordHighlightedOperationReceipt({
-          kind: "focused-source-revoke",
-          tone: notice.tone,
-          message: notice.message,
-          requestId: notice.requestId,
-          sourceKey: payload.group.sourceKey,
-          sessionId: highlightedSessionId || undefined,
-          sourceIssuedFromIp: payload.group.issuedFromIp,
-          sourceIssuedUserAgent: payload.group.issuedUserAgent,
-        });
+        recordHighlightedNoticeReceipt(
+          "focused-source-revoke",
+          buildHighlightedSourceReceiptContext(payload.group),
+          notice,
+        );
       }
-
-      void queryClient.invalidateQueries({
-        queryKey: ["cloud-console"],
-      });
     },
     onError: (error, payload) => {
-      setPendingSourceGroup(null);
-      showCloudAdminErrorNotice(showNotice, error);
+      dismissPendingSourceGroupRevoke();
+      showAdminSessionsErrorNotice(error);
       if (payload.mode === "focused-source") {
-        recordHighlightedOperationReceipt({
-          kind: "focused-source-revoke",
-          tone: "danger",
-          message: error.message,
-          requestId: getCloudAdminApiErrorRequestId(error),
-          sourceKey: payload.group.sourceKey,
-          sessionId: highlightedSessionId || undefined,
-          sourceIssuedFromIp: payload.group.issuedFromIp,
-          sourceIssuedUserAgent: payload.group.issuedUserAgent,
-        });
+        recordHighlightedErrorReceipt(
+          "focused-source-revoke",
+          buildHighlightedSourceReceiptContext(payload.group),
+          error,
+        );
       }
     },
   });
@@ -1520,214 +1503,185 @@ export function AdminSessionsPage() {
         ...sessionFilters,
         sourceKey: group.sourceKey,
       });
-      return {
-        snapshot: response.data,
-        requestId: response.requestId,
-        downloaded: downloadJsonFile(
-          buildSourceGroupSnapshotFilename(group),
-          response.data,
-        ),
-      };
+      return withDownloadedJsonFile(
+        {
+          snapshot: response.data,
+          requestId: response.requestId,
+        },
+        buildSourceGroupSnapshotFilename(group),
+        response.data,
+      );
     },
     onSuccess: ({ snapshot, requestId, downloaded }) => {
-      showRequestScopedNotice(
-        showNotice,
-        createBooleanOutcomeNotice({
+      showAdminSessionsNotice(
+        createAdminSessionArtifactDownloadNotice({
+          kind: "admin-session-audit-snapshot",
           requestId,
-          succeeded: downloaded,
-          successMessage: `Downloaded admin session audit snapshot for ${snapshot.group.totalSessions} session(s).`,
-          failureMessage:
-            "Admin session audit snapshot is ready, but this browser could not start the download.",
+          downloaded,
+          totalSessions: snapshot.group.totalSessions,
         }),
       );
     },
     onError: (error) => {
-      showCloudAdminErrorNotice(showNotice, error);
+      showAdminSessionsErrorNotice(error);
     },
   });
   const focusedSourceSnapshotExportMutation = useMutation({
     mutationFn: async () => {
-      if (!highlightedFocusedSourceSummary) {
-        throw new Error("Focused source snapshot is not available.");
-      }
+      const focusedSourceSummary = requireFocusedSourceSnapshotSummary();
 
       const response = await cloudAdminApi.createAdminSessionSourceGroupSnapshotWithMeta(
         {
           ...sessionFilters,
-          sourceKey: highlightedFocusedSourceSummary.sourceKey,
+          sourceKey: focusedSourceSummary.sourceKey,
         },
       );
-      return {
-        group: highlightedFocusedSourceSummary,
-        snapshot: response.data,
-        requestId: response.requestId,
-        downloaded: downloadJsonFile(
-          buildSourceGroupSnapshotFilename(highlightedFocusedSourceSummary),
-          response.data,
-        ),
-      };
+      return withDownloadedJsonFile(
+        {
+          group: focusedSourceSummary,
+          snapshot: response.data,
+          requestId: response.requestId,
+        },
+        buildSourceGroupSnapshotFilename(focusedSourceSummary),
+        response.data,
+      );
     },
     onSuccess: ({ downloaded, group, requestId, snapshot }) => {
-      const notice = createBooleanOutcomeNotice({
-        requestId,
-        succeeded: downloaded,
-        successMessage: `Downloaded focused source snapshot for ${snapshot.group.totalSessions} session(s).`,
-        failureMessage:
-          "Focused source snapshot is ready, but this browser could not start the download.",
-      });
-      showRequestScopedNotice(showNotice, notice);
-      recordHighlightedOperationReceipt({
+      const notice = createAdminSessionArtifactDownloadNotice({
         kind: "focused-source-snapshot",
-        tone: notice.tone,
-        message: notice.message,
-        requestId: notice.requestId,
-        sourceKey: group.sourceKey,
-        sessionId: highlightedSessionId || undefined,
-        sourceIssuedFromIp: group.issuedFromIp,
-        sourceIssuedUserAgent: group.issuedUserAgent,
+        requestId,
+        downloaded,
+        totalSessions: snapshot.group.totalSessions,
       });
+      showAdminSessionsNotice(notice);
+      recordHighlightedNoticeReceipt(
+        "focused-source-snapshot",
+        buildHighlightedSourceReceiptContext(group),
+        notice,
+      );
     },
     onError: (error) => {
-      showCloudAdminErrorNotice(showNotice, error);
-      if (!highlightedFocusedSourceSummary) {
+      showAdminSessionsErrorNotice(error);
+      const context = buildFocusedSourceReceiptContext();
+      if (!context) {
         return;
       }
 
-      recordHighlightedOperationReceipt({
-        kind: "focused-source-snapshot",
-        tone: "danger",
-        message: error.message,
-        requestId: getCloudAdminApiErrorRequestId(error),
-        sourceKey: highlightedFocusedSourceSummary.sourceKey,
-        sessionId: highlightedSessionId || undefined,
-        sourceIssuedFromIp: highlightedFocusedSourceSummary.issuedFromIp,
-        sourceIssuedUserAgent: highlightedFocusedSourceSummary.issuedUserAgent,
-      });
+      recordHighlightedErrorReceipt(
+        "focused-source-snapshot",
+        context,
+        error,
+      );
     },
   });
   const sourceGroupRiskSnapshotMutation = useMutation({
     mutationFn: async () => {
-      if (filters.sourceRiskLevel === "all") {
-        throw new Error("Select a source risk filter before exporting a snapshot.");
-      }
+      const riskLevel = requireSourceRiskFilter("snapshot");
 
       const response = await cloudAdminApi.createAdminSessionSourceGroupRiskSnapshotWithMeta({
         ...sessionFilters,
-        riskLevel: filters.sourceRiskLevel,
+        riskLevel,
       });
-      return {
-        snapshot: response.data,
-        requestId: response.requestId,
-        downloaded: downloadJsonFile(
-          buildSourceGroupRiskSnapshotFilename(filters.sourceRiskLevel),
-          response.data,
-        ),
-      };
+      return withDownloadedJsonFile(
+        {
+          snapshot: response.data,
+          requestId: response.requestId,
+        },
+        buildSourceGroupRiskSnapshotFilename(riskLevel),
+        response.data,
+      );
     },
     onSuccess: ({ snapshot, requestId, downloaded }) => {
-      showRequestScopedNotice(
-        showNotice,
-        createBooleanOutcomeNotice({
+      showAdminSessionsNotice(
+        createAdminSessionArtifactDownloadNotice({
+          kind: "risk-snapshot",
           requestId,
-          succeeded: downloaded,
-          successMessage: `Downloaded risk snapshot for ${snapshot.totalGroups} group(s) and ${snapshot.totalSessions} session(s).`,
-          failureMessage:
-            "Risk snapshot is ready, but this browser could not start the download.",
+          downloaded,
+          totalGroups: snapshot.totalGroups,
+          totalSessions: snapshot.totalSessions,
         }),
       );
     },
     onError: (error) => {
-      showCloudAdminErrorNotice(showNotice, error);
+      showAdminSessionsErrorNotice(error);
     },
   });
   const sourceGroupRiskGroupsCsvMutation = useMutation({
     mutationFn: async () => {
-      if (filters.sourceRiskLevel === "all") {
-        throw new Error("Select a source risk filter before exporting CSV.");
-      }
+      const riskLevel = requireSourceRiskFilter("groups-csv");
 
       const response = await cloudAdminApi.createAdminSessionSourceGroupRiskSnapshotWithMeta({
         ...sessionFilters,
-        riskLevel: filters.sourceRiskLevel,
+        riskLevel,
       });
-      return {
-        snapshot: response.data,
-        requestId: response.requestId,
-        downloaded: downloadTextFile(
-          buildSourceGroupRiskCsvFilename(filters.sourceRiskLevel),
-          buildSourceGroupRiskSnapshotCsv(response.data),
-          "text/csv;charset=utf-8",
-        ),
-      };
+      return withDownloadedTextFile(
+        {
+          snapshot: response.data,
+          requestId: response.requestId,
+        },
+        buildSourceGroupRiskCsvFilename(riskLevel),
+        buildSourceGroupRiskSnapshotCsv(response.data),
+        "text/csv;charset=utf-8",
+      );
     },
     onSuccess: ({ snapshot, requestId, downloaded }) => {
-      showRequestScopedNotice(
-        showNotice,
-        createBooleanOutcomeNotice({
+      showAdminSessionsNotice(
+        createAdminSessionArtifactDownloadNotice({
+          kind: "risk-groups-csv",
           requestId,
-          succeeded: downloaded,
-          successMessage: `Downloaded risk groups CSV for ${snapshot.totalGroups} group(s).`,
-          failureMessage:
-            "Risk groups CSV is ready, but this browser could not start the download.",
+          downloaded,
+          totalGroups: snapshot.totalGroups,
         }),
       );
     },
     onError: (error) => {
-      showCloudAdminErrorNotice(showNotice, error);
+      showAdminSessionsErrorNotice(error);
     },
   });
   const sourceGroupRiskSessionsCsvMutation = useMutation({
     mutationFn: async () => {
-      if (filters.sourceRiskLevel === "all") {
-        throw new Error("Select a source risk filter before exporting session CSV.");
-      }
+      const riskLevel = requireSourceRiskFilter("sessions-csv");
 
       const response = await cloudAdminApi.createAdminSessionSourceGroupRiskSnapshotWithMeta({
         ...sessionFilters,
-        riskLevel: filters.sourceRiskLevel,
+        riskLevel,
       });
-      return {
-        snapshot: response.data,
-        requestId: response.requestId,
-        downloaded: downloadTextFile(
-          buildSourceGroupRiskSessionsCsvFilename(filters.sourceRiskLevel),
-          buildSourceGroupRiskSessionsCsv(response.data),
-          "text/csv;charset=utf-8",
-        ),
-      };
+      return withDownloadedTextFile(
+        {
+          snapshot: response.data,
+          requestId: response.requestId,
+        },
+        buildSourceGroupRiskSessionsCsvFilename(riskLevel),
+        buildSourceGroupRiskSessionsCsv(response.data),
+        "text/csv;charset=utf-8",
+      );
     },
     onSuccess: ({ snapshot, requestId, downloaded }) => {
-      showRequestScopedNotice(
-        showNotice,
-        createBooleanOutcomeNotice({
+      showAdminSessionsNotice(
+        createAdminSessionArtifactDownloadNotice({
+          kind: "risk-sessions-csv",
           requestId,
-          succeeded: downloaded,
-          successMessage: `Downloaded risk sessions CSV for ${snapshot.totalSessions} session(s).`,
-          failureMessage:
-            "Risk sessions CSV is ready, but this browser could not start the download.",
+          downloaded,
+          totalSessions: snapshot.totalSessions,
         }),
       );
     },
     onError: (error) => {
-      showCloudAdminErrorNotice(showNotice, error);
+      showAdminSessionsErrorNotice(error);
     },
   });
   const sourceGroupRiskRevokeMutation = useMutation({
     mutationFn: () => {
-      if (filters.sourceRiskLevel === "all") {
-        throw new Error("Select a source risk filter before revoking groups.");
-      }
+      const riskLevel = requireSourceRiskFilter("revoke");
 
       return cloudAdminApi.revokeAdminSessionSourceGroupsByRiskWithMeta({
         ...sessionFilters,
-        riskLevel: filters.sourceRiskLevel,
+        riskLevel,
       });
     },
     onSuccess: (response) => {
-      setPendingRiskGroupRevoke(false);
-      setSelectedSessionIds([]);
-      showRequestScopedNotice(
-        showNotice,
+      settlePendingRiskGroupRevoke();
+      showAdminSessionsMutationNotice(
         createRiskGroupRevokeNotice({
           requestId: response.requestId,
           matchedGroupCount: response.data.matchedGroupCount,
@@ -1737,14 +1691,10 @@ export function AdminSessionsPage() {
           revokedCurrentSession: response.data.revokedCurrentSession,
         }),
       );
-
-      void queryClient.invalidateQueries({
-        queryKey: ["cloud-console"],
-      });
     },
     onError: (error) => {
-      setPendingRiskGroupRevoke(false);
-      showCloudAdminErrorNotice(showNotice, error);
+      dismissPendingRiskGroupRevoke();
+      showAdminSessionsErrorNotice(error);
     },
   });
 
@@ -2076,17 +2026,14 @@ export function AdminSessionsPage() {
       !focusedSourceSnapshotQuery.data ||
       !visibleFocusedSourceRiskTimeline.length
     ) {
-      showRequestScopedNotice(
-        showNotice,
-        createRequestScopedNotice(
-          "Risk timeline data is not ready for export yet.",
-          "warning",
-        ),
-      );
+      showAdminSessionsNotice(createAdminSessionRiskTimelineNotReadyNotice());
       return;
     }
 
-    const downloaded = downloadTextFile(
+    const { downloaded } = withDownloadedTextFile(
+      {
+        pointCount: visibleFocusedSourceRiskTimeline.length,
+      },
       buildSourceGroupRiskTimelineCsvFilename(
         focusedSourceSnapshotQuery.data,
         timelineView,
@@ -2098,18 +2045,12 @@ export function AdminSessionsPage() {
       ),
       "text/csv;charset=utf-8",
     );
-    showRequestScopedNotice(
-      showNotice,
-      createBooleanOutcomeNotice({
-        succeeded: downloaded,
-        successMessage:
-          timelineView === "daily"
-            ? `Downloaded daily risk timeline CSV for ${visibleFocusedSourceRiskTimeline.length} point(s).`
-            : timelineView === "weekly"
-              ? `Downloaded weekly risk timeline CSV for ${visibleFocusedSourceRiskTimeline.length} point(s).`
-              : `Downloaded risk timeline CSV for ${visibleFocusedSourceRiskTimeline.length} point(s).`,
-        failureMessage:
-          "Risk timeline CSV is ready, but this browser could not start the download.",
+    showAdminSessionsNotice(
+      createAdminSessionArtifactDownloadNotice({
+        kind: "risk-timeline-csv",
+        downloaded,
+        pointCount: visibleFocusedSourceRiskTimeline.length,
+        view: timelineView,
       }),
     );
   }
@@ -2196,9 +2137,7 @@ export function AdminSessionsPage() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
           <div className="text-sm text-[color:var(--text-secondary)]">
-            {hasSourceRiskFilter
-              ? `Risk filter: ${formatSourceGroupRiskFilterLabel(filters.sourceRiskLevel)}.`
-              : "Select a source risk filter to batch-revoke risky groups."}
+            {describeSourceRiskSelection()}
           </div>
           <div className="flex flex-wrap gap-2">
             <AdminSessionActionButton
@@ -2448,12 +2387,9 @@ export function AdminSessionsPage() {
                   />
                   <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-secondary)]">
                     {latestFocusedSourceRiskReasons.map((reason) => (
-                      <span
-                        key={reason}
-                        className="rounded-full border border-[color:var(--border-faint)] px-2 py-1"
-                      >
+                      <AdminSessionNeutralChip key={reason} size="compact">
                         {reason}
-                      </span>
+                      </AdminSessionNeutralChip>
                     ))}
                   </div>
                 </div>
@@ -2486,7 +2422,7 @@ export function AdminSessionsPage() {
                     riskLevel={latestFocusedSourceRiskPoint.riskLevel}
                     className="px-2 py-1 text-xs"
                   />
-                  <span className="rounded-full border border-[color:var(--border-faint)] px-2 py-1 text-xs text-[color:var(--text-secondary)]">
+                  <AdminSessionNeutralChip>
                     {timelineView === "daily" &&
                     "day" in latestFocusedSourceRiskPoint
                       ? formatDate(latestFocusedSourceRiskPoint.day)
@@ -2497,7 +2433,7 @@ export function AdminSessionsPage() {
                             latestFocusedSourceRiskPoint.weekEnd,
                           )
                         : formatDateTime(latestFocusedSourceRiskPoint.timestamp)}
-                  </span>
+                  </AdminSessionNeutralChip>
                 </>
               ) : null}
               <AdminSessionActionButton
@@ -2573,9 +2509,9 @@ export function AdminSessionsPage() {
 
                     <div className="mt-3">
                       {timelineView !== "events" && "pointCount" in point ? (
-                        <span className="rounded-full border border-[color:var(--border-faint)] px-2 py-1">
+                        <AdminSessionNeutralChip>
                           {point.pointCount} timeline point(s)
-                        </span>
+                        </AdminSessionNeutralChip>
                       ) : null}
                       <AdminSessionSourceGroupSummaryPills
                         activeSessions={point.activeSessions}
@@ -2644,14 +2580,14 @@ export function AdminSessionsPage() {
                                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                                     <div className="flex flex-wrap gap-2 text-[11px] text-[color:var(--text-secondary)]">
                                       {match.reasons.map((reason) => (
-                                        <span
+                                        <AdminSessionNeutralChip
                                           key={`${match.session.id}-${reason}`}
-                                          className="rounded-full border border-[color:var(--border-faint)] px-2 py-1"
+                                          size="compact"
                                         >
                                           {formatSourceGroupTimelineSessionMatchReason(
                                             reason,
                                           )}
-                                        </span>
+                                        </AdminSessionNeutralChip>
                                       ))}
                                     </div>
                                     <div className="flex flex-wrap gap-2">
@@ -2945,13 +2881,13 @@ export function AdminSessionsPage() {
                                 <div className="mt-3">
                                   {timelineView !== "events" &&
                                   "pointCount" in latestFocusedSourceRiskPoint ? (
-                                    <span className="rounded-full border border-[color:var(--border-faint)] px-2 py-1">
+                                    <AdminSessionNeutralChip size="compact">
                                       {latestFocusedSourceRiskPoint.pointCount} timeline point(s)
-                                    </span>
+                                    </AdminSessionNeutralChip>
                                   ) : null}
-                                  <span className="rounded-full border border-[color:var(--border-faint)] px-2 py-1">
+                                  <AdminSessionNeutralChip size="compact">
                                     {latestFocusedSourceMatchedSessions.length} matched session(s)
-                                  </span>
+                                  </AdminSessionNeutralChip>
                                   <AdminSessionSourceGroupSummaryPills
                                     activeSessions={latestFocusedSourceRiskPoint.activeSessions}
                                     expiredSessions={latestFocusedSourceRiskPoint.expiredSessions}
@@ -2964,12 +2900,12 @@ export function AdminSessionsPage() {
                                 </div>
                                 <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-secondary)]">
                                   {latestFocusedSourceRiskReasons.map((reason) => (
-                                    <span
+                                    <AdminSessionNeutralChip
                                       key={`latest-focused-source-reason-${reason}`}
-                                      className="rounded-full border border-[color:var(--border-faint)] px-2 py-1"
+                                      size="compact"
                                     >
                                       {reason}
-                                    </span>
+                                    </AdminSessionNeutralChip>
                                   ))}
                                 </div>
                               </div>
@@ -3010,9 +2946,12 @@ export function AdminSessionsPage() {
                                             )}
                                           </div>
                                         </div>
-                                        <span className="rounded-full border border-current/30 px-2 py-1 text-[11px]">
+                                        <AdminSessionNeutralChip
+                                          variant="current"
+                                          size="compact"
+                                        >
                                           {formatDateTime(receipt.createdAt)}
-                                        </span>
+                                        </AdminSessionNeutralChip>
                                       </div>
                                       <div className="mt-2 text-sm leading-6">
                                         {receipt.message}

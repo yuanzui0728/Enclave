@@ -180,6 +180,82 @@ function matchesAttentionFilter(
   return attention?.severity === filter;
 }
 
+function includesNormalizedQuery(
+  values: Array<string | null | undefined>,
+  query: string,
+) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return values.some((value) =>
+    typeof value === "string"
+      ? value.toLowerCase().includes(normalizedQuery)
+      : false,
+  );
+}
+
+function matchesWorldQuery(
+  item: {
+    id: string;
+    name: string;
+    phone: string;
+    status: string;
+    healthStatus?: string | null;
+    apiBaseUrl?: string | null;
+    adminUrl?: string | null;
+  },
+  query: string,
+) {
+  return includesNormalizedQuery(
+    [
+      item.id,
+      item.name,
+      item.phone,
+      item.status,
+      item.healthStatus,
+      item.apiBaseUrl,
+      item.adminUrl,
+    ],
+    query,
+  );
+}
+
+function matchesInstanceFleetQuery(
+  item: CloudWorldInstanceFleetItem,
+  query: string,
+  providerLabelByKey: Map<string, string>,
+  attention: CloudWorldAttentionItem | null | undefined,
+) {
+  return includesNormalizedQuery(
+    [
+      item.world.id,
+      item.world.name,
+      item.world.phone,
+      item.world.status,
+      item.world.healthStatus,
+      item.world.apiBaseUrl,
+      item.world.adminUrl,
+      resolveProviderKey(item),
+      resolveProviderLabel(item, providerLabelByKey),
+      item.instance?.providerInstanceId,
+      item.instance?.providerVolumeId,
+      item.instance?.providerSnapshotId,
+      item.instance?.name,
+      item.instance?.region,
+      item.instance?.zone,
+      item.instance?.privateIp,
+      item.instance?.publicIp,
+      item.instance?.powerState,
+      attention?.message,
+      attention?.reason,
+      attention?.severity,
+    ],
+    query,
+  );
+}
+
 type QuickActionConfirmState = {
   worldId: string;
   worldName: string;
@@ -198,6 +274,7 @@ export function WorldsPage() {
   const powerStateFilter = filters.powerState;
   const attentionFilter = filters.attention;
   const healthFilter = filters.health;
+  const queryFilter = filters.query;
 
   function updateFilters(next: Partial<WorldsRouteSearch>) {
     void navigate({
@@ -306,16 +383,31 @@ export function WorldsPage() {
         return false;
       }
 
-      return true;
+      return matchesInstanceFleetQuery(
+        item,
+        queryFilter,
+        providerLabelByKey,
+        attention,
+      );
     });
   }, [
     attentionByWorldId,
     attentionFilter,
     healthFilter,
     instanceFleetQuery.data,
+    providerLabelByKey,
     powerStateFilter,
     providerFilter,
+    queryFilter,
   ]);
+
+  const filteredWorlds = useMemo(
+    () =>
+      (worldsQuery.data ?? []).filter((item) =>
+        matchesWorldQuery(item, queryFilter),
+      ),
+    [queryFilter, worldsQuery.data],
+  );
 
   const fleetMetrics = useMemo(() => {
     const items = filteredInstanceFleet;
@@ -577,6 +669,21 @@ export function WorldsPage() {
           </div>
         </div>
 
+        <div className="mt-4 max-w-xl">
+          <label className="text-sm text-[color:var(--text-secondary)]">
+            <div className="mb-2">Search worlds</div>
+            <input
+              aria-label="World search"
+              value={queryFilter}
+              onChange={(event) =>
+                updateFilters({ query: event.target.value })
+              }
+              placeholder="world id, phone, name, provider, or endpoint"
+              className="w-full rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)]"
+            />
+          </label>
+        </div>
+
         <div className="mt-5 overflow-x-auto rounded-2xl border border-[color:var(--border-faint)]">
           <table className="min-w-[72rem] border-collapse text-left text-sm">
             <thead className="bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]">
@@ -592,7 +699,7 @@ export function WorldsPage() {
               </tr>
             </thead>
             <tbody>
-              {(worldsQuery.data ?? []).map((item) => {
+              {filteredWorlds.map((item) => {
                 const attention = attentionByWorldId.get(item.id);
 
                 return (
@@ -670,7 +777,7 @@ export function WorldsPage() {
 
           {!worldsQuery.isLoading &&
           !worldsQuery.isError &&
-          !worldsQuery.data?.length ? (
+          !filteredWorlds.length ? (
             <div className="p-4 text-sm text-[color:var(--text-muted)]">
               No worlds match this filter.
             </div>

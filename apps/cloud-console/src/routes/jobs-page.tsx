@@ -15,13 +15,20 @@ import { useConsoleNotice } from "../components/console-notice";
 import { WorldLifecycleActionButtons } from "../components/world-lifecycle-action-buttons";
 import {
   groupJobsByQueueState,
-  matchesQueueStateFilter,
   QUEUE_STATE_FILTERS,
 } from "../lib/job-queue-state";
 import {
+  describeJobResult,
+  getJobAuditBadgeLabel,
+} from "../lib/job-result";
+import {
+  JOB_AUDIT_FILTERS,
+  JOB_SUPERSEDED_BY_FILTERS,
   buildJobsRouteSearch,
   JOB_STATUS_FILTERS,
   JOB_TYPE_FILTERS,
+  type JobAuditFilter,
+  type JobSupersededByFilter,
   type JobStatusFilter,
   type JobTypeFilter,
   type JobsRouteSearch,
@@ -90,14 +97,6 @@ function getStatusTone(status: WorldLifecycleJobSummary["status"]) {
   }
 }
 
-function compareNewest(left?: string | null, right?: string | null) {
-  return new Date(right ?? 0).getTime() - new Date(left ?? 0).getTime();
-}
-
-function normalizeSearch(value: string) {
-  return value.trim().toLowerCase();
-}
-
 function resolveProviderKey(item: CloudWorldInstanceFleetItem) {
   return item.instance?.providerKey?.trim() || item.world.providerKey?.trim() || "";
 }
@@ -106,13 +105,8 @@ function buildProviderLabelMap(providers: CloudComputeProviderSummary[] | undefi
   return new Map((providers ?? []).map((provider) => [provider.key, provider.label] as const));
 }
 
-function describeJobResult(job: WorldLifecycleJobSummary) {
-  if (typeof job.resultPayload?.action === "string") {
-    return job.resultPayload.action;
-  }
-
-  return job.failureMessage ?? "None";
-}
+const JOB_AUDIT_BADGE_CLASS_NAME =
+  "rounded-full border border-amber-300/50 bg-amber-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-amber-100";
 
 type QuickActionConfirmState = {
   worldId: string;
@@ -131,6 +125,8 @@ export function JobsPage() {
   const jobType = filters.jobType;
   const providerFilter = filters.provider;
   const queueStateFilter = filters.queueState;
+  const auditFilter = filters.audit;
+  const supersededByFilter = filters.supersededBy;
   const query = filters.query;
 
   function updateFilters(next: Partial<JobsRouteSearch>) {
@@ -141,11 +137,28 @@ export function JobsPage() {
   }
 
   const jobsQuery = useQuery({
-    queryKey: ["cloud-console", "jobs", status, jobType],
+    queryKey: [
+      "cloud-console",
+      "jobs",
+      status,
+      jobType,
+      providerFilter,
+      queueStateFilter,
+      auditFilter,
+      supersededByFilter,
+      query,
+    ],
     queryFn: () =>
       cloudAdminApi.listJobs({
         status: status === "all" ? undefined : status,
         jobType: jobType === "all" ? undefined : jobType,
+        provider: providerFilter === "all" ? undefined : providerFilter,
+        queueState:
+          queueStateFilter === "all" ? undefined : queueStateFilter,
+        audit: auditFilter === "all" ? undefined : auditFilter,
+        supersededBy:
+          supersededByFilter === "all" ? undefined : supersededByFilter,
+        query: query || undefined,
       }),
     refetchInterval: 15_000,
   });
@@ -215,54 +228,13 @@ export function JobsPage() {
             : (providerLabelByKey.get(key) ?? key),
       }));
   }, [instanceFleetQuery.data, providerLabelByKey]);
-  const now = Date.now();
   const jobs = useMemo(() => {
-    const normalizedSearch = normalizeSearch(query);
-
-    return [...(jobsQuery.data ?? [])]
-      .filter((job) => {
-        const worldInfo = worldInfoById.get(job.worldId);
-        const providerKey = worldInfo?.providerKey ?? "";
-
-        if (providerFilter !== "all") {
-          if (providerFilter === UNASSIGNED_PROVIDER_FILTER) {
-            if (providerKey) {
-              return false;
-            }
-          } else if (providerKey !== providerFilter) {
-            return false;
-          }
-        }
-
-        if (!matchesQueueStateFilter(job, queueStateFilter, now)) {
-          return false;
-        }
-
-        if (!normalizedSearch) {
-          return true;
-        }
-
-        const haystack = [
-          job.id,
-          job.worldId,
-          job.jobType,
-          job.status,
-          job.leaseOwner,
-          job.failureCode,
-          job.failureMessage,
-          worldInfo?.name,
-          worldInfo?.phone,
-          worldInfo?.providerLabel,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return haystack.includes(normalizedSearch);
-      })
-      .sort((left, right) => compareNewest(left.updatedAt, right.updatedAt));
-  }, [jobsQuery.data, now, providerFilter, query, queueStateFilter, worldInfoById]);
-  const groupedJobs = useMemo(() => groupJobsByQueueState(jobs, now), [jobs, now]);
+    return jobsQuery.data ?? [];
+  }, [jobsQuery.data]);
+  const groupedJobs = useMemo(
+    () => groupJobsByQueueState(jobs, Date.now()),
+    [jobs],
+  );
   const quickActionMutation = useMutation({
     mutationFn: (input: { worldId: string; action: WorldLifecycleAction }) =>
       performWorldLifecycleActionWithMeta(input.worldId, input.action),
@@ -386,10 +358,42 @@ export function JobsPage() {
               })
             }
             className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
+            >
+              {QUEUE_STATE_FILTERS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+          </select>
+
+          <select
+            value={auditFilter}
+            onChange={(event) =>
+              updateFilters({
+                audit: event.target.value as JobAuditFilter,
+              })
+            }
+            className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
           >
-            {QUEUE_STATE_FILTERS.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
+            {JOB_AUDIT_FILTERS.map((item) => (
+              <option key={item} value={item}>
+                audit: {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={supersededByFilter}
+            onChange={(event) =>
+              updateFilters({
+                supersededBy: event.target.value as JobSupersededByFilter,
+              })
+            }
+            className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
+          >
+            {JOB_SUPERSEDED_BY_FILTERS.map((item) => (
+              <option key={item} value={item}>
+                superseded by: {item}
               </option>
             ))}
           </select>
@@ -461,6 +465,7 @@ export function JobsPage() {
                       JOBS_PAGE_ACTIONS,
                     )
                   : ["reconcile"];
+                const auditBadgeLabel = getJobAuditBadgeLabel(job);
 
                 return (
                   <tr
@@ -527,7 +532,14 @@ export function JobsPage() {
                       {formatDateTime(job.finishedAt)}
                     </td>
                     <td className="max-w-[20rem] px-4 py-3 text-[color:var(--text-secondary)]">
-                      {describeJobResult(job)}
+                      {auditBadgeLabel ? (
+                        <div className="mb-2">
+                          <span className={JOB_AUDIT_BADGE_CLASS_NAME}>
+                            {auditBadgeLabel}
+                          </span>
+                        </div>
+                      ) : null}
+                      <div>{describeJobResult(job)}</div>
                     </td>
                     <td className="px-4 py-3">
                       <WorldLifecycleActionButtons

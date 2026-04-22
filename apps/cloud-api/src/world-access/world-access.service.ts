@@ -22,6 +22,7 @@ import { ComputeProviderRegistryService } from "../providers/compute-provider-re
 import { isRequestGatePlaceholderWorld } from "../request-gate-placeholder";
 import { getRequestGateState } from "../request-gate-state";
 import { getRequestVisibleWorldProjection } from "../request-world-sync-state";
+import { ensureUniqueActiveLifecycleJob } from "../orchestration/world-lifecycle-job-queue";
 import { buildWorldAccessSnapshot, type WorldAccessSnapshot } from "./world-access-state";
 
 const PHONE_CHANGE_INVALIDATED_ACCESS_SESSION_REASON =
@@ -392,39 +393,28 @@ export class WorldAccessService {
   }
 
   private async ensureLifecycleJob(worldId: string, jobType: WorldLifecycleJobType, payload: Record<string, unknown>) {
-    const existing = await this.jobRepo.findOne({
-      where: {
-        worldId,
-        jobType,
-        status: In(["pending", "running"]),
-      },
-      order: {
-        createdAt: "DESC",
-      },
+    return ensureUniqueActiveLifecycleJob(this.jobRepo, {
+      worldId,
+      jobType,
+      create: () =>
+        this.jobRepo.create({
+          worldId,
+          jobType,
+          status: "pending",
+          priority: jobType === "resume" ? 50 : 100,
+          payload,
+          attempt: 0,
+          maxAttempts: jobType === "resume" ? 5 : 3,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          availableAt: new Date(),
+          startedAt: null,
+          finishedAt: null,
+          failureCode: null,
+          failureMessage: null,
+          resultPayload: null,
+        }),
     });
-    if (existing) {
-      return existing;
-    }
-
-    return this.jobRepo.save(
-      this.jobRepo.create({
-        worldId,
-        jobType,
-        status: "pending",
-        priority: jobType === "resume" ? 50 : 100,
-        payload,
-        attempt: 0,
-        maxAttempts: jobType === "resume" ? 5 : 3,
-        leaseOwner: null,
-        leaseExpiresAt: null,
-        availableAt: new Date(),
-        startedAt: null,
-        finishedAt: null,
-        failureCode: null,
-        failureMessage: null,
-        resultPayload: null,
-      }),
-    );
   }
 
   private async chooseRecoveryJobType(worldId: string): Promise<WorldLifecycleJobType> {

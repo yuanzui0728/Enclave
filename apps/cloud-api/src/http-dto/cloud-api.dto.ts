@@ -42,6 +42,18 @@ const CLOUD_WORLD_LIFECYCLE_STATUSES = [
 ] as const;
 const WORLD_LIFECYCLE_JOB_STATUSES = ["pending", "running", "succeeded", "failed", "cancelled"] as const;
 const WORLD_LIFECYCLE_JOB_TYPES = ["provision", "resume", "suspend", "reconcile"] as const;
+const WORLD_LIFECYCLE_JOB_AUDIT_FILTERS = ["superseded"] as const;
+const WORLD_LIFECYCLE_JOB_QUEUE_STATE_FILTERS = [
+  "running_now",
+  "lease_expired",
+  "delayed",
+] as const;
+const WAITING_SESSION_SYNC_TASK_STATUSES = ["pending", "running", "failed"] as const;
+const WAITING_SESSION_SYNC_TASK_TYPES = [
+  "refresh_phone",
+  "invalidate_phone",
+  "refresh_world",
+] as const;
 const CLOUD_ADMIN_SESSION_STATUSES = ["active", "expired", "revoked"] as const;
 const CLOUD_ADMIN_SESSION_REVOCATION_REASONS = [
   "logout",
@@ -402,6 +414,99 @@ export class ListJobsQueryDto {
   @IsOptional()
   @IsIn(WORLD_LIFECYCLE_JOB_TYPES, { message: "jobType 不是合法的生命周期任务类型。" })
   jobType?: (typeof WORLD_LIFECYCLE_JOB_TYPES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "provider 必须是字符串。" })
+  @MaxLength(64, { message: "provider 不能超过 64 个字符。" })
+  provider?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WORLD_LIFECYCLE_JOB_QUEUE_STATE_FILTERS, {
+    message: "queueState 不是合法的生命周期任务队列过滤条件。",
+  })
+  queueState?: (typeof WORLD_LIFECYCLE_JOB_QUEUE_STATE_FILTERS)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WORLD_LIFECYCLE_JOB_AUDIT_FILTERS, {
+    message: "audit 不是合法的生命周期任务审计过滤条件。",
+  })
+  audit?: (typeof WORLD_LIFECYCLE_JOB_AUDIT_FILTERS)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WORLD_LIFECYCLE_JOB_TYPES, {
+    message: "supersededBy 不是合法的 superseded 生命周期任务类型。",
+  })
+  supersededBy?: (typeof WORLD_LIFECYCLE_JOB_TYPES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "query 必须是字符串。" })
+  @MaxLength(255, { message: "query 不能超过 255 个字符。" })
+  query?: string;
+}
+
+export class ListWaitingSessionSyncTasksQueryDto {
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WAITING_SESSION_SYNC_TASK_STATUSES, {
+    message: "status 不是合法的 waiting session 补偿任务状态。",
+  })
+  status?: (typeof WAITING_SESSION_SYNC_TASK_STATUSES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WAITING_SESSION_SYNC_TASK_TYPES, {
+    message: "taskType 不是合法的 waiting session 补偿任务类型。",
+  })
+  taskType?: (typeof WAITING_SESSION_SYNC_TASK_TYPES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "query 必须是字符串。" })
+  @MaxLength(255, { message: "query 不能超过 255 个字符。" })
+  query?: string;
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "page 必须是整数。" })
+  @Min(1, { message: "page 最小为 1。" })
+  page?: number;
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "pageSize 必须是整数。" })
+  @Min(1, { message: "pageSize 最小为 1。" })
+  @Max(100, { message: "pageSize 最大为 100。" })
+  pageSize?: number;
+}
+
+export class MutateFailedWaitingSessionSyncTasksDto {
+  @Transform(trimStringArray)
+  @IsArray({ message: "taskIds 必须是数组。" })
+  @ArrayNotEmpty({ message: "taskIds 不能为空。" })
+  @ArrayMaxSize(100, { message: "taskIds 最多允许 100 条。" })
+  @ArrayUnique({ message: "taskIds 不能包含重复值。" })
+  @IsUUID("4", { each: true, message: "taskIds 必须全部是合法 UUID。" })
+  taskIds: string[];
+}
+
+export class MutateFilteredFailedWaitingSessionSyncTasksDto {
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(WAITING_SESSION_SYNC_TASK_TYPES, {
+    message: "taskType 不是合法的 waiting session 补偿任务类型。",
+  })
+  taskType?: (typeof WAITING_SESSION_SYNC_TASK_TYPES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "query 必须是字符串。" })
+  @MaxLength(255, { message: "query 不能超过 255 个字符。" })
+  query?: string;
 }
 
 export class ListAdminSessionsQueryDto {
