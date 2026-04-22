@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   ATTENTION_FILTERS,
+  buildCompactWorldsRouteSearch,
+  buildWorldsPermalink,
   buildWorldsRouteSearch,
   DEFAULT_WORLDS_ROUTE_SEARCH,
   HEALTH_FILTERS,
@@ -171,5 +173,39 @@ describe("world route search", () => {
         },
       },
     ],
+  });
+
+  it("builds compact world route search and permalinks without default empty filters", () => {
+    expect(buildCompactWorldsRouteSearch()).toEqual({});
+    expect(
+      buildCompactWorldsRouteSearch({
+        status: "ready",
+        provider: ` ${UNASSIGNED_PROVIDER_FILTER} `,
+        powerState: "running",
+        attention: "warning",
+        health: "unhealthy",
+        query: " +8613800138000 ",
+      }),
+    ).toEqual({
+      status: "ready",
+      provider: UNASSIGNED_PROVIDER_FILTER,
+      powerState: "running",
+      attention: "warning",
+      health: "unhealthy",
+      query: "+8613800138000",
+    });
+    expect(buildWorldsPermalink()).toBe("/worlds");
+    expect(
+      buildWorldsPermalink({
+        status: "ready",
+        provider: ` ${UNASSIGNED_PROVIDER_FILTER} `,
+        powerState: "running",
+        attention: "warning",
+        health: "unhealthy",
+        query: " +8613800138000 ",
+      }),
+    ).toBe(
+      "/worlds?status=ready&provider=__unassigned__&powerState=running&attention=warning&health=unhealthy&query=%2B8613800138000",
+    );
   });
 });

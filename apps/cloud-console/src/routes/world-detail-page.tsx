@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import type {
   CloudComputeProviderSummary,
   CloudWorldAttentionItem,
+  CloudWorldLifecycleJobAggregateSummary,
   CloudWorldLifecycleStatus,
   WorldLifecycleJobStatus,
 } from "@yinjie/contracts";
@@ -13,6 +14,7 @@ import {
   showCloudAdminErrorNotice,
 } from "../components/cloud-admin-error-block";
 import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
+import { JobsPermalinkLink } from "../components/jobs-permalink-link";
 import { useConsoleNotice } from "../components/console-notice";
 import { WorldLifecycleActionButtons } from "../components/world-lifecycle-action-buttons";
 import { copyTextToClipboard } from "../lib/clipboard";
@@ -22,6 +24,7 @@ import {
   QUEUE_STATE_FILTERS,
   type QueueStateFilter,
 } from "../lib/job-queue-state";
+import { buildCompactJobsRouteSearch } from "../lib/job-route-search";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 import { describeJobResult, getJobAuditBadgeLabel } from "../lib/job-result";
 import {
@@ -262,6 +265,11 @@ export function WorldDetailPage() {
     queryFn: () => cloudAdminApi.listJobs({ worldId, page: 1, pageSize: 20 }),
     refetchInterval: 15_000,
   });
+  const jobSummaryQuery = useQuery({
+    queryKey: ["cloud-console", "jobs", "summary", "world", worldId],
+    queryFn: () => cloudAdminApi.getJobSummary({ worldId }),
+    refetchInterval: 15_000,
+  });
 
   const [draftStatus, setDraftStatus] =
     useState<CloudWorldLifecycleStatus>("queued");
@@ -395,6 +403,75 @@ export function WorldDetailPage() {
   const currentAlert = alertSummary?.item ?? null;
   const jobs = jobsQuery.data?.items ?? [];
   const now = Date.now();
+  const jobSummaryFallback: CloudWorldLifecycleJobAggregateSummary = {
+    totalJobs: jobs.length,
+    activeJobs: 0,
+    failedJobs: 0,
+    supersededJobs: 0,
+    queueState: {
+      runningNow: 0,
+      leaseExpired: 0,
+      delayed: 0,
+    },
+  };
+  for (const job of jobs) {
+    if (job.status === "pending" || job.status === "running") {
+      jobSummaryFallback.activeJobs += 1;
+    }
+    if (job.status === "failed") {
+      jobSummaryFallback.failedJobs += 1;
+    }
+    if (getJobAuditBadgeLabel(job) !== null) {
+      jobSummaryFallback.supersededJobs += 1;
+    }
+  }
+  for (const group of groupJobsByQueueState(jobs, now)) {
+    if (group.state.key === "running_now") {
+      jobSummaryFallback.queueState.runningNow = group.jobs.length;
+    } else if (group.state.key === "lease_expired") {
+      jobSummaryFallback.queueState.leaseExpired = group.jobs.length;
+    } else if (group.state.key === "delayed") {
+      jobSummaryFallback.queueState.delayed = group.jobs.length;
+    }
+  }
+  const jobSummary = jobSummaryQuery.data;
+  const jobSummaryCards = [
+    {
+      key: "active",
+      label: "Active jobs",
+      count: jobSummary?.activeJobs ?? jobSummaryFallback.activeJobs,
+    },
+    {
+      key: "failed",
+      label: "Failed jobs",
+      count: jobSummary?.failedJobs ?? jobSummaryFallback.failedJobs,
+    },
+    {
+      key: "superseded",
+      label: "Superseded jobs",
+      count: jobSummary?.supersededJobs ?? jobSummaryFallback.supersededJobs,
+    },
+    {
+      key: "running_now",
+      label: "Running jobs",
+      count:
+        jobSummary?.queueState.runningNow ??
+        jobSummaryFallback.queueState.runningNow,
+    },
+    {
+      key: "lease_expired",
+      label: "Lease expired jobs",
+      count:
+        jobSummary?.queueState.leaseExpired ??
+        jobSummaryFallback.queueState.leaseExpired,
+    },
+    {
+      key: "delayed",
+      label: "Delayed jobs",
+      count:
+        jobSummary?.queueState.delayed ?? jobSummaryFallback.queueState.delayed,
+    },
+  ] as const;
   const visibleJobs = [...jobs]
     .filter((job) => matchesQueueStateFilter(job, queueStateFilter, now))
     .sort((left, right) => compareNewest(left.updatedAt, right.updatedAt));
@@ -1219,14 +1296,25 @@ export function WorldDetailPage() {
           </div>
         ) : null}
 
+        {jobSummaryQuery.isError && jobSummaryQuery.error instanceof Error ? (
+          <div className="mt-4">
+            <CloudAdminErrorBlock error={jobSummaryQuery.error} />
+          </div>
+        ) : null}
+
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {groupedJobs.map((group) => (
+          <div className="grid flex-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {jobSummaryCards.map((item) => (
               <div
-                key={group.state.key}
-                className={`rounded-full border px-3 py-2 text-xs uppercase tracking-[0.18em] ${group.state.tone}`}
+                key={item.key}
+                className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3"
               >
-                {group.state.label}: {group.jobs.length}
+                <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                  {item.label}
+                </div>
+                <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
+                  {item.count}
+                </div>
               </div>
             ))}
           </div>
@@ -1244,6 +1332,21 @@ export function WorldDetailPage() {
               </option>
             ))}
           </select>
+
+          <JobsPermalinkLink
+            search={buildCompactJobsRouteSearch({
+              worldId,
+              queueState: queueStateFilter,
+            })}
+            className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)] hover:bg-[color:var(--surface-soft)]"
+          >
+            Open full queue
+          </JobsPermalinkLink>
+        </div>
+
+        <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+          Queue totals reflect all jobs for this world, not just the recent 20
+          jobs below.
         </div>
 
         <div className="mt-4 overflow-x-auto rounded-2xl border border-[color:var(--border-faint)]">

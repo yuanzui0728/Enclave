@@ -301,6 +301,12 @@ export async function listJobs(baseUrl, headers, query) {
   });
 }
 
+export async function getJobSummary(baseUrl, headers, query) {
+  return apiFetch(baseUrl, `/admin/cloud/jobs/summary${buildQueryString(query)}`, {
+    headers,
+  });
+}
+
 export async function replayFailedWaitingSessionSyncTasks(
   baseUrl,
   taskIds,

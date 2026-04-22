@@ -17,6 +17,7 @@ export type JobSortFieldFilter = CloudWorldLifecycleJobSortField;
 export type JobSortDirectionFilter = CloudWorldLifecycleJobSortDirection;
 
 export type JobsRouteSearch = {
+  worldId: string;
   status: JobStatusFilter;
   jobType: JobTypeFilter;
   provider: string;
@@ -65,6 +66,7 @@ export const JOB_SORT_DIRECTIONS: JobSortDirectionFilter[] = ["desc", "asc"];
 export const JOB_PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
 
 export const DEFAULT_JOBS_ROUTE_SEARCH: JobsRouteSearch = {
+  worldId: "",
   status: "all",
   jobType: "all",
   provider: "all",
@@ -111,6 +113,7 @@ export function buildJobsRouteSearch(
 ): JobsRouteSearch {
   const status = normalizeRouteString(search?.status);
   const jobType = normalizeRouteString(search?.jobType);
+  const worldId = normalizeRouteString(search?.worldId);
   const provider = normalizeRouteString(search?.provider);
   const queueState = normalizeRouteString(search?.queueState);
   const audit = normalizeRouteString(search?.audit);
@@ -123,6 +126,7 @@ export function buildJobsRouteSearch(
   );
 
   return {
+    worldId,
     status: JOB_STATUS_FILTER_SET.has(status)
       ? (status as JobStatusFilter)
       : DEFAULT_JOBS_ROUTE_SEARCH.status,
@@ -161,6 +165,7 @@ export function buildJobsRouteSearch(
 
 export function validateJobsRouteSearch(search: Record<string, unknown>) {
   return buildJobsRouteSearch({
+    worldId: normalizeRouteString(search.worldId),
     status: normalizeRouteString(search.status),
     jobType: normalizeRouteString(search.jobType),
     provider: normalizeRouteString(search.provider),
@@ -173,4 +178,93 @@ export function validateJobsRouteSearch(search: Record<string, unknown>) {
     page: search.page,
     pageSize: search.pageSize,
   });
+}
+
+export function buildCompactJobsRouteSearch(search?: Partial<JobsRouteSearch>) {
+  const normalized = buildJobsRouteSearch(search);
+  const compact: Partial<JobsRouteSearch> = {};
+
+  if (normalized.worldId) {
+    compact.worldId = normalized.worldId;
+  }
+  if (normalized.status !== DEFAULT_JOBS_ROUTE_SEARCH.status) {
+    compact.status = normalized.status;
+  }
+  if (normalized.jobType !== DEFAULT_JOBS_ROUTE_SEARCH.jobType) {
+    compact.jobType = normalized.jobType;
+  }
+  if (normalized.provider !== DEFAULT_JOBS_ROUTE_SEARCH.provider) {
+    compact.provider = normalized.provider;
+  }
+  if (normalized.queueState !== DEFAULT_JOBS_ROUTE_SEARCH.queueState) {
+    compact.queueState = normalized.queueState;
+  }
+  if (normalized.audit !== DEFAULT_JOBS_ROUTE_SEARCH.audit) {
+    compact.audit = normalized.audit;
+  }
+  if (normalized.supersededBy !== DEFAULT_JOBS_ROUTE_SEARCH.supersededBy) {
+    compact.supersededBy = normalized.supersededBy;
+  }
+  if (normalized.query) {
+    compact.query = normalized.query;
+  }
+  if (normalized.sortBy !== DEFAULT_JOBS_ROUTE_SEARCH.sortBy) {
+    compact.sortBy = normalized.sortBy;
+  }
+  if (normalized.sortDirection !== DEFAULT_JOBS_ROUTE_SEARCH.sortDirection) {
+    compact.sortDirection = normalized.sortDirection;
+  }
+  if (normalized.page !== DEFAULT_JOBS_ROUTE_SEARCH.page) {
+    compact.page = normalized.page;
+  }
+  if (normalized.pageSize !== DEFAULT_JOBS_ROUTE_SEARCH.pageSize) {
+    compact.pageSize = normalized.pageSize;
+  }
+
+  return compact;
+}
+
+export function buildJobsPermalink(search?: Partial<JobsRouteSearch>) {
+  const compact = buildCompactJobsRouteSearch(search);
+  const params = new URLSearchParams();
+
+  if (compact.worldId) {
+    params.set("worldId", compact.worldId);
+  }
+  if (compact.status) {
+    params.set("status", compact.status);
+  }
+  if (compact.jobType) {
+    params.set("jobType", compact.jobType);
+  }
+  if (compact.provider) {
+    params.set("provider", compact.provider);
+  }
+  if (compact.queueState) {
+    params.set("queueState", compact.queueState);
+  }
+  if (compact.audit) {
+    params.set("audit", compact.audit);
+  }
+  if (compact.supersededBy) {
+    params.set("supersededBy", compact.supersededBy);
+  }
+  if (compact.query) {
+    params.set("query", compact.query);
+  }
+  if (compact.sortBy) {
+    params.set("sortBy", compact.sortBy);
+  }
+  if (compact.sortDirection) {
+    params.set("sortDirection", compact.sortDirection);
+  }
+  if (compact.page) {
+    params.set("page", String(compact.page));
+  }
+  if (compact.pageSize) {
+    params.set("pageSize", String(compact.pageSize));
+  }
+
+  const queryString = params.toString();
+  return queryString ? `/jobs?${queryString}` : "/jobs";
 }

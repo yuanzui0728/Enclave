@@ -27,6 +27,7 @@ import {
   JOB_SORT_DIRECTIONS,
   JOB_SORT_FIELDS,
   JOB_SUPERSEDED_BY_FILTERS,
+  buildJobsPermalink,
   buildJobsRouteSearch,
   JOB_STATUS_FILTERS,
   JOB_TYPE_FILTERS,
@@ -38,6 +39,7 @@ import {
   type JobTypeFilter,
   type JobsRouteSearch,
 } from "../lib/job-route-search";
+import { copyTextToClipboard } from "../lib/clipboard";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 import {
   createRequestScopedNotice,
@@ -126,6 +128,7 @@ export function JobsPage() {
   const filters = useSearch({ from: "/jobs" });
   const [confirmAction, setConfirmAction] =
     useState<QuickActionConfirmState | null>(null);
+  const worldId = filters.worldId;
   const status = filters.status;
   const jobType = filters.jobType;
   const providerFilter = filters.provider;
@@ -145,10 +148,25 @@ export function JobsPage() {
     });
   }
 
+  async function copyJobsPermalink() {
+    const relativePermalink = buildJobsPermalink(filters);
+    const absolutePermalink =
+      typeof window !== "undefined" && window.location?.origin
+        ? `${window.location.origin}${relativePermalink}`
+        : relativePermalink;
+    const copied = await copyTextToClipboard(absolutePermalink);
+
+    showNotice(
+      copied ? "Jobs permalink copied." : "Clipboard copy failed in this environment.",
+      copied ? "success" : "danger",
+    );
+  }
+
   const jobsQuery = useQuery({
     queryKey: [
       "cloud-console",
       "jobs",
+      worldId,
       status,
       jobType,
       providerFilter,
@@ -163,6 +181,7 @@ export function JobsPage() {
     ],
     queryFn: () =>
       cloudAdminApi.listJobs({
+        worldId: worldId || undefined,
         status: status === "all" ? undefined : status,
         jobType: jobType === "all" ? undefined : jobType,
         provider: providerFilter === "all" ? undefined : providerFilter,
@@ -176,6 +195,35 @@ export function JobsPage() {
         sortDirection,
         page,
         pageSize,
+    }),
+    refetchInterval: 15_000,
+  });
+  const jobSummaryQuery = useQuery({
+    queryKey: [
+      "cloud-console",
+      "jobs",
+      "summary",
+      worldId,
+      status,
+      jobType,
+      providerFilter,
+      queueStateFilter,
+      auditFilter,
+      supersededByFilter,
+      query,
+    ],
+    queryFn: () =>
+      cloudAdminApi.getJobSummary({
+        worldId: worldId || undefined,
+        status: status === "all" ? undefined : status,
+        jobType: jobType === "all" ? undefined : jobType,
+        provider: providerFilter === "all" ? undefined : providerFilter,
+        queueState:
+          queueStateFilter === "all" ? undefined : queueStateFilter,
+        audit: auditFilter === "all" ? undefined : auditFilter,
+        supersededBy:
+          supersededByFilter === "all" ? undefined : supersededByFilter,
+        query: query || undefined,
       }),
     refetchInterval: 15_000,
   });
@@ -245,12 +293,90 @@ export function JobsPage() {
             : (providerLabelByKey.get(key) ?? key),
       }));
   }, [instanceFleetQuery.data, providerLabelByKey]);
+  const scopedWorldInfo = worldId ? worldInfoById.get(worldId) : undefined;
   const jobsResult = jobsQuery.data;
   const jobs = jobsResult?.items ?? [];
+  const jobSummaryFallback = useMemo(() => {
+    const summary = {
+      activeJobs: 0,
+      failedJobs: 0,
+      supersededJobs: 0,
+      queueState: {
+        runningNow: 0,
+        leaseExpired: 0,
+        delayed: 0,
+      },
+    };
+
+    for (const job of jobs) {
+      if (job.status === "pending" || job.status === "running") {
+        summary.activeJobs += 1;
+      }
+      if (job.status === "failed") {
+        summary.failedJobs += 1;
+      }
+      if (getJobAuditBadgeLabel(job) !== null) {
+        summary.supersededJobs += 1;
+      }
+    }
+
+    for (const group of groupJobsByQueueState(jobs, Date.now())) {
+      if (group.state.key === "running_now") {
+        summary.queueState.runningNow = group.jobs.length;
+      } else if (group.state.key === "lease_expired") {
+        summary.queueState.leaseExpired = group.jobs.length;
+      } else if (group.state.key === "delayed") {
+        summary.queueState.delayed = group.jobs.length;
+      }
+    }
+
+    return summary;
+  }, [jobs]);
   const groupedJobs = useMemo(
     () => groupJobsByQueueState(jobs, Date.now()),
     [jobs],
   );
+  const jobSummary = jobSummaryQuery.data;
+  const summaryCards = [
+    {
+      key: "active",
+      label: "Active jobs",
+      count: jobSummary?.activeJobs ?? jobSummaryFallback.activeJobs,
+    },
+    {
+      key: "failed",
+      label: "Failed jobs",
+      count: jobSummary?.failedJobs ?? jobSummaryFallback.failedJobs,
+    },
+    {
+      key: "superseded",
+      label: "Superseded jobs",
+      count: jobSummary?.supersededJobs ?? jobSummaryFallback.supersededJobs,
+    },
+    {
+      key: "running_now",
+      label: "Running jobs",
+      count:
+        jobSummary?.queueState.runningNow ??
+        jobSummaryFallback.queueState.runningNow,
+    },
+    {
+      key: "lease_expired",
+      label: "Lease expired jobs",
+      count:
+        jobSummary?.queueState.leaseExpired ??
+        jobSummaryFallback.queueState.leaseExpired,
+    },
+    {
+      key: "delayed",
+      label:
+        queueStateFilter === "all"
+          ? "Delayed jobs"
+          : "Delayed jobs in filter",
+      count:
+        jobSummary?.queueState.delayed ?? jobSummaryFallback.queueState.delayed,
+    },
+  ] as const;
   const totalJobs = jobsResult?.total ?? 0;
   const totalPages = jobsResult?.totalPages ?? 1;
   const pageStart = totalJobs === 0 || jobs.length === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -300,6 +426,7 @@ export function JobsPage() {
     : null;
   const pageErrors = [
     jobsQuery.error,
+    jobSummaryQuery.error,
     instanceFleetQuery.error,
     providersQuery.error,
   ].filter((error): error is Error => error instanceof Error);
@@ -312,12 +439,21 @@ export function JobsPage() {
             Lifecycle jobs
           </div>
           <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-            Inspect provisioning, resume, suspend, and reconcile work across the
-            managed world fleet.
+            {worldId
+              ? "Inspect provisioning, resume, suspend, and reconcile work for the selected world."
+              : "Inspect provisioning, resume, suspend, and reconcile work across the managed world fleet."}
           </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => void copyJobsPermalink()}
+            className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)] hover:bg-[color:var(--surface-soft)]"
+          >
+            Copy jobs permalink
+          </button>
+
           <input
             value={query}
             onChange={(event) =>
@@ -480,15 +616,49 @@ export function JobsPage() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {groupedJobs.map((group) => (
-          <div
-            key={group.state.key}
-            className={`rounded-full border px-3 py-2 text-xs uppercase tracking-[0.18em] ${group.state.tone}`}
+      {worldId ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+            World scope
+          </div>
+          <Link
+            to="/worlds/$worldId"
+            params={{ worldId }}
+            className="text-sm font-medium text-[color:var(--text-primary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-secondary)]"
           >
-            {group.state.label}: {group.jobs.length}
+            {scopedWorldInfo?.name ?? worldId}
+          </Link>
+          <div className="text-sm text-[color:var(--text-secondary)]">
+            {scopedWorldInfo?.phone ?? "Phone unavailable"}
+          </div>
+          <button
+            type="button"
+            onClick={() => updateFilters({ worldId: "", page: 1 })}
+            className="rounded-xl border border-[color:var(--border-faint)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[color:var(--text-primary)]"
+          >
+            Clear world scope
+          </button>
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {summaryCards.map((item) => (
+          <div
+            key={item.key}
+            className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3"
+          >
+            <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+              {item.label}
+            </div>
+            <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
+              {item.count}
+            </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+        Summary counts reflect all jobs matching the current filters, not just this page.
       </div>
 
       {pageErrors.length ? (

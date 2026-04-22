@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { InlineNotice } from "@yinjie/ui";
+import { JobsPermalinkLink } from "./jobs-permalink-link";
+import { RequestsPermalinkLink } from "./requests-permalink-link";
+import { WorldsPermalinkLink } from "./worlds-permalink-link";
 import {
   getCloudAdminSecret,
   revokeStoredCloudAdminSession,
   setCloudAdminSecret,
 } from "../lib/cloud-admin-api";
 import { DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH } from "../lib/admin-sessions-route-search";
-import { DEFAULT_JOBS_ROUTE_SEARCH } from "../lib/job-route-search";
-import { DEFAULT_REQUESTS_ROUTE_SEARCH } from "../lib/request-route-search";
 import { DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH } from "../lib/waiting-session-sync-helpers";
-import { DEFAULT_WORLDS_ROUTE_SEARCH } from "../lib/world-route-search";
 import { ConsoleNoticeProvider, useConsoleNotice } from "./console-notice";
 
 const NAV_LINK =
@@ -22,6 +22,9 @@ const NAV_LINK_ACTIVE =
 function RootLayoutContent() {
   const queryClient = useQueryClient();
   const { notice, showNotice } = useConsoleNotice();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const [secret, setSecret] = useState(getCloudAdminSecret);
   const [editingSecret, setEditingSecret] = useState(!getCloudAdminSecret());
   const [draft, setDraft] = useState(getCloudAdminSecret);
@@ -115,30 +118,25 @@ function RootLayoutContent() {
             >
               Dashboard
             </Link>
-            <Link
-              to="/requests"
-              search={DEFAULT_REQUESTS_ROUTE_SEARCH}
-              className={NAV_LINK}
-              activeProps={{ className: NAV_LINK_ACTIVE }}
+            <RequestsPermalinkLink
+              className={
+                pathname.startsWith("/requests") ? NAV_LINK_ACTIVE : NAV_LINK
+              }
             >
               Requests
-            </Link>
-            <Link
-              to="/worlds"
-              search={DEFAULT_WORLDS_ROUTE_SEARCH}
-              className={NAV_LINK}
-              activeProps={{ className: NAV_LINK_ACTIVE }}
+            </RequestsPermalinkLink>
+            <WorldsPermalinkLink
+              className={
+                pathname.startsWith("/worlds") ? NAV_LINK_ACTIVE : NAV_LINK
+              }
             >
               Worlds
-            </Link>
-            <Link
-              to="/jobs"
-              search={DEFAULT_JOBS_ROUTE_SEARCH}
-              className={NAV_LINK}
-              activeProps={{ className: NAV_LINK_ACTIVE }}
+            </WorldsPermalinkLink>
+            <JobsPermalinkLink
+              className={pathname === "/jobs" ? NAV_LINK_ACTIVE : NAV_LINK}
             >
               Jobs
-            </Link>
+            </JobsPermalinkLink>
             <Link
               to="/sessions"
               search={DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH}

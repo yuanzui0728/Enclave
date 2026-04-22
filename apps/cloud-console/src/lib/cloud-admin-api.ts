@@ -18,6 +18,7 @@ import type {
   CloudWorldDriftSummary,
   CloudWorldBootstrapConfig,
   CloudWorldInstanceFleetItem,
+  CloudWorldLifecycleJobAggregateSummary,
   CloudWorldLifecycleJobListResponse,
   CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
@@ -549,6 +550,20 @@ export const cloudAdminApi = {
         sortDirection: filters?.sortDirection,
         page: filters?.page,
         pageSize: filters?.pageSize,
+      })}`,
+    ),
+
+  getJobSummary: (filters?: CloudWorldLifecycleJobListQuery) =>
+    adminFetch<CloudWorldLifecycleJobAggregateSummary>(
+      `/jobs/summary${buildQueryString({
+        worldId: filters?.worldId,
+        status: filters?.status,
+        jobType: filters?.jobType,
+        provider: filters?.provider,
+        queueState: filters?.queueState,
+        audit: filters?.audit,
+        supersededBy: filters?.supersededBy,
+        query: filters?.query,
       })}`,
     ),
 

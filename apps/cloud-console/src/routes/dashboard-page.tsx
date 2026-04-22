@@ -13,16 +13,19 @@ import {
   showCloudAdminErrorNotice,
 } from "../components/cloud-admin-error-block";
 import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
+import { JobsPermalinkLink } from "../components/jobs-permalink-link";
+import { RequestsPermalinkLink } from "../components/requests-permalink-link";
 import { useConsoleNotice } from "../components/console-notice";
 import {
   RequestProjectionBadges,
   RequestStatusBadge,
 } from "../components/request-controls";
+import { WorldsPermalinkLink } from "../components/worlds-permalink-link";
 import { WorldLifecycleActionButtons } from "../components/world-lifecycle-action-buttons";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 import { resolveQueueState } from "../lib/job-queue-state";
 import { describeJobResult, getJobAuditBadgeLabel } from "../lib/job-result";
-import { buildJobsRouteSearch } from "../lib/job-route-search";
+import { buildCompactJobsRouteSearch } from "../lib/job-route-search";
 import {
   getRequestStatusTone,
   getRequestToneStyles,
@@ -30,7 +33,10 @@ import {
   isRequestWorkflowCardStatus,
   REQUEST_WORKFLOW_CARD_STATUSES,
 } from "../lib/request-helpers";
-import { buildRequestsRouteSearch } from "../lib/request-route-search";
+import {
+  buildCompactRequestsRouteSearch,
+  buildRequestsRouteSearch,
+} from "../lib/request-route-search";
 import {
   createRequestScopedNotice,
   showRequestScopedNotice,
@@ -48,6 +54,7 @@ import {
   type WorldLifecycleAction,
 } from "../lib/world-lifecycle-actions";
 import {
+  buildCompactWorldsRouteSearch,
   buildWorldsRouteSearch,
   UNASSIGNED_PROVIDER_FILTER,
 } from "../lib/world-route-search";
@@ -171,8 +178,8 @@ function buildAttentionWorldSearch(item: CloudWorldAttentionItem) {
 }
 
 function buildAttentionJobsSearch(item: CloudWorldAttentionItem) {
-  return buildJobsRouteSearch({
-    query: item.phone,
+  return buildCompactJobsRouteSearch({
+    worldId: item.worldId,
     jobType: item.activeJobType ?? "all",
     status:
       item.reason === "failed_world" || item.reason === "provider_error"
@@ -249,6 +256,11 @@ export function DashboardPage() {
   const jobsQuery = useQuery({
     queryKey: ["cloud-console", "dashboard", "jobs"],
     queryFn: () => cloudAdminApi.listJobs({ page: 1, pageSize: 100 }),
+    refetchInterval: 15_000,
+  });
+  const jobSummaryQuery = useQuery({
+    queryKey: ["cloud-console", "dashboard", "job-summary"],
+    queryFn: () => cloudAdminApi.getJobSummary(),
     refetchInterval: 15_000,
   });
   const requestsQuery = useQuery({
@@ -362,14 +374,22 @@ export function DashboardPage() {
         .slice(0, 6),
     [jobsQuery.data],
   );
-  const queueStateSummary = useMemo(() => {
+  const jobSummaryFallback = useMemo(() => {
     const counts = {
       running_now: 0,
       lease_expired: 0,
       delayed: 0,
     };
+    let failedJobs = 0;
+    let supersededJobs = 0;
 
     for (const job of jobsQuery.data?.items ?? []) {
+      if (job.status === "failed") {
+        failedJobs += 1;
+      }
+      if (getJobAuditBadgeLabel(job) !== null) {
+        supersededJobs += 1;
+      }
       const queueState = resolveQueueState(job).key;
       if (queueState === "running_now") {
         counts.running_now += 1;
@@ -379,6 +399,21 @@ export function DashboardPage() {
         counts.delayed += 1;
       }
     }
+
+    return {
+      failedJobs,
+      supersededJobs,
+      queueState: counts,
+    };
+  }, [jobsQuery.data]);
+  const queueStateSummary = useMemo(() => {
+    const counts = jobSummaryQuery.data?.queueState
+      ? {
+          running_now: jobSummaryQuery.data.queueState.runningNow,
+          lease_expired: jobSummaryQuery.data.queueState.leaseExpired,
+          delayed: jobSummaryQuery.data.queueState.delayed,
+        }
+      : jobSummaryFallback.queueState;
 
     return [
       {
@@ -397,20 +432,11 @@ export function DashboardPage() {
         count: counts.delayed,
       },
     ] as const;
-  }, [jobsQuery.data]);
-  const failedJobCount = useMemo(
-    () =>
-      (jobsQuery.data?.items ?? []).filter((job) => job.status === "failed")
-        .length,
-    [jobsQuery.data],
-  );
-  const supersededJobCount = useMemo(
-    () =>
-      (jobsQuery.data?.items ?? []).filter(
-        (job) => getJobAuditBadgeLabel(job) !== null,
-      ).length,
-    [jobsQuery.data],
-  );
+  }, [jobSummaryFallback.queueState, jobSummaryQuery.data?.queueState]);
+  const failedJobCount =
+    jobSummaryQuery.data?.failedJobs ?? jobSummaryFallback.failedJobs;
+  const supersededJobCount =
+    jobSummaryQuery.data?.supersededJobs ?? jobSummaryFallback.supersededJobs;
   const supersededJobs = useMemo(
     () =>
       (jobsQuery.data?.items ?? [])
@@ -578,20 +604,18 @@ export function DashboardPage() {
           </div>
 
           <div className="flex flex-wrap gap-3 text-sm">
-            <Link
-              to="/worlds"
-              search={buildWorldsRouteSearch()}
+            <WorldsPermalinkLink
+              search={buildCompactWorldsRouteSearch()}
               className="rounded-full border border-[color:var(--border-faint)] px-4 py-2 text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               Open worlds
-            </Link>
-            <Link
-              to="/jobs"
-              search={buildJobsRouteSearch()}
+            </WorldsPermalinkLink>
+            <JobsPermalinkLink
+              search={buildCompactJobsRouteSearch()}
               className="rounded-full border border-[color:var(--border-faint)] px-4 py-2 text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               Inspect jobs
-            </Link>
+            </JobsPermalinkLink>
           </div>
         </div>
 
@@ -615,24 +639,22 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <Link
-              to="/requests"
-              search={buildRequestsRouteSearch()}
+            <RequestsPermalinkLink
+              search={buildCompactRequestsRouteSearch()}
               aria-label="Open all requests from request alerts"
               className="text-sm text-[color:var(--text-secondary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-primary)]"
             >
               Review requests ({requestWorkflowSummary.total})
-            </Link>
+            </RequestsPermalinkLink>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {requestWorkflowSummary.cards.map((item) => {
               const toneStyles = getRequestToneStyles(item.tone);
               return (
-                <Link
+                <RequestsPermalinkLink
                   key={`alert-${item.key}`}
-                  to="/requests"
-                  search={item.search}
+                  search={buildCompactRequestsRouteSearch(item.search)}
                   aria-label={item.alertAriaLabel}
                   data-tone={item.tone}
                   className={`rounded-2xl border p-3 transition ${toneStyles.panel}`}
@@ -651,16 +673,15 @@ export function DashboardPage() {
                     projectedRowClassName={`mt-2 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] ${toneStyles.detail}`}
                     desiredRowClassName={`mt-2 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] ${toneStyles.detail}`}
                   />
-                </Link>
+                </RequestsPermalinkLink>
               );
             })}
           </div>
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Link
-            to="/worlds"
-            search={buildWorldsRouteSearch({ status: "ready" })}
+          <WorldsPermalinkLink
+            search={buildCompactWorldsRouteSearch({ status: "ready" })}
             aria-label="Filter worlds by ready status"
             className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4 transition hover:border-[color:var(--border-strong)]"
           >
@@ -677,11 +698,10 @@ export function DashboardPage() {
             <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
               Total fleet: {driftSummary?.totalWorlds ?? 0}
             </div>
-          </Link>
+          </WorldsPermalinkLink>
 
-          <Link
-            to="/worlds"
-            search={buildWorldsRouteSearch({ attention: "critical" })}
+          <WorldsPermalinkLink
+            search={buildCompactWorldsRouteSearch({ attention: "critical" })}
             aria-label="Filter worlds by critical attention"
             className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4 transition hover:border-[color:var(--border-strong)]"
           >
@@ -698,7 +718,7 @@ export function DashboardPage() {
             <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
               Warning: {driftSummary?.warningAttentionWorlds ?? 0}
             </div>
-          </Link>
+          </WorldsPermalinkLink>
 
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
@@ -745,9 +765,8 @@ export function DashboardPage() {
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Link
-                to="/worlds"
-                search={buildWorldsRouteSearch({ powerState: "running" })}
+              <WorldsPermalinkLink
+                search={buildCompactWorldsRouteSearch({ powerState: "running" })}
                 aria-label="Filter worlds by running instances"
                 className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3 transition hover:border-[color:var(--border-strong)]"
               >
@@ -757,10 +776,9 @@ export function DashboardPage() {
                 <div className={`mt-2 text-2xl font-semibold ${getMetricTone(fleetSummary.running)}`}>
                   {fleetSummary.running}
                 </div>
-              </Link>
-              <Link
-                to="/worlds"
-                search={buildWorldsRouteSearch({ powerState: "stopped" })}
+              </WorldsPermalinkLink>
+              <WorldsPermalinkLink
+                search={buildCompactWorldsRouteSearch({ powerState: "stopped" })}
                 aria-label="Filter worlds by stopped instances"
                 className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3 transition hover:border-[color:var(--border-strong)]"
               >
@@ -770,10 +788,9 @@ export function DashboardPage() {
                 <div className={`mt-2 text-2xl font-semibold ${getMetricTone(fleetSummary.stopped)}`}>
                   {fleetSummary.stopped}
                 </div>
-              </Link>
-              <Link
-                to="/worlds"
-                search={buildWorldsRouteSearch({ powerState: "error" })}
+              </WorldsPermalinkLink>
+              <WorldsPermalinkLink
+                search={buildCompactWorldsRouteSearch({ powerState: "error" })}
                 aria-label="Filter worlds by error instances"
                 className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3 transition hover:border-[color:var(--border-strong)]"
               >
@@ -783,10 +800,9 @@ export function DashboardPage() {
                 <div className={`mt-2 text-2xl font-semibold ${getMetricTone(fleetSummary.error)}`}>
                   {fleetSummary.error}
                 </div>
-              </Link>
-              <Link
-                to="/worlds"
-                search={buildWorldsRouteSearch({
+              </WorldsPermalinkLink>
+              <WorldsPermalinkLink
+                search={buildCompactWorldsRouteSearch({
                   provider: UNASSIGNED_PROVIDER_FILTER,
                 })}
                 aria-label="Filter worlds by unassigned provider"
@@ -800,7 +816,7 @@ export function DashboardPage() {
                 >
                   {fleetSummary.unassignedWorlds}
                 </div>
-              </Link>
+              </WorldsPermalinkLink>
             </div>
           </div>
 
@@ -816,10 +832,11 @@ export function DashboardPage() {
 
             <div className="mt-4 space-y-3">
               {providerSummary.map((provider) => (
-                <Link
+                <WorldsPermalinkLink
                   key={provider.key}
-                  to="/worlds"
-                  search={buildWorldsRouteSearch({ provider: provider.key })}
+                  search={buildCompactWorldsRouteSearch({
+                    provider: provider.key,
+                  })}
                   aria-label={`Filter worlds by provider ${provider.label}`}
                   className="block rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3 transition hover:border-[color:var(--border-strong)]"
                 >
@@ -834,7 +851,7 @@ export function DashboardPage() {
                   <div className="mt-2 text-xs text-[color:var(--text-secondary)]">
                     Running {provider.running} · Error {provider.error}
                   </div>
-                </Link>
+                </WorldsPermalinkLink>
               ))}
 
               {!instanceFleetQuery.isLoading && providerSummary.length === 0 ? (
@@ -863,23 +880,21 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <Link
-            to="/requests"
-            search={buildRequestsRouteSearch()}
+          <RequestsPermalinkLink
+            search={buildCompactRequestsRouteSearch()}
             className="text-sm text-[color:var(--text-secondary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-primary)]"
           >
             Open requests ({requestWorkflowSummary.total})
-          </Link>
+          </RequestsPermalinkLink>
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {requestWorkflowSummary.cards.map((item) => {
             const toneStyles = getRequestToneStyles(item.tone);
             return (
-              <Link
+              <RequestsPermalinkLink
                 key={item.key}
-                to="/requests"
-                search={item.search}
+                search={buildCompactRequestsRouteSearch(item.search)}
                 aria-label={item.ariaLabel}
                 data-tone={item.tone}
                 className={`rounded-2xl border p-4 transition ${toneStyles.panel}`}
@@ -898,7 +913,7 @@ export function DashboardPage() {
                   projectedRowClassName={`mt-2 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] ${toneStyles.detail}`}
                   desiredRowClassName={`mt-2 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] ${toneStyles.detail}`}
                 />
-              </Link>
+              </RequestsPermalinkLink>
             );
           })}
         </div>
@@ -973,25 +988,23 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <Link
-              to="/jobs"
-              search={buildJobsRouteSearch()}
+            <JobsPermalinkLink
+              search={buildCompactJobsRouteSearch()}
               className="text-sm text-[color:var(--text-secondary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-primary)]"
             >
               Open jobs
-            </Link>
+            </JobsPermalinkLink>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {queueStateSummary.map((item) => (
-              <Link
+              <JobsPermalinkLink
                 key={item.key}
-                to="/jobs"
-                search={buildJobsRouteSearch({ queueState: item.key })}
+                search={buildCompactJobsRouteSearch({ queueState: item.key })}
                 className="rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
               >
                 {item.label} {item.count}
-              </Link>
+              </JobsPermalinkLink>
             ))}
           </div>
 
@@ -1071,6 +1084,18 @@ export function DashboardPage() {
                     className="mt-4 flex flex-wrap gap-2"
                     buttonClassName="rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] hover:border-[color:var(--border-strong)] disabled:opacity-60"
                   />
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <JobsPermalinkLink
+                      search={buildCompactJobsRouteSearch({
+                        worldId: job.worldId,
+                      })}
+                      aria-label={`Open operator jobs for ${worldMeta?.worldName ?? job.worldId}`}
+                      className="rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] transition hover:border-[color:var(--border-strong)]"
+                    >
+                      World operator jobs
+                    </JobsPermalinkLink>
+                  </div>
                 </div>
               );
             })}
@@ -1102,20 +1127,18 @@ export function DashboardPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  to="/jobs"
-                  search={buildJobsRouteSearch({ status: "failed" })}
+                <JobsPermalinkLink
+                  search={buildCompactJobsRouteSearch({ status: "failed" })}
                   className="text-sm text-[color:var(--text-secondary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-primary)]"
                 >
                   Open failed jobs ({failedJobCount})
-                </Link>
-                <Link
-                  to="/jobs"
-                  search={buildJobsRouteSearch({ audit: "superseded" })}
+                </JobsPermalinkLink>
+                <JobsPermalinkLink
+                  search={buildCompactJobsRouteSearch({ audit: "superseded" })}
                   className="text-sm text-[color:var(--text-secondary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-primary)]"
                 >
                   Open superseded jobs ({supersededJobCount})
-                </Link>
+                </JobsPermalinkLink>
               </div>
             </div>
 
@@ -1203,6 +1226,19 @@ export function DashboardPage() {
                       className="mt-4 flex flex-wrap gap-2"
                       buttonClassName="rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] hover:border-[color:var(--border-strong)] disabled:opacity-60"
                     />
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <JobsPermalinkLink
+                        search={buildCompactJobsRouteSearch({
+                          status: "failed",
+                          worldId: job.worldId,
+                        })}
+                        aria-label={`Open failed jobs for ${worldMeta?.worldName ?? job.worldId}`}
+                        className="rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] transition hover:border-[color:var(--border-strong)]"
+                      >
+                        World failed jobs
+                      </JobsPermalinkLink>
+                    </div>
                   </div>
                 );
               })}
@@ -1226,13 +1262,12 @@ export function DashboardPage() {
                 </div>
               </div>
 
-              <Link
-                to="/jobs"
-                search={buildJobsRouteSearch({ audit: "superseded" })}
+              <JobsPermalinkLink
+                search={buildCompactJobsRouteSearch({ audit: "superseded" })}
                 className="text-sm text-[color:var(--text-secondary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-primary)]"
               >
                 Open superseded queue ({supersededJobCount})
-              </Link>
+              </JobsPermalinkLink>
             </div>
 
             <div className="mt-4 space-y-3">
@@ -1241,7 +1276,6 @@ export function DashboardPage() {
                 const auditBadgeLabel =
                   getJobAuditBadgeLabel(job) ?? "Superseded";
                 const worldLabel = worldMeta?.worldName ?? job.worldId;
-                const supersededSearchQuery = worldMeta?.phone ?? job.worldId;
 
                 return (
                   <div
@@ -1293,17 +1327,16 @@ export function DashboardPage() {
                     </Link>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Link
-                        to="/jobs"
-                        search={buildJobsRouteSearch({
+                      <JobsPermalinkLink
+                        search={buildCompactJobsRouteSearch({
                           audit: "superseded",
-                          query: supersededSearchQuery,
+                          worldId: job.worldId,
                         })}
                         aria-label={`Open superseded jobs for ${worldLabel}`}
                         className="rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] transition hover:border-[color:var(--border-strong)]"
                       >
                         World superseded jobs
-                      </Link>
+                      </JobsPermalinkLink>
                     </div>
                   </div>
                 );
@@ -1336,13 +1369,12 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <Link
-            to="/worlds"
-            search={buildWorldsRouteSearch()}
+          <WorldsPermalinkLink
+            search={buildCompactWorldsRouteSearch()}
             className="text-sm text-[color:var(--text-secondary)] underline decoration-[color:var(--border-strong)] underline-offset-4 hover:text-[color:var(--text-primary)]"
           >
             Open world fleet
-          </Link>
+          </WorldsPermalinkLink>
         </div>
 
         <div className="mt-4 space-y-3">
@@ -1400,22 +1432,22 @@ export function DashboardPage() {
                 </Link>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    to="/worlds"
-                    search={buildAttentionWorldSearch(item)}
+                  <WorldsPermalinkLink
+                    search={buildCompactWorldsRouteSearch(
+                      buildAttentionWorldSearch(item),
+                    )}
                     aria-label={`Open worlds with ${item.severity} attention`}
                     className="rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] transition hover:border-[color:var(--border-strong)]"
                   >
                     {item.severity} worlds
-                  </Link>
-                  <Link
-                    to="/jobs"
+                  </WorldsPermalinkLink>
+                  <JobsPermalinkLink
                     search={buildAttentionJobsSearch(item)}
                     aria-label={`Open jobs for ${item.worldName}`}
                     className="rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] transition hover:border-[color:var(--border-strong)]"
                   >
                     {describeAttentionJobsLabel(item)}
-                  </Link>
+                  </JobsPermalinkLink>
                 </div>
 
                 <WorldLifecycleActionButtons

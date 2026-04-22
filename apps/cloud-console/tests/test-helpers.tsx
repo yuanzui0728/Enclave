@@ -1,4 +1,5 @@
 import type {
+  CloudWorldLifecycleJobAggregateSummary,
   CloudWorldLifecycleJobListResponse,
   WorldLifecycleJobSummary,
 } from "@yinjie/contracts";
@@ -383,6 +384,7 @@ type CloudAdminMockOverrides = {
   world?: Partial<typeof mockWorld>;
   job?: Partial<typeof mockJob>;
   jobs?: Array<Partial<typeof mockJob>>;
+  jobSummary?: Partial<CloudWorldLifecycleJobAggregateSummary>;
   instance?: Partial<typeof mockInstance>;
   attentionItem?: Partial<typeof mockAttentionItem>;
   driftSummary?: Partial<typeof mockDriftSummary>;
@@ -1103,11 +1105,11 @@ function pickAdminSessionFilterSearchParams(searchParams: URLSearchParams) {
   return nextSearchParams;
 }
 
-function filterLifecycleJobs(
+function selectLifecycleJobs(
   jobs: WorldLifecycleJobSummary[],
   world: typeof mockWorld,
   searchParams: URLSearchParams,
-): CloudWorldLifecycleJobListResponse {
+): WorldLifecycleJobSummary[] {
   const status = searchParams.get("status");
   const jobType = searchParams.get("jobType");
   const worldId = searchParams.get("worldId");
@@ -1119,14 +1121,6 @@ function filterLifecycleJobs(
   const sortBy = searchParams.get("sortBy") ?? "updatedAt";
   const sortDirection =
     searchParams.get("sortDirection") === "asc" ? "asc" : "desc";
-  const page = Math.max(
-    1,
-    Number.parseInt(searchParams.get("page") ?? "1", 10) || 1,
-  );
-  const pageSize = Math.max(
-    1,
-    Number.parseInt(searchParams.get("pageSize") ?? "20", 10) || 20,
-  );
   const providerKey = world.providerKey?.trim() ?? "";
   const providerLabel =
     mockProviders.find((item) => item.key === providerKey)?.label ?? providerKey;
@@ -1228,6 +1222,23 @@ function filterLifecycleJobs(
     return right.updatedAt.localeCompare(left.updatedAt);
   });
 
+  return sortedJobs;
+}
+
+function filterLifecycleJobs(
+  jobs: WorldLifecycleJobSummary[],
+  world: typeof mockWorld,
+  searchParams: URLSearchParams,
+): CloudWorldLifecycleJobListResponse {
+  const page = Math.max(
+    1,
+    Number.parseInt(searchParams.get("page") ?? "1", 10) || 1,
+  );
+  const pageSize = Math.max(
+    1,
+    Number.parseInt(searchParams.get("pageSize") ?? "20", 10) || 20,
+  );
+  const sortedJobs = selectLifecycleJobs(jobs, world, searchParams);
   const items = sortedJobs.slice((page - 1) * pageSize, page * pageSize);
   return {
     items,
@@ -1236,6 +1247,45 @@ function filterLifecycleJobs(
     pageSize,
     totalPages: Math.max(1, Math.ceil(sortedJobs.length / pageSize)),
   };
+}
+
+function summarizeLifecycleJobs(
+  jobs: WorldLifecycleJobSummary[],
+): CloudWorldLifecycleJobAggregateSummary {
+  const summary: CloudWorldLifecycleJobAggregateSummary = {
+    totalJobs: jobs.length,
+    activeJobs: 0,
+    failedJobs: 0,
+    supersededJobs: 0,
+    queueState: {
+      runningNow: 0,
+      leaseExpired: 0,
+      delayed: 0,
+    },
+  };
+
+  for (const job of jobs) {
+    if (job.status === "pending" || job.status === "running") {
+      summary.activeJobs += 1;
+    }
+    if (job.status === "failed") {
+      summary.failedJobs += 1;
+    }
+    if (getJobAuditBadgeLabel(job) !== null) {
+      summary.supersededJobs += 1;
+    }
+    if (matchesQueueStateFilter(job, "running_now")) {
+      summary.queueState.runningNow += 1;
+    }
+    if (matchesQueueStateFilter(job, "lease_expired")) {
+      summary.queueState.leaseExpired += 1;
+    }
+    if (matchesQueueStateFilter(job, "delayed")) {
+      summary.queueState.delayed += 1;
+    }
+  }
+
+  return summary;
 }
 
 export function installCloudAdminApiMock(
@@ -1837,6 +1887,19 @@ export function installCloudAdminApiMock(
         return jsonResponse(
           filterLifecycleJobs(resolvedJobs, resolvedWorld, url.searchParams),
         );
+      }
+      if (method === "GET" && url.pathname === "/admin/cloud/jobs/summary") {
+        const filteredJobSummary = summarizeLifecycleJobs(
+          selectLifecycleJobs(resolvedJobs, resolvedWorld, url.searchParams),
+        );
+        return jsonResponse({
+          ...filteredJobSummary,
+          ...(overrides?.jobSummary ?? {}),
+          queueState: {
+            ...filteredJobSummary.queueState,
+            ...(overrides?.jobSummary?.queueState ?? {}),
+          },
+        } satisfies CloudWorldLifecycleJobAggregateSummary);
       }
       if (
         method === "GET" &&

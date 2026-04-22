@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { installCloudAdminApiMock, renderRoute } from "./test-helpers";
 
 describe("cloud-console router smoke", () => {
@@ -20,6 +20,29 @@ describe("cloud-console router smoke", () => {
     expect(await screen.findByText("Fleet Dashboard")).toBeTruthy();
     expect(await screen.findByText("Attention Queue")).toBeTruthy();
     expect(await screen.findByText("Ready worlds")).toBeTruthy();
+    expect(
+      (await screen.findByRole("link", { name: "Requests" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/requests");
+    expect(
+      (await screen.findByRole("link", { name: "Worlds" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/worlds");
+    expect((await screen.findByRole("link", { name: "Jobs" })).getAttribute("href")).toBe(
+      "/jobs",
+    );
+  });
+
+  it("navigates through compact request and world nav links", async () => {
+    renderRoute("/");
+
+    fireEvent.click(await screen.findByRole("link", { name: "Requests" }));
+    expect(await screen.findByText("World requests")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("link", { name: "Worlds" }));
+    expect(await screen.findByText("Managed worlds")).toBeTruthy();
   });
 
   it("renders the requests route", async () => {

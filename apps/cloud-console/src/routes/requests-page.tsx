@@ -2,14 +2,17 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { CloudAdminErrorBlock } from "../components/cloud-admin-error-block";
+import { useConsoleNotice } from "../components/console-notice";
 import {
   RequestProjectionBadges,
   RequestProjectionFilterControls,
   RequestStatusBadge,
   RequestStatusFilterButtons,
 } from "../components/request-controls";
+import { copyTextToClipboard } from "../lib/clipboard";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 import {
+  buildRequestsPermalink,
   buildRequestsRouteSearch,
   type RequestsRouteSearch,
 } from "../lib/request-route-search";
@@ -55,6 +58,7 @@ function matchesRequestQuery(
 export function RequestsPage() {
   const navigate = useNavigate({ from: "/requests" });
   const filters = useSearch({ from: "/requests" });
+  const { showNotice } = useConsoleNotice();
   const requestStatusFilter = filters.status;
   const projectedWorldStatusFilter = filters.projectedWorldStatus;
   const desiredStateFilter = filters.desiredState;
@@ -65,6 +69,22 @@ export function RequestsPage() {
       replace: true,
       search: (previous) => buildRequestsRouteSearch({ ...previous, ...next }),
     });
+  }
+
+  async function copyRequestsPermalink() {
+    const relativePermalink = buildRequestsPermalink(filters);
+    const absolutePermalink =
+      typeof window !== "undefined" && window.location?.origin
+        ? `${window.location.origin}${relativePermalink}`
+        : relativePermalink;
+    const copied = await copyTextToClipboard(absolutePermalink);
+
+    showNotice(
+      copied
+        ? "Requests permalink copied."
+        : "Clipboard copy failed in this environment.",
+      copied ? "success" : "danger",
+    );
   }
 
   const requestsQuery = useQuery({
@@ -114,10 +134,19 @@ export function RequestsPage() {
           </div>
         </div>
 
-        <RequestStatusFilterButtons
-          value={requestStatusFilter}
-          onChange={(status) => updateFilters({ status })}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void copyRequestsPermalink()}
+            className="rounded-full border border-[color:var(--border-faint)] px-4 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
+          >
+            Copy requests permalink
+          </button>
+          <RequestStatusFilterButtons
+            value={requestStatusFilter}
+            onChange={(status) => updateFilters({ status })}
+          />
+        </div>
       </div>
 
       <RequestProjectionFilterControls

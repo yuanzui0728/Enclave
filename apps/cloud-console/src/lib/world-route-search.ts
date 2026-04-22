@@ -117,3 +117,58 @@ export function validateWorldsRouteSearch(search: Record<string, unknown>) {
     query: normalizeRouteString(search.query),
   });
 }
+
+export function buildCompactWorldsRouteSearch(
+  search?: Partial<WorldsRouteSearch>,
+) {
+  const normalized = buildWorldsRouteSearch(search);
+  const compact: Partial<WorldsRouteSearch> = {};
+
+  if (normalized.status !== DEFAULT_WORLDS_ROUTE_SEARCH.status) {
+    compact.status = normalized.status;
+  }
+  if (normalized.provider !== DEFAULT_WORLDS_ROUTE_SEARCH.provider) {
+    compact.provider = normalized.provider;
+  }
+  if (normalized.powerState !== DEFAULT_WORLDS_ROUTE_SEARCH.powerState) {
+    compact.powerState = normalized.powerState;
+  }
+  if (normalized.attention !== DEFAULT_WORLDS_ROUTE_SEARCH.attention) {
+    compact.attention = normalized.attention;
+  }
+  if (normalized.health !== DEFAULT_WORLDS_ROUTE_SEARCH.health) {
+    compact.health = normalized.health;
+  }
+  if (normalized.query) {
+    compact.query = normalized.query;
+  }
+
+  return compact;
+}
+
+export function buildWorldsPermalink(search?: Partial<WorldsRouteSearch>) {
+  const compact = buildCompactWorldsRouteSearch(search);
+  const params = new URLSearchParams();
+
+  if (compact.status) {
+    params.set("status", compact.status);
+  }
+  if (compact.provider) {
+    params.set("provider", compact.provider);
+  }
+  if (compact.powerState) {
+    params.set("powerState", compact.powerState);
+  }
+  if (compact.attention) {
+    params.set("attention", compact.attention);
+  }
+  if (compact.health) {
+    params.set("health", compact.health);
+  }
+  if (compact.query) {
+    params.set("query", compact.query);
+  }
+
+  const queryString = params.toString();
+  return queryString ? `/worlds?${queryString}` : "/worlds";
+}

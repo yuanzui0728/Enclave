@@ -143,10 +143,28 @@ describe("cloud-console live api smoke", () => {
       adminSecret: liveApiServer.adminSecret,
     });
     expect(await screen.findByText("Fleet Dashboard")).toBeTruthy();
+    const jobSummaryResponse = await apiFetch(
+      liveApiServer.baseUrl,
+      "/admin/cloud/jobs/summary",
+      {
+        headers: adminHeaders,
+      },
+    );
+    expect(jobSummaryResponse.status).toBe(200);
     expect(
       await screen.findByText((_, element) => {
         return element?.textContent === "Total fleet: 1";
       }),
+    ).toBeTruthy();
+    expect(
+      await screen.findByText(
+        `Open failed jobs (${jobSummaryResponse.body.failedJobs})`,
+      ),
+    ).toBeTruthy();
+    expect(
+      await screen.findByText(
+        `Open superseded jobs (${jobSummaryResponse.body.supersededJobs})`,
+      ),
     ).toBeTruthy();
 
     cleanup();
@@ -169,6 +187,32 @@ describe("cloud-console live api smoke", () => {
     ) as HTMLInputElement;
     expect(apiBaseInput.value).toBe("https://live-world.example.com/api");
     expect(adminUrlInput.value).toBe("https://live-world.example.com/admin");
+    const worldJobSummaryResponse = await apiFetch(
+      liveApiServer.baseUrl,
+      `/admin/cloud/jobs/summary?worldId=${worldId}`,
+      {
+        headers: adminHeaders,
+      },
+    );
+    expect(worldJobSummaryResponse.status).toBe(200);
+    expect(
+      await screen.findByText(
+        /Queue totals reflect all jobs for this world, not just the recent 20 jobs below\./,
+      ),
+    ).toBeTruthy();
+    const activeJobsLabel = await screen.findByText("Active jobs");
+    const runningJobsLabel = await screen.findByText("Running jobs");
+    expect(activeJobsLabel.parentElement?.textContent).toContain(
+      String(worldJobSummaryResponse.body.activeJobs),
+    );
+    expect(runningJobsLabel.parentElement?.textContent).toContain(
+      String(worldJobSummaryResponse.body.queueState.runningNow),
+    );
+    expect(
+      (await screen.findByRole("link", { name: "Open full queue" })).getAttribute(
+        "href",
+      ),
+    ).toContain(`worldId=${worldId}`);
 
     cleanup();
     renderRoute("/jobs", {

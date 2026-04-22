@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { QUEUE_STATE_FILTERS } from "../src/lib/job-queue-state";
 import {
+  buildJobsPermalink,
   JOB_AUDIT_FILTERS,
   JOB_PAGE_SIZE_OPTIONS,
   JOB_SORT_DIRECTIONS,
@@ -41,6 +42,7 @@ describe("job route search", () => {
         description: "default jobs route search stays stable",
         actual: DEFAULT_JOBS_ROUTE_SEARCH,
         expected: {
+          worldId: "",
           status: "all",
           jobType: "all",
           provider: "all",
@@ -95,6 +97,7 @@ describe("job route search", () => {
       {
         description: "trim valid job filters while preserving the raw query string",
         input: {
+          worldId: " world-1 ",
           status: " running ",
           jobType: " reconcile ",
           provider: " aws ",
@@ -108,6 +111,7 @@ describe("job route search", () => {
           pageSize: " 50 ",
         },
         expected: {
+          worldId: "world-1",
           status: "running",
           jobType: "reconcile",
           provider: "aws",
@@ -126,6 +130,7 @@ describe("job route search", () => {
       {
         description: "fall back for invalid job filters and non-string query",
         input: {
+          worldId: "   ",
           status: "queued",
           jobType: "destroy",
           provider: "   ",
@@ -143,6 +148,7 @@ describe("job route search", () => {
       {
         description: "fall back for non-string job filters",
         input: {
+          worldId: null,
           status: null,
           jobType: false,
           provider: undefined,
@@ -167,6 +173,7 @@ describe("job route search", () => {
       {
         description: "keep valid validated job filters",
         input: {
+          worldId: "world-1",
           status: "failed",
           jobType: "resume",
           provider: "gcp",
@@ -179,6 +186,7 @@ describe("job route search", () => {
           ignored: "value",
         },
         expected: {
+          worldId: "world-1",
           status: "failed",
           jobType: "resume",
           provider: "gcp",
@@ -195,6 +203,7 @@ describe("job route search", () => {
       {
         description: "trim valid job filters and default empty validated values",
         input: {
+          worldId: " world-1 ",
           status: " pending ",
           jobType: " invalid ",
           provider: "",
@@ -204,6 +213,7 @@ describe("job route search", () => {
           query: undefined,
         },
         expected: {
+          worldId: "world-1",
           status: "pending",
           jobType: "all",
           provider: "all",
@@ -218,5 +228,33 @@ describe("job route search", () => {
         },
       },
     ],
+  });
+
+  it("builds compact jobs permalinks without default empty filters", () => {
+    expect(buildJobsPermalink()).toBe("/jobs");
+    expect(
+      buildJobsPermalink({
+        worldId: "world-1",
+        status: "failed",
+        jobType: "resume",
+        query: "retry me",
+        page: 2,
+        pageSize: 50,
+      }),
+    ).toBe(
+      "/jobs?worldId=world-1&status=failed&jobType=resume&query=retry+me&page=2&pageSize=50",
+    );
+    expect(
+      buildJobsPermalink({
+        worldId: "world-1",
+        queueState: "delayed",
+        audit: "superseded",
+        supersededBy: "resume",
+        sortBy: "finishedAt",
+        sortDirection: "asc",
+      }),
+    ).toBe(
+      "/jobs?worldId=world-1&queueState=delayed&audit=superseded&supersededBy=resume&sortBy=finishedAt&sortDirection=asc",
+    );
   });
 });

@@ -94,6 +94,87 @@ function hasAdminSessionsRequest(
   });
 }
 
+function expectAdminSessionsBulkRevokeRequest(
+  requests: CloudAdminRequestLog[],
+  {
+    expectedCount,
+    requiredIds,
+    excludedIds = [],
+  }: {
+    expectedCount?: number;
+    requiredIds: string[];
+    excludedIds?: string[];
+  },
+) {
+  expect(
+    requests.some((entry) => {
+      if (entry.url !== "POST /admin/cloud/admin-sessions/revoke") {
+        return false;
+      }
+      if (!Array.isArray(entry.body?.sessionIds)) {
+        return false;
+      }
+
+      const sessionIds = entry.body.sessionIds.filter(
+        (value): value is string => typeof value === "string",
+      );
+
+      if (expectedCount !== undefined && sessionIds.length !== expectedCount) {
+        return false;
+      }
+
+      return (
+        requiredIds.every((sessionId) => sessionIds.includes(sessionId)) &&
+        excludedIds.every((sessionId) => !sessionIds.includes(sessionId))
+      );
+    }),
+  ).toBe(true);
+}
+
+function expectAdminSessionRevokeRequest(
+  requests: CloudAdminRequestLog[],
+  sessionId: string,
+) {
+  expect(
+    requests.some(
+      (entry) =>
+        entry.url === `POST /admin/cloud/admin-sessions/${sessionId}/revoke`,
+    ),
+  ).toBe(true);
+}
+
+function expectAdminSessionsFilteredRevokeRequest(
+  requests: CloudAdminRequestLog[],
+  {
+    query,
+    body = {},
+  }: {
+    query: string;
+    body?: Record<string, unknown>;
+  },
+) {
+  expect(
+    requests.some(
+      (entry) =>
+        entry.url === "POST /admin/cloud/admin-sessions/revoke-filtered" &&
+        entry.body?.query === query &&
+        Object.entries(body).every(
+          ([key, value]) =>
+            (entry.body as Record<string, unknown> | undefined)?.[key] === value,
+        ),
+    ),
+  ).toBe(true);
+}
+
+async function expectAdminSessionsQuery(
+  requests: CloudAdminRequestLog[],
+  expectedParams: Record<string, string>,
+) {
+  await waitFor(() => {
+    expect(hasAdminSessionsRequest(requests, expectedParams)).toBe(true);
+  });
+}
+
 function hasAdminSessionSourceGroupsRequest(
   requests: CloudAdminRequestLog[],
   expectedParams: Record<string, string>,
@@ -172,6 +253,7 @@ const DASHBOARD_FAILED_ACTION_VISIBILITY_CASES = buildActionVisibilityCases(
   DASHBOARD_FAILED_JOB_ACTIONS,
   DASHBOARD_FAILED_WORLD_LABEL,
 );
+type ScreenTextMatcher = string | RegExp;
 
 const WAITING_SYNC_REVIEW_CONTEXT = "runtime.heartbeat";
 const WAITING_SYNC_REVIEW_TASK_ID =
@@ -194,6 +276,12 @@ const ADMIN_SESSION_CURRENT_ID = "11111111-1111-4111-8111-111111111111";
 const ADMIN_SESSION_SECONDARY_ID = "22222222-2222-4222-8222-222222222222";
 const ADMIN_SESSION_FOCUSED_SOURCE_TITLE = "Focused Source Browser";
 const ADMIN_SESSION_FOCUSED_SOURCE_IP = "203.0.113.188";
+const ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID =
+  "77777777-7777-4777-8777-777777777777";
+const ADMIN_SESSION_FOCUSED_SOURCE_SECONDARY_ID =
+  "88888888-8888-4888-8888-888888888888";
+const ADMIN_SESSION_FOCUSED_SOURCE_OTHER_ID =
+  "99999999-9999-4999-8999-999999999999";
 
 function buildAdminSessionSourceKey(
   issuedFromIp: string,
@@ -269,6 +357,72 @@ function buildAdminSessionSourceScenario({
       ...otherSessions.map((session) => buildAdminSessionSourceSession(session)),
     ],
   };
+}
+
+function buildAdminSessionFocusedSourceScenario({
+  includeOtherSessions = false,
+}: {
+  includeOtherSessions?: boolean;
+} = {}) {
+  return buildAdminSessionSourceScenario({
+    issuedFromIp: ADMIN_SESSION_FOCUSED_SOURCE_IP,
+    issuedUserAgent: ADMIN_SESSION_FOCUSED_SOURCE_TITLE,
+    sourceSessions: [
+      {
+        template: mockAdminSessions[0],
+        id: ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID,
+        isCurrent: true,
+        status: "active",
+      },
+      {
+        id: ADMIN_SESSION_FOCUSED_SOURCE_SECONDARY_ID,
+        isCurrent: false,
+        status: "active",
+      },
+    ],
+    otherSessions: includeOtherSessions
+      ? [
+          {
+            id: ADMIN_SESSION_FOCUSED_SOURCE_OTHER_ID,
+            issuedFromIp: "198.51.100.188",
+            issuedUserAgent: "Other Source Browser",
+            isCurrent: false,
+            status: "active",
+          },
+        ]
+      : [],
+  });
+}
+
+function buildAdminSessionActiveSourcePairScenario({
+  issuedFromIp,
+  issuedUserAgent,
+  sourceSessionIds,
+  otherSessions = [],
+}: {
+  issuedFromIp: string;
+  issuedUserAgent: string;
+  sourceSessionIds: [string, string];
+  otherSessions?: AdminSessionSourceSessionInput[];
+}) {
+  return buildAdminSessionSourceScenario({
+    issuedFromIp,
+    issuedUserAgent,
+    sourceSessions: [
+      {
+        template: mockAdminSessions[0],
+        id: sourceSessionIds[0],
+        isCurrent: false,
+        status: "active",
+      },
+      {
+        id: sourceSessionIds[1],
+        isCurrent: false,
+        status: "active",
+      },
+    ],
+    otherSessions,
+  });
 }
 
 function buildAdminSessionGeneratedQuerySessions({
@@ -629,15 +783,84 @@ async function renderAdminSessionsPage() {
   expect(await screen.findByText("Admin sessions")).toBeTruthy();
 }
 
+async function expectAdminSessionsSummary(summary: string) {
+  expect(await screen.findAllByText(summary)).toHaveLength(2);
+}
+
+function expectAdminSessionsFirstDataRowContains(text: string) {
+  expect(screen.getAllByRole("row")[1]?.textContent).toContain(text);
+}
+
+async function expectAdminSessionsRevokeNotice(
+  message: string,
+  { includeRequestId = false }: { includeRequestId?: boolean } = {},
+) {
+  expect((await screen.findAllByText(message)).length).toBeGreaterThan(0);
+
+  if (includeRequestId) {
+    await expectAdminSessionRequestIdNotice();
+  }
+
+  expect(
+    (await screen.findAllByText("Manual revoke", { selector: "div" })).length,
+  ).toBeGreaterThan(0);
+}
+
+async function expectAdminSessionsErrorNotice(
+  message: string,
+  { dialogTitle }: { dialogTitle?: string } = {},
+) {
+  expect(await screen.findByText(message)).toBeTruthy();
+
+  if (dialogTitle) {
+    expectAdminSessionsDialogClosed(dialogTitle);
+  }
+}
+
+async function expectAdminSessionRequestIdNotice() {
+  expect(await screen.findByText("Request id")).toBeTruthy();
+  expect(await screen.findByText(/^mock-request-/)).toBeTruthy();
+}
+
+async function expectAdminSessionSourceGroupNotice(
+  message: string,
+  { includeRequestId = false }: { includeRequestId?: boolean } = {},
+) {
+  expect(await screen.findByText(message)).toBeTruthy();
+
+  if (includeRequestId) {
+    await expectAdminSessionRequestIdNotice();
+  }
+}
+
 async function setAdminSessionsSearch(query: string) {
   fireEvent.change(screen.getByLabelText("Search"), {
     target: { value: query },
   });
 }
 
-async function renderAdminSessionSourceGroupsPage() {
+async function renderAdminSessionSourceGroupsPage({
+  search,
+  requests,
+  riskFilter,
+}: {
+  search?: string;
+  requests?: CloudAdminRequestLog[];
+  riskFilter?: string;
+} = {}) {
   await renderAdminSessionsPage();
   expect(await screen.findByText("Source groups")).toBeTruthy();
+
+  if (search !== undefined) {
+    await setAdminSessionsSearch(search);
+  }
+
+  if (riskFilter !== undefined) {
+    if (!requests) {
+      throw new Error("Missing admin session requests for source-group risk filter.");
+    }
+    await setAdminSessionSourceGroupRiskFilter(requests, riskFilter);
+  }
 }
 
 async function expectAdminSessionSourceGroupsQuery(
@@ -678,6 +901,38 @@ async function focusAdminSessionSourceGroup(title = ADMIN_SESSION_FOCUSED_SOURCE
   return sourceGroupCard;
 }
 
+async function renderFocusedAdminSessionSourceGroup({
+  title = ADMIN_SESSION_FOCUSED_SOURCE_TITLE,
+  showMatches = false,
+}: {
+  title?: string;
+  showMatches?: boolean;
+} = {}) {
+  await renderAdminSessionSourceGroupsPage();
+  const sourceGroupCard = await focusAdminSessionSourceGroup(title);
+  if (showMatches) {
+    await showAdminSessionCurrentSnapshotMatches();
+  }
+  return sourceGroupCard;
+}
+
+async function renderAdminSessionRiskQuickViewPage(
+  requests: CloudAdminRequestLog[],
+  {
+    buttonName = "Watch risk",
+    riskLevel = "watch",
+  }: {
+    buttonName?: string;
+    riskLevel?: string;
+  } = {},
+) {
+  await renderAdminSessionSourceGroupsPage();
+  await switchAdminSessionRiskQuickView(requests, {
+    buttonName,
+    riskLevel,
+  });
+}
+
 async function showAdminSessionCurrentSnapshotMatches() {
   fireEvent.click(
     await screen.findByRole("button", {
@@ -697,7 +952,96 @@ async function exportAdminSessionFocusedSourceSnapshot(sessionCount: number) {
         `Downloaded focused source snapshot for ${sessionCount} session(s).`,
       )
     ).length,
-  ).toBeGreaterThan(0);
+      ).toBeGreaterThan(0);
+}
+
+async function expectAdminSessionFocusedSourceTimelineDetail({
+  includeLastRefreshed = false,
+  includeLatestSnapshot = false,
+  includeSyncedLabel = false,
+  includeWatchRisk = false,
+}: {
+  includeLastRefreshed?: boolean;
+  includeLatestSnapshot?: boolean;
+  includeSyncedLabel?: boolean;
+  includeWatchRisk?: boolean;
+} = {}) {
+  expect(await screen.findByText("Timeline focus")).toBeTruthy();
+  expect(await screen.findByText("Timeline audit detail")).toBeTruthy();
+  expect(await screen.findByText("Focused source risk")).toBeTruthy();
+
+  if (includeLastRefreshed) {
+    expect(await screen.findByText("Last refreshed")).toBeTruthy();
+  }
+  if (includeLatestSnapshot) {
+    expect(await screen.findByText("Latest timeline snapshot")).toBeTruthy();
+  }
+  if (includeSyncedLabel) {
+    expect(await screen.findByText("Synced with Event view.")).toBeTruthy();
+  }
+  if (includeWatchRisk) {
+    expect(await screen.findByText("Watch risk")).toBeTruthy();
+  }
+}
+
+async function openAdminSessionTimelineSessionInList({
+  requests,
+  sourceKey,
+  sessionId,
+  status = "active",
+  currentOnly = true,
+}: {
+  requests: CloudAdminRequestLog[];
+  sourceKey: string;
+  sessionId: string;
+  status?: string;
+  currentOnly?: boolean;
+}) {
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: `View ${sessionId} in sessions list`,
+    }),
+  );
+
+  await waitFor(() => {
+    expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe(sessionId);
+    expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe(status);
+    expect((screen.getByLabelText("Scope") as HTMLSelectElement).value).toBe(
+      currentOnly ? "current" : "all",
+    );
+    expect(
+      hasAdminSessionsRequest(requests, {
+        sourceKey,
+        status,
+        currentOnly: currentOnly ? "true" : "false",
+        query: sessionId,
+        page: "1",
+        pageSize: "10",
+      }),
+    ).toBe(true);
+  });
+}
+
+async function expectAdminSessionFocusedSourceSnapshotReceipt({
+  receiptCount,
+  sessionId,
+  labels = ["Focused source snapshot"],
+  repeatedEntries = 1,
+}: {
+  receiptCount: number;
+  sessionId: string;
+  labels?: string[];
+  repeatedEntries?: number;
+}) {
+  const receiptsRegion = await expectAdminSessionFocusedSourceReceiptsSummary({
+    receiptCount,
+    labels,
+  });
+  expectAdminSessionFocusedSourceReceiptContext(receiptsRegion, {
+    sessionId,
+    repeatedEntries,
+  });
+  return receiptsRegion;
 }
 
 async function expectAdminSessionFocusedSourceReceiptsSummary({
@@ -760,10 +1104,16 @@ function clearAdminSessionReceipts() {
   fireEvent.click(screen.getByRole("button", { name: "Clear receipts" }));
 }
 
-async function expectAdminSessionDownloadNotice(message: string) {
+async function clearAdminSessionReceiptsAndExpectClosed() {
+  clearAdminSessionReceipts();
+  await waitFor(() => {
+    expect(screen.queryByText("Recent operation receipts")).toBeNull();
+  });
+}
+
+async function expectAdminSessionDownloadNotice(message: ScreenTextMatcher) {
   expect(await screen.findByText(message)).toBeTruthy();
-  expect(await screen.findByText("Request id")).toBeTruthy();
-  expect(await screen.findByText(/^mock-request-/)).toBeTruthy();
+  await expectAdminSessionRequestIdNotice();
 }
 
 async function exportAdminSessionDownloadArtifact({
@@ -771,10 +1121,71 @@ async function exportAdminSessionDownloadArtifact({
   message,
 }: {
   buttonName: string;
-  message: string;
+  message: ScreenTextMatcher;
 }) {
   fireEvent.click(screen.getByRole("button", { name: buttonName }));
   await expectAdminSessionDownloadNotice(message);
+}
+
+async function exportAdminSessionSourceGroupArtifact({
+  buttonName,
+  message,
+  requests,
+  sourceKey,
+  includeRequestId = true,
+}: {
+  buttonName: string;
+  message: ScreenTextMatcher;
+  requests: CloudAdminRequestLog[];
+  sourceKey: string;
+  includeRequestId?: boolean;
+}) {
+  fireEvent.click(screen.getByRole("button", { name: buttonName }));
+  expect(await screen.findByText(message)).toBeTruthy();
+  if (includeRequestId) {
+    await expectAdminSessionRequestIdNotice();
+  }
+  expectAdminSessionSourceGroupSnapshotRequest(requests, sourceKey);
+}
+
+async function exportAdminSessionSourceGroupScenario({
+  adminSessions,
+  sourceKey,
+  buttonName,
+  message,
+  includeRequestId = true,
+  search,
+  title,
+  beforeExport,
+}: {
+  adminSessions: typeof mockAdminSessions;
+  sourceKey: string;
+  buttonName: string;
+  message: ScreenTextMatcher;
+  includeRequestId?: boolean;
+  search?: string;
+  title?: string;
+  beforeExport?: () => Promise<void> | void;
+}) {
+  const { requests } = installCloudAdminApiMock({
+    adminSessions,
+  });
+
+  if (title) {
+    await renderFocusedAdminSessionSourceGroup({ title });
+  } else {
+    await renderAdminSessionSourceGroupsPage({ search });
+  }
+
+  await beforeExport?.();
+
+  await exportAdminSessionSourceGroupArtifact({
+    buttonName,
+    message,
+    requests,
+    sourceKey,
+    includeRequestId,
+  });
 }
 
 async function switchAdminSessionRiskQuickView(
@@ -934,6 +1345,32 @@ async function exportAdminSessionRiskQuickViewArtifact(
   expectAdminSessionRiskSnapshotRequest(requests, riskLevel);
 }
 
+async function exportAdminSessionRiskQuickViewScenario({
+  adminSessions,
+  buttonName,
+  message,
+  quickViewButtonName = "Watch risk",
+  riskLevel = "watch",
+}: {
+  adminSessions: typeof mockAdminSessions;
+  buttonName: string;
+  message: string;
+  quickViewButtonName?: string;
+  riskLevel?: string;
+}) {
+  const { requests } = installCloudAdminApiMock({
+    adminSessions,
+  });
+
+  await renderAdminSessionsPage();
+  await exportAdminSessionRiskQuickViewArtifact(requests, {
+    buttonName,
+    message,
+    quickViewButtonName,
+    riskLevel,
+  });
+}
+
 async function expectAdminSessionTimelineSummaryViews() {
   fireEvent.click(screen.getByRole("button", { name: "Daily summary" }));
   expect(
@@ -952,15 +1389,6 @@ async function expectAdminSessionTimelineSummaryViews() {
     (await screen.findAllByText(/Weekly summary of \d+ timeline point\(s\)/))
       .length,
   ).toBeGreaterThan(0);
-}
-
-async function exportAdminSessionTimelineCsv() {
-  fireEvent.click(screen.getByRole("button", { name: "Export timeline CSV" }));
-  expect(
-    await screen.findByText(
-      /Downloaded weekly risk timeline CSV for \d+ point\(s\)\./,
-    ),
-  ).toBeTruthy();
 }
 
 async function selectAdminSessionsForBulkAction(sessionIds: string[]) {
@@ -995,6 +1423,40 @@ function confirmAdminSessionsBulkRevoke() {
   fireEvent.click(screen.getAllByRole("button", { name: "Revoke selected" })[1]);
 }
 
+async function openAdminSessionRevokeDialog({
+  buttonIndex = 1,
+  trigger,
+}: {
+  buttonIndex?: number;
+  trigger?: HTMLElement;
+} = {}) {
+  if (trigger) {
+    fireEvent.click(trigger);
+  } else {
+    fireEvent.click(screen.getAllByRole("button", { name: "Revoke" })[buttonIndex]);
+  }
+  expect(await screen.findByText("Revoke admin session?")).toBeTruthy();
+}
+
+function confirmAdminSessionRevoke() {
+  fireEvent.click(screen.getByRole("button", { name: "Revoke session" }));
+}
+
+async function openAdminSessionsFilteredRevokeDialog() {
+  fireEvent.click(screen.getByRole("button", { name: "Revoke all matching" }));
+  expect(
+    await screen.findByText("Revoke all matching admin sessions?"),
+  ).toBeTruthy();
+}
+
+function confirmAdminSessionsFilteredRevoke() {
+  fireEvent.click(screen.getByRole("button", { name: "Revoke matching sessions" }));
+}
+
+function expectAdminSessionsDialogClosed(title: string) {
+  expect(screen.queryByText(title)).toBeNull();
+}
+
 async function openAdminSessionSourceGroupRevokeDialog(trigger: HTMLElement) {
   fireEvent.click(trigger);
   expect(await screen.findByText("Revoke source group?")).toBeTruthy();
@@ -1017,6 +1479,171 @@ async function openAdminSessionRiskGroupRevokeDialog() {
 
 function confirmAdminSessionRiskGroupRevoke() {
   fireEvent.click(screen.getByRole("button", { name: "Revoke risk groups" }));
+}
+
+async function revokeAdminSessionAndAssert({
+  requests,
+  sessionId,
+  buttonIndex,
+  trigger,
+  successMessage,
+  errorMessage,
+  includeRequestId = false,
+  beforeConfirm,
+  afterSuccess,
+}: {
+  requests: CloudAdminRequestLog[];
+  sessionId: string;
+  buttonIndex?: number;
+  trigger?: HTMLElement;
+  successMessage?: string;
+  errorMessage?: string;
+  includeRequestId?: boolean;
+  beforeConfirm?: () => Promise<void> | void;
+  afterSuccess?: () => Promise<void> | void;
+}) {
+  await openAdminSessionRevokeDialog({ buttonIndex, trigger });
+  await beforeConfirm?.();
+  confirmAdminSessionRevoke();
+
+  if (errorMessage) {
+    await expectAdminSessionsErrorNotice(errorMessage, {
+      dialogTitle: "Revoke admin session?",
+    });
+  } else if (successMessage) {
+    await expectAdminSessionsRevokeNotice(successMessage, {
+      includeRequestId,
+    });
+    await afterSuccess?.();
+  }
+
+  expectAdminSessionRevokeRequest(requests, sessionId);
+}
+
+async function revokeAdminSessionsBulkAndAssert({
+  requests,
+  sessionIds,
+  successMessage,
+  errorMessage,
+  includeRequestId = false,
+  selectedCount = sessionIds.length,
+  expectedCount,
+  requiredIds = sessionIds,
+  excludedIds = [],
+}: {
+  requests: CloudAdminRequestLog[];
+  sessionIds: string[];
+  successMessage?: string;
+  errorMessage?: string;
+  includeRequestId?: boolean;
+  selectedCount?: number;
+  expectedCount?: number;
+  requiredIds?: string[];
+  excludedIds?: string[];
+}) {
+  await openAdminSessionsBulkRevokeDialog({
+    sessionIds,
+    selectedCount,
+  });
+  confirmAdminSessionsBulkRevoke();
+
+  if (errorMessage) {
+    await expectAdminSessionsErrorNotice(errorMessage, {
+      dialogTitle: "Revoke selected admin sessions?",
+    });
+  } else if (successMessage) {
+    await expectAdminSessionsRevokeNotice(successMessage, {
+      includeRequestId,
+    });
+  }
+
+  expectAdminSessionsBulkRevokeRequest(requests, {
+    expectedCount,
+    requiredIds,
+    excludedIds,
+  });
+}
+
+async function revokeAdminSessionsFilteredAndAssert({
+  requests,
+  query,
+  successMessage,
+  errorMessage,
+  includeRequestId = false,
+  body = {},
+}: {
+  requests: CloudAdminRequestLog[];
+  query: string;
+  successMessage?: string;
+  errorMessage?: string;
+  includeRequestId?: boolean;
+  body?: Record<string, unknown>;
+}) {
+  await openAdminSessionsFilteredRevokeDialog();
+  confirmAdminSessionsFilteredRevoke();
+
+  if (errorMessage) {
+    await expectAdminSessionsErrorNotice(errorMessage, {
+      dialogTitle: "Revoke all matching admin sessions?",
+    });
+  } else if (successMessage) {
+    await expectAdminSessionsRevokeNotice(successMessage, {
+      includeRequestId,
+    });
+  }
+
+  expectAdminSessionsFilteredRevokeRequest(requests, {
+    query,
+    body,
+  });
+}
+
+async function revokeAdminSessionSourceGroupAndAssert({
+  requests,
+  trigger,
+  message,
+  requestBody,
+  absentKeys = [],
+  includeRequestId = false,
+  confirmButtonIndex = -1,
+}: {
+  requests: CloudAdminRequestLog[];
+  trigger: HTMLElement;
+  message: string;
+  requestBody: Record<string, unknown>;
+  absentKeys?: string[];
+  includeRequestId?: boolean;
+  confirmButtonIndex?: number;
+}) {
+  await openAdminSessionSourceGroupRevokeDialog(trigger);
+  confirmAdminSessionSourceGroupRevoke(confirmButtonIndex);
+  await expectAdminSessionSourceGroupNotice(message, {
+    includeRequestId,
+  });
+  expectAdminSessionSourceGroupRevokeRequest(requests, {
+    body: requestBody,
+    absentKeys,
+  });
+}
+
+async function revokeAdminSessionRiskGroupAndAssert(
+  requests: CloudAdminRequestLog[],
+  {
+    message,
+    riskLevel = "watch",
+    includeRequestId = true,
+  }: {
+    message: string;
+    riskLevel?: string;
+    includeRequestId?: boolean;
+  },
+) {
+  await openAdminSessionRiskGroupRevokeDialog();
+  confirmAdminSessionRiskGroupRevoke();
+  await expectAdminSessionSourceGroupNotice(message, {
+    includeRequestId,
+  });
+  expectAdminSessionSourceGroupRiskRevokeRequest(requests, riskLevel);
 }
 
 describe("cloud-console interactions", () => {
@@ -1375,56 +2002,23 @@ describe("cloud-console interactions", () => {
       ),
     ).toBeTruthy();
 
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "Revoke" })[1],
-    );
-
-    expect(await screen.findByText("Revoke admin session?")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Revoke session" }));
-
-    expect(await screen.findByText("Admin session revoked.")).toBeTruthy();
-    expect(
-      (
-        await screen.findAllByText("Manual revoke", { selector: "div" })
-      ).length,
-    ).toBeGreaterThan(0);
-    expect(
-      requests.some(
-        (entry) =>
-          entry.url ===
-          "POST /admin/cloud/admin-sessions/22222222-2222-4222-8222-222222222222/revoke",
-      ),
-    ).toBe(true);
+    await revokeAdminSessionAndAssert({
+      requests,
+      sessionId: "22222222-2222-4222-8222-222222222222",
+      successMessage: "Admin session revoked.",
+    });
   });
 
   it("bulk revokes selected admin sessions on the current page", async () => {
     const { requests } = installCloudAdminApiMock();
     await renderAdminSessionsPage();
 
-    await openAdminSessionsBulkRevokeDialog({
+    await revokeAdminSessionsBulkAndAssert({
+      requests,
       sessionIds: [ADMIN_SESSION_CURRENT_ID, ADMIN_SESSION_SECONDARY_ID],
-    });
-    confirmAdminSessionsBulkRevoke();
-
-    expect(
-      await screen.findByText(
+      successMessage:
         "Revoked 2 selected session(s). The current console session was included, so the next admin request will re-issue a short-lived token.",
-      ),
-    ).toBeTruthy();
-    expect(
-      (
-        await screen.findAllByText("Manual revoke", { selector: "div" })
-      ).length,
-    ).toBeGreaterThan(0);
-    expect(
-      requests.some(
-        (entry) =>
-          entry.url === "POST /admin/cloud/admin-sessions/revoke" &&
-          Array.isArray(entry.body?.sessionIds) &&
-          entry.body?.sessionIds.includes(ADMIN_SESSION_CURRENT_ID) &&
-          entry.body?.sessionIds.includes(ADMIN_SESSION_SECONDARY_ID),
-      ),
-    ).toBe(true);
+    });
   });
 
   it("bulk revokes active admin sessions matching the current filters", async () => {
@@ -1435,35 +2029,12 @@ describe("cloud-console interactions", () => {
 
     expect(await screen.findAllByText("Showing 1-1 of 1")).toHaveLength(2);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Revoke all matching" }),
-    );
-
-    expect(
-      await screen.findByText("Revoke all matching admin sessions?"),
-    ).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Revoke matching sessions" }),
-    );
-
-    expect(
-      await screen.findByText("Revoked 1 matching active session(s)."),
-    ).toBeTruthy();
-    expect(await screen.findByText("Request id")).toBeTruthy();
-    expect(await screen.findByText(/^mock-request-/)).toBeTruthy();
-    expect(
-      (
-        await screen.findAllByText("Manual revoke", { selector: "div" })
-      ).length,
-    ).toBeGreaterThan(0);
-    expect(
-      requests.some(
-        (entry) =>
-          entry.url === "POST /admin/cloud/admin-sessions/revoke-filtered" &&
-          entry.body?.query === "Mobile Safari" &&
-          !("status" in (entry.body ?? {})),
-      ),
-    ).toBe(true);
+    await revokeAdminSessionsFilteredAndAssert({
+      requests,
+      query: "Mobile Safari",
+      successMessage: "Revoked 1 matching active session(s).",
+      includeRequestId: true,
+    });
   });
 
   it("revokes a matching admin session source group", async () => {
@@ -1499,30 +2070,22 @@ describe("cloud-console interactions", () => {
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderAdminSessionsPage();
-
-    expect(await screen.findByText("Source groups")).toBeTruthy();
-
-    await setAdminSessionsSearch("Shared Source Browser");
+    await renderAdminSessionSourceGroupsPage({
+      search: "Shared Source Browser",
+    });
 
     expect(await screen.findAllByText("2 active")).toHaveLength(1);
     expect(await screen.findAllByText("2 total")).toHaveLength(1);
 
-    await openAdminSessionSourceGroupRevokeDialog(
-      screen.getByRole("button", { name: "Revoke group" }),
-    );
-    confirmAdminSessionSourceGroupRevoke(1);
-
-    expect(
-      await screen.findByText(
-        "Revoked 2 matching active session(s) in the selected source group.",
-      ),
-    ).toBeTruthy();
-    expectAdminSessionSourceGroupRevokeRequest(requests, {
-      body: {
+    await revokeAdminSessionSourceGroupAndAssert({
+      requests,
+      trigger: screen.getByRole("button", { name: "Revoke group" }),
+      message: "Revoked 2 matching active session(s) in the selected source group.",
+      requestBody: {
         query: "Shared Source Browser",
         sourceKey: expectedSourceKey,
       },
+      confirmButtonIndex: 1,
     });
   });
 
@@ -1573,37 +2136,13 @@ describe("cloud-console interactions", () => {
 
   it("focuses sessions on a selected source group and can clear the focus", async () => {
     const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario({
-        issuedFromIp: "203.0.113.188",
-        issuedUserAgent: "Focused Source Browser",
-        sourceSessions: [
-          {
-            template: mockAdminSessions[0],
-            id: "77777777-7777-4777-8777-777777777777",
-            isCurrent: true,
-            status: "active",
-          },
-          {
-            id: "88888888-8888-4888-8888-888888888888",
-            isCurrent: false,
-            status: "active",
-          },
-        ],
-        otherSessions: [
-          {
-            id: "99999999-9999-4999-8999-999999999999",
-            issuedFromIp: "198.51.100.188",
-            issuedUserAgent: "Other Source Browser",
-            isCurrent: false,
-            status: "active",
-          },
-        ],
+      buildAdminSessionFocusedSourceScenario({
+        includeOtherSessions: true,
       });
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderAdminSessionSourceGroupsPage();
-    const focusedSourceCard = await focusAdminSessionSourceGroup();
+    const focusedSourceCard = await renderFocusedAdminSessionSourceGroup();
 
     expect(await screen.findByText("Risk timeline")).toBeTruthy();
     expect(await screen.findByText("Current snapshot")).toBeTruthy();
@@ -1658,138 +2197,57 @@ describe("cloud-console interactions", () => {
 
   it("can jump from a matched timeline session into the admin session list filters", async () => {
     const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario({
-        issuedFromIp: "203.0.113.188",
-        issuedUserAgent: "Focused Source Browser",
-        sourceSessions: [
-          {
-            template: mockAdminSessions[0],
-            id: "77777777-7777-4777-8777-777777777777",
-            isCurrent: true,
-            status: "active",
-          },
-          {
-            id: "88888888-8888-4888-8888-888888888888",
-            isCurrent: false,
-            status: "active",
-          },
-        ],
-        otherSessions: [
-          {
-            id: "99999999-9999-4999-8999-999999999999",
-            issuedFromIp: "198.51.100.188",
-            issuedUserAgent: "Other Source Browser",
-            isCurrent: false,
-            status: "active",
-          },
-        ],
+      buildAdminSessionFocusedSourceScenario({
+        includeOtherSessions: true,
       });
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderAdminSessionSourceGroupsPage();
-    await focusAdminSessionSourceGroup();
-    await showAdminSessionCurrentSnapshotMatches();
+    await renderFocusedAdminSessionSourceGroup({ showMatches: true });
 
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "View 77777777-7777-4777-8777-777777777777 in sessions list",
-      }),
-    );
-
-    await waitFor(() => {
-      expect(
-        (
-          screen.getByLabelText("Search") as HTMLInputElement
-        ).value,
-      ).toBe("77777777-7777-4777-8777-777777777777");
-      expect(
-        (
-          screen.getByLabelText("Status") as HTMLSelectElement
-        ).value,
-      ).toBe("active");
-      expect(
-        (
-          screen.getByLabelText("Scope") as HTMLSelectElement
-        ).value,
-      ).toBe("current");
-      expect(
-        hasAdminSessionsRequest(requests, {
-          sourceKey: expectedSourceKey,
-          status: "active",
-          currentOnly: "true",
-          query: "77777777-7777-4777-8777-777777777777",
-          page: "1",
-          pageSize: "10",
-        }),
-      ).toBe(true);
+    await openAdminSessionTimelineSessionInList({
+      requests,
+      sourceKey: expectedSourceKey,
+      sessionId: ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID,
     });
 
     expect(
       (await screen.findAllByText("Showing 1-1 of 1")).length,
     ).toBeGreaterThan(0);
-    expect(await screen.findByText("Timeline focus")).toBeTruthy();
-    expect(await screen.findByText("Timeline audit detail")).toBeTruthy();
-    expect(await screen.findByText("Last refreshed")).toBeTruthy();
-    expect(await screen.findByText("Focused source risk")).toBeTruthy();
-    expect(await screen.findByText("Latest timeline snapshot")).toBeTruthy();
-    expect(await screen.findByText("Synced with Event view.")).toBeTruthy();
-    expect(await screen.findByText("Watch risk")).toBeTruthy();
+    await expectAdminSessionFocusedSourceTimelineDetail({
+      includeLastRefreshed: true,
+      includeLatestSnapshot: true,
+      includeSyncedLabel: true,
+      includeWatchRisk: true,
+    });
 
     await exportAdminSessionFocusedSourceSnapshot(1);
-    const receiptsRegion = await expectAdminSessionFocusedSourceReceiptsSummary({
+    await expectAdminSessionFocusedSourceSnapshotReceipt({
       receiptCount: 1,
-    });
-    expectAdminSessionFocusedSourceReceiptContext(receiptsRegion, {
-      sessionId: "77777777-7777-4777-8777-777777777777",
+      sessionId: ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID,
     });
   });
 
   it("can revoke the focused source group from the highlighted session detail row", async () => {
     const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario({
-        issuedFromIp: "203.0.113.188",
-        issuedUserAgent: "Focused Source Browser",
-        sourceSessions: [
-          {
-            template: mockAdminSessions[0],
-            id: "77777777-7777-4777-8777-777777777777",
-            isCurrent: true,
-            status: "active",
-          },
-          {
-            id: "88888888-8888-4888-8888-888888888888",
-            isCurrent: false,
-            status: "active",
-          },
-        ],
-      });
+      buildAdminSessionFocusedSourceScenario();
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderAdminSessionSourceGroupsPage();
-    await focusAdminSessionSourceGroup();
-    await showAdminSessionCurrentSnapshotMatches();
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "View 77777777-7777-4777-8777-777777777777 in sessions list",
-      }),
-    );
+    await renderFocusedAdminSessionSourceGroup({ showMatches: true });
+    await openAdminSessionTimelineSessionInList({
+      requests,
+      sourceKey: expectedSourceKey,
+      sessionId: ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID,
+    });
+    await expectAdminSessionFocusedSourceTimelineDetail();
 
-    expect(await screen.findByText("Focused source risk")).toBeTruthy();
-
-    await openAdminSessionSourceGroupRevokeDialog(
-      screen.getByRole("button", { name: "Revoke focused source" }),
-    );
-    confirmAdminSessionSourceGroupRevoke();
-
-    expect(
-      await screen.findByText(
+    await revokeAdminSessionSourceGroupAndAssert({
+      requests,
+      trigger: screen.getByRole("button", { name: "Revoke focused source" }),
+      message:
         "Revoked 2 matching active session(s) in the selected source group. The current console session was included, so the next admin request will re-issue a short-lived token.",
-      ),
-    ).toBeTruthy();
-    expectAdminSessionSourceGroupRevokeRequest(requests, {
-      body: {
+      requestBody: {
         sourceKey: expectedSourceKey,
         status: "active",
       },
@@ -1798,69 +2256,35 @@ describe("cloud-console interactions", () => {
   });
 
   it("can open revoke confirmation directly from a matched timeline session", async () => {
-    const { adminSessions: groupedSessions } = buildAdminSessionSourceScenario({
-      issuedFromIp: "203.0.113.188",
-      issuedUserAgent: "Focused Source Browser",
-      sourceSessions: [
-        {
-          template: mockAdminSessions[0],
-          id: "77777777-7777-4777-8777-777777777777",
-          isCurrent: true,
-          status: "active",
-        },
-        {
-          id: "88888888-8888-4888-8888-888888888888",
-          isCurrent: false,
-          status: "active",
-        },
-      ],
-    });
+    const { adminSessions: groupedSessions } =
+      buildAdminSessionFocusedSourceScenario();
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderAdminSessionSourceGroupsPage();
-    await focusAdminSessionSourceGroup();
-    await showAdminSessionCurrentSnapshotMatches();
+    await renderFocusedAdminSessionSourceGroup({ showMatches: true });
 
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "Revoke 88888888-8888-4888-8888-888888888888 from timeline",
+    await revokeAdminSessionAndAssert({
+      requests,
+      sessionId: ADMIN_SESSION_FOCUSED_SOURCE_SECONDARY_ID,
+      trigger: await screen.findByRole("button", {
+        name: `Revoke ${ADMIN_SESSION_FOCUSED_SOURCE_SECONDARY_ID} from timeline`,
       }),
-    );
+      successMessage: "Admin session revoked.",
+      beforeConfirm: async () => {
+        await expectAdminSessionFocusedSourceTimelineDetail();
+        await exportAdminSessionFocusedSourceSnapshot(2);
+      },
+      afterSuccess: async () => {
+        await expectAdminSessionFocusedSourceSnapshotReceipt({
+          receiptCount: 2,
+          sessionId: ADMIN_SESSION_FOCUSED_SOURCE_SECONDARY_ID,
+          labels: ["Focused source snapshot", "Session revoke"],
+          repeatedEntries: 2,
+        });
 
-    expect(await screen.findByText("Revoke admin session?")).toBeTruthy();
-    expect(await screen.findByText("Timeline focus")).toBeTruthy();
-    expect(await screen.findByText("Timeline audit detail")).toBeTruthy();
-    expect(await screen.findByText("Focused source risk")).toBeTruthy();
-
-    await exportAdminSessionFocusedSourceSnapshot(2);
-
-    fireEvent.click(screen.getByRole("button", { name: "Revoke session" }));
-
-    expect((await screen.findAllByText("Admin session revoked.")).length).toBeGreaterThan(
-      0,
-    );
-    const receiptsRegion = await expectAdminSessionFocusedSourceReceiptsSummary({
-      receiptCount: 2,
-      labels: ["Focused source snapshot", "Session revoke"],
+        await clearAdminSessionReceiptsAndExpectClosed();
+      },
     });
-    expectAdminSessionFocusedSourceReceiptContext(receiptsRegion, {
-      sessionId: "88888888-8888-4888-8888-888888888888",
-      repeatedEntries: 2,
-    });
-
-    clearAdminSessionReceipts();
-
-    await waitFor(() => {
-      expect(screen.queryByText("Recent operation receipts")).toBeNull();
-    });
-    expect(
-      requests.some(
-        (entry) =>
-          entry.url ===
-          "POST /admin/cloud/admin-sessions/88888888-8888-4888-8888-888888888888/revoke",
-      ),
-    ).toBe(true);
   });
 
   it("exports the focused source-group risk timeline as CSV", async () => {
@@ -1882,18 +2306,20 @@ describe("cloud-console interactions", () => {
           },
         ],
       });
-    const { requests } = installCloudAdminApiMock({
+
+    await exportAdminSessionSourceGroupScenario({
       adminSessions: groupedSessions,
+      sourceKey: expectedSourceKey,
+      buttonName: "Export timeline CSV",
+      message: /Downloaded weekly risk timeline CSV for \d+ point\(s\)\./,
+      includeRequestId: false,
+      title: "Timeline Source Browser",
+      beforeExport: async () => {
+        expect(await screen.findByText("Risk timeline")).toBeTruthy();
+        expect(await screen.findByText("Current snapshot")).toBeTruthy();
+        await expectAdminSessionTimelineSummaryViews();
+      },
     });
-    await renderAdminSessionSourceGroupsPage();
-    await focusAdminSessionSourceGroup("Timeline Source Browser");
-
-    expect(await screen.findByText("Risk timeline")).toBeTruthy();
-    expect(await screen.findByText("Current snapshot")).toBeTruthy();
-
-    await expectAdminSessionTimelineSummaryViews();
-    await exportAdminSessionTimelineCsv();
-    expectAdminSessionSourceGroupSnapshotRequest(requests, expectedSourceKey);
   });
 
   it("exports an admin session source-group snapshot", async () => {
@@ -1916,159 +2342,115 @@ describe("cloud-console interactions", () => {
           },
         ],
       });
-    const { requests } = installCloudAdminApiMock({
-      adminSessions: groupedSessions,
-    });
-    await renderAdminSessionSourceGroupsPage();
-    expect((await screen.findAllByText("Critical risk")).length).toBeGreaterThan(0);
-    expect(await screen.findByText("Refresh reuse detected")).toBeTruthy();
 
-    await exportAdminSessionDownloadArtifact({
+    await exportAdminSessionSourceGroupScenario({
+      adminSessions: groupedSessions,
+      sourceKey: expectedSourceKey,
       buttonName: "Export snapshot",
       message: "Downloaded admin session audit snapshot for 2 session(s).",
+      beforeExport: async () => {
+        expect((await screen.findAllByText("Critical risk")).length).toBeGreaterThan(0);
+        expect(await screen.findByText("Refresh reuse detected")).toBeTruthy();
+      },
     });
-    expectAdminSessionSourceGroupSnapshotRequest(requests, expectedSourceKey);
   });
 
   it("filters source groups by risk level and revokes the matching groups", async () => {
-    const { adminSessions: groupedSessions } = buildAdminSessionSourceScenario({
-      issuedFromIp: "203.0.113.210",
-      issuedUserAgent: "Risk Watch Browser",
-      sourceSessions: [
-        {
-          template: mockAdminSessions[0],
-          id: "56565656-5656-4565-8565-565656565656",
-          isCurrent: false,
-          status: "active",
-        },
-        {
-          id: "67676767-6767-4676-8676-676767676767",
-          isCurrent: false,
-          status: "active",
-        },
-      ],
-      otherSessions: [
-        {
-          template: mockAdminSessions[2],
-          id: "78787878-7878-4787-8787-787878787878",
-          issuedFromIp: "198.51.100.210",
-          issuedUserAgent: "Risk Normal Browser",
-          isCurrent: true,
-          status: "active",
-        },
-      ],
-    });
+    const { adminSessions: groupedSessions } =
+      buildAdminSessionActiveSourcePairScenario({
+        issuedFromIp: "203.0.113.210",
+        issuedUserAgent: "Risk Watch Browser",
+        sourceSessionIds: [
+          "56565656-5656-4565-8565-565656565656",
+          "67676767-6767-4676-8676-676767676767",
+        ],
+        otherSessions: [
+          {
+            template: mockAdminSessions[2],
+            id: "78787878-7878-4787-8787-787878787878",
+            issuedFromIp: "198.51.100.210",
+            issuedUserAgent: "Risk Normal Browser",
+            isCurrent: true,
+            status: "active",
+          },
+        ],
+      });
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderAdminSessionSourceGroupsPage();
-    await setAdminSessionSourceGroupRiskFilter(requests, "watch");
+    await renderAdminSessionSourceGroupsPage({
+      requests,
+      riskFilter: "watch",
+    });
 
-    await openAdminSessionRiskGroupRevokeDialog();
-    confirmAdminSessionRiskGroupRevoke();
-
-    expect(
-      await screen.findByText(
-        "Revoked 2 active session(s) across 1 risk group(s).",
-      ),
-    ).toBeTruthy();
-    expect(await screen.findByText("Request id")).toBeTruthy();
-    expect(await screen.findByText(/^mock-request-/)).toBeTruthy();
-    expectAdminSessionSourceGroupRiskRevokeRequest(requests, "watch");
+    await revokeAdminSessionRiskGroupAndAssert(requests, {
+      message: "Revoked 2 active session(s) across 1 risk group(s).",
+      includeRequestId: true,
+    });
   });
 
   it("switches to a risk quick view and exports the matching risk snapshot", async () => {
-    const { adminSessions: groupedSessions } = buildAdminSessionSourceScenario({
-      issuedFromIp: "203.0.113.211",
-      issuedUserAgent: "Quick View Watch Browser",
-      sourceSessions: [
-        {
-          template: mockAdminSessions[0],
-          id: "89898989-8989-4898-8898-898989898989",
-          isCurrent: false,
-          status: "active",
-        },
-        {
-          id: "90909090-9090-4909-8909-909090909090",
-          isCurrent: false,
-          status: "active",
-        },
-      ],
-      otherSessions: [
-        {
-          template: mockAdminSessions[2],
-          id: "91919191-9191-4919-8919-919191919191",
-          issuedFromIp: "198.51.100.211",
-          issuedUserAgent: "Quick View Normal Browser",
-          isCurrent: true,
-          status: "active",
-          revocationReason: null,
-          revokedAt: null,
-          revokedBySessionId: null,
-        },
-      ],
-    });
-    const { requests } = installCloudAdminApiMock({
+    const { adminSessions: groupedSessions } =
+      buildAdminSessionActiveSourcePairScenario({
+        issuedFromIp: "203.0.113.211",
+        issuedUserAgent: "Quick View Watch Browser",
+        sourceSessionIds: [
+          "89898989-8989-4898-8898-898989898989",
+          "90909090-9090-4909-8909-909090909090",
+        ],
+        otherSessions: [
+          {
+            template: mockAdminSessions[2],
+            id: "91919191-9191-4919-8919-919191919191",
+            issuedFromIp: "198.51.100.211",
+            issuedUserAgent: "Quick View Normal Browser",
+            isCurrent: true,
+            status: "active",
+            revocationReason: null,
+            revokedAt: null,
+            revokedBySessionId: null,
+          },
+        ],
+      });
+
+    await exportAdminSessionRiskQuickViewScenario({
       adminSessions: groupedSessions,
-    });
-    await renderAdminSessionSourceGroupsPage();
-    await exportAdminSessionRiskQuickViewArtifact(requests, {
       buttonName: "Export risk snapshot",
       message: "Downloaded risk snapshot for 1 group(s) and 2 session(s).",
     });
   });
 
   it("exports the matching risk snapshot as groups CSV", async () => {
-    const { adminSessions: groupedSessions } = buildAdminSessionSourceScenario({
-      issuedFromIp: "203.0.113.212",
-      issuedUserAgent: "Quick View Csv Browser",
-      sourceSessions: [
-        {
-          template: mockAdminSessions[0],
-          id: "92929292-9292-4929-8929-929292929292",
-          isCurrent: false,
-          status: "active",
-        },
-        {
-          id: "93939393-9393-4939-8939-939393939393",
-          isCurrent: false,
-          status: "active",
-        },
-      ],
-    });
-    const { requests } = installCloudAdminApiMock({
+    const { adminSessions: groupedSessions } =
+      buildAdminSessionActiveSourcePairScenario({
+        issuedFromIp: "203.0.113.212",
+        issuedUserAgent: "Quick View Csv Browser",
+        sourceSessionIds: [
+          "92929292-9292-4929-8929-929292929292",
+          "93939393-9393-4939-8939-939393939393",
+        ],
+      });
+
+    await exportAdminSessionRiskQuickViewScenario({
       adminSessions: groupedSessions,
-    });
-    await renderAdminSessionSourceGroupsPage();
-    await exportAdminSessionRiskQuickViewArtifact(requests, {
       buttonName: "Export risk groups CSV",
       message: "Downloaded risk groups CSV for 1 group(s).",
     });
   });
 
   it("exports the matching risk snapshot as sessions CSV", async () => {
-    const { adminSessions: groupedSessions } = buildAdminSessionSourceScenario({
-      issuedFromIp: "203.0.113.213",
-      issuedUserAgent: "Quick View Session Csv Browser",
-      sourceSessions: [
-        {
-          template: mockAdminSessions[0],
-          id: "94949494-9494-4949-8949-949494949494",
-          isCurrent: false,
-          status: "active",
-        },
-        {
-          id: "95959595-9595-4959-8959-959595959595",
-          isCurrent: false,
-          status: "active",
-        },
-      ],
-    });
-    const { requests } = installCloudAdminApiMock({
+    const { adminSessions: groupedSessions } =
+      buildAdminSessionActiveSourcePairScenario({
+        issuedFromIp: "203.0.113.213",
+        issuedUserAgent: "Quick View Session Csv Browser",
+        sourceSessionIds: [
+          "94949494-9494-4949-8949-949494949494",
+          "95959595-9595-4959-8959-959595959595",
+        ],
+      });
+
+    await exportAdminSessionRiskQuickViewScenario({
       adminSessions: groupedSessions,
-    });
-    await renderAdminSessionSourceGroupsPage();
-    await exportAdminSessionRiskQuickViewArtifact(requests, {
       buttonName: "Export risk sessions CSV",
       message: "Downloaded risk sessions CSV for 2 session(s).",
     });
@@ -2080,36 +2462,17 @@ describe("cloud-console interactions", () => {
     });
     await renderAdminSessionsPage();
 
-    await openAdminSessionsBulkRevokeDialog({
+    await revokeAdminSessionsBulkAndAssert({
+      requests,
       sessionIds: [ADMIN_SESSION_CURRENT_ID, ADMIN_SESSION_SECONDARY_ID],
-    });
-    confirmAdminSessionsBulkRevoke();
-
-    expect(
-      await screen.findByText(
+      successMessage:
         "Revoked 1 selected session(s). 1 session(s) were already unavailable. The current console session was included, so the next admin request will re-issue a short-lived token.",
-      ),
-    ).toBeTruthy();
-    expect(await screen.findByText("Request id")).toBeTruthy();
-    expect(await screen.findByText(/^mock-request-/)).toBeTruthy();
-    expect(
-      (
-        await screen.findAllByText("Manual revoke", { selector: "div" })
-      ).length,
-    ).toBeGreaterThan(0);
-    expect(
-      requests.some(
-        (entry) =>
-          entry.url === "POST /admin/cloud/admin-sessions/revoke" &&
-          Array.isArray(entry.body?.sessionIds) &&
-          entry.body?.sessionIds.includes(ADMIN_SESSION_CURRENT_ID) &&
-          entry.body?.sessionIds.includes(ADMIN_SESSION_SECONDARY_ID),
-      ),
-    ).toBe(true);
+      includeRequestId: true,
+    });
   });
 
   it("shows a stale-selection warning when bulk revoke skips every selected session", async () => {
-    installCloudAdminApiMock({
+    const { requests } = installCloudAdminApiMock({
       bulkRevokeUnavailableSessionIds: [
         ADMIN_SESSION_CURRENT_ID,
         ADMIN_SESSION_SECONDARY_ID,
@@ -2117,21 +2480,12 @@ describe("cloud-console interactions", () => {
     });
     await renderAdminSessionsPage();
 
-    await openAdminSessionsBulkRevokeDialog({
+    await revokeAdminSessionsBulkAndAssert({
+      requests,
       sessionIds: [ADMIN_SESSION_CURRENT_ID, ADMIN_SESSION_SECONDARY_ID],
-    });
-    confirmAdminSessionsBulkRevoke();
-
-    expect(
-      await screen.findByText(
+      successMessage:
         "No selected admin sessions were revoked. The list may already be stale.",
-      ),
-    ).toBeTruthy();
-    expect(
-      (
-        await screen.findAllByText("Manual revoke", { selector: "div" })
-      ).length,
-    ).toBeGreaterThan(0);
+    });
   });
 
   it("shows notice errors when revoking a single admin session fails", async () => {
@@ -2140,24 +2494,11 @@ describe("cloud-console interactions", () => {
     });
     await renderAdminSessionsPage();
 
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "Revoke" })[1],
-    );
-    expect(await screen.findByText("Revoke admin session?")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Revoke session" }));
-
-    expect(
-      await screen.findByText("Admin session revoke failed."),
-    ).toBeTruthy();
-    expect(screen.queryByText("Revoke admin session?")).toBeNull();
-    expect(
-      requests.some(
-        (entry) =>
-          entry.url ===
-          "POST /admin/cloud/admin-sessions/22222222-2222-4222-8222-222222222222/revoke",
-      ),
-    ).toBe(true);
+    await revokeAdminSessionAndAssert({
+      requests,
+      sessionId: "22222222-2222-4222-8222-222222222222",
+      errorMessage: "Admin session revoke failed.",
+    });
   });
 
   it("shows notice errors when bulk revoking selected admin sessions fails", async () => {
@@ -2166,19 +2507,12 @@ describe("cloud-console interactions", () => {
     });
     await renderAdminSessionsPage();
 
-    await openAdminSessionsBulkRevokeDialog({
+    await revokeAdminSessionsBulkAndAssert({
+      requests,
       sessionIds: [ADMIN_SESSION_CURRENT_ID, ADMIN_SESSION_SECONDARY_ID],
+      errorMessage: "Bulk admin revoke failed.",
     });
-    confirmAdminSessionsBulkRevoke();
-
-    expect(await screen.findByText("Bulk admin revoke failed.")).toBeTruthy();
-    expect(screen.queryByText("Revoke selected admin sessions?")).toBeNull();
     await expectAdminSessionsBulkSelectionSummary(2);
-    expect(
-      requests.some(
-        (entry) => entry.url === "POST /admin/cloud/admin-sessions/revoke",
-      ),
-    ).toBe(true);
   });
 
   it("shows notice errors when revoking filtered admin sessions fails", async () => {
@@ -2190,30 +2524,11 @@ describe("cloud-console interactions", () => {
     await setAdminSessionsSearch("Mobile Safari");
     expect(await screen.findAllByText("Showing 1-1 of 1")).toHaveLength(2);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Revoke all matching" }),
-    );
-    expect(
-      await screen.findByText("Revoke all matching admin sessions?"),
-    ).toBeTruthy();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Revoke matching sessions" }),
-    );
-
-    expect(
-      await screen.findByText("Filtered admin revoke failed."),
-    ).toBeTruthy();
-    expect(
-      screen.queryByText("Revoke all matching admin sessions?"),
-    ).toBeNull();
-    expect(
-      requests.some(
-        (entry) =>
-          entry.url === "POST /admin/cloud/admin-sessions/revoke-filtered" &&
-          entry.body?.query === "Mobile Safari",
-        ),
-    ).toBe(true);
+    await revokeAdminSessionsFilteredAndAssert({
+      requests,
+      query: "Mobile Safari",
+      errorMessage: "Filtered admin revoke failed.",
+    });
   });
 
   it("filters waiting sync tasks and replays the matching failed tasks", async () => {
@@ -2655,7 +2970,7 @@ describe("cloud-console interactions", () => {
     });
     renderRoute("/sessions");
 
-    expect(await screen.findAllByText("Showing 1-10 of 12")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 1-10 of 12");
 
     fireEvent.click(
       screen.getByLabelText("Select all active admin sessions"),
@@ -2680,32 +2995,14 @@ describe("cloud-console interactions", () => {
         "Revoked 9 selected session(s). The current console session was included, so the next admin request will re-issue a short-lived token.",
       ),
     ).toBeTruthy();
-    expect(
-      requests.some((entry) => {
-        if (entry.url !== "POST /admin/cloud/admin-sessions/revoke") {
-          return false;
-        }
-        if (!Array.isArray(entry.body?.sessionIds)) {
-          return false;
-        }
-
-        const sessionIds = entry.body.sessionIds.filter(
-          (value): value is string => typeof value === "string",
-        );
-        return (
-          sessionIds.length === 9 &&
-          sessionIds.includes(
-            "00000002-4444-4444-8444-444444444444",
-          ) &&
-          sessionIds.includes(
-            "00000010-4444-4444-8444-444444444444",
-          ) &&
-          !sessionIds.includes(
-            "00000001-4444-4444-8444-444444444444",
-          )
-        );
-      }),
-    ).toBe(true);
+    expectAdminSessionsBulkRevokeRequest(requests, {
+      expectedCount: 9,
+      requiredIds: [
+        "00000002-4444-4444-8444-444444444444",
+        "00000010-4444-4444-8444-444444444444",
+      ],
+      excludedIds: ["00000001-4444-4444-8444-444444444444"],
+    });
   });
 
   it("filters and paginates admin sessions", async () => {
@@ -2723,14 +3020,14 @@ describe("cloud-console interactions", () => {
     });
     renderRoute("/sessions");
 
-    expect(await screen.findAllByText("Showing 1-10 of 12")).toHaveLength(2);
-    expect(screen.getAllByRole("row")[1]?.textContent).toContain(
+    await expectAdminSessionsSummary("Showing 1-10 of 12");
+    expectAdminSessionsFirstDataRowContains(
       "00000001-2222-4222-8222-222222222222",
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
 
-    expect(await screen.findAllByText("Showing 11-12 of 12")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 11-12 of 12");
     expect(
       await screen.findByText("00000012-2222-4222-8222-222222222222"),
     ).toBeTruthy();
@@ -2739,7 +3036,7 @@ describe("cloud-console interactions", () => {
       screen.getByRole("button", { name: "Recently revoked" }),
     );
 
-    expect(await screen.findAllByText("Showing 1-1 of 1")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 1-1 of 1");
     expect(
       await screen.findByText("00000012-2222-4222-8222-222222222222"),
     ).toBeTruthy();
@@ -2748,9 +3045,9 @@ describe("cloud-console interactions", () => {
       screen.getByRole("button", { name: "Expiring soon" }),
     );
 
-    expect(await screen.findAllByText("Showing 1-10 of 11")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 1-10 of 11");
     await waitFor(() => {
-      expect(screen.getAllByRole("row")[1]?.textContent).toContain(
+      expectAdminSessionsFirstDataRowContains(
         "00000011-2222-4222-8222-222222222222",
       );
     });
@@ -2763,28 +3060,26 @@ describe("cloud-console interactions", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getAllByRole("row")[1]?.textContent).toContain(
+      expectAdminSessionsFirstDataRowContains(
         "00000011-2222-4222-8222-222222222222",
       );
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
 
-    expect(await screen.findAllByText("Showing 1-10 of 12")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 1-10 of 12");
     await waitFor(() => {
-      expect(screen.getAllByRole("row")[1]?.textContent).toContain(
+      expectAdminSessionsFirstDataRowContains(
         "00000001-2222-4222-8222-222222222222",
       );
     });
 
-    expect(
-      hasAdminSessionsRequest(requests, {
+    await expectAdminSessionsQuery(requests, {
         sortBy: "updatedAt",
         sortDirection: "desc",
         page: "1",
         pageSize: "10",
-      }),
-    ).toBe(true);
+      });
   });
 
   it("issues admin session quick-view and sorting query params", async () => {
@@ -2806,36 +3101,28 @@ describe("cloud-console interactions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Current session" }));
 
-    expect(await screen.findAllByText("Showing 1-1 of 1")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 1-1 of 1");
     expect(
       await screen.findByText("00000001-3333-4333-8333-333333333333"),
     ).toBeTruthy();
-    await waitFor(() => {
-      expect(
-        hasAdminSessionsRequest(requests, {
+    await expectAdminSessionsQuery(requests, {
           currentOnly: "true",
           sortBy: "updatedAt",
           sortDirection: "desc",
           page: "1",
           pageSize: "10",
-        }),
-      ).toBe(true);
-    });
+        });
 
     fireEvent.click(screen.getByRole("button", { name: "Expiring soon" }));
 
-    expect(await screen.findAllByText("Showing 1-10 of 11")).toHaveLength(2);
-    await waitFor(() => {
-      expect(
-        hasAdminSessionsRequest(requests, {
+    await expectAdminSessionsSummary("Showing 1-10 of 11");
+    await expectAdminSessionsQuery(requests, {
           status: "active",
           sortBy: "expiresAt",
           sortDirection: "asc",
           page: "1",
           pageSize: "10",
-        }),
-      ).toBe(true);
-    });
+        });
 
     fireEvent.change(screen.getByLabelText("Sort by"), {
       target: { value: "createdAt" },
@@ -2844,31 +3131,23 @@ describe("cloud-console interactions", () => {
       target: { value: "asc" },
     });
 
-    await waitFor(() => {
-      expect(
-        hasAdminSessionsRequest(requests, {
+    await expectAdminSessionsQuery(requests, {
           status: "active",
           sortBy: "createdAt",
           sortDirection: "asc",
           page: "1",
           pageSize: "10",
-        }),
-      ).toBe(true);
-    });
+        });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
 
-    expect(await screen.findAllByText("Showing 1-10 of 12")).toHaveLength(2);
-    await waitFor(() => {
-      expect(
-        hasAdminSessionsRequest(requests, {
+    await expectAdminSessionsSummary("Showing 1-10 of 12");
+    await expectAdminSessionsQuery(requests, {
           sortBy: "updatedAt",
           sortDirection: "desc",
           page: "1",
           pageSize: "10",
-        }),
-      ).toBe(true);
-    });
+        });
   });
 
   it("clears bulk-selected admin sessions when paging to a different result set", async () => {
@@ -2885,7 +3164,7 @@ describe("cloud-console interactions", () => {
     });
     renderRoute("/sessions");
 
-    expect(await screen.findAllByText("Showing 1-10 of 12")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 1-10 of 12");
 
     fireEvent.click(
       screen.getByLabelText("Select all active admin sessions"),
@@ -2896,7 +3175,7 @@ describe("cloud-console interactions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
 
-    expect(await screen.findAllByText("Showing 11-12 of 12")).toHaveLength(2);
+    await expectAdminSessionsSummary("Showing 11-12 of 12");
     expect(
       await screen.findByText(
         "Select active sessions on this page to revoke them in one action.",
@@ -3454,6 +3733,85 @@ describe("cloud-console interactions", () => {
     expect(hasJobsRequest(requests, { queueState: "delayed" })).toBe(true);
   });
 
+  it("opens world-scoped operator jobs from the dashboard queue", async () => {
+    const { requests } = installCloudAdminApiMock({
+      job: {
+        status: "running",
+      },
+    });
+    renderRoute("/");
+
+    expect(await screen.findByText("Operator Queue")).toBeTruthy();
+
+    fireEvent.click(
+      await screen.findByRole("link", {
+        name: "Open operator jobs for Mock World",
+      }),
+    );
+
+    expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+    expect(await screen.findByText("World scope")).toBeTruthy();
+    expect(
+      (await screen.findAllByRole("link", { name: "Mock World" })).length,
+    ).toBeGreaterThan(0);
+    expect(
+      hasJobsRequest(requests, {
+        worldId: "world-1",
+      }),
+    ).toBe(true);
+  });
+
+  it("copies a compact jobs permalink from the jobs page", async () => {
+    renderRoute(
+      "/jobs?worldId=world-1&status=failed&jobType=resume&page=2&pageSize=50&query=retry+me",
+    );
+
+    expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy jobs permalink" }),
+    );
+
+    expect(await screen.findByText("Jobs permalink copied.")).toBeTruthy();
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/jobs?worldId=world-1&status=failed&jobType=resume&query=retry+me&page=2&pageSize=50`,
+    );
+  });
+
+  it("copies a compact requests permalink from the requests page", async () => {
+    renderRoute(
+      "/requests?status=pending&projectedWorldStatus=queued&desiredState=running&query=%2B8613800138000",
+    );
+
+    expect(await screen.findByText("World requests")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy requests permalink" }),
+    );
+
+    expect(await screen.findByText("Requests permalink copied.")).toBeTruthy();
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/requests?status=pending&projectedWorldStatus=queued&desiredState=running&query=%2B8613800138000`,
+    );
+  });
+
+  it("copies a compact worlds permalink from the worlds page", async () => {
+    renderRoute(
+      "/worlds?status=ready&provider=manual-docker&powerState=running&attention=critical&health=healthy&query=mock",
+    );
+
+    expect(await screen.findByText("Managed worlds")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy worlds permalink" }),
+    );
+
+    expect(await screen.findByText("Worlds permalink copied.")).toBeTruthy();
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/worlds?status=ready&provider=manual-docker&powerState=running&attention=critical&health=healthy&query=mock`,
+    );
+  });
+
   it("opens superseded jobs views from dashboard shortcuts", async () => {
     renderRoute("/");
 
@@ -3515,9 +3873,44 @@ describe("cloud-console interactions", () => {
     );
 
     expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+    expect(await screen.findByText("World scope")).toBeTruthy();
     expect(screen.getByDisplayValue("audit: superseded")).toBeTruthy();
-    expect(screen.getByDisplayValue("+8613800138000")).toBeTruthy();
+    expect(
+      (await screen.findAllByRole("link", { name: "Mock World" })).length,
+    ).toBeGreaterThan(0);
     expect(await screen.findByText("Superseded by resume")).toBeTruthy();
+  });
+
+  it("opens world-scoped failed jobs from the dashboard queue", async () => {
+    const { requests } = installCloudAdminApiMock({
+      job: {
+        status: "failed",
+        failureCode: "provider_error",
+        failureMessage: "Provider failed to wake the world.",
+      },
+    });
+    renderRoute("/");
+
+    expect(await screen.findByText("Recent Failures")).toBeTruthy();
+
+    fireEvent.click(
+      await screen.findByRole("link", {
+        name: "Open failed jobs for Mock World",
+      }),
+    );
+
+    expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+    expect(await screen.findByText("World scope")).toBeTruthy();
+    expect(screen.getByDisplayValue("status: failed")).toBeTruthy();
+    expect(
+      (await screen.findAllByRole("link", { name: "Mock World" })).length,
+    ).toBeGreaterThan(0);
+    expect(
+      hasJobsRequest(requests, {
+        worldId: "world-1",
+        status: "failed",
+      }),
+    ).toBe(true);
   });
 
   it.each(DASHBOARD_ACTIVE_ACTION_VISIBILITY_CASES)(
@@ -4054,6 +4447,7 @@ describe("cloud-console interactions", () => {
   });
 
   it("opens filtered jobs from attention queue shortcuts", async () => {
+    const { requests } = installCloudAdminApiMock();
     renderRoute("/");
 
     expect(await screen.findByText("Attention Queue")).toBeTruthy();
@@ -4063,8 +4457,17 @@ describe("cloud-console interactions", () => {
     );
 
     expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+    expect(await screen.findByText("World scope")).toBeTruthy();
     expect(screen.getByDisplayValue("type: resume")).toBeTruthy();
-    expect(screen.getByDisplayValue("+8613800138000")).toBeTruthy();
+    expect(
+      (await screen.findAllByRole("link", { name: "Mock World" })).length,
+    ).toBeGreaterThan(0);
+    expect(
+      hasJobsRequest(requests, {
+        worldId: "world-1",
+        jobType: "resume",
+      }),
+    ).toBe(true);
   });
 
   it("only exposes allowed quick actions from attention queue cards", async () => {

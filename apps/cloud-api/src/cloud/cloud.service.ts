@@ -8,6 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import type {
   ClearFilteredFailedCloudWaitingSessionSyncTasksResponse,
   ClearFailedCloudWaitingSessionSyncTasksResponse,
+  CloudWorldLifecycleJobAggregateSummary,
   CloudWorldLifecycleJobListResponse,
   CloudWorldLifecycleJobListQuery,
   CloudWaitingSessionSyncTaskListResponse,
@@ -733,6 +734,109 @@ export class CloudService {
     };
   }
 
+  async getJobSummary(
+    filters?: WorldLifecycleJobFilters,
+  ): Promise<CloudWorldLifecycleJobAggregateSummary> {
+    if (filters?.worldId) {
+      await this.requireWorld(filters.worldId);
+    }
+
+    const queueDelayedNow = new Date().toISOString();
+    const aggregates = await this.createFilteredJobQueryBuilder(filters)
+      .select("COUNT(*)", "totalJobs")
+      .addSelect(
+        `COALESCE(SUM(
+          CASE
+            WHEN job.status = :pendingJobStatus OR job.status = :runningJobStatus THEN 1
+            ELSE 0
+          END
+        ), 0)`,
+        "activeJobs",
+      )
+      .addSelect(
+        `COALESCE(SUM(
+          CASE
+            WHEN job.status = :failedJobStatus THEN 1
+            ELSE 0
+          END
+        ), 0)`,
+        "failedJobs",
+      )
+      .addSelect(
+        `COALESCE(SUM(
+          CASE
+            WHEN (
+              job.failureCode = :supersededFailureCode OR
+              json_extract(job.resultPayload, '$.action') = :supersededAction
+            ) THEN 1
+            ELSE 0
+          END
+        ), 0)`,
+        "supersededJobs",
+      )
+      .addSelect(
+        `COALESCE(SUM(
+          CASE
+            WHEN job.status = :runningJobStatus THEN 1
+            ELSE 0
+          END
+        ), 0)`,
+        "runningNowJobs",
+      )
+      .addSelect(
+        `COALESCE(SUM(
+          CASE
+            WHEN job.failureCode = :leaseExpiredFailureCode THEN 1
+            ELSE 0
+          END
+        ), 0)`,
+        "leaseExpiredJobs",
+      )
+      .addSelect(
+        `COALESCE(SUM(
+          CASE
+            WHEN (
+              job.status = :pendingJobStatus AND
+              job.availableAt IS NOT NULL AND
+              datetime(job.availableAt) > datetime(:queueDelayedNow)
+            ) THEN 1
+            ELSE 0
+          END
+        ), 0)`,
+        "delayedJobs",
+      )
+      .setParameters({
+        pendingJobStatus: "pending",
+        runningJobStatus: "running",
+        failedJobStatus: "failed",
+        supersededFailureCode: "superseded_by_new_job",
+        supersededAction: "superseded_by_new_job",
+        leaseExpiredFailureCode: "lease_expired",
+        queueDelayedNow,
+      })
+      .getRawOne<{
+        totalJobs?: number | string | null;
+        activeJobs?: number | string | null;
+        failedJobs?: number | string | null;
+        supersededJobs?: number | string | null;
+        runningNowJobs?: number | string | null;
+        leaseExpiredJobs?: number | string | null;
+        delayedJobs?: number | string | null;
+      }>();
+
+    return {
+      totalJobs: this.toRawCount(aggregates?.totalJobs),
+      activeJobs: this.toRawCount(aggregates?.activeJobs),
+      failedJobs: this.toRawCount(aggregates?.failedJobs),
+      supersededJobs: this.toRawCount(aggregates?.supersededJobs),
+      queueState: {
+        runningNow: this.toRawCount(aggregates?.runningNowJobs),
+        leaseExpired: this.toRawCount(aggregates?.leaseExpiredJobs),
+        delayed: this.toRawCount(aggregates?.delayedJobs),
+      },
+    };
+  }
+
   async listWaitingSessionSyncTasks(filters?: {
     status?: CloudWaitingSessionSyncTaskStatus;
     taskType?: CloudWaitingSessionSyncTaskType;
@@ -1300,6 +1404,19 @@ export class CloudService {
     }
   }
 
+  private toRawCount(value: string | number | null | undefined) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string" && value.trim()) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return 0;
+  }
+
   private async listWaitingSessionSyncTaskIds(
     filters?: WaitingSessionSyncTaskFilters,
   ) {
@@ -1309,14 +1426,19 @@ export class CloudService {
     return tasks.map((task) => task.id);
   }
 
-  private createJobQueryBuilder(filters?: WorldLifecycleJobFilters) {
+  private createFilteredJobQueryBuilder(filters?: WorldLifecycleJobFilters) {
     const queryBuilder = this.jobRepo.createQueryBuilder("job");
+    this.applyJobFilters(queryBuilder, filters);
+    return queryBuilder;
+  }
+
+  private createJobQueryBuilder(filters?: WorldLifecycleJobFilters) {
+    const queryBuilder = this.createFilteredJobQueryBuilder(filters);
     this.applyJobSort(
       queryBuilder,
       filters?.sortBy,
       filters?.sortDirection,
     );
-    this.applyJobFilters(queryBuilder, filters);
     return queryBuilder;
   }
 

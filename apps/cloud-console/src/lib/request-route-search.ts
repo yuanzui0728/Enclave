@@ -76,3 +76,49 @@ export function validateRequestsRouteSearch(search: Record<string, unknown>) {
     query: normalizeRouteString(search.query),
   });
 }
+
+export function buildCompactRequestsRouteSearch(
+  search?: Partial<RequestsRouteSearch>,
+) {
+  const normalized = buildRequestsRouteSearch(search);
+  const compact: Partial<RequestsRouteSearch> = {};
+
+  if (normalized.status !== DEFAULT_REQUESTS_ROUTE_SEARCH.status) {
+    compact.status = normalized.status;
+  }
+  if (
+    normalized.projectedWorldStatus !==
+    DEFAULT_REQUESTS_ROUTE_SEARCH.projectedWorldStatus
+  ) {
+    compact.projectedWorldStatus = normalized.projectedWorldStatus;
+  }
+  if (normalized.desiredState !== DEFAULT_REQUESTS_ROUTE_SEARCH.desiredState) {
+    compact.desiredState = normalized.desiredState;
+  }
+  if (normalized.query) {
+    compact.query = normalized.query;
+  }
+
+  return compact;
+}
+
+export function buildRequestsPermalink(search?: Partial<RequestsRouteSearch>) {
+  const compact = buildCompactRequestsRouteSearch(search);
+  const params = new URLSearchParams();
+
+  if (compact.status) {
+    params.set("status", compact.status);
+  }
+  if (compact.projectedWorldStatus) {
+    params.set("projectedWorldStatus", compact.projectedWorldStatus);
+  }
+  if (compact.desiredState) {
+    params.set("desiredState", compact.desiredState);
+  }
+  if (compact.query) {
+    params.set("query", compact.query);
+  }
+
+  const queryString = params.toString();
+  return queryString ? `/requests?${queryString}` : "/requests";
+}

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { REQUEST_STATUSES } from "../src/lib/request-status-meta";
 import {
+  buildCompactRequestsRouteSearch,
+  buildRequestsPermalink,
   buildRequestsRouteSearch,
   DEFAULT_REQUESTS_ROUTE_SEARCH,
   REQUEST_PROJECTED_DESIRED_STATE_FILTERS,
@@ -123,5 +125,33 @@ describe("request route search", () => {
         },
       },
     ],
+  });
+
+  it("builds compact request route search and permalinks without default empty filters", () => {
+    expect(buildCompactRequestsRouteSearch()).toEqual({});
+    expect(
+      buildCompactRequestsRouteSearch({
+        status: "pending",
+        projectedWorldStatus: "queued",
+        desiredState: "running",
+        query: " +8613800138000 ",
+      }),
+    ).toEqual({
+      status: "pending",
+      projectedWorldStatus: "queued",
+      desiredState: "running",
+      query: "+8613800138000",
+    });
+    expect(buildRequestsPermalink()).toBe("/requests");
+    expect(
+      buildRequestsPermalink({
+        status: "pending",
+        projectedWorldStatus: "queued",
+        desiredState: "running",
+        query: " +8613800138000 ",
+      }),
+    ).toBe(
+      "/requests?status=pending&projectedWorldStatus=queued&desiredState=running&query=%2B8613800138000",
+    );
   });
 });

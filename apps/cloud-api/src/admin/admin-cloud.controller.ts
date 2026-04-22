@@ -254,6 +254,20 @@ export class AdminCloudController {
     });
   }
 
+  @Get("jobs/summary")
+  getJobSummary(@Query() query: ListJobsQueryDto) {
+    return this.cloudService.getJobSummary({
+      worldId: query.worldId,
+      status: query.status,
+      jobType: query.jobType,
+      provider: query.provider,
+      queueState: query.queueState,
+      audit: query.audit,
+      supersededBy: query.supersededBy,
+      query: query.query,
+    });
+  }
+
   @Get("waiting-session-sync-tasks")
   listWaitingSessionSyncTasks(
     @Query() query: ListWaitingSessionSyncTasksQueryDto,

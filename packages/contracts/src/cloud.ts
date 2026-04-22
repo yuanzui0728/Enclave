@@ -338,6 +338,20 @@ export interface CloudWorldLifecycleJobListQuery {
   pageSize?: number;
 }
 
+export interface CloudWorldLifecycleJobQueueSummary {
+  runningNow: number;
+  leaseExpired: number;
+  delayed: number;
+}
+
+export interface CloudWorldLifecycleJobAggregateSummary {
+  totalJobs: number;
+  activeJobs: number;
+  failedJobs: number;
+  supersededJobs: number;
+  queueState: CloudWorldLifecycleJobQueueSummary;
+}
+
 export interface CloudWaitingSessionSyncTaskSummary {
   id: string;
   taskKey: string;

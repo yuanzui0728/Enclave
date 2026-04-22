@@ -13,6 +13,7 @@ import {
 import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
 import { useConsoleNotice } from "../components/console-notice";
 import { WorldLifecycleActionButtons } from "../components/world-lifecycle-action-buttons";
+import { copyTextToClipboard } from "../lib/clipboard";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 import {
   createRequestScopedNotice,
@@ -20,6 +21,7 @@ import {
 } from "../lib/request-scoped-notice";
 import {
   ATTENTION_FILTERS,
+  buildWorldsPermalink,
   buildWorldsRouteSearch,
   HEALTH_FILTERS,
   POWER_STATE_FILTERS,
@@ -281,6 +283,22 @@ export function WorldsPage() {
       replace: true,
       search: (previous) => buildWorldsRouteSearch({ ...previous, ...next }),
     });
+  }
+
+  async function copyWorldsPermalink() {
+    const relativePermalink = buildWorldsPermalink(filters);
+    const absolutePermalink =
+      typeof window !== "undefined" && window.location?.origin
+        ? `${window.location.origin}${relativePermalink}`
+        : relativePermalink;
+    const copied = await copyTextToClipboard(absolutePermalink);
+
+    showNotice(
+      copied
+        ? "Worlds permalink copied."
+        : "Clipboard copy failed in this environment.",
+      copied ? "success" : "danger",
+    );
   }
 
   const worldsQuery = useQuery({
@@ -651,7 +669,14 @@ export function WorldsPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void copyWorldsPermalink()}
+              className="rounded-full border border-[color:var(--border-faint)] px-4 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
+            >
+              Copy worlds permalink
+            </button>
             {WORLD_STATUS_FILTERS.map((status) => (
               <button
                 key={status}

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import {
   type CloudAdminRequestLog,
   installCloudAdminApiMock,
@@ -13,6 +13,25 @@ function hasJobsRequest(
 ) {
   return requests.some((entry) => {
     if (entry.url !== "GET /admin/cloud/jobs") {
+      return false;
+    }
+
+    const path = entry.pathWithSearch.slice("GET ".length);
+    const search = path.includes("?") ? path.slice(path.indexOf("?")) : "";
+    const params = new URLSearchParams(search);
+
+    return Object.entries(expectedParams).every(
+      ([key, value]) => params.get(key) === value,
+    );
+  });
+}
+
+function hasJobSummaryRequest(
+  requests: CloudAdminRequestLog[],
+  expectedParams: Record<string, string>,
+) {
+  return requests.some((entry) => {
+    if (entry.url !== "GET /admin/cloud/jobs/summary") {
       return false;
     }
 
@@ -42,7 +61,18 @@ function getJobsPageSelect(prefix: string) {
   return select;
 }
 
+async function expectJobsPageReady() {
+  expect((await screen.findAllByText("Lifecycle jobs")).length).toBeGreaterThan(
+    0,
+  );
+}
+
 describe("jobs page pagination", () => {
+  afterEach(() => {
+    cleanup();
+    window.localStorage.clear();
+  });
+
   it("paginates lifecycle jobs from backend results", async () => {
     window.scrollTo = () => {};
     const jobs = Array.from({ length: 25 }, (_, index) => ({
@@ -58,7 +88,7 @@ describe("jobs page pagination", () => {
     const { requests } = installCloudAdminApiMock({ jobs });
     renderRoute("/jobs");
 
-    expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+    await expectJobsPageReady();
     expect(await screen.findByText("Showing 1-20 of 25 jobs.")).toBeTruthy();
     expect(screen.getByText("job-01")).toBeTruthy();
     expect(screen.queryByText("job-21")).toBeNull();
@@ -117,7 +147,7 @@ describe("jobs page pagination", () => {
     const { requests } = installCloudAdminApiMock({ jobs });
     renderRoute("/jobs");
 
-    expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+    await expectJobsPageReady();
 
     fireEvent.change(getJobsPageSelect("sort by: "), {
       target: { value: "finishedAt" },
@@ -144,6 +174,87 @@ describe("jobs page pagination", () => {
       hasJobsRequest(requests, {
         sortBy: "finishedAt",
         sortDirection: "asc",
+      }),
+    ).toBe(true);
+  });
+
+  it("renders filtered backend job summary counts on the jobs page", async () => {
+    window.scrollTo = () => {};
+    const jobs = [
+      {
+        ...mockJob,
+        id: "job-delayed-a",
+        status: "pending" as const,
+        availableAt: "2099-04-20T01:00:00.000Z",
+        updatedAt: "2026-04-20T00:30:00.000Z",
+      },
+      {
+        ...mockJob,
+        id: "job-delayed-b",
+        status: "pending" as const,
+        availableAt: "2099-04-20T01:10:00.000Z",
+        updatedAt: "2026-04-20T00:29:00.000Z",
+      },
+      {
+        ...mockJob,
+        id: "job-running",
+        status: "running" as const,
+        availableAt: null,
+        updatedAt: "2026-04-20T00:28:00.000Z",
+      },
+    ];
+    const { requests } = installCloudAdminApiMock({ jobs });
+    renderRoute("/jobs");
+
+    await expectJobsPageReady();
+
+    fireEvent.change(getJobsPageSelect("queue: "), {
+      target: { value: "delayed" },
+    });
+
+    const delayedSummaryLabel = await screen.findByText(
+      "Delayed jobs in filter",
+    );
+    expect(delayedSummaryLabel.parentElement?.textContent).toContain("2");
+    await waitFor(() => {
+      expect(
+        hasJobSummaryRequest(requests, {
+          queueState: "delayed",
+        }),
+      ).toBe(true);
+    });
+    expect(
+      hasJobsRequest(requests, {
+        queueState: "delayed",
+      }),
+    ).toBe(true);
+  });
+
+  it("applies world scope filters to backend jobs and summary requests", async () => {
+    window.scrollTo = () => {};
+    const { requests } = installCloudAdminApiMock();
+    renderRoute("/jobs?worldId=world-1&queueState=running_now");
+
+    await expectJobsPageReady();
+
+    expect(
+      await screen.findByText(
+        "Inspect provisioning, resume, suspend, and reconcile work for the selected world.",
+      ),
+    ).toBeTruthy();
+    expect(await screen.findByText("World scope")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Mock World" })).toBeTruthy();
+    expect(await screen.findByText("+8613800138000")).toBeTruthy();
+    expect(
+      hasJobsRequest(requests, {
+        worldId: "world-1",
+        queueState: "running_now",
+      }),
+    ).toBe(true);
+    expect(
+      hasJobSummaryRequest(requests, {
+        worldId: "world-1",
+        queueState: "running_now",
       }),
     ).toBe(true);
   });

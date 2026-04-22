@@ -2339,6 +2339,303 @@ test("listJobs excludes request gate placeholder jobs from the global queue", as
   assert.equal(jobs.items.some((job) => job.id === hiddenJob.id), false);
 });
 
+test("getJobSummary excludes request gate placeholders and aggregates queue counts", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const service = createCloudService(dataSource);
+  const worldRepo = dataSource.getRepository(CloudWorldEntity);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+
+  const placeholderWorld = await saveRequestGatePlaceholderWorld(dataSource, {
+    phone: "+8613800138090",
+    name: "Hidden Summary Placeholder",
+    slug: "world-8090-job-summary-gate",
+    failureCode: REQUEST_GATE_PENDING_FAILURE_CODE,
+    failureMessage: getRequestGateFailureReasonForTest("pending", "等待审批。"),
+  });
+  const visibleWorld = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138091",
+      name: "Visible Summary World",
+      status: "ready",
+      slug: "world-8091-visible-summary",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: providerSummary.key,
+      providerRegion: "manual",
+      providerZone: "docker-host-a",
+      runtimeVersion: "test-runtime",
+      apiBaseUrl: "https://summary-visible.example.com",
+      adminUrl: "https://summary-visible-admin.example.com",
+      callbackToken: "token",
+      healthStatus: "healthy",
+      healthMessage: "World is ready.",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: placeholderWorld.id,
+      jobType: "resume",
+      status: "running",
+      priority: 50,
+      payload: { source: "placeholder" },
+      attempt: 1,
+      maxAttempts: 3,
+      leaseOwner: "hidden-worker",
+      leaseExpiresAt: new Date(Date.now() + 60_000),
+      availableAt: null,
+      startedAt: new Date(),
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: visibleWorld.id,
+      jobType: "resume",
+      status: "running",
+      priority: 50,
+      payload: { source: "running-now" },
+      attempt: 1,
+      maxAttempts: 3,
+      leaseOwner: "visible-worker",
+      leaseExpiresAt: new Date(Date.now() + 60_000),
+      availableAt: null,
+      startedAt: new Date(),
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: visibleWorld.id,
+      jobType: "resume",
+      status: "pending",
+      priority: 50,
+      payload: { source: "delayed" },
+      attempt: 0,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: new Date(Date.now() + 60_000),
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: visibleWorld.id,
+      jobType: "reconcile",
+      status: "failed",
+      priority: 50,
+      payload: { source: "lease-expired" },
+      attempt: 2,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: null,
+      startedAt: new Date(),
+      finishedAt: new Date(),
+      failureCode: "lease_expired",
+      failureMessage: "Lease expired before completion.",
+      resultPayload: null,
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: visibleWorld.id,
+      jobType: "suspend",
+      status: "cancelled",
+      priority: 50,
+      payload: { source: "superseded" },
+      attempt: 0,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: null,
+      startedAt: null,
+      finishedAt: new Date(),
+      failureCode: "superseded_by_new_job",
+      failureMessage:
+        "Pending suspend job was superseded by a newer resume request.",
+      resultPayload: {
+        action: "superseded_by_new_job",
+        supersededByJobType: "resume",
+      },
+    }),
+  );
+
+  const summary = await service.getJobSummary();
+
+  assert.deepEqual(summary, {
+    totalJobs: 4,
+    activeJobs: 2,
+    failedJobs: 1,
+    supersededJobs: 1,
+    queueState: {
+      runningNow: 1,
+      leaseExpired: 1,
+      delayed: 1,
+    },
+  });
+});
+
+test("getJobSummary supports lifecycle job filters", async (t) => {
+  const dataSource = await createTestDataSource();
+  t.after(async () => {
+    await dataSource.destroy();
+  });
+
+  const service = createCloudService(dataSource);
+  const worldRepo = dataSource.getRepository(CloudWorldEntity);
+  const jobRepo = dataSource.getRepository(WorldLifecycleJobEntity);
+  const world = await worldRepo.save(
+    worldRepo.create({
+      phone: "+8613800138092",
+      name: "Summary Filter World",
+      status: "ready",
+      slug: "world-8092-summary-filter",
+      desiredState: "running",
+      provisionStrategy: "manual-docker",
+      providerKey: providerSummary.key,
+      providerRegion: "manual",
+      providerZone: "docker-host-a",
+      runtimeVersion: "test-runtime",
+      apiBaseUrl: "https://summary-filter.example.com",
+      adminUrl: "https://summary-filter-admin.example.com",
+      callbackToken: "token",
+      healthStatus: "healthy",
+      healthMessage: "World is ready.",
+      lastAccessedAt: null,
+      lastInteractiveAt: null,
+      lastBootedAt: null,
+      lastHeartbeatAt: null,
+      lastSuspendedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      retryCount: 0,
+      note: null,
+    }),
+  );
+
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "suspend",
+      status: "cancelled",
+      priority: 50,
+      payload: { source: "suspend-request" },
+      attempt: 0,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: null,
+      startedAt: null,
+      finishedAt: new Date(),
+      failureCode: "superseded_by_new_job",
+      failureMessage:
+        "Pending suspend job was superseded by a newer resume request.",
+      resultPayload: {
+        action: "superseded_by_new_job",
+        supersededByJobType: "resume",
+      },
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "resume",
+      status: "cancelled",
+      priority: 50,
+      payload: { source: "resume-request" },
+      attempt: 0,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: null,
+      startedAt: null,
+      finishedAt: new Date(),
+      failureCode: "superseded_by_new_job",
+      failureMessage:
+        "Pending resume job was superseded by a newer suspend request.",
+      resultPayload: {
+        action: "superseded_by_new_job",
+        supersededByJobType: "suspend",
+      },
+    }),
+  );
+  await jobRepo.save(
+    jobRepo.create({
+      worldId: world.id,
+      jobType: "resume",
+      status: "pending",
+      priority: 50,
+      payload: { source: "delayed-resume" },
+      attempt: 0,
+      maxAttempts: 3,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      availableAt: new Date(Date.now() + 60_000),
+      startedAt: null,
+      finishedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      resultPayload: null,
+    }),
+  );
+
+  const supersededSummary = await service.getJobSummary({
+    audit: "superseded",
+    supersededBy: "resume",
+  });
+  assert.deepEqual(supersededSummary, {
+    totalJobs: 1,
+    activeJobs: 0,
+    failedJobs: 0,
+    supersededJobs: 1,
+    queueState: {
+      runningNow: 0,
+      leaseExpired: 0,
+      delayed: 0,
+    },
+  });
+
+  const delayedSummary = await service.getJobSummary({
+    queueState: "delayed",
+  });
+  assert.deepEqual(delayedSummary, {
+    totalJobs: 1,
+    activeJobs: 1,
+    failedJobs: 0,
+    supersededJobs: 0,
+    queueState: {
+      runningNow: 0,
+      leaseExpired: 0,
+      delayed: 1,
+    },
+  });
+});
+
 test("job endpoints hide request gate placeholder jobs", async (t) => {
   const dataSource = await createTestDataSource();
   t.after(async () => {
@@ -4073,6 +4370,55 @@ test("AdminCloudController forwards lifecycle job filters", async () => {
       sortDirection: "asc",
       page: 2,
       pageSize: 50,
+    },
+  ]);
+});
+
+test("AdminCloudController forwards lifecycle job summary filters", async () => {
+  const calls: Array<Record<string, unknown>> = [];
+  const expectedResponse = {
+    totalJobs: 12,
+    activeJobs: 3,
+    failedJobs: 2,
+    supersededJobs: 1,
+    queueState: {
+      runningNow: 1,
+      leaseExpired: 1,
+      delayed: 1,
+    },
+  };
+  const controller = new AdminCloudController(
+    {
+      getJobSummary: async (query: Record<string, unknown>) => {
+        calls.push(query);
+        return expectedResponse;
+      },
+    } as never,
+    {} as never,
+  );
+
+  const result = await controller.getJobSummary({
+    worldId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    status: "pending",
+    jobType: "resume",
+    provider: "manual-docker",
+    queueState: "delayed",
+    audit: "superseded",
+    supersededBy: "resume",
+    query: "retry",
+  });
+
+  assert.deepEqual(result, expectedResponse);
+  assert.deepEqual(calls, [
+    {
+      worldId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      status: "pending",
+      jobType: "resume",
+      provider: "manual-docker",
+      queueState: "delayed",
+      audit: "superseded",
+      supersededBy: "resume",
+      query: "retry",
     },
   ]);
 });

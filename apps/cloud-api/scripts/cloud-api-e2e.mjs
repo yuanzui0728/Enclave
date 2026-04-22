@@ -7,6 +7,7 @@ import {
   clearFailedWaitingSessionSyncTasks,
   createAdminSessionSourceGroupRiskSnapshot,
   createAdminSessionSourceGroupSnapshot,
+  getJobSummary,
   issueAdminAccessToken,
   listJobs,
   listAdminSessionSourceGroups,
@@ -776,6 +777,53 @@ async function runScenario() {
     pagedSupersededJobsResponse.body.items.length,
     1,
     "paginated job list should return one item for pageSize=1",
+  );
+
+  const jobSummaryResponse = await getJobSummary(baseUrl, adminHeaders);
+  assert.equal(
+    jobSummaryResponse.status,
+    200,
+    "job summary should succeed",
+  );
+  assert.ok(
+    jobSummaryResponse.body.totalJobs >= 2,
+    "job summary should count visible lifecycle jobs",
+  );
+  assert.ok(
+    jobSummaryResponse.body.supersededJobs >= 2,
+    "job summary should include superseded lifecycle jobs",
+  );
+  assert.ok(
+    jobSummaryResponse.body.queueState.runningNow >= 0,
+    "job summary should expose running queue counts",
+  );
+  assert.ok(
+    jobSummaryResponse.body.queueState.leaseExpired >= 0,
+    "job summary should expose lease-expired queue counts",
+  );
+  assert.ok(
+    jobSummaryResponse.body.queueState.delayed >= 0,
+    "job summary should expose delayed queue counts",
+  );
+
+  const filteredJobSummaryResponse = await getJobSummary(baseUrl, adminHeaders, {
+    audit: "superseded",
+    supersededBy: "resume",
+  });
+  assert.equal(
+    filteredJobSummaryResponse.status,
+    200,
+    "filtered job summary should succeed",
+  );
+  assert.equal(
+    filteredJobSummaryResponse.body.totalJobs,
+    1,
+    "filtered job summary should count only matching superseded jobs",
+  );
+  assert.equal(
+    filteredJobSummaryResponse.body.supersededJobs,
+    1,
+    "filtered job summary should preserve superseded counts within the filter",
   );
 
   const sortedSupersededJobsResponse = await listJobs(
