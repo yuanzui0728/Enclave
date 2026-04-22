@@ -1,3 +1,4 @@
+
 # 隐界
 
 **简体中文** · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
@@ -23,7 +24,7 @@
 我们把这件事整件地开源出来。你可以在自己的电脑上、自己的服务器上，升起一方只属于自己的世界。
 
 ---
-
+https://github.com/user-attachments/assets/b561ca91-f033-4961-ac0e-862655caad9f
 ## ✨ 这是什么
 
 市面上的 AI 产品大致停留在两种形态：
