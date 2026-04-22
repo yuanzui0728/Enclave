@@ -15,6 +15,7 @@
 
 - 桌面好友朋友圈已补 `returnPath` / `returnHash`，从 `通讯录 / 星标朋友 / 标签 / 朋友圈 / 聊天详情 / 头像卡片` 进入后可回到原上下文。
 - 桌面好友朋友圈现在也会兼容旧的 `source=starred-friends` / `source=tags` 裸 hash：这类历史地址在缺少 `returnPath/returnHash` 时，会直接回对应的桌面通讯录 pane，不再退成裸 `/tabs/contacts` 或旧 `/contacts/tags`、`/contacts/starred`。
+- 桌面好友朋友圈现在也会把旧 `returnPath=/contacts/starred` / `/contacts/tags` 收成桌面通讯录 `pane`。之前这类历史 hash 一旦自带旧返回地址，会优先复活旧通讯录路径，绕过上面的 `source` 兜底；现在即使没有 `returnHash`，也会自动补成对应的桌面 `starred-friends / tags` pane。
 - 桌面壳现在会记录原始 querystring，带搜索参数的桌面页面不再把历史地址写成错误的对象串，返回链路可继续命中真实 URL。
 - 桌面标签工作区已把 `tag + characterId` 写入 URL，刷新、返回、从资料页回来都能恢复到原标签分组和联系人。
 - 桌面角色资料页删除联系人后，已优先回 `returnPath / returnHash`，不再强制退回普通通讯录。
@@ -46,6 +47,9 @@
 - 桌面搜索这条链路里的消息和公众号结果现在也统一改走桌面协议：聊天会话与消息命中直接回 `/tabs/chat#conversationId=...`，消息命中会把 `messageId` 一起写进 hash；公众号主页和文章命中则回 `/tabs/contacts#pane=official-accounts...`。这样从桌面搜索建议和桌面搜索页打开结果时，不会再掉进移动 `/chat` `/group` 或旧 `/official-accounts/*` 页面。
 - 桌面搜索里的“最近收藏 / 收藏命中”现在也会先把旧收藏路由收敛到桌面工作区再打开。老的 `/chat/$id#chat-message-*`、`/group/$id#chat-message-*`、`/chat/subscription-inbox`、`/official-accounts/*` 收藏快捷项，不会再先落旧移动聊天页或旧公众号页，再靠桌面分支二次转发。
 - 桌面收藏页右侧的“打开内容”现在也会先把老收藏里残留的旧路由收敛到桌面工作区。历史遗留的 `/chat/$id#chat-message-*`、`/group/$id#chat-message-*`、`/chat/subscription-inbox`、`/official-accounts/*` 收藏项，不会再从桌面收藏页里直接掉回旧聊天页或旧公众号页。
+- 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/feed` 目标现在也会直接收成 `/tabs/feed`，而且 `feed-route-state` 会把历史 `returnPath=/discover/feed` 一起归一成桌面广场动态返回地址。之前这类旧广场动态链接会先打开共享广场页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
+- 桌面搜索页、搜索启动器和收藏页里的旧 `/games`、`/discover/games` 目标现在也会直接收成 `/tabs/games`，而且 `mobile-games-route-state` 会把历史 `returnPath=/games|/discover/games` 一起归一成桌面游戏中心返回地址。之前这类旧游戏中心链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧游戏中心路径。
+- 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/mini-programs` 目标现在也会直接收成 `/tabs/mini-programs`，而且 `mobile-mini-programs-route-state` 会把历史 `returnPath=/discover/mini-programs` 一起归一成桌面小程序返回地址。之前这类旧小程序链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面壳右上角“我”的资料卡里，“给自己发消息”快捷入口也已经改成桌面消息协议 `/tabs/chat#conversationId=...`。之前这里还在直跳移动 `/chat/$conversationId`，会把用户从桌面壳直接切回移动聊天页。
 - 桌面通讯录里的“群聊”分组现在也统一回桌面消息工作区：`进入群聊` 走 `/tabs/chat#conversationId=...`，`群聊信息` 走 `/tabs/chat#conversationId=...&panel=details`。之前这两个入口还会直接掉进移动 `/group/$groupId` 和 `/group/$groupId/details`。
 - 桌面通讯录联系人详情里的“共同群聊”入口也已经对齐到同一套桌面协议，点击后直接回 `/tabs/chat#conversationId=...`。之前这里也会把用户从桌面联系人详情带回移动 `/group/$groupId`。
@@ -77,7 +81,8 @@
 - 旧 `/discover` 发现页地址现在在桌面布局下也会主动自愈回 `/tabs/discover`。之前这条旧地址虽然会直接渲染桌面发现工作区，但 URL 本身不会收口，而且桌面里的“摇一摇”等入口还可能继续把旧 `/discover` 写进 `returnPath`；现在都会统一收成 `/tabs/discover`。
 - 桌面发现页里的“摇一摇”按钮现在也不再先跳旧 `/discover/encounter` 再被桌面重定向拦回发现页了；它会直接在桌面发现工作区里执行随机相遇，把结果写入通讯录并刷新好友申请 / 会话相关数据，避免桌面按钮看起来能点、实际只是在原地兜一圈。
 - 旧 `/discover/moments` 朋友圈地址现在在桌面布局下也会主动自愈回 `/tabs/moments`；同时桌面朋友圈跳好友朋友圈时，`returnPath` 也统一收成 `/tabs/moments`，并兼容修正历史上已经写进好友朋友圈 hash 的旧 `/discover/moments` 返回地址，不再让旧 discover 路径在回跳链路里反复复活。
-- 桌面视频号工作区现在也会把旧 `/discover/channels` 返回地址统一收成 `/tabs/channels`。包括旧作者页 `/channels/authors/$authorId` 在桌面下折回 `/tabs/channels` 时，也不会再把历史 `returnPath=/discover/channels` 原样带回桌面 hash，避免后续“返回上一页”把旧 discover 路径重新带活。
+- 桌面朋友圈总工作区自己的路由态现在也会把旧 `returnPath=/discover/moments` 收成 `/tabs/moments`。之前只要桌面地址里还残留这类旧返回目标，当前页虽然已经在 `/tabs/moments`，但点“返回上一页”仍会把旧 discover 路径重新带活；现在总朋友圈和好友朋友圈两边都只认桌面返回地址。
+- 桌面视频号的路由态现在也会把旧 `returnPath=/discover/channels` 直接收成 `/tabs/channels`。这样不只是工作区页面和旧作者页 `/channels/authors/$authorId` 在桌面下折回 `/tabs/channels` 时会归一，历史 hash 本身在被解析或重新写回时也不会再把旧 discover 返回地址原样带活。
 - 桌面看一看、游戏中心、小程序工作区现在也会把旧 `returnPath` 一起收敛掉：旧 `/discover/feed`、`/games`、`/discover/games`、`/discover/mini-programs` 在桌面自愈到 `/tabs/*` 时，不会再把这些旧返回地址继续写进新的 hash/search；游戏中心发出的组局邀约路径也会跟着改吃收敛后的桌面返回地址，避免旧 discover 路径从“返回上一页”或“回到刚才页面”链路里再次复活。
 - 桌面视频号工作区已补分栏切换入口，并把当前 `section` 与作者页回收链路继续对齐，刷新或从作者页折返时不会丢 `推荐 / 朋友 / 关注 / 直播` 上下文。
 - 桌面视频号作者侧栏现在会在主区切到其他作者内容时自动收敛，避免右侧作者资料和当前视频内容错位。
@@ -95,8 +100,16 @@
 - 旧 `/contacts/starred`、`/contacts/tags`、`/contacts/groups`、`/contacts/world-characters`、`/contacts/official-accounts` 这批桌面通讯录兼容页现在也会保住当前桌面 hash 里的选中态。星标朋友会继续带上当前 `characterId`，标签页会继续带上 `tag + characterId`，群聊页会继续带上当前选中群，世界角色会继续带上当前角色，公众号列表则会继续带上现有 `officialMode/accountId/articleId`；不再因为旧路径自愈而退成裸 pane，导致原来的桌面选中上下文丢掉。
 - 桌面搜索、搜索启动器和收藏页里如果还命中旧 `/contacts/official-accounts` 目标，现在也会直接收敛成显式 `officialMode=feed` 的桌面公众号列表地址；不再从旧快捷入口重新产出一份缺 mode 的列表 hash。
 - 桌面搜索、搜索启动器和收藏页里如果还命中旧 `friend-requests / contacts/starred / contacts/tags / contacts/groups / contacts/world-characters` 目标，现在也会直接收敛到桌面通讯录工作区自己的 pane hash，不再先落这些旧移动通讯录页，再靠页面级重定向补救。
+- 桌面搜索、搜索启动器和收藏页现在也会保住旧 `/contacts/*` 目标里已经带上的桌面选中态。之前 `/contacts/tags#pane=tags&tag=...&characterId=...`、`/contacts/groups#pane=groups&characterId=...`、`/contacts/official-accounts#pane=official-accounts&officialMode=accounts&accountId=...&articleId=...` 这类旧收藏或搜索目标，虽然会被收敛进桌面通讯录，但打开后只剩裸 pane；现在对应的 `tag / characterId / officialMode / accountId / articleId` 都会继续保住。
+- 桌面搜索、搜索启动器和收藏页现在也会把旧 `/friend-moments/$characterId` 目标直接收成 `/desktop/friend-moments/$characterId`。之前这类旧好友朋友圈链接会在桌面里原样打开移动页，既不会自愈到桌面工作区，也容易丢掉现有的返回状态；现在会统一走桌面好友朋友圈路径，并继续保住 hash 里的返回上下文。
+- 桌面搜索、搜索启动器和收藏页里的旧 `/contacts/official-accounts` 目标现在也会把“缺 `officialMode`、但已经带 `accountId/articleId`”的半成品 hash 自动补成 `accounts`。之前这类旧桌面收藏或搜索目标会被误收成 `feed + accountId/articleId`，后续还得再靠公众号工作区二次纠偏。
+- 桌面搜索、搜索启动器和收藏页里的旧 `/official-accounts/$accountId` 目标现在也会像兼容页一样保住同账号下的 `articleId`。之前这类旧公众号主页链接虽然能回到桌面通讯录，但会把当前正文选中态抹掉；现在如果 hash 已经指向同一个账号，会继续带上原来的文章选择。
+- 桌面搜索、搜索启动器和收藏页里的旧 `/official-accounts/articles/$articleId` 目标现在也会一起保住同篇文章附带的 `accountId`。之前这类旧文章链接只会带着 `articleId` 回桌面通讯录，一旦正文失效或还没完成账号纠偏，原来的公众号账号上下文就会先丢；现在如果 hash 已经指向同一篇文章，会继续把对应账号一起带回去。
 - 桌面搜索、搜索启动器和收藏页现在还会保住旧服务号/订阅号目标里的 `articleId`。之前 `/official-accounts/service/$accountId#articleId=...` 和 `/chat/subscription-inbox#articleId=...` 这类旧目标虽然会被收敛进桌面消息工作区，但只改了路径没带上文章上下文，打开后会直接丢正文选中态。
-- 旧 `/official-accounts/$accountId` 这条桌面详情入口现在也会在源头直接写 `officialMode=accounts`，不再先产出一份缺 mode 的半成品 hash 再依赖工作区二次修正；从旧公众号详情地址切进桌面通讯录时，URL 会一次性落到正确的 `accounts` 模式。
+- 旧 `/official-accounts/service/$accountId` 和 `/chat/subscription-inbox` 这两条桌面兼容壳现在只会在 hash 本来就属于同一条 official 视图时继续带 `articleId`。之前只要当前 hash 里有文章 id 就会原样带走，服务号和订阅号之间有机会互相串旧正文；现在裸 legacy hash 仍会保住文章选中态，但来自另一条 official 视图的旧 `articleId` 会先被丢掉。
+- 桌面搜索、搜索启动器和收藏页对这两类旧 official 目标也补成了同一套“同视图才保留正文”的规则，不再把服务号旧 hash 里的 `articleId` 误带进订阅号，或把订阅号旧正文误带进服务号线程。
+- 桌面搜索页和桌面搜索启动器里的角色详情入口现在也会带上 `/tabs/search` 的 `returnPath / returnHash`。之前从搜索结果、联系人建议、世界角色建议或旧角色快捷链接打开资料页后，返回经常只能掉回普通通讯录；现在会直接回当前搜索工作区，并保住当前关键词与来源上下文。
+- 旧 `/official-accounts/$accountId` 这条桌面详情入口现在也会在源头直接写 `officialMode=accounts`，并且如果当前桌面通讯录 hash 已经选中了同账号下的一篇文章，也会把这层 `articleId` 一起保住；不再先产出一份缺 mode 的半成品 hash，或在旧详情自愈时把当前公众号文章上下文冲掉。
 - 桌面内部几条继续跳公众号主页/文章的入口现在也统一显式写 `officialMode=accounts` 了，包括公众号文章独立窗口里的“打开公众号主页”和 `desktop/mobile` 里的官方 handoff 卡片；不再继续产出带 `accountId/articleId` 但缺 mode 的半成品 hash。
 - 旧 `/official-accounts/articles/$articleId` 这条桌面文章入口也不再继续写“只带 `articleId`、不带 mode”的回跳状态了；现在文章窗口自己的 `returnTo` 也会显式带上 `officialMode=accounts`，避免回桌面通讯录时继续依赖工作区侧推断模式。
 - 桌面公众号工作区的“服务号消息 / 订阅号消息” fallback，以及 `desktop/mobile` 里的“桌面回到当前工作区” official handoff，现在都统一改成直达 `/tabs/chat#officialView=...`；不再先跳旧的 `/official-accounts/service/...` 或 `/chat/subscription-inbox` 页面，再靠桌面布局二次转发，避免桌面官方消息入口继续挂在旧路径协议上。

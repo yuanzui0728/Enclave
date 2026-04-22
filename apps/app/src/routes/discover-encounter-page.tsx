@@ -178,7 +178,7 @@ function MobileDiscoverEncounterPage() {
                 onClick={() => shakeMutation.mutate()}
                 className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
               >
-                重试
+                重试摇一摇
               </button>
               <button
                 type="button"

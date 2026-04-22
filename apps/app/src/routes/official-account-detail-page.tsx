@@ -33,6 +33,7 @@ import {
   buildMobileOfficialRouteHash,
   parseMobileOfficialRouteState,
 } from "../features/official-accounts/mobile-official-route-state";
+import { parseDesktopContactsRouteState } from "../features/contacts/contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
@@ -48,6 +49,11 @@ const DesktopContactsRouteRedirectShell = lazy(async () => {
 export function OfficialAccountDetailPage() {
   const { accountId } = useParams({ from: "/official-accounts/$accountId" });
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const desktopPaneState = useMemo(() => {
+    const routeState = parseDesktopContactsRouteState(hash);
+    return routeState.pane === "official-accounts" ? routeState : null;
+  }, [hash]);
 
   if (isDesktopLayout) {
     return (
@@ -63,6 +69,11 @@ export function OfficialAccountDetailPage() {
         <DesktopContactsRouteRedirectShell
           pane="official-accounts"
           accountId={accountId}
+          articleId={
+            desktopPaneState?.accountId === accountId
+              ? desktopPaneState.articleId
+              : undefined
+          }
           officialMode="accounts"
         />
       </Suspense>
@@ -372,17 +383,28 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             <MobileOfficialStatusCard
               badge="公众号"
               title="这个公众号暂时不可用"
-              description="可以先回上一页，稍后再试。"
+              description="可以先重试读取，或返回上一页稍后再试。"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "返回公众号列表"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryAccount}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                  </Button>
+                </div>
               }
             />
           </div>

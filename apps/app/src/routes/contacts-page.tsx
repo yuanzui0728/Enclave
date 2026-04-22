@@ -123,6 +123,7 @@ type MobileErrorItem = {
   key: string;
   message: string;
   onRetry?: () => void;
+  retryLabel?: string;
   actionLabel?: string;
   onAction?: () => void;
 };
@@ -1224,6 +1225,7 @@ export function ContactsPage() {
       onRetry: () => {
         void friendsQuery.refetch();
       },
+      retryLabel: "重试读取",
     });
   }
   if (charactersQuery.isError && charactersQuery.error instanceof Error) {
@@ -1233,6 +1235,7 @@ export function ContactsPage() {
       onRetry: () => {
         void charactersQuery.refetch();
       },
+      retryLabel: "重试读取",
       actionLabel: "浏览角色",
       onAction: () => {
         handleShortcutNavigate("/contacts/world-characters");
@@ -1249,6 +1252,7 @@ export function ContactsPage() {
       onRetry: () => {
         void friendRequestsQuery.refetch();
       },
+      retryLabel: "重试读取",
       actionLabel: "查看新的朋友",
       onAction: () => {
         handleShortcutNavigate("/friend-requests");
@@ -1262,6 +1266,7 @@ export function ContactsPage() {
       onRetry: () => {
         void contactGroupsQuery.refetch();
       },
+      retryLabel: "重试读取",
       actionLabel: "查看群聊",
       onAction: () => {
         handleShortcutNavigate("/contacts/groups");
@@ -1878,7 +1883,7 @@ export function ContactsPage() {
                           onClick={item.onRetry}
                           className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                         >
-                          重试
+                          {item.retryLabel ?? "重试"}
                         </button>
                       ) : null}
                     </div>

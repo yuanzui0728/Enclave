@@ -221,7 +221,7 @@ export function MomentsPage() {
   const desktopMomentsPath = "/tabs/moments";
   const isDesktopMomentsRoute =
     pathname === desktopMomentsPath || pathname === "/discover/moments";
-  const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试";
+  const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试读取";
   const handleDesktopRouteStateChange = useEffectEvent(
     (state: { momentId?: string }) => {
       const nextHash = buildDesktopMomentsRouteHash(state);
@@ -842,7 +842,7 @@ export function MomentsPage() {
                     className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
                     onClick={handleStatusBack}
                   >
-                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                    {safeReturnPath ? "返回上一页" : "重试读取"}
                   </Button>
                 ) : undefined
               }
@@ -880,7 +880,7 @@ export function MomentsPage() {
                     className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
-                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                    {safeReturnPath ? "返回上一页" : "重试读取"}
                   </Button>
                 </div>
               }

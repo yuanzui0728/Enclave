@@ -1467,6 +1467,7 @@ export function DesktopChatWorkspace({
                     keyword={searchTerm}
                     onClose={desktopSearchLauncher.close}
                     onOpenSearch={desktopSearchLauncher.openSearch}
+                    source="chat"
                     speechDisplayText={desktopSearchLauncher.speechDisplayText}
                     speechError={desktopSearchLauncher.speechError}
                     speechStatus={desktopSearchLauncher.speechStatus}

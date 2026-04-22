@@ -1,4 +1,6 @@
 export type DesktopOfficialMessageRouteState = {
+  officialView?: "subscription-inbox" | "service-account";
+  accountId?: string;
   articleId?: string;
 };
 
@@ -11,9 +13,56 @@ export function parseDesktopOfficialMessageRouteHash(
   }
 
   const params = new URLSearchParams(normalizedHash);
+  const officialView = params.get("officialView")?.trim();
+  const accountId = params.get("accountId")?.trim() || undefined;
   const articleId = params.get("articleId")?.trim();
 
-  return articleId ? { articleId } : {};
+  if (
+    officialView !== "subscription-inbox" &&
+    officialView !== "service-account"
+  ) {
+    return articleId ? { articleId } : {};
+  }
+
+  return {
+    officialView,
+    accountId: officialView === "service-account" ? accountId : undefined,
+    articleId: articleId || undefined,
+  };
+}
+
+export function resolveDesktopSubscriptionMessageArticleId(
+  state: DesktopOfficialMessageRouteState,
+) {
+  if (!state.articleId) {
+    return undefined;
+  }
+
+  if (!state.officialView) {
+    return state.articleId;
+  }
+
+  return state.officialView === "subscription-inbox"
+    ? state.articleId
+    : undefined;
+}
+
+export function resolveDesktopServiceMessageArticleId(
+  state: DesktopOfficialMessageRouteState,
+  accountId: string | undefined,
+) {
+  if (!state.articleId) {
+    return undefined;
+  }
+
+  if (!state.officialView) {
+    return state.articleId;
+  }
+
+  return state.officialView === "service-account" &&
+    state.accountId === accountId
+    ? state.articleId
+    : undefined;
 }
 
 export function buildDesktopOfficialMessageRouteHash(

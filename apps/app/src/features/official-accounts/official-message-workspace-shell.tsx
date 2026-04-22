@@ -5,7 +5,11 @@ import {
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
 } from "../desktop/chat/desktop-chat-route-state";
-import { parseDesktopOfficialMessageRouteHash } from "./official-message-route-state";
+import {
+  parseDesktopOfficialMessageRouteHash,
+  resolveDesktopServiceMessageArticleId,
+  resolveDesktopSubscriptionMessageArticleId,
+} from "./official-message-route-state";
 
 export type OfficialMessageWorkspaceShellProps = {
   hash: string;
@@ -20,22 +24,39 @@ export function OfficialMessageWorkspaceShell({
 }: OfficialMessageWorkspaceShellProps) {
   const navigate = useNavigate();
   const routeState = parseDesktopOfficialMessageRouteHash(hash);
+  const safeServiceArticleId = useMemo(
+    () =>
+      resolveDesktopServiceMessageArticleId(
+        routeState,
+        selectedServiceAccountId,
+      ),
+    [routeState, selectedServiceAccountId],
+  );
+  const safeSubscriptionArticleId = useMemo(
+    () => resolveDesktopSubscriptionMessageArticleId(routeState),
+    [routeState],
+  );
   const targetPath = useMemo(() => {
     if (selectedServiceAccountId) {
       return buildDesktopOfficialServiceThreadPath({
         accountId: selectedServiceAccountId,
-        articleId: routeState.articleId,
+        articleId: safeServiceArticleId,
       });
     }
 
     if (selectedSpecialView === "subscription-inbox") {
       return buildDesktopSubscriptionInboxPath({
-        articleId: routeState.articleId,
+        articleId: safeSubscriptionArticleId,
       });
     }
 
     return "/tabs/chat";
-  }, [routeState.articleId, selectedServiceAccountId, selectedSpecialView]);
+  }, [
+    safeServiceArticleId,
+    safeSubscriptionArticleId,
+    selectedServiceAccountId,
+    selectedSpecialView,
+  ]);
 
   useEffect(() => {
     void navigate({

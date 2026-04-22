@@ -442,16 +442,26 @@ export function GroupChatBackgroundPage() {
           <MobileGroupBackgroundStatusCard
             badge="群聊"
             title="群聊不存在"
-            description="这个群聊暂时不可用，返回上一页后再试一次。"
+            description="这个群聊暂时不可用，可以先重试读取，或返回上一页后再试。"
             action={
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                onClick={handleMissingGroupAction}
-              >
-                {safeReturnPath ? "返回上一页" : "返回消息列表"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleRetryLoad}
+                >
+                  重试读取
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleMissingGroupAction}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回消息列表"}
+                </Button>
+              </div>
             }
           />
         )

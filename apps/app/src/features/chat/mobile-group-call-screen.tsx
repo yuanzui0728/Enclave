@@ -627,15 +627,23 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           <MobileCallStatusCard
             badge="群聊"
             title="当前不能发起群通话"
-            description="这个群聊暂时不可用，先返回群聊列表或上一个会话再试一次。"
+            description="这个群聊暂时不可用，可以先重试读取，或返回群聊后再试。"
             tone="danger"
             action={
-              <MobileCallActionButton
-                onClick={handleBack}
-                className="min-w-[132px]"
-              >
-                返回群聊
-              </MobileCallActionButton>
+              <div className="flex flex-wrap justify-center gap-2">
+                <MobileCallActionButton
+                  onClick={handleRetryLoad}
+                  className="min-w-[132px]"
+                >
+                  重试读取
+                </MobileCallActionButton>
+                <MobileCallActionButton
+                  onClick={handleBack}
+                  className="min-w-[132px]"
+                >
+                  返回群聊
+                </MobileCallActionButton>
+              </div>
             }
           />
         )}

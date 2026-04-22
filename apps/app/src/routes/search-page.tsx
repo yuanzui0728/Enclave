@@ -231,9 +231,23 @@ export function SearchPage() {
     setHistory(clearSearchHistory());
   }
 
-  function applyMobileSearchReturn(
+  function applySearchNavigationContext(
     navigationTarget: ReturnType<typeof resolveSearchNavigationTarget>,
   ) {
+    if (isDesktopLayout && navigationTarget.to.startsWith("/character/")) {
+      const targetRouteState = parseCharacterDetailRouteState(
+        navigationTarget.hash ?? "",
+      );
+      return {
+        ...navigationTarget,
+        hash: buildCharacterDetailRouteHash({
+          ...targetRouteState,
+          returnPath: desktopSearchPath,
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    }
+
     if (isDesktopLayout) {
       return navigationTarget;
     }
@@ -357,7 +371,7 @@ export function SearchPage() {
   }
 
   function handleOpenResult(item: SearchResultItem) {
-    const navigationTarget = applyMobileSearchReturn(
+    const navigationTarget = applySearchNavigationContext(
       resolveSearchNavigationTarget(item, {
         desktopLayout: isDesktopLayout,
       }),
@@ -375,7 +389,7 @@ export function SearchPage() {
     search?: string;
     hash?: string;
   }) {
-    const navigationTarget = applyMobileSearchReturn(
+    const navigationTarget = applySearchNavigationContext(
       resolveSearchNavigationTarget(item, {
         desktopLayout: isDesktopLayout,
       }),

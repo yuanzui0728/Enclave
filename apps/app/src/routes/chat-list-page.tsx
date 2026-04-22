@@ -694,7 +694,7 @@ function MobileChatListPage() {
                     }}
                     className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                   >
-                    重试
+                    重试读取
                   </button>
                 </div>
               </div>
@@ -729,7 +729,7 @@ function MobileChatListPage() {
                   }}
                   className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                 >
-                  重新加载
+                  重试读取
                 </Button>
               }
             />

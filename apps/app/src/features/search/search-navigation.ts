@@ -1,10 +1,33 @@
-import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
+import {
+  buildDesktopContactsRouteHash,
+  parseDesktopContactsRouteState,
+} from "../contacts/contacts-route-state";
 import {
   buildDesktopChatRouteHash,
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
 } from "../desktop/chat/desktop-chat-route-state";
-import { parseDesktopOfficialMessageRouteHash } from "../official-accounts/official-message-route-state";
+import {
+  parseDesktopOfficialMessageRouteHash,
+  resolveDesktopServiceMessageArticleId,
+  resolveDesktopSubscriptionMessageArticleId,
+} from "../official-accounts/official-message-route-state";
+import {
+  buildDesktopFriendMomentsPath,
+  parseDesktopFriendMomentsRouteState,
+} from "../moments/friend-moments-route-state";
+import {
+  buildFeedRouteHash,
+  parseFeedRouteHash,
+} from "../feed/feed-route-state";
+import {
+  buildMobileGamesRouteSearch,
+  parseMobileGamesRouteSearch,
+} from "../games/mobile-games-route-state";
+import {
+  buildMobileMiniProgramsRouteSearch,
+  parseMobileMiniProgramsRouteSearch,
+} from "../mini-programs/mobile-mini-programs-route-state";
 
 type SearchNavigationTargetInput = {
   to: string;
@@ -48,6 +71,10 @@ export function resolveSearchNavigationTarget(
   return (
     resolveDesktopConversationNavigationTarget(normalizedTarget) ??
     resolveDesktopContactsNavigationTarget(normalizedTarget) ??
+    resolveDesktopFeedNavigationTarget(normalizedTarget) ??
+    resolveDesktopGamesNavigationTarget(normalizedTarget) ??
+    resolveDesktopMiniProgramsNavigationTarget(normalizedTarget) ??
+    resolveDesktopMomentsNavigationTarget(normalizedTarget) ??
     resolveDesktopOfficialNavigationTarget(normalizedTarget) ??
     normalizedTarget
   );
@@ -112,7 +139,7 @@ function resolveDesktopConversationNavigationTarget(
 
     return buildNormalizedTargetFromPath(
       buildDesktopSubscriptionInboxPath({
-        articleId: routeState.articleId,
+        articleId: resolveDesktopSubscriptionMessageArticleId(routeState),
       }),
     );
   }
@@ -124,11 +151,28 @@ function resolveDesktopOfficialNavigationTarget(
   target: SearchNavigationTarget,
 ) {
   if (target.to === "/contacts/official-accounts") {
+    const routeState = parseDesktopContactsRouteState(target.hash ?? "");
+    const hasAccountSelection = Boolean(
+      routeState.accountId || routeState.articleId,
+    );
+
     return {
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "official-accounts",
-        officialMode: "feed",
+        officialMode:
+          routeState.pane === "official-accounts"
+            ? (routeState.officialMode ??
+                (hasAccountSelection ? "accounts" : "feed"))
+            : "feed",
+        accountId:
+          routeState.pane === "official-accounts"
+            ? routeState.accountId
+            : undefined,
+        articleId:
+          routeState.pane === "official-accounts"
+            ? routeState.articleId
+            : undefined,
         showWorldCharacters: false,
       }),
     } satisfies SearchNavigationTarget;
@@ -138,12 +182,16 @@ function resolveDesktopOfficialNavigationTarget(
     /^\/official-accounts\/service\/([^/?#]+)$/,
   );
   if (serviceMatch?.[1]?.trim()) {
+    const accountId = serviceMatch[1].trim();
     const routeState = parseDesktopOfficialMessageRouteHash(target.hash ?? "");
 
     return buildNormalizedTargetFromPath(
       buildDesktopOfficialServiceThreadPath({
-        accountId: serviceMatch[1].trim(),
-        articleId: routeState.articleId,
+        accountId,
+        articleId: resolveDesktopServiceMessageArticleId(
+          routeState,
+          accountId,
+        ),
       }),
     );
   }
@@ -152,11 +200,19 @@ function resolveDesktopOfficialNavigationTarget(
     /^\/official-accounts\/articles\/([^/?#]+)$/,
   );
   if (articleMatch?.[1]?.trim()) {
+    const articleId = articleMatch[1].trim();
+    const routeState = parseDesktopContactsRouteState(target.hash ?? "");
+
     return {
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "official-accounts",
-        articleId: articleMatch[1].trim(),
+        accountId:
+          routeState.pane === "official-accounts" &&
+          routeState.articleId === articleId
+            ? routeState.accountId
+            : undefined,
+        articleId,
         officialMode: "accounts",
         showWorldCharacters: false,
       }),
@@ -165,11 +221,19 @@ function resolveDesktopOfficialNavigationTarget(
 
   const accountMatch = target.to.match(/^\/official-accounts\/([^/?#]+)$/);
   if (accountMatch?.[1]?.trim()) {
+    const accountId = accountMatch[1].trim();
+    const routeState = parseDesktopContactsRouteState(target.hash ?? "");
+
     return {
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "official-accounts",
-        accountId: accountMatch[1].trim(),
+        accountId,
+        articleId:
+          routeState.pane === "official-accounts" &&
+          routeState.accountId === accountId
+            ? routeState.articleId
+            : undefined,
         officialMode: "accounts",
         showWorldCharacters: false,
       }),
@@ -182,6 +246,8 @@ function resolveDesktopOfficialNavigationTarget(
 function resolveDesktopContactsNavigationTarget(
   target: SearchNavigationTarget,
 ) {
+  const routeState = parseDesktopContactsRouteState(target.hash ?? "");
+
   if (target.to === "/friend-requests") {
     return {
       to: "/tabs/contacts",
@@ -196,6 +262,10 @@ function resolveDesktopContactsNavigationTarget(
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "starred-friends",
+        characterId:
+          routeState.pane === "starred-friends"
+            ? routeState.characterId
+            : undefined,
       }),
     } satisfies SearchNavigationTarget;
   }
@@ -205,6 +275,9 @@ function resolveDesktopContactsNavigationTarget(
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "tags",
+        tag: routeState.pane === "tags" ? routeState.tag : undefined,
+        characterId:
+          routeState.pane === "tags" ? routeState.characterId : undefined,
       }),
     } satisfies SearchNavigationTarget;
   }
@@ -214,6 +287,8 @@ function resolveDesktopContactsNavigationTarget(
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "groups",
+        characterId:
+          routeState.pane === "groups" ? routeState.characterId : undefined,
       }),
     } satisfies SearchNavigationTarget;
   }
@@ -223,12 +298,90 @@ function resolveDesktopContactsNavigationTarget(
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "world-character",
+        characterId:
+          routeState.pane === "world-character"
+            ? routeState.characterId
+            : undefined,
         showWorldCharacters: true,
       }),
     } satisfies SearchNavigationTarget;
   }
 
   return null;
+}
+
+function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
+  const friendMomentsMatch = target.to.match(/^\/friend-moments\/([^/?#]+)$/);
+  if (!friendMomentsMatch?.[1]?.trim()) {
+    return null;
+  }
+
+  const characterId = friendMomentsMatch[1].trim();
+  const routeState = parseDesktopFriendMomentsRouteState(target.hash ?? "");
+
+  return buildNormalizedTargetFromPath(
+    buildDesktopFriendMomentsPath(characterId, routeState),
+  );
+}
+
+function resolveDesktopFeedNavigationTarget(target: SearchNavigationTarget) {
+  if (target.to !== "/discover/feed" && target.to !== "/tabs/feed") {
+    return null;
+  }
+
+  const routeState = parseFeedRouteHash(target.hash ?? "");
+  return {
+    to: "/tabs/feed",
+    hash: buildFeedRouteHash({
+      postId: routeState.postId,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
+    }),
+  } satisfies SearchNavigationTarget;
+}
+
+function resolveDesktopGamesNavigationTarget(target: SearchNavigationTarget) {
+  if (
+    target.to !== "/games" &&
+    target.to !== "/discover/games" &&
+    target.to !== "/tabs/games"
+  ) {
+    return null;
+  }
+
+  const routeState = parseMobileGamesRouteSearch(target.search ?? "");
+  return {
+    to: "/tabs/games",
+    search: buildMobileGamesRouteSearch({
+      gameId: routeState.gameId,
+      inviteId: routeState.inviteId,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
+    }),
+  } satisfies SearchNavigationTarget;
+}
+
+function resolveDesktopMiniProgramsNavigationTarget(
+  target: SearchNavigationTarget,
+) {
+  if (
+    target.to !== "/discover/mini-programs" &&
+    target.to !== "/tabs/mini-programs"
+  ) {
+    return null;
+  }
+
+  const routeState = parseMobileMiniProgramsRouteSearch(target.search ?? "");
+  return {
+    to: "/tabs/mini-programs",
+    search: buildMobileMiniProgramsRouteSearch({
+      miniProgramId: routeState.miniProgramId,
+      sourceGroupId: routeState.sourceGroupId,
+      sourceGroupName: routeState.sourceGroupName,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
+    }),
+  } satisfies SearchNavigationTarget;
 }
 
 function parseLegacyHighlightedMessageId(hash: string | undefined) {

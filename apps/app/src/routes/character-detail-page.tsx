@@ -1122,24 +1122,14 @@ export function CharacterDetailPage() {
                 title="角色不存在"
                 description={
                   safeMobileReturnPath
-                    ? "这个资料暂时不可用，返回上一页再试一次。"
-                    : "这个资料暂时不可用，返回通讯录再试一次。"
+                    ? "这个资料暂时不可用，可以先重试读取，或返回上一页后再试。"
+                    : "这个资料暂时不可用，可以先重试读取，或返回通讯录后再试。"
                 }
                 action={
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      if (navigateToRouteStateReturn()) {
-                        return;
-                      }
-
-                      void navigate({ to: "/tabs/contacts" });
-                    }}
-                    className="rounded-full"
-                  >
-                    {safeMobileReturnPath ? "返回上一页" : "返回通讯录"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {renderMobileRetryCharacterLoadAction()}
+                    {renderMobileErrorBackAction()}
+                  </div>
                 }
               />
             )}

@@ -452,16 +452,26 @@ export function ChatBackgroundPage() {
           <MobileBackgroundStatusCard
             badge="会话"
             title="会话不存在"
-            description="这段聊天暂时不可用，返回聊天页后再试一次。"
+            description="这段聊天暂时不可用，可以先重试读取，或返回聊天页后再试。"
             action={
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                onClick={handleMissingConversationAction}
-              >
-                {safeReturnPath ? "返回上一页" : "返回消息列表"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleRetryLoad}
+                >
+                  重试读取
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleMissingConversationAction}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回消息列表"}
+                </Button>
+              </div>
             }
           />
         )

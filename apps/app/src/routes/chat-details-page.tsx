@@ -101,6 +101,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     message: string;
     actionLabel?: string;
     onAction?: () => void;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
   } | null>(null);
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
   const [managementSheetOpen, setManagementSheetOpen] = useState(false);
@@ -460,6 +462,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 void openAppSettings();
               }
             : undefined,
+          secondaryActionLabel: statusBackLabel,
+          onSecondaryAction: handleOperationBack,
         });
       } else {
         setNotice({
@@ -786,9 +790,22 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           >
             <span>{notice.message}</span>
             {notice.actionLabel && notice.onAction ? (
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <InlineNoticeActionButton
+                  label={notice.actionLabel}
+                  onClick={notice.onAction}
+                />
+                {notice.secondaryActionLabel && notice.onSecondaryAction ? (
+                  <InlineNoticeActionButton
+                    label={notice.secondaryActionLabel}
+                    onClick={notice.onSecondaryAction}
+                  />
+                ) : null}
+              </div>
+            ) : notice.secondaryActionLabel && notice.onSecondaryAction ? (
               <InlineNoticeActionButton
-                label={notice.actionLabel}
-                onClick={notice.onAction}
+                label={notice.secondaryActionLabel}
+                onClick={notice.onSecondaryAction}
               />
             ) : null}
           </InlineNotice>
@@ -830,22 +847,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <MobileChatDetailsStatusCard
             badge="会话"
             title="会话不存在"
-            description="这段聊天暂时不可用，返回消息列表再试一次。"
-            action={
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  if (navigateToRouteStateReturn()) {
-                    return;
-                  }
-                  void navigate({ to: "/tabs/chat" });
-                }}
-                className="rounded-full"
-              >
-                {safeReturnPath ? "返回上一页" : "返回消息列表"}
-              </Button>
-            }
+            description="这段聊天暂时不可用，可以先重试读取，或返回消息列表后再试。"
+            action={renderStatusRetryAction(() => {
+              void conversationsQuery.refetch();
+            })}
           />
         </div>
       ) : null}

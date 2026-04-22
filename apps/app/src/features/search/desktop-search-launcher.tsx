@@ -58,6 +58,10 @@ import {
 } from "./search-route-state";
 import { resolveSearchNavigationTarget } from "./search-navigation";
 import { buildDesktopAddFriendRouteHash } from "../contacts/add-friend-route-state";
+import {
+  buildCharacterDetailRouteHash,
+  parseCharacterDetailRouteState,
+} from "../contacts/character-detail-route-state";
 import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
 import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";
 import {
@@ -84,6 +88,7 @@ type DesktopSearchDropdownPanelProps = {
   keyword: string;
   onOpenSearch: (keyword?: string) => void;
   onClose?: () => void;
+  source: SearchRouteSource;
   speechDisplayText: string;
   speechError: string | null;
   speechStatus: SpeechInputStatus;
@@ -331,6 +336,7 @@ export function DesktopSearchDropdownPanel({
   keyword,
   onOpenSearch,
   onClose,
+  source,
   speechDisplayText,
   speechError,
   speechStatus,
@@ -341,6 +347,15 @@ export function DesktopSearchDropdownPanel({
   const localMessageActionState = useLocalChatMessageActionState();
   const trimmedKeyword = keyword.trim();
   const normalizedKeyword = trimmedKeyword.toLowerCase();
+  const currentSearchRouteHash = useMemo(
+    () =>
+      buildSearchRouteHash({
+        category: "all",
+        keyword: trimmedKeyword,
+        source,
+      }),
+    [source, trimmedKeyword],
+  );
   const shouldLoadSuggestions = true;
   const {
     favoriteMatches,
@@ -700,11 +715,34 @@ export function DesktopSearchDropdownPanel({
   const [navigationLayer, setNavigationLayer] =
     useState<SearchLauncherNavigationLayer>("input");
 
+  const applyDesktopSearchReturn = useCallback(
+    (navigationTarget: ReturnType<typeof resolveSearchNavigationTarget>) => {
+      if (!navigationTarget.to.startsWith("/character/")) {
+        return navigationTarget;
+      }
+
+      const targetRouteState = parseCharacterDetailRouteState(
+        navigationTarget.hash ?? "",
+      );
+      return {
+        ...navigationTarget,
+        hash: buildCharacterDetailRouteHash({
+          ...targetRouteState,
+          returnPath: "/tabs/search",
+          returnHash: currentSearchRouteHash || undefined,
+        }),
+      };
+    },
+    [currentSearchRouteHash],
+  );
+
   const handleOpenQuickLink = useCallback(
     (item: DesktopSearchQuickLink) => {
-      const navigationTarget = resolveSearchNavigationTarget(item, {
-        desktopLayout: true,
-      });
+      const navigationTarget = applyDesktopSearchReturn(
+        resolveSearchNavigationTarget(item, {
+          desktopLayout: true,
+        }),
+      );
       onClose?.();
       void navigate({
         hash: navigationTarget.hash,
@@ -712,7 +750,21 @@ export function DesktopSearchDropdownPanel({
         search: navigationTarget.search as never,
       });
     },
-    [navigate, onClose],
+    [applyDesktopSearchReturn, navigate, onClose],
+  );
+
+  const handleOpenCharacterDetail = useCallback(
+    (characterId: string) => {
+      const navigationTarget = applyDesktopSearchReturn({
+        to: `/character/${characterId}`,
+      });
+      onClose?.();
+      void navigate({
+        hash: navigationTarget.hash,
+        to: navigationTarget.to as never,
+      });
+    },
+    [applyDesktopSearchReturn, navigate, onClose],
   );
 
   const actionItems = useMemo<SearchLauncherActionItem[]>(() => {
@@ -763,26 +815,14 @@ export function DesktopSearchDropdownPanel({
       friendMatches.forEach((item) => {
         items.push({
           id: `friend-${item.character.id}`,
-          onSelect: () => {
-            onClose?.();
-            void navigate({
-              to: "/character/$characterId",
-              params: { characterId: item.character.id },
-            });
-          },
+          onSelect: () => handleOpenCharacterDetail(item.character.id),
         });
       });
 
       worldCharacterMatches.forEach((item) => {
         items.push({
           id: `world-character-${item.character.id}`,
-          onSelect: () => {
-            onClose?.();
-            void navigate({
-              to: "/character/$characterId",
-              params: { characterId: item.character.id },
-            });
-          },
+          onSelect: () => handleOpenCharacterDetail(item.character.id),
         });
       });
 
@@ -850,12 +890,11 @@ export function DesktopSearchDropdownPanel({
     conversationOnlyMatches,
     favoriteMatches,
     friendMatches,
+    handleOpenCharacterDetail,
     handleOpenQuickLink,
     history,
     keyword,
     miniProgramMatches,
-    navigate,
-    onClose,
     onOpenSearch,
     officialMatches,
     recentConversations,
@@ -1406,13 +1445,9 @@ export function DesktopSearchDropdownPanel({
                         onMouseEnter={() =>
                           activatePanelAction(`friend-${item.character.id}`)
                         }
-                        onClick={() => {
-                          onClose?.();
-                          void navigate({
-                            to: "/character/$characterId",
-                            params: { characterId: item.character.id },
-                          });
-                        }}
+                        onClick={() =>
+                          handleOpenCharacterDetail(item.character.id)
+                        }
                       />
                     ))}
                   </div>
@@ -1451,13 +1486,9 @@ export function DesktopSearchDropdownPanel({
                             `world-character-${item.character.id}`,
                           )
                         }
-                        onClick={() => {
-                          onClose?.();
-                          void navigate({
-                            to: "/character/$characterId",
-                            params: { characterId: item.character.id },
-                          });
-                        }}
+                        onClick={() =>
+                          handleOpenCharacterDetail(item.character.id)
+                        }
                       />
                     ))}
                   </div>

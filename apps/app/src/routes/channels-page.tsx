@@ -394,6 +394,36 @@ export function ChannelsPage() {
     commentMutation.variables?.postId === mobileCommentSheetPostId
       ? commentMutation.error.message
       : null);
+  const mobileCommentSheetRetryAction =
+    mobileCommentsQuery.isError && mobileCommentSheetPostId
+      ? {
+          label: "重试读取评论",
+          onClick: () => {
+            void mobileCommentsQuery.refetch();
+          },
+        }
+      : likeCommentMutation.isError &&
+          likeCommentMutation.error instanceof Error &&
+          likeCommentMutation.variables?.postId === mobileCommentSheetPostId
+        ? {
+            label: "重试评论点赞",
+            onClick: () => {
+              likeCommentMutation.mutate(likeCommentMutation.variables);
+            },
+          }
+        : commentMutation.isError &&
+            commentMutation.error instanceof Error &&
+            commentMutation.variables?.postId === mobileCommentSheetPostId &&
+            commentMutation.variables.text.trim()
+          ? {
+              label: commentMutation.variables.replyTarget
+                ? "重试回复评论"
+                : "重试发送评论",
+              onClick: () => {
+                commentMutation.mutate(commentMutation.variables);
+              },
+            }
+          : null;
   const desktopCommentPanelErrorMessage =
     (desktopCommentsQuery.isError && desktopCommentsQuery.error instanceof Error
       ? desktopCommentsQuery.error.message
@@ -968,7 +998,7 @@ export function ChannelsPage() {
                   onClick={handleStatusBack}
                   className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
-                  {safeReturnPath ? "返回上一页" : "重新加载"}
+                  {safeReturnPath ? "返回上一页" : "重试读取"}
                 </button>
               </div>
             ) : (
@@ -998,7 +1028,7 @@ export function ChannelsPage() {
                   className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                   onClick={handleStatusBack}
                 >
-                  {safeReturnPath ? "返回上一页" : "重新加载"}
+                  {safeReturnPath ? "返回上一页" : "重试读取"}
                 </Button>
               </div>
             }
@@ -1065,6 +1095,7 @@ export function ChannelsPage() {
             ? (commentDrafts[mobileCommentSheetPost.id] ?? "")
             : ""
         }
+        errorActionLabel={mobileCommentSheetRetryAction?.label}
         errorMessage={mobileCommentSheetErrorMessage}
         isLoading={mobileCommentsQuery.isLoading}
         likePendingCommentId={pendingLikeCommentId}
@@ -1084,6 +1115,7 @@ export function ChannelsPage() {
 
           updateCommentDraft(mobileCommentSheetPost.id, value);
         }}
+        onErrorAction={mobileCommentSheetRetryAction?.onClick}
         onLikeComment={(comment) =>
           likeCommentMutation.mutate({
             commentId: comment.id,
@@ -1580,6 +1612,7 @@ function ActionRailButton({
 function MobileChannelCommentsSheet({
   comments,
   draft,
+  errorActionLabel,
   errorMessage,
   isLoading,
   likePendingCommentId,
@@ -1590,12 +1623,14 @@ function MobileChannelCommentsSheet({
   onCancelReply,
   onClose,
   onDraftChange,
+  onErrorAction,
   onLikeComment,
   onReply,
   onSubmit,
 }: {
   comments: FeedComment[];
   draft: string;
+  errorActionLabel?: string;
   errorMessage?: string | null;
   isLoading: boolean;
   likePendingCommentId: string | null;
@@ -1611,6 +1646,7 @@ function MobileChannelCommentsSheet({
   onCancelReply: () => void;
   onClose: () => void;
   onDraftChange: (value: string) => void;
+  onErrorAction?: () => void;
   onLikeComment: (comment: FeedComment) => void;
   onReply: (comment: FeedComment) => void;
   onSubmit: () => void;
@@ -1691,13 +1727,24 @@ function MobileChannelCommentsSheet({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">{errorMessage}</span>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
-                >
-                  返回视频号
-                </button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {errorActionLabel && onErrorAction ? (
+                    <button
+                      type="button"
+                      onClick={onErrorAction}
+                      className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                    >
+                      {errorActionLabel}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#6b7280]"
+                  >
+                    返回视频号
+                  </button>
+                </div>
               </div>
             </InlineNotice>
           ) : null}

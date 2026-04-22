@@ -63,6 +63,7 @@ export function ContactsWorkspaceShell({
             keyword={searchText}
             onClose={desktopSearchLauncher.close}
             onOpenSearch={desktopSearchLauncher.openSearch}
+            source={searchSource}
             speechDisplayText={desktopSearchLauncher.speechDisplayText}
             speechError={desktopSearchLauncher.speechError}
             speechStatus={desktopSearchLauncher.speechStatus}

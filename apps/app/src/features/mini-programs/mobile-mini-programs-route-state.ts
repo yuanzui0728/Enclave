@@ -19,6 +19,10 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
+  if (nextValue === "/discover/mini-programs") {
+    return "/tabs/mini-programs";
+  }
+
   return nextValue;
 }
 

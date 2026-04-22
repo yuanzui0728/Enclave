@@ -625,6 +625,25 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     />
   );
 
+  const renderRetryCharacterLoadAction = () => (
+    <InlineNoticeActionButton
+      label="重试读取角色资料"
+      className="border-current/28 bg-white/12 active:bg-white/16"
+      onClick={() => {
+        void characterQuery.refetch();
+      }}
+    />
+  );
+
+  const renderOpenSettingsAction = () => (
+    <InlineNoticeActionButton
+      className="border-current/28 bg-white/12 active:bg-white/16"
+      onClick={() => {
+        void openAppSettings();
+      }}
+    />
+  );
+
   const handleSwitchToVoiceCall = async () => {
     if (leavingScreen) {
       return;
@@ -967,7 +986,58 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     );
   }
 
-  if (!conversation || conversation.type !== "direct") {
+  if (!conversation) {
+    return (
+      <AppPage
+        className={cn(
+          "min-h-full space-y-4 px-4 py-6",
+          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+        )}
+      >
+        {isDesktopLayout ? (
+          <>
+            <ErrorBlock message="当前聊天暂时不可用。" />
+            <Button
+              variant="secondary"
+              onClick={handleBack}
+              className={cn(
+                isDesktopLayout
+                  ? "rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  : "rounded-full",
+              )}
+            >
+              返回聊天
+            </Button>
+          </>
+        ) : (
+          <MobileCallStatusCard
+            badge="会话"
+            title="当前不能发起通话"
+            description="这段聊天暂时不可用，可以先重试读取，或返回聊天后再试。"
+            tone="danger"
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <MobileCallActionButton
+                  onClick={handleRetryLoad}
+                  className="min-w-[132px]"
+                >
+                  重试读取
+                </MobileCallActionButton>
+                <MobileCallActionButton
+                  onClick={handleBack}
+                  className="min-w-[132px]"
+                >
+                  返回聊天
+                </MobileCallActionButton>
+              </div>
+            }
+          />
+        )}
+      </AppPage>
+    );
+  }
+
+  if (conversation.type !== "direct") {
     return (
       <AppPage
         className={cn(
@@ -1377,15 +1447,13 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             speech.permissionDenied && nativeMobileShellSupported ? (
               <MobileCallNotice
                 tone="warning"
-                className="flex items-center justify-between gap-3"
+                className="flex flex-wrap items-center justify-between gap-3"
               >
                 <span>{speech.error}</span>
-                <InlineNoticeActionButton
-                  className="border-current/28 bg-white/12 active:bg-white/16"
-                  onClick={() => {
-                    void openAppSettings();
-                  }}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  {renderOpenSettingsAction()}
+                  {renderBackToChatAction()}
+                </div>
               </MobileCallNotice>
             ) : (
               <MobileCallNotice
@@ -1471,10 +1539,13 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {characterQuery.isError && characterQuery.error instanceof Error ? (
             <MobileCallNotice
               tone="danger"
-              className="flex items-center justify-between gap-3"
+              className="flex flex-wrap items-center justify-between gap-3"
             >
               <span>{characterQuery.error.message}</span>
-              {renderBackToChatAction()}
+              <div className="flex flex-wrap items-center gap-2">
+                {renderRetryCharacterLoadAction()}
+                {renderBackToChatAction()}
+              </div>
             </MobileCallNotice>
           ) : null}
         </div>

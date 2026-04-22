@@ -18,6 +18,10 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
+  if (nextValue === "/games" || nextValue === "/discover/games") {
+    return "/tabs/games";
+  }
+
   return nextValue;
 }
 

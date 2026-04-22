@@ -443,17 +443,28 @@ function MobileOfficialAccountArticlePage({
             <MobileOfficialArticleStatusCard
               badge="公众号文章"
               title="这篇文章暂时不可用"
-              description="可以先回上一页，稍后再试。"
+              description="可以先重试读取，或返回上一页稍后再试。"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryArticle}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                </div>
               }
             />
           </div>

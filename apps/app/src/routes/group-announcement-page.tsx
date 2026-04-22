@@ -380,16 +380,26 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
           <MobileAnnouncementStatusCard
             badge="群聊"
             title="群聊不存在"
-            description="这个群聊暂时不可用，返回上一页再试一次。"
+            description="这个群聊暂时不可用，可以先重试读取，或返回上一页后再试。"
             action={
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleMissingGroupAction}
-                className="rounded-full"
-              >
-                {safeReturnPath ? "返回上一页" : "返回消息列表"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleRetryLoad}
+                  className="rounded-full"
+                >
+                  重试读取
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleMissingGroupAction}
+                  className="rounded-full"
+                >
+                  {safeReturnPath ? "返回上一页" : "返回消息列表"}
+                </Button>
+              </div>
             }
           />
         </div>

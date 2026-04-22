@@ -27,6 +27,10 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
+  if (nextValue === "/discover/channels") {
+    return "/tabs/channels";
+  }
+
   return nextValue;
 }
 

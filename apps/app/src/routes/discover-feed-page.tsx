@@ -231,7 +231,7 @@ export function DiscoverFeedPage() {
 
     focusComposer();
   }
-  const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试";
+  const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试读取";
   const composerErrorActionLabel = safeReturnPath ? "返回上一页" : "继续编辑";
 
   useEffect(() => {
@@ -705,7 +705,7 @@ export function DiscoverFeedPage() {
                     onClick={handleStatusBack}
                     className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
-                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                    {safeReturnPath ? "返回上一页" : "重试读取"}
                   </button>
                 </div>
               ) : (
@@ -743,7 +743,7 @@ export function DiscoverFeedPage() {
                     className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
-                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                    {safeReturnPath ? "返回上一页" : "重试读取"}
                   </Button>
                 </div>
               }

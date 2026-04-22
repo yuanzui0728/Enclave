@@ -16,6 +16,10 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
+  if (nextValue === "/discover/feed") {
+    return "/tabs/feed";
+  }
+
   return nextValue;
 }
 

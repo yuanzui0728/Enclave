@@ -578,22 +578,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
           <MobileGroupDetailsStatusCard
             badge="群聊"
             title="群聊不存在"
-            description="这个群聊暂时不可用，返回消息列表再试一次。"
-            action={
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  if (navigateToRouteStateReturn()) {
-                    return;
-                  }
-                  void navigate({ to: "/tabs/chat" });
-                }}
-                className="rounded-full"
-              >
-                {safeReturnPath ? "返回上一页" : "返回消息列表"}
-              </Button>
-            }
+            description="这个群聊暂时不可用，可以先重试读取，或返回消息列表后再试。"
+            action={statusRetryAction}
           />
         </div>
       ) : null}

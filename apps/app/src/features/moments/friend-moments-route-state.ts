@@ -1,3 +1,5 @@
+import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
+
 const DESKTOP_FRIEND_MOMENTS_BASE_PATH = "/desktop/friend-moments";
 
 export type DesktopFriendMomentsRouteSource =
@@ -38,6 +40,10 @@ function normalizeReturnPath(value?: string | null) {
     return "/tabs/moments";
   }
 
+  if (nextValue === "/contacts/starred" || nextValue === "/contacts/tags") {
+    return "/tabs/contacts";
+  }
+
   return nextValue;
 }
 
@@ -61,7 +67,25 @@ export function parseDesktopFriendMomentsRouteState(
   const params = new URLSearchParams(normalizedHash);
   const momentId = params.get("moment")?.trim();
   const source = params.get("source")?.trim();
-  const returnPath = normalizeReturnPath(params.get("returnPath"));
+  const rawReturnPath = params.get("returnPath");
+  const returnPath = normalizeReturnPath(rawReturnPath);
+  const explicitReturnHash = normalizeHash(params.get("returnHash"));
+  const defaultLegacyContactsReturnHash =
+    rawReturnPath === "/contacts/starred"
+      ? buildDesktopContactsRouteHash({
+          pane: "starred-friends",
+          showWorldCharacters: false,
+        })
+      : rawReturnPath === "/contacts/tags"
+        ? buildDesktopContactsRouteHash({
+            pane: "tags",
+            showWorldCharacters: false,
+          })
+        : undefined;
+  const returnHash =
+    returnPath && (explicitReturnHash ?? defaultLegacyContactsReturnHash)
+      ? explicitReturnHash ?? defaultLegacyContactsReturnHash
+      : undefined;
 
   return {
     ...(momentId ? { momentId } : {}),
@@ -69,9 +93,7 @@ export function parseDesktopFriendMomentsRouteState(
       ? { source: source as DesktopFriendMomentsRouteSource }
       : {}),
     ...(returnPath ? { returnPath } : {}),
-    ...(returnPath && normalizeHash(params.get("returnHash"))
-      ? { returnHash: normalizeHash(params.get("returnHash")) }
-      : {}),
+    ...(returnHash ? { returnHash } : {}),
   };
 }
 
