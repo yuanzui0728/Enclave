@@ -2333,10 +2333,10 @@ test("listJobs excludes request gate placeholder jobs from the global queue", as
   const jobs = await service.listJobs();
 
   assert.deepEqual(
-    jobs.map((job) => job.id),
+    jobs.items.map((job) => job.id),
     [visibleJob.id],
   );
-  assert.equal(jobs.some((job) => job.id === hiddenJob.id), false);
+  assert.equal(jobs.items.some((job) => job.id === hiddenJob.id), false);
 });
 
 test("job endpoints hide request gate placeholder jobs", async (t) => {
@@ -3736,6 +3736,8 @@ test("ListJobsQueryDto transforms valid lifecycle job filters", () => {
     audit: " superseded ",
     supersededBy: " suspend ",
     query: " queued retry ",
+    page: "2",
+    pageSize: "50",
   });
   const errors = validateSync(query);
 
@@ -3748,6 +3750,8 @@ test("ListJobsQueryDto transforms valid lifecycle job filters", () => {
   assert.equal(query.audit, "superseded");
   assert.equal(query.supersededBy, "suspend");
   assert.equal(query.query, "queued retry");
+  assert.equal(query.page, 2);
+  assert.equal(query.pageSize, 50);
 });
 
 test("MutateFailedWaitingSessionSyncTasksDto transforms valid task ids", () => {
@@ -4004,7 +4008,13 @@ test("AdminCloudController forwards waiting session sync task filters", async ()
 
 test("AdminCloudController forwards lifecycle job filters", async () => {
   const calls: Array<Record<string, unknown>> = [];
-  const expectedResponse = [];
+  const expectedResponse = {
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    totalPages: 1,
+  };
   const controller = new AdminCloudController(
     {
       listJobs: async (query: Record<string, unknown>) => {
@@ -4024,6 +4034,8 @@ test("AdminCloudController forwards lifecycle job filters", async () => {
     audit: "superseded",
     supersededBy: "suspend",
     query: "retry",
+    page: 2,
+    pageSize: 50,
   });
 
   assert.deepEqual(result, expectedResponse);
@@ -4037,6 +4049,8 @@ test("AdminCloudController forwards lifecycle job filters", async () => {
       audit: "superseded",
       supersededBy: "suspend",
       query: "retry",
+      page: 2,
+      pageSize: 50,
     },
   ]);
 });
@@ -5287,12 +5301,12 @@ test("listJobs exposes lease and scheduling metadata", async (t) => {
     worldId: world.id,
   });
 
-  assert.equal(jobs.length, 1);
-  assert.equal(jobs[0]?.leaseOwner, "worker-a");
-  assert.equal(jobs[0]?.leaseExpiresAt, leaseExpiresAt.toISOString());
-  assert.equal(jobs[0]?.availableAt, availableAt.toISOString());
-  assert.ok((jobs[0]?.leaseRemainingSeconds ?? 0) > 0);
-  assert.ok((jobs[0]?.leaseRemainingSeconds ?? 9999) <= 5 * 60);
+  assert.equal(jobs.items.length, 1);
+  assert.equal(jobs.items[0]?.leaseOwner, "worker-a");
+  assert.equal(jobs.items[0]?.leaseExpiresAt, leaseExpiresAt.toISOString());
+  assert.equal(jobs.items[0]?.availableAt, availableAt.toISOString());
+  assert.ok((jobs.items[0]?.leaseRemainingSeconds ?? 0) > 0);
+  assert.ok((jobs.items[0]?.leaseRemainingSeconds ?? 9999) <= 5 * 60);
 });
 
 test("listJobs exposes superseded lifecycle audit metadata", async (t) => {
@@ -5363,13 +5377,13 @@ test("listJobs exposes superseded lifecycle audit metadata", async (t) => {
     worldId: world.id,
   });
 
-  assert.equal(jobs.length, 1);
-  assert.equal(jobs[0]?.failureCode, "superseded_by_new_job");
-  assert.equal(jobs[0]?.supersededByJobType, "resume");
-  assert.deepEqual(jobs[0]?.supersededByPayload, {
+  assert.equal(jobs.items.length, 1);
+  assert.equal(jobs.items[0]?.failureCode, "superseded_by_new_job");
+  assert.equal(jobs.items[0]?.supersededByJobType, "resume");
+  assert.deepEqual(jobs.items[0]?.supersededByPayload, {
     source: "resume-request",
   });
-  assert.deepEqual(jobs[0]?.resultPayload, {
+  assert.deepEqual(jobs.items[0]?.resultPayload, {
     action: "superseded_by_new_job",
     supersededByJobType: "resume",
     supersededByPayload: { source: "resume-request" },
@@ -5487,7 +5501,7 @@ test("listJobs filters superseded lifecycle jobs by audit and superseding job ty
     audit: "superseded",
   });
   assert.deepEqual(
-    new Set(supersededJobs.map((job) => job.id)),
+    new Set(supersededJobs.items.map((job) => job.id)),
     new Set([supersededResumeJob.id, supersededSuspendJob.id]),
   );
 
@@ -5495,9 +5509,20 @@ test("listJobs filters superseded lifecycle jobs by audit and superseding job ty
     audit: "superseded",
     supersededBy: "resume",
   });
-  assert.equal(resumeSupersededJobs.length, 1);
-  assert.equal(resumeSupersededJobs[0]?.id, supersededResumeJob.id);
-  assert.equal(resumeSupersededJobs[0]?.supersededByJobType, "resume");
+  assert.equal(resumeSupersededJobs.items.length, 1);
+  assert.equal(resumeSupersededJobs.items[0]?.id, supersededResumeJob.id);
+  assert.equal(resumeSupersededJobs.items[0]?.supersededByJobType, "resume");
+
+  const pagedSupersededJobs = await service.listJobs({
+    audit: "superseded",
+    page: 2,
+    pageSize: 1,
+  });
+  assert.equal(pagedSupersededJobs.page, 2);
+  assert.equal(pagedSupersededJobs.pageSize, 1);
+  assert.equal(pagedSupersededJobs.total, 2);
+  assert.equal(pagedSupersededJobs.totalPages, 2);
+  assert.equal(pagedSupersededJobs.items.length, 1);
 });
 
 test("listJobs filters lifecycle jobs by provider queue state and search query", async (t) => {
@@ -5609,7 +5634,7 @@ test("listJobs filters lifecycle jobs by provider queue state and search query",
     provider: providerSummary.key,
   });
   assert.deepEqual(
-    providerFilteredJobs.map((job) => job.id),
+    providerFilteredJobs.items.map((job) => job.id),
     [delayedJob.id],
   );
 
@@ -5617,7 +5642,7 @@ test("listJobs filters lifecycle jobs by provider queue state and search query",
     queueState: "delayed",
   });
   assert.deepEqual(
-    delayedJobs.map((job) => job.id),
+    delayedJobs.items.map((job) => job.id),
     [delayedJob.id],
   );
 
@@ -5625,7 +5650,7 @@ test("listJobs filters lifecycle jobs by provider queue state and search query",
     query: filteredWorld.phone,
   });
   assert.deepEqual(
-    queryFilteredJobs.map((job) => job.id),
+    queryFilteredJobs.items.map((job) => job.id),
     [delayedJob.id],
   );
 });

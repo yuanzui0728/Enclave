@@ -15,6 +15,7 @@ import { parseMobileChatRouteState } from "../features/chat/mobile-chat-route-st
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
+import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
@@ -28,6 +29,23 @@ const DesktopChatWorkspace = lazy(async () => {
   const mod = await import("../features/chat/chat-workspace-shell");
   return { default: mod.DesktopChatWorkspace };
 });
+
+function normalizeDesktopGameInviteReturnPath(
+  path: string,
+  isDesktopLayout: boolean,
+) {
+  if (!isDesktopLayout) {
+    return path;
+  }
+
+  const [pathname, ...searchParts] = path.split("?");
+  if (pathname !== "/games" && pathname !== "/discover/games") {
+    return path;
+  }
+
+  const search = searchParts.join("?");
+  return search ? `/tabs/games?${search}` : "/tabs/games";
+}
 
 export function ChatRoomPage() {
   const { conversationId } = useParams({ from: "/chat/$conversationId" });
@@ -52,12 +70,32 @@ export function ChatRoomPage() {
   });
   const activeConversation =
     conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
+  const safeRouteContext = routeContext
+    ? {
+        ...routeContext,
+        returnPath: normalizeDesktopGameInviteReturnPath(
+          routeContext.returnPath,
+          isDesktopLayout,
+        ),
+      }
+    : null;
 
   useEffect(() => {
     setRouteContext(resolveRouteContext(conversationId));
   }, [conversationId]);
 
   useEffect(() => {
+    if (isDesktopLayout) {
+      void navigate({
+        to: buildDesktopChatThreadPath({
+          conversationId,
+          messageId: highlightedMessageId ?? undefined,
+        }),
+        replace: true,
+      });
+      return;
+    }
+
     if (
       !activeConversation ||
       !isPersistedGroupConversation(activeConversation)
@@ -72,9 +110,21 @@ export function ChatRoomPage() {
       hash,
       replace: true,
     });
-  }, [activeConversation, hash, navigate, search]);
+  }, [
+    activeConversation,
+    conversationId,
+    hash,
+    highlightedMessageId,
+    isDesktopLayout,
+    navigate,
+    search,
+  ]);
 
   useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+
     const nextAction = parseChatComposeShortcutAction(search);
     if (!nextAction) {
       return;
@@ -93,9 +143,13 @@ export function ChatRoomPage() {
       hash,
       replace: true,
     });
-  }, [conversationId, hash, navigate, search]);
+  }, [conversationId, hash, isDesktopLayout, navigate, search]);
 
   useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+
     const nextKind = parseChatCallReturnKind(search);
     if (!nextKind) {
       return;
@@ -114,7 +168,7 @@ export function ChatRoomPage() {
       hash,
       replace: true,
     });
-  }, [conversationId, hash, navigate, search]);
+  }, [conversationId, hash, isDesktopLayout, navigate, search]);
 
   useEffect(() => {
     if (routeCallReturnKind === null) {
@@ -223,12 +277,12 @@ export function ChatRoomPage() {
           highlightedMessageId={highlightedMessageId}
           routeContextNotice={
             callReturnNotice ??
-            (routeContext
+            (safeRouteContext
               ? {
-                  actionLabel: routeContext.actionLabel,
-                  description: routeContext.description,
+                  actionLabel: safeRouteContext.actionLabel,
+                  description: safeRouteContext.description,
                   onAction: () => {
-                    void navigate({ to: routeContext.returnPath });
+                    void navigate({ to: safeRouteContext.returnPath });
                   },
                 }
               : undefined)
@@ -249,12 +303,12 @@ export function ChatRoomPage() {
           onRouteMobileShortcutHandled={handleRouteMobileShortcutHandled}
           routeContextNotice={
             callReturnNotice ??
-            (routeContext
+            (safeRouteContext
               ? {
-                  actionLabel: routeContext.actionLabel,
-                  description: routeContext.description,
+                  actionLabel: safeRouteContext.actionLabel,
+                  description: safeRouteContext.description,
                   onAction: () => {
-                    void navigate({ to: routeContext.returnPath });
+                    void navigate({ to: safeRouteContext.returnPath });
                   },
                 }
               : undefined)
@@ -266,7 +320,7 @@ export function ChatRoomPage() {
               }
 
               void navigate({
-                to: routeContext?.returnPath ?? "/tabs/chat",
+                to: safeRouteContext?.returnPath ?? "/tabs/chat",
               });
             });
           }}

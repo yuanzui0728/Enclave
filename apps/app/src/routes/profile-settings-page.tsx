@@ -159,19 +159,14 @@ export function ProfileSettingsPage() {
   const desktopSettingsPath = "/desktop/settings";
   const desktopMode = isDesktopLayout;
   const desktopSettingsRoute = pathname.startsWith("/desktop/settings");
-  const desktopSettingsRouteFamily =
-    pathname === "/profile/settings" || desktopSettingsRoute;
+  const desktopPathMismatch = desktopMode && pathname !== desktopSettingsPath;
   const backTo = desktopMode ? "/tabs/chat" : "/tabs/profile";
   const desktopBackTo = desktopSettingsRoute ? "/tabs/chat" : "/tabs/profile";
   const desktopBackLabel = desktopSettingsRoute ? "返回消息" : "返回资料";
   const mobileBackLabel = backTo === "/tabs/profile" ? "返回资料页" : "返回消息";
 
   useEffect(() => {
-    if (!desktopMode || !desktopSettingsRouteFamily) {
-      return;
-    }
-
-    if (pathname === desktopSettingsPath) {
+    if (!desktopPathMismatch) {
       return;
     }
 
@@ -179,16 +174,14 @@ export function ProfileSettingsPage() {
       to: desktopSettingsPath,
       replace: true,
     });
-  }, [
-    desktopMode,
-    desktopSettingsPath,
-    desktopSettingsRouteFamily,
-    navigate,
-    pathname,
-  ]);
+  }, [desktopPathMismatch, desktopSettingsPath, navigate]);
 
   function handleMobileBack() {
     void navigate({ to: backTo });
+  }
+
+  function handleRetryOwnerLoad() {
+    void ownerQuery.refetch();
   }
 
   const content = (
@@ -260,7 +253,18 @@ export function ProfileSettingsPage() {
             desktopMode ? (
               <ErrorBlock message={saveProfileMutation.error.message} />
             ) : (
-              <MobileSettingsInlineNotice tone="danger">
+              <MobileSettingsInlineNotice
+                tone="danger"
+                action={
+                  <button
+                    type="button"
+                    onClick={handleMobileBack}
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  >
+                    {mobileBackLabel}
+                  </button>
+                }
+              >
                 {saveProfileMutation.error.message}
               </MobileSettingsInlineNotice>
             )
@@ -381,14 +385,24 @@ export function ProfileSettingsPage() {
                 description={ownerQuery.error.message}
                 tone="danger"
                 action={
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                    onClick={handleMobileBack}
-                  >
-                    {mobileBackLabel}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      onClick={handleRetryOwnerLoad}
+                    >
+                      重试读取
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      onClick={handleMobileBack}
+                    >
+                      {mobileBackLabel}
+                    </Button>
+                  </div>
                 }
               />
             )

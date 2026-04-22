@@ -13,8 +13,9 @@ export function GroupVideoCallPage() {
     return (
       <DesktopChatRouteRedirectShell
         conversationId={groupId}
+        callAction="video"
         title="正在返回群聊工作区"
-        description="桌面端群视频通话入口已经收口到聊天工作区，先回到对应群聊。"
+        description="桌面端群视频通话入口已经收口到聊天工作区，正在恢复当前群聊的视频通话动作。"
         loadingLabel="正在切换到桌面群聊..."
       />
     );

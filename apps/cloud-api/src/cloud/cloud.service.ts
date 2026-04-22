@@ -8,6 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import type {
   ClearFilteredFailedCloudWaitingSessionSyncTasksResponse,
   ClearFailedCloudWaitingSessionSyncTasksResponse,
+  CloudWorldLifecycleJobListResponse,
   CloudWorldLifecycleJobListQuery,
   CloudWaitingSessionSyncTaskListResponse,
   CloudWaitingSessionSyncTaskStatus,
@@ -705,15 +706,31 @@ export class CloudService {
     return this.serializeWorld(world);
   }
 
-  async listJobs(filters?: WorldLifecycleJobFilters) {
+  async listJobs(
+    filters?: WorldLifecycleJobFilters,
+  ): Promise<CloudWorldLifecycleJobListResponse> {
     if (filters?.worldId) {
       await this.requireWorld(filters.worldId);
     }
 
-    const jobs = await this.createJobQueryBuilder(filters)
-      .take(filters?.worldId ? 20 : 100)
-      .getMany();
-    return jobs.map((job) => this.serializeJob(job));
+    const page = filters?.page && filters.page > 0 ? filters.page : 1;
+    const defaultPageSize = filters?.worldId ? 20 : 20;
+    const pageSize =
+      filters?.pageSize && filters.pageSize > 0
+        ? Math.min(filters.pageSize, 100)
+        : defaultPageSize;
+
+    const [items, total] = await this.createJobQueryBuilder(filters)
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+    return {
+      items: items.map((job) => this.serializeJob(job)),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
   }
 
   async listWaitingSessionSyncTasks(filters?: {

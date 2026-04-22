@@ -50,9 +50,16 @@ export function ChannelAuthorPage() {
   });
   const baseUrl = runtimeConfig.apiBaseUrl;
   const routeState = useMemo(() => parseDesktopChannelsRouteHash(hash), [hash]);
+  const normalizedDesktopReturnPath =
+    isDesktopLayout && routeState.returnPath === "/discover/channels"
+      ? "/tabs/channels"
+      : routeState.returnPath;
   const safeReturnPath =
-    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
-      ? routeState.returnPath
+    routeState.returnPath &&
+    !isDesktopOnlyPath(routeState.returnPath) &&
+    normalizedDesktopReturnPath &&
+    !isDesktopOnlyPath(normalizedDesktopReturnPath)
+      ? normalizedDesktopReturnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const sourceChannelsRouteState = useMemo(
@@ -118,8 +125,8 @@ export function ChannelAuthorPage() {
       hash: buildDesktopChannelsRouteHash({
         postId: routeState.postId,
         authorId,
-        returnHash: routeState.returnHash,
-        returnPath: routeState.returnPath,
+        returnHash: safeReturnHash,
+        returnPath: safeReturnPath,
         section: routeState.section,
       }),
       replace: true,
@@ -129,8 +136,8 @@ export function ChannelAuthorPage() {
     isDesktopLayout,
     navigate,
     routeState.postId,
-    routeState.returnHash,
-    routeState.returnPath,
+    safeReturnHash,
+    safeReturnPath,
     routeState.section,
   ]);
 
@@ -166,6 +173,19 @@ export function ChannelAuthorPage() {
       to: "/discover/channels",
       ...(fallbackChannelsHash ? { hash: fallbackChannelsHash } : {}),
     });
+  }
+
+  function handleRetryLoad() {
+    void profileQuery.refetch();
+  }
+
+  function handleRetryFollow() {
+    if (!profileQuery.data) {
+      return;
+    }
+
+    setNotice(null);
+    followMutation.mutate();
   }
 
   function openChannelPost(post: FeedPostListItem) {
@@ -287,14 +307,24 @@ export function ChannelAuthorPage() {
               description={profileQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "返回视频号"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryLoad}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回视频号"}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -307,14 +337,26 @@ export function ChannelAuthorPage() {
               description={followMutation.error.message}
               tone="danger"
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "返回视频号"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {profileQuery.data ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      onClick={handleRetryFollow}
+                    >
+                      {profileQuery.data.isFollowing ? "重试取消关注" : "重试关注"}
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回视频号"}
+                  </Button>
+                </div>
               }
             />
           </div>

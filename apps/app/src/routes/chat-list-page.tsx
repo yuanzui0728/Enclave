@@ -141,7 +141,24 @@ const DesktopChatWorkspace = lazy(async () => {
 
 export function ChatListPage() {
   const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({ select: (state) => state.location.hash });
+  const desktopPathMismatch = pathname !== "/tabs/chat";
+
+  useEffect(() => {
+    if (!isDesktopLayout || !desktopPathMismatch) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/chat",
+      hash: hash || undefined,
+      replace: true,
+    });
+  }, [desktopPathMismatch, hash, isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
     return (
@@ -441,6 +458,17 @@ function MobileChatListPage() {
     });
   }
 
+  function openOfficialAccountsList() {
+    setNotice(null);
+    void navigate({
+      to: "/contacts/official-accounts",
+      hash: buildMobileOfficialRouteHash({
+        returnPath: pathname,
+        returnHash: currentOfficialRouteHash || undefined,
+      }),
+    });
+  }
+
   function handleScheduleHideConversation(conversation: ConversationListEntry) {
     setOpenSwipeConversationId(null);
     setNotice(null);
@@ -651,15 +679,24 @@ function MobileChatListPage() {
                 <span className="min-w-0 flex-1">
                   订阅号与服务号入口暂时没有刷新成功。
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void messageEntriesQuery.refetch();
-                  }}
-                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
-                >
-                  重试
-                </button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={openOfficialAccountsList}
+                    className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  >
+                    查看公众号
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void messageEntriesQuery.refetch();
+                    }}
+                    className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  >
+                    重试
+                  </button>
+                </div>
               </div>
             </InlineNotice>
           </div>
@@ -1195,7 +1232,11 @@ function ConversationListItemLink({
           : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
-      <AvatarChip name={conversation.title} size="wechat" />
+      <AvatarChip
+        name={conversation.title}
+        src={conversation.avatar}
+        size="wechat"
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">

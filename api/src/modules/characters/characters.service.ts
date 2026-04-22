@@ -418,9 +418,7 @@ export class CharactersService implements OnModuleInit {
       return null;
     }
 
-    const canonicalAvatar = maybeGetCharacterAvatarBySourceKey(
-      character.sourceKey,
-    );
+    const canonicalAvatar = this.resolveCanonicalCharacterAvatar(character);
     if (
       !canonicalAvatar ||
       !this.shouldReplaceCharacterAvatar(character.avatar, canonicalAvatar)
@@ -432,6 +430,38 @@ export class CharactersService implements OnModuleInit {
       ...character,
       avatar: canonicalAvatar,
     };
+  }
+
+  private resolveCanonicalCharacterAvatar(
+    character: Pick<CharacterEntity, 'id' | 'sourceKey'>,
+  ) {
+    const mappedBySourceKey = maybeGetCharacterAvatarBySourceKey(
+      character.sourceKey,
+    );
+    if (mappedBySourceKey) {
+      return mappedBySourceKey;
+    }
+
+    const builtInPreset = BUILT_IN_CHARACTER_PRESETS.find(
+      (preset) => preset.id === character.id,
+    );
+    const mappedByBuiltInPreset = maybeGetCharacterAvatarBySourceKey(
+      builtInPreset?.character?.sourceKey ?? builtInPreset?.presetKey,
+    );
+    if (mappedByBuiltInPreset) {
+      return mappedByBuiltInPreset;
+    }
+
+    const defaultCharacter = buildDefaultCharacters().find(
+      (item) => item.id === character.id,
+    );
+    return (
+      maybeGetCharacterAvatarBySourceKey(defaultCharacter?.sourceKey) ??
+      builtInPreset?.character?.avatar?.trim() ??
+      builtInPreset?.avatar?.trim() ??
+      defaultCharacter?.avatar?.trim() ??
+      null
+    );
   }
 
   private shouldReplaceCharacterAvatar(
@@ -467,11 +497,7 @@ export class CharactersService implements OnModuleInit {
   }
 
   private async backfillCharacterAvatarAssets() {
-    const characters = await this.repo.find({
-      where: {
-        sourceType: In(['default_seed', 'preset_catalog']),
-      },
-    });
+    const characters = await this.repo.find();
     const pendingUpdates: CharacterEntity[] = [];
 
     for (const character of characters) {

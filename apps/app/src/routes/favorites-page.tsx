@@ -104,6 +104,8 @@ export function FavoritesPage() {
   const noteEditorRouteState = routeState.noteEditor;
   const workspaceRouteState = routeState.workspace;
   const desktopFavoritesPath = "/tabs/favorites";
+  const desktopPathMismatch =
+    isDesktopLayout && pathname !== desktopFavoritesPath;
 
   const normalizedSearchText = deferredSearchText.trim().toLowerCase();
   const favoriteNoteSummaryMap = useMemo(() => {
@@ -174,6 +176,18 @@ export function FavoritesPage() {
     const timer = window.setTimeout(() => setNotice(null), 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (!desktopPathMismatch) {
+      return;
+    }
+
+    void navigate({
+      to: desktopFavoritesPath,
+      hash: hash || undefined,
+      replace: true,
+    });
+  }, [desktopFavoritesPath, desktopPathMismatch, hash, navigate]);
 
   useEffect(() => {
     if (pathname !== desktopFavoritesPath || noteEditorRouteState) {
@@ -376,7 +390,7 @@ export function FavoritesPage() {
         noteId: input?.noteId?.trim() || undefined,
         returnTo:
           input?.returnTo?.trim() ||
-          (typeof window !== "undefined" && pathname === desktopFavoritesPath
+          (typeof window !== "undefined" && !desktopPathMismatch
             ? getCurrentWindowTargetPath()
             : fallbackReturnTo),
       }),

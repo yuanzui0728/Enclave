@@ -33,6 +33,10 @@ type DesktopMomentsSidebarProps = {
   onLike: (momentId: string) => void;
   onToggleFavorite: (momentId: string) => void;
   onOpenCompose: () => void;
+  onOpenAuthorProfilePopover?: (input: {
+    anchorElement: HTMLButtonElement;
+    moment: Moment;
+  }) => void;
   onSelectAuthor: (authorId: string, momentId?: string) => void;
 };
 
@@ -54,6 +58,7 @@ export function DesktopMomentsSidebar({
   onLike,
   onToggleFavorite,
   onOpenCompose,
+  onOpenAuthorProfilePopover,
   onSelectAuthor,
 }: DesktopMomentsSidebarProps) {
   if (mode === "detail" && selectedMoment) {
@@ -71,8 +76,20 @@ export function DesktopMomentsSidebar({
           onCommentSubmit={() => onCommentSubmit(selectedMoment.id)}
           onLike={() => onLike(selectedMoment.id)}
           onToggleFavorite={() => onToggleFavorite(selectedMoment.id)}
-          onSelectAuthor={() =>
-            onSelectAuthor(selectedMoment.authorId, selectedMoment.id)
+          onAuthorAction={
+            selectedMoment.authorType === "character"
+              ? () => onSelectAuthor(selectedMoment.authorId, selectedMoment.id)
+              : undefined
+          }
+          onSelectAuthor={
+            selectedMoment.authorType === "character" &&
+            onOpenAuthorProfilePopover
+              ? (event) =>
+                  onOpenAuthorProfilePopover({
+                    anchorElement: event.currentTarget,
+                    moment: selectedMoment,
+                  })
+              : undefined
           }
         />
       </aside>

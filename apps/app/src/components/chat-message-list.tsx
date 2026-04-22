@@ -210,6 +210,8 @@ type ChatMessageListProps = {
     snapshotRecordedAt?: string | null;
   }) => void;
   onSelectionModeChange?: (active: boolean) => void;
+  errorActionLabel?: string;
+  onErrorAction?: (() => void) | null;
 };
 
 const DesktopMessageForwardDialog = lazy(async () => {
@@ -324,6 +326,8 @@ export function ChatMessageList({
   onOpenDirectCallInvite,
   onOpenGroupCallInvite,
   onSelectionModeChange,
+  errorActionLabel,
+  onErrorAction = null,
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
   const navigate = useNavigate();
@@ -2365,6 +2369,13 @@ export function ChatMessageList({
             <InlineNoticeActionButton
               label={actionNotice.actionLabel}
               onClick={actionNotice.onAction}
+            />
+          ) : actionNotice.tone === "danger" &&
+            errorActionLabel &&
+            onErrorAction ? (
+            <InlineNoticeActionButton
+              label={errorActionLabel}
+              onClick={onErrorAction}
             />
           ) : null}
         </InlineNotice>

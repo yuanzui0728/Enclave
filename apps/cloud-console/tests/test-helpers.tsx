@@ -1,4 +1,7 @@
-import type { WorldLifecycleJobSummary } from "@yinjie/contracts";
+import type {
+  CloudWorldLifecycleJobListResponse,
+  WorldLifecycleJobSummary,
+} from "@yinjie/contracts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
@@ -1104,7 +1107,7 @@ function filterLifecycleJobs(
   jobs: WorldLifecycleJobSummary[],
   world: typeof mockWorld,
   searchParams: URLSearchParams,
-) {
+): CloudWorldLifecycleJobListResponse {
   const status = searchParams.get("status");
   const jobType = searchParams.get("jobType");
   const worldId = searchParams.get("worldId");
@@ -1113,11 +1116,19 @@ function filterLifecycleJobs(
   const audit = searchParams.get("audit");
   const supersededBy = searchParams.get("supersededBy");
   const query = searchParams.get("query")?.trim().toLowerCase() ?? "";
+  const page = Math.max(
+    1,
+    Number.parseInt(searchParams.get("page") ?? "1", 10) || 1,
+  );
+  const pageSize = Math.max(
+    1,
+    Number.parseInt(searchParams.get("pageSize") ?? "20", 10) || 20,
+  );
   const providerKey = world.providerKey?.trim() ?? "";
   const providerLabel =
     mockProviders.find((item) => item.key === providerKey)?.label ?? providerKey;
 
-  return jobs.filter((job) => {
+  const filteredJobs = jobs.filter((job) => {
     if (worldId && job.worldId !== worldId) {
       return false;
     }
@@ -1182,6 +1193,15 @@ function filterLifecycleJobs(
 
     return haystack.includes(query);
   });
+
+  const items = filteredJobs.slice((page - 1) * pageSize, page * pageSize);
+  return {
+    items,
+    total: filteredJobs.length,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(filteredJobs.length / pageSize)),
+  };
 }
 
 export function installCloudAdminApiMock(

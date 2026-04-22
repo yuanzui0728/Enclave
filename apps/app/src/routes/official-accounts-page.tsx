@@ -7,6 +7,7 @@ import { AppPage, Button, cn } from "@yinjie/ui";
 import { OfficialAccountListItem } from "../components/official-account-list-item";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { parseDesktopContactsRouteState } from "../features/contacts/contacts-route-state";
 import {
   buildMobileOfficialRouteHash,
   parseMobileOfficialRouteState,
@@ -23,6 +24,13 @@ const DesktopContactsRouteRedirectShell = lazy(async () => {
 
 export function OfficialAccountsPage() {
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
+  const desktopPaneState = useMemo(() => {
+    const routeState = parseDesktopContactsRouteState(hash);
+    return routeState.pane === "official-accounts" ? routeState : null;
+  }, [hash]);
 
   if (isDesktopLayout) {
     return (
@@ -35,7 +43,12 @@ export function OfficialAccountsPage() {
           />
         }
       >
-        <DesktopContactsRouteRedirectShell pane="official-accounts" />
+        <DesktopContactsRouteRedirectShell
+          pane="official-accounts"
+          officialMode={desktopPaneState?.officialMode ?? "feed"}
+          accountId={desktopPaneState?.accountId}
+          articleId={desktopPaneState?.articleId}
+        />
       </Suspense>
     );
   }
@@ -133,6 +146,10 @@ function MobileOfficialAccountsPage() {
     void navigate({ to: "/tabs/contacts" });
   }
 
+  function handleRetryAccounts() {
+    void accountsQuery.refetch();
+  }
+
   function handleEmptyStateAction() {
     if (navigateToRouteStateReturn()) {
       return;
@@ -217,14 +234,24 @@ function MobileOfficialAccountsPage() {
               description={accountsQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "返回通讯录"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryAccounts}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回通讯录"}
+                  </Button>
+                </div>
               }
             />
           </div>

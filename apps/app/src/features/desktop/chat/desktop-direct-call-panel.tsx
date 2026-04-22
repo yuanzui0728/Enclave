@@ -22,7 +22,11 @@ import {
   VolumeX,
 } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, cn } from "@yinjie/ui";
-import { getSystemStatus, type VoiceCallTurnResult } from "@yinjie/contracts";
+import {
+  getCharacter,
+  getSystemStatus,
+  type VoiceCallTurnResult,
+} from "@yinjie/contracts";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { resolveDigitalHumanGatewayStatusCopy } from "../../chat/digital-human-gateway-copy";
 import { DigitalHumanPlayer } from "../../chat/digital-human-player";
@@ -117,6 +121,15 @@ export function DesktopDirectCallPanel({
       kind === "video" &&
       Boolean(conversationId),
     retry: false,
+  });
+  const characterQuery = useQuery({
+    queryKey: [
+      "desktop-direct-call-character",
+      runtimeConfig.apiBaseUrl,
+      characterId,
+    ],
+    queryFn: () => getCharacter(characterId ?? "", runtimeConfig.apiBaseUrl),
+    enabled: Boolean(characterId),
   });
   const activeCall = isVideoMode ? digitalHumanCall : voiceCall;
   const speech = activeCall.speech;
@@ -375,7 +388,11 @@ export function DesktopDirectCallPanel({
               {callLabel}
             </div>
             <div className="mt-4 flex items-center gap-4">
-              <AvatarChip name={conversationTitle} size="xl" />
+              <AvatarChip
+                name={conversationTitle}
+                src={characterQuery.data?.avatar}
+                size="xl"
+              />
               <div className="min-w-0">
                 <div className="truncate text-[22px] font-semibold text-[color:var(--text-primary)]">
                   {conversationTitle}

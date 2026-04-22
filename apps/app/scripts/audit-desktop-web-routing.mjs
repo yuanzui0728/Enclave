@@ -9,49 +9,106 @@ const expectations = [
   {
     file: "src/features/shell/desktop-shell.tsx",
     description:
-      "desktop shell records SPA navigation state and opens the self-chat shortcut through the desktop chat workspace",
+      "desktop shell records SPA navigation state, treats /desktop/settings as part of the desktop profile surface, and opens the self-chat shortcut through the desktop chat workspace",
     includes: [
       'select: (state) => state.location.searchStr,',
       'import { recordAppNavigation } from "../../lib/history-back";',
       'import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";',
       'recordAppNavigation(`${pathname}${search}${hash}`);',
+      'pathname.startsWith("/desktop/settings") ||',
       "to: buildDesktopChatThreadPath({",
       "conversationId: conversation.id,",
     ],
   },
   {
     file: "src/routes/games-page.tsx",
-    description: "desktop games route restores query-driven selection from the raw search string",
+    description:
+      "desktop games route restores query-driven selection from the raw search string, self-heals legacy desktop discover paths back to /tabs/games even when the query already matches, normalizes stale desktop return paths away from /games and /discover/games, and reuses the normalized return target inside delivered invite links",
     includes: [
       'select: (state) => state.location.searchStr,',
       ">(inviteActivityFromSearch?.id ?? null);",
+      'const normalizedDesktopReturnPath =',
+      'routeState.returnPath === "/games" ||',
+      'routeState.returnPath === "/discover/games"',
+      '"/tabs/games"',
       "activity && activity.gameId === selectedGameId",
       "setActiveInviteActivityId(null);",
       "activeInviteActivity?.gameId === selectedGameId",
+      "returnPath: safeReturnPath,",
+      "returnHash: safeReturnHash,",
+      "const conversationPath = buildGameInvitePath(",
+      'pathname === "/tabs/games"',
+      'to: "/tabs/games",',
     ],
   },
   {
     file: "src/routes/mini-programs-page.tsx",
     description:
-      "desktop mini programs route restores query-driven selection from the raw search string, scopes group relay context to the group relay workspace, and routes desktop group-relay returns back through /tabs/chat",
+      "desktop mini programs route restores query-driven selection from the raw search string, scopes group relay context to the group relay workspace, self-heals legacy desktop discover paths back to /tabs/mini-programs, normalizes stale desktop return paths away from /discover/mini-programs, and routes desktop group-relay returns back through /tabs/chat",
     includes: [
       'select: (state) => state.location.searchStr,',
       'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
+      'const normalizedDesktopReturnPath =',
+      'routeState.returnPath === "/discover/mini-programs"',
+      '"/tabs/mini-programs"',
       'selectedMiniProgramId === "group-relay" ? groupRelayLaunchContext : null;',
       "sourceGroupId: activeLaunchContext?.sourceGroupId,",
       'miniProgramId === "group-relay" ? groupRelayLaunchContext : null;',
+      "returnPath: safeReturnPath,",
+      "returnHash: safeReturnHash,",
+      'pathname === "/tabs/mini-programs"',
+      'to: "/tabs/mini-programs",',
       "to: buildDesktopChatThreadPath({",
       "conversationId: activeLaunchContext.sourceGroupId,",
     ],
   },
   {
+    file: "src/routes/discover-feed-page.tsx",
+    description:
+      "desktop feed route self-heals legacy /discover/feed paths back to /tabs/feed even when the selected post hash already matches the workspace state, and normalizes stale desktop return paths away from /discover/feed",
+    includes: [
+      'const normalizedDesktopReturnPath =',
+      'routeState.returnPath === "/discover/feed"',
+      '"/tabs/feed"',
+      'const desktopPathMismatch = pathname !== "/tabs/feed";',
+      "(!desktopPathMismatch && routeSelectedPostId === desktopSelectedPostId)",
+      "returnPath: safeReturnPath,",
+      "returnHash: safeReturnHash,",
+      'to: "/tabs/feed",',
+      "hash: buildFeedRouteHash({",
+    ],
+  },
+  {
+    file: "src/routes/discover-page.tsx",
+    description:
+      "desktop discover route self-heals legacy /discover paths back to /tabs/discover and executes shake encounters directly inside the desktop workspace instead of routing through /discover/encounter",
+    includes: [
+      'const desktopDiscoverPath = "/tabs/discover";',
+      "const desktopPathMismatch =",
+      "pathname !== desktopDiscoverPath;",
+      "if (!desktopPathMismatch) {",
+      "to: desktopDiscoverPath,",
+      "hash: hash || undefined,",
+      "replace: true,",
+      "const shakeMutation = useMutation({",
+      "const preview = await shake(undefined, baseUrl);",
+      "await keepShakeSession(preview.id, baseUrl);",
+      'setSuccessNotice("随机相遇已写入通讯录。");',
+      "onClick={() => shakeMutation.mutate()}",
+      "disabled={shakeMutation.isPending}",
+    ],
+  },
+  {
     file: "src/features/desktop/chat/desktop-chat-details-panel.tsx",
     description:
-      "desktop chat details carries group-qr source context, preserves desktop return hashes for chat/group background and group qr pages, and opens common groups through the desktop chat workspace",
+      "desktop chat details carries group-qr source context, sends pending-friend shortcuts to the desktop new-friends pane, preserves desktop return hashes for chat/group background and group qr pages, and opens common groups through the desktop chat workspace",
     includes: [
       'import { buildGroupInviteReturnSearch } from "../../../lib/group-invite-delivery";',
       'import { buildMobileChatRouteHash } from "../../chat/mobile-chat-route-state";',
       'import { buildMobileGroupRouteHash } from "../../chat/mobile-group-route-state";',
+      'import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";',
+      'to: "/tabs/contacts",',
+      'pane: "new-friends",',
       'to: "/chat/$conversationId/background",',
       'to: "/group/$groupId/background",',
       "search: buildGroupInviteReturnSearch({",
@@ -85,10 +142,13 @@ const expectations = [
   {
     file: "src/features/desktop/contacts/desktop-add-friend-workspace.tsx",
     description:
-      "desktop add-friend workspace syncs the selected search result back to the route hash, repairs stale openCompose entries, and opens created chats through /tabs/chat",
+      "desktop add-friend workspace syncs the selected search result back to the route hash, routes new-friends shortcuts straight to the desktop contacts pane, repairs stale openCompose entries, and opens created chats through /tabs/chat",
     includes: [
+      'import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";',
       'if (!routeState.openCompose || loading) {',
       'if (routeState.openCompose) {',
+      'pane: "new-friends",',
+      'to: "/tabs/contacts",',
       'to: "/desktop/add-friend",',
       "characterId: selectedCharacterId ?? undefined,",
       "selectedResult?.character.id ??",
@@ -126,11 +186,14 @@ const expectations = [
   {
     file: "src/routes/character-detail-page.tsx",
     description:
-      "desktop character detail keeps start-chat, direct-call, and common-group opens on the desktop chat workspace instead of legacy /chat and /group routes",
+      "desktop character detail keeps pending-friend shortcuts in the desktop new-friends pane and keeps start-chat, direct-call, and common-group opens on the desktop chat workspace instead of legacy /chat and /group routes",
     includes: [
+      'import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";',
       "buildDesktopChatRouteHash,",
       "buildDesktopChatThreadPath,",
       "to: isDesktopLayout",
+      'to: "/tabs/contacts",',
+      'pane: "new-friends",',
       "params: isDesktopLayout",
       "hash: isDesktopLayout",
       "callAction: result.kind,",
@@ -158,6 +221,58 @@ const expectations = [
     includes: [
       "selectedCallAction={",
       "routeState.officialView ? undefined : routeState.callAction",
+    ],
+  },
+  {
+    file: "src/features/chat/chat-route-redirect-shell.tsx",
+    description:
+      "desktop chat route redirect shell forwards both one-shot callAction requests and legacy highlighted message ids so old chat/group compat routes reopen the intended desktop thread state instead of dropping message focus on the redirect",
+    includes: [
+      'type DesktopChatCallAction,',
+      'const LEGACY_HIGHLIGHT_HASH_PREFIX = "chat-message-";',
+      "function parseLegacyHighlightedMessageId(hash: string) {",
+      "const highlightedMessageId = parseLegacyHighlightedMessageId(hash);",
+      "callAction?: DesktopChatCallAction;",
+      "messageId: highlightedMessageId,",
+      "callAction,",
+      "callAction,",
+      "buildDesktopChatRouteHash({",
+    ],
+  },
+  {
+    file: "src/routes/chat-voice-call-page.tsx",
+    description:
+      "legacy direct voice-call route forwards callAction=voice into the desktop chat workspace instead of dropping the user on a plain thread view",
+    includes: [
+      "<DesktopChatRouteRedirectShell",
+      'callAction="voice"',
+    ],
+  },
+  {
+    file: "src/routes/chat-video-call-page.tsx",
+    description:
+      "legacy direct video-call route forwards callAction=video into the desktop chat workspace instead of dropping the user on a plain thread view",
+    includes: [
+      "<DesktopChatRouteRedirectShell",
+      'callAction="video"',
+    ],
+  },
+  {
+    file: "src/routes/group-voice-call-page.tsx",
+    description:
+      "legacy group voice-call route forwards callAction=voice into the desktop chat workspace instead of dropping the user on a plain thread view",
+    includes: [
+      "<DesktopChatRouteRedirectShell",
+      'callAction="voice"',
+    ],
+  },
+  {
+    file: "src/routes/group-video-call-page.tsx",
+    description:
+      "legacy group video-call route forwards callAction=video into the desktop chat workspace instead of dropping the user on a plain thread view",
+    includes: [
+      "<DesktopChatRouteRedirectShell",
+      'callAction="video"',
     ],
   },
   {
@@ -329,6 +444,121 @@ const expectations = [
     ],
   },
   {
+    file: "src/routes/chat-room-page.tsx",
+    description:
+      "desktop legacy direct-chat routes self-heal to /tabs/chat hashes instead of lingering on /chat/$conversationId, desktop game-invite notices normalize old /games and /discover/games returns back to /tabs/games, and mobile-only shortcut search cleanup stays off in desktop layout",
+    includes: [
+      'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
+      "function normalizeDesktopGameInviteReturnPath(",
+      'pathname !== "/games" && pathname !== "/discover/games"',
+      '"/tabs/games"',
+      "const safeRouteContext = routeContext",
+      "if (isDesktopLayout) {",
+      "to: buildDesktopChatThreadPath({",
+      "conversationId,",
+      "messageId: highlightedMessageId ?? undefined,",
+      "!activeConversation ||",
+      'to: "/group/$groupId",',
+      "if (isDesktopLayout) {",
+      'to: "/chat/$conversationId",',
+    ],
+  },
+  {
+    file: "src/routes/chat-list-page.tsx",
+    description:
+      "desktop legacy /chat list routes self-heal back to /tabs/chat instead of leaving the desktop workspace mounted on the old mobile path",
+    includes: [
+      "const pathname = useRouterState({",
+      'const desktopPathMismatch = pathname !== "/tabs/chat";',
+      "if (!isDesktopLayout || !desktopPathMismatch) {",
+      'to: "/tabs/chat",',
+      "hash: hash || undefined,",
+      "replace: true,",
+      "<DesktopChatWorkspace hash={hash} />",
+    ],
+  },
+  {
+    file: "src/routes/contacts-page.tsx",
+    description:
+      "desktop legacy /contacts routes self-heal back to /tabs/contacts instead of leaving the desktop contacts workspace mounted on the old mobile path",
+    includes: [
+      'const desktopContactsPath = "/tabs/contacts";',
+      "const desktopPathMismatch =",
+      "pathname !== desktopContactsPath;",
+      "if (!desktopPathMismatch) {",
+      "to: desktopContactsPath,",
+      "hash: hash || undefined,",
+      "replace: true,",
+      "to: \"/tabs/contacts\",",
+    ],
+  },
+  {
+    file: "src/routes/profile-page.tsx",
+    description:
+      "desktop profile settings entries stop reviving the old /profile/settings path and open the dedicated desktop settings route instead",
+    includes: [
+      'import { useDesktopLayout } from "../features/shell/use-desktop-layout";',
+      "const settingsPath = isDesktopLayout ? \"/desktop/settings\" : \"/profile/settings\";",
+      "void navigate({ to: settingsPath });",
+      "to={settingsPath as never}",
+      "to={settingsPath}",
+    ],
+  },
+  {
+    file: "src/routes/profile-settings-page.tsx",
+    description:
+      "desktop profile settings self-heal legacy /profile/settings paths back to /desktop/settings so the desktop toolbar keeps the correct return protocol",
+    includes: [
+      'const desktopSettingsPath = "/desktop/settings";',
+      "const desktopPathMismatch = desktopMode && pathname !== desktopSettingsPath;",
+      "if (!desktopPathMismatch) {",
+      "to: desktopSettingsPath,",
+      "replace: true,",
+      'title={desktopSettingsRoute ? "设置" : "资料与设置"}',
+      "{desktopBackLabel}",
+    ],
+  },
+  {
+    file: "src/components/mobile-document-shell.tsx",
+    description:
+      "shared legal document pages send desktop fallback returns back to /desktop/settings instead of reviving the legacy mobile settings path",
+    includes: [
+      'import { useDesktopLayout } from "../features/shell/use-desktop-layout";',
+      "const isDesktopLayout = useDesktopLayout();",
+      'to: isDesktopLayout ? "/desktop/settings" : "/profile/settings",',
+    ],
+  },
+  {
+    file: "src/routes/group-chat-page.tsx",
+    description:
+      "desktop legacy group-chat routes self-heal to /tabs/chat hashes instead of lingering on /group/$groupId, while mobile-only shortcut search cleanup stays off in desktop layout",
+    includes: [
+      'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
+      "if (isDesktopLayout) {",
+      "to: buildDesktopChatThreadPath({",
+      "conversationId: groupId,",
+      "messageId: highlightedMessageId ?? undefined,",
+      'to: "/group/$groupId",',
+      "if (isDesktopLayout) {",
+    ],
+  },
+  {
+    file: "src/features/official-accounts/official-message-workspace-shell.tsx",
+    description:
+      "desktop legacy official-message routes self-heal to /tabs/chat officialView hashes instead of lingering on /official-accounts/service/* or /chat/subscription-inbox",
+    includes: [
+      'import { RouteRedirectState } from "../../components/route-redirect-state";',
+      "buildDesktopOfficialServiceThreadPath,",
+      "buildDesktopSubscriptionInboxPath,",
+      "const targetPath = useMemo(() => {",
+      "accountId: selectedServiceAccountId,",
+      'selectedSpecialView === "subscription-inbox"',
+      "articleId: routeState.articleId,",
+      "to: targetPath,",
+      "replace: true,",
+    ],
+  },
+  {
     file: "src/features/search/desktop-search-launcher.tsx",
     description:
       "desktop search launcher opens conversation and official-account suggestions through desktop workspace routes and normalizes legacy favorite quick links before opening them",
@@ -346,7 +576,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";',
       'import {',
@@ -355,23 +585,52 @@ const expectations = [
       "buildDesktopSubscriptionInboxPath,",
       "options?: SearchNavigationOptions,",
       "resolveDesktopConversationNavigationTarget(normalizedTarget)",
+      "resolveDesktopContactsNavigationTarget(normalizedTarget)",
       "resolveDesktopOfficialNavigationTarget(normalizedTarget)",
       'to: "/tabs/chat",',
+      'target.to === "/friend-requests"',
+      'target.to === "/contacts/starred"',
+      'target.to === "/contacts/tags"',
+      'target.to === "/contacts/groups"',
+      'target.to === "/contacts/world-characters"',
+      'pane: "new-friends",',
+      'pane: "starred-friends",',
+      'pane: "tags",',
+      'pane: "groups",',
+      'pane: "world-character",',
+      "showWorldCharacters: true,",
       'target.to === "/chat/subscription-inbox"',
       'target.to === "/contacts/official-accounts"',
       'pane: "official-accounts",',
+      'officialMode: "feed",',
       "messageId: parseLegacyHighlightedMessageId(target.hash),",
+    ],
+  },
+  {
+    file: "src/features/search/search-navigation.ts",
+    description:
+      "desktop search navigation preserves articleId when it rewrites legacy subscription-inbox and service-account targets to desktop official-message routes",
+    includes: [
+      'import { parseDesktopOfficialMessageRouteHash } from "../official-accounts/official-message-route-state";',
+      'target.to === "/chat/subscription-inbox"',
+      'const routeState = parseDesktopOfficialMessageRouteHash(target.hash ?? "");',
+      "buildDesktopSubscriptionInboxPath({",
+      "articleId: routeState.articleId,",
+      "buildDesktopOfficialServiceThreadPath({",
     ],
   },
   {
     file: "src/routes/search-page.tsx",
     description:
-      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces",
+      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, and it self-heals legacy /search paths back to /tabs/search even when the hash already matches",
     includes: [
       "resolveSearchNavigationTarget(item, {",
       "desktopLayout: isDesktopLayout,",
       "applyMobileSearchReturn(",
       "const navigationTarget = applyMobileSearchReturn(",
+      'const desktopPathMismatch = isDesktopLayout && pathname !== "/tabs/search";',
+      "if (syncingRouteStateRef.current && !desktopPathMismatch) {",
+      "if (!desktopPathMismatch && normalizedHash === (nextHash ?? \"\")) {",
     ],
   },
   {
@@ -479,8 +738,11 @@ const expectations = [
   {
     file: "src/routes/desktop-mobile-page.tsx",
     description:
-      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, routes group-invite returns and desktop-open actions through /tabs/chat, and repairs stale official handoffs from live account/article data",
+      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
     includes: [
+      "desktopTo?: string;",
+      'desktopTo: "/desktop/settings",',
+      "to={(item.desktopTo ?? item.to) as never}",
       "const nextHash = buildDesktopMobileCallHandoffHash({",
       "title: callHandoffConversation.title,",
       "callHandoffConversation?.title?.trim() ||",
@@ -582,6 +844,22 @@ const expectations = [
     ],
   },
   {
+    file: "src/features/shell/conversation-strong-reminder-host.tsx",
+    description:
+      "desktop strong-reminder notifications treat /tabs/chat as the active conversation route and launch desktop /tabs/chat message targets instead of reviving legacy /chat paths",
+    includes: [
+      'import {',
+      "buildDesktopChatThreadPath,",
+      "parseDesktopChatRouteHash,",
+      "const isDesktopLayout = useDesktopLayout();",
+      'pathname === "/tabs/chat" &&',
+      "desktopRouteState.conversationId === conversation.id",
+      "route: isDesktopLayout",
+      "buildDesktopChatThreadPath({",
+      "messageId: message.id,",
+    ],
+  },
+  {
     file: "src/features/desktop/chat/desktop-notes-workspace.tsx",
     description:
       "desktop notes workspace keeps note-window close, missing-note, and delete fallbacks on the shared close/returnTo path, including rewriting missing standalone chat-window returns back to the main chat workspace",
@@ -600,8 +878,15 @@ const expectations = [
   {
     file: "src/routes/favorites-page.tsx",
     description:
-      "desktop favorites uses the full current path for inline note-editor returnTo links and normalizes legacy favorite open targets back into desktop workspaces",
+      "desktop favorites self-heals legacy /favorites paths back to /tabs/favorites, normalizes inline note-editor returnTo links onto the shared favorites workspace route, and rewrites legacy favorite open targets back into desktop workspaces",
     includes: [
+      'const desktopFavoritesPath = "/tabs/favorites";',
+      "const desktopPathMismatch =",
+      "pathname !== desktopFavoritesPath;",
+      "if (!desktopPathMismatch) {",
+      "to: desktopFavoritesPath,",
+      "hash: hash || undefined,",
+      "replace: true,",
       'import { resolveSearchNavigationTarget } from "../features/search/search-navigation";',
       "selectedFavoriteNavigationTarget",
       "resolveSearchNavigationTarget(",
@@ -609,8 +894,21 @@ const expectations = [
       "search={selectedFavoriteNavigationTarget?.search as never}",
       "hash={selectedFavoriteNavigationTarget?.hash}",
       'import { getCurrentWindowTargetPath } from "../runtime/desktop-windowing";',
+      "const fallbackReturnTo =",
+      "!desktopPathMismatch",
       "returnTo:",
       "getCurrentWindowTargetPath()",
+    ],
+  },
+  {
+    file: "src/routes/notes-page.tsx",
+    description:
+      "desktop notes compatibility entry defaults bare /notes redirects to the favorites notes category instead of dropping into all favorites",
+    includes: [
+      'import { buildDesktopFavoritesWorkspaceRouteHash } from "../features/favorites/favorites-route-state";',
+      'to: "/tabs/favorites",',
+      "buildDesktopFavoritesWorkspaceRouteHash({",
+      'category: "notes",',
     ],
   },
   {
@@ -683,14 +981,34 @@ const expectations = [
   {
     file: "src/routes/channels-page.tsx",
     description:
-      "desktop channels route only keeps the author side panel when it still matches the current desktop-selected post",
+      "desktop channels route only keeps the author side panel when it still matches the current desktop-selected post, self-heals legacy /discover/channels paths back to /tabs/channels even when the hash already matches, and normalizes stale desktop return paths away from /discover/channels",
     includes: [
+      'const normalizedDesktopReturnPath =',
+      'routeState.returnPath === "/discover/channels"',
+      '"/tabs/channels"',
       "desktopSelectedPost?.authorId === routeSelectedAuthorId",
       "? routeSelectedAuthorId",
       ": undefined;",
       'queryKey: ["app-channel-author", baseUrl, syncedRouteSelectedAuthorId],',
       "enabled: Boolean(isDesktopLayout && syncedRouteSelectedAuthorId),",
       "authorId: syncedRouteSelectedAuthorId,",
+      'pathname === "/tabs/channels"',
+      'to: "/tabs/channels",',
+    ],
+  },
+  {
+    file: "src/routes/channel-author-page.tsx",
+    description:
+      "desktop channel author redirect normalizes legacy /discover/channels return paths before folding the author page back into the desktop channels workspace",
+    includes: [
+      'const normalizedDesktopReturnPath =',
+      'routeState.returnPath === "/discover/channels"',
+      '"/tabs/channels"',
+      "returnHash: safeReturnHash,",
+      "returnPath: safeReturnPath,",
+      'to: "/tabs/channels",',
+      "authorId,",
+      "replace: true,",
     ],
   },
   {
@@ -739,11 +1057,135 @@ const expectations = [
   {
     file: "src/features/desktop/official-accounts/desktop-official-accounts-workspace.tsx",
     description:
+      "desktop official accounts fallback keeps account opens on the desktop contacts pane with explicit officialMode=accounts instead of reviving legacy /official-accounts paths",
+    includes: [
+      'import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";',
+      "const openDesktopAccountWorkspace = useCallback(",
+      'to: "/tabs/contacts",',
+      'pane: "official-accounts",',
+      'officialMode: "accounts",',
+      "openDesktopAccountWorkspace(accountId, articleId);",
+      "openDesktopAccountWorkspace(accountId);",
+    ],
+  },
+  {
+    file: "src/features/desktop/official-accounts/desktop-official-accounts-workspace.tsx",
+    description:
       "desktop official accounts rewrites legacy account selections that are missing officialMode=accounts",
     includes: [
       "if (!selectedAccountId || selectedMode) {",
       'displayMode !== "accounts" ||',
       'onModeChange("accounts");',
+    ],
+  },
+  {
+    file: "src/routes/official-accounts-page.tsx",
+    description:
+      "desktop official-accounts list redirects preserve any existing desktop account/article selection on the legacy /contacts/official-accounts path while still defaulting bare entries to officialMode=feed",
+    includes: [
+      "const desktopPaneState = useMemo(() => {",
+      'return routeState.pane === "official-accounts" ? routeState : null;',
+      "<DesktopContactsRouteRedirectShell",
+      'pane="official-accounts"',
+      'officialMode={desktopPaneState?.officialMode ?? "feed"}',
+      "accountId={desktopPaneState?.accountId}",
+      "articleId={desktopPaneState?.articleId}",
+    ],
+  },
+  {
+    file: "src/routes/starred-friends-page.tsx",
+    description:
+      "legacy /contacts/starred redirects keep the desktop-selected friend when normalizing back into the contacts workspace",
+    includes: [
+      "const desktopCompatHash = useMemo(() => {",
+      "const routeState = parseDesktopContactsRouteState(hash);",
+      'pane: "starred-friends",',
+      'routeState.pane === "starred-friends"',
+      "hash: desktopCompatHash,",
+    ],
+  },
+  {
+    file: "src/routes/tags-page.tsx",
+    description:
+      "legacy /contacts/tags redirects preserve the current desktop tag and selected friend instead of collapsing back to a bare tags pane",
+    includes: [
+      "const desktopCompatHash = useMemo(() => {",
+      "const routeState = parseDesktopContactsRouteState(hash);",
+      'pane: "tags",',
+      'tag: routeState.pane === "tags" ? routeState.tag : undefined,',
+      'routeState.pane === "tags" ? routeState.characterId : undefined,',
+      "hash: desktopCompatHash,",
+    ],
+  },
+  {
+    file: "src/routes/world-characters-page.tsx",
+    description:
+      "legacy /contacts/world-characters redirects keep the desktop-selected world character when normalizing back into the contacts workspace",
+    includes: [
+      "const desktopPaneState = useMemo(() => {",
+      'return routeState.pane === "world-character" ? routeState : null;',
+      "<DesktopContactsRouteRedirectShell",
+      'pane="world-character"',
+      "characterId={desktopPaneState?.characterId}",
+      "showWorldCharacters",
+    ],
+  },
+  {
+    file: "src/routes/group-contacts-page.tsx",
+    description:
+      "legacy /contacts/groups redirects keep the desktop-selected group when normalizing back into the contacts workspace",
+    includes: [
+      "const desktopPaneState = useMemo(() => {",
+      'return routeState.pane === "groups" ? routeState : null;',
+      "<DesktopContactsRouteRedirectShell",
+      'pane="groups"',
+      "characterId={desktopPaneState?.characterId}",
+    ],
+  },
+  {
+    file: "src/routes/official-account-detail-page.tsx",
+    description:
+      "desktop official-account detail redirects write officialMode=accounts at the source instead of relying on workspace-side repair",
+    includes: [
+      "<DesktopContactsRouteRedirectShell",
+      'pane="official-accounts"',
+      "accountId={accountId}",
+      'officialMode="accounts"',
+    ],
+  },
+  {
+    file: "src/routes/desktop-official-article-window-page.tsx",
+    description:
+      "desktop official-article window account-home entry writes officialMode=accounts when it jumps back into the contacts workspace",
+    includes: [
+      'buildDesktopContactsRouteHash({',
+      'pane: "official-accounts",',
+      "accountId,",
+      'officialMode: "accounts",',
+    ],
+  },
+  {
+    file: "src/routes/desktop-mobile-page.tsx",
+    description:
+      "desktop mobile official handoff cards write officialMode=accounts when they jump back into the contacts workspace with an account selection",
+    includes: [
+      'buildDesktopContactsRouteHash({',
+      'pane: "official-accounts",',
+      'officialMode: "accounts",',
+      "accountId: resolvedOfficialHandoffState.accountId,",
+      "accountId: account.id,",
+    ],
+  },
+  {
+    file: "src/features/official-accounts/official-article-route-shell.tsx",
+    description:
+      "desktop official-article route shell writes officialMode=accounts into article-window return targets instead of relying on the contacts workspace to infer a mode from articleId alone",
+    includes: [
+      'buildDesktopContactsRouteHash({',
+      'pane: "official-accounts",',
+      "articleId,",
+      'officialMode: "accounts",',
+      'returnTo: `/tabs/contacts',
     ],
   },
   {
@@ -771,6 +1213,18 @@ const expectations = [
     ],
   },
   {
+    file: "src/features/desktop/official-accounts/desktop-subscription-workspace.tsx",
+    description:
+      "desktop subscription inbox fallback opens linked accounts through the desktop contacts pane and preserves the current article context",
+    includes: [
+      'import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";',
+      'to: "/tabs/contacts",',
+      'pane: "official-accounts",',
+      'officialMode: "accounts",',
+      "openDesktopAccountWorkspace(accountId, articleQuery.data.id);",
+    ],
+  },
+  {
     file: "src/features/official-accounts/service/official-account-service-thread.tsx",
     description: "desktop service account thread rejects article ids from another account",
     includes: [
@@ -778,6 +1232,20 @@ const expectations = [
       "const missingSelectedArticle =",
       "isOfficialAccountArticleMissingError(articleQuery.error);",
       "onCloseArticle?.(accountId);",
+    ],
+  },
+  {
+    file: "src/features/official-accounts/service/official-account-service-thread.tsx",
+    description:
+      "desktop service account thread keeps account-home and article open/close fallbacks on the shared /tabs/chat officialView protocol when no host callbacks are wired",
+    includes: [
+      'import { buildDesktopChatRouteHash } from "../../desktop/chat/desktop-chat-route-state";',
+      'to: "/tabs/chat",',
+      'officialView: "official-accounts",',
+      'officialMode: "accounts",',
+      'officialView: "service-account",',
+      "onOpenArticle(articleId, accountId);",
+      "onCloseArticle(accountId);",
     ],
   },
   {
@@ -791,11 +1259,40 @@ const expectations = [
   },
   {
     file: "src/routes/moments-page.tsx",
-    description: "desktop moments only opens character authors in the friend moments workspace",
+    description:
+      "desktop moments self-heals legacy /discover/moments paths back to /tabs/moments and only opens character authors in the friend moments workspace with desktop return paths",
     includes: [
+      'const desktopMomentsPath = "/tabs/moments";',
+      'const desktopPathMismatch = pathname !== desktopMomentsPath;',
+      "(!desktopPathMismatch && currentRouteHash === normalizedHash)",
+      "to: desktopMomentsPath,",
       "routeSelectedAuthorMoment?.authorType === \"character\"",
+      "returnPath: desktopMomentsPath,",
       "if (targetMoment?.authorType !== \"character\") {",
       "params: { characterId: targetMoment.authorId },",
+    ],
+  },
+  {
+    file: "src/routes/friend-moments-page.tsx",
+    description:
+      "desktop friend-moments falls back from legacy source-only starred and tags links to the matching desktop contacts panes instead of reviving old mobile contacts routes",
+    includes: [
+      'if (routeState.source === "starred-friends") {',
+      'if (routeState.source === "tags") {',
+      'to: "/tabs/contacts",',
+      'pane: "starred-friends",',
+      'pane: "tags",',
+      'void navigate({ to: "/contacts/starred" });',
+      'void navigate({ to: "/contacts/tags" });',
+    ],
+  },
+  {
+    file: "src/features/moments/friend-moments-route-state.ts",
+    description:
+      "desktop friend-moments route state normalizes legacy /discover/moments return paths back to /tabs/moments",
+    includes: [
+      'if (nextValue === "/discover/moments") {',
+      'return "/tabs/moments";',
     ],
   },
 ];
@@ -805,6 +1302,7 @@ const guardedRouteFiles = [
   "src/routes/character-detail-page.tsx",
   "src/routes/friend-moments-page.tsx",
   "src/routes/friend-requests-page.tsx",
+  "src/routes/group-contacts-page.tsx",
   "src/routes/mobile-friend-moments-page.tsx",
   "src/routes/mobile-moments-publish-page.tsx",
   "src/routes/official-account-article-page.tsx",

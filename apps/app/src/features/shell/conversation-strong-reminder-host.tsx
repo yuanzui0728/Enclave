@@ -6,16 +6,29 @@ import { joinConversationRoom, onChatMessage } from "../../lib/socket";
 import { showLocalNotification } from "../../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
+  buildDesktopChatThreadPath,
+  parseDesktopChatRouteHash,
+} from "../desktop/chat/desktop-chat-route-state";
+import {
   describeStrongReminderMessage,
   isConversationStrongReminderActive,
 } from "../chat/conversation-strong-reminder";
+import { useDesktopLayout } from "./use-desktop-layout";
 
 export function ConversationStrongReminderHost() {
+  const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
+  const desktopRouteState = useMemo(
+    () => parseDesktopChatRouteHash(hash),
+    [hash],
+  );
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -57,7 +70,10 @@ export function ConversationStrongReminderHost() {
         return;
       }
 
-      const inActiveConversation = pathname === `/chat/${conversation.id}`;
+      const inActiveConversation = isDesktopLayout
+        ? pathname === "/tabs/chat" &&
+          desktopRouteState.conversationId === conversation.id
+        : pathname === `/chat/${conversation.id}`;
       if (
         inActiveConversation &&
         typeof document !== "undefined" &&
@@ -71,7 +87,12 @@ export function ConversationStrongReminderHost() {
         id: `strong-reminder-${conversation.id}-${message.id}`,
         title: `强提醒 · ${conversation.title}`,
         body: describeStrongReminderMessage(message),
-        route: `/chat/${conversation.id}#chat-message-${message.id}`,
+        route: isDesktopLayout
+          ? buildDesktopChatThreadPath({
+              conversationId: conversation.id,
+              messageId: message.id,
+            })
+          : `/chat/${conversation.id}#chat-message-${message.id}`,
         conversationId: conversation.id,
         source: "conversation_strong_reminder",
       });
@@ -80,7 +101,7 @@ export function ConversationStrongReminderHost() {
     return () => {
       offMessage();
     };
-  }, [conversationMap, pathname]);
+  }, [conversationMap, desktopRouteState.conversationId, isDesktopLayout, pathname]);
 
   return null;
 }

@@ -12,6 +12,7 @@ import {
 } from "../features/chat/chat-compose-shortcut-route";
 import { parseMobileGroupRouteState } from "../features/chat/mobile-group-route-state";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
+import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
@@ -45,6 +46,17 @@ export function GroupChatPage() {
   }, [groupId]);
 
   useEffect(() => {
+    if (isDesktopLayout) {
+      void navigate({
+        to: buildDesktopChatThreadPath({
+          conversationId: groupId,
+          messageId: highlightedMessageId ?? undefined,
+        }),
+        replace: true,
+      });
+      return;
+    }
+
     const nextAction = parseChatComposeShortcutAction(search);
     if (!nextAction) {
       return;
@@ -63,9 +75,20 @@ export function GroupChatPage() {
       hash,
       replace: true,
     });
-  }, [groupId, hash, navigate, search]);
+  }, [
+    groupId,
+    hash,
+    highlightedMessageId,
+    isDesktopLayout,
+    navigate,
+    search,
+  ]);
 
   useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+
     const nextKind = parseChatCallReturnKind(search);
     if (!nextKind) {
       return;
@@ -84,7 +107,7 @@ export function GroupChatPage() {
       hash,
       replace: true,
     });
-  }, [groupId, hash, navigate, search]);
+  }, [groupId, hash, isDesktopLayout, navigate, search]);
 
   useEffect(() => {
     if (routeCallReturnKind === null) {

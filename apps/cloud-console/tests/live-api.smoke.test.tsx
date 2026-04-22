@@ -184,13 +184,13 @@ describe("cloud-console live api smoke", () => {
     );
     expect(jobsResponse.status).toBe(200);
 
-    if (jobsResponse.body.length === 0) {
+    if (jobsResponse.body.items.length === 0) {
       expect(
         await screen.findByText("No jobs match this filter."),
       ).toBeTruthy();
     } else {
       expect(
-        await screen.findByText(jobsResponse.body[0].worldId),
+        await screen.findByText(jobsResponse.body.items[0].worldId),
       ).toBeTruthy();
     }
 

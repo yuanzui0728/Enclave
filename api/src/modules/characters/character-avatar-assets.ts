@@ -22,6 +22,10 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   nassim_taleb: 'nassim-taleb.svg',
   jian_ning_relationship_expert: 'jian-ning-relationship-expert.svg',
   richard_feynman: 'richard-feynman.svg',
+  moments_interactor_axun: 'moments-interactor-axun.svg',
+  lin_chen_sleep_support: 'lin-chen-sleep-support.svg',
+  lin_mian_sleep_support: 'lin-mian-sleep-support.svg',
+  xu_zhe_career_growth: 'xu-zhe-career-growth.svg',
 } as const;
 
 export type CharacterAvatarSourceKey =

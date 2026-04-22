@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
 import { type Moment } from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
 import {
@@ -28,7 +28,8 @@ type DesktopMomentDetailPanelProps = {
   onCommentSubmit: () => void;
   onLike: () => void;
   onToggleFavorite: () => void;
-  onSelectAuthor: () => void;
+  onAuthorAction?: () => void;
+  onSelectAuthor?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 };
 
 export function DesktopMomentDetailPanel({
@@ -45,6 +46,7 @@ export function DesktopMomentDetailPanel({
   onCommentSubmit,
   onLike,
   onToggleFavorite,
+  onAuthorAction,
   onSelectAuthor,
 }: DesktopMomentDetailPanelProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -62,6 +64,7 @@ export function DesktopMomentDetailPanel({
     (comment) => comment.authorType === "user",
   ).length;
   const hasText = Boolean(moment.text.trim());
+  const canSelectAuthor = Boolean(onSelectAuthor);
 
   useEffect(() => {
     scrollViewportRef.current?.scrollTo({ top: 0 });
@@ -94,29 +97,43 @@ export function DesktopMomentDetailPanel({
       >
         <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-start gap-4">
-            <button
-              type="button"
-              onClick={onSelectAuthor}
-              className="shrink-0 rounded-[18px]"
-              aria-label={
-                authorActionAriaLabel ?? `查看 ${moment.authorName} 的朋友圈`
-              }
-            >
+            {canSelectAuthor ? (
+              <button
+                type="button"
+                onClick={(event) => onSelectAuthor?.(event)}
+                className="shrink-0 rounded-[18px]"
+                aria-label={
+                  authorActionAriaLabel ?? `查看 ${moment.authorName} 的朋友圈`
+                }
+              >
+                <AvatarChip
+                  name={moment.authorName}
+                  src={moment.authorAvatar}
+                  size="wechat"
+                />
+              </button>
+            ) : (
               <AvatarChip
                 name={moment.authorName}
                 src={moment.authorAvatar}
                 size="wechat"
               />
-            </button>
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onSelectAuthor}
-                  className="truncate text-left text-base font-semibold text-[color:var(--text-primary)]"
-                >
-                  {moment.authorName}
-                </button>
+                {canSelectAuthor ? (
+                  <button
+                    type="button"
+                    onClick={(event) => onSelectAuthor?.(event)}
+                    className="truncate text-left text-base font-semibold text-[color:var(--text-primary)]"
+                  >
+                    {moment.authorName}
+                  </button>
+                ) : (
+                  <div className="truncate text-base font-semibold text-[color:var(--text-primary)]">
+                    {moment.authorName}
+                  </div>
+                )}
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
@@ -198,14 +215,16 @@ export function DesktopMomentDetailPanel({
               <Star size={14} className={favorite ? "fill-current" : ""} />
               {favorite ? "已收藏" : "收藏"}
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onSelectAuthor}
-              className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-            >
-              {authorActionLabel ?? "打开 TA 的朋友圈"}
-            </Button>
+            {onAuthorAction ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onAuthorAction}
+                className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+              >
+                {authorActionLabel ?? "打开 TA 的朋友圈"}
+              </Button>
+            ) : null}
           </div>
         </div>
 

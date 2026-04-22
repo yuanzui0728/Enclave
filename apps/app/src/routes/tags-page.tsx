@@ -8,7 +8,10 @@ import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
-import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";
+import {
+  buildDesktopContactsRouteHash,
+  parseDesktopContactsRouteState,
+} from "../features/contacts/contacts-route-state";
 import { buildContactTagGroups } from "../features/contacts/contact-tag-groups";
 import {
   buildMobileContactDirectoryRouteHash,
@@ -22,6 +25,19 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 export function TagsPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
+  const desktopCompatHash = useMemo(() => {
+    const routeState = parseDesktopContactsRouteState(hash);
+
+    return buildDesktopContactsRouteHash({
+      pane: "tags",
+      tag: routeState.pane === "tags" ? routeState.tag : undefined,
+      characterId:
+        routeState.pane === "tags" ? routeState.characterId : undefined,
+    });
+  }, [hash]);
 
   useEffect(() => {
     if (!isDesktopLayout) {
@@ -30,12 +46,10 @@ export function TagsPage() {
 
     void navigate({
       to: "/tabs/contacts",
-      hash: buildDesktopContactsRouteHash({
-        pane: "tags",
-      }),
+      hash: desktopCompatHash,
       replace: true,
     });
-  }, [isDesktopLayout, navigate]);
+  }, [desktopCompatHash, isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
     return (
@@ -142,6 +156,10 @@ function MobileTagsPage() {
     openStarredFriends();
   }
 
+  function handleRetryTags() {
+    void friendsQuery.refetch();
+  }
+
   const statusBackLabel = safeReturnPath ? "返回上一页" : "查看星标朋友";
 
   return (
@@ -215,14 +233,24 @@ function MobileTagsPage() {
               title="标签页暂时不可用"
               description={friendsQuery.error.message}
               action={
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleRetryTags}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                </div>
               }
               tone="danger"
             />

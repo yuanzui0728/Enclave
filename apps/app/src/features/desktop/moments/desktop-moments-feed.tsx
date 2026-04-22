@@ -18,7 +18,10 @@ type DesktopMomentsFeedProps = {
   onToggleFavorite: (momentId: string) => void;
   onOpenCompose: () => void;
   onOpenDetail: (momentId: string) => void;
-  onSelectAuthor: (authorId: string, momentId?: string) => void;
+  onSelectAuthor?: (input: {
+    anchorElement: HTMLButtonElement;
+    moment: Moment;
+  }) => void;
 };
 
 export function DesktopMomentsFeed({
@@ -64,7 +67,15 @@ export function DesktopMomentsFeed({
               onLike={() => onLike(moment.id)}
               onToggleFavorite={() => onToggleFavorite(moment.id)}
               onOpenDetail={() => onOpenDetail(moment.id)}
-              onSelectAuthor={() => onSelectAuthor(moment.authorId, moment.id)}
+              onSelectAuthor={
+                moment.authorType === "character" && onSelectAuthor
+                  ? (event) =>
+                      onSelectAuthor({
+                        anchorElement: event.currentTarget,
+                        moment,
+                      })
+                  : undefined
+              }
             />
           ))}
         </div>

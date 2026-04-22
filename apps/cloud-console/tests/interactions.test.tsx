@@ -21,6 +21,7 @@ import {
   type CloudAdminRequestLog,
   installCloudAdminApiMock,
   mockAdminSessions,
+  mockJob,
   mockWaitingSessionSyncTasks,
   renderRoute,
 } from "./test-helpers";
@@ -319,6 +320,44 @@ function buildAdminSessionGeneratedQuerySessions({
       revokedBySessionId: isRevoked ? firstSessionId : null,
       revocationReason: isRevoked ? revocationReason : null,
     });
+  });
+}
+
+function buildAdminSessionDescendingQuerySessions({
+  count,
+  idSuffix,
+  issuedFromIpPrefix,
+  issuedFromIpStart,
+  issuedUserAgentPrefix,
+  currentIndex = 0,
+  revokedIndexes = [],
+}: {
+  count: number;
+  idSuffix: string;
+  issuedFromIpPrefix: string;
+  issuedFromIpStart: number;
+  issuedUserAgentPrefix: string;
+  currentIndex?: number;
+  revokedIndexes?: number[];
+}) {
+  return buildAdminSessionGeneratedQuerySessions({
+    count,
+    idSuffix,
+    issuedFromIpPrefix,
+    issuedFromIpStart,
+    issuedUserAgentPrefix,
+    currentIndex,
+    revokedIndexes,
+    createdAt: (index) =>
+      new Date(Date.UTC(2026, 3, 20, 0, 0, 0) - index * 60_000).toISOString(),
+    updatedAt: (index) =>
+      new Date(Date.UTC(2026, 3, 20, 1, 0, 0) - index * 60_000).toISOString(),
+    lastUsedAt: (index) =>
+      new Date(Date.UTC(2026, 3, 20, 2, 0, 0) - index * 60_000).toISOString(),
+    expiresAt: (index) =>
+      new Date(
+        Date.UTC(2026, 3, 21, 0, 0, 0) + (count - 1 - index) * 60_000,
+      ).toISOString(),
   });
 }
 
@@ -2602,35 +2641,14 @@ describe("cloud-console interactions", () => {
   });
 
   it("selects only active sessions when bulk-selecting the current admin session page", async () => {
-    const generatedSessions = Array.from({ length: 12 }, (_, index) => {
-      const isRevoked = index === 0 || index === 11;
-      return {
-        ...mockAdminSessions[1],
-        id: `${String(index + 1).padStart(8, "0")}-4444-4444-8444-444444444444`,
-        isCurrent: index === 1,
-        status: isRevoked ? ("revoked" as const) : ("active" as const),
-        createdAt: new Date(
-          Date.UTC(2026, 3, 20, 0, 0, 0) - index * 60_000,
-        ).toISOString(),
-        updatedAt: new Date(
-          Date.UTC(2026, 3, 20, 1, 0, 0) - index * 60_000,
-        ).toISOString(),
-        lastUsedAt: new Date(
-          Date.UTC(2026, 3, 20, 2, 0, 0) - index * 60_000,
-        ).toISOString(),
-        expiresAt: new Date(
-          Date.UTC(2026, 3, 21, 0, 0, 0) + (11 - index) * 60_000,
-        ).toISOString(),
-        issuedFromIp: `203.0.113.${index + 30}`,
-        issuedUserAgent: `Bulk Page Browser ${index + 1}`,
-        revokedAt: isRevoked ? "2026-04-20T00:40:00.000Z" : null,
-        revokedBySessionId: isRevoked
-          ? "00000001-4444-4444-8444-444444444444"
-          : null,
-        revocationReason: isRevoked
-          ? ("manual-revocation" as const)
-          : null,
-      };
+    const generatedSessions = buildAdminSessionDescendingQuerySessions({
+      count: 12,
+      idSuffix: "4444-4444-8444-444444444444",
+      issuedFromIpPrefix: "203.0.113.",
+      issuedFromIpStart: 30,
+      issuedUserAgentPrefix: "Bulk Page Browser",
+      currentIndex: 1,
+      revokedIndexes: [0, 11],
     });
 
     const { requests } = installCloudAdminApiMock({
@@ -2692,39 +2710,13 @@ describe("cloud-console interactions", () => {
   });
 
   it("filters and paginates admin sessions", async () => {
-    const generatedSessions = Array.from({ length: 12 }, (_, index) => {
-      const isRevoked = index === 11;
-      const createdAt = new Date(
-        Date.UTC(2026, 3, 20, 0, 0, 0) - index * 60_000,
-      ).toISOString();
-      const updatedAt = new Date(
-        Date.UTC(2026, 3, 20, 1, 0, 0) - index * 60_000,
-      ).toISOString();
-      const lastUsedAt = new Date(
-        Date.UTC(2026, 3, 20, 2, 0, 0) - index * 60_000,
-      ).toISOString();
-      const expiresAt = new Date(
-        Date.UTC(2026, 3, 21, 0, 0, 0) + (11 - index) * 60_000,
-      ).toISOString();
-      return {
-        ...mockAdminSessions[1],
-        id: `${String(index + 1).padStart(8, "0")}-2222-4222-8222-222222222222`,
-        isCurrent: index === 0,
-        status: isRevoked ? ("revoked" as const) : ("active" as const),
-        createdAt,
-        updatedAt,
-        lastUsedAt,
-        expiresAt,
-        issuedFromIp: `203.0.113.${index + 10}`,
-        issuedUserAgent: `Browser ${index + 1}`,
-        revokedAt: isRevoked ? "2026-04-20T00:40:00.000Z" : null,
-        revokedBySessionId: isRevoked
-          ? "00000001-2222-4222-8222-222222222222"
-          : null,
-        revocationReason: isRevoked
-          ? ("manual-revocation" as const)
-          : null,
-      };
+    const generatedSessions = buildAdminSessionDescendingQuerySessions({
+      count: 12,
+      idSuffix: "2222-4222-8222-222222222222",
+      issuedFromIpPrefix: "203.0.113.",
+      issuedFromIpStart: 10,
+      issuedUserAgentPrefix: "Browser",
+      revokedIndexes: [11],
     });
 
     const { requests } = installCloudAdminApiMock({
@@ -2797,23 +2789,13 @@ describe("cloud-console interactions", () => {
   });
 
   it("issues admin session quick-view and sorting query params", async () => {
-    const generatedSessions = buildAdminSessionGeneratedQuerySessions({
+    const generatedSessions = buildAdminSessionDescendingQuerySessions({
       count: 12,
       idSuffix: "3333-4333-8333-333333333333",
       issuedFromIpPrefix: "198.51.100.",
       issuedFromIpStart: 20,
       issuedUserAgentPrefix: "Quick View Browser",
       revokedIndexes: [11],
-      createdAt: (index) =>
-        new Date(Date.UTC(2026, 3, 20, 0, 0, 0) - index * 60_000).toISOString(),
-      updatedAt: (index) =>
-        new Date(Date.UTC(2026, 3, 20, 1, 0, 0) - index * 60_000).toISOString(),
-      lastUsedAt: (index) =>
-        new Date(Date.UTC(2026, 3, 20, 2, 0, 0) - index * 60_000).toISOString(),
-      expiresAt: (index) =>
-        new Date(
-          Date.UTC(2026, 3, 21, 0, 0, 0) + (11 - index) * 60_000,
-        ).toISOString(),
     });
 
     const { requests } = installCloudAdminApiMock({
@@ -2891,29 +2873,13 @@ describe("cloud-console interactions", () => {
   });
 
   it("clears bulk-selected admin sessions when paging to a different result set", async () => {
-    const generatedSessions = Array.from({ length: 12 }, (_, index) => ({
-      ...mockAdminSessions[1],
-      id: `${String(index + 1).padStart(8, "0")}-5555-4555-8555-555555555555`,
-      isCurrent: index === 0,
-      status: "active" as const,
-      createdAt: new Date(
-        Date.UTC(2026, 3, 20, 0, 0, 0) - index * 60_000,
-      ).toISOString(),
-      updatedAt: new Date(
-        Date.UTC(2026, 3, 20, 1, 0, 0) - index * 60_000,
-      ).toISOString(),
-      lastUsedAt: new Date(
-        Date.UTC(2026, 3, 20, 2, 0, 0) - index * 60_000,
-      ).toISOString(),
-      expiresAt: new Date(
-        Date.UTC(2026, 3, 21, 0, 0, 0) + (11 - index) * 60_000,
-      ).toISOString(),
-      issuedFromIp: `198.51.100.${index + 40}`,
-      issuedUserAgent: `Paging Browser ${index + 1}`,
-      revokedAt: null,
-      revokedBySessionId: null,
-      revocationReason: null,
-    }));
+    const generatedSessions = buildAdminSessionDescendingQuerySessions({
+      count: 12,
+      idSuffix: "5555-4555-8555-555555555555",
+      issuedFromIpPrefix: "198.51.100.",
+      issuedFromIpStart: 40,
+      issuedUserAgentPrefix: "Paging Browser",
+    });
 
     installCloudAdminApiMock({
       adminSessions: generatedSessions,
@@ -3393,6 +3359,51 @@ describe("cloud-console interactions", () => {
       hasJobsRequest(requests, {
         audit: "superseded",
         supersededBy: "suspend",
+      }),
+    ).toBe(true);
+  });
+
+  it("paginates lifecycle jobs from backend results", async () => {
+    const jobs = Array.from({ length: 25 }, (_, index) => ({
+      ...mockJob,
+      id: `job-${String(index + 1).padStart(2, "0")}`,
+      updatedAt: new Date(
+        Date.UTC(2026, 3, 20, 0, 25 - index, 0),
+      ).toISOString(),
+      createdAt: new Date(
+        Date.UTC(2026, 3, 20, 0, 25 - index, 0),
+      ).toISOString(),
+    }));
+    const { requests } = installCloudAdminApiMock({ jobs });
+    renderRoute("/jobs");
+
+    expect(await screen.findByText("Lifecycle jobs")).toBeTruthy();
+    expect(await screen.findByText("Showing 1-20 of 25 jobs.")).toBeTruthy();
+    expect(screen.getByText("job-01")).toBeTruthy();
+    expect(screen.queryByText("job-21")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+
+    expect(await screen.findByText("Showing 21-25 of 25 jobs.")).toBeTruthy();
+    expect(screen.getByText("job-21")).toBeTruthy();
+    expect(screen.queryByText("job-01")).toBeNull();
+    expect(
+      hasJobsRequest(requests, {
+        page: "2",
+        pageSize: "20",
+      }),
+    ).toBe(true);
+
+    fireEvent.change(screen.getByDisplayValue("page size: 20"), {
+      target: { value: "50" },
+    });
+
+    expect(await screen.findByText("Showing 1-25 of 25 jobs.")).toBeTruthy();
+    expect(screen.getByText("job-01")).toBeTruthy();
+    expect(
+      hasJobsRequest(requests, {
+        page: "1",
+        pageSize: "50",
       }),
     ).toBe(true);
   });

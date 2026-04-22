@@ -18,6 +18,7 @@ import { EmptyState } from "../../../components/empty-state";
 import { OfficialAccountListItem } from "../../../components/official-account-list-item";
 import { OfficialArticleCard } from "../../../components/official-article-card";
 import { formatDesktopMessageTimestamp } from "../../../lib/format";
+import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";
 import {
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
@@ -175,6 +176,21 @@ export function DesktopOfficialAccountsWorkspace({
     onModeChange("accounts");
   }, [displayMode, onModeChange, selectedAccountId, selectedMode]);
 
+  const openDesktopAccountWorkspace = useCallback(
+    (accountId: string, articleId?: string | null) => {
+      void navigate({
+        to: "/tabs/contacts",
+        hash: buildDesktopContactsRouteHash({
+          pane: "official-accounts",
+          accountId,
+          articleId: articleId ?? undefined,
+          officialMode: "accounts",
+        }),
+      });
+    },
+    [navigate],
+  );
+
   function handleDisplayModeChange(mode: DesktopOfficialDisplayMode) {
     setDisplayMode(mode);
     onModeChange?.(mode);
@@ -187,17 +203,14 @@ export function DesktopOfficialAccountsWorkspace({
         return;
       }
 
-      if (onOpenAccount) {
+      if (!articleId && onOpenAccount) {
         onOpenAccount(accountId);
         return;
       }
 
-      void navigate({
-        to: "/official-accounts/$accountId",
-        params: { accountId },
-      });
+      openDesktopAccountWorkspace(accountId, articleId);
     },
-    [navigate, onOpenAccount, onOpenArticle],
+    [onOpenAccount, onOpenArticle, openDesktopAccountWorkspace],
   );
 
   const accountsQuery = useQuery({
@@ -571,10 +584,7 @@ export function DesktopOfficialAccountsWorkspace({
       return;
     }
 
-    void navigate({
-      to: "/official-accounts/$accountId",
-      params: { accountId },
-    });
+    openDesktopAccountWorkspace(accountId);
   }
 
   async function handleOpenArticleWindow(

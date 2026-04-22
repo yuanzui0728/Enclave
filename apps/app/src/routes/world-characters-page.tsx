@@ -15,6 +15,7 @@ import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { parseDesktopContactsRouteState } from "../features/contacts/contacts-route-state";
 import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
 import {
   buildContactSections,
@@ -38,6 +39,11 @@ const DesktopContactsRouteRedirectShell = lazy(async () => {
 
 export function WorldCharactersPage() {
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const desktopPaneState = useMemo(() => {
+    const routeState = parseDesktopContactsRouteState(hash);
+    return routeState.pane === "world-character" ? routeState : null;
+  }, [hash]);
 
   if (isDesktopLayout) {
     return (
@@ -52,6 +58,7 @@ export function WorldCharactersPage() {
       >
         <DesktopContactsRouteRedirectShell
           pane="world-character"
+          characterId={desktopPaneState?.characterId}
           showWorldCharacters
         />
       </Suspense>
@@ -170,6 +177,10 @@ function MobileWorldCharactersPage() {
     openFriendRequests();
   }
 
+  function handleRetryWorldCharacters() {
+    void Promise.all([friendsQuery.refetch(), charactersQuery.refetch()]);
+  }
+
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
@@ -242,15 +253,26 @@ function MobileWorldCharactersPage() {
               description={friendsQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "查看新的朋友"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryWorldCharacters}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "查看新的朋友"}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -263,15 +285,26 @@ function MobileWorldCharactersPage() {
               description={charactersQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "查看新的朋友"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryWorldCharacters}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "查看新的朋友"}
+                  </Button>
+                </div>
               }
             />
           </div>

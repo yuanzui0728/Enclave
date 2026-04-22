@@ -20,6 +20,8 @@ export type JobsRouteSearch = {
   audit: JobAuditFilter;
   supersededBy: JobSupersededByFilter;
   query: string;
+  page: number;
+  pageSize: number;
 };
 
 export const JOB_STATUS_FILTERS: JobStatusFilter[] = [
@@ -46,6 +48,7 @@ export const JOB_SUPERSEDED_BY_FILTERS: JobSupersededByFilter[] = [
   "suspend",
   "reconcile",
 ];
+export const JOB_PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
 
 export const DEFAULT_JOBS_ROUTE_SEARCH: JobsRouteSearch = {
   status: "all",
@@ -55,6 +58,8 @@ export const DEFAULT_JOBS_ROUTE_SEARCH: JobsRouteSearch = {
   audit: "all",
   supersededBy: "all",
   query: "",
+  page: 1,
+  pageSize: 20,
 };
 
 const JOB_STATUS_FILTER_SET = new Set<string>(JOB_STATUS_FILTERS);
@@ -66,9 +71,21 @@ const JOB_SUPERSEDED_BY_FILTER_SET = new Set<string>(
 const QUEUE_STATE_FILTER_SET = new Set<string>(
   QUEUE_STATE_FILTERS.map((item) => item.value),
 );
+const PAGE_SIZE_SET = new Set<number>(JOB_PAGE_SIZE_OPTIONS);
 
 function normalizeRouteString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizePositiveInteger(value: unknown, fallback: number) {
+  const normalized =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseInt(value.trim(), 10)
+        : Number.NaN;
+
+  return Number.isInteger(normalized) && normalized >= 1 ? normalized : fallback;
 }
 
 export function buildJobsRouteSearch(
@@ -80,6 +97,10 @@ export function buildJobsRouteSearch(
   const queueState = normalizeRouteString(search?.queueState);
   const audit = normalizeRouteString(search?.audit);
   const supersededBy = normalizeRouteString(search?.supersededBy);
+  const pageSize = normalizePositiveInteger(
+    search?.pageSize,
+    DEFAULT_JOBS_ROUTE_SEARCH.pageSize,
+  );
 
   return {
     status: JOB_STATUS_FILTER_SET.has(status)
@@ -102,6 +123,13 @@ export function buildJobsRouteSearch(
       typeof search?.query === "string"
         ? search.query
         : DEFAULT_JOBS_ROUTE_SEARCH.query,
+    page: normalizePositiveInteger(
+      search?.page,
+      DEFAULT_JOBS_ROUTE_SEARCH.page,
+    ),
+    pageSize: PAGE_SIZE_SET.has(pageSize)
+      ? pageSize
+      : DEFAULT_JOBS_ROUTE_SEARCH.pageSize,
   };
 }
 
@@ -114,5 +142,7 @@ export function validateJobsRouteSearch(search: Record<string, unknown>) {
     audit: normalizeRouteString(search.audit),
     supersededBy: normalizeRouteString(search.supersededBy),
     query: typeof search.query === "string" ? search.query : "",
+    page: search.page,
+    pageSize: search.pageSize,
   });
 }

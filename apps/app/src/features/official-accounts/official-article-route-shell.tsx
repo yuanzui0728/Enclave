@@ -17,6 +17,7 @@ export function OfficialArticleRouteShell({
       buildDesktopContactsRouteHash({
         pane: "official-accounts",
         articleId,
+        officialMode: "accounts",
       }),
     [articleId],
   );

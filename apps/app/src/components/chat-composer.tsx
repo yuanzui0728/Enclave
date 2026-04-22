@@ -81,6 +81,8 @@ type ChatComposerProps = {
   variant?: "mobile" | "desktop";
   pending?: boolean;
   error?: string | null;
+  errorActionLabel?: string;
+  onErrorAction?: (() => void) | null;
   speechInput?: {
     baseUrl?: string;
     conversationId: string;
@@ -312,6 +314,8 @@ export function ChatComposer({
   variant = "mobile",
   pending = false,
   error,
+  errorActionLabel,
+  onErrorAction = null,
   speechInput,
   onSendSticker,
   onSendAttachment,
@@ -2691,6 +2695,8 @@ export function ChatComposer({
       return {
         tone: "danger" as const,
         label: composerError,
+        actionLabel: errorActionLabel ?? undefined,
+        onAction: onErrorAction ?? undefined,
       };
     }
 
@@ -2746,15 +2752,17 @@ export function ChatComposer({
         tone: "danger" as const,
         label: composerError,
         actionLabel:
-          speech.permissionDenied && nativeMobileShellSupported
+          errorActionLabel ??
+          (speech.permissionDenied && nativeMobileShellSupported
             ? "去设置"
-            : undefined,
+            : undefined),
         onAction:
-          speech.permissionDenied && nativeMobileShellSupported
+          onErrorAction ??
+          (speech.permissionDenied && nativeMobileShellSupported
             ? () => {
                 void openAppSettings();
               }
-            : undefined,
+            : undefined),
       };
     }
 

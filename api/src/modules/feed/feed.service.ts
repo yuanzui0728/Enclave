@@ -3,6 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
@@ -42,6 +43,13 @@ type FeedOwnerState = {
   lastViewedAt: string | null;
   watchProgressSeconds: number | null;
   completed: boolean;
+};
+
+type FeedAvatarContext = {
+  ownerAvatar: string;
+  ownerId: string;
+  visibleCharacterIds: Set<string>;
+  characterAvatarById: Map<string, string>;
 };
 
 type FeedListItem = ReturnType<FeedService['serializePost']> & {
@@ -111,7 +119,7 @@ const MAX_FEED_IMAGE_COUNT = 9;
 const MAX_FEED_VIDEO_DURATION_MS = 5 * 60 * 1000;
 
 @Injectable()
-export class FeedService {
+export class FeedService implements OnModuleInit {
   private readonly logger = new Logger(FeedService.name);
 
   constructor(
@@ -130,6 +138,10 @@ export class FeedService {
     private readonly cyberAvatar: CyberAvatarService,
   ) {}
 
+  async onModuleInit() {
+    await this.backfillFeedAuthorAvatars();
+  }
+
   async getFeed(
     page = 1,
     limit = 20,
@@ -141,6 +153,10 @@ export class FeedService {
     }
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildFeedAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
     const visiblePosts =
       surface === 'channels'
         ? await this.getVisibleChannelPosts(owner.id, 'recommended')
@@ -150,13 +166,14 @@ export class FeedService {
       this.buildCommentsPreviewMap(
         pagedPosts.map((post) => post.id),
         owner.id,
+        avatarContext,
       ),
       this.buildOwnerStateMap(pagedPosts, owner.id),
     ]);
 
     return {
       posts: pagedPosts.map((post) => ({
-        ...this.serializePost(post, ownerStateMap.get(post.id)),
+        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
         commentsPreview: commentsPreviewMap.get(post.id) ?? [],
       })),
       total: visiblePosts.length,
@@ -172,6 +189,10 @@ export class FeedService {
     await this.topUpChannelsIfNeeded();
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildFeedAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
     const section = input?.section ?? 'recommended';
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 20;
@@ -196,10 +217,11 @@ export class FeedService {
       this.buildCommentsPreviewMap(
         pagedPosts.map((post) => post.id),
         owner.id,
+        avatarContext,
       ),
       this.buildOwnerStateMap(pagedPosts, owner.id),
-      this.buildChannelAuthorSummaries(allVisiblePosts, owner.id),
-      this.buildLiveEntries(allVisiblePosts),
+      this.buildChannelAuthorSummaries(allVisiblePosts, owner.id, avatarContext),
+      this.buildLiveEntries(allVisiblePosts, avatarContext),
       this.buildChannelSectionCounts(allVisiblePosts, owner.id),
     ]);
 
@@ -213,7 +235,7 @@ export class FeedService {
       })),
       activeSection: section,
       posts: pagedPosts.map((post) => ({
-        ...this.serializePost(post, ownerStateMap.get(post.id)),
+        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
         commentsPreview: commentsPreviewMap.get(post.id) ?? [],
       })),
       authors,
@@ -224,6 +246,10 @@ export class FeedService {
 
   async getChannelAuthorProfile(authorId: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildFeedAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
     const authorPosts = (
       await this.getVisibleChannelPosts(owner.id, 'recommended')
     ).filter((post) => post.authorId === authorId);
@@ -244,6 +270,7 @@ export class FeedService {
         this.buildCommentsPreviewMap(
           authorPosts.slice(0, 12).map((post) => post.id),
           owner.id,
+          avatarContext,
         ),
         this.followRepo.count({ where: { authorId } }),
         this.followRepo.findOneBy({ ownerId: owner.id, authorId }),
@@ -253,13 +280,18 @@ export class FeedService {
     return {
       authorId: latestPost.authorId,
       authorName: latestPost.authorName,
-      authorAvatar: latestPost.authorAvatar,
+      authorAvatar: this.resolveFeedAuthorAvatar(
+        latestPost.authorType,
+        latestPost.authorId,
+        latestPost.authorAvatar,
+        avatarContext,
+      ),
       authorType: latestPost.authorType,
       bio,
       followerCount,
       isFollowing: Boolean(isFollowing),
       recentPosts: authorPosts.slice(0, 12).map((post) => ({
-        ...this.serializePost(post, ownerStateMap.get(post.id)),
+        ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
         commentsPreview: commentsPreviewMap.get(post.id) ?? [],
       })),
     };
@@ -267,6 +299,10 @@ export class FeedService {
 
   async getPostWithComments(postId: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildFeedAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
     const post = await this.postRepo.findOneBy({ id: postId });
 
     if (!post || post.publishStatus === 'deleted') {
@@ -274,18 +310,24 @@ export class FeedService {
     }
 
     const [comments, ownerStateMap] = await Promise.all([
-      this.getComments(postId),
+      this.getComments(postId, avatarContext),
       this.buildOwnerStateMap([post], owner.id),
     ]);
 
     return {
-      ...this.serializePost(post, ownerStateMap.get(post.id)),
+      ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
       comments,
     };
   }
 
-  async getComments(postId: string) {
+  async getComments(postId: string, avatarContext?: FeedAvatarContext) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const resolvedAvatarContext =
+      avatarContext ??
+      (await this.buildFeedAvatarContext({
+        ownerId: owner.id,
+        ownerAvatar: owner.avatar,
+      }));
     const comments = await this.commentRepo.find({
       where: { postId, status: 'published' },
       order: { createdAt: 'ASC' },
@@ -296,7 +338,11 @@ export class FeedService {
     );
 
     return comments.map((comment) =>
-      this.serializeComment(comment, likedCommentIds.has(comment.id)),
+      this.serializeComment(
+        comment,
+        likedCommentIds.has(comment.id),
+        resolvedAvatarContext,
+      ),
     );
   }
 
@@ -424,8 +470,10 @@ export class FeedService {
       return existing;
     }
 
+    const character = await this.characters.findById(post.authorId);
+
     return this.createPost({
-      authorAvatar: post.authorAvatar,
+      authorAvatar: character?.avatar ?? post.authorAvatar,
       authorId: post.authorId,
       authorName: post.authorName,
       authorType: 'character',
@@ -997,7 +1045,11 @@ export class FeedService {
     }
   }
 
-  private async buildCommentsPreviewMap(postIds: string[], ownerId: string) {
+  private async buildCommentsPreviewMap(
+    postIds: string[],
+    ownerId: string,
+    avatarContext?: FeedAvatarContext,
+  ) {
     if (!postIds.length) {
       return new Map<string, ReturnType<FeedService['serializeComment']>[]>();
     }
@@ -1018,7 +1070,11 @@ export class FeedService {
     for (const comment of comments) {
       const currentComments = commentMap.get(comment.postId) ?? [];
       currentComments.push(
-        this.serializeComment(comment, likedCommentIds.has(comment.id)),
+        this.serializeComment(
+          comment,
+          likedCommentIds.has(comment.id),
+          avatarContext,
+        ),
       );
       commentMap.set(comment.postId, currentComments.slice(-3));
     }
@@ -1117,6 +1173,7 @@ export class FeedService {
   private async buildChannelAuthorSummaries(
     posts: FeedPostEntity[],
     ownerId: string,
+    avatarContext?: FeedAvatarContext,
   ) {
     const followedAuthorIds = new Set(
       (
@@ -1162,7 +1219,15 @@ export class FeedService {
       }
 
       authorMap.set(post.authorId, {
-        authorAvatar: post.authorAvatar,
+        authorAvatar:
+          avatarContext === undefined
+            ? post.authorAvatar
+            : this.resolveFeedAuthorAvatar(
+                post.authorType,
+                post.authorId,
+                post.authorAvatar,
+                avatarContext,
+              ),
         authorName: post.authorName,
         authorType: post.authorType,
         latestCreatedAt: post.createdAt,
@@ -1187,7 +1252,10 @@ export class FeedService {
       .slice(0, 12);
   }
 
-  private async buildLiveEntries(posts: FeedPostEntity[]) {
+  private async buildLiveEntries(
+    posts: FeedPostEntity[],
+    avatarContext?: FeedAvatarContext,
+  ) {
     return posts
       .filter(
         (post) =>
@@ -1201,7 +1269,15 @@ export class FeedService {
         title: post.title?.trim() || `${post.authorName} 的视频号直播`,
         authorId: post.authorId,
         authorName: post.authorName,
-        authorAvatar: post.authorAvatar,
+        authorAvatar:
+          avatarContext === undefined
+            ? post.authorAvatar
+            : this.resolveFeedAuthorAvatar(
+                post.authorType,
+                post.authorId,
+                post.authorAvatar,
+                avatarContext,
+              ),
         startedAt: post.createdAt.toISOString(),
         status: 'replay' as const,
         coverUrl: post.coverUrl ?? null,
@@ -1309,16 +1385,25 @@ export class FeedService {
   }
 
   private async resolveChannelAuthor(authorId: string) {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
     const latestPost = await this.postRepo.findOne({
       where: { authorId, surface: 'channels', publishStatus: 'published' },
       order: { createdAt: 'DESC' },
     });
 
     if (latestPost) {
+      const character =
+        latestPost.authorType === 'character'
+          ? await this.characters.findById(latestPost.authorId)
+          : null;
       return {
         authorId: latestPost.authorId,
         authorName: latestPost.authorName,
-        authorAvatar: latestPost.authorAvatar,
+        authorAvatar:
+          character?.avatar ??
+          (latestPost.authorId === owner.id && owner.avatar
+            ? owner.avatar
+            : latestPost.authorAvatar),
         authorType: latestPost.authorType,
       };
     }
@@ -1333,7 +1418,6 @@ export class FeedService {
       };
     }
 
-    const owner = await this.worldOwnerService.getOwnerOrThrow();
     if (owner.id === authorId) {
       return {
         authorId: owner.id,
@@ -1635,7 +1719,11 @@ export class FeedService {
     return `${imageCount} 张图片`;
   }
 
-  private serializePost(post: FeedPostEntity, ownerState?: FeedOwnerState) {
+  private serializePost(
+    post: FeedPostEntity,
+    ownerState?: FeedOwnerState,
+    avatarContext?: FeedAvatarContext,
+  ) {
     const media = this.resolveFeedPostMedia(post);
     const primaryMedia = media[0];
 
@@ -1643,7 +1731,15 @@ export class FeedService {
       id: post.id,
       authorId: post.authorId,
       authorName: post.authorName,
-      authorAvatar: post.authorAvatar,
+      authorAvatar:
+        avatarContext === undefined
+          ? post.authorAvatar
+          : this.resolveFeedAuthorAvatar(
+              post.authorType,
+              post.authorId,
+              post.authorAvatar,
+              avatarContext,
+            ),
       authorType: post.authorType as 'user' | 'character',
       surface: post.surface as FeedSurface,
       text: post.text,
@@ -1700,13 +1796,25 @@ export class FeedService {
     };
   }
 
-  private serializeComment(comment: FeedCommentEntity, likedByOwner: boolean) {
+  private serializeComment(
+    comment: FeedCommentEntity,
+    likedByOwner: boolean,
+    avatarContext?: FeedAvatarContext,
+  ) {
     return {
       id: comment.id,
       postId: comment.postId,
       authorId: comment.authorId,
       authorName: comment.authorName,
-      authorAvatar: comment.authorAvatar,
+      authorAvatar:
+        avatarContext === undefined
+          ? comment.authorAvatar
+          : this.resolveFeedAuthorAvatar(
+              comment.authorType,
+              comment.authorId,
+              comment.authorAvatar,
+              avatarContext,
+            ),
       authorType: comment.authorType as 'user' | 'character',
       text: comment.text,
       parentCommentId: comment.parentCommentId ?? null,
@@ -1717,6 +1825,119 @@ export class FeedService {
       likedByOwner,
       createdAt: comment.createdAt.toISOString(),
     };
+  }
+
+  private async buildFeedAvatarContext(input?: {
+    ownerId?: string;
+    ownerAvatar?: string | null;
+  }): Promise<FeedAvatarContext> {
+    const owner =
+      input?.ownerId === undefined
+        ? await this.worldOwnerService.getOwnerOrThrow()
+        : {
+            id: input.ownerId,
+            avatar: input.ownerAvatar ?? '',
+          };
+    const visibleCharacters = await this.characters.findAllVisibleToOwner(
+      owner.id,
+    );
+
+    return {
+      ownerAvatar: owner.avatar?.trim() || '',
+      ownerId: owner.id,
+      visibleCharacterIds: new Set(
+        visibleCharacters.map((character) => character.id),
+      ),
+      characterAvatarById: new Map(
+        visibleCharacters.map((character) => [
+          character.id,
+          character.avatar,
+        ]),
+      ),
+    };
+  }
+
+  private resolveFeedAuthorAvatar(
+    authorType: string | null | undefined,
+    authorId: string | null | undefined,
+    currentAvatar: string | null | undefined,
+    avatarContext: FeedAvatarContext,
+  ) {
+    if (authorType === 'character' && authorId) {
+      return avatarContext.characterAvatarById.get(authorId) ?? currentAvatar ?? '';
+    }
+
+    if (
+      authorType === 'user' &&
+      authorId === avatarContext.ownerId &&
+      avatarContext.ownerAvatar
+    ) {
+      return avatarContext.ownerAvatar;
+    }
+
+    return currentAvatar ?? '';
+  }
+
+  private async backfillFeedAuthorAvatars() {
+    const [owner, characters, posts, comments] = await Promise.all([
+      this.worldOwnerService.getOwnerOrThrow(),
+      this.characters.findAll(),
+      this.postRepo.find(),
+      this.commentRepo.find(),
+    ]);
+    const characterAvatarById = new Map(
+      characters.map((character) => [character.id, character.avatar]),
+    );
+    const ownerAvatar = owner.avatar?.trim() || '';
+
+    const resolveAvatar = (
+      authorType: string | null | undefined,
+      authorId: string | null | undefined,
+      currentAvatar: string | null | undefined,
+    ) => {
+      if (authorType === 'character' && authorId) {
+        return characterAvatarById.get(authorId) ?? currentAvatar ?? '';
+      }
+
+      if (authorType === 'user' && authorId === owner.id && ownerAvatar) {
+        return ownerAvatar;
+      }
+
+      return currentAvatar ?? '';
+    };
+
+    const pendingPostUpdates = posts.reduce<FeedPostEntity[]>((updates, post) => {
+      const nextAvatar = resolveAvatar(
+        post.authorType,
+        post.authorId,
+        post.authorAvatar,
+      );
+      if (nextAvatar && nextAvatar !== post.authorAvatar) {
+        updates.push({ ...post, authorAvatar: nextAvatar });
+      }
+      return updates;
+    }, []);
+    const pendingCommentUpdates = comments.reduce<FeedCommentEntity[]>(
+      (updates, comment) => {
+        const nextAvatar = resolveAvatar(
+          comment.authorType,
+          comment.authorId,
+          comment.authorAvatar,
+        );
+        if (nextAvatar && nextAvatar !== comment.authorAvatar) {
+          updates.push({ ...comment, authorAvatar: nextAvatar });
+        }
+        return updates;
+      },
+      [],
+    );
+
+    await Promise.all([
+      pendingPostUpdates.length > 0 ? this.postRepo.save(pendingPostUpdates) : null,
+      pendingCommentUpdates.length > 0
+        ? this.commentRepo.save(pendingCommentUpdates)
+        : null,
+    ]);
   }
 
   private async createPostInteraction(input: {

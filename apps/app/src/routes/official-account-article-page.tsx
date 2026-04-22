@@ -185,6 +185,19 @@ function MobileOfficialAccountArticlePage({
     void navigate({ to: "/contacts/official-accounts" });
   }
 
+  function handleRetryMarkRead() {
+    if (!article?.id) {
+      return;
+    }
+
+    setShareNotice(null);
+    markReadMutation.mutate(article.id);
+  }
+
+  function handleRetryArticle() {
+    void articleQuery.refetch();
+  }
+
   const statusBackLabel = safeReturnPath
     ? "返回上一页"
     : article?.account.id
@@ -342,15 +355,26 @@ function MobileOfficialAccountArticlePage({
               description={articleQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryArticle}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -363,15 +387,28 @@ function MobileOfficialAccountArticlePage({
               description={markReadMutation.error.message}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {article?.id ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      onClick={handleRetryMarkRead}
+                    >
+                      重试同步
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -382,7 +419,22 @@ function MobileOfficialAccountArticlePage({
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={shareNotice.tone}
             >
-              {shareNotice.message}
+              {shareNotice.tone === "info" ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">{shareNotice.message}</span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                </div>
+              ) : (
+                shareNotice.message
+              )}
             </InlineNotice>
           </div>
         ) : null}

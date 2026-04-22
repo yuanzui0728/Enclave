@@ -101,12 +101,13 @@ export function DiscoverFeedPage() {
       ? "/tabs/feed"
       : routeState.returnPath;
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const desktopPathMismatch = pathname !== "/tabs/feed";
   const routeSelectedPostId = routeState.postId;
   const [desktopSelectedPostId, setDesktopSelectedPostId] = useState<
     string | null
   >(routeSelectedPostId);
   const routeSelectionAlreadySynced =
-    routeSelectedPostId === desktopSelectedPostId;
+    (!desktopPathMismatch && routeSelectedPostId === desktopSelectedPostId);
   const safeReturnPath =
     normalizedDesktopReturnPath &&
     !isDesktopOnlyPath(normalizedDesktopReturnPath)
@@ -218,6 +219,11 @@ export function DiscoverFeedPage() {
     void blockedQuery.refetch();
   }
 
+  function handleRetryLoad() {
+    void feedQuery.refetch();
+    void blockedQuery.refetch();
+  }
+
   function handleEmptyStateAction() {
     if (navigateToRouteStateReturn()) {
       return;
@@ -233,7 +239,7 @@ export function DiscoverFeedPage() {
     setCommentDrafts({});
     setShowCompose(false);
     setNotice("");
-  }, [baseUrl]);
+  }, [baseUrl, resetComposeDraft]);
 
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
@@ -298,7 +304,6 @@ export function DiscoverFeedPage() {
   useEffect(() => {
     if (
       !isDesktopLayout ||
-      pathname !== "/tabs/feed" ||
       (routeSelectionAlreadySynced &&
         normalizedHash ===
           (buildFeedRouteHash({
@@ -320,11 +325,11 @@ export function DiscoverFeedPage() {
       replace: true,
     });
   }, [
+    desktopPathMismatch,
     desktopSelectedPostId,
     isDesktopLayout,
     navigate,
     normalizedHash,
-    pathname,
     routeSelectionAlreadySynced,
     safeReturnHash,
     safeReturnPath,
@@ -692,7 +697,20 @@ export function DiscoverFeedPage() {
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={noticeTone}
             >
-              {notice}
+              {noticeTone === "info" ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">{notice}</span>
+                  <button
+                    type="button"
+                    onClick={handleStatusBack}
+                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  >
+                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                  </button>
+                </div>
+              ) : (
+                notice
+              )}
             </InlineNotice>
           ) : null}
           {feedQuery.isLoading ? (
@@ -710,14 +728,24 @@ export function DiscoverFeedPage() {
               description={feedQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "重新加载"}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryLoad}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                  </Button>
+                </div>
               }
             />
           ) : null}

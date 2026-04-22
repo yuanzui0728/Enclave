@@ -247,6 +247,8 @@ export class AdminCloudController {
       audit: query.audit,
       supersededBy: query.supersededBy,
       query: query.query,
+      page: query.page,
+      pageSize: query.pageSize,
     });
   }
 

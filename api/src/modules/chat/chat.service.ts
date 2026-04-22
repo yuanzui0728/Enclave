@@ -169,7 +169,7 @@ export class ChatService {
       });
     }
 
-    return this._entityToConversation(entity);
+    return this.serializeConversation(entity);
   }
 
   async getConversation(convId: string): Promise<Conversation | undefined> {
@@ -179,7 +179,7 @@ export class ChatService {
     }
 
     const normalized = await this.normalizeLegacyConversationEntity(entity);
-    return this._entityToConversation(normalized);
+    return this.serializeConversation(normalized);
   }
 
   async getConversations(): Promise<
@@ -203,7 +203,7 @@ export class ChatService {
         order: { createdAt: 'DESC' },
       });
       const lastMessage = lastMsgEntity
-        ? this._entityToMessage(lastMsgEntity)
+        ? await this.serializeMessage(lastMsgEntity)
         : undefined;
 
       const unreadCutoff = this.getUnreadCutoff(conv);
@@ -214,7 +214,7 @@ export class ChatService {
       });
 
       result.push({
-        ...this._entityToConversation(conv),
+        ...(await this.serializeConversation(conv)),
         lastMessage,
         unreadCount,
       });
@@ -303,7 +303,7 @@ export class ChatService {
     });
 
     if (!lastCharacterMessage) {
-      return this._entityToConversation(entity);
+      return this.serializeConversation(entity);
     }
 
     const previousReadAt = new Date(
@@ -321,7 +321,7 @@ export class ChatService {
       lastReadAt: nextReadAt,
     });
 
-    return this._entityToConversation(updated);
+    return this.serializeConversation(updated);
   }
 
   async recallConversationMessage(
@@ -355,7 +355,7 @@ export class ChatService {
     });
 
     this.conversationHistory.delete(entity.id);
-    return this._entityToMessage(recalled);
+    return this.serializeMessage(recalled);
   }
 
   async deleteConversationMessage(
@@ -390,7 +390,7 @@ export class ChatService {
       pinnedAt: pinned ? new Date() : null,
     });
 
-    return this._entityToConversation(updated);
+    return this.serializeConversation(updated);
   }
 
   async setConversationMuted(
@@ -403,7 +403,7 @@ export class ChatService {
       isMuted: muted,
       mutedAt: muted ? new Date() : null,
     });
-    return this._entityToConversation(updated);
+    return this.serializeConversation(updated);
   }
 
   async setConversationStrongReminder(
@@ -425,7 +425,7 @@ export class ChatService {
       ...entity,
       strongReminderUntil: nextStrongReminderUntil,
     });
-    return this._entityToConversation(updated);
+    return this.serializeConversation(updated);
   }
 
   async hideConversation(convId: string): Promise<Conversation> {
@@ -436,7 +436,7 @@ export class ChatService {
       hiddenAt: new Date(),
     });
 
-    return this._entityToConversation(updated);
+    return this.serializeConversation(updated);
   }
 
   async clearConversationHistory(convId: string): Promise<Conversation> {
@@ -449,7 +449,7 @@ export class ChatService {
     });
 
     this.conversationHistory.set(convId, []);
-    return this._entityToConversation(updated);
+    return this.serializeConversation(updated);
   }
 
   async getMessages(
@@ -474,7 +474,7 @@ export class ChatService {
         throw new NotFoundException(`Message ${aroundMessageId} not found`);
       }
 
-      return window.map((entity) => this._entityToMessage(entity));
+      return this.serializeMessages(window);
     }
 
     const limit = options.limit;
@@ -490,12 +490,12 @@ export class ChatService {
           take: limit,
         })
       ).reverse();
-      return entities.map((entity) => this._entityToMessage(entity));
+      return this.serializeMessages(entities);
     }
 
-    return (
-      await this.listVisibleConversationMessageEntities(conversation)
-    ).map((entity) => this._entityToMessage(entity));
+    return this.serializeMessages(
+      await this.listVisibleConversationMessageEntities(conversation),
+    );
   }
 
   async searchConversationMessages(
@@ -503,9 +503,9 @@ export class ChatService {
     query: MessageSearchQuery,
   ): Promise<MessageSearchResponse> {
     const conversation = await this.requireOwnedConversation(conversationId);
-    const messages = (
-      await this.listVisibleConversationMessageEntities(conversation)
-    ).map((entity) => this._entityToMessage(entity));
+    const messages = await this.serializeMessages(
+      await this.listVisibleConversationMessageEntities(conversation),
+    );
 
     return searchVisibleMessages(messages, query);
   }
@@ -618,7 +618,7 @@ export class ChatService {
     });
     this.conversationHistory.set(conversationId, history);
 
-    return this._entityToMessage(messageEntity);
+    return this.serializeMessage(messageEntity);
   }
 
   async saveProactiveAttachmentMessage(
@@ -659,7 +659,7 @@ export class ChatService {
     });
     this.conversationHistory.set(conversationId, history);
 
-    return this._entityToMessage(messageEntity);
+    return this.serializeMessage(messageEntity);
   }
 
   async saveSystemMessage(
@@ -683,7 +683,7 @@ export class ChatService {
       entity,
       messageEntity.createdAt ?? new Date(),
     );
-    return this._entityToMessage(messageEntity);
+    return this.serializeMessage(messageEntity);
   }
 
   async sendMessage(
@@ -719,7 +719,7 @@ export class ChatService {
       userMsgEntity.createdAt ?? new Date(),
     );
 
-    const userMsg = this._entityToMessage(userMsgEntity);
+    const userMsg = await this.serializeMessage(userMsgEntity);
     const history = await this.ensureConversationHistory(entity);
     history.push({
       role: 'user',
@@ -821,7 +821,7 @@ export class ChatService {
         });
       }
       this.conversationHistory.set(convId, history);
-      results.push(this._entityToMessage(savedAiEntity));
+      results.push(await this.serializeMessage(savedAiEntity));
     }
 
     const runtimeRules = await this.replyLogicRules.getRules();
@@ -1218,6 +1218,7 @@ export class ChatService {
       type: 'direct',
       source: 'conversation',
       title: entity.title,
+      avatar: undefined,
       participants: entity.participants,
       messages: [],
       isPinned: entity.isPinned ?? false,
@@ -1279,6 +1280,7 @@ export class ChatService {
       senderType: entity.senderType as 'user' | 'character' | 'system',
       senderId: entity.senderId,
       senderName: entity.senderName,
+      senderAvatar: undefined,
       type: entity.type as
         | 'text'
         | 'system'
@@ -1313,6 +1315,7 @@ export class ChatService {
       type: 'group',
       source: 'group',
       title: group.name,
+      avatar: group.avatar ?? undefined,
       participants: members.map((member) => member.memberId),
       messages: [],
       isPinned: group.isPinned ?? false,
@@ -1330,6 +1333,57 @@ export class ChatService {
       updatedAt: group.updatedAt,
       lastMessage,
     };
+  }
+
+  private async serializeConversation(
+    entity: ConversationEntity,
+  ): Promise<Conversation> {
+    const conversation = this._entityToConversation(entity);
+    const characterId = conversation.participants[0]?.trim();
+    if (!characterId) {
+      return conversation;
+    }
+
+    const avatar = await this.resolveCharacterAvatar(characterId);
+    if (!avatar) {
+      return conversation;
+    }
+
+    return {
+      ...conversation,
+      avatar,
+    };
+  }
+
+  private async serializeMessages(entities: MessageEntity[]): Promise<Message[]> {
+    return Promise.all(entities.map((entity) => this.serializeMessage(entity)));
+  }
+
+  private async serializeMessage(entity: MessageEntity): Promise<Message> {
+    const message = this._entityToMessage(entity);
+    if (message.senderType !== 'character') {
+      return message;
+    }
+
+    const senderAvatar = await this.resolveCharacterAvatar(message.senderId);
+    if (!senderAvatar) {
+      return message;
+    }
+
+    return {
+      ...message,
+      senderAvatar,
+    };
+  }
+
+  private async resolveCharacterAvatar(characterId?: string | null) {
+    const normalizedCharacterId = characterId?.trim();
+    if (!normalizedCharacterId) {
+      return undefined;
+    }
+
+    const character = await this.characters.findById(normalizedCharacterId);
+    return character?.avatar?.trim() || undefined;
   }
 
   private resolveStrongReminderDurationHours(durationHours?: number) {

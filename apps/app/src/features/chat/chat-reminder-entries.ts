@@ -10,6 +10,7 @@ export type ChatReminderEntry = {
   threadId: string;
   threadType: "direct" | "group";
   title: string;
+  avatar?: string;
   previewText: string;
   remindAt: string;
   isDue: boolean;
@@ -63,6 +64,7 @@ export function buildChatReminderEntries(
           conversation?.title ||
           item.threadTitle?.trim() ||
           (item.threadType === "group" ? "群聊" : "聊天"),
+        avatar: conversation?.avatar,
         previewText: item.previewText?.trim() || "聊天消息",
         remindAt: item.remindAt,
         isDue: remindTimestamp <= nowTimestamp,

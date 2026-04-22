@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { AppPage, Button, LoadingBlock } from "@yinjie/ui";
+import { buildDesktopFavoritesWorkspaceRouteHash } from "../features/favorites/favorites-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function NotesPage() {
@@ -16,7 +17,12 @@ export function NotesPage() {
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
     void navigate({
       to: "/tabs/favorites",
-      hash: normalizedHash || undefined,
+      hash:
+        normalizedHash ||
+        buildDesktopFavoritesWorkspaceRouteHash({
+          category: "notes",
+        }) ||
+        undefined,
       replace: true,
     });
   }, [hash, isDesktopLayout, navigate]);

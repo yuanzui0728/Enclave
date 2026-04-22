@@ -219,6 +219,14 @@ function MobileGroupChatEditPage({
     void navigate({ to: "/tabs/chat" });
   }
 
+  function handleRetrySave() {
+    if (!trimmedDraft) {
+      return;
+    }
+
+    saveMutation.mutate(trimmedDraft);
+  }
+
   return (
     <ChatDetailsShell
       title={mode === "name" ? "群聊名称" : "我在本群的昵称"}
@@ -243,14 +251,26 @@ function MobileGroupChatEditPage({
             title="群聊信息暂时不可用"
             description={groupQuery.error.message}
             action={
-              <Button
-                type="button"
-                size="sm"
-                className="h-8 rounded-full px-3 text-[11px]"
-                onClick={openGroupDetails}
-              >
-                返回群聊信息
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={() => {
+                    void groupQuery.refetch();
+                  }}
+                >
+                  重试读取
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={openGroupDetails}
+                >
+                  返回群聊信息
+                </Button>
+              </div>
             }
             tone="danger"
           />
@@ -263,14 +283,26 @@ function MobileGroupChatEditPage({
             title="群成员信息暂时不可用"
             description={membersQuery.error.message}
             action={
-              <Button
-                type="button"
-                size="sm"
-                className="h-8 rounded-full px-3 text-[11px]"
-                onClick={openGroupDetails}
-              >
-                返回群聊信息
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={() => {
+                    void membersQuery.refetch();
+                  }}
+                >
+                  重试读取
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-[11px]"
+                  onClick={openGroupDetails}
+                >
+                  返回群聊信息
+                </Button>
+              </div>
             }
             tone="danger"
           />
@@ -284,13 +316,22 @@ function MobileGroupChatEditPage({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{saveMutation.error.message}</span>
-              <button
-                type="button"
-                onClick={openGroupDetails}
-                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
-              >
-                返回群聊信息
-              </button>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleRetrySave}
+                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  重试保存
+                </button>
+                <button
+                  type="button"
+                  onClick={openGroupDetails}
+                  className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                >
+                  返回群聊信息
+                </button>
+              </div>
             </div>
           </InlineNotice>
         </div>

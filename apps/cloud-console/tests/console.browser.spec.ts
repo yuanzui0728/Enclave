@@ -199,7 +199,7 @@ async function waitForWorldJobsToSettle(params: {
     });
     expect(response.status).toBe(200);
 
-    const jobs = response.body.filter(
+    const jobs = response.body.items.filter(
       (job: { worldId: string; status: string }) =>
         job.worldId === params.worldId,
     );
@@ -239,7 +239,7 @@ async function waitForWorldJobStatus(params: {
     });
     expect(response.status).toBe(200);
 
-    const matchedJob = response.body.find(
+    const matchedJob = response.body.items.find(
       (job: { worldId: string; status: string }) =>
         job.worldId === params.worldId && params.statuses.includes(job.status as never),
     );
@@ -478,7 +478,7 @@ test.describe("cloud-console browser smoke", () => {
     );
     expect(jobsResponse.status).toBe(200);
 
-    if (jobsResponse.body.length === 0) {
+    if (jobsResponse.body.items.length === 0) {
       await expect(page.getByText("No jobs match this filter.")).toBeVisible();
     } else {
       await expect(page.getByText(worldName).first()).toBeVisible();

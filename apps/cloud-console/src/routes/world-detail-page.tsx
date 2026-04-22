@@ -259,7 +259,7 @@ export function WorldDetailPage() {
   });
   const jobsQuery = useQuery({
     queryKey: ["cloud-console", "jobs", "world", worldId],
-    queryFn: () => cloudAdminApi.listJobs({ worldId }),
+    queryFn: () => cloudAdminApi.listJobs({ worldId, page: 1, pageSize: 20 }),
     refetchInterval: 15_000,
   });
 
@@ -393,7 +393,7 @@ export function WorldDetailPage() {
   const runtimeStatus = runtimeStatusQuery.data;
   const alertSummary = alertSummaryQuery.data;
   const currentAlert = alertSummary?.item ?? null;
-  const jobs = jobsQuery.data ?? [];
+  const jobs = jobsQuery.data?.items ?? [];
   const now = Date.now();
   const visibleJobs = [...jobs]
     .filter((job) => matchesQueueStateFilter(job, queueStateFilter, now))

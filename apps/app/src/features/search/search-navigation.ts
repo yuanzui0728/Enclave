@@ -4,6 +4,7 @@ import {
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
 } from "../desktop/chat/desktop-chat-route-state";
+import { parseDesktopOfficialMessageRouteHash } from "../official-accounts/official-message-route-state";
 
 type SearchNavigationTargetInput = {
   to: string;
@@ -46,6 +47,7 @@ export function resolveSearchNavigationTarget(
 
   return (
     resolveDesktopConversationNavigationTarget(normalizedTarget) ??
+    resolveDesktopContactsNavigationTarget(normalizedTarget) ??
     resolveDesktopOfficialNavigationTarget(normalizedTarget) ??
     normalizedTarget
   );
@@ -106,7 +108,13 @@ function resolveDesktopConversationNavigationTarget(
   }
 
   if (target.to === "/chat/subscription-inbox") {
-    return buildNormalizedTargetFromPath(buildDesktopSubscriptionInboxPath());
+    const routeState = parseDesktopOfficialMessageRouteHash(target.hash ?? "");
+
+    return buildNormalizedTargetFromPath(
+      buildDesktopSubscriptionInboxPath({
+        articleId: routeState.articleId,
+      }),
+    );
   }
 
   return null;
@@ -120,6 +128,7 @@ function resolveDesktopOfficialNavigationTarget(
       to: "/tabs/contacts",
       hash: buildDesktopContactsRouteHash({
         pane: "official-accounts",
+        officialMode: "feed",
         showWorldCharacters: false,
       }),
     } satisfies SearchNavigationTarget;
@@ -129,9 +138,12 @@ function resolveDesktopOfficialNavigationTarget(
     /^\/official-accounts\/service\/([^/?#]+)$/,
   );
   if (serviceMatch?.[1]?.trim()) {
+    const routeState = parseDesktopOfficialMessageRouteHash(target.hash ?? "");
+
     return buildNormalizedTargetFromPath(
       buildDesktopOfficialServiceThreadPath({
         accountId: serviceMatch[1].trim(),
+        articleId: routeState.articleId,
       }),
     );
   }
@@ -160,6 +172,58 @@ function resolveDesktopOfficialNavigationTarget(
         accountId: accountMatch[1].trim(),
         officialMode: "accounts",
         showWorldCharacters: false,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  return null;
+}
+
+function resolveDesktopContactsNavigationTarget(
+  target: SearchNavigationTarget,
+) {
+  if (target.to === "/friend-requests") {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "new-friends",
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/contacts/starred") {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "starred-friends",
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/contacts/tags") {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "tags",
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/contacts/groups") {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "groups",
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/contacts/world-characters") {
+    return {
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "world-character",
+        showWorldCharacters: true,
       }),
     } satisfies SearchNavigationTarget;
   }

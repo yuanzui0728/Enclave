@@ -152,6 +152,28 @@ function MobileFriendRequestsPage() {
     openWorldCharacters();
   }
 
+  function handleRetryRequests() {
+    void requestsQuery.refetch();
+  }
+
+  function handleRetryAccept() {
+    if (!acceptMutation.variables) {
+      return;
+    }
+
+    setSuccessNotice("");
+    acceptMutation.mutate(acceptMutation.variables);
+  }
+
+  function handleRetryDecline() {
+    if (!declineMutation.variables) {
+      return;
+    }
+
+    setSuccessNotice("");
+    declineMutation.mutate(declineMutation.variables);
+  }
+
   return (
     <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
       <TabPageTopBar
@@ -209,15 +231,26 @@ function MobileFriendRequestsPage() {
               description={requestsQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "浏览世界角色"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryRequests}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "浏览世界角色"}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -317,15 +350,28 @@ function MobileFriendRequestsPage() {
                 <span className="min-w-0 flex-1">
                   {acceptMutation.error.message}
                 </span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "浏览世界角色"}
-                </Button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {acceptMutation.variables ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                      onClick={handleRetryAccept}
+                    >
+                      重试通过
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "浏览世界角色"}
+                  </Button>
+                </div>
               </div>
             </InlineNotice>
           </div>
@@ -340,15 +386,28 @@ function MobileFriendRequestsPage() {
                 <span className="min-w-0 flex-1">
                   {declineMutation.error.message}
                 </span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "浏览世界角色"}
-                </Button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {declineMutation.variables ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                      onClick={handleRetryDecline}
+                    >
+                      重试拒绝
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "浏览世界角色"}
+                  </Button>
+                </div>
               </div>
             </InlineNotice>
           </div>

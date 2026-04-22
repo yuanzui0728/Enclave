@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { AvatarChip } from "../../components/avatar-chip";
 import { GroupAvatarChip } from "../../components/group-avatar-chip";
+import { InlineNoticeActionButton } from "../../components/inline-notice-action-button";
 import { formatDetailedMessageTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
@@ -410,6 +411,19 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     });
   };
 
+  const handleRetryLoad = () => {
+    void groupQuery.refetch();
+    void membersQuery.refetch();
+  };
+
+  const renderBackToGroupAction = () => (
+    <InlineNoticeActionButton
+      label="返回群聊"
+      className="border-current/28 bg-white/12 active:bg-white/16"
+      onClick={handleBack}
+    />
+  );
+
   const handleEndCall = async () => {
     if (leavingScreen) {
       return;
@@ -527,12 +541,20 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             description={groupQuery.error.message}
             tone="danger"
             action={
-              <MobileCallActionButton
-                onClick={handleBack}
-                className="min-w-[132px]"
-              >
-                返回群聊
-              </MobileCallActionButton>
+              <div className="flex flex-wrap justify-center gap-2">
+                <MobileCallActionButton
+                  onClick={handleRetryLoad}
+                  className="min-w-[132px]"
+                >
+                  重试读取
+                </MobileCallActionButton>
+                <MobileCallActionButton
+                  onClick={handleBack}
+                  className="min-w-[132px]"
+                >
+                  返回群聊
+                </MobileCallActionButton>
+              </div>
             }
           />
         )}
@@ -557,12 +579,20 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             description={membersQuery.error.message}
             tone="danger"
             action={
-              <MobileCallActionButton
-                onClick={handleBack}
-                className="min-w-[132px]"
-              >
-                返回群聊
-              </MobileCallActionButton>
+              <div className="flex flex-wrap justify-center gap-2">
+                <MobileCallActionButton
+                  onClick={handleRetryLoad}
+                  className="min-w-[132px]"
+                >
+                  重试读取
+                </MobileCallActionButton>
+                <MobileCallActionButton
+                  onClick={handleBack}
+                  className="min-w-[132px]"
+                >
+                  返回群聊
+                </MobileCallActionButton>
+              </div>
             }
           />
         )}
@@ -865,8 +895,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </MobileCallNotice>
           ) : null}
           {syncStatusMutation.error instanceof Error ? (
-            <MobileCallNotice tone="danger">
-              {syncStatusMutation.error.message}
+            <MobileCallNotice
+              tone="danger"
+              className="flex items-center justify-between gap-3"
+            >
+              <span>{syncStatusMutation.error.message}</span>
+              {renderBackToGroupAction()}
             </MobileCallNotice>
           ) : null}
           {syncStatusMutation.error instanceof Error ? (
@@ -893,8 +927,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </div>
           ) : null}
           {endStatusMutation.error instanceof Error ? (
-            <MobileCallNotice tone="danger">
-              {endStatusMutation.error.message}
+            <MobileCallNotice
+              tone="danger"
+              className="flex items-center justify-between gap-3"
+            >
+              <span>{endStatusMutation.error.message}</span>
+              {renderBackToGroupAction()}
             </MobileCallNotice>
           ) : null}
           {endStatusMutation.error instanceof Error ? (

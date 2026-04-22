@@ -138,6 +138,15 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
     void navigate({ to: "/tabs/chat" });
   };
 
+  const handleRetryLoad = () => {
+    void groupQuery.refetch();
+  };
+
+  const handleRetrySave = () => {
+    setNotice(null);
+    saveMutation.mutate();
+  };
+
   async function handleShareAnnouncement() {
     const group = groupQuery.data;
     const announcement = draft.trim() || group?.announcement?.trim() || "";
@@ -284,14 +293,24 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             description={groupQuery.error.message}
             tone="danger"
             action={
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleErrorStateAction}
-                className="rounded-full"
-              >
-                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleRetryLoad}
+                  className="rounded-full"
+                >
+                  重试读取
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleErrorStateAction}
+                  className="rounded-full"
+                >
+                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                </Button>
+              </div>
             }
           />
         </div>
@@ -302,7 +321,22 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             tone={notice.tone}
             className="rounded-[14px] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
           >
-            {notice.message}
+            {notice.tone === "info" ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">{notice.message}</span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                  onClick={handleErrorStateAction}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                </Button>
+              </div>
+            ) : (
+              notice.message
+            )}
           </InlineNotice>
         </div>
       ) : null}
@@ -314,19 +348,28 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{saveMutation.error.message}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  void navigate({
-                    to: "/group/$groupId/details",
-                    params: { groupId },
-                    ...(currentRouteHash ? { hash: currentRouteHash } : {}),
-                  });
-                }}
-                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
-              >
-                返回群聊信息
-              </button>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleRetrySave}
+                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  重试保存
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigate({
+                      to: "/group/$groupId/details",
+                      params: { groupId },
+                      ...(currentRouteHash ? { hash: currentRouteHash } : {}),
+                    });
+                  }}
+                  className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                >
+                  返回群聊信息
+                </button>
+              </div>
             </div>
           </InlineNotice>
         </div>

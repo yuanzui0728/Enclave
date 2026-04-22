@@ -68,6 +68,7 @@ export interface Message {
   senderType: MessageSenderType;
   senderId: string;
   senderName: string;
+  senderAvatar?: string;
   type: MessageType;
   text: string;
   attachment?: MessageAttachment;
@@ -79,6 +80,7 @@ export interface Conversation {
   type: ConversationType;
   source?: "conversation" | "group";
   title: string;
+  avatar?: string;
   participants: string[];
   messages: Message[];
   isPinned: boolean;

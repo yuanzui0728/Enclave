@@ -58,6 +58,7 @@ import { DesktopGroupMemberRemovalPicker } from "./desktop-group-member-removal-
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
 import { buildDesktopAddFriendRouteHash } from "../../contacts/add-friend-route-state";
 import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
+import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";
 import { DesktopContactTextEditDialog } from "../../contacts/desktop-contact-text-edit-dialog";
 import {
   DesktopContactProfileActionRow,
@@ -418,7 +419,13 @@ function DirectChatDetailsPanel({
     }
 
     if (hasPendingFriendRequest) {
-      void navigate({ to: "/friend-requests" });
+      void navigate({
+        to: "/tabs/contacts",
+        hash: buildDesktopContactsRouteHash({
+          pane: "new-friends",
+          showWorldCharacters: false,
+        }),
+      });
       return;
     }
 

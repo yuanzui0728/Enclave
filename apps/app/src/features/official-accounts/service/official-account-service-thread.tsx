@@ -20,6 +20,7 @@ import {
 import { Button, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
 import { OfficialServiceMessageBubble } from "../../../components/official-service-message-bubble";
+import { buildDesktopChatRouteHash } from "../../desktop/chat/desktop-chat-route-state";
 import { buildDesktopMobileOfficialHandoffHash } from "../mobile-official-handoff-route-state";
 import {
   buildMobileOfficialRouteHash,
@@ -249,6 +250,20 @@ export function OfficialAccountServiceThread({
       return;
     }
 
+    if (isDesktop) {
+      void navigate({
+        to: "/tabs/chat",
+        hash: buildDesktopChatRouteHash({
+          officialView: "official-accounts",
+          officialMode: "accounts",
+          accountId: nextAccountId,
+          articleId,
+        }),
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({
       to: "/official-accounts/$accountId",
       params: { accountId: nextAccountId },
@@ -269,12 +284,39 @@ export function OfficialAccountServiceThread({
       desktopThreadScrollTopRef.current =
         desktopThreadScrollContainerRef.current?.scrollTop ?? 0;
     }
-    onOpenArticle?.(articleId, accountId);
+
+    if (onOpenArticle) {
+      onOpenArticle(articleId, accountId);
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/chat",
+      hash: buildDesktopChatRouteHash({
+        officialView: "service-account",
+        accountId,
+        articleId,
+      }),
+      replace: true,
+    });
   }
 
   function handleCloseDesktopArticle() {
     setIsDesktopMenuOpen(false);
-    onCloseArticle?.(accountId);
+
+    if (onCloseArticle) {
+      onCloseArticle(accountId);
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/chat",
+      hash: buildDesktopChatRouteHash({
+        officialView: "service-account",
+        accountId,
+      }),
+      replace: true,
+    });
   }
 
   function handleOpenMobileHandoff() {
@@ -332,6 +374,26 @@ export function OfficialAccountServiceThread({
     }
 
     openOfficialAccountDetail();
+  }
+
+  function handleRetryPageData() {
+    void Promise.all([accountQuery.refetch(), messagesQuery.refetch()]);
+  }
+
+  function handleRetryActionSync() {
+    if (markReadMutation.isError) {
+      markReadMutation.mutate();
+      return;
+    }
+
+    if (muteMutation.isError && accountQuery.data?.isFollowing) {
+      muteMutation.mutate(!accountQuery.data.isMuted);
+      return;
+    }
+
+    if (markArticleReadMutation.isError && articleQuery.data?.id) {
+      markArticleReadMutation.mutate(articleQuery.data.id);
+    }
   }
 
   if (isDesktop) {
@@ -596,15 +658,26 @@ export function OfficialAccountServiceThread({
               description={pageErrorMessage}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "查看公众号主页"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryPageData}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "查看公众号主页"}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -617,15 +690,26 @@ export function OfficialAccountServiceThread({
               description={actionErrorMessage}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "查看公众号主页"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryActionSync}
+                  >
+                    重试同步
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "查看公众号主页"}
+                  </Button>
+                </div>
               }
             />
           </div>

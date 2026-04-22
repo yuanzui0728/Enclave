@@ -49,12 +49,20 @@ const DesktopFriendMomentsWorkspace = lazy(async () => {
   return { default: mod.DesktopFriendMomentsWorkspace };
 });
 
+const DesktopMessageAvatarPopover = lazy(async () => {
+  const mod = await import("../features/chat/message-avatar-popover-shell");
+  return { default: mod.DesktopMessageAvatarPopover };
+});
+
 export function FriendMomentsPage() {
   const { characterId } = useParams({
     from: "/desktop/friend-moments/$characterId",
   });
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
@@ -75,8 +83,16 @@ export function FriendMomentsPage() {
   const [showCompose, setShowCompose] = useState(false);
   const [notice, setNotice] = useState("");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
+  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<{
+    anchorElement: HTMLButtonElement;
+    returnHash?: string;
+  } | null>(null);
   const routeState = parseDesktopFriendMomentsRouteState(hash);
   const routeSelectedMomentId = routeState.momentId ?? null;
+
+  useEffect(() => {
+    setDesktopAvatarPopover(null);
+  }, [characterId, hash, pathname]);
 
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
@@ -315,13 +331,33 @@ export function FriendMomentsPage() {
       }
 
       if (routeState.source === "starred-friends") {
-        void navigate({
-          to: isDesktopLayout ? "/tabs/contacts" : "/contacts/starred",
-        });
+        if (isDesktopLayout) {
+          void navigate({
+            to: "/tabs/contacts",
+            hash: buildDesktopContactsRouteHash({
+              pane: "starred-friends",
+              showWorldCharacters: false,
+            }),
+          });
+          return;
+        }
+
+        void navigate({ to: "/contacts/starred" });
         return;
       }
 
       if (routeState.source === "tags") {
+        if (isDesktopLayout) {
+          void navigate({
+            to: "/tabs/contacts",
+            hash: buildDesktopContactsRouteHash({
+              pane: "tags",
+              showWorldCharacters: false,
+            }),
+          });
+          return;
+        }
+
         void navigate({ to: "/contacts/tags" });
         return;
       }
@@ -482,6 +518,15 @@ export function FriendMomentsPage() {
         onOpenMomentsHome={() => {
           void navigate({ to: "/tabs/moments" });
         }}
+        onOpenProfilePopover={({ anchorElement, momentId }) => {
+          setDesktopAvatarPopover({
+            anchorElement,
+            returnHash: buildDesktopFriendMomentsRouteHash({
+              ...routeState,
+              momentId: momentId ?? routeSelectedMomentId ?? undefined,
+            }),
+          });
+        }}
         onOpenProfile={() => {
           void navigate({
             to: "/tabs/contacts",
@@ -549,6 +594,23 @@ export function FriendMomentsPage() {
           void handleVideoFileSelected(file);
         }}
       />
+      {desktopAvatarPopover ? (
+        <Suspense fallback={null}>
+          <DesktopMessageAvatarPopover
+            anchorElement={desktopAvatarPopover.anchorElement}
+            kind="character"
+            characterId={characterId}
+            fallbackAvatar={character?.avatar}
+            fallbackName={displayName}
+            navigationContext={{
+              hideMomentsAction: true,
+              profileReturnHash: desktopAvatarPopover.returnHash,
+              profileReturnPath: pathname,
+            }}
+            onClose={() => setDesktopAvatarPopover(null)}
+          />
+        </Suspense>
+      ) : null}
     </Suspense>
   );
 }

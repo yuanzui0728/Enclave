@@ -119,6 +119,14 @@ type ShortcutRoute =
   | "/contacts/world-characters"
   | "/contacts/official-accounts";
 
+type MobileErrorItem = {
+  key: string;
+  message: string;
+  onRetry?: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
 type DesktopSelection =
   | {
       kind: "friend";
@@ -287,6 +295,20 @@ export function ContactsPage() {
   const startChatResetRef = useRef<() => void>(() => {});
   const effectiveSearchText = isDesktopLayout ? searchText : "";
   const deferredSearchText = useDeferredValue(effectiveSearchText);
+  const desktopContactsPath = "/tabs/contacts";
+  const desktopPathMismatch = isDesktopLayout && pathname !== desktopContactsPath;
+
+  useEffect(() => {
+    if (!desktopPathMismatch) {
+      return;
+    }
+
+    void navigate({
+      to: desktopContactsPath,
+      hash: hash || undefined,
+      replace: true,
+    });
+  }, [desktopContactsPath, desktopPathMismatch, hash, navigate]);
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -1194,64 +1216,90 @@ export function ContactsPage() {
     ...shortcutItems.slice(1),
   ];
   const mobileShortcutItems = shortcutItems;
-  const mobileErrorItems = [
-    friendsQuery.isError && friendsQuery.error instanceof Error
-      ? {
-          key: "friends",
-          message: "联系人列表暂时没有刷新成功。",
-          onRetry: () => {
-            void friendsQuery.refetch();
-          },
-        }
-      : null,
-    charactersQuery.isError && charactersQuery.error instanceof Error
-      ? {
-          key: "characters",
-          message: "世界角色目录暂时没有刷新成功。",
-          onRetry: () => {
-            void charactersQuery.refetch();
-          },
-        }
-      : null,
-    friendRequestsQuery.isError && friendRequestsQuery.error instanceof Error
-      ? {
-          key: "friend-requests",
-          message: "好友申请入口暂时没有刷新成功。",
-          onRetry: () => {
-            void friendRequestsQuery.refetch();
-          },
-        }
-      : null,
-    contactGroupsQuery.isError && contactGroupsQuery.error instanceof Error
-      ? {
-          key: "contact-groups",
-          message: "群聊入口暂时没有刷新成功。",
-          onRetry: () => {
-            void contactGroupsQuery.refetch();
-          },
-        }
-      : null,
-    startChatMutation.isError && startChatMutation.error instanceof Error
-      ? {
-          key: "start-chat",
-          message: startChatMutation.error.message,
-        }
-      : null,
-    setStarredMutation.isError && setStarredMutation.error instanceof Error
-      ? {
-          key: "set-starred",
-          message: setStarredMutation.error.message,
-        }
-      : null,
-  ].filter(
-    (
-      item,
-    ): item is {
-      key: string;
-      message: string;
-      onRetry?: () => void;
-    } => item !== null,
-  );
+  const mobileErrorItems: MobileErrorItem[] = [];
+  if (friendsQuery.isError && friendsQuery.error instanceof Error) {
+    mobileErrorItems.push({
+      key: "friends",
+      message: "联系人列表暂时没有刷新成功。",
+      onRetry: () => {
+        void friendsQuery.refetch();
+      },
+    });
+  }
+  if (charactersQuery.isError && charactersQuery.error instanceof Error) {
+    mobileErrorItems.push({
+      key: "characters",
+      message: "世界角色目录暂时没有刷新成功。",
+      onRetry: () => {
+        void charactersQuery.refetch();
+      },
+      actionLabel: "浏览角色",
+      onAction: () => {
+        handleShortcutNavigate("/contacts/world-characters");
+      },
+    });
+  }
+  if (
+    friendRequestsQuery.isError &&
+    friendRequestsQuery.error instanceof Error
+  ) {
+    mobileErrorItems.push({
+      key: "friend-requests",
+      message: "好友申请入口暂时没有刷新成功。",
+      onRetry: () => {
+        void friendRequestsQuery.refetch();
+      },
+      actionLabel: "查看新的朋友",
+      onAction: () => {
+        handleShortcutNavigate("/friend-requests");
+      },
+    });
+  }
+  if (contactGroupsQuery.isError && contactGroupsQuery.error instanceof Error) {
+    mobileErrorItems.push({
+      key: "contact-groups",
+      message: "群聊入口暂时没有刷新成功。",
+      onRetry: () => {
+        void contactGroupsQuery.refetch();
+      },
+      actionLabel: "查看群聊",
+      onAction: () => {
+        handleShortcutNavigate("/contacts/groups");
+      },
+    });
+  }
+  if (startChatMutation.isError && startChatMutation.error instanceof Error) {
+    mobileErrorItems.push({
+      key: "start-chat",
+      message: startChatMutation.error.message,
+      actionLabel: startChatMutation.variables ? "重试打开聊天" : undefined,
+      onAction: startChatMutation.variables
+        ? () => {
+            handleStartChat(startChatMutation.variables);
+          }
+        : undefined,
+    });
+  }
+  if (
+    setStarredMutation.isError &&
+    setStarredMutation.error instanceof Error
+  ) {
+    mobileErrorItems.push({
+      key: "set-starred",
+      message: setStarredMutation.error.message,
+      actionLabel: setStarredMutation.variables
+        ? setStarredMutation.variables.starred
+          ? "重试设为星标"
+          : "重试取消星标"
+        : undefined,
+      onAction: setStarredMutation.variables
+        ? () => {
+            setNotice(null);
+            setStarredMutation.mutate(setStarredMutation.variables);
+          }
+        : undefined,
+    });
+  }
   const desktopErrors = [
     friendsQuery.error,
     charactersQuery.error,
@@ -1814,15 +1862,26 @@ export function ContactsPage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{item.message}</span>
-                    {item.onRetry ? (
-                      <button
-                        type="button"
-                        onClick={item.onRetry}
-                        className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
-                      >
-                        重试
-                      </button>
-                    ) : null}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {item.actionLabel && item.onAction ? (
+                        <button
+                          type="button"
+                          onClick={item.onAction}
+                          className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        >
+                          {item.actionLabel}
+                        </button>
+                      ) : null}
+                      {item.onRetry ? (
+                        <button
+                          type="button"
+                          onClick={item.onRetry}
+                          className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                        >
+                          重试
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </InlineNotice>
               ))}

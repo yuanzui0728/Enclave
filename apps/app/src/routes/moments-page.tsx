@@ -54,6 +54,11 @@ const DesktopMomentsWorkspace = lazy(async () => {
   return { default: mod.DesktopMomentsWorkspace };
 });
 
+const DesktopMessageAvatarPopover = lazy(async () => {
+  const mod = await import("../features/chat/message-avatar-popover-shell");
+  return { default: mod.DesktopMessageAvatarPopover };
+});
+
 export function MomentsPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
@@ -84,6 +89,13 @@ export function MomentsPage() {
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
+  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<{
+    anchorElement: HTMLButtonElement;
+    characterId: string;
+    fallbackAvatar?: string | null;
+    fallbackName: string;
+    returnHash?: string;
+  } | null>(null);
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const routeState = parseDesktopMomentsRouteState(hash);
   const routeSelectedAuthorId = routeState.authorId ?? null;
@@ -108,6 +120,10 @@ export function MomentsPage() {
       safeReturnPath,
     ],
   );
+
+  useEffect(() => {
+    setDesktopAvatarPopover(null);
+  }, [hash, pathname]);
 
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
@@ -265,6 +281,11 @@ export function MomentsPage() {
     void blockedQuery.refetch();
   }
 
+  function handleRetryLoad() {
+    void momentsQuery.refetch();
+    void blockedQuery.refetch();
+  }
+
   function handleEmptyStateAction() {
     if (navigateToRouteStateReturn()) {
       return;
@@ -285,7 +306,7 @@ export function MomentsPage() {
     }
 
     setNotice("");
-  }, [baseUrl]);
+  }, [baseUrl, resetComposeDraft]);
 
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
@@ -350,7 +371,7 @@ export function MomentsPage() {
       !isDesktopLayout ||
       !isDesktopMomentsRoute ||
       syncedRouteSelectedAuthorId ||
-      (!desktopPathMismatch && (currentRouteHash ?? "") === normalizedHash)
+      (!desktopPathMismatch && currentRouteHash === normalizedHash)
     ) {
       return;
     }
@@ -619,15 +640,30 @@ export function MomentsPage() {
             void handleImageFilesSelected(files);
           }}
           onLike={(momentId) => likeMutation.mutate(momentId)}
+          onOpenAuthorPopover={({ anchorElement, moment }) => {
+            if (moment.authorType !== "character") {
+              return;
+            }
+
+            setDesktopAvatarPopover({
+              anchorElement,
+              characterId: moment.authorId,
+              fallbackAvatar: moment.authorAvatar,
+              fallbackName: moment.authorName,
+              returnHash: buildDesktopMomentsRouteHash({
+                authorId: routeSelectedAuthorId ?? undefined,
+                momentId: moment.id,
+                returnPath: safeReturnPath,
+                returnHash: safeReturnHash,
+              }),
+            });
+          }}
           onOpenAuthorMoments={({ authorId, momentId }) => {
             const targetMoment =
               (momentId
                 ? visibleMoments.find((item) => item.id === momentId)
                 : visibleMoments.find((item) => item.authorId === authorId)) ??
               null;
-            const returnPath = isDiscoverSubPage
-              ? "/discover/moments"
-              : "/tabs/moments";
 
             if (targetMoment?.authorType !== "character") {
               void navigate({
@@ -648,7 +684,7 @@ export function MomentsPage() {
               hash: buildDesktopFriendMomentsRouteHash({
                 momentId: targetMoment.id,
                 source: "moments",
-                returnPath,
+                returnPath: desktopMomentsPath,
                 returnHash: buildDesktopMomentsRouteHash({
                   momentId: targetMoment.id,
                 }),
@@ -699,6 +735,24 @@ export function MomentsPage() {
             void handleVideoFileSelected(file);
           }}
         />
+        {desktopAvatarPopover ? (
+          <Suspense fallback={null}>
+            <DesktopMessageAvatarPopover
+              anchorElement={desktopAvatarPopover.anchorElement}
+              kind="character"
+              characterId={desktopAvatarPopover.characterId}
+              fallbackAvatar={desktopAvatarPopover.fallbackAvatar}
+              fallbackName={desktopAvatarPopover.fallbackName}
+              navigationContext={{
+                momentsReturnHash: desktopAvatarPopover.returnHash,
+                momentsReturnPath: pathname,
+                profileReturnHash: desktopAvatarPopover.returnHash,
+                profileReturnPath: pathname,
+              }}
+              onClose={() => setDesktopAvatarPopover(null)}
+            />
+          </Suspense>
+        ) : null}
       </Suspense>
     );
   }
@@ -777,7 +831,22 @@ export function MomentsPage() {
             </div>
           </div>
           {notice ? (
-            <MobileMomentsInlineNotice tone={noticeTone}>
+            <MobileMomentsInlineNotice
+              tone={noticeTone}
+              action={
+                noticeTone === "info" ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                  </Button>
+                ) : undefined
+              }
+            >
               {notice}
             </MobileMomentsInlineNotice>
           ) : null}
@@ -796,14 +865,24 @@ export function MomentsPage() {
               description={momentsQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "重新加载"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryLoad}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "重新加载"}
+                  </Button>
+                </div>
               }
             />
           ) : null}

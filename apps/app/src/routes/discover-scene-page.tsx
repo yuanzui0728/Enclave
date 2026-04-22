@@ -208,15 +208,26 @@ function MobileDiscoverScenePage() {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="min-w-0 flex-1">{sceneMutation.error.message}</span>
-            <button
-              type="button"
-              onClick={handleErrorNoticeBack}
-              className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
-            >
-              {routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
-                ? "返回上一页"
-                : "回发现页"}
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {sceneMutation.variables ? (
+                <button
+                  type="button"
+                  onClick={() => sceneMutation.mutate(sceneMutation.variables)}
+                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                >
+                  重试
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleErrorNoticeBack}
+                className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+              >
+                {routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+                  ? "返回上一页"
+                  : "回发现页"}
+              </button>
+            </div>
           </div>
         </InlineNotice>
       ) : null}

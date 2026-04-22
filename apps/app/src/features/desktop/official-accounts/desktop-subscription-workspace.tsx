@@ -14,6 +14,7 @@ import {
   formatConversationTimestamp,
   formatDesktopMessageTimestamp,
 } from "../../../lib/format";
+import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";
 import { buildDesktopMobileOfficialHandoffHash } from "./desktop-mobile-official-handoff-route-state";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
@@ -34,6 +35,25 @@ export function DesktopSubscriptionWorkspace({
   const lastMarkedArticleIdRef = useRef<string | null>(null);
   const autoSyncedRouteArticleRef = useRef<string | null>(null);
   const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
+  const openDesktopAccountWorkspace = (
+    accountId: string,
+    articleId?: string,
+  ) => {
+    if (onOpenAccount) {
+      onOpenAccount(accountId, articleId);
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        accountId,
+        articleId,
+        officialMode: "accounts",
+      }),
+    });
+  };
 
   const inboxQuery = useQuery({
     queryKey: ["app-official-subscription-inbox", baseUrl],
@@ -357,15 +377,7 @@ export function DesktopSubscriptionWorkspace({
               article={articleQuery.data}
               desktopSurface="reader"
               onOpenAccount={(accountId) => {
-                if (onOpenAccount) {
-                  onOpenAccount(accountId, articleQuery.data.id);
-                  return;
-                }
-
-                void navigate({
-                  to: "/official-accounts/$accountId",
-                  params: { accountId },
-                });
+                openDesktopAccountWorkspace(accountId, articleQuery.data.id);
               }}
               onOpenArticle={handleSelectArticle}
             />

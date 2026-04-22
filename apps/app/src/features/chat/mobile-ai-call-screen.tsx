@@ -593,21 +593,37 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           to: desktopThreadPath,
           replace: true,
         });
-        return;
+      } else {
+        void navigate({
+          to: "/chat/$conversationId",
+          params: { conversationId: resolvedConversationId },
+          search:
+            buildChatCallReturnSearch({
+              kind: mode,
+            }) || undefined,
+          ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
+          replace: true,
+        });
       }
-
-      void navigate({
-        to: "/chat/$conversationId",
-        params: { conversationId: resolvedConversationId },
-        search:
-          buildChatCallReturnSearch({
-            kind: mode,
-          }) || undefined,
-        ...(currentMobileRouteHash ? { hash: currentMobileRouteHash } : {}),
-        replace: true,
-      });
     }
   };
+
+  const handleRetryLoad = () => {
+    void conversationsQuery.refetch();
+    if (characterId) {
+      void characterQuery.refetch();
+    }
+  };
+
+  const renderBackToChatAction = () => (
+    <InlineNoticeActionButton
+      label="返回聊天"
+      className="border-current/28 bg-white/12 active:bg-white/16"
+      onClick={() => {
+        void handleBack();
+      }}
+    />
+  );
 
   const handleSwitchToVoiceCall = async () => {
     if (leavingScreen) {
@@ -928,14 +944,22 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             description={conversationsQuery.error.message}
             tone="danger"
             action={
-              <MobileCallActionButton
-                onClick={() => {
-                  void handleBack();
-                }}
-                className="min-w-[132px]"
-              >
-                返回聊天
-              </MobileCallActionButton>
+              <div className="flex flex-wrap justify-center gap-2">
+                <MobileCallActionButton
+                  onClick={handleRetryLoad}
+                  className="min-w-[132px]"
+                >
+                  重试读取
+                </MobileCallActionButton>
+                <MobileCallActionButton
+                  onClick={() => {
+                    void handleBack();
+                  }}
+                  className="min-w-[132px]"
+                >
+                  返回聊天
+                </MobileCallActionButton>
+              </div>
             }
           />
         )}
@@ -1327,8 +1351,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </MobileCallNotice>
           ) : null}
           {isVideoMode && digitalHumanCall.sessionError ? (
-            <MobileCallNotice tone="danger">
-              {digitalHumanCall.sessionError}
+            <MobileCallNotice
+              tone="danger"
+              className="flex items-center justify-between gap-3"
+            >
+              <span>{digitalHumanCall.sessionError}</span>
+              {renderBackToChatAction()}
             </MobileCallNotice>
           ) : null}
           {leavingScreen ? (
@@ -1337,8 +1365,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </MobileCallNotice>
           ) : null}
           {activeCall.turnMutation.error instanceof Error ? (
-            <MobileCallNotice tone="danger">
-              {activeCall.turnMutation.error.message}
+            <MobileCallNotice
+              tone="danger"
+              className="flex items-center justify-between gap-3"
+            >
+              <span>{activeCall.turnMutation.error.message}</span>
+              {renderBackToChatAction()}
             </MobileCallNotice>
           ) : null}
           {speech.error ? (
@@ -1356,7 +1388,13 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 />
               </MobileCallNotice>
             ) : (
-              <MobileCallNotice tone="danger">{speech.error}</MobileCallNotice>
+              <MobileCallNotice
+                tone="danger"
+                className="flex items-center justify-between gap-3"
+              >
+                <span>{speech.error}</span>
+                {renderBackToChatAction()}
+              </MobileCallNotice>
             )
           ) : null}
           {videoRecoveryMessage ? (
@@ -1431,8 +1469,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </div>
           ) : null}
           {characterQuery.isError && characterQuery.error instanceof Error ? (
-            <MobileCallNotice tone="danger">
-              {characterQuery.error.message}
+            <MobileCallNotice
+              tone="danger"
+              className="flex items-center justify-between gap-3"
+            >
+              <span>{characterQuery.error.message}</span>
+              {renderBackToChatAction()}
             </MobileCallNotice>
           ) : null}
         </div>

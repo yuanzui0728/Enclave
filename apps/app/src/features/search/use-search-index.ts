@@ -703,6 +703,20 @@ export function useSearchIndex(
     extractErrorMessage(feedQuery.error) ||
     extractErrorMessage(messageSearchIndexQuery.error);
 
+  function retryLoad() {
+    void conversationsQuery.refetch();
+    void friendsQuery.refetch();
+    void charactersQuery.refetch();
+    void officialAccountsQuery.refetch();
+    void momentsQuery.refetch();
+    void feedQuery.refetch();
+
+    if (normalizedSearchText) {
+      void officialAccountArticlesQuery.refetch();
+      void messageSearchIndexQuery.refetch();
+    }
+  }
+
   return {
     error,
     filteredResults,
@@ -715,6 +729,7 @@ export function useSearchIndex(
     normalizedSearchText,
     recentFavorites,
     recentMiniPrograms,
+    retryLoad,
     searchingMessages:
       Boolean(normalizedSearchText) && messageSearchIndexQuery.isLoading,
     scopeCounts: loading ? emptySearchScopeCounts : scopeCounts,

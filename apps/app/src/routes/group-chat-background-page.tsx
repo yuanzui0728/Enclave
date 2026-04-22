@@ -282,6 +282,10 @@ export function GroupChatBackgroundPage() {
     });
   };
 
+  const handleRetryLoad = () => {
+    void Promise.all([groupQuery.refetch(), backgroundQuery.refetch()]);
+  };
+
   const handleMissingGroupAction = () => {
     if (navigateToRouteStateReturn()) {
       return;
@@ -340,14 +344,24 @@ export function GroupChatBackgroundPage() {
             description={groupQuery.error.message}
             tone="danger"
             action={
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                onClick={handleErrorStateAction}
-              >
-                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleRetryLoad}
+                >
+                  重试读取
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleErrorStateAction}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                </Button>
+              </div>
             }
           />
         )
@@ -362,14 +376,24 @@ export function GroupChatBackgroundPage() {
             description={backgroundQuery.error.message}
             tone="danger"
             action={
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-                onClick={handleErrorStateAction}
-              >
-                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleRetryLoad}
+                >
+                  重试读取
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+                  onClick={handleErrorStateAction}
+                >
+                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                </Button>
+              </div>
             }
           />
         )
@@ -386,16 +410,10 @@ export function GroupChatBackgroundPage() {
               <span className="min-w-0 flex-1">{pageError}</span>
               <button
                 type="button"
-                onClick={() => {
-                  void navigate({
-                    to: "/group/$groupId/details",
-                    params: { groupId },
-                    ...(currentRouteHash ? { hash: currentRouteHash } : {}),
-                  });
-                }}
+                onClick={handleErrorStateAction}
                 className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
-                返回群聊信息
+                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
               </button>
             </div>
           </InlineNotice>

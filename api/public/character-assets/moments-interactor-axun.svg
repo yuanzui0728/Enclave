@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-moments-interactor-axun-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#174C58" />
+      <stop offset="1" stop-color="#F08B67" />
+    </linearGradient>
+    <radialGradient id="glow-moments-interactor-axun-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(772 212) rotate(126) scale(520)">
+      <stop stop-color="rgba(255, 232, 219, 0.48)" />
+      <stop offset="1" stop-color="rgba(255, 232, 219, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-moments-interactor-axun-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-moments-interactor-axun-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-moments-interactor-axun-svg)" />
+  <circle cx="774" cy="214" r="178" fill="rgba(255, 255, 255, 0.08)" />
+  <circle cx="250" cy="820" r="156" fill="rgba(255, 232, 219, 0.12)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-moments-interactor-axun-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <circle cx="512" cy="438" r="224" fill="rgba(255, 255, 255, 0.12)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M154 766C220 702 314 662 408 662H616C738 662 834 742 870 862" stroke="rgba(255, 255, 255, 0.12)" stroke-width="28" stroke-linecap="round" />
+  <rect x="650" y="676" width="206" height="206" rx="76" fill="rgba(255, 255, 255, 0.14)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="816" cy="164" r="32" fill="rgba(255, 232, 219, 0.32)" />
+  <circle cx="208" cy="198" r="18" fill="rgba(255, 255, 255, 0.18)" />
+  <path d="M274 438C322 352 409 302 512 302C615 302 702 352 750 438C702 524 615 574 512 574C409 574 322 524 274 438Z" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="512" cy="438" r="82" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" stroke-width="30" />
+  <circle cx="544" cy="406" r="22" fill="#FFFFFF" fill-opacity="0.92" />
+  <path d="M708 736H796C824.719 736 848 759.281 848 788V816C848 844.719 824.719 868 796 868H746L700 904V868H708C679.281 868 656 844.719 656 816V788C656 759.281 679.281 736 708 736Z" fill="rgba(255,255,255,0.16)" stroke="#FFE8DB" stroke-width="20" stroke-linejoin="round" />
+  <circle cx="724" cy="802" r="14" fill="#FFE8DB" />
+  <circle cx="754" cy="802" r="14" fill="#FFE8DB" />
+  <circle cx="784" cy="802" r="14" fill="#FFE8DB" />
+</svg>

@@ -641,10 +641,32 @@ export function GroupQrPage() {
     navigate,
   ]);
 
+  const handleNoticeBackAction = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({
+      to: "/group/$groupId/details",
+      params: { groupId },
+      ...(detailsRouteHash ? { hash: detailsRouteHash } : {}),
+    });
+  };
+
   function showNotice(message: string, tone: "success" | "danger" = "success") {
     setNotice({
       message,
       tone,
+      actionLabel:
+        !isDesktopLayout && tone === "danger"
+          ? safeReturnPath
+            ? "返回上一页"
+            : "返回群聊信息"
+          : undefined,
+      onAction:
+        !isDesktopLayout && tone === "danger"
+          ? handleNoticeBackAction
+          : undefined,
     });
   }
 
@@ -660,7 +682,7 @@ export function GroupQrPage() {
     return true;
   };
 
-  const handleStatusErrorAction = (refetch: () => Promise<unknown>) => {
+  const handleStatusBackAction = () => {
     if (navigateToRouteStateReturn()) {
       return;
     }
@@ -673,8 +695,6 @@ export function GroupQrPage() {
       });
       return;
     }
-
-    void refetch();
   };
 
   async function copyText(value: string, successMessage: string) {
@@ -715,7 +735,13 @@ export function GroupQrPage() {
     setNotice({
       message: result.message,
       tone: result.status === "failed" ? "danger" : "success",
-      actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+      actionLabel: canRevealSavedFile
+        ? "打开位置"
+        : !isDesktopLayout && result.status === "failed"
+          ? safeReturnPath
+            ? "返回上一页"
+            : "返回群聊信息"
+          : undefined,
       onAction:
         savedPath
           ? () => {
@@ -728,6 +754,8 @@ export function GroupQrPage() {
                 );
               });
             }
+          : !isDesktopLayout && result.status === "failed"
+            ? handleNoticeBackAction
           : undefined,
     });
   }
@@ -915,14 +943,26 @@ export function GroupQrPage() {
             description={groupQuery.error.message}
             tone="danger"
             action={
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleStatusErrorAction(groupQuery.refetch)}
-                className="rounded-full"
-              >
-                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    void groupQuery.refetch();
+                  }}
+                  className="rounded-full"
+                >
+                  重试读取
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleStatusBackAction}
+                  className="rounded-full"
+                >
+                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                </Button>
+              </div>
             }
           />
         )
@@ -937,14 +977,26 @@ export function GroupQrPage() {
             description={membersQuery.error.message}
             tone="danger"
             action={
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleStatusErrorAction(membersQuery.refetch)}
-                className="rounded-full"
-              >
-                {safeReturnPath ? "返回上一页" : "返回群聊信息"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    void membersQuery.refetch();
+                  }}
+                  className="rounded-full"
+                >
+                  重试读取
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleStatusBackAction}
+                  className="rounded-full"
+                >
+                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                </Button>
+              </div>
             }
           />
         )
@@ -1359,16 +1411,26 @@ export function GroupQrPage() {
                     description={conversationsQuery.error.message}
                     tone="danger"
                     action={
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() =>
-                          handleStatusErrorAction(conversationsQuery.refetch)
-                        }
-                        className="rounded-full"
-                      >
-                        {safeReturnPath ? "返回上一页" : "返回群聊信息"}
-                      </Button>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            void conversationsQuery.refetch();
+                          }}
+                          className="rounded-full"
+                        >
+                          重试读取
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={handleStatusBackAction}
+                          className="rounded-full"
+                        >
+                          {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                        </Button>
+                      </div>
                     }
                   />
                 </div>

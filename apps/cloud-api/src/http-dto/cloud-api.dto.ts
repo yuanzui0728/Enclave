@@ -1,4 +1,4 @@
-import { Transform } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
@@ -447,6 +447,19 @@ export class ListJobsQueryDto {
   @IsString({ message: "query 必须是字符串。" })
   @MaxLength(255, { message: "query 不能超过 255 个字符。" })
   query?: string;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt({ message: "page 必须是整数。" })
+  @Min(1, { message: "page 必须大于或等于 1。" })
+  page?: number;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt({ message: "pageSize 必须是整数。" })
+  @Min(1, { message: "pageSize 必须大于或等于 1。" })
+  @Max(100, { message: "pageSize 不能超过 100。" })
+  pageSize?: number;
 }
 
 export class ListWaitingSessionSyncTasksQueryDto {

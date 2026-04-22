@@ -8,7 +8,10 @@ import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
-import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";
+import {
+  buildDesktopContactsRouteHash,
+  parseDesktopContactsRouteState,
+} from "../features/contacts/contacts-route-state";
 import {
   buildMobileContactDirectoryRouteHash,
   parseMobileContactDirectoryRouteState,
@@ -24,6 +27,20 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 export function StarredFriendsPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
+  const desktopCompatHash = useMemo(() => {
+    const routeState = parseDesktopContactsRouteState(hash);
+
+    return buildDesktopContactsRouteHash({
+      pane: "starred-friends",
+      characterId:
+        routeState.pane === "starred-friends"
+          ? routeState.characterId
+          : undefined,
+    });
+  }, [hash]);
 
   useEffect(() => {
     if (!isDesktopLayout) {
@@ -32,12 +49,10 @@ export function StarredFriendsPage() {
 
     void navigate({
       to: "/tabs/contacts",
-      hash: buildDesktopContactsRouteHash({
-        pane: "starred-friends",
-      }),
+      hash: desktopCompatHash,
       replace: true,
     });
-  }, [isDesktopLayout, navigate]);
+  }, [desktopCompatHash, isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
     return (
@@ -156,6 +171,10 @@ function MobileStarredFriendsPage() {
     openTags();
   }
 
+  function handleRetryFriends() {
+    void friendsQuery.refetch();
+  }
+
   const statusBackLabel = safeReturnPath ? "返回上一页" : "查看联系人标签";
 
   return (
@@ -229,14 +248,24 @@ function MobileStarredFriendsPage() {
               title="星标朋友暂时不可用"
               description={friendsQuery.error.message}
               action={
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleRetryFriends}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                </div>
               }
               tone="danger"
             />

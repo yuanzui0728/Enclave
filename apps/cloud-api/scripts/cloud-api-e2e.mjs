@@ -706,7 +706,7 @@ async function runScenario() {
     "superseded job list should succeed",
   );
   assert.ok(
-    supersededJobsResponse.body.some(
+    supersededJobsResponse.body.items.some(
       (job) =>
         job.failureCode === "superseded_by_new_job" &&
         job.supersededByJobType === "resume",
@@ -714,7 +714,7 @@ async function runScenario() {
     "superseded job list should include resume-superseded jobs",
   );
   assert.ok(
-    supersededJobsResponse.body.some(
+    supersededJobsResponse.body.items.some(
       (job) =>
         job.failureCode === "superseded_by_new_job" &&
         job.supersededByJobType === "suspend",
@@ -736,9 +736,44 @@ async function runScenario() {
     "superseded-by job list should succeed",
   );
   assert.deepEqual(
-    resumeSupersededJobsResponse.body.map((job) => job.id),
+    resumeSupersededJobsResponse.body.items.map((job) => job.id),
     [supersededResumeJob.id],
     "superseded-by filter should return only matching jobs",
+  );
+
+  const pagedSupersededJobsResponse = await listJobs(
+    baseUrl,
+    adminHeaders,
+    {
+      audit: "superseded",
+      page: 2,
+      pageSize: 1,
+    },
+  );
+  assert.equal(
+    pagedSupersededJobsResponse.status,
+    200,
+    "paginated superseded job list should succeed",
+  );
+  assert.equal(
+    pagedSupersededJobsResponse.body.page,
+    2,
+    "paginated job list should echo the requested page",
+  );
+  assert.equal(
+    pagedSupersededJobsResponse.body.pageSize,
+    1,
+    "paginated job list should echo the requested page size",
+  );
+  assert.equal(
+    pagedSupersededJobsResponse.body.total,
+    2,
+    "paginated job list should report the full superseded match count",
+  );
+  assert.equal(
+    pagedSupersededJobsResponse.body.items.length,
+    1,
+    "paginated job list should return one item for pageSize=1",
   );
 
   const delayedJob = seedLifecycleJob(databasePath, {
@@ -764,7 +799,7 @@ async function runScenario() {
     "queue-state filtered job list should succeed",
   );
   assert.deepEqual(
-    delayedJobsResponse.body.map((job) => job.id),
+    delayedJobsResponse.body.items.map((job) => job.id),
     [delayedJob.id],
     "queueState=delayed should return only delayed jobs",
   );
@@ -782,7 +817,7 @@ async function runScenario() {
     "provider-filtered job list should succeed",
   );
   assert.deepEqual(
-    unassignedProviderJobsResponse.body,
+    unassignedProviderJobsResponse.body.items,
     [],
     "provider=__unassigned__ should exclude jobs for assigned worlds",
   );
@@ -800,7 +835,7 @@ async function runScenario() {
     "query-filtered job list should succeed",
   );
   assert.ok(
-    queryFilteredJobsResponse.body.every((job) => job.worldId === world.id),
+    queryFilteredJobsResponse.body.items.every((job) => job.worldId === world.id),
     "query filter should match jobs by the world phone",
   );
 

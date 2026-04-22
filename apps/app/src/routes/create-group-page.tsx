@@ -268,6 +268,10 @@ export function CreateGroupPage() {
           ? "返回聊天"
           : "返回消息列表";
 
+  const handleRetryLoad = () => {
+    void friendsQuery.refetch();
+  };
+
   const toggleSelection = (characterId: string) => {
     setSelectedIds((current) =>
       current.includes(characterId)
@@ -430,14 +434,24 @@ export function CreateGroupPage() {
               title="联系人列表暂时不可用"
               description={friendsQuery.error.message}
               action={
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
-                  onClick={handleBack}
-                >
-                  {statusBackLabel}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleRetryLoad}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 rounded-full px-3 text-[11px]"
+                    onClick={handleBack}
+                  >
+                    {statusBackLabel}
+                  </Button>
+                </div>
               }
               tone="danger"
             />

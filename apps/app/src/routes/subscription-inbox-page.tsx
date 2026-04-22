@@ -157,6 +157,14 @@ function MobileSubscriptionInboxPage() {
     openOfficialAccountsDirectory();
   }
 
+  function handleRetryInbox() {
+    void inboxQuery.refetch();
+  }
+
+  function handleRetryMarkRead() {
+    markReadMutation.mutate();
+  }
+
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
@@ -223,15 +231,26 @@ function MobileSubscriptionInboxPage() {
               description={inboxQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "打开公众号列表"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryInbox}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "打开公众号列表"}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -242,19 +261,30 @@ function MobileSubscriptionInboxPage() {
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone="danger"
             >
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
                   {markReadMutation.error.message}
                 </span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "打开公众号列表"}
-                </Button>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={handleRetryMarkRead}
+                  >
+                    重试同步
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "打开公众号列表"}
+                  </Button>
+                </div>
               </div>
             </InlineNotice>
           </div>

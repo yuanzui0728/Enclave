@@ -78,6 +78,7 @@ export function SearchPage() {
     ? committedSearchText
     : searchText;
   const desktopSearchPath = "/tabs/search";
+  const desktopPathMismatch = isDesktopLayout && pathname !== "/tabs/search";
   const currentSearchRouteHash = buildSearchRouteHash({
     category: activeCategory,
     keyword: effectiveSearchText,
@@ -94,6 +95,7 @@ export function SearchPage() {
     officialAccountGroups,
     recentFavorites,
     recentMiniPrograms,
+    retryLoad,
     scopeCounts,
     searchingMessages,
   } = useSearchIndex(effectiveSearchText, activeCategory, isDesktopLayout);
@@ -112,7 +114,7 @@ export function SearchPage() {
   }, [routeState.category]);
 
   useEffect(() => {
-    if (!isDesktopLayout || pathname !== desktopSearchPath) {
+    if (!isDesktopLayout) {
       return;
     }
 
@@ -121,7 +123,7 @@ export function SearchPage() {
       activeCategory === routeState.category &&
       committedSearchText === routeState.keyword;
 
-    if (syncingRouteStateRef.current) {
+    if (syncingRouteStateRef.current && !desktopPathMismatch) {
       if (!routeStateApplied) {
         return;
       }
@@ -130,7 +132,7 @@ export function SearchPage() {
     }
 
     const nextHash = currentSearchRouteHash;
-    if (normalizedHash === (nextHash ?? "")) {
+    if (!desktopPathMismatch && normalizedHash === (nextHash ?? "")) {
       return;
     }
 
@@ -143,12 +145,12 @@ export function SearchPage() {
     activeCategory,
     committedSearchText,
     currentSearchRouteHash,
+    desktopPathMismatch,
     desktopSearchPath,
     effectiveSearchText,
     isDesktopLayout,
     navigate,
     normalizedHash,
-    pathname,
     routeState.category,
     routeState.keyword,
     routeState.source,
@@ -453,6 +455,7 @@ export function SearchPage() {
       onClearKeyword={() => setSearchText("")}
       onCommitSearch={handleCommitSearch}
       onOpenResult={handleOpenResult}
+      onRetryLoad={retryLoad}
       onRemoveHistory={handleRemoveHistory}
       scopeCounts={scopeCounts}
       searchText={searchText}

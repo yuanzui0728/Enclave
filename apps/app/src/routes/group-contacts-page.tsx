@@ -11,10 +11,11 @@ import {
   buildMobileGroupRouteHash,
   parseMobileGroupRouteState,
 } from "../features/chat/mobile-group-route-state";
+import { parseDesktopContactsRouteState } from "../features/contacts/contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsRouteRedirectShell = lazy(async () => {
@@ -25,6 +26,11 @@ const DesktopContactsRouteRedirectShell = lazy(async () => {
 
 export function GroupContactsPage() {
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const desktopPaneState = useMemo(() => {
+    const routeState = parseDesktopContactsRouteState(hash);
+    return routeState.pane === "groups" ? routeState : null;
+  }, [hash]);
 
   if (isDesktopLayout) {
     return (
@@ -37,7 +43,10 @@ export function GroupContactsPage() {
           />
         }
       >
-        <DesktopContactsRouteRedirectShell pane="groups" />
+        <DesktopContactsRouteRedirectShell
+          pane="groups"
+          characterId={desktopPaneState?.characterId}
+        />
       </Suspense>
     );
   }
@@ -57,7 +66,10 @@ function MobileGroupContactsPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchText, setSearchText] = useState("");
   const routeState = useMemo(() => parseMobileGroupRouteState(hash), [hash]);
-  const safeReturnPath = routeState.returnPath;
+  const safeReturnPath =
+    routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
+      ? routeState.returnPath
+      : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const currentRouteHash = useMemo(
     () =>
@@ -99,6 +111,10 @@ function MobileGroupContactsPage() {
     }
 
     void navigate({ to: "/tabs/contacts" });
+  }
+
+  function handleRetryGroups() {
+    void groupsQuery.refetch();
   }
 
   return (
@@ -182,14 +198,24 @@ function MobileGroupContactsPage() {
               description={groupsQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "返回通讯录"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryGroups}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回通讯录"}
+                  </Button>
+                </div>
               }
             />
           </div>

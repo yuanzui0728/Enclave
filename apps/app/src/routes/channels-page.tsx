@@ -438,6 +438,10 @@ export function ChannelsPage() {
     void channelsQuery.refetch();
   }
 
+  function handleRetryLoad() {
+    void channelsQuery.refetch();
+  }
+
   function handleEmptyStateAction() {
     if (navigateToRouteStateReturn()) {
       return;
@@ -979,14 +983,24 @@ export function ChannelsPage() {
             title="视频号暂时不可用"
             tone="danger"
             action={
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                onClick={handleStatusBack}
-              >
-                {safeReturnPath ? "返回上一页" : "重新加载"}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleRetryLoad}
+                >
+                  重试读取
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={handleStatusBack}
+                >
+                  {safeReturnPath ? "返回上一页" : "重新加载"}
+                </Button>
+              </div>
             }
           />
         ) : null}

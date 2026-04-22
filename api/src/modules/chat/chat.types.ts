@@ -101,6 +101,7 @@ export interface Message {
   senderType: 'user' | 'character' | 'system';
   senderId: string;
   senderName: string;
+  senderAvatar?: string;
   type:
     | 'text'
     | 'system'
@@ -170,6 +171,7 @@ export interface Conversation {
   type: 'direct' | 'group';
   source?: 'conversation' | 'group';
   title: string;
+  avatar?: string;
   participants: string[]; // character ids
   messages: Message[];
   isPinned: boolean;

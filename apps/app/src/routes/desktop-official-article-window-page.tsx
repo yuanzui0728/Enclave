@@ -250,6 +250,7 @@ export function DesktopOfficialArticleWindowPage() {
       buildDesktopContactsRouteHash({
         pane: "official-accounts",
         accountId,
+        officialMode: "accounts",
         showWorldCharacters: false,
       }) ?? ""
     }`;

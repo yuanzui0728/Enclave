@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -64,8 +65,15 @@ export interface Moment {
   interactions: MomentInteraction[];
 }
 
+type MomentAvatarContext = {
+  ownerAvatar: string;
+  ownerId: string;
+  visibleCharacterIds: Set<string>;
+  characterAvatarById: Map<string, string>;
+};
+
 @Injectable()
-export class MomentsService {
+export class MomentsService implements OnModuleInit {
   private readonly logger = new Logger(MomentsService.name);
 
   constructor(
@@ -84,6 +92,10 @@ export class MomentsService {
     @InjectRepository(MomentLikeEntity)
     private likeRepo: Repository<MomentLikeEntity>,
   ) {}
+
+  async onModuleInit() {
+    await this.backfillMomentAuthorAvatars();
+  }
 
   async createUserMoment(input: CreateMomentInput): Promise<Moment> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
@@ -121,19 +133,30 @@ export class MomentsService {
   }
 
   async getFeed(): Promise<Moment[]> {
-    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildMomentAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
     const posts = await this.postRepo.find({ order: { postedAt: 'DESC' } });
     const visiblePosts = posts.filter((post) =>
-      this.canOwnerViewPost(post, visibleCharacterIds),
+      this.canOwnerViewPost(post, avatarContext.visibleCharacterIds),
     );
-    return Promise.all(visiblePosts.map((post) => this._enrichPost(post)));
+    return Promise.all(
+      visiblePosts.map((post) => this._enrichPost(post, avatarContext)),
+    );
   }
 
   async getPost(postId: string): Promise<Moment | null> {
-    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const avatarContext = await this.buildMomentAvatarContext({
+      ownerId: owner.id,
+      ownerAvatar: owner.avatar,
+    });
     const post = await this.postRepo.findOneBy({ id: postId });
-    if (!post || !this.canOwnerViewPost(post, visibleCharacterIds)) return null;
-    return this._enrichPost(post);
+    if (!post || !this.canOwnerViewPost(post, avatarContext.visibleCharacterIds))
+      return null;
+    return this._enrichPost(post, avatarContext);
   }
 
   async addOwnerComment(
@@ -541,8 +564,12 @@ export class MomentsService {
     return post;
   }
 
-  private async _enrichPost(post: MomentPostEntity): Promise<Moment> {
-    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
+  private async _enrichPost(
+    post: MomentPostEntity,
+    avatarContext?: MomentAvatarContext,
+  ): Promise<Moment> {
+    const resolvedAvatarContext =
+      avatarContext ?? (await this.buildMomentAvatarContext());
     const [likes, comments] = await Promise.all([
       this.likeRepo.find({
         where: { postId: post.id },
@@ -556,37 +583,48 @@ export class MomentsService {
     const visibleLikes = likes.filter(
       (like) =>
         like.authorType !== 'character' ||
-        visibleCharacterIds.has(like.authorId),
+        resolvedAvatarContext.visibleCharacterIds.has(like.authorId),
     );
     const visibleComments = comments.filter(
       (comment) =>
         comment.authorType !== 'character' ||
-        visibleCharacterIds.has(comment.authorId),
+        resolvedAvatarContext.visibleCharacterIds.has(comment.authorId),
+    );
+    const serializedLikes = visibleLikes.map((like) =>
+      this.serializeMomentLike(like, resolvedAvatarContext),
+    );
+    const serializedComments = visibleComments.map((comment) =>
+      this.serializeMomentComment(comment, resolvedAvatarContext),
     );
 
     return {
       id: post.id,
       authorId: post.authorId,
       authorName: post.authorName,
-      authorAvatar: post.authorAvatar,
+      authorAvatar: this.resolveMomentAuthorAvatar(
+        post.authorType,
+        post.authorId,
+        post.authorAvatar,
+        resolvedAvatarContext,
+      ),
       authorType: post.authorType,
       text: post.text,
       location: post.location,
       contentType: this.normalizeMomentContentType(post.contentType),
       media: this.parseMomentMediaPayload(post.mediaPayload),
       postedAt: post.postedAt,
-      likeCount: visibleLikes.length,
-      commentCount: visibleComments.length,
-      likes: visibleLikes,
-      comments: visibleComments,
+      likeCount: serializedLikes.length,
+      commentCount: serializedComments.length,
+      likes: serializedLikes,
+      comments: serializedComments,
       interactions: [
-        ...visibleLikes.map((like) => ({
+        ...serializedLikes.map((like) => ({
           characterId: like.authorId,
           characterName: like.authorName,
           type: 'like' as const,
           createdAt: like.createdAt,
         })),
-        ...visibleComments.map((comment) => ({
+        ...serializedComments.map((comment) => ({
           characterId: comment.authorId,
           characterName: comment.authorName,
           type: 'comment' as const,
@@ -595,6 +633,168 @@ export class MomentsService {
         })),
       ],
     };
+  }
+
+  private serializeMomentLike(
+    like: MomentLikeEntity,
+    avatarContext: MomentAvatarContext,
+  ): MomentLikeEntity {
+    return {
+      ...like,
+      authorAvatar: this.resolveMomentAuthorAvatar(
+        like.authorType,
+        like.authorId,
+        like.authorAvatar,
+        avatarContext,
+      ),
+    };
+  }
+
+  private serializeMomentComment(
+    comment: MomentCommentEntity,
+    avatarContext: MomentAvatarContext,
+  ): MomentCommentEntity {
+    return {
+      ...comment,
+      authorAvatar: this.resolveMomentAuthorAvatar(
+        comment.authorType,
+        comment.authorId,
+        comment.authorAvatar,
+        avatarContext,
+      ),
+    };
+  }
+
+  private async buildMomentAvatarContext(input?: {
+    ownerId?: string;
+    ownerAvatar?: string | null;
+  }): Promise<MomentAvatarContext> {
+    const owner =
+      input?.ownerId === undefined
+        ? await this.worldOwnerService.getOwnerOrThrow()
+        : {
+            id: input.ownerId,
+            avatar: input.ownerAvatar ?? '',
+          };
+    const visibleCharacters = await this.characters.findAllVisibleToOwner(
+      owner.id,
+    );
+
+    return {
+      ownerAvatar: owner.avatar?.trim() || '',
+      ownerId: owner.id,
+      visibleCharacterIds: new Set(
+        visibleCharacters.map((character) => character.id),
+      ),
+      characterAvatarById: new Map(
+        visibleCharacters.map((character) => [
+          character.id,
+          character.avatar,
+        ]),
+      ),
+    };
+  }
+
+  private resolveMomentAuthorAvatar(
+    authorType: string | null | undefined,
+    authorId: string | null | undefined,
+    currentAvatar: string | null | undefined,
+    avatarContext: MomentAvatarContext,
+  ) {
+    if (authorType === 'character' && authorId) {
+      return avatarContext.characterAvatarById.get(authorId) ?? currentAvatar ?? '';
+    }
+
+    if (
+      authorType === 'user' &&
+      authorId === avatarContext.ownerId &&
+      avatarContext.ownerAvatar
+    ) {
+      return avatarContext.ownerAvatar;
+    }
+
+    return currentAvatar ?? '';
+  }
+
+  private async backfillMomentAuthorAvatars() {
+    const [owner, characters, posts, comments, likes] = await Promise.all([
+      this.worldOwnerService.getOwnerOrThrow(),
+      this.characters.findAll(),
+      this.postRepo.find(),
+      this.commentRepo.find(),
+      this.likeRepo.find(),
+    ]);
+    const characterAvatarById = new Map(
+      characters.map((character) => [character.id, character.avatar]),
+    );
+    const ownerAvatar = owner.avatar?.trim() || '';
+
+    const resolveAvatar = (
+      authorType: string | null | undefined,
+      authorId: string | null | undefined,
+      currentAvatar: string | null | undefined,
+    ) => {
+      if (authorType === 'character' && authorId) {
+        return characterAvatarById.get(authorId) ?? currentAvatar ?? '';
+      }
+
+      if (authorType === 'user' && authorId === owner.id && ownerAvatar) {
+        return ownerAvatar;
+      }
+
+      return currentAvatar ?? '';
+    };
+
+    const pendingPostUpdates = posts.reduce<MomentPostEntity[]>(
+      (updates, post) => {
+        const nextAvatar = resolveAvatar(
+          post.authorType,
+          post.authorId,
+          post.authorAvatar,
+        );
+        if (nextAvatar && nextAvatar !== post.authorAvatar) {
+          updates.push({ ...post, authorAvatar: nextAvatar });
+        }
+        return updates;
+      },
+      [],
+    );
+    const pendingCommentUpdates = comments.reduce<MomentCommentEntity[]>(
+      (updates, comment) => {
+        const nextAvatar = resolveAvatar(
+          comment.authorType,
+          comment.authorId,
+          comment.authorAvatar,
+        );
+        if (nextAvatar && nextAvatar !== comment.authorAvatar) {
+          updates.push({ ...comment, authorAvatar: nextAvatar });
+        }
+        return updates;
+      },
+      [],
+    );
+    const pendingLikeUpdates = likes.reduce<MomentLikeEntity[]>(
+      (updates, like) => {
+        const nextAvatar = resolveAvatar(
+          like.authorType,
+          like.authorId,
+          like.authorAvatar,
+        );
+        if (nextAvatar && nextAvatar !== like.authorAvatar) {
+          updates.push({ ...like, authorAvatar: nextAvatar });
+        }
+        return updates;
+      },
+      [],
+    );
+
+    await Promise.all([
+      pendingPostUpdates.length > 0 ? this.postRepo.save(pendingPostUpdates) : null,
+      pendingCommentUpdates.length > 0
+        ? this.commentRepo.save(pendingCommentUpdates)
+        : null,
+      pendingLikeUpdates.length > 0 ? this.likeRepo.save(pendingLikeUpdates) : null,
+    ]);
   }
 
   private normalizeCreateMomentInput(input: CreateMomentInput) {

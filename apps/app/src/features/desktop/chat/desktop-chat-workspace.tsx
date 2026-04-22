@@ -2485,7 +2485,7 @@ function DesktopReminderCard({
             size="sm"
           />
         ) : (
-          <AvatarChip name={entry.title} size="sm" />
+          <AvatarChip name={entry.title} src={entry.avatar} size="sm" />
         )}
 
         <div className="min-w-0 flex-1">
@@ -2613,7 +2613,7 @@ function ConversationCardLink({
           members={conversation.participants}
         />
       ) : (
-        <AvatarChip name={conversation.title} />
+        <AvatarChip name={conversation.title} src={conversation.avatar} />
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">

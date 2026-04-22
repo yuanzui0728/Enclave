@@ -40,6 +40,7 @@ import {
   buildCharacterDetailRouteHash,
   parseCharacterDetailRouteState,
 } from "../features/contacts/character-detail-route-state";
+import { buildDesktopContactsRouteHash } from "../features/contacts/contacts-route-state";
 import {
   buildDesktopChatRouteHash,
   buildDesktopChatThreadPath,
@@ -314,6 +315,19 @@ export function CharacterDetailPage() {
       }}
     >
       {safeMobileReturnPath ? "返回上一页" : "返回通讯录"}
+    </Button>
+  );
+  const renderMobileRetryCharacterLoadAction = () => (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
+      onClick={() => {
+        void characterQuery.refetch();
+      }}
+    >
+      重试读取
     </Button>
   );
 
@@ -705,16 +719,23 @@ export function CharacterDetailPage() {
   };
   const handleAddToContacts = () => {
     if (hasPendingFriendRequest) {
+      if (isDesktopLayout) {
+        void navigate({
+          to: "/tabs/contacts",
+          hash: buildDesktopContactsRouteHash({
+            pane: "new-friends",
+            showWorldCharacters: false,
+          }),
+        });
+        return;
+      }
+
       void navigate({
         to: "/friend-requests",
-        ...(isDesktopLayout
-          ? {}
-          : {
-              hash: buildMobileFriendRequestsRouteHash({
-                returnPath: pathname,
-                returnHash: mobileCurrentRouteHash || undefined,
-              }),
-            }),
+        hash: buildMobileFriendRequestsRouteHash({
+          returnPath: pathname,
+          returnHash: mobileCurrentRouteHash || undefined,
+        }),
       });
       return;
     }
@@ -1078,20 +1099,10 @@ export function CharacterDetailPage() {
                 description={characterQuery.error.message}
                 tone="danger"
                 action={
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      if (navigateToRouteStateReturn()) {
-                        return;
-                      }
-
-                      void navigate({ to: "/tabs/contacts" });
-                    }}
-                    className="rounded-full"
-                  >
-                    {safeMobileReturnPath ? "返回上一页" : "返回通讯录"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {renderMobileRetryCharacterLoadAction()}
+                    {renderMobileErrorBackAction()}
+                  </div>
                 }
               />
             )}
@@ -1153,7 +1164,14 @@ export function CharacterDetailPage() {
                     : "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
                 }
               >
-                {notice.message}
+                {!isDesktopLayout && notice.tone === "info" ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1">{notice.message}</span>
+                    {renderMobileErrorBackAction()}
+                  </div>
+                ) : (
+                  notice.message
+                )}
               </InlineNotice>
             ) : null}
             {entryNotice ? (

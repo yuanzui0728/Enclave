@@ -13,8 +13,9 @@ export function GroupVoiceCallPage() {
     return (
       <DesktopChatRouteRedirectShell
         conversationId={groupId}
+        callAction="voice"
         title="正在返回群聊工作区"
-        description="桌面端群语音通话入口已经收口到聊天工作区，先回到对应群聊。"
+        description="桌面端群语音通话入口已经收口到聊天工作区，正在恢复当前群聊的语音通话动作。"
         loadingLabel="正在切换到桌面群聊..."
       />
     );

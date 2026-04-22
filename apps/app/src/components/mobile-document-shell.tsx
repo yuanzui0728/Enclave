@@ -7,6 +7,7 @@ import {
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { TabPageTopBar } from "./tab-page-top-bar";
 
 type MobileDocumentShellProps = {
@@ -26,6 +27,7 @@ export function MobileDocumentShell({
   sections,
 }: MobileDocumentShellProps) {
   const navigate = useNavigate();
+  const isDesktopLayout = useDesktopLayout();
   const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<{
     tone: "success" | "info";
@@ -100,7 +102,9 @@ export function MobileDocumentShell({
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
-                void navigate({ to: "/profile/settings" });
+                void navigate({
+                  to: isDesktopLayout ? "/desktop/settings" : "/profile/settings",
+                });
               })
             }
             variant="ghost"

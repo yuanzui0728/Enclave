@@ -178,7 +178,11 @@ export function DesktopNoteSendDialog({
                           size="wechat"
                         />
                       ) : (
-                        <AvatarChip name={conversation.title} size="wechat" />
+                        <AvatarChip
+                          name={conversation.title}
+                          src={conversation.avatar}
+                          size="wechat"
+                        />
                       )}
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">

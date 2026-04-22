@@ -166,21 +166,36 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     });
     return true;
   };
-  const statusBackAction = (
+  const handleOperationBack = () => {
+    if (navigateToRouteStateReturn()) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat" });
+  };
+  const statusBackLabel = safeReturnPath ? "返回上一页" : "返回消息列表";
+  const renderStatusBackAction = () => (
     <Button
       type="button"
       variant="secondary"
-      onClick={() => {
-        if (navigateToRouteStateReturn()) {
-          return;
-        }
-
-        void navigate({ to: "/tabs/chat" });
-      }}
+      onClick={handleOperationBack}
       className="rounded-full"
     >
-      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+      {statusBackLabel}
     </Button>
+  );
+  const renderStatusRetryAction = (onRetry: () => void) => (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={onRetry}
+        className="rounded-full"
+      >
+        重试读取
+      </Button>
+      {renderStatusBackAction()}
+    </div>
   );
   const renderOperationBackAction = () => (
     <Button
@@ -188,15 +203,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       variant="secondary"
       size="sm"
       className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[10px]"
-      onClick={() => {
-        if (navigateToRouteStateReturn()) {
-          return;
-        }
-
-        void navigate({ to: "/tabs/chat" });
-      }}
+      onClick={handleOperationBack}
     >
-      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+      {statusBackLabel}
     </Button>
   );
 
@@ -361,6 +370,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         message: nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制联系人摘要。",
+        actionLabel: statusBackLabel,
+        onAction: handleOperationBack,
       });
       return;
     }
@@ -379,6 +390,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         message: nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制联系人摘要失败，请稍后重试。",
+        actionLabel: statusBackLabel,
+        onAction: handleOperationBack,
       });
     }
   }
@@ -720,7 +733,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="聊天信息暂时不可用"
             description={conversationsQuery.error.message}
             tone="danger"
-            action={statusBackAction}
+            action={renderStatusRetryAction(() => {
+              void conversationsQuery.refetch();
+            })}
           />
         </div>
       ) : null}
@@ -731,7 +746,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="联系人资料暂时不可用"
             description={characterQuery.error.message}
             tone="danger"
-            action={statusBackAction}
+            action={renderStatusRetryAction(() => {
+              void characterQuery.refetch();
+            })}
           />
         </div>
       ) : null}
@@ -742,7 +759,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="通讯录信息暂时不可用"
             description={friendsQuery.error.message}
             tone="danger"
-            action={statusBackAction}
+            action={renderStatusRetryAction(() => {
+              void friendsQuery.refetch();
+            })}
           />
         </div>
       ) : null}
@@ -753,7 +772,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             title="黑名单状态暂时不可用"
             description={blockedQuery.error.message}
             tone="danger"
-            action={statusBackAction}
+            action={renderStatusRetryAction(() => {
+              void blockedQuery.refetch();
+            })}
           />
         </div>
       ) : null}

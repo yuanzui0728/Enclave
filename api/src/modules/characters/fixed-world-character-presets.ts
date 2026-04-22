@@ -1,5 +1,10 @@
 import type { CelebrityCharacterPreset } from './celebrity-character-presets';
 import type { CharacterEntity } from './character.entity';
+import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
+
+const LIN_CHEN_SOURCE_KEY = 'lin_chen_sleep_support';
+const LIN_MIAN_SOURCE_KEY = 'lin_mian_sleep_support';
+const XU_ZHE_SOURCE_KEY = 'xu_zhe_career_growth';
 
 const AXUN_CHARACTER: Partial<CharacterEntity> = {
   id: 'char-manual-axun',
@@ -127,14 +132,14 @@ const AXUN_CHARACTER: Partial<CharacterEntity> = {
 const LIN_CHEN_CHARACTER: Partial<CharacterEntity> = {
   id: 'char_need_e9a84d01-9ab',
   name: '林晨',
-  avatar: '🙂',
+  avatar: getCharacterAvatarBySourceKey(LIN_CHEN_SOURCE_KEY),
   relationship: '能随时倾听、疏导压力和睡眠困扰的朋友型睡眠医生',
   relationshipType: 'expert',
   bio: '我是一名专注于睡眠医学和情绪疏导的医生，平时喜欢和朋友聊聊日常、分享压力小技巧。遇到睡眠和情绪波动时，我会耐心倾听、陪你一起面对。',
   isOnline: false,
   onlineMode: 'auto',
   sourceType: 'preset_catalog',
-  sourceKey: 'lin_chen_sleep_support',
+  sourceKey: LIN_CHEN_SOURCE_KEY,
   deletionPolicy: 'archive_allowed',
   isTemplate: false,
   expertDomains: ['睡眠医学', '情绪支持'],
@@ -224,14 +229,14 @@ const LIN_CHEN_CHARACTER: Partial<CharacterEntity> = {
 const LIN_MIAN_CHARACTER: Partial<CharacterEntity> = {
   id: 'char_need_3d1789f2-306',
   name: '林眠',
-  avatar: '🙂',
+  avatar: getCharacterAvatarBySourceKey(LIN_MIAN_SOURCE_KEY),
   relationship: '能随时倾听和接住你情绪的睡眠医生朋友',
   relationshipType: 'expert',
   bio: '专注于睡眠医学和情绪支持，喜欢和你聊聊困倦、无聊或小小的情绪波动。相信温柔的对话能帮人找到片刻安稳。',
   isOnline: false,
   onlineMode: 'auto',
   sourceType: 'preset_catalog',
-  sourceKey: 'lin_mian_sleep_support',
+  sourceKey: LIN_MIAN_SOURCE_KEY,
   deletionPolicy: 'archive_allowed',
   isTemplate: false,
   expertDomains: ['睡眠医学', '情绪支持'],
@@ -321,14 +326,14 @@ const LIN_MIAN_CHARACTER: Partial<CharacterEntity> = {
 const XU_ZHE_CHARACTER: Partial<CharacterEntity> = {
   id: 'char_need_cf214700-ca8',
   name: '许哲',
-  avatar: '🙂',
+  avatar: getCharacterAvatarBySourceKey(XU_ZHE_SOURCE_KEY),
   relationship: '长期职业成长与产品路径的导师型朋友',
   relationshipType: 'mentor',
   bio: '产品经理出身，专注职业规划与成长路径。喜欢和朋友一起拆解选择、探索方向，也乐于分享行业经验。',
   isOnline: false,
   onlineMode: 'auto',
   sourceType: 'preset_catalog',
-  sourceKey: 'xu_zhe_career_growth',
+  sourceKey: XU_ZHE_SOURCE_KEY,
   deletionPolicy: 'archive_allowed',
   isTemplate: false,
   expertDomains: ['职业规划', '产品思维'],
@@ -426,11 +431,11 @@ export const FIXED_WORLD_CHARACTER_PRESETS: CelebrityCharacterPreset[] = [
     character: AXUN_CHARACTER,
   },
   {
-    presetKey: 'lin_chen_sleep_support',
+    presetKey: LIN_CHEN_SOURCE_KEY,
     groupKey: 'relationships_and_emotions',
     id: 'char_need_e9a84d01-9ab',
     name: '林晨',
-    avatar: '🙂',
+    avatar: getCharacterAvatarBySourceKey(LIN_CHEN_SOURCE_KEY),
     relationship: '能随时倾听、疏导压力和睡眠困扰的朋友型睡眠医生',
     description:
       '偏睡眠医学与情绪支持的朋友型医生，适合聊压力、失眠和低落波动。',
@@ -438,11 +443,11 @@ export const FIXED_WORLD_CHARACTER_PRESETS: CelebrityCharacterPreset[] = [
     character: LIN_CHEN_CHARACTER,
   },
   {
-    presetKey: 'lin_mian_sleep_support',
+    presetKey: LIN_MIAN_SOURCE_KEY,
     groupKey: 'relationships_and_emotions',
     id: 'char_need_3d1789f2-306',
     name: '林眠',
-    avatar: '🙂',
+    avatar: getCharacterAvatarBySourceKey(LIN_MIAN_SOURCE_KEY),
     relationship: '能随时倾听和接住你情绪的睡眠医生朋友',
     description:
       '更偏夜间树洞气质的睡眠医生朋友，适合慢慢聊困倦、无聊和情绪波动。',
@@ -450,11 +455,11 @@ export const FIXED_WORLD_CHARACTER_PRESETS: CelebrityCharacterPreset[] = [
     character: LIN_MIAN_CHARACTER,
   },
   {
-    presetKey: 'xu_zhe_career_growth',
+    presetKey: XU_ZHE_SOURCE_KEY,
     groupKey: 'technology_and_product',
     id: 'char_need_cf214700-ca8',
     name: '许哲',
-    avatar: '🙂',
+    avatar: getCharacterAvatarBySourceKey(XU_ZHE_SOURCE_KEY),
     relationship: '长期职业成长与产品路径的导师型朋友',
     description:
       '长期职业成长与产品路径的导师型朋友，适合拆方向、选项和成长路径。',

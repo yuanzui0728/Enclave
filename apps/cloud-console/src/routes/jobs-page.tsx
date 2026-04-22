@@ -23,6 +23,7 @@ import {
 } from "../lib/job-result";
 import {
   JOB_AUDIT_FILTERS,
+  JOB_PAGE_SIZE_OPTIONS,
   JOB_SUPERSEDED_BY_FILTERS,
   buildJobsRouteSearch,
   JOB_STATUS_FILTERS,
@@ -128,6 +129,8 @@ export function JobsPage() {
   const auditFilter = filters.audit;
   const supersededByFilter = filters.supersededBy;
   const query = filters.query;
+  const page = filters.page;
+  const pageSize = filters.pageSize;
 
   function updateFilters(next: Partial<JobsRouteSearch>) {
     void navigate({
@@ -147,6 +150,8 @@ export function JobsPage() {
       auditFilter,
       supersededByFilter,
       query,
+      page,
+      pageSize,
     ],
     queryFn: () =>
       cloudAdminApi.listJobs({
@@ -159,6 +164,8 @@ export function JobsPage() {
         supersededBy:
           supersededByFilter === "all" ? undefined : supersededByFilter,
         query: query || undefined,
+        page,
+        pageSize,
       }),
     refetchInterval: 15_000,
   });
@@ -228,13 +235,18 @@ export function JobsPage() {
             : (providerLabelByKey.get(key) ?? key),
       }));
   }, [instanceFleetQuery.data, providerLabelByKey]);
-  const jobs = useMemo(() => {
-    return jobsQuery.data ?? [];
-  }, [jobsQuery.data]);
+  const jobsResult = jobsQuery.data;
+  const jobs = jobsResult?.items ?? [];
   const groupedJobs = useMemo(
     () => groupJobsByQueueState(jobs, Date.now()),
     [jobs],
   );
+  const totalJobs = jobsResult?.total ?? 0;
+  const totalPages = jobsResult?.totalPages ?? 1;
+  const pageStart = totalJobs === 0 || jobs.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const pageEnd = jobs.length === 0 ? 0 : pageStart + jobs.length - 1;
+  const hasPreviousPage = page > 1;
+  const hasNextPage = page < totalPages;
   const quickActionMutation = useMutation({
     mutationFn: (input: { worldId: string; action: WorldLifecycleAction }) =>
       performWorldLifecycleActionWithMeta(input.worldId, input.action),
@@ -298,7 +310,9 @@ export function JobsPage() {
         <div className="flex flex-wrap gap-3">
           <input
             value={query}
-            onChange={(event) => updateFilters({ query: event.target.value })}
+            onChange={(event) =>
+              updateFilters({ query: event.target.value, page: 1 })
+            }
             placeholder="Search world, phone, job, lease..."
             className="min-w-[16rem] rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]"
           />
@@ -308,6 +322,7 @@ export function JobsPage() {
             onChange={(event) =>
               updateFilters({
                 status: event.target.value as JobStatusFilter,
+                page: 1,
               })
             }
             className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
@@ -324,6 +339,7 @@ export function JobsPage() {
             onChange={(event) =>
               updateFilters({
                 jobType: event.target.value as JobTypeFilter,
+                page: 1,
               })
             }
             className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
@@ -338,7 +354,7 @@ export function JobsPage() {
           <select
             value={providerFilter}
             onChange={(event) =>
-              updateFilters({ provider: event.target.value })
+              updateFilters({ provider: event.target.value, page: 1 })
             }
             className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
           >
@@ -355,6 +371,7 @@ export function JobsPage() {
             onChange={(event) =>
               updateFilters({
                 queueState: event.target.value as JobsRouteSearch["queueState"],
+                page: 1,
               })
             }
             className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
@@ -371,6 +388,7 @@ export function JobsPage() {
             onChange={(event) =>
               updateFilters({
                 audit: event.target.value as JobAuditFilter,
+                page: 1,
               })
             }
             className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
@@ -387,6 +405,7 @@ export function JobsPage() {
             onChange={(event) =>
               updateFilters({
                 supersededBy: event.target.value as JobSupersededByFilter,
+                page: 1,
               })
             }
             className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
@@ -394,6 +413,23 @@ export function JobsPage() {
             {JOB_SUPERSEDED_BY_FILTERS.map((item) => (
               <option key={item} value={item}>
                 superseded by: {item}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={String(pageSize)}
+            onChange={(event) =>
+              updateFilters({
+                page: 1,
+                pageSize: Number(event.target.value),
+              })
+            }
+            className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-2 text-sm text-[color:var(--text-primary)]"
+          >
+            {JOB_PAGE_SIZE_OPTIONS.map((item) => (
+              <option key={item} value={item}>
+                page size: {item}
               </option>
             ))}
           </select>
@@ -587,6 +623,34 @@ export function JobsPage() {
             No jobs match this filter.
           </div>
         ) : null}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[color:var(--text-secondary)]">
+        <div>
+          Showing {pageStart}-{pageEnd} of {totalJobs} jobs.
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={!hasPreviousPage}
+            onClick={() => updateFilters({ page: page - 1 })}
+            className="rounded-xl border border-[color:var(--border-faint)] px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous page
+          </button>
+          <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+            Page {page} / {totalPages}
+          </div>
+          <button
+            type="button"
+            disabled={!hasNextPage}
+            onClick={() => updateFilters({ page: page + 1 })}
+            className="rounded-xl border border-[color:var(--border-faint)] px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next page
+          </button>
+        </div>
       </div>
 
       <ConsoleConfirmDialog

@@ -141,7 +141,7 @@ export function ConversationThreadPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const backgroundQuery = useConversationBackground(conversationId);
   const isDesktop = variant === "desktop";
-  const statusBackAction =
+  const renderStatusBackAction = () =>
     !isDesktop && onBack ? (
       <Button
         type="button"
@@ -152,6 +152,27 @@ export function ConversationThreadPanel({
       >
         返回上一页
       </Button>
+    ) : null;
+  const renderStatusRetryAction = () =>
+    !isDesktop ? (
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+        onClick={() => {
+          void messagesQuery.refetch();
+        }}
+      >
+        重试读取
+      </Button>
+    ) : null;
+  const renderStatusActions = () =>
+    !isDesktop ? (
+      <div className="flex flex-wrap justify-center gap-2">
+        {renderStatusRetryAction()}
+        {renderStatusBackAction()}
+      </div>
     ) : null;
   const highlightedWindowRequestRef = useRef<string | null>(null);
   const handledDesktopCallRequestTokenRef = useRef<number | null>(null);
@@ -638,7 +659,7 @@ export function ConversationThreadPanel({
                   title="会话暂时不可用"
                   description={messagesQuery.error.message}
                   tone="danger"
-                  action={statusBackAction}
+                  action={renderStatusActions()}
                 />
               )
             ) : null}
@@ -650,7 +671,10 @@ export function ConversationThreadPanel({
                   tone="danger"
                   className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
                 >
-                  {socketError}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1">{socketError}</span>
+                    {renderStatusBackAction()}
+                  </div>
                 </InlineNotice>
               )
             ) : null}
@@ -662,7 +686,12 @@ export function ConversationThreadPanel({
                   tone="danger"
                   className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
                 >
-                  {sendMutation.error.message}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1">
+                      {sendMutation.error.message}
+                    </span>
+                    {renderStatusBackAction()}
+                  </div>
                 </InlineNotice>
               )
             ) : null}
@@ -691,6 +720,8 @@ export function ConversationThreadPanel({
                 handleDesktopCallAction(input.kind);
               }}
               onSelectionModeChange={setSelectionModeActive}
+              errorActionLabel={!isDesktop && onBack ? "返回上一页" : undefined}
+              onErrorAction={!isDesktop && onBack ? onBack : null}
               emptyState={
                 !isDesktop &&
                 !messagesQuery.isLoading &&
@@ -730,6 +761,8 @@ export function ConversationThreadPanel({
               ? sendMutation.error.message
               : null
           }
+          errorActionLabel={!isDesktop && onBack ? "返回上一页" : undefined}
+          onErrorAction={!isDesktop && onBack ? onBack : null}
           speechInput={{
             baseUrl,
             conversationId,

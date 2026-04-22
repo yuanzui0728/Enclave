@@ -248,7 +248,7 @@ export function DashboardPage() {
   });
   const jobsQuery = useQuery({
     queryKey: ["cloud-console", "dashboard", "jobs"],
-    queryFn: () => cloudAdminApi.listJobs(),
+    queryFn: () => cloudAdminApi.listJobs({ page: 1, pageSize: 100 }),
     refetchInterval: 15_000,
   });
   const requestsQuery = useQuery({
@@ -356,7 +356,7 @@ export function DashboardPage() {
   );
   const activeJobs = useMemo(
     () =>
-      (jobsQuery.data ?? [])
+      (jobsQuery.data?.items ?? [])
         .filter((job) => job.status === "pending" || job.status === "running")
         .sort((left, right) => compareNewest(left.updatedAt, right.updatedAt))
         .slice(0, 6),
@@ -369,7 +369,7 @@ export function DashboardPage() {
       delayed: 0,
     };
 
-    for (const job of jobsQuery.data ?? []) {
+    for (const job of jobsQuery.data?.items ?? []) {
       const queueState = resolveQueueState(job).key;
       if (queueState === "running_now") {
         counts.running_now += 1;
@@ -399,19 +399,21 @@ export function DashboardPage() {
     ] as const;
   }, [jobsQuery.data]);
   const failedJobCount = useMemo(
-    () => (jobsQuery.data ?? []).filter((job) => job.status === "failed").length,
+    () =>
+      (jobsQuery.data?.items ?? []).filter((job) => job.status === "failed")
+        .length,
     [jobsQuery.data],
   );
   const supersededJobCount = useMemo(
     () =>
-      (jobsQuery.data ?? []).filter(
+      (jobsQuery.data?.items ?? []).filter(
         (job) => getJobAuditBadgeLabel(job) !== null,
       ).length,
     [jobsQuery.data],
   );
   const supersededJobs = useMemo(
     () =>
-      (jobsQuery.data ?? [])
+      (jobsQuery.data?.items ?? [])
         .filter((job) => getJobAuditBadgeLabel(job) !== null)
         .sort((left, right) => compareNewest(left.updatedAt, right.updatedAt))
         .slice(0, 4),
@@ -419,7 +421,7 @@ export function DashboardPage() {
   );
   const failedJobs = useMemo(
     () =>
-      (jobsQuery.data ?? [])
+      (jobsQuery.data?.items ?? [])
         .filter((job) => job.status === "failed")
         .sort((left, right) => compareNewest(left.updatedAt, right.updatedAt))
         .slice(0, 4),

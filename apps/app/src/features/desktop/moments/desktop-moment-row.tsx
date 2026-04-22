@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { type Moment } from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
 import {
@@ -27,7 +27,7 @@ type DesktopMomentRowProps = {
   onLike: () => void;
   onToggleFavorite: () => void;
   onOpenDetail: () => void;
-  onSelectAuthor: () => void;
+  onSelectAuthor?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 };
 
 export function DesktopMomentRow({
@@ -69,6 +69,7 @@ export function DesktopMomentRow({
     "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_10px_24px_rgba(15,23,42,0.05)]";
   const activeActionClassName =
     "border-[rgba(7,193,96,0.12)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]";
+  const canSelectAuthor = Boolean(onSelectAuthor);
 
   return (
     <article
@@ -81,37 +82,51 @@ export function DesktopMomentRow({
       )}
     >
       <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelectAuthor();
-          }}
-          className="shrink-0 rounded-[18px]"
-          aria-label={
-            authorActionAriaLabel ?? `查看 ${moment.authorName} 的朋友圈`
-          }
-        >
+        {canSelectAuthor ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelectAuthor?.(event);
+            }}
+            className="shrink-0 rounded-[18px]"
+            aria-label={
+              authorActionAriaLabel ?? `查看 ${moment.authorName} 的朋友圈`
+            }
+          >
+            <AvatarChip
+              name={moment.authorName}
+              src={moment.authorAvatar}
+              size="wechat"
+            />
+          </button>
+        ) : (
           <AvatarChip
             name={moment.authorName}
             src={moment.authorAvatar}
             size="wechat"
           />
-        </button>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onSelectAuthor();
-                }}
-                className="truncate text-left text-[15px] font-semibold text-[color:var(--text-primary)]"
-              >
-                {moment.authorName}
-              </button>
+              {canSelectAuthor ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSelectAuthor?.(event);
+                  }}
+                  className="truncate text-left text-[15px] font-semibold text-[color:var(--text-primary)]"
+                >
+                  {moment.authorName}
+                </button>
+              ) : (
+                <div className="truncate text-[15px] font-semibold text-[color:var(--text-primary)]">
+                  {moment.authorName}
+                </div>
+              )}
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium tracking-[0.12em]",

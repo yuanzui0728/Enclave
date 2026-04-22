@@ -253,6 +253,11 @@ export function MobileFriendMomentsPage() {
     });
   }
 
+  function handleRetryLoad() {
+    void momentsQuery.refetch();
+    void blockedQuery.refetch();
+  }
+
   if (!resolvedCharacterId) {
     return (
       <AppPage className="space-y-0 px-0 py-0">
@@ -446,14 +451,24 @@ export function MobileFriendMomentsPage() {
                 }
                 tone="danger"
                 action={
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                    onClick={handleBack}
-                  >
-                    {statusBackLabel}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      onClick={handleRetryLoad}
+                    >
+                      重试读取
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                      onClick={handleBack}
+                    >
+                      {statusBackLabel}
+                    </Button>
+                  </div>
                 }
               />
             ) : null}

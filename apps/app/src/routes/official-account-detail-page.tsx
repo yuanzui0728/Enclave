@@ -63,6 +63,7 @@ export function OfficialAccountDetailPage() {
         <DesktopContactsRouteRedirectShell
           pane="official-accounts"
           accountId={accountId}
+          officialMode="accounts"
         />
       </Suspense>
     );
@@ -161,6 +162,19 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
     }
 
     void navigate({ to: "/contacts/official-accounts" });
+  }
+
+  function handleRetryAccount() {
+    void accountQuery.refetch();
+  }
+
+  function handleRetryFollow() {
+    if (!account) {
+      return;
+    }
+
+    setActionNotice(null);
+    followMutation.mutate();
   }
 
   async function handleShareAccount() {
@@ -329,15 +343,26 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               description={accountQuery.error.message}
               tone="danger"
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                  onClick={handleStatusBack}
-                >
-                  {safeReturnPath ? "返回上一页" : "返回公众号列表"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleRetryAccount}
+                  >
+                    重试读取
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                  </Button>
+                </div>
               }
             />
           </div>
@@ -368,7 +393,22 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={actionNotice.tone}
             >
-              {actionNotice.message}
+              {actionNotice.tone === "info" ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">{actionNotice.message}</span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={handleStatusBack}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                  </Button>
+                </div>
+              ) : (
+                actionNotice.message
+              )}
             </InlineNotice>
           </div>
         ) : null}
@@ -446,15 +486,28 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                       <span className="min-w-0 flex-1">
                         {followMutation.error.message}
                       </span>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
-                        onClick={handleStatusBack}
-                      >
-                        {safeReturnPath ? "返回上一页" : "返回公众号列表"}
-                      </Button>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {account ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                            onClick={handleRetryFollow}
+                          >
+                            {account.isFollowing ? "重试取消关注" : "重试关注"}
+                          </Button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                          onClick={handleStatusBack}
+                        >
+                          {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                        </Button>
+                      </div>
                     </div>
                   </InlineNotice>
                 </div>

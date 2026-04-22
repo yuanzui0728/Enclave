@@ -491,6 +491,16 @@ export function ChatMessageSearchPanel({
             tone="danger"
             action={
               <div className="flex flex-wrap justify-center gap-2">
+                {onRetry ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onRetry}
+                    className="rounded-full"
+                  >
+                    重试读取
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="secondary"
@@ -499,16 +509,6 @@ export function ChatMessageSearchPanel({
                 >
                   返回上一页
                 </Button>
-                {onRetry ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={onRetry}
-                    className="rounded-full"
-                  >
-                    重新加载
-                  </Button>
-                ) : null}
               </div>
             }
           />

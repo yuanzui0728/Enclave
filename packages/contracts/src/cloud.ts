@@ -325,6 +325,8 @@ export interface CloudWorldLifecycleJobListQuery {
   audit?: WorldLifecycleJobAuditFilter;
   supersededBy?: WorldLifecycleJobType;
   query?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface CloudWaitingSessionSyncTaskSummary {
@@ -637,6 +639,14 @@ export interface WorldLifecycleJobSummary {
   resultPayload?: Record<string, unknown> | null;
   supersededByJobType?: WorldLifecycleJobType | null;
   supersededByPayload?: Record<string, unknown> | null;
+}
+
+export interface CloudWorldLifecycleJobListResponse {
+  items: WorldLifecycleJobSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface WorldAccessSessionSummary {

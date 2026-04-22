@@ -1009,6 +1009,7 @@ function isStandaloneDesktopRoute(pathname: string) {
 function isDesktopProfileRoute(pathname: string) {
   return (
     pathname.startsWith("/tabs/profile") ||
+    pathname.startsWith("/desktop/settings") ||
     pathname.startsWith("/profile/settings") ||
     pathname.startsWith("/legal/")
   );

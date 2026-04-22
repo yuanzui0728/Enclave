@@ -28,6 +28,7 @@ import { DesktopLayoutRequiredState } from "../../../components/desktop-layout-r
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
+import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
 import { useDesktopLayout } from "../../shell/use-desktop-layout";
 import { DesktopUtilityShell } from "../desktop-utility-shell";
@@ -82,6 +83,14 @@ export function DesktopAddFriendWorkspace() {
   const [sendDialogCharacterId, setSendDialogCharacterId] = useState<
     string | null
   >(null);
+  const newFriendsRouteHash = useMemo(
+    () =>
+      buildDesktopContactsRouteHash({
+        pane: "new-friends",
+        showWorldCharacters: false,
+      }),
+    [],
+  );
 
   const charactersQuery = useQuery({
     queryKey: ["app-characters", baseUrl],
@@ -286,16 +295,17 @@ export function DesktopAddFriendWorkspace() {
   }, [searchResults, selectedCharacterId]);
 
   useEffect(() => {
-    if (routeState.openCompose || loading || !submittedKeyword) {
+    if (loading || !submittedKeyword) {
       return;
     }
 
-    const nextCharacterId =
-      selectedCharacterId ??
-      (!submittedKeyword && routeCharacterId ? routeCharacterId : undefined);
+    if (routeState.openCompose) {
+      return;
+    }
+
     const nextHash = buildDesktopAddFriendRouteHash({
       keyword: routeState.keyword,
-      characterId: nextCharacterId,
+      characterId: selectedCharacterId ?? undefined,
       recommendationId: routeState.recommendationId,
     });
 
@@ -314,7 +324,6 @@ export function DesktopAddFriendWorkspace() {
     routeState.keyword,
     routeState.openCompose,
     routeState.recommendationId,
-    routeCharacterId,
     selectedCharacterId,
     submittedKeyword,
     loading,
@@ -418,7 +427,10 @@ export function DesktopAddFriendWorkspace() {
           type="button"
           variant="secondary"
           onClick={() => {
-            void navigate({ to: "/friend-requests" });
+            void navigate({
+              to: "/tabs/contacts",
+              hash: newFriendsRouteHash,
+            });
           }}
           className="rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 shadow-none hover:bg-[color:var(--surface-console)]"
         >
@@ -459,7 +471,10 @@ export function DesktopAddFriendWorkspace() {
                   : undefined
               }
               onClick={() => {
-                void navigate({ to: "/friend-requests" });
+                void navigate({
+                  to: "/tabs/contacts",
+                  hash: newFriendsRouteHash,
+                });
               }}
             />
 

@@ -18,6 +18,7 @@ import type {
   CloudWorldDriftSummary,
   CloudWorldBootstrapConfig,
   CloudWorldInstanceFleetItem,
+  CloudWorldLifecycleJobListResponse,
   CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
   CloudWorldLifecycleJobListQuery,
@@ -534,7 +535,7 @@ export const cloudAdminApi = {
     }),
 
   listJobs: (filters?: CloudWorldLifecycleJobListQuery) =>
-    adminFetch<WorldLifecycleJobSummary[]>(
+    adminFetch<CloudWorldLifecycleJobListResponse>(
       `/jobs${buildQueryString({
         worldId: filters?.worldId,
         status: filters?.status,
@@ -544,6 +545,8 @@ export const cloudAdminApi = {
         audit: filters?.audit,
         supersededBy: filters?.supersededBy,
         query: filters?.query,
+        page: filters?.page,
+        pageSize: filters?.pageSize,
       })}`,
     ),
 

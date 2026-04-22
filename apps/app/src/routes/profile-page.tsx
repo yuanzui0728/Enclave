@@ -9,13 +9,16 @@ import {
 import { AppPage, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function ProfilePage() {
   const navigate = useNavigate();
+  const isDesktopLayout = useDesktopLayout();
   const username = useWorldOwnerStore((state) => state.username);
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
+  const settingsPath = isDesktopLayout ? "/desktop/settings" : "/profile/settings";
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
@@ -26,7 +29,7 @@ export function ProfilePage() {
           <button
             type="button"
             onClick={() => {
-              void navigate({ to: "/profile/settings" });
+              void navigate({ to: settingsPath });
             }}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors active:bg-black/[0.05]"
             aria-label="打开设置"
@@ -38,7 +41,7 @@ export function ProfilePage() {
 
       <div className="pb-8">
         <Link
-          to="/profile/settings"
+          to={settingsPath as never}
           className="mt-1 flex items-center gap-2.5 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
         >
           <AvatarChip name={username ?? "世界主人"} src={avatar} size="lg" />
@@ -66,7 +69,7 @@ export function ProfilePage() {
             icon={Settings}
             iconClassName="bg-[rgba(7,193,96,0.10)] text-[#15803d]"
             label="设置"
-            to="/profile/settings"
+            to={settingsPath}
           />
         </ProfileEntryGroup>
 

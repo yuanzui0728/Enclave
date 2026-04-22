@@ -604,6 +604,32 @@ export function WelcomePage() {
     }
   }
 
+  function handleBackToEntryStep() {
+    setReadyBaseUrl(null);
+    setOwnerError("");
+    setEntryError("");
+    setNotice("");
+  }
+
+  function handleRetryEntryStep() {
+    if (mode === "local") {
+      void continueWithLocalWorld();
+      return;
+    }
+
+    void continueWithCloudWorld();
+  }
+
+  function handleRetrySendCode() {
+    setEntryError("");
+    sendCodeMutation.mutate();
+  }
+
+  function handleRetryCloudSession() {
+    setEntryError("");
+    void cloudAccessSessionQuery.refetch();
+  }
+
   function renderModeFields() {
     if (mode === "cloud") {
       return (
@@ -762,19 +788,27 @@ export function WelcomePage() {
               </InlineNotice>
             ) : (
               <div className="mt-3">
-                <MobileWelcomeNotice tone="danger">{ownerError}</MobileWelcomeNotice>
+                <MobileWelcomeNotice
+                  tone="danger"
+                  action={
+                    <button
+                      type="button"
+                      onClick={handleBackToEntryStep}
+                      className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                    >
+                      返回上一步
+                    </button>
+                  }
+                >
+                  {ownerError}
+                </MobileWelcomeNotice>
               </div>
             )
           ) : null}
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Button
-              onClick={() => {
-                setReadyBaseUrl(null);
-                setOwnerError("");
-                setEntryError("");
-                setNotice("");
-              }}
+              onClick={handleBackToEntryStep}
               disabled={isContinuing}
               variant="secondary"
               size="lg"
@@ -851,20 +885,75 @@ export function WelcomePage() {
         {renderModeFields()}
 
         {entryError ? (
-          isDesktopLayout ? <ErrorBlock message={entryError} /> : <MobileWelcomeNotice tone="danger">{entryError}</MobileWelcomeNotice>
+          isDesktopLayout ? (
+            <ErrorBlock message={entryError} />
+          ) : (
+            <MobileWelcomeNotice
+              tone="danger"
+              action={
+                ((mode === "local" && normalizedLocalApiBaseUrl) ||
+                  (mode === "cloud" &&
+                    phone.trim() &&
+                    (cloudAccessToken || code.trim()) &&
+                    !isContinuing)) ? (
+                  <button
+                    type="button"
+                    onClick={handleRetryEntryStep}
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                  >
+                    {mode === "local" ? "重新连接" : "重新解析"}
+                  </button>
+                ) : undefined
+              }
+            >
+              {entryError}
+            </MobileWelcomeNotice>
+          )
         ) : null}
         {sendCodeMutation.isError && sendCodeMutation.error instanceof Error ? (
           isDesktopLayout ? (
             <ErrorBlock message={sendCodeMutation.error.message} />
           ) : (
-            <MobileWelcomeNotice tone="danger">{sendCodeMutation.error.message}</MobileWelcomeNotice>
+            <MobileWelcomeNotice
+              tone="danger"
+              action={
+                phone.trim() && !sendCodeMutation.isPending ? (
+                  <button
+                    type="button"
+                    onClick={handleRetrySendCode}
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                  >
+                    重试发送
+                  </button>
+                ) : undefined
+              }
+            >
+              {sendCodeMutation.error.message}
+            </MobileWelcomeNotice>
           )
         ) : null}
         {cloudAccessSessionQuery.isError && cloudAccessSessionQuery.error instanceof Error ? (
           isDesktopLayout ? (
             <ErrorBlock message={cloudAccessSessionQuery.error.message} />
           ) : (
-            <MobileWelcomeNotice tone="danger">{cloudAccessSessionQuery.error.message}</MobileWelcomeNotice>
+            <MobileWelcomeNotice
+              tone="danger"
+              action={
+                cloudAccessSessionId &&
+                cloudAccessToken &&
+                !cloudAccessSessionQuery.isFetching ? (
+                  <button
+                    type="button"
+                    onClick={handleRetryCloudSession}
+                    className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                  >
+                    重新解析
+                  </button>
+                ) : undefined
+              }
+            >
+              {cloudAccessSessionQuery.error.message}
+            </MobileWelcomeNotice>
           )
         ) : null}
       </div>
@@ -943,9 +1032,11 @@ function MobileWelcomeStatusCard({
 function MobileWelcomeNotice({
   children,
   tone = "info",
+  action,
 }: {
   children: ReactNode;
   tone?: "danger" | "info" | "muted" | "success";
+  action?: ReactNode;
 }) {
   const toneClassName =
     tone === "danger"
@@ -956,5 +1047,16 @@ function MobileWelcomeNotice({
           ? "border-black/5 bg-[#f7f7f5] text-[color:var(--text-secondary)]"
           : "border-[rgba(22,163,74,0.12)] bg-[#f6fbf7] text-[color:var(--text-secondary)]";
 
-  return <div className={`rounded-[20px] border px-4 py-3 text-sm leading-6 ${toneClassName}`}>{children}</div>;
+  return (
+    <div className={`rounded-[20px] border px-4 py-3 text-sm leading-6 ${toneClassName}`}>
+      {action ? (
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 flex-1">{children}</span>
+          {action}
+        </div>
+      ) : (
+        children
+      )}
+    </div>
+  );
 }

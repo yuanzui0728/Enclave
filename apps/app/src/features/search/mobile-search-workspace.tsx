@@ -41,6 +41,7 @@ type MobileSearchWorkspaceProps = {
   onClearKeyword: () => void;
   onCommitSearch: (keyword: string) => void;
   onOpenResult: (item: SearchResultItem) => void;
+  onRetryLoad: () => void;
   onRemoveHistory: (keyword: string) => void;
   scopeCounts: SearchScopeCounts;
   searchText: string;
@@ -88,6 +89,7 @@ export function MobileSearchWorkspace({
   onClearKeyword,
   onCommitSearch,
   onOpenResult,
+  onRetryLoad,
   onRemoveHistory,
   scopeCounts,
   searchText,
@@ -187,13 +189,22 @@ export function MobileSearchWorkspace({
             description={error}
             tone="danger"
             action={
-              <button
-                type="button"
-                onClick={onBack}
-                className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px] text-[color:var(--text-primary)]"
-              >
-                返回上一页
-              </button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={onRetryLoad}
+                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px] text-[color:var(--text-primary)]"
+                >
+                  重试读取
+                </button>
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px] text-[color:var(--text-primary)]"
+                >
+                  返回上一页
+                </button>
+              </div>
             }
           />
         ) : null}

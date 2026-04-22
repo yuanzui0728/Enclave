@@ -65,7 +65,10 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       ? routeState.returnPath
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{
+    message: string;
+    showBackAction?: boolean;
+  } | null>(null);
   const [memberGridExpanded, setMemberGridExpanded] = useState(false);
   const [managementSheetOpen, setManagementSheetOpen] = useState(false);
   const [dangerSheetAction, setDangerSheetAction] = useState<
@@ -124,6 +127,22 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       {safeReturnPath ? "返回上一页" : "返回消息列表"}
     </Button>
   );
+  const handleRetryLoad = () => {
+    void Promise.all([groupQuery.refetch(), membersQuery.refetch()]);
+  };
+  const statusRetryAction = (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={handleRetryLoad}
+        className="rounded-full"
+      >
+        重试读取
+      </Button>
+      {statusBackAction}
+    </div>
+  );
   const renderOperationBackAction = () => (
     <Button
       type="button"
@@ -141,6 +160,17 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       {safeReturnPath ? "返回上一页" : "返回消息列表"}
     </Button>
   );
+  const showNotice = (
+    message: string,
+    options?: {
+      showBackAction?: boolean;
+    },
+  ) => {
+    setNotice({
+      message,
+      ...(options?.showBackAction ? { showBackAction: true } : {}),
+    });
+  };
 
   useEffect(() => {
     setNotice(null);
@@ -180,7 +210,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     mutationFn: (pinned: boolean) =>
       setGroupPinned(groupId, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
-      setNotice(pinned ? "群聊已置顶。" : "群聊已取消置顶。");
+      showNotice(pinned ? "群聊已置顶。" : "群聊已取消置顶。");
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
@@ -226,7 +256,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                       : "关闭了群公告通知。"
                     : "群聊设置已更新。";
 
-      setNotice(nextNotice);
+      showNotice(nextNotice);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
@@ -244,7 +274,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const clearMutation = useMutation({
     mutationFn: () => clearGroupMessages(groupId, baseUrl),
     onSuccess: async () => {
-      setNotice("群聊记录已清空。");
+      showNotice("群聊记录已清空。");
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
@@ -348,7 +378,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       const shared = await shareWithNativeShell(groupSummary);
 
       if (shared) {
-        setNotice("已打开系统分享面板。");
+        showNotice("已打开系统分享面板。");
         return;
       }
     }
@@ -358,26 +388,28 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      setNotice(
+      showNotice(
         nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制群聊摘要。",
+        { showBackAction: true },
       );
       return;
     }
 
     try {
       await navigator.clipboard.writeText(groupSummary.text);
-      setNotice(
+      showNotice(
         nativeMobileShareSupported
           ? "系统分享暂时不可用，已复制群聊摘要。"
           : "群聊摘要已复制。",
       );
     } catch {
-      setNotice(
+      showNotice(
         nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制群聊摘要失败，请稍后重试。",
+        { showBackAction: true },
       );
     }
   }
@@ -508,7 +540,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             title="群聊信息暂时不可用"
             description={groupQuery.error.message}
             tone="danger"
-            action={statusBackAction}
+            action={statusRetryAction}
           />
         </div>
       ) : null}
@@ -519,7 +551,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             title="群成员信息暂时不可用"
             description={membersQuery.error.message}
             tone="danger"
-            action={statusBackAction}
+            action={statusRetryAction}
           />
         </div>
       ) : null}
@@ -529,7 +561,14 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             tone="info"
             className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
-            {notice}
+            {notice.showBackAction ? (
+              <div className="flex items-start justify-between gap-2">
+                <span className="min-w-0 flex-1">{notice.message}</span>
+                {renderOperationBackAction()}
+              </div>
+            ) : (
+              notice.message
+            )}
           </InlineNotice>
         </div>
       ) : null}
@@ -584,11 +623,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 variant="wechat"
                 onClick={() => {
                   if (!hasCollapsedMembers) {
-                    setNotice(`当前群聊共有 ${totalMemberCount} 位成员。`);
+                    showNotice(`当前群聊共有 ${totalMemberCount} 位成员。`);
                     return;
                   }
                   setMemberGridExpanded(true);
-                  setNotice(`已展开全部 ${totalMemberCount} 位群成员。`);
+                  showNotice(`已展开全部 ${totalMemberCount} 位群成员。`);
                 }}
               />
               <ChatSettingRow

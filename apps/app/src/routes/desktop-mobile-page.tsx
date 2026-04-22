@@ -26,6 +26,7 @@ import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { EmptyState } from "../components/empty-state";
+import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import {
   hydrateLiveCompanionFromNative,
@@ -94,6 +95,7 @@ type QuickEntry = {
   label: string;
   description: string;
   to: string;
+  desktopTo?: string;
 };
 
 type MobileHandoffCategory =
@@ -177,6 +179,7 @@ const quickEntries: QuickEntry[] = [
     label: "设置",
     description: "把资料编辑、API Key 和世界配置切到手机端继续处理。",
     to: "/profile/settings",
+    desktopTo: "/desktop/settings",
   },
 ];
 
@@ -664,6 +667,7 @@ export function DesktopMobilePage() {
         pane: "official-accounts",
         accountId: resolvedOfficialHandoffState.accountId,
         articleId: resolvedOfficialHandoffState.articleId,
+        officialMode: "accounts",
         showWorldCharacters: false,
       }),
     });
@@ -1122,7 +1126,7 @@ export function DesktopMobilePage() {
                       复制到手机
                     </Button>
                     <Link
-                      to={item.to as never}
+                      to={(item.desktopTo ?? item.to) as never}
                       className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                     >
                       桌面打开
@@ -1287,6 +1291,7 @@ export function DesktopMobilePage() {
                         hash: buildDesktopContactsRouteHash({
                           pane: "official-accounts",
                           accountId: account.id,
+                          officialMode: "accounts",
                           showWorldCharacters: false,
                         }),
                       });
@@ -1298,6 +1303,7 @@ export function DesktopMobilePage() {
                           pane: "official-accounts",
                           accountId: account.id,
                           articleId: account.recentArticle?.id,
+                          officialMode: "accounts",
                           showWorldCharacters: false,
                         }),
                       });
@@ -1913,7 +1919,15 @@ function RecentConversationRow({
   return (
     <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
-        <AvatarChip name={item.title} size="wechat" />
+        {isPersistedGroupConversation(item) ? (
+          <GroupAvatarChip
+            name={item.title}
+            members={item.participants}
+            size="wechat"
+          />
+        ) : (
+          <AvatarChip name={item.title} src={item.avatar} size="wechat" />
+        )}
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
             {item.title}

@@ -44,6 +44,13 @@ type DesktopMessageAvatarPopoverProps =
       characterId: string;
       fallbackName: string;
       fallbackAvatar?: string | null;
+      navigationContext?: {
+        hideMomentsAction?: boolean;
+        momentsReturnHash?: string;
+        momentsReturnPath?: string;
+        profileReturnHash?: string;
+        profileReturnPath?: string;
+      };
       threadContext?: {
         id: string;
         type: "direct" | "group";
@@ -79,8 +86,20 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
       : ownerName?.trim() || "世界主人";
   const fallbackAvatar =
     props.kind === "character" ? props.fallbackAvatar : ownerAvatar;
+  const navigationContext =
+    props.kind === "character" ? props.navigationContext : undefined;
   const threadContext =
     props.kind === "character" ? props.threadContext : undefined;
+  const defaultReturnHash = threadContext
+    ? buildDesktopChatRouteHash({
+        conversationId: threadContext.id,
+      })
+    : undefined;
+  const profileReturnPath = navigationContext?.profileReturnPath ?? "/tabs/chat";
+  const profileReturnHash = navigationContext?.profileReturnHash ?? defaultReturnHash;
+  const momentsReturnPath = navigationContext?.momentsReturnPath ?? "/tabs/chat";
+  const momentsReturnHash = navigationContext?.momentsReturnHash ?? defaultReturnHash;
+  const hideMomentsAction = Boolean(navigationContext?.hideMomentsAction);
 
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
@@ -415,32 +434,26 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
           variant="secondary"
           size="sm"
           className="rounded-full"
-          onClick={() => {
-            onClose();
-            if (isOwner) {
-              void navigate({ to: "/desktop/settings" });
-              return;
-            }
+            onClick={() => {
+              onClose();
+              if (isOwner) {
+                void navigate({ to: "/desktop/settings" });
+                return;
+              }
 
-            const returnHash = threadContext
-              ? buildDesktopChatRouteHash({
-                  conversationId: threadContext.id,
-                })
-              : undefined;
-
-            void navigate({
-              to: "/character/$characterId",
-              params: { characterId },
-              hash: buildCharacterDetailRouteHash({
-                returnPath: "/tabs/chat",
-                returnHash,
-              }),
-            });
-          }}
-        >
-          {isOwner ? "打开设置" : "查看资料"}
-        </Button>
-        {isOwner || !isFriend ? null : (
+              void navigate({
+                to: "/character/$characterId",
+                params: { characterId },
+                hash: buildCharacterDetailRouteHash({
+                  returnPath: profileReturnPath,
+                  returnHash: profileReturnHash,
+                }),
+              });
+            }}
+          >
+            {isOwner ? "打开设置" : "查看资料"}
+          </Button>
+        {isOwner || !isFriend || hideMomentsAction ? null : (
           <Button
             variant="secondary"
             size="sm"
@@ -448,18 +461,13 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             disabled={!characterId}
             onClick={() => {
               onClose();
-              const returnHash = threadContext
-                ? buildDesktopChatRouteHash({
-                    conversationId: threadContext.id,
-                  })
-                : undefined;
               void navigate({
                 to: "/desktop/friend-moments/$characterId",
                 params: { characterId },
                 hash: buildDesktopFriendMomentsRouteHash({
                   source: "avatar-popover",
-                  returnPath: "/tabs/chat",
-                  returnHash,
+                  returnPath: momentsReturnPath,
+                  returnHash: momentsReturnHash,
                 }),
               });
             }}

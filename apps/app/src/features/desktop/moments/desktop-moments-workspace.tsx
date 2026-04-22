@@ -45,6 +45,10 @@ type DesktopMomentsWorkspaceProps = {
     authorId: string;
     momentId?: string;
   }) => void;
+  onOpenAuthorPopover?: (input: {
+    anchorElement: HTMLButtonElement;
+    moment: Moment;
+  }) => void;
   onRemoveImage: (id: string) => void;
   onRemoveVideo: () => void;
   onToggleFavorite: (momentId: string) => void;
@@ -82,6 +86,7 @@ export function DesktopMomentsWorkspace({
   onImageFilesSelected,
   onLike,
   onOpenAuthorMoments,
+  onOpenAuthorPopover,
   onRemoveImage,
   onRemoveVideo,
   onToggleFavorite,
@@ -208,9 +213,7 @@ export function DesktopMomentsWorkspace({
                 onToggleFavorite={onToggleFavorite}
                 onOpenCompose={() => setShowCompose(true)}
                 onOpenDetail={(momentId) => setSelectedMomentId(momentId)}
-                onSelectAuthor={(authorId, momentId) => {
-                  focusAuthor(authorId, momentId);
-                }}
+                onSelectAuthor={onOpenAuthorPopover}
               />
             </div>
           </div>
@@ -235,6 +238,7 @@ export function DesktopMomentsWorkspace({
         onLike={onLike}
         onToggleFavorite={onToggleFavorite}
         onOpenCompose={() => setShowCompose(true)}
+        onOpenAuthorProfilePopover={onOpenAuthorPopover}
         onSelectAuthor={focusAuthor}
       />
 

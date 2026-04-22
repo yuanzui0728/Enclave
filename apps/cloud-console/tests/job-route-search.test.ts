@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { QUEUE_STATE_FILTERS } from "../src/lib/job-queue-state";
 import {
   JOB_AUDIT_FILTERS,
+  JOB_PAGE_SIZE_OPTIONS,
   JOB_SUPERSEDED_BY_FILTERS,
   buildJobsRouteSearch,
   DEFAULT_JOBS_ROUTE_SEARCH,
@@ -45,6 +46,8 @@ describe("job route search", () => {
           audit: "all",
           supersededBy: "all",
           query: "",
+          page: 1,
+          pageSize: 20,
         },
       },
       {
@@ -56,6 +59,11 @@ describe("job route search", () => {
         description: "job superseded-by filters stay in their expected display order",
         actual: JOB_SUPERSEDED_BY_FILTERS,
         expected: ["all", "provision", "resume", "suspend", "reconcile"],
+      },
+      {
+        description: "job page size options stay in their expected display order",
+        actual: JOB_PAGE_SIZE_OPTIONS,
+        expected: [20, 50, 100],
       },
     ],
   });
@@ -74,6 +82,8 @@ describe("job route search", () => {
           audit: " superseded ",
           supersededBy: " resume ",
           query: "  +1 888  ",
+          page: " 3 ",
+          pageSize: " 50 ",
         },
         expected: {
           status: "running",
@@ -83,6 +93,8 @@ describe("job route search", () => {
           audit: "superseded",
           supersededBy: "resume",
           query: "  +1 888  ",
+          page: 3,
+          pageSize: 50,
         },
       },
     ],
@@ -97,6 +109,8 @@ describe("job route search", () => {
           audit: "legacy",
           supersededBy: "destroy",
           query: 123,
+          page: 0,
+          pageSize: 999,
         },
         expected: DEFAULT_JOBS_ROUTE_SEARCH,
       },
@@ -110,6 +124,8 @@ describe("job route search", () => {
           audit: [],
           supersededBy: {},
           query: null,
+          page: null,
+          pageSize: null,
         },
         expected: DEFAULT_JOBS_ROUTE_SEARCH,
       },
@@ -140,6 +156,8 @@ describe("job route search", () => {
           audit: "superseded",
           supersededBy: "resume",
           query: "retry me",
+          page: 1,
+          pageSize: 20,
         },
       },
       {
@@ -161,6 +179,8 @@ describe("job route search", () => {
           audit: "all",
           supersededBy: "all",
           query: "",
+          page: 1,
+          pageSize: 20,
         },
       },
     ],

@@ -5,7 +5,9 @@ import {
   addFeedComment,
   getBlockedCharacters,
   getFeed,
+  keepShakeSession,
   likeFeedPost,
+  shake,
   triggerSceneFriendRequest,
 } from "@yinjie/contracts";
 import {
@@ -202,7 +204,9 @@ export function DiscoverPage() {
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
-  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  const desktopDiscoverPath = "/tabs/discover";
+  const desktopPathMismatch =
+    isDesktopLayout && pathname !== desktopDiscoverPath;
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
@@ -241,6 +245,38 @@ export function DiscoverPage() {
       composeDraft.reset();
       setSuccessNotice("广场动态已发布，世界居民公开可见。");
       await queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
+    },
+  });
+
+  const shakeMutation = useMutation({
+    mutationFn: async () => {
+      const preview = await shake(undefined, baseUrl);
+      if (!preview) {
+        return null;
+      }
+
+      await keepShakeSession(preview.id, baseUrl);
+      return preview;
+    },
+    onSuccess: async (result) => {
+      if (!result) {
+        setSceneMessage("附近暂时没有新的相遇。");
+        return;
+      }
+
+      setSuccessNotice("随机相遇已写入通讯录。");
+      setSceneMessage(
+        `${result.character.name} 已加入通讯录：${result.greeting ?? "刚刚和你打了招呼。"}`,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-friend-requests", baseUrl],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
     },
   });
 
@@ -323,6 +359,18 @@ export function DiscoverPage() {
     setFeedCommentDrafts({});
     setSuccessNotice("");
   }, [baseUrl, resetComposeDraft]);
+
+  useEffect(() => {
+    if (!desktopPathMismatch) {
+      return;
+    }
+
+    void navigate({
+      to: desktopDiscoverPath,
+      hash: hash || undefined,
+      replace: true,
+    });
+  }, [desktopDiscoverPath, desktopPathMismatch, hash, navigate]);
 
   useEffect(() => {
     if (!successNotice) {
@@ -442,18 +490,11 @@ export function DiscoverPage() {
 
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={() =>
-                    void navigate({
-                      to: "/discover/encounter",
-                      hash: buildMobileDiscoverToolRouteHash({
-                        returnPath: pathname,
-                        returnHash: normalizedHash || undefined,
-                      }),
-                    })
-                  }
+                  onClick={() => shakeMutation.mutate()}
+                  disabled={shakeMutation.isPending}
                   variant="primary"
                 >
-                  摇一摇
+                  {shakeMutation.isPending ? "正在寻找..." : "摇一摇"}
                 </Button>
                 <div className="text-xs text-[color:var(--text-muted)]">
                   先生成临时候选，你决定要不要把他留下。
@@ -482,6 +523,9 @@ export function DiscoverPage() {
               ) : null}
               {sceneMutation.isError && sceneMutation.error instanceof Error ? (
                 <ErrorBlock message={sceneMutation.error.message} />
+              ) : null}
+              {shakeMutation.isError && shakeMutation.error instanceof Error ? (
+                <ErrorBlock message={shakeMutation.error.message} />
               ) : null}
             </AppSection>
 

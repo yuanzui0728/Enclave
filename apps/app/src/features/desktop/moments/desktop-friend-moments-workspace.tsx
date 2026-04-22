@@ -57,6 +57,10 @@ type DesktopFriendMomentsWorkspaceProps = {
   onLike: (momentId: string) => void;
   onOpenMomentsHome: () => void;
   onOpenProfile: () => void;
+  onOpenProfilePopover?: (input: {
+    anchorElement: HTMLButtonElement;
+    momentId?: string;
+  }) => void;
   onRemoveImage: (id: string) => void;
   onRemoveVideo: () => void;
   onRouteStateChange?: (state: DesktopFriendMomentsRouteState) => void;
@@ -99,6 +103,7 @@ export function DesktopFriendMomentsWorkspace({
   onLike,
   onOpenMomentsHome,
   onOpenProfile,
+  onOpenProfilePopover,
   onRemoveImage,
   onRemoveVideo,
   onRouteStateChange,
@@ -158,6 +163,21 @@ export function DesktopFriendMomentsWorkspace({
     });
   }, [onRouteStateChange, selectedMomentId]);
 
+  function openProfilePopover(
+    anchorElement: HTMLButtonElement,
+    momentId?: string,
+  ) {
+    if (onOpenProfilePopover) {
+      onOpenProfilePopover({
+        anchorElement,
+        momentId,
+      });
+      return;
+    }
+
+    onOpenProfile();
+  }
+
   function renderFeedContent() {
     if (isLoading) {
       return (
@@ -214,7 +234,9 @@ export function DesktopFriendMomentsWorkspace({
             onCommentSubmit={() => onCommentSubmit(moment.id)}
             onLike={() => onLike(moment.id)}
             onOpenDetail={() => setSelectedMomentId(moment.id)}
-            onSelectAuthor={onOpenProfile}
+            onSelectAuthor={(event) =>
+              openProfilePopover(event.currentTarget, moment.id)
+            }
             onToggleFavorite={() => onToggleFavorite(moment.id)}
           />
         ))}
@@ -241,7 +263,7 @@ export function DesktopFriendMomentsWorkspace({
                   <div className="flex min-w-0 items-start gap-4">
                     <button
                       type="button"
-                      onClick={onOpenProfile}
+                      onClick={(event) => openProfilePopover(event.currentTarget)}
                       className="shrink-0 rounded-[18px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
                       aria-label={profileActionAriaLabel}
                     >
@@ -253,7 +275,7 @@ export function DesktopFriendMomentsWorkspace({
                     </button>
                     <button
                       type="button"
-                      onClick={onOpenProfile}
+                      onClick={(event) => openProfilePopover(event.currentTarget)}
                       className="min-w-0 text-left transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
                       aria-label={profileActionAriaLabel}
                     >
@@ -358,7 +380,10 @@ export function DesktopFriendMomentsWorkspace({
             onCommentChange={(value) => onCommentChange(selectedMoment.id, value)}
             onCommentSubmit={() => onCommentSubmit(selectedMoment.id)}
             onLike={() => onLike(selectedMoment.id)}
-            onSelectAuthor={onOpenProfile}
+            onAuthorAction={onOpenProfile}
+            onSelectAuthor={(event) =>
+              openProfilePopover(event.currentTarget, selectedMoment.id)
+            }
             onToggleFavorite={() => onToggleFavorite(selectedMoment.id)}
           />
         ) : (
@@ -377,7 +402,7 @@ export function DesktopFriendMomentsWorkspace({
                 <div className="flex items-center gap-4">
                   <button
                     type="button"
-                    onClick={onOpenProfile}
+                    onClick={(event) => openProfilePopover(event.currentTarget)}
                     className="shrink-0 rounded-[18px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
                     aria-label={profileActionAriaLabel}
                   >
@@ -389,7 +414,7 @@ export function DesktopFriendMomentsWorkspace({
                   </button>
                   <button
                     type="button"
-                    onClick={onOpenProfile}
+                    onClick={(event) => openProfilePopover(event.currentTarget)}
                     className="min-w-0 flex-1 text-left transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
                     aria-label={profileActionAriaLabel}
                   >
