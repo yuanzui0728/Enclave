@@ -1,9 +1,27 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appDir = join(scriptDir, "..");
+
+async function loadTypeScriptModule(relativePath) {
+  const source = readFileSync(join(appDir, relativePath), "utf8");
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: relativePath,
+  });
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(
+    transpiled.outputText,
+    "utf8",
+  ).toString("base64")}`;
+
+  return import(moduleUrl);
+}
 
 const expectations = [
   {
@@ -1013,10 +1031,13 @@ const expectations = [
     ],
   },
   {
-    file: "src/features/shell/desktop-nav-config.ts",
+    file: "src/features/shell/desktop-nav-matching.ts",
     description:
-      "desktop shell nav keeps legacy desktop root paths owned by their primary workspace icons, matches by path segment instead of brittle raw startsWith checks, and leaves live-companion exclusive to the bottom More menu",
+      "desktop shell nav keeps its route ownership and path-segment matching in a shared matcher that both runtime code and audits can execute",
     includes: [
+      'export type DesktopNavAction =',
+      "export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [",
+      "export const desktopBottomNavBindings: DesktopNavActionBinding[] = [",
       "function normalizeDesktopNavMatchPath(value: string) {",
       "function matchesDesktopNavPath(pathname: string, match: string) {",
       "normalizedPathname === normalizedMatch ||",
@@ -1033,6 +1054,7 @@ const expectations = [
       '"/favorites",',
       'label: "朋友圈",',
       '"/discover/moments/publish",',
+      '"/friend-moments/",',
       'label: "视频号",',
       '"/discover/channels",',
       '"/channels/authors/"',
@@ -1048,6 +1070,23 @@ const expectations = [
       '"/profile/settings",',
       '"/legal/",',
       '"/desktop/channels/",',
+    ],
+  },
+  {
+    file: "src/features/shell/desktop-nav-config.ts",
+    description:
+      "desktop shell nav UI consumes the shared matcher bindings instead of duplicating the path ownership table in the icon config",
+    includes: [
+      'import {',
+      'desktopBottomNavBindings,',
+      'desktopPrimaryNavBindings,',
+      'type DesktopNavActionBinding,',
+      'type DesktopNavRouteBinding,',
+      'const desktopPrimaryNavIcons: Record<',
+      "desktopPrimaryNavBindings.map((item) => ({",
+      'const desktopBottomNavIcons: Record<',
+      "desktopBottomNavBindings.map((item) => ({",
+      "export { isDesktopNavItemActive };",
     ],
   },
   {
@@ -1584,6 +1623,108 @@ const guardedRouteFiles = [
   "src/routes/world-characters-page.tsx",
 ];
 
+const desktopNavRegressionCases = [
+  { pathname: "/tabs/chat", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/tabs/chat/", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/chat", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/chat/123", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/group/123", primaryTo: "/tabs/chat", bottomAction: null },
+  {
+    pathname: "/official-accounts/service/42",
+    primaryTo: "/tabs/chat",
+    bottomAction: null,
+  },
+  { pathname: "/tabs/contacts", primaryTo: "/tabs/contacts", bottomAction: null },
+  { pathname: "/contacts", primaryTo: "/tabs/contacts", bottomAction: null },
+  {
+    pathname: "/official-accounts",
+    primaryTo: "/tabs/contacts",
+    bottomAction: null,
+  },
+  {
+    pathname: "/official-accounts/articles/42",
+    primaryTo: "/tabs/contacts",
+    bottomAction: null,
+  },
+  {
+    pathname: "/tabs/favorites",
+    primaryTo: "/tabs/favorites",
+    bottomAction: null,
+  },
+  { pathname: "/favorites", primaryTo: "/tabs/favorites", bottomAction: null },
+  { pathname: "/notes", primaryTo: "/tabs/favorites", bottomAction: null },
+  { pathname: "/tabs/moments", primaryTo: "/tabs/moments", bottomAction: null },
+  {
+    pathname: "/discover/moments/publish",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  {
+    pathname: "/friend-moments/abc",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  {
+    pathname: "/desktop/friend-moments/abc",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  { pathname: "/discover/feed", primaryTo: "/tabs/feed", bottomAction: null },
+  {
+    pathname: "/tabs/channels/",
+    primaryTo: "/tabs/channels",
+    bottomAction: null,
+  },
+  {
+    pathname: "/discover/channels",
+    primaryTo: "/tabs/channels",
+    bottomAction: null,
+  },
+  {
+    pathname: "/channels/authors/42",
+    primaryTo: "/tabs/channels",
+    bottomAction: null,
+  },
+  { pathname: "/tabs/search", primaryTo: "/tabs/search", bottomAction: null },
+  { pathname: "/search", primaryTo: "/tabs/search", bottomAction: null },
+  { pathname: "/games", primaryTo: "/tabs/games", bottomAction: null },
+  {
+    pathname: "/discover/games",
+    primaryTo: "/tabs/games",
+    bottomAction: null,
+  },
+  {
+    pathname: "/discover/mini-programs",
+    primaryTo: "/tabs/mini-programs",
+    bottomAction: null,
+  },
+  {
+    pathname: "/desktop/mobile",
+    primaryTo: null,
+    bottomAction: "open-mobile-panel",
+  },
+  {
+    pathname: "/desktop/settings",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
+  {
+    pathname: "/profile/settings",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
+  {
+    pathname: "/legal/privacy",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
+  {
+    pathname: "/desktop/channels/live-companion",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
+];
+
 const failures = [];
 
 for (const expectation of expectations) {
@@ -1610,8 +1751,58 @@ for (const relativePath of guardedRouteFiles) {
   }
 }
 
+const desktopNavMatchingModule = await loadTypeScriptModule(
+  "src/features/shell/desktop-nav-matching.ts",
+);
+const {
+  desktopBottomNavBindings,
+  desktopPrimaryNavBindings,
+  isDesktopNavItemActive,
+} = desktopNavMatchingModule;
+
+for (const testCase of desktopNavRegressionCases) {
+  const activePrimaryItems = desktopPrimaryNavBindings.filter((item) =>
+    isDesktopNavItemActive(testCase.pathname, item),
+  );
+  if (activePrimaryItems.length > 1) {
+    failures.push(
+      `${testCase.pathname}: expected at most one primary nav match, got ${activePrimaryItems
+        .map((item) => item.to)
+        .join(", ")}`,
+    );
+  }
+
+  const activeBottomItems = desktopBottomNavBindings.filter((item) =>
+    isDesktopNavItemActive(testCase.pathname, item),
+  );
+  if (activeBottomItems.length > 1) {
+    failures.push(
+      `${testCase.pathname}: expected at most one bottom nav match, got ${activeBottomItems
+        .map((item) => item.action)
+        .join(", ")}`,
+    );
+  }
+
+  const actualPrimaryTo = activePrimaryItems[0]?.to ?? null;
+  if (actualPrimaryTo !== testCase.primaryTo) {
+    failures.push(
+      `${testCase.pathname}: expected primary nav ${String(testCase.primaryTo)}, got ${String(actualPrimaryTo)}`,
+    );
+  }
+
+  const actualBottomAction = activeBottomItems[0]?.action ?? null;
+  if (actualBottomAction !== testCase.bottomAction) {
+    failures.push(
+      `${testCase.pathname}: expected bottom nav ${String(testCase.bottomAction)}, got ${String(actualBottomAction)}`,
+    );
+  }
+}
+
 console.log("Desktop web routing audit");
-console.log(`- Checked files: ${expectations.length + guardedRouteFiles.length}`);
+console.log(
+  `- Checked files: ${expectations.length + guardedRouteFiles.length}`,
+);
+console.log(`- Nav regression cases: ${desktopNavRegressionCases.length}`);
 
 if (failures.length > 0) {
   console.error("Desktop web routing audit failed:");
