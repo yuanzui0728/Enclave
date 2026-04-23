@@ -25,8 +25,13 @@ export class InferenceAdminController {
       transcriptionEndpoint?: string;
       transcriptionModel?: string;
       transcriptionApiKey?: string;
+      ttsEndpoint?: string;
+      ttsApiKey?: string;
       ttsModel?: string;
       ttsVoice?: string;
+      imageGenerationEndpoint?: string;
+      imageGenerationModel?: string;
+      imageGenerationApiKey?: string;
       isEnabled?: boolean;
       notes?: string | null;
     },
@@ -48,8 +53,13 @@ export class InferenceAdminController {
       transcriptionEndpoint?: string;
       transcriptionModel?: string;
       transcriptionApiKey?: string;
+      ttsEndpoint?: string;
+      ttsApiKey?: string;
       ttsModel?: string;
       ttsVoice?: string;
+      imageGenerationEndpoint?: string;
+      imageGenerationModel?: string;
+      imageGenerationApiKey?: string;
       isEnabled?: boolean;
       notes?: string | null;
     },
@@ -75,9 +85,80 @@ export class InferenceAdminController {
       transcriptionEndpoint?: string;
       transcriptionModel?: string;
       transcriptionApiKey?: string;
+      ttsEndpoint?: string;
+      ttsApiKey?: string;
+      ttsModel?: string;
+      ttsVoice?: string;
+      imageGenerationEndpoint?: string;
+      imageGenerationModel?: string;
+      imageGenerationApiKey?: string;
     },
   ) {
     return this.inferenceService.testProviderConnection(body);
+  }
+
+  @Post('diagnostics/text')
+  diagnoseText(
+    @Body()
+    body: {
+      providerAccountId?: string;
+      characterId?: string;
+      prompt?: string;
+    },
+  ) {
+    return this.inferenceService.runDiagnostic('text', body);
+  }
+
+  @Post('diagnostics/image-input')
+  diagnoseImageInput(
+    @Body()
+    body: {
+      providerAccountId?: string;
+      characterId?: string;
+      prompt?: string;
+    },
+  ) {
+    return this.inferenceService.runDiagnostic('image_input', body);
+  }
+
+  @Post('diagnostics/transcription')
+  diagnoseTranscription(
+    @Body()
+    body: {
+      providerAccountId?: string;
+      characterId?: string;
+    },
+  ) {
+    return this.inferenceService.runDiagnostic('transcription', body);
+  }
+
+  @Post('diagnostics/tts')
+  diagnoseTts(
+    @Body()
+    body: {
+      providerAccountId?: string;
+      characterId?: string;
+      prompt?: string;
+    },
+  ) {
+    return this.inferenceService.runDiagnostic('tts', body);
+  }
+
+  @Post('diagnostics/image-generation')
+  diagnoseImageGeneration(
+    @Body()
+    body: {
+      providerAccountId?: string;
+      characterId?: string;
+      prompt?: string;
+    },
+  ) {
+    return this.inferenceService.runDiagnostic('image_generation', body);
+  }
+
+  @Post('diagnostics/digital-human')
+  diagnoseDigitalHuman() {
+    return this.inferenceService.runDiagnostic('digital_human', {});
   }
 
   @Post('model-personas/install')

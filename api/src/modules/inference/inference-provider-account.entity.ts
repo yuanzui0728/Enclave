@@ -42,10 +42,25 @@ export class InferenceProviderAccountEntity {
   transcriptionApiKeyEncrypted?: string | null;
 
   @Column('text', { nullable: true })
+  ttsEndpoint?: string | null;
+
+  @Column('text', { nullable: true })
+  ttsApiKeyEncrypted?: string | null;
+
+  @Column('text', { nullable: true })
   ttsModel?: string | null;
 
   @Column('text', { nullable: true })
   ttsVoice?: string | null;
+
+  @Column('text', { nullable: true })
+  imageGenerationEndpoint?: string | null;
+
+  @Column('text', { nullable: true })
+  imageGenerationModel?: string | null;
+
+  @Column('text', { nullable: true })
+  imageGenerationApiKeyEncrypted?: string | null;
 
   @Column({ default: false })
   isDefault: boolean;

@@ -42,6 +42,13 @@ export class SystemController {
       transcriptionEndpoint?: string;
       transcriptionModel?: string;
       transcriptionApiKey?: string;
+      ttsEndpoint?: string;
+      ttsApiKey?: string;
+      ttsModel?: string;
+      ttsVoice?: string;
+      imageGenerationEndpoint?: string;
+      imageGenerationModel?: string;
+      imageGenerationApiKey?: string;
     },
   ) {
     return this.systemService.setProviderConfig(body);
@@ -59,6 +66,13 @@ export class SystemController {
       transcriptionEndpoint?: string;
       transcriptionModel?: string;
       transcriptionApiKey?: string;
+      ttsEndpoint?: string;
+      ttsApiKey?: string;
+      ttsModel?: string;
+      ttsVoice?: string;
+      imageGenerationEndpoint?: string;
+      imageGenerationModel?: string;
+      imageGenerationApiKey?: string;
     },
   ) {
     return this.systemService.testProviderConnection(body);

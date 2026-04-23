@@ -101,7 +101,7 @@
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
-**推理**：InferenceProviderAccount · InferenceModelCatalogEntry
+**推理**：InferenceProviderAccount · InferenceModelCatalogEntry（Provider 账户已区分主推理、语音转写、TTS、图片生成独立 endpoint / model / API Key 配置）
 
 **表情**：ChatCustomSticker
 
@@ -454,6 +454,12 @@
 - `PATCH /api/admin/inference/providers/:id`
 - `POST /api/admin/inference/providers/:id/default`
 - `POST /api/admin/inference/providers/test`
+- `POST /api/admin/inference/diagnostics/text`
+- `POST /api/admin/inference/diagnostics/image-input`
+- `POST /api/admin/inference/diagnostics/transcription`
+- `POST /api/admin/inference/diagnostics/tts`
+- `POST /api/admin/inference/diagnostics/image-generation`
+- `POST /api/admin/inference/diagnostics/digital-human`
 - `POST /api/admin/inference/model-personas/install`
 - `POST /api/admin/inference/model-personas/rebind`
 

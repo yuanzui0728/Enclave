@@ -15,9 +15,15 @@ export interface InferenceStatus {
   healthy: boolean;
   activeProvider?: string;
   activeTranscriptionProvider?: string;
-  transcriptionMode?: "fallback" | "dedicated";
+  activeTtsProvider?: string;
+  activeImageGenerationProvider?: string;
+  transcriptionMode?: "dedicated" | "unconfigured";
   speechReady: boolean;
+  speechSynthesisReady?: boolean;
+  imageInputReady?: boolean;
+  imageGenerationReady?: boolean;
   speechMessage?: string;
+  imageGenerationMessage?: string;
   queueDepth: number;
   maxConcurrency: number;
   inFlightRequests: number;
@@ -126,6 +132,13 @@ export interface ProviderTestRequest {
   transcriptionEndpoint?: string;
   transcriptionModel?: string;
   transcriptionApiKey?: string;
+  ttsEndpoint?: string;
+  ttsApiKey?: string;
+  ttsModel?: string;
+  ttsVoice?: string;
+  imageGenerationEndpoint?: string;
+  imageGenerationModel?: string;
+  imageGenerationApiKey?: string;
 }
 
 export interface ProviderTestResult {
@@ -145,6 +158,13 @@ export interface ProviderConfig {
   transcriptionEndpoint?: string;
   transcriptionModel?: string;
   transcriptionApiKey?: string;
+  ttsEndpoint?: string;
+  ttsApiKey?: string;
+  ttsModel?: string;
+  ttsVoice?: string;
+  imageGenerationEndpoint?: string;
+  imageGenerationModel?: string;
+  imageGenerationApiKey?: string;
 }
 
 export interface InferencePreviewRequest {

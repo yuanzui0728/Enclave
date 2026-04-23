@@ -38,8 +38,6 @@ import {
   type ResolvedInferenceCapabilityProfile,
 } from '../inference/inference.service';
 
-const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
-const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 const DEFAULT_TTS_VOICE = 'alloy';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_DOCUMENT_EXTRACTION_BYTES = 512 * 1024;
@@ -85,8 +83,13 @@ type ResolvedProviderConfig = {
   transcriptionEndpoint: string;
   transcriptionApiKey: string;
   transcriptionModel: string;
+  ttsEndpoint: string;
+  ttsApiKey: string;
   ttsModel: string;
   ttsVoice: string;
+  imageGenerationEndpoint: string;
+  imageGenerationApiKey: string;
+  imageGenerationModel: string;
   apiStyle: 'openai-chat-completions' | 'openai-responses';
   mode: 'cloud' | 'local-compatible';
 };
@@ -247,17 +250,32 @@ export class AiOrchestratorService {
       transcriptionEndpoint: provider.transcriptionEndpoint,
       transcriptionApiKey: provider.transcriptionApiKey,
       transcriptionModel: provider.transcriptionModel,
+      ttsEndpoint: provider.ttsEndpoint,
+      ttsApiKey: provider.ttsApiKey,
       ttsModel: provider.ttsModel,
       ttsVoice: provider.ttsVoice,
+      imageGenerationEndpoint: provider.imageGenerationEndpoint,
+      imageGenerationApiKey: provider.imageGenerationApiKey,
+      imageGenerationModel: provider.imageGenerationModel,
       apiStyle: provider.apiStyle,
       mode: provider.mode,
     };
   }
 
-  private createProviderClient(provider: ResolvedProviderConfig) {
+  private createProviderClientFromEndpoint(input: {
+    endpoint: string;
+    apiKey: string;
+  }) {
     return new OpenAI({
+      apiKey: input.apiKey,
+      baseURL: this.normalizeProviderEndpoint(input.endpoint),
+    });
+  }
+
+  private createProviderClient(provider: ResolvedProviderConfig) {
+    return this.createProviderClientFromEndpoint({
+      endpoint: provider.endpoint,
       apiKey: provider.apiKey,
-      baseURL: provider.endpoint,
     });
   }
 
@@ -266,8 +284,15 @@ export class AiOrchestratorService {
   ): Promise<ResolvedInferenceCapabilityProfile> {
     return this.inferenceService.resolveCapabilityProfile({
       model: provider.model,
+      ttsEndpoint: provider.ttsEndpoint,
+      ttsApiKey: provider.ttsApiKey,
       ttsModel: provider.ttsModel,
+      transcriptionEndpoint: provider.transcriptionEndpoint,
+      transcriptionApiKey: provider.transcriptionApiKey,
       transcriptionModel: provider.transcriptionModel,
+      imageGenerationEndpoint: provider.imageGenerationEndpoint,
+      imageGenerationApiKey: provider.imageGenerationApiKey,
+      imageGenerationModel: provider.imageGenerationModel,
       apiStyle: provider.apiStyle,
       mode: provider.mode,
     });
@@ -645,29 +670,7 @@ export class AiOrchestratorService {
   }
 
   private resolveImageGenerationModel(provider: ResolvedProviderConfig) {
-    const normalizedModel = provider.model.trim().toLowerCase();
-    if (!normalizedModel) {
-      return null;
-    }
-
-    if (/^(gpt-image|chatgpt-image|dall-e)/i.test(normalizedModel)) {
-      return provider.model;
-    }
-
-    if (/^(gpt-|o\d)/i.test(normalizedModel)) {
-      return 'gpt-image-1';
-    }
-
-    try {
-      const hostname = new URL(provider.endpoint).hostname.toLowerCase();
-      if (hostname.includes('openai.com')) {
-        return 'gpt-image-1';
-      }
-    } catch {
-      // ignore malformed endpoint and fall through
-    }
-
-    return null;
+    return provider.imageGenerationModel?.trim() || null;
   }
 
   private getImageFileExtension(mimeType?: string | null) {
@@ -749,10 +752,16 @@ export class AiOrchestratorService {
         );
       case 'image_generation':
         return Boolean(
-          provider.apiKey?.trim() && this.resolveImageGenerationModel(provider),
+          provider.imageGenerationEndpoint?.trim() &&
+            provider.imageGenerationApiKey?.trim() &&
+            this.resolveImageGenerationModel(provider),
         );
       case 'tts':
-        return Boolean(provider.apiKey?.trim() && provider.ttsModel?.trim());
+        return Boolean(
+          provider.ttsEndpoint?.trim() &&
+            provider.ttsApiKey?.trim() &&
+            provider.ttsModel?.trim(),
+        );
       case 'text':
       default:
         return Boolean(provider.apiKey?.trim() && provider.model?.trim());
@@ -774,15 +783,15 @@ export class AiOrchestratorService {
       case 'image_generation':
         return [
           provider.mode,
-          provider.endpoint,
-          provider.apiKey,
+          provider.imageGenerationEndpoint,
+          provider.imageGenerationApiKey,
           this.resolveImageGenerationModel(provider),
         ].join('|');
       case 'tts':
         return [
           provider.mode,
-          provider.endpoint,
-          provider.apiKey,
+          provider.ttsEndpoint,
+          provider.ttsApiKey,
           provider.ttsModel,
         ].join('|');
       case 'text':
@@ -2469,7 +2478,10 @@ export class AiOrchestratorService {
       }
 
       attemptedProvider = true;
-      const client = this.createProviderClient(provider);
+      const client = this.createProviderClientFromEndpoint({
+        endpoint: provider.imageGenerationEndpoint,
+        apiKey: provider.imageGenerationApiKey,
+      });
       try {
         const body: OpenAI.Images.ImageGenerateParamsNonStreaming = {
           model: imageModel,
@@ -2723,7 +2735,10 @@ export class AiOrchestratorService {
       attemptedProvider = true;
       const voice =
         options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE;
-      const client = this.createProviderClient(provider);
+      const client = this.createProviderClientFromEndpoint({
+        endpoint: provider.ttsEndpoint,
+        apiKey: provider.ttsApiKey,
+      });
 
       try {
         const response = await this.retrySpeechRequest('speech synthesis', () =>

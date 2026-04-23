@@ -25,6 +25,36 @@ const DEFAULT_PROVIDER_ID = 'provider_default';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_INLINE_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_TRANSCRIPTION_BYTES = 10 * 1024 * 1024;
+const IMAGE_INPUT_PROBE_DATA_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAIElEQVR4nGO4o6CAHX3AjhhGNdBIwwfs6AN2NKqBJhoAXkPsEKPssDYAAAAASUVORK5CYII=';
+
+type InferenceDiagnosticCapability =
+  | 'text'
+  | 'image_input'
+  | 'transcription'
+  | 'tts'
+  | 'image_generation'
+  | 'digital_human';
+
+type InferenceDiagnosticInput = {
+  providerAccountId?: string;
+  characterId?: string;
+  prompt?: string;
+};
+
+type InferenceDiagnosticResult = {
+  capability: InferenceDiagnosticCapability;
+  status: 'ok' | 'unavailable' | 'failed';
+  success: boolean;
+  real: boolean;
+  message: string;
+  providerAccountId?: string;
+  providerName?: string;
+  endpoint?: string;
+  model?: string;
+  latencyMs: number;
+  metadata?: Record<string, unknown>;
+};
 
 type ProviderPayload = {
   name?: string;
@@ -37,8 +67,13 @@ type ProviderPayload = {
   transcriptionEndpoint?: string;
   transcriptionModel?: string;
   transcriptionApiKey?: string;
+  ttsEndpoint?: string;
+  ttsApiKey?: string;
   ttsModel?: string;
   ttsVoice?: string;
+  imageGenerationEndpoint?: string;
+  imageGenerationModel?: string;
+  imageGenerationApiKey?: string;
   isEnabled?: boolean;
   notes?: string | null;
 };
@@ -54,8 +89,13 @@ export type ResolvedInferenceProviderConfig = {
   transcriptionEndpoint: string;
   transcriptionApiKey: string;
   transcriptionModel: string;
+  ttsEndpoint: string;
+  ttsApiKey: string;
   ttsModel: string;
   ttsVoice: string;
+  imageGenerationEndpoint: string;
+  imageGenerationApiKey: string;
+  imageGenerationModel: string;
   apiStyle: 'openai-chat-completions' | 'openai-responses';
   mode: 'cloud' | 'local-compatible';
 };
@@ -382,6 +422,16 @@ export class InferenceService implements OnModuleInit {
         payload.transcriptionApiKey !== undefined
           ? this.encodeSecret(payload.transcriptionApiKey)
           : existing?.transcriptionApiKeyEncrypted ?? null,
+      ttsEndpoint:
+        payload.ttsEndpoint !== undefined
+          ? payload.ttsEndpoint.trim()
+            ? normalizeProviderEndpoint(payload.ttsEndpoint)
+            : null
+          : existing?.ttsEndpoint ?? null,
+      ttsApiKeyEncrypted:
+        payload.ttsApiKey !== undefined
+          ? this.encodeSecret(payload.ttsApiKey)
+          : existing?.ttsApiKeyEncrypted ?? null,
       ttsModel:
         payload.ttsModel !== undefined
           ? payload.ttsModel.trim() || null
@@ -390,6 +440,20 @@ export class InferenceService implements OnModuleInit {
         payload.ttsVoice !== undefined
           ? payload.ttsVoice.trim() || null
           : existing?.ttsVoice ?? DEFAULT_TTS_VOICE,
+      imageGenerationEndpoint:
+        payload.imageGenerationEndpoint !== undefined
+          ? payload.imageGenerationEndpoint.trim()
+            ? normalizeProviderEndpoint(payload.imageGenerationEndpoint)
+            : null
+          : existing?.imageGenerationEndpoint ?? null,
+      imageGenerationModel:
+        payload.imageGenerationModel !== undefined
+          ? payload.imageGenerationModel.trim() || null
+          : existing?.imageGenerationModel ?? null,
+      imageGenerationApiKeyEncrypted:
+        payload.imageGenerationApiKey !== undefined
+          ? this.encodeSecret(payload.imageGenerationApiKey)
+          : existing?.imageGenerationApiKeyEncrypted ?? null,
       isEnabled: payload.isEnabled ?? existing?.isEnabled ?? true,
       notes:
         payload.notes !== undefined
@@ -402,6 +466,10 @@ export class InferenceService implements OnModuleInit {
     const apiKey = this.decodeSecret(account.apiKeyEncrypted);
     const transcriptionApiKey = this.decodeSecret(
       account.transcriptionApiKeyEncrypted,
+    );
+    const ttsApiKey = this.decodeSecret(account.ttsApiKeyEncrypted);
+    const imageGenerationApiKey = this.decodeSecret(
+      account.imageGenerationApiKeyEncrypted,
     );
 
     return {
@@ -421,8 +489,15 @@ export class InferenceService implements OnModuleInit {
       transcriptionModel: account.transcriptionModel ?? null,
       transcriptionApiKey: transcriptionApiKey || undefined,
       transcriptionHasApiKey: Boolean(transcriptionApiKey),
+      ttsEndpoint: account.ttsEndpoint ?? null,
+      ttsApiKey: ttsApiKey || undefined,
+      ttsHasApiKey: Boolean(ttsApiKey),
       ttsModel: account.ttsModel ?? DEFAULT_TTS_MODEL,
       ttsVoice: account.ttsVoice ?? DEFAULT_TTS_VOICE,
+      imageGenerationEndpoint: account.imageGenerationEndpoint ?? null,
+      imageGenerationModel: account.imageGenerationModel ?? null,
+      imageGenerationApiKey: imageGenerationApiKey || undefined,
+      imageGenerationHasApiKey: Boolean(imageGenerationApiKey),
       isDefault: account.isDefault,
       isEnabled: account.isEnabled,
       notes: account.notes ?? null,
@@ -463,6 +538,10 @@ export class InferenceService implements OnModuleInit {
     const transcriptionApiKey = this.decodeSecret(
       account.transcriptionApiKeyEncrypted,
     );
+    const ttsApiKey = this.decodeSecret(account.ttsApiKeyEncrypted);
+    const imageGenerationApiKey = this.decodeSecret(
+      account.imageGenerationApiKeyEncrypted,
+    );
 
     await Promise.all([
       this.systemConfig.setConfig('provider_endpoint', account.endpoint),
@@ -483,12 +562,29 @@ export class InferenceService implements OnModuleInit {
         transcriptionApiKey,
       ),
       this.systemConfig.setConfig(
+        'provider_tts_endpoint',
+        account.ttsEndpoint ?? '',
+      ),
+      this.systemConfig.setConfig('provider_tts_api_key', ttsApiKey),
+      this.systemConfig.setConfig(
         'provider_tts_model',
         account.ttsModel ?? DEFAULT_TTS_MODEL,
       ),
       this.systemConfig.setConfig(
         'provider_tts_voice',
         account.ttsVoice ?? DEFAULT_TTS_VOICE,
+      ),
+      this.systemConfig.setConfig(
+        'provider_image_generation_endpoint',
+        account.imageGenerationEndpoint ?? '',
+      ),
+      this.systemConfig.setConfig(
+        'provider_image_generation_model',
+        account.imageGenerationModel ?? '',
+      ),
+      this.systemConfig.setConfig(
+        'provider_image_generation_api_key',
+        imageGenerationApiKey,
       ),
       this.systemConfig.setAiModel(account.defaultModelId),
     ]);
@@ -551,6 +647,12 @@ export class InferenceService implements OnModuleInit {
     const transcriptionApiKey =
       (await this.systemConfig.getConfig('provider_transcription_api_key'))?.trim() ||
       '';
+    const ttsEndpoint =
+      (await this.systemConfig.getConfig('provider_tts_endpoint'))?.trim() ||
+      '';
+    const ttsApiKey =
+      (await this.systemConfig.getConfig('provider_tts_api_key'))?.trim() ||
+      '';
     const mode =
       (await this.systemConfig.getConfig('provider_mode'))?.trim() || 'cloud';
     const apiStyle =
@@ -562,6 +664,18 @@ export class InferenceService implements OnModuleInit {
     const ttsVoice =
       (await this.systemConfig.getConfig('provider_tts_voice'))?.trim() ||
       DEFAULT_TTS_VOICE;
+    const imageGenerationEndpoint =
+      (await this.systemConfig.getConfig(
+        'provider_image_generation_endpoint',
+      ))?.trim() || '';
+    const imageGenerationModel =
+      (await this.systemConfig.getConfig(
+        'provider_image_generation_model',
+      ))?.trim() || '';
+    const imageGenerationApiKey =
+      (await this.systemConfig.getConfig(
+        'provider_image_generation_api_key',
+      ))?.trim() || '';
 
     const created = await this.providerRepo.save(
       this.providerRepo.create({
@@ -581,8 +695,17 @@ export class InferenceService implements OnModuleInit {
           : null,
         transcriptionModel: transcriptionModel || null,
         transcriptionApiKeyEncrypted: this.encodeSecret(transcriptionApiKey),
+        ttsEndpoint: ttsEndpoint ? normalizeProviderEndpoint(ttsEndpoint) : null,
+        ttsApiKeyEncrypted: this.encodeSecret(ttsApiKey),
         ttsModel,
         ttsVoice,
+        imageGenerationEndpoint: imageGenerationEndpoint
+          ? normalizeProviderEndpoint(imageGenerationEndpoint)
+          : null,
+        imageGenerationModel: imageGenerationModel || null,
+        imageGenerationApiKeyEncrypted: this.encodeSecret(
+          imageGenerationApiKey,
+        ),
         isDefault: true,
         isEnabled: true,
         notes: '由旧版 system/provider 配置自动迁移。',
@@ -601,7 +724,18 @@ export class InferenceService implements OnModuleInit {
   async resolveCapabilityProfile(
     input: Pick<
       ResolvedInferenceProviderConfig,
-      'model' | 'ttsModel' | 'transcriptionModel' | 'apiStyle' | 'mode'
+      | 'model'
+      | 'ttsEndpoint'
+      | 'ttsApiKey'
+      | 'ttsModel'
+      | 'transcriptionEndpoint'
+      | 'transcriptionApiKey'
+      | 'transcriptionModel'
+      | 'imageGenerationEndpoint'
+      | 'imageGenerationApiKey'
+      | 'imageGenerationModel'
+      | 'apiStyle'
+      | 'mode'
     >,
   ): Promise<ResolvedInferenceCapabilityProfile> {
     await this.ensureModelCapabilityCache();
@@ -611,8 +745,11 @@ export class InferenceService implements OnModuleInit {
       catalogEntry?.supportsVision ?? this.inferVisionSupport(input.model);
     const supportsAudio =
       catalogEntry?.supportsAudio ?? this.inferAudioSupport(input.model);
-    const supportsImageGeneration =
-      this.inferImageGenerationSupport(input.model);
+    const supportsImageGeneration = Boolean(
+      input.imageGenerationEndpoint?.trim() &&
+        input.imageGenerationApiKey?.trim() &&
+        input.imageGenerationModel?.trim(),
+    );
 
     return {
       supportsTextInput: true,
@@ -623,8 +760,16 @@ export class InferenceService implements OnModuleInit {
       supportsNativeDocumentInput: input.apiStyle === 'openai-responses',
       supportsImageGeneration,
       supportsStructuredDocumentInput: true,
-      supportsSpeechSynthesis: Boolean(input.ttsModel?.trim()),
-      supportsTranscription: Boolean(input.transcriptionModel?.trim()),
+      supportsSpeechSynthesis: Boolean(
+        input.ttsEndpoint?.trim() &&
+          input.ttsApiKey?.trim() &&
+          input.ttsModel?.trim(),
+      ),
+      supportsTranscription: Boolean(
+        input.transcriptionEndpoint?.trim() &&
+          input.transcriptionApiKey?.trim() &&
+          input.transcriptionModel?.trim(),
+      ),
       supportsResponsesApi: input.apiStyle === 'openai-responses',
       requiresPublicAssetUrl: input.mode !== 'local-compatible',
       maxInlineImageBytes: MAX_INLINE_IMAGE_BYTES,
@@ -848,6 +993,447 @@ export class InferenceService implements OnModuleInit {
     };
   }
 
+  async runDiagnostic(
+    capability: InferenceDiagnosticCapability,
+    input: InferenceDiagnosticInput,
+  ): Promise<InferenceDiagnosticResult> {
+    if (capability === 'digital_human') {
+      return this.runDigitalHumanDiagnostic();
+    }
+
+    const provider = await this.resolveDiagnosticProvider(input);
+    const startedAt = Date.now();
+
+    try {
+      if (capability === 'text') {
+        return await this.runTextDiagnostic(provider, input, startedAt);
+      }
+
+      if (capability === 'image_input') {
+        return await this.runImageInputDiagnostic(provider, input, startedAt);
+      }
+
+      if (capability === 'transcription') {
+        return await this.runTranscriptionDiagnostic(provider, startedAt);
+      }
+
+      if (capability === 'tts') {
+        return await this.runTtsDiagnostic(provider, input, startedAt);
+      }
+
+      return await this.runImageGenerationDiagnostic(provider, input, startedAt);
+    } catch (error) {
+      return this.buildDiagnosticResult(capability, provider, startedAt, {
+        status: 'failed',
+        success: false,
+        real: false,
+        message: extractErrorMessage(error),
+      });
+    }
+  }
+
+  private async resolveDiagnosticProvider(input: InferenceDiagnosticInput) {
+    const providerAccountId = input.providerAccountId?.trim();
+    if (providerAccountId) {
+      const account = await this.providerRepo.findOneBy({
+        id: providerAccountId,
+      });
+      if (!account) {
+        throw new NotFoundException(
+          `Provider account ${providerAccountId} not found.`,
+        );
+      }
+
+      return this.toResolvedProviderConfig({
+        account,
+        modelId: account.defaultModelId,
+        allowOwnerKeyOverride: true,
+      });
+    }
+
+    return this.resolveRuntimeProviderConfig({
+      characterId: input.characterId?.trim() || null,
+    });
+  }
+
+  private buildDiagnosticResult(
+    capability: InferenceDiagnosticCapability,
+    provider: ResolvedInferenceProviderConfig,
+    startedAt: number,
+    result: Omit<
+      InferenceDiagnosticResult,
+      | 'capability'
+      | 'providerAccountId'
+      | 'providerName'
+      | 'endpoint'
+      | 'model'
+      | 'latencyMs'
+    > & {
+      endpoint?: string;
+      model?: string;
+    },
+  ): InferenceDiagnosticResult {
+    return {
+      capability,
+      status: result.status,
+      success: result.success,
+      real: result.real,
+      message: result.message,
+      providerAccountId: provider.accountId,
+      providerName: provider.accountName,
+      endpoint: result.endpoint ?? provider.endpoint,
+      model: result.model ?? provider.model,
+      latencyMs: Date.now() - startedAt,
+      metadata: result.metadata,
+    };
+  }
+
+  private buildUnavailableDiagnosticResult(
+    capability: InferenceDiagnosticCapability,
+    provider: ResolvedInferenceProviderConfig,
+    startedAt: number,
+    message: string,
+    metadata?: Record<string, unknown>,
+  ) {
+    return this.buildDiagnosticResult(capability, provider, startedAt, {
+      status: 'unavailable',
+      success: false,
+      real: false,
+      message,
+      metadata,
+    });
+  }
+
+  private async runTextDiagnostic(
+    provider: ResolvedInferenceProviderConfig,
+    input: InferenceDiagnosticInput,
+    startedAt: number,
+  ) {
+    if (!provider.apiKey?.trim() || !provider.model?.trim()) {
+      return this.buildUnavailableDiagnosticResult(
+        'text',
+        provider,
+        startedAt,
+        '主推理 provider 缺少 API Key 或默认模型。',
+      );
+    }
+
+    const client = this.buildProviderClient({
+      endpoint: provider.endpoint,
+      apiKey: provider.apiKey,
+      model: provider.model,
+    });
+    const prompt = input.prompt?.trim() || '请只回复 ok。';
+    if (provider.apiStyle === 'openai-responses') {
+      await client.responses.create({
+        model: provider.model,
+        input: prompt,
+        max_output_tokens: 8,
+        temperature: 0,
+      });
+    } else {
+      await client.chat.completions.create({
+        model: provider.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 8,
+        temperature: 0,
+      });
+    }
+
+    return this.buildDiagnosticResult('text', provider, startedAt, {
+      status: 'ok',
+      success: true,
+      real: true,
+      message: '主推理 provider 文本调用成功。',
+    });
+  }
+
+  private async runImageInputDiagnostic(
+    provider: ResolvedInferenceProviderConfig,
+    input: InferenceDiagnosticInput,
+    startedAt: number,
+  ) {
+    const capabilities = await this.resolveCapabilityProfile(provider);
+    if (!provider.apiKey?.trim() || !provider.model?.trim()) {
+      return this.buildUnavailableDiagnosticResult(
+        'image_input',
+        provider,
+        startedAt,
+        '图片输入诊断缺少主推理 API Key 或默认模型。',
+      );
+    }
+    if (!capabilities.supportsNativeImageInput) {
+      return this.buildUnavailableDiagnosticResult(
+        'image_input',
+        provider,
+        startedAt,
+        '当前模型目录或启发式判断未声明原生图片输入能力。',
+        { capabilitySource: capabilities.capabilitySource },
+      );
+    }
+
+    const client = this.buildProviderClient({
+      endpoint: provider.endpoint,
+      apiKey: provider.apiKey,
+      model: provider.model,
+    });
+    const prompt =
+      input.prompt?.trim() || '请用中文简短描述这张 1x1 测试图片。';
+    if (provider.apiStyle === 'openai-responses') {
+      await client.responses.create({
+        model: provider.model,
+        input: [
+          {
+            role: 'user',
+            content: [
+              { type: 'input_text', text: prompt },
+              {
+                type: 'input_image',
+                image_url: IMAGE_INPUT_PROBE_DATA_URL,
+                detail: 'low',
+              },
+            ],
+          },
+        ],
+        max_output_tokens: 32,
+        temperature: 0,
+      });
+    } else {
+      await client.chat.completions.create({
+        model: provider.model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: IMAGE_INPUT_PROBE_DATA_URL,
+                  detail: 'low',
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 32,
+        temperature: 0,
+      });
+    }
+
+    return this.buildDiagnosticResult('image_input', provider, startedAt, {
+      status: 'ok',
+      success: true,
+      real: true,
+      message: '主推理 provider 原生图片输入调用成功。',
+      metadata: { capabilitySource: capabilities.capabilitySource },
+    });
+  }
+
+  private async runTranscriptionDiagnostic(
+    provider: ResolvedInferenceProviderConfig,
+    startedAt: number,
+  ) {
+    if (
+      !provider.transcriptionEndpoint?.trim() ||
+      !provider.transcriptionApiKey?.trim() ||
+      !provider.transcriptionModel?.trim()
+    ) {
+      return this.buildUnavailableDiagnosticResult(
+        'transcription',
+        provider,
+        startedAt,
+        '未配置独立语音转写 endpoint / API Key / model，语音和视频转写不能被证明可用。',
+        {
+          hasEndpoint: Boolean(provider.transcriptionEndpoint?.trim()),
+          hasApiKey: Boolean(provider.transcriptionApiKey?.trim()),
+          hasModel: Boolean(provider.transcriptionModel?.trim()),
+        },
+      );
+    }
+
+    await this.testTranscriptionProviderConnection({
+      endpoint: provider.transcriptionEndpoint,
+      apiKey: provider.transcriptionApiKey,
+      model: provider.transcriptionModel,
+    });
+
+    return this.buildDiagnosticResult('transcription', provider, startedAt, {
+      status: 'ok',
+      success: true,
+      real: true,
+      message: '语音转写 provider 调用成功。',
+      endpoint: provider.transcriptionEndpoint,
+      model: provider.transcriptionModel,
+    });
+  }
+
+  private async runTtsDiagnostic(
+    provider: ResolvedInferenceProviderConfig,
+    input: InferenceDiagnosticInput,
+    startedAt: number,
+  ) {
+    if (
+      !provider.ttsEndpoint?.trim() ||
+      !provider.ttsApiKey?.trim() ||
+      !provider.ttsModel?.trim()
+    ) {
+      return this.buildUnavailableDiagnosticResult(
+        'tts',
+        provider,
+        startedAt,
+        '未配置 TTS endpoint / API Key / model，语音回复不能被证明可用。',
+        {
+          hasEndpoint: Boolean(provider.ttsEndpoint?.trim()),
+          hasApiKey: Boolean(provider.ttsApiKey?.trim()),
+          hasModel: Boolean(provider.ttsModel?.trim()),
+        },
+      );
+    }
+
+    const client = this.buildProviderClient({
+      endpoint: provider.ttsEndpoint,
+      apiKey: provider.ttsApiKey,
+      model: provider.ttsModel,
+    });
+    const response = await client.audio.speech.create({
+      model: provider.ttsModel,
+      voice: provider.ttsVoice || DEFAULT_TTS_VOICE,
+      input: input.prompt?.trim() || '你好，这是一段语音诊断。',
+      response_format: 'mp3',
+    });
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length) {
+      throw new Error('TTS provider 返回了空音频。');
+    }
+
+    return this.buildDiagnosticResult('tts', provider, startedAt, {
+      status: 'ok',
+      success: true,
+      real: true,
+      message: 'TTS provider 生成音频成功。',
+      endpoint: provider.ttsEndpoint,
+      model: provider.ttsModel,
+      metadata: {
+        byteLength: buffer.length,
+        voice: provider.ttsVoice || DEFAULT_TTS_VOICE,
+      },
+    });
+  }
+
+  private async runImageGenerationDiagnostic(
+    provider: ResolvedInferenceProviderConfig,
+    input: InferenceDiagnosticInput,
+    startedAt: number,
+  ) {
+    if (
+      !provider.imageGenerationEndpoint?.trim() ||
+      !provider.imageGenerationApiKey?.trim() ||
+      !provider.imageGenerationModel?.trim()
+    ) {
+      return this.buildUnavailableDiagnosticResult(
+        'image_generation',
+        provider,
+        startedAt,
+        '未配置图片生成 endpoint / API Key / model，图片回复不能被证明可用。',
+        {
+          hasEndpoint: Boolean(provider.imageGenerationEndpoint?.trim()),
+          hasApiKey: Boolean(provider.imageGenerationApiKey?.trim()),
+          hasModel: Boolean(provider.imageGenerationModel?.trim()),
+        },
+      );
+    }
+
+    const client = this.buildProviderClient({
+      endpoint: provider.imageGenerationEndpoint,
+      apiKey: provider.imageGenerationApiKey,
+      model: provider.imageGenerationModel,
+    });
+    const model = provider.imageGenerationModel;
+    const body: OpenAI.Images.ImageGenerateParamsNonStreaming = {
+      model,
+      prompt:
+        input.prompt?.trim() || 'A tiny diagnostic icon: a red circle on white background.',
+    };
+    if (/^(gpt-image|chatgpt-image)/i.test(model)) {
+      body.output_format = 'png';
+      body.quality = 'low';
+      body.size = '1024x1024';
+    } else if (/^dall-e-3/i.test(model)) {
+      body.quality = 'standard';
+      body.response_format = 'b64_json';
+      body.size = '1024x1024';
+    } else if (/^dall-e-2/i.test(model)) {
+      body.response_format = 'b64_json';
+      body.size = '1024x1024';
+    }
+
+    const response = await client.images.generate(body);
+    const image = 'data' in response ? response.data?.[0] : undefined;
+    if (!image?.b64_json && !image?.url) {
+      throw new Error('图片生成 provider 返回了空结果。');
+    }
+
+    return this.buildDiagnosticResult('image_generation', provider, startedAt, {
+      status: 'ok',
+      success: true,
+      real: true,
+      message: '图片生成 provider 调用成功。',
+      endpoint: provider.imageGenerationEndpoint,
+      model,
+      metadata: {
+        returned: image.b64_json ? 'b64_json' : 'url',
+        revisedPrompt: image.revised_prompt ?? null,
+      },
+    });
+  }
+
+  private async runDigitalHumanDiagnostic(): Promise<InferenceDiagnosticResult> {
+    const startedAt = Date.now();
+    const mode =
+      (
+        (await this.systemConfig.getConfig('digital_human_provider_mode')) ??
+        this.config.get<string>('DIGITAL_HUMAN_PROVIDER_MODE')
+      )?.trim() || 'mock_iframe';
+    const playerTemplate =
+      (
+        await this.systemConfig.getConfig('digital_human_player_url_template')
+      )?.trim() ||
+      this.config.get<string>('DIGITAL_HUMAN_PLAYER_URL_TEMPLATE')?.trim() ||
+      '';
+    const callbackToken =
+      (
+        (await this.systemConfig.getConfig(
+          'digital_human_provider_callback_token',
+        )) ?? this.config.get<string>('DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN')
+      )?.trim() || '';
+    const params =
+      (await this.systemConfig.getConfig('digital_human_provider_params'))?.trim() ||
+      '';
+    const isMock = mode === 'mock_iframe' || mode === 'mock_stage';
+    const real = !isMock && Boolean(playerTemplate);
+
+    return {
+      capability: 'digital_human',
+      status: real ? 'ok' : 'unavailable',
+      success: real,
+      real,
+      message: real
+        ? '数字人 external player/stream 配置存在。'
+        : isMock
+          ? '当前数字人 provider 为 mock 模式，不能算真实数字人视频能力。'
+          : '数字人 provider 缺少 player/stream 模板配置。',
+      latencyMs: Date.now() - startedAt,
+      metadata: {
+        mode,
+        provider: real ? 'external_digital_human' : 'mock_digital_human',
+        playerTemplateConfigured: Boolean(playerTemplate),
+        callbackTokenConfigured: Boolean(callbackToken),
+        paramsConfigured: Boolean(params),
+      },
+    };
+  }
+
   async getDefaultProviderAccountEntity() {
     await this.ensureDefaultProviderAccount();
     const defaultAccount = await this.providerRepo.findOne({
@@ -872,6 +1458,13 @@ export class InferenceService implements OnModuleInit {
       transcriptionEndpoint: dto.transcriptionEndpoint ?? undefined,
       transcriptionModel: dto.transcriptionModel ?? undefined,
       transcriptionApiKey: dto.transcriptionApiKey,
+      ttsEndpoint: dto.ttsEndpoint ?? undefined,
+      ttsApiKey: dto.ttsApiKey,
+      ttsModel: dto.ttsModel ?? undefined,
+      ttsVoice: dto.ttsVoice ?? undefined,
+      imageGenerationEndpoint: dto.imageGenerationEndpoint ?? undefined,
+      imageGenerationModel: dto.imageGenerationModel ?? undefined,
+      imageGenerationApiKey: dto.imageGenerationApiKey,
     };
   }
 
@@ -895,6 +1488,13 @@ export class InferenceService implements OnModuleInit {
       transcriptionEndpoint: updated.transcriptionEndpoint ?? undefined,
       transcriptionModel: updated.transcriptionModel ?? undefined,
       transcriptionApiKey: updated.transcriptionApiKey,
+      ttsEndpoint: updated.ttsEndpoint ?? undefined,
+      ttsApiKey: updated.ttsApiKey,
+      ttsModel: updated.ttsModel ?? undefined,
+      ttsVoice: updated.ttsVoice ?? undefined,
+      imageGenerationEndpoint: updated.imageGenerationEndpoint ?? undefined,
+      imageGenerationModel: updated.imageGenerationModel ?? undefined,
+      imageGenerationApiKey: updated.imageGenerationApiKey,
     };
   }
 
@@ -967,6 +1567,10 @@ export class InferenceService implements OnModuleInit {
     const transcriptionApiKey = this.decodeSecret(
       input.account.transcriptionApiKeyEncrypted,
     );
+    const ttsApiKey = this.decodeSecret(input.account.ttsApiKeyEncrypted);
+    const imageGenerationApiKey = this.decodeSecret(
+      input.account.imageGenerationApiKeyEncrypted,
+    );
 
     return {
       accountId: input.account.id,
@@ -977,12 +1581,17 @@ export class InferenceService implements OnModuleInit {
       model: input.modelId,
       apiKey,
       transcriptionEndpoint:
-        input.account.transcriptionEndpoint?.trim() || input.account.endpoint,
-      transcriptionApiKey: transcriptionApiKey || apiKey,
-      transcriptionModel:
-        input.account.transcriptionModel?.trim() || DEFAULT_TRANSCRIPTION_MODEL,
+        input.account.transcriptionEndpoint?.trim() || '',
+      transcriptionApiKey,
+      transcriptionModel: input.account.transcriptionModel?.trim() || '',
+      ttsEndpoint: input.account.ttsEndpoint?.trim() || '',
+      ttsApiKey,
       ttsModel: input.account.ttsModel?.trim() || DEFAULT_TTS_MODEL,
       ttsVoice: input.account.ttsVoice?.trim() || DEFAULT_TTS_VOICE,
+      imageGenerationEndpoint:
+        input.account.imageGenerationEndpoint?.trim() || '',
+      imageGenerationApiKey,
+      imageGenerationModel: input.account.imageGenerationModel?.trim() || '',
       apiStyle:
         input.account.apiStyle === 'openai-responses'
           ? 'openai-responses'

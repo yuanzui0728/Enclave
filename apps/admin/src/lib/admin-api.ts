@@ -31,6 +31,9 @@ import type {
   FollowupRuntimeOverview,
   FollowupRuntimeRules,
   InferenceOverview,
+  InferenceDiagnosticCapability,
+  InferenceDiagnosticRequest,
+  InferenceDiagnosticResult,
   InferenceProviderAccount,
   InferenceProviderAccountDraft,
   InstallCharacterPresetsResult,
@@ -228,6 +231,26 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  runInferenceDiagnostic: (
+    capability: InferenceDiagnosticCapability,
+    payload: InferenceDiagnosticRequest,
+  ) => {
+    const pathByCapability: Record<InferenceDiagnosticCapability, string> = {
+      text: "text",
+      image_input: "image-input",
+      transcription: "transcription",
+      tts: "tts",
+      image_generation: "image-generation",
+      digital_human: "digital-human",
+    };
+    return adminFetch<InferenceDiagnosticResult>(
+      `/inference/diagnostics/${pathByCapability[capability]}`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+  },
   installModelPersonas: (payload: InstallModelPersonasRequest) =>
     adminFetch<InstallModelPersonasResult>("/inference/model-personas/install", {
       method: "POST",

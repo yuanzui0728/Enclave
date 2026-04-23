@@ -244,9 +244,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     ? [
         `回复 ${speechStatus.activeProvider ?? "未配置"}`,
         `转写 ${speechStatus.activeTranscriptionProvider ?? "未配置"}`,
+        `播报 ${speechStatus.activeTtsProvider ?? "未配置"}`,
         speechStatus.transcriptionMode === "dedicated"
           ? "独立网关"
-          : "跟随主推理",
+          : "转写未配置",
       ].join(" · ")
     : null;
   const showSpeechWarning = Boolean(speechStatus && !speechStatus.speechReady);

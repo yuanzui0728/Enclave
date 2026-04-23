@@ -22,8 +22,15 @@ export interface InferenceProviderAccount {
   transcriptionModel?: string | null;
   transcriptionApiKey?: string;
   transcriptionHasApiKey: boolean;
+  ttsEndpoint?: string | null;
+  ttsApiKey?: string;
+  ttsHasApiKey: boolean;
   ttsModel?: string | null;
   ttsVoice?: string | null;
+  imageGenerationEndpoint?: string | null;
+  imageGenerationModel?: string | null;
+  imageGenerationApiKey?: string;
+  imageGenerationHasApiKey: boolean;
   isDefault: boolean;
   isEnabled: boolean;
   notes?: string | null;
@@ -65,6 +72,36 @@ export interface InferenceOverview {
   providerAccounts: InferenceProviderAccount[];
   modelCatalog: InferenceModelCatalogEntry[];
   roleBindingSummary: InferenceRoleBindingSummary;
+}
+
+export type InferenceDiagnosticCapability =
+  | "text"
+  | "image_input"
+  | "transcription"
+  | "tts"
+  | "image_generation"
+  | "digital_human";
+
+export type InferenceDiagnosticStatus = "ok" | "unavailable" | "failed";
+
+export interface InferenceDiagnosticRequest {
+  providerAccountId?: string;
+  characterId?: string;
+  prompt?: string;
+}
+
+export interface InferenceDiagnosticResult {
+  capability: InferenceDiagnosticCapability;
+  status: InferenceDiagnosticStatus;
+  success: boolean;
+  real: boolean;
+  message: string;
+  providerAccountId?: string;
+  providerName?: string;
+  endpoint?: string;
+  model?: string;
+  latencyMs: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface InstallModelPersonasRequest {

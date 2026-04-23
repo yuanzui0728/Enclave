@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  InferenceDiagnosticCapability,
+  InferenceDiagnosticResult,
   InferenceModelCatalogEntry,
   InferenceProviderAccount,
   InferenceProviderAccountDraft,
@@ -51,8 +53,13 @@ const emptyDraft: InferenceProviderAccountDraft = {
   transcriptionEndpoint: "",
   transcriptionModel: "",
   transcriptionApiKey: "",
+  ttsEndpoint: "",
+  ttsApiKey: "",
   ttsModel: "gpt-4o-mini-tts",
   ttsVoice: "alloy",
+  imageGenerationEndpoint: "",
+  imageGenerationModel: "",
+  imageGenerationApiKey: "",
   isEnabled: true,
   notes: "",
 };
@@ -117,8 +124,13 @@ function toDraft(
     transcriptionEndpoint: account.transcriptionEndpoint ?? "",
     transcriptionModel: account.transcriptionModel ?? "",
     transcriptionApiKey: account.transcriptionApiKey ?? "",
+    ttsEndpoint: account.ttsEndpoint ?? "",
+    ttsApiKey: account.ttsApiKey ?? "",
     ttsModel: account.ttsModel ?? "",
     ttsVoice: account.ttsVoice ?? "",
+    imageGenerationEndpoint: account.imageGenerationEndpoint ?? "",
+    imageGenerationModel: account.imageGenerationModel ?? "",
+    imageGenerationApiKey: account.imageGenerationApiKey ?? "",
     isEnabled: account.isEnabled,
     notes: account.notes ?? "",
   };
@@ -135,12 +147,29 @@ function normalizeDraftForCompare(draft: InferenceProviderAccountDraft) {
     transcriptionEndpoint: draft.transcriptionEndpoint?.trim() ?? "",
     transcriptionModel: draft.transcriptionModel?.trim() ?? "",
     transcriptionApiKey: draft.transcriptionApiKey?.trim() ?? "",
+    ttsEndpoint: draft.ttsEndpoint?.trim() ?? "",
+    ttsApiKey: draft.ttsApiKey?.trim() ?? "",
     ttsModel: draft.ttsModel?.trim() ?? "",
     ttsVoice: draft.ttsVoice?.trim() ?? "",
+    imageGenerationEndpoint: draft.imageGenerationEndpoint?.trim() ?? "",
+    imageGenerationModel: draft.imageGenerationModel?.trim() ?? "",
+    imageGenerationApiKey: draft.imageGenerationApiKey?.trim() ?? "",
     isEnabled: draft.isEnabled ?? true,
     notes: draft.notes?.trim() ?? "",
   };
 }
+
+const DIAGNOSTIC_CAPABILITIES: Array<{
+  capability: InferenceDiagnosticCapability;
+  label: string;
+}> = [
+  { capability: "text", label: "文本" },
+  { capability: "image_input", label: "图片理解" },
+  { capability: "transcription", label: "语音转写" },
+  { capability: "tts", label: "TTS" },
+  { capability: "image_generation", label: "图片生成" },
+  { capability: "digital_human", label: "数字人" },
+];
 
 function formatDateTime(value?: string | null) {
   return formatLocalizedDateTime(
@@ -229,6 +258,8 @@ export function InferencePage() {
   const [modelCapabilityFilter, setModelCapabilityFilter] =
     useState<ModelCapabilityFilter>("all");
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  const [diagnosticResult, setDiagnosticResult] =
+    useState<InferenceDiagnosticResult | null>(null);
 
   const overviewQuery = useQuery({
     queryKey: ["admin-inference-overview"],
@@ -409,6 +440,20 @@ export function InferencePage() {
 
   const testMutation = useMutation({
     mutationFn: () => adminApi.testInferenceProvider(providerDraft),
+  });
+
+  const diagnosticMutation = useMutation({
+    mutationFn: (capability: InferenceDiagnosticCapability) =>
+      adminApi.runInferenceDiagnostic(capability, {
+        providerAccountId:
+          selectedProviderId && selectedProviderId !== "new"
+            ? selectedProviderId
+            : undefined,
+        prompt: "请只回复 ok。",
+      }),
+    onSuccess: (result) => {
+      setDiagnosticResult(result);
+    },
   });
 
   const setDefaultMutation = useMutation({
@@ -1005,6 +1050,24 @@ export function InferencePage() {
                 }
               />
               <AdminValueCard
+                label="TTS Key"
+                value={
+                  selectedAccount?.ttsHasApiKey ||
+                  providerDraft.ttsApiKey?.trim()
+                    ? "已配置"
+                    : "未配置"
+                }
+              />
+              <AdminValueCard
+                label="图片生成 Key"
+                value={
+                  selectedAccount?.imageGenerationHasApiKey ||
+                  providerDraft.imageGenerationApiKey?.trim()
+                    ? "已配置"
+                    : "未配置"
+                }
+              />
+              <AdminValueCard
                 label="最近更新时间"
                 value={formatDateTime(selectedAccount?.updatedAt)}
               />
@@ -1020,6 +1083,60 @@ export function InferencePage() {
                 账户名称、接口地址和默认模型 ID 必填。
               </InlineNotice>
             ) : null}
+
+            <section className="mt-5 space-y-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-elevated)] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                    真实多模态诊断
+                  </div>
+                  <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                    直接调用对应 provider 通道；未保存草稿不会参与诊断。
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {DIAGNOSTIC_CAPABILITIES.map((item) => (
+                    <Button
+                      key={item.capability}
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        diagnosticMutation.mutate(item.capability)
+                      }
+                      disabled={
+                        selectedProviderId === "new" ||
+                        diagnosticMutation.isPending
+                      }
+                    >
+                      {diagnosticMutation.isPending &&
+                      diagnosticMutation.variables === item.capability
+                        ? "诊断中..."
+                        : item.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {selectedProviderId === "new" ? (
+                <InlineNotice tone="warning">
+                  请先保存 Provider 账户，再进行真实通道诊断。
+                </InlineNotice>
+              ) : null}
+              {diagnosticResult ? (
+                <InlineNotice
+                  tone={
+                    diagnosticResult.status === "ok"
+                      ? "success"
+                      : diagnosticResult.status === "unavailable"
+                        ? "warning"
+                        : "danger"
+                  }
+                >
+                  {diagnosticResult.capability} · {diagnosticResult.status} ·{" "}
+                  {diagnosticResult.real ? "真实可用" : "未证明可用"} ·{" "}
+                  {diagnosticResult.message}
+                </InlineNotice>
+              ) : null}
+            </section>
 
             <div className="mt-5 space-y-5">
               <section className="space-y-4 border-t border-[color:var(--border-faint)] pt-5 first:border-t-0 first:pt-0">
@@ -1141,6 +1258,16 @@ export function InferencePage() {
                     }
                   />
                   <Field
+                    label="TTS 接口"
+                    value={providerDraft.ttsEndpoint ?? ""}
+                    onChange={(value) =>
+                      setProviderDraft((current) => ({
+                        ...current,
+                        ttsEndpoint: value,
+                      }))
+                    }
+                  />
+                  <Field
                     label="TTS 模型"
                     value={providerDraft.ttsModel ?? ""}
                     onChange={(value) =>
@@ -1151,12 +1278,62 @@ export function InferencePage() {
                     }
                   />
                   <Field
+                    label="TTS Key"
+                    type="password"
+                    value={providerDraft.ttsApiKey ?? ""}
+                    onChange={(value) =>
+                      setProviderDraft((current) => ({
+                        ...current,
+                        ttsApiKey: value,
+                      }))
+                    }
+                  />
+                  <Field
                     label="TTS 音色"
                     value={providerDraft.ttsVoice ?? ""}
                     onChange={(value) =>
                       setProviderDraft((current) => ({
                         ...current,
                         ttsVoice: value,
+                      }))
+                    }
+                  />
+                </div>
+              </section>
+
+              <section className="space-y-4 border-t border-[color:var(--border-faint)] pt-5">
+                <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                  图片回复能力
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="图片生成接口"
+                    value={providerDraft.imageGenerationEndpoint ?? ""}
+                    onChange={(value) =>
+                      setProviderDraft((current) => ({
+                        ...current,
+                        imageGenerationEndpoint: value,
+                      }))
+                    }
+                  />
+                  <Field
+                    label="图片生成模型"
+                    value={providerDraft.imageGenerationModel ?? ""}
+                    onChange={(value) =>
+                      setProviderDraft((current) => ({
+                        ...current,
+                        imageGenerationModel: value,
+                      }))
+                    }
+                  />
+                  <Field
+                    label="图片生成 Key"
+                    type="password"
+                    value={providerDraft.imageGenerationApiKey ?? ""}
+                    onChange={(value) =>
+                      setProviderDraft((current) => ({
+                        ...current,
+                        imageGenerationApiKey: value,
                       }))
                     }
                   />

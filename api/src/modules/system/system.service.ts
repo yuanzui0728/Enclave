@@ -34,6 +34,13 @@ type ProviderPayload = {
   transcriptionEndpoint?: string;
   transcriptionModel?: string;
   transcriptionApiKey?: string;
+  ttsEndpoint?: string;
+  ttsApiKey?: string;
+  ttsModel?: string;
+  ttsVoice?: string;
+  imageGenerationEndpoint?: string;
+  imageGenerationModel?: string;
+  imageGenerationApiKey?: string;
 };
 
 type DigitalHumanProviderMode =
@@ -41,7 +48,6 @@ type DigitalHumanProviderMode =
   | 'mock_iframe'
   | 'external_iframe';
 
-const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const DEFAULT_EVAL_MEMORY_STRATEGIES = [
   {
     id: 'default',
@@ -2558,15 +2564,43 @@ export class SystemService {
     const publicBaseUrl = this.config.get<string>('PUBLIC_API_BASE_URL')?.trim();
 
     const scheduler = await this.getSchedulerPayload();
-    const hasDedicatedTranscriptionProvider = Boolean(
-      providerConfig.transcriptionEndpoint ||
-        providerConfig.transcriptionModel ||
-        providerConfig.transcriptionApiKey,
+    const transcriptionReady = Boolean(
+      providerConfig.transcriptionEndpoint?.trim() &&
+        providerConfig.transcriptionModel?.trim() &&
+        providerConfig.transcriptionApiKey?.trim(),
     );
-    const activeTranscriptionProvider =
-      providerConfig.transcriptionModel || DEFAULT_TRANSCRIPTION_MODEL;
-    const speechReady = Boolean(
-      providerConfig.transcriptionApiKey || providerConfig.apiKey,
+    const speechSynthesisReady = Boolean(
+      providerConfig.ttsEndpoint?.trim() &&
+        providerConfig.ttsModel?.trim() &&
+        providerConfig.ttsApiKey?.trim(),
+    );
+    const imageGenerationReady = Boolean(
+      providerConfig.imageGenerationEndpoint?.trim() &&
+        providerConfig.imageGenerationModel?.trim() &&
+        providerConfig.imageGenerationApiKey?.trim(),
+    );
+    const speechReady = transcriptionReady && speechSynthesisReady;
+    const speechMessage = speechReady
+      ? '语音输入转写与语音回复 TTS 均已配置独立通道。'
+      : [
+          transcriptionReady ? null : '缺少独立语音转写 endpoint / model / API Key',
+          speechSynthesisReady ? null : '缺少独立 TTS endpoint / model / API Key',
+        ]
+          .filter(Boolean)
+          .join('；') || '语音能力未完整配置。';
+    const imageGenerationMessage = imageGenerationReady
+      ? '图片生成通道已配置。'
+      : '缺少图片生成 endpoint / model / API Key。';
+
+    const transcriptionMode: 'dedicated' | 'unconfigured' = transcriptionReady
+      ? 'dedicated'
+      : 'unconfigured';
+
+    const imageInputReady = Boolean(
+      providerConfig.model &&
+        /vision|gpt-4o|gpt-4\.1|gpt-5|gemini|claude|vl|multimodal/i.test(
+          providerConfig.model,
+        ),
     );
 
     return {
@@ -2592,16 +2626,22 @@ export class SystemService {
       inferenceGateway: {
         healthy: Boolean(providerConfig.model),
         activeProvider: providerConfig.model || undefined,
-        activeTranscriptionProvider,
-        transcriptionMode: hasDedicatedTranscriptionProvider
-          ? 'dedicated'
-          : 'fallback',
+        activeTranscriptionProvider: transcriptionReady
+          ? providerConfig.transcriptionModel
+          : undefined,
+        activeTtsProvider: speechSynthesisReady
+          ? providerConfig.ttsModel
+          : undefined,
+        activeImageGenerationProvider: imageGenerationReady
+          ? providerConfig.imageGenerationModel
+          : undefined,
+        transcriptionMode,
         speechReady,
-        speechMessage: speechReady
-          ? hasDedicatedTranscriptionProvider
-            ? '语音转写走独立网关。'
-            : '语音转写跟随主推理服务。'
-          : '当前缺少可用语音转写密钥。',
+        speechSynthesisReady,
+        imageInputReady,
+        imageGenerationReady,
+        speechMessage,
+        imageGenerationMessage,
         queueDepth: 0,
         maxConcurrency: 1,
         inFlightRequests: 0,
@@ -2679,6 +2719,13 @@ export class SystemService {
       transcriptionEndpoint: provider.transcriptionEndpoint,
       transcriptionModel: provider.transcriptionModel,
       transcriptionApiKey: provider.transcriptionApiKey,
+      ttsEndpoint: provider.ttsEndpoint,
+      ttsApiKey: provider.ttsApiKey,
+      ttsModel: provider.ttsModel,
+      ttsVoice: provider.ttsVoice,
+      imageGenerationEndpoint: provider.imageGenerationEndpoint,
+      imageGenerationModel: provider.imageGenerationModel,
+      imageGenerationApiKey: provider.imageGenerationApiKey,
     };
   }
 
