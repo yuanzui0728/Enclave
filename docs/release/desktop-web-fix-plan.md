@@ -71,6 +71,7 @@
 - `desktop/mobile` 里的公众号接力历史现在会把订阅号入口 `/chat/subscription-inbox` 和旧 `/contacts/official-accounts` 一起归进“公众号”分组，不再误落到“消息”或“其他”。之前订阅号接力卡片会因为先命中 `/chat/*` 分类，被错放到消息分组里。
 - `desktop/mobile` 里的旧快捷入口历史现在也会按根路径归对组：旧 `/chat` 会回“消息”，旧 `/contacts`、`/discover` 会回“快捷入口”；旧资料/设置接力 `/profile`、`/tabs/profile`、`/profile/settings`、`/desktop/settings`、`/legal/*` 也一样，即使老记录里还带着 query 或 hash 也不会再掉进“其他”。
 - `desktop/mobile` 里的游戏接力历史现在也会认桌面工作区根路径 `/tabs/games`。之前这类记录虽然语义上还是“游戏中心”，但会因为分组器只认旧 `/games`、`/discover/games` 而掉进“其他”。
+- `desktop/mobile` 里的视频号和小程序接力历史现在也会认旧根路径 `/channels`、`/mini-programs`。之前这类老记录虽然已经能自愈回桌面工作区，但历史分组器只认 `/discover/channels`、`/discover/mini-programs` 和 `/tabs/*`，会把它们错放到“其他”。
 - 桌面壳右上角“我”的资料卡里，“给自己发消息”快捷入口也已经改成桌面消息协议 `/tabs/chat#conversationId=...`。之前这里还在直跳移动 `/chat/$conversationId`，会把用户从桌面壳直接切回移动聊天页。
 - 桌面通讯录里的“群聊”分组现在也统一回桌面消息工作区：`进入群聊` 走 `/tabs/chat#conversationId=...`，`群聊信息` 走 `/tabs/chat#conversationId=...&panel=details`。之前这两个入口还会直接掉进移动 `/group/$groupId` 和 `/group/$groupId/details`。
 - 桌面通讯录联系人详情里的“共同群聊”入口也已经对齐到同一套桌面协议，点击后直接回 `/tabs/chat#conversationId=...`。之前这里也会把用户从桌面联系人详情带回移动 `/group/$groupId`。

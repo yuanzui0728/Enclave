@@ -2172,6 +2172,7 @@ function resolveMobileHandoffCategory(
 
   if (
     normalizedPath === "/tabs/mini-programs" ||
+    normalizedPath === "/mini-programs" ||
     normalizedPath.startsWith("/discover/mini-programs")
   ) {
     return "mini_program";
@@ -2187,6 +2188,7 @@ function resolveMobileHandoffCategory(
 
   if (
     normalizedPath === "/tabs/channels" ||
+    normalizedPath === "/channels" ||
     normalizedPath.startsWith("/discover/channels") ||
     normalizedPath.startsWith("/desktop/channels")
   ) {
