@@ -87,7 +87,7 @@
     "i18n:missing:changed": "node ./scripts/i18n-missing-check.mjs --changed",
     "i18n:missing:staged": "node ./scripts/i18n-missing-check.mjs --staged",
     "i18n:verify-catalogs": "git diff --exit-code -- packages/i18n/catalogs",
-    "i18n:check": "pnpm i18n:extract && pnpm i18n:verify-catalogs && pnpm i18n:compile && pnpm i18n:audit && pnpm i18n:hardcode:ratchet",
+    "i18n:check": "pnpm i18n:extract && pnpm i18n:verify-catalogs && pnpm i18n:compile && pnpm i18n:missing && pnpm i18n:audit && pnpm i18n:hardcode:ratchet",
     "i18n:check:changed": "pnpm i18n:extract && pnpm i18n:verify-catalogs && pnpm i18n:compile && pnpm i18n:audit:changed && pnpm i18n:missing:changed && pnpm i18n:hardcode:ratchet",
     "i18n:check:staged": "pnpm i18n:extract && pnpm i18n:verify-catalogs && pnpm i18n:compile && pnpm i18n:audit:staged && pnpm i18n:missing:staged && pnpm i18n:hardcode:ratchet",
     "audit:desktop-web": "pnpm --filter @yinjie/app audit:desktop-web",

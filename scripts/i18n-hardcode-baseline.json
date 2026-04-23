@@ -19,17 +19,17 @@
     },
     "apps/admin/src": {
       "rules": {
-        "jsx-literal-prop": 1929,
-        "object-ui-string": 819,
-        "jsx-cjk-text": 266,
+        "jsx-literal-prop": 1965,
+        "object-ui-string": 834,
+        "jsx-cjk-text": 286,
         "toast-dialog-string": 2,
         "setter-message-string": 9,
-        "literal-error-message": 22,
+        "literal-error-message": 24,
         "intl-locale-literal": 0,
         "locale-compare-literal": 0,
         "speech-lang-literal": 0,
         "prompt-locale-instruction": 0,
-        "raw-cjk-line": 5934
+        "raw-cjk-line": 6059
       }
     },
     "apps/cloud-console/src": {

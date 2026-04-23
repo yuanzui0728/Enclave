@@ -36,12 +36,12 @@ msgstr "AI Game Center Catalog and Source Structure"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:99
 msgid "provider-state 回调可走鉴权。"
-msgstr ""
+msgstr "provider-state callbacks can be authenticated."
 
 #: apps/admin/src/components/root-layout.tsx:188
 #: apps/admin/src/components/root-layout.tsx:335
 msgid "Token 用量"
-msgstr ""
+msgstr "Token Usage"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:72
 msgid "下一步修正 providerParams JSON，再重试外部视频通话联调。"
@@ -103,7 +103,7 @@ msgstr "Restore the world instance connection before continuing admin operations
 
 #: apps/admin/src/components/root-layout.tsx:262
 msgid "先承接 AI 游戏中心的目录、来源、运行模式和审核状态，后续再补详情、发布与运营能力。"
-msgstr ""
+msgstr "First cover the AI Game Center catalog, source structure, runtime mode, and review status; details, publishing, and operations can be added later."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:119
 msgid "内置 iframe"
@@ -131,23 +131,23 @@ msgstr "Reply Logic"
 
 #: apps/admin/src/components/root-layout.tsx:165
 msgid "回看世界主人与角色的真实单聊样本、搜索命中和会话成本。"
-msgstr ""
+msgstr "Review real one-on-one chat samples, search hits, and session costs for the world owner and characters."
 
 #: apps/admin/src/components/root-layout.tsx:358
 msgid "围绕动作识别、澄清、确认、连接器和执行轨迹查看真实世界动作能力。"
-msgstr ""
+msgstr "Explore real-world actions through action recognition, clarification, confirmation, connectors, and execution traces."
 
 #: apps/admin/src/components/root-layout.tsx:396
 msgid "围绕实例运行、角色运营和回复分析组织后台操作。"
-msgstr ""
+msgstr "Organize admin operations around instance runtime, character operations, and reply analysis."
 
 #: apps/admin/src/components/root-layout.tsx:348
 msgid "围绕角色、会话和全局规则排查回复链路，而不是在长页面里找模块。"
-msgstr ""
+msgstr "Troubleshoot the reply pipeline around characters, sessions, and global rules instead of hunting through a long page."
 
 #: apps/admin/src/components/root-layout.tsx:243
 msgid "在一个工作区里完成角色筛选、摘要查看和快捷跳转。"
-msgstr ""
+msgstr "Complete character filtering, summary review, and quick navigation in one workspace."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:121
 msgid "外部 iframe"
@@ -155,20 +155,20 @@ msgstr "External iframe"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:42
 msgid "外部播放器地址已具备，但 provider-state 回写鉴权还没配齐，画面就绪状态不稳定。"
-msgstr ""
+msgstr "The external player URL is available, but provider-state callback authentication is incomplete, so render readiness may be unstable."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:54
 msgid "外部数字人 Provider 已就绪，当前可以直接联调真实播放器和状态回写。"
-msgstr ""
+msgstr "The external digital human Provider is ready; you can now test the real player and state callbacks."
 
 #. placeholder {0}: gateway.paramsCount
 #: apps/admin/src/lib/digital-human-admin-summary.ts:51
 msgid "外部数字人 Provider 已就绪，当前模板会注入 {0} 个上游参数。"
-msgstr ""
+msgstr "The external digital human Provider is ready; the current template injects {0} upstream parameters."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:39
 msgid "外部数字人播放器模板还没配好，当前视频页只能停留在占位链路。"
-msgstr ""
+msgstr "The external digital human player template is not configured yet, so the video page can only stay on the placeholder flow."
 
 #: apps/admin/src/components/root-layout.tsx:250
 msgid "多模型账户与角色路由"
@@ -176,7 +176,7 @@ msgstr "Multi-Model Accounts and Character Routing"
 
 #: apps/admin/src/components/root-layout.tsx:145
 msgid "实例健康、Provider、诊断和运维动作的统一入口。"
-msgstr ""
+msgstr "Unified entry for instance health, Providers, diagnostics, and operations actions."
 
 #: apps/admin/src/components/root-layout.tsx:82
 msgid "实例已就绪"
@@ -220,19 +220,19 @@ msgstr "Configured"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:62
 msgid "当前仍在内置数字人播放器模式，播放器壳已接通，但还不是真实外部数字人。"
-msgstr ""
+msgstr "Still using the built-in digital human player mode; the player shell is connected, but this is not a real external digital human yet."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:58
 msgid "当前仍在内置数字人舞台模式，适合先验证会话、语音和状态链路。"
-msgstr ""
+msgstr "Still using built-in digital human stage mode; suitable for validating sessions, voice, and state flow first."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:93
 msgid "当前模式不依赖外部播放器模板。"
-msgstr ""
+msgstr "The current mode does not depend on an external player template."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:107
 msgid "当前没有扩展参数 JSON。"
-msgstr ""
+msgstr "No extension parameters JSON is configured."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:34
 msgid "待配置"
@@ -244,11 +244,11 @@ msgstr "Self Follow-up on Open Loops"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:46
 msgid "扩展参数 JSON 当前无效，外部数字人实例参数没有成功注入到播放器模板。"
-msgstr ""
+msgstr "The extension parameters JSON is invalid, so external digital human instance parameters were not injected into the player template."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:108
 msgid "扩展参数 JSON 解析失败。"
-msgstr ""
+msgstr "Failed to parse the extension parameters JSON."
 
 #: apps/admin/src/components/root-layout.tsx:181
 msgid "承接：小盯"
@@ -268,11 +268,11 @@ msgstr "Owner: Action Assistant"
 
 #: apps/admin/src/components/root-layout.tsx:318
 msgid "按模块整理基础资料、人格设定与行为约束，减少长表单迷路感。"
-msgstr ""
+msgstr "Organize profile basics, personality settings, and behavior constraints by module to reduce long-form friction."
 
 #: apps/admin/src/components/root-layout.tsx:225
 msgid "接入检查、推理配置、数字人设置和运维操作的统一入口。"
-msgstr ""
+msgstr "Unified entry for onboarding checks, inference configuration, digital human settings, and operations."
 
 #: apps/admin/src/components/admin-sidebar.tsx:121
 msgid "接口"
@@ -316,7 +316,7 @@ msgstr "Digital human {0}"
 
 #: apps/admin/src/components/root-layout.tsx:301
 msgid "整理配方、比对发布差异，并把草稿发布到运行时。"
-msgstr ""
+msgstr "Organize recipes, compare publish diffs, and publish drafts to runtime."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:103
 msgid "无效"
@@ -346,7 +346,7 @@ msgstr "Not set"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:100
 msgid "未设置时，provider-state 回调不会附带保护 token。"
-msgstr ""
+msgstr "When unset, provider-state callbacks will not include a protection token."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:89
 #: apps/admin/src/lib/format.ts:17
@@ -355,39 +355,39 @@ msgstr "Unconfigured"
 
 #: apps/admin/src/components/root-layout.tsx:160
 msgid "查看 AI 游戏中心目录、来源结构和当前审核状态。"
-msgstr ""
+msgstr "View AI Game Center catalog, source structure, and current review status."
 
 #: apps/admin/src/components/root-layout.tsx:189
 msgid "查看 AI 请求、Token 花费、预算预警和价格配置。"
-msgstr ""
+msgstr "View AI requests, token spend, budget alerts, and pricing configuration."
 
 #: apps/admin/src/components/root-layout.tsx:183
 msgid "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。"
-msgstr ""
+msgstr "View Xiaoding's active reminders, recent triggers/completions, private chat outbound records, and light Moments reminders."
 
 #: apps/admin/src/components/root-layout.tsx:292
 msgid "查看提醒角色当前在盯哪些事项、最近有没有真正提醒出去，以及晨间 / 晚间的长期习惯提醒是否稳定落地。"
-msgstr ""
+msgstr "View what the reminder character is tracking, whether reminders were actually sent recently, and whether morning/evening long-term habit reminders are stable."
 
 #: apps/admin/src/components/root-layout.tsx:200
 msgid "查看行为信号、画像状态、投影提示词与建模运行记录。"
-msgstr ""
+msgstr "View behavior signals, profile status, projection prompts, and modeling run records."
 
 #: apps/admin/src/components/root-layout.tsx:195
 msgid "查看行动助理的动作门控、连接器、规则和执行轨迹。"
-msgstr ""
+msgstr "View the action assistant's gates, connectors, rules, and execution traces."
 
 #: apps/admin/src/components/root-layout.tsx:150
 msgid "查看角色名册、角色工厂和运行逻辑台。"
-msgstr ""
+msgstr "View the character roster, character factory, and runtime logic console."
 
 #: apps/admin/src/components/root-layout.tsx:207
 msgid "查看角色现实新闻同步、每日 digest、scene patch 和现实发圈锚点。"
-msgstr ""
+msgstr "View characters' real-world news sync, daily digests, scene patches, and real-world Moments anchors."
 
 #: apps/admin/src/components/root-layout.tsx:309
 msgid "查看这个角色现在如何运行，并在同一页面完成人工干预。"
-msgstr ""
+msgstr "View how this character is currently running and intervene manually on the same page."
 
 #: apps/admin/src/components/root-layout.tsx:58
 msgid "核心接口待恢复"
@@ -435,11 +435,11 @@ msgstr "Configure now"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:19
 msgid "等待系统状态返回数字人 provider 配置。"
-msgstr ""
+msgstr "Waiting for system status to return digital human provider configuration."
 
 #: apps/admin/src/components/root-layout.tsx:155
 msgid "管理 Provider 账户、模型目录、默认路由和模型角色批量安装。"
-msgstr ""
+msgstr "Manage Provider accounts, model catalog, default routing, and batch installation of model persona characters."
 
 #: apps/admin/src/components/root-layout.tsx:394
 msgid "管理后台"
@@ -451,7 +451,7 @@ msgstr "Admin secret"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:92
 msgid "系统状态已检测到外部播放器模板。"
-msgstr ""
+msgstr "System status detected an external player template."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:31
 msgid "缺回调"
@@ -472,11 +472,11 @@ msgstr "Action Assistant Runtime"
 
 #: apps/admin/src/components/root-layout.tsx:234
 msgid "补齐推理 Provider、实例连通性和运行前置条件，确保后台操作与真实生成链路可用。"
-msgstr ""
+msgstr "Complete inference Provider, instance connectivity, and runtime prerequisites so admin operations and real generation are available."
 
 #: apps/admin/src/components/admin-sidebar.tsx:99
 msgid "补齐模型、接口和 API Key，否则无法跑真实生成。"
-msgstr ""
+msgstr "Complete model, endpoint, and API Key setup, otherwise real generation cannot run."
 
 #: apps/admin/src/components/root-layout.tsx:149
 #: apps/admin/src/components/root-layout.tsx:241
@@ -561,7 +561,7 @@ msgstr "Runtime Settings"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:94
 msgid "进入设置页补齐播放器 URL 模板"
-msgstr ""
+msgstr "Go to the setup page to complete the player URL template"
 
 #: apps/admin/src/components/admin-sidebar.tsx:91
 msgid "远程 API 离线"
@@ -569,47 +569,47 @@ msgstr "Remote API offline"
 
 #: apps/admin/src/components/root-layout.tsx:282
 msgid "配置 open loop 提取、推荐候选打分、我自己主动消息文案，并查看推荐后的打开、加好友和开聊动作。"
-msgstr ""
+msgstr "Configure open loop extraction, recommendation candidate scoring, self proactive message copy, and review the open, friend-add, and chat-start actions after recommendations."
 
 #: apps/admin/src/components/root-layout.tsx:176
 msgid "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。"
-msgstr ""
+msgstr "Configure rules, Prompt, and the recommendation flow for self to recover unresolved open loops."
 
 #: apps/admin/src/components/root-layout.tsx:272
 msgid "配置短周期和每日节奏的提示词、频率、角色生成策略，并查看运行记录与候选结果。"
-msgstr ""
+msgstr "Configure short-cycle and daily cadence prompts, frequency, and character generation strategy, then view run records and candidates."
 
 #: apps/admin/src/components/root-layout.tsx:170
 msgid "配置短期/长期角色生成策略，并查看候选与运行记录。"
-msgstr ""
+msgstr "Configure short-term/long-term character generation strategy, and view candidates and run records."
 
 #: apps/admin/src/components/root-layout.tsx:388
 msgid "集中查看 runs、compare 和 trace，逐步收口成更清晰的多视图结构。"
-msgstr ""
+msgstr "Centralize runs, compare, and trace views, then gradually consolidate them into clearer multi-view layouts."
 
 #: apps/admin/src/components/root-layout.tsx:213
 msgid "集中查看 runs、compare 和 trace。"
-msgstr ""
+msgstr "Centralized view of runs, compare, and trace."
 
 #: apps/admin/src/components/root-layout.tsx:338
 msgid "集中查看 Token 消耗、时间趋势、角色分布、预算预警和价格配置。"
-msgstr ""
+msgstr "Centralized view of token consumption, time trends, character distribution, budget alerts, and pricing configuration."
 
 #: apps/admin/src/components/root-layout.tsx:328
 msgid "集中查看世界主人与各角色的真实单聊历史、搜索命中上下文和会话级 Token 成本。"
-msgstr ""
+msgstr "Centralized view of real one-on-one histories, search-hit context, and session-level token costs for the world owner and characters."
 
 #: apps/admin/src/components/root-layout.tsx:378
 msgid "集中查看每日外部信号、摘要 digest、scene patch 和现实发圈锚点。"
-msgstr ""
+msgstr "Centralized view of daily external signals, digest summaries, scene patches, and real-world Moments anchors."
 
 #: apps/admin/src/components/root-layout.tsx:368
 msgid "集中查看赛博分身如何从行为信号收敛成画像，再投影成后续世界内外可消费的提示词。"
-msgstr ""
+msgstr "Centralized view of how the cyber avatar converges behavior signals into a profile, then projects them into prompts consumable inside and outside the world."
 
 #: apps/admin/src/components/root-layout.tsx:252
 msgid "集中管理多个 Provider 账户、模型目录、默认模型路由，以及批量安装模型人格角色。"
-msgstr ""
+msgstr "Centralized management of multiple Provider accounts, model catalogs, default model routing, and batch installation of model persona characters."
 
 #: apps/admin/src/components/root-layout.tsx:169
 #: apps/admin/src/components/root-layout.tsx:269
