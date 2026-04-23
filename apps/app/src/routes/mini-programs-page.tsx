@@ -109,6 +109,11 @@ export function MiniProgramsPage() {
   const groupRelayEntry = getMiniProgramEntry("group-relay");
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const [noticeActionState, setNoticeActionState] = useState<{
+    label: string;
+    message: string;
+    onAction: () => void;
+  } | null>(null);
   const isDesktopMiniProgramsRoute =
     pathname === "/tabs/mini-programs" ||
     pathname === "/discover/mini-programs";
@@ -226,7 +231,10 @@ export function MiniProgramsPage() {
       return;
     }
 
-    const timer = window.setTimeout(() => setSuccessNotice(""), 2800);
+    const timer = window.setTimeout(() => {
+      setSuccessNotice("");
+      setNoticeActionState(null);
+    }, 2800);
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
@@ -315,6 +323,7 @@ export function MiniProgramsPage() {
     openMiniProgram(miniProgramId);
     setSelectedMiniProgramId(miniProgramId);
     setNoticeTone("success");
+    setNoticeActionState(null);
     setSuccessNotice(
       `${miniProgram?.name ?? "该小程序"} 已加入最近使用，当前已进入小程序工作台。`,
     );
@@ -325,6 +334,7 @@ export function MiniProgramsPage() {
     const pinned = pinnedMiniProgramIds.includes(miniProgramId);
     togglePinned(miniProgramId);
     setNoticeTone("success");
+    setNoticeActionState(null);
     setSuccessNotice(
       `${miniProgram?.name ?? "该小程序"} 已${pinned ? "移出" : "加入"}我的小程序。`,
     );
@@ -340,6 +350,7 @@ export function MiniProgramsPage() {
     const completed = Boolean(task?.completed);
     toggleTaskCompletion(miniProgramId, taskId);
     setNoticeTone("success");
+    setNoticeActionState(null);
     setSuccessNotice(
       `${miniProgram?.name ?? "该小程序"} 已${completed ? "恢复" : "完成"}“${task?.title ?? "当前待办"}”。`,
     );
@@ -366,6 +377,7 @@ export function MiniProgramsPage() {
 
       if (shared) {
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("已打开系统分享面板。");
         return;
       }
@@ -383,8 +395,16 @@ export function MiniProgramsPage() {
       try {
         await navigator.clipboard.writeText(link);
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("系统分享暂时不可用，已复制入口链接。");
       } catch {
+        setNoticeActionState({
+          label: "重试分享",
+          message: "系统分享失败，请稍后重试。",
+          onAction: () => {
+            void handleCopyMiniProgramToMobile(miniProgramId);
+          },
+        });
         setNoticeTone("info");
         setSuccessNotice("系统分享失败，请稍后重试。");
       }
@@ -405,8 +425,16 @@ export function MiniProgramsPage() {
       try {
         await navigator.clipboard.writeText(link);
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("入口链接已复制。");
       } catch {
+        setNoticeActionState({
+          label: "重试复制",
+          message: "复制入口链接失败，请稍后重试。",
+          onAction: () => {
+            void handleCopyMiniProgramToMobile(miniProgramId);
+          },
+        });
         setNoticeTone("info");
         setSuccessNotice("复制入口链接失败，请稍后重试。");
       }
@@ -431,10 +459,18 @@ export function MiniProgramsPage() {
         path,
       });
       setNoticeTone("success");
+      setNoticeActionState(null);
       setSuccessNotice(
         `${miniProgram?.name ?? "该小程序"} 已复制到手机接力链接。`,
       );
     } catch {
+      setNoticeActionState({
+        label: "重试复制到手机",
+        message: "复制到手机失败，请稍后重试。",
+        onAction: () => {
+          void handleCopyMiniProgramToMobile(miniProgramId);
+        },
+      });
       setNoticeTone("info");
       setSuccessNotice("复制到手机失败，请稍后重试。");
     }
@@ -497,6 +533,7 @@ export function MiniProgramsPage() {
       recordGroupRelayPublish(groupRelayLaunchContext.sourceGroupId);
 
       setNoticeTone("success");
+      setNoticeActionState(null);
       setSuccessNotice(
         `群接龙结果已回填到“${groupRelayLaunchContext.sourceGroupName}”。`,
       );
@@ -592,6 +629,11 @@ export function MiniProgramsPage() {
       selectedMiniProgramId={selectedMiniProgramId}
       successNotice={successNotice}
       noticeTone={noticeTone}
+      noticeActionLabel={
+        noticeActionState && noticeActionState.message === successNotice
+          ? noticeActionState.label
+          : null
+      }
       statusBackLabel={statusBackLabel}
       visibleMiniPrograms={visibleMiniPrograms}
       onCopyMiniProgramToMobile={handleCopyMiniProgramToMobile}
@@ -601,6 +643,11 @@ export function MiniProgramsPage() {
       onOpenMiniProgram={handleOpenMiniProgram}
       onSearchTextChange={setSearchText}
       onSelectMiniProgram={setSelectedMiniProgramId}
+      onNoticeAction={
+        noticeActionState && noticeActionState.message === successNotice
+          ? noticeActionState.onAction
+          : undefined
+      }
       onStatusBack={statusBackLabel ? handleBack : undefined}
       onToggleMiniProgramTask={handleToggleMiniProgramTask}
       onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}

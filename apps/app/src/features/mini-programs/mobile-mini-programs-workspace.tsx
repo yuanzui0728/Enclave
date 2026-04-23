@@ -37,6 +37,7 @@ type MobileMiniProgramsWorkspaceProps = {
   selectedMiniProgramId: string;
   successNotice?: string;
   noticeTone?: "success" | "info";
+  noticeActionLabel?: string | null;
   statusBackLabel?: string | null;
   visibleMiniPrograms: MiniProgramEntry[];
   onCopyMiniProgramToMobile?: (miniProgramId: string) => void;
@@ -46,6 +47,7 @@ type MobileMiniProgramsWorkspaceProps = {
   onOpenMiniProgram: (miniProgramId: string) => void;
   onSearchTextChange: (value: string) => void;
   onSelectMiniProgram: (miniProgramId: string) => void;
+  onNoticeAction?: () => void;
   onStatusBack?: () => void;
   onToggleMiniProgramTask: (miniProgramId: string, taskId: string) => void;
   onTogglePinnedMiniProgram: (miniProgramId: string) => void;
@@ -64,6 +66,7 @@ export function MobileMiniProgramsWorkspace({
   selectedMiniProgramId,
   successNotice,
   noticeTone = "success",
+  noticeActionLabel = null,
   statusBackLabel = null,
   visibleMiniPrograms,
   onCopyMiniProgramToMobile,
@@ -73,6 +76,7 @@ export function MobileMiniProgramsWorkspace({
   onOpenMiniProgram,
   onSearchTextChange,
   onSelectMiniProgram,
+  onNoticeAction,
   onStatusBack,
   onToggleMiniProgramTask,
   onTogglePinnedMiniProgram,
@@ -172,16 +176,31 @@ export function MobileMiniProgramsWorkspace({
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
-            {noticeTone === "info" && statusBackLabel && onStatusBack ? (
+            {noticeTone === "info" &&
+            ((noticeActionLabel && onNoticeAction) ||
+              (statusBackLabel && onStatusBack)) ? (
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">{successNotice}</span>
-                <button
-                  type="button"
-                  onClick={onStatusBack}
-                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
-                >
-                  {statusBackLabel}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {noticeActionLabel && onNoticeAction ? (
+                    <button
+                      type="button"
+                      onClick={onNoticeAction}
+                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    >
+                      {noticeActionLabel}
+                    </button>
+                  ) : null}
+                  {statusBackLabel && onStatusBack ? (
+                    <button
+                      type="button"
+                      onClick={onStatusBack}
+                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    >
+                      {statusBackLabel}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ) : (
               successNotice
