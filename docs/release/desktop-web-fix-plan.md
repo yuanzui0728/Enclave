@@ -54,7 +54,7 @@
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/games`、`/discover/games` 目标现在也会直接收成 `/tabs/games`，而且 `mobile-games-route-state` 会把历史 `returnPath=/games|/discover/games` 一起归一成桌面游戏中心返回地址。之前这类旧游戏中心链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧游戏中心路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/mini-programs` 目标现在也会直接收成 `/tabs/mini-programs`，而且 `mobile-mini-programs-route-state` 会把历史 `returnPath=/discover/mini-programs` 一起归一成桌面小程序返回地址。之前这类旧小程序链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/channels` 目标现在也会直接收成 `/tabs/channels`，而且 `channels-route-state` 会把历史 `returnPath=/discover/channels` 一起归一成桌面视频号返回地址。之前这类旧视频号链接会先打开共享页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
-- 桌面搜索页、搜索启动器和收藏页里的旧 `/chat`、`/contacts`、`/favorites`、`/notes`、`/profile/settings` 目标现在也会直接收成各自的桌面主工作区，不再先打开共享根页再靠页面自愈。其中旧 `/notes` 会直接落到 `/tabs/favorites#category=notes`，旧设置页会直接落到 `/desktop/settings`。
+- 桌面搜索页、搜索启动器和收藏页里的旧 `/chat`、`/contacts`、`/profile`、`/favorites`、`/notes`、`/profile/settings` 目标现在也会直接收成各自的桌面主工作区，不再先打开共享根页再靠页面自愈。其中旧 `/notes` 会直接落到 `/tabs/favorites#category=notes`，旧设置页会直接落到 `/desktop/settings`，旧资料页会直接落到 `/tabs/profile`。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/official-accounts` 根入口现在也会直接收成桌面通讯录里的公众号工作区，不再先打开共享公众号列表页再靠兼容页跳回桌面；如果旧 hash 里已经带了 `accountId / articleId`，这层选择态也会继续保住。
 - `desktop/mobile` 里的公众号接力历史现在会把订阅号入口 `/chat/subscription-inbox` 和旧 `/contacts/official-accounts` 一起归进“公众号”分组，不再误落到“消息”或“其他”。之前订阅号接力卡片会因为先命中 `/chat/*` 分类，被错放到消息分组里。
 - 桌面壳右上角“我”的资料卡里，“给自己发消息”快捷入口也已经改成桌面消息协议 `/tabs/chat#conversationId=...`。之前这里还在直跳移动 `/chat/$conversationId`，会把用户从桌面壳直接切回移动聊天页。
@@ -77,6 +77,7 @@
 - 根布局上的“强提醒”本地通知现在也已经和桌面消息协议对齐：桌面下会把 `/tabs/chat#conversationId=...&messageId=...` 当成当前会话与通知落点，不再继续按旧 `/chat/$conversationId#chat-message-*` 判断活跃会话或发通知，避免桌面点通知后又被带回旧移动聊天页。
 - 旧 `/chat` 消息列表地址现在在桌面布局下也会主动自愈回 `/tabs/chat`。之前这条旧地址虽然会直接渲染桌面消息工作区，但 URL 本身不会收口，刷新或复制当前地址时仍会长期残留旧移动消息列表路径。
 - 旧 `/contacts` 通讯录地址现在在桌面布局下也会主动自愈回 `/tabs/contacts`。之前这条旧地址虽然会直接渲染桌面通讯录工作区，但 URL 本身不会收口，刷新或复制当前地址时仍会长期残留旧移动通讯录路径。
+- 旧 `/profile` 资料页地址现在在桌面布局下也会主动自愈回 `/tabs/profile`。之前这条旧地址虽然能打开“我”的共享页，但 URL 本身不会收口，桌面壳右上角资料态也不会把它识别成同一条资料链路；现在旧资料页、桌面资料工作区和桌面设置会统一落在同一套桌面协议上。
 - 桌面资料页里的“设置”入口现在不会再把用户带回旧 `/profile/settings`，而旧 `/profile/settings` 设置地址本身也会在桌面布局下主动自愈回 `/desktop/settings`。之前这条旧路径不只会长期残留在桌面地址栏里，还会让设置页标题和返回按钮误走“资料页”协议；现在桌面设置统一收口到 `/desktop/settings`，桌面壳右上角“我”的资料态也会把 `/desktop/settings` 识别成同一条桌面资料链路。
 - `desktop/mobile` 里的“设置”快捷卡片现在也把“复制到手机”和“桌面打开”拆成了两套协议：复制继续保留 `/profile/settings`，桌面打开则直接落 `/desktop/settings`。之前这里两个按钮共用同一条旧设置路径，桌面入口还会先落一次旧 `/profile/settings` 再靠页面自愈。
 - 资料页和设置页共用的三份协议文档现在也会按布局回到正确的设置页：桌面返回 `/desktop/settings`，移动继续返回 `/profile/settings`。之前文档页顶部返回按钮写死旧设置路径，桌面里从“隐私政策 / 服务条款 / 社区规范”返回时仍会复活 `/profile/settings`。

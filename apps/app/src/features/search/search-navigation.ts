@@ -208,6 +208,13 @@ function resolveDesktopWorkspaceNavigationTarget(
     } satisfies SearchNavigationTarget;
   }
 
+  if (target.to === "/profile") {
+    return {
+      to: "/tabs/profile",
+      hash: target.hash,
+    } satisfies SearchNavigationTarget;
+  }
+
   if (target.to === "/favorites" || target.to === "/tabs/favorites") {
     return {
       to: "/tabs/favorites",

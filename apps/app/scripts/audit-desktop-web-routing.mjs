@@ -9,12 +9,13 @@ const expectations = [
   {
     file: "src/features/shell/desktop-shell.tsx",
     description:
-      "desktop shell records SPA navigation state, treats /desktop/settings as part of the desktop profile surface, and opens the self-chat shortcut through the desktop chat workspace",
+      "desktop shell records SPA navigation state, treats legacy /profile and /desktop/settings as part of the desktop profile surface, and opens the self-chat shortcut through the desktop chat workspace",
     includes: [
       'select: (state) => state.location.searchStr,',
       'import { recordAppNavigation } from "../../lib/history-back";',
       'import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";',
       'recordAppNavigation(`${pathname}${search}${hash}`);',
+      'pathname.startsWith("/profile") ||',
       'pathname.startsWith("/desktop/settings") ||',
       "to: buildDesktopChatThreadPath({",
       "conversationId: conversation.id,",
@@ -495,9 +496,19 @@ const expectations = [
   {
     file: "src/routes/profile-page.tsx",
     description:
-      "desktop profile settings entries stop reviving the old /profile/settings path and open the dedicated desktop settings route instead",
+      "desktop profile page self-heals legacy /profile paths back to /tabs/profile and its settings entries stop reviving the old /profile/settings path",
     includes: [
+      'import { useEffect } from "react";',
+      "useRouterState",
       'import { useDesktopLayout } from "../features/shell/use-desktop-layout";',
+      'const desktopProfilePath = "/tabs/profile";',
+      "const desktopPathMismatch =",
+      "pathname !== desktopProfilePath;",
+      "if (!desktopPathMismatch) {",
+      "to: desktopProfilePath,",
+      "search: search || undefined,",
+      "hash: hash || undefined,",
+      "replace: true,",
       "const settingsPath = isDesktopLayout ? \"/desktop/settings\" : \"/profile/settings\";",
       "void navigate({ to: settingsPath });",
       "to={settingsPath as never}",
@@ -588,7 +599,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /contacts, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /contacts, /profile, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
       "buildDesktopMomentsRouteHash,",
@@ -622,6 +633,8 @@ const expectations = [
       "resolveDesktopOfficialNavigationTarget(normalizedTarget)",
       'target.to === "/chat"',
       'target.to === "/contacts"',
+      'target.to === "/profile"',
+      'to: "/tabs/profile",',
       'target.to === "/favorites" || target.to === "/tabs/favorites"',
       'target.to === "/notes"',
       'category: "notes",',
