@@ -740,8 +740,11 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, and mini-program targets so desktop search surfaces return to the active search workspace",
+      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, and create-group targets so desktop search surfaces return to the active search workspace",
     includes: [
+      'import {',
+      "buildCreateGroupRouteHash,",
+      "parseCreateGroupRouteHash,",
       "buildCharacterDetailRouteHash,",
       "parseCharacterDetailRouteState,",
       'const DESKTOP_SEARCH_PATH = "/tabs/search";',
@@ -753,6 +756,9 @@ const expectations = [
       'target.to === "/tabs/channels"',
       'target.to === "/tabs/games"',
       'target.to === "/tabs/mini-programs"',
+      'target.to === "/group/new"',
+      "parseCreateGroupRouteHash(target.hash ?? \"\")",
+      "seedMemberIds: targetRouteState.seedMemberIds,",
       "returnPath: DESKTOP_SEARCH_PATH,",
     ],
   },

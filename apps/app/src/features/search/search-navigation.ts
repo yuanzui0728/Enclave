@@ -42,6 +42,10 @@ import {
   buildMobileMiniProgramsRouteSearch,
   parseMobileMiniProgramsRouteSearch,
 } from "../mini-programs/mobile-mini-programs-route-state";
+import {
+  buildCreateGroupRouteHash,
+  parseCreateGroupRouteHash,
+} from "../../lib/create-group-route-state";
 
 type SearchNavigationTargetInput = {
   to: string;
@@ -185,6 +189,20 @@ export function applyDesktopSearchReturnContext(
         ...targetRouteState,
         returnPath: DESKTOP_SEARCH_PATH,
         returnHash,
+      }),
+    };
+  }
+
+  if (target.to === "/group/new") {
+    const targetRouteState = parseCreateGroupRouteHash(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildCreateGroupRouteHash({
+        source: targetRouteState.source,
+        conversationId: targetRouteState.conversationId,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+        seedMemberIds: targetRouteState.seedMemberIds,
       }),
     };
   }
