@@ -1,4 +1,12 @@
 import type { ConnectorConfig, ConnectorProviderKey } from "./config.js";
+import type {
+  ContactImportPlatformDescriptor,
+  ConnectorProviderDescriptor,
+} from "./platforms.js";
+import {
+  getContactImportPlatformCatalog,
+  getConnectorProviderCatalog,
+} from "./platforms.js";
 
 export const CONNECTOR_VERSION = "0.1.0";
 
@@ -59,6 +67,8 @@ export interface ConnectorHealth {
   lastScanAt?: string | null;
   contactCount: number;
   activeConfig: ConnectorActiveConfig;
+  implementedProviders: ConnectorProviderDescriptor[];
+  platformCatalog: ContactImportPlatformDescriptor[];
 }
 
 export interface ConnectorScanResponse {
@@ -68,6 +78,8 @@ export interface ConnectorScanResponse {
   contactCount: number;
   latestMessageAt?: string | null;
   activeConfig: ConnectorActiveConfig;
+  implementedProviders: ConnectorProviderDescriptor[];
+  platformCatalog: ContactImportPlatformDescriptor[];
 }
 
 export interface ConnectorContactSummary {
@@ -94,6 +106,8 @@ export interface ConnectorConfigResponse {
   weflowBaseUrl?: string | null;
   weflowAccessToken?: string | null;
   allowedOrigins: string[];
+  implementedProviders: ConnectorProviderDescriptor[];
+  platformCatalog: ContactImportPlatformDescriptor[];
 }
 
 export interface ConnectorScanRequest {
@@ -121,5 +135,7 @@ export function toConfigResponse(config: ConnectorConfig): ConnectorConfigRespon
     weflowBaseUrl: config.weflowBaseUrl,
     weflowAccessToken: config.weflowAccessToken,
     allowedOrigins: config.allowedOrigins,
+    implementedProviders: getConnectorProviderCatalog(),
+    platformCatalog: getContactImportPlatformCatalog(),
   };
 }
