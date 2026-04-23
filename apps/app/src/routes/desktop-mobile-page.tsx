@@ -60,8 +60,12 @@ import {
   buildDesktopChatThreadPathFromConversationPath,
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
+  parseDesktopChatRouteHash,
 } from "../features/desktop/chat/desktop-chat-route-state";
-import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
+import {
+  buildDesktopContactsRouteHash,
+  parseDesktopContactsRouteState,
+} from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { getConversationPreviewParts } from "../lib/conversation-preview";
 import {
@@ -2147,6 +2151,16 @@ function resolveMobileHandoffCategory(
   const rawPath = item.path.split(/[?#]/, 1)[0] ?? item.path;
   const normalizedPath =
     rawPath.length > 1 ? rawPath.replace(/\/+$/, "") : rawPath;
+  const hashIndex = item.path.indexOf("#");
+  const rawHash = hashIndex >= 0 ? item.path.slice(hashIndex) : "";
+  const desktopChatRouteState =
+    normalizedPath === "/tabs/chat"
+      ? parseDesktopChatRouteHash(rawHash)
+      : undefined;
+  const desktopContactsRouteState =
+    normalizedPath === "/tabs/contacts"
+      ? parseDesktopContactsRouteState(rawHash)
+      : undefined;
 
   if (
     normalizedPath.startsWith("/group/") &&
@@ -2156,6 +2170,10 @@ function resolveMobileHandoffCategory(
   }
 
   if (
+    (normalizedPath === "/tabs/chat" &&
+      desktopChatRouteState?.officialView !== undefined) ||
+    (normalizedPath === "/tabs/contacts" &&
+      desktopContactsRouteState?.pane === "official-accounts") ||
     normalizedPath === "/chat/subscription-inbox" ||
     normalizedPath === "/contacts/official-accounts" ||
     normalizedPath.startsWith("/official-accounts")
