@@ -2430,6 +2430,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "批量撤回失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续撤回所选消息",
+        onAction: () => {
+          void handleRecallSelectedMessages();
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     } finally {
       setSelectionActionPending(null);
