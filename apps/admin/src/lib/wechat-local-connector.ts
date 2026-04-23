@@ -7,6 +7,15 @@ export interface WechatConnectorSettings {
   baseUrl: string;
 }
 
+export type WechatConnectorProviderKey = "manual-json" | "wechat-decrypt-http";
+
+export interface WechatConnectorSourceConfig {
+  connectorLabel?: string | null;
+  providerKey: WechatConnectorProviderKey;
+  manualJsonPath?: string | null;
+  wechatDecryptBaseUrl?: string | null;
+}
+
 export interface WechatConnectorHealth {
   ok: boolean;
   version: string;
@@ -15,6 +24,9 @@ export interface WechatConnectorHealth {
   activeConfig: {
     connectorLabel?: string | null;
     sourceSummary?: string | null;
+    providerKey?: WechatConnectorProviderKey;
+    manualJsonPath?: string | null;
+    wechatDecryptBaseUrl?: string | null;
   };
 }
 
@@ -27,6 +39,9 @@ export interface WechatConnectorScanResponse {
   activeConfig: {
     connectorLabel?: string | null;
     sourceSummary?: string | null;
+    providerKey?: WechatConnectorProviderKey;
+    manualJsonPath?: string | null;
+    wechatDecryptBaseUrl?: string | null;
   };
 }
 
@@ -127,9 +142,23 @@ export function getWechatConnectorHealth(baseUrl: string) {
   return connectorFetch<WechatConnectorHealth>(baseUrl, "/health");
 }
 
-export function scanWechatConnector(baseUrl: string) {
+export function patchWechatConnectorConfig(
+  baseUrl: string,
+  config: Partial<WechatConnectorSourceConfig>,
+) {
+  return connectorFetch<WechatConnectorSourceConfig>(baseUrl, "/api/config", {
+    method: "PATCH",
+    body: JSON.stringify(config),
+  });
+}
+
+export function scanWechatConnector(
+  baseUrl: string,
+  config?: Partial<WechatConnectorSourceConfig>,
+) {
   return connectorFetch<WechatConnectorScanResponse>(baseUrl, "/api/scan", {
     method: "POST",
+    body: config ? JSON.stringify(config) : undefined,
   });
 }
 

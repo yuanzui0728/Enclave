@@ -41,8 +41,10 @@ import {
   getWechatConnectorHealth,
   listWechatConnectorContacts,
   loadWechatConnectorSettings,
+  patchWechatConnectorConfig,
   saveWechatConnectorSettings,
   scanWechatConnector,
+  type WechatConnectorProviderKey,
   type WechatConnectorSettings,
 } from "../lib/wechat-local-connector";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -143,6 +145,12 @@ export function WechatSyncPage() {
   const initialHasSharedView = hasWechatSyncViewQueryState();
   const [connectorSettings, setConnectorSettings] =
     useState<WechatConnectorSettings>(() => loadWechatConnectorSettings());
+  const [connectorProviderKey, setConnectorProviderKey] =
+    useState<WechatConnectorProviderKey>("manual-json");
+  const [connectorManualJsonPath, setConnectorManualJsonPath] = useState("");
+  const [connectorWechatDecryptBaseUrl, setConnectorWechatDecryptBaseUrl] =
+    useState("http://127.0.0.1:5678");
+  const [connectorConfigHydrated, setConnectorConfigHydrated] = useState(false);
   const [search, setSearch] = useState("");
   const [includeGroups, setIncludeGroups] = useState(false);
   const [autoAddFriend, setAutoAddFriend] = useState(true);
@@ -303,6 +311,29 @@ export function WechatSyncPage() {
     queryKey: ["admin-wechat-sync-history", baseUrl],
     queryFn: () => adminApi.getWechatSyncHistory(),
   });
+
+  useEffect(() => {
+    setConnectorConfigHydrated(false);
+  }, [connectorSettings.baseUrl]);
+
+  useEffect(() => {
+    const activeConfig = connectorHealthQuery.data?.activeConfig;
+    if (!activeConfig || connectorConfigHydrated) {
+      return;
+    }
+
+    if (activeConfig.providerKey) {
+      setConnectorProviderKey(activeConfig.providerKey);
+    }
+    setConnectorManualJsonPath(activeConfig.manualJsonPath ?? "");
+    setConnectorWechatDecryptBaseUrl(
+      activeConfig.wechatDecryptBaseUrl ?? "http://127.0.0.1:5678",
+    );
+    setConnectorConfigHydrated(true);
+  }, [
+    connectorConfigHydrated,
+    connectorHealthQuery.data?.activeConfig,
+  ]);
 
   const connectorReady =
     connectorHealthQuery.isSuccess && connectorHealthQuery.data.ok;
@@ -486,8 +517,45 @@ export function WechatSyncPage() {
     void connectorHealthQuery.refetch();
   }
 
+  function buildConnectorSourceConfig() {
+    return {
+      providerKey: connectorProviderKey,
+      manualJsonPath:
+        connectorProviderKey === "manual-json"
+          ? connectorManualJsonPath.trim() || null
+          : null,
+      wechatDecryptBaseUrl:
+        connectorProviderKey === "wechat-decrypt-http"
+          ? connectorWechatDecryptBaseUrl.trim() || null
+          : null,
+    };
+  }
+
+  const connectorSourceConfigReady =
+    connectorProviderKey !== "wechat-decrypt-http" ||
+    connectorWechatDecryptBaseUrl.trim().length > 0;
+
+  const connectorConfigMutation = useMutation({
+    mutationFn: () =>
+      patchWechatConnectorConfig(
+        connectorSettings.baseUrl,
+        buildConnectorSourceConfig(),
+      ),
+    onSuccess: async () => {
+      saveWechatConnectorSettings(connectorSettings);
+      setConnectorProbeRequested(true);
+      await queryClient.invalidateQueries({
+        queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
+      });
+    },
+  });
+
   const scanMutation = useMutation({
-    mutationFn: () => scanWechatConnector(connectorSettings.baseUrl),
+    mutationFn: () =>
+      scanWechatConnector(
+        connectorSettings.baseUrl,
+        buildConnectorSourceConfig(),
+      ),
     onSuccess: async () => {
       saveWechatConnectorSettings(connectorSettings);
       setPreviewItems([]);
@@ -1231,16 +1299,61 @@ export function WechatSyncPage() {
                 }))
               }
             />
+            <div>
+              <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                数据源
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <AdminSelectableCard
+                  active={connectorProviderKey === "manual-json"}
+                  title="本地 JSON / 文件"
+                  subtitle="从你授权导出的联系人快照读取"
+                  activeLabel="当前数据源"
+                  onClick={() => setConnectorProviderKey("manual-json")}
+                />
+                <AdminSelectableCard
+                  active={connectorProviderKey === "wechat-decrypt-http"}
+                  title="wechat-decrypt HTTP"
+                  subtitle="读取本机 5678 服务的历史与标签"
+                  activeLabel="当前数据源"
+                  onClick={() => setConnectorProviderKey("wechat-decrypt-http")}
+                />
+              </div>
+            </div>
+            {connectorProviderKey === "manual-json" ? (
+              <AdminTextField
+                label="连接器侧 JSON 路径（可选）"
+                value={connectorManualJsonPath}
+                placeholder="D:\\exports\\wechat-contacts.json"
+                onChange={setConnectorManualJsonPath}
+              />
+            ) : (
+              <AdminTextField
+                label="wechat-decrypt 地址"
+                value={connectorWechatDecryptBaseUrl}
+                placeholder="http://127.0.0.1:5678"
+                onChange={setConnectorWechatDecryptBaseUrl}
+              />
+            )}
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => connectorConfigMutation.mutate()}
+              disabled={
+                connectorConfigMutation.isPending || !connectorSourceConfigReady
+              }
+            >
+              {connectorConfigMutation.isPending ? "保存中..." : "保存数据源配置"}
+            </Button>
             <Button
               variant="primary"
               onClick={() => {
                 setConnectorProbeRequested(true);
                 scanMutation.mutate();
               }}
-              disabled={scanMutation.isPending}
+              disabled={scanMutation.isPending || !connectorSourceConfigReady}
             >
               {scanMutation.isPending ? "刷新中..." : "刷新本地索引"}
             </Button>
@@ -1270,6 +1383,21 @@ export function WechatSyncPage() {
           {scanMutation.isError && scanMutation.error instanceof Error ? (
             <ErrorBlock className="mt-4" message={scanMutation.error.message} />
           ) : null}
+          {connectorConfigMutation.isError &&
+          connectorConfigMutation.error instanceof Error ? (
+            <ErrorBlock
+              className="mt-4"
+              message={connectorConfigMutation.error.message}
+            />
+          ) : null}
+          {connectorConfigMutation.isSuccess ? (
+            <AdminActionFeedback
+              className="mt-4"
+              tone="success"
+              title="数据源配置已保存"
+              description="连接器会在下一次刷新索引时使用这个数据源。"
+            />
+          ) : null}
           {scanMutation.isSuccess ? (
             <AdminActionFeedback
               className="mt-4"
@@ -1294,6 +1422,21 @@ export function WechatSyncPage() {
                     {connectorHealthQuery.data.activeConfig.sourceSummary ||
                       "未回报"}
                   </div>
+                  <div>
+                    数据源：
+                    {formatConnectorProviderLabel(
+                      connectorHealthQuery.data.activeConfig.providerKey,
+                    )}
+                  </div>
+                  {connectorHealthQuery.data.activeConfig.wechatDecryptBaseUrl ? (
+                    <div>
+                      wechat-decrypt：
+                      {
+                        connectorHealthQuery.data.activeConfig
+                          .wechatDecryptBaseUrl
+                      }
+                    </div>
+                  ) : null}
                   <div>
                     上次扫描：
                     {formatDateTime(connectorHealthQuery.data.lastScanAt)}
@@ -5169,6 +5312,17 @@ function formatDateTime(value?: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatConnectorProviderLabel(value?: WechatConnectorProviderKey | null) {
+  switch (value) {
+    case "wechat-decrypt-http":
+      return "wechat-decrypt HTTP";
+    case "manual-json":
+      return "本地 JSON";
+    default:
+      return "未回报";
+  }
 }
 
 async function loadSelectedConnectorContacts(
