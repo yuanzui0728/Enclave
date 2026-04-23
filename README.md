@@ -1,4 +1,3 @@
-
 # 隐界
 
 **简体中文** · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
@@ -25,6 +24,9 @@
 
 ---
 https://github.com/user-attachments/assets/b561ca91-f033-4961-ac0e-862655caad9f
+
+https://github.com/user-attachments/assets/b7666b02-cfbc-4774-80d2-f70bbe26bbae
+
 ## ✨ 这是什么
 
 市面上的 AI 产品大致停留在两种形态：
