@@ -33,6 +33,11 @@ describe("cloud-console router smoke", () => {
     expect((await screen.findByRole("link", { name: "Jobs" })).getAttribute("href")).toBe(
       "/jobs",
     );
+    expect(
+      (await screen.findByRole("link", { name: "Sessions" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/sessions");
   });
 
   it("navigates through compact request and world nav links", async () => {

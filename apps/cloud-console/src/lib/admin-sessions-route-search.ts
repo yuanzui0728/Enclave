@@ -233,3 +233,136 @@ export function validateAdminSessionsRouteSearch(
     sourcePageSize: search.sourcePageSize,
   });
 }
+
+export function buildCompactAdminSessionsRouteSearch(
+  search?: Partial<AdminSessionsRouteSearch>,
+) {
+  const normalized = buildAdminSessionsRouteSearch(search);
+  const compact: Partial<AdminSessionsRouteSearch> = {};
+
+  if (normalized.status !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.status) {
+    compact.status = normalized.status;
+  }
+  if (
+    normalized.revocationReason !==
+    DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.revocationReason
+  ) {
+    compact.revocationReason = normalized.revocationReason;
+  }
+  if (normalized.scope !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.scope) {
+    compact.scope = normalized.scope;
+  }
+  if (normalized.query) {
+    compact.query = normalized.query;
+  }
+  if (normalized.sourceKey) {
+    compact.sourceKey = normalized.sourceKey;
+  }
+  if (normalized.sourceIssuedFromIp) {
+    compact.sourceIssuedFromIp = normalized.sourceIssuedFromIp;
+  }
+  if (normalized.sourceIssuedUserAgent) {
+    compact.sourceIssuedUserAgent = normalized.sourceIssuedUserAgent;
+  }
+  if (normalized.sortBy !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.sortBy) {
+    compact.sortBy = normalized.sortBy;
+  }
+  if (
+    normalized.sortDirection !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.sortDirection
+  ) {
+    compact.sortDirection = normalized.sortDirection;
+  }
+  if (normalized.page !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.page) {
+    compact.page = normalized.page;
+  }
+  if (normalized.pageSize !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.pageSize) {
+    compact.pageSize = normalized.pageSize;
+  }
+  if (
+    normalized.sourceSortBy !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.sourceSortBy
+  ) {
+    compact.sourceSortBy = normalized.sourceSortBy;
+  }
+  if (
+    normalized.sourceSortDirection !==
+    DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.sourceSortDirection
+  ) {
+    compact.sourceSortDirection = normalized.sourceSortDirection;
+  }
+  if (
+    normalized.sourceRiskLevel !==
+    DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.sourceRiskLevel
+  ) {
+    compact.sourceRiskLevel = normalized.sourceRiskLevel;
+  }
+  if (normalized.sourcePage !== DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.sourcePage) {
+    compact.sourcePage = normalized.sourcePage;
+  }
+  if (
+    normalized.sourcePageSize !==
+    DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH.sourcePageSize
+  ) {
+    compact.sourcePageSize = normalized.sourcePageSize;
+  }
+
+  return compact;
+}
+
+export function buildAdminSessionsPermalink(
+  search?: Partial<AdminSessionsRouteSearch>,
+) {
+  const compact = buildCompactAdminSessionsRouteSearch(search);
+  const params = new URLSearchParams();
+
+  if (compact.status) {
+    params.set("status", compact.status);
+  }
+  if (compact.revocationReason) {
+    params.set("revocationReason", compact.revocationReason);
+  }
+  if (compact.scope) {
+    params.set("scope", compact.scope);
+  }
+  if (compact.query) {
+    params.set("query", compact.query);
+  }
+  if (compact.sourceKey) {
+    params.set("sourceKey", compact.sourceKey);
+  }
+  if (compact.sourceIssuedFromIp) {
+    params.set("sourceIssuedFromIp", compact.sourceIssuedFromIp);
+  }
+  if (compact.sourceIssuedUserAgent) {
+    params.set("sourceIssuedUserAgent", compact.sourceIssuedUserAgent);
+  }
+  if (compact.sortBy) {
+    params.set("sortBy", compact.sortBy);
+  }
+  if (compact.sortDirection) {
+    params.set("sortDirection", compact.sortDirection);
+  }
+  if (typeof compact.page === "number") {
+    params.set("page", String(compact.page));
+  }
+  if (typeof compact.pageSize === "number") {
+    params.set("pageSize", String(compact.pageSize));
+  }
+  if (compact.sourceSortBy) {
+    params.set("sourceSortBy", compact.sourceSortBy);
+  }
+  if (compact.sourceSortDirection) {
+    params.set("sourceSortDirection", compact.sourceSortDirection);
+  }
+  if (compact.sourceRiskLevel) {
+    params.set("sourceRiskLevel", compact.sourceRiskLevel);
+  }
+  if (typeof compact.sourcePage === "number") {
+    params.set("sourcePage", String(compact.sourcePage));
+  }
+  if (typeof compact.sourcePageSize === "number") {
+    params.set("sourcePageSize", String(compact.sourcePageSize));
+  }
+
+  const queryString = params.toString();
+  return queryString ? `/sessions?${queryString}` : "/sessions";
+}

@@ -34,6 +34,7 @@ import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
 import { useConsoleNotice } from "../components/console-notice";
 import {
   DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH,
+  buildAdminSessionsPermalink,
   buildAdminSessionsRouteSearch,
   type AdminSessionsRouteSearch,
 } from "../lib/admin-sessions-route-search";
@@ -62,6 +63,7 @@ import {
   cloudAdminApi,
   getCloudAdminApiErrorRequestId,
 } from "../lib/cloud-admin-api";
+import { copyTextToClipboard } from "../lib/clipboard";
 import {
   createRequestScopedNotice,
   type RequestScopedNotice,
@@ -1274,6 +1276,22 @@ export function AdminSessionsPage() {
     });
   }
 
+  async function copyAdminSessionsPermalink() {
+    const relativePermalink = buildAdminSessionsPermalink(filters);
+    const absolutePermalink =
+      typeof window !== "undefined" && window.location?.origin
+        ? `${window.location.origin}${relativePermalink}`
+        : relativePermalink;
+    const copied = await copyTextToClipboard(absolutePermalink);
+
+    showNotice(
+      copied
+        ? "Admin sessions permalink copied."
+        : "Clipboard copy failed in this environment.",
+      copied ? "success" : "danger",
+    );
+  }
+
   const sessionFilters = {
     status: filters.status === "all" ? undefined : filters.status,
     revocationReason:
@@ -2066,9 +2084,17 @@ export function AdminSessionsPage() {
           description="Review live admin sessions, inspect where they were issued from, filter by revocation path, and page through longer audit history."
           variant="page"
         />
-        <AdminSessionSummaryChip className="tracking-[0.2em]">
-          {summary}
-        </AdminSessionSummaryChip>
+        <div className="flex flex-wrap items-center gap-3">
+          <AdminSessionSummaryChip className="tracking-[0.2em]">
+            {summary}
+          </AdminSessionSummaryChip>
+          <AdminSessionActionButton
+            tone="neutral"
+            onClick={copyAdminSessionsPermalink}
+          >
+            Copy sessions permalink
+          </AdminSessionActionButton>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">

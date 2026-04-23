@@ -10,6 +10,8 @@ import {
   ADMIN_SESSION_SOURCE_GROUP_SORT_DIRECTIONS,
   ADMIN_SESSION_SOURCE_GROUP_SORT_FIELDS,
   ADMIN_SESSION_STATUS_FILTERS,
+  buildAdminSessionsPermalink,
+  buildCompactAdminSessionsRouteSearch,
   buildAdminSessionsRouteSearch,
   DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH,
   validateAdminSessionsRouteSearch,
@@ -248,5 +250,72 @@ describe("admin sessions route search", () => {
         },
       },
     ],
+  });
+
+  it("builds compact admin-sessions route search and permalink", () => {
+    expect(
+      buildCompactAdminSessionsRouteSearch(DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH),
+    ).toEqual({});
+
+    expect(
+      buildCompactAdminSessionsRouteSearch({
+        status: "revoked",
+        revocationReason: "manual-revocation",
+        scope: "current",
+        query: "admin@example.com",
+        sourceKey: "browser:chrome",
+        sourceIssuedFromIp: "10.0.0.8",
+        sourceIssuedUserAgent: "Mozilla/5.0",
+        sortBy: "revokedAt",
+        sortDirection: "asc",
+        page: 2,
+        pageSize: 20,
+        sourceSortBy: "totalSessions",
+        sourceSortDirection: "asc",
+        sourceRiskLevel: "watch",
+        sourcePage: 3,
+        sourcePageSize: 12,
+      }),
+    ).toEqual({
+      status: "revoked",
+      revocationReason: "manual-revocation",
+      scope: "current",
+      query: "admin@example.com",
+      sourceKey: "browser:chrome",
+      sourceIssuedFromIp: "10.0.0.8",
+      sourceIssuedUserAgent: "Mozilla/5.0",
+      sortBy: "revokedAt",
+      sortDirection: "asc",
+      page: 2,
+      pageSize: 20,
+      sourceSortBy: "totalSessions",
+      sourceSortDirection: "asc",
+      sourceRiskLevel: "watch",
+      sourcePage: 3,
+      sourcePageSize: 12,
+    });
+
+    expect(
+      buildAdminSessionsPermalink({
+        status: "revoked",
+        revocationReason: "manual-revocation",
+        scope: "current",
+        query: "admin@example.com",
+        sourceKey: "browser:chrome",
+        sourceIssuedFromIp: "10.0.0.8",
+        sourceIssuedUserAgent: "Mozilla/5.0",
+        sortBy: "revokedAt",
+        sortDirection: "asc",
+        page: 2,
+        pageSize: 20,
+        sourceSortBy: "totalSessions",
+        sourceSortDirection: "asc",
+        sourceRiskLevel: "watch",
+        sourcePage: 3,
+        sourcePageSize: 12,
+      }),
+    ).toBe(
+      "/sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12",
+    );
   });
 });
