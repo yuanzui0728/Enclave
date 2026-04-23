@@ -7,7 +7,7 @@ import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import {
   buildReplyModalityPromptSections,
   extractRequestedImagePrompt,
-  normalizeAssistantReplyTextForModalities,
+  resolveAssistantReplyText,
   shouldCreateVoiceReplyFromText,
   type AssistantReplyModalitiesPlan,
 } from './assistant-reply-modalities';
@@ -75,6 +75,7 @@ export class GroupReplyOrchestratorService {
       userMessageParts,
       isGroupChat: true,
       extraSystemPromptSections,
+      emptyTextFallback: '',
       usageContext: {
         surface: 'app',
         scene: 'group_reply',
@@ -88,10 +89,12 @@ export class GroupReplyOrchestratorService {
     });
 
     return {
-      text: normalizeAssistantReplyTextForModalities(
-        result.text,
-        replyModalities,
-      ),
+      text: resolveAssistantReplyText({
+        text: result.text,
+        promptText: baseUserPrompt,
+        plan: replyModalities,
+        fallbackText: '收到。',
+      }),
       modalities: replyModalities,
     };
   }
@@ -140,6 +143,7 @@ export class GroupReplyOrchestratorService {
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
           extraSystemPromptSections,
+          emptyTextFallback: '',
           usageContext: {
             surface: 'app',
             scene: 'group_reply',
@@ -155,12 +159,21 @@ export class GroupReplyOrchestratorService {
           return;
         }
 
-        await sendReply(actor, reply.text);
+        const normalizedReplyText = resolveAssistantReplyText({
+          text: reply.text,
+          promptText: currentUserContext.promptText,
+          plan: { includeVoice: false, promptSections: [] },
+          fallbackText: '收到。',
+        });
+
+        await sendReply(actor, normalizedReplyText);
         emittedReplies.push({
           senderName: actor.character.name,
-          text: reply.text,
+          text: normalizedReplyText,
         });
-        rollingHistory.push(this.toEmittedHistoryMessage(actor, reply.text));
+        rollingHistory.push(
+          this.toEmittedHistoryMessage(actor, normalizedReplyText),
+        );
       } catch (error) {
         onError?.(actor, error);
       }

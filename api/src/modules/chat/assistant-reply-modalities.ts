@@ -20,6 +20,10 @@ export type AssistantReplyModalitiesPlan = {
   promptSections: string[];
 };
 
+const CHAT_REPLY_PREFIX_PATTERN = /^\[\[chat_reply:[^\]]+\]\]\n?/;
+const INLINE_MENTION_PATTERN = /(^|\s)@[\p{L}\p{N}_-]{1,40}/gu;
+const TERMINAL_PUNCTUATION_PATTERN = /[。！？!?]$/u;
+
 export function shouldCreateVoiceReplyFromAttachment(
   input: AssistantReplyTargetMessage,
 ) {
@@ -106,6 +110,99 @@ export function normalizeAssistantReplyTextForModalities(
     .trim();
 
   return stripped || '给你发过去了。';
+}
+
+export function resolveAssistantReplyText(input: {
+  text: string;
+  promptText: string;
+  plan: AssistantReplyModalitiesPlan;
+  fallbackText?: string;
+}) {
+  const rawText = input.text.trim() === '（无回复）' ? '' : input.text;
+  const normalized = normalizeAssistantReplyTextForModalities(
+    rawText,
+    input.plan,
+  );
+  if (normalized && normalized !== '（无回复）') {
+    return normalized;
+  }
+
+  if (input.plan.imagePrompt) {
+    return '给你发过去了。';
+  }
+
+  const promptFallback = extractPromptReplyFallback(
+    input.promptText,
+    input.plan,
+  );
+  if (promptFallback) {
+    return promptFallback;
+  }
+
+  const explicitFallback = input.fallbackText?.trim();
+  if (explicitFallback) {
+    return explicitFallback;
+  }
+
+  return input.plan.includeVoice ? '我在。' : '收到。';
+}
+
+function extractPromptReplyFallback(
+  promptText: string,
+  plan: AssistantReplyModalitiesPlan,
+) {
+  const cleanedPrompt = promptText
+    .replace(CHAT_REPLY_PREFIX_PATTERN, '')
+    .replace(INLINE_MENTION_PATTERN, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleanedPrompt) {
+    return '';
+  }
+
+  const colonTail = cleanedPrompt
+    .split(/[：:]/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .at(-1);
+  if (
+    plan.includeVoice &&
+    colonTail &&
+    colonTail !== cleanedPrompt &&
+    colonTail.length <= 120
+  ) {
+    return ensureReplySentence(colonTail);
+  }
+
+  const withoutLead = cleanedPrompt
+    .replace(/^(请|麻烦)?\s*(帮我|给我)?\s*/i, '')
+    .replace(
+      /(用语音回复我|语音回复我|语音回答我|语音回复|语音回答|发语音给我|发语音|用语音|说给我听|念给我听|读给我听|播报给我听)/i,
+      '',
+    )
+    .replace(/^(回复我|回答我|跟我说|告诉我)\s*/i, '')
+    .trim();
+  if (
+    plan.includeVoice &&
+    withoutLead &&
+    withoutLead.length <= 120 &&
+    !/语音|回复|回答|发图|图片|插画|配图|海报|壁纸/i.test(withoutLead)
+  ) {
+    return ensureReplySentence(withoutLead);
+  }
+
+  return '';
+}
+
+function ensureReplySentence(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  return TERMINAL_PUNCTUATION_PATTERN.test(trimmed)
+    ? trimmed
+    : `${trimmed}。`;
 }
 
 export function buildAssistantSpeechInstructions(characterName: string) {

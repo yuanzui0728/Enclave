@@ -61,6 +61,8 @@ import {
   joinConversationRoom,
   onChatMessage,
   onConversationUpdated,
+  onTypingStart,
+  onTypingStop,
 } from "../../lib/socket";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
@@ -135,6 +137,9 @@ export function GroupChatThreadPanel({
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
   const [messages, setMessages] = useState<GroupThreadMessage[]>([]);
+  const [typingCharacterId, setTypingCharacterId] = useState<string | null>(
+    null,
+  );
   const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
     kind: DesktopChatCallKind;
     source: CallInviteSource | null;
@@ -247,6 +252,7 @@ export function GroupChatThreadPanel({
     setText("");
     setMessages([]);
     setReplyDraft(null);
+    setTypingCharacterId(null);
     setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
     setSelectionModeActive(false);
@@ -282,6 +288,27 @@ export function GroupChatThreadPanel({
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === groupId && isPersistedGroupConversation(item),
   );
+  const typingCharacterName = useMemo(() => {
+    if (!typingCharacterId) {
+      return null;
+    }
+
+    const memberName = membersQuery.data?.find(
+      (member) => member.memberId === typingCharacterId,
+    )?.memberName;
+    if (memberName?.trim()) {
+      return memberName.trim();
+    }
+
+    const messageName = [...messages]
+      .reverse()
+      .find(
+        (message) =>
+          message.senderType === "character" &&
+          message.senderId === typingCharacterId,
+      )?.senderName;
+    return messageName?.trim() || "有人";
+  }, [membersQuery.data, messages, typingCharacterId]);
 
   useEffect(() => {
     if (unreadSnapshotReady || !conversationsQuery.isFetched) {
@@ -310,10 +337,29 @@ export function GroupChatThreadPanel({
         return;
       }
 
+      if (payload.senderType === "character") {
+        setTypingCharacterId((current) =>
+          current === payload.senderId ? null : current,
+        );
+      }
       setMessages((current) => upsertIncomingGroupMessage(current, payload));
       void queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
+    });
+
+    const offTypingStart = onTypingStart((payload) => {
+      if (payload.conversationId === groupId) {
+        setTypingCharacterId(payload.characterId);
+      }
+    });
+
+    const offTypingStop = onTypingStop((payload) => {
+      if (payload.conversationId === groupId) {
+        setTypingCharacterId((current) =>
+          current === payload.characterId ? null : current,
+        );
+      }
     });
 
     const offConversationUpdated = onConversationUpdated((payload) => {
@@ -337,6 +383,8 @@ export function GroupChatThreadPanel({
 
     return () => {
       offMessage();
+      offTypingStart();
+      offTypingStop();
       offConversationUpdated();
     };
   }, [baseUrl, groupId, queryClient]);
@@ -520,12 +568,16 @@ export function GroupChatThreadPanel({
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   const announcement = groupQuery.data?.announcement?.trim() ?? "";
   const mobileSubtitle = membersQuery.data
-    ? `${membersQuery.data.length} 人群聊${
-        groupQuery.data?.isMuted ? " · 免打扰" : ""
-      }`
-    : groupQuery.data?.isMuted
-      ? "群聊 · 免打扰"
-      : undefined;
+    ? typingCharacterName
+      ? `${typingCharacterName} 正在回复...`
+      : `${membersQuery.data.length} 人群聊${
+          groupQuery.data?.isMuted ? " · 免打扰" : ""
+        }`
+    : typingCharacterName
+      ? `${typingCharacterName} 正在回复...`
+      : groupQuery.data?.isMuted
+        ? "群聊 · 免打扰"
+        : undefined;
 
   useThreadEntryScrollToBottom({
     threadKey: groupId,
@@ -947,7 +999,9 @@ export function GroupChatThreadPanel({
               {groupQuery.data?.name ?? "群聊"}
             </div>
             <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-              {(membersQuery.data?.length ?? 0).toString()} 人群聊
+              {typingCharacterName
+                ? `${typingCharacterName} 正在回复...`
+                : `${(membersQuery.data?.length ?? 0).toString()} 人群聊`}
             </div>
           </div>
 

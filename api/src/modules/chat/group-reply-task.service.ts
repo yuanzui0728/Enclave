@@ -423,49 +423,54 @@ export class GroupReplyTaskService {
         order: { createdAt: 'ASC' },
       });
 
-      const reply = await this.groupReplyOrchestrator.generateTaskReply({
-        actor: {
-          character,
-          profile: runtimeProfile,
-          score: 0,
-          randomPassed: true,
-          isExplicitTarget: false,
-          isReplyTarget: false,
-          recentSpeakerIndex: -1,
-        },
-        groupId: task.groupId,
-        groupName: group?.name,
-        conversationHistory,
-        baseUserPrompt: task.userPromptText,
-        userMessageParts,
-        followupReplies: followupReplies.map((message) => ({
-          senderName: message.senderName,
-          text: message.text,
-        })),
-        allowMultiModal:
-          task.sequenceIndex === 0 ||
-          task.isExplicitTarget ||
-          task.isReplyTarget,
-      });
-
-      if (await this.hasNewerUserMessage(task)) {
-        await this.markTaskCancelled(task, 'superseded_by_new_user_message');
-        return;
-      }
-
-      const sentAt = await this.persistCharacterReply(
-        task.groupId,
-        character,
-        reply.text,
-      );
-      await this.markTaskSent(task, sentAt);
-      if (reply.modalities.includeVoice || reply.modalities.imagePrompt) {
-        void this.completeDeferredCharacterReplyMedia({
+      this.chatGateway.emitTypingStart(task.groupId, character.id);
+      try {
+        const reply = await this.groupReplyOrchestrator.generateTaskReply({
+          actor: {
+            character,
+            profile: runtimeProfile,
+            score: 0,
+            randomPassed: true,
+            isExplicitTarget: false,
+            isReplyTarget: false,
+            recentSpeakerIndex: -1,
+          },
           groupId: task.groupId,
-          character,
-          text: reply.text,
-          modalities: reply.modalities,
+          groupName: group?.name,
+          conversationHistory,
+          baseUserPrompt: task.userPromptText,
+          userMessageParts,
+          followupReplies: followupReplies.map((message) => ({
+            senderName: message.senderName,
+            text: message.text,
+          })),
+          allowMultiModal:
+            task.sequenceIndex === 0 ||
+            task.isExplicitTarget ||
+            task.isReplyTarget,
         });
+
+        if (await this.hasNewerUserMessage(task)) {
+          await this.markTaskCancelled(task, 'superseded_by_new_user_message');
+          return;
+        }
+
+        const sentAt = await this.persistCharacterReply(
+          task.groupId,
+          character,
+          reply.text,
+        );
+        await this.markTaskSent(task, sentAt);
+        if (reply.modalities.includeVoice || reply.modalities.imagePrompt) {
+          void this.completeDeferredCharacterReplyMedia({
+            groupId: task.groupId,
+            character,
+            text: reply.text,
+            modalities: reply.modalities,
+          });
+        }
+      } finally {
+        this.chatGateway.emitTypingStop(task.groupId, character.id);
       }
     } catch (error) {
       task.status = 'failed';
@@ -635,6 +640,7 @@ export class GroupReplyTaskService {
   private async persistCharacterImageReply(
     input: DeferredGroupReplyMedia & { imagePrompt: string },
   ) {
+    this.chatGateway.emitTypingStart(input.groupId, input.character.id);
     try {
       const generated = await this.ai.generateImage({
         prompt: input.imagePrompt,
@@ -665,6 +671,8 @@ export class GroupReplyTaskService {
       this.logger.warn(
         `Failed to generate group image reply for ${input.character.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
+    } finally {
+      this.chatGateway.emitTypingStop(input.groupId, input.character.id);
     }
   }
 

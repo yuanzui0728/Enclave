@@ -128,6 +128,7 @@ type PreparedReplyRequest = {
   conversationHistory: ChatMessage[];
   currentUserMessage: ChatMessage;
   isGroupChat?: boolean;
+  emptyTextFallback?: string;
 };
 
 type BudgetAwareProviderResult = {
@@ -1188,6 +1189,7 @@ export class AiOrchestratorService {
       conversationHistory,
       currentUserMessage,
       isGroupChat,
+      emptyTextFallback,
     } = request;
     const hasImageInput = this.requestContainsImageInput(request);
     const hasDocumentInput = this.requestContainsDocumentInput(request);
@@ -1230,8 +1232,9 @@ export class AiOrchestratorService {
           temperature: 0.85,
         });
 
-        const rawText = response.output_text ?? '（无回复）';
-        const text = sanitizeAiText(rawText) || '（无回复）';
+        const rawText = response.output_text ?? '';
+        const text =
+          sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
         const usage = this.normalizeUsageMetrics(response.usage);
         return {
           text,
@@ -1268,8 +1271,9 @@ export class AiOrchestratorService {
         temperature: 0.85,
       });
 
-      const rawText = response.choices[0]?.message?.content ?? '（无回复）';
-      const text = sanitizeAiText(rawText) || '（无回复）';
+      const rawText = response.choices[0]?.message?.content ?? '';
+      const text =
+        sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
       const usage = this.normalizeUsageMetrics(response.usage);
 
       return {
@@ -1752,6 +1756,7 @@ export class AiOrchestratorService {
       chatContext,
       extraSystemPromptSections,
       aiKeyOverride,
+      emptyTextFallback,
     } = options;
     const usageContext = this.resolveReplyUsageContext(profile, options);
     const runtimeProvider = await this.resolveRuntimeProvider({
@@ -1789,6 +1794,7 @@ export class AiOrchestratorService {
       conversationHistory: sanitizedHistory,
       currentUserMessage,
       isGroupChat,
+      emptyTextFallback,
     };
     const billingSource: AiUsageBillingSource = ownerKeyApplied
       ? 'owner_custom'

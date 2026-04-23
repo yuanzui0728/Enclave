@@ -53,7 +53,7 @@ import {
   buildAssistantSpeechInstructions,
   buildReplyModalityPromptSections,
   extractRequestedImagePrompt,
-  normalizeAssistantReplyTextForModalities,
+  resolveAssistantReplyText,
   shouldCreateVoiceReplyFromAttachment,
   shouldCreateVoiceReplyFromText,
   type AssistantReplyModalitiesPlan,
@@ -841,6 +841,7 @@ export class ChatService {
               chatContext,
               extraSystemPromptSections,
               aiKeyOverride,
+              emptyTextFallback: '',
               usageContext: {
                 surface: 'app',
                 scene: 'chat_reply',
@@ -854,11 +855,12 @@ export class ChatService {
               },
             })
           ).text;
-    const normalizedAssistantReplyText =
-      normalizeAssistantReplyTextForModalities(
-        assistantReplyText,
-        replyModalities,
-      );
+    const normalizedAssistantReplyText = resolveAssistantReplyText({
+      text: assistantReplyText,
+      promptText: normalizedInput.promptText,
+      plan: replyModalities,
+      fallbackText: '收到。',
+    });
 
     if (normalizedAssistantReplyText) {
       const assistantReply = await this.createAssistantReplyMessages({

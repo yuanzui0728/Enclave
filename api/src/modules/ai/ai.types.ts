@@ -328,6 +328,7 @@ export interface GenerateReplyOptions {
   extraSystemPromptSections?: string[];
   aiKeyOverride?: AiKeyOverride;
   usageContext?: AiUsageContext;
+  emptyTextFallback?: string;
 }
 
 export interface GenerateReplyResult {

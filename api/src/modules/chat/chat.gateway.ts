@@ -124,6 +124,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(roomId).emit('new_message', message);
   }
 
+  emitTypingStart(roomId: string, characterId: string) {
+    if (!this.server) {
+      return;
+    }
+
+    this.server
+      .to(roomId)
+      .emit('typing_start', { conversationId: roomId, characterId });
+  }
+
+  emitTypingStop(roomId: string, characterId: string) {
+    if (!this.server) {
+      return;
+    }
+
+    this.server
+      .to(roomId)
+      .emit('typing_stop', { conversationId: roomId, characterId });
+  }
+
   emitConversationUpdated(payload: {
     id: string;
     type: 'direct' | 'group';
@@ -291,9 +311,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: SendMessagePayload,
     replyText: string,
   ) {
-    this.server
-      .to(convId)
-      .emit('typing_start', { conversationId: convId, characterId });
+    this.emitTypingStart(convId, characterId);
 
     try {
       const { messages, deferredImageReply } =
@@ -308,9 +326,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      this.server
-        .to(convId)
-        .emit('typing_stop', { conversationId: convId, characterId });
+      this.emitTypingStop(convId, characterId);
 
       for (const message of messages) {
         this.emitThreadMessage(convId, message);
@@ -324,9 +340,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
       }
     } catch (error) {
-      this.server
-        .to(convId)
-        .emit('typing_stop', { conversationId: convId, characterId });
+      this.emitTypingStop(convId, characterId);
       await this.emitConversationFailure(convId);
       const failureMessage = this.describeReplyFailure(error);
       if (this.shouldPersistReplyFailure(error)) {
@@ -344,9 +358,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ChatService['completeDeferredAssistantImageReply']
     >[0],
   ) {
-    this.server
-      .to(convId)
-      .emit('typing_start', { conversationId: convId, characterId });
+    this.emitTypingStart(convId, characterId);
 
     try {
       const imageMessage = await this.chatService.completeDeferredAssistantImageReply(
@@ -356,9 +368,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.emitThreadMessage(convId, imageMessage);
       }
     } finally {
-      this.server
-        .to(convId)
-        .emit('typing_stop', { conversationId: convId, characterId });
+      this.emitTypingStop(convId, characterId);
     }
   }
 
