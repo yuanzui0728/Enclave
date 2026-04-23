@@ -564,6 +564,13 @@ export function GamesPage() {
         typeof navigator.clipboard.writeText !== "function"
       ) {
         setNoticeTone("info");
+        setNoticeActionState({
+          label: "重试分享",
+          message: "当前设备暂时无法打开系统分享，请稍后重试。",
+          onAction: () => {
+            void handleCopyInviteToMobile(activityId);
+          },
+        });
         setSuccessNotice("当前设备暂时无法打开系统分享，请稍后重试。");
         return;
       }
@@ -681,6 +688,13 @@ export function GamesPage() {
         typeof navigator.clipboard.writeText !== "function"
       ) {
         setNoticeTone("info");
+        setNoticeActionState({
+          label: "重试分享",
+          message: "当前设备暂时无法打开系统分享，请稍后重试。",
+          onAction: () => {
+            void handleCopyGameToMobile(gameId);
+          },
+        });
         setSuccessNotice("当前设备暂时无法打开系统分享，请稍后重试。");
         return;
       }
