@@ -13,6 +13,7 @@ import { CharacterBlueprintService } from '../characters/character-blueprint.ser
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersService } from '../characters/characters.service';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import { FavoritesService } from '../chat/favorites.service';
 import { GroupEntity } from '../chat/group.entity';
 import { GroupMemberEntity } from '../chat/group-member.entity';
@@ -396,26 +397,31 @@ export class NeedDiscoveryService {
     windowEndedAt: Date,
   ): Promise<NeedDiscoverySignalSnapshot> {
     const entries: NeedDiscoverySignalEntry[] = [];
-    const [conversations, userGroupMemberships, favoriteNotes, searchHistory] =
-      await Promise.all([
-        this.conversationRepo.find({
-          where: {
-            ownerId,
-            type: 'direct',
-            lastActivityAt: MoreThanOrEqual(windowStartedAt),
-          },
-          order: { lastActivityAt: 'DESC' },
-          take: 10,
-        }),
-        this.groupMemberRepo.find({
-          where: {
-            memberId: ownerId,
-            memberType: 'user',
-          },
-        }),
-        this.favoritesService.listFavoriteNotes(),
-        this.searchActivityService.listSearchHistory(),
-      ]);
+    const [
+      storedConversations,
+      userGroupMemberships,
+      favoriteNotes,
+      searchHistory,
+    ] = await Promise.all([
+      this.conversationRepo.find({
+        where: {
+          ownerId,
+          type: 'direct',
+          lastActivityAt: MoreThanOrEqual(windowStartedAt),
+        },
+        order: { lastActivityAt: 'DESC' },
+        take: 10,
+      }),
+      this.groupMemberRepo.find({
+        where: {
+          memberId: ownerId,
+          memberType: 'user',
+        },
+      }),
+      this.favoritesService.listFavoriteNotes(),
+      this.searchActivityService.listSearchHistory(),
+    ]);
+    const conversations = filterUserFacingConversations(storedConversations);
     const conversationIds = conversations.map((item) => item.id);
     const conversationMap = new Map(
       conversations.map((item) => [item.id, item] as const),

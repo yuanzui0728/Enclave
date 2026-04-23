@@ -5,6 +5,7 @@ import { In, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import { MessageEntity } from '../chat/message.entity';
 import { GroupEntity } from '../chat/group.entity';
 import { GroupMemberEntity } from '../chat/group-member.entity';
@@ -129,7 +130,9 @@ export class ReplyLogicAdminService {
       provider,
       worldContext,
       constants: runtimeRules,
-      characters: characters.map((character) => this.toCharacterOverviewItem(character)),
+      characters: characters.map((character) =>
+        this.toCharacterOverviewItem(character),
+      ),
       conversations,
     };
   }
@@ -138,7 +141,9 @@ export class ReplyLogicAdminService {
     return this.replyLogicRules.getRules();
   }
 
-  async setRuntimeRules(payload: Parameters<ReplyLogicRulesService['setRules']>[0]) {
+  async setRuntimeRules(
+    payload: Parameters<ReplyLogicRulesService['setRules']>[0],
+  ) {
     return this.replyLogicRules.setRules(payload);
   }
 
@@ -151,32 +156,36 @@ export class ReplyLogicAdminService {
       throw new NotFoundException(`Character ${characterId} not found`);
     }
 
-    const [provider, worldContext, conversations, narrativeArc, observability] =
-      await Promise.all([
-        this.resolveProviderSummary(owner),
-        this.resolveWorldContextSummary(),
-        this.conversationRepo.find({ where: { ownerId: owner.id } }),
-        this.narrativeArcRepo.findOne({
-          where: { ownerId: owner.id, characterId },
-          order: { createdAt: 'DESC' },
-        }),
-        this.buildCharacterObservability(character),
-      ]);
+    const [
+      provider,
+      worldContext,
+      storedConversations,
+      narrativeArc,
+      observability,
+    ] = await Promise.all([
+      this.resolveProviderSummary(owner),
+      this.resolveWorldContextSummary(),
+      this.conversationRepo.find({ where: { ownerId: owner.id } }),
+      this.narrativeArcRepo.findOne({
+        where: { ownerId: owner.id, characterId },
+        order: { createdAt: 'DESC' },
+      }),
+      this.buildCharacterObservability(character),
+    ]);
+    const conversations = filterUserFacingConversations(storedConversations);
     const runtimeRules = await this.replyLogicRules.getRules();
 
     const relatedConversationIds = conversations
-      .filter(
-        (conversation) =>
-          this.getStoredConversationParticipantIds(conversation).includes(
-            characterId,
-          ),
-      )
-      .map((conversation) => conversation.id);
-    const primaryConversation = conversations.find(
-      (conversation) =>
+      .filter((conversation) =>
         this.getStoredConversationParticipantIds(conversation).includes(
           characterId,
         ),
+      )
+      .map((conversation) => conversation.id);
+    const primaryConversation = conversations.find((conversation) =>
+      this.getStoredConversationParticipantIds(conversation).includes(
+        characterId,
+      ),
     );
     const visibleMessages = primaryConversation
       ? await this.loadConversationMessages(primaryConversation)
@@ -224,9 +233,8 @@ export class ReplyLogicAdminService {
     if (storedConversation) {
       const participantIds =
         this.getStoredConversationParticipantIds(storedConversation);
-      const visibleMessages = await this.loadConversationMessages(
-        storedConversation,
-      );
+      const visibleMessages =
+        await this.loadConversationMessages(storedConversation);
       const visibleHistory = visibleMessages.map((message) =>
         this.toHistoryItemFromConversationMessage(message, false, runtimeRules),
       );
@@ -234,8 +242,9 @@ export class ReplyLogicAdminService {
         await this.characterRepo.find({
           where: { id: In(participantIds) },
         })
-      ).sort((left, right) =>
-        participantIds.indexOf(left.id) - participantIds.indexOf(right.id),
+      ).sort(
+        (left, right) =>
+          participantIds.indexOf(left.id) - participantIds.indexOf(right.id),
       );
       const actors = await Promise.all(
         characters.map((character) =>
@@ -248,7 +257,10 @@ export class ReplyLogicAdminService {
           }),
         ),
       );
-      const arcs = await this.loadNarrativeArcs(owner.id, characters.map((item) => item.id));
+      const arcs = await this.loadNarrativeArcs(
+        owner.id,
+        characters.map((item) => item.id),
+      );
 
       return {
         provider,
@@ -260,7 +272,9 @@ export class ReplyLogicAdminService {
               includedInWindow: actors[0].windowMessages.some(
                 (message) => message.id === item.id,
               ),
-              note: actors[0].windowMessages.some((message) => message.id === item.id)
+              note: actors[0].windowMessages.some(
+                (message) => message.id === item.id,
+              )
                 ? runtimeRules.inspectorTemplates.historyIncludedNote
                 : runtimeRules.inspectorTemplates.historyExcludedNote,
             }))
@@ -330,7 +344,8 @@ export class ReplyLogicAdminService {
       visibleMessages: messages.map((message) =>
         this.toHistoryItemFromGroupMessage(
           message,
-          actors[0]?.windowMessages.some((item) => item.id === message.id) ?? false,
+          actors[0]?.windowMessages.some((item) => item.id === message.id) ??
+            false,
           runtimeRules,
         ),
       ),
@@ -358,14 +373,15 @@ export class ReplyLogicAdminService {
       throw new NotFoundException(`Character ${characterId} not found`);
     }
 
-    const conversations = await this.conversationRepo.find({
-      where: { ownerId: owner.id },
-    });
-    const primaryConversation = conversations.find(
-      (conversation) =>
-        this.getStoredConversationParticipantIds(conversation).includes(
-          characterId,
-        ),
+    const conversations = filterUserFacingConversations(
+      await this.conversationRepo.find({
+        where: { ownerId: owner.id },
+      }),
+    );
+    const primaryConversation = conversations.find((conversation) =>
+      this.getStoredConversationParticipantIds(conversation).includes(
+        characterId,
+      ),
     );
     const visibleMessages = primaryConversation
       ? await this.loadConversationMessages(primaryConversation)
@@ -410,9 +426,8 @@ export class ReplyLogicAdminService {
     if (storedConversation) {
       const participantIds =
         this.getStoredConversationParticipantIds(storedConversation);
-      const visibleMessages = await this.loadConversationMessages(
-        storedConversation,
-      );
+      const visibleMessages =
+        await this.loadConversationMessages(storedConversation);
       const characters = (
         await this.characterRepo.find({
           where: { id: In(participantIds) },
@@ -574,25 +589,35 @@ export class ReplyLogicAdminService {
   }
 
   private async listConversationItems(ownerId: string) {
-    const [storedConversations, memberships, characters] = await Promise.all([
-      this.conversationRepo.find({
-        where: { ownerId },
-        order: { lastActivityAt: 'DESC' },
-      }),
-      this.groupMemberRepo.find({
-        where: { memberId: ownerId, memberType: 'user' },
-      }),
-      this.characterRepo.find(),
-    ]);
-    const characterMap = new Map(characters.map((character) => [character.id, character]));
+    const [allStoredConversations, memberships, characters] = await Promise.all(
+      [
+        this.conversationRepo.find({
+          where: { ownerId },
+          order: { lastActivityAt: 'DESC' },
+        }),
+        this.groupMemberRepo.find({
+          where: { memberId: ownerId, memberType: 'user' },
+        }),
+        this.characterRepo.find(),
+      ],
+    );
+    const storedConversations = filterUserFacingConversations(
+      allStoredConversations,
+    );
+    const characterMap = new Map(
+      characters.map((character) => [character.id, character]),
+    );
     const storedItems = storedConversations.map((conversation) => ({
       participantIds: this.getStoredConversationParticipantIds(conversation),
       id: conversation.id,
       title: conversation.title,
       type: 'direct' as const,
       source: 'conversation' as const,
-      participantNames: this.getStoredConversationParticipantIds(conversation).map(
-        (participantId) => characterMap.get(participantId)?.name ?? participantId,
+      participantNames: this.getStoredConversationParticipantIds(
+        conversation,
+      ).map(
+        (participantId) =>
+          characterMap.get(participantId)?.name ?? participantId,
       ),
       lastActivityAt: conversation.lastActivityAt?.toISOString() ?? null,
     }));
@@ -642,7 +667,9 @@ export class ReplyLogicAdminService {
     );
   }
 
-  private async resolveProviderSummary(owner: UserEntity): Promise<ReplyLogicProviderSummary> {
+  private async resolveProviderSummary(
+    owner: UserEntity,
+  ): Promise<ReplyLogicProviderSummary> {
     const runtimeRules = await this.replyLogicRules.getRules();
     const configuredProviderEndpoint =
       await this.systemConfig.getConfig('provider_endpoint');
@@ -665,7 +692,8 @@ export class ReplyLogicAdminService {
       : envEndpoint?.trim()
         ? 'env_default'
         : 'deepseek_default';
-    const model = configuredAiModel?.trim() || envModel?.trim() || 'deepseek-chat';
+    const model =
+      configuredAiModel?.trim() || envModel?.trim() || 'deepseek-chat';
     const modelSource = configuredAiModel?.trim()
       ? 'system_config_ai_model'
       : envModel?.trim()
@@ -680,11 +708,15 @@ export class ReplyLogicAdminService {
 
     if (
       configuredProviderEndpoint?.trim() &&
-      configuredProviderEndpoint.trim().replace(/\/+$/, '') !== endpoint.replace(/\/+$/, '')
+      configuredProviderEndpoint.trim().replace(/\/+$/, '') !==
+        endpoint.replace(/\/+$/, '')
     ) {
       notes.push(runtimeRules.providerTemplates.endpointPriorityNote);
     }
-    if (configuredProviderModel?.trim() && configuredProviderModel.trim() !== model) {
+    if (
+      configuredProviderModel?.trim() &&
+      configuredProviderModel.trim() !== model
+    ) {
       notes.push(runtimeRules.providerTemplates.modelPriorityNote);
     }
 
@@ -863,13 +895,13 @@ export class ReplyLogicAdminService {
             },
       )
     ).map(
-        (section): ReplyLogicPromptSection => ({
-          key: section.key,
-          label: section.label,
-          content: section.content,
-          active: section.active,
-        }),
-      );
+      (section): ReplyLogicPromptSection => ({
+        key: section.key,
+        label: section.label,
+        content: section.content,
+        active: section.active,
+      }),
+    );
     const stateGate = input.includeStateGate
       ? this.describeDirectStateGate(runtimeRules, character.currentActivity)
       : this.describeNonDirectStateGate(runtimeRules);
@@ -908,8 +940,11 @@ export class ReplyLogicAdminService {
   ): ReplyLogicStateGateSummary {
     const activityLabel =
       runtimeRules.semanticLabels.activityLabels[
-        (activity ?? 'free') as keyof typeof runtimeRules.semanticLabels.activityLabels
-      ] ?? activity ?? runtimeRules.semanticLabels.activityLabels.free;
+        (activity ??
+          'free') as keyof typeof runtimeRules.semanticLabels.activityLabels
+      ] ??
+      activity ??
+      runtimeRules.semanticLabels.activityLabels.free;
     if (activity === 'sleeping') {
       return {
         mode: 'sleep_hint_delay',
@@ -929,9 +964,12 @@ export class ReplyLogicAdminService {
       return {
         mode: 'busy_hint_delay',
         activity,
-        reason: renderTemplate(runtimeRules.observabilityTemplates.stateGateBusy, {
-          activity: activityLabel,
-        }),
+        reason: renderTemplate(
+          runtimeRules.observabilityTemplates.stateGateBusy,
+          {
+            activity: activityLabel,
+          },
+        ),
         delayMs: { ...runtimeRules.busyDelayMs },
         hintMessages: [...(runtimeRules.busyHintMessages[activity] ?? [])],
       };
@@ -1046,7 +1084,9 @@ export class ReplyLogicAdminService {
     };
   }
 
-  private findLastUserMessageAt(messages: Array<MessageEntity | GroupMessageEntity>) {
+  private findLastUserMessageAt(
+    messages: Array<MessageEntity | GroupMessageEntity>,
+  ) {
     const latest = [...messages]
       .reverse()
       .find((message) => message.senderType === 'user');
@@ -1080,27 +1120,32 @@ export class ReplyLogicAdminService {
   private async loadGroupReplyRuntime(
     groupId: string,
   ): Promise<ReplyLogicGroupReplyRuntimeSummary> {
-    const [pendingTaskCount, processingTaskCount, failedTaskCount, taskEntities, archiveStore] =
-      await Promise.all([
-        this.groupReplyTaskRepo.count({
-          where: { groupId, status: 'pending' },
-        }),
-        this.groupReplyTaskRepo.count({
-          where: { groupId, status: 'processing' },
-        }),
-        this.groupReplyTaskRepo.count({
-          where: { groupId, status: 'failed' },
-        }),
-        this.groupReplyTaskRepo.find({
-          where: { groupId },
-          order: {
-            triggerMessageCreatedAt: 'DESC',
-            createdAt: 'DESC',
-          },
-          take: 96,
-        }),
-        this.readGroupReplyArchiveStore(),
-      ]);
+    const [
+      pendingTaskCount,
+      processingTaskCount,
+      failedTaskCount,
+      taskEntities,
+      archiveStore,
+    ] = await Promise.all([
+      this.groupReplyTaskRepo.count({
+        where: { groupId, status: 'pending' },
+      }),
+      this.groupReplyTaskRepo.count({
+        where: { groupId, status: 'processing' },
+      }),
+      this.groupReplyTaskRepo.count({
+        where: { groupId, status: 'failed' },
+      }),
+      this.groupReplyTaskRepo.find({
+        where: { groupId },
+        order: {
+          triggerMessageCreatedAt: 'DESC',
+          createdAt: 'DESC',
+        },
+        take: 96,
+      }),
+      this.readGroupReplyArchiveStore(),
+    ]);
 
     const tasksByTurn = new Map<string, GroupReplyTaskEntity[]>();
     for (const task of taskEntities) {
@@ -1113,7 +1158,10 @@ export class ReplyLogicAdminService {
       .slice(0, 8)
       .map((tasks) => this.toGroupReplyTurnSummary(tasks));
     const issueSummary = buildGroupReplyIssueSummaryFromTasks(taskEntities, 8);
-    const archiveSummary = this.toGroupReplyArchiveSummary(groupId, archiveStore);
+    const archiveSummary = this.toGroupReplyArchiveSummary(
+      groupId,
+      archiveStore,
+    );
 
     return {
       pendingTaskCount,
@@ -1171,7 +1219,8 @@ export class ReplyLogicAdminService {
     return {
       turnId: primaryTask.turnId,
       triggerMessageId: primaryTask.triggerMessageId,
-      triggerMessageCreatedAt: primaryTask.triggerMessageCreatedAt.toISOString(),
+      triggerMessageCreatedAt:
+        primaryTask.triggerMessageCreatedAt.toISOString(),
       createdAt: primaryTask.createdAt.toISOString(),
       updatedAt: updatedAt.toISOString(),
       maxSpeakers: plannerContext?.maxSpeakers ?? orderedTasks.length,
@@ -1249,7 +1298,9 @@ export class ReplyLogicAdminService {
     }
 
     try {
-      const parsed = JSON.parse(payload) as GroupReplyPlannerCandidateDiagnostic[];
+      const parsed = JSON.parse(
+        payload,
+      ) as GroupReplyPlannerCandidateDiagnostic[];
       if (!Array.isArray(parsed)) {
         return [];
       }
@@ -1388,13 +1439,12 @@ export class ReplyLogicAdminService {
 
     for (const turn of recentTurns) {
       for (const task of turn.tasks) {
-        const actorRuntime =
-          actorRuntimeMap.get(task.actorCharacterId) ?? {
-            actorName: task.actorName,
-            tasks: [],
-            turnIds: new Set<string>(),
-            openTaskCount: 0,
-          };
+        const actorRuntime = actorRuntimeMap.get(task.actorCharacterId) ?? {
+          actorName: task.actorName,
+          tasks: [],
+          turnIds: new Set<string>(),
+          openTaskCount: 0,
+        };
         actorRuntime.actorName = task.actorName;
         actorRuntime.tasks.push(task);
         actorRuntime.turnIds.add(turn.turnId);
@@ -1632,11 +1682,14 @@ export class ReplyLogicAdminService {
   private async toStoredConversationItem(
     conversation: ConversationEntity,
   ): Promise<ReplyLogicOverviewConversationItem> {
-    const participantIds = this.getStoredConversationParticipantIds(conversation);
+    const participantIds =
+      this.getStoredConversationParticipantIds(conversation);
     const characters = await this.characterRepo.find({
       where: { id: In(participantIds) },
     });
-    const characterMap = new Map(characters.map((character) => [character.id, character.name]));
+    const characterMap = new Map(
+      characters.map((character) => [character.id, character.name]),
+    );
 
     return {
       id: conversation.id,
@@ -1665,7 +1718,9 @@ export class ReplyLogicAdminService {
     members: GroupMemberEntity[],
     characters: CharacterEntity[],
   ): ReplyLogicOverviewConversationItem {
-    const characterMap = new Map(characters.map((character) => [character.id, character.name]));
+    const characterMap = new Map(
+      characters.map((character) => [character.id, character.name]),
+    );
 
     return {
       id: group.id,

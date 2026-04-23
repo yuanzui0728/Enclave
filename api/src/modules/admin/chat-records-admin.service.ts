@@ -7,6 +7,7 @@ import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import { AdminConversationReviewEntity } from './admin-conversation-review.entity';
 import {
   searchMessages as searchVisibleMessages,
@@ -222,15 +223,17 @@ export class ChatRecordsAdminService {
 
   async getOverview() {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const conversations = await this.conversationRepo.find({
-      where: {
-        ownerId: owner.id,
-        type: 'direct',
-      },
-      order: {
-        lastActivityAt: 'DESC',
-      },
-    });
+    const conversations = filterUserFacingConversations(
+      await this.conversationRepo.find({
+        where: {
+          ownerId: owner.id,
+          type: 'direct',
+        },
+        order: {
+          lastActivityAt: 'DESC',
+        },
+      }),
+    );
 
     if (!conversations.length) {
       return {
@@ -246,7 +249,9 @@ export class ChatRecordsAdminService {
       };
     }
 
-    const conversationIds = conversations.map((conversation) => conversation.id);
+    const conversationIds = conversations.map(
+      (conversation) => conversation.id,
+    );
     const sevenDaysAgo = this.daysAgo(7);
     const thirtyDaysAgo = this.daysAgo(30);
 
@@ -299,8 +304,7 @@ export class ChatRecordsAdminService {
           0,
         ),
       ),
-      currency:
-        recentUsage[0]?.currency === 'USD' ? 'USD' : ('CNY' as const),
+      currency: recentUsage[0]?.currency === 'USD' ? 'USD' : ('CNY' as const),
     };
   }
 
@@ -317,22 +321,27 @@ export class ChatRecordsAdminService {
     const activityWindow = this.normalizeActivityWindow(query.activityWindow);
     const dateFrom = this.normalizeDate(query.dateFrom);
     const dateTo = this.normalizeDate(query.dateTo);
-    const conversations = await this.conversationRepo.find({
-      where: {
-        ownerId: owner.id,
-        type: 'direct',
-      },
-      order: {
-        lastActivityAt: 'DESC',
-        updatedAt: 'DESC',
-      },
-    });
+    const conversations = filterUserFacingConversations(
+      await this.conversationRepo.find({
+        where: {
+          ownerId: owner.id,
+          type: 'direct',
+        },
+        order: {
+          lastActivityAt: 'DESC',
+          updatedAt: 'DESC',
+        },
+      }),
+    );
     const directConversations = conversations.filter((conversation) => {
       if (!includeHidden && conversation.isHidden) {
         return false;
       }
       const characterId = this.getDirectConversationCharacterId(conversation);
-      if (query.characterId?.trim() && characterId !== query.characterId.trim()) {
+      if (
+        query.characterId?.trim() &&
+        characterId !== query.characterId.trim()
+      ) {
         return false;
       }
       const lastActivityAt = conversation.lastActivityAt?.getTime() ?? 0;
@@ -389,22 +398,33 @@ export class ChatRecordsAdminService {
     conversationId: string,
     query: { includeClearedHistory?: boolean | string },
   ) {
-    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const conversation =
+      await this.requireOwnedDirectConversation(conversationId);
     const includeClearedHistory = this.normalizeBoolean(
       query.includeClearedHistory,
     );
     const storedMessages = await this.loadStoredMessages(conversation.id);
-    const visibleMessages = this.filterVisibleMessages(conversation, storedMessages);
-    const activeMessages = includeClearedHistory ? storedMessages : visibleMessages;
+    const visibleMessages = this.filterVisibleMessages(
+      conversation,
+      storedMessages,
+    );
+    const activeMessages = includeClearedHistory
+      ? storedMessages
+      : visibleMessages;
     const character = await this.loadConversationCharacter(conversation);
 
-    const conversationItems = await this.buildConversationListItems([conversation], {
-      ownerId: conversation.ownerId,
-      preloadedMessages: new Map([[conversation.id, storedMessages]]),
-      preloadedCharacters: character ? [character] : [],
-    });
+    const conversationItems = await this.buildConversationListItems(
+      [conversation],
+      {
+        ownerId: conversation.ownerId,
+        preloadedMessages: new Map([[conversation.id, storedMessages]]),
+        preloadedCharacters: character ? [character] : [],
+      },
+    );
     if (!conversationItems[0]) {
-      throw new NotFoundException(`Conversation ${conversationId} could not be built`);
+      throw new NotFoundException(
+        `Conversation ${conversationId} could not be built`,
+      );
     }
     return {
       conversation: conversationItems[0],
@@ -424,7 +444,8 @@ export class ChatRecordsAdminService {
     conversationId: string,
     query: ChatRecordConversationMessagesQuery,
   ): Promise<ChatRecordConversationMessagesPage> {
-    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const conversation =
+      await this.requireOwnedDirectConversation(conversationId);
     const includeClearedHistory = this.normalizeBoolean(
       query.includeClearedHistory,
     );
@@ -461,10 +482,15 @@ export class ChatRecordsAdminService {
       this.normalizePositiveInteger(query.limit, DEFAULT_MESSAGE_PAGE_SIZE),
       MAX_MESSAGE_PAGE_SIZE,
     );
-    const consumedNewestCount = this.normalizeNonNegativeInteger(query.cursor, 0);
+    const consumedNewestCount = this.normalizeNonNegativeInteger(
+      query.cursor,
+      0,
+    );
     const end = Math.max(0, allMessages.length - consumedNewestCount);
     const start = Math.max(0, end - limit);
-    const items = allMessages.slice(start, end).map((item) => this.toMessageContract(item));
+    const items = allMessages
+      .slice(start, end)
+      .map((item) => this.toMessageContract(item));
     const nextCursor =
       start > 0 ? String(consumedNewestCount + items.length) : undefined;
 
@@ -483,7 +509,8 @@ export class ChatRecordsAdminService {
     conversationId: string,
     query: ChatRecordConversationSearchQuery,
   ) {
-    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const conversation =
+      await this.requireOwnedDirectConversation(conversationId);
     const includeClearedHistory = this.normalizeBoolean(
       query.includeClearedHistory,
     );
@@ -517,28 +544,33 @@ export class ChatRecordsAdminService {
     const thirtyDaysAgo = this.daysAgo(30);
     const from = thirtyDaysAgo.toISOString();
     const to = now.toISOString();
-    const [allTimeOverview, recent30dOverview, recent30dTrend, recent30dBreakdown, recentRecords] =
-      await Promise.all([
-        this.usageLedger.getOverview({ conversationId }),
-        this.usageLedger.getOverview({ conversationId, from, to }),
-        this.usageLedger.getTrend({
-          conversationId,
-          from,
-          to,
-          grain: 'day',
-        }),
-        this.usageLedger.getBreakdown({
-          conversationId,
-          from,
-          to,
-          limit: 6,
-        }),
-        this.usageLedger.getRecords({
-          conversationId,
-          page: 1,
-          pageSize: 8,
-        }),
-      ]);
+    const [
+      allTimeOverview,
+      recent30dOverview,
+      recent30dTrend,
+      recent30dBreakdown,
+      recentRecords,
+    ] = await Promise.all([
+      this.usageLedger.getOverview({ conversationId }),
+      this.usageLedger.getOverview({ conversationId, from, to }),
+      this.usageLedger.getTrend({
+        conversationId,
+        from,
+        to,
+        grain: 'day',
+      }),
+      this.usageLedger.getBreakdown({
+        conversationId,
+        from,
+        to,
+        limit: 6,
+      }),
+      this.usageLedger.getRecords({
+        conversationId,
+        page: 1,
+        pageSize: 8,
+      }),
+    ]);
 
     return {
       allTimeOverview,
@@ -557,7 +589,8 @@ export class ChatRecordsAdminService {
     conversationId: string,
     payload: ChatRecordConversationReviewInput,
   ) {
-    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const conversation =
+      await this.requireOwnedDirectConversation(conversationId);
     const existing = await this.reviewRepo.findOneBy({
       conversationId: conversation.id,
       ownerId: conversation.ownerId,
@@ -575,7 +608,8 @@ export class ChatRecordsAdminService {
   }
 
   async deleteConversationReview(conversationId: string) {
-    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const conversation =
+      await this.requireOwnedDirectConversation(conversationId);
     await this.reviewRepo.delete({
       conversationId: conversation.id,
       ownerId: conversation.ownerId,
@@ -625,11 +659,15 @@ export class ChatRecordsAdminService {
       return [];
     }
 
-    const conversationIds = conversations.map((conversation) => conversation.id);
+    const conversationIds = conversations.map(
+      (conversation) => conversation.id,
+    );
     const characterIds = Array.from(
       new Set(
         conversations
-          .map((conversation) => this.getDirectConversationCharacterId(conversation))
+          .map((conversation) =>
+            this.getDirectConversationCharacterId(conversation),
+          )
           .filter((value): value is string => Boolean(value)),
       ),
     );
@@ -659,7 +697,7 @@ export class ChatRecordsAdminService {
       const directCharacterId =
         this.getDirectConversationCharacterId(conversation);
       const character = directCharacterId
-        ? characterMap.get(directCharacterId) ?? null
+        ? (characterMap.get(directCharacterId) ?? null)
         : null;
       const currentStoredMessages = storedMessages.get(conversation.id) ?? [];
       const currentVisibleMessages = this.filterVisibleMessages(
@@ -773,9 +811,7 @@ export class ChatRecordsAdminService {
       },
     });
 
-    return new Map(
-      reviews.map((review) => [review.conversationId, review]),
-    );
+    return new Map(reviews.map((review) => [review.conversationId, review]));
   }
 
   private async loadStoredMessages(conversationId: string) {
@@ -836,18 +872,20 @@ export class ChatRecordsAdminService {
         continue;
       }
 
-      if (
-        latestUserMessageAt &&
-        message.senderType === 'character'
-      ) {
+      if (latestUserMessageAt && message.senderType === 'character') {
         firstResponseDurations.push(
-          Math.max(0, message.createdAt.getTime() - latestUserMessageAt.getTime()),
+          Math.max(
+            0,
+            message.createdAt.getTime() - latestUserMessageAt.getTime(),
+          ),
         );
         latestUserMessageAt = null;
       }
     }
 
-    const sortedDurations = [...firstResponseDurations].sort((left, right) => left - right);
+    const sortedDurations = [...firstResponseDurations].sort(
+      (left, right) => left - right,
+    );
     const attachmentMessageCount = messages.filter((message) =>
       this.isAttachmentLikeMessage(message),
     ).length;
@@ -857,7 +895,9 @@ export class ChatRecordsAdminService {
       messageCount: messages.length,
       visibleMessageCount,
       storedMessageCount,
-      userMessageCount: messages.filter((message) => message.senderType === 'user').length,
+      userMessageCount: messages.filter(
+        (message) => message.senderType === 'user',
+      ).length,
       characterMessageCount: messages.filter(
         (message) => message.senderType === 'character',
       ).length,
@@ -865,7 +905,9 @@ export class ChatRecordsAdminService {
         (message) => message.type === 'proactive',
       ).length,
       attachmentMessageCount,
-      systemMessageCount: messages.filter((message) => message.type === 'system').length,
+      systemMessageCount: messages.filter(
+        (message) => message.type === 'system',
+      ).length,
       recentMessageCount7d: messages.filter(
         (message) => message.createdAt.getTime() >= sevenDaysAgo,
       ).length,
@@ -891,10 +933,16 @@ export class ChatRecordsAdminService {
     const detail = await this.getConversationDetail(conversationId, {
       includeClearedHistory,
     });
-    const conversation = await this.requireOwnedDirectConversation(conversationId);
+    const conversation =
+      await this.requireOwnedDirectConversation(conversationId);
     const storedMessages = await this.loadStoredMessages(conversation.id);
-    const visibleMessages = this.filterVisibleMessages(conversation, storedMessages);
-    const activeMessages = includeClearedHistory ? storedMessages : visibleMessages;
+    const visibleMessages = this.filterVisibleMessages(
+      conversation,
+      storedMessages,
+    );
+    const activeMessages = includeClearedHistory
+      ? storedMessages
+      : visibleMessages;
     const tokenUsage = await this.getConversationTokenUsage(conversationId);
 
     return {
@@ -905,7 +953,9 @@ export class ChatRecordsAdminService {
       stats: detail.stats,
       insight: detail.insight,
       review: detail.review,
-      messages: activeMessages.map((message) => this.toMessageContract(message)),
+      messages: activeMessages.map((message) =>
+        this.toMessageContract(message),
+      ),
       tokenUsage,
     };
   }
@@ -916,7 +966,9 @@ export class ChatRecordsAdminService {
     const trend7d = this.buildTrendPoints(messages, 7);
     const trend30d = this.buildTrendPoints(messages, 30);
     const totalMessages = messages.length;
-    const userMessages = messages.filter((message) => message.senderType === 'user').length;
+    const userMessages = messages.filter(
+      (message) => message.senderType === 'user',
+    ).length;
     const characterMessages = messages.filter(
       (message) => message.senderType === 'character',
     ).length;
@@ -926,15 +978,21 @@ export class ChatRecordsAdminService {
     const attachmentMessages = messages.filter((message) =>
       this.isAttachmentLikeMessage(message),
     ).length;
-    const systemMessages = messages.filter((message) => message.type === 'system').length;
+    const systemMessages = messages.filter(
+      (message) => message.type === 'system',
+    ).length;
     const lastUserMessage = [...messages]
       .reverse()
       .find((message) => message.senderType === 'user');
     const lastCharacterMessage = [...messages]
       .reverse()
       .find((message) => message.senderType === 'character');
-    const activeDays7d = trend7d.filter((item) => item.totalMessages > 0).length;
-    const activeDays30d = trend30d.filter((item) => item.totalMessages > 0).length;
+    const activeDays7d = trend7d.filter(
+      (item) => item.totalMessages > 0,
+    ).length;
+    const activeDays30d = trend30d.filter(
+      (item) => item.totalMessages > 0,
+    ).length;
     const weekdayLabel = this.resolveMostActiveWeekday(messages);
 
     return {
@@ -948,7 +1006,8 @@ export class ChatRecordsAdminService {
           ) / 10
         : null,
       lastUserMessageAt: lastUserMessage?.createdAt.toISOString() ?? null,
-      lastCharacterMessageAt: lastCharacterMessage?.createdAt.toISOString() ?? null,
+      lastCharacterMessageAt:
+        lastCharacterMessage?.createdAt.toISOString() ?? null,
       mostActiveWeekday: weekdayLabel,
       mix: {
         userShare: this.calculateShare(userMessages, totalMessages),
@@ -1060,7 +1119,9 @@ export class ChatRecordsAdminService {
     };
   }
 
-  private parseAttachment(entity: MessageEntity): MessageAttachment | undefined {
+  private parseAttachment(
+    entity: MessageEntity,
+  ): MessageAttachment | undefined {
     if (!entity.attachmentKind || !entity.attachmentPayload) {
       return undefined;
     }
@@ -1088,11 +1149,7 @@ export class ChatRecordsAdminService {
   private normalizeReviewStatus(
     value: string | undefined | null,
   ): ChatRecordConversationReviewStatus {
-    if (
-      value === 'watching' ||
-      value === 'important' ||
-      value === 'resolved'
-    ) {
+    if (value === 'watching' || value === 'important' || value === 'resolved') {
       return value;
     }
 
@@ -1247,7 +1304,10 @@ export class ChatRecordsAdminService {
       return right[1] - left[1] || left[0] - right[0];
     })[0];
 
-    return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][weekdayIndex] ?? null;
+    return (
+      ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][weekdayIndex] ??
+      null
+    );
   }
 
   private calculateShare(count: number, total: number) {
@@ -1269,7 +1329,9 @@ export class ChatRecordsAdminService {
     return `${year}-${month}-${day}`;
   }
 
-  private normalizeExportFormat(value: string | undefined): ChatRecordExportFormat {
+  private normalizeExportFormat(
+    value: string | undefined,
+  ): ChatRecordExportFormat {
     return value === 'json' ? 'json' : 'markdown';
   }
 
@@ -1311,10 +1373,14 @@ export class ChatRecordsAdminService {
       `- 近 30 天成本：${payload.tokenUsage.recent30dOverview.estimatedCost} ${payload.tokenUsage.recent30dOverview.currency}`,
       '',
       '### 近 30 天主要模型',
-      ...this.renderBreakdownLines(payload.tokenUsage.recent30dBreakdown.byModel),
+      ...this.renderBreakdownLines(
+        payload.tokenUsage.recent30dBreakdown.byModel,
+      ),
       '',
       '### 近 30 天主要场景',
-      ...this.renderBreakdownLines(payload.tokenUsage.recent30dBreakdown.byScene),
+      ...this.renderBreakdownLines(
+        payload.tokenUsage.recent30dBreakdown.byScene,
+      ),
       '',
       '## 对话正文',
       '',
@@ -1352,10 +1418,12 @@ export class ChatRecordsAdminService {
       return ['- 暂无'];
     }
 
-    return items.slice(0, 5).map(
-      (item) =>
-        `- ${item.label}：请求 ${item.requestCount}，Token ${item.totalTokens}，成本 ${item.estimatedCost}`,
-    );
+    return items
+      .slice(0, 5)
+      .map(
+        (item) =>
+          `- ${item.label}：请求 ${item.requestCount}，Token ${item.totalTokens}，成本 ${item.estimatedCost}`,
+      );
   }
 
   private quoteMarkdownText(text: string) {
@@ -1365,7 +1433,9 @@ export class ChatRecordsAdminService {
       .join('\n');
   }
 
-  private describeAttachment(message: Pick<ChatRecordMessage, 'attachment' | 'type'>) {
+  private describeAttachment(
+    message: Pick<ChatRecordMessage, 'attachment' | 'type'>,
+  ) {
     const attachment = message.attachment;
     if (!attachment) {
       return '无';

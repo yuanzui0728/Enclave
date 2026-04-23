@@ -19,6 +19,7 @@ import { FeedPostEntity } from '../feed/feed-post.entity';
 import { FavoritesService } from '../chat/favorites.service';
 import { SearchActivityService } from '../chat/search-activity.service';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import { GroupEntity } from '../chat/group.entity';
 import { GroupMemberEntity } from '../chat/group-member.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
@@ -392,7 +393,9 @@ export class ShakeDiscoveryService {
         await this.writeSessions(owner.id, sessions);
       }
       if (!existingCharacter) {
-        throw new BadRequestException('当前摇一摇结果已保留，但角色记录不存在。');
+        throw new BadRequestException(
+          '当前摇一摇结果已保留，但角色记录不存在。',
+        );
       }
       return {
         sessionId,
@@ -538,26 +541,31 @@ export class ShakeDiscoveryService {
     maxItems: number,
   ) {
     const entries: Array<{ timestamp: Date; text: string }> = [];
-    const [conversations, userGroupMemberships, favoriteNotes, searchHistory] =
-      await Promise.all([
-        this.conversationRepo.find({
-          where: {
-            ownerId,
-            type: 'direct',
-            lastActivityAt: MoreThanOrEqual(windowStartedAt),
-          },
-          order: { lastActivityAt: 'DESC' },
-          take: 10,
-        }),
-        this.groupMemberRepo.find({
-          where: {
-            memberId: ownerId,
-            memberType: 'user',
-          },
-        }),
-        this.favoritesService.listFavoriteNotes(),
-        this.searchActivityService.listSearchHistory(),
-      ]);
+    const [
+      storedConversations,
+      userGroupMemberships,
+      favoriteNotes,
+      searchHistory,
+    ] = await Promise.all([
+      this.conversationRepo.find({
+        where: {
+          ownerId,
+          type: 'direct',
+          lastActivityAt: MoreThanOrEqual(windowStartedAt),
+        },
+        order: { lastActivityAt: 'DESC' },
+        take: 10,
+      }),
+      this.groupMemberRepo.find({
+        where: {
+          memberId: ownerId,
+          memberType: 'user',
+        },
+      }),
+      this.favoritesService.listFavoriteNotes(),
+      this.searchActivityService.listSearchHistory(),
+    ]);
+    const conversations = filterUserFacingConversations(storedConversations);
 
     const conversationIds = conversations.map((item) => item.id);
     const conversationMap = new Map(
@@ -1236,7 +1244,9 @@ function removeDirectionByKey(
   directions: ShakeDiscoveryDirectionDraft[],
   directionKey: string,
 ) {
-  const index = directions.findIndex((item) => item.directionKey === directionKey);
+  const index = directions.findIndex(
+    (item) => item.directionKey === directionKey,
+  );
   if (index >= 0) {
     directions.splice(index, 1);
   }

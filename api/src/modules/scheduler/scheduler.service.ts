@@ -14,6 +14,7 @@ import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { UserEntity } from '../auth/user.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import { MessageEntity } from '../chat/message.entity';
 import { WorldService } from '../world/world.service';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
@@ -1187,7 +1188,7 @@ export class SchedulerService {
           continue;
         }
 
-        const convs = await this.convRepo.find();
+        const convs = filterUserFacingConversations(await this.convRepo.find());
         let sentForCharacter = 0;
         for (const conv of convs) {
           if (!conv.participants.includes(char.id)) continue;
@@ -1556,7 +1557,7 @@ export class SchedulerService {
     for (const char of chars) {
       try {
         // 找该角色参与的所有对话
-        const convs = await this.convRepo.find();
+        const convs = filterUserFacingConversations(await this.convRepo.find());
         const charConvIds = convs
           .filter((c) => c.participants?.includes(char.id))
           .map((c) => c.id);
@@ -1654,7 +1655,7 @@ export class SchedulerService {
     for (const char of chars) {
       try {
         // 找该角色参与的所有对话
-        const convs = await this.convRepo.find();
+        const convs = filterUserFacingConversations(await this.convRepo.find());
         const charConvIds = convs
           .filter((c) => c.participants?.includes(char.id))
           .map((c) => c.id);

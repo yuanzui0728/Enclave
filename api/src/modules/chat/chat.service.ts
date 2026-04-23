@@ -24,6 +24,10 @@ import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.ser
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ConversationEntity } from './conversation.entity';
+import {
+  filterUserFacingConversations,
+  isNonUserFacingDirectConversationId,
+} from './conversation-visibility';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
@@ -177,6 +181,8 @@ export class ChatService {
   ): Promise<Conversation> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const convId = conversationId ?? `direct_${characterId}`;
+    const isNonUserFacingConversation =
+      isNonUserFacingDirectConversationId(convId);
 
     let entity = await this.convRepo.findOneBy({ id: convId });
     if (!entity) {
@@ -188,7 +194,8 @@ export class ChatService {
         title: char?.name ?? characterId,
         participants: [characterId],
         isPinned: false,
-        isHidden: false,
+        isHidden: isNonUserFacingConversation,
+        hiddenAt: isNonUserFacingConversation ? new Date() : null,
         lastActivityAt: new Date(),
       });
       entity = await this.convRepo.save(entity);
@@ -197,7 +204,13 @@ export class ChatService {
       entity = await this.normalizeLegacyConversationEntity(entity);
     }
 
-    if (entity.isHidden) {
+    if (isNonUserFacingConversation && !entity.isHidden) {
+      entity = await this.convRepo.save({
+        ...entity,
+        isHidden: true,
+        hiddenAt: entity.hiddenAt ?? new Date(),
+      });
+    } else if (entity.isHidden) {
       entity = await this.convRepo.save({
         ...entity,
         isHidden: false,
@@ -222,9 +235,11 @@ export class ChatService {
     (Conversation & { lastMessage?: Message; unreadCount: number })[]
   > {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const convs = await this.convRepo.find({
-      where: { ownerId: owner.id, isHidden: false },
-    });
+    const convs = filterUserFacingConversations(
+      await this.convRepo.find({
+        where: { ownerId: owner.id, isHidden: false },
+      }),
+    );
 
     const result: (Conversation & {
       lastMessage?: Message;
@@ -748,7 +763,9 @@ export class ChatService {
   }
 
   async activateReplyArtifactJobs(jobIds?: string[]) {
-    const normalizedJobIds = jobIds?.map((jobId) => jobId.trim()).filter(Boolean);
+    const normalizedJobIds = jobIds
+      ?.map((jobId) => jobId.trim())
+      .filter(Boolean);
     if (!normalizedJobIds?.length) {
       return 0;
     }
@@ -914,7 +931,9 @@ export class ChatService {
         );
       }
       if (
-        this.shouldIncludeAssistantMessageInHistory(normalizedAssistantReplyText)
+        this.shouldIncludeAssistantMessageInHistory(
+          normalizedAssistantReplyText,
+        )
       ) {
         history.push({
           role: 'assistant',
@@ -1454,7 +1473,10 @@ export class ChatService {
     at: Date,
   ) {
     conversation.lastActivityAt = at;
-    if (conversation.isHidden) {
+    if (
+      conversation.isHidden &&
+      !isNonUserFacingDirectConversationId(conversation.id)
+    ) {
       conversation.isHidden = false;
       conversation.hiddenAt = null;
     }
@@ -2130,7 +2152,6 @@ function formatAttachmentDuration(durationMs: number) {
     ? `${minutes}:${String(seconds).padStart(2, '0')}`
     : `${seconds}"`;
 }
-
 
 function normalizeOptionalDimension(value?: number) {
   if (!value || !Number.isFinite(value) || value <= 0) {

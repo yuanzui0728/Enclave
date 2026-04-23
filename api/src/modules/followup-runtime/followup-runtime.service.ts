@@ -16,6 +16,7 @@ import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { ChatGateway } from '../chat/chat.gateway';
 import { ChatService } from '../chat/chat.service';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import { MessageRemindersService } from '../chat/message-reminders.service';
 import { MessageEntity } from '../chat/message.entity';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
@@ -746,15 +747,17 @@ export class FollowupRuntimeService {
     const quietBefore = new Date(
       now.getTime() - rules.quietHoursThreshold * 60 * 60 * 1000,
     );
-    const conversations = await this.conversationRepo.find({
-      where: {
-        ownerId,
-        type: 'direct',
-        lastActivityAt: Between(windowStartedAt, quietBefore),
-      },
-      order: { lastActivityAt: 'DESC', updatedAt: 'DESC' },
-      take: 24,
-    });
+    const conversations = filterUserFacingConversations(
+      await this.conversationRepo.find({
+        where: {
+          ownerId,
+          type: 'direct',
+          lastActivityAt: Between(windowStartedAt, quietBefore),
+        },
+        order: { lastActivityAt: 'DESC', updatedAt: 'DESC' },
+        take: 24,
+      }),
+    );
     const characters =
       await this.charactersService.findAllVisibleToOwner(ownerId);
     const characterMap = new Map(characters.map((item) => [item.id, item]));
