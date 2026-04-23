@@ -260,14 +260,14 @@ const WAITING_SYNC_REVIEW_TASK_ID =
   "77777777-7777-4777-8777-777777777777";
 const WAITING_SYNC_REVIEW_TASK_KEY = "refresh-phone:+8613800138099";
 const WAITING_SYNC_REVIEW_PATH =
-  "/waiting-sync?status=all&taskType=all&query=&reviewContext=runtime.heartbeat&page=1&pageSize=20";
+  "/waiting-sync?reviewContext=runtime.heartbeat";
 const WAITING_SYNC_REVIEW_TASK_PATH =
-  "/waiting-sync?status=all&taskType=all&query=&reviewContext=runtime.heartbeat&reviewTaskId=77777777-7777-4777-8777-777777777777&page=1&pageSize=20";
+  "/waiting-sync?reviewContext=runtime.heartbeat&reviewTaskId=77777777-7777-4777-8777-777777777777";
 const WAITING_SYNC_HIGHLIGHTED_TASK_ID =
   "44444444-4444-4444-8444-444444444444";
 const WAITING_SYNC_HIGHLIGHTED_TASK_KEY = "refresh-world:world-1";
 const WAITING_SYNC_HIGHLIGHTED_TASK_PATH =
-  "/waiting-sync?status=all&taskType=all&query=&reviewContext=runtime.heartbeat&reviewTaskId=44444444-4444-4444-8444-444444444444&page=1&pageSize=20";
+  "/waiting-sync?reviewContext=runtime.heartbeat&reviewTaskId=44444444-4444-4444-8444-444444444444";
 const WAITING_SYNC_FOCUSED_TARGET_TASK_KEY = "refresh-phone:+8613800138001";
 const WAITING_SYNC_LINKED_PHONE = "+8613800138000";
 const WAITING_SYNC_LINKED_REQUEST_NAME = "Linked Phone Request";
@@ -392,6 +392,22 @@ function buildAdminSessionFocusedSourceScenario({
         ]
       : [],
   });
+}
+
+function installFocusedAdminSessionScenario({
+  includeOtherSessions = false,
+}: {
+  includeOtherSessions?: boolean;
+} = {}) {
+  const scenario = buildAdminSessionFocusedSourceScenario({
+    includeOtherSessions,
+  });
+  return {
+    ...scenario,
+    ...installCloudAdminApiMock({
+      adminSessions: scenario.adminSessions,
+    }),
+  };
 }
 
 function buildAdminSessionActiveSourcePairScenario({
@@ -981,6 +997,13 @@ async function expectAdminSessionFocusedSourceOverview({
   }
 }
 
+async function expectAdminSessionFocusedSourceMatches(summary = "Showing 1-2 of 2") {
+  expect((await screen.findAllByText("Active threshold match")).length).toBeGreaterThan(
+    0,
+  );
+  expect((await screen.findAllByText(summary)).length).toBeGreaterThan(0);
+}
+
 async function expectAdminSessionFocusedSourceTimelineDetail({
   includeLastRefreshed = false,
   includeLatestSnapshot = false,
@@ -1046,6 +1069,51 @@ async function openAdminSessionTimelineSessionInList({
       }),
     ).toBe(true);
   });
+}
+
+async function expectAdminSessionFocusedSourceOverviewQueries(
+  requests: CloudAdminRequestLog[],
+  sourceKey: string,
+) {
+  await waitFor(() => {
+    expect(
+      hasAdminSessionsRequest(requests, {
+        sourceKey,
+        page: "1",
+        pageSize: "10",
+      }),
+    ).toBe(true);
+    expect(
+      hasAdminSessionSourceGroupsRequest(requests, {
+        sourceKey,
+        page: "1",
+        pageSize: "6",
+      }),
+    ).toBe(true);
+    expectAdminSessionSourceGroupSnapshotRequest(requests, sourceKey);
+  });
+}
+
+async function renderFocusedAdminSessionOverview({
+  requests,
+  sourceKey,
+  title = ADMIN_SESSION_FOCUSED_SOURCE_TITLE,
+  overviewOptions = {
+    includeThresholds: true,
+    includeCurrentRationale: true,
+  },
+}: {
+  requests: CloudAdminRequestLog[];
+  sourceKey: string;
+  title?: string;
+  overviewOptions?: Parameters<typeof expectAdminSessionFocusedSourceOverview>[0];
+}) {
+  await renderFocusedAdminSessionSourceGroup({ title });
+  await expectAdminSessionFocusedSourceOverview(overviewOptions);
+  await showAdminSessionCurrentSnapshotMatches();
+  await expectAdminSessionFocusedSourceMatches();
+  await expectAdminSessionTimelineSummaryViews();
+  await expectAdminSessionFocusedSourceOverviewQueries(requests, sourceKey);
 }
 
 async function renderFocusedAdminSessionTimelineSessionDetail({
@@ -1148,6 +1216,14 @@ function expectAdminSessionFocusedSourceReceiptContext(
 
 function clearAdminSessionReceipts() {
   fireEvent.click(screen.getByRole("button", { name: "Clear receipts" }));
+}
+
+async function clearAdminSessionSourceFocusAndExpectSummary(summary = "Showing 1-3 of 3") {
+  fireEvent.click(screen.getByRole("button", { name: "Clear source focus" }));
+  await waitFor(() => {
+    expect(screen.queryByText("Viewing source group")).toBeNull();
+  });
+  expect((await screen.findAllByText(summary)).length).toBeGreaterThan(0);
 }
 
 async function clearAdminSessionReceiptsAndExpectClosed() {
@@ -2181,66 +2257,20 @@ describe("cloud-console interactions", () => {
   });
 
   it("focuses sessions on a selected source group and can clear the focus", async () => {
-    const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionFocusedSourceScenario({
-        includeOtherSessions: true,
-      });
-    const { requests } = installCloudAdminApiMock({
-      adminSessions: groupedSessions,
+    const { requests, sourceKey: expectedSourceKey } = installFocusedAdminSessionScenario({
+      includeOtherSessions: true,
     });
-    const focusedSourceCard = await renderFocusedAdminSessionSourceGroup();
-
-    await expectAdminSessionFocusedSourceOverview({
-      includeThresholds: true,
-      includeCurrentRationale: true,
+    await renderFocusedAdminSessionOverview({
+      requests,
+      sourceKey: expectedSourceKey,
     });
 
-    await showAdminSessionCurrentSnapshotMatches();
-    expect(
-      (await screen.findAllByText("Active threshold match")).length,
-    ).toBeGreaterThan(0);
-
-    expect(
-      (await screen.findAllByText("Showing 1-2 of 2")).length,
-    ).toBeGreaterThan(0);
-
-    await expectAdminSessionTimelineSummaryViews();
-
-    await waitFor(() => {
-      expect(
-        hasAdminSessionsRequest(requests, {
-          sourceKey: expectedSourceKey,
-          page: "1",
-          pageSize: "10",
-        }),
-      ).toBe(true);
-      expect(
-        hasAdminSessionSourceGroupsRequest(requests, {
-          sourceKey: expectedSourceKey,
-          page: "1",
-          pageSize: "6",
-        }),
-      ).toBe(true);
-      expectAdminSessionSourceGroupSnapshotRequest(requests, expectedSourceKey);
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Clear source focus" }));
-
-    await waitFor(() => {
-      expect(screen.queryByText("Viewing source group")).toBeNull();
-    });
-    expect(
-      (await screen.findAllByText("Showing 1-3 of 3")).length,
-    ).toBeGreaterThan(0);
+    await clearAdminSessionSourceFocusAndExpectSummary();
   });
 
   it("can jump from a matched timeline session into the admin session list filters", async () => {
-    const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionFocusedSourceScenario({
-        includeOtherSessions: true,
-      });
-    const { requests } = installCloudAdminApiMock({
-      adminSessions: groupedSessions,
+    const { requests, sourceKey: expectedSourceKey } = installFocusedAdminSessionScenario({
+      includeOtherSessions: true,
     });
     await renderFocusedAdminSessionTimelineSessionDetail({
       requests,
@@ -2262,11 +2292,7 @@ describe("cloud-console interactions", () => {
   });
 
   it("can revoke the focused source group from the highlighted session detail row", async () => {
-    const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionFocusedSourceScenario();
-    const { requests } = installCloudAdminApiMock({
-      adminSessions: groupedSessions,
-    });
+    const { requests, sourceKey: expectedSourceKey } = installFocusedAdminSessionScenario();
     await renderFocusedAdminSessionTimelineSessionDetail({
       requests,
       sourceKey: expectedSourceKey,
@@ -2286,11 +2312,7 @@ describe("cloud-console interactions", () => {
   });
 
   it("can open revoke confirmation directly from a matched timeline session", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionFocusedSourceScenario();
-    const { requests } = installCloudAdminApiMock({
-      adminSessions: groupedSessions,
-    });
+    const { requests } = installFocusedAdminSessionScenario();
     await renderFocusedAdminSessionSourceGroup({ showMatches: true });
 
     await revokeAdminSessionAndAssert({
