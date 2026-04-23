@@ -4,7 +4,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PropsWithChildren,
 } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Camera,
   Clock3,
@@ -160,6 +160,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
     () => readDesktopLockSnapshot().passcodeLength,
   );
   const [lockStoreReady, setLockStoreReady] = useState(!nativeDesktopShell);
+  const [compactDesktopNav, setCompactDesktopNav] = useState(() =>
+    typeof window !== "undefined" ? window.innerHeight <= 820 : false,
+  );
   const [unlockPasscode, setUnlockPasscode] = useState("");
   const [setupPasscode, setSetupPasscode] = useState("");
   const [setupPasscodeConfirm, setSetupPasscodeConfirm] = useState("");
@@ -181,6 +184,23 @@ export function DesktopShell({ children }: PropsWithChildren) {
     return () => {
       document.documentElement.classList.remove("yj-desktop-window");
       document.body.classList.remove("yj-desktop-window");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncCompactDesktopNav = () => {
+      setCompactDesktopNav(window.innerHeight <= 820);
+    };
+
+    syncCompactDesktopNav();
+    window.addEventListener("resize", syncCompactDesktopNav);
+
+    return () => {
+      window.removeEventListener("resize", syncCompactDesktopNav);
     };
   }, []);
 
@@ -678,12 +698,23 @@ export function DesktopShell({ children }: PropsWithChildren) {
           ) : null}
 
           {showDesktopNavigation ? (
-            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2 text-white shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
-              <div className="relative mb-2.5 flex justify-center">
+            <aside
+              className={cn(
+                "hidden shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] text-white shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col",
+                compactDesktopNav ? "w-[88px] p-1.5" : "w-[92px] p-2",
+              )}
+            >
+              <div
+                className={cn(
+                  "relative flex justify-center",
+                  compactDesktopNav ? "mb-1" : "mb-1.5",
+                )}
+              >
                 <button
                   type="button"
                   className={cn(
-                    "group flex justify-center rounded-[14px] border-0 bg-transparent px-1.5 py-1 appearance-none",
+                    "group flex justify-center rounded-[14px] border-0 bg-transparent appearance-none",
+                    compactDesktopNav ? "px-1 py-0.5" : "px-1.5 py-1",
                     isOwnerCardOpen || profileRouteActive
                       ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
                       : undefined,
@@ -698,7 +729,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 >
                   <div
                     className={cn(
-                      "rounded-[14px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                      "rounded-[14px] border transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                      compactDesktopNav ? "p-1" : "p-1.5",
                       isOwnerCardOpen || profileRouteActive
                         ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] shadow-[0_8px_20px_rgba(7,193,96,0.10)]"
                         : "border-transparent bg-white/5 group-hover:border-white/10 group-hover:bg-white/9",
@@ -707,7 +739,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     <AvatarChip
                       name={ownerName ?? "世界主人"}
                       src={ownerAvatar}
-                      size="wechat"
+                      size={compactDesktopNav ? "md" : "wechat"}
                     />
                   </div>
                 </button>
@@ -729,19 +761,35 @@ export function DesktopShell({ children }: PropsWithChildren) {
               </div>
 
               <nav className="min-h-0 flex-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex flex-col gap-1.5 pb-2">
+                <div
+                  className={cn(
+                    "flex flex-col pb-1",
+                    compactDesktopNav ? "gap-0.5" : "gap-1",
+                  )}
+                >
                   {desktopPrimaryNavItems.map((item) => (
                     <DesktopNavLink
                       key={item.to}
                       active={isDesktopNavItemActive(pathname, item)}
+                      compact={compactDesktopNav}
                       item={item}
                     />
                   ))}
                 </div>
               </nav>
 
-              <div className="relative mt-2.5 border-t border-white/10 pt-2.5">
-                <div className="flex flex-col gap-1.5">
+              <div
+                className={cn(
+                  "relative border-t border-white/10",
+                  compactDesktopNav ? "mt-0.5 pt-0.5" : "mt-1.5 pt-1.5",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex flex-col",
+                    compactDesktopNav ? "gap-0.5" : "gap-1",
+                  )}
+                >
                   {desktopBottomNavItems.map((item) => (
                     <DesktopActionButton
                       key={item.action}
@@ -751,6 +799,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                             isDesktopNavItemActive(pathname, item)
                           : isDesktopNavItemActive(pathname, item)
                       }
+                      compact={compactDesktopNav}
                       item={item}
                       onClick={() => {
                         if (item.action === "open-mobile-panel") {
@@ -1183,19 +1232,28 @@ function DesktopWindowButton({
 
 function DesktopNavLink({
   active,
+  compact,
   item,
 }: {
   active: boolean;
+  compact: boolean;
   item: (typeof desktopPrimaryNavItems)[number];
 }) {
   const Icon = item.icon;
 
   return (
-    <Link
-      key={item.to}
-      to={item.to as never}
+    <button
+      type="button"
+      aria-current={active ? "page" : undefined}
+      title={item.label}
+      onClick={() => {
+        window.location.assign(item.to);
+      }}
       className={cn(
-        "group flex flex-col items-center gap-1 rounded-[12px] px-1.5 py-2 text-[10px] leading-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex flex-col items-center border-0 bg-transparent leading-none appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        compact
+          ? "gap-0 rounded-[10px] px-0.5 py-1 text-[8px]"
+          : "gap-0.5 rounded-[11px] px-1 py-1.5 text-[9px]",
         active
           ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
           : "text-white/68 hover:bg-white/8 hover:text-white",
@@ -1203,26 +1261,35 @@ function DesktopNavLink({
     >
       <div
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-[10px] border transition-[background-color,border-color,color]",
+          "flex items-center justify-center border transition-[background-color,border-color,color]",
+          compact ? "h-6 w-6 rounded-[8px]" : "h-7 w-7 rounded-[9px]",
           active
             ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
             : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
-        <Icon size={16} />
+        <Icon size={compact ? 14 : 15} />
       </div>
-      <span className="hidden xl:block">{item.label}</span>
-      <span className="xl:hidden">{item.shortLabel}</span>
-    </Link>
+      {compact ? (
+        <span>{item.shortLabel}</span>
+      ) : (
+        <>
+          <span className="hidden xl:block">{item.label}</span>
+          <span className="xl:hidden">{item.shortLabel}</span>
+        </>
+      )}
+    </button>
   );
 }
 
 function DesktopActionButton({
   active,
+  compact,
   item,
   onClick,
 }: {
   active: boolean;
+  compact: boolean;
   item: (typeof desktopBottomNavItems)[number];
   onClick: () => void;
 }) {
@@ -1231,9 +1298,13 @@ function DesktopActionButton({
   return (
     <button
       type="button"
+      title={item.label}
       onClick={onClick}
       className={cn(
-        "group flex w-full flex-col items-center gap-1 rounded-[12px] border-0 bg-transparent px-1.5 py-2 text-[10px] leading-none appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex w-full flex-col items-center border-0 bg-transparent leading-none appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        compact
+          ? "h-9 justify-center rounded-[10px] px-0 py-0 text-[8px]"
+          : "gap-0.5 rounded-[11px] px-1 py-1.5 text-[9px]",
         active
           ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
           : "text-white/68 hover:bg-white/8 hover:text-white",
@@ -1241,16 +1312,21 @@ function DesktopActionButton({
     >
       <div
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-[10px] border transition-[background-color,border-color,color]",
+          "flex items-center justify-center border transition-[background-color,border-color,color]",
+          compact ? "h-6 w-6 rounded-[8px]" : "h-7 w-7 rounded-[9px]",
           active
             ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
             : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
-        <Icon size={16} />
+        <Icon size={compact ? 14 : 15} />
       </div>
-      <span className="hidden xl:block">{item.label}</span>
-      <span className="xl:hidden">{item.shortLabel}</span>
+      {compact ? null : (
+        <>
+          <span className="hidden xl:block">{item.label}</span>
+          <span className="xl:hidden">{item.shortLabel}</span>
+        </>
+      )}
     </button>
   );
 }
