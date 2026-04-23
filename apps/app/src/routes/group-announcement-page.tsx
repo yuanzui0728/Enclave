@@ -48,6 +48,8 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
   const [notice, setNotice] = useState<{
     tone: "success" | "info";
     message: string;
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const routeState = parseMobileGroupRouteState(hash);
   const safeReturnPath =
@@ -211,6 +213,10 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
         message: nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制群公告失败，请稍后重试。",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShareAnnouncement();
+        },
       });
     }
   }
@@ -324,15 +330,28 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             {notice.tone === "info" ? (
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">{notice.message}</span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
-                  onClick={handleErrorStateAction}
-                >
-                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
-                </Button>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {notice.actionLabel && notice.onAction ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      onClick={notice.onAction}
+                    >
+                      {notice.actionLabel}
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={handleErrorStateAction}
+                  >
+                    {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                  </Button>
+                </div>
               </div>
             ) : (
               notice.message
