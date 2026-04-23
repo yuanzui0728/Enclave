@@ -201,6 +201,7 @@ function MobileChatListPage() {
   const [openSwipeConversationId, setOpenSwipeConversationId] = useState<
     string | null
   >(null);
+  const [swipeResetVersion, setSwipeResetVersion] = useState(0);
   const [pendingHideConversation, setPendingHideConversation] =
     useState<PendingHideConversation | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
@@ -410,6 +411,17 @@ function MobileChatListPage() {
 
     await persistHiddenConversation(entry, showSuccessNotice);
   };
+
+  useEffect(() => {
+    if (!isActiveTab) {
+      setIsQuickMenuOpen(false);
+      setOpenSwipeConversationId(null);
+      return;
+    }
+
+    setOpenSwipeConversationId(null);
+    setSwipeResetVersion((current) => current + 1);
+  }, [isActiveTab]);
 
   useEffect(() => {
     if (
@@ -964,7 +976,7 @@ function MobileChatListPage() {
 
               {visibleConversations.map((conversation, index) => (
                 <ConversationListItemLink
-                  key={conversation.id}
+                  key={`${swipeResetVersion}:${conversation.id}`}
                   conversation={conversation}
                   localMessageActionState={localMessageActionState}
                   open={openSwipeConversationId === conversation.id}
