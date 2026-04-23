@@ -108,6 +108,21 @@ type SpeechSynthesisResult = {
   voice: string;
 };
 
+type ImageGenerationOptions = {
+  prompt: string;
+  conversationId?: string;
+  characterId?: string;
+  size?: '1024x1024' | '1024x1536' | '1536x1024';
+};
+
+type ImageGenerationResult = {
+  buffer: Buffer;
+  mimeType: string;
+  fileExtension: string;
+  provider: string;
+  revisedPrompt?: string;
+};
+
 type PreparedReplyRequest = {
   systemPrompt: string;
   conversationHistory: ChatMessage[];
@@ -133,12 +148,34 @@ type BudgetAwareProviderResult = {
   };
 };
 
-type ProviderFallbackCapability = 'text' | 'transcription' | 'tts';
+type ProviderFallbackCapability =
+  | 'text'
+  | 'transcription'
+  | 'tts'
+  | 'image_generation';
 
 type ProviderFallbackCandidate = {
   provider: ResolvedProviderConfig;
   billingSource: AiUsageBillingSource;
   reason: 'character_instance_route' | 'instance_default_route';
+};
+
+type ChatCompletionTaskResult = {
+  usage?:
+    | {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        input_tokens?: number;
+        output_tokens?: number;
+        total_tokens?: number;
+      }
+    | null;
+  model?: string | null;
+  choices: Array<{
+    message?: {
+      content?: string | null;
+    } | null;
+  }>;
 };
 
 @Injectable()
@@ -991,6 +1028,107 @@ export class AiOrchestratorService {
     throw new HttpException(decision.message, HttpStatus.TOO_MANY_REQUESTS);
   }
 
+  private async requestChatTaskWithFallback(options: {
+    usageContext: AiUsageContext;
+    characterId?: string | null;
+    label: string;
+    request: (
+      client: OpenAI,
+      provider: ResolvedProviderConfig,
+    ) => Promise<ChatCompletionTaskResult>;
+  }): Promise<ChatCompletionTaskResult> {
+    const characterId = options.characterId ?? options.usageContext.characterId;
+    const primaryProvider = await this.resolveRuntimeProvider({
+      characterId,
+    });
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId,
+      capability: 'text',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        billingSource: 'instance_default' as const,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
+    );
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      if (!this.hasProviderCapability(attempt.provider, 'text')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const budgetedProvider = await this.prepareBudgetAwareProvider(
+        attempt.provider,
+        attempt.billingSource,
+        options.usageContext,
+      );
+      const provider = budgetedProvider.provider;
+      const client = this.createProviderClient(provider);
+
+      try {
+        const response = await options.request(client, provider);
+        const usage = this.normalizeUsageMetrics(response.usage);
+        await this.recordSuccessfulUsage(
+          provider,
+          attempt.billingSource,
+          options.usageContext,
+          {
+            usage,
+            model: response.model ?? provider.model,
+          },
+          budgetedProvider.usageAudit,
+        );
+        return response;
+      } catch (error) {
+        lastError = error;
+        await this.recordFailedUsage(
+          provider,
+          attempt.billingSource,
+          options.usageContext,
+          error,
+        );
+
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error(`${options.label} failed`, {
+            scene: options.usageContext.scene,
+            characterId: characterId ?? null,
+            model: provider.model,
+            billingSource: attempt.billingSource,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw error;
+        }
+
+        this.logger.warn(`${options.label} fallback scheduled`, {
+          scene: options.usageContext.scene,
+          characterId: characterId ?? null,
+          fromModel: provider.model,
+          toModel: attempts[index + 1]?.provider.model,
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
+      }
+    }
+
+    if (!attemptedProvider) {
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
+      );
+    }
+
+    throw lastError;
+  }
+
   private async requestReplyFromProvider(
     provider: ResolvedProviderConfig,
     request: PreparedReplyRequest,
@@ -1728,123 +1866,38 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
-    const runtimeProvider = await this.resolveRuntimeProvider({
-      characterId: profile.characterId,
-    });
-    const budgetedProvider = await this.prepareBudgetAwareProvider(
-      runtimeProvider,
-      'instance_default',
-      resolvedUsageContext,
-    );
-    const provider = budgetedProvider.provider;
-    const client = this.createProviderClient(provider);
-
-    try {
-      if (sceneKey !== 'moments_post') {
-        const systemPrompt = await this.buildSystemPrompt(
-          profile,
-          false,
-          undefined,
-          sceneKey,
-        );
-        const taskPrompts = [
-          this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, false),
-          this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, true),
-        ];
-
-        for (let attempt = 0; attempt < taskPrompts.length; attempt += 1) {
-          const response = await client.chat.completions.create({
-            model: provider.model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: taskPrompts[attempt] },
-            ],
-            max_tokens: sceneKey === 'channel_post' ? 220 : 170,
-            temperature: attempt === 0 ? 0.9 : 0.72,
-          });
-
-          const usage = this.normalizeUsageMetrics(response.usage);
-          await this.recordSuccessfulUsage(
-            provider,
-            'instance_default',
-            resolvedUsageContext,
-            {
-              usage,
-              model: response.model ?? provider.model,
-            },
-            budgetedProvider.usageAudit,
-          );
-
-          const text = sanitizeAiText(
-            response.choices[0]?.message?.content ?? '',
-          );
-          const validation = validateGeneratedSceneOutput({
-            text,
-            profile,
-            sceneKey,
-          });
-          if (validation.valid) {
-            return validation.normalizedText;
-          }
-
-          this.logger.warn(
-            `Discarded low-quality ${sceneKey} output for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
-          );
-        }
-
-        this.logger.warn(
-          `Skipped ${sceneKey} generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
-        );
-        return '';
-      }
-
-      const resolvedGenerationContext =
-        generationContext ??
-        (await this.momentGenerationContext.buildContext({
-          currentTime,
-          recentTopics,
-          usageContext: resolvedUsageContext,
-        }));
-      const promptRequest = await this.promptBuilder.buildMomentRequest(
+    if (sceneKey !== 'moments_post') {
+      const systemPrompt = await this.buildSystemPrompt(
         profile,
-        currentTime,
-        resolvedGenerationContext,
+        false,
+        undefined,
         sceneKey,
       );
-      const userPrompts = [
-        promptRequest.userPrompt,
-        promptRequest.retryUserPrompt,
+      const taskPrompts = [
+        this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, false),
+        this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, true),
       ];
 
-      for (let attempt = 0; attempt < userPrompts.length; attempt += 1) {
-        const response = await client.chat.completions.create({
-          model: provider.model,
-          messages: [
-            { role: 'system', content: promptRequest.systemPrompt },
-            { role: 'user', content: userPrompts[attempt] },
-          ],
-          max_tokens: 180,
-          temperature: attempt === 0 ? 0.9 : 0.75,
+      for (let attempt = 0; attempt < taskPrompts.length; attempt += 1) {
+        const response = await this.requestChatTaskWithFallback({
+          usageContext: resolvedUsageContext,
+          characterId: profile.characterId,
+          label: `${sceneKey} generation`,
+          request: (client, activeProvider) =>
+            client.chat.completions.create({
+              model: activeProvider.model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: taskPrompts[attempt] },
+              ],
+              max_tokens: sceneKey === 'channel_post' ? 220 : 170,
+              temperature: attempt === 0 ? 0.9 : 0.72,
+            }),
         });
 
-        const usage = this.normalizeUsageMetrics(response.usage);
-        await this.recordSuccessfulUsage(
-          provider,
-          'instance_default',
-          resolvedUsageContext,
-          {
-            usage,
-            model: response.model ?? provider.model,
-          },
-          budgetedProvider.usageAudit,
-        );
-
-        const text = sanitizeAiText(
-          response.choices[0]?.message?.content ?? '',
-        );
+        const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
         const validation = validateGeneratedSceneOutput({
           text,
-          context: resolvedGenerationContext,
           profile,
           sceneKey,
         });
@@ -1853,23 +1906,68 @@ export class AiOrchestratorService {
         }
 
         this.logger.warn(
-          `Discarded low-quality moment for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
+          `Discarded low-quality ${sceneKey} output for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
         );
       }
 
       this.logger.warn(
-        `Skipped moment generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
+        `Skipped ${sceneKey} generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
       );
       return '';
-    } catch (error) {
-      await this.recordFailedUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        error,
-      );
-      throw error;
     }
+
+    const resolvedGenerationContext =
+      generationContext ??
+      (await this.momentGenerationContext.buildContext({
+        currentTime,
+        recentTopics,
+        usageContext: resolvedUsageContext,
+      }));
+    const promptRequest = await this.promptBuilder.buildMomentRequest(
+      profile,
+      currentTime,
+      resolvedGenerationContext,
+      sceneKey,
+    );
+    const userPrompts = [promptRequest.userPrompt, promptRequest.retryUserPrompt];
+
+    for (let attempt = 0; attempt < userPrompts.length; attempt += 1) {
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: profile.characterId,
+        label: 'moment generation',
+        request: (client, activeProvider) =>
+          client.chat.completions.create({
+            model: activeProvider.model,
+            messages: [
+              { role: 'system', content: promptRequest.systemPrompt },
+              { role: 'user', content: userPrompts[attempt] },
+            ],
+            max_tokens: 180,
+            temperature: attempt === 0 ? 0.9 : 0.75,
+          }),
+      });
+
+      const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
+      const validation = validateGeneratedSceneOutput({
+        text,
+        context: resolvedGenerationContext,
+        profile,
+        sceneKey,
+      });
+      if (validation.valid) {
+        return validation.normalizedText;
+      }
+
+      this.logger.warn(
+        `Discarded low-quality moment for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
+      );
+    }
+
+    this.logger.warn(
+      `Skipped moment generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
+    );
+    return '';
   }
 
   async extractPersonality(
@@ -1894,53 +1992,26 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
-    const runtimeProvider = await this.resolveRuntimeProvider({
+    const response = await this.requestChatTaskWithFallback({
+      usageContext: resolvedUsageContext,
       characterId: resolvedUsageContext.characterId,
+      label: 'personality extraction',
+      request: (client, provider) =>
+        client.chat.completions.create({
+          model: provider.model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 600,
+          temperature: 0.3,
+          response_format: { type: 'json_object' },
+        }),
     });
-    const budgetedProvider = await this.prepareBudgetAwareProvider(
-      runtimeProvider,
-      'instance_default',
-      resolvedUsageContext,
-    );
-    const provider = budgetedProvider.provider;
-    const client = this.createProviderClient(provider);
 
+    const raw = response.choices[0]?.message?.content ?? '{}';
     try {
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 600,
-        temperature: 0.3,
-        response_format: { type: 'json_object' },
-      });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
-
-      const raw = response.choices[0]?.message?.content ?? '{}';
-      try {
-        return JSON.parse(raw) as Record<string, unknown>;
-      } catch {
-        this.logger.error('Failed to parse personality JSON', raw);
-        return {};
-      }
-    } catch (error) {
-      await this.recordFailedUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        error,
-      );
-      throw error;
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      this.logger.error('Failed to parse personality JSON', raw);
+      return {};
     }
   }
 
@@ -1979,57 +2050,31 @@ export class AiOrchestratorService {
   "basePrompt": "这个人自己的说话方式和边界（2-4句话，不要写成助理说明书，不要出现括号动作）"
 }`;
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
     const usageContext: AiUsageContext = {
       surface: 'admin',
       scene: 'quick_character_generate',
       scopeType: 'admin_task',
       scopeLabel: description.slice(0, 48) || 'quick-character',
     };
-    const budgetedProvider = await this.prepareBudgetAwareProvider(
-      runtimeProvider,
-      'instance_default',
+    const response = await this.requestChatTaskWithFallback({
       usageContext,
-    );
-    const provider = budgetedProvider.provider;
-    const client = this.createProviderClient(provider);
+      label: 'quick character generation',
+      request: (client, provider) =>
+        client.chat.completions.create({
+          model: provider.model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 800,
+          temperature: 0.8,
+          response_format: { type: 'json_object' },
+        }),
+    });
 
+    const raw = response.choices[0]?.message?.content ?? '{}';
     try {
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 800,
-        temperature: 0.8,
-        response_format: { type: 'json_object' },
-      });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        usageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
-
-      const raw = response.choices[0]?.message?.content ?? '{}';
-      try {
-        return JSON.parse(raw) as Record<string, unknown>;
-      } catch {
-        this.logger.error('Failed to parse quick character JSON', raw);
-        return {};
-      }
-    } catch (error) {
-      await this.recordFailedUsage(
-        provider,
-        'instance_default',
-        usageContext,
-        error,
-      );
-      throw error;
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      this.logger.error('Failed to parse quick character JSON', raw);
+      return {};
     }
   }
 
@@ -2040,39 +2085,20 @@ export class AiOrchestratorService {
     temperature?: number;
     fallback?: Record<string, unknown>;
   }): Promise<Record<string, unknown>> {
-    const runtimeProvider = await this.resolveRuntimeProvider({
-      characterId: options.usageContext.characterId,
-    });
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        options.usageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: options.prompt }],
-        max_tokens: options.maxTokens ?? 1200,
-        temperature: options.temperature ?? 0.3,
-        response_format: { type: 'json_object' },
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: options.usageContext,
+        characterId: options.usageContext.characterId,
+        label: 'json generation',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: options.prompt }],
+            max_tokens: options.maxTokens ?? 1200,
+            temperature: options.temperature ?? 0.3,
+            response_format: { type: 'json_object' },
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        options.usageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       const raw = response.choices[0]?.message?.content ?? '{}';
       try {
@@ -2082,12 +2108,6 @@ export class AiOrchestratorService {
         return options.fallback ?? {};
       }
     } catch (error) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        options.usageContext,
-        error,
-      );
       this.logger.error('generateJsonObject error', error);
       return options.fallback ?? {};
     }
@@ -2100,47 +2120,22 @@ export class AiOrchestratorService {
     temperature?: number;
     fallback?: string;
   }): Promise<string> {
-    const runtimeProvider = await this.resolveRuntimeProvider({
-      characterId: options.usageContext.characterId,
-    });
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        options.usageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: options.prompt }],
-        max_tokens: options.maxTokens ?? 800,
-        temperature: options.temperature ?? 0.4,
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: options.usageContext,
+        characterId: options.usageContext.characterId,
+        label: 'plain text generation',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: options.prompt }],
+            max_tokens: options.maxTokens ?? 800,
+            temperature: options.temperature ?? 0.4,
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        options.usageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (error) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        options.usageContext,
-        error,
-      );
       this.logger.error('generatePlainText error', error);
       return options.fallback ?? '';
     }
@@ -2161,9 +2156,6 @@ export class AiOrchestratorService {
       profile,
     );
 
-    const runtimeProvider = await this.resolveRuntimeProvider({
-      characterId: profile.characterId,
-    });
     const resolvedUsageContext: AiUsageContext = {
       surface: usageContext?.surface ?? 'app',
       scene: usageContext?.scene ?? 'memory_compress',
@@ -2176,44 +2168,23 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
-    let failureProvider = runtimeProvider;
 
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        resolvedUsageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 200,
-        temperature: 0.3,
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: profile.characterId,
+        label: 'memory compression',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 200,
+            temperature: 0.3,
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (err) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        resolvedUsageContext,
-        err,
-      );
       this.logger.error('compressMemory error', err);
       return profile.memory?.recentSummary ?? profile.memorySummary;
     }
@@ -2239,47 +2210,22 @@ export class AiOrchestratorService {
       characterId: usageContext?.characterId ?? profile.characterId,
       characterName: usageContext?.characterName ?? profile.name,
     };
-    const runtimeProvider = await this.resolveRuntimeProvider({
-      characterId: resolvedUsageContext.characterId,
-    });
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        resolvedUsageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 300,
-        temperature: 0.3,
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: resolvedUsageContext.characterId,
+        label: 'core memory extraction',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 300,
+            temperature: 0.3,
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (err) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        resolvedUsageContext,
-        err,
-      );
       this.logger.error('extractCoreMemory error', err);
       return profile.memory?.coreMemory ?? profile.memorySummary ?? '';
     }
@@ -2295,11 +2241,6 @@ export class AiOrchestratorService {
     reason: string;
     requiredDomains: string[];
   }> {
-    const runtimeProvider = await this.resolveRuntimeProvider();
-    if (!runtimeProvider.apiKey) {
-      return { needsGroupChat: false, reason: '', requiredDomains: [] };
-    }
-
     const prompt = await this.promptBuilder.buildIntentClassificationPrompt(
       userMessage,
       characterName,
@@ -2318,36 +2259,20 @@ export class AiOrchestratorService {
       groupId: usageContext?.groupId,
     };
 
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        resolvedUsageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 200,
-        temperature: 0.1,
-        response_format: { type: 'json_object' },
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: resolvedUsageContext.characterId,
+        label: 'intent classification',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 200,
+            temperature: 0.1,
+            response_format: { type: 'json_object' },
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       const raw = response.choices[0]?.message?.content ?? '{}';
       return JSON.parse(raw) as {
@@ -2356,12 +2281,6 @@ export class AiOrchestratorService {
         requiredDomains: string[];
       };
     } catch (error) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        resolvedUsageContext,
-        error,
-      );
       return { needsGroupChat: false, reason: '', requiredDomains: [] };
     }
   }
