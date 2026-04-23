@@ -1251,7 +1251,7 @@ function ConversationListItemLink({
       className={cn(
         "flex items-center gap-2.5 px-4 py-2.5",
         isPinned
-          ? "bg-[color:var(--surface-panel)]"
+          ? "bg-[#f5f5f5]"
           : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
