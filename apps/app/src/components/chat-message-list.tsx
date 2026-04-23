@@ -878,11 +878,17 @@ export function ChatMessageList({
         queryKey: ["app-conversations", baseUrl],
       });
     },
-    onError: (error) => {
+    onError: (error, message) => {
       setActionNotice({
         message:
           error instanceof Error ? error.message : "撤回失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续撤回",
+        onAction: () => {
+          recallMutation.mutate(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
@@ -942,11 +948,17 @@ export function ChatMessageList({
         queryKey: ["app-conversations", baseUrl],
       });
     },
-    onError: (error) => {
+    onError: (error, message) => {
       setActionNotice({
         message:
           error instanceof Error ? error.message : "删除失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续删除",
+        onAction: () => {
+          deleteMutation.mutate(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
