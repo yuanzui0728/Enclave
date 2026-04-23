@@ -47,7 +47,7 @@ type WaitingSessionSyncContextGroupsNoticeOptions = {
 
 type WaitingSessionSyncCopyNoticeOptions = {
   copied: boolean;
-  subject: "review-context" | "task-context";
+  subject: "permalink" | "review-context" | "task-context";
 };
 
 export function createWaitingSessionSyncReplayTaskNotice(
@@ -195,11 +195,15 @@ export function createWaitingSessionSyncCopyNotice({
   return createBooleanOutcomeNotice({
     succeeded: copied,
     successMessage:
-      subject === "review-context"
+      subject === "permalink"
+        ? "Waiting sync permalink copied."
+        : subject === "review-context"
         ? "Waiting sync review context copied."
         : "Waiting sync task context copied.",
     failureMessage:
-      subject === "review-context"
+      subject === "permalink"
+        ? "Waiting sync permalink copy failed."
+        : subject === "review-context"
         ? "Waiting sync review context copy failed."
         : "Waiting sync task context copy failed.",
   });

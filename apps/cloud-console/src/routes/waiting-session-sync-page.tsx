@@ -589,7 +589,7 @@ export function WaitingSessionSyncPage() {
     clearConfirmState?.mode === "single"
       ? clearTaskMutation.isPending
       : clearFilteredMutation.isPending;
-  const reviewPermalink = useMemo(
+  const currentPermalink = useMemo(
     () => buildWaitingSessionSyncPermalink(filters),
     [filters],
   );
@@ -824,7 +824,7 @@ export function WaitingSessionSyncPage() {
     const copied = await copyTextToClipboard(
       buildWaitingSessionSyncContextReviewCopy({
         artifact: reviewedContextArtifact,
-        reviewPath: reviewPermalink,
+        reviewPath: currentPermalink,
         summary: reviewedContextSummary,
       }),
     );
@@ -833,6 +833,21 @@ export function WaitingSessionSyncPage() {
       createWaitingSessionSyncCopyNotice({
         copied,
         subject: "review-context",
+      }),
+    );
+  }
+
+  async function copyWaitingSessionSyncPermalink() {
+    const absolutePermalink =
+      typeof window !== "undefined" && window.location?.origin
+        ? `${window.location.origin}${currentPermalink}`
+        : currentPermalink;
+    const copied = await copyTextToClipboard(absolutePermalink);
+
+    showWaitingSessionSyncNotice(
+      createWaitingSessionSyncCopyNotice({
+        copied,
+        subject: "permalink",
       }),
     );
   }
@@ -1003,15 +1018,28 @@ export function WaitingSessionSyncPage() {
             })}
           </div>
 
-          <WaitingSessionSyncActionButton
-            tone="neutral"
-            variant="ghost"
-            size="regular"
-            className="mt-4 underline decoration-dotted underline-offset-4"
-            onClick={() => updateFilters(DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH)}
-          >
-            Reset filters
-          </WaitingSessionSyncActionButton>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <WaitingSessionSyncActionButton
+              tone="neutral"
+              variant="ghost"
+              size="regular"
+              className="underline decoration-dotted underline-offset-4"
+              onClick={copyWaitingSessionSyncPermalink}
+            >
+              Copy waiting sync permalink
+            </WaitingSessionSyncActionButton>
+            <WaitingSessionSyncActionButton
+              tone="neutral"
+              variant="ghost"
+              size="regular"
+              className="underline decoration-dotted underline-offset-4"
+              onClick={() =>
+                updateFilters(DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH)
+              }
+            >
+              Reset filters
+            </WaitingSessionSyncActionButton>
+          </div>
         </div>
       </section>
 
@@ -1195,7 +1223,7 @@ export function WaitingSessionSyncPage() {
                   ) : null}
                   <WaitingSessionSyncActionAnchor
                     tone="sky"
-                    href={reviewPermalink}
+                    href={currentPermalink}
                     target="_blank"
                     rel="noreferrer"
                   >

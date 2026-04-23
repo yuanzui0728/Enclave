@@ -250,7 +250,18 @@ describe("waiting session sync notices", () => {
     });
   });
 
-  it("builds waiting sync copy notices for review and task contexts", () => {
+  it("builds waiting sync copy notices for permalink, review, and task contexts", () => {
+    expect(
+      createWaitingSessionSyncCopyNotice({
+        copied: true,
+        subject: "permalink",
+      }),
+    ).toEqual({
+      message: "Waiting sync permalink copied.",
+      tone: "success",
+      requestId: undefined,
+    });
+
     expect(
       createWaitingSessionSyncCopyNotice({
         copied: true,
