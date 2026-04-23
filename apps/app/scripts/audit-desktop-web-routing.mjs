@@ -1046,6 +1046,7 @@ const expectations = [
       '"/discover/mini-programs"',
       'label: "更多",',
       '"/profile/settings",',
+      '"/legal/",',
       '"/desktop/channels/",',
     ],
   },

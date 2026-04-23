@@ -165,6 +165,7 @@ export const desktopBottomNavItems: DesktopNavActionItem[] = [
       "/desktop/feedback",
       "/desktop/settings",
       "/profile/settings",
+      "/legal/",
       "/desktop/channels/",
     ],
   },
