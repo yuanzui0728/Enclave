@@ -1013,6 +1013,17 @@ const expectations = [
     ],
   },
   {
+    file: "src/features/shell/desktop-nav-config.ts",
+    description:
+      "desktop live-companion routes belong to the bottom More menu instead of also lighting up the primary Channels nav item",
+    includes: [
+      'label: "视频号",',
+      'matches: ["/tabs/channels"],',
+      'label: "更多",',
+      '"/desktop/channels/",',
+    ],
+  },
+  {
     file: "src/features/desktop/chat/desktop-notes-workspace.tsx",
     description:
       "desktop notes workspace keeps note-window close, missing-note, and delete fallbacks on the shared close/returnTo path, including rewriting missing standalone chat-window returns back to the main chat workspace",

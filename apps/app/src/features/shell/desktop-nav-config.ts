@@ -104,7 +104,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "视频号",
     shortLabel: "视频号",
     to: "/tabs/channels",
-    matches: ["/tabs/channels", "/desktop/channels/"],
+    matches: ["/tabs/channels"],
   },
   {
     kind: "route",
