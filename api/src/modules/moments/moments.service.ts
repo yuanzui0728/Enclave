@@ -1013,7 +1013,8 @@ export class MomentsService implements OnModuleInit {
 
     return {
       summary:
-        (await this.appendMomentTranscriptSummary(summary, media)) ?? summary,
+        (await this.appendMomentTranscriptSummary(summary, media, post)) ??
+        summary,
       parts: parts.length ? parts : undefined,
     };
   }
@@ -1021,6 +1022,7 @@ export class MomentsService implements OnModuleInit {
   private async appendMomentTranscriptSummary(
     summary: string,
     media: MomentMediaAsset[],
+    post: MomentPostEntity,
   ) {
     const video = media.find(
       (asset): asset is MomentVideoAsset => asset.kind === 'video',
@@ -1033,6 +1035,7 @@ export class MomentsService implements OnModuleInit {
       url: video.url,
       mimeType: video.mimeType,
       fileName: video.fileName,
+      characterId: post.authorType === 'character' ? post.authorId : undefined,
       mode: 'moment_media',
     });
     if (!transcription?.text) {

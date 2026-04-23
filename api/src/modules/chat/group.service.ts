@@ -794,9 +794,14 @@ export class GroupService {
         throw new Error('Attachment payload is invalid');
       }
 
+      const inferenceCharacterId = await this.resolveAttachmentInferenceCharacterId(
+        input.text,
+        groupId,
+      );
       const attachment = await this.enrichAttachmentForAi(
         input.attachment,
         groupId,
+        inferenceCharacterId,
       );
 
       const fallbackText =
@@ -828,6 +833,7 @@ export class GroupService {
   private async enrichAttachmentForAi(
     attachment: MessageAttachment,
     groupId?: string,
+    characterId?: string,
   ): Promise<MessageAttachment> {
     if (attachment.kind === 'voice') {
       if (attachment.transcriptText?.trim()) {
@@ -839,6 +845,7 @@ export class GroupService {
         mimeType: attachment.mimeType,
         fileName: attachment.fileName,
         conversationId: groupId,
+        characterId,
         mode: 'group_attachment',
       });
       return transcription?.text
@@ -862,6 +869,7 @@ export class GroupService {
         mimeType: attachment.mimeType,
         fileName: attachment.fileName,
         conversationId: groupId,
+        characterId,
         mode: 'group_attachment',
       });
       return transcription?.text
@@ -873,6 +881,71 @@ export class GroupService {
     }
 
     return attachment;
+  }
+
+  private async resolveAttachmentInferenceCharacterId(
+    rawText?: string,
+    groupId?: string,
+  ) {
+    if (!groupId) {
+      return undefined;
+    }
+
+    const replyContent = extractChatReplyMetadata(rawText ?? '');
+    if (replyContent.reply?.messageId) {
+      const replyTargetMessage = await this.messageRepo.findOne({
+        where: {
+          id: replyContent.reply.messageId,
+          groupId,
+        },
+      });
+      if (
+        replyTargetMessage?.senderType === 'character' &&
+        replyTargetMessage.senderId !== 'system'
+      ) {
+        return replyTargetMessage.senderId;
+      }
+    }
+
+    const mentionSummary = summarizeChatMentions(replyContent.body);
+    if (!mentionSummary.mentions.length || mentionSummary.hasMentionAll) {
+      return undefined;
+    }
+
+    const normalizedMentionTargets = new Set(
+      mentionSummary.mentions.map((mention) =>
+        mention.replace(/^@/, '').trim(),
+      ),
+    );
+    if (!normalizedMentionTargets.size) {
+      return undefined;
+    }
+
+    const members = await this.memberRepo.find({
+      where: { groupId, memberType: 'character' },
+    });
+    if (!members.length) {
+      return undefined;
+    }
+
+    const matchedCharacterIds = new Set<string>();
+    await Promise.all(
+      members.map(async (member) => {
+        const character = await this.characters.findById(member.memberId);
+        const aliases = [member.memberName, character?.name]
+          .map((value) => value?.trim())
+          .filter((value): value is string => Boolean(value));
+        if (
+          aliases.some((alias) => normalizedMentionTargets.has(alias))
+        ) {
+          matchedCharacterIds.add(member.memberId);
+        }
+      }),
+    );
+
+    return matchedCharacterIds.size === 1
+      ? [...matchedCharacterIds][0]
+      : undefined;
   }
 
   private buildAiHistoryMessage(message: GroupMessageEntity): ChatMessage {

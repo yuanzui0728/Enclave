@@ -1684,6 +1684,8 @@ export class FeedService implements OnModuleInit {
             url: primaryMedia.url,
             mimeType: primaryMedia.mimeType,
             fileName: primaryMedia.fileName,
+            characterId:
+              post.authorType === 'character' ? post.authorId : undefined,
             mode: 'feed_media',
           })
         : null;
