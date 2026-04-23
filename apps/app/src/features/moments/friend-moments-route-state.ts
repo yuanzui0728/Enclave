@@ -36,7 +36,7 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
-  if (nextValue === "/discover/moments") {
+  if (nextValue === "/moments" || nextValue === "/discover/moments") {
     return "/tabs/moments";
   }
 

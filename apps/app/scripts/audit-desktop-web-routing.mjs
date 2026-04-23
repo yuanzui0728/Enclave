@@ -1278,10 +1278,10 @@ const expectations = [
   {
     file: "src/features/channels/channels-route-state.ts",
     description:
-      "desktop channels route state normalizes legacy /discover/channels return paths to /tabs/channels before pages or back links consume them",
+      "desktop channels route state normalizes legacy /channels and /discover/channels return paths to /tabs/channels before pages or back links consume them",
     includes: [
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/discover/channels") {',
+      'if (nextValue === "/channels" || nextValue === "/discover/channels") {',
       'return "/tabs/channels";',
       "const returnPath = normalizeReturnPath(params.get(\"returnPath\"));",
       "const returnPath = normalizeReturnPath(input?.returnPath);",
@@ -1290,10 +1290,10 @@ const expectations = [
   {
     file: "src/features/feed/feed-route-state.ts",
     description:
-      "feed route state normalizes legacy /discover/feed return paths to /tabs/feed before feed pages, desktop search, or saved links reuse them",
+      "feed route state normalizes legacy /feed and /discover/feed return paths to /tabs/feed before feed pages, desktop search, or saved links reuse them",
     includes: [
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/discover/feed") {',
+      'if (nextValue === "/feed" || nextValue === "/discover/feed") {',
       'return "/tabs/feed";',
       'const returnPath = normalizeReturnPath(params.get("returnPath"));',
       "const returnPath = normalizeReturnPath(input?.returnPath);",
@@ -1314,10 +1314,11 @@ const expectations = [
   {
     file: "src/features/mini-programs/mobile-mini-programs-route-state.ts",
     description:
-      "mini-programs route state normalizes legacy /discover/mini-programs return paths to /tabs/mini-programs before desktop mini-program pages, search, or saved links reuse them",
+      "mini-programs route state normalizes legacy /mini-programs and /discover/mini-programs return paths to /tabs/mini-programs before desktop mini-program pages, search, or saved links reuse them",
     includes: [
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/discover/mini-programs") {',
+      'nextValue === "/mini-programs" ||',
+      'nextValue === "/discover/mini-programs"',
       'return "/tabs/mini-programs";',
       'const returnPath = normalizeReturnPath(params.get("returnPath"));',
       "const returnPath = normalizeReturnPath(state.returnPath);",
@@ -1643,9 +1644,9 @@ const expectations = [
   {
     file: "src/features/moments/friend-moments-route-state.ts",
     description:
-      "desktop friend-moments route state normalizes legacy /discover/moments and old contacts return paths back into desktop tabs, and it fills missing pane hashes for legacy starred/tags returns",
+      "desktop friend-moments route state normalizes legacy /moments, /discover/moments, and old contacts return paths back into desktop tabs, and it fills missing pane hashes for legacy starred/tags returns",
     includes: [
-      'if (nextValue === "/discover/moments") {',
+      'if (nextValue === "/moments" || nextValue === "/discover/moments") {',
       'return "/tabs/moments";',
       'if (nextValue === "/contacts/starred" || nextValue === "/contacts/tags") {',
       'return "/tabs/contacts";',
@@ -1658,9 +1659,9 @@ const expectations = [
   {
     file: "src/features/moments/moments-route-state.ts",
     description:
-      "desktop moments route state normalizes legacy /discover/moments return paths back to /tabs/moments",
+      "desktop moments route state normalizes legacy /moments and /discover/moments return paths back to /tabs/moments",
     includes: [
-      'if (nextValue === "/discover/moments") {',
+      'if (nextValue === "/moments" || nextValue === "/discover/moments") {',
       'return "/tabs/moments";',
     ],
   },
