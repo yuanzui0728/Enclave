@@ -20,6 +20,7 @@ import type {
   LocationCardAttachment,
   Message,
   NoteCardAttachment,
+  VoiceAttachment,
 } from './chat.types';
 
 type SendMessagePayload =
@@ -53,6 +54,13 @@ type SendMessagePayload =
       type: 'file';
       text?: string;
       attachment: FileAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'voice';
+      text?: string;
+      attachment: VoiceAttachment;
     }
   | {
       conversationId: string;
@@ -151,6 +159,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           ? (payload.text ?? `[图片] ${payload.attachment.fileName}`)
           : payload.type === 'file'
             ? (payload.text ?? `[文件] ${payload.attachment.fileName}`)
+            : payload.type === 'voice'
+              ? (payload.text ?? '[语音消息]')
             : payload.type === 'contact_card'
               ? (payload.text ?? `[名片] ${payload.attachment.name}`)
               : payload.type === 'location_card'

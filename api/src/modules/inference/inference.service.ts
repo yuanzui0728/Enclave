@@ -22,6 +22,8 @@ const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 const DEFAULT_TTS_VOICE = 'alloy';
 const DEFAULT_PROVIDER_ID = 'provider_default';
+const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_TRANSCRIPTION_BYTES = 10 * 1024 * 1024;
 
 type ProviderPayload = {
   name?: string;
@@ -55,6 +57,21 @@ export type ResolvedInferenceProviderConfig = {
   ttsVoice: string;
   apiStyle: 'openai-chat-completions' | 'openai-responses';
   mode: 'cloud' | 'local-compatible';
+};
+
+export type ResolvedInferenceCapabilityProfile = {
+  supportsTextInput: true;
+  supportsNativeImageInput: boolean;
+  supportsNativeAudioInput: boolean;
+  supportsNativeVideoInput: boolean;
+  supportsStructuredDocumentInput: true;
+  supportsSpeechSynthesis: boolean;
+  supportsTranscription: boolean;
+  supportsResponsesApi: boolean;
+  requiresPublicAssetUrl: boolean;
+  maxInlineImageBytes: number;
+  maxTranscriptionBytes: number;
+  capabilitySource: 'catalog' | 'heuristic';
 };
 
 function normalizeProviderEndpoint(value: string) {
@@ -121,6 +138,13 @@ function extractErrorMessage(error: unknown) {
 @Injectable()
 export class InferenceService implements OnModuleInit {
   private readonly logger = new Logger(InferenceService.name);
+  private readonly modelCapabilityCache = new Map<
+    string,
+    Pick<
+      InferenceModelCatalogEntryEntity,
+      'id' | 'supportsVision' | 'supportsAudio'
+    >
+  >();
 
   constructor(
     private readonly config: ConfigService,
@@ -205,6 +229,80 @@ export class InferenceService implements OnModuleInit {
     if (nextEntries.length > 0) {
       await this.modelCatalogRepo.save(nextEntries);
     }
+
+    this.refreshModelCapabilityCache(
+      nextEntries.length > 0 ? nextEntries : existingEntries,
+    );
+  }
+
+  private refreshModelCapabilityCache(
+    entries: Array<
+      Pick<
+        InferenceModelCatalogEntryEntity,
+        'id' | 'supportsVision' | 'supportsAudio'
+      >
+    >,
+  ) {
+    this.modelCapabilityCache.clear();
+    entries.forEach((entry) => {
+      this.modelCapabilityCache.set(entry.id.trim().toLowerCase(), {
+        id: entry.id,
+        supportsVision: entry.supportsVision,
+        supportsAudio: entry.supportsAudio,
+      });
+    });
+  }
+
+  private async ensureModelCapabilityCache() {
+    if (this.modelCapabilityCache.size > 0) {
+      return;
+    }
+
+    const existingEntries = await this.modelCatalogRepo.find({
+      select: ['id', 'supportsVision', 'supportsAudio'],
+    });
+    if (existingEntries.length > 0) {
+      this.refreshModelCapabilityCache(existingEntries);
+      return;
+    }
+
+    await this.seedModelCatalog();
+  }
+
+  private findModelCapabilityEntry(modelId: string) {
+    const normalized = modelId.trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+
+    const direct = this.modelCapabilityCache.get(normalized);
+    if (direct) {
+      return direct;
+    }
+
+    for (const [entryId, entry] of this.modelCapabilityCache.entries()) {
+      if (
+        normalized === entryId ||
+        normalized.startsWith(`${entryId}-`) ||
+        normalized.startsWith(`${entryId}.`) ||
+        entryId.startsWith(`${normalized}-`) ||
+        entryId.startsWith(`${normalized}.`)
+      ) {
+        return entry;
+      }
+    }
+
+    return null;
+  }
+
+  private inferVisionSupport(modelId: string) {
+    return /(vision|gpt-4o|gpt-4\.1|gpt-5|gemini|claude|vl|multimodal)/i.test(
+      modelId,
+    );
+  }
+
+  private inferAudioSupport(modelId: string) {
+    return /(gpt-4o|gemini|audio|omni|realtime|speech)/i.test(modelId);
   }
 
   private getDefaultProviderName() {
@@ -488,6 +586,37 @@ export class InferenceService implements OnModuleInit {
     return (await this.getAllProviderAccountEntities()).map((account) =>
       this.toProviderAccountDto(account),
     );
+  }
+
+  async resolveCapabilityProfile(
+    input: Pick<
+      ResolvedInferenceProviderConfig,
+      'model' | 'ttsModel' | 'transcriptionModel' | 'apiStyle' | 'mode'
+    >,
+  ): Promise<ResolvedInferenceCapabilityProfile> {
+    await this.ensureModelCapabilityCache();
+
+    const catalogEntry = this.findModelCapabilityEntry(input.model);
+    const supportsVision =
+      catalogEntry?.supportsVision ?? this.inferVisionSupport(input.model);
+    const supportsAudio =
+      catalogEntry?.supportsAudio ?? this.inferAudioSupport(input.model);
+
+    return {
+      supportsTextInput: true,
+      supportsNativeImageInput: supportsVision,
+      supportsNativeAudioInput:
+        supportsAudio && input.apiStyle === 'openai-responses',
+      supportsNativeVideoInput: false,
+      supportsStructuredDocumentInput: true,
+      supportsSpeechSynthesis: Boolean(input.ttsModel?.trim()),
+      supportsTranscription: Boolean(input.transcriptionModel?.trim()),
+      supportsResponsesApi: input.apiStyle === 'openai-responses',
+      requiresPublicAssetUrl: input.mode !== 'local-compatible',
+      maxInlineImageBytes: MAX_INLINE_IMAGE_BYTES,
+      maxTranscriptionBytes: MAX_TRANSCRIPTION_BYTES,
+      capabilitySource: catalogEntry ? 'catalog' : 'heuristic',
+    };
   }
 
   async listModelCatalog() {

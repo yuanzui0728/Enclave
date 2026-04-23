@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { MessageEntity } from '../chat/message.entity';
@@ -14,7 +14,7 @@ import { ReminderTaskEntity } from './reminder-task.entity';
     TypeOrmModule.forFeature([ReminderTaskEntity, MessageEntity]),
     AuthModule,
     SystemConfigModule,
-    WorldModule,
+    forwardRef(() => WorldModule),
   ],
   providers: [ReminderRuntimeRulesService, ReminderRuntimeService],
   controllers: [ReminderRuntimeController],

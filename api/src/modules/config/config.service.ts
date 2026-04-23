@@ -20,10 +20,18 @@ export class SystemConfigService {
   }
 
   async getAiModel(): Promise<string> {
-    return (await this.getConfig('ai_model')) ?? 'deepseek-chat';
+    return (
+      (await this.getConfig('provider_model'))?.trim() ||
+      (await this.getConfig('ai_model'))?.trim() ||
+      'deepseek-chat'
+    );
   }
 
   async setAiModel(model: string): Promise<void> {
-    await this.setConfig('ai_model', model);
+    const normalized = model.trim();
+    await Promise.all([
+      this.setConfig('provider_model', normalized),
+      this.setConfig('ai_model', normalized),
+    ]);
   }
 }

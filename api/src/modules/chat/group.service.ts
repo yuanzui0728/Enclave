@@ -937,6 +937,44 @@ export class GroupService {
     }
 
     if (attachment.kind === 'file') {
+      if (this.isAudioMimeType(attachment.mimeType)) {
+        return [
+          {
+            type: 'audio',
+            audioUrl: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            transcriptText: attachment.transcriptText,
+            summaryText: promptText,
+          },
+        ];
+      }
+
+      if (this.isVideoMimeType(attachment.mimeType)) {
+        return [
+          {
+            type: 'video',
+            videoUrl: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            transcriptText: attachment.transcriptText,
+            summaryText: promptText,
+          },
+        ];
+      }
+
+      if (this.isDocumentMimeType(attachment.mimeType, attachment.fileName)) {
+        return [
+          {
+            type: 'document',
+            url: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            summaryText: promptText,
+          },
+        ];
+      }
+
       return [
         {
           type: 'file',
@@ -949,9 +987,17 @@ export class GroupService {
     }
 
     if (attachment.kind === 'voice') {
-      return this.buildTextAiParts(
-        this.buildMessagePromptText(text, attachment),
-      );
+      return [
+        {
+          type: 'audio',
+          audioUrl: attachment.url,
+          mimeType: attachment.mimeType,
+          fileName: attachment.fileName,
+          durationMs: attachment.durationMs,
+          transcriptText: attachment.transcriptText,
+          summaryText: promptText,
+        },
+      ];
     }
 
     if (attachment.kind === 'contact_card') {
@@ -991,6 +1037,32 @@ export class GroupService {
 
   private buildTextAiParts(text: string): AiMessagePart[] {
     return [{ type: 'text', text }];
+  }
+
+  private isAudioMimeType(mimeType?: string) {
+    return Boolean(mimeType && /^audio\//i.test(mimeType));
+  }
+
+  private isVideoMimeType(mimeType?: string) {
+    return Boolean(mimeType && /^video\//i.test(mimeType));
+  }
+
+  private isDocumentMimeType(mimeType?: string, fileName?: string) {
+    if (mimeType) {
+      if (/^text\//i.test(mimeType)) {
+        return true;
+      }
+
+      if (
+        /^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/json|application\/xml|text\/markdown|text\/csv)$/i.test(
+          mimeType,
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return /\.(pdf|txt|md|markdown|csv|json|doc|docx)$/i.test(fileName ?? '');
   }
 
   private buildMessagePromptText(
