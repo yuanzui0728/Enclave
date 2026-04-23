@@ -1,11 +1,10 @@
 {
-  "name": "@yinjie/ui",
+  "name": "@yinjie/i18n",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./tokens.css": "./src/tokens.css"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
@@ -13,20 +12,13 @@
     "lint": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.66.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
     "@lingui/core": "5.9.5",
     "@lingui/macro": "5.9.5",
-    "@lingui/react": "5.9.5",
-    "@tanstack/react-query": "^5.66.8",
-    "@yinjie/config": "workspace:*",
-    "@yinjie/contracts": "workspace:*",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.6.0"
+    "@lingui/react": "5.9.5"
   },
   "devDependencies": {
     "@types/react": "^19.0.10",

@@ -69,8 +69,14 @@
     "ios:audit": "pnpm --filter @yinjie/ios-shell run audit",
     "ios:sync": "pnpm --filter @yinjie/ios-shell run sync",
     "ios:open": "pnpm --filter @yinjie/ios-shell run open",
-    "build": "turbo run build --filter=@yinjie/contracts --filter=@yinjie/config --filter=@yinjie/ui --filter=@yinjie/app --filter=@yinjie/admin --filter=@yinjie/cloud-console --filter=@yinjie/cloud-api",
+    "build": "turbo run build --filter=@yinjie/contracts --filter=@yinjie/config --filter=@yinjie/i18n --filter=@yinjie/ui --filter=@yinjie/app --filter=@yinjie/admin --filter=@yinjie/cloud-console --filter=@yinjie/cloud-api",
     "build:web": "pnpm build",
+    "i18n:extract": "lingui extract --clean",
+    "i18n:compile": "lingui compile --typescript",
+    "i18n:audit": "node ./scripts/i18n-audit.mjs",
+    "i18n:audit:staged": "I18N_AUDIT_SCOPE=staged node ./scripts/i18n-audit.mjs",
+    "i18n:check": "pnpm i18n:extract && pnpm i18n:compile && pnpm i18n:audit",
+    "i18n:check:staged": "pnpm i18n:extract && pnpm i18n:compile && pnpm i18n:audit:staged",
     "audit:desktop-web": "pnpm --filter @yinjie/app audit:desktop-web",
     "audit:mobile-web": "pnpm --filter @yinjie/app audit:mobile-web",
     "audit:android-shell": "pnpm audit:mobile-web && pnpm android:doctor",
@@ -88,7 +94,11 @@
     "legacy:stop": ".\\stop.bat"
   },
   "devDependencies": {
+    "@lingui/babel-plugin-lingui-macro": "5.9.5",
+    "@lingui/cli": "5.9.5",
+    "@lingui/vite-plugin": "5.9.5",
     "esbuild": "0.25.12",
+    "eslint-plugin-lingui": "0.13.1",
     "prettier": "^3.4.2",
     "turbo": "^2.4.2",
     "typescript": "^5.9.3"

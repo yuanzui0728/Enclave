@@ -1,10 +1,11 @@
+import type { ReactNode } from "react";
+import { Trans } from "@lingui/react/macro";
+
 type BootstrapScreenProps = {
-  message?: string;
+  message?: ReactNode;
 };
 
-export function BootstrapScreen({
-  message = "正在整理这次进入世界的路径，马上带你回到上次停留的地方。",
-}: BootstrapScreenProps) {
+export function BootstrapScreen({ message }: BootstrapScreenProps) {
   return (
     <div
       className="flex min-h-screen min-h-dvh items-center justify-center bg-[#f5f5f5] px-4 py-10 text-center"
@@ -23,10 +24,12 @@ export function BootstrapScreen({
           隐界
         </div>
         <h1 className="mt-6 text-4xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
-          欢迎回到你的世界
+          <Trans>欢迎回到你的世界</Trans>
         </h1>
         <p className="mt-4 text-sm leading-8 text-[color:var(--text-secondary)]">
-          这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。
+          <Trans>
+            这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。
+          </Trans>
         </p>
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
@@ -35,7 +38,7 @@ export function BootstrapScreen({
               Step 1
             </div>
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-              确认入口
+              <Trans>确认入口</Trans>
             </div>
           </div>
           <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
@@ -43,7 +46,7 @@ export function BootstrapScreen({
               Step 2
             </div>
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-              同步世界主人
+              <Trans>同步世界主人</Trans>
             </div>
           </div>
           <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
@@ -51,13 +54,17 @@ export function BootstrapScreen({
               Step 3
             </div>
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-              继续开启对话
+              <Trans>继续开启对话</Trans>
             </div>
           </div>
         </div>
 
         <div className="mt-6 rounded-[22px] border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-4 py-3 text-left text-sm leading-7 text-[#475569]">
-          {message}
+          {message ?? (
+            <Trans>
+              正在整理这次进入世界的路径，马上带你回到上次停留的地方。
+            </Trans>
+          )}
         </div>
       </div>
     </div>

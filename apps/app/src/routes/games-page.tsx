@@ -61,6 +61,7 @@ import {
   parseTimestamp,
 } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import {
   isMobileWebShareSurface,
@@ -154,10 +155,11 @@ export function GamesPage() {
     message: string;
     onAction: () => void;
   } | null>(null);
+  const normalizedPathname = normalizePathname(pathname);
   const isDesktopGamesRoute =
-    pathname === "/tabs/games" ||
-    pathname === "/games" ||
-    pathname === "/discover/games";
+    normalizedPathname === "/tabs/games" ||
+    normalizedPathname === "/games" ||
+    normalizedPathname === "/discover/games";
   const normalizedDesktopReturnPath =
     isDesktopLayout &&
     (routeState.returnPath === "/games" ||
@@ -285,7 +287,11 @@ export function GamesPage() {
   ]);
 
   useEffect(() => {
-    if (isDesktopLayout || pathname !== "/discover/games" || !selectedGameId) {
+    if (
+      isDesktopLayout ||
+      normalizedPathname !== "/discover/games" ||
+      !selectedGameId
+    ) {
       return;
     }
 
@@ -315,6 +321,7 @@ export function GamesPage() {
     locationSearch,
     navigate,
     pathname,
+    normalizedPathname,
     safeReturnHash,
     safeReturnPath,
     selectedGameId,

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getConversations } from "@yinjie/contracts";
 import { BellRing, Check, ChevronRight, X } from "lucide-react";
+import { normalizePathname } from "../../lib/normalize-pathname";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
   buildChatReminderHashValue,
@@ -34,6 +35,7 @@ export function MobileReminderToastHost() {
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
+  const normalizedPathname = normalizePathname(pathname);
   const { reminders, clearReminder, notifyReminder } = useMessageReminders();
   const [dismissedMessageIds, setDismissedMessageIds] = useState<string[]>([]);
   const [documentVisibility, setDocumentVisibility] = useState<
@@ -141,11 +143,14 @@ export function MobileReminderToastHost() {
 
   const shouldHideActiveReminder =
     !activeReminder ||
-    pathname === "/tabs/chat" ||
+    normalizedPathname === "/tabs/chat" ||
     (() => {
       const activePath = buildChatReminderPath(activeReminder);
       const activeHash = `#${buildChatReminderHashValue(activeReminder.messageId)}`;
-      return pathname === activePath && hash === activeHash;
+      return (
+        normalizePathname(activePath) === normalizedPathname &&
+        hash === activeHash
+      );
     })();
 
   if (shouldHideActiveReminder && !actionNotice) {

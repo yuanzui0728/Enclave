@@ -23,6 +23,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import {
@@ -114,10 +115,11 @@ export function MiniProgramsPage() {
     message: string;
     onAction: () => void;
   } | null>(null);
+  const normalizedPathname = normalizePathname(pathname);
   const isDesktopMiniProgramsRoute =
-    pathname === "/mini-programs" ||
-    pathname === "/tabs/mini-programs" ||
-    pathname === "/discover/mini-programs";
+    normalizedPathname === "/mini-programs" ||
+    normalizedPathname === "/tabs/mini-programs" ||
+    normalizedPathname === "/discover/mini-programs";
   const normalizedDesktopReturnPath =
     isDesktopLayout && routeState.returnPath === "/discover/mini-programs"
       ? "/tabs/mini-programs"
@@ -284,7 +286,7 @@ export function MiniProgramsPage() {
   useEffect(() => {
     if (
       isDesktopLayout ||
-      pathname !== "/discover/mini-programs" ||
+      normalizedPathname !== "/discover/mini-programs" ||
       !selectedMiniProgramId
     ) {
       return;
@@ -314,6 +316,7 @@ export function MiniProgramsPage() {
     locationSearch,
     navigate,
     pathname,
+    normalizedPathname,
     safeReturnHash,
     safeReturnPath,
     selectedMiniProgramId,

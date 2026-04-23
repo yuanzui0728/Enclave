@@ -42,11 +42,14 @@ const expectations = [
   {
     file: "src/routes/games-page.tsx",
     description:
-      "desktop games route restores query-driven selection from the raw search string, self-heals legacy /games and /discover/games paths back to /tabs/games even when the query already matches, normalizes stale desktop return paths away from /games and /discover/games, and reuses the normalized return target inside delivered invite links",
+      "desktop games route restores query-driven selection from the raw search string, self-heals legacy and trailing-slash /games variants back to /tabs/games even when the query already matches, normalizes stale desktop return paths away from /games and /discover/games, and reuses the normalized return target inside delivered invite links",
     includes: [
       'select: (state) => state.location.searchStr,',
+      'import { normalizePathname } from "../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
       ">(inviteActivityFromSearch?.id ?? null);",
-      'pathname === "/games" ||',
+      'normalizedPathname === "/games" ||',
+      'normalizedPathname === "/discover/games"',
       'const normalizedDesktopReturnPath =',
       'routeState.returnPath === "/games" ||',
       'routeState.returnPath === "/discover/games"',
@@ -64,11 +67,14 @@ const expectations = [
   {
     file: "src/routes/mini-programs-page.tsx",
     description:
-      "desktop mini programs route restores query-driven selection from the raw search string, scopes group relay context to the group relay workspace, self-heals legacy /mini-programs and /discover/mini-programs paths back to /tabs/mini-programs, normalizes stale desktop return paths away from /discover/mini-programs, and routes desktop group-relay returns back through /tabs/chat",
+      "desktop mini programs route restores query-driven selection from the raw search string, scopes group relay context to the group relay workspace, self-heals legacy and trailing-slash /mini-programs variants back to /tabs/mini-programs, normalizes stale desktop return paths away from /discover/mini-programs, and routes desktop group-relay returns back through /tabs/chat",
     includes: [
       'select: (state) => state.location.searchStr,',
       'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
-      'pathname === "/mini-programs" ||',
+      'import { normalizePathname } from "../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
+      'normalizedPathname === "/mini-programs" ||',
+      'normalizedPathname === "/discover/mini-programs"',
       'const normalizedDesktopReturnPath =',
       'routeState.returnPath === "/discover/mini-programs"',
       '"/tabs/mini-programs"',
@@ -1097,15 +1103,28 @@ const expectations = [
     ],
   },
   {
+    file: "src/features/chat/mobile-reminder-toast-host.tsx",
+    description:
+      "chat reminder toasts treat trailing-slash /tabs/chat paths as the active desktop chat workspace so desktop reminders do not keep resurfacing during route self-heal",
+    includes: [
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
+      'normalizedPathname === "/tabs/chat"',
+      "normalizePathname(activePath) === normalizedPathname",
+    ],
+  },
+  {
     file: "src/features/shell/conversation-strong-reminder-host.tsx",
     description:
-      "desktop strong-reminder notifications treat /tabs/chat as the active conversation route and launch desktop /tabs/chat message targets instead of reviving legacy /chat paths",
+      "desktop strong-reminder notifications treat /tabs/chat and its trailing-slash form as the active conversation route and launch desktop /tabs/chat message targets instead of reviving legacy /chat paths",
     includes: [
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
       'import {',
       "buildDesktopChatThreadPath,",
       "parseDesktopChatRouteHash,",
       "const isDesktopLayout = useDesktopLayout();",
-      'pathname === "/tabs/chat" &&',
+      "const normalizedPathname = normalizePathname(pathname);",
+      'normalizedPathname === "/tabs/chat" &&',
       "desktopRouteState.conversationId === conversation.id",
       "route: isDesktopLayout",
       "buildDesktopChatThreadPath({",
@@ -1289,6 +1308,18 @@ const expectations = [
     includes: ['export function isDesktopOnlyPath(path?: string | null) {'],
   },
   {
+    file: "src/lib/normalize-pathname.ts",
+    description:
+      "shared pathname normalization trims trailing slashes before desktop workspace pages and reminder surfaces compare canonical /tabs routes",
+    includes: [
+      "export function normalizePathname(pathname: string) {",
+      "const trimmed = pathname.trim();",
+      'if (!trimmed.startsWith("/")) {',
+      'if (trimmed === "/") {',
+      "return trimmed.replace(",
+    ],
+  },
+  {
     file: "src/routes/mobile-moments-publish-page.tsx",
     description:
       "mobile moments publish clears returnHash when returnPath is unsafe and carries safe desktop return context into /tabs/moments when the legacy publish page is opened on desktop",
@@ -1355,12 +1386,15 @@ const expectations = [
   {
     file: "src/routes/channels-page.tsx",
     description:
-      "desktop channels route only keeps the author side panel when it still matches the current desktop-selected post, self-heals legacy /channels and /discover/channels paths back to /tabs/channels even when the hash already matches, and normalizes stale desktop return paths away from /discover/channels",
+      "desktop channels route only keeps the author side panel when it still matches the current desktop-selected post, self-heals legacy and trailing-slash /channels variants back to /tabs/channels even when the hash already matches, and normalizes stale desktop return paths away from /discover/channels",
     includes: [
+      'import { normalizePathname } from "../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
       'const normalizedDesktopReturnPath =',
       'routeState.returnPath === "/discover/channels"',
       '"/tabs/channels"',
-      'pathname === "/channels" ||',
+      'normalizedPathname === "/channels" ||',
+      'normalizedPathname === "/discover/channels"',
       "desktopSelectedPost?.authorId === routeSelectedAuthorId",
       "? routeSelectedAuthorId",
       ": undefined;",
@@ -1642,10 +1676,12 @@ const expectations = [
   {
     file: "src/routes/moments-page.tsx",
     description:
-      "desktop moments self-heals legacy /moments and /discover/moments paths back to /tabs/moments and only opens character authors in the friend moments workspace with desktop return paths",
+      "desktop moments self-heals legacy and trailing-slash /moments variants back to /tabs/moments and only opens character authors in the friend moments workspace with desktop return paths",
     includes: [
+      'import { normalizePathname } from "../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
       'const desktopMomentsPath = "/tabs/moments";',
-      'pathname === "/moments" ||',
+      'normalizedPathname === "/moments" ||',
       'const desktopPathMismatch = pathname !== desktopMomentsPath;',
       "(!desktopPathMismatch && currentRouteHash === normalizedHash)",
       "to: desktopMomentsPath,",

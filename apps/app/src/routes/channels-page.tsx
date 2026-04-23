@@ -59,6 +59,7 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -92,15 +93,16 @@ export function ChannelsPage() {
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
+  const normalizedPathname = normalizePathname(pathname);
   const routeState = useMemo(() => parseDesktopChannelsRouteHash(hash), [hash]);
   const normalizedDesktopReturnPath =
     isDesktopLayout && routeState.returnPath === "/discover/channels"
       ? "/tabs/channels"
       : routeState.returnPath;
   const isDesktopChannelsRoute =
-    pathname === "/tabs/channels" ||
-    pathname === "/channels" ||
-    pathname === "/discover/channels";
+    normalizedPathname === "/tabs/channels" ||
+    normalizedPathname === "/channels" ||
+    normalizedPathname === "/discover/channels";
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const safeReturnPath =
     normalizedDesktopReturnPath &&
@@ -573,7 +575,7 @@ export function ChannelsPage() {
   ]);
 
   useEffect(() => {
-    if (isDesktopLayout || pathname !== "/discover/channels") {
+    if (isDesktopLayout || normalizedPathname !== "/discover/channels") {
       return;
     }
 
@@ -598,7 +600,7 @@ export function ChannelsPage() {
     isDesktopLayout,
     navigate,
     normalizedHash,
-    pathname,
+    normalizedPathname,
     routeSelectedPostId,
     routeState.section,
     safeReturnHash,

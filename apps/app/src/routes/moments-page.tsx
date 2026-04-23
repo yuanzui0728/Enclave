@@ -43,6 +43,7 @@ import {
 import { getMomentSummaryText } from "../features/moments/moment-content";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -78,6 +79,7 @@ export function MomentsPage() {
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
+  const normalizedPathname = normalizePathname(pathname);
   const composeDraft = useMomentComposeDraft();
   const resetComposeDraft = useEffectEvent(() => {
     composeDraft.reset();
@@ -227,12 +229,12 @@ export function MomentsPage() {
     routeSelectedAuthorMoment?.authorType === "character"
       ? routeSelectedAuthorId
       : undefined;
-  const isDiscoverSubPage = pathname === "/discover/moments";
+  const isDiscoverSubPage = normalizedPathname === "/discover/moments";
   const desktopMomentsPath = "/tabs/moments";
   const isDesktopMomentsRoute =
-    pathname === desktopMomentsPath ||
-    pathname === "/moments" ||
-    pathname === "/discover/moments";
+    normalizedPathname === desktopMomentsPath ||
+    normalizedPathname === "/moments" ||
+    normalizedPathname === "/discover/moments";
   const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试读取";
   const handleDesktopRouteStateChange = useEffectEvent(
     (state: { momentId?: string }) => {

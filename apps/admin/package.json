@@ -19,6 +19,7 @@
     "@tanstack/react-router": "^1.109.2",
     "@yinjie/config": "workspace:*",
     "@yinjie/contracts": "workspace:*",
+    "@yinjie/i18n": "workspace:*",
     "@yinjie/ui": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

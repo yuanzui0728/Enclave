@@ -1,11 +1,16 @@
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
+import { Trans } from "@lingui/react/macro";
 import { cn } from "../cn";
 
 type LoadingBlockProps = HTMLAttributes<HTMLDivElement> & {
-  label?: string;
+  label?: ReactNode;
 };
 
-export function LoadingBlock({ className, label = "加载中...", ...props }: LoadingBlockProps) {
+export function LoadingBlock({
+  className,
+  label,
+  ...props
+}: LoadingBlockProps) {
   return (
     <div
       className={cn(
@@ -20,7 +25,7 @@ export function LoadingBlock({ className, label = "加载中...", ...props }: Lo
           <span className="h-2.5 w-2.5 rounded-full bg-black/28 animate-pulse [animation-delay:120ms]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#8ecf9d] animate-pulse [animation-delay:240ms]" />
         </div>
-        <div>{label}</div>
+        <div>{label ?? <Trans>加载中...</Trans>}</div>
       </div>
     </div>
   );

@@ -78,6 +78,7 @@ jieshao/
 .cache/tools/
 .cache/android-api/
 .artifacts/
+packages/i18n/catalogs/**/*.ts
 
 # Runtime data
 runtime-data/

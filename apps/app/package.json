@@ -19,6 +19,7 @@
     "audit:mobile-web": "pnpm typecheck && pnpm lint:mobile-web && pnpm build"
   },
   "dependencies": {
+    "@lingui/react": "5.9.5",
     "@capacitor/core": "^7.1.1",
     "@capacitor/keyboard": "^7.0.6",
     "@hookform/resolvers": "^3.10.0",
@@ -28,6 +29,7 @@
     "@tauri-apps/plugin-opener": "^2.2.5",
     "@yinjie/config": "workspace:*",
     "@yinjie/contracts": "workspace:*",
+    "@yinjie/i18n": "workspace:*",
     "@yinjie/ui": "workspace:*",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",

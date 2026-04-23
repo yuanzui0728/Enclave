@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { getConversations, type Message } from "@yinjie/contracts";
+import { normalizePathname } from "../../lib/normalize-pathname";
 import { joinConversationRoom, onChatMessage } from "../../lib/socket";
 import { showLocalNotification } from "../../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -25,6 +26,7 @@ export function ConversationStrongReminderHost() {
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
+  const normalizedPathname = normalizePathname(pathname);
   const desktopRouteState = useMemo(
     () => parseDesktopChatRouteHash(hash),
     [hash],
@@ -71,7 +73,7 @@ export function ConversationStrongReminderHost() {
       }
 
       const inActiveConversation = isDesktopLayout
-        ? pathname === "/tabs/chat" &&
+        ? normalizedPathname === "/tabs/chat" &&
           desktopRouteState.conversationId === conversation.id
         : pathname === `/chat/${conversation.id}`;
       if (
@@ -101,7 +103,13 @@ export function ConversationStrongReminderHost() {
     return () => {
       offMessage();
     };
-  }, [conversationMap, desktopRouteState.conversationId, isDesktopLayout, pathname]);
+  }, [
+    conversationMap,
+    desktopRouteState.conversationId,
+    isDesktopLayout,
+    normalizedPathname,
+    pathname,
+  ]);
 
   return null;
 }
