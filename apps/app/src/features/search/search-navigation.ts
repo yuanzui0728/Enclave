@@ -79,6 +79,7 @@ export function resolveSearchNavigationTarget(
   return (
     resolveDesktopConversationNavigationTarget(normalizedTarget) ??
     resolveDesktopContactsNavigationTarget(normalizedTarget) ??
+    resolveDesktopDiscoverNavigationTarget(normalizedTarget) ??
     resolveDesktopFeedNavigationTarget(normalizedTarget) ??
     resolveDesktopGamesNavigationTarget(normalizedTarget) ??
     resolveDesktopMiniProgramsNavigationTarget(normalizedTarget) ??
@@ -317,6 +318,21 @@ function resolveDesktopContactsNavigationTarget(
   }
 
   return null;
+}
+
+function resolveDesktopDiscoverNavigationTarget(target: SearchNavigationTarget) {
+  if (
+    target.to !== "/discover" &&
+    target.to !== "/tabs/discover" &&
+    target.to !== "/discover/encounter" &&
+    target.to !== "/discover/scene"
+  ) {
+    return null;
+  }
+
+  return {
+    to: "/tabs/discover",
+  } satisfies SearchNavigationTarget;
 }
 
 function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {

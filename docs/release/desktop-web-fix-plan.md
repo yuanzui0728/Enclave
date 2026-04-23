@@ -47,6 +47,7 @@
 - 桌面搜索这条链路里的消息和公众号结果现在也统一改走桌面协议：聊天会话与消息命中直接回 `/tabs/chat#conversationId=...`，消息命中会把 `messageId` 一起写进 hash；公众号主页和文章命中则回 `/tabs/contacts#pane=official-accounts...`。这样从桌面搜索建议和桌面搜索页打开结果时，不会再掉进移动 `/chat` `/group` 或旧 `/official-accounts/*` 页面。
 - 桌面搜索里的“最近收藏 / 收藏命中”现在也会先把旧收藏路由收敛到桌面工作区再打开。老的 `/chat/$id#chat-message-*`、`/group/$id#chat-message-*`、`/chat/subscription-inbox`、`/official-accounts/*` 收藏快捷项，不会再先落旧移动聊天页或旧公众号页，再靠桌面分支二次转发。
 - 桌面收藏页右侧的“打开内容”现在也会先把老收藏里残留的旧路由收敛到桌面工作区。历史遗留的 `/chat/$id#chat-message-*`、`/group/$id#chat-message-*`、`/chat/subscription-inbox`、`/official-accounts/*` 收藏项，不会再从桌面收藏页里直接掉回旧聊天页或旧公众号页。
+- 桌面搜索页、搜索启动器和收藏页里的旧 `/discover`、`/discover/encounter`、`/discover/scene` 目标现在也会直接收成 `/tabs/discover`。之前这类旧发现入口会先打开共享发现页或发现工具页，再靠页面重定向回桌面发现工作区；现在会直接回桌面发现页本身，不再多绕一跳。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/feed` 目标现在也会直接收成 `/tabs/feed`，而且 `feed-route-state` 会把历史 `returnPath=/discover/feed` 一起归一成桌面广场动态返回地址。之前这类旧广场动态链接会先打开共享广场页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/moments` 目标现在也会直接收成 `/tabs/moments`，而且 `moments-route-state` 会继续把历史 `returnPath=/discover/moments` 归一成桌面朋友圈返回地址。之前这类旧总朋友圈链接会先打开共享页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/games`、`/discover/games` 目标现在也会直接收成 `/tabs/games`，而且 `mobile-games-route-state` 会把历史 `returnPath=/games|/discover/games` 一起归一成桌面游戏中心返回地址。之前这类旧游戏中心链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧游戏中心路径。
