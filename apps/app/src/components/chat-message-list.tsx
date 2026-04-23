@@ -1079,6 +1079,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "当前设备暂时无法打开系统分享，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareLocationSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }
@@ -1140,6 +1146,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "当前设备暂时无法打开系统分享，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareContactSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }
@@ -1195,6 +1207,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "当前设备暂时无法打开系统分享，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareNoteSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }
