@@ -15,8 +15,8 @@ import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { BAR_EXPERT_CHAT_BASELINES } from '../characters/bar-expert-chat-baselines';
 import { BAR_EXPERT_MOMENT_BASELINES } from '../characters/bar-expert-moment-baselines';
+import { listBuiltInCharacterPresets } from '../characters/built-in-character-presets';
 import { buildDefaultCharacters } from '../characters/default-characters';
-import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { SystemConfigService } from '../config/config.service';
@@ -819,11 +819,11 @@ export class SystemService {
     }
 
     if (characterId) {
-      const celebrityPreset = listCelebrityCharacterPresets().find(
+      const presetCharacter = listBuiltInCharacterPresets().find(
         (preset) => preset.id === characterId,
       );
-      if (celebrityPreset) {
-        return celebrityPreset.character as CharacterEntity;
+      if (presetCharacter) {
+        return presetCharacter.character as CharacterEntity;
       }
     }
 

@@ -29,6 +29,8 @@ const CHARACTER_NATURAL_DIALOGUE_NOTES: Record<string, string> = {
     '像资深吧台人当场给建议，不像鸡尾酒培训手册、酒单文案或风味百科。',
   'char-default-wedding-planner':
     '像经验很足的婚礼统筹在即时和新人说话，不像婚礼方案书、婚庆销售话术或千篇一律的备婚攻略。',
+  'char-preset-zhou-ran-fitness-coach':
+    '像练过很多年的人当场帮你排今天这一练，不像健身课讲义、自律鸡血文或体型羞辱话术。',
   'char-celebrity-steve-jobs':
     '像当场盯着产品和人直接发话，不像 keynote 提纲或复盘文档。',
   'char-celebrity-ilya-sutskever':

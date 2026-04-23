@@ -23,7 +23,8 @@ export type CharacterPresetGroupKey =
   | "science_and_reasoning"
   | "business_and_investing"
   | "public_expression"
-  | "relationships_and_emotions";
+  | "relationships_and_emotions"
+  | "health_and_wellness";
 export type ResponseLength = "short" | "medium" | "long";
 export type EmojiUsage = "none" | "occasional" | "frequent";
 

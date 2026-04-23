@@ -4,6 +4,7 @@ export const DEFAULT_CHARACTER_BIOS = {
   world_news_desk: '先把事实捋顺，再看影响和还没坐实的地方。',
   doctor: '先分清是不是急事，再决定现在怎么处理。',
   lawyer: '先把事实、证据和时间线摆清，再决定下一步。',
+  reminder_keeper: '怕忘的事直接丢给我。我替你盯着，到点叫你。',
   wedding_planner:
     '先定预算、人数和档期，再把流程、供应商和备选方案一项项落地。',
 } as const;
@@ -25,6 +26,7 @@ export const PRESET_CHARACTER_BIOS = {
   richard_feynman: '你是真的懂了，还是只是记住了名字？',
   jian_ning_relationship_expert: '别先猜他爱不爱你。先看边界、投入和修复。',
   su_yu_english_coach: '先别怕说错。你先开口，我负责把你的英语慢慢拉顺。',
+  zhou_ran_fitness_coach: '先别把计划写满。你先出现，我把训练和恢复排顺。',
 } as const;
 
 export type PresetCharacterBioKey = keyof typeof PRESET_CHARACTER_BIOS;

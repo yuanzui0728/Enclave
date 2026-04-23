@@ -12,9 +12,10 @@ import {
   DEFAULT_CHARACTER_IDS,
   SELF_CHARACTER_ID,
 } from '../characters/default-characters';
+import { listBuiltInCharacterPresets } from '../characters/built-in-character-presets';
+import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 import { ChatService } from '../chat/chat.service';
 import { CharactersService } from '../characters/characters.service';
-import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 
@@ -335,7 +336,7 @@ export class SocialService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
 
     // 从硬编码预设中按场景过滤，不依赖 DB 是否已安装
-    const allPresets = listCelebrityCharacterPresets();
+    const allPresets = listBuiltInCharacterPresets();
     const candidates = allPresets.filter((p) =>
       (p.character.triggerScenes ?? []).includes(scene),
     );
