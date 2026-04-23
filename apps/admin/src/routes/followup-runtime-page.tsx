@@ -283,6 +283,7 @@ export function FollowupRuntimePage() {
         eyebrow="主动跟进"
         title="我自己回捞未闭环事项"
         description="把“需要再接一下”的事情和“已经推进中的推荐”拆开来看。运营先判断当前闭环卡在哪，再决定是调规则还是直接复跑。"
+        badges={["承接角色：我自己"]}
         metrics={metrics}
         actions={
           <>

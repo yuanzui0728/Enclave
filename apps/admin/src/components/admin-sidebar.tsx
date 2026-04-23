@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@yinjie/ui";
-import { AdminEyebrow } from "./admin-workbench";
+import { AdminContextBadge, AdminEyebrow } from "./admin-workbench";
 import type { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 type SidebarLink = {
   label: string;
+  roleBadge?: string;
   to:
     | "/"
     | "/setup"
@@ -179,7 +180,15 @@ export function AdminSidebar({
           <div className="mt-2 space-y-1">
             {navLinks.map((item) => (
               <Link key={item.to} to={item.to} className={NAV_LINK} activeProps={{ className: NAV_LINK_ACTIVE }}>
-                {item.label}
+                <div className="flex items-center justify-between gap-2">
+                  <span>{item.label}</span>
+                  {item.roleBadge ? (
+                    <AdminContextBadge
+                      label={item.roleBadge}
+                      className="shrink-0 bg-[color:var(--surface-primary)]/92"
+                    />
+                  ) : null}
+                </div>
               </Link>
             ))}
           </div>

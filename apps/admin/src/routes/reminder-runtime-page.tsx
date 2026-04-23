@@ -802,6 +802,7 @@ export function ReminderRuntimePage() {
         eyebrow="提醒运行时"
         title="小盯值班台：先看风险，再处理提醒"
         description="把逾期、即将到点、最近触发与最近输出收敛到同一页，方便运营先判断优先级，再逐条完成、顺延或删除提醒。"
+        badges={["承接角色：小盯"]}
         metrics={metrics}
         actions={
           <>

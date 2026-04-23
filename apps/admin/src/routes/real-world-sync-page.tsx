@@ -880,6 +880,10 @@ export function RealWorldSyncPage() {
         eyebrow="Reality Sync"
         title="现实联动运营工作台"
         description="把外部现实信号、Digest 生效、界闻补发和发圈结果收敛到同一条值班路径里。运营先看今日节奏和待处理角色，再决定是否调全局规则。"
+        badges={[
+          `专属播报角色：${bulletinDeskCharacter?.characterName ?? "界闻"}`,
+          "覆盖角色：已启用现实联动角色",
+        ]}
         metrics={[
           { label: "已启用角色", value: overview.stats.enabledCharacters },
           { label: "Live 生效角色", value: overview.stats.liveCharacters },

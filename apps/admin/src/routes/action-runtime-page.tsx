@@ -668,6 +668,7 @@ export function ActionRuntimePage() {
         eyebrow="Action Runtime"
         title="self 角色真实世界动作工作台"
         description="围绕运营人员的查看路径重排：先看当前动作链是否健康，再决定是改门控、跑预演、校连接器，还是回看执行证据。"
+        badges={[`承接角色：${overview.selfCharacter?.name ?? "我自己"}`]}
         metrics={[
           { label: "总动作数", value: overview.counts.totalRuns },
           { label: "待处理动作", value: attentionRuns.length },

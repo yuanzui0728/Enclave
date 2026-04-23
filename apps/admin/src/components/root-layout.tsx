@@ -163,11 +163,13 @@ const NAV_ITEMS = [
   {
     to: "/followup-runtime",
     label: "主动跟进",
+    roleBadge: "承接：我自己",
     hint: "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。",
   },
   {
     to: "/reminder-runtime",
     label: "提醒运行时",
+    roleBadge: "承接：小盯",
     hint: "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。",
   },
   {
@@ -178,6 +180,7 @@ const NAV_ITEMS = [
   {
     to: "/action-runtime",
     label: "真实世界动作",
+    roleBadge: "承接：我自己",
     hint: "查看 self 角色的动作门控、连接器、规则和执行轨迹。",
   },
   {
