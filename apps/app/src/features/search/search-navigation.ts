@@ -288,6 +288,7 @@ function normalizeHashString(value: string | undefined) {
 function resolveDesktopConversationNavigationTarget(
   target: SearchNavigationTarget,
 ) {
+  const highlightedMessageId = parseLegacyHighlightedMessageId(target.hash);
   const conversationMatch = target.to.match(/^\/(?:chat|group)\/([^/?#]+)$/);
   if (conversationMatch) {
     const conversationId = conversationMatch[1]?.trim();
@@ -299,9 +300,76 @@ function resolveDesktopConversationNavigationTarget(
       to: "/tabs/chat",
       hash: buildDesktopChatRouteHash({
         conversationId,
-        messageId: parseLegacyHighlightedMessageId(target.hash),
+        messageId: highlightedMessageId,
       }),
     } satisfies SearchNavigationTarget;
+  }
+
+  const detailsMatch = target.to.match(/^\/(?:chat|group)\/([^/?#]+)\/details$/);
+  if (detailsMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: detailsMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+    });
+  }
+
+  const searchMatch = target.to.match(/^\/(?:chat|group)\/([^/?#]+)\/search$/);
+  if (searchMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: searchMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "history",
+    });
+  }
+
+  const callMatch = target.to.match(
+    /^\/(?:chat|group)\/([^/?#]+)\/(voice-call|video-call)$/,
+  );
+  if (callMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: callMatch[1].trim(),
+      messageId: highlightedMessageId,
+      callAction: callMatch[2] === "voice-call" ? "voice" : "video",
+    });
+  }
+
+  const groupAnnouncementMatch = target.to.match(
+    /^\/group\/([^/?#]+)\/announcement$/,
+  );
+  if (groupAnnouncementMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: groupAnnouncementMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+      detailsAction: "announcement",
+    });
+  }
+
+  const groupEditMatch = target.to.match(
+    /^\/group\/([^/?#]+)\/edit\/(name|nickname)$/,
+  );
+  if (groupEditMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: groupEditMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+      detailsAction:
+        groupEditMatch[2] === "name" ? "group-name" : "group-nickname",
+    });
+  }
+
+  const groupMembersMatch = target.to.match(
+    /^\/group\/([^/?#]+)\/members\/(add|remove)$/,
+  );
+  if (groupMembersMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: groupMembersMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+      detailsAction:
+        groupMembersMatch[2] === "add" ? "member-add" : "member-remove",
+    });
   }
 
   if (target.to === "/chat/subscription-inbox") {
@@ -315,6 +383,24 @@ function resolveDesktopConversationNavigationTarget(
   }
 
   return null;
+}
+
+function buildDesktopConversationNavigationTarget(input: {
+  conversationId: string;
+  messageId?: string;
+  panel?: "history" | "details";
+  callAction?: "voice" | "video";
+  detailsAction?:
+    | "announcement"
+    | "member-add"
+    | "member-remove"
+    | "group-name"
+    | "group-nickname";
+}) {
+  return {
+    to: "/tabs/chat",
+    hash: buildDesktopChatRouteHash(input),
+  } satisfies SearchNavigationTarget;
 }
 
 function resolveDesktopOfficialNavigationTarget(

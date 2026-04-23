@@ -639,7 +639,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /contacts, /profile, /search, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /discover/moments/publish, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, /channels/authors/$authorId, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /chat/$conversationId/details|search|voice-call|video-call, /group/$groupId/details|search|voice-call|video-call|announcement|edit/*|members/*, /contacts, /profile, /search, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /discover/moments/publish, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, /channels/authors/$authorId, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
       "buildDesktopMomentsRouteHash,",
@@ -683,6 +683,16 @@ const expectations = [
       'target.to === "/profile/settings"',
       'to: "/desktop/settings",',
       'to: "/tabs/chat",',
+      'const detailsMatch = target.to.match(/^\\/(?:chat|group)\\/([^/?#]+)\\/details$/);',
+      'const searchMatch = target.to.match(/^\\/(?:chat|group)\\/([^/?#]+)\\/search$/);',
+      'const callMatch = target.to.match(',
+      'const groupAnnouncementMatch = target.to.match(',
+      'const groupEditMatch = target.to.match(',
+      'const groupMembersMatch = target.to.match(',
+      "detailsAction: \"announcement\",",
+      "detailsAction:",
+      'panel: "details",',
+      'panel: "history",',
       'target.to !== "/discover" &&',
       'target.to !== "/tabs/discover" &&',
       'target.to !== "/discover/encounter" &&',
@@ -723,7 +733,8 @@ const expectations = [
       'pane: "official-accounts",',
       '(routeState.officialMode ??',
       '(hasAccountSelection ? "accounts" : "feed"))',
-      "messageId: parseLegacyHighlightedMessageId(target.hash),",
+      "const highlightedMessageId = parseLegacyHighlightedMessageId(target.hash);",
+      "messageId: highlightedMessageId,",
     ],
   },
   {
