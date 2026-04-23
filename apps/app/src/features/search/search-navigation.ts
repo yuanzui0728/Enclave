@@ -25,6 +25,7 @@ import {
   buildDesktopMomentsRouteHash,
   parseDesktopMomentsRouteState,
 } from "../moments/moments-route-state";
+import { parseMobileMomentsPublishRouteState } from "../moments/mobile-moments-publish-route-state";
 import {
   buildDesktopChannelsRouteHash,
   parseDesktopChannelsRouteHash,
@@ -499,6 +500,17 @@ function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
       hash: buildDesktopMomentsRouteHash({
         authorId: routeState.authorId,
         momentId: routeState.momentId,
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/discover/moments/publish") {
+    const routeState = parseMobileMomentsPublishRouteState(target.hash ?? "");
+    return {
+      to: "/tabs/moments",
+      hash: buildDesktopMomentsRouteHash({
         returnPath: routeState.returnPath,
         returnHash: routeState.returnHash,
       }),

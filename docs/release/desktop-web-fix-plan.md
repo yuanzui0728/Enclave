@@ -52,6 +52,7 @@
 - 旧 `/discover/encounter`、`/discover/scene` 在桌面布局下现在也会像旧 `/discover` 一样把现有 hash 一起带回 `/tabs/discover`；桌面搜索、搜索启动器和收藏页改写这两类旧发现工具目标时，也会继续保住原 hash，不再把现有返回上下文直接抹掉。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/feed` 目标现在也会直接收成 `/tabs/feed`，而且 `feed-route-state` 会把历史 `returnPath=/discover/feed` 一起归一成桌面广场动态返回地址。之前这类旧广场动态链接会先打开共享广场页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/moments` 目标现在也会直接收成 `/tabs/moments`，而且 `moments-route-state` 会继续把历史 `returnPath=/discover/moments` 归一成桌面朋友圈返回地址。之前这类旧总朋友圈链接会先打开共享页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
+- 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/moments/publish` 目标现在也会直接收成 `/tabs/moments`，并继续保住发表页 hash 里的 `returnPath / returnHash`。之前这类旧发表页链接会先打开共享发表页，再靠页面重定向回桌面朋友圈；现在会直接落桌面朋友圈，不再多绕一跳。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/games`、`/discover/games` 目标现在也会直接收成 `/tabs/games`，而且 `mobile-games-route-state` 会把历史 `returnPath=/games|/discover/games` 一起归一成桌面游戏中心返回地址。之前这类旧游戏中心链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧游戏中心路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/mini-programs` 目标现在也会直接收成 `/tabs/mini-programs`，而且 `mobile-mini-programs-route-state` 会把历史 `returnPath=/discover/mini-programs` 一起归一成桌面小程序返回地址。之前这类旧小程序链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/channels` 目标现在也会直接收成 `/tabs/channels`，而且 `channels-route-state` 会把历史 `returnPath=/discover/channels` 一起归一成桌面视频号返回地址。之前这类旧视频号链接会先打开共享页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。

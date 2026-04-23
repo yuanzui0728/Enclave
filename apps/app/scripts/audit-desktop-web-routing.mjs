@@ -621,7 +621,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /contacts, /profile, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /contacts, /profile, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /discover/moments/publish, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
       "buildDesktopMomentsRouteHash,",
@@ -670,6 +670,8 @@ const expectations = [
       'to: "/tabs/discover",',
       "hash: target.hash,",
       'target.to === "/discover/moments" || target.to === "/tabs/moments"',
+      'target.to === "/discover/moments/publish"',
+      "parseMobileMomentsPublishRouteState",
       'to: "/tabs/moments",',
       'target.to !== "/discover/feed" && target.to !== "/tabs/feed"',
       'to: "/tabs/feed",',
