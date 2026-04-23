@@ -1766,6 +1766,8 @@ export function ChatMessageList({
     fileName: string;
     kind: "image" | "file";
   }) => {
+    const retryLabel = input.kind === "image" ? "重试保存图片" : "重试保存文件";
+
     void saveRemoteFile({
       url: input.url,
       fileName: input.fileName,
@@ -1783,19 +1785,33 @@ export function ChatMessageList({
       setActionNotice({
         message: result.message,
         tone: result.status === "failed" ? "danger" : "success",
-        actionLabel: canRevealSavedFile ? "打开位置" : undefined,
-        onAction: savedPath
-          ? () => {
-              void revealSavedFile(savedPath).then((revealed) => {
-                setActionNotice({
-                  message: revealed
-                    ? "已打开所在位置。"
-                    : "打开所在位置失败，请稍后再试。",
-                  tone: revealed ? "success" : "danger",
-                });
-              });
-            }
-          : undefined,
+        actionLabel:
+          result.status === "failed"
+            ? retryLabel
+            : canRevealSavedFile
+              ? "打开位置"
+              : undefined,
+        onAction:
+          result.status === "failed"
+            ? () => {
+                saveAttachmentFile(input);
+              }
+            : savedPath
+              ? () => {
+                  void revealSavedFile(savedPath).then((revealed) => {
+                    setActionNotice({
+                      message: revealed
+                        ? "已打开所在位置。"
+                        : "打开所在位置失败，请稍后再试。",
+                      tone: revealed ? "success" : "danger",
+                    });
+                  });
+                }
+              : undefined,
+        secondaryActionLabel:
+          result.status === "failed" ? errorActionLabel : undefined,
+        onSecondaryAction:
+          result.status === "failed" ? onErrorAction ?? undefined : undefined,
       });
     });
   };

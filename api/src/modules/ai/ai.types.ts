@@ -325,6 +325,7 @@ export interface GenerateReplyOptions {
   isGroupChat?: boolean;
   otherParticipants?: PersonalityProfile[]; // 群聊中其他 AI
   chatContext?: { currentActivity?: string; lastChatAt?: Date };
+  extraSystemPromptSections?: string[];
   aiKeyOverride?: AiKeyOverride;
   usageContext?: AiUsageContext;
 }

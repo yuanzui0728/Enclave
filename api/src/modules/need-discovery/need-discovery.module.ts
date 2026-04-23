@@ -12,6 +12,7 @@ import { GroupMemberEntity } from '../chat/group-member.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { SystemConfigModule } from '../config/config.module';
+import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { CyberAvatarRealWorldBriefEntity } from '../cyber-avatar/cyber-avatar-real-world-brief.entity';
 import { CyberAvatarRealWorldItemEntity } from '../cyber-avatar/cyber-avatar-real-world-item.entity';
 import { EventsModule } from '../events/events.module';
@@ -54,6 +55,7 @@ import { NeedDiscoveryService } from './need-discovery.service';
     CharactersModule,
     forwardRef(() => ChatModule),
     SystemConfigModule,
+    forwardRef(() => CyberAvatarModule),
     SocialModule,
     EventsModule,
   ],

@@ -281,6 +281,7 @@ export type NeedDiscoverySignalSnapshot = {
   latestSignalAt?: Date | null;
   existingCoverageSummary: string;
   existingCandidatesSummary: string;
+  cyberAvatarSummary: string;
 };
 
 export type NeedDiscoveryAnalysisDraft = {

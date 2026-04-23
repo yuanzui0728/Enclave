@@ -20,6 +20,7 @@ import { GroupMessageEntity } from '../chat/group-message.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { SearchActivityService } from '../chat/search-activity.service';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { CyberAvatarRealWorldBriefEntity } from '../cyber-avatar/cyber-avatar-real-world-brief.entity';
 import { CyberAvatarRealWorldItemEntity } from '../cyber-avatar/cyber-avatar-real-world-item.entity';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
@@ -98,6 +99,7 @@ export class NeedDiscoveryService {
     private readonly charactersService: CharactersService,
     private readonly favoritesService: FavoritesService,
     private readonly searchActivityService: SearchActivityService,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
 
   async getOverview(): Promise<NeedDiscoveryOverview> {
@@ -329,6 +331,7 @@ export class NeedDiscoveryService {
             input.cadenceType,
             config,
             need,
+            signalSnapshot.cyberAvatarSummary,
           );
           const character = await this.createNeedGeneratedCharacter(
             candidate,
@@ -764,11 +767,15 @@ export class NeedDiscoveryService {
     );
     const limitedEntries = entries.slice(0, 48);
     const latestSignalAt = limitedEntries[0]?.timestamp ?? null;
-    const [existingCoverageSummary, existingCandidatesSummary] =
-      await Promise.all([
-        this.buildExistingCoverageSummary(ownerId),
-        this.buildExistingCandidatesSummary(),
-      ]);
+    const [
+      existingCoverageSummary,
+      existingCandidatesSummary,
+      cyberAvatarSummary,
+    ] = await Promise.all([
+      this.buildExistingCoverageSummary(ownerId),
+      this.buildExistingCandidatesSummary(),
+      this.buildCyberAvatarSummary(),
+    ]);
 
     return {
       entries: limitedEntries,
@@ -776,6 +783,7 @@ export class NeedDiscoveryService {
       latestSignalAt,
       existingCoverageSummary,
       existingCandidatesSummary,
+      cyberAvatarSummary,
     };
   }
 
@@ -788,20 +796,27 @@ export class NeedDiscoveryService {
   ): Promise<NeedDiscoveryAnalysisDraft> {
     const cadenceConfig =
       cadenceType === 'short_interval' ? config.shortInterval : config.daily;
-    const prompt = renderTemplate(cadenceConfig.promptTemplate, {
-      windowLabel: formatWindowLabel(windowStartedAt, windowEndedAt),
-      maxCandidatesPerRun: cadenceConfig.maxCandidatesPerRun,
-      signals:
-        signalSnapshot.entries.map((entry) => entry.text).join('\n') ||
-        '暂无可用信号',
-      existingCoverage:
-        signalSnapshot.existingCoverageSummary || '暂无已建立好友覆盖',
-      existingCandidates:
-        signalSnapshot.existingCandidatesSummary || '暂无待处理候选',
-      allowMedical: config.shared.allowMedical ? '是' : '否',
-      allowLegal: config.shared.allowLegal ? '是' : '否',
-      allowFinance: config.shared.allowFinance ? '是' : '否',
-    });
+    const prompt = [
+      signalSnapshot.cyberAvatarSummary
+        ? `赛博分身摘要：\n${signalSnapshot.cyberAvatarSummary}`
+        : '',
+      renderTemplate(cadenceConfig.promptTemplate, {
+        windowLabel: formatWindowLabel(windowStartedAt, windowEndedAt),
+        maxCandidatesPerRun: cadenceConfig.maxCandidatesPerRun,
+        signals:
+          signalSnapshot.entries.map((entry) => entry.text).join('\n') ||
+          '暂无可用信号',
+        existingCoverage:
+          signalSnapshot.existingCoverageSummary || '暂无已建立好友覆盖',
+        existingCandidates:
+          signalSnapshot.existingCandidatesSummary || '暂无待处理候选',
+        allowMedical: config.shared.allowMedical ? '是' : '否',
+        allowLegal: config.shared.allowLegal ? '是' : '否',
+        allowFinance: config.shared.allowFinance ? '是' : '否',
+      }),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     const raw = await this.ai.generateJsonObject({
       prompt,
       maxTokens: 1400,
@@ -887,15 +902,21 @@ export class NeedDiscoveryService {
     cadenceType: NeedDiscoveryCadenceType,
     config: NeedDiscoveryConfig,
     need: NeedDiscoveryNeedDraft,
+    cyberAvatarSummary?: string,
   ): Promise<NeedDiscoveryGeneratedCharacterDraft> {
-    const prompt = renderTemplate(config.shared.roleGenerationPrompt, {
-      roleBrief: need.roleBrief,
-      relationshipLabel: need.relationshipLabel,
-      relationshipType: need.relationshipType,
-      expertDomains: need.expertDomains.join('、') || '通用陪伴',
-      evidenceHighlights: need.evidenceHighlights.join('；') || '暂无',
-      coverageGapSummary: need.coverageGapSummary || '当前好友覆盖不足',
-    });
+    const prompt = [
+      cyberAvatarSummary ? `赛博分身摘要：\n${cyberAvatarSummary}` : '',
+      renderTemplate(config.shared.roleGenerationPrompt, {
+        roleBrief: need.roleBrief,
+        relationshipLabel: need.relationshipLabel,
+        relationshipType: need.relationshipType,
+        expertDomains: need.expertDomains.join('、') || '通用陪伴',
+        evidenceHighlights: need.evidenceHighlights.join('；') || '暂无',
+        coverageGapSummary: need.coverageGapSummary || '当前好友覆盖不足',
+      }),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     const raw = await this.ai.generateJsonObject({
       prompt,
       maxTokens: 1800,
@@ -1006,6 +1027,51 @@ export class NeedDiscoveryService {
           }`,
       )
       .join('\n');
+  }
+
+  private async buildCyberAvatarSummary() {
+    try {
+      const profile = await this.cyberAvatar.getProfile();
+      if ((profile.signalCount ?? 0) <= 0) {
+        return '';
+      }
+
+      const memoryBlock = profile.promptProjection.memoryBlock?.trim();
+      if (memoryBlock) {
+        return truncateText(memoryBlock, 900);
+      }
+
+      return truncateText(
+        [
+          profile.stableCore.identitySummary
+            ? `长期身份：${profile.stableCore.identitySummary}`
+            : '',
+          profile.liveState.focus.length
+            ? `当前关注：${profile.liveState.focus.join('、')}`
+            : '',
+          profile.liveState.openLoops.length
+            ? `当前未闭环：${profile.liveState.openLoops.join('、')}`
+            : '',
+          profile.recentState.recentGoals.length
+            ? `近期目标：${profile.recentState.recentGoals.join('、')}`
+            : '',
+          profile.recentState.recentFriction.length
+            ? `近期摩擦：${profile.recentState.recentFriction.join('、')}`
+            : '',
+          profile.stableCore.preferenceModel.length
+            ? `偏好模型：${profile.stableCore.preferenceModel.join('、')}`
+            : '',
+          profile.stableCore.boundaries.length
+            ? `边界：${profile.stableCore.boundaries.join('、')}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        900,
+      );
+    } catch {
+      return '';
+    }
   }
 
   private isRunDue(
