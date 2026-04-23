@@ -15,7 +15,11 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { getOrCreateConversation, listCharacters } from "@yinjie/contracts";
+import {
+  ACTION_OPERATOR_SOURCE_KEY,
+  getOrCreateConversation,
+  listCharacters,
+} from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
 import { recordAppNavigation } from "../../lib/history-back";
@@ -141,8 +145,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
     useState<DesktopWindowHandle | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isOwnerCardOpen, setIsOwnerCardOpen] = useState(false);
-  const [isOpeningSelfConversation, setIsOpeningSelfConversation] =
-    useState(false);
+  const [
+    isOpeningActionOperatorConversation,
+    setIsOpeningActionOperatorConversation,
+  ] = useState(false);
   const [ownerCardNotice, setOwnerCardNotice] = useState<string | null>(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isLocked, setIsLocked] = useState(
@@ -537,27 +543,26 @@ export function DesktopShell({ children }: PropsWithChildren) {
     void navigate({ to: "/tabs/moments" });
   };
 
-  const openSelfConversationShortcut = async () => {
-    if (!ownerId || isOpeningSelfConversation) {
+  const openActionOperatorConversationShortcut = async () => {
+    if (!ownerId || isOpeningActionOperatorConversation) {
       return;
     }
 
     setOwnerCardNotice(null);
-    setIsOpeningSelfConversation(true);
+    setIsOpeningActionOperatorConversation(true);
 
     try {
       const characters = await listCharacters(baseUrl);
-      const selfCharacter = characters.find(
-        (item) =>
-          item.relationshipType === "self" || item.sourceKey?.trim() === "self",
+      const actionOperatorCharacter = characters.find(
+        (item) => item.sourceKey?.trim() === ACTION_OPERATOR_SOURCE_KEY,
       );
 
-      if (!selfCharacter) {
-        throw new Error("当前世界还没有“我自己”角色。");
+      if (!actionOperatorCharacter) {
+        throw new Error("当前世界还没有“行动助理”角色。");
       }
 
       const conversation = await getOrCreateConversation(
-        { characterId: selfCharacter.id },
+        { characterId: actionOperatorCharacter.id },
         baseUrl,
       );
 
@@ -572,7 +577,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
         error instanceof Error ? error.message : "打开会话失败，请稍后再试。",
       );
     } finally {
-      setIsOpeningSelfConversation(false);
+      setIsOpeningActionOperatorConversation(false);
     }
   };
 
@@ -751,10 +756,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     ownerSignature={ownerSignature}
                     appTitle={appTitle}
                     notice={ownerCardNotice}
-                    isOpeningSelfConversation={isOpeningSelfConversation}
+                    isOpeningActionOperatorConversation={
+                      isOpeningActionOperatorConversation
+                    }
                     onOpenMoments={openMomentsShortcut}
-                    onOpenSelfConversation={() => {
-                      void openSelfConversationShortcut();
+                    onOpenActionOperatorConversation={() => {
+                      void openActionOperatorConversationShortcut();
                     }}
                   />
                 ) : null}
@@ -1091,18 +1098,18 @@ function DesktopOwnerQuickCard({
   ownerSignature,
   appTitle,
   notice,
-  isOpeningSelfConversation,
+  isOpeningActionOperatorConversation,
   onOpenMoments,
-  onOpenSelfConversation,
+  onOpenActionOperatorConversation,
 }: {
   ownerName: string | null;
   ownerAvatar: string;
   ownerSignature: string;
   appTitle: string;
   notice: string | null;
-  isOpeningSelfConversation: boolean;
+  isOpeningActionOperatorConversation: boolean;
   onOpenMoments: () => void;
-  onOpenSelfConversation: () => void;
+  onOpenActionOperatorConversation: () => void;
 }) {
   return (
     <div className="absolute left-[calc(100%+0.75rem)] top-0 z-30 w-[286px] rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.98)] p-3 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
@@ -1141,10 +1148,10 @@ function DesktopOwnerQuickCard({
         />
         <DesktopOwnerShortcutButton
           icon={MessageSquareText}
-          label={isOpeningSelfConversation ? "打开中..." : "给自己发消息"}
-          description="回到“我自己”单聊"
-          onClick={onOpenSelfConversation}
-          disabled={isOpeningSelfConversation}
+          label={isOpeningActionOperatorConversation ? "打开中..." : "行动助理"}
+          description="进入真实世界动作会话"
+          onClick={onOpenActionOperatorConversation}
+          disabled={isOpeningActionOperatorConversation}
         />
       </div>
 

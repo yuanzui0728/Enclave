@@ -42,7 +42,7 @@ export interface ActionRuntimePromptTemplates {
 
 export interface ActionRuntimePolicy {
   enabled: boolean;
-  selfRoleOnly: boolean;
+  entryCharacterSourceKey: string;
   confirmationKeywords: string[];
   rejectionKeywords: string[];
   autoExecuteRiskLevels: ActionRiskLevel[];
@@ -136,9 +136,10 @@ export interface ActionRuntimeOverview {
     failed: number;
     readyConnectors: number;
   };
-  selfCharacter: {
+  operatorCharacter: {
     id: string;
     name: string;
+    sourceKey?: string | null;
   } | null;
 }
 

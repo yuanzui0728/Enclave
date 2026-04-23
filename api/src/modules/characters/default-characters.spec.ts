@@ -1,4 +1,8 @@
 import {
+  ACTION_OPERATOR_CHARACTER_ID,
+  ACTION_OPERATOR_SOURCE_KEY,
+} from './action-operator-character';
+import {
   BAR_EXPERT_CHARACTER_ID,
   BAR_EXPERT_SOURCE_KEY,
 } from './bar-expert-character';
@@ -48,6 +52,28 @@ describe('default characters', () => {
     expect(character?.profile?.cognitiveBoundaries?.refusalStyle).toContain(
       '会直接拒绝',
     );
+  });
+
+  it('includes the action operator with expected runtime defaults', () => {
+    const character = buildDefaultCharacters().find(
+      (item) => item.id === ACTION_OPERATOR_CHARACTER_ID,
+    );
+
+    expect(character).toBeDefined();
+    expect(character).toMatchObject({
+      id: ACTION_OPERATOR_CHARACTER_ID,
+      sourceType: 'default_seed',
+      sourceKey: ACTION_OPERATOR_SOURCE_KEY,
+      relationshipType: 'custom',
+      momentsFrequency: 0,
+      feedFrequency: 0,
+      currentActivity: 'working',
+      expertDomains: ['management', 'general', 'lifestyle'],
+    });
+
+    expect(character?.profile?.coreLogic).toContain('真实世界里的事往前推进');
+    expect(character?.profile?.scenePrompts?.chat).toContain('先复述目标');
+    expect(character?.profile?.memorySummary).toContain('真实世界动作');
   });
 
   it('includes the doctor with expected runtime defaults', () => {

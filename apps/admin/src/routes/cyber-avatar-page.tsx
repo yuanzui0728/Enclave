@@ -115,7 +115,7 @@ const PROJECTION_SECTIONS: Array<{
   {
     key: "actionPlanningPrompt",
     label: "动作规划",
-    description: "用户授权 self 去做真实世界动作时的偏好和约束。",
+    description: "用户授权行动助理去做真实世界动作时的偏好和约束。",
     consumers: ["动作运行时"],
   },
   {

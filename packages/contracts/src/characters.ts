@@ -1,3 +1,6 @@
+export const SELF_CHARACTER_SOURCE_KEY = "self" as const;
+export const ACTION_OPERATOR_SOURCE_KEY = "action_operator" as const;
+
 export type RelationshipType =
   | "family"
   | "friend"

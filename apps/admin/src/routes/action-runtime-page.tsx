@@ -666,9 +666,14 @@ export function ActionRuntimePage() {
     <div className="space-y-6">
       <AdminPageHero
         eyebrow="Action Runtime"
-        title="self 角色真实世界动作工作台"
+        title="行动助理真实世界动作工作台"
         description="围绕运营人员的查看路径重排：先看当前动作链是否健康，再决定是改门控、跑预演、校连接器，还是回看执行证据。"
-        badges={[`承接角色：${overview.selfCharacter?.name ?? "我自己"}`]}
+        badges={[
+          `承接角色：${
+            overview.operatorCharacter?.name ??
+            (overview.rules.policy.entryCharacterSourceKey || "未限制角色")
+          }`,
+        ]}
         metrics={[
           { label: "总动作数", value: overview.counts.totalRuns },
           { label: "待处理动作", value: attentionRuns.length },
@@ -772,7 +777,7 @@ export function ActionRuntimePage() {
               {
                 label: "运营总览",
                 detail:
-                  "先确认动作入口、self 角色、待处理动作和连接器是否健康。",
+                  "先确认动作入口、动作角色、待处理动作和连接器是否健康。",
                 onClick: () => setWorkspaceTab("overview"),
               },
               {
@@ -802,14 +807,18 @@ export function ActionRuntimePage() {
             <AdminSectionHeader title="当前脉冲" />
             <div className="mt-4 grid gap-3">
               <AdminValueCard
-                label="self 角色"
+                label="动作角色"
                 value={
-                  overview.selfCharacter ? (
+                  overview.operatorCharacter ? (
                     <StatusPill tone="healthy">
-                      {overview.selfCharacter.name}
+                      {overview.operatorCharacter.name}
+                    </StatusPill>
+                  ) : overview.rules.policy.entryCharacterSourceKey ? (
+                    <StatusPill tone="warning">
+                      {overview.rules.policy.entryCharacterSourceKey}
                     </StatusPill>
                   ) : (
-                    <StatusPill tone="warning">未就绪</StatusPill>
+                    <StatusPill tone="muted">未限制角色</StatusPill>
                   )
                 }
               />
@@ -948,12 +957,16 @@ export function ActionRuntimePage() {
                 <AdminSectionHeader
                   title="动作链状态概览"
                   actions={
-                    overview.selfCharacter ? (
+                    overview.operatorCharacter ? (
                       <StatusPill tone="healthy">
-                        self 角色：{overview.selfCharacter.name}
+                        动作角色：{overview.operatorCharacter.name}
+                      </StatusPill>
+                    ) : overview.rules.policy.entryCharacterSourceKey ? (
+                      <StatusPill tone="warning">
+                        缺少 {overview.rules.policy.entryCharacterSourceKey}
                       </StatusPill>
                     ) : (
-                      <StatusPill tone="warning">缺少 self 角色</StatusPill>
+                      <StatusPill tone="muted">未限制入口角色</StatusPill>
                     )
                   }
                 />
@@ -994,8 +1007,9 @@ export function ActionRuntimePage() {
                         : "已关闭",
                     },
                     {
-                      label: "仅 self 角色",
-                      value: overview.rules.policy.selfRoleOnly ? "是" : "否",
+                      label: "入口角色 sourceKey",
+                      value:
+                        overview.rules.policy.entryCharacterSourceKey || "未限制",
                     },
                     {
                       label: "确认关键词",
@@ -1234,13 +1248,17 @@ export function ActionRuntimePage() {
                             setPolicyValue("enabled", checked)
                           }
                         />
-                        <AdminToggle
-                          label="仅对 self 角色生效"
-                          checked={rulesDraft.policy.selfRoleOnly}
-                          onChange={(checked) =>
-                            setPolicyValue("selfRoleOnly", checked)
+                        <AdminTextField
+                          label="入口角色 sourceKey"
+                          value={rulesDraft.policy.entryCharacterSourceKey}
+                          onChange={(value) =>
+                            setPolicyValue("entryCharacterSourceKey", value)
                           }
+                          placeholder="action_operator"
                         />
+                      </div>
+                      <div className="-mt-2 text-[12px] leading-5 text-[color:var(--text-dim)]">
+                        默认是 `action_operator`。留空表示不限制角色，只建议用于兼容或排障。
                       </div>
 
                       <AdminTextArea
@@ -2421,8 +2439,17 @@ function buildActionOperatorSummary(
   );
   const notes: string[] = [];
 
-  if (!overview.selfCharacter) {
-    notes.push("当前缺少 self 角色，真实世界动作链不会正常工作。");
+  if (
+    overview.rules.policy.entryCharacterSourceKey &&
+    !overview.operatorCharacter
+  ) {
+    notes.push(
+      `当前缺少 sourceKey = ${overview.rules.policy.entryCharacterSourceKey} 的动作角色，真实世界动作链不会正常工作。`,
+    );
+  }
+
+  if (!overview.rules.policy.entryCharacterSourceKey) {
+    notes.push("当前未限制动作入口角色，任何角色消息都可能命中动作链。");
   }
 
   if (!overview.rules.policy.enabled) {
@@ -2460,7 +2487,7 @@ function buildActionOperatorSummary(
       tone: "success" as const,
       title: "动作链当前可用",
       notes: [
-        "self 角色、动作入口和连接器状态都正常，可以继续做消息预演或回看成功样本。",
+        "动作角色、动作入口和连接器状态都正常，可以继续做消息预演或回看成功样本。",
       ],
     };
   }

@@ -1,5 +1,9 @@
 import type { CharacterEntity } from './character.entity';
 import {
+  ACTION_OPERATOR_CHARACTER_ID,
+  buildActionOperatorCharacter,
+} from './action-operator-character';
+import {
   BAR_EXPERT_CHARACTER_ID,
   buildBarExpertCharacter,
 } from './bar-expert-character';
@@ -23,6 +27,7 @@ export const SELF_CHARACTER_ID = 'char-default-self';
 
 export const DEFAULT_CHARACTER_IDS = [
   SELF_CHARACTER_ID,
+  ACTION_OPERATOR_CHARACTER_ID,
   BAR_EXPERT_CHARACTER_ID,
   DOCTOR_CHARACTER_ID,
   LAWYER_CHARACTER_ID,
@@ -225,6 +230,7 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
       intimacyLevel: 100,
       currentActivity: 'free',
     },
+    buildActionOperatorCharacter(),
     buildBarExpertCharacter(),
     buildDoctorCharacter(),
     buildLawyerCharacter(),

@@ -151,11 +151,6 @@ export class ActionRuntimeService {
       return { handled: false };
     }
 
-    if (rules.policy.selfRoleOnly && !this.isSelfCharacter(input.character)) {
-      return { handled: false };
-    }
-
-    const connectors = await this.listReadyConnectorEntities();
     const pendingRun = await this.findLatestPendingRun(
       input.conversationId,
       input.ownerId,
@@ -163,6 +158,7 @@ export class ActionRuntimeService {
     );
 
     if (pendingRun) {
+      const connectors = await this.listReadyConnectorEntities();
       return this.handlePendingRun({
         run: pendingRun,
         userMessage,
@@ -171,6 +167,11 @@ export class ActionRuntimeService {
       });
     }
 
+    if (!this.canCreateActionPlan(input.character, rules)) {
+      return { handled: false };
+    }
+
+    const connectors = await this.listReadyConnectorEntities();
     const preview = await this.planAction({
       message: userMessage,
       conversationId: input.conversationId,
@@ -256,14 +257,14 @@ export class ActionRuntimeService {
 
   async getAdminOverview() {
     await this.ensureDefaultConnectors();
-    const [rules, connectors, recentRuns, selfCharacter] = await Promise.all([
-      this.rulesService.getRules(),
+    const rules = await this.rulesService.getRules();
+    const [connectors, recentRuns, operatorCharacter] = await Promise.all([
       this.connectorRepo.find({ order: { displayName: 'ASC' } }),
       this.runRepo.find({
         order: { updatedAt: 'DESC' },
         take: 12,
       }),
-      this.findSelfCharacter(),
+      this.findActionRuntimeEntryCharacter(rules.policy.entryCharacterSourceKey),
     ]);
 
     const totalRuns = await this.runRepo.count();
@@ -295,10 +296,11 @@ export class ActionRuntimeService {
         readyConnectors: connectors.filter((item) => item.status === 'ready')
           .length,
       },
-      selfCharacter: selfCharacter
+      operatorCharacter: operatorCharacter
         ? {
-            id: selfCharacter.id,
-            name: selfCharacter.name,
+            id: operatorCharacter.id,
+            name: operatorCharacter.name,
+            sourceKey: operatorCharacter.sourceKey ?? null,
           }
         : null,
     };
@@ -657,16 +659,38 @@ export class ActionRuntimeService {
     this.connectorsSeeded = true;
   }
 
-  private async findSelfCharacter() {
-    const all = await this.characterRepo.find({ order: { name: 'ASC' } });
-    return all.find((character) => this.isSelfCharacter(character)) ?? null;
+  private async findActionRuntimeEntryCharacter(sourceKey: string) {
+    const normalizedSourceKey = sourceKey.trim();
+    if (!normalizedSourceKey) {
+      return null;
+    }
+
+    const character = await this.characterRepo.findOneBy({
+      sourceKey: normalizedSourceKey,
+    });
+    return character ?? null;
   }
 
-  private isSelfCharacter(character: CharacterEntity) {
-    return (
-      character.relationshipType === 'self' ||
-      character.sourceKey?.trim() === 'self'
+  private canCreateActionPlan(
+    character: CharacterEntity,
+    rules: ActionRuntimeRulesValue,
+  ) {
+    const entryCharacterSourceKey = rules.policy.entryCharacterSourceKey.trim();
+    if (!entryCharacterSourceKey) {
+      return true;
+    }
+
+    return this.matchesActionRuntimeEntryCharacter(
+      character,
+      entryCharacterSourceKey,
     );
+  }
+
+  private matchesActionRuntimeEntryCharacter(
+    character: CharacterEntity,
+    sourceKey: string,
+  ) {
+    return character.sourceKey?.trim() === sourceKey;
   }
 
   private async listReadyConnectorEntities() {

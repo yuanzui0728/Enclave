@@ -180,8 +180,8 @@ const NAV_ITEMS = [
   {
     to: "/action-runtime",
     label: "真实世界动作",
-    roleBadge: "承接：我自己",
-    hint: "查看 self 角色的动作门控、连接器、规则和执行轨迹。",
+    roleBadge: "承接：行动助理",
+    hint: "查看行动助理的动作门控、连接器、规则和执行轨迹。",
   },
   {
     to: "/cyber-avatar",
@@ -325,7 +325,7 @@ function resolveRouteMeta(pathname: string) {
   if (pathname === "/action-runtime") {
     return {
       eyebrow: "真实世界动作",
-      title: "self 角色动作运行时",
+      title: "行动助理动作运行时",
       description:
         "围绕动作识别、澄清、确认、连接器和执行轨迹查看真实世界动作能力。",
     };
