@@ -38,6 +38,16 @@ type ImportChangeRecord = NonNullable<
 
 type ImportChangeDiffRecord = NonNullable<ImportChangeRecord['diffs']>[number];
 
+type PreviewContactResult = {
+  item: WechatSyncPreviewItemValue;
+  aiAvailableForNextContacts: boolean;
+};
+
+const WECHAT_SYNC_PREVIEW_CONCURRENCY = 4;
+const WECHAT_SYNC_AI_PREVIEW_TIMEOUT_MS = 8_000;
+const WECHAT_SYNC_MIN_MESSAGES_FOR_AI_PREVIEW = 12;
+const WECHAT_SYNC_MIN_SAMPLES_FOR_AI_PREVIEW = 3;
+
 @Injectable()
 export class WechatSyncAdminService {
   private readonly logger = new Logger(WechatSyncAdminService.name);
@@ -145,10 +155,32 @@ export class WechatSyncAdminService {
       throw new BadRequestException('单次最多预览 20 个微信联系人。');
     }
 
-    const items: WechatSyncPreviewItemValue[] = [];
-    for (const contact of contacts) {
-      items.push(await this.previewContact(contact));
-    }
+    const items = new Array<WechatSyncPreviewItemValue>(contacts.length);
+    const workerCount = Math.min(
+      WECHAT_SYNC_PREVIEW_CONCURRENCY,
+      contacts.length,
+    );
+    let nextIndex = 0;
+    let aiAvailableForNextContacts = true;
+
+    await Promise.all(
+      Array.from({ length: workerCount }, async () => {
+        while (true) {
+          const currentIndex = nextIndex++;
+          if (currentIndex >= contacts.length) {
+            return;
+          }
+
+          const result = await this.previewContact(contacts[currentIndex], {
+            allowAi: aiAvailableForNextContacts,
+          });
+          items[currentIndex] = result.item;
+          if (!result.aiAvailableForNextContacts) {
+            aiAvailableForNextContacts = false;
+          }
+        }
+      }),
+    );
 
     return { items };
   }
@@ -375,14 +407,57 @@ export class WechatSyncAdminService {
 
   private async previewContact(
     contact: WechatSyncContactBundleValue,
-  ): Promise<WechatSyncPreviewItemValue> {
+    options?: {
+      allowAi?: boolean;
+    },
+  ): Promise<PreviewContactResult> {
     const warnings = buildPreviewWarnings(contact);
     const confidence = resolvePreviewConfidence(contact);
     let draftCharacter: Partial<CharacterEntity>;
+    let aiAvailableForNextContacts = options?.allowAi !== false;
+    const shouldAttemptAi =
+      aiAvailableForNextContacts &&
+      contact.messageCount >= WECHAT_SYNC_MIN_MESSAGES_FOR_AI_PREVIEW &&
+      contact.sampleMessages.length >= WECHAT_SYNC_MIN_SAMPLES_FOR_AI_PREVIEW;
+
+    if (!aiAvailableForNextContacts) {
+      warnings.push(
+        '本批次 AI 预览暂时不可用，当前已直接生成基础草稿，避免继续长时间等待。',
+      );
+      draftCharacter = this.normalizeCharacterDraft({}, contact);
+      return {
+        item: {
+          contact,
+          draftCharacter,
+          warnings,
+          confidence,
+        },
+        aiAvailableForNextContacts,
+      };
+    }
+
+    if (!shouldAttemptAi) {
+      warnings.push(
+        '聊天样本较少，当前直接生成基础草稿，避免为低置信度联系人长时间等待。',
+      );
+      draftCharacter = this.normalizeCharacterDraft({}, contact);
+      return {
+        item: {
+          contact,
+          draftCharacter,
+          warnings,
+          confidence,
+        },
+        aiAvailableForNextContacts,
+      };
+    }
 
     try {
       const raw = await this.ai.generateQuickCharacter(
         this.buildQuickCharacterDescription(contact),
+        {
+          timeoutMs: WECHAT_SYNC_AI_PREVIEW_TIMEOUT_MS,
+        },
       );
       draftCharacter = this.normalizeCharacterDraft(raw, contact);
     } catch (error) {
@@ -395,13 +470,17 @@ export class WechatSyncAdminService {
         'AI 角色草稿生成失败，已回退到启发式版本，导入前再过一眼。',
       );
       draftCharacter = this.normalizeCharacterDraft({}, contact);
+      aiAvailableForNextContacts = false;
     }
 
     return {
-      contact,
-      draftCharacter,
-      warnings,
-      confidence,
+      item: {
+        contact,
+        draftCharacter,
+        warnings,
+        confidence,
+      },
+      aiAvailableForNextContacts,
     };
   }
 

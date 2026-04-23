@@ -1589,6 +1589,9 @@ export class AiOrchestratorService {
 
   async generateQuickCharacter(
     description: string,
+    options?: {
+      timeoutMs?: number;
+    },
   ): Promise<Record<string, unknown>> {
     const prompt = `你是隐界的角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
 
@@ -1636,15 +1639,22 @@ export class AiOrchestratorService {
     );
     const provider = budgetedProvider.provider;
     const client = this.createProviderClient(provider);
+    const timeoutMs =
+      typeof options?.timeoutMs === 'number' && options.timeoutMs > 0
+        ? Math.min(options.timeoutMs, 120_000)
+        : undefined;
 
     try {
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 800,
-        temperature: 0.8,
-        response_format: { type: 'json_object' },
-      });
+      const response = await client.chat.completions.create(
+        {
+          model: provider.model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 800,
+          temperature: 0.8,
+          response_format: { type: 'json_object' },
+        },
+        timeoutMs ? { timeout: timeoutMs, maxRetries: 0 } : undefined,
+      );
 
       const usage = this.normalizeUsageMetrics(response.usage);
       await this.recordSuccessfulUsage(
