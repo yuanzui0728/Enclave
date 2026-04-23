@@ -17,6 +17,7 @@ import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { NarrativeService } from '../narrative/narrative.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
@@ -784,32 +785,35 @@ export class ChatService {
             sourceMessageId: userMsgEntity.id,
           })
         : { handled: false };
+    const extraSystemPromptSections =
+      await this.buildCyberAvatarChatPromptSections(charId);
 
     const assistantReplyText = actionResult.handled
       ? (actionResult.responseText?.trim() ?? '')
       : reminderResult.handled
         ? (reminderResult.responseText?.trim() ?? '')
-      : (
-          await this.ai.generateReply({
-            profile,
-            conversationHistory: history,
-            userMessage: normalizedInput.promptText,
-            userMessageParts: normalizedInput.aiParts,
-            chatContext,
-            aiKeyOverride,
-            usageContext: {
-              surface: 'app',
-              scene: 'chat_reply',
-              scopeType: 'conversation',
-              scopeId: convId,
-              scopeLabel: entity.title,
-              ownerId: owner.id,
-              characterId: charId,
-              characterName: profile.name,
-              conversationId: convId,
-            },
-          })
-        ).text;
+        : (
+            await this.ai.generateReply({
+              profile,
+              conversationHistory: history,
+              userMessage: normalizedInput.promptText,
+              userMessageParts: normalizedInput.aiParts,
+              chatContext,
+              extraSystemPromptSections,
+              aiKeyOverride,
+              usageContext: {
+                surface: 'app',
+                scene: 'chat_reply',
+                scopeType: 'conversation',
+                scopeId: convId,
+                scopeLabel: entity.title,
+                ownerId: owner.id,
+                characterId: charId,
+                characterName: profile.name,
+                conversationId: convId,
+              },
+            })
+          ).text;
 
     if (assistantReplyText) {
       const assistantDrafts = await this.createAssistantReplyMessages({
@@ -1743,6 +1747,41 @@ export class ChatService {
 
   private buildTextAiParts(text: string): AiMessagePart[] {
     return [{ type: 'text', text }];
+  }
+
+  private async buildCyberAvatarChatPromptSections(characterId: string) {
+    if (characterId !== SELF_CHARACTER_ID) {
+      return [] as string[];
+    }
+
+    try {
+      const profile = await this.cyberAvatar.getProfile();
+      if ((profile.signalCount ?? 0) <= 0) {
+        return [] as string[];
+      }
+
+      const content = [
+        profile.promptProjection.coreInstruction
+          ? `【核心约束】\n${profile.promptProjection.coreInstruction}`
+          : '',
+        profile.promptProjection.worldInteractionPrompt
+          ? `【世界内互动】\n${profile.promptProjection.worldInteractionPrompt}`
+          : '',
+        profile.promptProjection.memoryBlock
+          ? `【赛博分身记忆】\n${profile.promptProjection.memoryBlock}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+
+      return content
+        ? [
+            `<owner_cyber_avatar_context>\n${content}\n</owner_cyber_avatar_context>`,
+          ]
+        : [];
+    } catch {
+      return [] as string[];
+    }
   }
 
   private isAudioMimeType(mimeType?: string) {

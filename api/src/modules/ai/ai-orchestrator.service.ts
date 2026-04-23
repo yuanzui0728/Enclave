@@ -1041,6 +1041,7 @@ export class AiOrchestratorService {
       userMessage,
       isGroupChat,
       chatContext,
+      extraSystemPromptSections,
       aiKeyOverride,
     } = options;
     const provider = await this.resolveRuntimeProvider({
@@ -1052,6 +1053,7 @@ export class AiOrchestratorService {
       isGroupChat,
       chatContext,
       this.resolveSceneKey(options.usageContext?.scene),
+      extraSystemPromptSections,
     );
     const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
@@ -1148,6 +1150,7 @@ export class AiOrchestratorService {
     isGroupChat?: boolean,
     chatContext?: GenerateReplyOptions['chatContext'],
     sceneKey?: import('./ai.types').SceneKey,
+    extraSystemPromptSections?: string[],
   ) {
     let systemPrompt: string;
     if (sceneKey && sceneKey !== 'chat') {
@@ -1184,6 +1187,13 @@ export class AiOrchestratorService {
       // ignore world context errors
     }
 
+    if (extraSystemPromptSections?.length) {
+      systemPrompt = [
+        systemPrompt,
+        ...extraSystemPromptSections.map((item) => item.trim()).filter(Boolean),
+      ].join('\n\n');
+    }
+
     return systemPrompt;
   }
 
@@ -1214,6 +1224,7 @@ export class AiOrchestratorService {
       userMessageParts,
       isGroupChat,
       chatContext,
+      extraSystemPromptSections,
       aiKeyOverride,
     } = options;
     const usageContext = this.resolveReplyUsageContext(profile, options);
@@ -1231,6 +1242,7 @@ export class AiOrchestratorService {
       isGroupChat,
       chatContext,
       this.resolveSceneKey(usageContext.scene),
+      extraSystemPromptSections,
     );
     const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
