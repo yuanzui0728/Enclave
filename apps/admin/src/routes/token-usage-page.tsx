@@ -197,6 +197,7 @@ export function TokenUsagePage() {
     useState<TokenUsageWorkspace>("overview");
   const [activeExceptionView, setActiveExceptionView] =
     useState<TokenUsageExceptionView>("blocked");
+  const activeQuickRange = resolveActiveQuickRange(from, to);
 
   const listQuery = useMemo<TokenUsageQuery>(
     () => ({
@@ -781,27 +782,21 @@ export function TokenUsagePage() {
         description="这里把实例里的 AI 请求沉淀成运营账本，方便先看预算健康度，再处理阻断、降级和价格配置。"
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
+            <QuickRangeButton
+              label="近 7 天"
+              active={activeQuickRange === "7d"}
               onClick={() => applyPreset("7d", setFrom, setTo)}
-            >
-              近 7 天
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
+            />
+            <QuickRangeButton
+              label="近 30 天"
+              active={activeQuickRange === "30d"}
               onClick={() => applyPreset("30d", setFrom, setTo)}
-            >
-              近 30 天
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
+            />
+            <QuickRangeButton
+              label="本月"
+              active={activeQuickRange === "month"}
               onClick={() => applyPreset("month", setFrom, setTo)}
-            >
-              本月
-            </Button>
+            />
             <Button variant="ghost" size="sm" onClick={resetFilters}>
               重置筛选
             </Button>
@@ -2583,6 +2578,32 @@ function FocusSignalCard({
   );
 }
 
+function QuickRangeButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      variant={active ? "primary" : "secondary"}
+      size="sm"
+      onClick={onClick}
+      className={active ? "ring-2 ring-[color:var(--border-brand)]/40" : ""}
+    >
+      <span>{label}</span>
+      {active ? (
+        <span className="rounded-full border border-white/30 bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em]">
+          当前
+        </span>
+      ) : null}
+    </Button>
+  );
+}
+
 function buildTokenUsageOperatorSummary({
   hasConfiguredPricing,
   pricingModelCount,
@@ -3661,21 +3682,59 @@ function createInactiveBudgetStatus(): TokenUsageBudgetStatus {
 
 function formatScene(scene: string) {
   const sceneMap: Record<string, string> = {
-    chat_reply: "单聊回复",
-    group_reply: "群聊回复",
-    moment_post_generate: "朋友圈生成",
-    moment_comment_generate: "朋友圈评论",
+    chat_reply: "单聊回复生成",
+    group_reply: "群聊回复生成",
+    moment_post_generate: "朋友圈发帖生成",
+    moment_comment_generate: "朋友圈评论生成",
     feed_post_generate: "广场动态生成",
     feed_comment_generate: "广场评论生成",
-    channel_post_generate: "视频号生成",
-    social_greeting_generate: "社交问候",
-    memory_compress: "记忆压缩",
-    character_factory_extract: "角色工厂抽取",
+    channel_post_generate: "视频号内容生成",
+    social_greeting_generate: "社交问候生成",
+    memory_compress: "近期记忆压缩",
+    character_factory_extract: "角色工厂资料抽取",
     quick_character_generate: "快速生成角色",
     intent_classify: "意图分类",
+    proactive: "主动消息生成",
+    recent_memory_daily: "近期记忆日更",
+    core_memory_weekly: "核心记忆周更",
+    core_memory_extract: "核心记忆提炼",
+    shake_discovery_plan: "摇一摇候选规划",
+    shake_discovery_generate: "摇一摇候选生成",
+    need_discovery_short_analyze: "短周期需求分析",
+    need_discovery_daily_analyze: "每日需求分析",
+    need_discovery_character_generate: "需求补位角色生成",
+    followup_runtime_open_loop_extract: "主动跟进线索提取",
+    followup_runtime_handoff_message: "主动跟进推荐文案生成",
+    followup_runtime_friend_request_greeting: "主动跟进好友申请问候",
+    followup_runtime_friend_request_notice: "主动跟进好友申请提醒",
+    cyber_avatar_incremental: "赛博分身增量建模",
+    cyber_avatar_deep_refresh: "赛博分身深度刷新",
+    cyber_avatar_full_rebuild: "赛博分身全量重建",
+    cyber_avatar_real_world_brief: "赛博分身现实摘要",
+    action_runtime_plan: "动作执行规划",
   };
 
   return sceneMap[scene] ?? scene;
+}
+
+function resolveActiveQuickRange(
+  from: string,
+  to: string,
+): "7d" | "30d" | "month" | null {
+  const today = formatDateInput(new Date());
+  if (to !== today) {
+    return null;
+  }
+  if (from === monthStartInput()) {
+    return "month";
+  }
+  if (from === shiftDate(-29)) {
+    return "30d";
+  }
+  if (from === shiftDate(-6)) {
+    return "7d";
+  }
+  return null;
 }
 
 function applyPreset(
