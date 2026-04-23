@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { MessageEntity } from '../chat/message.entity';
 import { SystemConfigModule } from '../config/config.module';
@@ -12,7 +13,12 @@ import { ReminderTaskEntity } from './reminder-task.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ReminderTaskEntity, MessageEntity, MomentPostEntity]),
+    TypeOrmModule.forFeature([
+      ReminderTaskEntity,
+      MessageEntity,
+      MomentPostEntity,
+    ]),
+    forwardRef(() => AiModule),
     AuthModule,
     SystemConfigModule,
     forwardRef(() => WorldModule),

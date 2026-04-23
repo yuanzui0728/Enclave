@@ -66,7 +66,12 @@ export type ReminderRuntimeParserPeriodDefaultsValue = {
   evening: ReminderRuntimeParserPeriodDefaultValue;
 };
 
+export type ReminderRuntimeParserModeValue =
+  | 'rules_only'
+  | 'rules_with_llm_fallback';
+
 export type ReminderRuntimeParserRulesValue = {
+  parserMode: ReminderRuntimeParserModeValue;
   helpIntentPatterns: string[];
   listIntentPatterns: string[];
   cancelIntentPatterns: string[];
@@ -78,6 +83,7 @@ export type ReminderRuntimeParserRulesValue = {
   habitIntentKeywords: string[];
   habitKeywords: string[];
   hardReminderKeywords: string[];
+  llmFallbackPrompt: string;
   categoryKeywords: ReminderRuntimeParserCategoryKeywordsValue;
   periodDefaultClocks: ReminderRuntimeParserPeriodDefaultsValue;
 };
@@ -128,6 +134,11 @@ export type ReminderRuntimePreviewActionValue =
   | 'create'
   | 'unhandled';
 
+export type ReminderRuntimePreviewSourceValue =
+  | 'rules'
+  | 'llm_fallback'
+  | 'none';
+
 export type ReminderRuntimePreviewMatchedRulesValue = {
   intentPatterns: string[];
   createKeywords: string[];
@@ -160,11 +171,14 @@ export type ReminderRuntimePreviewReferencedTaskValue = {
 export type ReminderRuntimePreviewResultValue = {
   handled: boolean;
   action: ReminderRuntimePreviewActionValue;
+  source: ReminderRuntimePreviewSourceValue;
   reason: string;
   evaluatedAt: string;
   timezone: string;
   normalizedText: string;
   extractedTitle?: string | null;
+  canonicalMessage?: string | null;
+  fallbackReason?: string | null;
   responseText?: string | null;
   needsClarification: boolean;
   parsedTask?: ReminderRuntimePreviewParsedTaskValue | null;
@@ -231,6 +245,7 @@ export const DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES: ReminderRuntimeTextTemplat
 
 export const DEFAULT_REMINDER_RUNTIME_PARSER_RULES: ReminderRuntimeParserRulesValue =
   Object.freeze({
+    parserMode: 'rules_with_llm_fallback',
     helpIntentPatterns: [
       '(怎么用|你能提醒|你能做什么|怎么提醒|能帮我记什么)',
     ],
@@ -273,6 +288,27 @@ export const DEFAULT_REMINDER_RUNTIME_PARSER_RULES: ReminderRuntimeParserRulesVa
       '读书',
     ],
     hardReminderKeywords: ['吃药', '开会', '会议', '复诊', '考试'],
+    llmFallbackPrompt: [
+      '你是“小盯”的提醒语义归一化器。你的任务不是直接回复用户，而是把用户原话改写成系统可解析的标准提醒口令。',
+      '只有当原话明显与提醒、待办、完成、删除、顺延、查询提醒能力相关时，handled=true；否则 handled=false。',
+      '必须严格输出 JSON object，不要输出 markdown 或额外解释。',
+      '标准口令必须严格使用以下形式之一：',
+      '1. help: 你能帮我记什么',
+      '2. list: 看看我有哪些提醒',
+      '3. cancel: 删除提醒 <事项>',
+      '4. complete: 已完成 <事项>',
+      '5. snooze: 明天再提醒 <事项> / 半小时后再提醒 <事项> / 一小时后再提醒 <事项>',
+      '6. create 单次: <日期/时段/时间> 提醒我 <事项>',
+      '7. create 每天: 每天 <时间> 提醒我 <事项>',
+      '8. create 每周: 每周X <时间> 提醒我 <事项>',
+      '9. create 习惯: 提醒我坚持 <事项>',
+      '要求：',
+      '- 不要编造不存在的任务标题。',
+      '- 如果是删除、完成、顺延，优先复用给定活跃提醒标题里的原词。',
+      '- 如果原话信息不够，handled=false，并在 reason 里说明缺什么，不要硬猜。',
+      '- canonicalMessage 只能输出一条标准口令。',
+      '输出格式：{"handled":boolean,"action":"help|list|cancel|complete|snooze|create|unhandled","reason":"...","canonicalMessage":"..."}',
+    ].join('\n'),
     categoryKeywords: {
       health: ['吃药', '复诊', '体检'],
       shopping: ['买', '采购', '补货', '快递'],
@@ -537,6 +573,11 @@ export function normalizeReminderRuntimeRules(
       ),
     },
     parserRules: {
+      parserMode:
+        parserRules.parserMode === 'rules_only' ||
+        parserRules.parserMode === 'rules_with_llm_fallback'
+          ? parserRules.parserMode
+          : DEFAULT_REMINDER_RUNTIME_PARSER_RULES.parserMode,
       helpIntentPatterns: normalizeStringList(
         parserRules.helpIntentPatterns,
         DEFAULT_REMINDER_RUNTIME_PARSER_RULES.helpIntentPatterns,
@@ -580,6 +621,10 @@ export function normalizeReminderRuntimeRules(
       hardReminderKeywords: normalizeStringList(
         parserRules.hardReminderKeywords,
         DEFAULT_REMINDER_RUNTIME_PARSER_RULES.hardReminderKeywords,
+      ),
+      llmFallbackPrompt: normalizeTemplate(
+        parserRules.llmFallbackPrompt,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.llmFallbackPrompt,
       ),
       categoryKeywords: {
         health: normalizeStringList(

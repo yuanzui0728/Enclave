@@ -66,7 +66,12 @@ export interface ReminderRuntimeParserPeriodDefaults {
   evening: ReminderRuntimeParserPeriodDefault;
 }
 
+export type ReminderRuntimeParserMode =
+  | "rules_only"
+  | "rules_with_llm_fallback";
+
 export interface ReminderRuntimeParserRules {
+  parserMode: ReminderRuntimeParserMode;
   helpIntentPatterns: string[];
   listIntentPatterns: string[];
   cancelIntentPatterns: string[];
@@ -78,6 +83,7 @@ export interface ReminderRuntimeParserRules {
   habitIntentKeywords: string[];
   habitKeywords: string[];
   hardReminderKeywords: string[];
+  llmFallbackPrompt: string;
   categoryKeywords: ReminderRuntimeParserCategoryKeywords;
   periodDefaultClocks: ReminderRuntimeParserPeriodDefaults;
 }
@@ -182,6 +188,11 @@ export type ReminderRuntimePreviewAction =
   | "create"
   | "unhandled";
 
+export type ReminderRuntimePreviewSource =
+  | "rules"
+  | "llm_fallback"
+  | "none";
+
 export interface ReminderRuntimePreviewMatchedRules {
   intentPatterns: string[];
   createKeywords: string[];
@@ -214,11 +225,14 @@ export interface ReminderRuntimePreviewReferencedTask {
 export interface ReminderRuntimePreviewResult {
   handled: boolean;
   action: ReminderRuntimePreviewAction;
+  source: ReminderRuntimePreviewSource;
   reason: string;
   evaluatedAt: string;
   timezone: string;
   normalizedText: string;
   extractedTitle?: string | null;
+  canonicalMessage?: string | null;
+  fallbackReason?: string | null;
   responseText?: string | null;
   needsClarification: boolean;
   parsedTask?: ReminderRuntimePreviewParsedTask | null;

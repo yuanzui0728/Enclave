@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
+import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { MessageEntity } from '../chat/message.entity';
 import {
@@ -18,6 +19,7 @@ import { ReminderRuntimeRulesService } from './reminder-runtime-rules.service';
 import { normalizeReminderRuntimeRules } from './reminder-runtime.types';
 import type {
   ReminderRecurrenceRule,
+  ReminderRuntimePreviewSourceValue,
   ReminderRuntimeParserPeriodDefaultsValue,
   ReminderRuntimePreviewActionValue,
   ReminderRuntimePreviewMatchedRulesValue,
@@ -148,6 +150,7 @@ type ParsedWeeklyRule = {
 
 type ReminderParserDebug = {
   normalizedText: string;
+  source: ReminderRuntimePreviewSourceValue;
   matchedIntentPatterns: string[];
   matchedCreateKeywords: string[];
   matchedDailyKeywords: string[];
@@ -159,18 +162,22 @@ type ReminderParserDebug = {
   matchedPeriodKey: ReminderParserPeriodKey | null;
   matchedPeriodPatterns: string[];
   extractedTitle: string | null;
+  canonicalMessage: string | null;
+  fallbackReason: string | null;
 };
 
 type ReminderConversationEvaluation =
   | {
       handled: false;
       action: 'unhandled';
+      source: ReminderRuntimePreviewSourceValue;
       reason: string;
       debug: ReminderParserDebug;
     }
   | {
       handled: true;
       action: 'help' | 'list';
+      source: ReminderRuntimePreviewSourceValue;
       reason: string;
       responseText: string;
       debug: ReminderParserDebug;
@@ -178,6 +185,7 @@ type ReminderConversationEvaluation =
   | {
       handled: true;
       action: 'cancel' | 'complete' | 'snooze';
+      source: ReminderRuntimePreviewSourceValue;
       reason: string;
       responseText: string;
       referencedTask: ReminderTaskEntity | null;
@@ -187,10 +195,17 @@ type ReminderConversationEvaluation =
   | {
       handled: true;
       action: 'create';
+      source: ReminderRuntimePreviewSourceValue;
       reason: string;
       parsedIntent: ParsedReminderIntent;
       debug: ReminderParserDebug;
     };
+
+type ReminderLlmFallbackResult = {
+  handled: boolean;
+  reason: string;
+  canonicalMessage: string | null;
+};
 
 const WEEKDAY_ALIASES: Record<string, number> = {
   日: 0,
@@ -332,6 +347,7 @@ export class ReminderRuntimeService {
     private readonly worldOwnerService: WorldOwnerService,
     private readonly worldService: WorldService,
     private readonly rulesService: ReminderRuntimeRulesService,
+    private readonly ai: AiOrchestratorService,
   ) {}
 
   getReminderCharacterIdentity() {
@@ -849,14 +865,51 @@ export class ReminderRuntimeService {
     now: Date;
     rules: ReminderRuntimeRulesValue;
   }): Promise<ReminderConversationEvaluation> {
+    const rulesEvaluation = await this.evaluateConversationTurnFromRules(input, {
+      source: 'rules',
+    });
+    if (
+      rulesEvaluation.handled ||
+      input.rules.parserRules.parserMode === 'rules_only' ||
+      !input.text.trim()
+    ) {
+      return rulesEvaluation;
+    }
+
+    return this.evaluateConversationTurnWithLlmFallback(input, rulesEvaluation);
+  }
+
+  private async evaluateConversationTurnFromRules(
+    input: {
+      ownerId: string;
+      conversationId: string;
+      text: string;
+      timezone: string;
+      now: Date;
+      rules: ReminderRuntimeRulesValue;
+    },
+    options?: {
+      source?: ReminderRuntimePreviewSourceValue;
+      canonicalMessage?: string | null;
+      fallbackReason?: string | null;
+    },
+  ): Promise<ReminderConversationEvaluation> {
     const { ownerId, conversationId, text, timezone, now, rules } = input;
+    const source = options?.source ?? 'rules';
+    const canonicalMessage = options?.canonicalMessage ?? null;
+    const fallbackReason = options?.fallbackReason ?? null;
 
     if (!text) {
       return {
         handled: false,
         action: 'unhandled',
+        source,
         reason: '消息为空，未进入提醒解析。',
-        debug: this.createParserDebug(text),
+        debug: this.createParserDebug(text, {
+          source,
+          canonicalMessage,
+          fallbackReason,
+        }),
       };
     }
 
@@ -868,10 +921,14 @@ export class ReminderRuntimeService {
       return {
         handled: true,
         action: 'help',
+        source,
         reason: '命中帮助意图规则。',
         responseText: rules.textTemplates.helpMessage,
         debug: this.createParserDebug(text, {
+          source,
           matchedIntentPatterns: helpPatterns,
+          canonicalMessage,
+          fallbackReason,
         }),
       };
     }
@@ -885,10 +942,14 @@ export class ReminderRuntimeService {
       return {
         handled: true,
         action: 'list',
+        source,
         reason: '命中提醒列表查询规则。',
         responseText: this.renderTaskList(tasks, rules.maxListItems, rules),
         debug: this.createParserDebug(text, {
+          source,
           matchedIntentPatterns: listPatterns,
+          canonicalMessage,
+          fallbackReason,
         }),
       };
     }
@@ -906,6 +967,7 @@ export class ReminderRuntimeService {
       return {
         handled: true,
         action: 'cancel',
+        source,
         reason: referencedTask
           ? '命中删除提醒规则，并匹配到了当前提醒。'
           : '命中删除提醒规则，但没有匹配到当前提醒。',
@@ -916,7 +978,10 @@ export class ReminderRuntimeService {
           : rules.textTemplates.taskCancelMissing,
         referencedTask,
         debug: this.createParserDebug(text, {
+          source,
           matchedIntentPatterns: cancelPatterns,
+          canonicalMessage,
+          fallbackReason,
         }),
       };
     }
@@ -937,6 +1002,7 @@ export class ReminderRuntimeService {
       return {
         handled: true,
         action: 'snooze',
+        source,
         reason: referencedTask
           ? '命中顺延提醒规则，并匹配到了当前提醒。'
           : '命中顺延提醒规则，但没有匹配到当前提醒。',
@@ -950,7 +1016,10 @@ export class ReminderRuntimeService {
         referencedTask,
         snoozeUntil,
         debug: this.createParserDebug(text, {
+          source,
           matchedIntentPatterns: snoozePatterns,
+          canonicalMessage,
+          fallbackReason,
         }),
       };
     }
@@ -984,13 +1053,17 @@ export class ReminderRuntimeService {
       return {
         handled: true,
         action: 'complete',
+        source,
         reason: referencedTask
           ? '命中完成提醒规则，并匹配到了当前提醒。'
           : '命中完成提醒规则，但没有匹配到当前提醒。',
         responseText,
         referencedTask,
         debug: this.createParserDebug(text, {
+          source,
           matchedIntentPatterns: completePatterns,
+          canonicalMessage,
+          fallbackReason,
         }),
       };
     }
@@ -1000,17 +1073,180 @@ export class ReminderRuntimeService {
       return {
         handled: false,
         action: 'unhandled',
+        source,
         reason: parsedIntent.reason,
-        debug: parsedIntent.debug,
+        debug: {
+          ...parsedIntent.debug,
+          source,
+          canonicalMessage,
+          fallbackReason,
+        },
       };
     }
 
     return {
       handled: true,
       action: 'create',
+      source,
       reason: parsedIntent.reason,
       parsedIntent,
-      debug: parsedIntent.debug,
+      debug: {
+        ...parsedIntent.debug,
+        source,
+        canonicalMessage,
+        fallbackReason,
+      },
+    };
+  }
+
+  private async evaluateConversationTurnWithLlmFallback(
+    input: {
+      ownerId: string;
+      conversationId: string;
+      text: string;
+      timezone: string;
+      now: Date;
+      rules: ReminderRuntimeRulesValue;
+    },
+    rulesEvaluation: ReminderConversationEvaluation,
+  ): Promise<ReminderConversationEvaluation> {
+    const llmResult = await this.resolveLlmFallbackCommand(input);
+    if (!llmResult.handled || !llmResult.canonicalMessage) {
+      return {
+        handled: false,
+        action: 'unhandled',
+        source: 'llm_fallback',
+        reason: llmResult.reason || rulesEvaluation.reason,
+        debug: this.createParserDebug(input.text, {
+          source: 'llm_fallback',
+          canonicalMessage: llmResult.canonicalMessage,
+          fallbackReason: llmResult.reason || rulesEvaluation.reason,
+        }),
+      };
+    }
+
+    const canonicalEvaluation = await this.evaluateConversationTurnFromRules(
+      {
+        ...input,
+        text: llmResult.canonicalMessage,
+      },
+      {
+        source: 'llm_fallback',
+        canonicalMessage: llmResult.canonicalMessage,
+        fallbackReason: llmResult.reason,
+      },
+    );
+
+    if (canonicalEvaluation.handled) {
+      return canonicalEvaluation;
+    }
+
+    return {
+      handled: false,
+      action: 'unhandled',
+      source: 'llm_fallback',
+      reason: `模型已尝试归一化为“${llmResult.canonicalMessage}”，但规则仍未命中。`,
+      debug: this.createParserDebug(input.text, {
+        source: 'llm_fallback',
+        canonicalMessage: llmResult.canonicalMessage,
+        fallbackReason: llmResult.reason,
+      }),
+    };
+  }
+
+  private async resolveLlmFallbackCommand(input: {
+    ownerId: string;
+    conversationId: string;
+    text: string;
+    timezone: string;
+    now: Date;
+    rules: ReminderRuntimeRulesValue;
+  }): Promise<ReminderLlmFallbackResult> {
+    const activeTasks = await this.listActiveTasksForConversation(
+      input.ownerId,
+      input.conversationId,
+    );
+    const prompt = this.buildLlmFallbackPrompt({
+      message: input.text,
+      activeTasks,
+      timezone: input.timezone,
+      now: input.now,
+      rules: input.rules,
+    });
+
+    const raw = await this.ai.generateJsonObject({
+      prompt,
+      usageContext: {
+        surface: 'app',
+        scene: 'reminder_runtime_parse_fallback',
+        scopeType: 'conversation',
+        scopeId: input.conversationId,
+        scopeLabel: '提醒运行时解析',
+        ownerId: input.ownerId,
+        characterId: REMINDER_CHARACTER_ID,
+        characterName: this.getReminderCharacterIdentity().name,
+        conversationId: input.conversationId,
+      },
+      maxTokens: 600,
+      temperature: 0.1,
+      fallback: {
+        handled: false,
+        action: 'unhandled',
+        reason: '模型兜底没有返回有效结果。',
+        canonicalMessage: '',
+      },
+    });
+
+    return this.normalizeLlmFallbackResult(raw);
+  }
+
+  private buildLlmFallbackPrompt(input: {
+    message: string;
+    activeTasks: ReminderTaskEntity[];
+    timezone: string;
+    now: Date;
+    rules: ReminderRuntimeRulesValue;
+  }) {
+    const activeTaskSummary = input.activeTasks.length
+      ? input.activeTasks
+          .slice(0, 12)
+          .map(
+            (task, index) =>
+              `${index + 1}. ${task.title} | ${this.describeSchedule(task)}`,
+          )
+          .join('\n')
+      : '当前没有活跃提醒。';
+
+    return [
+      input.rules.parserRules.llmFallbackPrompt,
+      `当前时间：${input.now.toISOString()}`,
+      `当前时区：${input.timezone}`,
+      `用户原话：${input.message}`,
+      `当前活跃提醒：\n${activeTaskSummary}`,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
+  private normalizeLlmFallbackResult(
+    raw: Record<string, unknown>,
+  ): ReminderLlmFallbackResult {
+    const handled = raw.handled === true;
+    const reason =
+      typeof raw.reason === 'string' && raw.reason.trim()
+        ? raw.reason.trim()
+        : handled
+          ? '模型兜底已生成标准提醒口令。'
+          : '模型兜底判断当前消息不属于提醒链。';
+    const canonicalMessage =
+      typeof raw.canonicalMessage === 'string' && raw.canonicalMessage.trim()
+        ? raw.canonicalMessage.trim()
+        : null;
+
+    return {
+      handled: handled && canonicalMessage != null,
+      reason,
+      canonicalMessage,
     };
   }
 
@@ -1036,11 +1272,14 @@ export class ReminderRuntimeService {
     return {
       handled: evaluation.handled,
       action: this.toPreviewAction(evaluation.action),
+      source: evaluation.source,
       reason: evaluation.reason,
       evaluatedAt: now.toISOString(),
       timezone,
       normalizedText: evaluation.debug.normalizedText,
       extractedTitle: evaluation.debug.extractedTitle,
+      canonicalMessage: evaluation.debug.canonicalMessage,
+      fallbackReason: evaluation.debug.fallbackReason,
       responseText:
         createParsedIntent != null && createParsedIntent.handled
           ? createParsedIntent.responseText
@@ -1244,6 +1483,7 @@ export class ReminderRuntimeService {
   ): ReminderParserDebug {
     return {
       normalizedText: normalizeComparableText(text),
+      source: patch.source ?? 'none',
       matchedIntentPatterns: patch.matchedIntentPatterns ?? [],
       matchedCreateKeywords: patch.matchedCreateKeywords ?? [],
       matchedDailyKeywords: patch.matchedDailyKeywords ?? [],
@@ -1255,6 +1495,8 @@ export class ReminderRuntimeService {
       matchedPeriodKey: patch.matchedPeriodKey ?? null,
       matchedPeriodPatterns: patch.matchedPeriodPatterns ?? [],
       extractedTitle: patch.extractedTitle ?? null,
+      canonicalMessage: patch.canonicalMessage ?? null,
+      fallbackReason: patch.fallbackReason ?? null,
     };
   }
 

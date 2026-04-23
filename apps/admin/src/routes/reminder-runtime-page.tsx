@@ -161,6 +161,10 @@ const PARSER_PREVIEW_EXAMPLES = [
     message: "提醒我坚持学英语",
   },
   {
+    label: "模型兜底",
+    message: "我明天得去复诊，别忘了",
+  },
+  {
     label: "完成提醒",
     message: "买猫粮已经搞定了",
   },
@@ -174,6 +178,12 @@ const PREVIEW_ACTION_LABELS: Record<string, string> = {
   snooze: "顺延",
   create: "创建",
   unhandled: "未命中",
+};
+
+const PREVIEW_SOURCE_LABELS: Record<string, string> = {
+  rules: "规则命中",
+  llm_fallback: "模型兜底",
+  none: "未命中",
 };
 
 function formatDateTime(value?: string | null) {
@@ -792,6 +802,18 @@ function ReminderRuntimeConfigPanel({
     });
   };
 
+  const updateParserMode = (
+    value: ReminderRuntimeRules["parserRules"]["parserMode"],
+  ) => {
+    onChange({
+      ...draft,
+      parserRules: {
+        ...draft.parserRules,
+        parserMode: value,
+      },
+    });
+  };
+
   const updateParserArrayField = (
     key: ReminderParserArrayFieldKey,
     value: string,
@@ -801,6 +823,16 @@ function ReminderRuntimeConfigPanel({
       parserRules: {
         ...draft.parserRules,
         [key]: parseLineList(value),
+      },
+    });
+  };
+
+  const updateParserPrompt = (value: string) => {
+    onChange({
+      ...draft,
+      parserRules: {
+        ...draft.parserRules,
+        llmFallbackPrompt: value,
       },
     });
   };
@@ -1171,8 +1203,41 @@ function ReminderRuntimeConfigPanel({
             <AdminCallout
               title="这里改的是“用户原话如何进提醒链”"
               tone="info"
-              description="帮助 / 列表 / 删除 / 完成 / 顺延按上到下顺序判断；只有前面都没命中，才会进入“创建提醒”解析。意图规则支持正则或普通片段；关键词建议按“一行一条”维护。"
+              description="帮助 / 列表 / 删除 / 完成 / 顺延按上到下顺序判断；只有前面都没命中，才会进入“创建提醒”解析。当前支持“纯规则”与“规则优先 + 模型兜底”两种模式。"
             />
+
+            <ConfigGroup
+              title="解析模式"
+              description="建议默认走“规则优先 + 模型兜底”。模型不会直接写库，只会先把原话改写成标准提醒口令，再交回规则引擎处理。"
+            >
+              <div className="space-y-4">
+                <SelectField
+                  label="当前模式"
+                  value={draft.parserRules.parserMode}
+                  onChange={(value) =>
+                    updateParserMode(
+                      value as ReminderRuntimeRules["parserRules"]["parserMode"],
+                    )
+                  }
+                  options={[
+                    {
+                      value: "rules_with_llm_fallback",
+                      label: "规则优先 + 模型兜底",
+                    },
+                    {
+                      value: "rules_only",
+                      label: "纯规则",
+                    },
+                  ]}
+                />
+                <AdminTextArea
+                  label="模型兜底提示模板"
+                  value={draft.parserRules.llmFallbackPrompt}
+                  onChange={updateParserPrompt}
+                  textareaClassName="min-h-40"
+                />
+              </div>
+            </ConfigGroup>
 
             <ConfigGroup
               title="意图识别"
@@ -1429,6 +1494,13 @@ function ReminderRuntimeConfigPanel({
                           }
                         />
                         <AdminValueCard
+                          label="解析来源"
+                          value={
+                            PREVIEW_SOURCE_LABELS[previewResult.source] ??
+                            previewResult.source
+                          }
+                        />
+                        <AdminValueCard
                           label="处理结果"
                           value={
                             previewResult.handled
@@ -1462,6 +1534,20 @@ function ReminderRuntimeConfigPanel({
                             "当前消息不会由提醒运行时接管。"}
                         </div>
                       </AdminSoftBox>
+
+                      {previewResult.canonicalMessage ? (
+                        <AdminSoftBox>
+                          兜底标准口令：
+                          <div className="mt-2 text-sm leading-6">
+                            {previewResult.canonicalMessage}
+                          </div>
+                          {previewResult.fallbackReason ? (
+                            <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+                              模型判断：{previewResult.fallbackReason}
+                            </div>
+                          ) : null}
+                        </AdminSoftBox>
+                      ) : null}
 
                       {previewResult.parsedTask ? (
                         <div className="grid gap-3 md:grid-cols-2">
@@ -1617,6 +1703,37 @@ function NumberField({
         onChange={(event) => onChange(Number(event.target.value))}
         className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]"
       />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <div className="text-xs font-medium text-[color:var(--text-secondary)]">
+        {label}
+      </div>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }
