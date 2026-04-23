@@ -114,6 +114,9 @@ export type CyberAvatarPromptProjection = {
   memoryBlock: string;
 };
 
+export type CyberAvatarPromptProjectionSection =
+  keyof CyberAvatarPromptProjection;
+
 export type CyberAvatarProfilePayload = {
   liveState: CyberAvatarLiveState;
   recentState: CyberAvatarRecentState;

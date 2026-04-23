@@ -1609,31 +1609,14 @@ export class ActionRuntimeService {
   }
 
   private async buildCyberAvatarActionPromptContext() {
-    try {
-      const profile = await this.cyberAvatar.getProfile();
-      if ((profile.signalCount ?? 0) <= 0) {
-        return '';
-      }
-
-      return [
-        profile.promptProjection.coreInstruction
-          ? `【核心约束】\n${profile.promptProjection.coreInstruction}`
-          : '',
-        profile.promptProjection.realWorldInteractionPrompt
-          ? `【真实世界互动】\n${profile.promptProjection.realWorldInteractionPrompt}`
-          : '',
-        profile.promptProjection.actionPlanningPrompt
-          ? `【动作规划】\n${profile.promptProjection.actionPlanningPrompt}`
-          : '',
-        profile.promptProjection.memoryBlock
-          ? `【赛博分身记忆】\n${profile.promptProjection.memoryBlock}`
-          : '',
-      ]
-        .filter(Boolean)
-        .join('\n\n');
-    } catch {
-      return '';
-    }
+    return this.cyberAvatar.buildPromptContext({
+      sections: [
+        'coreInstruction',
+        'realWorldInteractionPrompt',
+        'actionPlanningPrompt',
+        'memoryBlock',
+      ],
+    });
   }
 
   private async captureActionRunSignal(

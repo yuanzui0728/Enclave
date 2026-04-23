@@ -727,31 +727,14 @@ export class FollowupRuntimeService {
   }
 
   private async buildCyberAvatarProactivePromptContext() {
-    try {
-      const profile = await this.cyberAvatar.getProfile();
-      if ((profile.signalCount ?? 0) <= 0) {
-        return '';
-      }
-
-      return [
-        profile.promptProjection.coreInstruction
-          ? `【核心约束】\n${profile.promptProjection.coreInstruction}`
-          : '',
-        profile.promptProjection.worldInteractionPrompt
-          ? `【世界内互动】\n${profile.promptProjection.worldInteractionPrompt}`
-          : '',
-        profile.promptProjection.proactivePrompt
-          ? `【主动跟进】\n${profile.promptProjection.proactivePrompt}`
-          : '',
-        profile.promptProjection.memoryBlock
-          ? `【赛博分身记忆】\n${profile.promptProjection.memoryBlock}`
-          : '',
-      ]
-        .filter(Boolean)
-        .join('\n\n');
-    } catch {
-      return '';
-    }
+    return this.cyberAvatar.buildPromptContext({
+      sections: [
+        'coreInstruction',
+        'worldInteractionPrompt',
+        'proactivePrompt',
+        'memoryBlock',
+      ],
+    });
   }
 
   private async collectSignalSnapshot(

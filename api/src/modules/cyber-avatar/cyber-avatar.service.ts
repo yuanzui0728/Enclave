@@ -19,6 +19,7 @@ import type {
   CyberAvatarLiveState,
   CyberAvatarProfilePayload,
   CyberAvatarPromptProjection,
+  CyberAvatarPromptProjectionSection,
   CyberAvatarRunMode,
   CyberAvatarRunTrigger,
   CyberAvatarSignalInput,
@@ -105,6 +106,18 @@ type NormalizedIncrementalOutput = {
   confidence: CyberAvatarProfilePayload['confidence'];
   changeSummary: string[];
   shouldRefreshStableCore: boolean;
+};
+
+const DEFAULT_PROMPT_SECTION_LABELS: Record<
+  CyberAvatarPromptProjectionSection,
+  string
+> = {
+  coreInstruction: '核心约束',
+  worldInteractionPrompt: '世界内互动',
+  realWorldInteractionPrompt: '真实世界互动',
+  proactivePrompt: '主动跟进',
+  actionPlanningPrompt: '动作规划',
+  memoryBlock: '赛博分身记忆',
 };
 
 @Injectable()
@@ -223,6 +236,59 @@ export class CyberAvatarService {
   async getProfile() {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     return this.serializeProfile(await this.ensureProfile(owner.id));
+  }
+
+  async buildPromptContext(options?: {
+    sections?: CyberAvatarPromptProjectionSection[];
+    sectionLabels?: Partial<Record<CyberAvatarPromptProjectionSection, string>>;
+  }) {
+    try {
+      const profile = await this.getProfile();
+      if ((profile.signalCount ?? 0) <= 0) {
+        return '';
+      }
+
+      const sections =
+        options?.sections?.length &&
+        options.sections.every((section) => typeof section === 'string')
+          ? options.sections
+          : ([
+              'coreInstruction',
+              'worldInteractionPrompt',
+              'memoryBlock',
+            ] satisfies CyberAvatarPromptProjectionSection[]);
+
+      return sections
+        .map((section) => {
+          const value = profile.promptProjection[section]?.trim();
+          if (!value) {
+            return '';
+          }
+
+          const label =
+            options?.sectionLabels?.[section] ??
+            DEFAULT_PROMPT_SECTION_LABELS[section];
+          return label ? `【${label}】\n${value}` : value;
+        })
+        .filter(Boolean)
+        .join('\n\n');
+    } catch {
+      return '';
+    }
+  }
+
+  async buildPromptSections(options?: {
+    sections?: CyberAvatarPromptProjectionSection[];
+    sectionLabels?: Partial<Record<CyberAvatarPromptProjectionSection, string>>;
+    tagName?: string;
+  }) {
+    const content = await this.buildPromptContext(options);
+    if (!content) {
+      return [] as string[];
+    }
+
+    const tagName = options?.tagName?.trim() || 'owner_cyber_avatar_context';
+    return [`<${tagName}>\n${content}\n</${tagName}>`];
   }
 
   async listSignals(options?: { limit?: number }) {

@@ -34,6 +34,7 @@ import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service';
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import {
   WORLD_NEWS_BULLETIN_GENERATION_KIND,
   WORLD_NEWS_DESK_CHARACTER_ID,
@@ -109,6 +110,7 @@ export class SchedulerService {
     private readonly realWorldSync: RealWorldSyncService,
     private readonly followupRuntimeService: FollowupRuntimeService,
     private readonly reminderRuntimeService: ReminderRuntimeService,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
 
   @Cron('*/5 * * * *')
@@ -582,7 +584,8 @@ export class SchedulerService {
   }
 
   private async handleTriggerReminderCheckins(): Promise<TrackedJobResult> {
-    const dispatches = await this.reminderRuntimeService.collectCheckinDispatches();
+    const dispatches =
+      await this.reminderRuntimeService.collectCheckinDispatches();
     let sentCount = 0;
 
     for (const dispatch of dispatches) {
@@ -1129,6 +1132,15 @@ export class SchedulerService {
     }
 
     const chars = await this.charactersService.findAllVisibleToOwner();
+    const selfCyberAvatarPromptSections =
+      await this.cyberAvatar.buildPromptSections({
+        sections: [
+          'coreInstruction',
+          'worldInteractionPrompt',
+          'proactivePrompt',
+          'memoryBlock',
+        ],
+      });
     let memorySeededCount = 0;
     let sentMessages = 0;
 
@@ -1156,6 +1168,10 @@ export class SchedulerService {
           profile: runtimeProfile as any,
           conversationHistory: [],
           userMessage: `今天是${today}，结合你的记忆，请判断是否需要主动向用户发送消息。如果不需要，只回复：${noActionToken}`,
+          extraSystemPromptSections:
+            char.id === SELF_CHARACTER_ID
+              ? selfCyberAvatarPromptSections
+              : undefined,
           usageContext: {
             surface: 'scheduler',
             scene: 'proactive',

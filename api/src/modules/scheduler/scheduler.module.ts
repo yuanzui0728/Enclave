@@ -21,6 +21,7 @@ import { EventsModule } from '../events/events.module';
 import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
+import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.modu
     RealWorldSyncModule,
     FollowupRuntimeModule,
     ReminderRuntimeModule,
+    CyberAvatarModule,
   ],
   providers: [SchedulerService, SchedulerTelemetryService],
   exports: [SchedulerService, SchedulerTelemetryService],

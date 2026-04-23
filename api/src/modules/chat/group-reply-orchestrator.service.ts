@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { type ChatMessage } from '../ai/ai.types';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import {
   type GroupReplyCandidate,
   type GroupReplyOrchestratorInput,
@@ -11,7 +13,10 @@ import {
 export class GroupReplyOrchestratorService {
   private readonly latestTriggerMessageByGroup = new Map<string, string>();
 
-  constructor(private readonly ai: AiOrchestratorService) {}
+  constructor(
+    private readonly ai: AiOrchestratorService,
+    private readonly cyberAvatar: CyberAvatarService,
+  ) {}
 
   async generateTaskReply(input: {
     actor: GroupReplyCandidate;
@@ -32,6 +37,9 @@ export class GroupReplyOrchestratorService {
       followupReplies,
     } = input;
     const rollingHistory = [...conversationHistory];
+    const extraSystemPromptSections = await this.buildCyberAvatarPromptSections(
+      actor.character.id,
+    );
 
     for (const reply of followupReplies) {
       rollingHistory.push({
@@ -47,6 +55,7 @@ export class GroupReplyOrchestratorService {
       userMessage: this.buildTurnUserPrompt(baseUserPrompt, followupReplies),
       userMessageParts,
       isGroupChat: true,
+      extraSystemPromptSections,
       usageContext: {
         surface: 'app',
         scene: 'group_reply',
@@ -92,6 +101,8 @@ export class GroupReplyOrchestratorService {
       }
 
       try {
+        const extraSystemPromptSections =
+          await this.buildCyberAvatarPromptSections(actor.character.id);
         const reply = await this.ai.generateReply({
           profile: actor.profile,
           conversationHistory: rollingHistory,
@@ -101,6 +112,7 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
+          extraSystemPromptSections,
           usageContext: {
             surface: 'app',
             scene: 'group_reply',
@@ -139,6 +151,16 @@ export class GroupReplyOrchestratorService {
     };
   }
 
+  private async buildCyberAvatarPromptSections(characterId: string) {
+    if (characterId !== SELF_CHARACTER_ID) {
+      return [] as string[];
+    }
+
+    return this.cyberAvatar.buildPromptSections({
+      sections: ['coreInstruction', 'worldInteractionPrompt', 'memoryBlock'],
+    });
+  }
+
   private buildTurnUserPrompt(
     promptText: string,
     emittedReplies: Array<{ senderName: string; text: string }>,
@@ -149,7 +171,8 @@ export class GroupReplyOrchestratorService {
 
     const replySummary = emittedReplies
       .map(
-        (reply) => `- ${reply.senderName}：${sanitizeAiText(reply.text) || '（无回复）'}`,
+        (reply) =>
+          `- ${reply.senderName}：${sanitizeAiText(reply.text) || '（无回复）'}`,
       )
       .join('\n');
 
