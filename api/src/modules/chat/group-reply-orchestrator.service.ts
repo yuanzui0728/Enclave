@@ -5,6 +5,13 @@ import { type ChatMessage } from '../ai/ai.types';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import {
+  buildReplyModalityPromptSections,
+  extractRequestedImagePrompt,
+  normalizeAssistantReplyTextForModalities,
+  shouldCreateVoiceReplyFromText,
+  type AssistantReplyModalitiesPlan,
+} from './assistant-reply-modalities';
+import {
   type GroupReplyCandidate,
   type GroupReplyOrchestratorInput,
 } from './group-reply.types';
@@ -26,6 +33,7 @@ export class GroupReplyOrchestratorService {
     baseUserPrompt: string;
     userMessageParts: GroupReplyOrchestratorInput['currentUserContext']['parts'];
     followupReplies: Array<{ senderName: string; text: string }>;
+    allowMultiModal?: boolean;
   }) {
     const {
       actor,
@@ -35,11 +43,22 @@ export class GroupReplyOrchestratorService {
       baseUserPrompt,
       userMessageParts,
       followupReplies,
+      allowMultiModal,
     } = input;
     const rollingHistory = [...conversationHistory];
-    const extraSystemPromptSections = await this.buildCyberAvatarPromptSections(
-      actor.character.id,
-    );
+    const replyModalities = allowMultiModal
+      ? await this.planAssistantReplyModalities({
+          characterId: actor.character.id,
+          promptText: baseUserPrompt,
+        })
+      : {
+          includeVoice: false,
+          promptSections: [],
+        };
+    const extraSystemPromptSections = [
+      ...(await this.buildCyberAvatarPromptSections(actor.character.id)),
+      ...replyModalities.promptSections,
+    ];
 
     for (const reply of followupReplies) {
       rollingHistory.push({
@@ -49,7 +68,7 @@ export class GroupReplyOrchestratorService {
       });
     }
 
-    return this.ai.generateReply({
+    const result = await this.ai.generateReply({
       profile: actor.profile,
       conversationHistory: rollingHistory,
       userMessage: this.buildTurnUserPrompt(baseUserPrompt, followupReplies),
@@ -67,6 +86,14 @@ export class GroupReplyOrchestratorService {
         groupId,
       },
     });
+
+    return {
+      text: normalizeAssistantReplyTextForModalities(
+        result.text,
+        replyModalities,
+      ),
+      modalities: replyModalities,
+    };
   }
 
   async executeTurn(input: GroupReplyOrchestratorInput): Promise<void> {
@@ -159,6 +186,37 @@ export class GroupReplyOrchestratorService {
     return this.cyberAvatar.buildPromptSections({
       sections: ['coreInstruction', 'worldInteractionPrompt', 'memoryBlock'],
     });
+  }
+
+  private async planAssistantReplyModalities(input: {
+    characterId: string;
+    promptText: string;
+  }): Promise<AssistantReplyModalitiesPlan> {
+    const wantsVoice = shouldCreateVoiceReplyFromText(input.promptText);
+    const requestedImagePrompt = extractRequestedImagePrompt({
+      type: 'text',
+      text: input.promptText,
+    });
+    if (!wantsVoice && !requestedImagePrompt) {
+      return {
+        includeVoice: false,
+        promptSections: [],
+      };
+    }
+
+    const capabilities = await this.ai.resolveRuntimeCapabilityProfile({
+      characterId: input.characterId,
+    });
+    const plan: AssistantReplyModalitiesPlan = {
+      includeVoice: wantsVoice && capabilities.supportsSpeechSynthesis,
+      imagePrompt:
+        requestedImagePrompt && capabilities.supportsImageGeneration
+          ? requestedImagePrompt
+          : undefined,
+      promptSections: [],
+    };
+    plan.promptSections = buildReplyModalityPromptSections(plan);
+    return plan;
   }
 
   private buildTurnUserPrompt(

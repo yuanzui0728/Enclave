@@ -3,6 +3,9 @@ import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
+import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { AiSpeechAssetsService } from '../ai/ai-speech-assets.service';
+import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { type AiMessagePart, type ChatMessage } from '../ai/ai.types';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersService } from '../characters/characters.service';
@@ -20,6 +23,10 @@ import {
   type GroupUserMessageContext,
 } from './group-reply.types';
 import {
+  buildAssistantSpeechInstructions,
+  type AssistantReplyModalitiesPlan,
+} from './assistant-reply-modalities';
+import {
   buildGroupReplyIssueSummaryFromTasks,
   createEmptyGroupReplyTaskArchiveActorStat,
   createEmptyGroupReplyTaskArchiveBucket,
@@ -31,6 +38,12 @@ import {
   type GroupReplyTaskArchiveStore,
 } from './group-reply-task-observability';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
+import { ChatService } from './chat.service';
+import {
+  type GroupMessage,
+  type MessageAttachment,
+  type VoiceAttachment,
+} from './chat.types';
 
 const GROUP_REPLY_TASK_BATCH_SIZE = 12;
 const GROUP_REPLY_PROCESSING_RETRY_MS = 2 * 60 * 1000;
@@ -40,6 +53,13 @@ const GROUP_REPLY_TASK_TERMINAL_STATUSES: GroupReplyTaskStatus[] = [
   'cancelled',
   'failed',
 ];
+
+type DeferredGroupReplyMedia = {
+  groupId: string;
+  character: CharacterEntity;
+  text: string;
+  modalities: AssistantReplyModalitiesPlan;
+};
 
 @Injectable()
 export class GroupReplyTaskService {
@@ -55,11 +75,14 @@ export class GroupReplyTaskService {
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
+    private readonly ai: AiOrchestratorService,
+    private readonly speechAssets: AiSpeechAssetsService,
     private readonly charactersService: CharactersService,
     private readonly systemConfig: SystemConfigService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly chatGateway: ChatGateway,
     private readonly groupReplyOrchestrator: GroupReplyOrchestratorService,
+    private readonly chatService: ChatService,
   ) {}
 
   async scheduleTurn(input: {
@@ -394,6 +417,7 @@ export class GroupReplyTaskService {
         where: {
           groupId: task.groupId,
           senderType: 'character',
+          type: 'text',
           createdAt: MoreThan(task.triggerMessageCreatedAt),
         },
         order: { createdAt: 'ASC' },
@@ -418,6 +442,10 @@ export class GroupReplyTaskService {
           senderName: message.senderName,
           text: message.text,
         })),
+        allowMultiModal:
+          task.sequenceIndex === 0 ||
+          task.isExplicitTarget ||
+          task.isReplyTarget,
       });
 
       if (await this.hasNewerUserMessage(task)) {
@@ -431,6 +459,14 @@ export class GroupReplyTaskService {
         reply.text,
       );
       await this.markTaskSent(task, sentAt);
+      if (reply.modalities.includeVoice || reply.modalities.imagePrompt) {
+        void this.completeDeferredCharacterReplyMedia({
+          groupId: task.groupId,
+          character,
+          text: reply.text,
+          modalities: reply.modalities,
+        });
+      }
     } catch (error) {
       task.status = 'failed';
       task.errorMessage =
@@ -510,6 +546,7 @@ export class GroupReplyTaskService {
         groupId: task.groupId,
         senderType: 'character',
         senderId: task.actorCharacterId,
+        type: 'text',
         createdAt: MoreThan(task.triggerMessageCreatedAt),
       },
       order: { createdAt: 'ASC' },
@@ -537,18 +574,172 @@ export class GroupReplyTaskService {
     });
     await this.groupMessageRepo.save(message);
     await this.touchGroupActivity(group, message.createdAt ?? new Date());
-    this.chatGateway.emitThreadMessage(groupId, {
-      id: message.id,
-      groupId,
-      senderId: message.senderId,
-      senderType: 'character',
-      senderName: message.senderName,
-      senderAvatar: message.senderAvatar ?? undefined,
-      type: 'text',
-      text,
-      createdAt: message.createdAt,
-    });
+    this.chatGateway.emitThreadMessage(groupId, this.toGroupMessage(message));
     return message.createdAt ?? new Date();
+  }
+
+  private async completeDeferredCharacterReplyMedia(
+    input: DeferredGroupReplyMedia,
+  ) {
+    if (input.modalities.includeVoice) {
+      await this.persistCharacterVoiceReply(input);
+    }
+
+    if (input.modalities.imagePrompt) {
+      await this.persistCharacterImageReply({
+        ...input,
+        imagePrompt: input.modalities.imagePrompt,
+      });
+    }
+  }
+
+  private async persistCharacterVoiceReply(input: DeferredGroupReplyMedia) {
+    try {
+      const synthesized = await this.ai.synthesizeSpeech({
+        text: input.text,
+        conversationId: input.groupId,
+        characterId: input.character.id,
+        instructions: buildAssistantSpeechInstructions(input.character.name),
+      });
+      const asset = await this.speechAssets.saveGeneratedSpeech(
+        synthesized.buffer,
+        {
+          mimeType: synthesized.mimeType,
+          fileExtension: synthesized.fileExtension,
+          baseName: `group-reply-${input.character.id}`,
+        },
+      );
+      const attachment: VoiceAttachment = {
+        kind: 'voice',
+        url: asset.audioUrl,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName,
+        size: synthesized.buffer.length,
+        durationMs: synthesized.durationMs,
+        transcriptText: input.text,
+      };
+      await this.persistCharacterAttachmentMessage({
+        groupId: input.groupId,
+        character: input.character,
+        type: 'voice',
+        text: input.text,
+        attachment,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to synthesize group voice reply for ${input.character.id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async persistCharacterImageReply(
+    input: DeferredGroupReplyMedia & { imagePrompt: string },
+  ) {
+    try {
+      const generated = await this.ai.generateImage({
+        prompt: input.imagePrompt,
+        conversationId: input.groupId,
+        characterId: input.character.id,
+      });
+      const attachment = await this.chatService.saveUploadedAttachment(
+        {
+          buffer: generated.buffer,
+          mimetype: generated.mimeType,
+          originalname: `group-reply-image.${generated.fileExtension}`,
+          size: generated.buffer.length,
+        },
+        {},
+      );
+      if (attachment.kind !== 'image') {
+        return;
+      }
+
+      await this.persistCharacterAttachmentMessage({
+        groupId: input.groupId,
+        character: input.character,
+        type: 'image',
+        text: '',
+        attachment,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to generate group image reply for ${input.character.id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async persistCharacterAttachmentMessage(input: {
+    groupId: string;
+    character: CharacterEntity;
+    type: 'image' | 'voice';
+    text: string;
+    attachment: MessageAttachment;
+  }) {
+    const group = await this.groupRepo.findOneBy({ id: input.groupId });
+    if (!group) {
+      throw new Error(`Group ${input.groupId} not found`);
+    }
+
+    const message = this.groupMessageRepo.create({
+      groupId: input.groupId,
+      senderId: input.character.id,
+      senderType: 'character',
+      senderName: input.character.name,
+      senderAvatar: input.character.avatar ?? undefined,
+      text: input.text,
+      type: input.type,
+      attachmentKind: input.attachment.kind,
+      attachmentPayload: JSON.stringify(input.attachment),
+    });
+    await this.groupMessageRepo.save(message);
+    await this.touchGroupActivity(group, message.createdAt ?? new Date());
+    this.chatGateway.emitThreadMessage(input.groupId, this.toGroupMessage(message));
+  }
+
+  private toGroupMessage(entity: GroupMessageEntity): GroupMessage {
+    return {
+      id: entity.id,
+      groupId: entity.groupId,
+      senderId: entity.senderId,
+      senderType: entity.senderType as 'user' | 'character' | 'system',
+      senderName: entity.senderName,
+      senderAvatar: entity.senderAvatar ?? undefined,
+      type: entity.type as
+        | 'text'
+        | 'system'
+        | 'sticker'
+        | 'image'
+        | 'file'
+        | 'voice'
+        | 'contact_card'
+        | 'location_card'
+        | 'note_card',
+      text:
+        entity.senderType === 'user'
+          ? entity.text
+          : sanitizeAiText(entity.text),
+      attachment: this.parseAttachment(entity),
+      createdAt: entity.createdAt,
+    };
+  }
+
+  private parseAttachment(
+    entity: GroupMessageEntity,
+  ): MessageAttachment | undefined {
+    if (!entity.attachmentKind || !entity.attachmentPayload) {
+      return undefined;
+    }
+
+    try {
+      const parsed = JSON.parse(entity.attachmentPayload) as MessageAttachment;
+      if (parsed.kind !== entity.attachmentKind) {
+        return undefined;
+      }
+
+      return parsed;
+    } catch {
+      return undefined;
+    }
   }
 
   private async markTaskCancelled(task: GroupReplyTaskEntity, reason: string) {
