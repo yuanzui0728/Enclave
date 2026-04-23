@@ -14,6 +14,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@lingui/macro": "5.9.5",
     "@hookform/resolvers": "^3.10.0",
     "@tanstack/react-query": "^5.66.8",
     "@tanstack/react-router": "^1.109.2",

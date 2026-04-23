@@ -36,6 +36,12 @@ import {
   AdminSectionHeader,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
+import {
+  formatAdminCurrency,
+  formatAdminDateTime as formatLocalizedDateTime,
+  formatAdminInteger,
+  formatAdminPercent,
+} from "../lib/format";
 
 function formatDateInput(value: Date) {
   const year = value.getFullYear();
@@ -86,26 +92,20 @@ function readInitialTokenUsageFocus(): {
 }
 
 function formatInteger(value: number) {
-  return new Intl.NumberFormat("zh-CN", {
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatAdminInteger(value);
 }
 
 function formatCost(value: number, currency: "CNY" | "USD") {
-  return new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value || 0);
+  return formatAdminCurrency(value, currency, 2);
 }
 
 function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatLocalizedDateTime(value, {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
+  });
 }
 
 function formatBudgetValue(
@@ -125,7 +125,7 @@ function formatRatio(value: number | null) {
   if (value == null) {
     return "未启用";
   }
-  return `${Math.round(value * 100)}%`;
+  return formatAdminPercent(value, 0);
 }
 
 function emptyPricingItem(): TokenPricingCatalogItem {

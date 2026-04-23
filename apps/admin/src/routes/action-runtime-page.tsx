@@ -40,6 +40,10 @@ import {
   AdminSelectField,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
+import {
+  compareAdminText,
+  formatAdminDateTime as formatLocalizedDateTime,
+} from "../lib/format";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 type WorkspaceTab =
@@ -1009,7 +1013,8 @@ export function ActionRuntimePage() {
                     {
                       label: "入口角色 sourceKey",
                       value:
-                        overview.rules.policy.entryCharacterSourceKey || "未限制",
+                        overview.rules.policy.entryCharacterSourceKey ||
+                        "未限制",
                     },
                     {
                       label: "确认关键词",
@@ -1258,7 +1263,8 @@ export function ActionRuntimePage() {
                         />
                       </div>
                       <div className="-mt-2 text-[12px] leading-5 text-[color:var(--text-dim)]">
-                        默认是 `action_operator`。留空表示不限制角色，只建议用于兼容或排障。
+                        默认是
+                        `action_operator`。留空表示不限制角色，只建议用于兼容或排障。
                       </div>
 
                       <AdminTextArea
@@ -2586,7 +2592,7 @@ function sortConnectorsForOps(connectors: ActionConnectorSummary[]) {
     if (statusDelta !== 0) {
       return statusDelta;
     }
-    return left.displayName.localeCompare(right.displayName, "zh-CN");
+    return compareAdminText(left.displayName, right.displayName);
   });
 }
 
@@ -2926,20 +2932,17 @@ function parseStringList(value: string) {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "未记录";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalizedDateTime(
+    value,
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "notRecorded",
+  );
 }
 
 function resolveConnectorTone(

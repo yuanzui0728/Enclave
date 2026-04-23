@@ -26,6 +26,10 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import {
+  compareAdminText,
+  formatAdminDateTime as formatLocalizedDateTime,
+} from "../lib/format";
 
 type WorkspaceTab = "overview" | "registry";
 type FriendFilter = "all" | "friend" | "world";
@@ -911,7 +915,7 @@ function buildBreakdown(
     .sort((left, right) =>
       right.count !== left.count
         ? right.count - left.count
-        : left.label.localeCompare(right.label, "zh-CN"),
+        : compareAdminText(left.label, right.label),
     );
 }
 
@@ -944,7 +948,7 @@ function compareCharactersForOps(
     return rightTime - leftTime;
   }
 
-  return left.name.localeCompare(right.name, "zh-CN");
+  return compareAdminText(left.name, right.name);
 }
 
 function resolveLeadTone(summary: CharacterSummary) {
@@ -1069,22 +1073,17 @@ function resolveTimestamp(value?: string | null) {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "暂无";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "暂无";
-  }
-
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
+  return formatLocalizedDateTime(
+    value,
+    {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    },
+    "none",
+  );
 }
 
 function formatActiveHours(character: Character) {

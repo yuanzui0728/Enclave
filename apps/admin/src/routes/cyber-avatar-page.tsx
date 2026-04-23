@@ -48,6 +48,7 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
 
 type WorkspaceTab = "overview" | "projection" | "evidence" | "rules";
 type EvidenceTab = "runs" | "signals" | "items" | "briefs" | "need-discovery";
@@ -242,16 +243,18 @@ function safePrettyJson(value: unknown) {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "暂无";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString("zh-CN", { hour12: false });
+  return formatLocalizedDateTime(
+    value,
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    },
+    "none",
+  );
 }
 
 function joinList(items: string[], emptyLabel = "暂无") {

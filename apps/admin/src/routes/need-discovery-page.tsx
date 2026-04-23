@@ -33,6 +33,7 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
 
 type NeedDiscoveryView = "overview" | "candidates" | "config" | "shake";
 type CandidateDatasetKey = "active" | "recent";
@@ -3444,16 +3445,16 @@ function padNumber(value: number) {
 }
 
 function formatCompactDateTime(value?: string | null) {
-  if (!value) {
-    return "未记录";
-  }
-
-  return new Date(value).toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalizedDateTime(
+    value,
+    {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "notRecorded",
+  );
 }
 
 function parseShakeDiscoveryConfig(raw?: string | null): ShakeDiscoveryConfig {

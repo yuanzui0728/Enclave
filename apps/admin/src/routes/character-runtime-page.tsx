@@ -17,6 +17,7 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
 import { CharacterWorkspaceNav } from "../components/character-workspace-nav";
 
 const ACTIVITY_OPTIONS = [
@@ -330,19 +331,16 @@ function formatGateMode(mode: string) {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "未设置";
-  }
-  try {
-    return new Intl.DateTimeFormat("zh-CN", {
+  return formatLocalizedDateTime(
+    value,
+    {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
+    },
+    "notSet",
+  );
 }
 
 function formatSchedulerRunStatus(value: "success" | "error") {

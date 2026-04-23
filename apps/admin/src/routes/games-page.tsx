@@ -43,6 +43,7 @@ import { GameCurationWorkbench } from "../components/game-curation-workbench";
 import { GameReleaseWorkbench } from "../components/game-release-workbench";
 import { GameSubmissionWorkbench } from "../components/game-submission-workbench";
 import { adminApi } from "../lib/admin-api";
+import { compareAdminText } from "../lib/format";
 
 type GameWorkbenchDraft = {
   id: string;
@@ -1468,7 +1469,7 @@ function compareGamesByOperationsPriority(
     scoreGameOperationsPriority(right) - scoreGameOperationsPriority(left) ||
     Number(new Date(right.updatedAt)) - Number(new Date(left.updatedAt)) ||
     left.sortOrder - right.sortOrder ||
-    left.name.localeCompare(right.name, "zh-CN")
+    compareAdminText(left.name, right.name)
   );
 }
 

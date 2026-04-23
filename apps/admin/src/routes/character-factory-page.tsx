@@ -36,6 +36,7 @@ import {
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
+import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
 import { CharacterWorkspaceNav } from "../components/character-workspace-nav";
 
 const ACTIVITY_OPTIONS = [
@@ -1498,18 +1499,14 @@ function formatFieldSourceStatus(
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "未设置";
-  }
-
-  try {
-    return new Intl.DateTimeFormat("zh-CN", {
+  return formatLocalizedDateTime(
+    value,
+    {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
+    },
+    "notSet",
+  );
 }

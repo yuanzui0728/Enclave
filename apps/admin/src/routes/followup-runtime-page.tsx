@@ -26,6 +26,7 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
 
 type WorkspaceTab = "open_loops" | "recommendations" | "runs";
 type ConfigTab = "policy" | "weights" | "copy";
@@ -1698,16 +1699,16 @@ function compareDates(a?: string | null, b?: string | null) {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "未发生";
-  }
-
-  return new Date(value).toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalizedDateTime(
+    value,
+    {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "notOccurred",
+  );
 }
 
 function formatScore(value: number) {

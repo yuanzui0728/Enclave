@@ -32,6 +32,10 @@ import {
   type WechatConnectorSettings,
 } from "../lib/wechat-local-connector";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import {
+  compareAdminText,
+  formatAdminDateTime as formatLocalizedDateTime,
+} from "../lib/format";
 
 const SAMPLE_WECHAT_SYNC_CONTACTS: WechatSyncContactBundle[] = [
   {
@@ -5059,22 +5063,17 @@ function PreviewCharacterCard({
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "暂无";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalizedDateTime(
+    value,
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "none",
+  );
 }
 
 async function loadSelectedConnectorContacts(
@@ -5848,7 +5847,7 @@ function sortWechatSyncAnnotationTemplates(
     if (left.source !== right.source) {
       return left.source === "default" ? -1 : 1;
     }
-    return left.label.localeCompare(right.label, "zh-Hans-CN");
+    return compareAdminText(left.label, right.label);
   });
 }
 

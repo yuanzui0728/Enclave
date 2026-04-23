@@ -34,6 +34,10 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import {
+  compareAdminText,
+  formatAdminDateTime as formatLocalizedDateTime,
+} from "../lib/format";
 
 type WorkspaceTab = "operations" | "rules";
 type DetailTab = "digest" | "signals" | "runs";
@@ -157,15 +161,16 @@ function parseBooleanSelect(value: string) {
 }
 
 function formatCompactTime(value?: string | null) {
-  if (!value) {
-    return "未执行";
-  }
-  return new Date(value).toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalizedDateTime(
+    value,
+    {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "notExecuted",
+  );
 }
 
 function formatScore(value: number) {
@@ -370,7 +375,7 @@ function sortCharacters(characters: RealWorldSyncCharacterSummary[]) {
     if (left.isWorldNewsDesk !== right.isWorldNewsDesk) {
       return left.isWorldNewsDesk ? -1 : 1;
     }
-    return left.characterName.localeCompare(right.characterName, "zh-CN");
+    return compareAdminText(left.characterName, right.characterName);
   });
 }
 

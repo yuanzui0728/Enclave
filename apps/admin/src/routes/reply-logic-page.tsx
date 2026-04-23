@@ -57,6 +57,10 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import {
+  compareAdminText,
+  formatAdminDateTime as formatLocalizedDateTime,
+} from "../lib/format";
 
 type InspectorScope = "character" | "conversation";
 
@@ -1673,7 +1677,7 @@ function GroupReplyRuntimeCard({
 
     return [...actorMap.entries()]
       .map(([id, name]) => ({ id, name }))
-      .sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
+      .sort((left, right) => compareAdminText(left.name, right.name));
   }, [runtime.archiveSummary?.actorSummary, runtime.recentTurns]);
 
   const retryMutation = useMutation({
@@ -5374,19 +5378,15 @@ function formatGroupReplyIssueLabel(
 }
 
 function formatArchiveTrendDate(date: string) {
-  if (!date) {
-    return "未记录日期";
-  }
-
-  try {
-    return new Intl.DateTimeFormat("zh-CN", {
+  return formatLocalizedDateTime(
+    date ? `${date}T00:00:00` : date,
+    {
       month: "2-digit",
       day: "2-digit",
       weekday: "short",
-    }).format(new Date(`${date}T00:00:00`));
-  } catch {
-    return date;
-  }
+    },
+    "未记录日期",
+  );
 }
 
 function describeArchiveTrendPoint(
@@ -5590,18 +5590,14 @@ function formatReplyLogicText(value: string) {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "未设置";
-  }
-
-  try {
-    return new Intl.DateTimeFormat("zh-CN", {
+  return formatLocalizedDateTime(
+    value,
+    {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
+    },
+    "notSet",
+  );
 }

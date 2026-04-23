@@ -37,6 +37,12 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { chatRecordsAdminApi } from "../lib/chat-records-api";
+import {
+  formatAdminCompactInteger,
+  formatAdminCurrency,
+  formatAdminDateTime as formatLocalizedDateTime,
+  formatAdminPercent,
+} from "../lib/format";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 const SORT_OPTIONS = [
@@ -1964,56 +1970,55 @@ function matchesMessageType(
 }
 
 function formatCompactDate(value?: string | null) {
-  if (!value) {
-    return "暂无";
-  }
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return formatLocalizedDateTime(
+    value,
+    {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "none",
+  );
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "暂无";
-  }
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return formatLocalizedDateTime(
+    value,
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "none",
+  );
 }
 
 function formatTimelineDate(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-  }).format(new Date(value));
+  return formatLocalizedDateTime(
+    value,
+    {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    },
+    "notRecorded",
+  );
 }
 
 function formatCurrency(value: number, currency: "CNY" | "USD") {
-  return new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: currency === "USD" ? 4 : 2,
-  }).format(value);
+  return formatAdminCurrency(value, currency, currency === "USD" ? 4 : 2);
 }
 
 function formatPercent(value: number) {
-  return new Intl.NumberFormat("zh-CN", {
-    style: "percent",
-    maximumFractionDigits: value > 0 && value < 0.1 ? 1 : 0,
-  }).format(value);
+  return formatAdminPercent(value, value > 0 && value < 0.1 ? 1 : 0);
 }
 
 function compactInteger(value: number) {
   if (value >= 10000) {
-    return `${Math.round((value / 10000) * 10) / 10}w`;
+    return formatAdminCompactInteger(value);
   }
   return String(value);
 }

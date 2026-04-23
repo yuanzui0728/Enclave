@@ -11,3 +11,27 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#: apps/admin/src/lib/format.ts:12
+msgid "暂无"
+msgstr "N/A"
+
+#: apps/admin/src/lib/format.ts:16
+msgid "未发生"
+msgstr "Not occurred"
+
+#: apps/admin/src/lib/format.ts:15
+msgid "未执行"
+msgstr "Not executed"
+
+#: apps/admin/src/lib/format.ts:14
+msgid "未记录"
+msgstr "Not recorded"
+
+#: apps/admin/src/lib/format.ts:13
+msgid "未设置"
+msgstr "Not set"
+
+#: apps/admin/src/lib/format.ts:17
+msgid "未配置"
+msgstr "Unconfigured"

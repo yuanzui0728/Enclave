@@ -1,4 +1,10 @@
-import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   runSchedulerJob,
@@ -9,7 +15,14 @@ import {
   type ReminderRuntimeRules,
   type ReminderTaskRecord,
 } from "@yinjie/contracts";
-import { Button, Card, ErrorBlock, LoadingBlock, StatusPill, cn } from "@yinjie/ui";
+import {
+  Button,
+  Card,
+  ErrorBlock,
+  LoadingBlock,
+  StatusPill,
+  cn,
+} from "@yinjie/ui";
 import {
   AdminCallout,
   AdminCodeBlock,
@@ -29,6 +42,7 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
 
 type ReminderSchedulerJob =
   | "trigger_due_reminder_tasks"
@@ -187,16 +201,16 @@ const PREVIEW_SOURCE_LABELS: Record<string, string> = {
 };
 
 function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "未发生";
-  }
-
-  return new Date(value).toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalizedDateTime(
+    value,
+    {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+    "notOccurred",
+  );
 }
 
 function formatCheckinHours(hours: number[]) {
@@ -204,9 +218,7 @@ function formatCheckinHours(hours: number[]) {
     return "未配置";
   }
 
-  return hours
-    .map((hour) => `${String(hour).padStart(2, "0")}:00`)
-    .join(" / ");
+  return hours.map((hour) => `${String(hour).padStart(2, "0")}:00`).join(" / ");
 }
 
 function formatCheckinHoursInput(hours: number[]) {
@@ -268,7 +280,10 @@ function resolveTaskDueAt(task: ReminderTaskRecord) {
   return task.nextTriggerAt ?? task.dueAt ?? null;
 }
 
-function resolveTaskQueue(task: ReminderTaskRecord, now: Date): ReminderTaskQueue {
+function resolveTaskQueue(
+  task: ReminderTaskRecord,
+  now: Date,
+): ReminderTaskQueue {
   const nextTrigger = resolveTaskDueAt(task);
   if (!nextTrigger) {
     return "routine";
@@ -423,7 +438,8 @@ function buildOperationsSummary(overview: ReminderRuntimeOverview) {
     return {
       tone: "info" as const,
       title: `未来 6 小时内有 ${stats.dueSoonTaskCount} 条提醒会到点`,
-      description: "当前没有逾期项，但下一波提醒已经接近触发窗口，适合提前检查是否存在扎堆触发或需要顺延的事项。",
+      description:
+        "当前没有逾期项，但下一波提醒已经接近触发窗口，适合提前检查是否存在扎堆触发或需要顺延的事项。",
     };
   }
 
@@ -431,7 +447,8 @@ function buildOperationsSummary(overview: ReminderRuntimeOverview) {
     return {
       tone: "muted" as const,
       title: "当前没有活跃提醒",
-      description: "值班侧重点可以转向最近出站内容和规则窗口，确认提醒角色近期是否仍有需要新增的盯办事项。",
+      description:
+        "值班侧重点可以转向最近出站内容和规则窗口，确认提醒角色近期是否仍有需要新增的盯办事项。",
     };
   }
 
@@ -439,7 +456,8 @@ function buildOperationsSummary(overview: ReminderRuntimeOverview) {
     return {
       tone: "info" as const,
       title: "提醒队列存在，但今天还没有对外动作",
-      description: "可以先看值班工作台里的最近触发时间，必要时执行一次“到点提醒”验证链路是否按预期出站。",
+      description:
+        "可以先看值班工作台里的最近触发时间，必要时执行一次“到点提醒”验证链路是否按预期出站。",
     };
   }
 
@@ -489,9 +507,11 @@ function buildRecentActivity(overview: ReminderRuntimeOverview) {
       .map<ReminderRuntimeActivityItem>((task) => ({
         id: `delivered-${task.id}`,
         badge: "触发",
-        tone: task.priority === "hard" ? ("warning" as const) : ("muted" as const),
+        tone:
+          task.priority === "hard" ? ("warning" as const) : ("muted" as const),
         title: task.title,
-        description: task.detail || `已按计划发出提醒，调度为 ${task.scheduleText}。`,
+        description:
+          task.detail || `已按计划发出提醒，调度为 ${task.scheduleText}。`,
         meta: task.lastDeliveredAt
           ? `任务触发 · ${formatDateTime(task.lastDeliveredAt)}`
           : "任务触发",
@@ -523,7 +543,10 @@ function buildRecentActivity(overview: ReminderRuntimeOverview) {
       id: `moment-${moment.id}`,
       badge: "发圈",
       tone: momentTone(moment),
-      title: moment.slotLabel || MOMENT_KIND_LABELS[moment.generationKind] || "提醒发圈",
+      title:
+        moment.slotLabel ||
+        MOMENT_KIND_LABELS[moment.generationKind] ||
+        "提醒发圈",
       description: truncateText(moment.text, 120),
       meta: `${moment.likeCount} 赞 · ${moment.commentCount} 评论`,
       timestamp: moment.postedAt,
@@ -531,7 +554,11 @@ function buildRecentActivity(overview: ReminderRuntimeOverview) {
   ];
 
   return items
-    .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
+    .sort(
+      (left, right) =>
+        new Date(right.timestamp).getTime() -
+        new Date(left.timestamp).getTime(),
+    )
     .slice(0, 12);
 }
 
@@ -598,7 +625,9 @@ function TaskQueueListItem({
           <div className="text-sm font-semibold text-[color:var(--text-primary)]">
             {task.title}
           </div>
-          <div className="mt-2 flex flex-wrap gap-2">{buildTaskBadges(task)}</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {buildTaskBadges(task)}
+          </div>
         </div>
         <StatusPill tone={queueTone(queue)}>{queueLabel(queue)}</StatusPill>
       </div>
@@ -654,7 +683,13 @@ function TaskDetailPanel({
         </div>
 
         <AdminCallout
-          tone={queue === "overdue" ? "warning" : queue === "due_soon" ? "info" : "muted"}
+          tone={
+            queue === "overdue"
+              ? "warning"
+              : queue === "due_soon"
+                ? "info"
+                : "muted"
+          }
           title={buildTaskStatusSummary(task, now)}
           description={buildTaskOperatorHint(task, now)}
         />
@@ -662,17 +697,23 @@ function TaskDetailPanel({
         <div className="grid gap-3 md:grid-cols-2">
           <AdminMiniPanel title="下次触发" tone="soft">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              {resolveTaskDueAt(task) ? formatDateTime(resolveTaskDueAt(task)) : "待计算"}
+              {resolveTaskDueAt(task)
+                ? formatDateTime(resolveTaskDueAt(task))
+                : "待计算"}
             </div>
           </AdminMiniPanel>
           <AdminMiniPanel title="最近触发" tone="soft">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              {task.lastDeliveredAt ? formatDateTime(task.lastDeliveredAt) : "暂无"}
+              {task.lastDeliveredAt
+                ? formatDateTime(task.lastDeliveredAt)
+                : "暂无"}
             </div>
           </AdminMiniPanel>
           <AdminMiniPanel title="最近完成" tone="soft">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              {task.lastCompletedAt ? formatDateTime(task.lastCompletedAt) : "暂无"}
+              {task.lastCompletedAt
+                ? formatDateTime(task.lastCompletedAt)
+                : "暂无"}
             </div>
           </AdminMiniPanel>
           <AdminMiniPanel title="累计完成" tone="soft">
@@ -684,9 +725,13 @@ function TaskDetailPanel({
 
         <div className="grid gap-3">
           <AdminSoftBox>调度文案：{task.scheduleText}</AdminSoftBox>
-          {task.detail ? <AdminSoftBox>任务说明：{task.detail}</AdminSoftBox> : null}
+          {task.detail ? (
+            <AdminSoftBox>任务说明：{task.detail}</AdminSoftBox>
+          ) : null}
           {task.snoozedUntil ? (
-            <AdminSoftBox>当前顺延到：{formatDateTime(task.snoozedUntil)}</AdminSoftBox>
+            <AdminSoftBox>
+              当前顺延到：{formatDateTime(task.snoozedUntil)}
+            </AdminSoftBox>
           ) : null}
         </div>
 
@@ -697,7 +742,8 @@ function TaskDetailPanel({
             disabled={Boolean(activeTaskAction.taskId)}
             onClick={onComplete}
           >
-            {activeTaskAction.taskId === task.id && activeTaskAction.action === "complete"
+            {activeTaskAction.taskId === task.id &&
+            activeTaskAction.action === "complete"
               ? "处理中..."
               : "标记完成"}
           </Button>
@@ -730,7 +776,8 @@ function TaskDetailPanel({
             disabled={Boolean(activeTaskAction.taskId)}
             onClick={onCancel}
           >
-            {activeTaskAction.taskId === task.id && activeTaskAction.action === "cancel"
+            {activeTaskAction.taskId === task.id &&
+            activeTaskAction.action === "cancel"
               ? "处理中..."
               : "删除提醒"}
           </Button>
@@ -922,28 +969,36 @@ function ReminderRuntimeConfigPanel({
                   value={draft.defaultReminderHour}
                   min={0}
                   max={23}
-                  onChange={(value) => updateNumberField("defaultReminderHour", value)}
+                  onChange={(value) =>
+                    updateNumberField("defaultReminderHour", value)
+                  }
                 />
                 <NumberField
                   label="默认单次提醒分钟"
                   value={draft.defaultReminderMinute}
                   min={0}
                   max={59}
-                  onChange={(value) => updateNumberField("defaultReminderMinute", value)}
+                  onChange={(value) =>
+                    updateNumberField("defaultReminderMinute", value)
+                  }
                 />
                 <NumberField
                   label="习惯提醒默认小时"
                   value={draft.habitDefaultHour}
                   min={0}
                   max={23}
-                  onChange={(value) => updateNumberField("habitDefaultHour", value)}
+                  onChange={(value) =>
+                    updateNumberField("habitDefaultHour", value)
+                  }
                 />
                 <NumberField
                   label="习惯提醒默认分钟"
                   value={draft.habitDefaultMinute}
                   min={0}
                   max={59}
-                  onChange={(value) => updateNumberField("habitDefaultMinute", value)}
+                  onChange={(value) =>
+                    updateNumberField("habitDefaultMinute", value)
+                  }
                 />
               </div>
             </ConfigGroup>
@@ -983,7 +1038,9 @@ function ReminderRuntimeConfigPanel({
                     value={draft.maxListItems}
                     min={1}
                     max={20}
-                    onChange={(value) => updateNumberField("maxListItems", value)}
+                    onChange={(value) =>
+                      updateNumberField("maxListItems", value)
+                    }
                   />
                 </div>
                 <AdminSoftBox className="text-xs leading-5">
@@ -1011,17 +1068,23 @@ function ReminderRuntimeConfigPanel({
                   <AdminTextField
                     label="空列表文案"
                     value={draft.textTemplates.taskListEmpty}
-                    onChange={(value) => updateTextTemplate("taskListEmpty", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskListEmpty", value)
+                    }
                   />
                   <AdminTextField
                     label="列表头文案"
                     value={draft.textTemplates.taskListHeader}
-                    onChange={(value) => updateTextTemplate("taskListHeader", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskListHeader", value)
+                    }
                   />
                   <AdminTextField
                     label="列表项模板"
                     value={draft.textTemplates.taskListItem}
-                    onChange={(value) => updateTextTemplate("taskListItem", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskListItem", value)
+                    }
                   />
                 </div>
               </div>
@@ -1036,27 +1099,37 @@ function ReminderRuntimeConfigPanel({
                   <AdminTextField
                     label="删除失败文案"
                     value={draft.textTemplates.taskCancelMissing}
-                    onChange={(value) => updateTextTemplate("taskCancelMissing", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCancelMissing", value)
+                    }
                   />
                   <AdminTextField
                     label="删除成功文案"
                     value={draft.textTemplates.taskCancelSuccess}
-                    onChange={(value) => updateTextTemplate("taskCancelSuccess", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCancelSuccess", value)
+                    }
                   />
                   <AdminTextField
                     label="顺延失败文案"
                     value={draft.textTemplates.taskSnoozeMissing}
-                    onChange={(value) => updateTextTemplate("taskSnoozeMissing", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskSnoozeMissing", value)
+                    }
                   />
                   <AdminTextField
                     label="顺延成功文案"
                     value={draft.textTemplates.taskSnoozeSuccess}
-                    onChange={(value) => updateTextTemplate("taskSnoozeSuccess", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskSnoozeSuccess", value)
+                    }
                   />
                   <AdminTextField
                     label="完成失败文案"
                     value={draft.textTemplates.taskCompleteMissing}
-                    onChange={(value) => updateTextTemplate("taskCompleteMissing", value)}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCompleteMissing", value)
+                    }
                   />
                   <AdminTextField
                     label="单次完成文案"
@@ -1126,17 +1199,23 @@ function ReminderRuntimeConfigPanel({
                 <AdminTextField
                   label="硬提醒文案"
                   value={draft.textTemplates.dueReminderHard}
-                  onChange={(value) => updateTextTemplate("dueReminderHard", value)}
+                  onChange={(value) =>
+                    updateTextTemplate("dueReminderHard", value)
+                  }
                 />
                 <AdminTextField
                   label="习惯提醒文案"
                   value={draft.textTemplates.dueReminderHabit}
-                  onChange={(value) => updateTextTemplate("dueReminderHabit", value)}
+                  onChange={(value) =>
+                    updateTextTemplate("dueReminderHabit", value)
+                  }
                 />
                 <AdminTextField
                   label="普通提醒文案"
                   value={draft.textTemplates.dueReminderDefault}
-                  onChange={(value) => updateTextTemplate("dueReminderDefault", value)}
+                  onChange={(value) =>
+                    updateTextTemplate("dueReminderDefault", value)
+                  }
                 />
                 <AdminTextField
                   label="有活跃任务时问询"
@@ -1270,7 +1349,9 @@ function ReminderRuntimeConfigPanel({
                 />
                 <AdminTextArea
                   label="完成意图"
-                  value={formatLineList(draft.parserRules.completeIntentPatterns)}
+                  value={formatLineList(
+                    draft.parserRules.completeIntentPatterns,
+                  )}
                   onChange={(value) =>
                     updateParserArrayField("completeIntentPatterns", value)
                   }
@@ -1302,7 +1383,9 @@ function ReminderRuntimeConfigPanel({
                 />
                 <AdminTextArea
                   label="每日重复关键词"
-                  value={formatLineList(draft.parserRules.dailyRecurrenceKeywords)}
+                  value={formatLineList(
+                    draft.parserRules.dailyRecurrenceKeywords,
+                  )}
                   onChange={(value) =>
                     updateParserArrayField("dailyRecurrenceKeywords", value)
                   }
@@ -1310,7 +1393,9 @@ function ReminderRuntimeConfigPanel({
                 />
                 <AdminTextArea
                   label="每周重复前缀"
-                  value={formatLineList(draft.parserRules.weeklyRecurrenceKeywords)}
+                  value={formatLineList(
+                    draft.parserRules.weeklyRecurrenceKeywords,
+                  )}
                   onChange={(value) =>
                     updateParserArrayField("weeklyRecurrenceKeywords", value)
                   }
@@ -1350,7 +1435,9 @@ function ReminderRuntimeConfigPanel({
               <div className="grid gap-4 xl:grid-cols-2">
                 <AdminTextArea
                   label="健康"
-                  value={formatLineList(draft.parserRules.categoryKeywords.health)}
+                  value={formatLineList(
+                    draft.parserRules.categoryKeywords.health,
+                  )}
                   onChange={(value) =>
                     updateParserCategoryKeywords("health", value)
                   }
@@ -1358,7 +1445,9 @@ function ReminderRuntimeConfigPanel({
                 />
                 <AdminTextArea
                   label="采购"
-                  value={formatLineList(draft.parserRules.categoryKeywords.shopping)}
+                  value={formatLineList(
+                    draft.parserRules.categoryKeywords.shopping,
+                  )}
                   onChange={(value) =>
                     updateParserCategoryKeywords("shopping", value)
                   }
@@ -1366,7 +1455,9 @@ function ReminderRuntimeConfigPanel({
                 />
                 <AdminTextArea
                   label="生活"
-                  value={formatLineList(draft.parserRules.categoryKeywords.lifestyle)}
+                  value={formatLineList(
+                    draft.parserRules.categoryKeywords.lifestyle,
+                  )}
                   onChange={(value) =>
                     updateParserCategoryKeywords("lifestyle", value)
                   }
@@ -1374,7 +1465,9 @@ function ReminderRuntimeConfigPanel({
                 />
                 <AdminTextArea
                   label="成长"
-                  value={formatLineList(draft.parserRules.categoryKeywords.growth)}
+                  value={formatLineList(
+                    draft.parserRules.categoryKeywords.growth,
+                  )}
                   onChange={(value) =>
                     updateParserCategoryKeywords("growth", value)
                   }
@@ -1389,7 +1482,8 @@ function ReminderRuntimeConfigPanel({
             >
               <div className="grid gap-4 xl:grid-cols-2">
                 {PARSER_PERIOD_FIELDS.map((field) => {
-                  const value = draft.parserRules.periodDefaultClocks[field.key];
+                  const value =
+                    draft.parserRules.periodDefaultClocks[field.key];
                   return (
                     <div
                       key={field.key}
@@ -1480,7 +1574,9 @@ function ReminderRuntimeConfigPanel({
                   </Button>
                 </div>
 
-                {previewError ? <ErrorBlock message={previewError.message} /> : null}
+                {previewError ? (
+                  <ErrorBlock message={previewError.message} />
+                ) : null}
 
                 {previewResult ? (
                   <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
@@ -1610,7 +1706,9 @@ function ReminderRuntimeConfigPanel({
                         <div className="mb-2 text-sm font-semibold text-[color:var(--text-primary)]">
                           命中规则
                         </div>
-                        <AdminCodeBlock value={prettyJson(previewResult.matchedRules)} />
+                        <AdminCodeBlock
+                          value={prettyJson(previewResult.matchedRules)}
+                        />
                       </div>
 
                       <div>
@@ -1665,7 +1763,9 @@ function ConfigGroup({
 }) {
   return (
     <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/75 p-4 shadow-[var(--shadow-soft)]">
-      <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
+      <div className="font-semibold text-[color:var(--text-primary)]">
+        {title}
+      </div>
       <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
         {description}
       </div>
@@ -1747,9 +1847,8 @@ export function ReminderRuntimePage() {
   const [taskSearch, setTaskSearch] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [configTab, setConfigTab] = useState<ReminderConfigTab>("schedule");
-  const [parserPreviewInput, setParserPreviewInput] = useState(
-    "明早8点提醒我吃药",
-  );
+  const [parserPreviewInput, setParserPreviewInput] =
+    useState("明早8点提醒我吃药");
   const deferredTaskSearch = useDeferredValue(normalizeSearchText(taskSearch));
 
   const overviewQuery = useQuery({
@@ -1779,7 +1878,8 @@ export function ReminderRuntimePage() {
   };
 
   const runMutation = useMutation({
-    mutationFn: (jobId: ReminderSchedulerJob) => runSchedulerJob(jobId, baseUrl),
+    mutationFn: (jobId: ReminderSchedulerJob) =>
+      runSchedulerJob(jobId, baseUrl),
     onSuccess: async (_, jobId) => {
       setNotice(JOB_SUCCESS_NOTICES[jobId]);
       await Promise.all([
@@ -1813,7 +1913,8 @@ export function ReminderRuntimePage() {
   });
 
   const completeTaskMutation = useMutation({
-    mutationFn: (taskId: string) => adminApi.completeReminderRuntimeTask(taskId),
+    mutationFn: (taskId: string) =>
+      adminApi.completeReminderRuntimeTask(taskId),
     onSuccess: async ({ task }) => {
       setNotice(
         task.kind === "one_time"
@@ -1932,7 +2033,9 @@ export function ReminderRuntimePage() {
       matchesTaskSearch(task, deferredTaskSearch),
   );
   const selectedTask =
-    filteredTasks.find((task) => task.id === selectedTaskId) ?? filteredTasks[0] ?? null;
+    filteredTasks.find((task) => task.id === selectedTaskId) ??
+    filteredTasks[0] ??
+    null;
 
   useEffect(() => {
     if (!filteredTasks.length) {
@@ -1975,19 +2078,25 @@ export function ReminderRuntimePage() {
       key: "overdue" as const,
       label: "逾期",
       description: "已经超过计划时间，优先判断是否要立刻处置。",
-      tasks: filteredTasks.filter((task) => resolveTaskQueue(task, now) === "overdue"),
+      tasks: filteredTasks.filter(
+        (task) => resolveTaskQueue(task, now) === "overdue",
+      ),
     },
     {
       key: "due_soon" as const,
       label: "6 小时内到点",
       description: "下一波提醒即将触发，适合提前整理。",
-      tasks: filteredTasks.filter((task) => resolveTaskQueue(task, now) === "due_soon"),
+      tasks: filteredTasks.filter(
+        (task) => resolveTaskQueue(task, now) === "due_soon",
+      ),
     },
     {
       key: "routine" as const,
       label: "常规排队",
       description: "暂不紧急，但仍可回看节奏与说明。",
-      tasks: filteredTasks.filter((task) => resolveTaskQueue(task, now) === "routine"),
+      tasks: filteredTasks.filter(
+        (task) => resolveTaskQueue(task, now) === "routine",
+      ),
     },
   ].filter((group) => group.tasks.length > 0);
   const recentActivity = buildRecentActivity(overviewQuery.data);
@@ -2009,7 +2118,9 @@ export function ReminderRuntimePage() {
               onClick={() => runMutation.mutate("trigger_due_reminder_tasks")}
               disabled={runMutation.isPending}
             >
-              {runningJob === "trigger_due_reminder_tasks" ? "执行中..." : "执行到点提醒"}
+              {runningJob === "trigger_due_reminder_tasks"
+                ? "执行中..."
+                : "执行到点提醒"}
             </Button>
             <Button
               variant="secondary"
@@ -2017,7 +2128,9 @@ export function ReminderRuntimePage() {
               onClick={() => runMutation.mutate("trigger_reminder_checkins")}
               disabled={runMutation.isPending}
             >
-              {runningJob === "trigger_reminder_checkins" ? "执行中..." : "执行问询"}
+              {runningJob === "trigger_reminder_checkins"
+                ? "执行中..."
+                : "执行问询"}
             </Button>
             <Button
               variant="primary"
@@ -2033,7 +2146,9 @@ export function ReminderRuntimePage() {
               onClick={() => runMutation.mutate("check_moment_schedule")}
               disabled={runMutation.isPending}
             >
-              {runningJob === "check_moment_schedule" ? "执行中..." : "执行发圈窗口"}
+              {runningJob === "check_moment_schedule"
+                ? "执行中..."
+                : "执行发圈窗口"}
             </Button>
           </>
         }
@@ -2066,7 +2181,9 @@ export function ReminderRuntimePage() {
             <AdminSectionHeader
               title="值班工作台"
               actions={
-                <StatusPill tone={filteredTasks.length > 0 ? "healthy" : "muted"}>
+                <StatusPill
+                  tone={filteredTasks.length > 0 ? "healthy" : "muted"}
+                >
                   显示 {filteredTasks.length} / {stats.activeTaskCount} 条
                 </StatusPill>
               }
@@ -2164,7 +2281,9 @@ export function ReminderRuntimePage() {
                         task={selectedTask}
                         now={now}
                         activeTaskAction={activeTaskAction}
-                        onComplete={() => completeTaskMutation.mutate(selectedTask.id)}
+                        onComplete={() =>
+                          completeTaskMutation.mutate(selectedTask.id)
+                        }
                         onSnoozeMinutes={() =>
                           snoozeTaskMutation.mutate({
                             taskId: selectedTask.id,
@@ -2174,10 +2293,14 @@ export function ReminderRuntimePage() {
                         onSnoozeTomorrow={() =>
                           snoozeTaskMutation.mutate({
                             taskId: selectedTask.id,
-                            payload: { until: buildTomorrowReminderIso(selectedTask) },
+                            payload: {
+                              until: buildTomorrowReminderIso(selectedTask),
+                            },
                           })
                         }
-                        onCancel={() => cancelTaskMutation.mutate(selectedTask.id)}
+                        onCancel={() =>
+                          cancelTaskMutation.mutate(selectedTask.id)
+                        }
                       />
                     ) : (
                       <AdminEmptyState
@@ -2220,21 +2343,28 @@ export function ReminderRuntimePage() {
               <AdminMiniPanel title="最近私聊出站" tone="soft">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   {overviewQuery.data.recentMessages[0]
-                    ? formatDateTime(overviewQuery.data.recentMessages[0].createdAt)
+                    ? formatDateTime(
+                        overviewQuery.data.recentMessages[0].createdAt,
+                      )
                     : "暂无"}
                 </div>
               </AdminMiniPanel>
               <AdminMiniPanel title="最近完成" tone="soft">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   {overviewQuery.data.recentCompletedTasks[0]?.lastCompletedAt
-                    ? formatDateTime(overviewQuery.data.recentCompletedTasks[0].lastCompletedAt)
+                    ? formatDateTime(
+                        overviewQuery.data.recentCompletedTasks[0]
+                          .lastCompletedAt,
+                      )
                     : "暂无"}
                 </div>
               </AdminMiniPanel>
               <AdminMiniPanel title="最近轻提醒发圈" tone="soft">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   {overviewQuery.data.recentMoments[0]
-                    ? formatDateTime(overviewQuery.data.recentMoments[0].postedAt)
+                    ? formatDateTime(
+                        overviewQuery.data.recentMoments[0].postedAt,
+                      )
                     : "暂无"}
                 </div>
               </AdminMiniPanel>
@@ -2242,12 +2372,14 @@ export function ReminderRuntimePage() {
             <div className="mt-4 space-y-3">
               {overviewQuery.data.recentMessages[0] ? (
                 <AdminSoftBox>
-                  最新私聊：{truncateText(overviewQuery.data.recentMessages[0].text, 90)}
+                  最新私聊：
+                  {truncateText(overviewQuery.data.recentMessages[0].text, 90)}
                 </AdminSoftBox>
               ) : null}
               {overviewQuery.data.recentMoments[0] ? (
                 <AdminSoftBox>
-                  最新发圈：{truncateText(overviewQuery.data.recentMoments[0].text, 90)}
+                  最新发圈：
+                  {truncateText(overviewQuery.data.recentMoments[0].text, 90)}
                 </AdminSoftBox>
               ) : null}
             </div>
@@ -2281,7 +2413,9 @@ export function ReminderRuntimePage() {
             <AdminSectionHeader
               title="最近执行流水"
               actions={
-                <StatusPill tone={recentActivity.length > 0 ? "healthy" : "muted"}>
+                <StatusPill
+                  tone={recentActivity.length > 0 ? "healthy" : "muted"}
+                >
                   {recentActivity.length} 条
                 </StatusPill>
               }
