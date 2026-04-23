@@ -389,6 +389,17 @@ export function MiniProgramsPage() {
         typeof navigator.clipboard.writeText !== "function"
       ) {
         setNoticeTone("info");
+        setNoticeActionState(
+          nativeMobileShareSupported
+            ? {
+                label: "重试分享",
+                message: "当前设备暂时无法打开系统分享，请稍后重试。",
+                onAction: () => {
+                  void handleCopyMiniProgramToMobile(miniProgramId);
+                },
+              }
+            : null,
+        );
         setSuccessNotice("当前设备暂时无法打开系统分享，请稍后重试。");
         return;
       }
