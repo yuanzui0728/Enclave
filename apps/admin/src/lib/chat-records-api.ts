@@ -14,6 +14,7 @@ import type {
   AdminChatRecordUpsertReviewRequest,
 } from "@yinjie/contracts";
 import { getAdminSecret, setAdminSecret } from "./admin-api";
+import { resolveAdminApiBase } from "./admin-api-base";
 
 const DEV_ADMIN_SECRET =
   import.meta.env.DEV ? import.meta.env.VITE_ADMIN_SECRET?.trim() ?? "" : "";
@@ -28,23 +29,6 @@ function getStorage() {
   } catch {
     return null;
   }
-}
-
-function resolveAdminApiBase() {
-  const configuredBase = import.meta.env.VITE_API_BASE?.trim();
-  if (configuredBase) {
-    return configuredBase.replace(/\/+$/, "");
-  }
-
-  if (
-    typeof window !== "undefined" &&
-    (window.location.protocol === "http:" ||
-      window.location.protocol === "https:")
-  ) {
-    return `${window.location.origin}/api`;
-  }
-
-  return "http://localhost:3000/api";
 }
 
 async function requestWithSecret(

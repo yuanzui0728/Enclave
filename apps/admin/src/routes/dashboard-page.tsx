@@ -85,15 +85,15 @@ export function DashboardPage() {
   const operationsSectionRef = useRef<HTMLDivElement>(null);
 
   const adminStatsQuery = useQuery({
-    queryKey: ["admin-stats"],
-    queryFn: () => adminApi.getStats(),
-    retry: false,
+    queryKey: ["admin-stats", baseUrl],
+    queryFn: () => adminApi.getStats(baseUrl),
+    retry: 2,
   });
 
   const adminSystemQuery = useQuery({
-    queryKey: ["admin-system"],
-    queryFn: () => adminApi.getSystem(),
-    retry: false,
+    queryKey: ["admin-system", baseUrl],
+    queryFn: () => adminApi.getSystem(baseUrl),
+    retry: 2,
   });
 
   const { desktopAvailable, desktopStatusQuery, runtimeContextQuery, runtimeDiagnosticsQuery } = useDesktopRuntime({
