@@ -33,7 +33,12 @@ function sanitizeBoolean(value: unknown, fallback: boolean) {
   return typeof value === 'boolean' ? value : fallback;
 }
 
-function sanitizeNumber(value: unknown, fallback: number, min: number, max: number) {
+function sanitizeNumber(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return fallback;
   }
@@ -77,6 +82,18 @@ function normalizeSourceToggles(
     includeOwnerProfileUpdates: sanitizeBoolean(
       value?.includeOwnerProfileUpdates,
       fallback.includeOwnerProfileUpdates,
+    ),
+    includeSearchActivity: sanitizeBoolean(
+      value?.includeSearchActivity,
+      fallback.includeSearchActivity,
+    ),
+    includeFavoriteActions: sanitizeBoolean(
+      value?.includeFavoriteActions,
+      fallback.includeFavoriteActions,
+    ),
+    includeRealWorldActions: sanitizeBoolean(
+      value?.includeRealWorldActions,
+      fallback.includeRealWorldActions,
     ),
     includeLocationUpdates: sanitizeBoolean(
       value?.includeLocationUpdates,
@@ -276,7 +293,8 @@ function normalizeInteractionRules(
       fallback.feedNeedDiscoveryEnabled,
     ),
     providerMode:
-      value?.providerMode === 'mock' || value?.providerMode === 'google_news_rss'
+      value?.providerMode === 'mock' ||
+      value?.providerMode === 'google_news_rss'
         ? value.providerMode
         : fallback.providerMode,
     ownerQueryOverrides: Array.isArray(value?.ownerQueryOverrides)
@@ -340,7 +358,9 @@ function normalizeInteractionRules(
       24 * 14,
     ),
     googleNews: normalizeInteractionGoogleNewsRules(value?.googleNews),
-    promptTemplates: normalizeInteractionPromptTemplates(value?.promptTemplates),
+    promptTemplates: normalizeInteractionPromptTemplates(
+      value?.promptTemplates,
+    ),
   };
 }
 

@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { decryptUserApiKey, encryptUserApiKey } from '../auth/api-key-crypto';
 import { CharacterEntity } from '../characters/character.entity';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { DEFAULT_ACTION_CONNECTOR_SEEDS } from './action-runtime.constants';
 import { ActionConnectorEntity } from './action-connector.entity';
 import { ActionRunEntity } from './action-run.entity';
@@ -61,7 +62,16 @@ function normalizeUserMessage(input: string) {
   return input.trim();
 }
 
-function rankConnectorProvider(providerType: ActionConnectorEntity['providerType']) {
+function truncateActionSignalSummary(value: string) {
+  const normalized = value.trim();
+  return normalized.length > 220
+    ? `${normalized.slice(0, 217)}...`
+    : normalized;
+}
+
+function rankConnectorProvider(
+  providerType: ActionConnectorEntity['providerType'],
+) {
   if (providerType === 'official_api') {
     return 4;
   }
@@ -124,6 +134,7 @@ export class ActionRuntimeService {
     private readonly characterRepo: Repository<CharacterEntity>,
     private readonly ai: AiOrchestratorService,
     private readonly rulesService: ActionRuntimeRulesService,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
 
   async handleConversationTurn(input: {
@@ -271,7 +282,9 @@ export class ActionRuntimeService {
 
     return {
       rules,
-      connectors: connectors.map((connector) => this.serializeConnector(connector)),
+      connectors: connectors.map((connector) =>
+        this.serializeConnector(connector),
+      ),
       recentRuns: recentRuns.map((run) => this.serializeRun(run)),
       counts: {
         totalRuns,
@@ -367,7 +380,8 @@ export class ActionRuntimeService {
 
     const rules = await this.rulesService.getRules();
     const sampleMessage =
-      payload?.sampleMessage?.trim() || this.buildDefaultConnectorTestMessage(connector);
+      payload?.sampleMessage?.trim() ||
+      this.buildDefaultConnectorTestMessage(connector);
     const testedAt = new Date();
 
     try {
@@ -409,7 +423,9 @@ export class ActionRuntimeService {
       };
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : '连接器测试过程中发生未知异常。';
+        error instanceof Error
+          ? error.message
+          : '连接器测试过程中发生未知异常。';
       connector.lastHealthCheckAt = testedAt;
       connector.lastError = errorMessage;
       if (connector.status !== 'disabled') {
@@ -449,8 +465,8 @@ export class ActionRuntimeService {
     if (
       connector.connectorKey === 'official-home-assistant-smart-home' ||
       (connector.providerType === 'official_api' &&
-        (connector.endpointConfigPayload as Record<string, unknown> | null)?.provider ===
-          'home_assistant')
+        (connector.endpointConfigPayload as Record<string, unknown> | null)
+          ?.provider === 'home_assistant')
     ) {
       return this.discoverHomeAssistantConnector(connector, payload);
     }
@@ -531,11 +547,14 @@ export class ActionRuntimeService {
 
     const confirmationRecorded = Boolean(
       run.confirmationPayload &&
-        typeof run.confirmationPayload === 'object' &&
-        'confirmedAt' in run.confirmationPayload &&
-        run.confirmationPayload.confirmedAt,
+      typeof run.confirmationPayload === 'object' &&
+      'confirmedAt' in run.confirmationPayload &&
+      run.confirmationPayload.confirmedAt,
     );
-    if (this.requiresConfirmation(refreshedPlan, rules) && !confirmationRecorded) {
+    if (
+      this.requiresConfirmation(refreshedPlan, rules) &&
+      !confirmationRecorded
+    ) {
       run.status = 'awaiting_confirmation';
       run.confirmationPayload = {
         ...(run.confirmationPayload ?? {}),
@@ -556,7 +575,9 @@ export class ActionRuntimeService {
 
     run.status = 'running';
     run.policyDecisionPayload = {
-      reason: confirmationRecorded ? 'retry_after_confirmation' : 'retry_execute',
+      reason: confirmationRecorded
+        ? 'retry_after_confirmation'
+        : 'retry_execute',
       autoExecutable: true,
     };
     await this.runRepo.save(run);
@@ -638,9 +659,7 @@ export class ActionRuntimeService {
 
   private async findSelfCharacter() {
     const all = await this.characterRepo.find({ order: { name: 'ASC' } });
-    return (
-      all.find((character) => this.isSelfCharacter(character)) ?? null
-    );
+    return all.find((character) => this.isSelfCharacter(character)) ?? null;
   }
 
   private isSelfCharacter(character: CharacterEntity) {
@@ -704,6 +723,7 @@ export class ActionRuntimeService {
         reason: 'user_rejected',
       });
       await this.runRepo.save(run);
+      await this.captureActionRunSignal(run, plan, 'cancelled');
       return {
         handled: true,
         responseText: this.renderCancelled(plan, rules),
@@ -796,6 +816,7 @@ export class ActionRuntimeService {
         code: 'CONNECTOR_UNAVAILABLE',
       });
       await this.runRepo.save(run);
+      await this.captureActionRunSignal(run, plan, 'failed');
       return {
         handled: true,
         responseText: this.renderFailure(plan, run.errorMessage, rules),
@@ -819,6 +840,7 @@ export class ActionRuntimeService {
         resultSummary: execution.resultSummary,
       });
       await this.runRepo.save(run);
+      await this.captureActionRunSignal(run, plan, 'succeeded');
       return {
         handled: true,
         responseText: this.renderSuccess(
@@ -843,6 +865,7 @@ export class ActionRuntimeService {
         message,
       });
       await this.runRepo.save(run);
+      await this.captureActionRunSignal(run, plan, 'failed');
       return {
         handled: true,
         responseText: this.renderFailure(plan, message, rules),
@@ -858,17 +881,18 @@ export class ActionRuntimeService {
     characterId?: string;
     conversationId?: string;
   }) {
-    const {
-      message,
-      connectors,
-      rules,
-      ownerId,
-      characterId,
-      conversationId,
-    } = input;
+    const { message, connectors, rules, ownerId, characterId, conversationId } =
+      input;
+    const cyberAvatarPromptContext =
+      await this.buildCyberAvatarActionPromptContext();
 
     if (rules.plannerMode === 'heuristic') {
-      return this.planActionFromMessage(message, connectors, rules);
+      return this.planActionFromMessage(
+        message,
+        connectors,
+        rules,
+        cyberAvatarPromptContext,
+      );
     }
 
     try {
@@ -879,6 +903,7 @@ export class ActionRuntimeService {
         ownerId,
         characterId,
         conversationId,
+        cyberAvatarPromptContext,
       });
       if (llmResult.handled || rules.plannerMode === 'llm') {
         return llmResult;
@@ -889,7 +914,12 @@ export class ActionRuntimeService {
       }
     }
 
-    return this.planActionFromMessage(message, connectors, rules);
+    return this.planActionFromMessage(
+      message,
+      connectors,
+      rules,
+      cyberAvatarPromptContext,
+    );
   }
 
   private async planActionWithLlm(input: {
@@ -899,13 +929,21 @@ export class ActionRuntimeService {
     ownerId?: string;
     characterId?: string;
     conversationId?: string;
+    cyberAvatarPromptContext: string;
   }): Promise<{
     handled: boolean;
     reason: string;
     plan?: ActionPlanValue;
   }> {
-    const { message, connectors, rules, ownerId, characterId, conversationId } =
-      input;
+    const {
+      message,
+      connectors,
+      rules,
+      ownerId,
+      characterId,
+      conversationId,
+      cyberAvatarPromptContext,
+    } = input;
     if (!connectors.length) {
       return {
         handled: false,
@@ -913,7 +951,12 @@ export class ActionRuntimeService {
       };
     }
 
-    const prompt = this.buildLlmPlannerPrompt(message, connectors, rules);
+    const prompt = this.buildLlmPlannerPrompt(
+      message,
+      connectors,
+      rules,
+      cyberAvatarPromptContext,
+    );
     const raw = await this.ai.generateJsonObject({
       prompt,
       usageContext: {
@@ -934,13 +977,20 @@ export class ActionRuntimeService {
       },
     });
 
-    return this.normalizeLlmPlan(raw, message, connectors, rules);
+    return this.normalizeLlmPlan(
+      raw,
+      message,
+      connectors,
+      rules,
+      cyberAvatarPromptContext,
+    );
   }
 
   private planActionFromMessage(
     message: string,
     connectors: ActionConnectorEntity[],
     rules: ActionRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ): {
     handled: boolean;
     reason: string;
@@ -954,7 +1004,12 @@ export class ActionRuntimeService {
       };
     }
 
-    const smartHomePlan = this.buildSmartHomePlan(normalized, connectors, rules);
+    const smartHomePlan = this.buildSmartHomePlan(
+      normalized,
+      connectors,
+      rules,
+      cyberAvatarPromptContext,
+    );
     if (smartHomePlan) {
       return {
         handled: true,
@@ -963,7 +1018,12 @@ export class ActionRuntimeService {
       };
     }
 
-    const foodPlan = this.buildFoodDeliveryPlan(normalized, connectors, rules);
+    const foodPlan = this.buildFoodDeliveryPlan(
+      normalized,
+      connectors,
+      rules,
+      cyberAvatarPromptContext,
+    );
     if (foodPlan) {
       return {
         handled: true,
@@ -972,7 +1032,12 @@ export class ActionRuntimeService {
       };
     }
 
-    const ticketPlan = this.buildTicketPlan(normalized, connectors, rules);
+    const ticketPlan = this.buildTicketPlan(
+      normalized,
+      connectors,
+      rules,
+      cyberAvatarPromptContext,
+    );
     if (ticketPlan) {
       return {
         handled: true,
@@ -991,13 +1056,12 @@ export class ActionRuntimeService {
     message: string,
     connectors: ActionConnectorEntity[],
     rules: ActionRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ) {
     const parsed = this.parseSmartHomeSlots(message);
 
     const hitSmartHome = Boolean(
-      parsed.slots.device ||
-        parsed.slots.room ||
-        message.includes('智能'),
+      parsed.slots.device || parsed.slots.room || message.includes('智能'),
     );
     if (!hitSmartHome) {
       return null;
@@ -1040,7 +1104,12 @@ export class ActionRuntimeService {
       slots: parsed.slots,
       missingSlots,
       matchedKeywords: parsed.matchedKeywords,
-      promptPreview: this.buildPromptPreview(message, connectors, rules),
+      promptPreview: this.buildPromptPreview(
+        message,
+        connectors,
+        rules,
+        cyberAvatarPromptContext,
+      ),
     };
   }
 
@@ -1048,6 +1117,7 @@ export class ActionRuntimeService {
     message: string,
     connectors: ActionConnectorEntity[],
     rules: ActionRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ) {
     const parsed = this.parseFoodDeliverySlots(message);
     const hitFood =
@@ -1077,10 +1147,7 @@ export class ActionRuntimeService {
       return null;
     }
 
-    const operation = this.findOperation(
-      connector,
-      requestedOperationKey,
-    );
+    const operation = this.findOperation(connector, requestedOperationKey);
     if (!operation) {
       return null;
     }
@@ -1105,7 +1172,12 @@ export class ActionRuntimeService {
       slots: parsed.slots,
       missingSlots,
       matchedKeywords: parsed.matchedKeywords,
-      promptPreview: this.buildPromptPreview(message, connectors, rules),
+      promptPreview: this.buildPromptPreview(
+        message,
+        connectors,
+        rules,
+        cyberAvatarPromptContext,
+      ),
     };
   }
 
@@ -1113,18 +1185,18 @@ export class ActionRuntimeService {
     message: string,
     connectors: ActionConnectorEntity[],
     rules: ActionRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ) {
     const parsed = this.parseTicketSlots(message);
-    const ticketType =
-      message.includes('机票')
-        ? '机票'
-        : message.includes('火车票') || message.includes('高铁')
-          ? '火车票'
-          : message.includes('电影票')
-            ? '电影票'
-            : message.includes('演唱会')
-              ? '演出票'
-              : '票';
+    const ticketType = message.includes('机票')
+      ? '机票'
+      : message.includes('火车票') || message.includes('高铁')
+        ? '火车票'
+        : message.includes('电影票')
+          ? '电影票'
+          : message.includes('演唱会')
+            ? '演出票'
+            : '票';
     const hitTicket =
       message.includes('订票') ||
       message.includes('买票') ||
@@ -1153,10 +1225,7 @@ export class ActionRuntimeService {
       return null;
     }
 
-    const operation = this.findOperation(
-      connector,
-      requestedOperationKey,
-    );
+    const operation = this.findOperation(connector, requestedOperationKey);
     if (!operation) {
       return null;
     }
@@ -1185,7 +1254,12 @@ export class ActionRuntimeService {
       slots,
       missingSlots,
       matchedKeywords: parsed.matchedKeywords,
-      promptPreview: this.buildPromptPreview(message, connectors, rules),
+      promptPreview: this.buildPromptPreview(
+        message,
+        connectors,
+        rules,
+        cyberAvatarPromptContext,
+      ),
     };
   }
 
@@ -1231,6 +1305,7 @@ export class ActionRuntimeService {
     message: string,
     connectors: ActionConnectorEntity[],
     rules: ActionRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ) {
     const visibleConnectors =
       connectors.length > 0
@@ -1241,23 +1316,32 @@ export class ActionRuntimeService {
     const connectorSummary = visibleConnectors
       .map((connector) => {
         const operations = (connector.capabilitiesPayload ?? [])
-          .map((operation) => `${operation.operationKey}:${operation.requiredSlots.join('+') || 'none'}`)
+          .map(
+            (operation) =>
+              `${operation.operationKey}:${operation.requiredSlots.join('+') || 'none'}`,
+          )
           .join(', ');
         return `${connector.connectorKey}(${operations})`;
       })
       .join('\n');
     return [
       rules.promptTemplates.plannerSystemPrompt,
+      cyberAvatarPromptContext
+        ? `赛博分身动作上下文：\n${cyberAvatarPromptContext}`
+        : '',
       `用户消息：${message}`,
       `可用连接器：\n${connectorSummary}`,
       `当前 plannerMode：${rules.plannerMode}`,
-    ].join('\n\n');
+    ]
+      .filter(Boolean)
+      .join('\n\n');
   }
 
   private buildLlmPlannerPrompt(
     message: string,
     connectors: ActionConnectorEntity[],
     rules: ActionRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ) {
     const connectorCatalog = connectors.map((connector) => ({
       connectorKey: connector.connectorKey,
@@ -1276,6 +1360,9 @@ export class ActionRuntimeService {
 
     return [
       rules.promptTemplates.plannerSystemPrompt,
+      cyberAvatarPromptContext
+        ? `赛博分身动作上下文：\n${cyberAvatarPromptContext}`
+        : '',
       '你必须严格输出 JSON object，不要输出 markdown。',
       '如果当前消息不是明确要你处理真实世界动作，handled=false。',
       '只能从给定连接器和 operationKey 中选择，不允许编造新的 connectorKey / operationKey。',
@@ -1284,7 +1371,9 @@ export class ActionRuntimeService {
       '输出格式：{"handled":boolean,"reason":"...","connectorKey":"...","operationKey":"...","title":"...","goal":"...","rationale":"...","slots":{},"missingSlots":[],"matchedKeywords":[]}',
       `用户消息：${message}`,
       `可用连接器目录：${JSON.stringify(connectorCatalog, null, 2)}`,
-    ].join('\n\n');
+    ]
+      .filter(Boolean)
+      .join('\n\n');
   }
 
   private normalizeLlmPlan(
@@ -1292,6 +1381,7 @@ export class ActionRuntimeService {
     message: string,
     connectors: ActionConnectorEntity[],
     rules: ActionRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ): {
     handled: boolean;
     reason: string;
@@ -1327,7 +1417,11 @@ export class ActionRuntimeService {
         (item) =>
           item.connectorKey === requestedConnectorKey &&
           Boolean(this.findOperation(item, requestedOperationKey)),
-      ) ?? this.findPreferredConnectorForOperation(connectors, requestedOperationKey);
+      ) ??
+      this.findPreferredConnectorForOperation(
+        connectors,
+        requestedOperationKey,
+      );
     if (!connector) {
       return {
         handled: false,
@@ -1353,9 +1447,7 @@ export class ActionRuntimeService {
       slots,
     );
     const matchedKeywords = Array.isArray(raw.matchedKeywords)
-      ? raw.matchedKeywords
-          .map((item) => String(item).trim())
-          .filter(Boolean)
+      ? raw.matchedKeywords.map((item) => String(item).trim()).filter(Boolean)
       : this.extractMatchedKeywords(operation.domain, message);
 
     return {
@@ -1382,7 +1474,12 @@ export class ActionRuntimeService {
         slots,
         missingSlots,
         matchedKeywords,
-        promptPreview: this.buildLlmPlannerPrompt(message, connectors, rules),
+        promptPreview: this.buildLlmPlannerPrompt(
+          message,
+          connectors,
+          rules,
+          cyberAvatarPromptContext,
+        ),
       },
     };
   }
@@ -1392,19 +1489,19 @@ export class ActionRuntimeService {
       (item) => item.operationKey,
     );
     if (operationKeys.includes('smart_home_control')) {
-        return '帮我把客厅空调调到24度';
+      return '帮我把客厅空调调到24度';
     }
     if (
       operationKeys.includes('food_delivery_submit') ||
       operationKeys.includes('food_delivery_prepare')
     ) {
-        return '帮我点个轻食外卖，送到公司前台';
+      return '帮我点个轻食外卖，送到公司前台';
     }
     if (
       operationKeys.includes('ticket_booking_submit') ||
       operationKeys.includes('ticket_booking_prepare')
     ) {
-        return '帮我订明天上海到杭州的高铁票';
+      return '帮我订明天上海到杭州的高铁票';
     }
     return `测试 ${connector.displayName} 的连接状态`;
   }
@@ -1414,7 +1511,12 @@ export class ActionRuntimeService {
     sampleMessage: string,
     rules: ActionRuntimeRulesValue,
   ): ActionPlanValue {
-    const preview = this.planActionFromMessage(sampleMessage, [connector], rules);
+    const preview = this.planActionFromMessage(
+      sampleMessage,
+      [connector],
+      rules,
+      '',
+    );
     if (
       preview.handled &&
       preview.plan &&
@@ -1429,69 +1531,148 @@ export class ActionRuntimeService {
     );
 
     if (operationKeys.includes('smart_home_control')) {
-        return {
-          connectorKey: connector.connectorKey,
-          operationKey: 'smart_home_control',
-          domain: 'smart_home',
-          title: '客厅空调调到24度',
-          goal: sampleMessage,
-          rationale: '后台连接器自检使用固定智能家居样例。',
-          riskLevel: 'reversible_low_risk',
-          requiresConfirmation: false,
-          slots: {
-            room: '客厅',
-            device: '空调',
-            action: 'set_temperature',
-            temperatureCelsius: 24,
-          },
-          missingSlots: [],
-          matchedKeywords: ['客厅', '空调', '温度'],
-          promptPreview: this.buildPromptPreview(sampleMessage, [connector], rules),
-        };
+      return {
+        connectorKey: connector.connectorKey,
+        operationKey: 'smart_home_control',
+        domain: 'smart_home',
+        title: '客厅空调调到24度',
+        goal: sampleMessage,
+        rationale: '后台连接器自检使用固定智能家居样例。',
+        riskLevel: 'reversible_low_risk',
+        requiresConfirmation: false,
+        slots: {
+          room: '客厅',
+          device: '空调',
+          action: 'set_temperature',
+          temperatureCelsius: 24,
+        },
+        missingSlots: [],
+        matchedKeywords: ['客厅', '空调', '温度'],
+        promptPreview: this.buildPromptPreview(
+          sampleMessage,
+          [connector],
+          rules,
+        ),
+      };
     }
     if (operationKeys.includes('food_delivery_submit')) {
-        return {
-          connectorKey: connector.connectorKey,
-          operationKey: 'food_delivery_submit',
-          domain: 'food_delivery',
-          title: '外卖下单',
-          goal: sampleMessage,
-          rationale: '后台连接器自检使用固定外卖样例。',
-          riskLevel: 'cost_or_irreversible',
-          requiresConfirmation: true,
-          slots: {
-            preference: '轻食',
-            address: '公司前台',
-            budgetCny: 48,
-          },
-          missingSlots: [],
-          matchedKeywords: ['轻食', '地址'],
-          promptPreview: this.buildPromptPreview(sampleMessage, [connector], rules),
-        };
+      return {
+        connectorKey: connector.connectorKey,
+        operationKey: 'food_delivery_submit',
+        domain: 'food_delivery',
+        title: '外卖下单',
+        goal: sampleMessage,
+        rationale: '后台连接器自检使用固定外卖样例。',
+        riskLevel: 'cost_or_irreversible',
+        requiresConfirmation: true,
+        slots: {
+          preference: '轻食',
+          address: '公司前台',
+          budgetCny: 48,
+        },
+        missingSlots: [],
+        matchedKeywords: ['轻食', '地址'],
+        promptPreview: this.buildPromptPreview(
+          sampleMessage,
+          [connector],
+          rules,
+        ),
+      };
     }
     if (operationKeys.includes('ticket_booking_submit')) {
-        return {
-          connectorKey: connector.connectorKey,
-          operationKey: 'ticket_booking_submit',
-          domain: 'ticketing',
-          title: '高铁票预订',
-          goal: sampleMessage,
-          rationale: '后台连接器自检使用固定订票样例。',
-          riskLevel: 'cost_or_irreversible',
-          requiresConfirmation: true,
-          slots: {
-            ticketType: '火车票',
-            route: '上海 -> 杭州',
-            date: '明天',
-          },
-          missingSlots: [],
-          matchedKeywords: ['上海 -> 杭州', '明天'],
-          promptPreview: this.buildPromptPreview(sampleMessage, [connector], rules),
-        };
+      return {
+        connectorKey: connector.connectorKey,
+        operationKey: 'ticket_booking_submit',
+        domain: 'ticketing',
+        title: '高铁票预订',
+        goal: sampleMessage,
+        rationale: '后台连接器自检使用固定订票样例。',
+        riskLevel: 'cost_or_irreversible',
+        requiresConfirmation: true,
+        slots: {
+          ticketType: '火车票',
+          route: '上海 -> 杭州',
+          date: '明天',
+        },
+        missingSlots: [],
+        matchedKeywords: ['上海 -> 杭州', '明天'],
+        promptPreview: this.buildPromptPreview(
+          sampleMessage,
+          [connector],
+          rules,
+        ),
+      };
     }
     throw new BadRequestException(
       `尚未为 ${connector.connectorKey} 定义测试样例。`,
     );
+  }
+
+  private async buildCyberAvatarActionPromptContext() {
+    try {
+      const profile = await this.cyberAvatar.getProfile();
+      if ((profile.signalCount ?? 0) <= 0) {
+        return '';
+      }
+
+      return [
+        profile.promptProjection.coreInstruction
+          ? `【核心约束】\n${profile.promptProjection.coreInstruction}`
+          : '',
+        profile.promptProjection.realWorldInteractionPrompt
+          ? `【真实世界互动】\n${profile.promptProjection.realWorldInteractionPrompt}`
+          : '',
+        profile.promptProjection.actionPlanningPrompt
+          ? `【动作规划】\n${profile.promptProjection.actionPlanningPrompt}`
+          : '',
+        profile.promptProjection.memoryBlock
+          ? `【赛博分身记忆】\n${profile.promptProjection.memoryBlock}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+    } catch {
+      return '';
+    }
+  }
+
+  private async captureActionRunSignal(
+    run: ActionRunEntity,
+    plan: ActionPlanValue,
+    status: 'succeeded' | 'failed' | 'cancelled',
+  ) {
+    const summaryText =
+      status === 'succeeded'
+        ? `完成真实世界动作「${run.title}」：${run.resultSummary ?? '已执行'}`
+        : status === 'cancelled'
+          ? `取消真实世界动作「${run.title}」`
+          : `真实世界动作「${run.title}」执行失败：${
+              run.errorMessage ?? '执行失败'
+            }`;
+
+    await this.cyberAvatar.captureSignal({
+      ownerId: run.ownerId,
+      signalType: 'real_world_action',
+      sourceSurface: 'action_runtime',
+      sourceEntityType: 'action_run',
+      sourceEntityId: run.id,
+      dedupeKey: `action-run:${run.id}:${status}`,
+      summaryText: truncateActionSignalSummary(summaryText),
+      payload: {
+        status,
+        connectorKey: run.connectorKey,
+        operationKey: run.operationKey,
+        title: run.title,
+        goal: run.userGoal,
+        riskLevel: run.riskLevel,
+        requiresConfirmation: run.requiresConfirmation,
+        slots: run.slotPayload,
+        matchedKeywords: plan.matchedKeywords,
+        resultSummary: run.resultSummary ?? null,
+        errorMessage: run.errorMessage ?? null,
+      },
+      occurredAt: run.updatedAt ?? new Date(),
+    });
   }
 
   private mergePlanWithMessage(
@@ -1570,7 +1751,10 @@ export class ActionRuntimeService {
     }
 
     let actionLabel = '';
-    if (/调到?\s*\d{2}\s*度/.test(message) || /设为?\s*\d{2}\s*度/.test(message)) {
+    if (
+      /调到?\s*\d{2}\s*度/.test(message) ||
+      /设为?\s*\d{2}\s*度/.test(message)
+    ) {
       slots.action = 'set_temperature';
       actionLabel = '调到';
       matchedKeywords.push('温度');
@@ -1632,9 +1816,7 @@ export class ActionRuntimeService {
       matchedKeywords.push(`预算${budgetMatch[1]}`);
     }
 
-    const addressMatch = message.match(
-      /(?:送到|送去|地址是)([^，。,.；;]+)/,
-    );
+    const addressMatch = message.match(/(?:送到|送去|地址是)([^，。,.；;]+)/);
     if (addressMatch?.[1]?.trim()) {
       slots.address = addressMatch[1].trim();
       matchedKeywords.push('地址');
@@ -1679,14 +1861,20 @@ export class ActionRuntimeService {
       );
     }
     if (domain === 'food_delivery') {
-      return ['外卖', '咖啡', '奶茶', '沙拉', '汉堡', '地址'].filter((keyword) =>
-        message.includes(keyword),
+      return ['外卖', '咖啡', '奶茶', '沙拉', '汉堡', '地址'].filter(
+        (keyword) => message.includes(keyword),
       );
     }
     if (domain === 'ticketing') {
-      return ['订票', '机票', '火车票', '电影票', '演唱会', '明天', '后天'].filter(
-        (keyword) => message.includes(keyword),
-      );
+      return [
+        '订票',
+        '机票',
+        '火车票',
+        '电影票',
+        '演唱会',
+        '明天',
+        '后天',
+      ].filter((keyword) => message.includes(keyword));
     }
     return [];
   }
@@ -1945,7 +2133,8 @@ export class ActionRuntimeService {
     }
 
     const timeoutMs =
-      typeof endpointConfig?.timeoutMs === 'number' && endpointConfig.timeoutMs > 0
+      typeof endpointConfig?.timeoutMs === 'number' &&
+      endpointConfig.timeoutMs > 0
         ? Math.min(endpointConfig.timeoutMs, 60000)
         : 12000;
 
@@ -1993,15 +2182,18 @@ export class ActionRuntimeService {
         key,
         entityId,
         serviceDomain:
-          typeof target.serviceDomain === 'string' && target.serviceDomain.trim()
+          typeof target.serviceDomain === 'string' &&
+          target.serviceDomain.trim()
             ? target.serviceDomain.trim()
             : entityId.split('.')[0] || 'homeassistant',
         turnOnService:
-          typeof target.turnOnService === 'string' && target.turnOnService.trim()
+          typeof target.turnOnService === 'string' &&
+          target.turnOnService.trim()
             ? target.turnOnService.trim()
             : 'turn_on',
         turnOffService:
-          typeof target.turnOffService === 'string' && target.turnOffService.trim()
+          typeof target.turnOffService === 'string' &&
+          target.turnOffService.trim()
             ? target.turnOffService.trim()
             : 'turn_off',
         setTemperatureService:
@@ -2015,7 +2207,9 @@ export class ActionRuntimeService {
             ? target.temperatureField.trim()
             : 'temperature',
         onData:
-          target.onData && typeof target.onData === 'object' && !Array.isArray(target.onData)
+          target.onData &&
+          typeof target.onData === 'object' &&
+          !Array.isArray(target.onData)
             ? (target.onData as Record<string, unknown>)
             : {},
         offData:
@@ -2096,8 +2290,10 @@ export class ActionRuntimeService {
       entityId: string;
     },
   ) {
-    const room = typeof plan.slots.room === 'string' ? plan.slots.room : '指定房间';
-    const device = typeof plan.slots.device === 'string' ? plan.slots.device : '设备';
+    const room =
+      typeof plan.slots.room === 'string' ? plan.slots.room : '指定房间';
+    const device =
+      typeof plan.slots.device === 'string' ? plan.slots.device : '设备';
     const action = plan.slots.action;
     if (action === 'set_temperature') {
       return `${room}的${device}已通过 Home Assistant 调到 ${plan.slots.temperatureCelsius} 度。`;
@@ -2117,11 +2313,13 @@ export class ActionRuntimeService {
       credential?: string;
     },
   ): Promise<ActionConnectorDiscoveryResultValue> {
-    const { baseUrl, token, timeoutMs } =
-      this.resolveHomeAssistantConnection(connector, {
+    const { baseUrl, token, timeoutMs } = this.resolveHomeAssistantConnection(
+      connector,
+      {
         endpointConfig: payload?.endpointConfig,
         credential: payload?.credential,
-      });
+      },
+    );
     let registrySnapshot: HomeAssistantRegistrySnapshot | null = null;
     const warnings: string[] = [];
     try {
@@ -2178,8 +2376,9 @@ export class ActionRuntimeService {
       .filter(
         (
           item,
-        ): item is NonNullable<ReturnType<typeof this.buildHomeAssistantDiscoveryItem>> =>
-          Boolean(item),
+        ): item is NonNullable<
+          ReturnType<typeof this.buildHomeAssistantDiscoveryItem>
+        > => Boolean(item),
       )
       .filter((item) => {
         if (!normalizedQuery) {
@@ -2220,8 +2419,7 @@ export class ActionRuntimeService {
         `检测到 ${finalized.disambiguatedCount} 个重复映射键，已自动改成更具体的 key，避免导入时互相覆盖。`,
       );
     }
-    const items = finalized.items
-      .slice(0, limit);
+    const items = finalized.items.slice(0, limit);
 
     return {
       connector: this.serializeConnector(connector),
@@ -2262,19 +2460,18 @@ export class ActionRuntimeService {
         ? { ...(record.attributes as Record<string, unknown>) }
         : {};
     const friendlyName =
-      typeof attributes.friendly_name === 'string' && attributes.friendly_name.trim()
+      typeof attributes.friendly_name === 'string' &&
+      attributes.friendly_name.trim()
         ? attributes.friendly_name.trim()
         : entityId;
     const state =
       typeof record.state === 'string' && record.state.trim()
         ? record.state.trim()
         : 'unknown';
-    const registryEntity =
-      registrySnapshot?.entitiesById.get(entityId) ?? null;
-    const registryDevice =
-      registryEntity?.deviceId
-        ? (registrySnapshot?.devicesById.get(registryEntity.deviceId) ?? null)
-        : null;
+    const registryEntity = registrySnapshot?.entitiesById.get(entityId) ?? null;
+    const registryDevice = registryEntity?.deviceId
+      ? (registrySnapshot?.devicesById.get(registryEntity.deviceId) ?? null)
+      : null;
     const registryAreaName =
       (registryEntity?.areaId
         ? registrySnapshot?.areasById.get(registryEntity.areaId)?.name
@@ -2334,7 +2531,8 @@ export class ActionRuntimeService {
       ),
       attributes: {
         ...attributes,
-        registryAreaId: registryEntity?.areaId || registryDevice?.areaId || null,
+        registryAreaId:
+          registryEntity?.areaId || registryDevice?.areaId || null,
         registryDeviceId: registryEntity?.deviceId || null,
       },
     };
@@ -2426,7 +2624,11 @@ export class ActionRuntimeService {
         room,
         device,
       ),
-      this.extractHomeAssistantSpecificKeyLabel(item.friendlyName, room, device),
+      this.extractHomeAssistantSpecificKeyLabel(
+        item.friendlyName,
+        room,
+        device,
+      ),
       this.extractHomeAssistantSpecificKeyLabel(entitySuffix, room, device),
       entitySuffix
         ? `${device}-${entitySuffix
@@ -2442,9 +2644,7 @@ export class ActionRuntimeService {
 
     return Array.from(
       new Set(
-        labelCandidates.map((label) =>
-          room ? `${room}:${label}` : label,
-        ),
+        labelCandidates.map((label) => (room ? `${room}:${label}` : label)),
       ),
     );
   }
@@ -2474,7 +2674,10 @@ export class ActionRuntimeService {
       }
     }
     text = text
-      .replace(/\b(light|lamp|switch|fan|climate|cover|media player|humidifier|vacuum)\b/gi, ' ')
+      .replace(
+        /\b(light|lamp|switch|fan|climate|cover|media player|humidifier|vacuum)\b/gi,
+        ' ',
+      )
       .replace(/\s+/g, ' ')
       .trim();
 
@@ -2589,7 +2792,10 @@ export class ActionRuntimeService {
 
         const id =
           typeof message.id === 'number' ? message.id : Number(message.id);
-        if (!Number.isFinite(id) || !commands.some((command) => command.id === id)) {
+        if (
+          !Number.isFinite(id) ||
+          !commands.some((command) => command.id === id)
+        ) {
           return;
         }
 
@@ -2677,13 +2883,9 @@ export class ActionRuntimeService {
         const id = typeof record.id === 'string' ? record.id.trim() : '';
         const areaId =
           typeof record.area_id === 'string' ? record.area_id.trim() : '';
-        const name = [
-          record.name_by_user,
-          record.name,
-          record.model,
-        ].find((value) => typeof value === 'string' && value.trim()) as
-          | string
-          | undefined;
+        const name = [record.name_by_user, record.name, record.model].find(
+          (value) => typeof value === 'string' && value.trim(),
+        ) as string | undefined;
         if (!id) {
           continue;
         }
@@ -2709,34 +2911,21 @@ export class ActionRuntimeService {
         continue;
       }
       const record = item as Record<string, unknown>;
-      const entityId = [
-        record.ei,
-        record.entity_id,
-      ].find((value) => typeof value === 'string' && value.trim()) as
-        | string
-        | undefined;
+      const entityId = [record.ei, record.entity_id].find(
+        (value) => typeof value === 'string' && value.trim(),
+      ) as string | undefined;
       if (!entityId?.trim()) {
         continue;
       }
-      const areaId = [
-        record.ai,
-        record.area_id,
-      ].find((value) => typeof value === 'string' && value.trim()) as
-        | string
-        | undefined;
-      const deviceId = [
-        record.di,
-        record.device_id,
-      ].find((value) => typeof value === 'string' && value.trim()) as
-        | string
-        | undefined;
-      const name = [
-        record.en,
-        record.name,
-        record.original_name,
-      ].find((value) => typeof value === 'string' && value.trim()) as
-        | string
-        | undefined;
+      const areaId = [record.ai, record.area_id].find(
+        (value) => typeof value === 'string' && value.trim(),
+      ) as string | undefined;
+      const deviceId = [record.di, record.device_id].find(
+        (value) => typeof value === 'string' && value.trim(),
+      ) as string | undefined;
+      const name = [record.en, record.name, record.original_name].find(
+        (value) => typeof value === 'string' && value.trim(),
+      ) as string | undefined;
       entitiesById.set(entityId.trim(), {
         entityId: entityId.trim(),
         areaId: areaId?.trim() || '',
@@ -2882,7 +3071,9 @@ export class ActionRuntimeService {
     const url =
       typeof endpointConfig?.url === 'string' ? endpointConfig.url.trim() : '';
     if (!url) {
-      throw new Error(`连接器 ${connector.displayName} 缺少 endpointConfig.url。`);
+      throw new Error(
+        `连接器 ${connector.displayName} 缺少 endpointConfig.url。`,
+      );
     }
 
     const method =
@@ -2891,14 +3082,17 @@ export class ActionRuntimeService {
         ? endpointConfig.method.toUpperCase()
         : 'POST';
     const timeoutMs =
-      typeof endpointConfig?.timeoutMs === 'number' && endpointConfig.timeoutMs > 0
+      typeof endpointConfig?.timeoutMs === 'number' &&
+      endpointConfig.timeoutMs > 0
         ? Math.min(endpointConfig.timeoutMs, 60000)
         : 15000;
     const configuredHeaders =
       endpointConfig?.headers &&
       typeof endpointConfig.headers === 'object' &&
       !Array.isArray(endpointConfig.headers)
-        ? Object.entries(endpointConfig.headers as Record<string, unknown>).reduce(
+        ? Object.entries(
+            endpointConfig.headers as Record<string, unknown>,
+          ).reduce(
             (accumulator, [key, value]) => {
               if (typeof value === 'string' && key.trim()) {
                 accumulator[key.trim()] = value;
@@ -2960,7 +3154,8 @@ export class ActionRuntimeService {
     }
 
     const resultSummary =
-      typeof parsedBody?.resultSummary === 'string' && parsedBody.resultSummary.trim()
+      typeof parsedBody?.resultSummary === 'string' &&
+      parsedBody.resultSummary.trim()
         ? parsedBody.resultSummary.trim()
         : typeof parsedBody?.summary === 'string' && parsedBody.summary.trim()
           ? parsedBody.summary.trim()
@@ -2987,7 +3182,7 @@ export class ActionRuntimeService {
         typeof parsedBody.result === 'object' &&
         !Array.isArray(parsedBody.result)
           ? (parsedBody.result as Record<string, unknown>)
-          : parsedBody ?? {},
+          : (parsedBody ?? {}),
     };
   }
 
@@ -3035,8 +3230,7 @@ export class ActionRuntimeService {
     if (plan.operationKey === 'food_delivery_prepare') {
       const preference =
         (plan.slots.preference as string | undefined) ?? '家常简餐';
-      const budgetCny =
-        (plan.slots.budgetCny as number | undefined) ?? 48;
+      const budgetCny = (plan.slots.budgetCny as number | undefined) ?? 48;
       return {
         resultSummary: `我先整理了 3 家适合「${preference}」的 mock 外卖，预算控制在 ${budgetCny} 元内，预计 30 分钟左右送达。`,
         executionPayload: {
@@ -3046,9 +3240,21 @@ export class ActionRuntimeService {
         },
         resultPayload: {
           options: [
-            { shop: 'Mock 轻食厨房', estimateMinutes: 26, priceCny: budgetCny - 6 },
-            { shop: 'Mock 便当站', estimateMinutes: 31, priceCny: budgetCny - 10 },
-            { shop: 'Mock 快手热食', estimateMinutes: 34, priceCny: budgetCny - 4 },
+            {
+              shop: 'Mock 轻食厨房',
+              estimateMinutes: 26,
+              priceCny: budgetCny - 6,
+            },
+            {
+              shop: 'Mock 便当站',
+              estimateMinutes: 31,
+              priceCny: budgetCny - 10,
+            },
+            {
+              shop: 'Mock 快手热食',
+              estimateMinutes: 34,
+              priceCny: budgetCny - 4,
+            },
           ],
         },
       };
@@ -3057,7 +3263,9 @@ export class ActionRuntimeService {
     if (plan.operationKey === 'food_delivery_submit') {
       const preference = plan.slots.preference as string;
       const address = plan.slots.address as string;
-      const orderRef = previewOnly ? 'PREVIEW-ORDER' : createMockReference('order');
+      const orderRef = previewOnly
+        ? 'PREVIEW-ORDER'
+        : createMockReference('order');
       return {
         resultSummary: `我已经按「${preference}」生成了一笔 mock 外卖订单，送达地址是「${address}」，参考单号 ${orderRef}。`,
         executionPayload: {
@@ -3204,7 +3412,10 @@ export class ActionRuntimeService {
       return '暂时还没有稳定参数';
     }
     return entries
-      .map(([key, value]) => `${this.humanizeSlotName(key)}：${this.humanizeSlotValue(key, value)}`)
+      .map(
+        ([key, value]) =>
+          `${this.humanizeSlotName(key)}：${this.humanizeSlotValue(key, value)}`,
+      )
       .join('；');
   }
 

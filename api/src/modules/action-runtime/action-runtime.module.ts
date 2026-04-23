@@ -5,6 +5,7 @@ import { AdminGuard } from '../admin/admin.guard';
 import { AuthModule } from '../auth/auth.module';
 import { CharactersModule } from '../characters/characters.module';
 import { SystemConfigModule } from '../config/config.module';
+import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { ActionConnectorEntity } from './action-connector.entity';
 import { ActionRunEntity } from './action-run.entity';
 import { ActionRuntimeAdminController } from './action-runtime-admin.controller';
@@ -18,6 +19,7 @@ import { CharacterEntity } from '../characters/character.entity';
     AuthModule,
     CharactersModule,
     SystemConfigModule,
+    forwardRef(() => CyberAvatarModule),
     TypeOrmModule.forFeature([
       ActionConnectorEntity,
       ActionRunEntity,

@@ -21,6 +21,9 @@ export type CyberAvatarSignalType =
   | 'feed_interaction'
   | 'friendship_event'
   | 'owner_profile_update'
+  | 'search_activity'
+  | 'favorite_action'
+  | 'real_world_action'
   | 'location_update'
   | 'real_world_item'
   | 'real_world_brief';
@@ -45,10 +48,7 @@ export type CyberAvatarRealWorldItemStatus =
   | 'filtered_duplicate'
   | 'filtered_low_score'
   | 'filtered_blocked_source';
-export type CyberAvatarRealWorldBriefStatus =
-  | 'active'
-  | 'archived'
-  | 'failed';
+export type CyberAvatarRealWorldBriefStatus = 'active' | 'archived' | 'failed';
 export type CyberAvatarRealWorldProviderMode = 'mock' | 'google_news_rss';
 
 export type CyberAvatarSignalInput = {
@@ -147,6 +147,9 @@ export type CyberAvatarSourceToggles = {
   includeFeedInteractions: boolean;
   includeFriendshipEvents: boolean;
   includeOwnerProfileUpdates: boolean;
+  includeSearchActivity: boolean;
+  includeFavoriteActions: boolean;
+  includeRealWorldActions: boolean;
   includeLocationUpdates: boolean;
   includeRealWorldItems: boolean;
   includeRealWorldBriefs: boolean;
