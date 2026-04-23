@@ -20,47 +20,68 @@ import {
   LoadingBlock,
   MetricCard,
   StatusPill,
-  ToggleChip,
 } from "@yinjie/ui";
 import {
   AdminCallout,
+  AdminCodeBlock,
   AdminEmptyState,
   AdminMiniPanel,
   AdminPageHero,
   AdminSectionHeader,
-  AdminSectionNav,
   AdminSubpanel,
+  AdminTabs,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
+type NeedDiscoveryView = "overview" | "candidates" | "config" | "shake";
 type CandidateDatasetKey = "active" | "recent";
 type CandidateStatusFilter = "all" | NeedDiscoveryCandidateRecord["status"];
 type CandidateCadenceFilter =
   | "all"
   | NeedDiscoveryCandidateRecord["cadenceType"];
 type RunCadenceFilter = "all" | NeedDiscoveryRunRecord["cadenceType"];
+type ConfigPanelKey = "short" | "daily" | "shared";
+type ShakePanelKey = "sessions" | "config";
 type ShakeStatusFilter = "all" | ShakeDiscoverySessionRecord["status"];
+type ShakeTraceTab = "planning" | "generation";
 type NeedDiscoveryJob =
   | "discover_need_characters_short_interval"
   | "discover_need_characters_daily";
-
-const SECTION_IDS = {
-  overview: "need-discovery-overview",
-  operations: "need-discovery-operations",
-  config: "need-discovery-config",
-  shake: "need-discovery-shake",
-} as const;
 
 const NEED_DISCOVERY_NOTICES: Record<NeedDiscoveryJob, string> = {
   discover_need_characters_short_interval: "短周期需求发现已执行。",
   discover_need_characters_daily: "每日需求发现已执行。",
 };
 
+const WORKSPACE_TABS: Array<{ key: NeedDiscoveryView; label: string }> = [
+  { key: "overview", label: "总览" },
+  { key: "candidates", label: "候选处理" },
+  { key: "config", label: "规则配置" },
+  { key: "shake", label: "摇一摇" },
+];
+
+const CONFIG_TABS: Array<{ key: ConfigPanelKey; label: string }> = [
+  { key: "short", label: "短周期" },
+  { key: "daily", label: "每日" },
+  { key: "shared", label: "共享约束" },
+];
+
+const SHAKE_TABS: Array<{ key: ShakePanelKey; label: string }> = [
+  { key: "sessions", label: "Session" },
+  { key: "config", label: "配置" },
+];
+
+const SHAKE_TRACE_TABS: Array<{ key: ShakeTraceTab; label: string }> = [
+  { key: "planning", label: "方向规划 Prompt" },
+  { key: "generation", label: "角色生成 Prompt" },
+];
+
 const CANDIDATE_STATUS_OPTIONS: Array<{
-  value: Exclude<CandidateStatusFilter, "all">;
+  value: CandidateStatusFilter;
   label: string;
 }> = [
+  { value: "all", label: "全部" },
   { value: "draft", label: "草稿" },
   { value: "friend_request_pending", label: "待通过" },
   { value: "accepted", label: "已接受" },
@@ -71,9 +92,10 @@ const CANDIDATE_STATUS_OPTIONS: Array<{
 ];
 
 const SHAKE_STATUS_OPTIONS: Array<{
-  value: Exclude<ShakeStatusFilter, "all">;
+  value: ShakeStatusFilter;
   label: string;
 }> = [
+  { value: "all", label: "全部" },
   { value: "preview_ready", label: "待决定" },
   { value: "kept", label: "已保留" },
   { value: "dismissed", label: "已跳过" },
@@ -85,6 +107,7 @@ const SHAKE_STATUS_OPTIONS: Array<{
 export function NeedDiscoveryPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
+
   const overviewQuery = useQuery({
     queryKey: ["admin-need-discovery", baseUrl],
     queryFn: () => adminApi.getNeedDiscoveryOverview(),
@@ -117,14 +140,25 @@ export function NeedDiscoveryPage() {
     null,
   );
   const [notice, setNotice] = useState("");
+  const [view, setView] = useState<NeedDiscoveryView>("overview");
+  const [configPanel, setConfigPanel] = useState<ConfigPanelKey>("short");
+  const [shakePanel, setShakePanel] = useState<ShakePanelKey>("sessions");
+  const [shakeTraceTab, setShakeTraceTab] = useState<ShakeTraceTab>("planning");
+
   const [candidateDataset, setCandidateDataset] =
     useState<CandidateDatasetKey>("active");
   const [candidateStatusFilter, setCandidateStatusFilter] =
     useState<CandidateStatusFilter>("all");
   const [candidateCadenceFilter, setCandidateCadenceFilter] =
     useState<CandidateCadenceFilter>("all");
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
+    null,
+  );
+
   const [runCadenceFilter, setRunCadenceFilter] =
     useState<RunCadenceFilter>("all");
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+
   const [shakeStatusFilter, setShakeStatusFilter] =
     useState<ShakeStatusFilter>("all");
   const [selectedShakeSessionId, setSelectedShakeSessionId] = useState<
@@ -150,19 +184,6 @@ export function NeedDiscoveryPage() {
     const timer = window.setTimeout(() => setNotice(""), 2600);
     return () => window.clearTimeout(timer);
   }, [notice]);
-
-  useEffect(() => {
-    if (!shakeSessions.length) {
-      setSelectedShakeSessionId(null);
-      return;
-    }
-
-    setSelectedShakeSessionId((current) =>
-      current && shakeSessions.some((item) => item.id === current)
-        ? current
-        : shakeSessions[0].id,
-    );
-  }, [shakeSessions]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -204,7 +225,10 @@ export function NeedDiscoveryPage() {
     },
   });
 
-  const latestRun = overviewQuery.data?.recentRuns[0] ?? null;
+  const allRuns = useMemo(
+    () => overviewQuery.data?.recentRuns ?? [],
+    [overviewQuery.data?.recentRuns],
+  );
   const activeCandidates = useMemo(
     () => overviewQuery.data?.activeCandidates ?? [],
     [overviewQuery.data?.activeCandidates],
@@ -213,183 +237,205 @@ export function NeedDiscoveryPage() {
     () => overviewQuery.data?.recentCandidates ?? [],
     [overviewQuery.data?.recentCandidates],
   );
+  const latestRun = allRuns[0] ?? null;
+
   const selectedCandidateSource =
     candidateDataset === "active" ? activeCandidates : recentCandidates;
-  const selectedShakeSession = useMemo(
+
+  const filteredCandidates = useMemo(
     () =>
-      shakeSessions.find((item) => item.id === selectedShakeSessionId) ?? null,
-    [selectedShakeSessionId, shakeSessions],
+      sortCandidates(
+        selectedCandidateSource.filter((candidate) => {
+          if (
+            candidateStatusFilter !== "all" &&
+            candidate.status !== candidateStatusFilter
+          ) {
+            return false;
+          }
+          if (
+            candidateCadenceFilter !== "all" &&
+            candidate.cadenceType !== candidateCadenceFilter
+          ) {
+            return false;
+          }
+          return true;
+        }),
+      ),
+    [candidateCadenceFilter, candidateStatusFilter, selectedCandidateSource],
   );
+
+  const filteredRuns = useMemo(
+    () =>
+      allRuns.filter((run) =>
+        runCadenceFilter === "all"
+          ? true
+          : run.cadenceType === runCadenceFilter,
+      ),
+    [allRuns, runCadenceFilter],
+  );
+
+  const filteredShakeSessions = useMemo(
+    () =>
+      shakeSessions.filter((session) =>
+        shakeStatusFilter === "all"
+          ? true
+          : session.status === shakeStatusFilter,
+      ),
+    [shakeSessions, shakeStatusFilter],
+  );
+
+  useEffect(() => {
+    if (!filteredCandidates.length) {
+      setSelectedCandidateId(null);
+      return;
+    }
+
+    setSelectedCandidateId((current) =>
+      current && filteredCandidates.some((item) => item.id === current)
+        ? current
+        : filteredCandidates[0].id,
+    );
+  }, [filteredCandidates]);
+
+  useEffect(() => {
+    if (!filteredShakeSessions.length) {
+      setSelectedShakeSessionId(null);
+      return;
+    }
+
+    setSelectedShakeSessionId((current) =>
+      current && filteredShakeSessions.some((item) => item.id === current)
+        ? current
+        : filteredShakeSessions[0].id,
+    );
+  }, [filteredShakeSessions]);
+
+  useEffect(() => {
+    const relatedRunId =
+      filteredCandidates.find((item) => item.id === selectedCandidateId)
+        ?.runId ?? null;
+    const selectionPool = filteredRuns.length ? filteredRuns : allRuns;
+
+    if (!selectionPool.length) {
+      setSelectedRunId(null);
+      return;
+    }
+
+    setSelectedRunId((current) => {
+      if (current && allRuns.some((run) => run.id === current)) {
+        return current;
+      }
+      if (relatedRunId && allRuns.some((run) => run.id === relatedRunId)) {
+        return relatedRunId;
+      }
+      return selectionPool[0].id;
+    });
+  }, [allRuns, filteredCandidates, filteredRuns, selectedCandidateId]);
+
+  const selectedCandidate =
+    filteredCandidates.find((item) => item.id === selectedCandidateId) ?? null;
+  const selectedRun =
+    allRuns.find((item) => item.id === selectedRunId) ??
+    (selectedCandidate?.runId
+      ? (allRuns.find((item) => item.id === selectedCandidate.runId) ?? null)
+      : null) ??
+    filteredRuns[0] ??
+    null;
+  const selectedShakeSession =
+    filteredShakeSessions.find((item) => item.id === selectedShakeSessionId) ??
+    null;
 
   const candidateStatusCounts = useMemo(
     () => buildCandidateStatusCounts(selectedCandidateSource),
     [selectedCandidateSource],
   );
-
-  const candidateCadenceCounts = useMemo(
-    () => ({
-      short_interval: selectedCandidateSource.filter(
-        (item) => item.cadenceType === "short_interval",
-      ).length,
-      daily: selectedCandidateSource.filter(
-        (item) => item.cadenceType === "daily",
-      ).length,
-    }),
-    [selectedCandidateSource],
+  const shakeStatusCounts = useMemo(
+    () => buildShakeStatusCounts(shakeSessions),
+    [shakeSessions],
   );
 
-  const filteredCandidates = useMemo(() => {
-    return sortCandidates(
-      selectedCandidateSource.filter((candidate) => {
-        if (
-          candidateStatusFilter !== "all" &&
-          candidate.status !== candidateStatusFilter
-        ) {
-          return false;
-        }
-        if (
-          candidateCadenceFilter !== "all" &&
-          candidate.cadenceType !== candidateCadenceFilter
-        ) {
-          return false;
-        }
-        return true;
-      }),
-    );
-  }, [candidateCadenceFilter, candidateStatusFilter, selectedCandidateSource]);
-
-  const filteredRuns = useMemo(() => {
-    const runs = overviewQuery.data?.recentRuns ?? [];
-    return runs.filter((run) =>
-      runCadenceFilter === "all" ? true : run.cadenceType === runCadenceFilter,
-    );
-  }, [overviewQuery.data, runCadenceFilter]);
-
-  const filteredShakeSessions = useMemo(() => {
-    return shakeSessions.filter((session) =>
-      shakeStatusFilter === "all" ? true : session.status === shakeStatusFilter,
-    );
-  }, [shakeSessions, shakeStatusFilter]);
-
-  const hasUnsavedNeedConfig = useMemo(
-    () =>
-      Boolean(
-        draft &&
-        overviewQuery.data?.config &&
-        !isSameSerialized(draft, overviewQuery.data.config),
-      ),
-    [draft, overviewQuery.data],
-  );
-
-  const hasUnsavedShakeConfig = useMemo(
-    () =>
-      Boolean(
-        shakeDraft &&
-        serverShakeConfig &&
-        !isSameSerialized(shakeDraft, serverShakeConfig),
-      ),
-    [serverShakeConfig, shakeDraft],
-  );
-
-  const hasUnsavedChanges = hasUnsavedNeedConfig || hasUnsavedShakeConfig;
-  const shakePendingCount = shakeSessions.filter(
-    (item) => item.status === "preview_ready",
-  ).length;
-  const shakeKeptCount = shakeSessions.filter(
-    (item) => item.status === "kept",
-  ).length;
   const expiringSoonCount = activeCandidates.filter((item) =>
     isWithinHours(item.expiresAt, 24),
   ).length;
   const enabledCadenceCount =
     Number(draft?.shortInterval.enabled ?? false) +
     Number(draft?.daily.enabled ?? false);
-  const recentFailedRunCount =
-    overviewQuery.data?.recentRuns.filter((run) => run.status === "failed")
-      .length ?? 0;
-
-  const metrics = useMemo(
-    () => [
-      {
-        label: "待处理候选",
-        value: overviewQuery.data?.stats.pendingCandidates ?? 0,
-      },
-      {
-        label: "最近失败运行",
-        value: recentFailedRunCount,
-      },
-      {
-        label: "24h 内将过期",
-        value: expiringSoonCount,
-      },
-      {
-        label: "摇一摇待决定",
-        value: shakePendingCount,
-      },
-      {
-        label: "摇一摇已保留",
-        value: shakeKeptCount,
-      },
-      {
-        label: "启用节奏",
-        value: `${enabledCadenceCount}/2`,
-      },
-    ],
-    [
-      enabledCadenceCount,
-      expiringSoonCount,
-      overviewQuery.data,
-      recentFailedRunCount,
-      shakeKeptCount,
-      shakePendingCount,
-    ],
+  const hasUnsavedNeedConfig = Boolean(
+    draft &&
+    overviewQuery.data?.config &&
+    !isSameSerialized(draft, overviewQuery.data.config),
   );
-
-  const focusItems = useMemo(
-    () =>
-      buildFocusItems({
-        config: draft,
-        hasUnsavedChanges,
-        latestRun,
-        activeCandidates,
-        expiringSoonCount,
-        shakePendingCount,
-      }),
-    [
-      activeCandidates,
-      draft,
-      expiringSoonCount,
-      hasUnsavedChanges,
-      latestRun,
-      shakePendingCount,
-    ],
+  const hasUnsavedShakeConfig = Boolean(
+    shakeDraft &&
+    serverShakeConfig &&
+    !isSameSerialized(shakeDraft, serverShakeConfig),
   );
+  const hasUnsavedChanges = hasUnsavedNeedConfig || hasUnsavedShakeConfig;
+  const queueOccupancy = draft
+    ? `${activeCandidates.length}/${draft.shared.pendingCandidateLimit}`
+    : "0/0";
+  const shakePendingCount = shakeStatusCounts.preview_ready;
+  const metrics = [
+    { label: "候选池", value: queueOccupancy },
+    {
+      label: "最新运行",
+      value: latestRun
+        ? `${formatCadenceLabel(latestRun.cadenceType)} · ${labelForRun(
+            latestRun.status,
+          )}`
+        : "暂无",
+    },
+    { label: "24h 将过期", value: expiringSoonCount },
+    { label: "摇一摇待决定", value: shakePendingCount },
+  ];
 
-  const navItems = useMemo(
-    () => [
-      {
-        label: "运营总览",
-        detail: "先判断节奏、候选池和当前风险。",
-        onClick: () => scrollToSection(SECTION_IDS.overview),
-      },
-      {
-        label: "候选与运行",
-        detail: "筛选当前候选，回看最近执行结果。",
-        onClick: () => scrollToSection(SECTION_IDS.operations),
-      },
-      {
-        label: "规则配置",
-        detail: "调整短周期、每日和共享约束。",
-        onClick: () => scrollToSection(SECTION_IDS.config),
-      },
-      {
-        label: "摇一摇工作台",
-        detail: "管理即时相遇配置，并切换查看 session trace。",
-        onClick: () => scrollToSection(SECTION_IDS.shake),
-      },
-    ],
-    [],
-  );
+  const openCandidateQueue = (status?: CandidateStatusFilter) => {
+    setView("candidates");
+    setCandidateDataset("active");
+    if (status) {
+      setCandidateStatusFilter(status);
+    }
+  };
+
+  const openRunWorkspace = (cadence?: RunCadenceFilter) => {
+    setView("candidates");
+    if (cadence) {
+      setRunCadenceFilter(cadence);
+    }
+  };
+
+  const openConfigWorkspace = (panel?: ConfigPanelKey) => {
+    setView("config");
+    if (panel) {
+      setConfigPanel(panel);
+    }
+  };
+
+  const openShakeWorkspace = (
+    panel: ShakePanelKey = "sessions",
+    status?: ShakeStatusFilter,
+  ) => {
+    setView("shake");
+    setShakePanel(panel);
+    if (status) {
+      setShakeStatusFilter(status);
+    }
+  };
+
+  const primaryCandidateStatus = pickPriorityCandidateStatus(activeCandidates);
+  const todayActions = buildTodayActions({
+    draft,
+    hasUnsavedChanges,
+    latestRun,
+    activeCandidates,
+    expiringSoonCount,
+    shakePendingCount,
+    primaryCandidateStatus,
+    openCandidateQueue,
+    openConfigWorkspace,
+    openRunWorkspace,
+    openShakeWorkspace,
+  });
 
   const resetDrafts = () => {
     if (overviewQuery.data?.config) {
@@ -421,8 +467,8 @@ export function NeedDiscoveryPage() {
     <div className="space-y-6">
       <AdminPageHero
         eyebrow="需求发现"
-        title="角色缺口识别与自动加友工作台"
-        description="先看自动补位是否健康，再处理候选池和摇一摇即时相遇，最后再调规则。页面按运营排查顺序重组，减少在长表单里来回找状态。"
+        title="角色缺口识别与自动加友"
+        description="把今日排查、候选处理、规则调整和摇一摇检查拆成独立工作模式。先切到当下要做的那一件事，再进入详情，不再在长页里来回找。"
         metrics={metrics}
         actions={
           <>
@@ -446,14 +492,6 @@ export function NeedDiscoveryPage() {
             >
               立即跑每日
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending || !hasUnsavedChanges}
-            >
-              保存全部配置
-            </Button>
           </>
         }
       />
@@ -470,351 +508,580 @@ export function NeedDiscoveryPage() {
         <ErrorBlock message={runMutation.error.message} />
       ) : null}
 
-      <AdminCallout
-        title={
-          hasUnsavedChanges ? "当前有未保存改动" : "当前配置已与服务端同步"
-        }
-        tone={hasUnsavedChanges ? "warning" : "success"}
-        description={
-          <div className="space-y-3">
-            <p>
-              {hasUnsavedChanges
-                ? "规则调整还没有写回服务端。建议先完成保存，再继续观察候选与运行态，避免判断基于旧配置。"
-                : "可以直接围绕候选、运行和摇一摇 session 做排查；如需调整，再回到规则工作台。"}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {hasUnsavedNeedConfig ? (
-                <StatusPill tone="warning">自动补位规则待保存</StatusPill>
-              ) : null}
-              {hasUnsavedShakeConfig ? (
-                <StatusPill tone="warning">摇一摇规则待保存</StatusPill>
-              ) : null}
-              {!hasUnsavedChanges ? (
-                <StatusPill tone="healthy">可直接查看线上状态</StatusPill>
-              ) : null}
-            </div>
-          </div>
-        }
-        actions={
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetDrafts}
-              disabled={!hasUnsavedChanges}
-            >
-              恢复服务端当前值
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => saveMutation.mutate()}
-              disabled={!hasUnsavedChanges || saveMutation.isPending}
-            >
-              保存改动
-            </Button>
-          </>
-        }
+      <WorkspaceToolbar
+        view={view}
+        onViewChange={setView}
+        primaryAction={todayActions[0] ?? null}
+        hasUnsavedChanges={hasUnsavedChanges}
+        hasUnsavedNeedConfig={hasUnsavedNeedConfig}
+        hasUnsavedShakeConfig={hasUnsavedShakeConfig}
+        onSave={() => saveMutation.mutate()}
+        onReset={resetDrafts}
+        saveDisabled={!hasUnsavedChanges || saveMutation.isPending}
+        resetDisabled={!hasUnsavedChanges}
       />
 
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr),300px]">
-        <div className="space-y-6">
-          <section id={SECTION_IDS.overview} className="scroll-mt-28 space-y-6">
-            <Card className="bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,248,239,0.95)_48%,rgba(242,251,246,0.96))]">
-              <AdminSectionHeader
-                title="运营总览"
-                actions={
-                  <StatusPill
-                    tone={
-                      focusItems.some((item) => item.tone === "warning")
-                        ? "warning"
-                        : "healthy"
-                    }
-                  >
-                    {focusItems.some((item) => item.tone === "warning")
-                      ? "需关注"
-                      : "运行平稳"}
-                  </StatusPill>
-                }
-              />
-              <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-                先用四个摘要回答运营最关心的问题：候选池有没有堵住、最近运行有没有出错、自动补位是否还开着、摇一摇里有没有待决定的临时候选。
-              </p>
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <MetricCard
-                  label="候选池占用"
-                  value={`${activeCandidates.length}/${draft.shared.pendingCandidateLimit}`}
-                  detail="待处理候选过多会压住新的补位结果。"
-                  meta={
-                    <StatusPill
-                      tone={
-                        activeCandidates.length >=
-                        draft.shared.pendingCandidateLimit
-                          ? "warning"
-                          : "healthy"
-                      }
-                    >
-                      {Math.round(
-                        (activeCandidates.length /
-                          Math.max(draft.shared.pendingCandidateLimit, 1)) *
-                          100,
-                      )}
-                      %
-                    </StatusPill>
-                  }
-                />
-                <MetricCard
-                  label="最近执行"
-                  value={
-                    latestRun
-                      ? `${labelForRun(latestRun.status)} · ${formatCadenceLabel(
-                          latestRun.cadenceType,
-                        )}`
-                      : "暂无"
-                  }
-                  detail={
-                    latestRun
-                      ? `${formatCompactDateTime(latestRun.startedAt)} · 信号 ${latestRun.signalCount} 条`
-                      : "还没有 recent run。"
-                  }
-                  meta={
-                    latestRun ? (
-                      <StatusPill tone={toneForRun(latestRun.status)}>
-                        {labelForRun(latestRun.status)}
-                      </StatusPill>
-                    ) : undefined
-                  }
-                />
-                <MetricCard
-                  label="自动补位节奏"
-                  value={`${enabledCadenceCount}/2`}
-                  detail={`短周期 ${draft.shortInterval.enabled ? "开启" : "关闭"} · 每日 ${
-                    draft.daily.enabled ? "开启" : "关闭"
-                  }`}
-                  meta={
-                    <StatusPill
-                      tone={enabledCadenceCount === 0 ? "warning" : "healthy"}
-                    >
-                      {enabledCadenceCount === 0 ? "已停用" : "运行中"}
-                    </StatusPill>
-                  }
-                />
-                <MetricCard
-                  label="摇一摇待决定"
-                  value={shakePendingCount}
-                  detail={`已保留 ${shakeKeptCount} · 最近记录 ${shakeSessions.length}`}
-                  meta={
-                    <StatusPill
-                      tone={shakePendingCount > 0 ? "warning" : "healthy"}
-                    >
-                      {shakePendingCount > 0 ? "待处理" : "已清空"}
-                    </StatusPill>
-                  }
-                />
-              </div>
-            </Card>
+      {view === "overview" ? (
+        <OverviewWorkspace
+          draft={draft}
+          latestRun={latestRun}
+          activeCandidates={activeCandidates}
+          recentCandidates={recentCandidates}
+          shakeSessions={shakeSessions}
+          candidateStatusCounts={buildCandidateStatusCounts(activeCandidates)}
+          shakeStatusCounts={shakeStatusCounts}
+          expiringSoonCount={expiringSoonCount}
+          queueOccupancy={queueOccupancy}
+          enabledCadenceCount={enabledCadenceCount}
+          todayActions={todayActions}
+          openCandidateQueue={openCandidateQueue}
+          openConfigWorkspace={openConfigWorkspace}
+          openRunWorkspace={openRunWorkspace}
+          openShakeWorkspace={openShakeWorkspace}
+        />
+      ) : null}
 
-            <div className="grid gap-4 xl:grid-cols-2">
-              {focusItems.map((item) => (
-                <AdminCallout
-                  key={item.title}
-                  title={item.title}
-                  tone={item.tone}
-                  description={item.description}
-                />
-              ))}
+      {view === "candidates" ? (
+        <CandidatesWorkspace
+          dataset={candidateDataset}
+          onDatasetChange={setCandidateDataset}
+          statusFilter={candidateStatusFilter}
+          onStatusFilterChange={setCandidateStatusFilter}
+          cadenceFilter={candidateCadenceFilter}
+          onCadenceFilterChange={setCandidateCadenceFilter}
+          sourceCount={selectedCandidateSource.length}
+          filteredCandidates={filteredCandidates}
+          selectedCandidateId={selectedCandidateId}
+          onSelectCandidate={setSelectedCandidateId}
+          selectedCandidate={selectedCandidate}
+          candidateStatusCounts={candidateStatusCounts}
+          relatedRun={
+            selectedCandidate?.runId
+              ? (allRuns.find((run) => run.id === selectedCandidate.runId) ??
+                null)
+              : null
+          }
+          onOpenRelatedRun={(runId) => setSelectedRunId(runId)}
+          runCadenceFilter={runCadenceFilter}
+          onRunCadenceFilterChange={setRunCadenceFilter}
+          runs={filteredRuns}
+          selectedRun={selectedRun}
+          selectedRunId={selectedRunId}
+          onSelectRun={setSelectedRunId}
+          expiringSoonCount={expiringSoonCount}
+        />
+      ) : null}
+
+      {view === "config" ? (
+        <ConfigWorkspace
+          panel={configPanel}
+          onPanelChange={setConfigPanel}
+          draft={draft}
+          onChange={setDraft}
+          hasUnsavedNeedConfig={hasUnsavedNeedConfig}
+          hasUnsavedShakeConfig={hasUnsavedShakeConfig}
+        />
+      ) : null}
+
+      {view === "shake" ? (
+        <ShakeWorkspace
+          panel={shakePanel}
+          onPanelChange={setShakePanel}
+          traceTab={shakeTraceTab}
+          onTraceTabChange={setShakeTraceTab}
+          sessions={filteredShakeSessions}
+          allSessions={shakeSessions}
+          statusFilter={shakeStatusFilter}
+          onStatusFilterChange={setShakeStatusFilter}
+          selectedSession={selectedShakeSession}
+          selectedSessionId={selectedShakeSessionId}
+          onSelectSession={setSelectedShakeSessionId}
+          config={shakeDraft}
+          onConfigChange={setShakeDraft}
+          statusCounts={shakeStatusCounts}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function WorkspaceToolbar({
+  view,
+  onViewChange,
+  primaryAction,
+  hasUnsavedChanges,
+  hasUnsavedNeedConfig,
+  hasUnsavedShakeConfig,
+  onSave,
+  onReset,
+  saveDisabled,
+  resetDisabled,
+}: {
+  view: NeedDiscoveryView;
+  onViewChange: (view: NeedDiscoveryView) => void;
+  primaryAction: TodayAction | null;
+  hasUnsavedChanges: boolean;
+  hasUnsavedNeedConfig: boolean;
+  hasUnsavedShakeConfig: boolean;
+  onSave: () => void;
+  onReset: () => void;
+  saveDisabled: boolean;
+  resetDisabled: boolean;
+}) {
+  return (
+    <Card className="sticky top-24 z-20 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,249,241,0.95),rgba(240,253,246,0.92))]">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+              当前优先动作
             </div>
+            <StatusPill tone={hasUnsavedChanges ? "warning" : "healthy"}>
+              {hasUnsavedChanges ? "有未保存改动" : "可直接按线上状态排查"}
+            </StatusPill>
+          </div>
+          <div className="mt-2 text-sm text-[color:var(--text-primary)]">
+            {primaryAction?.title ?? "当前无阻塞项"}
+          </div>
+          <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+            {primaryAction?.description ??
+              "候选、规则和摇一摇都处于可控状态，可以进入任意工作模式细看。"}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {hasUnsavedNeedConfig ? (
+              <StatusPill tone="warning">自动补位规则待保存</StatusPill>
+            ) : (
+              <StatusPill tone="healthy">自动补位规则已同步</StatusPill>
+            )}
+            {hasUnsavedShakeConfig ? (
+              <StatusPill tone="warning">摇一摇规则待保存</StatusPill>
+            ) : (
+              <StatusPill tone="muted">摇一摇规则未改动</StatusPill>
+            )}
+          </div>
+        </div>
 
-            <div className="grid gap-6 xl:grid-cols-3">
-              <CadenceSnapshotCard
-                title="短周期补位"
-                description="更偏即时信号和短期需求，适合捕捉最近刚冒头的缺口。"
-                cadenceType="short_interval"
-                config={draft.shortInterval}
-                recentRuns={overviewQuery.data.recentRuns}
-              />
-              <CadenceSnapshotCard
-                title="每日补位"
-                description="更偏中长期缺口和稳定角色位，适合做结构性补齐。"
-                cadenceType="daily"
-                config={draft.daily}
-                recentRuns={overviewQuery.data.recentRuns}
-              />
-              <SharedHealthCard
-                config={draft}
-                stats={overviewQuery.data.stats}
-                activeCandidateCount={activeCandidates.length}
-              />
-            </div>
-          </section>
-
-          <section
-            id={SECTION_IDS.operations}
-            className="scroll-mt-28 space-y-6"
+        <div className="flex flex-wrap gap-2">
+          {primaryAction ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={primaryAction.onClick}
+            >
+              {primaryAction.actionLabel}
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onReset}
+            disabled={resetDisabled}
           >
-            <AdminCallout
-              title="候选与运行排查路径"
-              tone="info"
-              description="先看当前候选池是否接近上限，再按状态筛掉噪音，最后回看最近运行是失败、跳过还是成功。这样能更快判断问题是在规则、输入信号还是生成链路。"
-            />
+            恢复服务端当前值
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onSave}
+            disabled={saveDisabled}
+          >
+            保存全部配置
+          </Button>
+        </div>
+      </div>
 
-            <div className="grid gap-6 xl:grid-cols-[1.16fr,0.84fr]">
-              <CandidateWorkbenchCard
-                dataset={candidateDataset}
-                onDatasetChange={setCandidateDataset}
-                statusFilter={candidateStatusFilter}
-                onStatusFilterChange={setCandidateStatusFilter}
-                cadenceFilter={candidateCadenceFilter}
-                onCadenceFilterChange={setCandidateCadenceFilter}
-                activeCount={activeCandidates.length}
-                recentCount={recentCandidates.length}
-                sourceCount={selectedCandidateSource.length}
-                filteredCandidates={filteredCandidates}
-                statusCounts={candidateStatusCounts}
-                cadenceCounts={candidateCadenceCounts}
-              />
+      <AdminTabs
+        tabs={WORKSPACE_TABS}
+        activeKey={view}
+        onChange={(key) => onViewChange(key as NeedDiscoveryView)}
+        className="mt-4"
+      />
+    </Card>
+  );
+}
 
-              <RunListCard
-                runs={filteredRuns}
-                cadenceFilter={runCadenceFilter}
-                onCadenceFilterChange={setRunCadenceFilter}
-              />
-            </div>
-          </section>
+type TodayAction = {
+  key: string;
+  title: string;
+  description: string;
+  actionLabel: string;
+  tone: "warning" | "info" | "success";
+  onClick: () => void;
+};
 
-          <section id={SECTION_IDS.config} className="scroll-mt-28 space-y-6">
-            <AdminCallout
-              title="规则工作台"
-              tone="muted"
-              description="配置区按运营动作拆成了开关与模式、节奏与窗口、候选阈值、Prompt 四块。先调开关和上限，再看 Prompt，避免一上来就陷进大段文本。"
-            />
-
-            <CadenceCard
-              title="短周期策略"
-              description="更看重最近一段时间的压力、症状、即时求助信号。"
-              cadenceType="short"
-              config={draft}
-              onChange={setDraft}
-            />
-            <CadenceCard
-              title="每日策略"
-              description="更看重反复出现的主题、长期缺口和稳定角色位。"
-              cadenceType="daily"
-              config={draft}
-              onChange={setDraft}
-            />
-            <SharedCard config={draft} onChange={setDraft} />
-          </section>
-
-          <section id={SECTION_IDS.shake} className="scroll-mt-28 space-y-6">
-            <AdminCallout
-              title="摇一摇工作台"
-              tone={shakePendingCount > 0 ? "warning" : "info"}
-              description={
-                shakePendingCount > 0
-                  ? `当前有 ${shakePendingCount} 个待决定的即时相遇 session。建议优先看最近几条的 matchReason、方向和 prompt trace。`
-                  : "摇一摇和自动补位不是一条链路：前者负责即时相遇和用户决定是否保留，后者负责系统自动补位。"
+function OverviewWorkspace({
+  draft,
+  latestRun,
+  activeCandidates,
+  recentCandidates,
+  shakeSessions,
+  candidateStatusCounts,
+  shakeStatusCounts,
+  expiringSoonCount,
+  queueOccupancy,
+  enabledCadenceCount,
+  todayActions,
+  openCandidateQueue,
+  openConfigWorkspace,
+  openRunWorkspace,
+  openShakeWorkspace,
+}: {
+  draft: NeedDiscoveryConfig;
+  latestRun: NeedDiscoveryRunRecord | null;
+  activeCandidates: NeedDiscoveryCandidateRecord[];
+  recentCandidates: NeedDiscoveryCandidateRecord[];
+  shakeSessions: ShakeDiscoverySessionRecord[];
+  candidateStatusCounts: Record<NeedDiscoveryCandidateRecord["status"], number>;
+  shakeStatusCounts: Record<ShakeDiscoverySessionRecord["status"], number>;
+  expiringSoonCount: number;
+  queueOccupancy: string;
+  enabledCadenceCount: number;
+  todayActions: TodayAction[];
+  openCandidateQueue: (status?: CandidateStatusFilter) => void;
+  openConfigWorkspace: (panel?: ConfigPanelKey) => void;
+  openRunWorkspace: (cadence?: RunCadenceFilter) => void;
+  openShakeWorkspace: (
+    panel?: ShakePanelKey,
+    status?: ShakeStatusFilter,
+  ) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader
+          title="今天先做什么"
+          actions={
+            <StatusPill
+              tone={
+                todayActions.some((item) => item.tone === "warning")
+                  ? "warning"
+                  : "healthy"
               }
-            />
-
-            <div className="grid gap-6 xl:grid-cols-[1.08fr,0.92fr]">
-              <ShakeConfigCard config={shakeDraft} onChange={setShakeDraft} />
-
-              <div className="space-y-6">
-                <ShakeSessionWorkspace
-                  sessions={filteredShakeSessions}
-                  allSessions={shakeSessions}
-                  statusFilter={shakeStatusFilter}
-                  onStatusFilterChange={setShakeStatusFilter}
-                  selectedSessionId={selectedShakeSessionId}
-                  onSelectSession={setSelectedShakeSessionId}
-                />
-                <ShakeTraceCard session={selectedShakeSession} />
-              </div>
-            </div>
-          </section>
+            >
+              {todayActions.some((item) => item.tone === "warning")
+                ? "先处理阻塞"
+                : "状态平稳"}
+            </StatusPill>
+          }
+        />
+        <div className="mt-4 grid gap-4 xl:grid-cols-3">
+          {todayActions.map((action) => (
+            <OverviewActionCard key={action.key} action={action} />
+          ))}
         </div>
+      </Card>
 
-        <div className="space-y-6 2xl:sticky 2xl:top-24 2xl:self-start">
-          <AdminSectionNav title="页面导航" items={navItems} />
-          <QuickPulseCard
-            latestRun={latestRun}
-            hasUnsavedChanges={hasUnsavedChanges}
-            activeCandidateCount={activeCandidates.length}
-            pendingCandidateLimit={draft.shared.pendingCandidateLimit}
-            enabledCadenceCount={enabledCadenceCount}
-            shakePendingCount={shakePendingCount}
-          />
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="候选池"
+          value={queueOccupancy}
+          detail="待处理候选过多会压住新补位。"
+          meta={
+            <StatusPill
+              tone={
+                activeCandidates.length >= draft.shared.pendingCandidateLimit
+                  ? "warning"
+                  : "healthy"
+              }
+            >
+              {Math.round(
+                (activeCandidates.length /
+                  Math.max(draft.shared.pendingCandidateLimit, 1)) *
+                  100,
+              )}
+              %
+            </StatusPill>
+          }
+        />
+        <MetricCard
+          label="最新运行"
+          value={
+            latestRun
+              ? `${formatCadenceLabel(latestRun.cadenceType)} · ${labelForRun(
+                  latestRun.status,
+                )}`
+              : "暂无"
+          }
+          detail={
+            latestRun
+              ? `${formatCompactDateTime(latestRun.startedAt)} · 信号 ${latestRun.signalCount} 条`
+              : "等待首次调度。"
+          }
+          meta={
+            latestRun ? (
+              <StatusPill tone={toneForRun(latestRun.status)}>
+                {labelForRun(latestRun.status)}
+              </StatusPill>
+            ) : undefined
+          }
+        />
+        <MetricCard
+          label="24h 将过期"
+          value={expiringSoonCount}
+          detail="优先清掉将过期且仍待通过的候选。"
+        />
+        <MetricCard
+          label="摇一摇待决定"
+          value={shakeStatusCounts.preview_ready}
+          detail={`已保留 ${shakeStatusCounts.kept} · 最近 ${shakeSessions.length}`}
+        />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.08fr,0.92fr]">
+        <CadenceOverviewCard
+          draft={draft}
+          latestRun={latestRun}
+          enabledCadenceCount={enabledCadenceCount}
+          onOpenRunWorkspace={openRunWorkspace}
+          onOpenConfigWorkspace={openConfigWorkspace}
+        />
+        <HealthOverviewCard
+          activeCandidates={activeCandidates}
+          recentCandidates={recentCandidates}
+          candidateStatusCounts={candidateStatusCounts}
+          shakeStatusCounts={shakeStatusCounts}
+          onOpenCandidateQueue={openCandidateQueue}
+          onOpenShakeWorkspace={openShakeWorkspace}
+        />
       </div>
     </div>
   );
 }
 
-function QuickPulseCard({
+function OverviewActionCard({ action }: { action: TodayAction }) {
+  return (
+    <div
+      className={[
+        "rounded-[24px] border p-4 shadow-[var(--shadow-soft)]",
+        action.tone === "warning"
+          ? "border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))]"
+          : action.tone === "success"
+            ? "border-emerald-200 bg-[linear-gradient(160deg,rgba(236,253,245,0.98),rgba(220,252,231,0.92))]"
+            : "border-sky-200 bg-[linear-gradient(160deg,rgba(239,246,255,0.98),rgba(224,242,254,0.92))]",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+          {action.title}
+        </div>
+        <StatusPill
+          tone={
+            action.tone === "warning"
+              ? "warning"
+              : action.tone === "success"
+                ? "healthy"
+                : "muted"
+          }
+        >
+          {action.tone === "warning"
+            ? "优先"
+            : action.tone === "success"
+              ? "稳定"
+              : "查看"}
+        </StatusPill>
+      </div>
+      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+        {action.description}
+      </div>
+      <Button
+        variant={action.tone === "warning" ? "primary" : "secondary"}
+        size="sm"
+        className="mt-4"
+        onClick={action.onClick}
+      >
+        {action.actionLabel}
+      </Button>
+    </div>
+  );
+}
+
+function CadenceOverviewCard({
+  draft,
   latestRun,
-  hasUnsavedChanges,
-  activeCandidateCount,
-  pendingCandidateLimit,
   enabledCadenceCount,
-  shakePendingCount,
+  onOpenRunWorkspace,
+  onOpenConfigWorkspace,
 }: {
+  draft: NeedDiscoveryConfig;
   latestRun: NeedDiscoveryRunRecord | null;
-  hasUnsavedChanges: boolean;
-  activeCandidateCount: number;
-  pendingCandidateLimit: number;
   enabledCadenceCount: number;
-  shakePendingCount: number;
+  onOpenRunWorkspace: (cadence?: RunCadenceFilter) => void;
+  onOpenConfigWorkspace: (panel?: ConfigPanelKey) => void;
 }) {
+  const shortLatest =
+    latestRun?.cadenceType === "short_interval" ? latestRun : null;
+  const dailyLatest = latestRun?.cadenceType === "daily" ? latestRun : null;
+
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
-        title="当前脉冲"
+        title="自动补位概览"
         actions={
-          <StatusPill tone={hasUnsavedChanges ? "warning" : "healthy"}>
-            {hasUnsavedChanges ? "未保存" : "已同步"}
+          <StatusPill tone={enabledCadenceCount === 0 ? "warning" : "healthy"}>
+            {enabledCadenceCount}/2 节奏开启
           </StatusPill>
         }
       />
-      <div className="mt-4 grid gap-3">
-        <AdminMiniPanel title="最近执行">
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <SummaryButtonCard
+          title="短周期补位"
+          detail={`${
+            draft.shortInterval.enabled ? "启用中" : "已停用"
+          } · ${formatExecutionMode(draft.shortInterval.executionMode)}`}
+          meta={`每 ${draft.shortInterval.intervalMinutes} 分钟 · 回看 ${draft.shortInterval.lookbackHours} 小时`}
+          actionLabel="查看短周期规则"
+          onClick={() => onOpenConfigWorkspace("short")}
+          tone={draft.shortInterval.enabled ? "healthy" : "warning"}
+        />
+        <SummaryButtonCard
+          title="每日补位"
+          detail={`${
+            draft.daily.enabled ? "启用中" : "已停用"
+          } · ${formatExecutionMode(draft.daily.executionMode)}`}
+          meta={`每天 ${padNumber(draft.daily.runAtHour)}:${padNumber(
+            draft.daily.runAtMinute,
+          )} · 回看 ${draft.daily.lookbackDays} 天`}
+          actionLabel="查看每日规则"
+          onClick={() => onOpenConfigWorkspace("daily")}
+          tone={draft.daily.enabled ? "healthy" : "warning"}
+        />
+        <SummaryButtonCard
+          title="共享约束"
+          detail={`队列 ${draft.shared.pendingCandidateLimit} · 每日创建 ${draft.shared.dailyCreationLimit}`}
+          meta={`抑制期 ${draft.shared.shortSuppressionDays}/${draft.shared.dailySuppressionDays} 天 · 风险域 ${formatRiskDomains(
+            draft.shared.allowMedical,
+            draft.shared.allowLegal,
+            draft.shared.allowFinance,
+          )}`}
+          actionLabel="查看共享约束"
+          onClick={() => onOpenConfigWorkspace("shared")}
+          tone="muted"
+        />
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => onOpenRunWorkspace("short_interval")}
+          className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-white/90"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+              最近短周期运行
+            </div>
+            <StatusPill tone={toneForRun(shortLatest?.status ?? "skipped")}>
+              {shortLatest ? labelForRun(shortLatest.status) : "暂无"}
+            </StatusPill>
+          </div>
+          <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            {shortLatest
+              ? `${formatCompactDateTime(shortLatest.startedAt)} · 信号 ${shortLatest.signalCount} 条`
+              : "还没有短周期 recent run。"}
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenRunWorkspace("daily")}
+          className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-white/90"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+              最近每日运行
+            </div>
+            <StatusPill tone={toneForRun(dailyLatest?.status ?? "skipped")}>
+              {dailyLatest ? labelForRun(dailyLatest.status) : "暂无"}
+            </StatusPill>
+          </div>
+          <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            {dailyLatest
+              ? `${formatCompactDateTime(dailyLatest.startedAt)} · 信号 ${dailyLatest.signalCount} 条`
+              : "还没有每日 recent run。"}
+          </div>
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function HealthOverviewCard({
+  activeCandidates,
+  recentCandidates,
+  candidateStatusCounts,
+  shakeStatusCounts,
+  onOpenCandidateQueue,
+  onOpenShakeWorkspace,
+}: {
+  activeCandidates: NeedDiscoveryCandidateRecord[];
+  recentCandidates: NeedDiscoveryCandidateRecord[];
+  candidateStatusCounts: Record<NeedDiscoveryCandidateRecord["status"], number>;
+  shakeStatusCounts: Record<ShakeDiscoverySessionRecord["status"], number>;
+  onOpenCandidateQueue: (status?: CandidateStatusFilter) => void;
+  onOpenShakeWorkspace: (
+    panel?: ShakePanelKey,
+    status?: ShakeStatusFilter,
+  ) => void;
+}) {
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <AdminSectionHeader title="当前处理压力" />
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <SummaryButtonCard
+          title="待通过候选"
+          detail={`${candidateStatusCounts.friend_request_pending} 条`}
+          meta="通常应优先处理，避免长期积压。"
+          actionLabel="打开候选队列"
+          onClick={() => onOpenCandidateQueue("friend_request_pending")}
+          tone={
+            candidateStatusCounts.friend_request_pending > 0
+              ? "warning"
+              : "muted"
+          }
+        />
+        <SummaryButtonCard
+          title="草稿候选"
+          detail={`${candidateStatusCounts.draft} 条`}
+          meta="适合排查 need 识别质量和草稿阈值。"
+          actionLabel="查看草稿"
+          onClick={() => onOpenCandidateQueue("draft")}
+          tone={candidateStatusCounts.draft > 0 ? "info" : "muted"}
+        />
+        <SummaryButtonCard
+          title="生成失败"
+          detail={`${candidateStatusCounts.generation_failed} 条`}
+          meta="优先确认是 Prompt、输入信号还是生成链路异常。"
+          actionLabel="查看失败候选"
+          onClick={() => onOpenCandidateQueue("generation_failed")}
+          tone={
+            candidateStatusCounts.generation_failed > 0 ? "warning" : "muted"
+          }
+        />
+        <SummaryButtonCard
+          title="摇一摇待决定"
+          detail={`${shakeStatusCounts.preview_ready} 条`}
+          meta={`已保留 ${shakeStatusCounts.kept} · 已过期 ${shakeStatusCounts.expired}`}
+          actionLabel="查看 session"
+          onClick={() => onOpenShakeWorkspace("sessions", "preview_ready")}
+          tone={shakeStatusCounts.preview_ready > 0 ? "info" : "muted"}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <AdminMiniPanel title="当前候选池">
           <div className="text-sm text-[color:var(--text-primary)]">
-            {latestRun
-              ? `${formatCadenceLabel(latestRun.cadenceType)} · ${labelForRun(
-                  latestRun.status,
-                )}`
-              : "暂无运行"}
+            当前候选 {activeCandidates.length} 条
           </div>
           <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            {latestRun
-              ? formatCompactDateTime(latestRun.startedAt)
-              : "等待首次执行"}
+            最近候选 {recentCandidates.length} 条
           </div>
         </AdminMiniPanel>
-        <AdminMiniPanel title="候选池">
+        <AdminMiniPanel title="历史结果">
           <div className="text-sm text-[color:var(--text-primary)]">
-            {activeCandidateCount}/{pendingCandidateLimit}
+            已接受 {candidateStatusCounts.accepted} · 已拒绝{" "}
+            {candidateStatusCounts.declined}
           </div>
           <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            {activeCandidateCount >= pendingCandidateLimit
-              ? "已到上限，新的补位会受阻。"
-              : "仍有可用余量。"}
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="自动补位">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            {enabledCadenceCount}/2 节奏开启
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            节奏越少，候选来源越单一。
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="摇一摇">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            待决定 {shakePendingCount}
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            适合快速抽查即时相遇质量。
+            已过期 {candidateStatusCounts.expired} · 已删除{" "}
+            {candidateStatusCounts.deleted}
           </div>
         </AdminMiniPanel>
       </div>
@@ -822,153 +1089,80 @@ function QuickPulseCard({
   );
 }
 
-function CadenceSnapshotCard({
+function SummaryButtonCard({
   title,
-  description,
-  cadenceType,
-  config,
-  recentRuns,
+  detail,
+  meta,
+  actionLabel,
+  onClick,
+  tone,
 }: {
   title: string;
-  description: string;
-  cadenceType: NeedDiscoveryRunRecord["cadenceType"];
-  config: NeedDiscoveryConfig["shortInterval"] | NeedDiscoveryConfig["daily"];
-  recentRuns: NeedDiscoveryRunRecord[];
+  detail: string;
+  meta: string;
+  actionLabel: string;
+  onClick: () => void;
+  tone: "warning" | "healthy" | "info" | "muted";
 }) {
-  const latestRun =
-    recentRuns.find((item) => item.cadenceType === cadenceType) ?? null;
-
   return (
-    <Card className="bg-[color:var(--surface-console)]">
-      <AdminSectionHeader
-        title={title}
-        actions={
-          <StatusPill tone={config.enabled ? "healthy" : "warning"}>
-            {config.enabled ? "启用中" : "已停用"}
-          </StatusPill>
-        }
-      />
-      <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        {description}
-      </p>
-      <div className="mt-4 grid gap-3">
-        <AdminMiniPanel title="执行模式">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            {formatExecutionMode(config.executionMode)}
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="运行节奏">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            {formatCadenceSchedule(cadenceType, config)}
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="候选阈值">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            单轮 {config.maxCandidatesPerRun} 个
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            最低置信度 {config.minConfidenceScore.toFixed(2)}
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="最近运行">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            {latestRun ? labelForRun(latestRun.status) : "暂无"}
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            {latestRun
-              ? `${formatCompactDateTime(latestRun.startedAt)} · 信号 ${latestRun.signalCount} 条`
-              : "还没有 recent run。"}
-          </div>
-        </AdminMiniPanel>
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        <StatusPill
+          tone={
+            tone === "warning"
+              ? "warning"
+              : tone === "healthy"
+                ? "healthy"
+                : "muted"
+          }
+        >
+          {tone === "warning"
+            ? "需关注"
+            : tone === "healthy"
+              ? "正常"
+              : tone === "info"
+                ? "查看"
+                : "概览"}
+        </StatusPill>
       </div>
-    </Card>
+      <div className="mt-2 text-sm text-[color:var(--text-primary)]">
+        {detail}
+      </div>
+      <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
+        {meta}
+      </div>
+      <Button variant="ghost" size="sm" className="mt-3" onClick={onClick}>
+        {actionLabel}
+      </Button>
+    </div>
   );
 }
 
-function SharedHealthCard({
-  config,
-  stats,
-  activeCandidateCount,
-}: {
-  config: NeedDiscoveryConfig;
-  stats: {
-    pendingCandidates: number;
-    acceptedCandidates: number;
-    declinedCandidates: number;
-    expiredCandidates: number;
-    deletedCandidates: number;
-    dormantCharacters: number;
-  };
-  activeCandidateCount: number;
-}) {
-  const riskDomains = [
-    config.shared.allowMedical ? "医疗" : null,
-    config.shared.allowLegal ? "法律" : null,
-    config.shared.allowFinance ? "金融" : null,
-  ].filter((item): item is string => Boolean(item));
-
-  return (
-    <Card className="bg-[color:var(--surface-console)]">
-      <AdminSectionHeader
-        title="共享边界"
-        actions={<StatusPill tone="muted">统一约束</StatusPill>}
-      />
-      <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        这里决定两条自动补位节奏共用的上限、抑制期和风险领域边界。
-      </p>
-      <div className="mt-4 grid gap-3">
-        <AdminMiniPanel title="队列上限">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            {activeCandidateCount}/{config.shared.pendingCandidateLimit}
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            每日创建上限 {config.shared.dailyCreationLimit}
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="抑制与过期">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            申请有效 {config.shared.expiryDays} 天
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            短周期抑制 {config.shared.shortSuppressionDays} 天 · 每日抑制{" "}
-            {config.shared.dailySuppressionDays} 天
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="覆盖去重">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            重叠阈值 {config.shared.coverageDomainOverlapThreshold.toFixed(2)}
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            休眠角色 {stats.dormantCharacters} · 已接受{" "}
-            {stats.acceptedCandidates}
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="高风险领域">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            {riskDomains.length ? riskDomains.join(" / ") : "全部关闭"}
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            已拒绝 {stats.declinedCandidates} · 已过期 {stats.expiredCandidates}
-          </div>
-        </AdminMiniPanel>
-      </div>
-    </Card>
-  );
-}
-
-function CandidateWorkbenchCard({
+function CandidatesWorkspace({
   dataset,
   onDatasetChange,
   statusFilter,
   onStatusFilterChange,
   cadenceFilter,
   onCadenceFilterChange,
-  activeCount,
-  recentCount,
   sourceCount,
   filteredCandidates,
-  statusCounts,
-  cadenceCounts,
+  selectedCandidateId,
+  onSelectCandidate,
+  selectedCandidate,
+  candidateStatusCounts,
+  relatedRun,
+  onOpenRelatedRun,
+  runCadenceFilter,
+  onRunCadenceFilterChange,
+  runs,
+  selectedRun,
+  selectedRunId,
+  onSelectRun,
+  expiringSoonCount,
 }: {
   dataset: CandidateDatasetKey;
   onDatasetChange: (value: CandidateDatasetKey) => void;
@@ -976,86 +1170,188 @@ function CandidateWorkbenchCard({
   onStatusFilterChange: (value: CandidateStatusFilter) => void;
   cadenceFilter: CandidateCadenceFilter;
   onCadenceFilterChange: (value: CandidateCadenceFilter) => void;
-  activeCount: number;
-  recentCount: number;
   sourceCount: number;
   filteredCandidates: NeedDiscoveryCandidateRecord[];
-  statusCounts: Record<NeedDiscoveryCandidateRecord["status"], number>;
-  cadenceCounts: Record<NeedDiscoveryCandidateRecord["cadenceType"], number>;
+  selectedCandidateId: string | null;
+  onSelectCandidate: (id: string) => void;
+  selectedCandidate: NeedDiscoveryCandidateRecord | null;
+  candidateStatusCounts: Record<NeedDiscoveryCandidateRecord["status"], number>;
+  relatedRun: NeedDiscoveryRunRecord | null;
+  onOpenRelatedRun: (runId: string) => void;
+  runCadenceFilter: RunCadenceFilter;
+  onRunCadenceFilterChange: (value: RunCadenceFilter) => void;
+  runs: NeedDiscoveryRunRecord[];
+  selectedRun: NeedDiscoveryRunRecord | null;
+  selectedRunId: string | null;
+  onSelectRun: (id: string) => void;
+  expiringSoonCount: number;
+}) {
+  return (
+    <div className="space-y-6">
+      <AdminCallout
+        title="候选处理工作区"
+        tone="info"
+        description="左侧只看候选列表和筛选，右侧只看当前选中候选的完整信息；运行记录收在下方单独处理，避免在一大堆卡片里来回扫。"
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
+        <CandidateQueueCard
+          dataset={dataset}
+          onDatasetChange={onDatasetChange}
+          statusFilter={statusFilter}
+          onStatusFilterChange={onStatusFilterChange}
+          cadenceFilter={cadenceFilter}
+          onCadenceFilterChange={onCadenceFilterChange}
+          sourceCount={sourceCount}
+          filteredCandidates={filteredCandidates}
+          selectedCandidateId={selectedCandidateId}
+          onSelectCandidate={onSelectCandidate}
+          candidateStatusCounts={candidateStatusCounts}
+          expiringSoonCount={expiringSoonCount}
+        />
+
+        <div className="space-y-6">
+          <CandidateInspectorCard
+            candidate={selectedCandidate}
+            relatedRun={relatedRun}
+            onOpenRelatedRun={onOpenRelatedRun}
+          />
+          <RunsInspectorCard
+            cadenceFilter={runCadenceFilter}
+            onCadenceFilterChange={onRunCadenceFilterChange}
+            runs={runs}
+            selectedRun={selectedRun}
+            selectedRunId={selectedRunId}
+            onSelectRun={onSelectRun}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CandidateQueueCard({
+  dataset,
+  onDatasetChange,
+  statusFilter,
+  onStatusFilterChange,
+  cadenceFilter,
+  onCadenceFilterChange,
+  sourceCount,
+  filteredCandidates,
+  selectedCandidateId,
+  onSelectCandidate,
+  candidateStatusCounts,
+  expiringSoonCount,
+}: {
+  dataset: CandidateDatasetKey;
+  onDatasetChange: (value: CandidateDatasetKey) => void;
+  statusFilter: CandidateStatusFilter;
+  onStatusFilterChange: (value: CandidateStatusFilter) => void;
+  cadenceFilter: CandidateCadenceFilter;
+  onCadenceFilterChange: (value: CandidateCadenceFilter) => void;
+  sourceCount: number;
+  filteredCandidates: NeedDiscoveryCandidateRecord[];
+  selectedCandidateId: string | null;
+  onSelectCandidate: (id: string) => void;
+  candidateStatusCounts: Record<NeedDiscoveryCandidateRecord["status"], number>;
+  expiringSoonCount: number;
 }) {
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
-        title="候选工作台"
+        title="候选队列"
         actions={
           <StatusPill tone={filteredCandidates.length ? "healthy" : "muted"}>
             筛后 {filteredCandidates.length} 条
           </StatusPill>
         }
       />
-      <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        用范围、状态和 cadence 三层筛选快速收敛候选列表。当前数据源共{" "}
-        {sourceCount} 条，优先看待通过、即将过期和生成失败。
-      </p>
 
-      <div className="mt-5 space-y-4">
-        <FilterGroup label="候选范围">
-          <ToggleChip
-            label={`当前候选 ${activeCount}`}
-            checked={dataset === "active"}
-            onChange={() => onDatasetChange("active")}
-          />
-          <ToggleChip
-            label={`最近候选 ${recentCount}`}
-            checked={dataset === "recent"}
-            onChange={() => onDatasetChange("recent")}
-          />
-        </FilterGroup>
-
-        <FilterGroup label="状态筛选">
-          <ToggleChip
-            label={`全部 ${sourceCount}`}
-            checked={statusFilter === "all"}
-            onChange={() => onStatusFilterChange("all")}
-          />
-          {CANDIDATE_STATUS_OPTIONS.map((option) => (
-            <ToggleChip
-              key={option.value}
-              label={`${option.label} ${statusCounts[option.value] ?? 0}`}
-              checked={statusFilter === option.value}
-              onChange={() => onStatusFilterChange(option.value)}
-            />
-          ))}
-        </FilterGroup>
-
-        <FilterGroup label="来源 cadence">
-          <ToggleChip
-            label={`全部 ${sourceCount}`}
-            checked={cadenceFilter === "all"}
-            onChange={() => onCadenceFilterChange("all")}
-          />
-          <ToggleChip
-            label={`短周期 ${cadenceCounts.short_interval}`}
-            checked={cadenceFilter === "short_interval"}
-            onChange={() => onCadenceFilterChange("short_interval")}
-          />
-          <ToggleChip
-            label={`每日 ${cadenceCounts.daily}`}
-            checked={cadenceFilter === "daily"}
-            onChange={() => onCadenceFilterChange("daily")}
-          />
-        </FilterGroup>
+      <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-1">
+        <AdminMiniPanel title="当前数据源">
+          <div className="text-sm text-[color:var(--text-primary)]">
+            {dataset === "active" ? "当前候选" : "最近候选"}
+          </div>
+          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
+            共 {sourceCount} 条
+          </div>
+        </AdminMiniPanel>
+        <AdminMiniPanel title="待处理压力">
+          <div className="text-sm text-[color:var(--text-primary)]">
+            待通过 {candidateStatusCounts.friend_request_pending}
+          </div>
+          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
+            草稿 {candidateStatusCounts.draft} · 失败{" "}
+            {candidateStatusCounts.generation_failed}
+          </div>
+        </AdminMiniPanel>
+        <AdminMiniPanel title="时效提醒">
+          <div className="text-sm text-[color:var(--text-primary)]">
+            24h 将过期 {expiringSoonCount}
+          </div>
+          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
+            需要尽快处理待通过候选。
+          </div>
+        </AdminMiniPanel>
       </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-4 space-y-4">
+        <SelectionBar
+          label="候选范围"
+          options={[
+            { key: "active", label: "当前候选" },
+            { key: "recent", label: "最近候选" },
+          ]}
+          activeKey={dataset}
+          onChange={(key) => onDatasetChange(key as CandidateDatasetKey)}
+        />
+        <SelectionBar
+          label="状态筛选"
+          options={CANDIDATE_STATUS_OPTIONS.map((option) => ({
+            key: option.value,
+            label:
+              option.value === "all"
+                ? `全部 ${sourceCount}`
+                : `${option.label} ${candidateStatusCounts[option.value] ?? 0}`,
+          }))}
+          activeKey={statusFilter}
+          onChange={(key) => onStatusFilterChange(key as CandidateStatusFilter)}
+        />
+        <SelectionBar
+          label="来源 cadence"
+          options={[
+            { key: "all", label: `全部 ${sourceCount}` },
+            {
+              key: "short_interval",
+              label: `短周期 ${filteredCandidates.filter((item) => item.cadenceType === "short_interval").length}`,
+            },
+            {
+              key: "daily",
+              label: `每日 ${filteredCandidates.filter((item) => item.cadenceType === "daily").length}`,
+            },
+          ]}
+          activeKey={cadenceFilter}
+          onChange={(key) =>
+            onCadenceFilterChange(key as CandidateCadenceFilter)
+          }
+        />
+      </div>
+
+      <div className="mt-5 space-y-2">
         {filteredCandidates.length === 0 ? (
           <AdminEmptyState
             title="当前筛选下没有候选"
-            description="可以切换到另一组状态或候选范围，或者先执行一次短周期 / 每日调度。"
+            description="可以切换状态或范围，也可以先手动执行一次短周期 / 每日调度。"
           />
         ) : (
           filteredCandidates.map((candidate) => (
-            <CandidateRecordCard key={candidate.id} candidate={candidate} />
+            <CandidateListItem
+              key={candidate.id}
+              candidate={candidate}
+              selected={selectedCandidateId === candidate.id}
+              onClick={() => onSelectCandidate(candidate.id)}
+            />
           ))
         )}
       </div>
@@ -1063,19 +1359,85 @@ function CandidateWorkbenchCard({
   );
 }
 
-function CandidateRecordCard({
+function CandidateListItem({
   candidate,
+  selected,
+  onClick,
 }: {
   candidate: NeedDiscoveryCandidateRecord;
+  selected: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="text-base font-semibold text-[color:var(--text-primary)]">
-              {candidate.characterName || candidate.needCategory}
-            </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "w-full rounded-[20px] border px-4 py-4 text-left transition",
+        selected
+          ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] shadow-[var(--shadow-card)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)] hover:border-[color:var(--border-subtle)] hover:bg-white/90",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-[color:var(--text-primary)]">
+            {candidate.characterName || candidate.needCategory}
+          </div>
+          <div className="mt-1 truncate text-xs tracking-[0.14em] text-[color:var(--text-muted)]">
+            {candidate.needKey}
+          </div>
+        </div>
+        <StatusPill tone={toneForCandidate(candidate.status)}>
+          {labelForCandidate(candidate.status)}
+        </StatusPill>
+      </div>
+
+      <div className="mt-3 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+        {candidate.coverageGapSummary || "暂无缺口摘要。"}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-muted)]">
+        <span className="rounded-full border border-[color:var(--border-faint)] bg-white/85 px-2.5 py-1">
+          {formatCadenceLabel(candidate.cadenceType)}
+        </span>
+        <span>P {candidate.priorityScore.toFixed(2)}</span>
+        <span>C {candidate.confidenceScore.toFixed(2)}</span>
+        <span>{formatCompactDateTime(candidate.createdAt)}</span>
+      </div>
+    </button>
+  );
+}
+
+function CandidateInspectorCard({
+  candidate,
+  relatedRun,
+  onOpenRelatedRun,
+}: {
+  candidate: NeedDiscoveryCandidateRecord | null;
+  relatedRun: NeedDiscoveryRunRecord | null;
+  onOpenRelatedRun: (runId: string) => void;
+}) {
+  if (!candidate) {
+    return (
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader title="候选详情" />
+        <div className="mt-4">
+          <AdminEmptyState
+            title="先从左侧选一个候选"
+            description="候选详情会显示完整缺口摘要、证据、好友申请开场以及对应运行。"
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <AdminSectionHeader
+        title="候选详情"
+        actions={
+          <div className="flex flex-wrap gap-2">
             <StatusPill tone={toneForCandidate(candidate.status)}>
               {labelForCandidate(candidate.status)}
             </StatusPill>
@@ -1083,20 +1445,35 @@ function CandidateRecordCard({
               {formatCadenceLabel(candidate.cadenceType)}
             </StatusPill>
           </div>
-          <div className="mt-1 text-xs tracking-[0.14em] text-[color:var(--text-muted)]">
+        }
+      />
+
+      <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="text-xl font-semibold text-[color:var(--text-primary)]">
+            {candidate.characterName || candidate.needCategory}
+          </div>
+          <div className="mt-1 text-xs tracking-[0.16em] text-[color:var(--text-muted)]">
             {candidate.needKey}
           </div>
         </div>
-        <div className="text-xs text-[color:var(--text-muted)]">
-          创建于 {formatCompactDateTime(candidate.createdAt)}
-        </div>
+        {relatedRun ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onOpenRelatedRun(relatedRun.id)}
+          >
+            查看对应运行
+          </Button>
+        ) : null}
       </div>
 
-      <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        {candidate.coverageGapSummary || "暂无缺口摘要。"}
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <AdminMiniPanel title="Need 分类">
+          <div className="text-sm text-[color:var(--text-primary)]">
+            {candidate.needCategory}
+          </div>
+        </AdminMiniPanel>
         <AdminMiniPanel title="优先级">
           <div className="text-sm text-[color:var(--text-primary)]">
             {candidate.priorityScore.toFixed(2)}
@@ -1114,130 +1491,248 @@ function CandidateRecordCard({
         </AdminMiniPanel>
       </div>
 
+      <AdminCallout
+        title="缺口摘要"
+        tone={
+          candidate.status === "generation_failed" ||
+          candidate.status === "declined" ||
+          candidate.status === "expired"
+            ? "warning"
+            : candidate.status === "friend_request_pending"
+              ? "info"
+              : "muted"
+        }
+        className="mt-4"
+        description={candidate.coverageGapSummary || "暂无缺口摘要。"}
+      />
+
       {candidate.evidenceHighlights.length ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {candidate.evidenceHighlights.map((item, index) => (
-            <span
-              key={`${candidate.id}-evidence-${index}`}
-              className="rounded-full border border-[color:var(--border-faint)] bg-white/85 px-3 py-1 text-xs text-[color:var(--text-secondary)]"
-            >
-              {item}
-            </span>
-          ))}
-        </div>
+        <AdminSubpanel title="证据高亮" className="mt-4 bg-white/85">
+          <div className="flex flex-wrap gap-2">
+            {candidate.evidenceHighlights.map((item, index) => (
+              <span
+                key={`${candidate.id}-evidence-${index}`}
+                className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-1 text-xs text-[color:var(--text-secondary)]"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </AdminSubpanel>
       ) : null}
 
       {candidate.friendRequestGreeting ? (
         <AdminSubpanel
           title="好友申请开场"
-          className="mt-4 bg-white/80"
-          contentClassName="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]"
+          className="mt-4 bg-white/85"
+          contentClassName="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]"
         >
           {candidate.friendRequestGreeting}
         </AdminSubpanel>
       ) : null}
-    </div>
-  );
-}
 
-function RunListCard({
-  runs,
-  cadenceFilter,
-  onCadenceFilterChange,
-}: {
-  runs: NeedDiscoveryRunRecord[];
-  cadenceFilter: RunCadenceFilter;
-  onCadenceFilterChange: (value: RunCadenceFilter) => void;
-}) {
-  return (
-    <Card className="bg-[color:var(--surface-console)]">
-      <AdminSectionHeader
-        title="最近运行"
-        actions={
-          <StatusPill tone={runs.length ? "healthy" : "muted"}>
-            共 {runs.length} 条
-          </StatusPill>
-        }
-      />
-      <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        用 cadence 切换看短周期或每日的执行结果，优先关注失败和连续跳过。
-      </p>
-
-      <div className="mt-5">
-        <FilterGroup label="运行筛选">
-          <ToggleChip
-            label="全部"
-            checked={cadenceFilter === "all"}
-            onChange={() => onCadenceFilterChange("all")}
-          />
-          <ToggleChip
-            label="短周期"
-            checked={cadenceFilter === "short_interval"}
-            onChange={() => onCadenceFilterChange("short_interval")}
-          />
-          <ToggleChip
-            label="每日"
-            checked={cadenceFilter === "daily"}
-            onChange={() => onCadenceFilterChange("daily")}
-          />
-        </FilterGroup>
-      </div>
-
-      <div className="mt-5 space-y-4">
-        {runs.length === 0 ? (
-          <AdminEmptyState
-            title="没有命中的运行记录"
-            description="当前筛选条件下没有 recent run，可以切回全部或先手动执行一次。"
-          />
-        ) : (
-          runs.map((run) => <RunRecordCard key={run.id} run={run} />)
-        )}
-      </div>
+      {relatedRun ? (
+        <div className="mt-4 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+              对应运行
+            </div>
+            <StatusPill tone={toneForRun(relatedRun.status)}>
+              {labelForRun(relatedRun.status)}
+            </StatusPill>
+          </div>
+          <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
+            {formatCadenceLabel(relatedRun.cadenceType)} ·{" "}
+            {formatCompactDateTime(relatedRun.startedAt)} · 信号{" "}
+            {relatedRun.signalCount} 条
+          </div>
+          <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+            {relatedRun.summary ||
+              relatedRun.skipReason ||
+              relatedRun.errorMessage ||
+              "暂无摘要"}
+          </div>
+        </div>
+      ) : null}
     </Card>
   );
 }
 
-function RunRecordCard({ run }: { run: NeedDiscoveryRunRecord }) {
+function RunsInspectorCard({
+  cadenceFilter,
+  onCadenceFilterChange,
+  runs,
+  selectedRun,
+  selectedRunId,
+  onSelectRun,
+}: {
+  cadenceFilter: RunCadenceFilter;
+  onCadenceFilterChange: (value: RunCadenceFilter) => void;
+  runs: NeedDiscoveryRunRecord[];
+  selectedRun: NeedDiscoveryRunRecord | null;
+  selectedRunId: string | null;
+  onSelectRun: (id: string) => void;
+}) {
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <AdminSectionHeader
+        title="运行详情"
+        actions={
+          <StatusPill tone={runs.length ? "healthy" : "muted"}>
+            {runs.length} 条
+          </StatusPill>
+        }
+      />
+
+      <div className="mt-4">
+        <SelectionBar
+          label="运行筛选"
+          options={[
+            { key: "all", label: "全部" },
+            { key: "short_interval", label: "短周期" },
+            { key: "daily", label: "每日" },
+          ]}
+          activeKey={cadenceFilter}
+          onChange={(key) => onCadenceFilterChange(key as RunCadenceFilter)}
+        />
+      </div>
+
+      {runs.length === 0 ? (
+        <div className="mt-4">
+          <AdminEmptyState
+            title="当前筛选下没有运行记录"
+            description="可以切换 cadence，或者先执行一次短周期 / 每日调度。"
+          />
+        </div>
+      ) : (
+        <div className="mt-5 grid gap-6 xl:grid-cols-[280px,minmax(0,1fr)]">
+          <div className="space-y-2">
+            {runs.map((run) => (
+              <RunListItem
+                key={run.id}
+                run={run}
+                selected={selectedRunId === run.id}
+                onClick={() => onSelectRun(run.id)}
+              />
+            ))}
+          </div>
+
+          {selectedRun ? (
+            <RunDetailCard run={selectedRun} />
+          ) : (
+            <AdminEmptyState
+              title="还没有选中运行"
+              description="从左侧选择一条运行记录后，这里会展示完整摘要和窗口信息。"
+            />
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function RunListItem({
+  run,
+  selected,
+  onClick,
+}: {
+  run: NeedDiscoveryRunRecord;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "w-full rounded-[20px] border px-4 py-4 text-left transition",
+        selected
+          ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] shadow-[var(--shadow-card)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)] hover:border-[color:var(--border-subtle)] hover:bg-white/90",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+          {formatCadenceLabel(run.cadenceType)}
+        </div>
+        <StatusPill tone={toneForRun(run.status)}>
+          {labelForRun(run.status)}
+        </StatusPill>
+      </div>
+      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+        {formatCompactDateTime(run.startedAt)}
+      </div>
+      <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+        {run.summary || run.skipReason || run.errorMessage || "暂无摘要"}
+      </div>
+    </button>
+  );
+}
+
+function RunDetailCard({ run }: { run: NeedDiscoveryRunRecord }) {
   return (
     <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="text-base font-semibold text-[color:var(--text-primary)]">
-            {formatCadenceLabel(run.cadenceType)}
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-base font-semibold text-[color:var(--text-primary)]">
+              {formatCadenceLabel(run.cadenceType)}
+            </div>
+            <StatusPill tone={toneForRun(run.status)}>
+              {labelForRun(run.status)}
+            </StatusPill>
           </div>
-          <StatusPill tone={toneForRun(run.status)}>
-            {labelForRun(run.status)}
-          </StatusPill>
-        </div>
-        <div className="text-xs text-[color:var(--text-muted)]">
-          {formatCompactDateTime(run.startedAt)}
+          <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+            {formatCompactDateTime(run.startedAt)}
+          </div>
         </div>
       </div>
 
-      <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        {run.summary || run.skipReason || run.errorMessage || "暂无摘要"}
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <AdminMiniPanel title="信号与窗口">
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <AdminMiniPanel title="信号数">
           <div className="text-sm text-[color:var(--text-primary)]">
-            信号 {run.signalCount} 条
+            {run.signalCount} 条
           </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
+        </AdminMiniPanel>
+        <AdminMiniPanel title="信号窗口">
+          <div className="text-sm text-[color:var(--text-primary)]">
             {formatRunWindow(run)}
           </div>
         </AdminMiniPanel>
-        <AdminMiniPanel title="命中结果">
+        <AdminMiniPanel title="最近信号">
           <div className="text-sm text-[color:var(--text-primary)]">
-            {run.selectedNeedKeys.length
-              ? run.selectedNeedKeys.join(" / ")
-              : "没有选中 need"}
-          </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-            最近信号 {formatCompactDateTime(run.latestSignalAt)}
+            {formatCompactDateTime(run.latestSignalAt)}
           </div>
         </AdminMiniPanel>
       </div>
+
+      <AdminCallout
+        title="运行摘要"
+        tone={run.status === "failed" ? "warning" : "muted"}
+        className="mt-4"
+        description={
+          run.summary || run.skipReason || run.errorMessage || "暂无摘要"
+        }
+      />
+
+      <AdminSubpanel title="命中 need key" className="mt-4 bg-white/85">
+        {run.selectedNeedKeys.length ? (
+          <div className="flex flex-wrap gap-2">
+            {run.selectedNeedKeys.map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-1 text-xs text-[color:var(--text-secondary)]"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-[color:var(--text-secondary)]">
+            没有选中 need key。
+          </div>
+        )}
+      </AdminSubpanel>
 
       {run.errorMessage ? (
         <div className="mt-4 rounded-[18px] border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm leading-6 text-amber-700">
@@ -1248,117 +1743,228 @@ function RunRecordCard({ run }: { run: NeedDiscoveryRunRecord }) {
   );
 }
 
-function ShakeSessionWorkspace({
+function ConfigWorkspace({
+  panel,
+  onPanelChange,
+  draft,
+  onChange,
+  hasUnsavedNeedConfig,
+  hasUnsavedShakeConfig,
+}: {
+  panel: ConfigPanelKey;
+  onPanelChange: (panel: ConfigPanelKey) => void;
+  draft: NeedDiscoveryConfig;
+  onChange: (next: NeedDiscoveryConfig) => void;
+  hasUnsavedNeedConfig: boolean;
+  hasUnsavedShakeConfig: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader
+          title="规则配置工作区"
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <StatusPill tone={hasUnsavedNeedConfig ? "warning" : "healthy"}>
+                自动补位 {hasUnsavedNeedConfig ? "待保存" : "已同步"}
+              </StatusPill>
+              <StatusPill tone={hasUnsavedShakeConfig ? "warning" : "muted"}>
+                摇一摇 {hasUnsavedShakeConfig ? "待保存" : "未改动"}
+              </StatusPill>
+            </div>
+          }
+        />
+        <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+          一次只编辑一组规则。先选短周期、每日或共享约束，再进入当前组的详细字段和
+          Prompt，避免在多组长表单间来回跳。
+        </p>
+        <AdminTabs
+          tabs={CONFIG_TABS}
+          activeKey={panel}
+          onChange={(key) => onPanelChange(key as ConfigPanelKey)}
+          className="mt-4"
+        />
+      </Card>
+
+      {panel === "short" ? (
+        <CadenceCard
+          title="短周期策略"
+          description="更看重最近一段时间的压力、症状、即时求助信号。"
+          cadenceType="short"
+          config={draft}
+          onChange={onChange}
+        />
+      ) : null}
+
+      {panel === "daily" ? (
+        <CadenceCard
+          title="每日策略"
+          description="更看重反复出现的主题、长期缺口和稳定角色位。"
+          cadenceType="daily"
+          config={draft}
+          onChange={onChange}
+        />
+      ) : null}
+
+      {panel === "shared" ? (
+        <SharedCard config={draft} onChange={onChange} />
+      ) : null}
+    </div>
+  );
+}
+
+function ShakeWorkspace({
+  panel,
+  onPanelChange,
+  traceTab,
+  onTraceTabChange,
+  sessions,
+  allSessions,
+  statusFilter,
+  onStatusFilterChange,
+  selectedSession,
+  selectedSessionId,
+  onSelectSession,
+  config,
+  onConfigChange,
+  statusCounts,
+}: {
+  panel: ShakePanelKey;
+  onPanelChange: (panel: ShakePanelKey) => void;
+  traceTab: ShakeTraceTab;
+  onTraceTabChange: (tab: ShakeTraceTab) => void;
+  sessions: ShakeDiscoverySessionRecord[];
+  allSessions: ShakeDiscoverySessionRecord[];
+  statusFilter: ShakeStatusFilter;
+  onStatusFilterChange: (value: ShakeStatusFilter) => void;
+  selectedSession: ShakeDiscoverySessionRecord | null;
+  selectedSessionId: string | null;
+  onSelectSession: (id: string) => void;
+  config: ShakeDiscoveryConfig;
+  onConfigChange: (next: ShakeDiscoveryConfig) => void;
+  statusCounts: Record<ShakeDiscoverySessionRecord["status"], number>;
+}) {
+  return (
+    <div className="space-y-6">
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader
+          title="摇一摇工作区"
+          actions={
+            <StatusPill
+              tone={statusCounts.preview_ready > 0 ? "warning" : "healthy"}
+            >
+              待决定 {statusCounts.preview_ready}
+            </StatusPill>
+          }
+        />
+        <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+          Session 和配置分开处理。抽查即时相遇质量时只看
+          session；改规则时只看配置，不把两类任务堆在同一屏里。
+        </p>
+        <AdminTabs
+          tabs={SHAKE_TABS}
+          activeKey={panel}
+          onChange={(key) => onPanelChange(key as ShakePanelKey)}
+          className="mt-4"
+        />
+      </Card>
+
+      {panel === "sessions" ? (
+        <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
+          <ShakeSessionQueueCard
+            sessions={sessions}
+            allSessions={allSessions}
+            statusFilter={statusFilter}
+            onStatusFilterChange={onStatusFilterChange}
+            selectedSessionId={selectedSessionId}
+            onSelectSession={onSelectSession}
+            statusCounts={statusCounts}
+          />
+          <ShakeSessionInspectorCard
+            session={selectedSession}
+            traceTab={traceTab}
+            onTraceTabChange={onTraceTabChange}
+          />
+        </div>
+      ) : null}
+
+      {panel === "config" ? (
+        <ShakeConfigCard config={config} onChange={onConfigChange} />
+      ) : null}
+    </div>
+  );
+}
+
+function ShakeSessionQueueCard({
   sessions,
   allSessions,
   statusFilter,
   onStatusFilterChange,
   selectedSessionId,
   onSelectSession,
+  statusCounts,
 }: {
   sessions: ShakeDiscoverySessionRecord[];
   allSessions: ShakeDiscoverySessionRecord[];
   statusFilter: ShakeStatusFilter;
   onStatusFilterChange: (value: ShakeStatusFilter) => void;
   selectedSessionId: string | null;
-  onSelectSession: (value: string) => void;
+  onSelectSession: (id: string) => void;
+  statusCounts: Record<ShakeDiscoverySessionRecord["status"], number>;
 }) {
-  const counts = useMemo(
-    () => buildShakeStatusCounts(allSessions),
-    [allSessions],
-  );
-
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
-        title="最近摇一摇 Session"
+        title="Session 列表"
         actions={
           <StatusPill tone={sessions.length ? "healthy" : "muted"}>
-            命中 {sessions.length} 条
+            {sessions.length} 条
           </StatusPill>
         }
       />
-      <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        先按状态筛选，再点具体 session 查看右侧
-        trace。这样比默认只盯第一条更适合运营抽查质量。
-      </p>
 
-      <div className="mt-5">
-        <FilterGroup label="状态筛选">
-          <ToggleChip
-            label={`全部 ${allSessions.length}`}
-            checked={statusFilter === "all"}
-            onChange={() => onStatusFilterChange("all")}
-          />
-          {SHAKE_STATUS_OPTIONS.map((option) => (
-            <ToggleChip
-              key={option.value}
-              label={`${option.label} ${counts[option.value] ?? 0}`}
-              checked={statusFilter === option.value}
-              onChange={() => onStatusFilterChange(option.value)}
-            />
-          ))}
-        </FilterGroup>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+        <AdminMiniPanel title="待决定">
+          <div className="text-sm text-[color:var(--text-primary)]">
+            {statusCounts.preview_ready} 条
+          </div>
+        </AdminMiniPanel>
+        <AdminMiniPanel title="已保留 / 已过期">
+          <div className="text-sm text-[color:var(--text-primary)]">
+            {statusCounts.kept} / {statusCounts.expired}
+          </div>
+        </AdminMiniPanel>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-4">
+        <SelectionBar
+          label="状态筛选"
+          options={SHAKE_STATUS_OPTIONS.map((option) => ({
+            key: option.value,
+            label:
+              option.value === "all"
+                ? `全部 ${allSessions.length}`
+                : `${option.label} ${statusCounts[option.value] ?? 0}`,
+          }))}
+          activeKey={statusFilter}
+          onChange={(key) => onStatusFilterChange(key as ShakeStatusFilter)}
+        />
+      </div>
+
+      <div className="mt-5 space-y-2">
         {sessions.length === 0 ? (
           <AdminEmptyState
-            title="当前筛选下没有摇一摇记录"
-            description="可以切回全部，或者等用户产生新的 shake session 后再来查看。"
+            title="当前筛选下没有 session"
+            description="可以切换状态，或者等待新的摇一摇记录产生后再抽查。"
           />
         ) : (
-          sessions.slice(0, 12).map((session) => (
-            <button
+          sessions.map((session) => (
+            <ShakeSessionListItem
               key={session.id}
-              type="button"
+              session={session}
+              selected={selectedSessionId === session.id}
               onClick={() => onSelectSession(session.id)}
-              className={[
-                "w-full rounded-[22px] border px-4 py-4 text-left transition",
-                selectedSessionId === session.id
-                  ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] shadow-[var(--shadow-card)]"
-                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)] hover:border-[color:var(--border-subtle)] hover:bg-white/90",
-              ].join(" ")}
-            >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-base font-semibold text-[color:var(--text-primary)]">
-                      {session.character.name}
-                    </div>
-                    <StatusPill tone={toneForShakeStatus(session.status)}>
-                      {labelForShakeStatus(session.status)}
-                    </StatusPill>
-                  </div>
-                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    {session.character.relationship}
-                  </div>
-                </div>
-                <div className="text-xs text-[color:var(--text-muted)]">
-                  {formatCompactDateTime(session.createdAt)}
-                </div>
-              </div>
-
-              <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-                {session.matchReason || session.failureReason || "暂无说明。"}
-              </div>
-
-              {session.selectedDirection ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-[color:var(--border-faint)] bg-white/85 px-3 py-1 text-xs text-[color:var(--text-secondary)]">
-                    {session.selectedDirection.relationshipLabel}
-                  </span>
-                  {session.selectedDirection.expertDomains.map((domain) => (
-                    <span
-                      key={`${session.id}-${domain}`}
-                      className="rounded-full border border-[color:var(--border-faint)] bg-white/85 px-3 py-1 text-xs text-[color:var(--text-secondary)]"
-                    >
-                      {domain}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </button>
+            />
           ))
         )}
       </div>
@@ -1366,19 +1972,66 @@ function ShakeSessionWorkspace({
   );
 }
 
-function ShakeTraceCard({
+function ShakeSessionListItem({
   session,
+  selected,
+  onClick,
+}: {
+  session: ShakeDiscoverySessionRecord;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "w-full rounded-[20px] border px-4 py-4 text-left transition",
+        selected
+          ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] shadow-[var(--shadow-card)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)] hover:border-[color:var(--border-subtle)] hover:bg-white/90",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-[color:var(--text-primary)]">
+            {session.character.name}
+          </div>
+          <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">
+            {session.character.relationship}
+          </div>
+        </div>
+        <StatusPill tone={toneForShakeStatus(session.status)}>
+          {labelForShakeStatus(session.status)}
+        </StatusPill>
+      </div>
+      <div className="mt-3 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+        {session.matchReason || session.failureReason || "暂无说明。"}
+      </div>
+      <div className="mt-3 text-xs text-[color:var(--text-muted)]">
+        {formatCompactDateTime(session.createdAt)}
+      </div>
+    </button>
+  );
+}
+
+function ShakeSessionInspectorCard({
+  session,
+  traceTab,
+  onTraceTabChange,
 }: {
   session: ShakeDiscoverySessionRecord | null;
+  traceTab: ShakeTraceTab;
+  onTraceTabChange: (tab: ShakeTraceTab) => void;
 }) {
   if (!session) {
     return (
       <Card className="bg-[color:var(--surface-console)]">
-        <AdminSectionHeader title="Session Trace" />
+        <AdminSectionHeader title="Session 详情" />
         <div className="mt-4">
           <AdminEmptyState
-            title="还没有可查看的 trace"
-            description="当右侧列表存在 session 时，点击任意一条即可查看方向规划和角色生成提示词。"
+            title="先从左侧选一个 session"
+            description="这里会展示匹配理由、问候语、方向信息以及规划 / 生成 Prompt。"
           />
         </div>
       </Card>
@@ -1388,30 +2041,28 @@ function ShakeTraceCard({
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
-        title="当前 Session Trace"
+        title="Session 详情"
         actions={
           <StatusPill tone={toneForShakeStatus(session.status)}>
             {labelForShakeStatus(session.status)}
           </StatusPill>
         }
       />
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <AdminMiniPanel title="角色预览">
+
+      <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <AdminMiniPanel title="角色">
           <div className="text-sm text-[color:var(--text-primary)]">
             {session.character.name}
           </div>
-          <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
+        </AdminMiniPanel>
+        <AdminMiniPanel title="关系">
+          <div className="text-sm text-[color:var(--text-primary)]">
             {session.character.relationship}
           </div>
         </AdminMiniPanel>
-        <AdminMiniPanel title="匹配说明">
+        <AdminMiniPanel title="创建时间">
           <div className="text-sm text-[color:var(--text-primary)]">
-            {session.matchReason || "暂无"}
-          </div>
-        </AdminMiniPanel>
-        <AdminMiniPanel title="问候语">
-          <div className="text-sm text-[color:var(--text-primary)]">
-            {session.greeting || "暂无"}
+            {formatCompactDateTime(session.createdAt)}
           </div>
         </AdminMiniPanel>
         <AdminMiniPanel title="有效期">
@@ -1423,60 +2074,145 @@ function ShakeTraceCard({
         </AdminMiniPanel>
       </div>
 
-      {session.selectedDirection ? (
-        <div className="mt-4 grid gap-3">
-          <AdminSubpanel
-            title="选中方向"
-            contentClassName="mt-3 space-y-3 text-sm text-[color:var(--text-secondary)]"
-          >
-            <div className="font-medium text-[color:var(--text-primary)]">
-              {session.selectedDirection.relationshipLabel}
-            </div>
-            <div>{session.selectedDirection.whyNow}</div>
-            <div className="flex flex-wrap gap-2">
-              {session.selectedDirection.expertDomains.map((domain) => (
-                <span
-                  key={`${session.id}-trace-${domain}`}
-                  className="rounded-full border border-[color:var(--border-faint)] bg-white/85 px-3 py-1 text-xs text-[color:var(--text-secondary)]"
-                >
-                  {domain}
-                </span>
-              ))}
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <AdminMiniPanel title="Fit">
-                <div className="text-sm text-[color:var(--text-primary)]">
-                  {session.selectedDirection.fitScore.toFixed(2)}
-                </div>
-              </AdminMiniPanel>
-              <AdminMiniPanel title="Novelty">
-                <div className="text-sm text-[color:var(--text-primary)]">
-                  {session.selectedDirection.noveltyScore.toFixed(2)}
-                </div>
-              </AdminMiniPanel>
-              <AdminMiniPanel title="Surprise">
-                <div className="text-sm text-[color:var(--text-primary)]">
-                  {session.selectedDirection.surpriseBoost.toFixed(2)}
-                </div>
-              </AdminMiniPanel>
-            </div>
-          </AdminSubpanel>
-        </div>
-      ) : null}
+      <AdminCallout
+        title="匹配说明"
+        tone={
+          session.status === "failed"
+            ? "warning"
+            : session.status === "preview_ready"
+              ? "info"
+              : "muted"
+        }
+        className="mt-4"
+        description={
+          session.matchReason || session.failureReason || "暂无说明。"
+        }
+      />
 
-      <div className="mt-4 space-y-4">
-        <AdminSubpanel title="方向规划提示词" contentClassName="mt-3">
-          <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs leading-6 text-[color:var(--text-secondary)]">
-            {session.planningPrompt || "暂无"}
-          </pre>
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <AdminSubpanel title="问候语" className="bg-white/85">
+          <div className="text-sm leading-7 text-[color:var(--text-secondary)]">
+            {session.greeting || "暂无"}
+          </div>
         </AdminSubpanel>
-        <AdminSubpanel title="角色生成提示词" contentClassName="mt-3">
-          <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs leading-6 text-[color:var(--text-secondary)]">
-            {session.generationPrompt || "暂无"}
-          </pre>
+
+        <AdminSubpanel title="方向摘要" className="bg-white/85">
+          {session.selectedDirection ? (
+            <div className="space-y-3">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                {session.selectedDirection.relationshipLabel}
+              </div>
+              <div className="text-sm leading-6 text-[color:var(--text-secondary)]">
+                {session.selectedDirection.whyNow}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {session.selectedDirection.expertDomains.map((domain) => (
+                  <span
+                    key={`${session.id}-${domain}`}
+                    className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-1 text-xs text-[color:var(--text-secondary)]"
+                  >
+                    {domain}
+                  </span>
+                ))}
+              </div>
+              <div className="grid gap-2 md:grid-cols-3">
+                <AdminMiniPanel title="Fit">
+                  <div className="text-sm text-[color:var(--text-primary)]">
+                    {session.selectedDirection.fitScore.toFixed(2)}
+                  </div>
+                </AdminMiniPanel>
+                <AdminMiniPanel title="Novelty">
+                  <div className="text-sm text-[color:var(--text-primary)]">
+                    {session.selectedDirection.noveltyScore.toFixed(2)}
+                  </div>
+                </AdminMiniPanel>
+                <AdminMiniPanel title="Surprise">
+                  <div className="text-sm text-[color:var(--text-primary)]">
+                    {session.selectedDirection.surpriseBoost.toFixed(2)}
+                  </div>
+                </AdminMiniPanel>
+              </div>
+              {session.selectedDirection.riskFlags.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {session.selectedDirection.riskFlags.map((flag, index) => (
+                    <span
+                      key={`${session.id}-risk-${index}`}
+                      className="rounded-full border border-amber-200 bg-amber-50/80 px-3 py-1 text-xs text-amber-700"
+                    >
+                      {flag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="text-sm text-[color:var(--text-secondary)]">
+              当前没有选中方向信息。
+            </div>
+          )}
+        </AdminSubpanel>
+      </div>
+
+      <div className="mt-4">
+        <AdminTabs
+          tabs={SHAKE_TRACE_TABS}
+          activeKey={traceTab}
+          onChange={(key) => onTraceTabChange(key as ShakeTraceTab)}
+        />
+        <AdminSubpanel
+          title={
+            traceTab === "planning" ? "方向规划 Prompt" : "角色生成 Prompt"
+          }
+          className="mt-4 bg-white/85"
+        >
+          <AdminCodeBlock
+            value={
+              traceTab === "planning"
+                ? session.planningPrompt || "暂无"
+                : session.generationPrompt || "暂无"
+            }
+            className="border-0 bg-transparent p-0"
+          />
         </AdminSubpanel>
       </div>
     </Card>
+  );
+}
+
+function SelectionBar({
+  label,
+  options,
+  activeKey,
+  onChange,
+}: {
+  label: string;
+  options: Array<{ key: string; label: ReactNode }>;
+  activeKey: string;
+  onChange: (key: string) => void;
+}) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+        {label}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {options.map((option) => (
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => onChange(option.key)}
+            className={[
+              "rounded-full border px-3 py-2 text-sm transition",
+              option.key === activeKey
+                ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:border-[color:var(--border-subtle)] hover:bg-white/90",
+            ].join(" ")}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1498,7 +2234,8 @@ function ShakeConfigCard({
         }
       />
       <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-        这里控制用户手动摇一摇时的即时相遇。运营关注点不是“是否自动补位”，而是“候选够不够新鲜、解释是否合理、有没有过度冒险”。
+        这里只编辑摇一摇规则，不展示 session
+        列表。这样运营改参数时不会被即时记录打断，也更容易确认当前改的是哪一组策略。
       </p>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -2199,23 +2936,6 @@ function ConfigBlock({
   );
 }
 
-function FilterGroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-        {label}
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2">{children}</div>
-    </div>
-  );
-}
-
 function PromptField({
   label,
   value,
@@ -2351,93 +3071,128 @@ function ConfigCheckbox({
   );
 }
 
-function buildFocusItems({
-  config,
+function buildTodayActions({
+  draft,
   hasUnsavedChanges,
   latestRun,
   activeCandidates,
   expiringSoonCount,
   shakePendingCount,
+  primaryCandidateStatus,
+  openCandidateQueue,
+  openConfigWorkspace,
+  openRunWorkspace,
+  openShakeWorkspace,
 }: {
-  config: NeedDiscoveryConfig | null;
+  draft: NeedDiscoveryConfig | null;
   hasUnsavedChanges: boolean;
   latestRun: NeedDiscoveryRunRecord | null;
   activeCandidates: NeedDiscoveryCandidateRecord[];
   expiringSoonCount: number;
   shakePendingCount: number;
+  primaryCandidateStatus: CandidateStatusFilter;
+  openCandidateQueue: (status?: CandidateStatusFilter) => void;
+  openConfigWorkspace: (panel?: ConfigPanelKey) => void;
+  openRunWorkspace: (cadence?: RunCadenceFilter) => void;
+  openShakeWorkspace: (
+    panel?: ShakePanelKey,
+    status?: ShakeStatusFilter,
+  ) => void;
 }) {
-  const items: Array<{
-    tone: "warning" | "success" | "info" | "muted";
-    title: string;
-    description: string;
-  }> = [];
+  const actions: TodayAction[] = [];
 
-  if (config && !config.shortInterval.enabled && !config.daily.enabled) {
-    items.push({
-      tone: "warning",
-      title: "自动补位已全部停用",
+  if (hasUnsavedChanges) {
+    actions.push({
+      key: "save-draft",
+      title: "先处理未保存草稿",
       description:
-        "短周期和每日两个 cadence 都关闭了，系统不会继续自动补位新角色。",
+        "当前页面的规则改动还没写回服务端。先确认是否保存，再继续看候选或运行，避免判断基于旧配置。",
+      actionLabel: "去看规则",
+      tone: "warning",
+      onClick: () => openConfigWorkspace("short"),
+    });
+  }
+
+  if (draft && activeCandidates.length >= draft.shared.pendingCandidateLimit) {
+    actions.push({
+      key: "queue-full",
+      title: "候选池已到上限",
+      description: `当前活跃候选 ${activeCandidates.length} 条，已触及共享上限 ${draft.shared.pendingCandidateLimit}。建议先处理候选，再决定是否下调生成量。`,
+      actionLabel: "打开候选队列",
+      tone: "warning",
+      onClick: () => openCandidateQueue(primaryCandidateStatus),
     });
   }
 
   if (latestRun?.status === "failed") {
-    items.push({
-      tone: "warning",
-      title: "最近一次调度失败",
+    actions.push({
+      key: "latest-run-failed",
+      title: "最近调度失败",
       description:
         latestRun.errorMessage ||
         latestRun.summary ||
         "最近一次运行失败，但没有返回更多摘要。",
-    });
-  }
-
-  if (
-    config &&
-    activeCandidates.length >= config.shared.pendingCandidateLimit
-  ) {
-    items.push({
+      actionLabel: "查看运行详情",
       tone: "warning",
-      title: "候选池已接近上限",
-      description: `当前活跃候选 ${activeCandidates.length} 条，已触及共享上限 ${config.shared.pendingCandidateLimit}。建议先清理旧候选或下调生成量。`,
+      onClick: () => openRunWorkspace(latestRun.cadenceType),
     });
   }
 
   if (expiringSoonCount > 0) {
-    items.push({
-      tone: "info",
+    actions.push({
+      key: "candidate-expiring",
       title: "有候选即将过期",
-      description: `未来 24 小时内有 ${expiringSoonCount} 条候选会过期，适合优先排查是否是审批链路过慢或生成质量不够。`,
+      description: `未来 24 小时内有 ${expiringSoonCount} 条候选会过期，适合优先清理仍待通过的记录。`,
+      actionLabel: "查看待通过候选",
+      tone: "info",
+      onClick: () => openCandidateQueue("friend_request_pending"),
     });
   }
 
   if (shakePendingCount > 0) {
-    items.push({
-      tone: "info",
+    actions.push({
+      key: "shake-pending",
       title: "摇一摇存在待决定 session",
-      description: `当前有 ${shakePendingCount} 条摇一摇临时候选待决定，建议抽查 matchReason 和 greeting 是否自然。`,
-    });
-  }
-
-  if (hasUnsavedChanges) {
-    items.push({
+      description: `当前有 ${shakePendingCount} 条即时相遇还没决定，建议抽查 matchReason、方向摘要和问候语。`,
+      actionLabel: "查看摇一摇 session",
       tone: "info",
-      title: "页面存在未保存改动",
-      description:
-        "规则已经在本地编辑但尚未保存，当前看到的运行状态仍对应旧配置。",
+      onClick: () => openShakeWorkspace("sessions", "preview_ready"),
     });
   }
 
-  if (!items.length) {
-    items.push({
-      tone: "success",
-      title: "当前运行平稳",
-      description:
-        "自动补位未见明显阻塞，候选池和摇一摇都在可控范围内，可以按需细看具体候选质量。",
-    });
+  if (!actions.length) {
+    actions.push(
+      {
+        key: "stable-candidates",
+        title: "当前状态稳定",
+        description:
+          "自动补位没有明显阻塞。可以抽查候选质量，或者微调短周期 / 每日规则。",
+        actionLabel: "打开候选处理",
+        tone: "success",
+        onClick: () => openCandidateQueue("all"),
+      },
+      {
+        key: "stable-config",
+        title: "规则可按需微调",
+        description:
+          "如果想更保守地控量，优先看共享约束；如果想提速补位，优先看短周期。",
+        actionLabel: "查看共享约束",
+        tone: "info",
+        onClick: () => openConfigWorkspace("shared"),
+      },
+      {
+        key: "stable-shake",
+        title: "摇一摇可做抽样巡检",
+        description:
+          "当前没有明显待处理堆积，适合抽查 session 文案是否自然、方向是否足够多样。",
+        actionLabel: "打开摇一摇",
+        tone: "info",
+        onClick: () => openShakeWorkspace("sessions", "all"),
+      },
+    );
   }
 
-  return items.slice(0, 4);
+  return actions.slice(0, 3);
 }
 
 function buildCandidateStatusCounts(
@@ -2520,6 +3275,21 @@ function candidateStatusWeight(status: NeedDiscoveryCandidateRecord["status"]) {
     default:
       return 10;
   }
+}
+
+function pickPriorityCandidateStatus(
+  candidates: NeedDiscoveryCandidateRecord[],
+): CandidateStatusFilter {
+  if (candidates.some((item) => item.status === "friend_request_pending")) {
+    return "friend_request_pending";
+  }
+  if (candidates.some((item) => item.status === "draft")) {
+    return "draft";
+  }
+  if (candidates.some((item) => item.status === "generation_failed")) {
+    return "generation_failed";
+  }
+  return "all";
 }
 
 function toneForRun(status: NeedDiscoveryRunRecord["status"]) {
@@ -2608,21 +3378,6 @@ function formatExecutionMode(value: "dry_run" | "auto_send") {
   return value === "dry_run" ? "只生成草稿" : "直接创建并发起好友申请";
 }
 
-function formatCadenceSchedule(
-  cadenceType: NeedDiscoveryRunRecord["cadenceType"],
-  config: NeedDiscoveryConfig["shortInterval"] | NeedDiscoveryConfig["daily"],
-) {
-  if (cadenceType === "short_interval") {
-    const shortConfig = config as NeedDiscoveryConfig["shortInterval"];
-    return `每 ${shortConfig.intervalMinutes} 分钟，回看 ${shortConfig.lookbackHours} 小时`;
-  }
-
-  const dailyConfig = config as NeedDiscoveryConfig["daily"];
-  return `每天 ${padNumber(dailyConfig.runAtHour)}:${padNumber(
-    dailyConfig.runAtMinute,
-  )}，回看 ${dailyConfig.lookbackDays} 天`;
-}
-
 function buildCandidateTimingLabel(candidate: NeedDiscoveryCandidateRecord) {
   if (candidate.acceptedAt) {
     return `接受于 ${formatCompactDateTime(candidate.acceptedAt)}`;
@@ -2682,14 +3437,6 @@ function isWithinHours(value?: string | null, hours = 24) {
 
 function isSameSerialized(left: unknown, right: unknown) {
   return JSON.stringify(left) === JSON.stringify(right);
-}
-
-function scrollToSection(id: string) {
-  const element = document.getElementById(id);
-  if (!element) {
-    return;
-  }
-  element.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function padNumber(value: number) {
