@@ -11,6 +11,7 @@ import { AppPage, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function ProfilePage() {
@@ -29,8 +30,9 @@ export function ProfilePage() {
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
   const desktopProfilePath = "/tabs/profile";
+  const normalizedPathname = normalizePathname(pathname);
   const desktopPathMismatch =
-    isDesktopLayout && pathname !== desktopProfilePath;
+    isDesktopLayout && normalizedPathname !== desktopProfilePath;
   const settingsPath = isDesktopLayout ? "/desktop/settings" : "/profile/settings";
 
   useEffect(() => {

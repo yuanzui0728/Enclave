@@ -80,6 +80,7 @@ import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopContactsWorkspace = lazy(async () => {
@@ -297,7 +298,9 @@ export function ContactsPage() {
   const effectiveSearchText = isDesktopLayout ? searchText : "";
   const deferredSearchText = useDeferredValue(effectiveSearchText);
   const desktopContactsPath = "/tabs/contacts";
-  const desktopPathMismatch = isDesktopLayout && pathname !== desktopContactsPath;
+  const normalizedPathname = normalizePathname(pathname);
+  const desktopPathMismatch =
+    isDesktopLayout && normalizedPathname !== desktopContactsPath;
 
   useEffect(() => {
     if (!desktopPathMismatch) {

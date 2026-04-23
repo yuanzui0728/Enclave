@@ -50,6 +50,7 @@ import type {
 import { useSearchIndex } from "../features/search/use-search-index";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const DesktopSearchWorkspace = lazy(async () => {
@@ -81,7 +82,9 @@ export function SearchPage() {
     ? committedSearchText
     : searchText;
   const desktopSearchPath = "/tabs/search";
-  const desktopPathMismatch = isDesktopLayout && pathname !== "/tabs/search";
+  const normalizedPathname = normalizePathname(pathname);
+  const desktopPathMismatch =
+    isDesktopLayout && normalizedPathname !== desktopSearchPath;
   const currentSearchRouteHash = buildSearchRouteHash({
     category: activeCategory,
     keyword: effectiveSearchText,

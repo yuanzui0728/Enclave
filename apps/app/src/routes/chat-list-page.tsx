@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
   type ReactNode,
-  type TouchEvent,
+  type TouchEvent as ReactTouchEvent,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -76,6 +76,7 @@ import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { normalizePathname } from "../lib/normalize-pathname";
 import {
   getConversationPreviewParts,
   getConversationVisibleLastMessage,
@@ -146,7 +147,8 @@ export function ChatListPage() {
     select: (state) => state.location.pathname,
   });
   const hash = useRouterState({ select: (state) => state.location.hash });
-  const desktopPathMismatch = pathname !== "/tabs/chat";
+  const normalizedPathname = normalizePathname(pathname);
+  const desktopPathMismatch = normalizedPathname !== "/tabs/chat";
 
   useEffect(() => {
     if (!isDesktopLayout || !desktopPathMismatch) {
@@ -203,7 +205,8 @@ function MobileChatListPage() {
     useState<PendingHideConversation | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
   const pendingHideRef = useRef<PendingHideConversation | null>(null);
-  const isActiveTab = pathname === "/tabs/chat";
+  const normalizedPathname = normalizePathname(pathname);
+  const isActiveTab = normalizedPathname === "/tabs/chat";
   const officialRouteState = useMemo(
     () => parseMobileOfficialRouteState(hash),
     [hash],
@@ -1171,7 +1174,7 @@ function ConversationListItemLink({
     }
   }, [open, swipeActionWidth]);
 
-  const handleTouchStart = (event: TouchEvent<HTMLAnchorElement>) => {
+  const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
     if (pending) {
       return;
     }
@@ -1189,7 +1192,7 @@ function ConversationListItemLink({
     };
   };
 
-  const handleTouchMove = (event: TouchEvent<HTMLAnchorElement>) => {
+  const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
     const gesture = gestureRef.current;
     if (!gesture?.dragging) {
       return;
@@ -1316,10 +1319,6 @@ function ConversationListItemLink({
       search={{}}
       className={linkClassName}
       style={{ transform: `translateX(${swipeOffset}px)` }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
       onClick={(event) => {
         if (open || swipeOffset !== 0) {
           event.preventDefault();
@@ -1337,10 +1336,6 @@ function ConversationListItemLink({
       search={{}}
       className={linkClassName}
       style={{ transform: `translateX(${swipeOffset}px)` }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
       onClick={(event) => {
         if (open || swipeOffset !== 0) {
           event.preventDefault();
@@ -1354,7 +1349,13 @@ function ConversationListItemLink({
   );
 
   return (
-    <div className={cn("relative overflow-hidden bg-[#c4c7cc]", className)}>
+    <div
+      className={cn("relative overflow-hidden bg-[#c4c7cc]", className)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+    >
       <div className="absolute inset-y-0 right-0 flex">
         <button
           type="button"

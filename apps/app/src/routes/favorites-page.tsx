@@ -45,6 +45,7 @@ import {
 import { resolveSearchNavigationTarget } from "../features/search/search-navigation";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { getCurrentWindowTargetPath } from "../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -104,8 +105,9 @@ export function FavoritesPage() {
   const noteEditorRouteState = routeState.noteEditor;
   const workspaceRouteState = routeState.workspace;
   const desktopFavoritesPath = "/tabs/favorites";
+  const normalizedPathname = normalizePathname(pathname);
   const desktopPathMismatch =
-    isDesktopLayout && pathname !== desktopFavoritesPath;
+    isDesktopLayout && normalizedPathname !== desktopFavoritesPath;
 
   const normalizedSearchText = deferredSearchText.trim().toLowerCase();
   const favoriteNoteSummaryMap = useMemo(() => {
@@ -190,7 +192,7 @@ export function FavoritesPage() {
   }, [desktopFavoritesPath, desktopPathMismatch, hash, navigate]);
 
   useEffect(() => {
-    if (pathname !== desktopFavoritesPath || noteEditorRouteState) {
+    if (normalizedPathname !== desktopFavoritesPath || noteEditorRouteState) {
       return;
     }
 
@@ -202,12 +204,12 @@ export function FavoritesPage() {
   }, [
     desktopFavoritesPath,
     noteEditorRouteState,
-    pathname,
+    normalizedPathname,
     workspaceRouteState.category,
   ]);
 
   useEffect(() => {
-    if (pathname !== desktopFavoritesPath || noteEditorRouteState) {
+    if (normalizedPathname !== desktopFavoritesPath || noteEditorRouteState) {
       return;
     }
 
@@ -215,7 +217,12 @@ export function FavoritesPage() {
     setSelectedFavoriteSourceId((current) =>
       current === nextSourceId ? current : nextSourceId,
     );
-  }, [desktopFavoritesPath, noteEditorRouteState, pathname, workspaceRouteState.sourceId]);
+  }, [
+    desktopFavoritesPath,
+    noteEditorRouteState,
+    normalizedPathname,
+    workspaceRouteState.sourceId,
+  ]);
 
   useEffect(() => {
     if (!noteEditorRouteState) {
@@ -293,7 +300,7 @@ export function FavoritesPage() {
   }, [filteredFavorites, selectedFavoriteSourceId]);
 
   useEffect(() => {
-    if (pathname !== desktopFavoritesPath || noteEditorRouteState) {
+    if (normalizedPathname !== desktopFavoritesPath || noteEditorRouteState) {
       return;
     }
 
@@ -318,7 +325,7 @@ export function FavoritesPage() {
     hash,
     navigate,
     noteEditorRouteState,
-    pathname,
+    normalizedPathname,
     selectedFavoriteSourceId,
   ]);
 

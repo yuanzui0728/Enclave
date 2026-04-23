@@ -56,6 +56,7 @@ import { buildMobileGamesRouteSearch } from "../features/games/mobile-games-rout
 import { buildMobileMiniProgramsRouteSearch } from "../features/mini-programs/mobile-mini-programs-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
+import { normalizePathname } from "../lib/normalize-pathname";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -205,8 +206,9 @@ export function DiscoverPage() {
     select: (state) => state.location.hash,
   });
   const desktopDiscoverPath = "/tabs/discover";
+  const normalizedPathname = normalizePathname(pathname);
   const desktopPathMismatch =
-    isDesktopLayout && pathname !== desktopDiscoverPath;
+    isDesktopLayout && normalizedPathname !== desktopDiscoverPath;
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();

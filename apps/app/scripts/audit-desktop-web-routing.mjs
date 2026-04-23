@@ -112,11 +112,13 @@ const expectations = [
   {
     file: "src/routes/discover-page.tsx",
     description:
-      "desktop discover route self-heals legacy /discover paths back to /tabs/discover and executes shake encounters directly inside the desktop workspace instead of routing through /discover/encounter",
+      "desktop discover route self-heals legacy and trailing-slash /discover paths back to /tabs/discover and executes shake encounters directly inside the desktop workspace instead of routing through /discover/encounter",
     includes: [
+      'import { normalizePathname } from "../lib/normalize-pathname";',
       'const desktopDiscoverPath = "/tabs/discover";',
+      "const normalizedPathname = normalizePathname(pathname);",
       "const desktopPathMismatch =",
-      "pathname !== desktopDiscoverPath;",
+      "normalizedPathname !== desktopDiscoverPath;",
       "if (!desktopPathMismatch) {",
       "to: desktopDiscoverPath,",
       "hash: hash || undefined,",
@@ -519,25 +521,30 @@ const expectations = [
   {
     file: "src/routes/chat-list-page.tsx",
     description:
-      "desktop legacy /chat list routes self-heal back to /tabs/chat instead of leaving the desktop workspace mounted on the old mobile path",
+      "desktop legacy and trailing-slash /chat list routes self-heal back to /tabs/chat instead of leaving the desktop workspace mounted on the old mobile path",
     includes: [
       "const pathname = useRouterState({",
-      'const desktopPathMismatch = pathname !== "/tabs/chat";',
+      'import { normalizePathname } from "../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
+      'const desktopPathMismatch = normalizedPathname !== "/tabs/chat";',
       "if (!isDesktopLayout || !desktopPathMismatch) {",
       'to: "/tabs/chat",',
       "hash: hash || undefined,",
       "replace: true,",
       "<DesktopChatWorkspace hash={hash} />",
+      'const isActiveTab = normalizedPathname === "/tabs/chat";',
     ],
   },
   {
     file: "src/routes/contacts-page.tsx",
     description:
-      "desktop legacy /contacts routes self-heal back to /tabs/contacts instead of leaving the desktop contacts workspace mounted on the old mobile path",
+      "desktop legacy and trailing-slash /contacts routes self-heal back to /tabs/contacts instead of leaving the desktop contacts workspace mounted on the old mobile path",
     includes: [
+      'import { normalizePathname } from "../lib/normalize-pathname";',
       'const desktopContactsPath = "/tabs/contacts";',
+      "const normalizedPathname = normalizePathname(pathname);",
       "const desktopPathMismatch =",
-      "pathname !== desktopContactsPath;",
+      "normalizedPathname !== desktopContactsPath;",
       "if (!desktopPathMismatch) {",
       "to: desktopContactsPath,",
       "hash: hash || undefined,",
@@ -548,14 +555,16 @@ const expectations = [
   {
     file: "src/routes/profile-page.tsx",
     description:
-      "desktop profile page self-heals legacy /profile paths back to /tabs/profile and its settings entries stop reviving the old /profile/settings path",
+      "desktop profile page self-heals legacy and trailing-slash /profile paths back to /tabs/profile and its settings entries stop reviving the old /profile/settings path",
     includes: [
       'import { useEffect } from "react";',
       "useRouterState",
       'import { useDesktopLayout } from "../features/shell/use-desktop-layout";',
+      'import { normalizePathname } from "../lib/normalize-pathname";',
       'const desktopProfilePath = "/tabs/profile";',
+      "const normalizedPathname = normalizePathname(pathname);",
       "const desktopPathMismatch =",
-      "pathname !== desktopProfilePath;",
+      "normalizedPathname !== desktopProfilePath;",
       "if (!desktopPathMismatch) {",
       "to: desktopProfilePath,",
       "search: search || undefined,",
@@ -849,7 +858,7 @@ const expectations = [
   {
     file: "src/routes/search-page.tsx",
     description:
-      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group opens, and self-heals legacy /search paths back to /tabs/search even when the hash already matches",
+      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group opens, and self-heals legacy and trailing-slash /search paths back to /tabs/search even when the hash already matches",
     includes: [
       "applyDesktopSearchReturnContext,",
       "resolveSearchNavigationTarget(item, {",
@@ -857,7 +866,10 @@ const expectations = [
       "function applySearchNavigationContext(",
       "return applyDesktopSearchReturnContext(",
       "const navigationTarget = applySearchNavigationContext(",
-      'const desktopPathMismatch = isDesktopLayout && pathname !== "/tabs/search";',
+      'import { normalizePathname } from "../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
+      'const desktopPathMismatch =',
+      "isDesktopLayout && normalizedPathname !== desktopSearchPath;",
       "if (syncingRouteStateRef.current && !desktopPathMismatch) {",
       "if (!desktopPathMismatch && normalizedHash === (nextHash ?? \"\")) {",
     ],
@@ -1224,11 +1236,13 @@ const expectations = [
   {
     file: "src/routes/favorites-page.tsx",
     description:
-      "desktop favorites self-heals legacy /favorites paths back to /tabs/favorites, normalizes inline note-editor returnTo links onto the shared favorites workspace route, and rewrites legacy favorite open targets back into desktop workspaces",
+      "desktop favorites self-heals legacy and trailing-slash /favorites paths back to /tabs/favorites, normalizes inline note-editor returnTo links onto the shared favorites workspace route, and rewrites legacy favorite open targets back into desktop workspaces",
     includes: [
+      'import { normalizePathname } from "../lib/normalize-pathname";',
       'const desktopFavoritesPath = "/tabs/favorites";',
+      "const normalizedPathname = normalizePathname(pathname);",
       "const desktopPathMismatch =",
-      "pathname !== desktopFavoritesPath;",
+      "normalizedPathname !== desktopFavoritesPath;",
       "if (!desktopPathMismatch) {",
       "to: desktopFavoritesPath,",
       "hash: hash || undefined,",
@@ -1244,6 +1258,7 @@ const expectations = [
       "!desktopPathMismatch",
       "returnTo:",
       "getCurrentWindowTargetPath()",
+      "normalizedPathname !== desktopFavoritesPath || noteEditorRouteState",
     ],
   },
   {
