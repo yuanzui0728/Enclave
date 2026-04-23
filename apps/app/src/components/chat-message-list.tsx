@@ -1910,6 +1910,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "重试发送失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续重试发送",
+        onAction: () => {
+          void handleRetryMessage(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
