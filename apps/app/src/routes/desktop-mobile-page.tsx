@@ -2144,7 +2144,9 @@ function resolveLiveQualityLabel(quality: LiveSessionRecord["quality"]) {
 function resolveMobileHandoffCategory(
   item: MobileHandoffRecord,
 ): MobileHandoffCategory {
-  const normalizedPath = item.path.split(/[?#]/, 1)[0] ?? item.path;
+  const rawPath = item.path.split(/[?#]/, 1)[0] ?? item.path;
+  const normalizedPath =
+    rawPath.length > 1 ? rawPath.replace(/\/+$/, "") : rawPath;
 
   if (
     normalizedPath.startsWith("/group/") &&
