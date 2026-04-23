@@ -138,6 +138,124 @@ const DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES: WechatSyncAnnotationTemplate[] =
     },
   ];
 
+type WechatSyncWorkflowStepState =
+  | "done"
+  | "active"
+  | "pending"
+  | "attention";
+
+type WechatSyncWorkflowSummaryItem = {
+  key: string;
+  step: string;
+  title: string;
+  detail: string;
+  state: WechatSyncWorkflowStepState;
+};
+
+type WechatSyncImportProgressPhase =
+  | "preparing"
+  | "importing"
+  | "refreshing"
+  | "done"
+  | "error";
+
+type WechatSyncImportProgressState = {
+  phase: WechatSyncImportProgressPhase;
+  total: number;
+  completed: number;
+  importedCount: number;
+  skippedCount: number;
+  startedAt: number;
+  updatedAt: number;
+  currentLabel?: string | null;
+  currentUsername?: string | null;
+  errorMessage?: string | null;
+};
+
+function createEmptyWechatSyncImportResult(): WechatSyncImportResponse {
+  return {
+    importedCount: 0,
+    items: [],
+    skipped: [],
+  };
+}
+
+function mergeWechatSyncImportResults(
+  target: WechatSyncImportResponse,
+  source: WechatSyncImportResponse,
+) {
+  target.importedCount += source.importedCount;
+  target.items.push(...source.items);
+  target.skipped.push(...source.skipped);
+}
+
+function describeWorkflowStepState(state: WechatSyncWorkflowStepState) {
+  switch (state) {
+    case "done":
+      return {
+        label: "已完成",
+        tone: "healthy" as const,
+      };
+    case "active":
+      return {
+        label: "进行中",
+        tone: "warning" as const,
+      };
+    case "attention":
+      return {
+        label: "需处理",
+        tone: "warning" as const,
+      };
+    default:
+      return {
+        label: "待开始",
+        tone: "muted" as const,
+      };
+  }
+}
+
+function describeWechatSyncImportPhase(phase: WechatSyncImportProgressPhase) {
+  switch (phase) {
+    case "preparing":
+      return {
+        label: "准备导入",
+        tone: "warning" as const,
+      };
+    case "importing":
+      return {
+        label: "逐项导入中",
+        tone: "warning" as const,
+      };
+    case "refreshing":
+      return {
+        label: "刷新结果中",
+        tone: "warning" as const,
+      };
+    case "done":
+      return {
+        label: "导入完成",
+        tone: "healthy" as const,
+      };
+    case "error":
+      return {
+        label: "导入中断",
+        tone: "warning" as const,
+      };
+  }
+}
+
+function formatWechatSyncDuration(startedAt: number, updatedAt: number) {
+  const durationMs = Math.max(0, updatedAt - startedAt);
+  const totalSeconds = Math.max(1, Math.round(durationMs / 1000));
+  if (totalSeconds < 60) {
+    return `${totalSeconds} 秒`;
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return seconds > 0 ? `${minutes} 分 ${seconds} 秒` : `${minutes} 分`;
+}
+
 export function WechatSyncPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
@@ -211,6 +329,8 @@ export function WechatSyncPage() {
   const [batchRelationshipInput, setBatchRelationshipInput] = useState("");
   const [batchDomainInput, setBatchDomainInput] = useState("");
   const [previewItems, setPreviewItems] = useState<WechatSyncPreviewItem[]>([]);
+  const [importProgress, setImportProgress] =
+    useState<WechatSyncImportProgressState | null>(null);
   const deferredSearch = useDeferredValue(search.trim());
   const deferredHistorySearch = useDeferredValue(
     historySearch.trim().toLowerCase(),
@@ -356,14 +476,32 @@ export function WechatSyncPage() {
       ),
     [previewItems],
   );
-  const invalidPreviewCount = useMemo(
+  const visibleContactCount = contactsQuery.data?.length ?? 0;
+  const targetPreviewItems = useMemo(() => {
+    if (!selectedPreviewUsernames.length) {
+      return previewItems;
+    }
+    const selected = new Set(selectedPreviewUsernames);
+    return previewItems.filter((item) => selected.has(item.contact.username));
+  }, [previewItems, selectedPreviewUsernames]);
+  const importTargetCount = targetPreviewItems.length;
+  const invalidImportTargetCount = useMemo(
     () =>
-      previewItems.filter(
+      targetPreviewItems.filter(
         (item) =>
           (previewValidation.get(item.contact.username)?.length ?? 0) > 0,
       ).length,
-    [previewItems, previewValidation],
+    [previewValidation, targetPreviewItems],
   );
+  const readyImportTargetCount = Math.max(
+    importTargetCount - invalidImportTargetCount,
+    0,
+  );
+  const importScopeLabel = selectedPreviewUsernames.length
+    ? `已选 ${selectedPreviewUsernames.length} 项`
+    : previewItems.length
+      ? `全部 ${previewItems.length} 项`
+      : "暂无导入目标";
   const batchTargetUsernames = useMemo(() => {
     if (selectedPreviewUsernames.length > 0) {
       return selectedPreviewUsernames;
@@ -584,6 +722,11 @@ export function WechatSyncPage() {
       saveWechatConnectorSettings(connectorSettings);
       return adminApi.previewWechatSync({ contacts: selectedContacts });
     },
+    onMutate: () => {
+      resetImportFeedback();
+      setPreviewItems([]);
+      setSelectedPreviewUsernames([]);
+    },
     onSuccess: (result) => {
       setPreviewItems(result.items);
       setSelectedPreviewUsernames(
@@ -597,18 +740,92 @@ export function WechatSyncPage() {
       if (!previewItems.length) {
         throw new Error("请先生成角色预览。");
       }
-      return adminApi.importWechatSync({
-        items: previewItems.map((item) => ({
-          contact: item.contact,
-          draftCharacter: item.draftCharacter,
-          autoAddFriend,
-          seedMoments,
-        })),
+      if (!importTargetCount) {
+        throw new Error("请先选择要导入的预览项。");
+      }
+      if (invalidImportTargetCount > 0) {
+        throw new Error("当前导入目标里仍有未通过校验的角色草稿。");
+      }
+
+      const startedAt = Date.now();
+      const aggregatedResult = createEmptyWechatSyncImportResult();
+      const itemsToImport = targetPreviewItems.map((item) => ({
+        contact: item.contact,
+        draftCharacter: item.draftCharacter,
+        autoAddFriend,
+        seedMoments,
+      }));
+
+      setImportProgress({
+        phase: "preparing",
+        total: itemsToImport.length,
+        completed: 0,
+        importedCount: 0,
+        skippedCount: 0,
+        startedAt,
+        updatedAt: startedAt,
+        currentLabel: null,
+        currentUsername: null,
+        errorMessage: null,
       });
+
+      for (const [index, item] of itemsToImport.entries()) {
+        const currentLabel =
+          item.contact.remarkName ||
+          item.contact.displayName ||
+          item.contact.nickname ||
+          item.contact.username;
+        const importingAt = Date.now();
+        setImportProgress({
+          phase: "importing",
+          total: itemsToImport.length,
+          completed: index,
+          importedCount: aggregatedResult.importedCount,
+          skippedCount: aggregatedResult.skipped.length,
+          startedAt,
+          updatedAt: importingAt,
+          currentLabel,
+          currentUsername: item.contact.username,
+          errorMessage: null,
+        });
+        const partialResult = await adminApi.importWechatSync({
+          items: [item],
+        });
+        mergeWechatSyncImportResults(aggregatedResult, partialResult);
+        setImportProgress({
+          phase: "importing",
+          total: itemsToImport.length,
+          completed: index + 1,
+          importedCount: aggregatedResult.importedCount,
+          skippedCount: aggregatedResult.skipped.length,
+          startedAt,
+          updatedAt: Date.now(),
+          currentLabel,
+          currentUsername: item.contact.username,
+          errorMessage: null,
+        });
+      }
+
+      return aggregatedResult;
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       setRollbackGuideItem(null);
       setPendingSnapshotRestore(null);
+      setImportProgress((current) =>
+        current
+          ? {
+              ...current,
+              phase: "refreshing",
+              updatedAt: Date.now(),
+              completed: current.total,
+              importedCount: result.importedCount,
+              skippedCount: result.skipped.length,
+              currentLabel: "刷新历史与角色列表",
+              currentUsername: null,
+              errorMessage: null,
+            }
+          : current,
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["admin-wechat-sync-history", baseUrl],
@@ -626,8 +843,142 @@ export function WechatSyncPage() {
           queryKey: ["admin-system-status", baseUrl],
         }),
       ]);
+      setImportProgress((current) =>
+        current
+          ? {
+              ...current,
+              phase: "done",
+              updatedAt: Date.now(),
+              completed: current.total,
+              importedCount: result.importedCount,
+              skippedCount: result.skipped.length,
+              currentLabel: null,
+              currentUsername: null,
+              errorMessage: null,
+            }
+          : current,
+      );
+    },
+    onError: (error) => {
+      setImportProgress((current) => {
+        const now = Date.now();
+        return {
+          phase: "error",
+          total: current?.total ?? importTargetCount,
+          completed: current?.completed ?? 0,
+          importedCount: current?.importedCount ?? 0,
+          skippedCount: current?.skippedCount ?? 0,
+          startedAt: current?.startedAt ?? now,
+          updatedAt: now,
+          currentLabel: current?.currentLabel ?? null,
+          currentUsername: current?.currentUsername ?? null,
+          errorMessage:
+            error instanceof Error ? error.message : "导入过程中出现未知错误。",
+        };
+      });
     },
   });
+
+  function resetImportFeedback() {
+    setImportProgress(null);
+    importMutation.reset();
+  }
+
+  function clearPreviewPipeline() {
+    resetImportFeedback();
+    setPreviewItems([]);
+    setSelectedPreviewUsernames([]);
+  }
+
+  const workflowSteps = useMemo(() => {
+    const importPhase = importProgress?.phase;
+    const importRunning =
+      importPhase === "preparing" ||
+      importPhase === "importing" ||
+      importPhase === "refreshing";
+    const lastImportFinished = importPhase === "done";
+    return [
+      {
+        key: "source",
+        step: "步骤 1",
+        title: "连接数据源",
+        detail: connectorReady
+          ? `已连接本地服务，可读取 ${visibleContactCount} 个联系人`
+          : connectorProbeRequested
+            ? "正在探测本地连接器，或可直接使用手动 JSON"
+            : "先连接本地服务，或改用手动 JSON 入口",
+        state: connectorReady
+          ? ("done" as const)
+          : connectorProbeRequested
+            ? ("active" as const)
+            : ("attention" as const),
+      },
+      {
+        key: "selection",
+        step: "步骤 2",
+        title: "选择联系人",
+        detail: selectedCount
+          ? `已选 ${selectedCount} 个联系人，随时可以生成预览`
+          : connectorReady
+            ? "从联系人列表里挑选本轮想导入的人"
+            : "等待数据源就绪后再筛选联系人",
+        state: selectedCount
+          ? ("done" as const)
+          : connectorReady
+            ? ("active" as const)
+            : ("pending" as const),
+      },
+      {
+        key: "preview",
+        step: "步骤 3",
+        title: "校验预览",
+        detail: previewMutation.isPending
+          ? `正在生成 ${selectedCount || previewItems.length} 个联系人预览`
+          : previewItems.length
+            ? invalidImportTargetCount
+              ? `${importScopeLabel} 中有 ${invalidImportTargetCount} 项待补字段`
+              : `${importScopeLabel} 已通过导入前校验`
+            : "生成角色预览后，可逐项修改和批量补齐字段",
+        state: previewMutation.isPending
+          ? ("active" as const)
+          : previewItems.length
+            ? invalidImportTargetCount
+              ? ("attention" as const)
+              : ("done" as const)
+            : selectedCount
+              ? ("active" as const)
+              : ("pending" as const),
+      },
+      {
+        key: "import",
+        step: "步骤 4",
+        title: "导入角色",
+        detail: importRunning
+          ? `正在处理 ${importProgress?.completed ?? 0}/${importProgress?.total ?? 0}`
+          : lastImportFinished
+            ? "最近一次导入已完成，可去历史区复核或回滚"
+            : "导入时会实时显示当前阶段、对象与结果汇总",
+        state: importRunning
+          ? ("active" as const)
+          : lastImportFinished
+            ? ("done" as const)
+            : previewItems.length
+              ? ("active" as const)
+              : ("pending" as const),
+      },
+    ] satisfies WechatSyncWorkflowSummaryItem[];
+  }, [
+    connectorProbeRequested,
+    connectorReady,
+    importProgress,
+    importScopeLabel,
+    invalidImportTargetCount,
+    previewItems.length,
+    previewMutation.isPending,
+    selectedCount,
+    visibleContactCount,
+  ]);
+
   const retryFriendshipMutation = useMutation({
     mutationFn: (characterId: string) =>
       adminApi.retryWechatSyncFriendship(characterId),
@@ -761,8 +1112,7 @@ export function WechatSyncPage() {
   });
 
   function toggleUsername(username: string) {
-    setPreviewItems([]);
-    setSelectedPreviewUsernames([]);
+    clearPreviewPipeline();
     setSelectedUsernames((current) =>
       current.includes(username)
         ? current.filter((item) => item !== username)
@@ -771,8 +1121,7 @@ export function WechatSyncPage() {
   }
 
   function selectVisibleContacts() {
-    setPreviewItems([]);
-    setSelectedPreviewUsernames([]);
+    clearPreviewPipeline();
     setSelectedUsernames(
       (contactsQuery.data ?? [])
         .filter((item) => !item.isGroup)
@@ -781,8 +1130,7 @@ export function WechatSyncPage() {
   }
 
   function clearSelection() {
-    setPreviewItems([]);
-    setSelectedPreviewUsernames([]);
+    clearPreviewPipeline();
     setSelectedUsernames([]);
   }
 
@@ -790,6 +1138,7 @@ export function WechatSyncPage() {
     username: string,
     updater: (current: WechatSyncPreviewItem) => WechatSyncPreviewItem,
   ) {
+    resetImportFeedback();
     setPreviewItems((current) =>
       current.map((item) =>
         item.contact.username === username ? updater(item) : item,
@@ -808,6 +1157,7 @@ export function WechatSyncPage() {
   }
 
   function removePreviewItem(username: string) {
+    resetImportFeedback();
     setPreviewItems((current) =>
       current.filter((item) => item.contact.username !== username),
     );
@@ -1087,6 +1437,7 @@ export function WechatSyncPage() {
 
   function regeneratePreviewFromHistoryItem(item: WechatSyncHistoryItem) {
     const bundle = buildRollbackGuideContactBundle(item);
+    resetImportFeedback();
     reimportMutation.reset();
     restoreSnapshotMutation.reset();
     setPendingSnapshotRestore(null);
@@ -1103,6 +1454,7 @@ export function WechatSyncPage() {
     snapshot: WechatImportSnapshotLike | null,
     item: WechatSyncHistoryItem,
   ) {
+    resetImportFeedback();
     reimportMutation.reset();
     restoreSnapshotMutation.reset();
     setPendingSnapshotRestore(null);
@@ -1126,6 +1478,7 @@ export function WechatSyncPage() {
     item: WechatSyncHistoryItem,
   ) {
     const restoredItem = buildPreviewItemFromImportSnapshot(snapshot);
+    resetImportFeedback();
     reimportMutation.reset();
     restoreSnapshotMutation.reset();
     setPendingSnapshotRestore(null);
@@ -1146,6 +1499,7 @@ export function WechatSyncPage() {
   }
 
   function previewManualBundles(raw: string, sourceLabel?: string | null) {
+    resetImportFeedback();
     setManualBundleJson(raw);
     setManualBundleFileName(sourceLabel?.trim() || null);
     const bundles = parseWechatSyncContactBundles(raw);
@@ -1182,7 +1536,7 @@ export function WechatSyncPage() {
       <AdminPageHero
         eyebrow="角色中心 / 微信同步"
         title="一键同步微信朋友"
-        description="通过你本地授权提供的联系人资料和聊天摘要，挑选要导入的微信联系人，生成隐界角色并自动成为好友。第一版会优先使用聊天、标签和联系人资料；朋友圈摘要目前只在数据源提供时参与导入。"
+        description="按 4 步完成：连接数据源、筛选联系人、生成并校验角色预览、导入后自动建立好友关系。页面会实时显示当前阶段、处理对象和最后一次导入结果。"
         actions={
           <>
             <Link to="/characters">
@@ -1198,7 +1552,11 @@ export function WechatSyncPage() {
                 !connectorReady || !selectedCount || previewMutation.isPending
               }
             >
-              {previewMutation.isPending ? "生成预览中..." : "生成角色预览"}
+              {previewMutation.isPending
+                ? "生成预览中..."
+                : selectedCount
+                  ? `生成 ${selectedCount} 个联系人预览`
+                  : "先选择联系人"}
             </Button>
           </>
         }
@@ -1212,12 +1570,12 @@ export function WechatSyncPage() {
             value: selectedCount,
           },
           {
-            label: "最近扫描联系人",
-            value: connectorHealthQuery.data?.contactCount ?? 0,
+            label: "当前可见联系人",
+            value: visibleContactCount,
           },
           {
-            label: "已生成预览",
-            value: previewItems.length,
+            label: "当前导入目标",
+            value: importTargetCount,
           },
         ]}
       />
@@ -1253,26 +1611,48 @@ export function WechatSyncPage() {
         />
       ) : null}
 
-      <AdminCallout
-        title="本地运行前提"
-        tone="info"
-        description={
-          <div className="space-y-2">
-            <p>
-              后台只消费你本地已经授权整理好的联系人资料和聊天摘要，不提供密钥提取、聊天记录破解或进程内存读取能力。
-            </p>
-            <p>
-              如果你已经有自己的本地数据连接器，可直接填入连接器地址；如果没有，也可以把联系人快照
-              JSON 直接粘贴到下方手动导入区。
-            </p>
+      <Card className="bg-[color:var(--surface-console)]">
+        <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+          <div>
+            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+              当前流程
+            </div>
+            <div className="mt-4">
+              <WechatSyncWorkflowSummary steps={workflowSteps} />
+            </div>
           </div>
-        }
-      />
+          <div className="space-y-3">
+            <AdminMiniPanel title="现在该做什么" tone="soft">
+              <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                {!connectorReady ? (
+                  <p>先连上本地连接器，或直接用右侧手动 JSON 入口生成预览。</p>
+                ) : !selectedCount ? (
+                  <p>从联系人列表里勾选本轮想导入的人，页面会马上显示已选数量。</p>
+                ) : !previewItems.length ? (
+                  <p>已经选好联系人了，下一步生成角色预览并检查草稿字段。</p>
+                ) : invalidImportTargetCount > 0 ? (
+                  <p>当前导入目标里还有字段缺失，先在预览区补齐后再导入。</p>
+                ) : importProgress?.phase === "done" ? (
+                  <p>最近一次导入已经完成，可以去历史区复核、补建关系或回滚。</p>
+                ) : (
+                  <p>当前目标已经可以导入，导入时会显示逐项进度和刷新阶段。</p>
+                )}
+              </div>
+            </AdminMiniPanel>
+            <AdminMiniPanel title="本地运行前提" tone="soft">
+              <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                <p>后台只消费你本地已经授权整理好的联系人资料和聊天摘要，不提供密钥提取或聊天记录破解能力。</p>
+                <p>如果没有本地连接器，也可以把联系人快照 JSON 直接粘贴到下方手动导入区。</p>
+              </div>
+            </AdminMiniPanel>
+          </div>
+        </div>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="bg-[color:var(--surface-console)]">
           <AdminSectionHeader
-            title="连接器设置"
+            title="步骤 1 · 连接数据源"
             actions={
               <StatusPill
                 tone={
@@ -1463,7 +1843,7 @@ export function WechatSyncPage() {
 
         <Card className="bg-[color:var(--surface-console)]">
           <AdminSectionHeader
-            title="手动导入联系人快照"
+            title="步骤 1B · 手动导入联系人快照"
             actions={
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -1640,9 +2020,23 @@ export function WechatSyncPage() {
 
         <Card className="bg-[color:var(--surface-console)] xl:col-span-2">
           <AdminSectionHeader
-            title="联系人选择"
+            title="步骤 2 · 选择联系人"
             actions={
               <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => previewMutation.mutate(undefined)}
+                  disabled={
+                    !connectorReady ||
+                    !selectedCount ||
+                    previewMutation.isPending
+                  }
+                >
+                  {previewMutation.isPending
+                    ? "生成中..."
+                    : `生成预览${selectedCount ? ` (${selectedCount})` : ""}`}
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -1676,12 +2070,39 @@ export function WechatSyncPage() {
                 label="包含群聊"
                 checked={includeGroups}
                 onChange={(checked) => {
-                  setPreviewItems([]);
+                  clearPreviewPipeline();
                   setIncludeGroups(checked);
                 }}
               />
             </div>
           </div>
+
+          {!connectorReady ? (
+            <InlineNotice className="mt-4" tone="muted">
+              连接器未就绪时，这里不会拉取联系人列表。你仍然可以使用上方手动 JSON 入口继续生成预览。
+            </InlineNotice>
+          ) : (
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <AdminMiniPanel title="当前可见" tone="soft">
+                <div className="text-sm text-[color:var(--text-secondary)]">
+                  {visibleContactCount} 个联系人
+                </div>
+              </AdminMiniPanel>
+              <AdminMiniPanel title="已选联系人" tone="soft">
+                <div className="text-sm text-[color:var(--text-secondary)]">
+                  {selectedCount
+                    ? `已选 ${selectedCount} 个，下一步生成预览`
+                    : "尚未选择联系人"}
+                </div>
+              </AdminMiniPanel>
+              <AdminMiniPanel title="筛选范围" tone="soft">
+                <div className="text-sm text-[color:var(--text-secondary)]">
+                  {includeGroups ? "联系人 + 群聊" : "仅联系人"}
+                  {deferredSearch ? ` · 搜索“${deferredSearch}”` : ""}
+                </div>
+              </AdminMiniPanel>
+            </div>
+          )}
 
           {contactsQuery.isLoading ? (
             <LoadingBlock className="mt-4" label="正在读取本地微信联系人..." />
@@ -1703,10 +2124,20 @@ export function WechatSyncPage() {
             />
           ) : null}
 
-          <div className="mt-4 space-y-3">
+          {selectedCount ? (
+            <AdminActionFeedback
+              className="mt-4"
+              tone="busy"
+              title="已加入本轮预览范围"
+              description={`当前已选 ${selectedCount} 个联系人。点击“生成预览”后，页面会进入角色草稿校验区。`}
+            />
+          ) : null}
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
             {(contactsQuery.data ?? []).map((contact) => (
               <AdminSelectableCard
                 key={contact.username}
+                className="h-full"
                 active={selectedSet.has(contact.username)}
                 onClick={() => toggleUsername(contact.username)}
                 title={contact.displayName}
@@ -1745,16 +2176,13 @@ export function WechatSyncPage() {
 
       <Card className="bg-[color:var(--surface-console)]">
         <AdminSectionHeader
-          title="角色预览"
+          title="步骤 3 · 预览、校验与导入"
           actions={
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => {
-                  setPreviewItems([]);
-                  setSelectedPreviewUsernames([]);
-                }}
+                onClick={clearPreviewPipeline}
                 disabled={!previewItems.length || importMutation.isPending}
               >
                 清空预览
@@ -1764,12 +2192,16 @@ export function WechatSyncPage() {
                 size="sm"
                 onClick={() => importMutation.mutate()}
                 disabled={
-                  !previewItems.length ||
+                  !importTargetCount ||
                   importMutation.isPending ||
-                  invalidPreviewCount > 0
+                  invalidImportTargetCount > 0
                 }
               >
-                {importMutation.isPending ? "导入中..." : "导入并建立好友关系"}
+                {importMutation.isPending
+                  ? importProgress?.phase === "refreshing"
+                    ? "刷新结果中..."
+                    : `导入中 ${importProgress?.completed ?? 0}/${importProgress?.total ?? importTargetCount}`
+                  : `导入当前目标 (${importTargetCount || previewItems.length})`}
               </Button>
             </div>
           }
@@ -1784,8 +2216,15 @@ export function WechatSyncPage() {
         {importMutation.isError && importMutation.error instanceof Error ? (
           <ErrorBlock className="mt-4" message={importMutation.error.message} />
         ) : null}
+        {importProgress ? (
+          <WechatSyncImportProgressPanel progress={importProgress} />
+        ) : null}
         {importMutation.isSuccess ? (
-          <ImportResultPanel result={importMutation.data} />
+          <ImportResultPanel
+            result={importMutation.data}
+            title="最近一次导入结果"
+            description={`最近一次导入共写入 ${importMutation.data.importedCount} 个角色，下面保留了成功项和跳过项明细。`}
+          />
         ) : null}
 
         {previewItems.length ? (
@@ -1796,11 +2235,8 @@ export function WechatSyncPage() {
                   批量编辑与导入校验
                 </div>
                 <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-                  当前批量目标：
-                  {selectedPreviewUsernames.length
-                    ? `已选 ${selectedPreviewUsernames.length} 项`
-                    : `全部 ${previewItems.length} 项`}
-                  。不勾选时，批量动作默认作用于全部预览项。
+                  当前导入范围：{importScopeLabel}
+                  。不勾选时，批量动作和导入动作默认都作用于全部预览项。
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1821,6 +2257,27 @@ export function WechatSyncPage() {
                   清空批量选中
                 </Button>
               </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <AdminMiniPanel title="预览条目" tone="soft">
+                <div className="text-sm text-[color:var(--text-secondary)]">
+                  共生成 {previewItems.length} 个角色草稿
+                </div>
+              </AdminMiniPanel>
+              <AdminMiniPanel title="当前导入目标" tone="soft">
+                <div className="text-sm text-[color:var(--text-secondary)]">
+                  {importScopeLabel}
+                </div>
+              </AdminMiniPanel>
+              <AdminMiniPanel title="目标校验结果" tone="soft">
+                <div className="text-sm text-[color:var(--text-secondary)]">
+                  可导入 {readyImportTargetCount} 项
+                  {invalidImportTargetCount
+                    ? ` · 待补字段 ${invalidImportTargetCount} 项`
+                    : " · 当前已全部通过"}
+                </div>
+              </AdminMiniPanel>
             </div>
 
             <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -1874,17 +2331,30 @@ export function WechatSyncPage() {
               </div>
 
               <div className="space-y-3">
-                {invalidPreviewCount > 0 ? (
+                <AdminCallout
+                  title={
+                    selectedPreviewUsernames.length
+                      ? "当前只会导入选中的预览项"
+                      : "当前会导入全部预览项"
+                  }
+                  tone="info"
+                  description={
+                    selectedPreviewUsernames.length
+                      ? `这次只会处理你勾选的 ${selectedPreviewUsernames.length} 个角色草稿，未勾选的预览项会保留在页面上。`
+                      : `当前 ${previewItems.length} 个预览项都会参与导入。若只想导入其中一部分，可以先在卡片上勾选目标。`
+                  }
+                />
+                {invalidImportTargetCount > 0 ? (
                   <AdminCallout
-                    title="当前还有未通过校验的角色草稿"
+                    title="当前导入目标还有未通过校验的角色草稿"
                     tone="warning"
-                    description={`共有 ${invalidPreviewCount} 个预览项缺少必要字段，导入按钮已禁用。请先补齐角色名、关系定位、简介、领域标签和记忆摘要。`}
+                    description={`当前目标里共有 ${invalidImportTargetCount} 个预览项缺少必要字段，导入按钮已禁用。请先补齐角色名、关系定位、简介、领域标签和记忆摘要。`}
                   />
                 ) : (
                   <AdminCallout
-                    title="当前预览已通过导入前校验"
+                    title="当前导入目标已通过导入前校验"
                     tone="success"
-                    description={`本轮 ${previewItems.length} 个预览项都具备基础导入字段，可以继续导入并建立好友关系。`}
+                    description={`当前目标里的 ${importTargetCount} 个预览项都具备基础导入字段，可以继续导入并建立好友关系。`}
                   />
                 )}
               </div>
@@ -1900,9 +2370,13 @@ export function WechatSyncPage() {
           />
         ) : null}
         {previewMutation.isPending ? (
-          <LoadingBlock
+          <AdminActionFeedback
             className="mt-4"
-            label="正在根据微信聊天资料生成角色预览..."
+            tone="busy"
+            title="正在生成角色预览"
+            description={`正在根据本轮选择的 ${
+              selectedCount || previewItems.length
+            } 个联系人整理聊天摘要并生成角色草稿，完成后会自动进入校验区。`}
           />
         ) : null}
 
@@ -1954,7 +2428,7 @@ export function WechatSyncPage() {
 
       <Card className="bg-[color:var(--surface-console)]">
         <AdminSectionHeader
-          title="已导入历史"
+          title="步骤 4 · 导入历史与回滚"
           actions={
             <Button
               variant="secondary"
@@ -2306,6 +2780,123 @@ export function WechatSyncPage() {
               }
             />
           </div>
+        ) : null}
+      </Card>
+    </div>
+  );
+}
+
+function WechatSyncWorkflowSummary({
+  steps,
+}: {
+  steps: WechatSyncWorkflowSummaryItem[];
+}) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {steps.map((step) => {
+        const status = describeWorkflowStepState(step.state);
+        return (
+          <AdminMiniPanel key={step.key} title={step.step} className="h-full">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-[color:var(--text-primary)]">
+                  {step.title}
+                </div>
+                <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                  {step.detail}
+                </div>
+              </div>
+              <StatusPill tone={status.tone}>{status.label}</StatusPill>
+            </div>
+          </AdminMiniPanel>
+        );
+      })}
+    </div>
+  );
+}
+
+function WechatSyncImportProgressPanel({
+  progress,
+}: {
+  progress: WechatSyncImportProgressState;
+}) {
+  const phase = describeWechatSyncImportPhase(progress.phase);
+  const feedbackTone =
+    phase.tone === "healthy"
+      ? "success"
+      : phase.tone === "warning"
+        ? progress.phase === "error"
+          ? "warning"
+          : "busy"
+        : "info";
+  const progressRatio =
+    progress.total > 0
+      ? Math.min(100, Math.round((progress.completed / progress.total) * 100))
+      : 0;
+  let description = `已处理 ${progress.completed}/${progress.total} 项，已导入 ${progress.importedCount} 个，跳过 ${progress.skippedCount} 个，用时 ${formatWechatSyncDuration(progress.startedAt, progress.updatedAt)}。`;
+
+  if (progress.phase === "preparing") {
+    description = "正在整理导入目标、确认范围并初始化进度。";
+  } else if (progress.phase === "refreshing") {
+    description = `所有目标都已提交，正在刷新导入历史、角色列表和系统状态。已导入 ${progress.importedCount} 个，跳过 ${progress.skippedCount} 个。`;
+  } else if (progress.phase === "done") {
+    description = `本轮共处理 ${progress.total} 项，用时 ${formatWechatSyncDuration(progress.startedAt, progress.updatedAt)}，已导入 ${progress.importedCount} 个，跳过 ${progress.skippedCount} 个。`;
+  } else if (progress.phase === "error") {
+    description = `${description}${progress.errorMessage ? ` ${progress.errorMessage}` : ""}`;
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      <AdminActionFeedback
+        tone={feedbackTone}
+        title={phase.label}
+        description={description}
+      />
+      <Card className="bg-[color:var(--surface-card)]">
+        <div className="grid gap-3 md:grid-cols-3">
+          <AdminMiniPanel title="当前阶段" tone="soft">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm text-[color:var(--text-secondary)]">
+                {progress.currentLabel || "等待下一步"}
+              </div>
+              <StatusPill tone={phase.tone}>{phase.label}</StatusPill>
+            </div>
+          </AdminMiniPanel>
+          <AdminMiniPanel title="完成进度" tone="soft">
+            <div className="text-sm text-[color:var(--text-secondary)]">
+              {progress.completed}/{progress.total} 项
+            </div>
+          </AdminMiniPanel>
+          <AdminMiniPanel title="处理结果" tone="soft">
+            <div className="text-sm text-[color:var(--text-secondary)]">
+              导入 {progress.importedCount} 个 · 跳过 {progress.skippedCount} 个
+            </div>
+          </AdminMiniPanel>
+        </div>
+
+        <div className="mt-4">
+          <div className="h-2 rounded-full bg-[color:var(--surface-soft)]">
+            <div
+              className={
+                progress.phase === "error"
+                  ? "h-full rounded-full bg-amber-400 transition-[width] duration-300"
+                  : progress.phase === "done"
+                    ? "h-full rounded-full bg-emerald-500 transition-[width] duration-300"
+                    : "h-full rounded-full bg-sky-500 transition-[width] duration-300"
+              }
+              style={{ width: `${progressRatio}%` }}
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[color:var(--text-muted)]">
+            <span>当前进度 {progressRatio}%</span>
+            <span>{formatWechatSyncDuration(progress.startedAt, progress.updatedAt)}</span>
+          </div>
+        </div>
+
+        {progress.errorMessage ? (
+          <InlineNotice className="mt-4" tone="warning">
+            {progress.errorMessage}
+          </InlineNotice>
         ) : null}
       </Card>
     </div>
