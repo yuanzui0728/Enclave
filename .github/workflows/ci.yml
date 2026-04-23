@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v3
         with:
@@ -24,6 +26,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: I18n changed-file guard
+        env:
+          I18N_AUDIT_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD' }}
+        run: pnpm i18n:check:changed
 
       - name: Typecheck (admin and app excluded — drift tracked separately)
         run: pnpm exec turbo run typecheck --filter=!@yinjie/admin --filter=!@yinjie/app

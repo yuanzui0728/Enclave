@@ -13,9 +13,7 @@ const TARGETS = [
   "apps/cloud-api/src/**/*.ts",
 ];
 
-const FILE_IGNORE_PATTERNS = [
-  /\/packages\/i18n\//,
-];
+const FILE_IGNORE_PATTERNS = [/\/packages\/i18n\//];
 
 const RULES = [
   {
@@ -29,8 +27,7 @@ const RULES = [
     name: "intl-locale-literal",
     message:
       "Detected a hard-coded Intl locale. Route date/number/collation formatting through shared i18n helpers.",
-    pattern:
-      /new\s+Intl\.(?:DateTimeFormat|NumberFormat|Collator)\(\s*["'`]/,
+    pattern: /new\s+Intl\.(?:DateTimeFormat|NumberFormat|Collator)\(\s*["'`]/,
   },
   {
     name: "locale-compare-literal",
@@ -53,12 +50,82 @@ const RULES = [
   },
 ];
 
-const ALLOWLIST_PATTERNS = [
-  /<Trans\b/,
-  /\bt`/,
-  /\bmsg`/,
-  /\bdefineMessage\(/,
-];
+const ALLOWLIST_PATTERNS = [/<Trans\b/, /\bt`/, /\bmsg`/, /\bdefineMessage\(/];
+
+function printHelp() {
+  console.log(`Usage: node ./scripts/i18n-audit.mjs [options]
+
+Options:
+  --staged                 Audit staged changes only.
+  --changed                Audit changes since I18N_AUDIT_BASE or HEAD.
+  --base <ref>             Audit changes since the given git ref.
+  --github-annotations     Emit GitHub Actions error annotations.
+  --no-github-annotations  Disable GitHub Actions error annotations.
+  --help                   Show this help text.
+`);
+}
+
+function parseArgs(argv) {
+  const options = {
+    baseRef: process.env.I18N_AUDIT_BASE ?? "HEAD",
+    githubAnnotations: process.env.GITHUB_ACTIONS === "true",
+    scope: process.env.I18N_AUDIT_SCOPE ?? "working-tree",
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === "--help" || arg === "-h") {
+      printHelp();
+      process.exit(0);
+    }
+
+    if (arg === "--staged") {
+      options.scope = "staged";
+      continue;
+    }
+
+    if (arg === "--changed") {
+      options.scope = "changed";
+      continue;
+    }
+
+    if (arg === "--github-annotations") {
+      options.githubAnnotations = true;
+      continue;
+    }
+
+    if (arg === "--no-github-annotations") {
+      options.githubAnnotations = false;
+      continue;
+    }
+
+    if (arg === "--base") {
+      const value = argv[index + 1];
+      if (!value) {
+        throw new Error("--base requires a git ref.");
+      }
+      options.baseRef = value;
+      options.scope = "changed";
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--base=")) {
+      options.baseRef = arg.slice("--base=".length);
+      options.scope = "changed";
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return options;
+}
+
+function normalizeBaseRef(baseRef) {
+  return /^0{40}$/.test(baseRef) ? "HEAD" : baseRef;
+}
 
 function readDiff(args) {
   try {
@@ -80,19 +147,21 @@ function readDiff(args) {
 }
 
 function resolveAuditTarget() {
-  const scope = process.env.I18N_AUDIT_SCOPE ?? "working-tree";
+  const options = parseArgs(process.argv.slice(2));
+  const baseRef = normalizeBaseRef(options.baseRef);
 
-  if (scope === "staged") {
+  if (options.scope === "staged") {
     return {
       args: ["--cached"],
+      githubAnnotations: options.githubAnnotations,
       label: "staged changes",
     };
   }
 
-  const baseRef = process.env.I18N_AUDIT_BASE ?? "HEAD";
   return {
     args: [baseRef],
-    label: baseRef,
+    githubAnnotations: options.githubAnnotations,
+    label: options.scope === "changed" ? `changes since ${baseRef}` : baseRef,
   };
 }
 
@@ -159,6 +228,31 @@ function collectIssues(diffText) {
   return issues;
 }
 
+function escapeGithubAnnotationValue(value) {
+  return value
+    .replace(/%/g, "%25")
+    .replace(/\r/g, "%0D")
+    .replace(/\n/g, "%0A")
+    .replace(/:/g, "%3A")
+    .replace(/,/g, "%2C");
+}
+
+function escapeGithubAnnotationData(value) {
+  return value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+
+function emitGithubAnnotation(issue) {
+  const properties = [
+    `file=${escapeGithubAnnotationValue(issue.file)}`,
+    `line=${issue.line}`,
+    "title=i18n audit",
+  ].join(",");
+  const message = escapeGithubAnnotationData(
+    `${issue.message} ${issue.source}`,
+  );
+  console.error(`::error ${properties}::${message}`);
+}
+
 function main() {
   const auditTarget = resolveAuditTarget();
   const diffText = readDiff(auditTarget.args);
@@ -175,6 +269,9 @@ function main() {
   for (const issue of issues) {
     console.error(`- ${issue.file}:${issue.line} ${issue.message}`);
     console.error(`  ${issue.source}`);
+    if (auditTarget.githubAnnotations) {
+      emitGithubAnnotation(issue);
+    }
   }
 
   process.exitCode = 1;
