@@ -1736,7 +1736,7 @@ export function WechatSyncPage() {
                     ) : null}
                   </div>
                 }
-                activeLabel="已加入导入队列"
+                activeLabel="已选中，待生成预览"
               />
             ))}
           </div>
