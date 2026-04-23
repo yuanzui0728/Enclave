@@ -61,6 +61,11 @@ const FollowupRuntimePage = lazy(async () => {
   return { default: mod.FollowupRuntimePage };
 });
 
+const ReminderRuntimePage = lazy(async () => {
+  const mod = await import("./routes/reminder-runtime-page");
+  return { default: mod.ReminderRuntimePage };
+});
+
 const ActionRuntimePage = lazy(async () => {
   const mod = await import("./routes/action-runtime-page");
   return { default: mod.ActionRuntimePage };
@@ -172,6 +177,12 @@ const followupRuntimeRoute = createRoute({
   component: FollowupRuntimePage,
 });
 
+const reminderRuntimeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reminder-runtime",
+  component: ReminderRuntimePage,
+});
+
 const actionRuntimeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/action-runtime",
@@ -221,6 +232,7 @@ const routeTree = rootRoute.addChildren([
   replyLogicRoute,
   needDiscoveryRoute,
   followupRuntimeRoute,
+  reminderRuntimeRoute,
   actionRuntimeRoute,
   cyberAvatarRoute,
   realWorldSyncRoute,

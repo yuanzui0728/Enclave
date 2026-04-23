@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { MessageEntity } from '../chat/message.entity';
 import { SystemConfigModule } from '../config/config.module';
+import { MomentPostEntity } from '../moments/moment-post.entity';
 import { WorldModule } from '../world/world.module';
 import { ReminderRuntimeController } from './reminder-runtime.controller';
 import { ReminderRuntimeRulesService } from './reminder-runtime-rules.service';
@@ -11,7 +12,7 @@ import { ReminderTaskEntity } from './reminder-task.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ReminderTaskEntity, MessageEntity]),
+    TypeOrmModule.forFeature([ReminderTaskEntity, MessageEntity, MomentPostEntity]),
     AuthModule,
     SystemConfigModule,
     forwardRef(() => WorldModule),

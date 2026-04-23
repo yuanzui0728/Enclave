@@ -11,6 +11,7 @@ import {
   REMINDER_CHARACTER_ID,
   REMINDER_CHARACTER_SOURCE_KEY,
 } from '../characters/reminder-character';
+import { MomentPostEntity } from '../moments/moment-post.entity';
 import { WorldService } from '../world/world.service';
 import { ReminderTaskEntity } from './reminder-task.entity';
 import { ReminderRuntimeRulesService } from './reminder-runtime-rules.service';
@@ -51,6 +52,46 @@ type ReminderMomentNudge = {
   priority: ReminderTaskPriority;
   scheduleText: string;
   completionCount: number;
+};
+
+type ReminderRuntimeOverviewMessage = {
+  id: string;
+  conversationId: string;
+  text: string;
+  createdAt: string;
+};
+
+type ReminderRuntimeOverviewMoment = {
+  id: string;
+  text: string;
+  generationKind: string;
+  slot: string | null;
+  slotLabel: string | null;
+  likeCount: number;
+  commentCount: number;
+  postedAt: string;
+};
+
+type ReminderRuntimeOverviewStats = {
+  activeTaskCount: number;
+  dueSoonTaskCount: number;
+  overdueTaskCount: number;
+  habitTaskCount: number;
+  hardTaskCount: number;
+  deliveredTodayCount: number;
+  completedTodayCount: number;
+  momentCountToday: number;
+};
+
+type ReminderRuntimeOverview = {
+  rules: ReminderRuntimeRulesValue;
+  stats: ReminderRuntimeOverviewStats;
+  activeTasks: ReminderTaskRecordValue[];
+  upcomingTasks: ReminderTaskRecordValue[];
+  recentDeliveredTasks: ReminderTaskRecordValue[];
+  recentCompletedTasks: ReminderTaskRecordValue[];
+  recentMessages: ReminderRuntimeOverviewMessage[];
+  recentMoments: ReminderRuntimeOverviewMoment[];
 };
 
 type ParsedClock = {
@@ -210,6 +251,8 @@ export class ReminderRuntimeService {
     private readonly taskRepo: Repository<ReminderTaskEntity>,
     @InjectRepository(MessageEntity)
     private readonly messageRepo: Repository<MessageEntity>,
+    @InjectRepository(MomentPostEntity)
+    private readonly momentPostRepo: Repository<MomentPostEntity>,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly worldService: WorldService,
     private readonly rulesService: ReminderRuntimeRulesService,
@@ -225,6 +268,10 @@ export class ReminderRuntimeService {
 
   buildConversationId(characterId = REMINDER_CHARACTER_ID) {
     return `direct_${characterId}`;
+  }
+
+  getRules() {
+    return this.rulesService.getRules();
   }
 
   async getTasks(query?: ReminderTaskQuery): Promise<ReminderTaskRecordValue[]> {
@@ -291,6 +338,140 @@ export class ReminderRuntimeService {
       scheduleText: this.describeSchedule(task),
       completionCount: task.completionCount ?? 0,
     }));
+  }
+
+  async getOverview(): Promise<ReminderRuntimeOverview> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const dueSoonCutoff = new Date(now);
+    dueSoonCutoff.setHours(dueSoonCutoff.getHours() + 6);
+    const rules = await this.rulesService.getRules();
+
+    const activeRows = await this.taskRepo.find({
+      where: {
+        ownerId: owner.id,
+        characterId: REMINDER_CHARACTER_ID,
+        status: 'active',
+      },
+      order: {
+        nextTriggerAt: 'ASC',
+        dueAt: 'ASC',
+        updatedAt: 'DESC',
+      },
+    });
+
+    const [
+      recentDeliveredRows,
+      recentCompletedRows,
+      recentMessages,
+      recentMoments,
+      deliveredTodayCount,
+      completedTodayCount,
+      momentCountToday,
+    ] = await Promise.all([
+      this.taskRepo
+        .createQueryBuilder('task')
+        .where('task.ownerId = :ownerId', { ownerId: owner.id })
+        .andWhere('task.characterId = :characterId', {
+          characterId: REMINDER_CHARACTER_ID,
+        })
+        .andWhere('task.lastDeliveredAt IS NOT NULL')
+        .orderBy('task.lastDeliveredAt', 'DESC')
+        .limit(8)
+        .getMany(),
+      this.taskRepo
+        .createQueryBuilder('task')
+        .where('task.ownerId = :ownerId', { ownerId: owner.id })
+        .andWhere('task.characterId = :characterId', {
+          characterId: REMINDER_CHARACTER_ID,
+        })
+        .andWhere('task.lastCompletedAt IS NOT NULL')
+        .orderBy('task.lastCompletedAt', 'DESC')
+        .limit(8)
+        .getMany(),
+      this.messageRepo.find({
+        where: {
+          conversationId: this.buildConversationId(),
+          senderType: 'character',
+          senderId: REMINDER_CHARACTER_ID,
+        },
+        order: { createdAt: 'DESC' },
+        take: 10,
+      }),
+      this.momentPostRepo.find({
+        where: {
+          authorId: REMINDER_CHARACTER_ID,
+        },
+        order: { postedAt: 'DESC' },
+        take: 8,
+      }),
+      this.taskRepo
+        .createQueryBuilder('task')
+        .where('task.ownerId = :ownerId', { ownerId: owner.id })
+        .andWhere('task.characterId = :characterId', {
+          characterId: REMINDER_CHARACTER_ID,
+        })
+        .andWhere('task.lastDeliveredAt >= :startOfDay', { startOfDay })
+        .getCount(),
+      this.taskRepo
+        .createQueryBuilder('task')
+        .where('task.ownerId = :ownerId', { ownerId: owner.id })
+        .andWhere('task.characterId = :characterId', {
+          characterId: REMINDER_CHARACTER_ID,
+        })
+        .andWhere('task.lastCompletedAt >= :startOfDay', { startOfDay })
+        .getCount(),
+      this.momentPostRepo
+        .createQueryBuilder('post')
+        .where('post.authorId = :characterId', {
+          characterId: REMINDER_CHARACTER_ID,
+        })
+        .andWhere('post.postedAt >= :startOfDay', { startOfDay })
+        .getCount(),
+    ]);
+
+    const activeTasks = activeRows.slice(0, 12).map((item) => this.serializeTask(item));
+    const upcomingTasks = activeRows
+      .filter((item) => item.nextTriggerAt instanceof Date)
+      .slice(0, 8)
+      .map((item) => this.serializeTask(item));
+
+    return {
+      rules,
+      stats: {
+        activeTaskCount: activeRows.length,
+        dueSoonTaskCount: activeRows.filter((item) => {
+          if (!(item.nextTriggerAt instanceof Date)) {
+            return false;
+          }
+          const timestamp = item.nextTriggerAt.getTime();
+          return timestamp >= now.getTime() && timestamp <= dueSoonCutoff.getTime();
+        }).length,
+        overdueTaskCount: activeRows.filter(
+          (item) =>
+            item.nextTriggerAt instanceof Date &&
+            item.nextTriggerAt.getTime() < now.getTime(),
+        ).length,
+        habitTaskCount: activeRows.filter((item) => item.kind === 'habit').length,
+        hardTaskCount: activeRows.filter((item) => item.priority === 'hard').length,
+        deliveredTodayCount,
+        completedTodayCount,
+        momentCountToday,
+      },
+      activeTasks,
+      upcomingTasks,
+      recentDeliveredTasks: recentDeliveredRows.map((item) => this.serializeTask(item)),
+      recentCompletedTasks: recentCompletedRows.map((item) => this.serializeTask(item)),
+      recentMessages: recentMessages.map((item) => ({
+        id: item.id,
+        conversationId: item.conversationId,
+        text: item.text,
+        createdAt: item.createdAt.toISOString(),
+      })),
+      recentMoments: recentMoments.map((item) => this.serializeMoment(item)),
+    };
   }
 
   async buildMomentNudgePayload(input?: {
@@ -1234,6 +1415,30 @@ export class ReminderRuntimeService {
       return normalized;
     }
     return `${normalized.slice(0, maxLength)}…`;
+  }
+
+  private serializeMoment(
+    moment: MomentPostEntity,
+  ): ReminderRuntimeOverviewMoment {
+    const slot =
+      typeof moment.generationMetadata?.slot === 'string'
+        ? moment.generationMetadata.slot
+        : null;
+    const slotLabel =
+      typeof moment.generationMetadata?.slotLabel === 'string'
+        ? moment.generationMetadata.slotLabel
+        : null;
+
+    return {
+      id: moment.id,
+      text: moment.text,
+      generationKind: moment.generationKind,
+      slot,
+      slotLabel,
+      likeCount: moment.likeCount ?? 0,
+      commentCount: moment.commentCount ?? 0,
+      postedAt: moment.postedAt.toISOString(),
+    };
   }
 
   private buildDueReminderMessage(task: ReminderTaskEntity) {

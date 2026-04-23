@@ -14,6 +14,7 @@ type SidebarLink = {
     | "/chat-records"
     | "/need-discovery"
     | "/followup-runtime"
+    | "/reminder-runtime"
     | "/token-usage"
     | "/action-runtime"
     | "/cyber-avatar"

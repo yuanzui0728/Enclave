@@ -23,6 +23,7 @@ import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
 import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
+import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import type { RealWorldSyncRulesValue } from '../real-world-sync/real-world-sync.types';
 import type { NeedDiscoveryConfig } from '../need-discovery/need-discovery.types';
 import type { FollowupRuntimeRulesValue } from '../followup-runtime/followup-runtime.types';
@@ -47,6 +48,7 @@ export class AdminController {
     private readonly realWorldSyncService: RealWorldSyncService,
     private readonly schedulerService: SchedulerService,
     private readonly followupRuntimeService: FollowupRuntimeService,
+    private readonly reminderRuntimeService: ReminderRuntimeService,
   ) {}
 
   @Get('stats')
@@ -82,6 +84,11 @@ export class AdminController {
   @Get('followup-runtime/overview')
   getFollowupRuntimeOverview() {
     return this.followupRuntimeService.getOverview();
+  }
+
+  @Get('reminder-runtime/overview')
+  getReminderRuntimeOverview() {
+    return this.reminderRuntimeService.getOverview();
   }
 
   @Get('followup-runtime/rules')

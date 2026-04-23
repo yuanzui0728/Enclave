@@ -12,6 +12,16 @@ export interface ReminderRecurrenceRule {
   cadenceDays?: number;
 }
 
+export interface ReminderRuntimeRules {
+  defaultReminderHour: number;
+  defaultReminderMinute: number;
+  habitDefaultHour: number;
+  habitDefaultMinute: number;
+  checkinHours: number[];
+  checkinMinIntervalHours: number;
+  maxListItems: number;
+}
+
 export interface ReminderTaskRecord {
   id: string;
   title: string;
@@ -48,4 +58,44 @@ export interface SnoozeReminderTaskRequest {
   minutes?: number;
   hours?: number;
   until?: string;
+}
+
+export interface ReminderRuntimeOverviewStats {
+  activeTaskCount: number;
+  dueSoonTaskCount: number;
+  overdueTaskCount: number;
+  habitTaskCount: number;
+  hardTaskCount: number;
+  deliveredTodayCount: number;
+  completedTodayCount: number;
+  momentCountToday: number;
+}
+
+export interface ReminderRuntimeMessageRecord {
+  id: string;
+  conversationId: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface ReminderRuntimeMomentRecord {
+  id: string;
+  text: string;
+  generationKind: string;
+  slot?: string | null;
+  slotLabel?: string | null;
+  likeCount: number;
+  commentCount: number;
+  postedAt: string;
+}
+
+export interface ReminderRuntimeOverview {
+  rules: ReminderRuntimeRules;
+  stats: ReminderRuntimeOverviewStats;
+  activeTasks: ReminderTaskRecord[];
+  upcomingTasks: ReminderTaskRecord[];
+  recentDeliveredTasks: ReminderTaskRecord[];
+  recentCompletedTasks: ReminderTaskRecord[];
+  recentMessages: ReminderRuntimeMessageRecord[];
+  recentMoments: ReminderRuntimeMomentRecord[];
 }

@@ -166,6 +166,11 @@ const NAV_ITEMS = [
     hint: "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。",
   },
   {
+    to: "/reminder-runtime",
+    label: "提醒运行时",
+    hint: "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。",
+  },
+  {
     to: "/token-usage",
     label: "Token 用量",
     hint: "查看 AI 请求、Token 花费、预算预警和价格配置。",
@@ -251,6 +256,15 @@ function resolveRouteMeta(pathname: string) {
       title: "我自己回捞未闭环事项",
       description:
         "配置 open loop 提取、推荐候选打分、我自己主动消息文案，并查看推荐后的打开、加好友和开聊动作。",
+    };
+  }
+
+  if (pathname === "/reminder-runtime") {
+    return {
+      eyebrow: "提醒运行时",
+      title: "小盯的任务、触发与轻提醒发圈",
+      description:
+        "查看提醒角色当前在盯哪些事项、最近有没有真正提醒出去，以及晨间 / 晚间的长期习惯提醒是否稳定落地。",
     };
   }
 
