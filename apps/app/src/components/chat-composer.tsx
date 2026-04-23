@@ -307,6 +307,8 @@ type MobileComposerStatusState = {
   label: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 };
 
 export function ChatComposer({
@@ -2757,21 +2759,25 @@ export function ChatComposer({
     }
 
     if (composerError) {
+      const permissionDeniedWithSettings =
+        speech.permissionDenied && nativeMobileShellSupported;
       return {
         tone: "danger" as const,
         label: composerError,
-        actionLabel:
-          errorActionLabel ??
-          (speech.permissionDenied && nativeMobileShellSupported
-            ? "去设置"
-            : undefined),
-        onAction:
-          onErrorAction ??
-          (speech.permissionDenied && nativeMobileShellSupported
-            ? () => {
-                void openAppSettings();
-              }
-            : undefined),
+        actionLabel: permissionDeniedWithSettings
+          ? "去设置"
+          : errorActionLabel ?? undefined,
+        onAction: permissionDeniedWithSettings
+          ? () => {
+              void openAppSettings();
+            }
+          : onErrorAction ?? undefined,
+        secondaryActionLabel: permissionDeniedWithSettings
+          ? errorActionLabel ?? undefined
+          : undefined,
+        onSecondaryAction: permissionDeniedWithSettings
+          ? onErrorAction ?? undefined
+          : undefined,
       };
     }
 
@@ -3611,6 +3617,8 @@ function MobileComposerStatusRail({
   label,
   actionLabel,
   onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
 }: MobileComposerStatusState) {
   return (
     <div
@@ -3627,19 +3635,34 @@ function MobileComposerStatusRail({
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {actionLabel && onAction ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <InlineNoticeActionButton
+            label={actionLabel}
+            onClick={onAction}
+            className={cn(
+              "shrink-0 bg-white",
+              tone === "danger"
+                ? "border-[#fecaca] text-[#b42318]"
+                : tone === "success"
+                  ? "border-[rgba(7,193,96,0.14)] text-[#15803d]"
+                  : tone === "info"
+                    ? "border-[#bfdbfe] text-[#1d4ed8]"
+                    : "border-black/6 text-[color:var(--text-secondary)]",
+            )}
+          />
+          {secondaryActionLabel && onSecondaryAction ? (
+            <InlineNoticeActionButton
+              label={secondaryActionLabel}
+              onClick={onSecondaryAction}
+              className="shrink-0 border-black/6 bg-white text-[color:var(--text-secondary)]"
+            />
+          ) : null}
+        </div>
+      ) : secondaryActionLabel && onSecondaryAction ? (
         <InlineNoticeActionButton
-          label={actionLabel}
-          onClick={onAction}
-          className={cn(
-            "shrink-0 bg-white",
-            tone === "danger"
-              ? "border-[#fecaca] text-[#b42318]"
-              : tone === "success"
-                ? "border-[rgba(7,193,96,0.14)] text-[#15803d]"
-                : tone === "info"
-                  ? "border-[#bfdbfe] text-[#1d4ed8]"
-                  : "border-black/6 text-[color:var(--text-secondary)]",
-          )}
+          label={secondaryActionLabel}
+          onClick={onSecondaryAction}
+          className="shrink-0 border-black/6 bg-white text-[color:var(--text-secondary)]"
         />
       ) : null}
     </div>
