@@ -30,10 +30,13 @@ import type {
   CyberAvatarRuntimeRules,
   FollowupRuntimeOverview,
   FollowupRuntimeRules,
+  InferenceDiagnosticSnapshot,
   InferenceOverview,
   InferenceDiagnosticCapability,
   InferenceDiagnosticRequest,
   InferenceDiagnosticResult,
+  InferenceDiagnosticsRunRequest,
+  InferenceMultimodalOverview,
   InferenceProviderAccount,
   InferenceProviderAccountDraft,
   InstallCharacterPresetsResult,
@@ -251,6 +254,17 @@ export const adminApi = {
       },
     );
   },
+  runAllInferenceDiagnostics: (payload: InferenceDiagnosticsRunRequest) =>
+    adminFetch<InferenceDiagnosticSnapshot>("/inference/diagnostics/run-all", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getLatestInferenceDiagnostics: () =>
+    adminFetch<InferenceDiagnosticSnapshot | null>(
+      "/inference/diagnostics/latest",
+    ),
+  getInferenceMultimodalOverview: () =>
+    adminFetch<InferenceMultimodalOverview>("/inference/multimodal/overview"),
   installModelPersonas: (payload: InstallModelPersonasRequest) =>
     adminFetch<InstallModelPersonasResult>("/inference/model-personas/install", {
       method: "POST",

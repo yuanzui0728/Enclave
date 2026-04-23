@@ -1,3 +1,9 @@
+import type {
+  InferenceDiagnosticResult,
+  InferenceDiagnosticSummary,
+  InferenceDiagnosticStatus,
+} from "./inference";
+
 export interface ServiceHealth {
   name: string;
   healthy: boolean;
@@ -24,6 +30,9 @@ export interface InferenceStatus {
   imageGenerationReady?: boolean;
   speechMessage?: string;
   imageGenerationMessage?: string;
+  lastDiagnosticsAt?: string;
+  diagnosticsSummary?: InferenceDiagnosticSummary;
+  diagnosticResults?: InferenceDiagnosticResult[];
   queueDepth: number;
   maxConcurrency: number;
   inFlightRequests: number;
@@ -39,11 +48,14 @@ export interface DigitalHumanStatus {
   mode: "mock_stage" | "mock_iframe" | "external_iframe";
   provider: "mock_digital_human" | "external_digital_human";
   ready: boolean;
+  realReady?: boolean;
   playerTemplateConfigured: boolean;
   callbackTokenConfigured: boolean;
   paramsValid: boolean;
   paramsCount: number;
   paramsKeys: string[];
+  lastDiagnosticStatus?: InferenceDiagnosticStatus;
+  lastDiagnosticAt?: string;
   message: string;
 }
 

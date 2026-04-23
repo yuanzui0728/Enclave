@@ -207,6 +207,38 @@ function resolveModelStatusTone(status: InferenceModelCatalogEntry["status"]) {
   return "muted" as const;
 }
 
+function resolveDiagnosticStatusTone(
+  status: InferenceDiagnosticResult["status"] | "not_run",
+  realReady: boolean,
+) {
+  if (realReady) {
+    return "healthy" as const;
+  }
+  if (status === "failed" || status === "unavailable") {
+    return "warning" as const;
+  }
+  return "muted" as const;
+}
+
+function resolveDiagnosticStatusLabel(
+  status: InferenceDiagnosticResult["status"] | "not_run",
+  realReady: boolean,
+) {
+  if (realReady) {
+    return "真实可用";
+  }
+  if (status === "not_run") {
+    return "未诊断";
+  }
+  if (status === "failed") {
+    return "诊断失败";
+  }
+  if (status === "unavailable") {
+    return "不可用";
+  }
+  return "未证明";
+}
+
 function matchesCapability(
   entry: InferenceModelCatalogEntry,
   capability: ModelCapabilityFilter,
@@ -264,6 +296,11 @@ export function InferencePage() {
   const overviewQuery = useQuery({
     queryKey: ["admin-inference-overview"],
     queryFn: () => adminApi.getInferenceOverview(),
+  });
+
+  const multimodalOverviewQuery = useQuery({
+    queryKey: ["admin-inference-multimodal-overview"],
+    queryFn: () => adminApi.getInferenceMultimodalOverview(),
   });
 
   const providerAccounts = useMemo(
@@ -451,8 +488,28 @@ export function InferencePage() {
             : undefined,
         prompt: "请只回复 ok。",
       }),
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       setDiagnosticResult(result);
+      await queryClient.invalidateQueries({
+        queryKey: ["admin-inference-multimodal-overview"],
+      });
+    },
+  });
+
+  const runAllDiagnosticMutation = useMutation({
+    mutationFn: () =>
+      adminApi.runAllInferenceDiagnostics({
+        providerAccountId:
+          selectedProviderId && selectedProviderId !== "new"
+            ? selectedProviderId
+            : undefined,
+        prompt: "请只回复 ok。",
+      }),
+    onSuccess: async (snapshot) => {
+      setDiagnosticResult(snapshot.results.at(-1) ?? null);
+      await queryClient.invalidateQueries({
+        queryKey: ["admin-inference-multimodal-overview"],
+      });
     },
   });
 
@@ -715,6 +772,13 @@ export function InferencePage() {
       ) : null}
       {testMutation.isError && testMutation.error instanceof Error ? (
         <ErrorBlock message={testMutation.error.message} />
+      ) : null}
+      {diagnosticMutation.isError && diagnosticMutation.error instanceof Error ? (
+        <ErrorBlock message={diagnosticMutation.error.message} />
+      ) : null}
+      {runAllDiagnosticMutation.isError &&
+      runAllDiagnosticMutation.error instanceof Error ? (
+        <ErrorBlock message={runAllDiagnosticMutation.error.message} />
       ) : null}
       {installMutation.isError && installMutation.error instanceof Error ? (
         <ErrorBlock message={installMutation.error.message} />
@@ -1091,10 +1155,24 @@ export function InferencePage() {
                     真实多模态诊断
                   </div>
                   <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                    直接调用对应 provider 通道；未保存草稿不会参与诊断。
+                    一键运行会写入最新快照，系统状态页只按这份真实诊断结果展示多模态就绪状态。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => runAllDiagnosticMutation.mutate()}
+                    disabled={
+                      selectedProviderId === "new" ||
+                      diagnosticMutation.isPending ||
+                      runAllDiagnosticMutation.isPending
+                    }
+                  >
+                    {runAllDiagnosticMutation.isPending
+                      ? "全量诊断中..."
+                      : "运行全部诊断"}
+                  </Button>
                   {DIAGNOSTIC_CAPABILITIES.map((item) => (
                     <Button
                       key={item.capability}
@@ -1105,7 +1183,8 @@ export function InferencePage() {
                       }
                       disabled={
                         selectedProviderId === "new" ||
-                        diagnosticMutation.isPending
+                        diagnosticMutation.isPending ||
+                        runAllDiagnosticMutation.isPending
                       }
                     >
                       {diagnosticMutation.isPending &&
@@ -1136,6 +1215,69 @@ export function InferencePage() {
                   {diagnosticResult.message}
                 </InlineNotice>
               ) : null}
+              {multimodalOverviewQuery.data?.latestDiagnostics ? (
+                <AdminSoftBox>
+                  最近快照：{formatDateTime(
+                    multimodalOverviewQuery.data.latestDiagnostics.ranAt,
+                  )}{" "}
+                  · 真实可用{" "}
+                  {multimodalOverviewQuery.data.latestDiagnostics.summary.real}/
+                  {multimodalOverviewQuery.data.latestDiagnostics.summary.total}
+                  ，失败{" "}
+                  {multimodalOverviewQuery.data.latestDiagnostics.summary.failed}
+                  ，不可用{" "}
+                  {
+                    multimodalOverviewQuery.data.latestDiagnostics.summary
+                      .unavailable
+                  }
+                </AdminSoftBox>
+              ) : (
+                <AdminSoftBox>尚未保存真实诊断快照。</AdminSoftBox>
+              )}
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {(multimodalOverviewQuery.data?.capabilityMatrix ?? []).map(
+                  (item) => (
+                    <div
+                      key={item.capability}
+                      className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-[color:var(--text-primary)]">
+                            {item.label}
+                          </div>
+                          <div className="mt-1 text-xs text-[color:var(--text-tertiary)]">
+                            {item.model ?? item.providerName ?? "未绑定诊断结果"}
+                          </div>
+                        </div>
+                        <StatusPill
+                          tone={resolveDiagnosticStatusTone(
+                            item.status,
+                            item.realReady,
+                          )}
+                        >
+                          {resolveDiagnosticStatusLabel(
+                            item.status,
+                            item.realReady,
+                          )}
+                        </StatusPill>
+                      </div>
+                      <div className="mt-3 text-xs leading-5 text-[color:var(--text-secondary)]">
+                        {item.message}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-tertiary)]">
+                        <span>{item.configured ? "已配置" : "未配置"}</span>
+                        <span>{item.declared ? "已声明" : "未声明"}</span>
+                        <span>
+                          {item.lastCheckedAt
+                            ? formatDateTime(item.lastCheckedAt)
+                            : "未检查"}
+                        </span>
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
             </section>
 
             <div className="mt-5 space-y-5">

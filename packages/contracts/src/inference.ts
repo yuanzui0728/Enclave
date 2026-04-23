@@ -90,6 +90,11 @@ export interface InferenceDiagnosticRequest {
   prompt?: string;
 }
 
+export interface InferenceDiagnosticsRunRequest
+  extends InferenceDiagnosticRequest {
+  capabilities?: InferenceDiagnosticCapability[];
+}
+
 export interface InferenceDiagnosticResult {
   capability: InferenceDiagnosticCapability;
   status: InferenceDiagnosticStatus;
@@ -101,7 +106,51 @@ export interface InferenceDiagnosticResult {
   endpoint?: string;
   model?: string;
   latencyMs: number;
+  checkedAt: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface InferenceDiagnosticSummary {
+  total: number;
+  ok: number;
+  unavailable: number;
+  failed: number;
+  real: number;
+}
+
+export interface InferenceDiagnosticSnapshot {
+  ranAt: string;
+  results: InferenceDiagnosticResult[];
+  summary: InferenceDiagnosticSummary;
+}
+
+export interface InferenceCapabilityMatrixItem {
+  capability: InferenceDiagnosticCapability;
+  label: string;
+  configured: boolean;
+  declared: boolean;
+  realReady: boolean;
+  status: InferenceDiagnosticStatus | "not_run";
+  message: string;
+  providerName?: string;
+  endpoint?: string;
+  model?: string;
+  latencyMs?: number;
+  lastCheckedAt?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface InferenceMultimodalOverview {
+  provider: {
+    accountId: string;
+    accountName: string;
+    model: string;
+    endpoint: string;
+    apiStyle: InferenceApiStyle;
+    mode: InferenceProviderMode;
+  };
+  capabilityMatrix: InferenceCapabilityMatrixItem[];
+  latestDiagnostics: InferenceDiagnosticSnapshot | null;
 }
 
 export interface InstallModelPersonasRequest {

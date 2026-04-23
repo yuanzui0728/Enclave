@@ -1,6 +1,9 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AdminGuard } from '../admin/admin.guard';
-import { InferenceService } from './inference.service';
+import {
+  InferenceDiagnosticCapability,
+  InferenceService,
+} from './inference.service';
 
 @Controller('admin/inference')
 @UseGuards(AdminGuard)
@@ -159,6 +162,29 @@ export class InferenceAdminController {
   @Post('diagnostics/digital-human')
   diagnoseDigitalHuman() {
     return this.inferenceService.runDiagnostic('digital_human', {});
+  }
+
+  @Get('diagnostics/latest')
+  getLatestDiagnostics() {
+    return this.inferenceService.getLatestDiagnosticSnapshot();
+  }
+
+  @Post('diagnostics/run-all')
+  runAllDiagnostics(
+    @Body()
+    body: {
+      providerAccountId?: string;
+      characterId?: string;
+      prompt?: string;
+      capabilities?: InferenceDiagnosticCapability[];
+    },
+  ) {
+    return this.inferenceService.runAllDiagnostics(body);
+  }
+
+  @Get('multimodal/overview')
+  getMultimodalOverview() {
+    return this.inferenceService.getMultimodalOverview();
   }
 
   @Post('model-personas/install')

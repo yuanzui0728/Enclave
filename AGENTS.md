@@ -461,6 +461,9 @@
 - `POST /api/admin/inference/diagnostics/tts`
 - `POST /api/admin/inference/diagnostics/image-generation`
 - `POST /api/admin/inference/diagnostics/digital-human`
+- `GET /api/admin/inference/diagnostics/latest`
+- `POST /api/admin/inference/diagnostics/run-all`
+- `GET /api/admin/inference/multimodal/overview`
 - `POST /api/admin/inference/model-personas/install`
 - `POST /api/admin/inference/model-personas/rebind`
 

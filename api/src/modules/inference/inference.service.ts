@@ -25,10 +25,21 @@ const DEFAULT_PROVIDER_ID = 'provider_default';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_INLINE_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_TRANSCRIPTION_BYTES = 10 * 1024 * 1024;
+const MULTIMODAL_DIAGNOSTICS_CONFIG_KEY =
+  'inference_multimodal_diagnostics_latest';
 const IMAGE_INPUT_PROBE_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAIElEQVR4nGO4o6CAHX3AjhhGNdBIwwfs6AN2NKqBJhoAXkPsEKPssDYAAAAASUVORK5CYII=';
 
-type InferenceDiagnosticCapability =
+const DIAGNOSTIC_CAPABILITIES = [
+  'text',
+  'image_input',
+  'transcription',
+  'tts',
+  'image_generation',
+  'digital_human',
+] as const;
+
+export type InferenceDiagnosticCapability =
   | 'text'
   | 'image_input'
   | 'transcription'
@@ -36,15 +47,21 @@ type InferenceDiagnosticCapability =
   | 'image_generation'
   | 'digital_human';
 
-type InferenceDiagnosticInput = {
+export type InferenceDiagnosticStatus = 'ok' | 'unavailable' | 'failed';
+
+export type InferenceDiagnosticInput = {
   providerAccountId?: string;
   characterId?: string;
   prompt?: string;
 };
 
-type InferenceDiagnosticResult = {
+export type InferenceDiagnosticsRunInput = InferenceDiagnosticInput & {
+  capabilities?: InferenceDiagnosticCapability[];
+};
+
+export type InferenceDiagnosticResult = {
   capability: InferenceDiagnosticCapability;
-  status: 'ok' | 'unavailable' | 'failed';
+  status: InferenceDiagnosticStatus;
   success: boolean;
   real: boolean;
   message: string;
@@ -53,7 +70,51 @@ type InferenceDiagnosticResult = {
   endpoint?: string;
   model?: string;
   latencyMs: number;
+  checkedAt: string;
   metadata?: Record<string, unknown>;
+};
+
+export type InferenceDiagnosticSummary = {
+  total: number;
+  ok: number;
+  unavailable: number;
+  failed: number;
+  real: number;
+};
+
+export type InferenceDiagnosticSnapshot = {
+  ranAt: string;
+  results: InferenceDiagnosticResult[];
+  summary: InferenceDiagnosticSummary;
+};
+
+export type InferenceCapabilityMatrixItem = {
+  capability: InferenceDiagnosticCapability;
+  label: string;
+  configured: boolean;
+  declared: boolean;
+  realReady: boolean;
+  status: InferenceDiagnosticStatus | 'not_run';
+  message: string;
+  providerName?: string;
+  endpoint?: string;
+  model?: string;
+  latencyMs?: number;
+  lastCheckedAt?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export type InferenceMultimodalOverview = {
+  provider: {
+    accountId: string;
+    accountName: string;
+    model: string;
+    endpoint: string;
+    apiStyle: ResolvedInferenceProviderConfig['apiStyle'];
+    mode: ResolvedInferenceProviderConfig['mode'];
+  };
+  capabilityMatrix: InferenceCapabilityMatrixItem[];
+  latestDiagnostics: InferenceDiagnosticSnapshot | null;
 };
 
 type ProviderPayload = {
@@ -997,6 +1058,155 @@ export class InferenceService implements OnModuleInit {
     capability: InferenceDiagnosticCapability,
     input: InferenceDiagnosticInput,
   ): Promise<InferenceDiagnosticResult> {
+    const result = await this.executeDiagnostic(capability, input);
+    await this.mergeDiagnosticResult(result);
+    return result;
+  }
+
+  async runAllDiagnostics(
+    input: InferenceDiagnosticsRunInput = {},
+  ): Promise<InferenceDiagnosticSnapshot> {
+    const capabilities = this.normalizeDiagnosticCapabilities(
+      input.capabilities,
+    );
+    const results: InferenceDiagnosticResult[] = [];
+
+    for (const capability of capabilities) {
+      results.push(await this.executeDiagnostic(capability, input));
+    }
+
+    const snapshot = this.buildDiagnosticSnapshot(results);
+    await this.saveDiagnosticSnapshot(snapshot);
+    return snapshot;
+  }
+
+  async getLatestDiagnosticSnapshot(): Promise<InferenceDiagnosticSnapshot | null> {
+    const raw = await this.systemConfig.getConfig(
+      MULTIMODAL_DIAGNOSTICS_CONFIG_KEY,
+    );
+    if (!raw?.trim()) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as InferenceDiagnosticSnapshot;
+      if (!parsed.ranAt || !Array.isArray(parsed.results)) {
+        return null;
+      }
+      return {
+        ranAt: parsed.ranAt,
+        results: parsed.results,
+        summary:
+          parsed.summary ?? this.buildDiagnosticSummary(parsed.results ?? []),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async getMultimodalOverview(): Promise<InferenceMultimodalOverview> {
+    const [latestDiagnostics, digitalHumanState] = await Promise.all([
+      this.getLatestDiagnosticSnapshot(),
+      this.resolveDigitalHumanDiagnosticState(),
+    ]);
+    const latestProviderAccountId = latestDiagnostics?.results.find((result) =>
+      result.providerAccountId?.trim(),
+    )?.providerAccountId;
+    let provider: ResolvedInferenceProviderConfig;
+    try {
+      provider = await this.resolveDiagnosticProvider({
+        providerAccountId: latestProviderAccountId,
+      });
+    } catch {
+      provider = await this.resolveDiagnosticProvider({});
+    }
+    const capabilities = await this.resolveCapabilityProfile(provider);
+    const latestByCapability = new Map(
+      (latestDiagnostics?.results ?? []).map((result) => [
+        result.capability,
+        result,
+      ]),
+    );
+
+    const buildMatrixItem = (
+      capability: InferenceDiagnosticCapability,
+      label: string,
+      configured: boolean,
+      declared: boolean,
+    ): InferenceCapabilityMatrixItem => {
+      const latest = latestByCapability.get(capability);
+      return {
+        capability,
+        label,
+        configured,
+        declared,
+        realReady: Boolean(latest?.status === 'ok' && latest.real),
+        status: latest?.status ?? 'not_run',
+        message: latest?.message ?? '尚未运行真实诊断。',
+        providerName: latest?.providerName,
+        endpoint: latest?.endpoint,
+        model: latest?.model,
+        latencyMs: latest?.latencyMs,
+        lastCheckedAt: latest?.checkedAt ?? latestDiagnostics?.ranAt,
+        metadata: latest?.metadata,
+      };
+    };
+
+    return {
+      provider: {
+        accountId: provider.accountId,
+        accountName: provider.accountName,
+        model: provider.model,
+        endpoint: provider.endpoint,
+        apiStyle: provider.apiStyle,
+        mode: provider.mode,
+      },
+      capabilityMatrix: [
+        buildMatrixItem(
+          'text',
+          '文本理解 / 文本回复',
+          Boolean(provider.apiKey?.trim() && provider.model?.trim()),
+          true,
+        ),
+        buildMatrixItem(
+          'image_input',
+          '图片理解',
+          Boolean(provider.apiKey?.trim() && provider.model?.trim()),
+          capabilities.supportsNativeImageInput,
+        ),
+        buildMatrixItem(
+          'transcription',
+          '语音 / 视频转写理解',
+          capabilities.supportsTranscription,
+          capabilities.supportsTranscription,
+        ),
+        buildMatrixItem(
+          'tts',
+          '语音回复 TTS',
+          capabilities.supportsSpeechSynthesis,
+          capabilities.supportsSpeechSynthesis,
+        ),
+        buildMatrixItem(
+          'image_generation',
+          '图片回复生成',
+          capabilities.supportsImageGeneration,
+          capabilities.supportsImageGeneration,
+        ),
+        buildMatrixItem(
+          'digital_human',
+          '数字人视频回复',
+          digitalHumanState.real,
+          digitalHumanState.real,
+        ),
+      ],
+      latestDiagnostics,
+    };
+  }
+
+  private async executeDiagnostic(
+    capability: InferenceDiagnosticCapability,
+    input: InferenceDiagnosticInput,
+  ): Promise<InferenceDiagnosticResult> {
     if (capability === 'digital_human') {
       return this.runDigitalHumanDiagnostic();
     }
@@ -1030,6 +1240,71 @@ export class InferenceService implements OnModuleInit {
         message: extractErrorMessage(error),
       });
     }
+  }
+
+  private normalizeDiagnosticCapabilities(
+    capabilities?: InferenceDiagnosticCapability[],
+  ) {
+    if (!capabilities?.length) {
+      return [...DIAGNOSTIC_CAPABILITIES];
+    }
+
+    const allowed = new Set<InferenceDiagnosticCapability>(
+      DIAGNOSTIC_CAPABILITIES,
+    );
+    return capabilities.reduce<InferenceDiagnosticCapability[]>(
+      (normalized, capability) => {
+        if (allowed.has(capability) && !normalized.includes(capability)) {
+          normalized.push(capability);
+        }
+        return normalized;
+      },
+      [],
+    );
+  }
+
+  private buildDiagnosticSummary(
+    results: InferenceDiagnosticResult[],
+  ): InferenceDiagnosticSummary {
+    return {
+      total: results.length,
+      ok: results.filter((result) => result.status === 'ok').length,
+      unavailable: results.filter((result) => result.status === 'unavailable')
+        .length,
+      failed: results.filter((result) => result.status === 'failed').length,
+      real: results.filter((result) => result.real).length,
+    };
+  }
+
+  private buildDiagnosticSnapshot(
+    results: InferenceDiagnosticResult[],
+  ): InferenceDiagnosticSnapshot {
+    return {
+      ranAt: new Date().toISOString(),
+      results,
+      summary: this.buildDiagnosticSummary(results),
+    };
+  }
+
+  private async saveDiagnosticSnapshot(snapshot: InferenceDiagnosticSnapshot) {
+    await this.systemConfig.setConfig(
+      MULTIMODAL_DIAGNOSTICS_CONFIG_KEY,
+      JSON.stringify(snapshot),
+    );
+  }
+
+  private async mergeDiagnosticResult(result: InferenceDiagnosticResult) {
+    const existing = await this.getLatestDiagnosticSnapshot();
+    const byCapability = new Map(
+      (existing?.results ?? []).map((item) => [item.capability, item]),
+    );
+    byCapability.set(result.capability, result);
+
+    const results = DIAGNOSTIC_CAPABILITIES.flatMap((capability) => {
+      const item = byCapability.get(capability);
+      return item ? [item] : [];
+    });
+    await this.saveDiagnosticSnapshot(this.buildDiagnosticSnapshot(results));
   }
 
   private async resolveDiagnosticProvider(input: InferenceDiagnosticInput) {
@@ -1068,6 +1343,7 @@ export class InferenceService implements OnModuleInit {
       | 'endpoint'
       | 'model'
       | 'latencyMs'
+      | 'checkedAt'
     > & {
       endpoint?: string;
       model?: string;
@@ -1084,6 +1360,7 @@ export class InferenceService implements OnModuleInit {
       endpoint: result.endpoint ?? provider.endpoint,
       model: result.model ?? provider.model,
       latencyMs: Date.now() - startedAt,
+      checkedAt: new Date().toISOString(),
       metadata: result.metadata,
     };
   }
@@ -1388,8 +1665,7 @@ export class InferenceService implements OnModuleInit {
     });
   }
 
-  private async runDigitalHumanDiagnostic(): Promise<InferenceDiagnosticResult> {
-    const startedAt = Date.now();
+  private async resolveDigitalHumanDiagnosticState() {
     const mode =
       (
         (await this.systemConfig.getConfig('digital_human_provider_mode')) ??
@@ -1414,22 +1690,37 @@ export class InferenceService implements OnModuleInit {
     const real = !isMock && Boolean(playerTemplate);
 
     return {
-      capability: 'digital_human',
-      status: real ? 'ok' : 'unavailable',
-      success: real,
+      mode,
       real,
-      message: real
+      isMock,
+      playerTemplateConfigured: Boolean(playerTemplate),
+      callbackTokenConfigured: Boolean(callbackToken),
+      paramsConfigured: Boolean(params),
+    };
+  }
+
+  private async runDigitalHumanDiagnostic(): Promise<InferenceDiagnosticResult> {
+    const startedAt = Date.now();
+    const state = await this.resolveDigitalHumanDiagnosticState();
+
+    return {
+      capability: 'digital_human',
+      status: state.real ? 'ok' : 'unavailable',
+      success: state.real,
+      real: state.real,
+      message: state.real
         ? '数字人 external player/stream 配置存在。'
-        : isMock
+        : state.isMock
           ? '当前数字人 provider 为 mock 模式，不能算真实数字人视频能力。'
           : '数字人 provider 缺少 player/stream 模板配置。',
       latencyMs: Date.now() - startedAt,
+      checkedAt: new Date().toISOString(),
       metadata: {
-        mode,
-        provider: real ? 'external_digital_human' : 'mock_digital_human',
-        playerTemplateConfigured: Boolean(playerTemplate),
-        callbackTokenConfigured: Boolean(callbackToken),
-        paramsConfigured: Boolean(params),
+        mode: state.mode,
+        provider: state.real ? 'external_digital_human' : 'mock_digital_human',
+        playerTemplateConfigured: state.playerTemplateConfigured,
+        callbackTokenConfigured: state.callbackTokenConfigured,
+        paramsConfigured: state.paramsConfigured,
       },
     };
   }

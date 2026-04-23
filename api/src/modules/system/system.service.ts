@@ -23,7 +23,10 @@ import { SystemConfigService } from '../config/config.service';
 import { resolveDatabasePath, resolveRepoPath } from '../../database/database-path';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { SchedulerTelemetryService } from '../scheduler/scheduler-telemetry.service';
-import { InferenceService } from '../inference/inference.service';
+import {
+  InferenceService,
+  type InferenceDiagnosticCapability,
+} from '../inference/inference.service';
 
 type ProviderPayload = {
   endpoint: string;
@@ -2550,7 +2553,15 @@ export class SystemService {
   }
 
   async getStatus() {
-    const [ownerCount, charactersCount, narrativeArcsCount, behaviorLogsCount, providerConfig, digitalHumanConfig] =
+    const [
+      ownerCount,
+      charactersCount,
+      narrativeArcsCount,
+      behaviorLogsCount,
+      providerConfig,
+      digitalHumanConfig,
+      latestDiagnostics,
+    ] =
       await Promise.all([
         this.userRepo.count(),
         this.characterRepo.count(),
@@ -2558,50 +2569,52 @@ export class SystemService {
         this.behaviorLogRepo.count(),
         this.resolveProviderConfig(),
         this.resolveDigitalHumanConfig(),
+        this.inferenceService.getLatestDiagnosticSnapshot(),
       ]);
 
     const databasePath = this.resolveDatabasePath();
     const publicBaseUrl = this.config.get<string>('PUBLIC_API_BASE_URL')?.trim();
 
     const scheduler = await this.getSchedulerPayload();
-    const transcriptionReady = Boolean(
-      providerConfig.transcriptionEndpoint?.trim() &&
-        providerConfig.transcriptionModel?.trim() &&
-        providerConfig.transcriptionApiKey?.trim(),
+    const latestByCapability = new Map(
+      (latestDiagnostics?.results ?? []).map((result) => [
+        result.capability,
+        result,
+      ]),
     );
-    const speechSynthesisReady = Boolean(
-      providerConfig.ttsEndpoint?.trim() &&
-        providerConfig.ttsModel?.trim() &&
-        providerConfig.ttsApiKey?.trim(),
-    );
-    const imageGenerationReady = Boolean(
-      providerConfig.imageGenerationEndpoint?.trim() &&
-        providerConfig.imageGenerationModel?.trim() &&
-        providerConfig.imageGenerationApiKey?.trim(),
-    );
+    const getDiagnostic = (capability: InferenceDiagnosticCapability) =>
+      latestByCapability.get(capability);
+    const isRealDiagnosticOk = (capability: InferenceDiagnosticCapability) => {
+      const result = getDiagnostic(capability);
+      return Boolean(result?.status === 'ok' && result.real);
+    };
+    const textReady = isRealDiagnosticOk('text');
+    const transcriptionReady = isRealDiagnosticOk('transcription');
+    const speechSynthesisReady = isRealDiagnosticOk('tts');
+    const imageGenerationReady = isRealDiagnosticOk('image_generation');
+    const imageInputReady = isRealDiagnosticOk('image_input');
+    const digitalHumanRealReady = isRealDiagnosticOk('digital_human');
     const speechReady = transcriptionReady && speechSynthesisReady;
     const speechMessage = speechReady
-      ? '语音输入转写与语音回复 TTS 均已配置独立通道。'
+      ? '语音输入转写与语音回复 TTS 均已通过真实诊断。'
       : [
-          transcriptionReady ? null : '缺少独立语音转写 endpoint / model / API Key',
-          speechSynthesisReady ? null : '缺少独立 TTS endpoint / model / API Key',
+          transcriptionReady
+            ? null
+            : `转写：${getDiagnostic('transcription')?.message ?? '尚未运行真实诊断'}`,
+          speechSynthesisReady
+            ? null
+            : `TTS：${getDiagnostic('tts')?.message ?? '尚未运行真实诊断'}`,
         ]
           .filter(Boolean)
-          .join('；') || '语音能力未完整配置。';
+          .join('；') || '语音能力未通过真实诊断。';
     const imageGenerationMessage = imageGenerationReady
-      ? '图片生成通道已配置。'
-      : '缺少图片生成 endpoint / model / API Key。';
+      ? '图片生成通道已通过真实诊断。'
+      : getDiagnostic('image_generation')?.message ??
+        '尚未运行图片生成真实诊断。';
 
     const transcriptionMode: 'dedicated' | 'unconfigured' = transcriptionReady
       ? 'dedicated'
       : 'unconfigured';
-
-    const imageInputReady = Boolean(
-      providerConfig.model &&
-        /vision|gpt-4o|gpt-4\.1|gpt-5|gemini|claude|vl|multimodal/i.test(
-          providerConfig.model,
-        ),
-    );
 
     return {
       coreApi: {
@@ -2624,16 +2637,16 @@ export class SystemService {
         connected: true,
       },
       inferenceGateway: {
-        healthy: Boolean(providerConfig.model),
+        healthy: textReady || Boolean(providerConfig.model),
         activeProvider: providerConfig.model || undefined,
         activeTranscriptionProvider: transcriptionReady
-          ? providerConfig.transcriptionModel
+          ? getDiagnostic('transcription')?.model
           : undefined,
         activeTtsProvider: speechSynthesisReady
-          ? providerConfig.ttsModel
+          ? getDiagnostic('tts')?.model
           : undefined,
         activeImageGenerationProvider: imageGenerationReady
-          ? providerConfig.imageGenerationModel
+          ? getDiagnostic('image_generation')?.model
           : undefined,
         transcriptionMode,
         speechReady,
@@ -2642,6 +2655,9 @@ export class SystemService {
         imageGenerationReady,
         speechMessage,
         imageGenerationMessage,
+        lastDiagnosticsAt: latestDiagnostics?.ranAt,
+        diagnosticsSummary: latestDiagnostics?.summary,
+        diagnosticResults: latestDiagnostics?.results,
         queueDepth: 0,
         maxConcurrency: 1,
         inFlightRequests: 0,
@@ -2654,11 +2670,15 @@ export class SystemService {
         mode: digitalHumanConfig.mode,
         provider: digitalHumanConfig.provider,
         ready: digitalHumanConfig.ready,
+        realReady: digitalHumanRealReady,
         playerTemplateConfigured: digitalHumanConfig.playerTemplateConfigured,
         callbackTokenConfigured: digitalHumanConfig.callbackTokenConfigured,
         paramsValid: digitalHumanConfig.paramsValid,
         paramsCount: digitalHumanConfig.paramsCount,
         paramsKeys: digitalHumanConfig.paramsKeys,
+        lastDiagnosticStatus: getDiagnostic('digital_human')?.status,
+        lastDiagnosticAt:
+          getDiagnostic('digital_human')?.checkedAt ?? latestDiagnostics?.ranAt,
         message: digitalHumanConfig.message,
       },
       worldSurface: {
