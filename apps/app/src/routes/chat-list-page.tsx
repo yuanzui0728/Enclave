@@ -1141,6 +1141,7 @@ function ConversationListItemLink({
     ? "bg-[#07c160]"
     : "bg-[#9aa0a6]";
   const [swipeOffset, setSwipeOffset] = useState(open ? -swipeActionWidth : 0);
+  const swipeOffsetRef = useRef(swipeOffset);
   const hasUnreadMessages = conversation.unreadCount > 0;
   const isPinned = conversation.isPinned;
   const isGroupConversation = isPersistedGroupConversation(conversation);
@@ -1157,9 +1158,16 @@ function ConversationListItemLink({
     },
   );
 
+  const updateSwipeOffset = (nextOffset: number) => {
+    swipeOffsetRef.current = nextOffset;
+    setSwipeOffset(nextOffset);
+  };
+
   useEffect(() => {
     if (!gestureRef.current?.dragging) {
-      setSwipeOffset(open ? -swipeActionWidth : 0);
+      const nextOffset = open ? -swipeActionWidth : 0;
+      swipeOffsetRef.current = nextOffset;
+      setSwipeOffset(nextOffset);
     }
   }, [open, swipeActionWidth]);
 
@@ -1196,7 +1204,7 @@ function ConversationListItemLink({
     const deltaY = touch.clientY - gesture.startY;
     if (Math.abs(deltaY) > 14 && Math.abs(deltaY) > Math.abs(deltaX)) {
       gestureRef.current = null;
-      setSwipeOffset(open ? -swipeActionWidth : 0);
+      updateSwipeOffset(open ? -swipeActionWidth : 0);
       return;
     }
 
@@ -1208,7 +1216,7 @@ function ConversationListItemLink({
     if (Math.abs(deltaX) > 6) {
       event.preventDefault();
     }
-    setSwipeOffset(nextOffset);
+    updateSwipeOffset(nextOffset);
   };
 
   const handleTouchEnd = () => {
@@ -1218,8 +1226,8 @@ function ConversationListItemLink({
     }
 
     gestureRef.current = null;
-    const shouldOpen = swipeOffset <= -swipeActionWidth / 2;
-    setSwipeOffset(shouldOpen ? -swipeActionWidth : 0);
+    const shouldOpen = swipeOffsetRef.current <= -swipeActionWidth / 2;
+    updateSwipeOffset(shouldOpen ? -swipeActionWidth : 0);
     onOpenChange(shouldOpen);
   };
 
@@ -1315,7 +1323,7 @@ function ConversationListItemLink({
       onClick={(event) => {
         if (open || swipeOffset !== 0) {
           event.preventDefault();
-          setSwipeOffset(0);
+          updateSwipeOffset(0);
           onOpenChange(false);
         }
       }}
@@ -1336,7 +1344,7 @@ function ConversationListItemLink({
       onClick={(event) => {
         if (open || swipeOffset !== 0) {
           event.preventDefault();
-          setSwipeOffset(0);
+          updateSwipeOffset(0);
           onOpenChange(false);
         }
       }}
