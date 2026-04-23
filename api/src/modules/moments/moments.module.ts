@@ -12,6 +12,7 @@ import { AuthModule } from '../auth/auth.module';
 import { SocialModule } from '../social/social.module';
 import { FeedModule } from '../feed/feed.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
+import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
     SocialModule,
     FeedModule,
     forwardRef(() => CyberAvatarModule),
+    ReminderRuntimeModule,
   ],
   providers: [MomentsService],
   controllers: [MomentsController],

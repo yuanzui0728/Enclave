@@ -41,6 +41,16 @@ type ReminderDispatch = {
   text: string;
 };
 
+type ReminderMomentNudge = {
+  id: string;
+  title: string;
+  category: string;
+  kind: ReminderTaskKind;
+  priority: ReminderTaskPriority;
+  scheduleText: string;
+  completionCount: number;
+};
+
 type ParsedClock = {
   hour: number;
   minute: number;
@@ -241,6 +251,36 @@ export class ReminderRuntimeService {
       .filter((item) => item.nextTriggerAt instanceof Date)
       .slice(0, limit)
       .map((item) => this.serializeTask(item));
+  }
+
+  async getMomentNudgeTasks(limit = 3): Promise<ReminderMomentNudge[]> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const rows = await this.taskRepo.find({
+      where: {
+        ownerId: owner.id,
+        characterId: REMINDER_CHARACTER_ID,
+        status: 'active',
+      },
+      order: {
+        nextTriggerAt: 'ASC',
+        dueAt: 'ASC',
+        updatedAt: 'DESC',
+      },
+      take: 24,
+    });
+
+    const preferred = rows.filter((item) => this.isLongHorizonNudgeTask(item));
+    const source = preferred.length > 0 ? preferred : rows;
+
+    return source.slice(0, limit).map((task) => ({
+      id: task.id,
+      title: task.title,
+      category: task.category,
+      kind: task.kind as ReminderTaskKind,
+      priority: task.priority as ReminderTaskPriority,
+      scheduleText: this.describeSchedule(task),
+      completionCount: task.completionCount ?? 0,
+    }));
   }
 
   async completeTask(id: string) {
@@ -1028,6 +1068,15 @@ export class ReminderRuntimeService {
 
     const next = task.nextTriggerAt ?? task.dueAt;
     return next ? formatDateTimeLabel(next, new Date()) : '已触发，等你处理';
+  }
+
+  private isLongHorizonNudgeTask(task: ReminderTaskEntity) {
+    return (
+      task.kind === 'habit' ||
+      task.category === 'growth' ||
+      task.category === 'lifestyle' ||
+      task.category === 'health'
+    );
   }
 
   private buildDueReminderMessage(task: ReminderTaskEntity) {

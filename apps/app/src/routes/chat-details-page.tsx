@@ -11,6 +11,7 @@ import {
   getConversations,
   getFriends,
   hideConversation,
+  REMINDER_CHARACTER_ID,
   sendFriendRequest,
   setConversationStrongReminder,
   setConversationMuted,
@@ -33,6 +34,7 @@ import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
+import { ReminderTaskPanel } from "../features/chat/reminder-task-panel";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import {
@@ -135,6 +137,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   );
   const backgroundQuery = useConversationBackground(conversationId);
   const targetCharacterId = conversation?.participants[0] ?? "";
+  const isReminderConversation = targetCharacterId === REMINDER_CHARACTER_ID;
 
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, targetCharacterId],
@@ -912,6 +915,16 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <ChatDetailsSection variant="wechat">
             <ChatMemberGrid items={memberItems} variant="wechat" />
           </ChatDetailsSection>
+
+          {isReminderConversation ? (
+            <ChatDetailsSection title="提醒管理" variant="wechat">
+              <ReminderTaskPanel
+                conversationId={conversationId}
+                variant="mobile"
+                surface="details"
+              />
+            </ChatDetailsSection>
+          ) : null}
 
           <ChatDetailsSection title="聊天记录" variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">

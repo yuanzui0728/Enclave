@@ -16,6 +16,7 @@ import { useReminderRuntimeTasks } from "./use-reminder-runtime-tasks";
 type ReminderTaskPanelProps = {
   conversationId: string;
   variant?: "mobile" | "desktop";
+  surface?: "thread" | "details";
 };
 
 type ReminderPanelNotice = {
@@ -28,8 +29,10 @@ const DEFAULT_VISIBLE_TASK_COUNT = 3;
 export function ReminderTaskPanel({
   conversationId,
   variant = "mobile",
+  surface = "thread",
 }: ReminderTaskPanelProps) {
   const isDesktop = variant === "desktop";
+  const isDetailsSurface = surface === "details";
   const [expanded, setExpanded] = useState(isDesktop);
   const [notice, setNotice] = useState<ReminderPanelNotice | null>(null);
   const {
@@ -143,14 +146,19 @@ export function ReminderTaskPanel({
   return (
     <section
       className={cn(
-        "border-t border-[color:var(--border-faint)] bg-[rgba(248,250,249,0.96)]",
-        isDesktop ? "px-5 py-3" : "px-2.5 py-2.5",
+        !isDetailsSurface &&
+          "border-t border-[color:var(--border-faint)] bg-[rgba(248,250,249,0.96)]",
+        isDetailsSurface ? "px-0 py-0" : isDesktop ? "px-5 py-3" : "px-2.5 py-2.5",
       )}
     >
       <div
         className={cn(
-          "rounded-[20px] border border-[rgba(7,193,96,0.16)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(15,23,42,0.45)]",
-          isDesktop ? "px-4 py-3" : "px-3 py-2.5",
+          isDetailsSurface
+            ? isDesktop
+              ? "px-4 py-3"
+              : "px-4 py-3"
+            : "rounded-[20px] border border-[rgba(7,193,96,0.16)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(15,23,42,0.45)]",
+          !isDetailsSurface && (isDesktop ? "px-4 py-3" : "px-3 py-2.5"),
         )}
       >
         <div className="flex items-start justify-between gap-3">
