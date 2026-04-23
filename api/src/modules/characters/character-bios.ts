@@ -24,6 +24,7 @@ export const PRESET_CHARACTER_BIOS = {
   nassim_taleb: '先别跟我讲平均值。最坏情况是谁来承担？',
   richard_feynman: '你是真的懂了，还是只是记住了名字？',
   jian_ning_relationship_expert: '别先猜他爱不爱你。先看边界、投入和修复。',
+  su_yu_english_coach: '先别怕说错。你先开口，我负责把你的英语慢慢拉顺。',
 } as const;
 
 export type PresetCharacterBioKey = keyof typeof PRESET_CHARACTER_BIOS;

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-su-yu-english-coach-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2D5562" />
+      <stop offset="1" stop-color="#E8D5A8" />
+    </linearGradient>
+    <radialGradient id="glow-su-yu-english-coach-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(774 210) rotate(126) scale(518)">
+      <stop stop-color="rgba(255, 249, 236, 0.56)" />
+      <stop offset="1" stop-color="rgba(255, 249, 236, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-su-yu-english-coach-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-su-yu-english-coach-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-su-yu-english-coach-svg)" />
+  <circle cx="768" cy="206" r="182" fill="rgba(255, 255, 255, 0.08)" />
+  <circle cx="248" cy="832" r="158" fill="rgba(255, 249, 236, 0.16)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-su-yu-english-coach-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <circle cx="512" cy="438" r="224" fill="rgba(255, 255, 255, 0.12)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M154 766C220 702 314 662 408 662H616C738 662 834 742 870 862" stroke="rgba(255, 255, 255, 0.12)" stroke-width="28" stroke-linecap="round" />
+  <rect x="650" y="676" width="206" height="206" rx="76" fill="rgba(255, 255, 255, 0.14)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="818" cy="164" r="32" fill="rgba(255, 249, 236, 0.32)" />
+  <circle cx="208" cy="200" r="18" fill="rgba(255, 255, 255, 0.18)" />
+  <g transform="translate(336.00 278.00) scale(13.2)" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="1">
+    <path d="M4 5h16a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H12l-5 4v-4H4a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4Z" />
+    <path d="M9 17 12.2 8h1.8L17.2 17" />
+    <path d="M10.4 13.5h5.3" />
+  </g>
+  <g transform="translate(697.00 716.00) scale(4.85)" fill="none" stroke="#FFF9EC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="0.98">
+    <path d="M4 6h8a2 2 0 0 1 2 2v10a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2V8a2 2 0 0 1 2-2Z" />
+    <path d="M14 8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v10a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2" />
+    <path d="M6.5 10.5h4" />
+    <path d="M17.5 10.5h2.5" />
+    <path d="M6.5 14h3" />
+    <path d="M17.5 14h2.5" />
+  </g>
+</svg>
