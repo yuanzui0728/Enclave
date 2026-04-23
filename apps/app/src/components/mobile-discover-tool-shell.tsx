@@ -42,6 +42,8 @@ export function MobileDiscoverToolShell({
   const [shareNotice, setShareNotice] = useState<{
     tone: "success" | "info";
     message: string;
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
 
   async function handleShare() {
@@ -105,6 +107,10 @@ export function MobileDiscoverToolShell({
         message: nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制工具摘要失败，请稍后重试。",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShare();
+        },
       });
     }
   }
@@ -148,7 +154,31 @@ export function MobileDiscoverToolShell({
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={shareNotice.tone}
           >
-            {shareNotice.message}
+            {shareNotice.tone === "info" ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">{shareNotice.message}</span>
+                <div className="flex items-center gap-1.5">
+                  {shareNotice.actionLabel && shareNotice.onAction ? (
+                    <button
+                      type="button"
+                      onClick={shareNotice.onAction}
+                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    >
+                      {shareNotice.actionLabel}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={onBack}
+                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  >
+                    返回上一页
+                  </button>
+                </div>
+              </div>
+            ) : (
+              shareNotice.message
+            )}
           </InlineNotice>
         ) : null}
         <section className="relative overflow-hidden rounded-[20px] border border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
