@@ -3377,6 +3377,8 @@ export function ChatComposer({
             label={mobileComposerStatus.label}
             actionLabel={mobileComposerStatus.actionLabel}
             onAction={mobileComposerStatus.onAction}
+            secondaryActionLabel={mobileComposerStatus.secondaryActionLabel}
+            onSecondaryAction={mobileComposerStatus.onSecondaryAction}
           />
         ) : null}
         {composerPending && isDesktop ? (

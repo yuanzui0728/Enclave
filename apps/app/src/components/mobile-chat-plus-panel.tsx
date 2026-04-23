@@ -294,6 +294,10 @@ export function MobileChatPlusPanel({
   const UnavailableIcon = unavailableAction?.icon;
   const unavailableFallbackAction = unavailableAction?.fallbackAction;
   const unavailableFallbackLabel = unavailableAction?.fallbackLabel;
+  const friends = friendsQuery.data ?? [];
+  const showFriendsError = friendsQuery.isError && friends.length === 0;
+  const showFavoritesError =
+    favoritesQuery.isError && favoriteRecords.length === 0;
 
   return (
     <div className="mt-1.5 min-h-[232px] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] shadow-none">
@@ -542,9 +546,21 @@ export function MobileChatPlusPanel({
               label="正在读取联系人..."
             />
           ) : null}
-          {friendsQuery.data?.length ? (
+          {showFriendsError ? (
+            <PanelStatusBlock
+              title="联系人读取失败"
+              description="暂时没能读取联系人名片，请检查网络后重试。"
+              primaryLabel="重新读取"
+              onPrimary={() => {
+                void friendsQuery.refetch();
+              }}
+              secondaryLabel="返回更多功能"
+              onSecondary={() => setActiveView("root")}
+            />
+          ) : null}
+          {friends.length ? (
             <div className="mx-2.5 max-h-64 overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
-              {friendsQuery.data.map(({ character }, index) => (
+              {friends.map(({ character }, index) => (
                 <button
                   key={character.id}
                   type="button"
@@ -583,7 +599,7 @@ export function MobileChatPlusPanel({
               ))}
             </div>
           ) : null}
-          {!friendsQuery.isLoading && !friendsQuery.data?.length ? (
+          {!friendsQuery.isLoading && !showFriendsError && !friends.length ? (
             <div className="px-4 py-8 text-center text-sm text-[color:var(--text-muted)]">
               还没有可以分享的联系人名片。
             </div>
@@ -602,6 +618,18 @@ export function MobileChatPlusPanel({
             <LoadingBlock
               className="px-4 py-6 text-left"
               label="正在读取收藏..."
+            />
+          ) : null}
+          {showFavoritesError ? (
+            <PanelStatusBlock
+              title="收藏读取失败"
+              description="暂时没能读取收藏内容，请检查网络后重试。"
+              primaryLabel="重新读取"
+              onPrimary={() => {
+                void favoritesQuery.refetch();
+              }}
+              secondaryLabel="返回更多功能"
+              onSecondary={() => setActiveView("root")}
             />
           ) : null}
           {favoriteRecords.length ? (
@@ -645,7 +673,7 @@ export function MobileChatPlusPanel({
                 </button>
               ))}
             </div>
-          ) : !favoritesQuery.isLoading ? (
+          ) : !favoritesQuery.isLoading && !showFavoritesError ? (
             <div className="px-4 py-8 text-center text-sm text-[color:var(--text-muted)]">
               还没有可发送的收藏内容，先在聊天或内容页里把消息加入收藏。
             </div>
@@ -685,6 +713,49 @@ export function MobileChatPlusPanel({
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function PanelStatusBlock({
+  title,
+  description,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+}: {
+  title: string;
+  description: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <div className="mx-2.5 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-4 py-5 text-center shadow-none">
+      <div className="text-[13px] font-medium text-[#111827]">{title}</div>
+      <div className="mx-auto mt-1.5 max-w-[18rem] text-[11px] leading-[18px] text-[color:var(--text-muted)]">
+        {description}
+      </div>
+      <div className="mt-3 flex justify-center gap-2">
+        <button
+          type="button"
+          onClick={onPrimary}
+          className="rounded-full bg-[#07c160] px-3 py-1.5 text-[11px] font-medium text-white transition active:opacity-90"
+        >
+          {primaryLabel}
+        </button>
+        {secondaryLabel && onSecondary ? (
+          <button
+            type="button"
+            onClick={onSecondary}
+            className="rounded-full bg-[color:var(--surface-panel)] px-3 py-1.5 text-[11px] font-medium text-[#5f5f5f] transition active:bg-[color:var(--surface-card-hover)]"
+          >
+            {secondaryLabel}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
