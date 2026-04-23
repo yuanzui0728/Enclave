@@ -9,6 +9,9 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { storeMomentPublishFlash } from "../features/moments/moment-publish-flash";
 import {
+  buildDesktopMomentsRouteHash,
+} from "../features/moments/moments-route-state";
+import {
   parseMobileMomentsPublishRouteState,
 } from "../features/moments/mobile-moments-publish-route-state";
 import {
@@ -77,9 +80,14 @@ export function MobileMomentsPublishPage() {
 
     void navigate({
       to: "/tabs/moments",
+      hash:
+        buildDesktopMomentsRouteHash({
+          returnPath: safeReturnPath,
+          returnHash: safeReturnHash,
+        }) ?? undefined,
       replace: true,
     });
-  }, [isDesktopLayout, navigate]);
+  }, [isDesktopLayout, navigate, safeReturnHash, safeReturnPath]);
 
   function handleBack() {
     navigateBackOrFallback(() => {

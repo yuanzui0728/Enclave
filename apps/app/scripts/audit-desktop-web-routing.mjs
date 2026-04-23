@@ -1101,9 +1101,17 @@ const expectations = [
   },
   {
     file: "src/routes/mobile-moments-publish-page.tsx",
-    description: "mobile moments publish clears returnHash when returnPath is unsafe",
+    description:
+      "mobile moments publish clears returnHash when returnPath is unsafe and carries safe desktop return context into /tabs/moments when the legacy publish page is opened on desktop",
     includes: [
+      'import {',
+      "buildDesktopMomentsRouteHash,",
       "const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;",
+      'to: "/tabs/moments",',
+      "hash:",
+      "buildDesktopMomentsRouteHash({",
+      "returnPath: safeReturnPath,",
+      "returnHash: safeReturnHash,",
     ],
   },
   {
