@@ -1,4 +1,9 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { msg } from "@lingui/macro";
+import {
+  resolveSpeechRecognitionLocale,
+  translateRuntimeMessage,
+} from "@yinjie/i18n";
 import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 import { transcribeSpeechInput } from "./api/transcriptions";
 import type {
@@ -63,17 +68,34 @@ function mapRecognitionError(error: string) {
   switch (error) {
     case "not-allowed":
     case "service-not-allowed":
-      return resolveMicrophonePermissionDeniedCopy();
+      return {
+        message: resolveMicrophonePermissionDeniedCopy(),
+        permissionDenied: true,
+      };
     case "no-speech":
-      return "没有听到有效语音，请再说一遍。";
+      return {
+        message: translateRuntimeMessage(msg`没有听到有效语音，请再说一遍。`),
+        permissionDenied: false,
+      };
     case "audio-capture":
-      return "当前设备无法采集麦克风音频。";
+      return {
+        message: translateRuntimeMessage(msg`当前设备无法采集麦克风音频。`),
+        permissionDenied: false,
+      };
     case "network":
-      return isNativeMobileRuntime()
-        ? "语音识别网络异常，已可改用录音转写。"
-        : "浏览器语音识别网络异常，已可改用录音转写。";
+      return {
+        message: isNativeMobileRuntime()
+          ? translateRuntimeMessage(msg`语音识别网络异常，已可改用录音转写。`)
+          : translateRuntimeMessage(
+              msg`浏览器语音识别网络异常，已可改用录音转写。`,
+            ),
+        permissionDenied: false,
+      };
     default:
-      return "语音识别中断了，请重试。";
+      return {
+        message: translateRuntimeMessage(msg`语音识别中断了，请重试。`),
+        permissionDenied: false,
+      };
   }
 }
 
@@ -95,7 +117,7 @@ export function useSpeechInput({
   conversationId,
   characterId,
   enabled,
-  language = "zh-CN",
+  language,
   mode = "dictation",
 }: UseSpeechInputOptions) {
   const [status, setStatus] = useState<SpeechInputStatus>("idle");
@@ -106,6 +128,7 @@ export function useSpeechInput({
     useState<RecordedSpeechAudio | null>(null);
   const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -139,6 +162,7 @@ export function useSpeechInput({
     setRecordedAudio(null);
     setRecordingElapsedMs(0);
     setError(null);
+    setPermissionDenied(false);
     setEngine(null);
     setStatus("idle");
     recognitionFinalTextRef.current = "";
@@ -207,7 +231,7 @@ export function useSpeechInput({
     const recognition = new recognitionConstructor();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = language;
+    recognition.lang = resolveSpeechRecognitionLocale(language);
     recognition.maxAlternatives = 1;
     recognitionActiveRef.current = true;
     recognitionFinalTextRef.current = "";
@@ -216,6 +240,7 @@ export function useSpeechInput({
     setTranscript("");
     setInterimTranscript("");
     setError(null);
+    setPermissionDenied(false);
 
     recognition.onstart = () => {
       setStatus("listening");
@@ -246,11 +271,13 @@ export function useSpeechInput({
     };
 
     recognition.onerror = (event: BrowserSpeechRecognitionErrorEvent) => {
+      const mappedError = mapRecognitionError(event.error);
       recognitionActiveRef.current = false;
       recognitionRef.current = null;
       setEngine("browser-recognition");
       setStatus("error");
-      setError(mapRecognitionError(event.error));
+      setError(mappedError.message);
+      setPermissionDenied(mappedError.permissionDenied);
       setInterimTranscript("");
     };
 
@@ -275,6 +302,7 @@ export function useSpeechInput({
     if (!canUseMediaRecorder) {
       setStatus("error");
       setError(resolveSpeechInputUnsupportedCopy(mode));
+      setPermissionDenied(false);
       return;
     }
 
@@ -285,6 +313,7 @@ export function useSpeechInput({
     setRecordedAudio(null);
     setRecordingElapsedMs(0);
     setError(null);
+    setPermissionDenied(false);
     shouldUploadRecordingRef.current = true;
     const requestId = mediaStartRequestIdRef.current + 1;
     mediaStartRequestIdRef.current = requestId;
@@ -342,13 +371,21 @@ export function useSpeechInput({
 
         if (!audioBlob.size) {
           setStatus("error");
-          setError("没有录到有效语音，请再试一次。");
+          setError(
+            translateRuntimeMessage(msg`没有录到有效语音，请再试一次。`),
+          );
+          setPermissionDenied(false);
           return;
         }
 
         if (audioBlob.size > MAX_AUDIO_BYTES) {
           setStatus("error");
-          setError("这段录音太长了，请缩短单次语音输入时长。");
+          setError(
+            translateRuntimeMessage(
+              msg`这段录音太长了，请缩短单次语音输入时长。`,
+            ),
+          );
+          setPermissionDenied(false);
           return;
         }
 
@@ -365,6 +402,7 @@ export function useSpeechInput({
           setRecordingElapsedMs(durationMs);
           setStatus("ready");
           setError(null);
+          setPermissionDenied(false);
           return;
         }
 
@@ -390,15 +428,19 @@ export function useSpeechInput({
           setError(
             result.text.trim()
               ? null
-              : "这段语音没有识别出有效文字，请再试一次。",
+              : translateRuntimeMessage(
+                  msg`这段语音没有识别出有效文字，请再试一次。`,
+                ),
           );
+          setPermissionDenied(false);
         } catch (uploadError) {
           setStatus("error");
           setError(
             uploadError instanceof Error
               ? uploadError.message
-              : "语音转写失败，请稍后再试。",
+              : translateRuntimeMessage(msg`语音转写失败，请稍后再试。`),
           );
+          setPermissionDenied(false);
         }
       };
 
@@ -415,19 +457,25 @@ export function useSpeechInput({
       }
 
       setStatus("error");
-      setError(
+      const nextPermissionDenied =
         startError instanceof Error &&
-          /permission|denied|allowed/i.test(startError.message)
+        /permission|denied|allowed/i.test(startError.message);
+      setError(
+        nextPermissionDenied
           ? resolveMicrophonePermissionDeniedCopy()
           : resolveMicrophonePermissionCheckCopy(),
       );
+      setPermissionDenied(nextPermissionDenied);
     }
   };
 
   const start = async () => {
     if (!supported) {
       setStatus("error");
-      setError("当前环境不支持语音输入，请改用键盘输入。");
+      setError(
+        translateRuntimeMessage(msg`当前环境不支持语音输入，请改用键盘输入。`),
+      );
+      setPermissionDenied(false);
       return;
     }
 
@@ -503,7 +551,7 @@ export function useSpeechInput({
     error,
     interimTranscript,
     mode,
-    permissionDenied: Boolean(error?.includes("权限被拒绝")),
+    permissionDenied,
     recordedAudio,
     start,
     status,
@@ -528,11 +576,11 @@ function resolveVoiceDisplayText(
   recordedAudio: RecordedSpeechAudio | null,
 ) {
   if (status === "listening" && recordingElapsedMs > 0) {
-    return `已录制 ${formatDurationLabel(recordingElapsedMs)}`;
+    return `${translateRuntimeMessage(msg`已录制`)} ${formatDurationLabel(recordingElapsedMs)}`;
   }
 
   if (status === "ready" && recordedAudio) {
-    return `语音时长 ${formatDurationLabel(recordedAudio.durationMs)}`;
+    return `${translateRuntimeMessage(msg`语音时长`)} ${formatDurationLabel(recordedAudio.durationMs)}`;
   }
 
   return "";
@@ -566,18 +614,25 @@ function formatDurationLabel(durationMs: number) {
 }
 
 function resolveSpeechInputUnsupportedCopy(mode: "dictation" | "voice") {
-  const surfaceLabel = isNativeMobileRuntime() ? "当前设备" : "当前浏览器";
-  return mode === "voice"
-    ? `${surfaceLabel}不支持语音发送。`
-    : `${surfaceLabel}不支持录音转写。`;
+  if (mode === "voice") {
+    return isNativeMobileRuntime()
+      ? translateRuntimeMessage(msg`当前设备不支持语音发送。`)
+      : translateRuntimeMessage(msg`当前浏览器不支持语音发送。`);
+  }
+
+  return isNativeMobileRuntime()
+    ? translateRuntimeMessage(msg`当前设备不支持录音转写。`)
+    : translateRuntimeMessage(msg`当前浏览器不支持录音转写。`);
 }
 
 function resolveMicrophonePermissionDeniedCopy() {
-  const surfaceLabel = isNativeMobileRuntime() ? "应用" : "浏览器";
-  return `麦克风权限被拒绝，请先允许${surfaceLabel}访问麦克风。`;
+  return isNativeMobileRuntime()
+    ? translateRuntimeMessage(msg`麦克风权限被拒绝，请先允许应用访问麦克风。`)
+    : translateRuntimeMessage(msg`麦克风权限被拒绝，请先允许浏览器访问麦克风。`);
 }
 
 function resolveMicrophonePermissionCheckCopy() {
-  const surfaceLabel = isNativeMobileRuntime() ? "应用" : "浏览器";
-  return `无法启动录音，请检查${surfaceLabel}麦克风权限。`;
+  return isNativeMobileRuntime()
+    ? translateRuntimeMessage(msg`无法启动录音，请检查应用麦克风权限。`)
+    : translateRuntimeMessage(msg`无法启动录音，请检查浏览器麦克风权限。`);
 }

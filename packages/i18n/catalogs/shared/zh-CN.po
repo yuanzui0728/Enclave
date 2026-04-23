@@ -12,6 +12,14 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: packages/i18n/src/runtime/formatters.ts:61
+msgid "刚刚"
+msgstr "刚刚"
+
 #: packages/ui/src/components/loading-block.tsx:28
 msgid "加载中..."
 msgstr "加载中..."
+
+#: packages/i18n/src/runtime/formatters.ts:65
+msgid "昨天"
+msgstr "昨天"

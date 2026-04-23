@@ -16,6 +16,42 @@ msgstr ""
 msgid "同步世界主人"
 msgstr "Sync world owner"
 
+#: apps/app/src/features/chat/use-speech-input.ts:579
+msgid "已录制"
+msgstr "Recorded"
+
+#: apps/app/src/features/chat/use-speech-input.ts:625
+msgid "当前浏览器不支持录音转写。"
+msgstr "This browser doesn't support speech transcription."
+
+#: apps/app/src/features/chat/use-speech-input.ts:620
+msgid "当前浏览器不支持语音发送。"
+msgstr "This browser doesn't support voice sending."
+
+#: apps/app/src/features/chat/use-speech-input.ts:476
+msgid "当前环境不支持语音输入，请改用键盘输入。"
+msgstr "Voice input isn't supported in this environment. Use keyboard input instead."
+
+#: apps/app/src/features/chat/use-speech-input.ts:624
+msgid "当前设备不支持录音转写。"
+msgstr "This device doesn't support speech transcription."
+
+#: apps/app/src/features/chat/use-speech-input.ts:619
+msgid "当前设备不支持语音发送。"
+msgstr "This device doesn't support voice sending."
+
+#: apps/app/src/features/chat/use-speech-input.ts:82
+msgid "当前设备无法采集麦克风音频。"
+msgstr "This device can't capture microphone audio."
+
+#: apps/app/src/features/chat/use-speech-input.ts:636
+msgid "无法启动录音，请检查应用麦克风权限。"
+msgstr "Couldn't start recording. Check the app's microphone permission."
+
+#: apps/app/src/features/chat/use-speech-input.ts:637
+msgid "无法启动录音，请检查浏览器麦克风权限。"
+msgstr "Couldn't start recording. Check the browser's microphone permission."
+
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
 msgstr "Welcome back to your world"
@@ -23,6 +59,18 @@ msgstr "Welcome back to your world"
 #: apps/app/src/components/bootstrap-screen.tsx:64
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
 msgstr "We're restoring the path back into your world and will return you to where you last left off."
+
+#: apps/app/src/features/chat/use-speech-input.ts:77
+msgid "没有听到有效语音，请再说一遍。"
+msgstr "No valid speech was detected. Please say it again."
+
+#: apps/app/src/features/chat/use-speech-input.ts:375
+msgid "没有录到有效语音，请再试一次。"
+msgstr "No valid audio was recorded. Please try again."
+
+#: apps/app/src/features/chat/use-speech-input.ts:90
+msgid "浏览器语音识别网络异常，已可改用录音转写。"
+msgstr "Browser speech recognition hit a network error. You can switch to recorded transcription."
 
 #: apps/app/src/components/bootstrap-screen.tsx:41
 msgid "确认入口"
@@ -32,6 +80,38 @@ msgstr "Confirm entry"
 msgid "继续开启对话"
 msgstr "Resume the conversation"
 
+#: apps/app/src/features/chat/use-speech-input.ts:583
+msgid "语音时长"
+msgstr "Voice length"
+
+#: apps/app/src/features/chat/use-speech-input.ts:96
+msgid "语音识别中断了，请重试。"
+msgstr "Speech recognition was interrupted. Please try again."
+
+#: apps/app/src/features/chat/use-speech-input.ts:88
+msgid "语音识别网络异常，已可改用录音转写。"
+msgstr "Speech recognition hit a network error. You can switch to recorded transcription."
+
+#: apps/app/src/features/chat/use-speech-input.ts:441
+msgid "语音转写失败，请稍后再试。"
+msgstr "Speech transcription failed. Please try again later."
+
+#: apps/app/src/features/chat/use-speech-input.ts:385
+msgid "这段录音太长了，请缩短单次语音输入时长。"
+msgstr "This recording is too long. Shorten a single voice input."
+
+#: apps/app/src/features/chat/use-speech-input.ts:432
+msgid "这段语音没有识别出有效文字，请再试一次。"
+msgstr "No valid text was recognized from this audio. Please try again."
+
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
 msgstr "This isn't just a bundle of account data, but a personal world that keeps growing and responding to you."
+
+#: apps/app/src/features/chat/use-speech-input.ts:630
+msgid "麦克风权限被拒绝，请先允许应用访问麦克风。"
+msgstr "Microphone access was denied. Please allow the app to access your microphone first."
+
+#: apps/app/src/features/chat/use-speech-input.ts:631
+msgid "麦克风权限被拒绝，请先允许浏览器访问麦克风。"
+msgstr "Microphone access was denied. Please allow the browser to access your microphone first."

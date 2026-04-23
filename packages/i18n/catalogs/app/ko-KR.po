@@ -16,6 +16,42 @@ msgstr ""
 msgid "同步世界主人"
 msgstr "세계 주인 동기화"
 
+#: apps/app/src/features/chat/use-speech-input.ts:579
+msgid "已录制"
+msgstr "녹음됨"
+
+#: apps/app/src/features/chat/use-speech-input.ts:625
+msgid "当前浏览器不支持录音转写。"
+msgstr "현재 브라우저는 녹음 전사를 지원하지 않습니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:620
+msgid "当前浏览器不支持语音发送。"
+msgstr "현재 브라우저는 음성 전송을 지원하지 않습니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:476
+msgid "当前环境不支持语音输入，请改用键盘输入。"
+msgstr "현재 환경에서는 음성 입력을 지원하지 않습니다. 키보드 입력을 사용하세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:624
+msgid "当前设备不支持录音转写。"
+msgstr "현재 기기는 녹음 전사를 지원하지 않습니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:619
+msgid "当前设备不支持语音发送。"
+msgstr "현재 기기는 음성 전송을 지원하지 않습니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:82
+msgid "当前设备无法采集麦克风音频。"
+msgstr "현재 기기에서는 마이크 오디오를 수집할 수 없습니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:636
+msgid "无法启动录音，请检查应用麦克风权限。"
+msgstr "녹음을 시작할 수 없습니다. 앱의 마이크 권한을 확인하세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:637
+msgid "无法启动录音，请检查浏览器麦克风权限。"
+msgstr "녹음을 시작할 수 없습니다. 브라우저의 마이크 권한을 확인하세요."
+
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
 msgstr "당신의 세계에 다시 오신 것을 환영합니다"
@@ -23,6 +59,18 @@ msgstr "당신의 세계에 다시 오신 것을 환영합니다"
 #: apps/app/src/components/bootstrap-screen.tsx:64
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
 msgstr "이번 진입 경로를 정리하고 있습니다. 곧 지난번 머물던 곳으로 돌아갑니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:77
+msgid "没有听到有效语音，请再说一遍。"
+msgstr "유효한 음성이 감지되지 않았습니다. 다시 말씀해 주세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:375
+msgid "没有录到有效语音，请再试一次。"
+msgstr "유효한 음성이 녹음되지 않았습니다. 다시 시도해 주세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:90
+msgid "浏览器语音识别网络异常，已可改用录音转写。"
+msgstr "브라우저 음성 인식에 네트워크 오류가 발생했습니다. 녹음 전사로 전환할 수 있습니다."
 
 #: apps/app/src/components/bootstrap-screen.tsx:41
 msgid "确认入口"
@@ -32,6 +80,38 @@ msgstr "입구 확인"
 msgid "继续开启对话"
 msgstr "대화 이어가기"
 
+#: apps/app/src/features/chat/use-speech-input.ts:583
+msgid "语音时长"
+msgstr "음성 길이"
+
+#: apps/app/src/features/chat/use-speech-input.ts:96
+msgid "语音识别中断了，请重试。"
+msgstr "음성 인식이 중단되었습니다. 다시 시도해 주세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:88
+msgid "语音识别网络异常，已可改用录音转写。"
+msgstr "음성 인식에 네트워크 오류가 발생했습니다. 녹음 전사로 전환할 수 있습니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:441
+msgid "语音转写失败，请稍后再试。"
+msgstr "음성 전사에 실패했습니다. 잠시 후 다시 시도해 주세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:385
+msgid "这段录音太长了，请缩短单次语音输入时长。"
+msgstr "이 녹음은 너무 깁니다. 한 번의 음성 입력 시간을 줄여 주세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:432
+msgid "这段语音没有识别出有效文字，请再试一次。"
+msgstr "이 음성에서 유효한 텍스트를 인식하지 못했습니다. 다시 시도해 주세요."
+
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
 msgstr "여기는 단순한 계정 정보가 아니라, 계속 자라고 계속 응답하는 당신만의 세계입니다."
+
+#: apps/app/src/features/chat/use-speech-input.ts:630
+msgid "麦克风权限被拒绝，请先允许应用访问麦克风。"
+msgstr "마이크 권한이 거부되었습니다. 먼저 앱의 마이크 접근을 허용해 주세요."
+
+#: apps/app/src/features/chat/use-speech-input.ts:631
+msgid "麦克风权限被拒绝，请先允许浏览器访问麦克风。"
+msgstr "마이크 권한이 거부되었습니다. 먼저 브라우저의 마이크 접근을 허용해 주세요."

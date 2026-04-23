@@ -19,6 +19,7 @@
     "audit:mobile-web": "pnpm typecheck && pnpm lint:mobile-web && pnpm build"
   },
   "dependencies": {
+    "@lingui/macro": "5.9.5",
     "@lingui/react": "5.9.5",
     "@capacitor/core": "^7.1.1",
     "@capacitor/keyboard": "^7.0.6",

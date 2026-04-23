@@ -1,3 +1,9 @@
+import {
+  formatDateTime,
+  getJustNowLabel,
+  getYesterdayLabel,
+} from "@yinjie/i18n";
+
 export function parseTimestamp(value?: string | null) {
   if (!value) {
     return null;
@@ -12,7 +18,7 @@ export function parseTimestamp(value?: string | null) {
 
 export function formatTimestamp(value?: string | null) {
   if (!value) {
-    return "刚刚";
+    return getJustNowLabel();
   }
 
   const timestamp = parseTimestamp(value);
@@ -21,18 +27,18 @@ export function formatTimestamp(value?: string | null) {
   }
 
   const date = new Date(timestamp);
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatDateTime(date, {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  });
 }
 
 export function formatConversationTimestamp(value?: string | null) {
   const date = parseDateValue(value);
   if (!date) {
-    return "刚刚";
+    return getJustNowLabel();
   }
 
   const now = new Date();
@@ -44,27 +50,27 @@ export function formatConversationTimestamp(value?: string | null) {
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   if (isSameDay(date, yesterday)) {
-    return "昨天";
+    return getYesterdayLabel();
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return new Intl.DateTimeFormat("zh-CN", {
+    return formatDateTime(date, {
       month: "numeric",
       day: "numeric",
-    }).format(date);
+    });
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatDateTime(date, {
     year: "2-digit",
     month: "numeric",
     day: "numeric",
-  }).format(date);
+  });
 }
 
 export function formatMessageTimestamp(value?: string | null) {
   const date = parseDateValue(value);
   if (!date) {
-    return "刚刚";
+    return getJustNowLabel();
   }
 
   const now = new Date();
@@ -76,31 +82,31 @@ export function formatMessageTimestamp(value?: string | null) {
   }
 
   if (isSameDay(date, yesterday)) {
-    return `昨天 ${formatTime(date)}`;
+    return `${getYesterdayLabel()} ${formatTime(date)}`;
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return new Intl.DateTimeFormat("zh-CN", {
+    return formatDateTime(date, {
       month: "numeric",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(date);
+    });
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatDateTime(date, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  });
 }
 
 export function formatDesktopMessageTimestamp(value?: string | null) {
   const date = parseDateValue(value);
   if (!date) {
-    return "刚刚";
+    return getJustNowLabel();
   }
 
   const now = new Date();
@@ -112,7 +118,7 @@ export function formatDesktopMessageTimestamp(value?: string | null) {
   }
 
   if (isSameDay(date, yesterday)) {
-    return `昨天 ${formatTime(date)}`;
+    return `${getYesterdayLabel()} ${formatTime(date)}`;
   }
 
   if (isInSameWeek(date, now)) {
@@ -120,26 +126,37 @@ export function formatDesktopMessageTimestamp(value?: string | null) {
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return `${date.getMonth() + 1}月${date.getDate()}日 ${formatTime(date)}`;
+    return formatDateTime(date, {
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${formatTime(date)}`;
+  return formatDateTime(date, {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function formatDetailedMessageTimestamp(value?: string | null) {
   const date = parseDateValue(value);
   if (!date) {
-    return "刚刚";
+    return getJustNowLabel();
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatDateTime(date, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  });
 }
 
 export function initials(name?: string | null) {
@@ -156,24 +173,16 @@ function parseDateValue(value?: string | null) {
 }
 
 function formatTime(date: Date) {
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatDateTime(date, {
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  });
 }
 
 function formatWeekday(date: Date) {
-  const weekdayLabels = [
-    "星期日",
-    "星期一",
-    "星期二",
-    "星期三",
-    "星期四",
-    "星期五",
-    "星期六",
-  ];
-
-  return weekdayLabels[date.getDay()] ?? "星期";
+  return formatDateTime(date, {
+    weekday: "long",
+  });
 }
 
 function isInSameWeek(left: Date, right: Date) {

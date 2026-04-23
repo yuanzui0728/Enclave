@@ -16,6 +16,42 @@ msgstr ""
 msgid "同步世界主人"
 msgstr "同步世界主人"
 
+#: apps/app/src/features/chat/use-speech-input.ts:579
+msgid "已录制"
+msgstr "已录制"
+
+#: apps/app/src/features/chat/use-speech-input.ts:625
+msgid "当前浏览器不支持录音转写。"
+msgstr "当前浏览器不支持录音转写。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:620
+msgid "当前浏览器不支持语音发送。"
+msgstr "当前浏览器不支持语音发送。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:476
+msgid "当前环境不支持语音输入，请改用键盘输入。"
+msgstr "当前环境不支持语音输入，请改用键盘输入。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:624
+msgid "当前设备不支持录音转写。"
+msgstr "当前设备不支持录音转写。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:619
+msgid "当前设备不支持语音发送。"
+msgstr "当前设备不支持语音发送。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:82
+msgid "当前设备无法采集麦克风音频。"
+msgstr "当前设备无法采集麦克风音频。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:636
+msgid "无法启动录音，请检查应用麦克风权限。"
+msgstr "无法启动录音，请检查应用麦克风权限。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:637
+msgid "无法启动录音，请检查浏览器麦克风权限。"
+msgstr "无法启动录音，请检查浏览器麦克风权限。"
+
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
 msgstr "欢迎回到你的世界"
@@ -23,6 +59,18 @@ msgstr "欢迎回到你的世界"
 #: apps/app/src/components/bootstrap-screen.tsx:64
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
 msgstr "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:77
+msgid "没有听到有效语音，请再说一遍。"
+msgstr "没有听到有效语音，请再说一遍。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:375
+msgid "没有录到有效语音，请再试一次。"
+msgstr "没有录到有效语音，请再试一次。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:90
+msgid "浏览器语音识别网络异常，已可改用录音转写。"
+msgstr "浏览器语音识别网络异常，已可改用录音转写。"
 
 #: apps/app/src/components/bootstrap-screen.tsx:41
 msgid "确认入口"
@@ -32,6 +80,38 @@ msgstr "确认入口"
 msgid "继续开启对话"
 msgstr "继续开启对话"
 
+#: apps/app/src/features/chat/use-speech-input.ts:583
+msgid "语音时长"
+msgstr "语音时长"
+
+#: apps/app/src/features/chat/use-speech-input.ts:96
+msgid "语音识别中断了，请重试。"
+msgstr "语音识别中断了，请重试。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:88
+msgid "语音识别网络异常，已可改用录音转写。"
+msgstr "语音识别网络异常，已可改用录音转写。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:441
+msgid "语音转写失败，请稍后再试。"
+msgstr "语音转写失败，请稍后再试。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:385
+msgid "这段录音太长了，请缩短单次语音输入时长。"
+msgstr "这段录音太长了，请缩短单次语音输入时长。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:432
+msgid "这段语音没有识别出有效文字，请再试一次。"
+msgstr "这段语音没有识别出有效文字，请再试一次。"
+
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
 msgstr "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:630
+msgid "麦克风权限被拒绝，请先允许应用访问麦克风。"
+msgstr "麦克风权限被拒绝，请先允许应用访问麦克风。"
+
+#: apps/app/src/features/chat/use-speech-input.ts:631
+msgid "麦克风权限被拒绝，请先允许浏览器访问麦克风。"
+msgstr "麦克风权限被拒绝，请先允许浏览器访问麦克风。"

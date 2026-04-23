@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import {
   DEFAULT_LOCALE,
@@ -19,6 +18,7 @@ import {
   resolveSupportedLocale,
   syncDocumentLocale,
 } from "../locales";
+import { appI18n, setActiveLocale } from "./i18n-instance";
 import { loadMessagesForSurface } from "./catalog-loaders";
 
 type AppLocaleContextValue = {
@@ -43,12 +43,6 @@ export function AppLocaleProvider({
   fallback = null,
   surface,
 }: AppLocaleProviderProps) {
-  const i18n = useMemo(() => {
-    const instance = setupI18n();
-    instance.activate(DEFAULT_LOCALE);
-    syncDocumentLocale(DEFAULT_LOCALE);
-    return instance;
-  }, []);
   const [locale, setLocaleState] = useState<SupportedLocale>(() =>
     resolveInitialLocale(surface),
   );
@@ -80,8 +74,9 @@ export function AppLocaleProvider({
           return;
         }
 
-        i18n.load(locale, messages);
-        i18n.activate(locale);
+        appI18n.load(locale, messages);
+        appI18n.activate(locale);
+        setActiveLocale(locale);
         syncDocumentLocale(locale);
         setIsReady(true);
       } catch (cause) {
@@ -99,6 +94,7 @@ export function AppLocaleProvider({
         }
 
         syncDocumentLocale(DEFAULT_LOCALE);
+        setActiveLocale(DEFAULT_LOCALE);
         setError(nextError);
         setIsReady(true);
       }
@@ -109,7 +105,7 @@ export function AppLocaleProvider({
     return () => {
       cancelled = true;
     };
-  }, [i18n, locale, surface]);
+  }, [locale, surface]);
 
   const contextValue = useMemo<AppLocaleContextValue>(
     () => ({
@@ -125,7 +121,7 @@ export function AppLocaleProvider({
 
   return (
     <AppLocaleContext.Provider value={contextValue}>
-      <I18nProvider i18n={i18n}>
+      <I18nProvider i18n={appI18n}>
         {isReady ? children : fallback}
       </I18nProvider>
     </AppLocaleContext.Provider>
