@@ -23,6 +23,20 @@ export class ChatRecordsAdminController {
     return this.chatRecordsAdminService.getOverview();
   }
 
+  @Get('media-insights')
+  listMediaInsights(
+    @Query()
+    query: {
+      threadType?: string;
+      threadId?: string;
+      status?: string;
+      kind?: string;
+      limit?: number | string;
+    },
+  ) {
+    return this.chatRecordsAdminService.listMediaInsights(query);
+  }
+
   @Get('conversations')
   listConversations(
     @Query()

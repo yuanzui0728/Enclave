@@ -423,6 +423,7 @@
 ## 管理后台聊天记录路由
 
 - `GET /api/admin/chat-records/overview`
+- `GET /api/admin/chat-records/media-insights`
 - `GET /api/admin/chat-records/conversations`
 - `GET /api/admin/chat-records/conversations/:id`
 - `GET /api/admin/chat-records/conversations/:id/messages`

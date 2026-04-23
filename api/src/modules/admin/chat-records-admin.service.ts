@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { FindOptionsWhere, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
@@ -8,6 +8,12 @@ import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { filterUserFacingConversations } from '../chat/conversation-visibility';
+import {
+  MediaInsightJobEntity,
+  type MediaInsightJobStatus,
+  type MediaInsightJobThreadType,
+  type MediaInsightKind,
+} from '../chat/media-insight-job.entity';
 import { AdminConversationReviewEntity } from './admin-conversation-review.entity';
 import {
   searchMessages as searchVisibleMessages,
@@ -46,8 +52,74 @@ type ChatRecordConversationSearchQuery = Omit<MessageSearchQuery, 'limit'> & {
   includeClearedHistory?: boolean | string;
 };
 
+type ChatRecordMediaInsightQuery = {
+  threadType?: string;
+  threadId?: string;
+  status?: string;
+  kind?: string;
+  limit?: number | string;
+};
+
+type ChatRecordMessageMediaInsight = {
+  jobId: string;
+  kind: MediaInsightKind;
+  status: MediaInsightJobStatus;
+  provider?: string | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  updatedAt?: string | null;
+};
+
 type ChatRecordMessage = Omit<ChatMessage, 'createdAt'> & {
   createdAt: string;
+  mediaInsight?: ChatRecordMessageMediaInsight | null;
+};
+
+type ChatRecordMediaInsightJobItem = {
+  id: string;
+  threadType: MediaInsightJobThreadType;
+  threadId: string;
+  sourceMessageId: string;
+  sourceMessageCreatedAt: string;
+  insightKind: MediaInsightKind;
+  status: MediaInsightJobStatus;
+  attemptCount: number;
+  source: {
+    url: string;
+    mimeType: string | null;
+    fileName: string | null;
+    characterId: string | null;
+  };
+  result: {
+    provider: string | null;
+    hasTranscriptText: boolean;
+    transcriptTextPreview: string | null;
+    hasExtractedText: boolean;
+    extractedTextPreview: string | null;
+  };
+  error: {
+    code: string | null;
+    message: string | null;
+    cancelReason: string | null;
+  };
+  executeAfter: string;
+  lastAttemptAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ChatRecordMediaInsightListResponse = {
+  items: ChatRecordMediaInsightJobItem[];
+  total: number;
+  limit: number;
+  filters: {
+    threadType: MediaInsightJobThreadType | null;
+    threadId: string | null;
+    status: MediaInsightJobStatus | null;
+    kind: MediaInsightKind | null;
+  };
 };
 
 type ChatRecordConversationListItem = {
@@ -203,6 +275,8 @@ const DEFAULT_LIST_PAGE_SIZE = 24;
 const MAX_LIST_PAGE_SIZE = 100;
 const DEFAULT_MESSAGE_PAGE_SIZE = 60;
 const MAX_MESSAGE_PAGE_SIZE = 200;
+const DEFAULT_MEDIA_INSIGHT_PAGE_SIZE = 50;
+const MAX_MEDIA_INSIGHT_PAGE_SIZE = 200;
 
 @Injectable()
 export class ChatRecordsAdminService {
@@ -217,6 +291,8 @@ export class ChatRecordsAdminService {
     private readonly usageRepo: Repository<AiUsageLedgerEntity>,
     @InjectRepository(AdminConversationReviewEntity)
     private readonly reviewRepo: Repository<AdminConversationReviewEntity>,
+    @InjectRepository(MediaInsightJobEntity)
+    private readonly mediaInsightJobRepo: Repository<MediaInsightJobEntity>,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly usageLedger: AiUsageLedgerService,
   ) {}
@@ -305,6 +381,57 @@ export class ChatRecordsAdminService {
         ),
       ),
       currency: recentUsage[0]?.currency === 'USD' ? 'USD' : ('CNY' as const),
+    };
+  }
+
+  async listMediaInsights(
+    query: ChatRecordMediaInsightQuery,
+  ): Promise<ChatRecordMediaInsightListResponse> {
+    const limit = Math.min(
+      this.normalizePositiveInteger(
+        query.limit,
+        DEFAULT_MEDIA_INSIGHT_PAGE_SIZE,
+      ),
+      MAX_MEDIA_INSIGHT_PAGE_SIZE,
+    );
+    const threadType = this.normalizeMediaInsightThreadType(query.threadType);
+    const threadId = query.threadId?.trim() || null;
+    const status = this.normalizeMediaInsightStatus(query.status);
+    const kind = this.normalizeMediaInsightKind(query.kind);
+    const where: FindOptionsWhere<MediaInsightJobEntity> = {};
+
+    if (threadType) {
+      where.threadType = threadType;
+    }
+    if (threadId) {
+      where.threadId = threadId;
+    }
+    if (status) {
+      where.status = status;
+    }
+    if (kind) {
+      where.insightKind = kind;
+    }
+
+    const [jobs, total] = await this.mediaInsightJobRepo.findAndCount({
+      where,
+      order: {
+        updatedAt: 'DESC',
+        createdAt: 'DESC',
+      },
+      take: limit,
+    });
+
+    return {
+      items: jobs.map((job) => this.toMediaInsightJobContract(job)),
+      total,
+      limit,
+      filters: {
+        threadType,
+        threadId,
+        status,
+        kind,
+      },
     };
   }
 
@@ -1061,6 +1188,8 @@ export class ChatRecordsAdminService {
   }
 
   private toMessageContract(entity: MessageEntity): ChatRecordMessage {
+    const attachment = this.parseAttachment(entity);
+
     return {
       id: entity.id,
       conversationId: entity.conversationId,
@@ -1082,9 +1211,121 @@ export class ChatRecordsAdminService {
         entity.senderType === 'user'
           ? entity.text
           : sanitizeAiText(entity.text),
-      attachment: this.parseAttachment(entity),
+      attachment,
+      mediaInsight: this.toMessageMediaInsight(attachment),
       createdAt: entity.createdAt.toISOString(),
     };
+  }
+
+  private toMediaInsightJobContract(
+    job: MediaInsightJobEntity,
+  ): ChatRecordMediaInsightJobItem {
+    const resultPayload = this.parseMediaInsightResultPayload(job);
+    const transcriptText = this.getStringRecordValue(
+      resultPayload,
+      'transcriptText',
+    );
+    const extractedText = this.getStringRecordValue(
+      resultPayload,
+      'extractedText',
+    );
+    const provider =
+      job.resultProvider?.trim() ||
+      this.getStringRecordValue(resultPayload, 'provider') ||
+      null;
+
+    return {
+      id: job.id,
+      threadType: job.threadType,
+      threadId: job.threadId,
+      sourceMessageId: job.sourceMessageId,
+      sourceMessageCreatedAt: job.sourceMessageCreatedAt.toISOString(),
+      insightKind: job.insightKind,
+      status: job.status,
+      attemptCount: job.attemptCount,
+      source: {
+        url: job.sourceUrl,
+        mimeType: job.mimeType ?? null,
+        fileName: job.fileName ?? null,
+        characterId: job.characterId ?? null,
+      },
+      result: {
+        provider,
+        hasTranscriptText: Boolean(transcriptText?.trim()),
+        transcriptTextPreview: this.truncateInsightPreview(transcriptText),
+        hasExtractedText: Boolean(extractedText?.trim()),
+        extractedTextPreview: this.truncateInsightPreview(extractedText),
+      },
+      error: {
+        code: job.errorCode ?? null,
+        message: job.errorMessage ?? null,
+        cancelReason: job.cancelReason ?? null,
+      },
+      executeAfter: job.executeAfter.toISOString(),
+      lastAttemptAt: job.lastAttemptAt?.toISOString() ?? null,
+      completedAt: job.completedAt?.toISOString() ?? null,
+      cancelledAt: job.cancelledAt?.toISOString() ?? null,
+      createdAt: job.createdAt.toISOString(),
+      updatedAt: job.updatedAt.toISOString(),
+    };
+  }
+
+  private toMessageMediaInsight(
+    attachment: MessageAttachment | undefined,
+  ): ChatRecordMessageMediaInsight | null {
+    if (
+      !attachment ||
+      (attachment.kind !== 'file' && attachment.kind !== 'voice') ||
+      !attachment.insight
+    ) {
+      return null;
+    }
+
+    return {
+      jobId: attachment.insight.jobId,
+      kind: attachment.insight.kind,
+      status: attachment.insight.status,
+      provider: attachment.insight.provider ?? null,
+      errorCode: attachment.insight.errorCode ?? null,
+      errorMessage: attachment.insight.errorMessage ?? null,
+      updatedAt: attachment.insight.updatedAt ?? null,
+    };
+  }
+
+  private parseMediaInsightResultPayload(
+    job: Pick<MediaInsightJobEntity, 'resultPayload'>,
+  ): Record<string, unknown> {
+    if (!job.resultPayload) {
+      return {};
+    }
+
+    try {
+      const parsed = JSON.parse(job.resultPayload) as unknown;
+      return this.isRecord(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private getStringRecordValue(
+    value: Record<string, unknown>,
+    key: string,
+  ): string | null {
+    const fieldValue = value[key];
+    return typeof fieldValue === 'string' ? fieldValue : null;
+  }
+
+  private truncateInsightPreview(value: string | null): string | null {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    return trimmed.length > 240 ? `${trimmed.slice(0, 240)}...` : trimmed;
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value && typeof value === 'object' && !Array.isArray(value));
   }
 
   private toSearchableMessage(entity: MessageEntity): ChatMessage {
@@ -1174,6 +1415,46 @@ export class ChatRecordsAdminService {
     }
 
     return 'all';
+  }
+
+  private normalizeMediaInsightThreadType(
+    value: string | undefined,
+  ): MediaInsightJobThreadType | null {
+    if (value === 'conversation' || value === 'group') {
+      return value;
+    }
+
+    return null;
+  }
+
+  private normalizeMediaInsightStatus(
+    value: string | undefined,
+  ): MediaInsightJobStatus | null {
+    if (
+      value === 'pending' ||
+      value === 'processing' ||
+      value === 'completed' ||
+      value === 'cancelled' ||
+      value === 'failed'
+    ) {
+      return value;
+    }
+
+    return null;
+  }
+
+  private normalizeMediaInsightKind(
+    value: string | undefined,
+  ): MediaInsightKind | null {
+    if (
+      value === 'audio_transcription' ||
+      value === 'video_transcription' ||
+      value === 'document_text_extraction'
+    ) {
+      return value;
+    }
+
+    return null;
   }
 
   private normalizeBoolean(value: boolean | string | undefined) {

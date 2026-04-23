@@ -11,6 +11,7 @@ import { ConversationEntity } from '../chat/conversation.entity';
 import { GroupEntity } from '../chat/group.entity';
 import { GroupMemberEntity } from '../chat/group-member.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
+import { MediaInsightJobEntity } from '../chat/media-insight-job.entity';
 import { GroupReplyTaskEntity } from '../chat/group-reply-task.entity';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { AuthModule } from '../auth/auth.module';
@@ -65,6 +66,7 @@ import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.modu
       GroupEntity,
       GroupMemberEntity,
       GroupMessageEntity,
+      MediaInsightJobEntity,
       GroupReplyTaskEntity,
       NarrativeArcEntity,
       MomentPostEntity,
