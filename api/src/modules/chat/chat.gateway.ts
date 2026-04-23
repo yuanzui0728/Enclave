@@ -124,24 +124,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(roomId).emit('new_message', message);
   }
 
-  emitTypingStart(roomId: string, characterId: string) {
+  emitTypingStart(
+    roomId: string,
+    characterId: string,
+    stage: 'reply' | 'image_generation' = 'reply',
+  ) {
     if (!this.server) {
       return;
     }
 
     this.server
       .to(roomId)
-      .emit('typing_start', { conversationId: roomId, characterId });
+      .emit('typing_start', { conversationId: roomId, characterId, stage });
   }
 
-  emitTypingStop(roomId: string, characterId: string) {
+  emitTypingStop(
+    roomId: string,
+    characterId: string,
+    stage: 'reply' | 'image_generation' = 'reply',
+  ) {
     if (!this.server) {
       return;
     }
 
     this.server
       .to(roomId)
-      .emit('typing_stop', { conversationId: roomId, characterId });
+      .emit('typing_stop', { conversationId: roomId, characterId, stage });
   }
 
   emitConversationUpdated(payload: {
@@ -311,7 +319,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: SendMessagePayload,
     replyText: string,
   ) {
-    this.emitTypingStart(convId, characterId);
+    this.emitTypingStart(convId, characterId, 'reply');
 
     try {
       const { messages, deferredImageReply } =
@@ -326,7 +334,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      this.emitTypingStop(convId, characterId);
+      this.emitTypingStop(convId, characterId, 'reply');
 
       for (const message of messages) {
         this.emitThreadMessage(convId, message);
@@ -340,7 +348,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
       }
     } catch (error) {
-      this.emitTypingStop(convId, characterId);
+      this.emitTypingStop(convId, characterId, 'reply');
       await this.emitConversationFailure(convId);
       const failureMessage = this.describeReplyFailure(error);
       if (this.shouldPersistReplyFailure(error)) {
@@ -358,7 +366,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ChatService['completeDeferredAssistantImageReply']
     >[0],
   ) {
-    this.emitTypingStart(convId, characterId);
+    this.emitTypingStart(convId, characterId, 'image_generation');
 
     try {
       const imageMessage = await this.chatService.completeDeferredAssistantImageReply(
@@ -368,7 +376,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.emitThreadMessage(convId, imageMessage);
       }
     } finally {
-      this.emitTypingStop(convId, characterId);
+      this.emitTypingStop(convId, characterId, 'image_generation');
     }
   }
 

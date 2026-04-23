@@ -423,7 +423,7 @@ export class GroupReplyTaskService {
         order: { createdAt: 'ASC' },
       });
 
-      this.chatGateway.emitTypingStart(task.groupId, character.id);
+      this.chatGateway.emitTypingStart(task.groupId, character.id, 'reply');
       try {
         const reply = await this.groupReplyOrchestrator.generateTaskReply({
           actor: {
@@ -470,7 +470,7 @@ export class GroupReplyTaskService {
           });
         }
       } finally {
-        this.chatGateway.emitTypingStop(task.groupId, character.id);
+        this.chatGateway.emitTypingStop(task.groupId, character.id, 'reply');
       }
     } catch (error) {
       task.status = 'failed';
@@ -640,7 +640,11 @@ export class GroupReplyTaskService {
   private async persistCharacterImageReply(
     input: DeferredGroupReplyMedia & { imagePrompt: string },
   ) {
-    this.chatGateway.emitTypingStart(input.groupId, input.character.id);
+    this.chatGateway.emitTypingStart(
+      input.groupId,
+      input.character.id,
+      'image_generation',
+    );
     try {
       const generated = await this.ai.generateImage({
         prompt: input.imagePrompt,
@@ -672,7 +676,11 @@ export class GroupReplyTaskService {
         `Failed to generate group image reply for ${input.character.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
     } finally {
-      this.chatGateway.emitTypingStop(input.groupId, input.character.id);
+      this.chatGateway.emitTypingStop(
+        input.groupId,
+        input.character.id,
+        'image_generation',
+      );
     }
   }
 

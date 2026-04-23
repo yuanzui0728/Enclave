@@ -21,6 +21,7 @@ import {
   sendGroupMessage,
   type SendGroupMessageRequest,
   type StickerAttachment,
+  type TypingPayload,
   uploadChatAttachment,
 } from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
@@ -137,8 +138,10 @@ export function GroupChatThreadPanel({
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
   const [messages, setMessages] = useState<GroupThreadMessage[]>([]);
-  const [typingCharacterId, setTypingCharacterId] = useState<string | null>(
-    null,
+  const [typingStates, setTypingStates] = useState<
+    Record<string, TypingPayload["stage"] | undefined>
+  >(
+    {},
   );
   const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
     kind: DesktopChatCallKind;
@@ -252,7 +255,7 @@ export function GroupChatThreadPanel({
     setText("");
     setMessages([]);
     setReplyDraft(null);
-    setTypingCharacterId(null);
+    setTypingStates({});
     setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
     setSelectionModeActive(false);
@@ -288,27 +291,51 @@ export function GroupChatThreadPanel({
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === groupId && isPersistedGroupConversation(item),
   );
-  const typingCharacterName = useMemo(() => {
-    if (!typingCharacterId) {
+  const typingSummary = useMemo(() => {
+    const entries = Object.entries(typingStates)
+      .map(([characterId, stage]) => {
+        const memberName = membersQuery.data?.find(
+          (member) => member.memberId === characterId,
+        )?.memberName;
+        const messageName = [...messages]
+          .reverse()
+          .find(
+            (message) =>
+              message.senderType === "character" &&
+              message.senderId === characterId,
+          )?.senderName;
+
+        return {
+          characterId,
+          stage,
+          name: memberName?.trim() || messageName?.trim() || "有人",
+        };
+      })
+      .filter((entry) => Boolean(entry.characterId));
+    if (!entries.length) {
       return null;
     }
 
-    const memberName = membersQuery.data?.find(
-      (member) => member.memberId === typingCharacterId,
-    )?.memberName;
-    if (memberName?.trim()) {
-      return memberName.trim();
+    if (entries.length === 1) {
+      const [entry] = entries;
+      return entry.stage === "image_generation"
+        ? `${entry.name} 正在生成图片...`
+        : `${entry.name} 正在回复...`;
     }
 
-    const messageName = [...messages]
-      .reverse()
-      .find(
-        (message) =>
-          message.senderType === "character" &&
-          message.senderId === typingCharacterId,
-      )?.senderName;
-    return messageName?.trim() || "有人";
-  }, [membersQuery.data, messages, typingCharacterId]);
+    const hasImageStage = entries.some(
+      (entry) => entry.stage === "image_generation",
+    );
+    if (entries.length === 2 && !hasImageStage) {
+      return `${entries[0]?.name ?? "有人"}、${entries[1]?.name ?? "有人"} 正在回复...`;
+    }
+
+    if (hasImageStage) {
+      return `${entries[0]?.name ?? "有人"} 等 ${entries.length} 位角色正在接力回复...`;
+    }
+
+    return `${entries[0]?.name ?? "有人"} 等 ${entries.length} 位角色正在回复...`;
+  }, [membersQuery.data, messages, typingStates]);
 
   useEffect(() => {
     if (unreadSnapshotReady || !conversationsQuery.isFetched) {
@@ -338,9 +365,15 @@ export function GroupChatThreadPanel({
       }
 
       if (payload.senderType === "character") {
-        setTypingCharacterId((current) =>
-          current === payload.senderId ? null : current,
-        );
+        setTypingStates((current) => {
+          if (!(payload.senderId in current)) {
+            return current;
+          }
+
+          const next = { ...current };
+          delete next[payload.senderId];
+          return next;
+        });
       }
       setMessages((current) => upsertIncomingGroupMessage(current, payload));
       void queryClient.invalidateQueries({
@@ -350,15 +383,29 @@ export function GroupChatThreadPanel({
 
     const offTypingStart = onTypingStart((payload) => {
       if (payload.conversationId === groupId) {
-        setTypingCharacterId(payload.characterId);
+        setTypingStates((current) => ({
+          ...current,
+          [payload.characterId]: payload.stage,
+        }));
       }
     });
 
     const offTypingStop = onTypingStop((payload) => {
       if (payload.conversationId === groupId) {
-        setTypingCharacterId((current) =>
-          current === payload.characterId ? null : current,
-        );
+        setTypingStates((current) => {
+          if (!(payload.characterId in current)) {
+            return current;
+          }
+
+          const currentStage = current[payload.characterId];
+          if (payload.stage && currentStage && payload.stage !== currentStage) {
+            return current;
+          }
+
+          const next = { ...current };
+          delete next[payload.characterId];
+          return next;
+        });
       }
     });
 
@@ -568,13 +615,13 @@ export function GroupChatThreadPanel({
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   const announcement = groupQuery.data?.announcement?.trim() ?? "";
   const mobileSubtitle = membersQuery.data
-    ? typingCharacterName
-      ? `${typingCharacterName} 正在回复...`
+    ? typingSummary
+      ? typingSummary
       : `${membersQuery.data.length} 人群聊${
           groupQuery.data?.isMuted ? " · 免打扰" : ""
         }`
-    : typingCharacterName
-      ? `${typingCharacterName} 正在回复...`
+    : typingSummary
+      ? typingSummary
       : groupQuery.data?.isMuted
         ? "群聊 · 免打扰"
         : undefined;
@@ -999,8 +1046,8 @@ export function GroupChatThreadPanel({
               {groupQuery.data?.name ?? "群聊"}
             </div>
             <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-              {typingCharacterName
-                ? `${typingCharacterName} 正在回复...`
+              {typingSummary
+                ? typingSummary
                 : `${(membersQuery.data?.length ?? 0).toString()} 人群聊`}
             </div>
           </div>

@@ -138,7 +138,7 @@ export function ConversationThreadPanel({
     setText,
     socketError,
     text,
-    typingCharacterId,
+    typingState,
   } = useConversationThread(conversationId);
   const runtimeConfig = useAppRuntimeConfig();
   const backgroundQuery = useConversationBackground(conversationId);
@@ -195,8 +195,10 @@ export function ConversationThreadPanel({
   const subtitle =
     conversationType === "group"
       ? `${participants.length || 0} 人群聊`
-      : typingCharacterId
-        ? "对方正在输入..."
+      : typingState?.stage === "image_generation"
+        ? "对方正在生成图片..."
+        : typingState
+          ? "对方正在回复..."
         : undefined;
 
   const hasHighlightedMessage = renderedMessages.some(

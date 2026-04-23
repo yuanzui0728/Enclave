@@ -93,6 +93,7 @@ export type SendMessagePayload =
 export interface TypingPayload {
   conversationId: string;
   characterId: string;
+  stage?: "reply" | "image_generation";
 }
 
 export interface ConversationUpdatedPayload {
