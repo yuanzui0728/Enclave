@@ -495,6 +495,7 @@ const expectations = [
       'import {',
       "normalizeDesktopGameInviteReturnPath,",
       "const safeRouteContext = routeContext",
+      "}, [conversationId, search]);",
       "if (isDesktopLayout) {",
       "to: buildDesktopChatThreadPath({",
       "conversationId,",

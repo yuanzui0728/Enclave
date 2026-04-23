@@ -68,7 +68,7 @@ export function ChatRoomPage() {
 
   useEffect(() => {
     setRouteContext(resolveRouteContext(conversationId));
-  }, [conversationId]);
+  }, [conversationId, search]);
 
   useEffect(() => {
     if (isDesktopLayout) {
