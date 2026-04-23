@@ -8,13 +8,14 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 const stateDir = path.join(rootDir, "logs", "dev-services");
 const nodeBinary = process.execPath;
+const pnpmBinary = "pnpm";
 
 const command = process.argv[2] ?? "status";
 const target = process.argv[3] ?? "workspace";
 
 const serviceGroups = {
   workspace: ["app", "admin", "cloud-api", "cloud-console"],
-  all: ["api", "app", "admin", "cloud-api", "cloud-console"],
+  all: ["api", "app", "admin", "cloud-api", "cloud-console", "wechat-connector"],
 };
 
 const services = {
@@ -72,6 +73,40 @@ const services = {
     },
     port: 5182,
     url: "http://127.0.0.1:5182/",
+  },
+  "wechat-connector": {
+    cwd: rootDir,
+    command: nodeBinary,
+    args: [path.join(rootDir, "apps", "wechat-connector", "dist", "main.js")],
+    port: 17364,
+    url: "http://127.0.0.1:17364/",
+    prestart() {
+      const pnpmArgs = ["--filter", "@yinjie/wechat-connector", "build"];
+      const result =
+        process.platform === "win32"
+          ? spawnSync(`${pnpmBinary} ${pnpmArgs.join(" ")}`, {
+              cwd: rootDir,
+              env: process.env,
+              shell: true,
+              stdio: "inherit",
+              windowsHide: true,
+            })
+          : spawnSync(pnpmBinary, pnpmArgs, {
+              cwd: rootDir,
+              env: process.env,
+              shell: false,
+              stdio: "inherit",
+              windowsHide: true,
+            });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (result.status !== 0) {
+        throw new Error(`wechat-connector build failed with exit code ${result.status ?? "unknown"}.`);
+      }
+    },
   },
 };
 

@@ -1,0 +1,22 @@
+{
+  "name": "@yinjie/wechat-connector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "node ../../scripts/dev-services.mjs start wechat-connector",
+    "dev:raw": "pnpm build && node dist/main.js",
+    "dev:stop": "node ../../scripts/dev-services.mjs stop wechat-connector",
+    "dev:restart": "node ../../scripts/dev-services.mjs restart wechat-connector",
+    "dev:status": "node ../../scripts/dev-services.mjs status wechat-connector",
+    "start": "node ../../scripts/dev-services.mjs start wechat-connector",
+    "start:raw": "node dist/main.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "typescript": "^5.9.3"
+  }
+}
