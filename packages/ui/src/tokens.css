@@ -42,6 +42,7 @@
   --surface-card-hover: #fffbf0;
   --surface-soft: rgba(249, 115, 22, 0.08);
   --surface-secondary: rgba(255, 255, 255, 0.78);
+  --surface-panel: var(--surface-secondary);
   --surface-tertiary: rgba(249, 115, 22, 0.1);
   --surface-overlay: rgba(255, 253, 248, 0.96);
   --surface-console: #fffdf7;
