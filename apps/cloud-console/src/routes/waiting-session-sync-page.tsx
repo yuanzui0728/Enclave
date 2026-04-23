@@ -1028,6 +1028,16 @@ export function WaitingSessionSyncPage() {
             >
               Copy waiting sync permalink
             </WaitingSessionSyncActionButton>
+            <WaitingSessionSyncActionAnchor
+              tone="neutral"
+              variant="ghost"
+              size="regular"
+              href={currentPermalink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open waiting sync permalink
+            </WaitingSessionSyncActionAnchor>
             <WaitingSessionSyncActionButton
               tone="neutral"
               variant="ghost"

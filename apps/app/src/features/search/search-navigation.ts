@@ -2,6 +2,10 @@ import {
   buildDesktopContactsRouteHash,
   parseDesktopContactsRouteState,
 } from "../contacts/contacts-route-state";
+import {
+  buildCharacterDetailRouteHash,
+  parseCharacterDetailRouteState,
+} from "../contacts/character-detail-route-state";
 import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";
 import {
   buildDesktopChatRouteHash,
@@ -44,7 +48,7 @@ type SearchNavigationTargetInput = {
   hash?: string;
 };
 
-type SearchNavigationTarget = {
+export type SearchNavigationTarget = {
   to: string;
   search?: string;
   hash?: string;
@@ -56,6 +60,7 @@ type SearchNavigationOptions = {
 
 const SEARCH_NAVIGATION_BASE_URL = "https://yinjie.local";
 const LEGACY_CHAT_MESSAGE_HASH_PREFIX = "chat-message-";
+const DESKTOP_SEARCH_PATH = "/tabs/search";
 
 export function resolveSearchNavigationTarget(
   input: SearchNavigationTargetInput,
@@ -90,6 +95,100 @@ export function resolveSearchNavigationTarget(
     resolveDesktopOfficialNavigationTarget(normalizedTarget) ??
     normalizedTarget
   );
+}
+
+export function applyDesktopSearchReturnContext(
+  target: SearchNavigationTarget,
+  currentSearchRouteHash?: string,
+): SearchNavigationTarget {
+  const returnHash = currentSearchRouteHash?.trim() || undefined;
+
+  if (target.to.startsWith("/character/")) {
+    const targetRouteState = parseCharacterDetailRouteState(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildCharacterDetailRouteHash({
+        ...targetRouteState,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  if (target.to === "/tabs/moments") {
+    const targetRouteState = parseDesktopMomentsRouteState(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildDesktopMomentsRouteHash({
+        ...targetRouteState,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  const friendMomentsMatch = target.to.match(/^\/desktop\/friend-moments\/([^/?#]+)$/);
+  if (friendMomentsMatch?.[1]?.trim()) {
+    return buildNormalizedTargetFromPath(
+      buildDesktopFriendMomentsPath(friendMomentsMatch[1].trim(), {
+        ...parseDesktopFriendMomentsRouteState(target.hash ?? ""),
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    );
+  }
+
+  if (target.to === "/tabs/feed") {
+    const targetRouteState = parseFeedRouteHash(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildFeedRouteHash({
+        ...targetRouteState,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  if (target.to === "/tabs/channels") {
+    const targetRouteState = parseDesktopChannelsRouteHash(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildDesktopChannelsRouteHash({
+        ...targetRouteState,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  if (target.to === "/tabs/games") {
+    const targetRouteState = parseMobileGamesRouteSearch(target.search ?? "");
+    return {
+      ...target,
+      search: buildMobileGamesRouteSearch({
+        ...targetRouteState,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  if (target.to === "/tabs/mini-programs") {
+    const targetRouteState = parseMobileMiniProgramsRouteSearch(
+      target.search ?? "",
+    );
+    return {
+      ...target,
+      search: buildMobileMiniProgramsRouteSearch({
+        ...targetRouteState,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  return target;
 }
 
 function resolveDesktopWorkspaceNavigationTarget(
@@ -206,7 +305,10 @@ function resolveDesktopConversationNavigationTarget(
 function resolveDesktopOfficialNavigationTarget(
   target: SearchNavigationTarget,
 ) {
-  if (target.to === "/contacts/official-accounts") {
+  if (
+    target.to === "/contacts/official-accounts" ||
+    target.to === "/official-accounts"
+  ) {
     const routeState = parseDesktopContactsRouteState(target.hash ?? "");
     const hasAccountSelection = Boolean(
       routeState.accountId || routeState.articleId,

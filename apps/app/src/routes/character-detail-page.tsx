@@ -31,6 +31,7 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { buildMobileChatRouteHash } from "../features/chat/mobile-chat-route-state";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
@@ -117,6 +118,8 @@ export function CharacterDetailPage() {
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
     message: string;
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const [mobileSheetAction, setMobileSheetAction] = useState<
     "call" | "block" | "delete" | null
@@ -685,6 +688,10 @@ export function CharacterDetailPage() {
         message: nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制名片失败，请稍后重试。",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShareCharacterCard();
+        },
       });
     }
   };
@@ -1157,7 +1164,15 @@ export function CharacterDetailPage() {
                 {!isDesktopLayout && notice.tone === "info" ? (
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{notice.message}</span>
-                    {renderMobileErrorBackAction()}
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      {notice.actionLabel && notice.onAction ? (
+                        <InlineNoticeActionButton
+                          label={notice.actionLabel}
+                          onClick={notice.onAction}
+                        />
+                      ) : null}
+                      {renderMobileErrorBackAction()}
+                    </div>
                   </div>
                 ) : (
                   notice.message

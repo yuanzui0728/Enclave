@@ -568,14 +568,13 @@ const expectations = [
   {
     file: "src/features/search/desktop-search-launcher.tsx",
     description:
-      "desktop search launcher opens conversation and official-account suggestions through desktop workspace routes, normalizes legacy favorite quick links, and sends desktop character-detail opens back through /tabs/search",
+      "desktop search launcher opens conversation and official-account suggestions through desktop workspace routes, normalizes legacy favorite quick links, and sends desktop character-detail, moments, friend-moments, feed, channels, games, and mini-program opens back through /tabs/search",
     includes: [
-      "buildCharacterDetailRouteHash,",
-      "parseCharacterDetailRouteState,",
+      "applyDesktopSearchReturnContext,",
       'import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";',
       'import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";',
-      'returnPath: "/tabs/search",',
       "const applyDesktopSearchReturn = useCallback(",
+      "return applyDesktopSearchReturnContext(",
       "resolveSearchNavigationTarget(item, {",
       "desktopLayout: true,",
       "const handleOpenCharacterDetail = useCallback(",
@@ -589,7 +588,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /contacts, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /contacts, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
       "buildDesktopMomentsRouteHash,",
@@ -661,6 +660,7 @@ const expectations = [
       "showWorldCharacters: true,",
       'target.to === "/chat/subscription-inbox"',
       'target.to === "/contacts/official-accounts"',
+      'target.to === "/official-accounts"',
       'pane: "official-accounts",',
       '(routeState.officialMode ??',
       '(hasAccountSelection ? "accounts" : "feed"))',
@@ -670,7 +670,26 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation preserves desktop pane selection when it rewrites legacy /contacts/*, /contacts/official-accounts, /official-accounts/$accountId, and /official-accounts/articles/$articleId targets from saved search/favorite links, and it infers officialMode=accounts when a legacy official-accounts hash already carries account/article selection",
+      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, and mini-program targets so desktop search surfaces return to the active search workspace",
+    includes: [
+      "buildCharacterDetailRouteHash,",
+      "parseCharacterDetailRouteState,",
+      'const DESKTOP_SEARCH_PATH = "/tabs/search";',
+      "export function applyDesktopSearchReturnContext(",
+      'target.to.startsWith("/character/")',
+      'target.to === "/tabs/moments"',
+      'const friendMomentsMatch = target.to.match(/^\\/desktop\\/friend-moments\\/',
+      'target.to === "/tabs/feed"',
+      'target.to === "/tabs/channels"',
+      'target.to === "/tabs/games"',
+      'target.to === "/tabs/mini-programs"',
+      "returnPath: DESKTOP_SEARCH_PATH,",
+    ],
+  },
+  {
+    file: "src/features/search/search-navigation.ts",
+    description:
+      "desktop search navigation preserves desktop pane selection when it rewrites legacy /contacts/*, /contacts/official-accounts, /official-accounts, /official-accounts/$accountId, and /official-accounts/articles/$articleId targets from saved search/favorite links, and it infers officialMode=accounts when a legacy official-accounts hash already carries account/article selection",
     includes: [
       "const routeState = parseDesktopContactsRouteState(target.hash ?? \"\");",
       'target.to === "/contacts/starred"',
@@ -682,6 +701,7 @@ const expectations = [
       'target.to === "/contacts/world-characters"',
       'routeState.pane === "world-character"',
       'target.to === "/contacts/official-accounts"',
+      'target.to === "/official-accounts"',
       'routeState.pane === "official-accounts"',
       "routeState.accountId",
       "routeState.articleId",
@@ -712,13 +732,13 @@ const expectations = [
   {
     file: "src/routes/search-page.tsx",
     description:
-      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, adds /tabs/search return context for desktop character-detail opens, and self-heals legacy /search paths back to /tabs/search even when the hash already matches",
+      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, and mini-program opens, and self-heals legacy /search paths back to /tabs/search even when the hash already matches",
     includes: [
+      "applyDesktopSearchReturnContext,",
       "resolveSearchNavigationTarget(item, {",
       "desktopLayout: isDesktopLayout,",
       "function applySearchNavigationContext(",
-      "returnPath: desktopSearchPath,",
-      "returnHash: currentSearchRouteHash || undefined,",
+      "return applyDesktopSearchReturnContext(",
       "const navigationTarget = applySearchNavigationContext(",
       'const desktopPathMismatch = isDesktopLayout && pathname !== "/tabs/search";',
       "if (syncingRouteStateRef.current && !desktopPathMismatch) {",

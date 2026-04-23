@@ -11,7 +11,10 @@ import {
   buildSearchRouteHash,
   parseSearchRouteState,
 } from "../features/search/search-route-state";
-import { resolveSearchNavigationTarget } from "../features/search/search-navigation";
+import {
+  applyDesktopSearchReturnContext,
+  resolveSearchNavigationTarget,
+} from "../features/search/search-navigation";
 import {
   buildCharacterDetailRouteHash,
   parseCharacterDetailRouteState,
@@ -234,22 +237,11 @@ export function SearchPage() {
   function applySearchNavigationContext(
     navigationTarget: ReturnType<typeof resolveSearchNavigationTarget>,
   ) {
-    if (isDesktopLayout && navigationTarget.to.startsWith("/character/")) {
-      const targetRouteState = parseCharacterDetailRouteState(
-        navigationTarget.hash ?? "",
-      );
-      return {
-        ...navigationTarget,
-        hash: buildCharacterDetailRouteHash({
-          ...targetRouteState,
-          returnPath: desktopSearchPath,
-          returnHash: currentSearchRouteHash || undefined,
-        }),
-      };
-    }
-
     if (isDesktopLayout) {
-      return navigationTarget;
+      return applyDesktopSearchReturnContext(
+        navigationTarget,
+        currentSearchRouteHash,
+      );
     }
 
     if (navigationTarget.to === "/discover/moments") {

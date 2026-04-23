@@ -56,12 +56,11 @@ import {
   buildSearchRouteHash,
   type SearchRouteSource,
 } from "./search-route-state";
-import { resolveSearchNavigationTarget } from "./search-navigation";
-import { buildDesktopAddFriendRouteHash } from "../contacts/add-friend-route-state";
 import {
-  buildCharacterDetailRouteHash,
-  parseCharacterDetailRouteState,
-} from "../contacts/character-detail-route-state";
+  applyDesktopSearchReturnContext,
+  resolveSearchNavigationTarget,
+} from "./search-navigation";
+import { buildDesktopAddFriendRouteHash } from "../contacts/add-friend-route-state";
 import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
 import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";
 import {
@@ -717,21 +716,10 @@ export function DesktopSearchDropdownPanel({
 
   const applyDesktopSearchReturn = useCallback(
     (navigationTarget: ReturnType<typeof resolveSearchNavigationTarget>) => {
-      if (!navigationTarget.to.startsWith("/character/")) {
-        return navigationTarget;
-      }
-
-      const targetRouteState = parseCharacterDetailRouteState(
-        navigationTarget.hash ?? "",
+      return applyDesktopSearchReturnContext(
+        navigationTarget,
+        currentSearchRouteHash,
       );
-      return {
-        ...navigationTarget,
-        hash: buildCharacterDetailRouteHash({
-          ...targetRouteState,
-          returnPath: "/tabs/search",
-          returnHash: currentSearchRouteHash || undefined,
-        }),
-      };
     },
     [currentSearchRouteHash],
   );
