@@ -12,6 +12,316 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: issues.length
+#: apps/admin/src/components/root-layout.tsx:72
+msgid "{0} 项待处理"
+msgstr "{0} 件の要対応"
+
+#. placeholder {0}: issues[0]
+#: apps/admin/src/components/root-layout.tsx:77
+msgid "{0}，其余项也需要继续检查。"
+msgstr "{0}。残りの項目も確認が必要です。"
+
+#: apps/admin/src/components/admin-sidebar.tsx:152
+msgid "{issueCount} 项待处理"
+msgstr "{issueCount} 件の要対応"
+
+#: apps/admin/src/components/root-layout.tsx:336
+msgid "AI 成本与请求账本"
+msgstr "AI コストとリクエスト台帳"
+
+#: apps/admin/src/components/root-layout.tsx:260
+msgid "AI 游戏中心目录与来源结构"
+msgstr "AI ゲームセンターのカタログとソース構造"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:99
+msgid "provider-state 回调可走鉴权。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:188
+#: apps/admin/src/components/root-layout.tsx:335
+msgid "Token 用量"
+msgstr "Token 使用量"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:72
+msgid "下一步修正 providerParams JSON，再重试外部视频通话联调。"
+msgstr "次に providerParams JSON を修正し、外部ビデオ通話の連携テストを再実行します。"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:68
+msgid "下一步先到设置页补 playerUrlTemplate。"
+msgstr "次に設定ページで playerUrlTemplate を追加します。"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:76
+msgid "下一步把模式切到 external_iframe，并补真实播放器模板。"
+msgstr "次にモードを external_iframe に切り替え、実プレイヤーテンプレートを追加します。"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:74
+msgid "下一步直接发起一次真实数字人视频通话，核对回调和画面切换。"
+msgstr "次に実際のデジタルヒューマン通話を開始し、コールバックと画面切り替えを確認します。"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:70
+msgid "下一步补 callbackToken，让 provider-state 回调进入可鉴权状态。"
+msgstr "次に callbackToken を追加し、provider-state コールバックを認証可能にします。"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:78
+msgid "下一步补外部 provider 模板和回调，把内置播放器替换成真实数字人服务。"
+msgstr "次に外部 provider テンプレートとコールバックを追加し、内蔵プレイヤーを実デジタルヒューマンサービスに置き換えます。"
+
+#: apps/admin/src/components/admin-sidebar.tsx:112
+#: apps/admin/src/components/root-layout.tsx:63
+msgid "世界主人数量异常"
+msgstr "世界の主人の数が異常です"
+
+#: apps/admin/src/components/root-layout.tsx:326
+msgid "世界样本与会话档案"
+msgstr "世界サンプルと会話アーカイブ"
+
+#: apps/admin/src/components/root-layout.tsx:346
+msgid "世界级回复调试台"
+msgstr "世界レベル返信デバッグ台"
+
+#: apps/admin/src/components/admin-sidebar.tsx:129
+msgid "主人"
+msgstr "主人"
+
+#: apps/admin/src/components/root-layout.tsx:174
+#: apps/admin/src/components/root-layout.tsx:279
+msgid "主动跟进"
+msgstr "能動フォローアップ"
+
+#: apps/admin/src/components/admin-sidebar.tsx:241
+msgid "保存密钥"
+msgstr "キーを保存"
+
+#: apps/admin/src/components/admin-sidebar.tsx:254
+msgid "修改"
+msgstr "変更"
+
+#: apps/admin/src/components/admin-sidebar.tsx:92
+msgid "先恢复世界实例连接，再继续后台操作。"
+msgstr "管理操作を続ける前に、世界インスタンスの接続を復旧してください。"
+
+#: apps/admin/src/components/root-layout.tsx:262
+msgid "先承接 AI 游戏中心的目录、来源、运行模式和审核状态，后续再补详情、发布与运营能力。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:119
+msgid "内置 iframe"
+msgstr "内蔵 iframe"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:117
+msgid "内置舞台"
+msgstr "内蔵ステージ"
+
+#: apps/admin/src/components/admin-sidebar.tsx:113
+msgid "单世界实例必须且只能有一个世界主人。"
+msgstr "単一世界インスタンスには、世界の主人が必ず 1 人だけ必要です。"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:33
+msgid "参数无效"
+msgstr "パラメータ無効"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:27
+msgid "可联调"
+msgstr "連携テスト可能"
+
+#: apps/admin/src/components/root-layout.tsx:345
+msgid "回复逻辑"
+msgstr "返信ロジック"
+
+#: apps/admin/src/components/root-layout.tsx:165
+msgid "回看世界主人与角色的真实单聊样本、搜索命中和会话成本。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:358
+msgid "围绕动作识别、澄清、确认、连接器和执行轨迹查看真实世界动作能力。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:396
+msgid "围绕实例运行、角色运营和回复分析组织后台操作。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:348
+msgid "围绕角色、会话和全局规则排查回复链路，而不是在长页面里找模块。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:243
+msgid "在一个工作区里完成角色筛选、摘要查看和快捷跳转。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:121
+msgid "外部 iframe"
+msgstr "外部 iframe"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:42
+msgid "外部播放器地址已具备，但 provider-state 回写鉴权还没配齐，画面就绪状态不稳定。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:54
+msgid "外部数字人 Provider 已就绪，当前可以直接联调真实播放器和状态回写。"
+msgstr ""
+
+#. placeholder {0}: gateway.paramsCount
+#: apps/admin/src/lib/digital-human-admin-summary.ts:51
+msgid "外部数字人 Provider 已就绪，当前模板会注入 {0} 个上游参数。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:39
+msgid "外部数字人播放器模板还没配好，当前视频页只能停留在占位链路。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:250
+msgid "多模型账户与角色路由"
+msgstr "複数モデルアカウントとキャラクタールーティング"
+
+#: apps/admin/src/components/root-layout.tsx:145
+msgid "实例健康、Provider、诊断和运维动作的统一入口。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:82
+msgid "实例已就绪"
+msgstr "インスタンス準備完了"
+
+#: apps/admin/src/components/root-layout.tsx:224
+msgid "实例状态与配置"
+msgstr "インスタンス状態と設定"
+
+#: apps/admin/src/components/root-layout.tsx:43
+msgid "实例状态待确认"
+msgstr "インスタンス状態の確認が必要です"
+
+#: apps/admin/src/components/admin-sidebar.tsx:247
+msgid "密钥已配置"
+msgstr "キー設定済み"
+
+#: apps/admin/src/components/admin-sidebar.tsx:247
+msgid "密钥未配置"
+msgstr "キー未設定"
+
+#: apps/admin/src/components/admin-sidebar.tsx:198
+msgid "导航"
+msgstr "ナビゲーション"
+
+#: apps/admin/src/components/root-layout.tsx:290
+msgid "小盯的任务、触发与轻提醒发圈"
+msgstr "小盯のタスク、トリガー、軽いリマインド投稿"
+
+#: apps/admin/src/components/admin-sidebar.tsx:156
+msgid "已就绪"
+msgstr "準備完了"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:96
+msgid "已设置"
+msgstr "設定済み"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:88
+msgid "已配置"
+msgstr "設定済み"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:62
+msgid "当前仍在内置数字人播放器模式，播放器壳已接通，但还不是真实外部数字人。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:58
+msgid "当前仍在内置数字人舞台模式，适合先验证会话、语音和状态链路。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:93
+msgid "当前模式不依赖外部播放器模板。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:107
+msgid "当前没有扩展参数 JSON。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:34
+msgid "待配置"
+msgstr "設定待ち"
+
+#: apps/admin/src/components/root-layout.tsx:280
+msgid "我自己回捞未闭环事项"
+msgstr "自分自身による未完了事項の回収"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:46
+msgid "扩展参数 JSON 当前无效，外部数字人实例参数没有成功注入到播放器模板。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:108
+msgid "扩展参数 JSON 解析失败。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:181
+msgid "承接：小盯"
+msgstr "担当：小盯"
+
+#: apps/admin/src/components/root-layout.tsx:175
+msgid "承接：我自己"
+msgstr "担当：自分自身"
+
+#: apps/admin/src/components/root-layout.tsx:205
+msgid "承接：界闻/联动角色"
+msgstr "担当：界聞 / 連動キャラクター"
+
+#: apps/admin/src/components/root-layout.tsx:194
+msgid "承接：行动助理"
+msgstr "担当：行動アシスタント"
+
+#: apps/admin/src/components/root-layout.tsx:318
+msgid "按模块整理基础资料、人格设定与行为约束，减少长表单迷路感。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:225
+msgid "接入检查、推理配置、数字人设置和运维操作的统一入口。"
+msgstr ""
+
+#: apps/admin/src/components/admin-sidebar.tsx:121
+msgid "接口"
+msgstr "API"
+
+#: apps/admin/src/components/admin-sidebar.tsx:125
+msgid "推理"
+msgstr "推論"
+
+#: apps/admin/src/components/root-layout.tsx:60
+msgid "推理服务待配置"
+msgstr "推論サービスの設定が必要です"
+
+#: apps/admin/src/components/admin-sidebar.tsx:98
+msgid "推理服务未配置"
+msgstr "推論サービス未設定"
+
+#: apps/admin/src/components/root-layout.tsx:180
+#: apps/admin/src/components/root-layout.tsx:289
+msgid "提醒运行时"
+msgstr "リマインダーランタイム"
+
+#: apps/admin/src/components/admin-sidebar.tsx:133
+msgid "数字人"
+msgstr "デジタルヒューマン"
+
+#. placeholder {0}: digitalHumanSummary.statusLabel
+#: apps/admin/src/components/admin-sidebar.tsx:105
+msgid "数字人 {0}"
+msgstr "デジタルヒューマン {0}"
+
+#: apps/admin/src/components/root-layout.tsx:45
+msgid "数字人、推理服务或实例连通性还未同步成功。"
+msgstr "デジタルヒューマン、推論サービス、またはインスタンス接続がまだ正常に同期されていません。"
+
+#. placeholder {0}: digitalHumanSummary.statusLabel
+#: apps/admin/src/components/root-layout.tsx:66
+#: apps/admin/src/components/root-layout.tsx:84
+msgid "数字人{0}"
+msgstr "デジタルヒューマン {0}"
+
+#: apps/admin/src/components/root-layout.tsx:301
+msgid "整理配方、比对发布差异，并把草稿发布到运行时。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:103
+msgid "无效"
+msgstr "無効"
+
 #: apps/admin/src/lib/format.ts:12
 msgid "暂无"
 msgstr "なし"
@@ -28,10 +338,280 @@ msgstr "未実行"
 msgid "未记录"
 msgstr "未記録"
 
+#: apps/admin/src/lib/digital-human-admin-summary.ts:97
+#: apps/admin/src/lib/digital-human-admin-summary.ts:123
 #: apps/admin/src/lib/format.ts:13
 msgid "未设置"
 msgstr "未設定"
 
+#: apps/admin/src/lib/digital-human-admin-summary.ts:100
+msgid "未设置时，provider-state 回调不会附带保护 token。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:89
 #: apps/admin/src/lib/format.ts:17
 msgid "未配置"
 msgstr "未設定"
+
+#: apps/admin/src/components/root-layout.tsx:160
+msgid "查看 AI 游戏中心目录、来源结构和当前审核状态。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:189
+msgid "查看 AI 请求、Token 花费、预算预警和价格配置。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:183
+msgid "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:292
+msgid "查看提醒角色当前在盯哪些事项、最近有没有真正提醒出去，以及晨间 / 晚间的长期习惯提醒是否稳定落地。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:200
+msgid "查看行为信号、画像状态、投影提示词与建模运行记录。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:195
+msgid "查看行动助理的动作门控、连接器、规则和执行轨迹。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:150
+msgid "查看角色名册、角色工厂和运行逻辑台。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:207
+msgid "查看角色现实新闻同步、每日 digest、scene patch 和现实发圈锚点。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:309
+msgid "查看这个角色现在如何运行，并在同一页面完成人工干预。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:58
+msgid "核心接口待恢复"
+msgstr "コア API の復旧が必要です"
+
+#: apps/admin/src/components/root-layout.tsx:154
+#: apps/admin/src/components/root-layout.tsx:249
+msgid "模型与路由"
+msgstr "モデルとルーティング"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:35
+msgid "模拟"
+msgstr "モック"
+
+#: apps/admin/src/components/root-layout.tsx:53
+msgid "正在同步远程 API、推理网关和世界表面状态。"
+msgstr "リモート API、推論ゲートウェイ、世界サーフェス状態を同期しています。"
+
+#: apps/admin/src/components/root-layout.tsx:51
+msgid "正在读取实例状态"
+msgstr "インスタンス状態を読み込み中"
+
+#: apps/admin/src/components/root-layout.tsx:159
+#: apps/admin/src/components/root-layout.tsx:259
+msgid "游戏目录"
+msgstr "ゲームカタログ"
+
+#: apps/admin/src/components/root-layout.tsx:204
+#: apps/admin/src/components/root-layout.tsx:375
+msgid "现实联动"
+msgstr "現実連動"
+
+#: apps/admin/src/components/root-layout.tsx:366
+msgid "用户行为建模与 Prompt 投影"
+msgstr "ユーザー行動モデリングと Prompt 投影"
+
+#: apps/admin/src/components/root-layout.tsx:193
+#: apps/admin/src/components/root-layout.tsx:355
+msgid "真实世界动作"
+msgstr "現実世界アクション"
+
+#: apps/admin/src/components/admin-sidebar.tsx:254
+msgid "立即配置"
+msgstr "今すぐ設定"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:19
+msgid "等待系统状态返回数字人 provider 配置。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:155
+msgid "管理 Provider 账户、模型目录、默认路由和模型角色批量安装。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:394
+msgid "管理后台"
+msgstr "管理コンソール"
+
+#: apps/admin/src/components/admin-sidebar.tsx:226
+msgid "管理密钥"
+msgstr "管理キー"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:92
+msgid "系统状态已检测到外部播放器模板。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:31
+msgid "缺回调"
+msgstr "コールバック不足"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:29
+msgid "缺模板"
+msgstr "テンプレート不足"
+
+#: apps/admin/src/components/root-layout.tsx:164
+#: apps/admin/src/components/root-layout.tsx:325
+msgid "聊天记录"
+msgstr "チャット記録"
+
+#: apps/admin/src/components/root-layout.tsx:356
+msgid "行动助理动作运行时"
+msgstr "行動アシスタント実行環境"
+
+#: apps/admin/src/components/root-layout.tsx:234
+msgid "补齐推理 Provider、实例连通性和运行前置条件，确保后台操作与真实生成链路可用。"
+msgstr ""
+
+#: apps/admin/src/components/admin-sidebar.tsx:99
+msgid "补齐模型、接口和 API Key，否则无法跑真实生成。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:149
+#: apps/admin/src/components/root-layout.tsx:241
+msgid "角色中心"
+msgstr "キャラクターセンター"
+
+#: apps/admin/src/components/root-layout.tsx:300
+msgid "角色制造与发布"
+msgstr "キャラクター制作と公開"
+
+#: apps/admin/src/components/root-layout.tsx:242
+msgid "角色名册与工作入口"
+msgstr "キャラクター名簿と作業入口"
+
+#: apps/admin/src/components/root-layout.tsx:299
+msgid "角色工厂"
+msgstr "キャラクター工場"
+
+#: apps/admin/src/components/root-layout.tsx:308
+msgid "角色当前状态与可观测性"
+msgstr "キャラクター現在状態と可観測性"
+
+#: apps/admin/src/components/root-layout.tsx:376
+msgid "角色现实世界同步与日更"
+msgstr "キャラクター現実世界同期と日次更新"
+
+#: apps/admin/src/components/root-layout.tsx:315
+msgid "角色编辑"
+msgstr "キャラクター編集"
+
+#: apps/admin/src/components/root-layout.tsx:270
+msgid "角色缺口识别与自动加友"
+msgstr "キャラクター不足検出と自動友だち追加"
+
+#: apps/admin/src/components/root-layout.tsx:316
+msgid "角色资料编辑"
+msgstr "キャラクタープロフィール編集"
+
+#: apps/admin/src/components/root-layout.tsx:307
+msgid "角色运行逻辑台"
+msgstr "キャラクター実行ロジック台"
+
+#: apps/admin/src/components/root-layout.tsx:212
+#: apps/admin/src/components/root-layout.tsx:385
+msgid "评测分析"
+msgstr "評価分析"
+
+#: apps/admin/src/components/root-layout.tsx:386
+msgid "评测运行与 Trace 工作台"
+msgstr "評価実行と Trace ワークベンチ"
+
+#: apps/admin/src/components/root-layout.tsx:199
+#: apps/admin/src/components/root-layout.tsx:365
+msgid "赛博分身"
+msgstr "サイバー分身"
+
+#: apps/admin/src/components/admin-sidebar.tsx:231
+msgid "输入后台密钥"
+msgstr "管理キーを入力"
+
+#: apps/admin/src/components/admin-topbar.tsx:47
+#: apps/admin/src/components/root-layout.tsx:395
+msgid "运营工作台"
+msgstr "運用ワークベンチ"
+
+#: apps/admin/src/components/admin-sidebar.tsx:147
+#: apps/admin/src/components/root-layout.tsx:223
+msgid "运营控制台"
+msgstr "運用コンソール"
+
+#: apps/admin/src/components/root-layout.tsx:144
+msgid "运行总览"
+msgstr "実行概要"
+
+#: apps/admin/src/components/root-layout.tsx:232
+msgid "运行时与 Provider 初始化"
+msgstr "ランタイムと Provider 初期化"
+
+#: apps/admin/src/components/root-layout.tsx:231
+msgid "运行设置"
+msgstr "ランタイム設定"
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:94
+msgid "进入设置页补齐播放器 URL 模板"
+msgstr ""
+
+#: apps/admin/src/components/admin-sidebar.tsx:91
+msgid "远程 API 离线"
+msgstr "リモート API オフライン"
+
+#: apps/admin/src/components/root-layout.tsx:282
+msgid "配置 open loop 提取、推荐候选打分、我自己主动消息文案，并查看推荐后的打开、加好友和开聊动作。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:176
+msgid "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:272
+msgid "配置短周期和每日节奏的提示词、频率、角色生成策略，并查看运行记录与候选结果。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:170
+msgid "配置短期/长期角色生成策略，并查看候选与运行记录。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:388
+msgid "集中查看 runs、compare 和 trace，逐步收口成更清晰的多视图结构。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:213
+msgid "集中查看 runs、compare 和 trace。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:338
+msgid "集中查看 Token 消耗、时间趋势、角色分布、预算预警和价格配置。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:328
+msgid "集中查看世界主人与各角色的真实单聊历史、搜索命中上下文和会话级 Token 成本。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:378
+msgid "集中查看每日外部信号、摘要 digest、scene patch 和现实发圈锚点。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:368
+msgid "集中查看赛博分身如何从行为信号收敛成画像，再投影成后续世界内外可消费的提示词。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:252
+msgid "集中管理多个 Provider 账户、模型目录、默认模型路由，以及批量安装模型人格角色。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:169
+#: apps/admin/src/components/root-layout.tsx:269
+msgid "需求发现"
+msgstr "ニーズ発見"

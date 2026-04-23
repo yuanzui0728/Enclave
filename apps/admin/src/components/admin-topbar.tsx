@@ -1,4 +1,5 @@
-import { LanguageSwitcher } from "@yinjie/i18n";
+import { msg } from "@lingui/macro";
+import { LanguageSwitcher, translateRuntimeMessage } from "@yinjie/i18n";
 
 type AdminTopbarProps = {
   eyebrow: string;
@@ -16,6 +17,8 @@ export function AdminTopbar({
   statusTone,
   statusDetailLabel,
 }: Omit<AdminTopbarProps, "description">) {
+  const t = translateRuntimeMessage;
+
   return (
     <header className="rounded-[28px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-5 py-3 shadow-[var(--shadow-soft)] backdrop-blur">
       <div className="flex items-center justify-between gap-4">
@@ -41,7 +44,7 @@ export function AdminTopbar({
             {statusLabel}
           </div>
           <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-primary)] px-3 py-1 text-xs text-[color:var(--text-muted)]">
-            {statusDetailLabel ?? "运营工作台"}
+            {statusDetailLabel ?? t(msg`运营工作台`)}
           </div>
         </div>
       </div>
