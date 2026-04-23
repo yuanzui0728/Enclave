@@ -164,6 +164,7 @@ export const desktopBottomNavItems: DesktopNavActionItem[] = [
       "/desktop/chat-history",
       "/desktop/feedback",
       "/desktop/settings",
+      "/profile/settings",
       "/desktop/channels/",
     ],
   },
@@ -214,17 +215,46 @@ export const desktopMoreMenuItems: DesktopNavActionItem[] = [
   },
 ];
 
+function normalizeDesktopNavMatchPath(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/")) {
+    return "";
+  }
+
+  if (trimmed === "/") {
+    return "/";
+  }
+
+  return trimmed.replace(/\/+$/, "");
+}
+
+function matchesDesktopNavPath(pathname: string, match: string) {
+  const normalizedPathname = normalizeDesktopNavMatchPath(pathname);
+  const normalizedMatch = normalizeDesktopNavMatchPath(match);
+  if (!normalizedPathname || !normalizedMatch) {
+    return false;
+  }
+
+  return (
+    normalizedPathname === normalizedMatch ||
+    normalizedPathname.startsWith(`${normalizedMatch}/`)
+  );
+}
+
 export function isDesktopNavItemActive(
   pathname: string,
   item: Pick<DesktopNavItem, "excludedMatches" | "matches">,
 ) {
   const matches =
-    item.matches?.some((prefix) => pathname.startsWith(prefix)) ?? false;
+    item.matches?.some((prefix) => matchesDesktopNavPath(pathname, prefix)) ??
+    false;
   if (!matches) {
     return false;
   }
 
   return !(
-    item.excludedMatches?.some((prefix) => pathname.startsWith(prefix)) ?? false
+    item.excludedMatches?.some((prefix) =>
+      matchesDesktopNavPath(pathname, prefix),
+    ) ?? false
   );
 }

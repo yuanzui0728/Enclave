@@ -1015,8 +1015,15 @@ const expectations = [
   {
     file: "src/features/shell/desktop-nav-config.ts",
     description:
-      "desktop shell nav keeps legacy desktop root paths owned by their primary workspace icons while live-companion stays exclusive to the bottom More menu",
+      "desktop shell nav keeps legacy desktop root paths owned by their primary workspace icons, matches by path segment instead of brittle raw startsWith checks, and leaves live-companion exclusive to the bottom More menu",
     includes: [
+      "function normalizeDesktopNavMatchPath(value: string) {",
+      "function matchesDesktopNavPath(pathname: string, match: string) {",
+      "normalizedPathname === normalizedMatch ||",
+      "normalizedPathname.startsWith(`${normalizedMatch}/`)",
+      "item.matches?.some((prefix) => matchesDesktopNavPath(pathname, prefix))",
+      "item.excludedMatches?.some((prefix) =>",
+      "matchesDesktopNavPath(pathname, prefix)",
       'label: "消息",',
       '"/chat",',
       'label: "通讯录",',
@@ -1038,6 +1045,7 @@ const expectations = [
       'label: "小程序面板",',
       '"/discover/mini-programs"',
       'label: "更多",',
+      '"/profile/settings",',
       '"/desktop/channels/",',
     ],
   },
