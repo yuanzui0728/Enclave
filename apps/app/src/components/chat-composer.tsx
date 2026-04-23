@@ -5691,6 +5691,8 @@ function resolveNativeCameraCaptureNotice(
       message: "当前设备暂时无法打开相机，请先改用相册选图。",
       actionLabel: options?.onPickAlbum ? "改用相册" : undefined,
       onAction: options?.onPickAlbum,
+      secondaryActionLabel: options?.secondaryActionLabel,
+      onSecondaryAction: options?.onSecondaryAction,
     };
   }
 
@@ -5698,6 +5700,8 @@ function resolveNativeCameraCaptureNotice(
     message: "打开相机失败，请稍后再试。",
     actionLabel: options?.onRetry ? "重试打开相机" : undefined,
     onAction: options?.onRetry,
+    secondaryActionLabel: options?.secondaryActionLabel,
+    onSecondaryAction: options?.onSecondaryAction,
   };
 }
 
