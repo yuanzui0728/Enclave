@@ -591,11 +591,26 @@ function resolveDesktopMiniProgramsNavigationTarget(
 }
 
 function resolveDesktopChannelsNavigationTarget(target: SearchNavigationTarget) {
+  const routeState = parseDesktopChannelsRouteHash(target.hash ?? "");
+  const authorMatch = target.to.match(/^\/channels\/authors\/([^/?#]+)$/);
+
+  if (authorMatch?.[1]?.trim()) {
+    return {
+      to: "/tabs/channels",
+      hash: buildDesktopChannelsRouteHash({
+        authorId: authorMatch[1].trim(),
+        postId: routeState.postId,
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
+        section: routeState.section,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
   if (target.to !== "/discover/channels" && target.to !== "/tabs/channels") {
     return null;
   }
 
-  const routeState = parseDesktopChannelsRouteHash(target.hash ?? "");
   return {
     to: "/tabs/channels",
     hash: buildDesktopChannelsRouteHash({
