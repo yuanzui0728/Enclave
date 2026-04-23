@@ -191,6 +191,7 @@ const NAV_ITEMS = [
   {
     to: "/real-world-sync",
     label: "现实联动",
+    roleBadge: "承接：界闻/联动角色",
     hint: "查看角色现实新闻同步、每日 digest、scene patch 和现实发圈锚点。",
   },
   {
