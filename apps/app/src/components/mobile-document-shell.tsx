@@ -73,6 +73,12 @@ export function MobileDocumentShell({
         message: nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制文档摘要。",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : undefined,
+        onAction: nativeMobileShareSupported
+          ? () => {
+              void handleShareDocument();
+            }
+          : undefined,
       });
       return;
     }
