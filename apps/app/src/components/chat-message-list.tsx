@@ -1015,6 +1015,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "复制失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "重试复制",
+        onAction: () => {
+          void copyToClipboard(text, successMessage);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
