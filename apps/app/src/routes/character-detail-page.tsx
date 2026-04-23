@@ -670,12 +670,10 @@ export function CharacterDetailPage() {
         message: nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制名片。",
-        actionLabel: nativeMobileShareSupported ? "重试分享" : undefined,
-        onAction: nativeMobileShareSupported
-          ? () => {
-              void handleShareCharacterCard();
-            }
-          : undefined,
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShareCharacterCard();
+        },
       });
       return;
     }
