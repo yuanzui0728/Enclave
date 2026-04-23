@@ -589,8 +589,10 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
     includes: [
+      "buildDesktopMomentsRouteHash,",
+      "parseDesktopMomentsRouteState,",
       "buildDesktopChannelsRouteHash,",
       "parseDesktopChannelsRouteHash,",
       "buildFeedRouteHash,",
@@ -617,6 +619,8 @@ const expectations = [
       "resolveDesktopMomentsNavigationTarget(normalizedTarget)",
       "resolveDesktopOfficialNavigationTarget(normalizedTarget)",
       'to: "/tabs/chat",',
+      'target.to === "/discover/moments" || target.to === "/tabs/moments"',
+      'to: "/tabs/moments",',
       'target.to !== "/discover/feed" && target.to !== "/tabs/feed"',
       'to: "/tabs/feed",',
       'target.to !== "/games" &&',

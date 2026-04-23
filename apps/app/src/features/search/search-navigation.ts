@@ -17,6 +17,10 @@ import {
   parseDesktopFriendMomentsRouteState,
 } from "../moments/friend-moments-route-state";
 import {
+  buildDesktopMomentsRouteHash,
+  parseDesktopMomentsRouteState,
+} from "../moments/moments-route-state";
+import {
   buildDesktopChannelsRouteHash,
   parseDesktopChannelsRouteHash,
 } from "../channels/channels-route-state";
@@ -316,6 +320,19 @@ function resolveDesktopContactsNavigationTarget(
 }
 
 function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
+  if (target.to === "/discover/moments" || target.to === "/tabs/moments") {
+    const routeState = parseDesktopMomentsRouteState(target.hash ?? "");
+    return {
+      to: "/tabs/moments",
+      hash: buildDesktopMomentsRouteHash({
+        authorId: routeState.authorId,
+        momentId: routeState.momentId,
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
   const friendMomentsMatch = target.to.match(/^\/friend-moments\/([^/?#]+)$/);
   if (!friendMomentsMatch?.[1]?.trim()) {
     return null;
