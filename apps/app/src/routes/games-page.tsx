@@ -149,6 +149,11 @@ export function GamesPage() {
   >(inviteActivityFromSearch?.id ?? null);
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const [noticeActionState, setNoticeActionState] = useState<{
+    label: string;
+    message: string;
+    onAction: () => void;
+  } | null>(null);
   const isDesktopGamesRoute =
     pathname === "/tabs/games" || pathname === "/discover/games";
   const normalizedDesktopReturnPath =
@@ -190,7 +195,10 @@ export function GamesPage() {
       return;
     }
 
-    const timer = window.setTimeout(() => setSuccessNotice(""), 2800);
+    const timer = window.setTimeout(() => {
+      setSuccessNotice("");
+      setNoticeActionState(null);
+    }, 2800);
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
@@ -543,6 +551,7 @@ export function GamesPage() {
 
       if (shared) {
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("已打开系统分享面板。");
         return;
       }
@@ -562,8 +571,16 @@ export function GamesPage() {
         applyFriendInvite(activityId, "invited");
         setSelectedGameId(activity.gameId);
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("系统分享暂时不可用，已复制组局链接。");
       } catch {
+        setNoticeActionState({
+          label: "重试分享",
+          message: "系统分享失败，请稍后重试。",
+          onAction: () => {
+            void handleCopyInviteToMobile(activityId);
+          },
+        });
         setNoticeTone("info");
         setSuccessNotice("系统分享失败，请稍后重试。");
       }
@@ -586,8 +603,16 @@ export function GamesPage() {
         applyFriendInvite(activityId, "invited");
         setSelectedGameId(activity.gameId);
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("组局链接已复制。");
       } catch {
+        setNoticeActionState({
+          label: "重试复制",
+          message: "复制组局链接失败，请稍后重试。",
+          onAction: () => {
+            void handleCopyInviteToMobile(activityId);
+          },
+        });
         setNoticeTone("info");
         setSuccessNotice("复制组局链接失败，请稍后重试。");
       }
@@ -614,8 +639,16 @@ export function GamesPage() {
         path,
       });
       setNoticeTone("success");
+      setNoticeActionState(null);
       setSuccessNotice(`已把 ${activity.friendName} 的组局邀约复制到手机。`);
     } catch {
+      setNoticeActionState({
+        label: "重试复制到手机",
+        message: "复制到手机失败，请稍后重试。",
+        onAction: () => {
+          void handleCopyInviteToMobile(activityId);
+        },
+      });
       setNoticeTone("info");
       setSuccessNotice("复制到手机失败，请稍后重试。");
     }
@@ -635,6 +668,7 @@ export function GamesPage() {
 
       if (shared) {
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("已打开系统分享面板。");
         return;
       }
@@ -652,8 +686,16 @@ export function GamesPage() {
       try {
         await navigator.clipboard.writeText(link);
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("系统分享暂时不可用，已复制入口链接。");
       } catch {
+        setNoticeActionState({
+          label: "重试分享",
+          message: "系统分享失败，请稍后重试。",
+          onAction: () => {
+            void handleCopyGameToMobile(gameId);
+          },
+        });
         setNoticeTone("info");
         setSuccessNotice("系统分享失败，请稍后重试。");
       }
@@ -674,8 +716,16 @@ export function GamesPage() {
       try {
         await navigator.clipboard.writeText(link);
         setNoticeTone("success");
+        setNoticeActionState(null);
         setSuccessNotice("入口链接已复制。");
       } catch {
+        setNoticeActionState({
+          label: "重试复制",
+          message: "复制入口链接失败，请稍后重试。",
+          onAction: () => {
+            void handleCopyGameToMobile(gameId);
+          },
+        });
         setNoticeTone("info");
         setSuccessNotice("复制入口链接失败，请稍后重试。");
       }
@@ -700,8 +750,16 @@ export function GamesPage() {
         path,
       });
       setNoticeTone("success");
+      setNoticeActionState(null);
       setSuccessNotice(`${game?.name ?? "该游戏"} 已复制到手机接力链接。`);
     } catch {
+      setNoticeActionState({
+        label: "重试复制到手机",
+        message: "复制到手机失败，请稍后重试。",
+        onAction: () => {
+          void handleCopyGameToMobile(gameId);
+        },
+      });
       setNoticeTone("info");
       setSuccessNotice("复制到手机失败，请稍后重试。");
     }
@@ -914,16 +972,33 @@ export function GamesPage() {
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
-            {noticeTone === "info" && statusBackLabel ? (
+            {noticeTone === "info" &&
+            ((noticeActionState &&
+              noticeActionState.message === successNotice) ||
+              statusBackLabel) ? (
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">{successNotice}</span>
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
-                >
-                  {statusBackLabel}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {noticeActionState &&
+                  noticeActionState.message === successNotice ? (
+                    <button
+                      type="button"
+                      onClick={noticeActionState.onAction}
+                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    >
+                      {noticeActionState.label}
+                    </button>
+                  ) : null}
+                  {statusBackLabel ? (
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    >
+                      {statusBackLabel}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ) : (
               successNotice
