@@ -7,6 +7,20 @@ export interface WechatConnectorSettings {
   baseUrl: string;
 }
 
+export type WechatConnectorProviderKey =
+  | "manual-json"
+  | "wechat-decrypt-http"
+  | "weflow-http";
+
+export interface WechatConnectorSourceConfig {
+  connectorLabel?: string | null;
+  providerKey: WechatConnectorProviderKey;
+  manualJsonPath?: string | null;
+  wechatDecryptBaseUrl?: string | null;
+  weflowBaseUrl?: string | null;
+  weflowAccessToken?: string | null;
+}
+
 export interface WechatConnectorHealth {
   ok: boolean;
   version: string;
@@ -15,6 +29,11 @@ export interface WechatConnectorHealth {
   activeConfig: {
     connectorLabel?: string | null;
     sourceSummary?: string | null;
+    providerKey?: WechatConnectorProviderKey;
+    manualJsonPath?: string | null;
+    wechatDecryptBaseUrl?: string | null;
+    weflowBaseUrl?: string | null;
+    weflowAccessToken?: string | null;
   };
 }
 
@@ -27,6 +46,11 @@ export interface WechatConnectorScanResponse {
   activeConfig: {
     connectorLabel?: string | null;
     sourceSummary?: string | null;
+    providerKey?: WechatConnectorProviderKey;
+    manualJsonPath?: string | null;
+    wechatDecryptBaseUrl?: string | null;
+    weflowBaseUrl?: string | null;
+    weflowAccessToken?: string | null;
   };
 }
 
@@ -117,19 +141,76 @@ async function connectorFetch<T>(
 
   const rawBody = await response.text();
   if (!response.ok) {
-    throw new Error(rawBody || `本地微信连接器请求失败：${response.status}`);
+    throw new Error(
+      extractConnectorError(rawBody) ||
+        `本地微信连接器请求失败：${response.status}`,
+    );
   }
 
-  return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  try {
+    return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  } catch (error) {
+    throw new Error(
+      `本地微信连接器返回了非 JSON 响应。${
+        error instanceof Error ? error.message : ""
+      }`,
+    );
+  }
+}
+
+function extractConnectorError(rawBody: string) {
+  const normalized = rawBody.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(normalized) as unknown;
+    if (!isRecord(parsed)) {
+      return normalized;
+    }
+
+    const error = parsed.error;
+    if (typeof error === "string" && error.trim()) {
+      return error.trim();
+    }
+
+    const message = parsed.message;
+    if (typeof message === "string" && message.trim()) {
+      return message.trim();
+    }
+  } catch {
+    return normalized;
+  }
+
+  return normalized;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 export function getWechatConnectorHealth(baseUrl: string) {
   return connectorFetch<WechatConnectorHealth>(baseUrl, "/health");
 }
 
-export function scanWechatConnector(baseUrl: string) {
+export function patchWechatConnectorConfig(
+  baseUrl: string,
+  config: Partial<WechatConnectorSourceConfig>,
+) {
+  return connectorFetch<WechatConnectorSourceConfig>(baseUrl, "/api/config", {
+    method: "PATCH",
+    body: JSON.stringify(config),
+  });
+}
+
+export function scanWechatConnector(
+  baseUrl: string,
+  config?: Partial<WechatConnectorSourceConfig>,
+) {
   return connectorFetch<WechatConnectorScanResponse>(baseUrl, "/api/scan", {
     method: "POST",
+    body: config ? JSON.stringify(config) : undefined,
   });
 }
 

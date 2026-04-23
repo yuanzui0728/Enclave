@@ -10,6 +10,7 @@ export * from "./characters";
 export * from "./chat-records";
 export * from "./client";
 export * from "./config";
+export * from "./contact-import";
 export * from "./cyber-avatar";
 export * from "./evals";
 export * from "./feed";

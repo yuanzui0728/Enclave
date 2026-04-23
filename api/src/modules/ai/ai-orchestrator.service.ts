@@ -2095,6 +2095,9 @@ export class AiOrchestratorService {
 
   async generateQuickCharacter(
     description: string,
+    options?: {
+      timeoutMs?: number;
+    },
   ): Promise<Record<string, unknown>> {
     const prompt = `你是隐界的角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
 
