@@ -2178,6 +2178,7 @@ function resolveMobileHandoffCategory(
   }
 
   if (
+    normalizedPath === "/tabs/games" ||
     normalizedPath === "/games" ||
     normalizedPath.startsWith("/discover/games")
   ) {
