@@ -42,6 +42,7 @@ import type {
   NeedDiscoveryOverview,
   ProviderTestResult,
   ReminderRuntimeOverview,
+  ReminderTaskMutationResult,
   RealWorldNewsBulletinPublishRequest,
   RealWorldNewsBulletinPublishResult,
   RealWorldSyncCharacterDetail,
@@ -74,6 +75,7 @@ import type {
   WechatSyncPreviewResponse,
   WechatSyncRetryFriendshipResponse,
   WechatSyncRollbackResponse,
+  SnoozeReminderTaskRequest,
 } from "@yinjie/contracts";
 
 const ADMIN_SECRET_KEY = "yinjie_admin_secret";
@@ -370,6 +372,22 @@ export const adminApi = {
     }),
   getReminderRuntimeOverview: () =>
     adminFetch<ReminderRuntimeOverview>("/reminder-runtime/overview"),
+  completeReminderRuntimeTask: (id: string) =>
+    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}/complete`, {
+      method: "POST",
+    }),
+  snoozeReminderRuntimeTask: (
+    id: string,
+    payload: SnoozeReminderTaskRequest,
+  ) =>
+    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}/snooze`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  cancelReminderRuntimeTask: (id: string) =>
+    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}`, {
+      method: "DELETE",
+    }),
   getFollowupRuntimeOverview: () =>
     adminFetch<FollowupRuntimeOverview>("/followup-runtime/overview"),
   setFollowupRuntimeRules: (payload: Partial<FollowupRuntimeRules>) =>

@@ -91,6 +91,24 @@ export class AdminController {
     return this.reminderRuntimeService.getOverview();
   }
 
+  @Post('reminder-runtime/tasks/:id/complete')
+  completeReminderRuntimeTask(@Param('id') id: string) {
+    return this.reminderRuntimeService.completeTask(id);
+  }
+
+  @Post('reminder-runtime/tasks/:id/snooze')
+  snoozeReminderRuntimeTask(
+    @Param('id') id: string,
+    @Body() body: { minutes?: number; hours?: number; until?: string },
+  ) {
+    return this.reminderRuntimeService.snoozeTask(id, body);
+  }
+
+  @Delete('reminder-runtime/tasks/:id')
+  cancelReminderRuntimeTask(@Param('id') id: string) {
+    return this.reminderRuntimeService.cancelTask(id);
+  }
+
   @Get('followup-runtime/rules')
   getFollowupRuntimeRules() {
     return this.followupRuntimeService.getRules();

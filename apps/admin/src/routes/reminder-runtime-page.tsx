@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   runSchedulerJob,
+  type SnoozeReminderTaskRequest,
   type ReminderRuntimeMomentRecord,
   type ReminderRuntimeMessageRecord,
   type ReminderTaskRecord,
@@ -50,6 +51,12 @@ const JOB_SUCCESS_NOTICES: Record<ReminderSchedulerJob, string> = {
   trigger_reminder_checkins: "提醒问询调度已执行。",
   check_moment_schedule: "提醒发圈窗口已执行。",
 };
+
+type ReminderTaskAction =
+  | "complete"
+  | "snooze_30m"
+  | "snooze_tomorrow"
+  | "cancel";
 
 function formatDateTime(value?: string | null) {
   if (!value) {
@@ -132,6 +139,15 @@ function buildTaskDetails(task: ReminderTaskRecord) {
   );
 }
 
+function buildTomorrowReminderIso(task: ReminderTaskRecord) {
+  const basisValue = task.nextTriggerAt ?? task.dueAt;
+  const basis = basisValue ? new Date(basisValue) : new Date();
+  const next = new Date();
+  next.setDate(next.getDate() + 1);
+  next.setHours(basis.getHours(), basis.getMinutes(), 0, 0);
+  return next.toISOString();
+}
+
 function momentTone(moment: ReminderRuntimeMomentRecord) {
   return moment.generationKind === "reminder_nudge" ? "healthy" : "muted";
 }
@@ -194,20 +210,106 @@ export function ReminderRuntimePage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  const invalidateReminderRuntimeOverview = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["admin-reminder-runtime", baseUrl],
+    });
+  };
+
   const runMutation = useMutation({
     mutationFn: (jobId: ReminderSchedulerJob) => runSchedulerJob(jobId, baseUrl),
     onSuccess: async (_, jobId) => {
       setNotice(JOB_SUCCESS_NOTICES[jobId]);
       await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["admin-reminder-runtime", baseUrl],
-        }),
+        invalidateReminderRuntimeOverview(),
         queryClient.invalidateQueries({
           queryKey: ["admin-scheduler-status", baseUrl],
         }),
       ]);
     },
   });
+
+  const completeTaskMutation = useMutation({
+    mutationFn: (taskId: string) => adminApi.completeReminderRuntimeTask(taskId),
+    onSuccess: async ({ task }) => {
+      setNotice(
+        task.kind === "one_time"
+          ? `已完成：${task.title}`
+          : `已记录完成：${task.title}`,
+      );
+      await invalidateReminderRuntimeOverview();
+    },
+  });
+
+  const snoozeTaskMutation = useMutation({
+    mutationFn: ({
+      taskId,
+      payload,
+    }: {
+      taskId: string;
+      payload: SnoozeReminderTaskRequest;
+    }) => adminApi.snoozeReminderRuntimeTask(taskId, payload),
+    onSuccess: async ({ task }, variables) => {
+      setNotice(
+        variables.payload.until
+          ? `${task.title} 已顺到明天。`
+          : `${task.title} 已往后顺 30 分钟。`,
+      );
+      await invalidateReminderRuntimeOverview();
+    },
+  });
+
+  const cancelTaskMutation = useMutation({
+    mutationFn: (taskId: string) => adminApi.cancelReminderRuntimeTask(taskId),
+    onSuccess: async ({ task }) => {
+      setNotice(`已删除：${task.title}`);
+      await invalidateReminderRuntimeOverview();
+    },
+  });
+
+  const taskActionError =
+    completeTaskMutation.error instanceof Error
+      ? completeTaskMutation.error
+      : snoozeTaskMutation.error instanceof Error
+        ? snoozeTaskMutation.error
+        : cancelTaskMutation.error instanceof Error
+          ? cancelTaskMutation.error
+          : null;
+
+  const activeTaskAction = useMemo(() => {
+    if (completeTaskMutation.isPending) {
+      return {
+        taskId: completeTaskMutation.variables ?? null,
+        action: "complete" as ReminderTaskAction,
+      };
+    }
+    if (snoozeTaskMutation.isPending) {
+      return {
+        taskId: snoozeTaskMutation.variables?.taskId ?? null,
+        action:
+          snoozeTaskMutation.variables?.payload.until != null
+            ? ("snooze_tomorrow" as ReminderTaskAction)
+            : ("snooze_30m" as ReminderTaskAction),
+      };
+    }
+    if (cancelTaskMutation.isPending) {
+      return {
+        taskId: cancelTaskMutation.variables ?? null,
+        action: "cancel" as ReminderTaskAction,
+      };
+    }
+    return {
+      taskId: null,
+      action: null as ReminderTaskAction | null,
+    };
+  }, [
+    cancelTaskMutation.isPending,
+    cancelTaskMutation.variables,
+    completeTaskMutation.isPending,
+    completeTaskMutation.variables,
+    snoozeTaskMutation.isPending,
+    snoozeTaskMutation.variables,
+  ]);
 
   const metrics = useMemo(() => {
     const stats = overviewQuery.data?.stats;
@@ -295,6 +397,9 @@ export function ReminderRuntimePage() {
       {runMutation.error instanceof Error ? (
         <ErrorBlock message={runMutation.error.message} />
       ) : null}
+      {taskActionError ? (
+        <ErrorBlock message={taskActionError.message} />
+      ) : null}
 
       {stats.overdueTaskCount > 0 ? (
         <AdminCallout
@@ -357,6 +462,67 @@ export function ReminderRuntimePage() {
                     meta={buildTaskMeta(task)}
                     description={task.detail || undefined}
                     details={buildTaskDetails(task)}
+                    actions={
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={Boolean(activeTaskAction.taskId)}
+                          onClick={() => completeTaskMutation.mutate(task.id)}
+                        >
+                          {activeTaskAction.taskId === task.id &&
+                          activeTaskAction.action === "complete"
+                            ? "处理中..."
+                            : "完成"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={Boolean(activeTaskAction.taskId)}
+                          onClick={() =>
+                            snoozeTaskMutation.mutate({
+                              taskId: task.id,
+                              payload: { minutes: 30 },
+                            })
+                          }
+                        >
+                          {activeTaskAction.taskId === task.id &&
+                          activeTaskAction.action === "snooze_30m"
+                            ? "处理中..."
+                            : "30 分后"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={Boolean(activeTaskAction.taskId)}
+                          onClick={() =>
+                            snoozeTaskMutation.mutate({
+                              taskId: task.id,
+                              payload: {
+                                until: buildTomorrowReminderIso(task),
+                              },
+                            })
+                          }
+                        >
+                          {activeTaskAction.taskId === task.id &&
+                          activeTaskAction.action === "snooze_tomorrow"
+                            ? "处理中..."
+                            : "明天"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                          disabled={Boolean(activeTaskAction.taskId)}
+                          onClick={() => cancelTaskMutation.mutate(task.id)}
+                        >
+                          {activeTaskAction.taskId === task.id &&
+                          activeTaskAction.action === "cancel"
+                            ? "处理中..."
+                            : "删除"}
+                        </Button>
+                      </div>
+                    }
                   />
                 ))
               ) : (

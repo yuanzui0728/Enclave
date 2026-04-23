@@ -373,6 +373,9 @@
 ## 管理后台提醒运行时路由
 
 - `GET /api/admin/reminder-runtime/overview`
+- `POST /api/admin/reminder-runtime/tasks/:id/complete`
+- `POST /api/admin/reminder-runtime/tasks/:id/snooze`
+- `DELETE /api/admin/reminder-runtime/tasks/:id`
 
 ## 管理后台赛博分身路由
 
