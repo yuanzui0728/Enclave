@@ -430,6 +430,13 @@ export function MiniProgramsPage() {
         typeof navigator.clipboard.writeText !== "function"
       ) {
         setNoticeTone("info");
+        setNoticeActionState({
+          label: "重试复制",
+          message: "当前环境暂不支持复制入口链接。",
+          onAction: () => {
+            void handleCopyMiniProgramToMobile(miniProgramId);
+          },
+        });
         setSuccessNotice("当前环境暂不支持复制入口链接。");
         return;
       }
@@ -459,6 +466,13 @@ export function MiniProgramsPage() {
       typeof navigator.clipboard.writeText !== "function"
     ) {
       setNoticeTone("info");
+      setNoticeActionState({
+        label: "重试复制到手机",
+        message: "当前环境暂不支持复制到手机。",
+        onAction: () => {
+          void handleCopyMiniProgramToMobile(miniProgramId);
+        },
+      });
       setSuccessNotice("当前环境暂不支持复制到手机。");
       return;
     }
