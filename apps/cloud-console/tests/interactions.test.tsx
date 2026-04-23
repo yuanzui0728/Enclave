@@ -410,6 +410,67 @@ function installFocusedAdminSessionScenario({
   };
 }
 
+async function renderInstalledFocusedAdminSessionSourceGroup({
+  includeOtherSessions = false,
+  title,
+  showMatches = false,
+}: {
+  includeOtherSessions?: boolean;
+  title?: string;
+  showMatches?: boolean;
+} = {}) {
+  const scenario = installFocusedAdminSessionScenario({
+    includeOtherSessions,
+  });
+  await renderFocusedAdminSessionSourceGroup({
+    title,
+    showMatches,
+  });
+  return scenario;
+}
+
+async function renderInstalledFocusedAdminSessionOverview({
+  includeOtherSessions = false,
+  title,
+  overviewOptions,
+}: {
+  includeOtherSessions?: boolean;
+  title?: string;
+  overviewOptions?: Parameters<typeof renderFocusedAdminSessionOverview>[0]["overviewOptions"];
+} = {}) {
+  const scenario = installFocusedAdminSessionScenario({
+    includeOtherSessions,
+  });
+  await renderFocusedAdminSessionOverview({
+    requests: scenario.requests,
+    sourceKey: scenario.sourceKey,
+    title,
+    overviewOptions,
+  });
+  return scenario;
+}
+
+async function renderInstalledFocusedAdminSessionTimelineSessionDetail({
+  includeOtherSessions = false,
+  sessionId,
+  detailOptions,
+}: {
+  includeOtherSessions?: boolean;
+  sessionId?: string;
+  detailOptions?: Parameters<typeof renderFocusedAdminSessionTimelineSessionDetail>[0]["detailOptions"];
+} = {}) {
+  const scenario = installFocusedAdminSessionScenario({
+    includeOtherSessions,
+  });
+  await renderFocusedAdminSessionTimelineSessionDetail({
+    requests: scenario.requests,
+    sourceKey: scenario.sourceKey,
+    sessionId,
+    detailOptions,
+  });
+  return scenario;
+}
+
 function buildAdminSessionActiveSourcePairScenario({
   issuedFromIp,
   issuedUserAgent,
@@ -2257,31 +2318,24 @@ describe("cloud-console interactions", () => {
   });
 
   it("focuses sessions on a selected source group and can clear the focus", async () => {
-    const { requests, sourceKey: expectedSourceKey } = installFocusedAdminSessionScenario({
+    await renderInstalledFocusedAdminSessionOverview({
       includeOtherSessions: true,
-    });
-    await renderFocusedAdminSessionOverview({
-      requests,
-      sourceKey: expectedSourceKey,
     });
 
     await clearAdminSessionSourceFocusAndExpectSummary();
   });
 
   it("can jump from a matched timeline session into the admin session list filters", async () => {
-    const { requests, sourceKey: expectedSourceKey } = installFocusedAdminSessionScenario({
-      includeOtherSessions: true,
-    });
-    await renderFocusedAdminSessionTimelineSessionDetail({
-      requests,
-      sourceKey: expectedSourceKey,
-      detailOptions: {
-        includeLastRefreshed: true,
-        includeLatestSnapshot: true,
-        includeSyncedLabel: true,
-        includeWatchRisk: true,
-      },
-    });
+    const { requests, sourceKey: expectedSourceKey } =
+      await renderInstalledFocusedAdminSessionTimelineSessionDetail({
+        includeOtherSessions: true,
+        detailOptions: {
+          includeLastRefreshed: true,
+          includeLatestSnapshot: true,
+          includeSyncedLabel: true,
+          includeWatchRisk: true,
+        },
+      });
     expect((await screen.findAllByText("Showing 1-1 of 1")).length).toBeGreaterThan(0);
 
     await exportAdminSessionFocusedSourceSnapshot(1);
@@ -2292,11 +2346,8 @@ describe("cloud-console interactions", () => {
   });
 
   it("can revoke the focused source group from the highlighted session detail row", async () => {
-    const { requests, sourceKey: expectedSourceKey } = installFocusedAdminSessionScenario();
-    await renderFocusedAdminSessionTimelineSessionDetail({
-      requests,
-      sourceKey: expectedSourceKey,
-    });
+    const { requests, sourceKey: expectedSourceKey } =
+      await renderInstalledFocusedAdminSessionTimelineSessionDetail();
 
     await revokeAdminSessionSourceGroupAndAssert({
       requests,
@@ -2312,8 +2363,9 @@ describe("cloud-console interactions", () => {
   });
 
   it("can open revoke confirmation directly from a matched timeline session", async () => {
-    const { requests } = installFocusedAdminSessionScenario();
-    await renderFocusedAdminSessionSourceGroup({ showMatches: true });
+    const { requests } = await renderInstalledFocusedAdminSessionSourceGroup({
+      showMatches: true,
+    });
 
     await revokeAdminSessionAndAssert({
       requests,
@@ -3868,6 +3920,25 @@ describe("cloud-console interactions", () => {
     expect(await screen.findByText("Worlds permalink copied.")).toBeTruthy();
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
       `${window.location.origin}/worlds?status=ready&provider=manual-docker&powerState=running&attention=critical&health=healthy&query=mock`,
+    );
+  });
+
+  it("copies a compact waiting-sync permalink from the waiting-sync page", async () => {
+    renderRoute(
+      "/waiting-sync?status=failed&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&page=2&pageSize=10",
+    );
+
+    expect(await screen.findByText("Waiting session sync")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy waiting sync permalink" }),
+    );
+
+    expect(
+      await screen.findByText("Waiting sync permalink copied."),
+    ).toBeTruthy();
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/waiting-sync?status=failed&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&page=2&pageSize=10`,
     );
   });
 
