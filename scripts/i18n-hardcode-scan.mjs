@@ -153,6 +153,9 @@ function printHelp() {
 Options:
   --all                    Scan all default source scopes. This is the default.
   --scope <path>           Scan a specific path. Can be repeated.
+  --changed                Scan added lines in changes since I18N_AUDIT_BASE or HEAD.
+  --staged                 Scan added lines in staged changes only.
+  --base <ref>             Scan added lines in changes since the given git ref.
   --baseline <file>        Compare results with a baseline JSON file.
   --ratchet                Fail when any rule count exceeds the baseline.
   --json                   Print machine-readable JSON.
@@ -168,9 +171,11 @@ Ignore comments:
 
 function parseArgs(argv) {
   const options = {
+    baseRef: process.env.I18N_AUDIT_BASE ?? "HEAD",
     baselinePath: null,
     includeIssues: false,
     json: false,
+    mode: "full",
     ratchet: false,
     scopes: [],
     topCount: 12,
@@ -201,6 +206,33 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--scope=")) {
       options.scopes.push(normalizePath(arg.slice("--scope=".length)));
+      continue;
+    }
+
+    if (arg === "--changed") {
+      options.mode = "changed";
+      continue;
+    }
+
+    if (arg === "--staged") {
+      options.mode = "staged";
+      continue;
+    }
+
+    if (arg === "--base") {
+      const value = argv[index + 1];
+      if (!value) {
+        throw new Error("--base requires a git ref.");
+      }
+      options.baseRef = value;
+      options.mode = "changed";
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--base=")) {
+      options.baseRef = arg.slice("--base=".length);
+      options.mode = "changed";
       continue;
     }
 
@@ -268,6 +300,10 @@ function parseArgs(argv) {
 
 function normalizePath(value) {
   return value.replace(/\\/g, "/").replace(/\/+$/, "");
+}
+
+function normalizeBaseRef(baseRef) {
+  return /^0{40}$/.test(baseRef) ? "HEAD" : baseRef;
 }
 
 function shouldIgnoreFile(filePath) {
@@ -347,6 +383,30 @@ function addIssue(summary, fileSummary, issue) {
   fileSummary.rules[issue.rule] = (fileSummary.rules[issue.rule] ?? 0) + 1;
 }
 
+function collectLineIssues(filePath, scope, lineNumber, line, previousLine) {
+  if (shouldIgnoreLine(line, previousLine)) {
+    return [];
+  }
+
+  const issues = [];
+  for (const rule of RULES) {
+    if (!rule.test(line)) {
+      continue;
+    }
+
+    issues.push({
+      file: filePath,
+      line: lineNumber,
+      message: rule.message,
+      rule: rule.name,
+      scope,
+      source: line.trim(),
+    });
+  }
+
+  return issues;
+}
+
 function scanFile(filePath, scope, includeIssues) {
   const text = readFileSync(filePath, "utf8");
   const lines = text.split(/\r?\n/);
@@ -362,22 +422,13 @@ function scanFile(filePath, scope, includeIssues) {
     const line = lines[index] ?? "";
     const previousLine = index > 0 ? (lines[index - 1] ?? "") : "";
 
-    if (shouldIgnoreLine(line, previousLine)) {
-      continue;
-    }
-
-    for (const rule of RULES) {
-      if (!rule.test(line)) {
-        continue;
-      }
-
-      const issue = {
-        file: filePath,
-        line: index + 1,
-        message: rule.message,
-        rule: rule.name,
-        source: line.trim(),
-      };
+    for (const issue of collectLineIssues(
+      filePath,
+      scope,
+      index + 1,
+      line,
+      previousLine,
+    )) {
       addIssue({ rules: {}, totalIssues: 0 }, fileSummary, issue);
       if (includeIssues) {
         issues.push(issue);
@@ -438,6 +489,159 @@ function scan(scopes, includeIssues) {
     scopes: scopeSummaries,
     issues,
   };
+}
+
+function readChangedDiff(options) {
+  const baseRef = normalizeBaseRef(options.baseRef);
+  const args =
+    options.mode === "staged"
+      ? ["diff", "--cached", "--unified=0", "--", ...options.scopes]
+      : ["diff", "--unified=0", baseRef, "--", ...options.scopes];
+
+  try {
+    return execFileSync("git", args, {
+      cwd: process.cwd(),
+      encoding: "utf8",
+    });
+  } catch (error) {
+    if (error instanceof Error && "stdout" in error) {
+      return String(error.stdout ?? "");
+    }
+
+    throw error;
+  }
+}
+
+function scanChangedLines(options) {
+  const diffText = readChangedDiff(options);
+  const issues = [];
+  const lines = diffText.split("\n");
+  let currentFile = null;
+  let currentLineNumber = 0;
+  let previousAddedLine = "";
+  let scope = null;
+
+  for (const line of lines) {
+    if (line.startsWith("+++ b/")) {
+      currentFile = normalizePath(line.slice("+++ b/".length));
+      currentLineNumber = 0;
+      previousAddedLine = "";
+      scope = shouldIgnoreFile(currentFile)
+        ? null
+        : resolveScope(currentFile, options.scopes);
+      continue;
+    }
+
+    if (line.startsWith("diff --git ")) {
+      currentFile = null;
+      currentLineNumber = 0;
+      previousAddedLine = "";
+      scope = null;
+      continue;
+    }
+
+    const hunkMatch = line.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+    if (hunkMatch) {
+      currentLineNumber = Number(hunkMatch[1]);
+      previousAddedLine = "";
+      continue;
+    }
+
+    if (!currentFile || !scope) {
+      continue;
+    }
+
+    if (line.startsWith("+") && !line.startsWith("+++")) {
+      const addedLine = line.slice(1);
+      issues.push(
+        ...collectLineIssues(
+          currentFile,
+          scope,
+          currentLineNumber,
+          addedLine,
+          previousAddedLine,
+        ),
+      );
+      previousAddedLine = addedLine;
+      currentLineNumber += 1;
+      continue;
+    }
+
+    if (line.startsWith(" ")) {
+      previousAddedLine = line.slice(1);
+      currentLineNumber += 1;
+    }
+  }
+
+  return issues;
+}
+
+function summarizeIssuesByScope(scopes, issues, topCount) {
+  const scopeSummaries = Object.fromEntries(
+    scopes.map((scope) => [
+      scope,
+      {
+        files: 0,
+        rules: makeEmptyRuleCounts(),
+        topFiles: [],
+        totalIssues: 0,
+      },
+    ]),
+  );
+  const filesByScope = new Map();
+  const fileSummaries = new Map();
+
+  for (const issue of issues) {
+    const scopeSummary =
+      scopeSummaries[issue.scope] ??
+      (scopeSummaries[issue.scope] = {
+        files: 0,
+        rules: makeEmptyRuleCounts(),
+        topFiles: [],
+        totalIssues: 0,
+      });
+    const fileKey = `${issue.scope}:${issue.file}`;
+    let fileSummary = fileSummaries.get(fileKey);
+
+    if (!fileSummary) {
+      fileSummary = {
+        file: issue.file,
+        rules: makeEmptyRuleCounts(),
+        scope: issue.scope,
+        totalIssues: 0,
+      };
+      fileSummaries.set(fileKey, fileSummary);
+
+      const scopeFiles = filesByScope.get(issue.scope) ?? new Set();
+      scopeFiles.add(issue.file);
+      filesByScope.set(issue.scope, scopeFiles);
+    }
+
+    scopeSummary.totalIssues += 1;
+    scopeSummary.rules[issue.rule] =
+      (scopeSummary.rules[issue.rule] ?? 0) + 1;
+    fileSummary.totalIssues += 1;
+    fileSummary.rules[issue.rule] = (fileSummary.rules[issue.rule] ?? 0) + 1;
+  }
+
+  for (const [scopeName, fileSet] of filesByScope.entries()) {
+    const scopeSummary = scopeSummaries[scopeName];
+    if (scopeSummary) {
+      scopeSummary.files = fileSet.size;
+    }
+  }
+
+  for (const fileSummary of fileSummaries.values()) {
+    scopeSummaries[fileSummary.scope]?.topFiles.push(fileSummary);
+  }
+
+  const result = {
+    rules: RULES.map(({ name, message }) => ({ name, message })),
+    scopes: scopeSummaries,
+    issues,
+  };
+  finalizeTopFiles(result, topCount);
+  return result;
 }
 
 function finalizeTopFiles(result, topCount) {
@@ -533,6 +737,42 @@ function printHumanSummary(result, comparison) {
   }
 }
 
+function printChangedSummary(result, options) {
+  const label =
+    options.mode === "staged"
+      ? "staged changes"
+      : `changes since ${normalizeBaseRef(options.baseRef)}`;
+
+  if (result.issues.length === 0) {
+    console.log(`i18n hardcode changed scan passed for ${label}.`);
+    return;
+  }
+
+  console.error(
+    `i18n hardcode changed scan found ${result.issues.length} issue(s) in ${label}:`,
+  );
+  for (const [scope, summary] of Object.entries(result.scopes)) {
+    if (summary.totalIssues === 0) {
+      continue;
+    }
+
+    console.error(`- ${scope}: ${summary.totalIssues}`);
+    for (const [ruleName, count] of Object.entries(summary.rules)) {
+      if (count > 0) {
+        console.error(`  ${ruleName}: ${count}`);
+      }
+    }
+  }
+
+  for (const issue of result.issues.slice(0, 80)) {
+    console.error(`  ${issue.file}:${issue.line} ${issue.rule}`);
+    console.error(`    ${issue.source}`);
+  }
+  if (result.issues.length > 80) {
+    console.error(`  ...and ${result.issues.length - 80} more.`);
+  }
+}
+
 function stripIssuesIfNeeded(result, includeIssues) {
   if (includeIssues) {
     return result;
@@ -544,6 +784,28 @@ function stripIssuesIfNeeded(result, includeIssues) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
+
+  if (options.mode === "changed" || options.mode === "staged") {
+    const issues = scanChangedLines(options);
+    const result = summarizeIssuesByScope(
+      options.scopes,
+      issues,
+      options.topCount,
+    );
+    const output = stripIssuesIfNeeded(result, options.includeIssues);
+
+    if (options.json) {
+      console.log(JSON.stringify(output, null, 2));
+    } else {
+      printChangedSummary(result, options);
+    }
+
+    if (issues.length > 0) {
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   const result = scan(options.scopes, options.includeIssues);
   finalizeTopFiles(result, options.topCount);
 

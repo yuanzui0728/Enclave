@@ -21,7 +21,7 @@
       "rules": {
         "jsx-literal-prop": 1965,
         "object-ui-string": 834,
-        "jsx-cjk-text": 286,
+        "jsx-cjk-text": 287,
         "toast-dialog-string": 2,
         "setter-message-string": 9,
         "literal-error-message": 24,
@@ -29,7 +29,7 @@
         "locale-compare-literal": 0,
         "speech-lang-literal": 0,
         "prompt-locale-instruction": 0,
-        "raw-cjk-line": 6059
+        "raw-cjk-line": 6076
       }
     },
     "apps/cloud-console/src": {
@@ -74,7 +74,7 @@
         "locale-compare-literal": 9,
         "speech-lang-literal": 0,
         "prompt-locale-instruction": 2,
-        "raw-cjk-line": 8655
+        "raw-cjk-line": 8664
       }
     },
     "apps/cloud-api/src": {
