@@ -718,6 +718,7 @@ export function GroupQrPage() {
     retryOptions?: {
       actionLabel: string;
       onAction: () => void;
+      unavailableMessage?: string;
     },
   ) {
     if (
@@ -725,6 +726,15 @@ export function GroupQrPage() {
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
+      if (retryOptions?.unavailableMessage) {
+        showRetryNotice(
+          retryOptions.unavailableMessage,
+          retryOptions.actionLabel,
+          retryOptions.onAction,
+        );
+        return;
+      }
+
       showNotice("当前环境暂不支持复制。", "danger");
       return;
     }
@@ -874,6 +884,7 @@ export function GroupQrPage() {
       onAction: () => {
         void shareInviteLink();
       },
+      unavailableMessage: "当前设备暂时无法打开系统分享，请稍后重试。",
     });
   }
 
@@ -905,6 +916,7 @@ export function GroupQrPage() {
       onAction: () => {
         void shareInviteTextOnly();
       },
+      unavailableMessage: "当前设备暂时无法打开系统分享，请稍后重试。",
     });
   }
 
