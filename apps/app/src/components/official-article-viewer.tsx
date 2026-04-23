@@ -2,6 +2,7 @@ import { useState, type MouseEvent } from "react";
 import type { OfficialAccountArticleDetail } from "@yinjie/contracts";
 import { Copy, Share2, Star } from "lucide-react";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
+import { InlineNoticeActionButton } from "./inline-notice-action-button";
 import { openExternalUrl } from "../runtime/external-url";
 import {
   shareWithNativeShell,
@@ -38,6 +39,8 @@ export function OfficialArticleViewer({
   const [shareNotice, setShareNotice] = useState<{
     message: string;
     tone: "success" | "info";
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const nativeMobileShareSupported = isNativeMobileShareSurface();
   const isDesktopReader = !mobile && desktopSurface === "reader";
@@ -54,7 +57,21 @@ export function OfficialArticleViewer({
       ? articlePath
       : `${window.location.origin}${articlePath}`;
 
-  async function handleCopyLink() {
+  function retryCopyLink() {
+    void handleCopyLink({
+      retryLabel: "重试复制",
+      onRetry: retryCopyLink,
+    });
+  }
+
+  function retryShareArticle() {
+    void handleShareArticle();
+  }
+
+  async function handleCopyLink(options?: {
+    retryLabel?: string;
+    onRetry?: () => void;
+  }) {
     if (
       typeof navigator === "undefined" ||
       !navigator.clipboard ||
@@ -65,6 +82,8 @@ export function OfficialArticleViewer({
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制链接。",
         tone: "info",
+        actionLabel: nativeMobileShareSupported ? options?.retryLabel : undefined,
+        onAction: nativeMobileShareSupported ? options?.onRetry : undefined,
       });
       return;
     }
@@ -76,6 +95,8 @@ export function OfficialArticleViewer({
           ? "系统分享暂时不可用，已复制文章链接。"
           : "文章链接已复制。",
         tone: "success",
+        actionLabel: undefined,
+        onAction: undefined,
       });
     } catch {
       setShareNotice({
@@ -83,13 +104,17 @@ export function OfficialArticleViewer({
           ? "系统分享失败，请稍后重试。"
           : "复制失败，请稍后重试。",
         tone: "info",
+        actionLabel:
+          options?.retryLabel ?? (nativeMobileShareSupported ? "重试分享" : "重试复制"),
+        onAction:
+          options?.onRetry ?? (nativeMobileShareSupported ? retryShareArticle : retryCopyLink),
       });
     }
   }
 
   async function handleShareArticle() {
     if (!nativeMobileShareSupported) {
-      await handleCopyLink();
+      retryCopyLink();
       return;
     }
 
@@ -107,7 +132,10 @@ export function OfficialArticleViewer({
       return;
     }
 
-    await handleCopyLink();
+    await handleCopyLink({
+      retryLabel: "重试分享",
+      onRetry: retryShareArticle,
+    });
   }
 
   async function handleContentLinkClick(event: MouseEvent<HTMLDivElement>) {
@@ -291,15 +319,21 @@ export function OfficialArticleViewer({
         <InlineNotice
           className={cn(
             mobile
-              ? "mt-2.5 border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[12px] leading-5"
-              : "mt-4 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
+              ? "mt-2.5 flex items-center justify-between gap-2.5 border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[12px] leading-5"
+              : "mt-4 flex items-center justify-between gap-3 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
             isDesktopReader
               ? "mt-4 rounded-[16px] bg-[#f6f8f6] text-[13px] leading-6"
               : undefined,
           )}
           tone={shareNotice.tone}
         >
-          {shareNotice.message}
+          <span>{shareNotice.message}</span>
+          {shareNotice.actionLabel && shareNotice.onAction ? (
+            <InlineNoticeActionButton
+              label={shareNotice.actionLabel}
+              onClick={shareNotice.onAction}
+            />
+          ) : null}
         </InlineNotice>
       ) : null}
       {article.coverImage ? (
