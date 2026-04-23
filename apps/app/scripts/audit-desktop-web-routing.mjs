@@ -950,7 +950,7 @@ const expectations = [
   {
     file: "src/routes/desktop-mobile-page.tsx",
     description:
-      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, classifies legacy chat/contacts/discover roots plus desktop and legacy games/channel/mini-program histories and official/profile/settings shortcut histories into the right buckets even when old records carry query or hash state, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
+      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, classifies legacy chat/contacts/discover/search/favorites/moments/feed roots plus desktop and legacy games/channel/mini-program histories and official/profile/settings shortcut histories into the right buckets even when old records carry query or hash state, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
     includes: [
       'const normalizedPath = item.path.split(/[?#]/, 1)[0] ?? item.path;',
       "desktopTo?: string;",
@@ -962,6 +962,15 @@ const expectations = [
       'normalizedPath === "/chat"',
       'normalizedPath === "/contacts"',
       'normalizedPath === "/discover"',
+      'normalizedPath === "/tabs/moments"',
+      'normalizedPath === "/moments"',
+      'normalizedPath === "/tabs/feed"',
+      'normalizedPath === "/feed"',
+      'normalizedPath === "/tabs/search"',
+      'normalizedPath === "/search"',
+      'normalizedPath === "/tabs/favorites"',
+      'normalizedPath === "/favorites"',
+      'normalizedPath === "/notes"',
       'normalizedPath === "/tabs/games"',
       'normalizedPath === "/games"',
       'normalizedPath === "/tabs/channels"',

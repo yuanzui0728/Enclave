@@ -2200,6 +2200,17 @@ function resolveMobileHandoffCategory(
     normalizedPath === "/contacts" ||
     normalizedPath === "/tabs/discover" ||
     normalizedPath === "/discover" ||
+    normalizedPath === "/tabs/moments" ||
+    normalizedPath === "/moments" ||
+    normalizedPath.startsWith("/discover/moments") ||
+    normalizedPath === "/tabs/feed" ||
+    normalizedPath === "/feed" ||
+    normalizedPath.startsWith("/discover/feed") ||
+    normalizedPath === "/tabs/search" ||
+    normalizedPath === "/search" ||
+    normalizedPath === "/tabs/favorites" ||
+    normalizedPath === "/favorites" ||
+    normalizedPath === "/notes" ||
     normalizedPath === "/tabs/profile" ||
     normalizedPath === "/profile" ||
     normalizedPath === "/profile/settings" ||
