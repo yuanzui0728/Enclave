@@ -4,7 +4,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PropsWithChildren,
 } from "react";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import {
   Camera,
   Clock3,
@@ -119,7 +119,6 @@ async function resolveDesktopWindowHandle(): Promise<DesktopWindowHandle | null>
 }
 
 export function DesktopShell({ children }: PropsWithChildren) {
-  const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -421,13 +420,13 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
       if (event.key.toLowerCase() === "k") {
         event.preventDefault();
-        void navigate({ to: "/tabs/search" });
+        navigateDesktopShellTo("/tabs/search");
         return;
       }
 
       if (event.key === ",") {
         event.preventDefault();
-        void navigate({ to: "/desktop/settings" });
+        navigateDesktopShellTo("/desktop/settings");
         return;
       }
 
@@ -439,7 +438,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
       if (event.shiftKey && event.key.toLowerCase() === "f") {
         event.preventDefault();
-        void navigate({ to: "/desktop/chat-files" });
+        navigateDesktopShellTo("/desktop/chat-files");
       }
     };
 
@@ -448,7 +447,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isLocked, navigate]);
+  }, [isLocked]);
 
   const shellInsetClass = nativeDesktopShell
     ? "rounded-none"
@@ -541,7 +540,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const openMomentsShortcut = () => {
     setOwnerCardNotice(null);
     setIsOwnerCardOpen(false);
-    void navigate({ to: "/tabs/moments" });
+    navigateDesktopShellTo("/tabs/moments");
   };
 
   const openActionOperatorConversationShortcut = async () => {
@@ -568,11 +567,11 @@ export function DesktopShell({ children }: PropsWithChildren) {
       );
 
       setIsOwnerCardOpen(false);
-      void navigate({
-        to: buildDesktopChatThreadPath({
+      navigateDesktopShellTo(
+        buildDesktopChatThreadPath({
           conversationId: conversation.id,
         }),
-      });
+      );
     } catch (error) {
       setOwnerCardNotice(
         error instanceof Error ? error.message : "打开会话失败，请稍后再试。",
@@ -813,7 +812,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                         if (item.action === "open-mobile-panel") {
                           setIsOwnerCardOpen(false);
                           setOwnerCardNotice(null);
-                          void navigate({ to: "/desktop/mobile" });
+                          navigateDesktopShellTo("/desktop/mobile");
                           return;
                         }
 
@@ -1035,27 +1034,27 @@ export function DesktopShell({ children }: PropsWithChildren) {
     setOwnerCardNotice(null);
 
     if (action === "open-live-companion") {
-      void navigate({ to: "/desktop/channels/live-companion" });
+      navigateDesktopShellTo("/desktop/channels/live-companion");
       return;
     }
 
     if (action === "open-chat-files") {
-      void navigate({ to: "/desktop/chat-files" });
+      navigateDesktopShellTo("/desktop/chat-files");
       return;
     }
 
     if (action === "open-chat-history") {
-      void navigate({ to: "/desktop/chat-history" });
+      navigateDesktopShellTo("/desktop/chat-history");
       return;
     }
 
     if (action === "open-feedback") {
-      void navigate({ to: "/desktop/feedback" });
+      navigateDesktopShellTo("/desktop/feedback");
       return;
     }
 
     if (action === "open-settings") {
-      void navigate({ to: "/desktop/settings" });
+      navigateDesktopShellTo("/desktop/settings");
       return;
     }
 
@@ -1063,6 +1062,14 @@ export function DesktopShell({ children }: PropsWithChildren) {
       openDesktopLock();
     }
   }
+}
+
+function navigateDesktopShellTo(targetPath: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.location.assign(targetPath);
 }
 
 function isStandaloneDesktopRoute(pathname: string) {
