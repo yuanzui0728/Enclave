@@ -37,12 +37,14 @@ import {
 } from "./group-call-message";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
+import { ReminderTaskPanel } from "./reminder-task-panel";
 import { findFirstUnreadMessageId } from "./chat-unread-marker";
 import { useConversationBackground } from "./backgrounds/use-conversation-background";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
 import { useDigitalHumanEntryGuard } from "./use-digital-human-entry-guard";
 import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
+import { REMINDER_CHARACTER_ID } from "@yinjie/contracts";
 import {
   buildMobileChatRouteHash,
   parseMobileChatRouteState,
@@ -188,6 +190,8 @@ export function ConversationThreadPanel({
     scrollToBottom,
   } = scrollAnchor;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
+  const isReminderConversation =
+    conversationType === "direct" && participants[0] === REMINDER_CHARACTER_ID;
   const subtitle =
     conversationType === "group"
       ? `${participants.length || 0} 人群聊`
@@ -751,75 +755,87 @@ export function ConversationThreadPanel({
       </div>
 
       {!selectionModeActive ? (
-        <ChatComposer
-          value={text}
-          placeholder="输入消息"
-          variant={isDesktop ? "desktop" : "mobile"}
-          pending={sendMutation.isPending}
-          error={
-            sendMutation.error instanceof Error
-              ? sendMutation.error.message
-              : null
-          }
-          errorActionLabel={!isDesktop && onBack ? "返回上一页" : undefined}
-          onErrorAction={!isDesktop && onBack ? onBack : null}
-          speechInput={{
-            baseUrl,
-            conversationId,
-            characterId: participants[0],
-            enabled: runtimeConfig.appPlatform !== "desktop",
-          }}
-          onChange={(value) => {
-            handleDismissRouteContextNotice();
-            if (socketError) {
-              setSocketError(null);
+        <>
+          {isReminderConversation ? (
+            <ReminderTaskPanel
+              conversationId={conversationId}
+              variant={isDesktop ? "desktop" : "mobile"}
+            />
+          ) : null}
+          <ChatComposer
+            value={text}
+            placeholder={
+              isReminderConversation
+                ? "直接说：明早8点提醒我吃药"
+                : "输入消息"
             }
-            setText(value);
-          }}
-          onSendSticker={async (sticker) => {
-            if (socketError) {
-              setSocketError(null);
+            variant={isDesktop ? "desktop" : "mobile"}
+            pending={sendMutation.isPending}
+            error={
+              sendMutation.error instanceof Error
+                ? sendMutation.error.message
+                : null
             }
-            await handleSendSticker(sticker);
-          }}
-          onSendAttachment={async (payload) => {
-            if (socketError) {
-              setSocketError(null);
-            }
-            await handleSendAttachment(payload);
-          }}
-          onSendPresetText={async (presetText) => {
-            if (socketError) {
-              setSocketError(null);
-            }
-            await handleSendPresetText(presetText);
-          }}
-          mobileShortcutRequest={mobileShortcutRequest}
-          onMobileShortcutHandled={() => {
-            setMobileShortcutRequest(null);
-          }}
-          onStartVoiceCall={() => {
-            void navigate({
-              to: "/chat/$conversationId/voice-call",
-              params: { conversationId },
-              ...(currentMobileRouteHash
-                ? { hash: currentMobileRouteHash }
-                : {}),
-            });
-          }}
-          onStartVideoCall={() => {
-            void navigate({
-              to: "/chat/$conversationId/video-call",
-              params: { conversationId },
-              ...(currentMobileRouteHash
-                ? { hash: currentMobileRouteHash }
-                : {}),
-            });
-          }}
-          replyPreview={replyPreview}
-          onCancelReply={() => setReplyDraft(null)}
-          onSubmit={() => void handleSubmit()}
-        />
+            errorActionLabel={!isDesktop && onBack ? "返回上一页" : undefined}
+            onErrorAction={!isDesktop && onBack ? onBack : null}
+            speechInput={{
+              baseUrl,
+              conversationId,
+              characterId: participants[0],
+              enabled: runtimeConfig.appPlatform !== "desktop",
+            }}
+            onChange={(value) => {
+              handleDismissRouteContextNotice();
+              if (socketError) {
+                setSocketError(null);
+              }
+              setText(value);
+            }}
+            onSendSticker={async (sticker) => {
+              if (socketError) {
+                setSocketError(null);
+              }
+              await handleSendSticker(sticker);
+            }}
+            onSendAttachment={async (payload) => {
+              if (socketError) {
+                setSocketError(null);
+              }
+              await handleSendAttachment(payload);
+            }}
+            onSendPresetText={async (presetText) => {
+              if (socketError) {
+                setSocketError(null);
+              }
+              await handleSendPresetText(presetText);
+            }}
+            mobileShortcutRequest={mobileShortcutRequest}
+            onMobileShortcutHandled={() => {
+              setMobileShortcutRequest(null);
+            }}
+            onStartVoiceCall={() => {
+              void navigate({
+                to: "/chat/$conversationId/voice-call",
+                params: { conversationId },
+                ...(currentMobileRouteHash
+                  ? { hash: currentMobileRouteHash }
+                  : {}),
+              });
+            }}
+            onStartVideoCall={() => {
+              void navigate({
+                to: "/chat/$conversationId/video-call",
+                params: { conversationId },
+                ...(currentMobileRouteHash
+                  ? { hash: currentMobileRouteHash }
+                  : {}),
+              });
+            }}
+            replyPreview={replyPreview}
+            onCancelReply={() => setReplyDraft(null)}
+            onSubmit={() => void handleSubmit()}
+          />
+        </>
       ) : null}
     </div>
   );
