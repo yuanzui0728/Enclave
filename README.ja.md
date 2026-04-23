@@ -24,6 +24,10 @@ Enclave は、AI によって動く、オープンソースのプライベート
 
 ---
 
+
+https://github.com/user-attachments/assets/8aa53836-f116-40f7-96b8-3ca308301cb8
+
+
 ## ✨ これは何？
 
 世にある AI 製品の多くは、大きく二つのかたちに落ち着いています：
