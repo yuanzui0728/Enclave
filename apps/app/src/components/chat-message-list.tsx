@@ -2080,6 +2080,8 @@ export function ChatMessageList({
                 void openAppSettings();
               }
             : undefined,
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
         });
         return;
       }
