@@ -55,6 +55,7 @@
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/moments/publish` 目标现在也会直接收成 `/tabs/moments`，并继续保住发表页 hash 里的 `returnPath / returnHash`。之前这类旧发表页链接会先打开共享发表页，再靠页面重定向回桌面朋友圈；现在会直接落桌面朋友圈，不再多绕一跳。
 - 桌面壳里的 `视频号直播伴侣` 现在只归底部“更多”入口，不再同时点亮顶部“视频号”主导航。之前 `/desktop/channels/live-companion` 会同时命中两套导航匹配，造成桌面侧栏双高亮；现在直播伴侣作为独立工具页只保留“更多”选中态。
 - 桌面壳左侧主导航现在也会认旧根路径：旧 `/chat`、`/contacts`、`/favorites`、`/official-accounts`、`/search`、`/games`、`/discover/games`、`/discover/channels`、`/channels/authors/*`、`/discover/mini-programs`、`/discover/moments/publish`、`/friend-moments/*` 在桌面自愈前就会先点亮对应工作区，不再出现“界面还是旧路径、侧栏高亮却掉线”的错位。
+- 桌面壳左侧主导航现在也会把旧 `/group/new` 归到“消息”。之前桌面里直接打开旧发起群聊页时，对话框已经是消息链路的一部分，但侧栏没有任何主导航高亮，会出现“窗口已打开、主入口掉线”的错位。
 - 桌面壳底部“更多”入口现在也会认旧 `/profile/settings`。之前桌面设置页在自愈回 `/desktop/settings` 之前，底部“更多”不会先亮，设置工作区会短暂出现“页面已打开、入口未选中”的错位。
 - 桌面壳底部“更多”入口现在也会认协议文档页 `/legal/*`。之前桌面里打开隐私政策、用户协议、社区规范时，页面虽然仍属于设置链路，但底部“更多”不会保持选中，导致设置子页导航态掉线。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/games`、`/discover/games` 目标现在也会直接收成 `/tabs/games`，而且 `mobile-games-route-state` 会把历史 `returnPath=/games|/discover/games` 一起归一成桌面游戏中心返回地址。之前这类旧游戏中心链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧游戏中心路径。

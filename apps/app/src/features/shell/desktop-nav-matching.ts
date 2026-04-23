@@ -34,6 +34,7 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
       "/tabs/chat",
       "/chat",
       "/group/",
+      "/group/new",
       "/official-accounts/service/",
     ],
   },

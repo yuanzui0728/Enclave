@@ -1653,6 +1653,7 @@ const desktopNavRegressionCases = [
   { pathname: "/chat", primaryTo: "/tabs/chat", bottomAction: null },
   { pathname: "/chat/123", primaryTo: "/tabs/chat", bottomAction: null },
   { pathname: "/group/123", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/group/new", primaryTo: "/tabs/chat", bottomAction: null },
   {
     pathname: "/official-accounts/service/42",
     primaryTo: "/tabs/chat",
