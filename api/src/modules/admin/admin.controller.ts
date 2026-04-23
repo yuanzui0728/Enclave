@@ -102,6 +102,20 @@ export class AdminController {
     return this.reminderRuntimeService.setRules(body);
   }
 
+  @Post('reminder-runtime/preview')
+  previewReminderRuntime(
+    @Body()
+    body: {
+      message?: string | null;
+      rules?: Partial<ReminderRuntimeRulesValue> | null;
+    },
+  ) {
+    return this.reminderRuntimeService.previewMessage({
+      message: body.message?.trim() ?? '',
+      rules: body.rules ?? undefined,
+    });
+  }
+
   @Post('reminder-runtime/tasks/:id/complete')
   completeReminderRuntimeTask(@Param('id') id: string) {
     return this.reminderRuntimeService.completeTask(id);

@@ -58,6 +58,46 @@ export class ReminderRuntimeRulesService {
         ...current.textTemplates,
         ...(input.textTemplates ?? {}),
       },
+      parserRules: {
+        ...current.parserRules,
+        ...(input.parserRules ?? {}),
+        categoryKeywords: {
+          ...current.parserRules.categoryKeywords,
+          ...(input.parserRules?.categoryKeywords ?? {}),
+        },
+        periodDefaultClocks: {
+          ...current.parserRules.periodDefaultClocks,
+          ...(input.parserRules?.periodDefaultClocks ?? {}),
+          sleepBefore: {
+            ...current.parserRules.periodDefaultClocks.sleepBefore,
+            ...(input.parserRules?.periodDefaultClocks?.sleepBefore ?? {}),
+          },
+          morning: {
+            ...current.parserRules.periodDefaultClocks.morning,
+            ...(input.parserRules?.periodDefaultClocks?.morning ?? {}),
+          },
+          lateMorning: {
+            ...current.parserRules.periodDefaultClocks.lateMorning,
+            ...(input.parserRules?.periodDefaultClocks?.lateMorning ?? {}),
+          },
+          noon: {
+            ...current.parserRules.periodDefaultClocks.noon,
+            ...(input.parserRules?.periodDefaultClocks?.noon ?? {}),
+          },
+          afternoon: {
+            ...current.parserRules.periodDefaultClocks.afternoon,
+            ...(input.parserRules?.periodDefaultClocks?.afternoon ?? {}),
+          },
+          dusk: {
+            ...current.parserRules.periodDefaultClocks.dusk,
+            ...(input.parserRules?.periodDefaultClocks?.dusk ?? {}),
+          },
+          evening: {
+            ...current.parserRules.periodDefaultClocks.evening,
+            ...(input.parserRules?.periodDefaultClocks?.evening ?? {}),
+          },
+        },
+      },
     });
 
     await this.systemConfig.setConfig(

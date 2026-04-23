@@ -42,6 +42,7 @@ import type {
   NeedDiscoveryOverview,
   ProviderTestResult,
   ReminderRuntimeOverview,
+  ReminderRuntimePreviewResult,
   ReminderRuntimeRules,
   ReminderTaskMutationResult,
   RealWorldNewsBulletinPublishRequest,
@@ -377,6 +378,14 @@ export const adminApi = {
     adminFetch<ReminderRuntimeRules>("/reminder-runtime/rules", {
       method: "PATCH",
       body: JSON.stringify(payload),
+    }),
+  previewReminderRuntime: (
+    message: string,
+    rules?: Partial<ReminderRuntimeRules>,
+  ) =>
+    adminFetch<ReminderRuntimePreviewResult>("/reminder-runtime/preview", {
+      method: "POST",
+      body: JSON.stringify({ message, rules }),
     }),
   completeReminderRuntimeTask: (id: string) =>
     adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}/complete`, {

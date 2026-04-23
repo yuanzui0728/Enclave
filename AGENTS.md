@@ -316,7 +316,7 @@
 - `games-page.tsx`：AI 游戏工作台，查看目录、来源、审核状态，并直接编辑游戏资料与新建草稿
 - `need-discovery-page.tsx`：角色缺口识别与自动加友配置页，查看短期/每日 cadence 规则、候选和运行记录
 - `followup-runtime-page.tsx`：主动跟进配置页，查看 open loop、推荐记录、规则、Prompt 与“我自己”推荐链路结果
-- `reminder-runtime-page.tsx`：提醒运行时页，查看活跃提醒任务、最近触发 / 完成、聊天提醒出站记录与小盯朋友圈轻提醒记录
+- `reminder-runtime-page.tsx`：提醒运行时页，查看活跃提醒任务、最近触发 / 完成、聊天提醒出站记录与小盯朋友圈轻提醒记录，并直接配置提醒解析规则与消息预演
 - `cyber-avatar-page.tsx`：赛博分身工作台入口页，承接分身画像、真实世界回流、好友需求上游、信号与运行记录视图
 - `real-world-sync-page.tsx`：真实世界联动页，查看每日外部信号、active digest、scene patch、现实发圈锚点与全局规则
 - `wechat-sync-page.tsx`：微信朋友同步页，接收本地授权导出的联系人资料与聊天摘要，生成角色预览并导入为好友
@@ -376,6 +376,7 @@
 - `GET /api/admin/reminder-runtime/overview`
 - `GET /api/admin/reminder-runtime/rules`
 - `PATCH /api/admin/reminder-runtime/rules`
+- `POST /api/admin/reminder-runtime/preview`
 - `POST /api/admin/reminder-runtime/tasks/:id/complete`
 - `POST /api/admin/reminder-runtime/tasks/:id/snooze`
 - `DELETE /api/admin/reminder-runtime/tasks/:id`

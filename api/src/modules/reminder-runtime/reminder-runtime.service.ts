@@ -15,8 +15,15 @@ import { MomentPostEntity } from '../moments/moment-post.entity';
 import { WorldService } from '../world/world.service';
 import { ReminderTaskEntity } from './reminder-task.entity';
 import { ReminderRuntimeRulesService } from './reminder-runtime-rules.service';
+import { normalizeReminderRuntimeRules } from './reminder-runtime.types';
 import type {
   ReminderRecurrenceRule,
+  ReminderRuntimeParserPeriodDefaultsValue,
+  ReminderRuntimePreviewActionValue,
+  ReminderRuntimePreviewMatchedRulesValue,
+  ReminderRuntimePreviewParsedTaskValue,
+  ReminderRuntimePreviewReferencedTaskValue,
+  ReminderRuntimePreviewResultValue,
   ReminderRuntimeRulesValue,
   ReminderTaskKind,
   ReminderTaskPriority,
@@ -94,23 +101,33 @@ type ReminderRuntimeOverview = {
   recentMoments: ReminderRuntimeOverviewMoment[];
 };
 
+type ReminderParserPeriodKey = keyof ReminderRuntimeParserPeriodDefaultsValue;
+
 type ParsedClock = {
   hour: number;
   minute: number;
+  source: 'explicit' | 'period_default' | 'default';
+  matchedPeriodKey?: ReminderParserPeriodKey | null;
+  matchedPatterns?: string[];
 };
 
 type ParsedReminderIntent =
   | {
       handled: false;
+      reason: string;
+      debug: ReminderParserDebug;
     }
   | {
       handled: true;
       needsClarification: true;
+      reason: string;
       responseText: string;
+      debug: ReminderParserDebug;
     }
   | {
       handled: true;
       needsClarification?: false;
+      reason: string;
       title: string;
       category: string;
       kind: ReminderTaskKind;
@@ -120,22 +137,61 @@ type ParsedReminderIntent =
       nextTriggerAt?: Date | null;
       recurrenceRule?: ReminderRecurrenceRule | null;
       responseText: string;
+      debug: ReminderParserDebug;
     };
 
-const HARD_REMINDER_KEYWORDS = ['吃药', '开会', '会议', '复诊', '考试'];
-const HABIT_KEYWORDS = [
-  '学英语',
-  '英语',
-  '锻炼',
-  '运动',
-  '健身',
-  '背单词',
-  '喝水',
-  '早睡',
-  '复盘',
-  '看书',
-  '读书',
-];
+type ParsedWeeklyRule = {
+  weekday: number;
+  label: string;
+  matchedKeyword: string;
+};
+
+type ReminderParserDebug = {
+  normalizedText: string;
+  matchedIntentPatterns: string[];
+  matchedCreateKeywords: string[];
+  matchedDailyKeywords: string[];
+  matchedWeeklyKeywords: string[];
+  matchedHabitIntentKeywords: string[];
+  matchedHabitKeywords: string[];
+  matchedHardKeywords: string[];
+  matchedCategoryKeywords: string[];
+  matchedPeriodKey: ReminderParserPeriodKey | null;
+  matchedPeriodPatterns: string[];
+  extractedTitle: string | null;
+};
+
+type ReminderConversationEvaluation =
+  | {
+      handled: false;
+      action: 'unhandled';
+      reason: string;
+      debug: ReminderParserDebug;
+    }
+  | {
+      handled: true;
+      action: 'help' | 'list';
+      reason: string;
+      responseText: string;
+      debug: ReminderParserDebug;
+    }
+  | {
+      handled: true;
+      action: 'cancel' | 'complete' | 'snooze';
+      reason: string;
+      responseText: string;
+      referencedTask: ReminderTaskEntity | null;
+      snoozeUntil?: Date;
+      debug: ReminderParserDebug;
+    }
+  | {
+      handled: true;
+      action: 'create';
+      reason: string;
+      parsedIntent: ParsedReminderIntent;
+      debug: ReminderParserDebug;
+    };
+
 const WEEKDAY_ALIASES: Record<string, number> = {
   日: 0,
   天: 0,
@@ -170,6 +226,10 @@ function normalizeComparableText(value: string) {
 
 function stripTrailingPunctuation(value: string) {
   return value.replace(/[，。、“”‘’：:！!？?；;,.]+$/g, '').trim();
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function stripReminderCommand(value: string) {
@@ -294,6 +354,36 @@ export class ReminderRuntimeService {
     patch: Partial<ReminderRuntimeRulesValue>,
   ): Promise<ReminderRuntimeRulesValue> {
     return this.rulesService.setRules(patch);
+  }
+
+  async previewMessage(
+    input: {
+      message: string;
+      rules?: Partial<ReminderRuntimeRulesValue> | null;
+    },
+  ): Promise<ReminderRuntimePreviewResultValue> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const rules =
+      input.rules != null
+        ? normalizeReminderRuntimeRules(input.rules)
+        : await this.rulesService.getRules();
+    const worldCalendar = await this.worldService.getWorldCalendar();
+    const now = new Date();
+    const text = input.message.trim();
+    const evaluation = await this.evaluateConversationTurn({
+      ownerId: owner.id,
+      conversationId: this.buildConversationId(),
+      text,
+      timezone: worldCalendar.location.timezone,
+      now,
+      rules,
+    });
+
+    return this.buildPreviewResult(
+      evaluation,
+      now,
+      worldCalendar.location.timezone,
+    );
   }
 
   async getTasks(query?: ReminderTaskQuery): Promise<ReminderTaskRecordValue[]> {
@@ -609,167 +699,366 @@ export class ReminderRuntimeService {
     const now = new Date();
     const text = input.userMessage.trim();
 
-    if (!text) {
-      return { handled: false };
-    }
-
-    if (this.isHelpIntent(text)) {
-      return {
-        handled: true,
-        responseText: rules.textTemplates.helpMessage,
-      };
-    }
-
-    if (this.isListIntent(text)) {
-      const tasks = await this.listActiveTasksForConversation(
-        owner.id,
-        input.conversationId,
-      );
-      return {
-        handled: true,
-        responseText: this.renderTaskList(tasks, rules.maxListItems, rules),
-      };
-    }
-
-    if (this.isCancelIntent(text)) {
-      const task = await this.resolveReferencedTask(
-        owner.id,
-        input.conversationId,
-        text,
-      );
-      if (!task) {
-        return {
-          handled: true,
-          responseText: rules.textTemplates.taskCancelMissing,
-        };
-      }
-
-      task.status = 'cancelled';
-      task.cancelledAt = now;
-      task.nextTriggerAt = null;
-      const saved = await this.taskRepo.save(task);
-      return {
-        handled: true,
-        responseText: renderTemplate(rules.textTemplates.taskCancelSuccess, {
-          title: saved.title,
-        }),
-        task: this.serializeTask(saved),
-      };
-    }
-
-    if (this.isSnoozeIntent(text)) {
-      const task = await this.resolveReferencedTask(
-        owner.id,
-        input.conversationId,
-        text,
-      );
-      if (!task) {
-        return {
-          handled: true,
-          responseText: rules.textTemplates.taskSnoozeMissing,
-        };
-      }
-
-      const until = this.resolveSnoozeFromText(text, now);
-      task.nextTriggerAt = until;
-      task.snoozedUntil = until;
-      const saved = await this.taskRepo.save(task);
-      return {
-        handled: true,
-        responseText: renderTemplate(rules.textTemplates.taskSnoozeSuccess, {
-          title: saved.title,
-          untilLabel: formatDateTimeLabel(until, now),
-        }),
-        task: this.serializeTask(saved),
-      };
-    }
-
-    if (this.isCompleteIntent(text)) {
-      const task = await this.resolveReferencedTask(
-        owner.id,
-        input.conversationId,
-        text,
-      );
-      if (!task) {
-        return {
-          handled: true,
-          responseText: rules.textTemplates.taskCompleteMissing,
-        };
-      }
-
-      task.lastCompletedAt = now;
-      task.completionCount = (task.completionCount ?? 0) + 1;
-      task.snoozedUntil = null;
-
-      let responseText = '';
-      if (task.kind === 'one_time') {
-        task.status = 'completed';
-        task.completedAt = now;
-        task.nextTriggerAt = null;
-        responseText = renderTemplate(
-          rules.textTemplates.taskCompleteOneTimeSuccess,
-          {
-            title: task.title,
-          },
-        );
-      } else {
-        task.completedAt = null;
-        task.nextTriggerAt = this.computeNextTriggerAfter(task, now);
-        responseText = renderTemplate(
-          rules.textTemplates.taskCompleteRecurringSuccess,
-          {
-            title: task.title,
-            scheduleText: this.describeSchedule(task),
-          },
-        );
-      }
-
-      const saved = await this.taskRepo.save(task);
-      return {
-        handled: true,
-        responseText,
-        task: this.serializeTask(saved),
-      };
-    }
-
-    const parsedIntent = this.parseCreateIntent(
-      text,
-      worldCalendar.location.timezone,
-      now,
-      rules,
-    );
-    if (!parsedIntent.handled) {
-      return { handled: false };
-    }
-
-    if ('needsClarification' in parsedIntent && parsedIntent.needsClarification) {
-      return {
-        handled: true,
-        responseText: parsedIntent.responseText,
-      };
-    }
-
-    const task = this.taskRepo.create({
+    const evaluation = await this.evaluateConversationTurn({
       ownerId: owner.id,
-      characterId: REMINDER_CHARACTER_ID,
-      sourceConversationId: input.conversationId,
-      sourceMessageId: input.sourceMessageId,
-      title: parsedIntent.title,
-      category: parsedIntent.category,
-      kind: parsedIntent.kind,
-      status: 'active',
-      priority: parsedIntent.priority,
-      timezone: parsedIntent.timezone,
-      dueAt: parsedIntent.dueAt ?? null,
-      recurrenceRule: parsedIntent.recurrenceRule ?? null,
-      nextTriggerAt: parsedIntent.nextTriggerAt ?? null,
-      completionCount: 0,
+      conversationId: input.conversationId,
+      text,
+      now,
+      timezone: worldCalendar.location.timezone,
+      rules,
     });
-    const saved = await this.taskRepo.save(task);
+
+    switch (evaluation.action) {
+      case 'help':
+      case 'list':
+        return {
+          handled: true,
+          responseText: evaluation.responseText,
+        };
+      case 'cancel': {
+        const task = evaluation.referencedTask;
+        if (!task) {
+          return {
+            handled: true,
+            responseText: evaluation.responseText,
+          };
+        }
+
+        task.status = 'cancelled';
+        task.cancelledAt = now;
+        task.nextTriggerAt = null;
+        const saved = await this.taskRepo.save(task);
+        return {
+          handled: true,
+          responseText: renderTemplate(rules.textTemplates.taskCancelSuccess, {
+            title: saved.title,
+          }),
+          task: this.serializeTask(saved),
+        };
+      }
+      case 'snooze': {
+        const task = evaluation.referencedTask;
+        if (!task || !evaluation.snoozeUntil) {
+          return {
+            handled: true,
+            responseText: evaluation.responseText,
+          };
+        }
+
+        task.nextTriggerAt = evaluation.snoozeUntil;
+        task.snoozedUntil = evaluation.snoozeUntil;
+        const saved = await this.taskRepo.save(task);
+        return {
+          handled: true,
+          responseText: renderTemplate(rules.textTemplates.taskSnoozeSuccess, {
+            title: saved.title,
+            untilLabel: formatDateTimeLabel(evaluation.snoozeUntil, now),
+          }),
+          task: this.serializeTask(saved),
+        };
+      }
+      case 'complete': {
+        const task = evaluation.referencedTask;
+        if (!task) {
+          return {
+            handled: true,
+            responseText: evaluation.responseText,
+          };
+        }
+
+        task.lastCompletedAt = now;
+        task.completionCount = (task.completionCount ?? 0) + 1;
+        task.snoozedUntil = null;
+
+        let responseText = '';
+        if (task.kind === 'one_time') {
+          task.status = 'completed';
+          task.completedAt = now;
+          task.nextTriggerAt = null;
+          responseText = renderTemplate(
+            rules.textTemplates.taskCompleteOneTimeSuccess,
+            {
+              title: task.title,
+            },
+          );
+        } else {
+          task.completedAt = null;
+          task.nextTriggerAt = this.computeNextTriggerAfter(task, now);
+          responseText = renderTemplate(
+            rules.textTemplates.taskCompleteRecurringSuccess,
+            {
+              title: task.title,
+              scheduleText: this.describeSchedule(task),
+            },
+          );
+        }
+
+        const saved = await this.taskRepo.save(task);
+        return {
+          handled: true,
+          responseText,
+          task: this.serializeTask(saved),
+        };
+      }
+      case 'create': {
+        const parsedIntent = evaluation.parsedIntent;
+        if (!parsedIntent.handled) {
+          return { handled: false };
+        }
+        if ('needsClarification' in parsedIntent && parsedIntent.needsClarification) {
+          return {
+            handled: true,
+            responseText: parsedIntent.responseText,
+          };
+        }
+
+        const task = this.taskRepo.create({
+          ownerId: owner.id,
+          characterId: REMINDER_CHARACTER_ID,
+          sourceConversationId: input.conversationId,
+          sourceMessageId: input.sourceMessageId,
+          title: parsedIntent.title,
+          category: parsedIntent.category,
+          kind: parsedIntent.kind,
+          status: 'active',
+          priority: parsedIntent.priority,
+          timezone: parsedIntent.timezone,
+          dueAt: parsedIntent.dueAt ?? null,
+          recurrenceRule: parsedIntent.recurrenceRule ?? null,
+          nextTriggerAt: parsedIntent.nextTriggerAt ?? null,
+          completionCount: 0,
+        });
+        const saved = await this.taskRepo.save(task);
+        return {
+          handled: true,
+          responseText: parsedIntent.responseText,
+          task: this.serializeTask(saved),
+        };
+      }
+      case 'unhandled':
+      default:
+        return { handled: false };
+    }
+  }
+
+  private async evaluateConversationTurn(input: {
+    ownerId: string;
+    conversationId: string;
+    text: string;
+    timezone: string;
+    now: Date;
+    rules: ReminderRuntimeRulesValue;
+  }): Promise<ReminderConversationEvaluation> {
+    const { ownerId, conversationId, text, timezone, now, rules } = input;
+
+    if (!text) {
+      return {
+        handled: false,
+        action: 'unhandled',
+        reason: '消息为空，未进入提醒解析。',
+        debug: this.createParserDebug(text),
+      };
+    }
+
+    const helpPatterns = this.findMatchedPatterns(
+      text,
+      rules.parserRules.helpIntentPatterns,
+    );
+    if (helpPatterns.length > 0) {
+      return {
+        handled: true,
+        action: 'help',
+        reason: '命中帮助意图规则。',
+        responseText: rules.textTemplates.helpMessage,
+        debug: this.createParserDebug(text, {
+          matchedIntentPatterns: helpPatterns,
+        }),
+      };
+    }
+
+    const listPatterns = this.findMatchedPatterns(
+      text,
+      rules.parserRules.listIntentPatterns,
+    );
+    if (listPatterns.length > 0) {
+      const tasks = await this.listActiveTasksForConversation(ownerId, conversationId);
+      return {
+        handled: true,
+        action: 'list',
+        reason: '命中提醒列表查询规则。',
+        responseText: this.renderTaskList(tasks, rules.maxListItems, rules),
+        debug: this.createParserDebug(text, {
+          matchedIntentPatterns: listPatterns,
+        }),
+      };
+    }
+
+    const cancelPatterns = this.findMatchedPatterns(
+      text,
+      rules.parserRules.cancelIntentPatterns,
+    );
+    if (cancelPatterns.length > 0) {
+      const referencedTask = await this.resolveReferencedTask(
+        ownerId,
+        conversationId,
+        text,
+      );
+      return {
+        handled: true,
+        action: 'cancel',
+        reason: referencedTask
+          ? '命中删除提醒规则，并匹配到了当前提醒。'
+          : '命中删除提醒规则，但没有匹配到当前提醒。',
+        responseText: referencedTask
+          ? renderTemplate(rules.textTemplates.taskCancelSuccess, {
+              title: referencedTask.title,
+            })
+          : rules.textTemplates.taskCancelMissing,
+        referencedTask,
+        debug: this.createParserDebug(text, {
+          matchedIntentPatterns: cancelPatterns,
+        }),
+      };
+    }
+
+    const snoozePatterns = this.findMatchedPatterns(
+      text,
+      rules.parserRules.snoozeIntentPatterns,
+    );
+    if (snoozePatterns.length > 0) {
+      const referencedTask = await this.resolveReferencedTask(
+        ownerId,
+        conversationId,
+        text,
+      );
+      const snoozeUntil = referencedTask
+        ? this.resolveSnoozeFromText(text, now)
+        : undefined;
+      return {
+        handled: true,
+        action: 'snooze',
+        reason: referencedTask
+          ? '命中顺延提醒规则，并匹配到了当前提醒。'
+          : '命中顺延提醒规则，但没有匹配到当前提醒。',
+        responseText:
+          referencedTask && snoozeUntil
+            ? renderTemplate(rules.textTemplates.taskSnoozeSuccess, {
+                title: referencedTask.title,
+                untilLabel: formatDateTimeLabel(snoozeUntil, now),
+              })
+            : rules.textTemplates.taskSnoozeMissing,
+        referencedTask,
+        snoozeUntil,
+        debug: this.createParserDebug(text, {
+          matchedIntentPatterns: snoozePatterns,
+        }),
+      };
+    }
+
+    const completePatterns = this.findMatchedPatterns(
+      text,
+      rules.parserRules.completeIntentPatterns,
+    );
+    if (completePatterns.length > 0) {
+      const referencedTask = await this.resolveReferencedTask(
+        ownerId,
+        conversationId,
+        text,
+      );
+      let responseText = rules.textTemplates.taskCompleteMissing;
+      if (referencedTask) {
+        responseText =
+          referencedTask.kind === 'one_time'
+            ? renderTemplate(rules.textTemplates.taskCompleteOneTimeSuccess, {
+                title: referencedTask.title,
+              })
+            : renderTemplate(
+                rules.textTemplates.taskCompleteRecurringSuccess,
+                {
+                  title: referencedTask.title,
+                  scheduleText: this.describeSchedule(referencedTask),
+                },
+              );
+      }
+
+      return {
+        handled: true,
+        action: 'complete',
+        reason: referencedTask
+          ? '命中完成提醒规则，并匹配到了当前提醒。'
+          : '命中完成提醒规则，但没有匹配到当前提醒。',
+        responseText,
+        referencedTask,
+        debug: this.createParserDebug(text, {
+          matchedIntentPatterns: completePatterns,
+        }),
+      };
+    }
+
+    const parsedIntent = this.parseCreateIntent(text, timezone, now, rules);
+    if (!parsedIntent.handled) {
+      return {
+        handled: false,
+        action: 'unhandled',
+        reason: parsedIntent.reason,
+        debug: parsedIntent.debug,
+      };
+    }
+
     return {
       handled: true,
-      responseText: parsedIntent.responseText,
-      task: this.serializeTask(saved),
+      action: 'create',
+      reason: parsedIntent.reason,
+      parsedIntent,
+      debug: parsedIntent.debug,
+    };
+  }
+
+  private buildPreviewResult(
+    evaluation: ReminderConversationEvaluation,
+    now: Date,
+    timezone: string,
+  ): ReminderRuntimePreviewResultValue {
+    const createParsedIntent =
+      evaluation.action === 'create' ? evaluation.parsedIntent : null;
+    const createNeedsClarification =
+      createParsedIntent != null &&
+      createParsedIntent.handled &&
+      'needsClarification' in createParsedIntent &&
+      createParsedIntent.needsClarification === true;
+    const createResolvedIntent =
+      createParsedIntent != null &&
+      createParsedIntent.handled &&
+      !createNeedsClarification
+        ? createParsedIntent
+        : null;
+
+    return {
+      handled: evaluation.handled,
+      action: this.toPreviewAction(evaluation.action),
+      reason: evaluation.reason,
+      evaluatedAt: now.toISOString(),
+      timezone,
+      normalizedText: evaluation.debug.normalizedText,
+      extractedTitle: evaluation.debug.extractedTitle,
+      responseText:
+        createParsedIntent != null && createParsedIntent.handled
+          ? createParsedIntent.responseText
+          : evaluation.handled && evaluation.action !== 'create'
+            ? evaluation.responseText
+            : null,
+      needsClarification: createNeedsClarification,
+      parsedTask:
+        createResolvedIntent != null
+          ? this.serializePreviewParsedTask(createResolvedIntent)
+          : null,
+      referencedTask:
+        evaluation.action === 'cancel' ||
+        evaluation.action === 'complete' ||
+        evaluation.action === 'snooze'
+          ? this.serializePreviewReferencedTask(evaluation.referencedTask)
+          : null,
+      matchedRules: this.serializePreviewMatchedRules(evaluation.debug),
     };
   }
 
@@ -949,30 +1238,149 @@ export class ReminderRuntimeService {
     return sorted[0] ?? null;
   }
 
-  private isListIntent(text: string) {
-    return /(有哪些|有什么|列一下|查一下|看看).*(提醒|待提醒|待办|记着)|提醒.*(有哪些|有什么|列一下|查一下|看看)/.test(
-      text,
-    );
+  private createParserDebug(
+    text: string,
+    patch: Partial<ReminderParserDebug> = {},
+  ): ReminderParserDebug {
+    return {
+      normalizedText: normalizeComparableText(text),
+      matchedIntentPatterns: patch.matchedIntentPatterns ?? [],
+      matchedCreateKeywords: patch.matchedCreateKeywords ?? [],
+      matchedDailyKeywords: patch.matchedDailyKeywords ?? [],
+      matchedWeeklyKeywords: patch.matchedWeeklyKeywords ?? [],
+      matchedHabitIntentKeywords: patch.matchedHabitIntentKeywords ?? [],
+      matchedHabitKeywords: patch.matchedHabitKeywords ?? [],
+      matchedHardKeywords: patch.matchedHardKeywords ?? [],
+      matchedCategoryKeywords: patch.matchedCategoryKeywords ?? [],
+      matchedPeriodKey: patch.matchedPeriodKey ?? null,
+      matchedPeriodPatterns: patch.matchedPeriodPatterns ?? [],
+      extractedTitle: patch.extractedTitle ?? null,
+    };
   }
 
-  private isHelpIntent(text: string) {
-    return /(怎么用|你能提醒|你能做什么|怎么提醒|能帮我记什么)/.test(text);
+  private toPreviewAction(
+    action: ReminderConversationEvaluation['action'],
+  ): ReminderRuntimePreviewActionValue {
+    return action;
   }
 
-  private isCancelIntent(text: string) {
-    return /(取消|删掉|删除|不用提醒|别提醒|不需要提醒)/.test(text);
+  private serializePreviewMatchedRules(
+    debug: ReminderParserDebug,
+  ): ReminderRuntimePreviewMatchedRulesValue {
+    return {
+      intentPatterns: debug.matchedIntentPatterns,
+      createKeywords: debug.matchedCreateKeywords,
+      dailyKeywords: debug.matchedDailyKeywords,
+      weeklyKeywords: debug.matchedWeeklyKeywords,
+      habitIntentKeywords: debug.matchedHabitIntentKeywords,
+      habitKeywords: debug.matchedHabitKeywords,
+      hardKeywords: debug.matchedHardKeywords,
+      categoryKeywords: debug.matchedCategoryKeywords,
+      periodKey: debug.matchedPeriodKey,
+      periodPatterns: debug.matchedPeriodPatterns,
+    };
   }
 
-  private isCompleteIntent(text: string) {
-    return /^(完成了|已完成|搞定了|做完了|买好了|吃过了|吃完了|练了|睡了)/.test(
-      text,
-    );
+  private serializePreviewParsedTask(
+    parsedIntent: Extract<ParsedReminderIntent, { handled: true; title: string }>,
+  ): ReminderRuntimePreviewParsedTaskValue {
+    return {
+      title: parsedIntent.title,
+      category: parsedIntent.category,
+      kind: parsedIntent.kind,
+      priority: parsedIntent.priority,
+      dueAt: parsedIntent.dueAt?.toISOString() ?? null,
+      nextTriggerAt: parsedIntent.nextTriggerAt?.toISOString() ?? null,
+      recurrenceRule: parsedIntent.recurrenceRule ?? null,
+    };
   }
 
-  private isSnoozeIntent(text: string) {
-    return /(延后|晚点|等会|待会|稍后|一小时后|半小时后|明天再提醒|明早再提醒)/.test(
-      text,
-    );
+  private serializePreviewReferencedTask(
+    task: ReminderTaskEntity | null,
+  ): ReminderRuntimePreviewReferencedTaskValue | null {
+    if (!task) {
+      return null;
+    }
+
+    return {
+      id: task.id,
+      title: task.title,
+      scheduleText: this.describeSchedule(task),
+    };
+  }
+
+  private findMatchedPatterns(text: string, patterns: string[]) {
+    return patterns.filter((pattern) => this.matchesPattern(text, pattern));
+  }
+
+  private matchesPattern(text: string, pattern: string) {
+    const normalizedPattern = pattern.trim();
+    if (!normalizedPattern) {
+      return false;
+    }
+
+    try {
+      return new RegExp(normalizedPattern, 'u').test(text);
+    } catch {
+      return text.includes(normalizedPattern);
+    }
+  }
+
+  private findMatchedKeywords(text: string, keywords: string[]) {
+    return keywords.filter((keyword) => keyword.trim() && text.includes(keyword));
+  }
+
+  private getPeriodRuleEntries(rules: ReminderRuntimeRulesValue) {
+    const periodDefaults = rules.parserRules.periodDefaultClocks;
+    return [
+      ['sleepBefore', periodDefaults.sleepBefore],
+      ['morning', periodDefaults.morning],
+      ['lateMorning', periodDefaults.lateMorning],
+      ['noon', periodDefaults.noon],
+      ['afternoon', periodDefaults.afternoon],
+      ['dusk', periodDefaults.dusk],
+      ['evening', periodDefaults.evening],
+    ] as const;
+  }
+
+  private findMatchedPeriod(
+    text: string,
+    rules: ReminderRuntimeRulesValue,
+  ): {
+    key: ReminderParserPeriodKey;
+    matchedPatterns: string[];
+    clock: ParsedClock;
+  } | null {
+    for (const [key, rule] of this.getPeriodRuleEntries(rules)) {
+      const matchedPatterns = this.findMatchedKeywords(text, rule.patterns);
+      if (matchedPatterns.length === 0) {
+        continue;
+      }
+
+      return {
+        key,
+        matchedPatterns,
+        clock: {
+          hour: rule.hour,
+          minute: rule.minute,
+          source: 'period_default',
+          matchedPeriodKey: key,
+          matchedPatterns,
+        },
+      };
+    }
+
+    return null;
+  }
+
+  private buildDefaultClock(hour: number, minute: number): ParsedClock {
+    return {
+      hour,
+      minute,
+      source: 'default',
+      matchedPeriodKey: null,
+      matchedPatterns: [],
+    };
   }
 
   private parseCreateIntent(
@@ -981,46 +1389,100 @@ export class ReminderRuntimeService {
     now: Date,
     rules: ReminderRuntimeRulesValue,
   ): ParsedReminderIntent {
-    const hasReminderVerb =
-      text.includes('提醒我') ||
-      text.includes('记得提醒我') ||
-      text.includes('帮我记') ||
-      text.includes('记一下') ||
-      text.includes('记着');
+    const matchedCreateKeywords = this.findMatchedKeywords(
+      text,
+      rules.parserRules.createIntentKeywords,
+    );
+    const matchedDailyKeywords = this.findMatchedKeywords(
+      text,
+      rules.parserRules.dailyRecurrenceKeywords,
+    );
+    const weeklyRule = this.extractWeeklyRule(text, rules);
+    const matchedWeeklyKeywords = weeklyRule
+      ? [weeklyRule.matchedKeyword]
+      : this.findMatchedKeywords(text, rules.parserRules.weeklyRecurrenceKeywords);
+    const matchedHabitIntentKeywords = this.findMatchedKeywords(
+      text,
+      rules.parserRules.habitIntentKeywords,
+    );
+    const matchedHabitKeywordsInText = this.findMatchedKeywords(
+      text,
+      rules.parserRules.habitKeywords,
+    );
+    const clock = this.extractClock(text, rules);
+
+    const hasReminderVerb = matchedCreateKeywords.length > 0;
     const looksLikeHabit =
-      /提醒/.test(text) &&
-      HABIT_KEYWORDS.some((keyword) => text.includes(keyword));
+      (text.includes('提醒') || hasReminderVerb) &&
+      matchedHabitKeywordsInText.length > 0;
+    const baseDebug = this.createParserDebug(text, {
+      matchedCreateKeywords,
+      matchedDailyKeywords,
+      matchedWeeklyKeywords,
+      matchedHabitIntentKeywords,
+      matchedHabitKeywords: matchedHabitKeywordsInText,
+      matchedPeriodKey: clock?.matchedPeriodKey ?? null,
+      matchedPeriodPatterns: clock?.matchedPatterns ?? [],
+    });
 
     if (!hasReminderVerb && !looksLikeHabit) {
-      return { handled: false };
+      return {
+        handled: false,
+        reason: '没有命中创建提醒入口关键词，也不像习惯提醒。',
+        debug: baseDebug,
+      };
     }
 
-    const title = this.extractReminderTitle(text);
+    const title = this.extractReminderTitle(text, rules);
     if (!title) {
       return {
         handled: true,
         needsClarification: true,
+        reason: '命中创建提醒入口，但没有解析出事项标题。',
         responseText: rules.textTemplates.taskCreateMissingTitle,
+        debug: {
+          ...baseDebug,
+          extractedTitle: null,
+        },
       };
     }
 
-    const kind = this.detectKind(text, title);
-    const priority = HARD_REMINDER_KEYWORDS.some((keyword) =>
-      title.includes(keyword),
-    )
-      ? 'hard'
-      : 'soft';
-    const category = this.detectCategory(title);
+    const matchedHabitKeywords = this.findMatchedKeywords(
+      title,
+      rules.parserRules.habitKeywords,
+    );
+    const matchedHardKeywords = this.findMatchedKeywords(
+      title,
+      rules.parserRules.hardReminderKeywords,
+    );
+    const categoryMatch = this.detectCategory(title, rules);
+    const debug = {
+      ...baseDebug,
+      extractedTitle: title,
+      matchedHabitKeywords,
+      matchedHardKeywords,
+      matchedCategoryKeywords: categoryMatch.hits,
+    };
+    const kind =
+      matchedDailyKeywords.length > 0 || weeklyRule
+        ? 'recurring'
+        : matchedHabitIntentKeywords.length > 0 || matchedHabitKeywords.length > 0
+          ? 'habit'
+          : 'one_time';
+    const priority = matchedHardKeywords.length > 0 ? 'hard' : 'soft';
+    const category = categoryMatch.category;
 
     if (kind === 'habit') {
-      const clock =
-        this.extractClock(text) ?? {
-          hour: rules.habitDefaultHour,
-          minute: rules.habitDefaultMinute,
-        };
-      const nextTriggerAt = this.resolveNextDailyDate(now, clock);
+      const resolvedClock =
+        clock ??
+        this.buildDefaultClock(
+          rules.habitDefaultHour,
+          rules.habitDefaultMinute,
+        );
+      const nextTriggerAt = this.resolveNextDailyDate(now, resolvedClock);
       return {
         handled: true,
+        reason: '命中创建提醒入口，并解析成习惯提醒。',
         title,
         category,
         kind,
@@ -1030,29 +1492,32 @@ export class ReminderRuntimeService {
         nextTriggerAt,
         recurrenceRule: {
           unit: 'habit',
-          hour: clock.hour,
-          minute: clock.minute,
+          hour: resolvedClock.hour,
+          minute: resolvedClock.minute,
           cadenceDays: 1,
         },
         responseText: renderTemplate(
           rules.textTemplates.taskCreateHabitSuccess,
           {
             title,
-            time: formatTime(clock.hour, clock.minute),
+            time: formatTime(resolvedClock.hour, resolvedClock.minute),
           },
         ),
+        debug,
       };
     }
 
-    if (text.includes('每天')) {
-      const clock =
-        this.extractClock(text) ?? {
-          hour: rules.defaultReminderHour,
-          minute: rules.defaultReminderMinute,
-        };
-      const nextTriggerAt = this.resolveNextDailyDate(now, clock);
+    if (matchedDailyKeywords.length > 0) {
+      const resolvedClock =
+        clock ??
+        this.buildDefaultClock(
+          rules.defaultReminderHour,
+          rules.defaultReminderMinute,
+        );
+      const nextTriggerAt = this.resolveNextDailyDate(now, resolvedClock);
       return {
         handled: true,
+        reason: '命中创建提醒入口，并解析成每日重复提醒。',
         title,
         category,
         kind: 'recurring',
@@ -1062,33 +1527,35 @@ export class ReminderRuntimeService {
         nextTriggerAt,
         recurrenceRule: {
           unit: 'daily',
-          hour: clock.hour,
-          minute: clock.minute,
+          hour: resolvedClock.hour,
+          minute: resolvedClock.minute,
         },
         responseText: renderTemplate(
           rules.textTemplates.taskCreateDailySuccess,
           {
             title,
-            time: formatTime(clock.hour, clock.minute),
+            time: formatTime(resolvedClock.hour, resolvedClock.minute),
           },
         ),
+        debug,
       };
     }
 
-    const weeklyRule = this.extractWeeklyRule(text);
     if (weeklyRule) {
-      const clock =
-        this.extractClock(text) ?? {
-          hour: rules.defaultReminderHour,
-          minute: rules.defaultReminderMinute,
-        };
+      const resolvedClock =
+        clock ??
+        this.buildDefaultClock(
+          rules.defaultReminderHour,
+          rules.defaultReminderMinute,
+        );
       const nextTriggerAt = this.resolveNextWeeklyDate(
         now,
         weeklyRule.weekday,
-        clock,
+        resolvedClock,
       );
       return {
         handled: true,
+        reason: '命中创建提醒入口，并解析成每周重复提醒。',
         title,
         category,
         kind: 'recurring',
@@ -1099,31 +1566,35 @@ export class ReminderRuntimeService {
         recurrenceRule: {
           unit: 'weekly',
           weekdays: [weeklyRule.weekday],
-          hour: clock.hour,
-          minute: clock.minute,
+          hour: resolvedClock.hour,
+          minute: resolvedClock.minute,
         },
         responseText: renderTemplate(
           rules.textTemplates.taskCreateWeeklySuccess,
           {
             title,
-            time: formatTime(clock.hour, clock.minute),
+            time: formatTime(resolvedClock.hour, resolvedClock.minute),
             weekdayLabel: weeklyRule.label,
           },
         ),
+        debug,
       };
     }
 
-    const oneTime = this.extractOneTimeDate(text, now, rules);
+    const oneTime = this.extractOneTimeDate(text, now, rules, clock);
     if (!oneTime) {
       return {
         handled: true,
         needsClarification: true,
+        reason: '命中创建提醒入口，但没有解析出具体触发时间。',
         responseText: rules.textTemplates.taskCreateMissingTime,
+        debug,
       };
     }
 
     return {
       handled: true,
+      reason: '命中创建提醒入口，并解析成单次提醒。',
       title,
       category,
       kind: 'one_time',
@@ -1138,74 +1609,132 @@ export class ReminderRuntimeService {
           dateTimeLabel: formatDateTimeLabel(oneTime, now),
         },
       ),
+      debug,
     };
   }
 
-  private detectKind(text: string, title: string): ReminderTaskKind {
-    if (text.includes('每天') || /每周|每星期|礼拜./.test(text)) {
-      return 'recurring';
+  private detectCategory(title: string, rules: ReminderRuntimeRulesValue) {
+    const categoryKeywords = rules.parserRules.categoryKeywords;
+    const categories: Array<{
+      category: string;
+      keywords: string[];
+    }> = [
+      { category: 'health', keywords: categoryKeywords.health },
+      { category: 'shopping', keywords: categoryKeywords.shopping },
+      { category: 'lifestyle', keywords: categoryKeywords.lifestyle },
+      { category: 'growth', keywords: categoryKeywords.growth },
+    ];
+
+    for (const item of categories) {
+      const hits = this.findMatchedKeywords(title, item.keywords);
+      if (hits.length > 0) {
+        return {
+          category: item.category,
+          hits,
+        };
+      }
     }
-    if (
-      /坚持|长期|养成|监督我/.test(text) ||
-      HABIT_KEYWORDS.some((keyword) => title.includes(keyword))
-    ) {
-      return 'habit';
-    }
-    return 'one_time';
+
+    return {
+      category: 'general',
+      hits: [],
+    };
   }
 
-  private detectCategory(title: string) {
-    if (/吃药|复诊|体检/.test(title)) {
-      return 'health';
-    }
-    if (/买|采购|补货|快递/.test(title)) {
-      return 'shopping';
-    }
-    if (/睡|吃饭|喝水/.test(title)) {
-      return 'lifestyle';
-    }
-    if (/学|背单词|英语|复盘|锻炼|运动|看书/.test(title)) {
-      return 'growth';
-    }
-    return 'general';
-  }
-
-  private extractReminderTitle(text: string) {
-    const reminderIndex = text.indexOf('提醒我');
+  private extractReminderTitle(
+    text: string,
+    rules: ReminderRuntimeRulesValue,
+  ) {
+    const matchedCreateKeyword = rules.parserRules.createIntentKeywords
+      .map((keyword) => ({
+        keyword,
+        index: text.indexOf(keyword),
+      }))
+      .filter((item) => item.index >= 0)
+      .sort((left, right) =>
+        left.index === right.index
+          ? right.keyword.length - left.keyword.length
+          : left.index - right.index,
+      )[0];
     let title = '';
-    if (reminderIndex >= 0) {
-      title = text.slice(reminderIndex + '提醒我'.length).trim();
-    } else if (text.includes('记得提醒我')) {
-      title = text.slice(text.indexOf('记得提醒我') + '记得提醒我'.length).trim();
-    } else if (text.includes('帮我记')) {
-      title = text.slice(text.indexOf('帮我记') + '帮我记'.length).trim();
+    if (matchedCreateKeyword) {
+      title = text
+        .slice(matchedCreateKeyword.index + matchedCreateKeyword.keyword.length)
+        .trim();
     } else {
       title = text;
     }
 
-    title = title
-      .replace(
-        /^(今天|明天|后天|今晚|今早|明早|明晚|早上|上午|中午|下午|傍晚|晚上|睡前)\s*/,
-        '',
-      )
-      .replace(
-        /^(每周[一二三四五六日天]|每星期[一二三四五六日天]|礼拜[一二三四五六日天]|周[一二三四五六日天])\s*/,
-        '',
-      )
-      .replace(
-        /^((\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(点|:|：)(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})?分?)\s*/,
+    const periodTokens = Array.from(
+      new Set([
+        '今天',
+        '明天',
+        '后天',
+        ...this.getPeriodRuleEntries(rules).flatMap(([, rule]) => rule.patterns),
+      ]),
+    );
+    if (periodTokens.length > 0) {
+      title = title.replace(
+        new RegExp(
+          `^(?:(?:${periodTokens.map(escapeRegex).join('|')})\\s*)+`,
+          'u',
+        ),
         '',
       );
+    }
+
+    if (rules.parserRules.dailyRecurrenceKeywords.length > 0) {
+      title = title.replace(
+        new RegExp(
+          `^(?:(?:${rules.parserRules.dailyRecurrenceKeywords
+            .map(escapeRegex)
+            .join('|')})\\s*)+`,
+          'u',
+        ),
+        '',
+      );
+    }
+
+    if (rules.parserRules.weeklyRecurrenceKeywords.length > 0) {
+      title = title.replace(
+        new RegExp(
+          `^(?:(?:${rules.parserRules.weeklyRecurrenceKeywords
+            .map(escapeRegex)
+            .join('|')})[一二三四五六日天七]\\s*)+`,
+          'u',
+        ),
+        '',
+      );
+    }
+
+    if (periodTokens.length > 0) {
+      title = title.replace(
+        new RegExp(
+          `^(?:(?:${periodTokens.map(escapeRegex).join('|')})\\s*)+`,
+          'u',
+        ),
+        '',
+      );
+    }
+
+    title = title.replace(
+      /^((\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(点|:|：)(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})?分?)\s*/,
+      '',
+    );
 
     title = stripReminderCommand(title);
     return title || null;
   }
 
-  private extractClock(text: string): ParsedClock | null {
+  private extractClock(
+    text: string,
+    rules: ReminderRuntimeRulesValue,
+  ): ParsedClock | null {
     const explicitMatch = text.match(
       /(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(?:点|:|：)(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})?/,
     );
     if (explicitMatch) {
+      const matchedPeriod = this.findMatchedPeriod(text, rules);
       const rawHour = parseChineseNumber(explicitMatch[1]);
       const rawMinute = explicitMatch[2]
         ? parseChineseNumber(explicitMatch[2])
@@ -1219,37 +1748,44 @@ export class ReminderRuntimeService {
         rawMinute <= 59
       ) {
         let hour = rawHour;
-        if (/下午|晚上|今晚|傍晚/.test(text) && hour < 12) {
+        if (
+          matchedPeriod &&
+          ['afternoon', 'dusk', 'evening'].includes(matchedPeriod.key) &&
+          hour < 12
+        ) {
           hour += 12;
         }
-        if (/中午/.test(text) && hour < 11) {
+        if (matchedPeriod?.key === 'noon' && hour < 11) {
           hour += 12;
         }
-        return { hour, minute: rawMinute };
+        return {
+          hour,
+          minute: rawMinute,
+          source: 'explicit',
+          matchedPeriodKey: matchedPeriod?.key ?? null,
+          matchedPatterns: matchedPeriod?.matchedPatterns ?? [],
+        };
       }
     }
 
-    const periodDefaults: Array<{ pattern: RegExp; clock: ParsedClock }> = [
-      { pattern: /睡前/, clock: { hour: 23, minute: 0 } },
-      { pattern: /明早|今早|早上|早晨/, clock: { hour: 8, minute: 0 } },
-      { pattern: /上午/, clock: { hour: 9, minute: 0 } },
-      { pattern: /中午/, clock: { hour: 12, minute: 30 } },
-      { pattern: /下午/, clock: { hour: 15, minute: 0 } },
-      { pattern: /傍晚/, clock: { hour: 18, minute: 30 } },
-      { pattern: /晚上|今晚|明晚/, clock: { hour: 20, minute: 0 } },
-    ];
-
-    for (const item of periodDefaults) {
-      if (item.pattern.test(text)) {
-        return item.clock;
-      }
-    }
-
-    return null;
+    return this.findMatchedPeriod(text, rules)?.clock ?? null;
   }
 
-  private extractWeeklyRule(text: string) {
-    const match = text.match(/(?:每周|每星期|礼拜)([一二三四五六日天七])/);
+  private extractWeeklyRule(
+    text: string,
+    rules: ReminderRuntimeRulesValue,
+  ): ParsedWeeklyRule | null {
+    if (rules.parserRules.weeklyRecurrenceKeywords.length === 0) {
+      return null;
+    }
+
+    const weeklyPattern = new RegExp(
+      `(?:${rules.parserRules.weeklyRecurrenceKeywords
+        .map(escapeRegex)
+        .join('|')})([一二三四五六日天七])`,
+      'u',
+    );
+    const match = text.match(weeklyPattern);
     if (!match?.[1]) {
       return null;
     }
@@ -1260,6 +1796,10 @@ export class ReminderRuntimeService {
 
     return {
       weekday,
+      matchedKeyword:
+        rules.parserRules.weeklyRecurrenceKeywords.find((keyword) =>
+          text.includes(keyword),
+        ) ?? rules.parserRules.weeklyRecurrenceKeywords[0] ?? '',
       label:
         match[1] === '天' || match[1] === '日' || match[1] === '七'
           ? '日'
@@ -1271,42 +1811,54 @@ export class ReminderRuntimeService {
     text: string,
     now: Date,
     rules: ReminderRuntimeRulesValue,
+    clock: ParsedClock | null,
   ) {
-    const clock =
-      this.extractClock(text) ?? {
-        hour: rules.defaultReminderHour,
-        minute: rules.defaultReminderMinute,
-      };
+    const resolvedClock =
+      clock ??
+      this.buildDefaultClock(
+        rules.defaultReminderHour,
+        rules.defaultReminderMinute,
+      );
+    const dayOffset = this.resolveRelativeDayOffset(
+      text,
+      resolvedClock.matchedPatterns ?? [],
+    );
 
-    if (/明天/.test(text)) {
+    if (dayOffset != null) {
       const target = new Date(now);
-      target.setDate(target.getDate() + 1);
-      target.setHours(clock.hour, clock.minute, 0, 0);
+      target.setDate(target.getDate() + dayOffset);
+      target.setHours(resolvedClock.hour, resolvedClock.minute, 0, 0);
       return target;
     }
+
+    if (clock && clock.source !== 'default') {
+      const target = new Date(now);
+      target.setHours(resolvedClock.hour, resolvedClock.minute, 0, 0);
+      if (target.getTime() <= now.getTime()) {
+        target.setDate(target.getDate() + 1);
+      }
+      return target;
+    }
+
+    return null;
+  }
+
+  private resolveRelativeDayOffset(text: string, matchedPatterns: string[]) {
     if (/后天/.test(text)) {
-      const target = new Date(now);
-      target.setDate(target.getDate() + 2);
-      target.setHours(clock.hour, clock.minute, 0, 0);
-      return target;
+      return 2;
     }
-    if (/今晚|今早|今天|早上|上午|中午|下午|傍晚|晚上|睡前/.test(text)) {
-      const target = new Date(now);
-      target.setHours(clock.hour, clock.minute, 0, 0);
-      if (target.getTime() <= now.getTime()) {
-        target.setDate(target.getDate() + 1);
-      }
-      return target;
+    if (/明天/.test(text)) {
+      return 1;
     }
-    if (this.extractClock(text)) {
-      const target = new Date(now);
-      target.setHours(clock.hour, clock.minute, 0, 0);
-      if (target.getTime() <= now.getTime()) {
-        target.setDate(target.getDate() + 1);
-      }
-      return target;
+    if (/今天/.test(text)) {
+      return 0;
     }
-
+    if (matchedPatterns.some((pattern) => pattern.startsWith('明'))) {
+      return 1;
+    }
+    if (matchedPatterns.some((pattern) => pattern.startsWith('今'))) {
+      return 0;
+    }
     return null;
   }
 
@@ -1343,6 +1895,7 @@ export class ReminderRuntimeService {
     const clock = {
       hour: rule.hour,
       minute: rule.minute,
+      source: 'default' as const,
     };
 
     if (rule.unit === 'weekly' && rule.weekdays?.length) {

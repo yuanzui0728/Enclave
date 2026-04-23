@@ -5,12 +5,14 @@ import {
   type SnoozeReminderTaskRequest,
   type ReminderRuntimeMomentRecord,
   type ReminderRuntimeOverview,
+  type ReminderRuntimePreviewResult,
   type ReminderRuntimeRules,
   type ReminderTaskRecord,
 } from "@yinjie/contracts";
 import { Button, Card, ErrorBlock, LoadingBlock, StatusPill, cn } from "@yinjie/ui";
 import {
   AdminCallout,
+  AdminCodeBlock,
   AdminDraftStatusPill,
   AdminEmptyState,
   AdminMetaText,
@@ -23,6 +25,7 @@ import {
   AdminTabs,
   AdminTextArea,
   AdminTextField,
+  AdminValueCard,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -66,7 +69,23 @@ type ReminderTaskAction =
 
 type ReminderTaskFilter = "all" | "focus" | "hard" | "habit";
 type ReminderTaskQueue = "overdue" | "due_soon" | "routine";
-type ReminderConfigTab = "schedule" | "messages" | "moments";
+type ReminderConfigTab = "schedule" | "messages" | "moments" | "parser";
+type ReminderParserArrayFieldKey =
+  | "helpIntentPatterns"
+  | "listIntentPatterns"
+  | "cancelIntentPatterns"
+  | "completeIntentPatterns"
+  | "snoozeIntentPatterns"
+  | "createIntentKeywords"
+  | "dailyRecurrenceKeywords"
+  | "weeklyRecurrenceKeywords"
+  | "habitIntentKeywords"
+  | "habitKeywords"
+  | "hardReminderKeywords";
+type ReminderParserCategoryKey =
+  keyof ReminderRuntimeRules["parserRules"]["categoryKeywords"];
+type ReminderParserPeriodKey =
+  keyof ReminderRuntimeRules["parserRules"]["periodDefaultClocks"];
 
 type ReminderRuntimeActivityItem = {
   id: string;
@@ -85,6 +104,77 @@ type ReminderNumberFieldKey =
   | "habitDefaultMinute"
   | "checkinMinIntervalHours"
   | "maxListItems";
+
+const PARSER_PERIOD_FIELDS: Array<{
+  key: ReminderParserPeriodKey;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "sleepBefore",
+    label: "睡前",
+    description: "兜住“睡前记得...”这类表达。",
+  },
+  {
+    key: "morning",
+    label: "早上 / 明早",
+    description: "用于晨间默认时间，同时承接“今早 / 明早”。",
+  },
+  {
+    key: "lateMorning",
+    label: "上午",
+    description: "上午但没写具体点数时，会默认落到这里。",
+  },
+  {
+    key: "noon",
+    label: "中午",
+    description: "显式“中午”但没写分秒时，按这里落点。",
+  },
+  {
+    key: "afternoon",
+    label: "下午",
+    description: "显式“下午”但没写具体时间时，按这里落点。",
+  },
+  {
+    key: "dusk",
+    label: "傍晚",
+    description: "适合饭点前后的柔性提醒。",
+  },
+  {
+    key: "evening",
+    label: "晚上 / 今晚 / 明晚",
+    description: "晚间默认时间，同时承接“今晚 / 明晚”。",
+  },
+];
+
+const PARSER_PREVIEW_EXAMPLES = [
+  {
+    label: "单次提醒",
+    message: "明早8点提醒我吃药",
+  },
+  {
+    label: "每周提醒",
+    message: "每周五晚上提醒我买猫粮",
+  },
+  {
+    label: "习惯提醒",
+    message: "提醒我坚持学英语",
+  },
+  {
+    label: "完成提醒",
+    message: "买猫粮已经搞定了",
+  },
+];
+
+const PREVIEW_ACTION_LABELS: Record<string, string> = {
+  help: "帮助",
+  list: "列表",
+  cancel: "删除",
+  complete: "完成",
+  snooze: "顺延",
+  create: "创建",
+  unhandled: "未命中",
+};
 
 function formatDateTime(value?: string | null) {
   if (!value) {
@@ -113,6 +203,10 @@ function formatCheckinHoursInput(hours: number[]) {
   return hours.join(", ");
 }
 
+function formatLineList(values: string[]) {
+  return values.join("\n");
+}
+
 function parseCheckinHoursInput(value: string) {
   return Array.from(
     new Set(
@@ -124,6 +218,17 @@ function parseCheckinHoursInput(value: string) {
   )
     .sort((left, right) => left - right)
     .slice(0, 6);
+}
+
+function parseLineList(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  );
 }
 
 function taskTone(task: ReminderTaskRecord) {
@@ -143,6 +248,10 @@ function truncateText(value: string, maxLength = 96) {
 
 function serializeRules(value: ReminderRuntimeRules | null) {
   return JSON.stringify(value ?? null);
+}
+
+function prettyJson(value: unknown) {
+  return JSON.stringify(value, null, 2);
 }
 
 function resolveTaskDueAt(task: ReminderTaskRecord) {
@@ -629,6 +738,12 @@ function ReminderRuntimeConfigPanel({
   onChange,
   onSave,
   savePending,
+  previewInput,
+  onPreviewInputChange,
+  onRunPreview,
+  previewPending,
+  previewResult,
+  previewError,
 }: {
   draft: ReminderRuntimeRules;
   dirty: boolean;
@@ -637,6 +752,12 @@ function ReminderRuntimeConfigPanel({
   onChange: (value: ReminderRuntimeRules) => void;
   onSave: () => void;
   savePending: boolean;
+  previewInput: string;
+  onPreviewInputChange: (value: string) => void;
+  onRunPreview: () => void;
+  previewPending: boolean;
+  previewResult: ReminderRuntimePreviewResult | null;
+  previewError: Error | null;
 }) {
   const updateNumberField = (key: ReminderNumberFieldKey, value: number) => {
     onChange({
@@ -671,6 +792,74 @@ function ReminderRuntimeConfigPanel({
     });
   };
 
+  const updateParserArrayField = (
+    key: ReminderParserArrayFieldKey,
+    value: string,
+  ) => {
+    onChange({
+      ...draft,
+      parserRules: {
+        ...draft.parserRules,
+        [key]: parseLineList(value),
+      },
+    });
+  };
+
+  const updateParserCategoryKeywords = (
+    key: ReminderParserCategoryKey,
+    value: string,
+  ) => {
+    onChange({
+      ...draft,
+      parserRules: {
+        ...draft.parserRules,
+        categoryKeywords: {
+          ...draft.parserRules.categoryKeywords,
+          [key]: parseLineList(value),
+        },
+      },
+    });
+  };
+
+  const updateParserPeriodPatterns = (
+    key: ReminderParserPeriodKey,
+    value: string,
+  ) => {
+    onChange({
+      ...draft,
+      parserRules: {
+        ...draft.parserRules,
+        periodDefaultClocks: {
+          ...draft.parserRules.periodDefaultClocks,
+          [key]: {
+            ...draft.parserRules.periodDefaultClocks[key],
+            patterns: parseLineList(value),
+          },
+        },
+      },
+    });
+  };
+
+  const updateParserPeriodTime = (
+    key: ReminderParserPeriodKey,
+    field: "hour" | "minute",
+    value: number,
+  ) => {
+    onChange({
+      ...draft,
+      parserRules: {
+        ...draft.parserRules,
+        periodDefaultClocks: {
+          ...draft.parserRules.periodDefaultClocks,
+          [key]: {
+            ...draft.parserRules.periodDefaultClocks[key],
+            [field]: value,
+          },
+        },
+      },
+    });
+  };
+
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <AdminSectionHeader
@@ -683,6 +872,7 @@ function ReminderRuntimeConfigPanel({
             { key: "schedule", label: "调度规则" },
             { key: "messages", label: "用户文案" },
             { key: "moments", label: "发圈模板" },
+            { key: "parser", label: "解析规则" },
           ]}
           activeKey={activeTab}
           onChange={(value) => onTabChange(value as ReminderConfigTab)}
@@ -976,6 +1166,393 @@ function ReminderRuntimeConfigPanel({
           </div>
         ) : null}
 
+        {activeTab === "parser" ? (
+          <div className="space-y-4">
+            <AdminCallout
+              title="这里改的是“用户原话如何进提醒链”"
+              tone="info"
+              description="帮助 / 列表 / 删除 / 完成 / 顺延按上到下顺序判断；只有前面都没命中，才会进入“创建提醒”解析。意图规则支持正则或普通片段；关键词建议按“一行一条”维护。"
+            />
+
+            <ConfigGroup
+              title="意图识别"
+              description="决定哪些话会被识别成帮助、列表、删除、完成、顺延。这里适合放正则或强触发片段。"
+            >
+              <div className="grid gap-4 xl:grid-cols-2">
+                <AdminTextArea
+                  label="帮助意图"
+                  value={formatLineList(draft.parserRules.helpIntentPatterns)}
+                  onChange={(value) =>
+                    updateParserArrayField("helpIntentPatterns", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="列表意图"
+                  value={formatLineList(draft.parserRules.listIntentPatterns)}
+                  onChange={(value) =>
+                    updateParserArrayField("listIntentPatterns", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="删除意图"
+                  value={formatLineList(draft.parserRules.cancelIntentPatterns)}
+                  onChange={(value) =>
+                    updateParserArrayField("cancelIntentPatterns", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="完成意图"
+                  value={formatLineList(draft.parserRules.completeIntentPatterns)}
+                  onChange={(value) =>
+                    updateParserArrayField("completeIntentPatterns", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="顺延意图"
+                  value={formatLineList(draft.parserRules.snoozeIntentPatterns)}
+                  onChange={(value) =>
+                    updateParserArrayField("snoozeIntentPatterns", value)
+                  }
+                  textareaClassName="min-h-24 xl:col-span-2"
+                />
+              </div>
+            </ConfigGroup>
+
+            <ConfigGroup
+              title="创建入口与类型识别"
+              description="先判断有没有进入“创建提醒”入口，再根据每天 / 每周 / 习惯类词汇决定落成单次、重复还是习惯提醒。"
+            >
+              <div className="grid gap-4 xl:grid-cols-2">
+                <AdminTextArea
+                  label="创建提醒入口关键词"
+                  value={formatLineList(draft.parserRules.createIntentKeywords)}
+                  onChange={(value) =>
+                    updateParserArrayField("createIntentKeywords", value)
+                  }
+                  textareaClassName="min-h-28"
+                />
+                <AdminTextArea
+                  label="每日重复关键词"
+                  value={formatLineList(draft.parserRules.dailyRecurrenceKeywords)}
+                  onChange={(value) =>
+                    updateParserArrayField("dailyRecurrenceKeywords", value)
+                  }
+                  textareaClassName="min-h-28"
+                />
+                <AdminTextArea
+                  label="每周重复前缀"
+                  value={formatLineList(draft.parserRules.weeklyRecurrenceKeywords)}
+                  onChange={(value) =>
+                    updateParserArrayField("weeklyRecurrenceKeywords", value)
+                  }
+                  textareaClassName="min-h-28"
+                />
+                <AdminTextArea
+                  label="习惯意图关键词"
+                  value={formatLineList(draft.parserRules.habitIntentKeywords)}
+                  onChange={(value) =>
+                    updateParserArrayField("habitIntentKeywords", value)
+                  }
+                  textareaClassName="min-h-28"
+                />
+                <AdminTextArea
+                  label="习惯事项关键词"
+                  value={formatLineList(draft.parserRules.habitKeywords)}
+                  onChange={(value) =>
+                    updateParserArrayField("habitKeywords", value)
+                  }
+                  textareaClassName="min-h-28"
+                />
+                <AdminTextArea
+                  label="硬提醒关键词"
+                  value={formatLineList(draft.parserRules.hardReminderKeywords)}
+                  onChange={(value) =>
+                    updateParserArrayField("hardReminderKeywords", value)
+                  }
+                  textareaClassName="min-h-28"
+                />
+              </div>
+            </ConfigGroup>
+
+            <ConfigGroup
+              title="类别关键词"
+              description="创建提醒后会按标题命中类别关键词；命不中时落到 `general`。"
+            >
+              <div className="grid gap-4 xl:grid-cols-2">
+                <AdminTextArea
+                  label="健康"
+                  value={formatLineList(draft.parserRules.categoryKeywords.health)}
+                  onChange={(value) =>
+                    updateParserCategoryKeywords("health", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="采购"
+                  value={formatLineList(draft.parserRules.categoryKeywords.shopping)}
+                  onChange={(value) =>
+                    updateParserCategoryKeywords("shopping", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="生活"
+                  value={formatLineList(draft.parserRules.categoryKeywords.lifestyle)}
+                  onChange={(value) =>
+                    updateParserCategoryKeywords("lifestyle", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="成长"
+                  value={formatLineList(draft.parserRules.categoryKeywords.growth)}
+                  onChange={(value) =>
+                    updateParserCategoryKeywords("growth", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+              </div>
+            </ConfigGroup>
+
+            <ConfigGroup
+              title="时间语义默认值"
+              description="用户只说“早上 / 下午 / 晚上”而没写具体点数时，会落到这里。显式写了 `8点`、`8:30` 仍优先按显式时间解析。"
+            >
+              <div className="grid gap-4 xl:grid-cols-2">
+                {PARSER_PERIOD_FIELDS.map((field) => {
+                  const value = draft.parserRules.periodDefaultClocks[field.key];
+                  return (
+                    <div
+                      key={field.key}
+                      className="rounded-[18px] border border-[color:var(--border-faint)] bg-white/70 p-4"
+                    >
+                      <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                        {field.label}
+                      </div>
+                      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                        {field.description}
+                      </div>
+                      <div className="mt-4 space-y-4">
+                        <AdminTextArea
+                          label="命中词"
+                          value={formatLineList(value.patterns)}
+                          onChange={(nextValue) =>
+                            updateParserPeriodPatterns(field.key, nextValue)
+                          }
+                          textareaClassName="min-h-24"
+                        />
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <NumberField
+                            label="默认小时"
+                            value={value.hour}
+                            min={0}
+                            max={23}
+                            onChange={(nextValue) =>
+                              updateParserPeriodTime(
+                                field.key,
+                                "hour",
+                                nextValue,
+                              )
+                            }
+                          />
+                          <NumberField
+                            label="默认分钟"
+                            value={value.minute}
+                            min={0}
+                            max={59}
+                            onChange={(nextValue) =>
+                              updateParserPeriodTime(
+                                field.key,
+                                "minute",
+                                nextValue,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ConfigGroup>
+
+            <ConfigGroup
+              title="解析预览器"
+              description="输入一句候选用户原话，直接查看会不会命中提醒链、会落成什么提醒、命中了哪些规则。预览使用当前页面 draft，不会落库。"
+            >
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {PARSER_PREVIEW_EXAMPLES.map((example) => (
+                    <Button
+                      key={example.label}
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onPreviewInputChange(example.message)}
+                    >
+                      {example.label}
+                    </Button>
+                  ))}
+                </div>
+                <AdminTextArea
+                  label="候选原话"
+                  value={previewInput}
+                  onChange={onPreviewInputChange}
+                  placeholder="例如：明早8点提醒我吃药 / 每周五晚上提醒我买猫粮 / 今天先帮我记着晚上开会。"
+                  textareaClassName="min-h-28"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={!previewInput.trim() || previewPending}
+                    onClick={onRunPreview}
+                  >
+                    {previewPending ? "预演中..." : "运行解析预演"}
+                  </Button>
+                </div>
+
+                {previewError ? <ErrorBlock message={previewError.message} /> : null}
+
+                {previewResult ? (
+                  <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
+                    <div className="space-y-4">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <AdminValueCard
+                          label="动作"
+                          value={
+                            PREVIEW_ACTION_LABELS[previewResult.action] ??
+                            previewResult.action
+                          }
+                        />
+                        <AdminValueCard
+                          label="处理结果"
+                          value={
+                            previewResult.handled
+                              ? "会进入提醒运行时"
+                              : "继续走普通聊天链路"
+                          }
+                        />
+                        <AdminValueCard
+                          label="提取标题"
+                          value={previewResult.extractedTitle || "未提取"}
+                        />
+                        <AdminValueCard
+                          label="评估时间"
+                          value={`${previewResult.timezone} · ${formatDateTime(
+                            previewResult.evaluatedAt,
+                          )}`}
+                        />
+                      </div>
+
+                      <AdminSoftBox>
+                        结论：
+                        <div className="mt-2 text-sm leading-6">
+                          {previewResult.reason}
+                        </div>
+                      </AdminSoftBox>
+
+                      <AdminSoftBox>
+                        回复预览：
+                        <div className="mt-2 text-sm leading-6">
+                          {previewResult.responseText ||
+                            "当前消息不会由提醒运行时接管。"}
+                        </div>
+                      </AdminSoftBox>
+
+                      {previewResult.parsedTask ? (
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <AdminValueCard
+                            label="提醒类型"
+                            value={
+                              TASK_KIND_LABELS[previewResult.parsedTask.kind] ??
+                              previewResult.parsedTask.kind
+                            }
+                          />
+                          <AdminValueCard
+                            label="优先级"
+                            value={
+                              previewResult.parsedTask.priority === "hard"
+                                ? "硬提醒"
+                                : "轻提醒"
+                            }
+                          />
+                          <AdminValueCard
+                            label="类别"
+                            value={
+                              TASK_CATEGORY_LABELS[
+                                previewResult.parsedTask.category
+                              ] ?? previewResult.parsedTask.category
+                            }
+                          />
+                          <AdminValueCard
+                            label="下一次触发"
+                            value={formatDateTime(
+                              previewResult.parsedTask.nextTriggerAt ??
+                                previewResult.parsedTask.dueAt,
+                            )}
+                          />
+                        </div>
+                      ) : null}
+
+                      {previewResult.referencedTask ? (
+                        <AdminSoftBox>
+                          当前命中的已有提醒：
+                          <div className="mt-2 text-sm leading-6">
+                            {previewResult.referencedTask.title}
+                            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                              {previewResult.referencedTask.scheduleText}
+                            </div>
+                          </div>
+                        </AdminSoftBox>
+                      ) : null}
+
+                      {previewResult.needsClarification ? (
+                        <AdminCallout
+                          tone="warning"
+                          title="当前还需要澄清"
+                          description="说明规则已经命中提醒链，但标题或时间还不够完整，实际会回复用户继续补信息。"
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <div className="mb-2 text-sm font-semibold text-[color:var(--text-primary)]">
+                          命中规则
+                        </div>
+                        <AdminCodeBlock value={prettyJson(previewResult.matchedRules)} />
+                      </div>
+
+                      <div>
+                        <div className="mb-2 text-sm font-semibold text-[color:var(--text-primary)]">
+                          解析结果详情
+                        </div>
+                        <AdminCodeBlock
+                          value={prettyJson({
+                            handled: previewResult.handled,
+                            action: previewResult.action,
+                            parsedTask: previewResult.parsedTask,
+                            referencedTask: previewResult.referencedTask,
+                          })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <AdminEmptyState
+                    title="还没有解析结果"
+                    description="先输入一句候选用户原话，再点“运行解析预演”，这里会展示命中规则、解析结果和回复预览。"
+                  />
+                )}
+              </div>
+            </ConfigGroup>
+          </div>
+        ) : null}
+
         <div className="flex justify-end">
           <Button
             variant="primary"
@@ -1053,6 +1630,9 @@ export function ReminderRuntimePage() {
   const [taskSearch, setTaskSearch] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [configTab, setConfigTab] = useState<ReminderConfigTab>("schedule");
+  const [parserPreviewInput, setParserPreviewInput] = useState(
+    "明早8点提醒我吃药",
+  );
   const deferredTaskSearch = useDeferredValue(normalizeSearchText(taskSearch));
 
   const overviewQuery = useQuery({
@@ -1103,6 +1683,16 @@ export function ReminderRuntimePage() {
         queryKey: ["admin-reminder-runtime", baseUrl],
       });
     },
+  });
+
+  const previewMutation = useMutation({
+    mutationFn: ({
+      message,
+      rules,
+    }: {
+      message: string;
+      rules: ReminderRuntimeRules;
+    }) => adminApi.previewReminderRuntime(message, rules),
   });
 
   const completeTaskMutation = useMutation({
@@ -1186,6 +1776,9 @@ export function ReminderRuntimePage() {
     snoozeTaskMutation.isPending,
     snoozeTaskMutation.variables,
   ]);
+
+  const previewError =
+    previewMutation.error instanceof Error ? previewMutation.error : null;
 
   const metrics = useMemo(() => {
     const stats = overviewQuery.data?.stats;
@@ -1551,6 +2144,20 @@ export function ReminderRuntimePage() {
             onChange={setDraft}
             onSave={() => saveMutation.mutate()}
             savePending={saveMutation.isPending}
+            previewInput={parserPreviewInput}
+            onPreviewInputChange={setParserPreviewInput}
+            onRunPreview={() => {
+              if (!draft || !parserPreviewInput.trim()) {
+                return;
+              }
+              previewMutation.mutate({
+                message: parserPreviewInput.trim(),
+                rules: draft,
+              });
+            }}
+            previewPending={previewMutation.isPending}
+            previewResult={previewMutation.data ?? null}
+            previewError={previewError}
           />
 
           <Card className="bg-[color:var(--surface-console)]">

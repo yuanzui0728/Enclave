@@ -43,6 +43,45 @@ export interface ReminderRuntimeTextTemplates {
   checkinWithoutActiveTasks: string;
 }
 
+export interface ReminderRuntimeParserPeriodDefault {
+  patterns: string[];
+  hour: number;
+  minute: number;
+}
+
+export interface ReminderRuntimeParserCategoryKeywords {
+  growth: string[];
+  lifestyle: string[];
+  health: string[];
+  shopping: string[];
+}
+
+export interface ReminderRuntimeParserPeriodDefaults {
+  sleepBefore: ReminderRuntimeParserPeriodDefault;
+  morning: ReminderRuntimeParserPeriodDefault;
+  lateMorning: ReminderRuntimeParserPeriodDefault;
+  noon: ReminderRuntimeParserPeriodDefault;
+  afternoon: ReminderRuntimeParserPeriodDefault;
+  dusk: ReminderRuntimeParserPeriodDefault;
+  evening: ReminderRuntimeParserPeriodDefault;
+}
+
+export interface ReminderRuntimeParserRules {
+  helpIntentPatterns: string[];
+  listIntentPatterns: string[];
+  cancelIntentPatterns: string[];
+  completeIntentPatterns: string[];
+  snoozeIntentPatterns: string[];
+  createIntentKeywords: string[];
+  dailyRecurrenceKeywords: string[];
+  weeklyRecurrenceKeywords: string[];
+  habitIntentKeywords: string[];
+  habitKeywords: string[];
+  hardReminderKeywords: string[];
+  categoryKeywords: ReminderRuntimeParserCategoryKeywords;
+  periodDefaultClocks: ReminderRuntimeParserPeriodDefaults;
+}
+
 export interface ReminderRuntimeRules {
   defaultReminderHour: number;
   defaultReminderMinute: number;
@@ -53,6 +92,7 @@ export interface ReminderRuntimeRules {
   maxListItems: number;
   promptTemplates: ReminderRuntimePromptTemplates;
   textTemplates: ReminderRuntimeTextTemplates;
+  parserRules: ReminderRuntimeParserRules;
 }
 
 export interface ReminderTaskRecord {
@@ -131,4 +171,57 @@ export interface ReminderRuntimeOverview {
   recentCompletedTasks: ReminderTaskRecord[];
   recentMessages: ReminderRuntimeMessageRecord[];
   recentMoments: ReminderRuntimeMomentRecord[];
+}
+
+export type ReminderRuntimePreviewAction =
+  | "help"
+  | "list"
+  | "cancel"
+  | "complete"
+  | "snooze"
+  | "create"
+  | "unhandled";
+
+export interface ReminderRuntimePreviewMatchedRules {
+  intentPatterns: string[];
+  createKeywords: string[];
+  dailyKeywords: string[];
+  weeklyKeywords: string[];
+  habitIntentKeywords: string[];
+  habitKeywords: string[];
+  hardKeywords: string[];
+  categoryKeywords: string[];
+  periodKey?: keyof ReminderRuntimeParserPeriodDefaults | null;
+  periodPatterns: string[];
+}
+
+export interface ReminderRuntimePreviewParsedTask {
+  title: string;
+  category: string;
+  kind: ReminderTaskKind;
+  priority: ReminderTaskPriority;
+  dueAt?: string | null;
+  nextTriggerAt?: string | null;
+  recurrenceRule?: ReminderRecurrenceRule | null;
+}
+
+export interface ReminderRuntimePreviewReferencedTask {
+  id: string;
+  title: string;
+  scheduleText: string;
+}
+
+export interface ReminderRuntimePreviewResult {
+  handled: boolean;
+  action: ReminderRuntimePreviewAction;
+  reason: string;
+  evaluatedAt: string;
+  timezone: string;
+  normalizedText: string;
+  extractedTitle?: string | null;
+  responseText?: string | null;
+  needsClarification: boolean;
+  parsedTask?: ReminderRuntimePreviewParsedTask | null;
+  referencedTask?: ReminderRuntimePreviewReferencedTask | null;
+  matchedRules: ReminderRuntimePreviewMatchedRules;
 }

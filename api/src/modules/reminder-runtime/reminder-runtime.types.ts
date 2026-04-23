@@ -43,6 +43,45 @@ export type ReminderRuntimeTextTemplatesValue = {
   checkinWithoutActiveTasks: string;
 };
 
+export type ReminderRuntimeParserPeriodDefaultValue = {
+  patterns: string[];
+  hour: number;
+  minute: number;
+};
+
+export type ReminderRuntimeParserCategoryKeywordsValue = {
+  growth: string[];
+  lifestyle: string[];
+  health: string[];
+  shopping: string[];
+};
+
+export type ReminderRuntimeParserPeriodDefaultsValue = {
+  sleepBefore: ReminderRuntimeParserPeriodDefaultValue;
+  morning: ReminderRuntimeParserPeriodDefaultValue;
+  lateMorning: ReminderRuntimeParserPeriodDefaultValue;
+  noon: ReminderRuntimeParserPeriodDefaultValue;
+  afternoon: ReminderRuntimeParserPeriodDefaultValue;
+  dusk: ReminderRuntimeParserPeriodDefaultValue;
+  evening: ReminderRuntimeParserPeriodDefaultValue;
+};
+
+export type ReminderRuntimeParserRulesValue = {
+  helpIntentPatterns: string[];
+  listIntentPatterns: string[];
+  cancelIntentPatterns: string[];
+  completeIntentPatterns: string[];
+  snoozeIntentPatterns: string[];
+  createIntentKeywords: string[];
+  dailyRecurrenceKeywords: string[];
+  weeklyRecurrenceKeywords: string[];
+  habitIntentKeywords: string[];
+  habitKeywords: string[];
+  hardReminderKeywords: string[];
+  categoryKeywords: ReminderRuntimeParserCategoryKeywordsValue;
+  periodDefaultClocks: ReminderRuntimeParserPeriodDefaultsValue;
+};
+
 export type ReminderRuntimeRulesValue = {
   defaultReminderHour: number;
   defaultReminderMinute: number;
@@ -53,6 +92,7 @@ export type ReminderRuntimeRulesValue = {
   maxListItems: number;
   promptTemplates: ReminderRuntimePromptTemplatesValue;
   textTemplates: ReminderRuntimeTextTemplatesValue;
+  parserRules: ReminderRuntimeParserRulesValue;
 };
 
 export type ReminderTaskRecordValue = {
@@ -77,6 +117,59 @@ export type ReminderTaskRecordValue = {
   scheduleText: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type ReminderRuntimePreviewActionValue =
+  | 'help'
+  | 'list'
+  | 'cancel'
+  | 'complete'
+  | 'snooze'
+  | 'create'
+  | 'unhandled';
+
+export type ReminderRuntimePreviewMatchedRulesValue = {
+  intentPatterns: string[];
+  createKeywords: string[];
+  dailyKeywords: string[];
+  weeklyKeywords: string[];
+  habitIntentKeywords: string[];
+  habitKeywords: string[];
+  hardKeywords: string[];
+  categoryKeywords: string[];
+  periodKey?: keyof ReminderRuntimeParserPeriodDefaultsValue | null;
+  periodPatterns: string[];
+};
+
+export type ReminderRuntimePreviewParsedTaskValue = {
+  title: string;
+  category: string;
+  kind: ReminderTaskKind;
+  priority: ReminderTaskPriority;
+  dueAt?: string | null;
+  nextTriggerAt?: string | null;
+  recurrenceRule?: ReminderRecurrenceRule | null;
+};
+
+export type ReminderRuntimePreviewReferencedTaskValue = {
+  id: string;
+  title: string;
+  scheduleText: string;
+};
+
+export type ReminderRuntimePreviewResultValue = {
+  handled: boolean;
+  action: ReminderRuntimePreviewActionValue;
+  reason: string;
+  evaluatedAt: string;
+  timezone: string;
+  normalizedText: string;
+  extractedTitle?: string | null;
+  responseText?: string | null;
+  needsClarification: boolean;
+  parsedTask?: ReminderRuntimePreviewParsedTaskValue | null;
+  referencedTask?: ReminderRuntimePreviewReferencedTaskValue | null;
+  matchedRules: ReminderRuntimePreviewMatchedRulesValue;
 };
 
 export const DEFAULT_REMINDER_RUNTIME_PROMPT_TEMPLATES: ReminderRuntimePromptTemplatesValue =
@@ -136,6 +229,95 @@ export const DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES: ReminderRuntimeTextTemplat
       '今天如果还有什么怕忘的，直接发我一句，我替你盯着。',
   });
 
+export const DEFAULT_REMINDER_RUNTIME_PARSER_RULES: ReminderRuntimeParserRulesValue =
+  Object.freeze({
+    helpIntentPatterns: [
+      '(怎么用|你能提醒|你能做什么|怎么提醒|能帮我记什么)',
+    ],
+    listIntentPatterns: [
+      '(有哪些|有什么|列一下|查一下|看看).*(提醒|待提醒|待办|记着)',
+      '提醒.*(有哪些|有什么|列一下|查一下|看看)',
+    ],
+    cancelIntentPatterns: ['(取消|删掉|删除|不用提醒|别提醒|不需要提醒)'],
+    completeIntentPatterns: [
+      '^(完成了|已完成|搞定了|做完了|买好了|吃过了|吃完了|练了|睡了)',
+    ],
+    snoozeIntentPatterns: [
+      '(延后|晚点|等会|待会|稍后|一小时后|半小时后|明天再提醒|明早再提醒)',
+    ],
+    createIntentKeywords: [
+      '记得提醒我',
+      '提醒我',
+      '帮我记一下',
+      '帮我记着',
+      '帮我记住',
+      '帮我记',
+      '记一下',
+      '记着',
+      '记住',
+    ],
+    dailyRecurrenceKeywords: ['每天'],
+    weeklyRecurrenceKeywords: ['每周', '每星期', '礼拜'],
+    habitIntentKeywords: ['坚持', '长期', '养成', '监督我'],
+    habitKeywords: [
+      '学英语',
+      '英语',
+      '锻炼',
+      '运动',
+      '健身',
+      '背单词',
+      '喝水',
+      '早睡',
+      '复盘',
+      '看书',
+      '读书',
+    ],
+    hardReminderKeywords: ['吃药', '开会', '会议', '复诊', '考试'],
+    categoryKeywords: {
+      health: ['吃药', '复诊', '体检'],
+      shopping: ['买', '采购', '补货', '快递'],
+      lifestyle: ['睡', '吃饭', '喝水'],
+      growth: ['学', '背单词', '英语', '复盘', '锻炼', '运动', '看书'],
+    },
+    periodDefaultClocks: {
+      sleepBefore: {
+        patterns: ['睡前'],
+        hour: 23,
+        minute: 0,
+      },
+      morning: {
+        patterns: ['明早', '今早', '早上', '早晨'],
+        hour: 8,
+        minute: 0,
+      },
+      lateMorning: {
+        patterns: ['上午'],
+        hour: 9,
+        minute: 0,
+      },
+      noon: {
+        patterns: ['中午'],
+        hour: 12,
+        minute: 30,
+      },
+      afternoon: {
+        patterns: ['下午'],
+        hour: 15,
+        minute: 0,
+      },
+      dusk: {
+        patterns: ['傍晚'],
+        hour: 18,
+        minute: 30,
+      },
+      evening: {
+        patterns: ['晚上', '今晚', '明晚'],
+        hour: 20,
+        minute: 0,
+      },
+    },
+  });
+
 export const DEFAULT_REMINDER_RUNTIME_RULES: ReminderRuntimeRulesValue =
   Object.freeze({
     defaultReminderHour: 9,
@@ -147,6 +329,7 @@ export const DEFAULT_REMINDER_RUNTIME_RULES: ReminderRuntimeRulesValue =
     maxListItems: 6,
     promptTemplates: DEFAULT_REMINDER_RUNTIME_PROMPT_TEMPLATES,
     textTemplates: DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES,
+    parserRules: DEFAULT_REMINDER_RUNTIME_PARSER_RULES,
   });
 
 function normalizeHour(value: unknown, fallback: number) {
@@ -178,6 +361,33 @@ function normalizeTemplate(value: unknown, fallback: string) {
   return next || fallback;
 }
 
+function normalizeStringList(value: unknown, fallback: string[]) {
+  if (!Array.isArray(value)) {
+    return [...fallback];
+  }
+
+  const next = value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter((item) => item.length > 0);
+  return Array.from(new Set(next));
+}
+
+function normalizeParserPeriodDefault(
+  value: unknown,
+  fallback: ReminderRuntimeParserPeriodDefaultValue,
+): ReminderRuntimeParserPeriodDefaultValue {
+  const record =
+    value && typeof value === 'object'
+      ? (value as Partial<ReminderRuntimeParserPeriodDefaultValue>)
+      : {};
+
+  return {
+    patterns: normalizeStringList(record.patterns, fallback.patterns),
+    hour: normalizeHour(record.hour, fallback.hour),
+    minute: normalizeMinute(record.minute, fallback.minute),
+  };
+}
+
 export function normalizeReminderRuntimeRules(
   value: Partial<ReminderRuntimeRulesValue> | undefined,
 ): ReminderRuntimeRulesValue {
@@ -185,6 +395,12 @@ export function normalizeReminderRuntimeRules(
     value?.promptTemplates ?? {};
   const textTemplates: Partial<ReminderRuntimeTextTemplatesValue> =
     value?.textTemplates ?? {};
+  const parserRules: Partial<ReminderRuntimeParserRulesValue> =
+    value?.parserRules ?? {};
+  const parserCategoryKeywords: Partial<ReminderRuntimeParserCategoryKeywordsValue> =
+    parserRules.categoryKeywords ?? {};
+  const parserPeriodDefaultClocks: Partial<ReminderRuntimeParserPeriodDefaultsValue> =
+    parserRules.periodDefaultClocks ?? {};
 
   return {
     defaultReminderHour: normalizeHour(
@@ -319,6 +535,100 @@ export function normalizeReminderRuntimeRules(
         textTemplates.checkinWithoutActiveTasks,
         DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES.checkinWithoutActiveTasks,
       ),
+    },
+    parserRules: {
+      helpIntentPatterns: normalizeStringList(
+        parserRules.helpIntentPatterns,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.helpIntentPatterns,
+      ),
+      listIntentPatterns: normalizeStringList(
+        parserRules.listIntentPatterns,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.listIntentPatterns,
+      ),
+      cancelIntentPatterns: normalizeStringList(
+        parserRules.cancelIntentPatterns,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.cancelIntentPatterns,
+      ),
+      completeIntentPatterns: normalizeStringList(
+        parserRules.completeIntentPatterns,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.completeIntentPatterns,
+      ),
+      snoozeIntentPatterns: normalizeStringList(
+        parserRules.snoozeIntentPatterns,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.snoozeIntentPatterns,
+      ),
+      createIntentKeywords: normalizeStringList(
+        parserRules.createIntentKeywords,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.createIntentKeywords,
+      ),
+      dailyRecurrenceKeywords: normalizeStringList(
+        parserRules.dailyRecurrenceKeywords,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.dailyRecurrenceKeywords,
+      ),
+      weeklyRecurrenceKeywords: normalizeStringList(
+        parserRules.weeklyRecurrenceKeywords,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.weeklyRecurrenceKeywords,
+      ),
+      habitIntentKeywords: normalizeStringList(
+        parserRules.habitIntentKeywords,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.habitIntentKeywords,
+      ),
+      habitKeywords: normalizeStringList(
+        parserRules.habitKeywords,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.habitKeywords,
+      ),
+      hardReminderKeywords: normalizeStringList(
+        parserRules.hardReminderKeywords,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.hardReminderKeywords,
+      ),
+      categoryKeywords: {
+        health: normalizeStringList(
+          parserCategoryKeywords.health,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.categoryKeywords.health,
+        ),
+        shopping: normalizeStringList(
+          parserCategoryKeywords.shopping,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.categoryKeywords.shopping,
+        ),
+        lifestyle: normalizeStringList(
+          parserCategoryKeywords.lifestyle,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.categoryKeywords.lifestyle,
+        ),
+        growth: normalizeStringList(
+          parserCategoryKeywords.growth,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.categoryKeywords.growth,
+        ),
+      },
+      periodDefaultClocks: {
+        sleepBefore: normalizeParserPeriodDefault(
+          parserPeriodDefaultClocks.sleepBefore,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.periodDefaultClocks.sleepBefore,
+        ),
+        morning: normalizeParserPeriodDefault(
+          parserPeriodDefaultClocks.morning,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.periodDefaultClocks.morning,
+        ),
+        lateMorning: normalizeParserPeriodDefault(
+          parserPeriodDefaultClocks.lateMorning,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.periodDefaultClocks.lateMorning,
+        ),
+        noon: normalizeParserPeriodDefault(
+          parserPeriodDefaultClocks.noon,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.periodDefaultClocks.noon,
+        ),
+        afternoon: normalizeParserPeriodDefault(
+          parserPeriodDefaultClocks.afternoon,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.periodDefaultClocks.afternoon,
+        ),
+        dusk: normalizeParserPeriodDefault(
+          parserPeriodDefaultClocks.dusk,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.periodDefaultClocks.dusk,
+        ),
+        evening: normalizeParserPeriodDefault(
+          parserPeriodDefaultClocks.evening,
+          DEFAULT_REMINDER_RUNTIME_PARSER_RULES.periodDefaultClocks.evening,
+        ),
+      },
     },
   };
 }
