@@ -1734,17 +1734,30 @@ export function ChatMessageList({
     }
 
     if (attachment.kind === "file") {
-      void openRemoteFile({
-        url: resolveAttachmentUrl(attachment.url),
-        fileName: attachment.fileName,
-        mimeType: attachment.mimeType,
-        dialogTitle: "打开文件",
-      }).then((result) => {
+      const openFileAttachment = () =>
+        openRemoteFile({
+          url: resolveAttachmentUrl(attachment.url),
+          fileName: attachment.fileName,
+          mimeType: attachment.mimeType,
+          dialogTitle: "打开文件",
+        });
+
+      const showFileOpenResult = (result: Awaited<ReturnType<typeof openRemoteFile>>) => {
         setActionNotice({
           message: result.message,
           tone: result.opened ? "success" : "danger",
+          actionLabel: result.opened ? undefined : "重试打开文件",
+          onAction: result.opened
+            ? undefined
+            : () => {
+                void openFileAttachment().then(showFileOpenResult);
+              },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
         });
-      });
+      };
+
+      void openFileAttachment().then(showFileOpenResult);
     }
   };
 
