@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
@@ -43,6 +44,7 @@ export type ResolvedInferenceProviderConfig = {
   accountId: string;
   accountName: string;
   providerKind: 'openai_compatible';
+  allowOwnerKeyOverride: boolean;
   endpoint: string;
   model: string;
   apiKey: string;
@@ -118,6 +120,8 @@ function extractErrorMessage(error: unknown) {
 
 @Injectable()
 export class InferenceService implements OnModuleInit {
+  private readonly logger = new Logger(InferenceService.name);
+
   constructor(
     private readonly config: ConfigService,
     private readonly systemConfig: SystemConfigService,
@@ -132,6 +136,19 @@ export class InferenceService implements OnModuleInit {
   async onModuleInit() {
     await this.seedModelCatalog();
     await this.ensureDefaultProviderAccount();
+    try {
+      const result = await this.installModelPersonas();
+      const changedCount = result.installedCount + result.updatedCount;
+      if (changedCount > 0) {
+        this.logger.log(
+          `Auto-installed model personas: +${result.installedCount}, updated ${result.updatedCount}, skipped ${result.skippedCount}.`,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Failed to auto-install model personas: ${extractErrorMessage(error)}`,
+      );
+    }
   }
 
   private encodeSecret(value?: string | null) {
@@ -745,6 +762,7 @@ export class InferenceService implements OnModuleInit {
       return {
         account: defaultAccount,
         modelId: defaultAccount.defaultModelId,
+        allowOwnerKeyOverride: true,
       };
     }
 
@@ -755,12 +773,23 @@ export class InferenceService implements OnModuleInit {
         'modelRoutingMode',
         'inferenceProviderAccountId',
         'inferenceModelId',
+        'allowOwnerKeyOverride',
       ],
     });
-    if (!character || character.modelRoutingMode !== 'character_override') {
+    if (!character) {
       return {
         account: defaultAccount,
         modelId: defaultAccount.defaultModelId,
+        allowOwnerKeyOverride: true,
+      };
+    }
+
+    const allowOwnerKeyOverride = character.allowOwnerKeyOverride !== false;
+    if (character.modelRoutingMode !== 'character_override') {
+      return {
+        account: defaultAccount,
+        modelId: defaultAccount.defaultModelId,
+        allowOwnerKeyOverride,
       };
     }
 
@@ -781,6 +810,7 @@ export class InferenceService implements OnModuleInit {
         character.inferenceModelId?.trim() ||
         account.defaultModelId ||
         defaultAccount.defaultModelId,
+      allowOwnerKeyOverride,
     };
   }
 
@@ -800,6 +830,7 @@ export class InferenceService implements OnModuleInit {
       accountId: account.id,
       accountName: account.name,
       providerKind: this.normalizeProviderKind(),
+      allowOwnerKeyOverride: route.allowOwnerKeyOverride,
       endpoint: account.endpoint,
       model: route.modelId,
       apiKey,

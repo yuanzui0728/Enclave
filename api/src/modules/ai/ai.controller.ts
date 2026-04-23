@@ -38,7 +38,8 @@ export class AiController {
   )
   createTranscription(
     @UploadedFile() file: UploadedAudioFile | undefined,
-    @Body() body: { conversationId?: string; mode?: string },
+    @Body()
+    body: { conversationId?: string; characterId?: string; mode?: string },
   ) {
     if (!file) {
       throw new BadRequestException('请先录一段语音再试。');
@@ -50,6 +51,7 @@ export class AiController {
 
     return this.ai.transcribeAudio(file, {
       conversationId: body.conversationId,
+      characterId: body.characterId,
       mode: body.mode ?? 'dictation',
     });
   }

@@ -67,6 +67,8 @@ type LoadedAsset = {
 type ResolvedProviderConfig = {
   accountId?: string;
   accountName?: string;
+  allowOwnerKeyOverride?: boolean;
+  appliedOwnerKeyOverride?: boolean;
   endpoint: string;
   model: string;
   apiKey: string;
@@ -171,10 +173,17 @@ export class AiOrchestratorService {
 
     return {
       ...provider,
-      endpoint: options?.override?.apiBase
-        ? this.normalizeProviderEndpoint(options.override.apiBase)
+      appliedOwnerKeyOverride:
+        Boolean(options?.override?.apiKey?.trim()) &&
+        provider.allowOwnerKeyOverride !== false,
+      endpoint:
+        options?.override?.apiBase && provider.allowOwnerKeyOverride !== false
+          ? this.normalizeProviderEndpoint(options.override.apiBase)
         : provider.endpoint,
-      apiKey: options?.override?.apiKey?.trim() || provider.apiKey,
+      apiKey:
+        provider.allowOwnerKeyOverride !== false
+          ? options?.override?.apiKey?.trim() || provider.apiKey
+          : provider.apiKey,
       model: provider.model,
       transcriptionEndpoint: provider.transcriptionEndpoint,
       transcriptionApiKey: provider.transcriptionApiKey,
@@ -1188,6 +1197,7 @@ export class AiOrchestratorService {
       override: aiKeyOverride,
       characterId: profile.characterId,
     });
+    const ownerKeyApplied = runtimeProvider.appliedOwnerKeyOverride === true;
     if (!runtimeProvider.apiKey) {
       return this.buildUnavailableReply(profile);
     }
@@ -1218,7 +1228,7 @@ export class AiOrchestratorService {
       currentUserMessage,
       isGroupChat,
     };
-    const billingSource: AiUsageBillingSource = aiKeyOverride
+    const billingSource: AiUsageBillingSource = ownerKeyApplied
       ? 'owner_custom'
       : 'instance_default';
     const budgetedProvider = await this.prepareBudgetAwareProvider(
@@ -1242,7 +1252,7 @@ export class AiOrchestratorService {
         billingSource,
       };
     } catch (err) {
-      if (aiKeyOverride && this.isAuthenticationFailure(err)) {
+      if (ownerKeyApplied && this.isAuthenticationFailure(err)) {
         await this.recordFailedUsage(
           provider,
           'owner_custom',
@@ -1310,7 +1320,7 @@ export class AiOrchestratorService {
 
       await this.recordFailedUsage(
         provider,
-        aiKeyOverride ? 'owner_custom' : 'instance_default',
+        billingSource,
         usageContext,
         err,
       );
@@ -1981,7 +1991,7 @@ export class AiOrchestratorService {
 
   async transcribeAudio(
     file: UploadedAudioFile,
-    options: { conversationId?: string; mode?: string },
+    options: { conversationId?: string; characterId?: string; mode?: string },
   ) {
     if (!file.buffer?.length) {
       throw new BadRequestException('没有收到可转写的音频内容。');
@@ -1997,7 +2007,9 @@ export class AiOrchestratorService {
       );
     }
 
-    const provider = await this.resolveProviderConfig();
+    const provider = await this.resolveRuntimeProvider({
+      characterId: options.characterId,
+    });
     if (!provider.transcriptionApiKey.trim()) {
       throw new ServiceUnavailableException(
         '当前实例未配置可用的 AI Key，暂时无法转写语音。',
@@ -2038,7 +2050,7 @@ export class AiOrchestratorService {
       return {
         text,
         durationMs: Date.now() - startedAt,
-        provider: provider.model,
+        provider: provider.transcriptionModel || provider.model,
       };
     } catch (error) {
       if (error instanceof BadGatewayException) {
@@ -2047,6 +2059,7 @@ export class AiOrchestratorService {
 
       this.logger.error('speech transcription failed', {
         conversationId: options.conversationId,
+        characterId: options.characterId,
         mode: options.mode,
         mimetype: file.mimetype,
         size: file.size,
@@ -2074,7 +2087,9 @@ export class AiOrchestratorService {
   async synthesizeSpeech(
     options: SpeechSynthesisOptions,
   ): Promise<SpeechSynthesisResult> {
-    const provider = await this.resolveProviderConfig();
+    const provider = await this.resolveRuntimeProvider({
+      characterId: options.characterId,
+    });
     if (!provider.apiKey.trim()) {
       throw new ServiceUnavailableException(
         '当前实例未配置可用的 AI Key，暂时无法生成语音。',
