@@ -31,6 +31,7 @@ export interface FileAttachment {
   size: number;
   transcriptText?: string;
   extractedText?: string;
+  insight?: AttachmentInsight;
 }
 
 export interface VoiceAttachment {
@@ -41,6 +42,18 @@ export interface VoiceAttachment {
   size: number;
   durationMs?: number;
   transcriptText?: string;
+  insight?: AttachmentInsight;
+}
+
+export interface AttachmentInsight {
+  jobId: string;
+  kind:
+    | "audio_transcription"
+    | "video_transcription"
+    | "document_text_extraction";
+  status: "pending" | "processing" | "completed" | "cancelled" | "failed";
+  updatedAt?: string;
+  errorMessage?: string;
 }
 
 export interface ContactCardAttachment {

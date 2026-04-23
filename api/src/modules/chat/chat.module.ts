@@ -44,10 +44,12 @@ import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import { GroupReplyTaskEntity } from './group-reply-task.entity';
 import { ReplyArtifactJobEntity } from './reply-artifact-job.entity';
+import { MediaInsightJobEntity } from './media-insight-job.entity';
 import { ChatCustomStickerEntity } from './custom-sticker.entity';
 import { CustomStickersService } from './custom-stickers.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
+import { MediaInsightJobService } from './media-insight-job.service';
 
 @Module({
   imports: [
@@ -67,6 +69,7 @@ import { ReplyArtifactJobService } from './reply-artifact-job.service';
       GroupMessageEntity,
       GroupReplyTaskEntity,
       ReplyArtifactJobEntity,
+      MediaInsightJobEntity,
       ChatCustomStickerEntity,
       CharacterEntity,
     ]),
@@ -80,6 +83,7 @@ import { ReplyArtifactJobService } from './reply-artifact-job.service';
     GroupReplyOrchestratorService,
     GroupReplyTaskService,
     ReplyArtifactJobService,
+    MediaInsightJobService,
     FavoritesService,
     SearchActivityService,
     MessageRemindersService,
@@ -109,6 +113,7 @@ import { ReplyArtifactJobService } from './reply-artifact-job.service';
     ChatGateway,
     GroupReplyTaskService,
     ReplyArtifactJobService,
+    MediaInsightJobService,
     FavoritesService,
     SearchActivityService,
     MessageRemindersService,

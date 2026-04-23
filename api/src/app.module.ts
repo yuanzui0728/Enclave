@@ -48,6 +48,7 @@ import { GroupMemberEntity } from './modules/chat/group-member.entity';
 import { GroupMessageEntity } from './modules/chat/group-message.entity';
 import { GroupReplyTaskEntity } from './modules/chat/group-reply-task.entity';
 import { ReplyArtifactJobEntity } from './modules/chat/reply-artifact-job.entity';
+import { MediaInsightJobEntity } from './modules/chat/media-insight-job.entity';
 import { ChatCustomStickerEntity } from './modules/chat/custom-sticker.entity';
 import { FeedPostEntity } from './modules/feed/feed-post.entity';
 import { FeedCommentEntity } from './modules/feed/feed-comment.entity';
@@ -126,6 +127,7 @@ import {
           GroupMessageEntity,
           GroupReplyTaskEntity,
           ReplyArtifactJobEntity,
+          MediaInsightJobEntity,
           ChatCustomStickerEntity,
           FeedPostEntity,
           FeedCommentEntity,

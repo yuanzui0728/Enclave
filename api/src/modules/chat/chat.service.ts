@@ -71,6 +71,7 @@ import {
   type AssistantReplyTargetMessage,
 } from './assistant-reply-modalities';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
+import { MediaInsightJobService } from './media-insight-job.service';
 
 type SendConversationMessageInput =
   | {
@@ -163,6 +164,7 @@ export class ChatService {
     private readonly reminderRuntime: ReminderRuntimeService,
     @Inject(forwardRef(() => ReplyArtifactJobService))
     private readonly replyArtifactJobs: ReplyArtifactJobService,
+    private readonly mediaInsightJobs: MediaInsightJobService,
     @InjectRepository(ConversationEntity)
     private convRepo: Repository<ConversationEntity>,
     @InjectRepository(MessageEntity)
@@ -410,6 +412,11 @@ export class ChatService {
       'source_message_recalled',
       message.id,
     );
+    await this.mediaInsightJobs.cancelConversationJobs(
+      convId,
+      'source_message_recalled',
+      message.id,
+    );
     this.conversationHistory.delete(entity.id);
     return this.serializeMessage(recalled);
   }
@@ -430,6 +437,11 @@ export class ChatService {
 
     await this.msgRepo.delete({ id: message.id });
     await this.replyArtifactJobs.cancelConversationJobs(
+      convId,
+      'source_message_deleted',
+      message.id,
+    );
+    await this.mediaInsightJobs.cancelConversationJobs(
       convId,
       'source_message_deleted',
       message.id,
@@ -510,6 +522,10 @@ export class ChatService {
     });
 
     await this.replyArtifactJobs.cancelConversationJobs(
+      convId,
+      'conversation_cleared',
+    );
+    await this.mediaInsightJobs.cancelConversationJobs(
       convId,
       'conversation_cleared',
     );
@@ -782,11 +798,7 @@ export class ChatService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const aiKeyOverride =
       (await this.worldOwnerService.getOwnerAiConfig()) ?? undefined;
-    const normalizedInput = await this.normalizeOutgoingMessageInput(
-      input,
-      convId,
-      entity.participants[0],
-    );
+    const normalizedInput = await this.normalizeOutgoingMessageInput(input);
 
     const userMsgEntity = this.msgRepo.create({
       id: `msg_${Date.now()}`,
@@ -807,12 +819,36 @@ export class ChatService {
       userMsgEntity.createdAt ?? new Date(),
     );
 
+    const enrichedAttachment = normalizedInput.attachment
+      ? await this.mediaInsightJobs.ensureConversationMessageInsight({
+          conversationId: convId,
+          sourceMessageId: userMsgEntity.id,
+          sourceMessageCreatedAt: userMsgEntity.createdAt ?? new Date(),
+          attachment: normalizedInput.attachment,
+          characterId: entity.participants[0],
+        })
+      : undefined;
+    const resolvedInput = {
+      ...normalizedInput,
+      attachment: enrichedAttachment,
+      promptText: enrichedAttachment
+        ? this.buildMessagePromptText(normalizedInput.text, enrichedAttachment)
+        : normalizedInput.promptText,
+      aiParts: enrichedAttachment
+        ? this.buildAiParts(normalizedInput.text, enrichedAttachment)
+        : normalizedInput.aiParts,
+    };
+    if (resolvedInput.attachment) {
+      userMsgEntity.attachmentKind = resolvedInput.attachment.kind;
+      userMsgEntity.attachmentPayload = JSON.stringify(resolvedInput.attachment);
+    }
+
     const userMsg = await this.serializeMessage(userMsgEntity);
     const history = await this.ensureConversationHistory(entity);
     history.push({
       role: 'user',
-      content: normalizedInput.promptText,
-      parts: normalizedInput.aiParts,
+      content: resolvedInput.promptText,
+      parts: resolvedInput.aiParts,
     });
 
     const results: Message[] = [userMsg];
@@ -829,13 +865,13 @@ export class ChatService {
       sourceEntityType: 'conversation_message',
       sourceEntityId: userMsgEntity.id,
       dedupeKey: `direct_message:${userMsgEntity.id}`,
-      summaryText: `单聊对 ${entity.title} 发送：${normalizedInput.promptText.slice(0, 120)}`,
+      summaryText: `单聊对 ${entity.title} 发送：${resolvedInput.promptText.slice(0, 120)}`,
       payload: {
         conversationId: convId,
         conversationTitle: entity.title,
         characterId: charId,
-        messageType: normalizedInput.type,
-        text: normalizedInput.promptText,
+        messageType: resolvedInput.type,
+        text: resolvedInput.promptText,
       },
       occurredAt: userMsgEntity.createdAt ?? new Date(),
     });
@@ -857,23 +893,23 @@ export class ChatService {
           conversationId: convId,
           ownerId: owner.id,
           character: charEntity,
-          userMessage: normalizedInput.promptText,
+          userMessage: resolvedInput.promptText,
         })
       : { handled: false };
     const reminderResult =
       charId === REMINDER_CHARACTER_ID
         ? await this.reminderRuntime.handleConversationTurn({
             conversationId: convId,
-            userMessage: normalizedInput.promptText,
+            userMessage: resolvedInput.promptText,
             sourceMessageId: userMsgEntity.id,
           })
         : { handled: false };
     const replyModalities = await this.planAssistantReplyModalities({
       characterId: charId,
       message: {
-        type: normalizedInput.type,
-        text: normalizedInput.text,
-        attachment: normalizedInput.attachment,
+        type: resolvedInput.type,
+        text: resolvedInput.text,
+        attachment: resolvedInput.attachment,
       },
     });
     const extraSystemPromptSections = [...replyModalities.promptSections];
@@ -886,8 +922,8 @@ export class ChatService {
             await this.ai.generateReply({
               profile,
               conversationHistory: history,
-              userMessage: normalizedInput.promptText,
-              userMessageParts: normalizedInput.aiParts,
+              userMessage: resolvedInput.promptText,
+              userMessageParts: resolvedInput.aiParts,
               chatContext,
               extraSystemPromptSections,
               aiKeyOverride,
@@ -907,7 +943,7 @@ export class ChatService {
           ).text;
     const normalizedAssistantReplyText = resolveAssistantReplyText({
       text: assistantReplyText,
-      promptText: normalizedInput.promptText,
+      promptText: resolvedInput.promptText,
       plan: replyModalities,
       fallbackText: '收到。',
     });
@@ -1199,77 +1235,6 @@ export class ChatService {
       drafts,
       deferredImageReply,
     };
-  }
-
-  private async enrichAttachmentForAi(
-    attachment: MessageAttachment,
-    conversationId?: string,
-    characterId?: string,
-  ): Promise<MessageAttachment> {
-    if (attachment.kind === 'voice') {
-      if (attachment.transcriptText?.trim()) {
-        return attachment;
-      }
-
-      const transcription = await this.ai.tryTranscribeMediaFromUrl({
-        url: attachment.url,
-        mimeType: attachment.mimeType,
-        fileName: attachment.fileName,
-        conversationId,
-        characterId,
-        mode: 'chat_attachment',
-      });
-      return transcription?.text
-        ? {
-            ...attachment,
-            transcriptText: transcription.text,
-          }
-        : attachment;
-    }
-
-    if (
-      attachment.kind === 'file' &&
-      /^(audio|video)\//i.test(attachment.mimeType)
-    ) {
-      if (attachment.transcriptText?.trim()) {
-        return attachment;
-      }
-
-      const transcription = await this.ai.tryTranscribeMediaFromUrl({
-        url: attachment.url,
-        mimeType: attachment.mimeType,
-        fileName: attachment.fileName,
-        conversationId,
-        characterId,
-        mode: 'chat_attachment',
-      });
-      return transcription?.text
-        ? {
-            ...attachment,
-            transcriptText: transcription.text,
-          }
-        : attachment;
-    }
-
-    if (attachment.kind === 'file') {
-      if (attachment.extractedText?.trim()) {
-        return attachment;
-      }
-
-      const extractedText = await this.ai.tryExtractDocumentTextFromUrl({
-        url: attachment.url,
-        mimeType: attachment.mimeType,
-        fileName: attachment.fileName,
-      });
-      return extractedText
-        ? {
-            ...attachment,
-            extractedText,
-          }
-        : attachment;
-    }
-
-    return attachment;
   }
 
   private async syncNarrativeArc(
@@ -1749,8 +1714,6 @@ export class ChatService {
 
   private async normalizeOutgoingMessageInput(
     input: SendConversationMessageInput,
-    conversationId?: string,
-    characterId?: string,
   ): Promise<{
     type:
       | 'text'
@@ -1800,11 +1763,7 @@ export class ChatService {
       if (!input.attachment || input.attachment.kind !== input.type) {
         throw new NotFoundException('Attachment payload is invalid');
       }
-      const attachment = await this.enrichAttachmentForAi(
-        input.attachment,
-        conversationId,
-        characterId,
-      );
+      const attachment = input.attachment;
 
       const fallbackText =
         input.text?.trim() || this.getAttachmentFallbackText(attachment);

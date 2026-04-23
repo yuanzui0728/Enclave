@@ -47,6 +47,7 @@ import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyTaskService } from './group-reply-task.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
+import { MediaInsightJobService } from './media-insight-job.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -151,6 +152,7 @@ export class GroupService {
     private readonly groupReplyPlanner: GroupReplyPlannerService,
     private readonly groupReplyTaskService: GroupReplyTaskService,
     private readonly replyArtifactJobs: ReplyArtifactJobService,
+    private readonly mediaInsightJobs: MediaInsightJobService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -432,6 +434,7 @@ export class GroupService {
     });
 
     await this.replyArtifactJobs.cancelGroupJobs(groupId, 'group_cleared');
+    await this.mediaInsightJobs.cancelGroupJobs(groupId, 'group_cleared');
     await this.emitGroupConversationUpdated(groupId);
     return this.toGroup(updated);
   }
@@ -518,6 +521,11 @@ export class GroupService {
     await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_recalled', {
       sourceMessageId: message.id,
     });
+    await this.mediaInsightJobs.cancelGroupJobs(
+      groupId,
+      'source_message_recalled',
+      message.id,
+    );
     const recalledMessage = this.toGroupMessage(recalled);
     this.chatGateway.emitThreadMessage(groupId, recalledMessage);
     return recalledMessage;
@@ -541,6 +549,11 @@ export class GroupService {
     await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_deleted', {
       sourceMessageId: message.id,
     });
+    await this.mediaInsightJobs.cancelGroupJobs(
+      groupId,
+      'source_message_deleted',
+      message.id,
+    );
     await this.syncGroupLastActivity(group);
     await this.emitGroupConversationUpdated(groupId);
 
@@ -622,10 +635,7 @@ export class GroupService {
     senderAvatar?: string,
   ): Promise<GroupMessage> {
     const group = await this.requireAccessibleGroup(groupId);
-    const normalizedInput = await this.normalizeOutgoingMessageInput(
-      input,
-      groupId,
-    );
+    const normalizedInput = await this.normalizeOutgoingMessageInput(input);
     const message = this.messageRepo.create({
       groupId,
       senderId,
@@ -641,6 +651,29 @@ export class GroupService {
     });
 
     await this.messageRepo.save(message);
+    const enrichedAttachment = normalizedInput.attachment
+      ? await this.mediaInsightJobs.ensureGroupMessageInsight({
+          groupId,
+          sourceMessageId: message.id,
+          sourceMessageCreatedAt: message.createdAt ?? new Date(),
+          attachment: normalizedInput.attachment,
+          characterId: senderType === 'character' ? senderId : undefined,
+        })
+      : undefined;
+    const resolvedInput = {
+      ...normalizedInput,
+      attachment: enrichedAttachment,
+      promptText: enrichedAttachment
+        ? this.buildMessagePromptText(normalizedInput.text, enrichedAttachment)
+        : normalizedInput.promptText,
+      aiParts: enrichedAttachment
+        ? this.buildAiParts(normalizedInput.text, enrichedAttachment)
+        : normalizedInput.aiParts,
+    };
+    if (resolvedInput.attachment) {
+      message.attachmentKind = resolvedInput.attachment.kind;
+      message.attachmentPayload = JSON.stringify(resolvedInput.attachment);
+    }
     await this.touchGroupActivity(
       group,
       message.createdAt ?? new Date(),
@@ -654,12 +687,12 @@ export class GroupService {
         sourceEntityType: 'group_message',
         sourceEntityId: message.id,
         dedupeKey: `group_message:${message.id}`,
-        summaryText: `群聊 ${group.name} 发言：${normalizedInput.promptText.slice(0, 120)}`,
+        summaryText: `群聊 ${group.name} 发言：${resolvedInput.promptText.slice(0, 120)}`,
         payload: {
           groupId,
           groupName: group.name,
-          messageType: normalizedInput.type,
-          text: normalizedInput.promptText,
+          messageType: resolvedInput.type,
+          text: resolvedInput.promptText,
         },
         occurredAt: message.createdAt ?? new Date(),
       });
@@ -751,7 +784,6 @@ export class GroupService {
 
   private async normalizeOutgoingMessageInput(
     input: SendGroupMessageInput,
-    groupId?: string,
   ): Promise<{
     type:
       | 'text'
@@ -802,16 +834,7 @@ export class GroupService {
       if (!input.attachment || input.attachment.kind !== input.type) {
         throw new Error('Attachment payload is invalid');
       }
-
-      const inferenceCharacterId = await this.resolveAttachmentInferenceCharacterId(
-        input.text,
-        groupId,
-      );
-      const attachment = await this.enrichAttachmentForAi(
-        input.attachment,
-        groupId,
-        inferenceCharacterId,
-      );
+      const attachment = input.attachment;
 
       const fallbackText =
         input.text?.trim() || this.getAttachmentFallbackText(attachment);
@@ -837,142 +860,6 @@ export class GroupService {
       promptText: this.buildMessagePromptText(text),
       aiParts: this.buildAiParts(text),
     };
-  }
-
-  private async enrichAttachmentForAi(
-    attachment: MessageAttachment,
-    groupId?: string,
-    characterId?: string,
-  ): Promise<MessageAttachment> {
-    if (attachment.kind === 'voice') {
-      if (attachment.transcriptText?.trim()) {
-        return attachment;
-      }
-
-      const transcription = await this.ai.tryTranscribeMediaFromUrl({
-        url: attachment.url,
-        mimeType: attachment.mimeType,
-        fileName: attachment.fileName,
-        conversationId: groupId,
-        characterId,
-        mode: 'group_attachment',
-      });
-      return transcription?.text
-        ? {
-            ...attachment,
-            transcriptText: transcription.text,
-          }
-        : attachment;
-    }
-
-    if (
-      attachment.kind === 'file' &&
-      /^(audio|video)\//i.test(attachment.mimeType)
-    ) {
-      if (attachment.transcriptText?.trim()) {
-        return attachment;
-      }
-
-      const transcription = await this.ai.tryTranscribeMediaFromUrl({
-        url: attachment.url,
-        mimeType: attachment.mimeType,
-        fileName: attachment.fileName,
-        conversationId: groupId,
-        characterId,
-        mode: 'group_attachment',
-      });
-      return transcription?.text
-        ? {
-            ...attachment,
-            transcriptText: transcription.text,
-          }
-        : attachment;
-    }
-
-    if (attachment.kind === 'file') {
-      if (attachment.extractedText?.trim()) {
-        return attachment;
-      }
-
-      const extractedText = await this.ai.tryExtractDocumentTextFromUrl({
-        url: attachment.url,
-        mimeType: attachment.mimeType,
-        fileName: attachment.fileName,
-      });
-      return extractedText
-        ? {
-            ...attachment,
-            extractedText,
-          }
-        : attachment;
-    }
-
-    return attachment;
-  }
-
-  private async resolveAttachmentInferenceCharacterId(
-    rawText?: string,
-    groupId?: string,
-  ) {
-    if (!groupId) {
-      return undefined;
-    }
-
-    const replyContent = extractChatReplyMetadata(rawText ?? '');
-    if (replyContent.reply?.messageId) {
-      const replyTargetMessage = await this.messageRepo.findOne({
-        where: {
-          id: replyContent.reply.messageId,
-          groupId,
-        },
-      });
-      if (
-        replyTargetMessage?.senderType === 'character' &&
-        replyTargetMessage.senderId !== 'system'
-      ) {
-        return replyTargetMessage.senderId;
-      }
-    }
-
-    const mentionSummary = summarizeChatMentions(replyContent.body);
-    if (!mentionSummary.mentions.length || mentionSummary.hasMentionAll) {
-      return undefined;
-    }
-
-    const normalizedMentionTargets = new Set(
-      mentionSummary.mentions.map((mention) =>
-        mention.replace(/^@/, '').trim(),
-      ),
-    );
-    if (!normalizedMentionTargets.size) {
-      return undefined;
-    }
-
-    const members = await this.memberRepo.find({
-      where: { groupId, memberType: 'character' },
-    });
-    if (!members.length) {
-      return undefined;
-    }
-
-    const matchedCharacterIds = new Set<string>();
-    await Promise.all(
-      members.map(async (member) => {
-        const character = await this.characters.findById(member.memberId);
-        const aliases = [member.memberName, character?.name]
-          .map((value) => value?.trim())
-          .filter((value): value is string => Boolean(value));
-        if (
-          aliases.some((alias) => normalizedMentionTargets.has(alias))
-        ) {
-          matchedCharacterIds.add(member.memberId);
-        }
-      }),
-    );
-
-    return matchedCharacterIds.size === 1
-      ? [...matchedCharacterIds][0]
-      : undefined;
   }
 
   private buildAiHistoryMessage(message: GroupMessageEntity): ChatMessage {
