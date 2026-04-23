@@ -1367,10 +1367,13 @@ const expectations = [
   {
     file: "src/features/official-accounts/official-article-route-shell.tsx",
     description:
-      "desktop official-article route shell writes officialMode=accounts into article-window return targets instead of relying on the contacts workspace to infer a mode from articleId alone",
+      "desktop official-article route shell writes officialMode=accounts into article-window return targets and preserves the current accountId when the legacy article route already matches the same article",
     includes: [
+      'import { useNavigate, useRouterState } from "@tanstack/react-router";',
       'buildDesktopContactsRouteHash({',
       'pane: "official-accounts",',
+      "desktopPaneState?.articleId === articleId",
+      "desktopPaneState.accountId",
       "articleId,",
       'officialMode: "accounts",',
       'returnTo: `/tabs/contacts',

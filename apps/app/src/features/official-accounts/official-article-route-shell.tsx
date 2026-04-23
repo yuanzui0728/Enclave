@@ -1,7 +1,10 @@
 import { useEffect, useMemo } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { RouteRedirectState } from "../../components/route-redirect-state";
-import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
+import {
+  buildDesktopContactsRouteHash,
+  parseDesktopContactsRouteState,
+} from "../contacts/contacts-route-state";
 import { buildDesktopOfficialArticleWindowRouteHash } from "./official-article-window-route-state";
 
 export type OfficialArticleRouteShellProps = {
@@ -12,14 +15,23 @@ export function OfficialArticleRouteShell({
   articleId,
 }: OfficialArticleRouteShellProps) {
   const navigate = useNavigate();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const desktopPaneState = useMemo(() => {
+    const routeState = parseDesktopContactsRouteState(hash);
+    return routeState.pane === "official-accounts" ? routeState : null;
+  }, [hash]);
   const contactsHash = useMemo(
     () =>
       buildDesktopContactsRouteHash({
         pane: "official-accounts",
+        accountId:
+          desktopPaneState?.articleId === articleId
+            ? desktopPaneState.accountId
+            : undefined,
         articleId,
         officialMode: "accounts",
       }),
-    [articleId],
+    [articleId, desktopPaneState?.accountId, desktopPaneState?.articleId],
   );
 
   useEffect(() => {

@@ -121,6 +121,7 @@
 - 旧 `/official-accounts/$accountId` 这条桌面详情入口现在也会在源头直接写 `officialMode=accounts`，并且如果当前桌面通讯录 hash 已经选中了同账号下的一篇文章，也会把这层 `articleId` 一起保住；不再先产出一份缺 mode 的半成品 hash，或在旧详情自愈时把当前公众号文章上下文冲掉。
 - 桌面内部几条继续跳公众号主页/文章的入口现在也统一显式写 `officialMode=accounts` 了，包括公众号文章独立窗口里的“打开公众号主页”和 `desktop/mobile` 里的官方 handoff 卡片；不再继续产出带 `accountId/articleId` 但缺 mode 的半成品 hash。
 - 旧 `/official-accounts/articles/$articleId` 这条桌面文章入口也不再继续写“只带 `articleId`、不带 mode”的回跳状态了；现在文章窗口自己的 `returnTo` 也会显式带上 `officialMode=accounts`，避免回桌面通讯录时继续依赖工作区侧推断模式。
+- 旧 `/official-accounts/articles/$articleId` 这条桌面文章入口现在也会在当前 hash 已经指向同一篇文章时继续保住现有 `accountId`。之前兼容壳只会把 `articleId` 带回桌面通讯录，一旦正文失效或账号纠偏还没完成，账号上下文会先丢；现在同篇文章的旧链接回桌面时会继续保留原来的公众号账号。
 - 桌面公众号工作区的“服务号消息 / 订阅号消息” fallback，以及 `desktop/mobile` 里的“桌面回到当前工作区” official handoff，现在都统一改成直达 `/tabs/chat#officialView=...`；不再先跳旧的 `/official-accounts/service/...` 或 `/chat/subscription-inbox` 页面，再靠桌面布局二次转发，避免桌面官方消息入口继续挂在旧路径协议上。
 - 桌面公众号工作区现在会在 feed 模式下校验当前可见文章列表，服务号/订阅号带回来的旧 `articleId` 如果已经不在列表里，会自动回收到首条有效内容，并把这条 fallback 结果继续写回聊天 / 通讯录 hash，避免界面已经高亮新文章、URL 却还残留旧 `articleId`。
 - 桌面订阅号消息工作区现在会在进入时校验 `articleId` 是否仍在当前 inbox 列表里，旧文章上下文会自动回收到首条有效订阅；如果当前 inbox 已空，也会把旧 `articleId` 从路由里收回，避免界面已经回到空列表但 URL 还残留旧文章上下文。
