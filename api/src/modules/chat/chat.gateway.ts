@@ -296,7 +296,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('typing_start', { conversationId: convId, characterId });
 
     try {
-      const messages = await this.chatService.sendMessage(convId, payload);
+      const { messages, deferredImageReply } =
+        await this.chatService.sendMessageDetailed(convId, payload);
       const aiReply = messages.find(
         (message) => message.senderType === 'character',
       );
@@ -314,6 +315,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       for (const message of messages) {
         this.emitThreadMessage(convId, message);
       }
+
+      if (deferredImageReply) {
+        void this.deliverDeferredAssistantImageReply(
+          convId,
+          characterId,
+          deferredImageReply,
+        );
+      }
     } catch (error) {
       this.server
         .to(convId)
@@ -325,6 +334,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
       this.emitConversationError(convId, failureMessage);
+    }
+  }
+
+  private async deliverDeferredAssistantImageReply(
+    convId: string,
+    characterId: string,
+    deferredImageReply: Parameters<
+      ChatService['completeDeferredAssistantImageReply']
+    >[0],
+  ) {
+    this.server
+      .to(convId)
+      .emit('typing_start', { conversationId: convId, characterId });
+
+    try {
+      const imageMessage = await this.chatService.completeDeferredAssistantImageReply(
+        deferredImageReply,
+      );
+      if (imageMessage) {
+        this.emitThreadMessage(convId, imageMessage);
+      }
+    } finally {
+      this.server
+        .to(convId)
+        .emit('typing_stop', { conversationId: convId, characterId });
     }
   }
 

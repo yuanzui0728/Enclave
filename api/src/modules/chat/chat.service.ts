@@ -122,6 +122,18 @@ type AssistantReplyModalitiesPlan = {
   promptSections: string[];
 };
 
+type DeferredAssistantImageReply = {
+  conversationId: string;
+  characterId: string;
+  characterName: string;
+  imagePrompt: string;
+};
+
+type SendConversationResult = {
+  messages: Message[];
+  deferredImageReply?: DeferredAssistantImageReply;
+};
+
 type ConversationMessageListQuery = {
   limit?: number;
   aroundMessageId?: string;
@@ -714,6 +726,14 @@ export class ChatService {
     convId: string,
     input: SendConversationMessageInput,
   ): Promise<Message[]> {
+    const result = await this.sendMessageDetailed(convId, input);
+    return result.messages;
+  }
+
+  async sendMessageDetailed(
+    convId: string,
+    input: SendConversationMessageInput,
+  ): Promise<SendConversationResult> {
     const entity = await this.requireOwnedConversation(convId);
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
@@ -851,7 +871,7 @@ export class ChatService {
       );
 
     if (normalizedAssistantReplyText) {
-      const assistantDrafts = await this.createAssistantReplyMessages({
+      const assistantReply = await this.createAssistantReplyMessages({
         conversationId: convId,
         characterId: charId,
         characterName: profile.name,
@@ -859,7 +879,7 @@ export class ChatService {
         modalities: replyModalities,
       });
       const savedAiEntities = await this.msgRepo.save(
-        assistantDrafts.map((draft) => this.msgRepo.create(draft)),
+        assistantReply.drafts.map((draft) => this.msgRepo.create(draft)),
       );
       const latestAiEntity = savedAiEntities[savedAiEntities.length - 1];
       if (latestAiEntity) {
@@ -886,6 +906,53 @@ export class ChatService {
           ),
         )),
       );
+
+      if (assistantReply.deferredImageReply) {
+        const runtimeRules = await this.replyLogicRules.getRules();
+        if (
+          history.length % runtimeRules.memoryCompressionEveryMessages === 0 &&
+          history.length > 0
+        ) {
+          const primaryCharId = entity.participants[0];
+          const char = await this.characters.findById(primaryCharId);
+          if (char) {
+            const runtimeProfile =
+              (await this.characters.getRuntimeProfileFromCharacter(char)) ??
+              char.profile;
+            const newMemory = await this.ai.compressMemory(
+              history,
+              runtimeProfile,
+              {
+                surface: 'app',
+                scene: 'memory_compress',
+                scopeType: 'conversation',
+                scopeId: convId,
+                scopeLabel: entity.title,
+                ownerId: entity.ownerId,
+                characterId: primaryCharId,
+                characterName: char.name,
+                conversationId: convId,
+              },
+            );
+            if (!char.profile.memory) {
+              char.profile.memory = {
+                coreMemory: char.profile.memorySummary ?? '',
+                recentSummary: newMemory,
+                forgettingCurve: 70,
+              };
+            } else {
+              char.profile.memory.recentSummary = newMemory;
+            }
+            await this.characters.upsert(char);
+          }
+        }
+
+        await this.syncNarrativeArc(entity);
+        return {
+          messages: results,
+          deferredImageReply: assistantReply.deferredImageReply,
+        };
+      }
     }
 
     const runtimeRules = await this.replyLogicRules.getRules();
@@ -928,7 +995,9 @@ export class ChatService {
     }
 
     await this.syncNarrativeArc(entity);
-    return results;
+    return {
+      messages: results,
+    };
   }
 
   private shouldCreateVoiceReplyFromAttachment(input: AssistantReplyTargetMessage) {
@@ -1051,7 +1120,23 @@ export class ChatService {
     characterName: string;
     text: string;
     modalities: AssistantReplyModalitiesPlan;
-  }) {
+  }): Promise<{
+    drafts: Array<
+      Pick<
+        MessageEntity,
+        | 'id'
+        | 'conversationId'
+        | 'senderType'
+        | 'senderId'
+        | 'senderName'
+        | 'type'
+        | 'text'
+        | 'attachmentKind'
+        | 'attachmentPayload'
+      >
+    >;
+    deferredImageReply?: DeferredAssistantImageReply;
+  }> {
     const drafts: Array<
       Pick<
         MessageEntity,
@@ -1078,50 +1163,20 @@ export class ChatService {
       attachmentPayload: null as string | null,
     };
     drafts.push(textMessage);
-
-    if (input.modalities.imagePrompt) {
-      try {
-        const generated = await this.ai.generateImage({
-          prompt: input.modalities.imagePrompt,
+    const deferredImageReply = input.modalities.imagePrompt
+      ? {
           conversationId: input.conversationId,
           characterId: input.characterId,
-        });
-        const generatedAttachment = await this.saveUploadedAttachment(
-          {
-            buffer: generated.buffer,
-            mimetype: generated.mimeType,
-            originalname: `chat-reply-image.${generated.fileExtension}`,
-            size: generated.buffer.length,
-          },
-          {},
-        );
-        if (generatedAttachment.kind === 'image') {
-          drafts.push({
-            id: `msg_${Date.now()}_ai_image_${randomUUID().slice(0, 8)}`,
-            conversationId: input.conversationId,
-            senderType: 'character' as const,
-            senderId: input.characterId,
-            senderName: input.characterName,
-            type: 'image' as const,
-            text: '',
-            attachmentKind: generatedAttachment.kind,
-            attachmentPayload: JSON.stringify(generatedAttachment),
-          });
+          characterName: input.characterName,
+          imagePrompt: input.modalities.imagePrompt,
         }
-      } catch (error) {
-        this.logger.warn(
-          'Failed to generate assistant image reply, falling back to text.',
-          {
-            conversationId: input.conversationId,
-            characterId: input.characterId,
-            errorMessage: error instanceof Error ? error.message : String(error),
-          },
-        );
-      }
-    }
+      : undefined;
 
     if (!input.modalities.includeVoice) {
-      return drafts;
+      return {
+        drafts,
+        deferredImageReply,
+      };
     }
 
     try {
@@ -1170,7 +1225,63 @@ export class ChatService {
       );
     }
 
-    return drafts;
+    return {
+      drafts,
+      deferredImageReply,
+    };
+  }
+
+  async completeDeferredAssistantImageReply(
+    input: DeferredAssistantImageReply,
+  ): Promise<Message | null> {
+    try {
+      const generated = await this.ai.generateImage({
+        prompt: input.imagePrompt,
+        conversationId: input.conversationId,
+        characterId: input.characterId,
+      });
+      const generatedAttachment = await this.saveUploadedAttachment(
+        {
+          buffer: generated.buffer,
+          mimetype: generated.mimeType,
+          originalname: `chat-reply-image.${generated.fileExtension}`,
+          size: generated.buffer.length,
+        },
+        {},
+      );
+      if (generatedAttachment.kind !== 'image') {
+        return null;
+      }
+
+      const entity = await this.requireOwnedConversation(input.conversationId);
+      const imageMessageEntity = this.msgRepo.create({
+        id: `msg_${Date.now()}_ai_image_${randomUUID().slice(0, 8)}`,
+        conversationId: input.conversationId,
+        senderType: 'character',
+        senderId: input.characterId,
+        senderName: input.characterName,
+        type: 'image',
+        text: '',
+        attachmentKind: generatedAttachment.kind,
+        attachmentPayload: JSON.stringify(generatedAttachment),
+      });
+      await this.msgRepo.save(imageMessageEntity);
+      await this.touchConversationActivity(
+        entity,
+        imageMessageEntity.createdAt ?? new Date(),
+      );
+      return this.serializeMessage(imageMessageEntity);
+    } catch (error) {
+      this.logger.warn(
+        'Failed to generate deferred assistant image reply, skipping image.',
+        {
+          conversationId: input.conversationId,
+          characterId: input.characterId,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        },
+      );
+      return null;
+    }
   }
 
   private async enrichAttachmentForAi(
