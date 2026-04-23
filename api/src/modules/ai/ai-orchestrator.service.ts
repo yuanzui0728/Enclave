@@ -2541,78 +2541,102 @@ export class AiOrchestratorService {
   async synthesizeSpeech(
     options: SpeechSynthesisOptions,
   ): Promise<SpeechSynthesisResult> {
-    const provider = await this.resolveRuntimeProvider({
+    const primaryProvider = await this.resolveRuntimeProvider({
       characterId: options.characterId,
     });
-    if (!provider.apiKey.trim()) {
-      throw new ServiceUnavailableException(
-        '当前实例未配置可用的 AI Key，暂时无法生成语音。',
-      );
-    }
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId: options.characterId,
+      capability: 'tts',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
 
     const text = options.text.trim();
     if (!text) {
       throw new BadRequestException('请先提供要播报的文本。');
     }
 
-    const voice =
-      options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE;
-    const client = this.createProviderClient(provider);
     const startedAt = Date.now();
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的 AI Key，暂时无法生成语音。',
+    );
 
-    try {
-      const response = await this.retrySpeechRequest('speech synthesis', () =>
-        client.audio.speech.create({
-          model: provider.ttsModel,
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      const provider = attempt.provider;
+      if (!this.hasProviderCapability(provider, 'tts')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const voice =
+        options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE;
+      const client = this.createProviderClient(provider);
+
+      try {
+        const response = await this.retrySpeechRequest('speech synthesis', () =>
+          client.audio.speech.create({
+            model: provider.ttsModel,
+            voice,
+            input: text,
+            response_format: 'mp3',
+            instructions: options.instructions?.trim() || undefined,
+          }),
+        );
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        if (!buffer.length) {
+          throw new BadGatewayException('语音生成结果为空，请稍后再试。');
+        }
+
+        return {
+          buffer,
+          mimeType: 'audio/mpeg',
+          fileExtension: 'mp3',
+          durationMs: Date.now() - startedAt,
+          provider: provider.ttsModel,
           voice,
-          input: text,
-          response_format: 'mp3',
-          instructions: options.instructions?.trim() || undefined,
-        }),
-      );
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+        };
+      } catch (error) {
+        lastError = error;
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error('speech synthesis failed', {
+            conversationId: options.conversationId,
+            characterId: options.characterId,
+            voice,
+            textLength: text.length,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw this.toSpeechSynthesisException(error);
+        }
 
-      if (!buffer.length) {
-        throw new BadGatewayException('语音生成结果为空，请稍后再试。');
+        this.logger.warn('speech synthesis fallback scheduled', {
+          conversationId: options.conversationId,
+          characterId: options.characterId,
+          voice,
+          fromModel: provider.ttsModel,
+          toModel: attempts[index + 1]?.provider.ttsModel,
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
       }
+    }
 
-      return {
-        buffer,
-        mimeType: 'audio/mpeg',
-        fileExtension: 'mp3',
-        durationMs: Date.now() - startedAt,
-        provider: provider.ttsModel,
-        voice,
-      };
-    } catch (error) {
-      if (error instanceof BadGatewayException) {
-        throw error;
-      }
-
-      this.logger.error('speech synthesis failed', {
-        conversationId: options.conversationId,
-        characterId: options.characterId,
-        voice,
-        textLength: text.length,
-        errorMessage: this.extractErrorMessage(error),
-      });
-
-      if (this.isAuthenticationFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音播报配置鉴权失败，请检查 Provider Key。',
-        );
-      }
-
-      if (this.isTransientSpeechFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音播报通道繁忙，请稍后再试。',
-        );
-      }
-
-      throw new BadGatewayException(
-        '当前 Provider 暂不支持语音合成，请切换支持播报的模型或网关。',
+    if (!attemptedProvider) {
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的 AI Key，暂时无法生成语音。',
       );
     }
+
+    throw this.toSpeechSynthesisException(lastError);
   }
 }
