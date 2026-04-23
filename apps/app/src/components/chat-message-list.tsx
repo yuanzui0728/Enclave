@@ -993,13 +993,19 @@ export function ChatMessageList({
         queryKey: ["app-sticker-catalog", baseUrl],
       });
     },
-    onError: (error) => {
+    onError: (error, message) => {
       setActionNotice({
         message:
           error instanceof Error
             ? error.message
             : "添加到表情失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续添加到表情",
+        onAction: () => {
+          addToStickerMutation.mutate(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
