@@ -54,6 +54,7 @@ import {
   buildCreateGroupRouteHash,
   parseCreateGroupRouteHash,
 } from "../../lib/create-group-route-state";
+import { normalizePathname } from "../../lib/normalize-pathname";
 
 type SearchNavigationTargetInput = {
   to: string;
@@ -79,10 +80,10 @@ export function resolveSearchNavigationTarget(
   input: SearchNavigationTargetInput,
   options?: SearchNavigationOptions,
 ): SearchNavigationTarget {
-  const normalizedTo = input.to.trim() || "/";
-  const embeddedTarget = parseEmbeddedNavigationTarget(normalizedTo);
+  const rawTo = input.to.trim() || "/";
+  const embeddedTarget = parseEmbeddedNavigationTarget(rawTo);
   const normalizedTarget = {
-    to: embeddedTarget?.to ?? normalizedTo,
+    to: normalizePathname(embeddedTarget?.to ?? rawTo),
     search:
       normalizeSearchString(input.search) ??
       normalizeSearchString(embeddedTarget?.search),

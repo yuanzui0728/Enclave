@@ -70,6 +70,7 @@
 - 桌面搜索页、搜索启动器和收藏页现在也会把旧 `/moments`、`/moments/friend/$characterId`、`/feed`、`/channels`、`/mini-programs` 这批共享根路径直接收成对应桌面工作区，不再先打开共享根页再靠页面自愈。之前这些老链接会在桌面里短暂停在旧共享页，朋友圈/视频号/小程序还可能让主导航在自愈前掉线。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/chat`、`/contacts`、`/profile`、`/search`、`/favorites`、`/notes`、`/profile/settings` 目标现在也会直接收成各自的桌面主工作区，不再先打开共享根页再靠页面自愈。其中旧 `/notes` 会直接落到 `/tabs/favorites#category=notes`，旧设置页会直接落到 `/desktop/settings`，旧资料页会直接落到 `/tabs/profile`，旧搜索页会直接落到 `/tabs/search`。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/chat/$conversationId/details|search|voice-call|video-call`，以及 `/group/$groupId/details|search|voice-call|video-call|announcement|edit/*|members/*` 目标现在也会直接收成 `/tabs/chat#...` 的桌面消息状态，不再先打开共享兼容页再重定向回桌面工作区；旧 hash 里的 `messageId` 也会一起保住。
+- 桌面搜索页、搜索启动器和收藏页的统一导航收敛器现在会先归一目标 `pathname` 的尾斜杠。旧收藏或搜索目标如果写成 `/chat/$conversationId/`、`/official-accounts/$accountId/`、`/discover/channels/` 这类尾斜杠地址，也会继续命中桌面工作区收敛规则，不再绕过兼容层。
 - 群聊页现在也会像单聊页一样消费游戏邀约上下文：把组局邀约发到群里后，从旧 `/group/$groupId?game=...&invite=...` 或最近投递会话回到群聊，桌面下也会出现“回到组局 / 回到游戏”提示，而且回跳会把旧 `/games`、`/discover/games` 继续收成 `/tabs/games`。
 - 群聊页里的游戏邀约上下文现在也会在同一个群内随 query 变化立即刷新，不再只在切群时更新。之前如果还停在同一个群里，连续切不同组局邀约链接，顶部“回到组局 / 回到游戏”提示可能残留上一条邀约的上下文。
 - 单聊页里的游戏邀约上下文也同步对齐了：同一个会话里连续切不同 `?game=...&invite=...` 链接时，顶部“回到组局 / 回到游戏”提示会立即刷新，不再先短暂残留上一条邀约的上下文。

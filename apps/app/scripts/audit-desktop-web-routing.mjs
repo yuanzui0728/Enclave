@@ -667,9 +667,12 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /chat/$conversationId/details|search|voice-call|video-call, /group/$groupId/details|search|voice-call|video-call|announcement|edit/*|members/*, /contacts, /profile, /search, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /moments, /moments/friend/$characterId, /discover/moments, /discover/moments/publish, /feed, /games, /discover/games, /discover/feed, /mini-programs, /discover/mini-programs, /channels, /discover/channels, /channels/authors/$authorId, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
+      "desktop search navigation normalizes trailing-slash target pathnames and rewrites legacy /chat, /group, /chat/$conversationId/details|search|voice-call|video-call, /group/$groupId/details|search|voice-call|video-call|announcement|edit/*|members/*, /contacts, /profile, /search, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /moments, /moments/friend/$characterId, /discover/moments, /discover/moments/publish, /feed, /games, /discover/games, /discover/feed, /mini-programs, /discover/mini-programs, /channels, /discover/channels, /channels/authors/$authorId, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
+      "const rawTo = input.to.trim() || \"/\";",
+      "to: normalizePathname(embeddedTarget?.to ?? rawTo),",
       "buildDesktopMomentsRouteHash,",
       "parseDesktopMomentsRouteState,",
       "buildDesktopChannelsRouteHash,",

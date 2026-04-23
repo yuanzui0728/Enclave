@@ -3366,6 +3366,8 @@ export function ChatComposer({
               setAttachmentError(null);
               setMobilePlusNotice({ message });
             }}
+            unavailableBackActionLabel={errorActionLabel}
+            onUnavailableBack={onErrorAction ?? undefined}
             onUnavailableFallback={handleUnavailableFallback}
           />
         ) : null}
