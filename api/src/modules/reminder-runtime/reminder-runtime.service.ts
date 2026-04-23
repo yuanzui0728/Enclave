@@ -432,7 +432,7 @@ export class ReminderRuntimeService {
         .getCount(),
     ]);
 
-    const activeTasks = activeRows.slice(0, 12).map((item) => this.serializeTask(item));
+    const activeTasks = activeRows.map((item) => this.serializeTask(item));
     const upcomingTasks = activeRows
       .filter((item) => item.nextTriggerAt instanceof Date)
       .slice(0, 8)
