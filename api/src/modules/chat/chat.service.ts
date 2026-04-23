@@ -701,6 +701,7 @@ export class ChatService {
     const normalizedInput = await this.normalizeOutgoingMessageInput(
       input,
       convId,
+      entity.participants[0],
     );
 
     const userMsgEntity = this.msgRepo.create({
@@ -811,20 +812,26 @@ export class ChatService {
         ).text;
 
     if (assistantReplyText) {
-      const aiEntity = this.msgRepo.create({
-        id: `msg_${Date.now()}_ai`,
+      const assistantDrafts = await this.createAssistantReplyMessages({
         conversationId: convId,
-        senderType: 'character',
-        senderId: charId,
-        senderName: profile.name,
-        type: 'text',
+        characterId: charId,
+        characterName: profile.name,
         text: assistantReplyText,
+        replyToMessage: {
+          type: normalizedInput.type,
+          attachment: normalizedInput.attachment,
+        },
       });
-      const savedAiEntity = await this.msgRepo.save(aiEntity);
-      await this.touchConversationActivity(
-        entity,
-        savedAiEntity.createdAt ?? new Date(),
+      const savedAiEntities = await this.msgRepo.save(
+        assistantDrafts.map((draft) => this.msgRepo.create(draft)),
       );
+      const latestAiEntity = savedAiEntities[savedAiEntities.length - 1];
+      if (latestAiEntity) {
+        await this.touchConversationActivity(
+          entity,
+          latestAiEntity.createdAt ?? new Date(),
+        );
+      }
       if (this.shouldIncludeAssistantMessageInHistory(assistantReplyText)) {
         history.push({
           role: 'assistant',
@@ -834,7 +841,13 @@ export class ChatService {
         });
       }
       this.conversationHistory.set(convId, history);
-      results.push(await this.serializeMessage(savedAiEntity));
+      results.push(
+        ...(await Promise.all(
+          savedAiEntities.map((savedAiEntity) =>
+            this.serializeMessage(savedAiEntity),
+          ),
+        )),
+      );
     }
 
     const runtimeRules = await this.replyLogicRules.getRules();
@@ -881,35 +894,50 @@ export class ChatService {
   }
 
   private shouldCreateVoiceReply(
-    inputType:
-      | 'text'
-      | 'sticker'
-      | 'image'
-      | 'file'
-      | 'voice'
-      | 'contact_card'
-      | 'location_card'
-      | 'note_card',
+    input: {
+      type:
+        | 'text'
+        | 'sticker'
+        | 'image'
+        | 'file'
+        | 'voice'
+        | 'contact_card'
+        | 'location_card'
+        | 'note_card';
+      attachment?: MessageAttachment;
+    },
   ) {
-    return inputType === 'voice';
+    if (input.type === 'voice') {
+      return true;
+    }
+
+    return (
+      input.type === 'file' &&
+      input.attachment?.kind === 'file' &&
+      /^(audio|video)\//i.test(input.attachment.mimeType)
+    );
   }
 
-  private async createAssistantReplyMessageEntity(input: {
+  private async createAssistantReplyMessages(input: {
     conversationId: string;
     characterId: string;
     characterName: string;
     text: string;
-    replyToInputType:
-      | 'text'
-      | 'sticker'
-      | 'image'
-      | 'file'
-      | 'voice'
-      | 'contact_card'
-      | 'location_card'
-      | 'note_card';
+    replyToMessage: {
+      type:
+        | 'text'
+        | 'sticker'
+        | 'image'
+        | 'file'
+        | 'voice'
+        | 'contact_card'
+        | 'location_card'
+        | 'note_card';
+      attachment?: MessageAttachment;
+    };
   }) {
-    const baseMessage = {
+    const textMessage = {
+      id: `msg_${Date.now()}_ai_text_${randomUUID().slice(0, 8)}`,
       conversationId: input.conversationId,
       senderType: 'character' as const,
       senderId: input.characterId,
@@ -920,8 +948,15 @@ export class ChatService {
       attachmentPayload: null as string | null,
     };
 
-    if (!this.shouldCreateVoiceReply(input.replyToInputType)) {
-      return baseMessage;
+    if (!this.shouldCreateVoiceReply(input.replyToMessage)) {
+      return [textMessage];
+    }
+
+    const capabilities = await this.ai.resolveRuntimeCapabilityProfile({
+      characterId: input.characterId,
+    });
+    if (!capabilities.supportsSpeechSynthesis) {
+      return [textMessage];
     }
 
     try {
@@ -945,15 +980,25 @@ export class ChatService {
         mimeType: asset.mimeType,
         fileName: asset.fileName,
         size: synthesized.buffer.length,
+        durationMs: synthesized.durationMs,
         transcriptText: input.text,
       };
+      const voiceMessageId = `msg_${Date.now()}_ai_voice_${randomUUID().slice(0, 8)}`;
 
-      return {
-        ...baseMessage,
-        type: 'voice' as const,
-        attachmentKind: attachment.kind,
-        attachmentPayload: JSON.stringify(attachment),
-      };
+      return [
+        textMessage,
+        {
+          id: voiceMessageId,
+          conversationId: input.conversationId,
+          senderType: 'character' as const,
+          senderId: input.characterId,
+          senderName: input.characterName,
+          type: 'voice' as const,
+          text: input.text,
+          attachmentKind: attachment.kind,
+          attachmentPayload: JSON.stringify(attachment),
+        },
+      ];
     } catch (error) {
       this.logger.warn(
         'Failed to synthesize assistant voice reply, falling back to text.',
@@ -963,13 +1008,14 @@ export class ChatService {
           errorMessage: error instanceof Error ? error.message : String(error),
         },
       );
-      return baseMessage;
+      return [textMessage];
     }
   }
 
   private async enrichAttachmentForAi(
     attachment: MessageAttachment,
     conversationId?: string,
+    characterId?: string,
   ): Promise<MessageAttachment> {
     if (attachment.kind === 'voice') {
       if (attachment.transcriptText?.trim()) {
@@ -981,6 +1027,7 @@ export class ChatService {
         mimeType: attachment.mimeType,
         fileName: attachment.fileName,
         conversationId,
+        characterId,
         mode: 'chat_attachment',
       });
       return transcription?.text
@@ -1004,6 +1051,7 @@ export class ChatService {
         mimeType: attachment.mimeType,
         fileName: attachment.fileName,
         conversationId,
+        characterId,
         mode: 'chat_attachment',
       });
       return transcription?.text
@@ -1490,6 +1538,7 @@ export class ChatService {
   private async normalizeOutgoingMessageInput(
     input: SendConversationMessageInput,
     conversationId?: string,
+    characterId?: string,
   ): Promise<{
     type:
       | 'text'
@@ -1542,6 +1591,7 @@ export class ChatService {
       const attachment = await this.enrichAttachmentForAi(
         input.attachment,
         conversationId,
+        characterId,
       );
 
       const fallbackText =
@@ -1592,6 +1642,44 @@ export class ChatService {
     }
 
     if (attachment.kind === 'file') {
+      if (this.isAudioMimeType(attachment.mimeType)) {
+        return [
+          {
+            type: 'audio',
+            audioUrl: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            transcriptText: attachment.transcriptText,
+            summaryText: promptText,
+          },
+        ];
+      }
+
+      if (this.isVideoMimeType(attachment.mimeType)) {
+        return [
+          {
+            type: 'video',
+            videoUrl: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            transcriptText: attachment.transcriptText,
+            summaryText: promptText,
+          },
+        ];
+      }
+
+      if (this.isDocumentMimeType(attachment.mimeType, attachment.fileName)) {
+        return [
+          {
+            type: 'document',
+            url: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            summaryText: promptText,
+          },
+        ];
+      }
+
       return [
         {
           type: 'file',
@@ -1604,9 +1692,17 @@ export class ChatService {
     }
 
     if (attachment.kind === 'voice') {
-      return this.buildTextAiParts(
-        this.buildMessagePromptText(text, attachment),
-      );
+      return [
+        {
+          type: 'audio',
+          audioUrl: attachment.url,
+          mimeType: attachment.mimeType,
+          fileName: attachment.fileName,
+          durationMs: attachment.durationMs,
+          transcriptText: attachment.transcriptText,
+          summaryText: promptText,
+        },
+      ];
     }
 
     if (attachment.kind === 'contact_card') {
@@ -1647,6 +1743,32 @@ export class ChatService {
 
   private buildTextAiParts(text: string): AiMessagePart[] {
     return [{ type: 'text', text }];
+  }
+
+  private isAudioMimeType(mimeType?: string) {
+    return Boolean(mimeType && /^audio\//i.test(mimeType));
+  }
+
+  private isVideoMimeType(mimeType?: string) {
+    return Boolean(mimeType && /^video\//i.test(mimeType));
+  }
+
+  private isDocumentMimeType(mimeType?: string, fileName?: string) {
+    if (mimeType) {
+      if (/^text\//i.test(mimeType)) {
+        return true;
+      }
+
+      if (
+        /^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/json|application\/xml|text\/markdown|text\/csv)$/i.test(
+          mimeType,
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return /\.(pdf|txt|md|markdown|csv|json|doc|docx)$/i.test(fileName ?? '');
   }
 
   private buildMessagePromptText(

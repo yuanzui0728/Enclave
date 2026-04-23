@@ -33,7 +33,10 @@ import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { resolveReadableChatAttachmentPath } from '../chat/chat-attachment-storage';
 import { resolveReadableMomentMediaPath } from '../moments/moment-media.storage';
-import { InferenceService } from '../inference/inference.service';
+import {
+  InferenceService,
+  type ResolvedInferenceCapabilityProfile,
+} from '../inference/inference.service';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
@@ -202,11 +205,16 @@ export class AiOrchestratorService {
     });
   }
 
-  private modelSupportsImageInput(model: string) {
-    const normalized = model.toLowerCase();
-    return /(vision|gpt-4o|gpt-4\.1|gpt-5|gemini|claude|vl|multimodal)/.test(
-      normalized,
-    );
+  private async resolveProviderCapabilityProfile(
+    provider: ResolvedProviderConfig,
+  ): Promise<ResolvedInferenceCapabilityProfile> {
+    return this.inferenceService.resolveCapabilityProfile({
+      model: provider.model,
+      ttsModel: provider.ttsModel,
+      transcriptionModel: provider.transcriptionModel,
+      apiStyle: provider.apiStyle,
+      mode: provider.mode,
+    });
   }
 
   private isPrivateHostname(hostname: string) {
@@ -743,6 +751,9 @@ export class AiOrchestratorService {
       isGroupChat,
     } = request;
     const hasImageInput = this.requestContainsImageInput(request);
+    const capabilities = await this.resolveProviderCapabilityProfile(provider);
+    const allowNativeImageInput =
+      hasImageInput && capabilities.supportsNativeImageInput;
 
     const execute = async (
       allowImageInput: boolean,
@@ -823,9 +834,9 @@ export class AiOrchestratorService {
     };
 
     try {
-      return await execute(true);
+      return await execute(allowNativeImageInput);
     } catch (error) {
-      if (hasImageInput && this.isUnsupportedImageInputError(error)) {
+      if (allowNativeImageInput && this.isUnsupportedImageInputError(error)) {
         this.logger.warn(
           'Provider rejected image input, retrying with text-only fallback',
           {
@@ -838,6 +849,17 @@ export class AiOrchestratorService {
 
       throw error;
     }
+  }
+
+  async resolveRuntimeCapabilityProfile(options?: {
+    override?: AiKeyOverride;
+    characterId?: string | null;
+  }) {
+    const provider = await this.resolveRuntimeProvider({
+      override: options?.override,
+      characterId: options?.characterId,
+    });
+    return this.resolveProviderCapabilityProfile(provider);
   }
 
   private canRetryWithDefaultProvider(
@@ -1077,6 +1099,7 @@ export class AiOrchestratorService {
     mimeType?: string | null;
     fileName?: string | null;
     conversationId?: string;
+    characterId?: string;
     mode?: string;
   }) {
     const normalizedMimeType =
@@ -1106,6 +1129,7 @@ export class AiOrchestratorService {
         },
         {
           conversationId: input.conversationId,
+          characterId: input.characterId,
           mode: input.mode,
         },
       );

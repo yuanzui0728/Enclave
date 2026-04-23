@@ -86,6 +86,7 @@ type ChatComposerProps = {
   speechInput?: {
     baseUrl?: string;
     conversationId: string;
+    characterId?: string;
     enabled: boolean;
   };
   onSendSticker?: (sticker: StickerAttachment) => void | Promise<void>;
@@ -432,6 +433,7 @@ export function ChatComposer({
   const speech = useSpeechInput({
     baseUrl: speechInput?.baseUrl,
     conversationId: speechInput?.conversationId ?? "",
+    characterId: speechInput?.characterId,
     enabled: showSpeechEntry,
     mode: isDesktop ? "dictation" : "voice",
   });

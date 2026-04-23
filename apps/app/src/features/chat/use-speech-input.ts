@@ -13,6 +13,7 @@ import type {
 type UseSpeechInputOptions = {
   baseUrl?: string;
   conversationId: string;
+  characterId?: string;
   enabled: boolean;
   language?: string;
   mode?: "dictation" | "voice";
@@ -92,6 +93,7 @@ function mergeInputText(currentValue: string, nextText: string) {
 export function useSpeechInput({
   baseUrl,
   conversationId,
+  characterId,
   enabled,
   language = "zh-CN",
   mode = "dictation",
@@ -376,6 +378,9 @@ export function useSpeechInput({
             buildRecordedAudioFileName(audioBlob.type),
           );
           formData.append("conversationId", conversationId);
+          if (characterId) {
+            formData.append("characterId", characterId);
+          }
           formData.append("mode", "dictation");
 
           const result = await transcribeSpeechInput(formData, baseUrl);

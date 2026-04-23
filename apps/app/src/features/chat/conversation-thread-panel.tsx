@@ -766,6 +766,7 @@ export function ConversationThreadPanel({
           speechInput={{
             baseUrl,
             conversationId,
+            characterId: participants[0],
             enabled: runtimeConfig.appPlatform !== "desktop",
           }}
           onChange={(value) => {
