@@ -1,3 +1,5 @@
+import { LanguageSwitcher } from "@yinjie/i18n";
+
 type AdminTopbarProps = {
   eyebrow: string;
   title: string;
@@ -18,10 +20,15 @@ export function AdminTopbar({
     <header className="rounded-[28px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-5 py-3 shadow-[var(--shadow-soft)] backdrop-blur">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">{eyebrow}</div>
-          <h1 className="mt-0.5 text-xl font-semibold text-[color:var(--text-primary)]">{title}</h1>
+          <div className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">
+            {eyebrow}
+          </div>
+          <h1 className="mt-0.5 text-xl font-semibold text-[color:var(--text-primary)]">
+            {title}
+          </h1>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <LanguageSwitcher variant="compact" description={null} />
           <div
             className={
               statusTone === "healthy"

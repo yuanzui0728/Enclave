@@ -8,6 +8,7 @@ import {
   setWorldOwnerApiKey,
   updateWorldOwner,
 } from "@yinjie/contracts";
+import { LanguageSwitcher } from "@yinjie/i18n";
 import {
   AppPage,
   Button,
@@ -29,13 +30,14 @@ import {
 } from "../store/chat-preferences-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
-type SettingsTab = "profile" | "chat" | "ai" | "legal";
+type SettingsTab = "profile" | "chat" | "ai" | "language" | "legal";
 type LegalTab = "privacy" | "terms" | "community";
 
 const settingsTabs: Array<{ id: SettingsTab; label: string }> = [
   { id: "profile", label: "个人资料" },
   { id: "chat", label: "聊天" },
   { id: "ai", label: "AI 设置" },
+  { id: "language", label: "语言" },
   { id: "legal", label: "协议与规范" },
 ];
 
@@ -163,7 +165,8 @@ export function ProfileSettingsPage() {
   const backTo = desktopMode ? "/tabs/chat" : "/tabs/profile";
   const desktopBackTo = desktopSettingsRoute ? "/tabs/chat" : "/tabs/profile";
   const desktopBackLabel = desktopSettingsRoute ? "返回消息" : "返回资料";
-  const mobileBackLabel = backTo === "/tabs/profile" ? "返回资料页" : "返回消息";
+  const mobileBackLabel =
+    backTo === "/tabs/profile" ? "返回资料页" : "返回消息";
 
   useEffect(() => {
     if (!desktopPathMismatch) {
@@ -212,7 +215,11 @@ export function ProfileSettingsPage() {
         <MobileSettingsSection
           desktop={desktopMode}
           title={desktopMode ? "个人资料" : undefined}
-          description={desktopMode ? "这里的名称和签名会用于移动端资料页和世界主人展示。" : undefined}
+          description={
+            desktopMode
+              ? "这里的名称和签名会用于移动端资料页和世界主人展示。"
+              : undefined
+          }
         >
           <div className="space-y-3">
             <MobileFieldGroup label="显示名称">
@@ -343,11 +350,13 @@ export function ProfileSettingsPage() {
 
           {desktopMode ? (
             <InlineNotice tone="muted">
-              当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
+              当前仅影响桌面和 Web
+              的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
             </InlineNotice>
           ) : (
             <MobileSettingsInlineNotice tone="muted">
-              当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
+              当前仅影响桌面和 Web
+              的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
             </MobileSettingsInlineNotice>
           )}
         </MobileSettingsSection>
@@ -409,7 +418,9 @@ export function ProfileSettingsPage() {
           ) : null}
           {ownerQuery.data ? (
             desktopMode ? (
-              <InlineNotice tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}>
+              <InlineNotice
+                tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}
+              >
                 {ownerQuery.data.hasCustomApiKey
                   ? `当前使用专属 API Key${ownerQuery.data.customApiBase ? `，Base URL：${ownerQuery.data.customApiBase}` : ""}。`
                   : "当前使用实例级 Provider。"}
@@ -557,6 +568,30 @@ export function ProfileSettingsPage() {
         </MobileSettingsSection>
       ) : null}
 
+      {activeTab === "language" ? (
+        <MobileSettingsSection
+          desktop={desktopMode}
+          title={desktopMode ? "界面语言" : undefined}
+          description={
+            desktopMode
+              ? "切换桌面端、Web、Android、iOS 共用业务界面的显示语言。"
+              : "切换当前设备的界面语言"
+          }
+        >
+          <LanguageSwitcher />
+
+          {desktopMode ? (
+            <InlineNotice tone="muted">
+              语言偏好按端保存；后续新增语言会自动出现在这里，不需要每个页面单独加入口。
+            </InlineNotice>
+          ) : (
+            <MobileSettingsInlineNotice tone="muted">
+              语言偏好会保存在当前设备；桌面端、管理后台和云控制台有各自的切换入口。
+            </MobileSettingsInlineNotice>
+          )}
+        </MobileSettingsSection>
+      ) : null}
+
       {activeTab === "legal" ? (
         <>
           {desktopMode ? null : (
@@ -652,9 +687,11 @@ export function ProfileSettingsPage() {
             ? "在桌面工作区里管理世界主人的资料与签名。"
             : activeTab === "chat"
               ? "调整桌面和 Web 键盘聊天输入的发送快捷键。"
-            : activeTab === "ai"
-              ? "管理专属 API Key 和兼容 Base URL。"
-              : "查看当前世界相关的协议和社区规范。"
+              : activeTab === "ai"
+                ? "管理专属 API Key 和兼容 Base URL。"
+                : activeTab === "language"
+                  ? "切换当前端的界面语言和本地化格式。"
+                  : "查看当前世界相关的协议和社区规范。"
         }
         toolbar={
           <Button
@@ -760,7 +797,7 @@ export function ProfileSettingsPage() {
       <TabPageTopBar
         title="设置"
         titleAlign="center"
-      className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={handleMobileBack}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { LanguageSwitcher } from "@yinjie/i18n";
 import { InlineNotice } from "@yinjie/ui";
 import { JobsPermalinkLink } from "./jobs-permalink-link";
 import { RequestsPermalinkLink } from "./requests-permalink-link";
@@ -62,13 +63,25 @@ function RootLayoutContent() {
 
       <div className="relative mx-auto max-w-7xl">
         <div className="mb-6 rounded-[30px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-console)] px-6 py-5 shadow-[var(--shadow-overlay)]">
-          <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--text-muted)]">
-            Yinjie Cloud Ops
-          </div>
-          <div className="mt-2 text-3xl font-semibold">Cloud World Console</div>
-          <div className="mt-2 max-w-3xl text-sm leading-7 text-[color:var(--text-secondary)]">
-            Manage phone-based world provisioning, wake old worlds, inspect
-            lifecycle jobs, and track instance health from one place.
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--text-muted)]">
+                Yinjie Cloud Ops
+              </div>
+              <div className="mt-2 text-3xl font-semibold">
+                Cloud World Console
+              </div>
+              <div className="mt-2 max-w-3xl text-sm leading-7 text-[color:var(--text-secondary)]">
+                Manage phone-based world provisioning, wake old worlds, inspect
+                lifecycle jobs, and track instance health from one place.
+              </div>
+            </div>
+
+            <LanguageSwitcher
+              variant="compact"
+              description={null}
+              className="shrink-0 self-start"
+            />
           </div>
 
           <div className="mt-4">
@@ -138,9 +151,7 @@ function RootLayoutContent() {
               Jobs
             </JobsPermalinkLink>
             <SessionsPermalinkLink
-              className={
-                pathname === "/sessions" ? NAV_LINK_ACTIVE : NAV_LINK
-              }
+              className={pathname === "/sessions" ? NAV_LINK_ACTIVE : NAV_LINK}
             >
               Sessions
             </SessionsPermalinkLink>

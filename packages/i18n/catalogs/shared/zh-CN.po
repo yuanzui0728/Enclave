@@ -12,6 +12,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: packages/i18n/src/runtime/language-switcher.tsx:28
+msgid "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
+msgstr "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
+
 #: packages/i18n/src/runtime/formatters.ts:61
 msgid "刚刚"
 msgstr "刚刚"
@@ -23,3 +27,7 @@ msgstr "加载中..."
 #: packages/i18n/src/runtime/formatters.ts:65
 msgid "昨天"
 msgstr "昨天"
+
+#: packages/i18n/src/runtime/language-switcher.tsx:58
+msgid "界面语言"
+msgstr "界面语言"
