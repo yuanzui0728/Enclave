@@ -1559,31 +1559,6 @@ function expectAdminSessionSourceGroupRiskRevokeRequest(
   ).toBe(true);
 }
 
-async function exportAdminSessionRiskQuickViewArtifact(
-  requests: CloudAdminRequestLog[],
-  {
-    buttonName,
-    message,
-    quickViewButtonName = "Watch risk",
-    riskLevel = "watch",
-  }: {
-    buttonName: string;
-    message: string;
-    quickViewButtonName?: string;
-    riskLevel?: string;
-  },
-) {
-  await switchAdminSessionRiskQuickView(requests, {
-    buttonName: quickViewButtonName,
-    riskLevel,
-  });
-  await exportAdminSessionDownloadArtifact({
-    buttonName,
-    message,
-  });
-  expectAdminSessionRiskSnapshotRequest(requests, riskLevel);
-}
-
 async function exportAdminSessionRiskQuickViewScenario({
   adminSessions,
   buttonName,
