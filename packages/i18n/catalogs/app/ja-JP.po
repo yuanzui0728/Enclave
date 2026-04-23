@@ -14,24 +14,24 @@ msgstr ""
 
 #: apps/app/src/components/bootstrap-screen.tsx:49
 msgid "同步世界主人"
-msgstr ""
+msgstr "世界の主人を同期"
 
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
-msgstr ""
+msgstr "あなたの世界へ、おかえりなさい"
 
 #: apps/app/src/components/bootstrap-screen.tsx:64
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
-msgstr ""
+msgstr "今回の入場経路を整えています。まもなく前回の続きに戻ります。"
 
 #: apps/app/src/components/bootstrap-screen.tsx:41
 msgid "确认入口"
-msgstr ""
+msgstr "入口を確認"
 
 #: apps/app/src/components/bootstrap-screen.tsx:57
 msgid "继续开启对话"
-msgstr ""
+msgstr "会話を続ける"
 
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
-msgstr ""
+msgstr "ここは単なるアカウント情報の集まりではなく、成長し続け、応え続けるあなた自身の世界です。"

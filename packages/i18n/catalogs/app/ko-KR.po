@@ -14,24 +14,24 @@ msgstr ""
 
 #: apps/app/src/components/bootstrap-screen.tsx:49
 msgid "同步世界主人"
-msgstr ""
+msgstr "세계 주인 동기화"
 
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
-msgstr ""
+msgstr "당신의 세계에 다시 오신 것을 환영합니다"
 
 #: apps/app/src/components/bootstrap-screen.tsx:64
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
-msgstr ""
+msgstr "이번 진입 경로를 정리하고 있습니다. 곧 지난번 머물던 곳으로 돌아갑니다."
 
 #: apps/app/src/components/bootstrap-screen.tsx:41
 msgid "确认入口"
-msgstr ""
+msgstr "입구 확인"
 
 #: apps/app/src/components/bootstrap-screen.tsx:57
 msgid "继续开启对话"
-msgstr ""
+msgstr "대화 이어가기"
 
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
-msgstr ""
+msgstr "여기는 단순한 계정 정보가 아니라, 계속 자라고 계속 응답하는 당신만의 세계입니다."

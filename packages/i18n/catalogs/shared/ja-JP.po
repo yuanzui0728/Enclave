@@ -14,4 +14,4 @@ msgstr ""
 
 #: packages/ui/src/components/loading-block.tsx:28
 msgid "加载中..."
-msgstr ""
+msgstr "読み込み中..."
