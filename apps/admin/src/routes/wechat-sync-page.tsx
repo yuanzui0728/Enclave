@@ -268,6 +268,11 @@ export function WechatSyncPage() {
   const [connectorManualJsonPath, setConnectorManualJsonPath] = useState("");
   const [connectorWechatDecryptBaseUrl, setConnectorWechatDecryptBaseUrl] =
     useState("http://127.0.0.1:5678");
+  const [connectorWeFlowBaseUrl, setConnectorWeFlowBaseUrl] = useState(
+    "http://127.0.0.1:5031",
+  );
+  const [connectorWeFlowAccessToken, setConnectorWeFlowAccessToken] =
+    useState("");
   const [connectorConfigHydrated, setConnectorConfigHydrated] = useState(false);
   const [search, setSearch] = useState("");
   const [includeGroups, setIncludeGroups] = useState(false);
@@ -449,6 +454,8 @@ export function WechatSyncPage() {
     setConnectorWechatDecryptBaseUrl(
       activeConfig.wechatDecryptBaseUrl ?? "http://127.0.0.1:5678",
     );
+    setConnectorWeFlowBaseUrl(activeConfig.weflowBaseUrl ?? "http://127.0.0.1:5031");
+    setConnectorWeFlowAccessToken(activeConfig.weflowAccessToken ?? "");
     setConnectorConfigHydrated(true);
   }, [
     connectorConfigHydrated,
@@ -666,12 +673,24 @@ export function WechatSyncPage() {
         connectorProviderKey === "wechat-decrypt-http"
           ? connectorWechatDecryptBaseUrl.trim() || null
           : null,
+      weflowBaseUrl:
+        connectorProviderKey === "weflow-http"
+          ? connectorWeFlowBaseUrl.trim() || null
+          : null,
+      weflowAccessToken:
+        connectorProviderKey === "weflow-http"
+          ? connectorWeFlowAccessToken.trim() || null
+          : null,
     };
   }
 
   const connectorSourceConfigReady =
-    connectorProviderKey !== "wechat-decrypt-http" ||
-    connectorWechatDecryptBaseUrl.trim().length > 0;
+    connectorProviderKey === "wechat-decrypt-http"
+      ? connectorWechatDecryptBaseUrl.trim().length > 0
+      : connectorProviderKey === "weflow-http"
+        ? connectorWeFlowBaseUrl.trim().length > 0 &&
+          connectorWeFlowAccessToken.trim().length > 0
+        : true;
 
   const connectorConfigMutation = useMutation({
     mutationFn: () =>
@@ -1623,7 +1642,7 @@ export function WechatSyncPage() {
 
           <AdminMiniPanel title="如何操作" tone="soft" className="h-full">
             <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              <p>1. 先准备数据源：启动本机 `17364` 连接器，并根据需要启动 `5678` 的 `wechat-decrypt` 服务，或者直接准备 JSON 快照。</p>
+              <p>1. 先准备数据源：启动本机 `17364` 连接器，并按需选择 `5678` 的 `wechat-decrypt`、`5031` 的 WeFlow API，或者直接准备 JSON 快照。</p>
               <p>2. 在“步骤 1”里选择数据源，确认地址后点“刷新连接状态”与“刷新本地索引”。</p>
               <p>3. 在“步骤 2”里筛选并勾选联系人，再点“生成预览”。</p>
               <p>4. 在“步骤 3”里检查角色草稿，补齐缺失字段后执行导入。</p>
@@ -1633,9 +1652,9 @@ export function WechatSyncPage() {
 
           <AdminMiniPanel title="常见问题" tone="soft" className="h-full">
             <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              <p>如果看到 `fetch failed`，优先检查 `http://127.0.0.1:5678` 和 `http://127.0.0.1:17364` 是否都能从本机访问。</p>
+              <p>如果看到 `fetch failed`，优先检查 `http://127.0.0.1:17364` 和你当前选择的上游地址（如 `5678` 或 `5031`）是否都能从本机访问。</p>
               <p>当前版本只支持导入单聊联系人，群聊会保留在列表中供筛查，但不会被真正导入。</p>
-              <p>本页不会自动启动 `wechat-decrypt`；如果你选择的是 `wechat-decrypt HTTP`，请先在本机把 `5678` 服务跑起来。</p>
+              <p>本页不会自动启动 `wechat-decrypt` 或 WeFlow；如果你选择的是 WeFlow API，还需要先在 WeFlow 设置里开启 API 服务并填写 Access Token。</p>
             </div>
           </AdminMiniPanel>
         </div>
@@ -1713,7 +1732,7 @@ export function WechatSyncPage() {
               <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
                 数据源
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-3">
                 <AdminSelectableCard
                   active={connectorProviderKey === "manual-json"}
                   title="本地 JSON / 文件"
@@ -1728,6 +1747,13 @@ export function WechatSyncPage() {
                   activeLabel="当前数据源"
                   onClick={() => setConnectorProviderKey("wechat-decrypt-http")}
                 />
+                <AdminSelectableCard
+                  active={connectorProviderKey === "weflow-http"}
+                  title="WeFlow API"
+                  subtitle="读取本机 5031 服务的联系人与会话摘要"
+                  activeLabel="当前数据源"
+                  onClick={() => setConnectorProviderKey("weflow-http")}
+                />
               </div>
             </div>
             {connectorProviderKey === "manual-json" ? (
@@ -1737,13 +1763,29 @@ export function WechatSyncPage() {
                 placeholder="D:\\exports\\wechat-contacts.json"
                 onChange={setConnectorManualJsonPath}
               />
-            ) : (
+            ) : connectorProviderKey === "wechat-decrypt-http" ? (
               <AdminTextField
                 label="wechat-decrypt 地址"
                 value={connectorWechatDecryptBaseUrl}
                 placeholder="http://127.0.0.1:5678"
                 onChange={setConnectorWechatDecryptBaseUrl}
               />
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                <AdminTextField
+                  label="WeFlow API 地址"
+                  value={connectorWeFlowBaseUrl}
+                  placeholder="http://127.0.0.1:5031"
+                  onChange={setConnectorWeFlowBaseUrl}
+                />
+                <AdminTextField
+                  label="WeFlow Access Token"
+                  value={connectorWeFlowAccessToken}
+                  placeholder="从 WeFlow 设置页复制"
+                  type="password"
+                  onChange={setConnectorWeFlowAccessToken}
+                />
+              </div>
             )}
           </div>
 
@@ -1846,6 +1888,15 @@ export function WechatSyncPage() {
                           .wechatDecryptBaseUrl
                       }
                     </div>
+                  ) : null}
+                  {connectorHealthQuery.data.activeConfig.weflowBaseUrl ? (
+                    <div>
+                      WeFlow API：
+                      {connectorHealthQuery.data.activeConfig.weflowBaseUrl}
+                    </div>
+                  ) : null}
+                  {connectorHealthQuery.data.activeConfig.weflowAccessToken ? (
+                    <div>WeFlow Token：已配置</div>
                   ) : null}
                   <div>
                     上次扫描：
@@ -5937,6 +5988,8 @@ function formatDateTime(value?: string | null) {
 
 function formatConnectorProviderLabel(value?: WechatConnectorProviderKey | null) {
   switch (value) {
+    case "weflow-http":
+      return "WeFlow API";
     case "wechat-decrypt-http":
       return "wechat-decrypt HTTP";
     case "manual-json":

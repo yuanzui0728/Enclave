@@ -62,7 +62,9 @@ export function toContactSummary(
     contactMessageCount: bundle.contactMessageCount,
     latestMessageAt: bundle.latestMessageAt,
     sampleSnippet:
-      bundle.sampleMessages.find((sample) => sample.text.trim())?.text ?? null,
+      bundle.sampleMessages.find((sample) => sample.text.trim())?.text ??
+      bundle.chatSummary ??
+      null,
   };
 }
 

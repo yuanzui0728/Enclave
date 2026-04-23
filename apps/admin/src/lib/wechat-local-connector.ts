@@ -7,13 +7,18 @@ export interface WechatConnectorSettings {
   baseUrl: string;
 }
 
-export type WechatConnectorProviderKey = "manual-json" | "wechat-decrypt-http";
+export type WechatConnectorProviderKey =
+  | "manual-json"
+  | "wechat-decrypt-http"
+  | "weflow-http";
 
 export interface WechatConnectorSourceConfig {
   connectorLabel?: string | null;
   providerKey: WechatConnectorProviderKey;
   manualJsonPath?: string | null;
   wechatDecryptBaseUrl?: string | null;
+  weflowBaseUrl?: string | null;
+  weflowAccessToken?: string | null;
 }
 
 export interface WechatConnectorHealth {
@@ -27,6 +32,8 @@ export interface WechatConnectorHealth {
     providerKey?: WechatConnectorProviderKey;
     manualJsonPath?: string | null;
     wechatDecryptBaseUrl?: string | null;
+    weflowBaseUrl?: string | null;
+    weflowAccessToken?: string | null;
   };
 }
 
@@ -42,6 +49,8 @@ export interface WechatConnectorScanResponse {
     providerKey?: WechatConnectorProviderKey;
     manualJsonPath?: string | null;
     wechatDecryptBaseUrl?: string | null;
+    weflowBaseUrl?: string | null;
+    weflowAccessToken?: string | null;
   };
 }
 

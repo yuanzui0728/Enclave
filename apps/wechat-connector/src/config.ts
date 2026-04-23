@@ -1,4 +1,7 @@
-export type ConnectorProviderKey = "manual-json" | "wechat-decrypt-http";
+export type ConnectorProviderKey =
+  | "manual-json"
+  | "wechat-decrypt-http"
+  | "weflow-http";
 
 export interface ConnectorConfig {
   host: string;
@@ -7,6 +10,8 @@ export interface ConnectorConfig {
   providerKey: ConnectorProviderKey;
   manualJsonPath: string | null;
   wechatDecryptBaseUrl: string | null;
+  weflowBaseUrl: string | null;
+  weflowAccessToken: string | null;
   allowedOrigins: string[];
 }
 
@@ -30,6 +35,12 @@ export function loadConnectorConfig(
     wechatDecryptBaseUrl:
       normalizeBaseUrl(env.WECHAT_DECRYPT_BASE_URL) ??
       normalizeBaseUrl(env.WECHAT_CONNECTOR_WECHAT_DECRYPT_BASE_URL),
+    weflowBaseUrl:
+      normalizeBaseUrl(env.WEFLOW_BASE_URL) ??
+      normalizeBaseUrl(env.WECHAT_CONNECTOR_WEFLOW_BASE_URL),
+    weflowAccessToken:
+      normalizeToken(env.WEFLOW_ACCESS_TOKEN) ??
+      normalizeToken(env.WECHAT_CONNECTOR_WEFLOW_ACCESS_TOKEN),
     allowedOrigins: normalizeAllowedOrigins(env.WECHAT_CONNECTOR_ALLOWED_ORIGINS),
   };
 }
@@ -39,7 +50,12 @@ export function applyConfigPatch(
   patch: Partial<
     Pick<
       ConnectorConfig,
-      "connectorLabel" | "manualJsonPath" | "providerKey" | "wechatDecryptBaseUrl"
+      | "connectorLabel"
+      | "manualJsonPath"
+      | "providerKey"
+      | "wechatDecryptBaseUrl"
+      | "weflowBaseUrl"
+      | "weflowAccessToken"
     >
   >,
 ): ConnectorConfig {
@@ -56,6 +72,14 @@ export function applyConfigPatch(
       patch.wechatDecryptBaseUrl === undefined
         ? current.wechatDecryptBaseUrl
         : normalizeBaseUrl(patch.wechatDecryptBaseUrl),
+    weflowBaseUrl:
+      patch.weflowBaseUrl === undefined
+        ? current.weflowBaseUrl
+        : normalizeBaseUrl(patch.weflowBaseUrl),
+    weflowAccessToken:
+      patch.weflowAccessToken === undefined
+        ? current.weflowAccessToken
+        : normalizeToken(patch.weflowAccessToken),
   };
 }
 
@@ -93,8 +117,23 @@ function normalizeProviderKey(
   value: string | undefined,
   env: NodeJS.ProcessEnv,
 ): ConnectorProviderKey {
+  if (value === "weflow-http") {
+    return "weflow-http";
+  }
+
+  if (value === "wechat-decrypt-http") {
+    return "wechat-decrypt-http";
+  }
+
+  if (value === "manual-json") {
+    return "manual-json";
+  }
+
+  if (env.WEFLOW_BASE_URL || env.WECHAT_CONNECTOR_WEFLOW_BASE_URL) {
+    return "weflow-http";
+  }
+
   if (
-    value === "wechat-decrypt-http" ||
     env.WECHAT_DECRYPT_BASE_URL ||
     env.WECHAT_CONNECTOR_WECHAT_DECRYPT_BASE_URL
   ) {
@@ -107,7 +146,11 @@ function normalizeProviderKey(
 function normalizePatchProviderKey(
   value: ConnectorProviderKey | undefined,
 ): ConnectorProviderKey | null {
-  if (value === "manual-json" || value === "wechat-decrypt-http") {
+  if (
+    value === "manual-json" ||
+    value === "wechat-decrypt-http" ||
+    value === "weflow-http"
+  ) {
     return value;
   }
 
@@ -133,6 +176,11 @@ function normalizeBaseUrl(value: string | null | undefined) {
   }
 
   return null;
+}
+
+function normalizeToken(value: string | null | undefined) {
+  const normalized = normalizeText(value);
+  return normalized ? normalized : null;
 }
 
 function normalizeText(value: string | null | undefined) {

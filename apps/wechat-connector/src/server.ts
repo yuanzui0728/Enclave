@@ -37,8 +37,10 @@ export function createConnectorServer(runtime: ConnectorRuntime) {
         const body = await readJsonBody<{
           connectorLabel?: string;
           manualJsonPath?: string | null;
-          providerKey?: "manual-json" | "wechat-decrypt-http";
+          providerKey?: "manual-json" | "wechat-decrypt-http" | "weflow-http";
           wechatDecryptBaseUrl?: string | null;
+          weflowBaseUrl?: string | null;
+          weflowAccessToken?: string | null;
         }>(request);
         sendJson(response, runtime.patchConfig(body ?? {}));
         return;
@@ -64,7 +66,7 @@ export function createConnectorServer(runtime: ConnectorRuntime) {
 
       if (method === "POST" && url.pathname === "/api/contact-bundles") {
         const body = await readJsonBody<ConnectorContactBundleRequest>(request);
-        sendJson(response, runtime.buildBundles(body ?? {}));
+        sendJson(response, await runtime.buildBundles(body ?? {}));
         return;
       }
 

@@ -49,6 +49,8 @@ export interface ConnectorActiveConfig {
   providerKey: ConnectorProviderKey;
   manualJsonPath?: string | null;
   wechatDecryptBaseUrl?: string | null;
+  weflowBaseUrl?: string | null;
+  weflowAccessToken?: string | null;
 }
 
 export interface ConnectorHealth {
@@ -89,6 +91,8 @@ export interface ConnectorConfigResponse {
   providerKey: ConnectorProviderKey;
   manualJsonPath?: string | null;
   wechatDecryptBaseUrl?: string | null;
+  weflowBaseUrl?: string | null;
+  weflowAccessToken?: string | null;
   allowedOrigins: string[];
 }
 
@@ -98,6 +102,8 @@ export interface ConnectorScanRequest {
   manualJsonPath?: string | null;
   providerKey?: ConnectorProviderKey;
   wechatDecryptBaseUrl?: string | null;
+  weflowBaseUrl?: string | null;
+  weflowAccessToken?: string | null;
 }
 
 export interface ConnectorContactBundleRequest {
@@ -112,6 +118,8 @@ export function toConfigResponse(config: ConnectorConfig): ConnectorConfigRespon
     providerKey: config.providerKey,
     manualJsonPath: config.manualJsonPath,
     wechatDecryptBaseUrl: config.wechatDecryptBaseUrl,
+    weflowBaseUrl: config.weflowBaseUrl,
+    weflowAccessToken: config.weflowAccessToken,
     allowedOrigins: config.allowedOrigins,
   };
 }
