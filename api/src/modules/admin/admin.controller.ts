@@ -27,6 +27,7 @@ import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.ser
 import type { RealWorldSyncRulesValue } from '../real-world-sync/real-world-sync.types';
 import type { NeedDiscoveryConfig } from '../need-discovery/need-discovery.types';
 import type { FollowupRuntimeRulesValue } from '../followup-runtime/followup-runtime.types';
+import type { ReminderRuntimeRulesValue } from '../reminder-runtime/reminder-runtime.types';
 import type {
   WechatSyncImportRequestValue,
   WechatSyncPreviewRequestValue,
@@ -89,6 +90,16 @@ export class AdminController {
   @Get('reminder-runtime/overview')
   getReminderRuntimeOverview() {
     return this.reminderRuntimeService.getOverview();
+  }
+
+  @Get('reminder-runtime/rules')
+  getReminderRuntimeRules() {
+    return this.reminderRuntimeService.getRules();
+  }
+
+  @Patch('reminder-runtime/rules')
+  setReminderRuntimeRules(@Body() body: Partial<ReminderRuntimeRulesValue>) {
+    return this.reminderRuntimeService.setRules(body);
   }
 
   @Post('reminder-runtime/tasks/:id/complete')

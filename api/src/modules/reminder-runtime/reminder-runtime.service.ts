@@ -184,6 +184,22 @@ function stripReminderCommand(value: string) {
   );
 }
 
+function renderTemplate(
+  template: string,
+  variables: Record<string, string | number | undefined | null>,
+) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) =>
+    variables[key] == null ? '' : String(variables[key]),
+  );
+}
+
+function splitTemplateVariants(value: string) {
+  return value
+    .split('\n')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
 function parseChineseNumber(input: string) {
   const trimmed = input.trim();
   if (!trimmed) {
@@ -272,6 +288,12 @@ export class ReminderRuntimeService {
 
   getRules() {
     return this.rulesService.getRules();
+  }
+
+  async setRules(
+    patch: Partial<ReminderRuntimeRulesValue>,
+  ): Promise<ReminderRuntimeRulesValue> {
+    return this.rulesService.setRules(patch);
   }
 
   async getTasks(query?: ReminderTaskQuery): Promise<ReminderTaskRecordValue[]> {
@@ -482,6 +504,7 @@ export class ReminderRuntimeService {
   }): Promise<{ text: string; tasks: ReminderMomentNudge[] } | null> {
     const now = input?.now ?? new Date();
     const slot = input?.slot ?? 'general';
+    const rules = await this.rulesService.getRules();
     const tasks = await this.getMomentNudgeTasks(input?.limit ?? 3);
     if (tasks.length === 0) {
       return null;
@@ -489,107 +512,34 @@ export class ReminderRuntimeService {
 
     const primary = tasks[0];
     const focus = this.truncateReminderLabel(primary.title, 14);
-    const companionLine = this.buildReminderCompanionLine(tasks, slot);
-    let variants: string[] = [];
-
-    if (/英语|背单词/.test(primary.title)) {
-      variants =
-        slot === 'morning'
-          ? [
-              `今天的${focus}，早一点开个头。`,
-              '英语这件事，先开口一点，就不算断。',
-              companionLine || `别把${focus}又顺到晚上。`,
-            ]
-          : [
-              '英语这件事，不靠哪天突然开窍，靠的是今天也没断。',
-              `今天的${focus}，做一点就不算掉线。`,
-              companionLine || `先别跟“明天开始”合作了。${focus}，今天动一下。`,
-            ];
-    } else if (/锻炼|运动|健身/.test(primary.title)) {
-      variants =
-        slot === 'morning'
-          ? [
-              `今天的${focus}，先动一下就算开张。`,
-              '锻炼不靠等状态，靠今天先动一下。',
-              companionLine || `把${focus}留到太晚，通常就没下文了。`,
-            ]
-          : [
-              '锻炼不靠等状态，靠今天先动一下。',
-              `今天不必练很猛，${focus}别断就行。`,
-              companionLine || `长期的事最怕连续说“明天”。${focus}，先做一点。`,
-            ];
-    } else if (/早睡|睡觉/.test(primary.title)) {
-      variants = [
-        '早睡这件事，嘴上说一次不算，今晚早点放下手机才算。',
-        `今天的${focus}，别又让“再刷一会儿”赢了。`,
-        companionLine || '消息可以晚回一点，觉别总晚睡。',
-      ];
-    } else if (/喝水|吃饭/.test(primary.title)) {
-      variants =
-        slot === 'morning'
-          ? [
-              `今天别一忙就把${focus}忘了。`,
-              `先把${focus}放进今天的节奏里。`,
-              companionLine || `从现在开始，${focus}也算一件正事。`,
-            ]
-          : [
-              `再忙也别把${focus}排到最后。`,
-              '照顾身体这种事，不该总靠想起来。',
-              companionLine || `今天的${focus}，也照样算数。`,
-            ];
-    } else if (/吃药|复诊|体检/.test(primary.title)) {
-      variants = [
-        `跟身体有关的事别拿来讨价还价。${focus}。`,
-        `重要的不是记性好，是到点就动。${focus}。`,
-        companionLine || `该做的${focus}，今天别拖。`,
-      ];
-    } else {
-      switch (primary.category) {
-        case 'growth':
-          variants =
-            slot === 'morning'
-              ? [
-                  `今天先盯住${focus}，别还没开始就让一天过去。`,
-                  companionLine || `先动一下${focus}，今天才算真正开场。`,
-                  `热血不一定天天有，${focus}先做一点也行。`,
-                ]
-              : [
-                  `长期的事最怕“明天开始”。${focus}，今天做一点也算没掉线。`,
-                  companionLine || `今天先盯住${focus}，别让计划继续停在计划里。`,
-                  `热血不一定天天有，${focus}做一点也算推进。`,
-                ];
-          break;
-        case 'lifestyle':
-          variants = [
-            `再忙也别把身体放到待办最后。${focus}，今天照样算数。`,
-            companionLine || `今天也照顾一下自己。${focus}别再往后拖。`,
-            `人可以慢一点，${focus}别一直往后顺。`,
-          ];
-          break;
-        case 'health':
-          variants = [
-            `身体相关的事，不适合跟自己讲价。${focus}。`,
-            companionLine || `今天先把${focus}处理掉，别拖。`,
-            `我这边盯的不是效率，是${focus}这种不能一直拖的事。`,
-          ];
-          break;
-        default:
-          variants = [
-            companionLine || `我这边今天继续盯着：${focus}。先做一点，别全留给明天。`,
-            `怕忘的事不用都塞给脑子。${focus}，今天往前推一点。`,
-            `先做一件也行，${focus}别一直挂在嘴上。`,
-          ];
-          break;
-      }
-    }
+    const companionLine =
+      this.buildReminderCompanionLine(tasks, slot) ||
+      `${focus}，今天先动一点，别继续往后拖。`;
+    const templateSource =
+      slot === 'morning'
+        ? rules.promptTemplates.momentNudgeMorningTemplates
+        : slot === 'evening'
+          ? rules.promptTemplates.momentNudgeEveningTemplates
+          : rules.promptTemplates.momentNudgeGeneralTemplates;
+    const variants = splitTemplateVariants(templateSource);
+    const selectedTemplate =
+      variants[
+        hashTextSeed(
+          `${input?.seedKey ?? now.toISOString().slice(0, 10)}:${slot}:${primary.id}`,
+        ) % variants.length
+      ] ?? companionLine;
+    const text = renderTemplate(selectedTemplate, {
+      title: primary.title,
+      focus,
+      category: primary.category,
+      scheduleText: primary.scheduleText,
+      completionCount: primary.completionCount,
+      companionLine,
+      slot,
+    }).trim();
 
     return {
-      text:
-        variants[
-          hashTextSeed(
-            `${input?.seedKey ?? now.toISOString().slice(0, 10)}:${slot}:${primary.id}`,
-          ) % variants.length
-        ],
+      text: text || companionLine,
       tasks,
     };
   }
@@ -666,8 +616,7 @@ export class ReminderRuntimeService {
     if (this.isHelpIntent(text)) {
       return {
         handled: true,
-        responseText:
-          '你可以直接说“明早8点提醒我吃药”“每周五提醒我买猫粮”“提醒我坚持学英语”。要查、删、延后、完成，也直接跟我说。',
+        responseText: rules.textTemplates.helpMessage,
       };
     }
 
@@ -678,7 +627,7 @@ export class ReminderRuntimeService {
       );
       return {
         handled: true,
-        responseText: this.renderTaskList(tasks, rules.maxListItems),
+        responseText: this.renderTaskList(tasks, rules.maxListItems, rules),
       };
     }
 
@@ -691,7 +640,7 @@ export class ReminderRuntimeService {
       if (!task) {
         return {
           handled: true,
-          responseText: '我没对上你想删的是哪一个。你把事项名再说一遍就行。',
+          responseText: rules.textTemplates.taskCancelMissing,
         };
       }
 
@@ -701,7 +650,9 @@ export class ReminderRuntimeService {
       const saved = await this.taskRepo.save(task);
       return {
         handled: true,
-        responseText: `删掉了：${saved.title}。`,
+        responseText: renderTemplate(rules.textTemplates.taskCancelSuccess, {
+          title: saved.title,
+        }),
         task: this.serializeTask(saved),
       };
     }
@@ -715,7 +666,7 @@ export class ReminderRuntimeService {
       if (!task) {
         return {
           handled: true,
-          responseText: '我没对上要延后的是哪一个。你带上事项名再说一次。',
+          responseText: rules.textTemplates.taskSnoozeMissing,
         };
       }
 
@@ -725,7 +676,10 @@ export class ReminderRuntimeService {
       const saved = await this.taskRepo.save(task);
       return {
         handled: true,
-        responseText: `往后顺到了${formatDateTimeLabel(until, now)}。${saved.title}我会再叫你。`,
+        responseText: renderTemplate(rules.textTemplates.taskSnoozeSuccess, {
+          title: saved.title,
+          untilLabel: formatDateTimeLabel(until, now),
+        }),
         task: this.serializeTask(saved),
       };
     }
@@ -739,7 +693,7 @@ export class ReminderRuntimeService {
       if (!task) {
         return {
           handled: true,
-          responseText: '我没对上你完成的是哪件事。你把事项名补给我就行。',
+          responseText: rules.textTemplates.taskCompleteMissing,
         };
       }
 
@@ -752,11 +706,22 @@ export class ReminderRuntimeService {
         task.status = 'completed';
         task.completedAt = now;
         task.nextTriggerAt = null;
-        responseText = `收到，${task.title}我记成已完成了。`;
+        responseText = renderTemplate(
+          rules.textTemplates.taskCompleteOneTimeSuccess,
+          {
+            title: task.title,
+          },
+        );
       } else {
         task.completedAt = null;
         task.nextTriggerAt = this.computeNextTriggerAfter(task, now);
-        responseText = `收到，这次${task.title}我记成完成了。下次还是按${this.describeSchedule(task)}提醒你。`;
+        responseText = renderTemplate(
+          rules.textTemplates.taskCompleteRecurringSuccess,
+          {
+            title: task.title,
+            scheduleText: this.describeSchedule(task),
+          },
+        );
       }
 
       const saved = await this.taskRepo.save(task);
@@ -809,6 +774,7 @@ export class ReminderRuntimeService {
   }
 
   async prepareDueDispatches(now = new Date()): Promise<ReminderDispatch[]> {
+    const rules = await this.rulesService.getRules();
     const rows = await this.taskRepo.find({
       where: {
         characterId: REMINDER_CHARACTER_ID,
@@ -827,7 +793,7 @@ export class ReminderRuntimeService {
         task.sourceConversationId || this.buildConversationId(task.characterId),
       characterId: task.characterId,
       characterName: this.getReminderCharacterIdentity().name,
-      text: this.buildDueReminderMessage(task),
+      text: this.buildDueReminderMessage(task, rules),
     }));
   }
 
@@ -888,8 +854,10 @@ export class ReminderRuntimeService {
         characterName: this.getReminderCharacterIdentity().name,
         text:
           activeCount > 0
-            ? `我这边还替你记着${activeCount}件事。要是还有新的，也继续丢给我。`
-            : '今天如果还有什么怕忘的，直接发我一句，我替你盯着。',
+            ? renderTemplate(rules.textTemplates.checkinWithActiveTasks, {
+                activeCount,
+              })
+            : rules.textTemplates.checkinWithoutActiveTasks,
       },
     ];
   }
@@ -928,15 +896,23 @@ export class ReminderRuntimeService {
     return scoped.length > 0 ? scoped : rows;
   }
 
-  private renderTaskList(tasks: ReminderTaskEntity[], maxItems: number) {
+  private renderTaskList(
+    tasks: ReminderTaskEntity[],
+    maxItems: number,
+    rules: ReminderRuntimeRulesValue,
+  ) {
     if (tasks.length === 0) {
-      return '你现在还没让我记着具体的事。要记新的，直接把事项和时间发我。';
+      return rules.textTemplates.taskListEmpty;
     }
 
     const lines = tasks.slice(0, maxItems).map((item, index) => {
-      return `${index + 1}. ${item.title}，${this.describeSchedule(item)}`;
+      return renderTemplate(rules.textTemplates.taskListItem, {
+        index: index + 1,
+        title: item.title,
+        scheduleText: this.describeSchedule(item),
+      });
     });
-    return `你现在让我记着这些：\n${lines.join('\n')}`;
+    return `${rules.textTemplates.taskListHeader}\n${lines.join('\n')}`;
   }
 
   private async resolveReferencedTask(
@@ -1024,8 +1000,7 @@ export class ReminderRuntimeService {
       return {
         handled: true,
         needsClarification: true,
-        responseText:
-          '这件事我能替你记，但你还没把事项说清。你可以直接说“明早8点提醒我吃药”。',
+        responseText: rules.textTemplates.taskCreateMissingTitle,
       };
     }
 
@@ -1059,7 +1034,13 @@ export class ReminderRuntimeService {
           minute: clock.minute,
           cadenceDays: 1,
         },
-        responseText: `记下了。我先按每天 ${formatTime(clock.hour, clock.minute)} 轻轻提醒你${title}。想换时间就直接告诉我。`,
+        responseText: renderTemplate(
+          rules.textTemplates.taskCreateHabitSuccess,
+          {
+            title,
+            time: formatTime(clock.hour, clock.minute),
+          },
+        ),
       };
     }
 
@@ -1084,7 +1065,13 @@ export class ReminderRuntimeService {
           hour: clock.hour,
           minute: clock.minute,
         },
-        responseText: `记下了。我会每天 ${formatTime(clock.hour, clock.minute)} 提醒你${title}。`,
+        responseText: renderTemplate(
+          rules.textTemplates.taskCreateDailySuccess,
+          {
+            title,
+            time: formatTime(clock.hour, clock.minute),
+          },
+        ),
       };
     }
 
@@ -1115,7 +1102,14 @@ export class ReminderRuntimeService {
           hour: clock.hour,
           minute: clock.minute,
         },
-        responseText: `记下了。我会每周${weeklyRule.label} ${formatTime(clock.hour, clock.minute)} 提醒你${title}。`,
+        responseText: renderTemplate(
+          rules.textTemplates.taskCreateWeeklySuccess,
+          {
+            title,
+            time: formatTime(clock.hour, clock.minute),
+            weekdayLabel: weeklyRule.label,
+          },
+        ),
       };
     }
 
@@ -1124,8 +1118,7 @@ export class ReminderRuntimeService {
       return {
         handled: true,
         needsClarification: true,
-        responseText:
-          '这件事我可以替你记，但你还没告诉我具体什么时候提醒。比如“明天早上8点提醒我吃药”。',
+        responseText: rules.textTemplates.taskCreateMissingTime,
       };
     }
 
@@ -1138,7 +1131,13 @@ export class ReminderRuntimeService {
       timezone,
       dueAt: oneTime,
       nextTriggerAt: oneTime,
-      responseText: `记下了。我会在${formatDateTimeLabel(oneTime, now)}提醒你${title}。`,
+      responseText: renderTemplate(
+        rules.textTemplates.taskCreateOneTimeSuccess,
+        {
+          title,
+          dateTimeLabel: formatDateTimeLabel(oneTime, now),
+        },
+      ),
     };
   }
 
@@ -1441,14 +1440,23 @@ export class ReminderRuntimeService {
     };
   }
 
-  private buildDueReminderMessage(task: ReminderTaskEntity) {
+  private buildDueReminderMessage(
+    task: ReminderTaskEntity,
+    rules: ReminderRuntimeRulesValue,
+  ) {
     if (task.priority === 'hard') {
-      return `${task.title}，到点了。先去做。`;
+      return renderTemplate(rules.textTemplates.dueReminderHard, {
+        title: task.title,
+      });
     }
     if (task.kind === 'habit') {
-      return `${task.title}这件事，今天也别断。我在这儿替你提个醒。`;
+      return renderTemplate(rules.textTemplates.dueReminderHabit, {
+        title: task.title,
+      });
     }
-    return `${task.title}，别忘了。`;
+    return renderTemplate(rules.textTemplates.dueReminderDefault, {
+      title: task.title,
+    });
   }
 
   private resolveSnoozeUntil(

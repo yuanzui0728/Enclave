@@ -97,7 +97,7 @@
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（55个，物理表保持兼容）
+## 数据库实体（56个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -111,7 +111,7 @@
 
 **安全**：ModerationReport
 
-**群聊**：Group · GroupMember · GroupMessage · GroupReplyTask
+**群聊**：Group · GroupMember · GroupMessage · GroupReplyTask · ReplyArtifactJob
 
 **视频号**：FeedPost · FeedComment · UserFeedInteraction · VideoChannelFollow
 
@@ -187,6 +187,7 @@
 - `Group` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载群聊专属聊天背景配置
 - `GroupMessage` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载聊天附件消息元数据
 - `GroupReplyTask`：用于持久化群聊 AI 回复任务，状态包含 `pending`、`processing`、`sent`、`cancelled`、`failed`；现已额外记录选角分数、命中情况、最近发言惩罚、选中/跳过原因与本轮 planner 快照；同群新用户消息到来后会取消未发送的旧轮任务
+- `ReplyArtifactJob`：用于持久化单聊 / 群聊异步多模态补发任务，当前承载 `voice` / `image` 工件的调度、补发、取消与失败状态，避免清空会话或新消息到来后旧轮补媒体穿透落库
 - `User` 表现已扩展字段：`defaultChatBackgroundPayload`，用于承载实例默认聊天背景配置
 - `Character` 表现已扩展字段：`onlineMode`、`activityMode`，用于区分在线状态 / 当前活动由调度器自动驱动还是后台人工锁定
 - `Character` 表现已扩展字段：`sourceType`、`sourceKey`、`deletionPolicy`，用于区分默认保底角色 / 名人预设角色 / 后台手工角色，以及是否允许后台删除
@@ -373,6 +374,8 @@
 ## 管理后台提醒运行时路由
 
 - `GET /api/admin/reminder-runtime/overview`
+- `GET /api/admin/reminder-runtime/rules`
+- `PATCH /api/admin/reminder-runtime/rules`
 - `POST /api/admin/reminder-runtime/tasks/:id/complete`
 - `POST /api/admin/reminder-runtime/tasks/:id/snooze`
 - `DELETE /api/admin/reminder-runtime/tasks/:id`

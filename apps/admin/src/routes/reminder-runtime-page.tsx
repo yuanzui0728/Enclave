@@ -1,17 +1,18 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   runSchedulerJob,
   type SnoozeReminderTaskRequest,
   type ReminderRuntimeMomentRecord,
   type ReminderRuntimeOverview,
+  type ReminderRuntimeRules,
   type ReminderTaskRecord,
 } from "@yinjie/contracts";
 import { Button, Card, ErrorBlock, LoadingBlock, StatusPill, cn } from "@yinjie/ui";
 import {
   AdminCallout,
+  AdminDraftStatusPill,
   AdminEmptyState,
-  AdminInfoRows,
   AdminMetaText,
   AdminMiniPanel,
   AdminPageHero,
@@ -19,6 +20,9 @@ import {
   AdminPillTextField,
   AdminSectionHeader,
   AdminSoftBox,
+  AdminTabs,
+  AdminTextArea,
+  AdminTextField,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -62,6 +66,7 @@ type ReminderTaskAction =
 
 type ReminderTaskFilter = "all" | "focus" | "hard" | "habit";
 type ReminderTaskQueue = "overdue" | "due_soon" | "routine";
+type ReminderConfigTab = "schedule" | "messages" | "moments";
 
 type ReminderRuntimeActivityItem = {
   id: string;
@@ -72,6 +77,14 @@ type ReminderRuntimeActivityItem = {
   meta?: string;
   timestamp: string;
 };
+
+type ReminderNumberFieldKey =
+  | "defaultReminderHour"
+  | "defaultReminderMinute"
+  | "habitDefaultHour"
+  | "habitDefaultMinute"
+  | "checkinMinIntervalHours"
+  | "maxListItems";
 
 function formatDateTime(value?: string | null) {
   if (!value) {
@@ -96,6 +109,23 @@ function formatCheckinHours(hours: number[]) {
     .join(" / ");
 }
 
+function formatCheckinHoursInput(hours: number[]) {
+  return hours.join(", ");
+}
+
+function parseCheckinHoursInput(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\s,，/]+/)
+        .map((item) => Number(item))
+        .filter((item) => Number.isInteger(item) && item >= 0 && item <= 23),
+    ),
+  )
+    .sort((left, right) => left - right)
+    .slice(0, 6);
+}
+
 function taskTone(task: ReminderTaskRecord) {
   return task.priority === "hard" ? "warning" : "muted";
 }
@@ -109,6 +139,10 @@ function truncateText(value: string, maxLength = 96) {
     return value;
   }
   return `${value.slice(0, maxLength).trimEnd()}…`;
+}
+
+function serializeRules(value: ReminderRuntimeRules | null) {
+  return JSON.stringify(value ?? null);
 }
 
 function resolveTaskDueAt(task: ReminderTaskRecord) {
@@ -587,19 +621,451 @@ function TaskDetailPanel({
   );
 }
 
+function ReminderRuntimeConfigPanel({
+  draft,
+  dirty,
+  activeTab,
+  onTabChange,
+  onChange,
+  onSave,
+  savePending,
+}: {
+  draft: ReminderRuntimeRules;
+  dirty: boolean;
+  activeTab: ReminderConfigTab;
+  onTabChange: (tab: ReminderConfigTab) => void;
+  onChange: (value: ReminderRuntimeRules) => void;
+  onSave: () => void;
+  savePending: boolean;
+}) {
+  const updateNumberField = (key: ReminderNumberFieldKey, value: number) => {
+    onChange({
+      ...draft,
+      [key]: value,
+    });
+  };
+
+  const updateTextTemplate = (
+    key: keyof ReminderRuntimeRules["textTemplates"],
+    value: string,
+  ) => {
+    onChange({
+      ...draft,
+      textTemplates: {
+        ...draft.textTemplates,
+        [key]: value,
+      },
+    });
+  };
+
+  const updatePromptTemplate = (
+    key: keyof ReminderRuntimeRules["promptTemplates"],
+    value: string,
+  ) => {
+    onChange({
+      ...draft,
+      promptTemplates: {
+        ...draft.promptTemplates,
+        [key]: value,
+      },
+    });
+  };
+
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <AdminSectionHeader
+        title="规则与提示模板"
+        actions={<AdminDraftStatusPill ready dirty={dirty} />}
+      />
+      <div className="mt-4 space-y-4">
+        <AdminTabs
+          tabs={[
+            { key: "schedule", label: "调度规则" },
+            { key: "messages", label: "用户文案" },
+            { key: "moments", label: "发圈模板" },
+          ]}
+          activeKey={activeTab}
+          onChange={(value) => onTabChange(value as ReminderConfigTab)}
+        />
+
+        {activeTab === "schedule" ? (
+          <div className="space-y-4">
+            <ConfigGroup
+              title="默认触发时间"
+              description="影响未显式指定时间时的默认落点。单次/重复提醒和习惯提醒分开配置。"
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <NumberField
+                  label="默认单次提醒小时"
+                  value={draft.defaultReminderHour}
+                  min={0}
+                  max={23}
+                  onChange={(value) => updateNumberField("defaultReminderHour", value)}
+                />
+                <NumberField
+                  label="默认单次提醒分钟"
+                  value={draft.defaultReminderMinute}
+                  min={0}
+                  max={59}
+                  onChange={(value) => updateNumberField("defaultReminderMinute", value)}
+                />
+                <NumberField
+                  label="习惯提醒默认小时"
+                  value={draft.habitDefaultHour}
+                  min={0}
+                  max={23}
+                  onChange={(value) => updateNumberField("habitDefaultHour", value)}
+                />
+                <NumberField
+                  label="习惯提醒默认分钟"
+                  value={draft.habitDefaultMinute}
+                  min={0}
+                  max={59}
+                  onChange={(value) => updateNumberField("habitDefaultMinute", value)}
+                />
+              </div>
+            </ConfigGroup>
+
+            <ConfigGroup
+              title="问询节奏"
+              description="控制小盯主动问一句的时间窗口，以及一次列表展示的上限。"
+            >
+              <div className="space-y-4">
+                <div>
+                  <AdminTextField
+                    label="问询小时点"
+                    value={formatCheckinHoursInput(draft.checkinHours)}
+                    onChange={(value) =>
+                      onChange({
+                        ...draft,
+                        checkinHours: parseCheckinHoursInput(value),
+                      })
+                    }
+                  />
+                  <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
+                    用逗号分隔 0-23 的小时值，例如 `9, 13, 21`。
+                  </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <NumberField
+                    label="最小问询间隔（小时）"
+                    value={draft.checkinMinIntervalHours}
+                    min={1}
+                    max={72}
+                    onChange={(value) =>
+                      updateNumberField("checkinMinIntervalHours", value)
+                    }
+                  />
+                  <NumberField
+                    label="聊天列表最大项数"
+                    value={draft.maxListItems}
+                    min={1}
+                    max={20}
+                    onChange={(value) => updateNumberField("maxListItems", value)}
+                  />
+                </div>
+                <AdminSoftBox className="text-xs leading-5">
+                  当前问询窗口：{formatCheckinHours(draft.checkinHours)}。
+                </AdminSoftBox>
+              </div>
+            </ConfigGroup>
+          </div>
+        ) : null}
+
+        {activeTab === "messages" ? (
+          <div className="space-y-4">
+            <ConfigGroup
+              title="入口与列表文案"
+              description="决定用户问“你能做什么”“我有哪些提醒”时，小盯如何回应。支持占位符：`{{index}}`、`{{title}}`、`{{scheduleText}}`。"
+            >
+              <div className="space-y-4">
+                <AdminTextArea
+                  label="帮助文案"
+                  value={draft.textTemplates.helpMessage}
+                  onChange={(value) => updateTextTemplate("helpMessage", value)}
+                  textareaClassName="min-h-24"
+                />
+                <div className="grid gap-4">
+                  <AdminTextField
+                    label="空列表文案"
+                    value={draft.textTemplates.taskListEmpty}
+                    onChange={(value) => updateTextTemplate("taskListEmpty", value)}
+                  />
+                  <AdminTextField
+                    label="列表头文案"
+                    value={draft.textTemplates.taskListHeader}
+                    onChange={(value) => updateTextTemplate("taskListHeader", value)}
+                  />
+                  <AdminTextField
+                    label="列表项模板"
+                    value={draft.textTemplates.taskListItem}
+                    onChange={(value) => updateTextTemplate("taskListItem", value)}
+                  />
+                </div>
+              </div>
+            </ConfigGroup>
+
+            <ConfigGroup
+              title="任务处置文案"
+              description="用于删除、顺延、完成和创建提醒时的回执。支持占位符：`{{title}}`、`{{untilLabel}}`、`{{scheduleText}}`、`{{time}}`、`{{weekdayLabel}}`、`{{dateTimeLabel}}`。"
+            >
+              <div className="space-y-4">
+                <div className="grid gap-4">
+                  <AdminTextField
+                    label="删除失败文案"
+                    value={draft.textTemplates.taskCancelMissing}
+                    onChange={(value) => updateTextTemplate("taskCancelMissing", value)}
+                  />
+                  <AdminTextField
+                    label="删除成功文案"
+                    value={draft.textTemplates.taskCancelSuccess}
+                    onChange={(value) => updateTextTemplate("taskCancelSuccess", value)}
+                  />
+                  <AdminTextField
+                    label="顺延失败文案"
+                    value={draft.textTemplates.taskSnoozeMissing}
+                    onChange={(value) => updateTextTemplate("taskSnoozeMissing", value)}
+                  />
+                  <AdminTextField
+                    label="顺延成功文案"
+                    value={draft.textTemplates.taskSnoozeSuccess}
+                    onChange={(value) => updateTextTemplate("taskSnoozeSuccess", value)}
+                  />
+                  <AdminTextField
+                    label="完成失败文案"
+                    value={draft.textTemplates.taskCompleteMissing}
+                    onChange={(value) => updateTextTemplate("taskCompleteMissing", value)}
+                  />
+                  <AdminTextField
+                    label="单次完成文案"
+                    value={draft.textTemplates.taskCompleteOneTimeSuccess}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCompleteOneTimeSuccess", value)
+                    }
+                  />
+                  <AdminTextField
+                    label="重复完成文案"
+                    value={draft.textTemplates.taskCompleteRecurringSuccess}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCompleteRecurringSuccess", value)
+                    }
+                  />
+                  <AdminTextField
+                    label="缺少事项文案"
+                    value={draft.textTemplates.taskCreateMissingTitle}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCreateMissingTitle", value)
+                    }
+                  />
+                  <AdminTextField
+                    label="缺少时间文案"
+                    value={draft.textTemplates.taskCreateMissingTime}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCreateMissingTime", value)
+                    }
+                  />
+                  <AdminTextField
+                    label="习惯创建文案"
+                    value={draft.textTemplates.taskCreateHabitSuccess}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCreateHabitSuccess", value)
+                    }
+                  />
+                  <AdminTextField
+                    label="每天创建文案"
+                    value={draft.textTemplates.taskCreateDailySuccess}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCreateDailySuccess", value)
+                    }
+                  />
+                  <AdminTextField
+                    label="每周创建文案"
+                    value={draft.textTemplates.taskCreateWeeklySuccess}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCreateWeeklySuccess", value)
+                    }
+                  />
+                  <AdminTextField
+                    label="单次创建文案"
+                    value={draft.textTemplates.taskCreateOneTimeSuccess}
+                    onChange={(value) =>
+                      updateTextTemplate("taskCreateOneTimeSuccess", value)
+                    }
+                  />
+                </div>
+              </div>
+            </ConfigGroup>
+
+            <ConfigGroup
+              title="主动提醒与问询文案"
+              description="影响真正发出的到点提醒和空闲时的小问询。支持占位符：`{{title}}`、`{{activeCount}}`。"
+            >
+              <div className="grid gap-4">
+                <AdminTextField
+                  label="硬提醒文案"
+                  value={draft.textTemplates.dueReminderHard}
+                  onChange={(value) => updateTextTemplate("dueReminderHard", value)}
+                />
+                <AdminTextField
+                  label="习惯提醒文案"
+                  value={draft.textTemplates.dueReminderHabit}
+                  onChange={(value) => updateTextTemplate("dueReminderHabit", value)}
+                />
+                <AdminTextField
+                  label="普通提醒文案"
+                  value={draft.textTemplates.dueReminderDefault}
+                  onChange={(value) => updateTextTemplate("dueReminderDefault", value)}
+                />
+                <AdminTextField
+                  label="有活跃任务时问询"
+                  value={draft.textTemplates.checkinWithActiveTasks}
+                  onChange={(value) =>
+                    updateTextTemplate("checkinWithActiveTasks", value)
+                  }
+                />
+                <AdminTextField
+                  label="无活跃任务时问询"
+                  value={draft.textTemplates.checkinWithoutActiveTasks}
+                  onChange={(value) =>
+                    updateTextTemplate("checkinWithoutActiveTasks", value)
+                  }
+                />
+              </div>
+            </ConfigGroup>
+          </div>
+        ) : null}
+
+        {activeTab === "moments" ? (
+          <div className="space-y-4">
+            <AdminCallout
+              title="发圈模板按“每行一条候选”生效"
+              tone="info"
+              description="支持占位符：`{{focus}}`、`{{title}}`、`{{category}}`、`{{scheduleText}}`、`{{completionCount}}`、`{{companionLine}}`。同一时段会按种子稳定挑选其中一条。"
+            />
+            <ConfigGroup
+              title="轻提醒发圈模板"
+              description="把晨间、晚间和通用窗口拆开调，方便运营按语气分别收敛。"
+            >
+              <div className="space-y-4">
+                <AdminTextArea
+                  label="晨间模板"
+                  value={draft.promptTemplates.momentNudgeMorningTemplates}
+                  onChange={(value) =>
+                    updatePromptTemplate("momentNudgeMorningTemplates", value)
+                  }
+                  textareaClassName="min-h-32"
+                />
+                <AdminTextArea
+                  label="晚间模板"
+                  value={draft.promptTemplates.momentNudgeEveningTemplates}
+                  onChange={(value) =>
+                    updatePromptTemplate("momentNudgeEveningTemplates", value)
+                  }
+                  textareaClassName="min-h-32"
+                />
+                <AdminTextArea
+                  label="通用模板"
+                  value={draft.promptTemplates.momentNudgeGeneralTemplates}
+                  onChange={(value) =>
+                    updatePromptTemplate("momentNudgeGeneralTemplates", value)
+                  }
+                  textareaClassName="min-h-32"
+                />
+              </div>
+            </ConfigGroup>
+          </div>
+        ) : null}
+
+        <div className="flex justify-end">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onSave}
+            disabled={savePending || !dirty}
+          >
+            {savePending ? "保存中..." : "保存规则与模板"}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ConfigGroup({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/75 p-4 shadow-[var(--shadow-soft)]">
+      <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
+      <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+        {description}
+      </div>
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <div className="text-xs font-medium text-[color:var(--text-secondary)]">
+        {label}
+      </div>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]"
+      />
+    </label>
+  );
+}
+
 export function ReminderRuntimePage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
+  const [draft, setDraft] = useState<ReminderRuntimeRules | null>(null);
   const [notice, setNotice] = useState("");
   const [taskFilter, setTaskFilter] = useState<ReminderTaskFilter>("focus");
   const [taskSearch, setTaskSearch] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [configTab, setConfigTab] = useState<ReminderConfigTab>("schedule");
   const deferredTaskSearch = useDeferredValue(normalizeSearchText(taskSearch));
 
   const overviewQuery = useQuery({
     queryKey: ["admin-reminder-runtime", baseUrl],
     queryFn: () => adminApi.getReminderRuntimeOverview(),
   });
+
+  useEffect(() => {
+    if (!overviewQuery.data || draft) {
+      return;
+    }
+    setDraft(overviewQuery.data.rules);
+  }, [draft, overviewQuery.data]);
 
   useEffect(() => {
     if (!notice) {
@@ -625,6 +1091,17 @@ export function ReminderRuntimePage() {
           queryKey: ["admin-scheduler-status", baseUrl],
         }),
       ]);
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: () => adminApi.setReminderRuntimeRules(draft ?? {}),
+    onSuccess: async (rules) => {
+      setDraft(rules);
+      setNotice("提醒运行时配置已保存。");
+      await queryClient.invalidateQueries({
+        queryKey: ["admin-reminder-runtime", baseUrl],
+      });
     },
   });
 
@@ -732,6 +1209,11 @@ export function ReminderRuntimePage() {
     ];
   }, [overviewQuery.data]);
 
+  const dirty =
+    draft != null &&
+    overviewQuery.data != null &&
+    serializeRules(draft) !== serializeRules(overviewQuery.data.rules);
+
   const now = new Date();
   const activeTasks = overviewQuery.data?.activeTasks ?? [];
   const filteredTasks = activeTasks.filter(
@@ -771,7 +1253,11 @@ export function ReminderRuntimePage() {
     );
   }
 
-  const { rules, stats } = overviewQuery.data;
+  if (!draft) {
+    return <LoadingBlock label="正在同步提醒运行时配置..." />;
+  }
+
+  const { stats } = overviewQuery.data;
   const runningJob = runMutation.variables ?? null;
   const operationsSummary = buildOperationsSummary(overviewQuery.data);
   const taskGroups = [
@@ -806,6 +1292,7 @@ export function ReminderRuntimePage() {
         metrics={metrics}
         actions={
           <>
+            <AdminDraftStatusPill ready dirty={dirty} />
             <Button
               variant="secondary"
               size="sm"
@@ -821,6 +1308,14 @@ export function ReminderRuntimePage() {
               disabled={runMutation.isPending}
             >
               {runningJob === "trigger_reminder_checkins" ? "执行中..." : "执行问询"}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending || !dirty}
+            >
+              {saveMutation.isPending ? "保存中..." : "保存配置"}
             </Button>
             <Button
               variant="primary"
@@ -841,6 +1336,9 @@ export function ReminderRuntimePage() {
       ) : null}
       {runMutation.error instanceof Error ? (
         <ErrorBlock message={runMutation.error.message} />
+      ) : null}
+      {saveMutation.error instanceof Error ? (
+        <ErrorBlock message={saveMutation.error.message} />
       ) : null}
       {taskActionError ? (
         <ErrorBlock message={taskActionError.message} />
@@ -994,7 +1492,7 @@ export function ReminderRuntimePage() {
           </Card>
         </div>
 
-        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+        <div className="space-y-6">
           <Card className="bg-[color:var(--surface-console)]">
             <AdminSectionHeader title="值班摘要" />
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
@@ -1045,30 +1543,14 @@ export function ReminderRuntimePage() {
             </div>
           </Card>
 
-          <AdminInfoRows
-            title="规则快照"
-            rows={[
-              {
-                label: "默认单次提醒时间",
-                value: `${String(rules.defaultReminderHour).padStart(2, "0")}:${String(rules.defaultReminderMinute).padStart(2, "0")}`,
-              },
-              {
-                label: "习惯提醒默认时间",
-                value: `${String(rules.habitDefaultHour).padStart(2, "0")}:${String(rules.habitDefaultMinute).padStart(2, "0")}`,
-              },
-              {
-                label: "问询小时点",
-                value: formatCheckinHours(rules.checkinHours),
-              },
-              {
-                label: "最小问询间隔",
-                value: `${rules.checkinMinIntervalHours} 小时`,
-              },
-              {
-                label: "聊天列表最大项数",
-                value: `${rules.maxListItems} 项`,
-              },
-            ]}
+          <ReminderRuntimeConfigPanel
+            draft={draft}
+            dirty={dirty}
+            activeTab={configTab}
+            onTabChange={setConfigTab}
+            onChange={setDraft}
+            onSave={() => saveMutation.mutate()}
+            savePending={saveMutation.isPending}
           />
 
           <Card className="bg-[color:var(--surface-console)]">

@@ -12,6 +12,37 @@ export interface ReminderRecurrenceRule {
   cadenceDays?: number;
 }
 
+export interface ReminderRuntimePromptTemplates {
+  momentNudgeMorningTemplates: string;
+  momentNudgeEveningTemplates: string;
+  momentNudgeGeneralTemplates: string;
+}
+
+export interface ReminderRuntimeTextTemplates {
+  helpMessage: string;
+  taskListEmpty: string;
+  taskListHeader: string;
+  taskListItem: string;
+  taskCancelMissing: string;
+  taskCancelSuccess: string;
+  taskSnoozeMissing: string;
+  taskSnoozeSuccess: string;
+  taskCompleteMissing: string;
+  taskCompleteOneTimeSuccess: string;
+  taskCompleteRecurringSuccess: string;
+  taskCreateMissingTitle: string;
+  taskCreateMissingTime: string;
+  taskCreateHabitSuccess: string;
+  taskCreateDailySuccess: string;
+  taskCreateWeeklySuccess: string;
+  taskCreateOneTimeSuccess: string;
+  dueReminderHard: string;
+  dueReminderHabit: string;
+  dueReminderDefault: string;
+  checkinWithActiveTasks: string;
+  checkinWithoutActiveTasks: string;
+}
+
 export interface ReminderRuntimeRules {
   defaultReminderHour: number;
   defaultReminderMinute: number;
@@ -20,6 +51,8 @@ export interface ReminderRuntimeRules {
   checkinHours: number[];
   checkinMinIntervalHours: number;
   maxListItems: number;
+  promptTemplates: ReminderRuntimePromptTemplates;
+  textTemplates: ReminderRuntimeTextTemplates;
 }
 
 export interface ReminderTaskRecord {

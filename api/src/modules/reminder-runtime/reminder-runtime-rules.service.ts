@@ -38,4 +38,33 @@ export class ReminderRuntimeRulesService {
       return this.cachedRules;
     }
   }
+
+  getCachedRules() {
+    return this.cachedRules;
+  }
+
+  async setRules(
+    input: Partial<ReminderRuntimeRulesValue>,
+  ): Promise<ReminderRuntimeRulesValue> {
+    const current = await this.getRules();
+    const normalized = normalizeReminderRuntimeRules({
+      ...current,
+      ...input,
+      promptTemplates: {
+        ...current.promptTemplates,
+        ...(input.promptTemplates ?? {}),
+      },
+      textTemplates: {
+        ...current.textTemplates,
+        ...(input.textTemplates ?? {}),
+      },
+    });
+
+    await this.systemConfig.setConfig(
+      REMINDER_RUNTIME_RULES_CONFIG_KEY,
+      JSON.stringify(normalized),
+    );
+    this.cachedRules = normalized;
+    return normalized;
+  }
 }
