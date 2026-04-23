@@ -56,7 +56,7 @@ export function GroupChatPage() {
 
   useEffect(() => {
     setRouteContext(resolveRouteContext(groupId));
-  }, [groupId]);
+  }, [groupId, search]);
 
   useEffect(() => {
     if (isDesktopLayout) {
@@ -169,7 +169,7 @@ export function GroupChatPage() {
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("storage", handleFocus);
     };
-  }, [groupId]);
+  }, [groupId, search]);
 
   const callReturnNotice =
     routeCallReturnKind === null

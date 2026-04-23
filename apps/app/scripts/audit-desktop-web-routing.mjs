@@ -596,6 +596,7 @@ const expectations = [
       "conversationId: groupId,",
       "messageId: highlightedMessageId ?? undefined,",
       "resolveGameInviteRouteContext(window.location.search) ??",
+      "}, [groupId, search]);",
       'to: "/group/$groupId",',
       "if (isDesktopLayout) {",
     ],
