@@ -63,7 +63,7 @@
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/chat`、`/contacts`、`/profile`、`/favorites`、`/notes`、`/profile/settings` 目标现在也会直接收成各自的桌面主工作区，不再先打开共享根页再靠页面自愈。其中旧 `/notes` 会直接落到 `/tabs/favorites#category=notes`，旧设置页会直接落到 `/desktop/settings`，旧资料页会直接落到 `/tabs/profile`。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/official-accounts` 根入口现在也会直接收成桌面通讯录里的公众号工作区，不再先打开共享公众号列表页再靠兼容页跳回桌面；如果旧 hash 里已经带了 `accountId / articleId`，这层选择态也会继续保住。
 - `desktop/mobile` 里的公众号接力历史现在会把订阅号入口 `/chat/subscription-inbox` 和旧 `/contacts/official-accounts` 一起归进“公众号”分组，不再误落到“消息”或“其他”。之前订阅号接力卡片会因为先命中 `/chat/*` 分类，被错放到消息分组里。
-- `desktop/mobile` 里的旧资料/设置接力现在也会统一归进“快捷入口”，包括 `/profile`、`/tabs/profile`、`/profile/settings`、`/desktop/settings` 和 `/legal/*`，即使老记录里还带着 query 或 hash 也一样。之前这类历史一旦挂了 `#...` 或 `?...`，仍可能继续掉进“其他”，看起来像是不属于全局快捷入口的杂项链路。
+- `desktop/mobile` 里的旧快捷入口历史现在也会按根路径归对组：旧 `/chat` 会回“消息”，旧 `/contacts`、`/discover` 会回“快捷入口”；旧资料/设置接力 `/profile`、`/tabs/profile`、`/profile/settings`、`/desktop/settings`、`/legal/*` 也一样，即使老记录里还带着 query 或 hash 也不会再掉进“其他”。
 - 桌面壳右上角“我”的资料卡里，“给自己发消息”快捷入口也已经改成桌面消息协议 `/tabs/chat#conversationId=...`。之前这里还在直跳移动 `/chat/$conversationId`，会把用户从桌面壳直接切回移动聊天页。
 - 桌面通讯录里的“群聊”分组现在也统一回桌面消息工作区：`进入群聊` 走 `/tabs/chat#conversationId=...`，`群聊信息` 走 `/tabs/chat#conversationId=...&panel=details`。之前这两个入口还会直接掉进移动 `/group/$groupId` 和 `/group/$groupId/details`。
 - 桌面通讯录联系人详情里的“共同群聊”入口也已经对齐到同一套桌面协议，点击后直接回 `/tabs/chat#conversationId=...`。之前这里也会把用户从桌面联系人详情带回移动 `/group/$groupId`。

@@ -2163,6 +2163,7 @@ function resolveMobileHandoffCategory(
 
   if (
     normalizedPath === "/tabs/chat" ||
+    normalizedPath === "/chat" ||
     normalizedPath.startsWith("/chat/") ||
     normalizedPath.startsWith("/group/")
   ) {
@@ -2193,7 +2194,9 @@ function resolveMobileHandoffCategory(
 
   if (
     normalizedPath === "/tabs/contacts" ||
+    normalizedPath === "/contacts" ||
     normalizedPath === "/tabs/discover" ||
+    normalizedPath === "/discover" ||
     normalizedPath === "/tabs/profile" ||
     normalizedPath === "/profile" ||
     normalizedPath === "/profile/settings" ||
