@@ -4,8 +4,8 @@ import { AppPage, Button, cn } from "@yinjie/ui";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
 
 type ChatDetailsShellProps = {
-  title: string;
-  subtitle?: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
   onBack: () => void;
   rightActions?: ReactNode;
   children: ReactNode;

@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
+
 type MobileDetailsActionSheetAction = {
   key: string;
-  label: string;
-  description?: string;
+  label: ReactNode;
+  description?: ReactNode;
   danger?: boolean;
   disabled?: boolean;
   onClick: () => void;
@@ -9,10 +11,10 @@ type MobileDetailsActionSheetAction = {
 
 type MobileDetailsActionSheetProps = {
   open: boolean;
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   actions: MobileDetailsActionSheetAction[];
-  cancelLabel?: string;
+  cancelLabel?: ReactNode;
   onClose: () => void;
 };
 

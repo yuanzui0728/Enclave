@@ -12,6 +12,40 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: normalizedDraft.length
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:129
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:150
+msgid "{0} 字"
+msgstr "{0} chars"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:68
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:75
+msgid "保存"
+msgstr "Save"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:111
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:118
+msgid "关闭"
+msgstr "Close"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:69
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:76
+msgid "关闭弹层"
+msgstr "Close dialog"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
+msgid "内容不能为空"
+msgstr "Content cannot be empty"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:140
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:161
+msgid "取消"
+msgstr "Cancel"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
+msgid "可留空保存"
+msgstr "Can be saved empty"
+
 #: apps/app/src/components/bootstrap-screen.tsx:49
 msgid "同步世界主人"
 msgstr "Sync world owner"
@@ -44,6 +78,10 @@ msgstr "This device doesn't support voice sending."
 msgid "当前设备无法采集麦克风音频。"
 msgstr "This device can't capture microphone audio."
 
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:128
+msgid "支持留空保存"
+msgstr "Empty value can be saved"
+
 #: apps/app/src/features/chat/use-speech-input.ts:765
 msgid "无法启动录音，请检查应用麦克风权限。"
 msgstr "Couldn't start recording. Check the app's microphone permission."
@@ -55,6 +93,11 @@ msgstr "Couldn't start recording. Check the browser's microphone permission."
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
 msgstr "Welcome back to your world"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:148
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:169
+msgid "正在保存..."
+msgstr "Saving..."
 
 #: apps/app/src/components/bootstrap-screen.tsx:64
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"

@@ -1,9 +1,13 @@
+import type { ReactNode } from "react";
 import { AvatarChip } from "../../components/avatar-chip";
 import { cn } from "@yinjie/ui";
 
+const EMPTY_AVATAR_NAME = "";
+
 type ChatMemberGridItem = {
   key: string;
-  label: string;
+  label: ReactNode;
+  avatarName?: string;
   src?: string | null;
   kind?: "member" | "add" | "remove";
   onClick?: () => void;
@@ -54,7 +58,16 @@ export function ChatMemberGrid({
                   {item.kind === "remove" ? "−" : "+"}
                 </div>
               ) : (
-                <AvatarChip name={item.label} src={item.src} size="wechat" />
+                <AvatarChip
+                  name={
+                    item.avatarName ??
+                    (typeof item.label === "string"
+                      ? item.label
+                      : EMPTY_AVATAR_NAME)
+                  }
+                  src={item.src}
+                  size="wechat"
+                />
               )}
               <span
                 className={cn(

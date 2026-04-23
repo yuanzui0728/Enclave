@@ -1,15 +1,16 @@
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
 export type ContactShortcutListItem = {
   key: string;
-  label: string;
-  subtitle?: string;
+  label: ReactNode;
+  subtitle?: ReactNode;
   badgeCount?: number;
   active?: boolean;
   disabled?: boolean;
-  disabledLabel?: string;
+  disabledLabel?: ReactNode;
   icon: LucideIcon;
   iconClassName: string;
   onClick: () => void;

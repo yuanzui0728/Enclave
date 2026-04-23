@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
 type ChatSettingRowProps = {
-  label: string;
-  value?: string;
+  label: ReactNode;
+  value?: ReactNode;
   onClick?: () => void;
   danger?: boolean;
   disabled?: boolean;

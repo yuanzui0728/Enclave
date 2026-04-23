@@ -12,6 +12,40 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: normalizedDraft.length
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:129
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:150
+msgid "{0} 字"
+msgstr "{0} 文字"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:68
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:75
+msgid "保存"
+msgstr "保存"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:111
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:118
+msgid "关闭"
+msgstr "閉じる"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:69
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:76
+msgid "关闭弹层"
+msgstr "ダイアログを閉じる"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
+msgid "内容不能为空"
+msgstr "内容は空にできません"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:140
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:161
+msgid "取消"
+msgstr "キャンセル"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
+msgid "可留空保存"
+msgstr "空のまま保存できます"
+
 #: apps/app/src/components/bootstrap-screen.tsx:49
 msgid "同步世界主人"
 msgstr "世界の主人を同期"
@@ -44,6 +78,10 @@ msgstr "この端末は音声送信に対応していません。"
 msgid "当前设备无法采集麦克风音频。"
 msgstr "この端末ではマイク音声を取得できません。"
 
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:128
+msgid "支持留空保存"
+msgstr "空のまま保存できます"
+
 #: apps/app/src/features/chat/use-speech-input.ts:765
 msgid "无法启动录音，请检查应用麦克风权限。"
 msgstr "録音を開始できません。アプリのマイク権限を確認してください。"
@@ -55,6 +93,11 @@ msgstr "録音を開始できません。ブラウザのマイク権限を確認
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
 msgstr "あなたの世界へ、おかえりなさい"
+
+#: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:148
+#: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:169
+msgid "正在保存..."
+msgstr "保存中..."
 
 #: apps/app/src/components/bootstrap-screen.tsx:64
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@yinjie/ui";
 
 type ChatDetailsSectionProps = {
-  title?: string;
+  title?: ReactNode;
   children: ReactNode;
   className?: string;
   variant?: "default" | "wechat";

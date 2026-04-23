@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
 import { Button, TextAreaField, TextField } from "@yinjie/ui";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 
 type DesktopChatTextEditDialogProps = {
   open: boolean;
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   placeholder?: string;
   initialValue: string;
-  submitLabel?: string;
+  submitLabel?: ReactNode;
+  closeLabel?: string;
   multiline?: boolean;
   emptyAllowed?: boolean;
   pending?: boolean;
@@ -22,13 +25,15 @@ export function DesktopChatTextEditDialog({
   description,
   placeholder,
   initialValue,
-  submitLabel = "保存",
+  submitLabel,
+  closeLabel,
   multiline = false,
   emptyAllowed = false,
   pending = false,
   onClose,
   onConfirm,
 }: DesktopChatTextEditDialogProps) {
+  const t = translateRuntimeMessage;
   const [draft, setDraft] = useState(initialValue);
 
   useEffect(() => {
@@ -67,12 +72,14 @@ export function DesktopChatTextEditDialog({
     pending ||
     (!emptyAllowed && normalizedDraft.length === 0) ||
     normalizedDraft === normalizedInitialValue;
+  const effectiveSubmitLabel = submitLabel ?? t(msg`保存`);
+  const effectiveCloseLabel = closeLabel ?? t(msg`关闭弹层`);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
-        aria-label={`关闭${title}弹层`}
+        aria-label={effectiveCloseLabel}
         onClick={() => {
           if (!pending) {
             onClose();
@@ -108,7 +115,7 @@ export function DesktopChatTextEditDialog({
             onClick={onClose}
             disabled={pending}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-            aria-label="关闭"
+            aria-label={t(msg`关闭`)}
           >
             <X size={16} />
           </button>
@@ -137,8 +144,10 @@ export function DesktopChatTextEditDialog({
           )}
 
           <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
-            <span>{emptyAllowed ? "可留空保存" : "内容不能为空"}</span>
-            <span>{normalizedDraft.length} 字</span>
+            <span>
+              {emptyAllowed ? t(msg`可留空保存`) : t(msg`内容不能为空`)}
+            </span>
+            <span>{t(msg`${normalizedDraft.length} 字`)}</span>
           </div>
 
           <div className="flex items-center justify-end gap-3">
@@ -149,7 +158,7 @@ export function DesktopChatTextEditDialog({
               disabled={pending}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
-              取消
+              {t(msg`取消`)}
             </Button>
             <Button
               type="submit"
@@ -157,7 +166,7 @@ export function DesktopChatTextEditDialog({
               disabled={confirmDisabled}
               className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
             >
-              {pending ? "正在保存..." : submitLabel}
+              {pending ? t(msg`正在保存...`) : effectiveSubmitLabel}
             </Button>
           </div>
         </div>

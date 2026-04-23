@@ -115,7 +115,7 @@ export function DesktopContactProfileSection({
   children,
   action,
 }: {
-  title: string;
+  title: ReactNode;
   children: ReactNode;
   action?: ReactNode;
 }) {
@@ -138,8 +138,8 @@ export function DesktopContactProfileRow({
   muted = false,
   multiline = false,
 }: {
-  label: string;
-  value: string;
+  label: ReactNode;
+  value: ReactNode;
   muted?: boolean;
   multiline?: boolean;
 }) {
@@ -169,7 +169,7 @@ export function DesktopContactProfileToggleRow({
   disabled = false,
   onToggle,
 }: {
-  label: string;
+  label: ReactNode;
   checked: boolean;
   disabled?: boolean;
   onToggle?: () => void;
@@ -215,8 +215,8 @@ export function DesktopContactProfileActionRow({
   disabled = false,
   valueMuted = false,
 }: {
-  label: string;
-  value: string;
+  label: ReactNode;
+  value: ReactNode;
   onClick: () => void;
   danger?: boolean;
   disabled?: boolean;
