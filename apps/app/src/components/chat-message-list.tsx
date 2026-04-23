@@ -800,11 +800,17 @@ export function ChatMessageList({
         });
       }, 500);
     },
-    onError: (error) => {
+    onError: (error, input) => {
       setActionNotice({
         message:
           error instanceof Error ? error.message : "转发失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续转发消息",
+        onAction: () => {
+          void forwardMutation.mutateAsync(input);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
