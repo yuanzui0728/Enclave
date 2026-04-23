@@ -453,6 +453,12 @@ function buildAdminSessionSourceSession({
 type AdminSessionSourceSessionInput = Parameters<
   typeof buildAdminSessionSourceSession
 >[0];
+type AdminSessionSourceScenarioInput = Parameters<
+  typeof buildAdminSessionSourceScenario
+>[0];
+type AdminSessionActiveSourcePairScenarioInput = Parameters<
+  typeof buildAdminSessionActiveSourcePairScenario
+>[0];
 
 function buildAdminSessionSourceScenario({
   issuedFromIp,
@@ -1454,23 +1460,46 @@ async function renderInstalledAdminSessionSourceGroupsPage({
   return { requests };
 }
 
-async function renderInstalledAdminSessionRiskQuickViewPage({
-  adminSessions,
-  buttonName = "Watch risk",
-  riskLevel = "watch",
+async function renderInstalledAdminSessionSourceScenarioPage({
+  sourceScenario,
+  includeDefaultAdminSessions = false,
+  search,
+  riskFilter,
 }: {
-  adminSessions: typeof mockAdminSessions;
-  buttonName?: string;
-  riskLevel?: string;
+  sourceScenario: AdminSessionSourceScenarioInput;
+  includeDefaultAdminSessions?: boolean;
+  search?: string;
+  riskFilter?: string;
 }) {
-  const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
-    adminSessions,
+  const scenario = buildAdminSessionSourceScenario(sourceScenario);
+  const rendered = await renderInstalledAdminSessionSourceGroupsPage({
+    adminSessions: scenario.adminSessions,
+    includeDefaultAdminSessions,
+    search,
+    riskFilter,
   });
-  await switchAdminSessionRiskQuickView(requests, {
-    buttonName,
-    riskLevel,
+  return {
+    ...scenario,
+    ...rendered,
+  };
+}
+
+async function renderInstalledAdminSessionActiveSourcePairPage({
+  sourceScenario,
+  riskFilter,
+}: {
+  sourceScenario: AdminSessionActiveSourcePairScenarioInput;
+  riskFilter?: string;
+}) {
+  const scenario = buildAdminSessionActiveSourcePairScenario(sourceScenario);
+  const rendered = await renderInstalledAdminSessionSourceGroupsPage({
+    adminSessions: scenario.adminSessions,
+    riskFilter,
   });
-  return { requests };
+  return {
+    ...scenario,
+    ...rendered,
+  };
 }
 
 async function expectAdminSessionDownloadNotice(message: ScreenTextMatcher) {
@@ -1511,8 +1540,7 @@ async function exportAdminSessionSourceGroupArtifact({
 }
 
 async function exportAdminSessionSourceGroupScenario({
-  adminSessions,
-  sourceKey,
+  sourceScenario,
   buttonName,
   message,
   includeRequestId = true,
@@ -1520,8 +1548,7 @@ async function exportAdminSessionSourceGroupScenario({
   title,
   beforeExport,
 }: {
-  adminSessions: typeof mockAdminSessions;
-  sourceKey: string;
+  sourceScenario: AdminSessionSourceScenarioInput;
   buttonName: string;
   message: ScreenTextMatcher;
   includeRequestId?: boolean;
@@ -1529,6 +1556,7 @@ async function exportAdminSessionSourceGroupScenario({
   title?: string;
   beforeExport?: () => Promise<void> | void;
 }) {
+  const { adminSessions, sourceKey } = buildAdminSessionSourceScenario(sourceScenario);
   const { requests } = installAdminSessionSourceGroupsMock({
     adminSessions,
   });
@@ -1683,20 +1711,22 @@ function expectAdminSessionSourceGroupRiskRevokeRequest(
 }
 
 async function exportAdminSessionRiskQuickViewScenario({
-  adminSessions,
+  sourceScenario,
   buttonName,
   message,
   quickViewButtonName = "Watch risk",
   riskLevel = "watch",
 }: {
-  adminSessions: typeof mockAdminSessions;
+  sourceScenario: AdminSessionActiveSourcePairScenarioInput;
   buttonName: string;
   message: string;
   quickViewButtonName?: string;
   riskLevel?: string;
 }) {
-  const { requests } = await renderInstalledAdminSessionRiskQuickViewPage({
-    adminSessions,
+  const { requests } = await renderInstalledAdminSessionActiveSourcePairPage({
+    sourceScenario,
+  });
+  await switchAdminSessionRiskQuickView(requests, {
     buttonName: quickViewButtonName,
     riskLevel,
   });
@@ -2374,36 +2404,33 @@ describe("cloud-console interactions", () => {
   });
 
   it("revokes a matching admin session source group", async () => {
-    const {
-      adminSessions: sharedSourceSessions,
-      sourceKey: expectedSourceKey,
-    } = buildAdminSessionSourceScenario({
-      issuedFromIp: "203.0.113.88",
-      issuedUserAgent: "Shared Source Browser",
-      sourceSessions: [
-        {
-          id: "44444444-4444-4444-8444-444444444444",
-          isCurrent: false,
-          createdAt: "2026-04-20T00:10:00.000Z",
-          updatedAt: "2026-04-20T00:20:00.000Z",
-          lastUsedAt: "2026-04-20T00:20:00.000Z",
-          expiresAt: "2026-04-27T01:00:00.000Z",
+    const { requests, sourceKey: expectedSourceKey } =
+      await renderInstalledAdminSessionSourceScenarioPage({
+        sourceScenario: {
+          issuedFromIp: "203.0.113.88",
+          issuedUserAgent: "Shared Source Browser",
+          sourceSessions: [
+            {
+              id: "44444444-4444-4444-8444-444444444444",
+              isCurrent: false,
+              createdAt: "2026-04-20T00:10:00.000Z",
+              updatedAt: "2026-04-20T00:20:00.000Z",
+              lastUsedAt: "2026-04-20T00:20:00.000Z",
+              expiresAt: "2026-04-27T01:00:00.000Z",
+            },
+            {
+              id: "55555555-5555-4555-8555-555555555555",
+              isCurrent: false,
+              createdAt: "2026-04-20T00:15:00.000Z",
+              updatedAt: "2026-04-20T00:25:00.000Z",
+              lastUsedAt: "2026-04-20T00:25:00.000Z",
+              expiresAt: "2026-04-27T02:00:00.000Z",
+            },
+          ],
         },
-        {
-          id: "55555555-5555-4555-8555-555555555555",
-          isCurrent: false,
-          createdAt: "2026-04-20T00:15:00.000Z",
-          updatedAt: "2026-04-20T00:25:00.000Z",
-          lastUsedAt: "2026-04-20T00:25:00.000Z",
-          expiresAt: "2026-04-27T02:00:00.000Z",
-        },
-      ],
-    });
-    const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
-      adminSessions: sharedSourceSessions,
-      includeDefaultAdminSessions: true,
-      search: "Shared Source Browser",
-    });
+        includeDefaultAdminSessions: true,
+        search: "Shared Source Browser",
+      });
 
     expect(await screen.findAllByText("2 active")).toHaveLength(1);
     expect(await screen.findAllByText("2 total")).toHaveLength(1);
@@ -2543,19 +2570,15 @@ describe("cloud-console interactions", () => {
     sourceScenario,
     exportOptions,
   }) => {
-    const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario(sourceScenario);
-
     await exportAdminSessionSourceGroupScenario({
-      adminSessions: groupedSessions,
-      sourceKey: expectedSourceKey,
+      sourceScenario,
       ...exportOptions,
     });
   });
 
   it("filters source groups by risk level and revokes the matching groups", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
+    const { requests } = await renderInstalledAdminSessionActiveSourcePairPage({
+      sourceScenario: {
         issuedFromIp: "203.0.113.210",
         issuedUserAgent: "Risk Watch Browser",
         sourceSessionIds: [
@@ -2572,9 +2595,7 @@ describe("cloud-console interactions", () => {
             status: "active",
           },
         ],
-      });
-    const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
-      adminSessions: groupedSessions,
+      },
       riskFilter: "watch",
     });
 
@@ -2588,11 +2609,8 @@ describe("cloud-console interactions", () => {
     sourceScenario,
     exportOptions,
   }) => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario(sourceScenario);
-
     await exportAdminSessionRiskQuickViewScenario({
-      adminSessions: groupedSessions,
+      sourceScenario,
       ...exportOptions,
     });
   });
