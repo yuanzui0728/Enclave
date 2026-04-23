@@ -2247,6 +2247,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "收藏失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续收藏所选消息",
+        onAction: () => {
+          void handleFavoriteSelectedMessages();
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     } finally {
       setSelectionActionPending(null);
