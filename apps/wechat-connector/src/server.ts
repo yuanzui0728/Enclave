@@ -37,6 +37,8 @@ export function createConnectorServer(runtime: ConnectorRuntime) {
         const body = await readJsonBody<{
           connectorLabel?: string;
           manualJsonPath?: string | null;
+          providerKey?: "manual-json" | "wechat-decrypt-http";
+          wechatDecryptBaseUrl?: string | null;
         }>(request);
         sendJson(response, runtime.patchConfig(body ?? {}));
         return;

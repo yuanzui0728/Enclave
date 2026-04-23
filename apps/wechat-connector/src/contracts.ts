@@ -48,6 +48,7 @@ export interface ConnectorActiveConfig {
   sourceSummary: string | null;
   providerKey: ConnectorProviderKey;
   manualJsonPath?: string | null;
+  wechatDecryptBaseUrl?: string | null;
 }
 
 export interface ConnectorHealth {
@@ -87,6 +88,7 @@ export interface ConnectorConfigResponse {
   connectorLabel: string;
   providerKey: ConnectorProviderKey;
   manualJsonPath?: string | null;
+  wechatDecryptBaseUrl?: string | null;
   allowedOrigins: string[];
 }
 
@@ -94,6 +96,8 @@ export interface ConnectorScanRequest {
   contacts?: unknown;
   sourceLabel?: string | null;
   manualJsonPath?: string | null;
+  providerKey?: ConnectorProviderKey;
+  wechatDecryptBaseUrl?: string | null;
 }
 
 export interface ConnectorContactBundleRequest {
@@ -107,6 +111,7 @@ export function toConfigResponse(config: ConnectorConfig): ConnectorConfigRespon
     connectorLabel: config.connectorLabel,
     providerKey: config.providerKey,
     manualJsonPath: config.manualJsonPath,
+    wechatDecryptBaseUrl: config.wechatDecryptBaseUrl,
     allowedOrigins: config.allowedOrigins,
   };
 }

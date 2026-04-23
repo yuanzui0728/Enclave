@@ -17,10 +17,12 @@ import {
   type ConnectorConfig,
 } from "./config.js";
 import { ManualJsonProvider, toContactSummary } from "./manual-json-provider.js";
+import { WechatDecryptHttpProvider } from "./wechat-decrypt-http-provider.js";
 
 export class ConnectorRuntime {
   private config: ConnectorConfig;
-  private readonly provider = new ManualJsonProvider();
+  private readonly manualJsonProvider = new ManualJsonProvider();
+  private readonly wechatDecryptHttpProvider = new WechatDecryptHttpProvider();
   private contacts = new Map<string, WechatSyncContactBundle>();
   private lastScanAt: string | null = null;
   private sourceSummary: string | null = null;
@@ -40,7 +42,14 @@ export class ConnectorRuntime {
     return toConfigResponse(this.config);
   }
 
-  patchConfig(patch: Partial<Pick<ConnectorConfig, "connectorLabel" | "manualJsonPath">>) {
+  patchConfig(
+    patch: Partial<
+      Pick<
+        ConnectorConfig,
+        "connectorLabel" | "manualJsonPath" | "providerKey" | "wechatDecryptBaseUrl"
+      >
+    >,
+  ) {
     this.config = applyConfigPatch(this.config, patch);
     this.sourceSummary = this.config.manualJsonPath
       ? `manual-json:${this.config.manualJsonPath}`
@@ -64,11 +73,22 @@ export class ConnectorRuntime {
     if (manualJsonPath) {
       this.patchConfig({ manualJsonPath });
     }
+    if (body?.providerKey || body?.wechatDecryptBaseUrl) {
+      this.patchConfig({
+        providerKey: body.providerKey,
+        wechatDecryptBaseUrl: body.wechatDecryptBaseUrl,
+      });
+    }
 
     const result =
       body && Object.hasOwn(body, "contacts")
-        ? this.provider.scanFromValue(body.contacts, body.sourceLabel ?? "request-body")
-        : this.config.manualJsonPath
+        ? this.manualJsonProvider.scanFromValue(
+            body.contacts,
+            body.sourceLabel ?? "request-body",
+          )
+        : this.config.providerKey === "wechat-decrypt-http"
+          ? await this.scanWechatDecryptHttp()
+          : this.config.manualJsonPath
           ? await this.scanConfiguredPath(this.config.manualJsonPath)
           : {
               contacts: [],
@@ -144,7 +164,17 @@ export class ConnectorRuntime {
 
   private async scanConfiguredPath(filePath: string) {
     await stat(filePath);
-    return this.provider.scanFromPath(filePath);
+    return this.manualJsonProvider.scanFromPath(filePath);
+  }
+
+  private async scanWechatDecryptHttp() {
+    if (!this.config.wechatDecryptBaseUrl) {
+      throw new Error(
+        "请先设置 WECHAT_DECRYPT_BASE_URL 或调用 PATCH /api/config 配置 wechatDecryptBaseUrl。",
+      );
+    }
+
+    return this.wechatDecryptHttpProvider.scan(this.config.wechatDecryptBaseUrl);
   }
 
   private getActiveConfig(): ConnectorActiveConfig {
@@ -153,6 +183,7 @@ export class ConnectorRuntime {
       sourceSummary: this.sourceSummary,
       providerKey: this.config.providerKey,
       manualJsonPath: this.config.manualJsonPath,
+      wechatDecryptBaseUrl: this.config.wechatDecryptBaseUrl,
     };
   }
 
