@@ -15,14 +15,15 @@ import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { BAR_EXPERT_CHAT_BASELINES } from '../characters/bar-expert-chat-baselines';
 import { BAR_EXPERT_MOMENT_BASELINES } from '../characters/bar-expert-moment-baselines';
+import { listBuiltInCharacterPresets } from '../characters/built-in-character-presets';
 import { buildDefaultCharacters } from '../characters/default-characters';
-import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { SystemConfigService } from '../config/config.service';
 import { resolveDatabasePath, resolveRepoPath } from '../../database/database-path';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { SchedulerTelemetryService } from '../scheduler/scheduler-telemetry.service';
+import { InferenceService } from '../inference/inference.service';
 
 type ProviderPayload = {
   endpoint: string;
@@ -619,6 +620,7 @@ export class SystemService {
   constructor(
     private readonly config: ConfigService,
     private readonly systemConfig: SystemConfigService,
+    private readonly inferenceService: InferenceService,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(CharacterEntity)
@@ -817,11 +819,11 @@ export class SystemService {
     }
 
     if (characterId) {
-      const celebrityPreset = listCelebrityCharacterPresets().find(
+      const presetCharacter = listBuiltInCharacterPresets().find(
         (preset) => preset.id === characterId,
       );
-      if (celebrityPreset) {
-        return celebrityPreset.character as CharacterEntity;
+      if (presetCharacter) {
+        return presetCharacter.character as CharacterEntity;
       }
     }
 
@@ -892,6 +894,11 @@ export class SystemService {
       momentsFrequency: 0,
       feedFrequency: 0,
       intimacyLevel: 0,
+      modelRoutingMode: 'inherit_default',
+      inferenceProviderAccountId: null,
+      inferenceModelId: null,
+      allowOwnerKeyOverride: true,
+      modelRoutingNotes: '',
       activityMode: 'auto',
     } as CharacterEntity;
   }
@@ -2428,40 +2435,7 @@ export class SystemService {
   }
 
   private async resolveProviderConfig() {
-    const endpoint =
-      (await this.systemConfig.getConfig('provider_endpoint')) ??
-      this.config.get<string>('OPENAI_BASE_URL') ??
-      'https://api.deepseek.com';
-    const model =
-      (await this.systemConfig.getConfig('provider_model')) ??
-      this.config.get<string>('AI_MODEL') ??
-      'deepseek-chat';
-    const apiKey =
-      (await this.systemConfig.getConfig('provider_api_key')) ??
-      this.config.get<string>('DEEPSEEK_API_KEY') ??
-      '';
-    const mode = (await this.systemConfig.getConfig('provider_mode')) ?? 'cloud';
-    const apiStyle =
-      (await this.systemConfig.getConfig('provider_api_style')) ?? 'openai-chat-completions';
-    const transcriptionEndpoint =
-      (await this.systemConfig.getConfig('provider_transcription_endpoint')) ?? '';
-    const transcriptionModel =
-      (await this.systemConfig.getConfig('provider_transcription_model')) ?? '';
-    const transcriptionApiKey =
-      (await this.systemConfig.getConfig('provider_transcription_api_key')) ?? '';
-
-    return {
-      endpoint: normalizeProviderEndpoint(endpoint),
-      model,
-      apiKey,
-      mode,
-      apiStyle,
-      transcriptionEndpoint: transcriptionEndpoint
-        ? normalizeProviderEndpoint(transcriptionEndpoint)
-        : undefined,
-      transcriptionModel: transcriptionModel || undefined,
-      transcriptionApiKey: transcriptionApiKey || undefined,
-    };
+    return this.inferenceService.getLegacyProviderConfig();
   }
 
   private createProviderClient(payload: ProviderPayload) {
@@ -2649,7 +2623,7 @@ export class SystemService {
       },
       worldSurface: {
         apiPrefix: '/api',
-        migratedModules: ['config', 'characters', 'world', 'social', 'chat', 'moments', 'feed'],
+        migratedModules: ['config', 'characters', 'world', 'social', 'chat', 'moments', 'feed', 'reminder-runtime'],
         ownerCount,
         charactersCount,
         narrativeArcsCount,
@@ -2709,100 +2683,11 @@ export class SystemService {
   }
 
   async setProviderConfig(payload: ProviderPayload) {
-    const nextConfig = {
-      endpoint: normalizeProviderEndpoint(payload.endpoint),
-      model: payload.model.trim(),
-      apiKey: payload.apiKey?.trim() ?? '',
-      mode: payload.mode === 'local-compatible' ? 'local-compatible' : 'cloud',
-      apiStyle: payload.apiStyle === 'openai-responses' ? 'openai-responses' : 'openai-chat-completions',
-      transcriptionEndpoint: payload.transcriptionEndpoint?.trim()
-        ? normalizeProviderEndpoint(payload.transcriptionEndpoint)
-        : '',
-      transcriptionModel: payload.transcriptionModel?.trim() ?? '',
-      transcriptionApiKey: payload.transcriptionApiKey?.trim() ?? '',
-    };
-
-    await Promise.all([
-      this.systemConfig.setConfig('provider_endpoint', nextConfig.endpoint),
-      this.systemConfig.setConfig('provider_model', nextConfig.model),
-      this.systemConfig.setConfig('provider_api_key', nextConfig.apiKey),
-      this.systemConfig.setConfig('provider_mode', nextConfig.mode),
-      this.systemConfig.setConfig('provider_api_style', nextConfig.apiStyle),
-      this.systemConfig.setConfig(
-        'provider_transcription_endpoint',
-        nextConfig.transcriptionEndpoint,
-      ),
-      this.systemConfig.setConfig(
-        'provider_transcription_model',
-        nextConfig.transcriptionModel,
-      ),
-      this.systemConfig.setConfig(
-        'provider_transcription_api_key',
-        nextConfig.transcriptionApiKey,
-      ),
-      this.systemConfig.setAiModel(nextConfig.model),
-    ]);
-
-    return {
-      endpoint: nextConfig.endpoint,
-      model: nextConfig.model,
-      apiKey: nextConfig.apiKey || undefined,
-      mode: nextConfig.mode,
-      apiStyle: nextConfig.apiStyle,
-      transcriptionEndpoint: nextConfig.transcriptionEndpoint || undefined,
-      transcriptionModel: nextConfig.transcriptionModel || undefined,
-      transcriptionApiKey: nextConfig.transcriptionApiKey || undefined,
-    };
+    return this.inferenceService.setLegacyProviderConfig(payload);
   }
 
   async testProviderConnection(payload: ProviderPayload) {
-    const normalizedEndpoint = normalizeProviderEndpoint(payload.endpoint);
-    const normalizedTranscriptionEndpoint = payload.transcriptionEndpoint?.trim()
-      ? normalizeProviderEndpoint(payload.transcriptionEndpoint)
-      : undefined;
-    const transcriptionApiKey =
-      payload.transcriptionApiKey?.trim() || payload.apiKey?.trim() || '';
-
-    try {
-      await this.testChatProviderConnection({
-        ...payload,
-        endpoint: normalizedEndpoint,
-      });
-    } catch (error) {
-      return {
-        success: false,
-        message: `主推理服务连接失败：${extractErrorMessage(error)}`,
-        normalizedEndpoint,
-        normalizedTranscriptionEndpoint,
-      };
-    }
-
-    if (normalizedTranscriptionEndpoint) {
-      try {
-        await this.testTranscriptionProviderConnection({
-          endpoint: normalizedTranscriptionEndpoint,
-          apiKey: transcriptionApiKey,
-          model: payload.transcriptionModel?.trim() || DEFAULT_TRANSCRIPTION_MODEL,
-        });
-      } catch (error) {
-        return {
-          success: false,
-          message: `独立语音转写网关连接失败：${extractErrorMessage(error)}`,
-          normalizedEndpoint,
-          normalizedTranscriptionEndpoint,
-        };
-      }
-    }
-
-    return {
-      success: true,
-      message: normalizedTranscriptionEndpoint
-        ? '主推理服务与独立语音转写网关均可连通。'
-        : '主推理服务连通成功。',
-      normalizedEndpoint,
-      normalizedTranscriptionEndpoint,
-      statusCode: 200,
-    };
+    return this.inferenceService.testProviderConnection(payload);
   }
 
   async runInferencePreview(payload: { prompt: string; model?: string; systemPrompt?: string }) {

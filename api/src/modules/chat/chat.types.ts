@@ -27,6 +27,7 @@ export interface FileAttachment {
   fileName: string;
   size: number;
   transcriptText?: string;
+  extractedText?: string;
 }
 
 export interface VoiceAttachment {

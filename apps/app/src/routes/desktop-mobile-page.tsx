@@ -2144,48 +2144,80 @@ function resolveLiveQualityLabel(quality: LiveSessionRecord["quality"]) {
 function resolveMobileHandoffCategory(
   item: MobileHandoffRecord,
 ): MobileHandoffCategory {
+  const normalizedPath = item.path.split(/[?#]/, 1)[0] ?? item.path;
+
   if (
-    item.path.startsWith("/group/") &&
+    normalizedPath.startsWith("/group/") &&
     (item.label.endsWith("邀请") || item.description.includes("邀请"))
   ) {
     return "group_invite";
   }
 
   if (
-    item.path === "/tabs/chat" ||
-    item.path.startsWith("/chat/") ||
-    item.path.startsWith("/group/")
+    normalizedPath === "/chat/subscription-inbox" ||
+    normalizedPath === "/contacts/official-accounts" ||
+    normalizedPath.startsWith("/official-accounts")
   ) {
-    return "messages";
-  }
-
-  if (item.path.startsWith("/official-accounts")) {
     return "official";
   }
 
   if (
-    item.path === "/tabs/mini-programs" ||
-    item.path.startsWith("/discover/mini-programs")
+    normalizedPath === "/tabs/chat" ||
+    normalizedPath === "/chat" ||
+    normalizedPath.startsWith("/chat/") ||
+    normalizedPath.startsWith("/group/")
+  ) {
+    return "messages";
+  }
+
+  if (
+    normalizedPath === "/tabs/mini-programs" ||
+    normalizedPath === "/mini-programs" ||
+    normalizedPath.startsWith("/discover/mini-programs")
   ) {
     return "mini_program";
   }
 
-  if (item.path === "/games" || item.path.startsWith("/discover/games")) {
+  if (
+    normalizedPath === "/tabs/games" ||
+    normalizedPath === "/games" ||
+    normalizedPath.startsWith("/discover/games")
+  ) {
     return "games";
   }
 
   if (
-    item.path === "/tabs/channels" ||
-    item.path.startsWith("/discover/channels") ||
-    item.path.startsWith("/desktop/channels")
+    normalizedPath === "/tabs/channels" ||
+    normalizedPath === "/channels" ||
+    normalizedPath.startsWith("/discover/channels") ||
+    normalizedPath.startsWith("/desktop/channels")
   ) {
     return "channel";
   }
 
   if (
-    item.path === "/tabs/contacts" ||
-    item.path === "/tabs/discover" ||
-    item.path === "/profile/settings"
+    normalizedPath === "/tabs/contacts" ||
+    normalizedPath === "/contacts" ||
+    normalizedPath === "/tabs/discover" ||
+    normalizedPath === "/discover" ||
+    normalizedPath === "/discover/encounter" ||
+    normalizedPath === "/discover/scene" ||
+    normalizedPath === "/tabs/moments" ||
+    normalizedPath === "/moments" ||
+    normalizedPath.startsWith("/discover/moments") ||
+    normalizedPath === "/tabs/feed" ||
+    normalizedPath === "/feed" ||
+    normalizedPath.startsWith("/discover/feed") ||
+    normalizedPath === "/tabs/search" ||
+    normalizedPath === "/search" ||
+    normalizedPath === "/tabs/favorites" ||
+    normalizedPath === "/favorites" ||
+    normalizedPath === "/notes" ||
+    normalizedPath === "/tabs/profile" ||
+    normalizedPath === "/profile" ||
+    normalizedPath === "/profile/settings" ||
+    normalizedPath === "/desktop/settings" ||
+    normalizedPath.startsWith("/legal/")
   ) {
     return "shortcut";
   }

@@ -37,9 +37,7 @@ import {
   DEFAULT_CHARACTER_IDS,
 } from './default-characters';
 import {
-  getCelebrityCharacterPreset,
   getCelebrityCharacterPresetGroup,
-  listCelebrityCharacterPresets,
 } from './celebrity-character-presets';
 import {
   BUILT_IN_CHARACTER_PRESETS,
@@ -174,7 +172,7 @@ export class CharactersService implements OnModuleInit {
         ]),
     );
 
-    return listCelebrityCharacterPresets().map((preset) => {
+    return BUILT_IN_CHARACTER_PRESETS.map((preset) => {
       const group = getCelebrityCharacterPresetGroup(preset.groupKey);
       const installedCharacter = installedBySourceKey.get(preset.presetKey);
       return {
@@ -197,7 +195,7 @@ export class CharactersService implements OnModuleInit {
   }
 
   async installCelebrityPreset(presetKey: string): Promise<CharacterEntity> {
-    const preset = getCelebrityCharacterPreset(presetKey);
+    const preset = getBuiltInCharacterPreset(presetKey);
     if (!preset) {
       throw new NotFoundException(`Preset ${presetKey} not found`);
     }
@@ -242,11 +240,11 @@ export class CharactersService implements OnModuleInit {
       ),
     );
     if (normalizedPresetKeys.length === 0) {
-      throw new BadRequestException('至少选择一个名人预设。');
+      throw new BadRequestException('至少选择一个预设角色。');
     }
 
     const missingPresetKeys = normalizedPresetKeys.filter(
-      (presetKey) => !getCelebrityCharacterPreset(presetKey),
+      (presetKey) => !getBuiltInCharacterPreset(presetKey),
     );
     if (missingPresetKeys.length > 0) {
       throw new NotFoundException(

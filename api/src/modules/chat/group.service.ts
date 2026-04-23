@@ -46,6 +46,7 @@ import { type GroupUserMessageContext } from './group-reply.types';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyTaskService } from './group-reply-task.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { ReplyArtifactJobService } from './reply-artifact-job.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -149,6 +150,7 @@ export class GroupService {
     private readonly cyberAvatar: CyberAvatarService,
     private readonly groupReplyPlanner: GroupReplyPlannerService,
     private readonly groupReplyTaskService: GroupReplyTaskService,
+    private readonly replyArtifactJobs: ReplyArtifactJobService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -429,6 +431,7 @@ export class GroupService {
       lastReadAt: now,
     });
 
+    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'group_cleared');
     await this.emitGroupConversationUpdated(groupId);
     return this.toGroup(updated);
   }
@@ -512,6 +515,9 @@ export class GroupService {
       attachmentPayload: null,
     });
 
+    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_recalled', {
+      sourceMessageId: message.id,
+    });
     const recalledMessage = this.toGroupMessage(recalled);
     this.chatGateway.emitThreadMessage(groupId, recalledMessage);
     return recalledMessage;
@@ -532,6 +538,9 @@ export class GroupService {
     }
 
     await this.messageRepo.delete({ id: message.id });
+    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_deleted', {
+      sourceMessageId: message.id,
+    });
     await this.syncGroupLastActivity(group);
     await this.emitGroupConversationUpdated(groupId);
 
@@ -794,9 +803,14 @@ export class GroupService {
         throw new Error('Attachment payload is invalid');
       }
 
+      const inferenceCharacterId = await this.resolveAttachmentInferenceCharacterId(
+        input.text,
+        groupId,
+      );
       const attachment = await this.enrichAttachmentForAi(
         input.attachment,
         groupId,
+        inferenceCharacterId,
       );
 
       const fallbackText =
@@ -828,6 +842,7 @@ export class GroupService {
   private async enrichAttachmentForAi(
     attachment: MessageAttachment,
     groupId?: string,
+    characterId?: string,
   ): Promise<MessageAttachment> {
     if (attachment.kind === 'voice') {
       if (attachment.transcriptText?.trim()) {
@@ -839,6 +854,7 @@ export class GroupService {
         mimeType: attachment.mimeType,
         fileName: attachment.fileName,
         conversationId: groupId,
+        characterId,
         mode: 'group_attachment',
       });
       return transcription?.text
@@ -862,6 +878,7 @@ export class GroupService {
         mimeType: attachment.mimeType,
         fileName: attachment.fileName,
         conversationId: groupId,
+        characterId,
         mode: 'group_attachment',
       });
       return transcription?.text
@@ -872,7 +889,90 @@ export class GroupService {
         : attachment;
     }
 
+    if (attachment.kind === 'file') {
+      if (attachment.extractedText?.trim()) {
+        return attachment;
+      }
+
+      const extractedText = await this.ai.tryExtractDocumentTextFromUrl({
+        url: attachment.url,
+        mimeType: attachment.mimeType,
+        fileName: attachment.fileName,
+      });
+      return extractedText
+        ? {
+            ...attachment,
+            extractedText,
+          }
+        : attachment;
+    }
+
     return attachment;
+  }
+
+  private async resolveAttachmentInferenceCharacterId(
+    rawText?: string,
+    groupId?: string,
+  ) {
+    if (!groupId) {
+      return undefined;
+    }
+
+    const replyContent = extractChatReplyMetadata(rawText ?? '');
+    if (replyContent.reply?.messageId) {
+      const replyTargetMessage = await this.messageRepo.findOne({
+        where: {
+          id: replyContent.reply.messageId,
+          groupId,
+        },
+      });
+      if (
+        replyTargetMessage?.senderType === 'character' &&
+        replyTargetMessage.senderId !== 'system'
+      ) {
+        return replyTargetMessage.senderId;
+      }
+    }
+
+    const mentionSummary = summarizeChatMentions(replyContent.body);
+    if (!mentionSummary.mentions.length || mentionSummary.hasMentionAll) {
+      return undefined;
+    }
+
+    const normalizedMentionTargets = new Set(
+      mentionSummary.mentions.map((mention) =>
+        mention.replace(/^@/, '').trim(),
+      ),
+    );
+    if (!normalizedMentionTargets.size) {
+      return undefined;
+    }
+
+    const members = await this.memberRepo.find({
+      where: { groupId, memberType: 'character' },
+    });
+    if (!members.length) {
+      return undefined;
+    }
+
+    const matchedCharacterIds = new Set<string>();
+    await Promise.all(
+      members.map(async (member) => {
+        const character = await this.characters.findById(member.memberId);
+        const aliases = [member.memberName, character?.name]
+          .map((value) => value?.trim())
+          .filter((value): value is string => Boolean(value));
+        if (
+          aliases.some((alias) => normalizedMentionTargets.has(alias))
+        ) {
+          matchedCharacterIds.add(member.memberId);
+        }
+      }),
+    );
+
+    return matchedCharacterIds.size === 1
+      ? [...matchedCharacterIds][0]
+      : undefined;
   }
 
   private buildAiHistoryMessage(message: GroupMessageEntity): ChatMessage {
@@ -937,6 +1037,45 @@ export class GroupService {
     }
 
     if (attachment.kind === 'file') {
+      if (this.isAudioMimeType(attachment.mimeType)) {
+        return [
+          {
+            type: 'audio',
+            audioUrl: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            transcriptText: attachment.transcriptText,
+            summaryText: promptText,
+          },
+        ];
+      }
+
+      if (this.isVideoMimeType(attachment.mimeType)) {
+        return [
+          {
+            type: 'video',
+            videoUrl: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            transcriptText: attachment.transcriptText,
+            summaryText: promptText,
+          },
+        ];
+      }
+
+      if (this.isDocumentMimeType(attachment.mimeType, attachment.fileName)) {
+        return [
+          {
+            type: 'document',
+            url: attachment.url,
+            mimeType: attachment.mimeType,
+            fileName: attachment.fileName,
+            extractedText: attachment.extractedText,
+            summaryText: promptText,
+          },
+        ];
+      }
+
       return [
         {
           type: 'file',
@@ -949,9 +1088,17 @@ export class GroupService {
     }
 
     if (attachment.kind === 'voice') {
-      return this.buildTextAiParts(
-        this.buildMessagePromptText(text, attachment),
-      );
+      return [
+        {
+          type: 'audio',
+          audioUrl: attachment.url,
+          mimeType: attachment.mimeType,
+          fileName: attachment.fileName,
+          durationMs: attachment.durationMs,
+          transcriptText: attachment.transcriptText,
+          summaryText: promptText,
+        },
+      ];
     }
 
     if (attachment.kind === 'contact_card') {
@@ -991,6 +1138,32 @@ export class GroupService {
 
   private buildTextAiParts(text: string): AiMessagePart[] {
     return [{ type: 'text', text }];
+  }
+
+  private isAudioMimeType(mimeType?: string) {
+    return Boolean(mimeType && /^audio\//i.test(mimeType));
+  }
+
+  private isVideoMimeType(mimeType?: string) {
+    return Boolean(mimeType && /^video\//i.test(mimeType));
+  }
+
+  private isDocumentMimeType(mimeType?: string, fileName?: string) {
+    if (mimeType) {
+      if (/^text\//i.test(mimeType)) {
+        return true;
+      }
+
+      if (
+        /^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/json|application\/xml|text\/markdown|text\/csv)$/i.test(
+          mimeType,
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return /\.(pdf|txt|md|markdown|csv|json|doc|docx)$/i.test(fileName ?? '');
   }
 
   private buildMessagePromptText(
@@ -1038,6 +1211,9 @@ export class GroupService {
           : '音频';
         attachmentSummary =
           `发来一个${mediaLabel}文件《${attachment.fileName}》${sizeText ? `，大小：${sizeText}` : ''}${captionText}，转写内容：${attachment.transcriptText.trim()}`.trim();
+      } else if (attachment.extractedText?.trim()) {
+        attachmentSummary =
+          `发来一个文档《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}，提取内容：${attachment.extractedText.trim()}`.trim();
       } else {
         attachmentSummary =
           `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();

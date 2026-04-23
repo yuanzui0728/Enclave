@@ -26,6 +26,8 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   lin_chen_sleep_support: 'lin-chen-sleep-support.svg',
   lin_mian_sleep_support: 'lin-mian-sleep-support.svg',
   xu_zhe_career_growth: 'xu-zhe-career-growth.svg',
+  su_yu_english_coach: 'su-yu-english-coach.svg',
+  zhou_ran_fitness_coach: 'zhou-ran-fitness-coach.svg',
 } as const;
 
 export type CharacterAvatarSourceKey =
@@ -37,9 +39,7 @@ export function getCharacterAvatarBySourceKey(
   return `${CHARACTER_AVATAR_ASSET_ROUTE}/${CHARACTER_AVATAR_FILE_BY_SOURCE_KEY[sourceKey]}`;
 }
 
-export function maybeGetCharacterAvatarBySourceKey(
-  sourceKey?: string | null,
-) {
+export function maybeGetCharacterAvatarBySourceKey(sourceKey?: string | null) {
   if (!sourceKey) {
     return null;
   }

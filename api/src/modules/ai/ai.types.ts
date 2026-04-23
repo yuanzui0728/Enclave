@@ -214,6 +214,34 @@ export type AiMessagePart =
       mimeType?: string;
     }
   | {
+      type: 'audio';
+      audioUrl: string;
+      mimeType?: string;
+      fileName?: string;
+      durationMs?: number;
+      transcriptText?: string;
+      summaryText: string;
+    }
+  | {
+      type: 'video';
+      videoUrl: string;
+      mimeType?: string;
+      fileName?: string;
+      durationMs?: number;
+      width?: number;
+      height?: number;
+      transcriptText?: string;
+      summaryText: string;
+    }
+  | {
+      type: 'document';
+      url: string;
+      mimeType?: string;
+      fileName: string;
+      extractedText?: string;
+      summaryText: string;
+    }
+  | {
       type: 'file';
       fileName: string;
       mimeType: string;
@@ -297,8 +325,10 @@ export interface GenerateReplyOptions {
   isGroupChat?: boolean;
   otherParticipants?: PersonalityProfile[]; // 群聊中其他 AI
   chatContext?: { currentActivity?: string; lastChatAt?: Date };
+  extraSystemPromptSections?: string[];
   aiKeyOverride?: AiKeyOverride;
   usageContext?: AiUsageContext;
+  emptyTextFallback?: string;
 }
 
 export interface GenerateReplyResult {

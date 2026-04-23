@@ -50,6 +50,7 @@ export class VoiceCallsService {
 
     const transcription = await this.ai.transcribeAudio(file, {
       conversationId: conversation.id,
+      characterId,
       mode: 'voice_call',
     });
     const messages = await this.chatService.sendMessage(conversation.id, {

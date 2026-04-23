@@ -230,6 +230,12 @@ function MobileOfficialAccountArticlePage({
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制文章链接。",
         tone: "info",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : undefined,
+        onAction: nativeMobileShareSupported
+          ? () => {
+              void handleShareArticle();
+            }
+          : undefined,
       });
       return;
     }

@@ -2,6 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { type ChatMessage } from '../ai/ai.types';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import {
+  buildReplyModalityPromptSections,
+  extractRequestedImagePrompt,
+  resolveAssistantReplyText,
+  shouldCreateVoiceReplyFromText,
+  type AssistantReplyModalitiesPlan,
+} from './assistant-reply-modalities';
 import {
   type GroupReplyCandidate,
   type GroupReplyOrchestratorInput,
@@ -11,7 +20,10 @@ import {
 export class GroupReplyOrchestratorService {
   private readonly latestTriggerMessageByGroup = new Map<string, string>();
 
-  constructor(private readonly ai: AiOrchestratorService) {}
+  constructor(
+    private readonly ai: AiOrchestratorService,
+    private readonly cyberAvatar: CyberAvatarService,
+  ) {}
 
   async generateTaskReply(input: {
     actor: GroupReplyCandidate;
@@ -21,6 +33,7 @@ export class GroupReplyOrchestratorService {
     baseUserPrompt: string;
     userMessageParts: GroupReplyOrchestratorInput['currentUserContext']['parts'];
     followupReplies: Array<{ senderName: string; text: string }>;
+    allowMultiModal?: boolean;
   }) {
     const {
       actor,
@@ -30,8 +43,22 @@ export class GroupReplyOrchestratorService {
       baseUserPrompt,
       userMessageParts,
       followupReplies,
+      allowMultiModal,
     } = input;
     const rollingHistory = [...conversationHistory];
+    const replyModalities = allowMultiModal
+      ? await this.planAssistantReplyModalities({
+          characterId: actor.character.id,
+          promptText: baseUserPrompt,
+        })
+      : {
+          includeVoice: false,
+          promptSections: [],
+        };
+    const extraSystemPromptSections = [
+      ...(await this.buildCyberAvatarPromptSections(actor.character.id)),
+      ...replyModalities.promptSections,
+    ];
 
     for (const reply of followupReplies) {
       rollingHistory.push({
@@ -41,12 +68,14 @@ export class GroupReplyOrchestratorService {
       });
     }
 
-    return this.ai.generateReply({
+    const result = await this.ai.generateReply({
       profile: actor.profile,
       conversationHistory: rollingHistory,
       userMessage: this.buildTurnUserPrompt(baseUserPrompt, followupReplies),
       userMessageParts,
       isGroupChat: true,
+      extraSystemPromptSections,
+      emptyTextFallback: '',
       usageContext: {
         surface: 'app',
         scene: 'group_reply',
@@ -58,6 +87,16 @@ export class GroupReplyOrchestratorService {
         groupId,
       },
     });
+
+    return {
+      text: resolveAssistantReplyText({
+        text: result.text,
+        promptText: baseUserPrompt,
+        plan: replyModalities,
+        fallbackText: '收到。',
+      }),
+      modalities: replyModalities,
+    };
   }
 
   async executeTurn(input: GroupReplyOrchestratorInput): Promise<void> {
@@ -92,6 +131,8 @@ export class GroupReplyOrchestratorService {
       }
 
       try {
+        const extraSystemPromptSections =
+          await this.buildCyberAvatarPromptSections(actor.character.id);
         const reply = await this.ai.generateReply({
           profile: actor.profile,
           conversationHistory: rollingHistory,
@@ -101,6 +142,8 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
+          extraSystemPromptSections,
+          emptyTextFallback: '',
           usageContext: {
             surface: 'app',
             scene: 'group_reply',
@@ -116,12 +159,21 @@ export class GroupReplyOrchestratorService {
           return;
         }
 
-        await sendReply(actor, reply.text);
+        const normalizedReplyText = resolveAssistantReplyText({
+          text: reply.text,
+          promptText: currentUserContext.promptText,
+          plan: { includeVoice: false, promptSections: [] },
+          fallbackText: '收到。',
+        });
+
+        await sendReply(actor, normalizedReplyText);
         emittedReplies.push({
           senderName: actor.character.name,
-          text: reply.text,
+          text: normalizedReplyText,
         });
-        rollingHistory.push(this.toEmittedHistoryMessage(actor, reply.text));
+        rollingHistory.push(
+          this.toEmittedHistoryMessage(actor, normalizedReplyText),
+        );
       } catch (error) {
         onError?.(actor, error);
       }
@@ -139,6 +191,47 @@ export class GroupReplyOrchestratorService {
     };
   }
 
+  private async buildCyberAvatarPromptSections(characterId: string) {
+    if (characterId !== SELF_CHARACTER_ID) {
+      return [] as string[];
+    }
+
+    return this.cyberAvatar.buildPromptSections({
+      sections: ['coreInstruction', 'worldInteractionPrompt', 'memoryBlock'],
+    });
+  }
+
+  private async planAssistantReplyModalities(input: {
+    characterId: string;
+    promptText: string;
+  }): Promise<AssistantReplyModalitiesPlan> {
+    const wantsVoice = shouldCreateVoiceReplyFromText(input.promptText);
+    const requestedImagePrompt = extractRequestedImagePrompt({
+      type: 'text',
+      text: input.promptText,
+    });
+    if (!wantsVoice && !requestedImagePrompt) {
+      return {
+        includeVoice: false,
+        promptSections: [],
+      };
+    }
+
+    const capabilities = await this.ai.resolveRuntimeCapabilityProfile({
+      characterId: input.characterId,
+    });
+    const plan: AssistantReplyModalitiesPlan = {
+      includeVoice: wantsVoice && capabilities.supportsSpeechSynthesis,
+      imagePrompt:
+        requestedImagePrompt && capabilities.supportsImageGeneration
+          ? requestedImagePrompt
+          : undefined,
+      promptSections: [],
+    };
+    plan.promptSections = buildReplyModalityPromptSections(plan);
+    return plan;
+  }
+
   private buildTurnUserPrompt(
     promptText: string,
     emittedReplies: Array<{ senderName: string; text: string }>,
@@ -149,7 +242,8 @@ export class GroupReplyOrchestratorService {
 
     const replySummary = emittedReplies
       .map(
-        (reply) => `- ${reply.senderName}：${sanitizeAiText(reply.text) || '（无回复）'}`,
+        (reply) =>
+          `- ${reply.senderName}：${sanitizeAiText(reply.text) || '（无回复）'}`,
       )
       .join('\n');
 

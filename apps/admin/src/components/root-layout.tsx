@@ -141,6 +141,11 @@ const NAV_ITEMS = [
     hint: "查看角色名册、角色工厂和运行逻辑台。",
   },
   {
+    to: "/inference",
+    label: "模型与路由",
+    hint: "管理 Provider 账户、模型目录、默认路由和模型角色批量安装。",
+  },
+  {
     to: "/games",
     label: "游戏目录",
     hint: "查看 AI 游戏中心目录、来源结构和当前审核状态。",
@@ -158,7 +163,14 @@ const NAV_ITEMS = [
   {
     to: "/followup-runtime",
     label: "主动跟进",
+    roleBadge: "承接：我自己",
     hint: "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。",
+  },
+  {
+    to: "/reminder-runtime",
+    label: "提醒运行时",
+    roleBadge: "承接：小盯",
+    hint: "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。",
   },
   {
     to: "/token-usage",
@@ -168,7 +180,8 @@ const NAV_ITEMS = [
   {
     to: "/action-runtime",
     label: "真实世界动作",
-    hint: "查看 self 角色的动作门控、连接器、规则和执行轨迹。",
+    roleBadge: "承接：行动助理",
+    hint: "查看行动助理的动作门控、连接器、规则和执行轨迹。",
   },
   {
     to: "/cyber-avatar",
@@ -213,6 +226,15 @@ function resolveRouteMeta(pathname: string) {
     };
   }
 
+  if (pathname === "/inference") {
+    return {
+      eyebrow: "模型与路由",
+      title: "多模型账户与角色路由",
+      description:
+        "集中管理多个 Provider 账户、模型目录、默认模型路由，以及批量安装模型人格角色。",
+    };
+  }
+
   if (pathname === "/games") {
     return {
       eyebrow: "游戏目录",
@@ -237,6 +259,15 @@ function resolveRouteMeta(pathname: string) {
       title: "我自己回捞未闭环事项",
       description:
         "配置 open loop 提取、推荐候选打分、我自己主动消息文案，并查看推荐后的打开、加好友和开聊动作。",
+    };
+  }
+
+  if (pathname === "/reminder-runtime") {
+    return {
+      eyebrow: "提醒运行时",
+      title: "小盯的任务、触发与轻提醒发圈",
+      description:
+        "查看提醒角色当前在盯哪些事项、最近有没有真正提醒出去，以及晨间 / 晚间的长期习惯提醒是否稳定落地。",
     };
   }
 
@@ -294,7 +325,7 @@ function resolveRouteMeta(pathname: string) {
   if (pathname === "/action-runtime") {
     return {
       eyebrow: "真实世界动作",
-      title: "self 角色动作运行时",
+      title: "行动助理动作运行时",
       description:
         "围绕动作识别、澄清、确认、连接器和执行轨迹查看真实世界动作能力。",
     };

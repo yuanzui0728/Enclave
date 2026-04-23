@@ -9,6 +9,7 @@ import {
   type Message,
   type SendMessagePayload,
   type StickerAttachment,
+  type TypingPayload,
 } from "@yinjie/contracts";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import {
@@ -41,7 +42,10 @@ export function useConversationThread(conversationId: string) {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<DirectThreadMessage[]>([]);
-  const [typingCharacterId, setTypingCharacterId] = useState<string | null>(
+  const [typingState, setTypingState] = useState<{
+    characterId: string;
+    stage?: TypingPayload["stage"];
+  } | null>(
     null,
   );
   const [socketError, setSocketError] = useState<string | null>(null);
@@ -186,7 +190,7 @@ export function useConversationThread(conversationId: string) {
     };
 
     setSocketError(null);
-    setTypingCharacterId(null);
+    setTypingState(null);
     joinConversationRoom({ conversationId });
     void markActiveConversationRead();
 
@@ -203,6 +207,9 @@ export function useConversationThread(conversationId: string) {
       syncActiveConversationMessage(payload);
 
       if (payload.senderType === "character") {
+        setTypingState((current) =>
+          current?.characterId === payload.senderId ? null : current,
+        );
         void markActiveConversationRead();
         return;
       }
@@ -214,13 +221,26 @@ export function useConversationThread(conversationId: string) {
 
     const offTypingStart = onTypingStart((payload) => {
       if (payload.conversationId === conversationId) {
-        setTypingCharacterId(payload.characterId);
+        setTypingState({
+          characterId: payload.characterId,
+          stage: payload.stage,
+        });
       }
     });
 
     const offTypingStop = onTypingStop((payload) => {
       if (payload.conversationId === conversationId) {
-        setTypingCharacterId(null);
+        setTypingState((current) => {
+          if (!current || current.characterId !== payload.characterId) {
+            return current;
+          }
+
+          if (payload.stage && current.stage && payload.stage !== current.stage) {
+            return current;
+          }
+
+          return null;
+        });
       }
     });
 
@@ -621,7 +641,7 @@ export function useConversationThread(conversationId: string) {
     setText,
     socketError,
     text,
-    typingCharacterId,
+    typingState,
   };
 }
 

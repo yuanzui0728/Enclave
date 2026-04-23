@@ -16,146 +16,69 @@ import {
   RadioTower,
   Settings,
 } from "lucide-react";
+import {
+  desktopBottomNavBindings,
+  desktopPrimaryNavBindings,
+  isDesktopNavItemActive,
+  type DesktopNavAction,
+  type DesktopNavActionBinding,
+  type DesktopNavRouteBinding,
+} from "./desktop-nav-matching";
 
-export type DesktopNavRouteItem = {
+export type DesktopNavRouteItem = DesktopNavRouteBinding & {
   kind: "route";
   icon: typeof MessageCircleMore;
-  label: string;
-  shortLabel: string;
-  to: string;
-  matches: string[];
-  excludedMatches?: string[];
 };
 
-export type DesktopNavActionItem = {
+export type DesktopNavActionItem = DesktopNavActionBinding & {
   kind: "action";
   icon: typeof MessageCircleMore;
-  label: string;
-  shortLabel: string;
-  action:
-    | "open-mobile-panel"
-    | "open-more-menu"
-    | "open-live-companion"
-    | "open-chat-files"
-    | "open-chat-history"
-    | "lock"
-    | "open-feedback"
-    | "open-settings";
-  matches?: string[];
-  excludedMatches?: string[];
 };
 
 export type DesktopNavItem = DesktopNavRouteItem | DesktopNavActionItem;
 
-export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
-  {
-    kind: "route",
-    icon: MessageCircleMore,
-    label: "消息",
-    shortLabel: "消息",
-    to: "/tabs/chat",
-    matches: ["/tabs/chat", "/chat/", "/group/", "/official-accounts/service/"],
-  },
-  {
-    kind: "route",
-    icon: UsersRound,
-    label: "通讯录",
-    shortLabel: "通讯录",
-    to: "/tabs/contacts",
-    matches: [
-      "/tabs/contacts",
-      "/contacts/starred",
-      "/contacts/tags",
-      "/contacts/official-accounts",
-      "/desktop/add-friend",
-      "/official-accounts/",
-      "/character/",
-      "/friend-requests",
-    ],
-    excludedMatches: ["/official-accounts/service/"],
-  },
-  {
-    kind: "route",
-    icon: Star,
-    label: "收藏",
-    shortLabel: "收藏",
-    to: "/tabs/favorites",
-    matches: ["/tabs/favorites", "/notes", "/desktop/note-window"],
-  },
-  {
-    kind: "route",
-    icon: BellDot,
-    label: "朋友圈",
-    shortLabel: "朋友圈",
-    to: "/tabs/moments",
-    matches: ["/tabs/moments", "/discover/moments", "/desktop/friend-moments/"],
-  },
-  {
-    kind: "route",
-    icon: Newspaper,
-    label: "广场动态",
-    shortLabel: "广场",
-    to: "/tabs/feed",
-    matches: ["/tabs/feed", "/discover/feed"],
-  },
-  {
-    kind: "route",
-    icon: PlaySquare,
-    label: "视频号",
-    shortLabel: "视频号",
-    to: "/tabs/channels",
-    matches: ["/tabs/channels", "/desktop/channels/"],
-  },
-  {
-    kind: "route",
-    icon: Search,
-    label: "搜一搜",
-    shortLabel: "搜索",
-    to: "/tabs/search",
-    matches: ["/tabs/search"],
-  },
-  {
-    kind: "route",
-    icon: Gamepad2,
-    label: "游戏中心",
-    shortLabel: "游戏",
-    to: "/tabs/games",
-    matches: ["/tabs/games"],
-  },
-  {
-    kind: "route",
-    icon: Blocks,
-    label: "小程序面板",
-    shortLabel: "小程序",
-    to: "/tabs/mini-programs",
-    matches: ["/tabs/mini-programs"],
-  },
-];
+const desktopPrimaryNavIcons: Record<
+  DesktopNavRouteBinding["to"],
+  typeof MessageCircleMore
+> = {
+  "/tabs/chat": MessageCircleMore,
+  "/tabs/contacts": UsersRound,
+  "/tabs/favorites": Star,
+  "/tabs/moments": BellDot,
+  "/tabs/feed": Newspaper,
+  "/tabs/channels": PlaySquare,
+  "/tabs/search": Search,
+  "/tabs/games": Gamepad2,
+  "/tabs/mini-programs": Blocks,
+};
 
-export const desktopBottomNavItems: DesktopNavActionItem[] = [
-  {
+export const desktopPrimaryNavItems: DesktopNavRouteItem[] =
+  desktopPrimaryNavBindings.map((item) => ({
+    ...item,
+    kind: "route",
+    icon: desktopPrimaryNavIcons[item.to],
+  }));
+
+const desktopBottomNavIcons: Record<
+  DesktopNavAction,
+  typeof MessageCircleMore
+> = {
+  "open-mobile-panel": Smartphone,
+  "open-more-menu": MoreHorizontal,
+  "open-live-companion": RadioTower,
+  "open-chat-files": FolderOpen,
+  "open-chat-history": History,
+  lock: Lock,
+  "open-feedback": MessageCircleMore,
+  "open-settings": Settings,
+};
+
+export const desktopBottomNavItems: DesktopNavActionItem[] =
+  desktopBottomNavBindings.map((item) => ({
+    ...item,
     kind: "action",
-    icon: Smartphone,
-    label: "手机",
-    shortLabel: "手机",
-    action: "open-mobile-panel",
-    matches: ["/desktop/mobile"],
-  },
-  {
-    kind: "action",
-    icon: MoreHorizontal,
-    label: "更多",
-    shortLabel: "更多",
-    action: "open-more-menu",
-    matches: [
-      "/desktop/chat-files",
-      "/desktop/chat-history",
-      "/desktop/feedback",
-      "/desktop/settings",
-      "/desktop/channels/",
-    ],
-  },
-];
+    icon: desktopBottomNavIcons[item.action],
+  }));
 
 export const desktopMoreMenuItems: DesktopNavActionItem[] = [
   {
@@ -202,17 +125,4 @@ export const desktopMoreMenuItems: DesktopNavActionItem[] = [
   },
 ];
 
-export function isDesktopNavItemActive(
-  pathname: string,
-  item: Pick<DesktopNavItem, "excludedMatches" | "matches">,
-) {
-  const matches =
-    item.matches?.some((prefix) => pathname.startsWith(prefix)) ?? false;
-  if (!matches) {
-    return false;
-  }
-
-  return !(
-    item.excludedMatches?.some((prefix) => pathname.startsWith(prefix)) ?? false
-  );
-}
+export { isDesktopNavItemActive };

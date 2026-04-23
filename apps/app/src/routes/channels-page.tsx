@@ -98,7 +98,9 @@ export function ChannelsPage() {
       ? "/tabs/channels"
       : routeState.returnPath;
   const isDesktopChannelsRoute =
-    pathname === "/tabs/channels" || pathname === "/discover/channels";
+    pathname === "/tabs/channels" ||
+    pathname === "/channels" ||
+    pathname === "/discover/channels";
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const safeReturnPath =
     normalizedDesktopReturnPath &&
@@ -125,6 +127,10 @@ export function ChannelsPage() {
     useState<FeedCommentReplyTarget | null>(null);
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const [noticeActionLabel, setNoticeActionLabel] = useState<string | null>(
+    null,
+  );
+  const [noticeAction, setNoticeAction] = useState<(() => void) | null>(null);
   const previousBaseUrlRef = useRef(baseUrl);
 
   const channelsQuery = useQuery({
@@ -140,6 +146,8 @@ export function ChannelsPage() {
     mutationFn: (postId: string) => likeFeedPost(postId, baseUrl),
     onSuccess: async () => {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("视频号互动已更新。");
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", baseUrl],
@@ -190,6 +198,8 @@ export function ChannelsPage() {
         current?.postId === input.postId ? null : current,
       );
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice(
         input.replyTarget ? "视频号回复已发送。" : "视频号评论已发送。",
       );
@@ -207,6 +217,8 @@ export function ChannelsPage() {
     mutationFn: () => generateChannelPost(baseUrl),
     onSuccess: async () => {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("已生成一条新的 AI 视频号内容。");
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", baseUrl],
@@ -220,6 +232,8 @@ export function ChannelsPage() {
         : favoriteFeedPost(input.postId, baseUrl),
     onSuccess: async (_, input) => {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice(input.favorited ? "已取消收藏。" : "已收藏这条视频号内容。");
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", baseUrl],
@@ -233,6 +247,8 @@ export function ChannelsPage() {
         : followChannelAuthor(input.authorId, baseUrl),
     onSuccess: async (_, input) => {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice(input.following ? "已取消关注。" : "已关注该视频号作者。");
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", baseUrl],
@@ -243,6 +259,8 @@ export function ChannelsPage() {
     mutationFn: (postId: string) => markFeedPostNotInterested(postId, baseUrl),
     onSuccess: async () => {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("这类内容会减少推荐。");
       await queryClient.invalidateQueries({
         queryKey: ["app-channels-home", baseUrl],
@@ -254,6 +272,8 @@ export function ChannelsPage() {
       likeFeedComment(input.commentId, baseUrl),
     onSuccess: async (_, input) => {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("评论互动已更新。");
       await Promise.all([
         queryClient.invalidateQueries({
@@ -486,6 +506,8 @@ export function ChannelsPage() {
 
     if (baseUrlChanged) {
       setCommentDrafts({});
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("");
     }
 
@@ -619,7 +641,11 @@ export function ChannelsPage() {
       return;
     }
 
-    const timer = window.setTimeout(() => setNotice(""), 2400);
+    const timer = window.setTimeout(() => {
+      setNotice("");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
+    }, 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
 
@@ -645,6 +671,8 @@ export function ChannelsPage() {
       if (shared) {
         await shareFeedPost(post.id, { channel: "native" }, baseUrl);
         setNoticeTone("success");
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
         setNotice("已打开系统分享面板。");
         return;
       }
@@ -656,6 +684,14 @@ export function ChannelsPage() {
       typeof navigator.clipboard.writeText !== "function"
     ) {
       setNoticeTone("info");
+      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : null);
+      setNoticeAction(
+        nativeMobileShareSupported
+          ? () => () => {
+              void handleSharePost(post);
+            }
+          : null,
+      );
       setNotice(
         nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
@@ -668,6 +704,8 @@ export function ChannelsPage() {
       await navigator.clipboard.writeText(summaryText);
       await shareFeedPost(post.id, { channel: "copy" }, baseUrl);
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice(
         nativeMobileShareSupported
           ? "系统分享暂时不可用，已复制内容摘要。"
@@ -675,6 +713,10 @@ export function ChannelsPage() {
       );
     } catch {
       setNoticeTone("info");
+      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : "重试复制");
+      setNoticeAction(() => () => {
+        void handleSharePost(post);
+      });
       setNotice(
         nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
@@ -993,13 +1035,24 @@ export function ChannelsPage() {
             {noticeTone === "info" ? (
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">{notice}</span>
-                <button
-                  type="button"
-                  onClick={handleStatusBack}
-                  className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
-                >
-                  {safeReturnPath ? "返回上一页" : "重试读取"}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {noticeAction && noticeActionLabel ? (
+                    <button
+                      type="button"
+                      onClick={noticeAction}
+                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    >
+                      {noticeActionLabel}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handleStatusBack}
+                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  >
+                    {safeReturnPath ? "返回上一页" : "重试读取"}
+                  </button>
+                </div>
               </div>
             ) : (
               notice

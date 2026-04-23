@@ -283,6 +283,129 @@ const ADMIN_SESSION_FOCUSED_SOURCE_SECONDARY_ID =
 const ADMIN_SESSION_FOCUSED_SOURCE_OTHER_ID =
   "99999999-9999-4999-8999-999999999999";
 
+const ADMIN_SESSION_SOURCE_GROUP_EXPORT_CASES = [
+  {
+    name: "exports the focused source-group risk timeline as CSV",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.189",
+      issuedUserAgent: "Timeline Source Browser",
+      sourceSessions: [
+        {
+          template: mockAdminSessions[0],
+          id: "a1111111-1111-4111-8111-111111111111",
+          isCurrent: true,
+          status: "active" as const,
+        },
+        {
+          id: "a2222222-2222-4222-8222-222222222222",
+          isCurrent: false,
+          status: "active" as const,
+        },
+      ],
+    },
+    exportOptions: {
+      buttonName: "Export timeline CSV",
+      message: /Downloaded weekly risk timeline CSV for \d+ point\(s\)\./,
+      includeRequestId: false,
+      title: "Timeline Source Browser",
+      beforeExport: async () => {
+        await expectAdminSessionFocusedSourceOverview();
+        await expectAdminSessionTimelineSummaryViews();
+      },
+    },
+  },
+  {
+    name: "exports an admin session source-group snapshot",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.200",
+      issuedUserAgent: "Snapshot Source Browser",
+      sourceSessions: [
+        {
+          template: mockAdminSessions[0],
+          id: "12121212-1212-4121-8121-121212121212",
+          isCurrent: true,
+          status: "active" as const,
+        },
+        {
+          id: "34343434-3434-4343-8343-343434343434",
+          isCurrent: false,
+          status: "revoked" as const,
+          revocationReason: "refresh-token-reuse" as const,
+        },
+      ],
+    },
+    exportOptions: {
+      buttonName: "Export snapshot",
+      message: "Downloaded admin session audit snapshot for 2 session(s).",
+      beforeExport: async () => {
+        expect((await screen.findAllByText("Critical risk")).length).toBeGreaterThan(0);
+        expect(await screen.findByText("Refresh reuse detected")).toBeTruthy();
+      },
+    },
+  },
+] as const;
+
+const ADMIN_SESSION_RISK_QUICK_VIEW_EXPORT_CASES = [
+  {
+    name: "switches to a risk quick view and exports the matching risk snapshot",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.211",
+      issuedUserAgent: "Quick View Watch Browser",
+      sourceSessionIds: [
+        "89898989-8989-4898-8898-898989898989",
+        "90909090-9090-4909-8909-909090909090",
+      ] as [string, string],
+      otherSessions: [
+        {
+          template: mockAdminSessions[2],
+          id: "91919191-9191-4919-8919-919191919191",
+          issuedFromIp: "198.51.100.211",
+          issuedUserAgent: "Quick View Normal Browser",
+          isCurrent: true,
+          status: "active" as const,
+          revocationReason: null,
+          revokedAt: null,
+          revokedBySessionId: null,
+        },
+      ],
+    },
+    exportOptions: {
+      buttonName: "Export risk snapshot",
+      message: "Downloaded risk snapshot for 1 group(s) and 2 session(s).",
+    },
+  },
+  {
+    name: "exports the matching risk snapshot as groups CSV",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.212",
+      issuedUserAgent: "Quick View Csv Browser",
+      sourceSessionIds: [
+        "92929292-9292-4929-8929-929292929292",
+        "93939393-9393-4939-8939-939393939393",
+      ] as [string, string],
+    },
+    exportOptions: {
+      buttonName: "Export risk groups CSV",
+      message: "Downloaded risk groups CSV for 1 group(s).",
+    },
+  },
+  {
+    name: "exports the matching risk snapshot as sessions CSV",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.213",
+      issuedUserAgent: "Quick View Session Csv Browser",
+      sourceSessionIds: [
+        "94949494-9494-4949-8949-949494949494",
+        "95959595-9595-4959-8959-959595959595",
+      ] as [string, string],
+    },
+    exportOptions: {
+      buttonName: "Export risk sessions CSV",
+      message: "Downloaded risk sessions CSV for 2 session(s).",
+    },
+  },
+] as const;
+
 function buildAdminSessionSourceKey(
   issuedFromIp: string,
   issuedUserAgent: string,
@@ -329,6 +452,12 @@ function buildAdminSessionSourceSession({
 
 type AdminSessionSourceSessionInput = Parameters<
   typeof buildAdminSessionSourceSession
+>[0];
+type AdminSessionSourceScenarioInput = Parameters<
+  typeof buildAdminSessionSourceScenario
+>[0];
+type AdminSessionActiveSourcePairScenarioInput = Parameters<
+  typeof buildAdminSessionActiveSourcePairScenario
 >[0];
 
 function buildAdminSessionSourceScenario({
@@ -916,6 +1045,62 @@ async function setAdminSessionsSearch(query: string) {
   });
 }
 
+async function switchAdminSessionsQuickViewAndAssert({
+  requests,
+  buttonName,
+  summary,
+  rowText,
+  query,
+}: {
+  requests?: CloudAdminRequestLog[];
+  buttonName: string;
+  summary: string;
+  rowText?: string;
+  query?: Record<string, string>;
+}) {
+  fireEvent.click(screen.getByRole("button", { name: buttonName }));
+  await expectAdminSessionsSummary(summary);
+
+  if (rowText) {
+    expect(await screen.findByText(rowText)).toBeTruthy();
+  }
+
+  if (requests && query) {
+    await expectAdminSessionsQuery(requests, query);
+  }
+}
+
+async function setAdminSessionsSortAndDirectionAndAssert({
+  requests,
+  sortBy,
+  sortDirection,
+  rowText,
+  query,
+}: {
+  requests?: CloudAdminRequestLog[];
+  sortBy: string;
+  sortDirection: string;
+  rowText?: string;
+  query?: Record<string, string>;
+}) {
+  fireEvent.change(screen.getByLabelText("Sort by"), {
+    target: { value: sortBy },
+  });
+  fireEvent.change(screen.getByLabelText("Direction"), {
+    target: { value: sortDirection },
+  });
+
+  if (rowText) {
+    await waitFor(() => {
+      expectAdminSessionsFirstDataRowContains(rowText);
+    });
+  }
+
+  if (requests && query) {
+    await expectAdminSessionsQuery(requests, query);
+  }
+}
+
 async function renderAdminSessionSourceGroupsPage({
   search,
   requests,
@@ -1331,23 +1516,46 @@ async function renderInstalledAdminSessionSourceGroupsPage({
   return { requests };
 }
 
-async function renderInstalledAdminSessionRiskQuickViewPage({
-  adminSessions,
-  buttonName = "Watch risk",
-  riskLevel = "watch",
+async function renderInstalledAdminSessionSourceScenarioPage({
+  sourceScenario,
+  includeDefaultAdminSessions = false,
+  search,
+  riskFilter,
 }: {
-  adminSessions: typeof mockAdminSessions;
-  buttonName?: string;
-  riskLevel?: string;
+  sourceScenario: AdminSessionSourceScenarioInput;
+  includeDefaultAdminSessions?: boolean;
+  search?: string;
+  riskFilter?: string;
 }) {
-  const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
-    adminSessions,
+  const scenario = buildAdminSessionSourceScenario(sourceScenario);
+  const rendered = await renderInstalledAdminSessionSourceGroupsPage({
+    adminSessions: scenario.adminSessions,
+    includeDefaultAdminSessions,
+    search,
+    riskFilter,
   });
-  await switchAdminSessionRiskQuickView(requests, {
-    buttonName,
-    riskLevel,
+  return {
+    ...scenario,
+    ...rendered,
+  };
+}
+
+async function renderInstalledAdminSessionActiveSourcePairPage({
+  sourceScenario,
+  riskFilter,
+}: {
+  sourceScenario: AdminSessionActiveSourcePairScenarioInput;
+  riskFilter?: string;
+}) {
+  const scenario = buildAdminSessionActiveSourcePairScenario(sourceScenario);
+  const rendered = await renderInstalledAdminSessionSourceGroupsPage({
+    adminSessions: scenario.adminSessions,
+    riskFilter,
   });
-  return { requests };
+  return {
+    ...scenario,
+    ...rendered,
+  };
 }
 
 async function expectAdminSessionDownloadNotice(message: ScreenTextMatcher) {
@@ -1388,8 +1596,7 @@ async function exportAdminSessionSourceGroupArtifact({
 }
 
 async function exportAdminSessionSourceGroupScenario({
-  adminSessions,
-  sourceKey,
+  sourceScenario,
   buttonName,
   message,
   includeRequestId = true,
@@ -1397,8 +1604,7 @@ async function exportAdminSessionSourceGroupScenario({
   title,
   beforeExport,
 }: {
-  adminSessions: typeof mockAdminSessions;
-  sourceKey: string;
+  sourceScenario: AdminSessionSourceScenarioInput;
   buttonName: string;
   message: ScreenTextMatcher;
   includeRequestId?: boolean;
@@ -1406,6 +1612,7 @@ async function exportAdminSessionSourceGroupScenario({
   title?: string;
   beforeExport?: () => Promise<void> | void;
 }) {
+  const { adminSessions, sourceKey } = buildAdminSessionSourceScenario(sourceScenario);
   const { requests } = installAdminSessionSourceGroupsMock({
     adminSessions,
   });
@@ -1560,20 +1767,22 @@ function expectAdminSessionSourceGroupRiskRevokeRequest(
 }
 
 async function exportAdminSessionRiskQuickViewScenario({
-  adminSessions,
+  sourceScenario,
   buttonName,
   message,
   quickViewButtonName = "Watch risk",
   riskLevel = "watch",
 }: {
-  adminSessions: typeof mockAdminSessions;
+  sourceScenario: AdminSessionActiveSourcePairScenarioInput;
   buttonName: string;
   message: string;
   quickViewButtonName?: string;
   riskLevel?: string;
 }) {
-  const { requests } = await renderInstalledAdminSessionRiskQuickViewPage({
-    adminSessions,
+  const { requests } = await renderInstalledAdminSessionActiveSourcePairPage({
+    sourceScenario,
+  });
+  await switchAdminSessionRiskQuickView(requests, {
     buttonName: quickViewButtonName,
     riskLevel,
   });
@@ -1857,6 +2066,80 @@ async function revokeAdminSessionRiskGroupAndAssert(
     includeRequestId,
   });
   expectAdminSessionSourceGroupRiskRevokeRequest(requests, riskLevel);
+}
+
+async function revokeInstalledAdminSessionSourceScenario({
+  sourceScenario,
+  includeDefaultAdminSessions = false,
+  search,
+  summaryLabels = [],
+  triggerName = "Revoke group",
+  message,
+  requestBody,
+  absentKeys = [],
+  includeRequestId = false,
+  confirmButtonIndex = -1,
+}: {
+  sourceScenario: AdminSessionSourceScenarioInput;
+  includeDefaultAdminSessions?: boolean;
+  search?: string;
+  summaryLabels?: string[];
+  triggerName?: string;
+  message: string;
+  requestBody:
+    | Record<string, unknown>
+    | ((sourceKey: string) => Record<string, unknown>);
+  absentKeys?: string[];
+  includeRequestId?: boolean;
+  confirmButtonIndex?: number;
+}) {
+  const { requests, sourceKey } = await renderInstalledAdminSessionSourceScenarioPage({
+    sourceScenario,
+    includeDefaultAdminSessions,
+    search,
+  });
+
+  for (const summaryLabel of summaryLabels) {
+    expect(await screen.findAllByText(summaryLabel)).toHaveLength(1);
+  }
+
+  await revokeAdminSessionSourceGroupAndAssert({
+    requests,
+    trigger: screen.getByRole("button", { name: triggerName }),
+    message,
+    requestBody:
+      typeof requestBody === "function" ? requestBody(sourceKey) : requestBody,
+    absentKeys,
+    includeRequestId,
+    confirmButtonIndex,
+  });
+
+  return { requests, sourceKey };
+}
+
+async function revokeInstalledAdminSessionRiskScenario({
+  sourceScenario,
+  riskFilter = "watch",
+  message,
+  includeRequestId = true,
+}: {
+  sourceScenario: AdminSessionActiveSourcePairScenarioInput;
+  riskFilter?: string;
+  message: string;
+  includeRequestId?: boolean;
+}) {
+  const { requests } = await renderInstalledAdminSessionActiveSourcePairPage({
+    sourceScenario,
+    riskFilter,
+  });
+
+  await revokeAdminSessionRiskGroupAndAssert(requests, {
+    message,
+    riskLevel: riskFilter,
+    includeRequestId,
+  });
+
+  return { requests };
 }
 
 describe("cloud-console interactions", () => {
@@ -2251,48 +2534,37 @@ describe("cloud-console interactions", () => {
   });
 
   it("revokes a matching admin session source group", async () => {
-    const {
-      adminSessions: sharedSourceSessions,
-      sourceKey: expectedSourceKey,
-    } = buildAdminSessionSourceScenario({
-      issuedFromIp: "203.0.113.88",
-      issuedUserAgent: "Shared Source Browser",
-      sourceSessions: [
-        {
-          id: "44444444-4444-4444-8444-444444444444",
-          isCurrent: false,
-          createdAt: "2026-04-20T00:10:00.000Z",
-          updatedAt: "2026-04-20T00:20:00.000Z",
-          lastUsedAt: "2026-04-20T00:20:00.000Z",
-          expiresAt: "2026-04-27T01:00:00.000Z",
-        },
-        {
-          id: "55555555-5555-4555-8555-555555555555",
-          isCurrent: false,
-          createdAt: "2026-04-20T00:15:00.000Z",
-          updatedAt: "2026-04-20T00:25:00.000Z",
-          lastUsedAt: "2026-04-20T00:25:00.000Z",
-          expiresAt: "2026-04-27T02:00:00.000Z",
-        },
-      ],
-    });
-    const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
-      adminSessions: sharedSourceSessions,
+    await revokeInstalledAdminSessionSourceScenario({
+      sourceScenario: {
+        issuedFromIp: "203.0.113.88",
+        issuedUserAgent: "Shared Source Browser",
+        sourceSessions: [
+          {
+            id: "44444444-4444-4444-8444-444444444444",
+            isCurrent: false,
+            createdAt: "2026-04-20T00:10:00.000Z",
+            updatedAt: "2026-04-20T00:20:00.000Z",
+            lastUsedAt: "2026-04-20T00:20:00.000Z",
+            expiresAt: "2026-04-27T01:00:00.000Z",
+          },
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            isCurrent: false,
+            createdAt: "2026-04-20T00:15:00.000Z",
+            updatedAt: "2026-04-20T00:25:00.000Z",
+            lastUsedAt: "2026-04-20T00:25:00.000Z",
+            expiresAt: "2026-04-27T02:00:00.000Z",
+          },
+        ],
+      },
       includeDefaultAdminSessions: true,
       search: "Shared Source Browser",
-    });
-
-    expect(await screen.findAllByText("2 active")).toHaveLength(1);
-    expect(await screen.findAllByText("2 total")).toHaveLength(1);
-
-    await revokeAdminSessionSourceGroupAndAssert({
-      requests,
-      trigger: screen.getByRole("button", { name: "Revoke group" }),
+      summaryLabels: ["2 active", "2 total"],
       message: "Revoked 2 matching active session(s) in the selected source group.",
-      requestBody: {
+      requestBody: (sourceKey) => ({
         query: "Shared Source Browser",
-        sourceKey: expectedSourceKey,
-      },
+        sourceKey,
+      }),
       confirmButtonIndex: 1,
     });
   });
@@ -2416,76 +2688,19 @@ describe("cloud-console interactions", () => {
     });
   });
 
-  it("exports the focused source-group risk timeline as CSV", async () => {
-    const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario({
-        issuedFromIp: "203.0.113.189",
-        issuedUserAgent: "Timeline Source Browser",
-        sourceSessions: [
-          {
-            template: mockAdminSessions[0],
-            id: "a1111111-1111-4111-8111-111111111111",
-            isCurrent: true,
-            status: "active",
-          },
-          {
-            id: "a2222222-2222-4222-8222-222222222222",
-            isCurrent: false,
-            status: "active",
-          },
-        ],
-      });
-
+  it.each(ADMIN_SESSION_SOURCE_GROUP_EXPORT_CASES)("$name", async ({
+    sourceScenario,
+    exportOptions,
+  }) => {
     await exportAdminSessionSourceGroupScenario({
-      adminSessions: groupedSessions,
-      sourceKey: expectedSourceKey,
-      buttonName: "Export timeline CSV",
-      message: /Downloaded weekly risk timeline CSV for \d+ point\(s\)\./,
-      includeRequestId: false,
-      title: "Timeline Source Browser",
-      beforeExport: async () => {
-        await expectAdminSessionFocusedSourceOverview();
-        await expectAdminSessionTimelineSummaryViews();
-      },
-    });
-  });
-
-  it("exports an admin session source-group snapshot", async () => {
-    const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario({
-        issuedFromIp: "203.0.113.200",
-        issuedUserAgent: "Snapshot Source Browser",
-        sourceSessions: [
-          {
-            template: mockAdminSessions[0],
-            id: "12121212-1212-4121-8121-121212121212",
-            isCurrent: true,
-            status: "active",
-          },
-          {
-            id: "34343434-3434-4343-8343-343434343434",
-            isCurrent: false,
-            status: "revoked",
-            revocationReason: "refresh-token-reuse" as const,
-          },
-        ],
-      });
-
-    await exportAdminSessionSourceGroupScenario({
-      adminSessions: groupedSessions,
-      sourceKey: expectedSourceKey,
-      buttonName: "Export snapshot",
-      message: "Downloaded admin session audit snapshot for 2 session(s).",
-      beforeExport: async () => {
-        expect((await screen.findAllByText("Critical risk")).length).toBeGreaterThan(0);
-        expect(await screen.findByText("Refresh reuse detected")).toBeTruthy();
-      },
+      sourceScenario,
+      ...exportOptions,
     });
   });
 
   it("filters source groups by risk level and revokes the matching groups", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
+    await revokeInstalledAdminSessionRiskScenario({
+      sourceScenario: {
         issuedFromIp: "203.0.113.210",
         issuedUserAgent: "Risk Watch Browser",
         sourceSessionIds: [
@@ -2502,82 +2717,20 @@ describe("cloud-console interactions", () => {
             status: "active",
           },
         ],
-      });
-    const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
-      adminSessions: groupedSessions,
+      },
       riskFilter: "watch",
-    });
-
-    await revokeAdminSessionRiskGroupAndAssert(requests, {
       message: "Revoked 2 active session(s) across 1 risk group(s).",
       includeRequestId: true,
     });
   });
 
-  it("switches to a risk quick view and exports the matching risk snapshot", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
-        issuedFromIp: "203.0.113.211",
-        issuedUserAgent: "Quick View Watch Browser",
-        sourceSessionIds: [
-          "89898989-8989-4898-8898-898989898989",
-          "90909090-9090-4909-8909-909090909090",
-        ],
-        otherSessions: [
-          {
-            template: mockAdminSessions[2],
-            id: "91919191-9191-4919-8919-919191919191",
-            issuedFromIp: "198.51.100.211",
-            issuedUserAgent: "Quick View Normal Browser",
-            isCurrent: true,
-            status: "active",
-            revocationReason: null,
-            revokedAt: null,
-            revokedBySessionId: null,
-          },
-        ],
-      });
-
+  it.each(ADMIN_SESSION_RISK_QUICK_VIEW_EXPORT_CASES)("$name", async ({
+    sourceScenario,
+    exportOptions,
+  }) => {
     await exportAdminSessionRiskQuickViewScenario({
-      adminSessions: groupedSessions,
-      buttonName: "Export risk snapshot",
-      message: "Downloaded risk snapshot for 1 group(s) and 2 session(s).",
-    });
-  });
-
-  it("exports the matching risk snapshot as groups CSV", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
-        issuedFromIp: "203.0.113.212",
-        issuedUserAgent: "Quick View Csv Browser",
-        sourceSessionIds: [
-          "92929292-9292-4929-8929-929292929292",
-          "93939393-9393-4939-8939-939393939393",
-        ],
-      });
-
-    await exportAdminSessionRiskQuickViewScenario({
-      adminSessions: groupedSessions,
-      buttonName: "Export risk groups CSV",
-      message: "Downloaded risk groups CSV for 1 group(s).",
-    });
-  });
-
-  it("exports the matching risk snapshot as sessions CSV", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
-        issuedFromIp: "203.0.113.213",
-        issuedUserAgent: "Quick View Session Csv Browser",
-        sourceSessionIds: [
-          "94949494-9494-4949-8949-949494949494",
-          "95959595-9595-4959-8959-959595959595",
-        ],
-      });
-
-    await exportAdminSessionRiskQuickViewScenario({
-      adminSessions: groupedSessions,
-      buttonName: "Export risk sessions CSV",
-      message: "Downloaded risk sessions CSV for 2 session(s).",
+      sourceScenario,
+      ...exportOptions,
     });
   });
 
@@ -3165,37 +3318,21 @@ describe("cloud-console interactions", () => {
       await screen.findByText("00000012-2222-4222-8222-222222222222"),
     ).toBeTruthy();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Recently revoked" }),
-    );
-
-    await expectAdminSessionsSummary("Showing 1-1 of 1");
-    expect(
-      await screen.findByText("00000012-2222-4222-8222-222222222222"),
-    ).toBeTruthy();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Expiring soon" }),
-    );
-
-    await expectAdminSessionsSummary("Showing 1-10 of 11");
-    await waitFor(() => {
-      expectAdminSessionsFirstDataRowContains(
-        "00000011-2222-4222-8222-222222222222",
-      );
+    await switchAdminSessionsQuickViewAndAssert({
+      buttonName: "Recently revoked",
+      summary: "Showing 1-1 of 1",
+      rowText: "00000012-2222-4222-8222-222222222222",
     });
 
-    fireEvent.change(screen.getByLabelText("Sort by"), {
-      target: { value: "createdAt" },
-    });
-    fireEvent.change(screen.getByLabelText("Direction"), {
-      target: { value: "asc" },
+    await switchAdminSessionsQuickViewAndAssert({
+      buttonName: "Expiring soon",
+      summary: "Showing 1-10 of 11",
     });
 
-    await waitFor(() => {
-      expectAdminSessionsFirstDataRowContains(
-        "00000011-2222-4222-8222-222222222222",
-      );
+    await setAdminSessionsSortAndDirectionAndAssert({
+      sortBy: "createdAt",
+      sortDirection: "asc",
+      rowText: "00000011-2222-4222-8222-222222222222",
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
@@ -3208,11 +3345,11 @@ describe("cloud-console interactions", () => {
     });
 
     await expectAdminSessionsQuery(requests, {
-        sortBy: "updatedAt",
-        sortDirection: "desc",
-        page: "1",
-        pageSize: "10",
-      });
+      sortBy: "updatedAt",
+      sortDirection: "desc",
+      page: "1",
+      pageSize: "10",
+    });
   });
 
   it("issues admin session quick-view and sorting query params", async () => {
@@ -3232,55 +3369,55 @@ describe("cloud-console interactions", () => {
 
     expect(await screen.findByText("Admin sessions")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Current session" }));
-
-    await expectAdminSessionsSummary("Showing 1-1 of 1");
-    expect(
-      await screen.findByText("00000001-3333-4333-8333-333333333333"),
-    ).toBeTruthy();
-    await expectAdminSessionsQuery(requests, {
-          currentOnly: "true",
-          sortBy: "updatedAt",
-          sortDirection: "desc",
-          page: "1",
-          pageSize: "10",
-        });
-
-    fireEvent.click(screen.getByRole("button", { name: "Expiring soon" }));
-
-    await expectAdminSessionsSummary("Showing 1-10 of 11");
-    await expectAdminSessionsQuery(requests, {
-          status: "active",
-          sortBy: "expiresAt",
-          sortDirection: "asc",
-          page: "1",
-          pageSize: "10",
-        });
-
-    fireEvent.change(screen.getByLabelText("Sort by"), {
-      target: { value: "createdAt" },
-    });
-    fireEvent.change(screen.getByLabelText("Direction"), {
-      target: { value: "asc" },
+    await switchAdminSessionsQuickViewAndAssert({
+      requests,
+      buttonName: "Current session",
+      summary: "Showing 1-1 of 1",
+      rowText: "00000001-3333-4333-8333-333333333333",
+      query: {
+        currentOnly: "true",
+        sortBy: "updatedAt",
+        sortDirection: "desc",
+        page: "1",
+        pageSize: "10",
+      },
     });
 
-    await expectAdminSessionsQuery(requests, {
-          status: "active",
-          sortBy: "createdAt",
-          sortDirection: "asc",
-          page: "1",
-          pageSize: "10",
-        });
+    await switchAdminSessionsQuickViewAndAssert({
+      requests,
+      buttonName: "Expiring soon",
+      summary: "Showing 1-10 of 11",
+      query: {
+        status: "active",
+        sortBy: "expiresAt",
+        sortDirection: "asc",
+        page: "1",
+        pageSize: "10",
+      },
+    });
+
+    await setAdminSessionsSortAndDirectionAndAssert({
+      requests,
+      sortBy: "createdAt",
+      sortDirection: "asc",
+      query: {
+        status: "active",
+        sortBy: "createdAt",
+        sortDirection: "asc",
+        page: "1",
+        pageSize: "10",
+      },
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
 
     await expectAdminSessionsSummary("Showing 1-10 of 12");
     await expectAdminSessionsQuery(requests, {
-          sortBy: "updatedAt",
-          sortDirection: "desc",
-          page: "1",
-          pageSize: "10",
-        });
+      sortBy: "updatedAt",
+      sortDirection: "desc",
+      page: "1",
+      pageSize: "10",
+    });
   });
 
   it("clears bulk-selected admin sessions when paging to a different result set", async () => {
@@ -3961,6 +4098,25 @@ describe("cloud-console interactions", () => {
     ).toBeTruthy();
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
       `${window.location.origin}/waiting-sync?status=failed&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&page=2&pageSize=10`,
+    );
+  });
+
+  it("copies a compact admin-sessions permalink from the admin-sessions page", async () => {
+    renderRoute(
+      "/sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12",
+    );
+
+    expect(await screen.findByText("Admin sessions")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy sessions permalink" }),
+    );
+
+    expect(
+      await screen.findByText("Admin sessions permalink copied."),
+    ).toBeTruthy();
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12`,
     );
   });
 

@@ -37,7 +37,7 @@ export type ActionRuntimePromptTemplatesValue = {
 
 export type ActionRuntimePolicyValue = {
   enabled: boolean;
-  selfRoleOnly: boolean;
+  entryCharacterSourceKey: string;
   confirmationKeywords: string[];
   rejectionKeywords: string[];
   autoExecuteRiskLevels: ActionRiskLevelValue[];

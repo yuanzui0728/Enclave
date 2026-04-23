@@ -33,6 +33,16 @@ describe("cloud-console router smoke", () => {
     expect((await screen.findByRole("link", { name: "Jobs" })).getAttribute("href")).toBe(
       "/jobs",
     );
+    expect(
+      (await screen.findByRole("link", { name: "Sessions" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/sessions");
+    expect(
+      (await screen.findByRole("link", { name: "Waiting Sync" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/waiting-sync");
   });
 
   it("navigates through compact request and world nav links", async () => {
@@ -86,6 +96,11 @@ describe("cloud-console router smoke", () => {
 
     expect(await screen.findByText("Admin sessions")).toBeTruthy();
     expect(await screen.findByText("Current")).toBeTruthy();
+    expect(
+      (
+        await screen.findByRole("link", { name: "Open sessions permalink" })
+      ).getAttribute("href"),
+    ).toBe("/sessions");
   });
 
   it("renders the waiting session sync route", async () => {

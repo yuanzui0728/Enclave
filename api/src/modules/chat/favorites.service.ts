@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SystemConfigService } from '../config/config.service';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ConversationEntity } from './conversation.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
@@ -120,6 +121,7 @@ export class FavoritesService {
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly systemConfigService: SystemConfigService,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
 
   async listFavorites(): Promise<FavoriteRecord[]> {
@@ -154,6 +156,20 @@ export class FavoritesService {
     ].slice(0, MAX_FAVORITES);
 
     await this.writeFavorites(nextFavorites);
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    await this.captureFavoriteAction(owner.id, {
+      sourceEntityType: 'favorite_message',
+      sourceEntityId: favorite.sourceId,
+      summaryText: `收藏了一条${favorite.badge}：${favorite.description}`,
+      payload: {
+        category: favorite.category,
+        title: favorite.title,
+        description: favorite.description,
+        to: favorite.to,
+        badge: favorite.badge,
+      },
+      occurredAt: favorite.collectedAt,
+    });
     return favorite;
   }
 
@@ -206,6 +222,20 @@ export class FavoritesService {
     );
 
     await this.writeFavoriteNoteDocuments(nextNotes);
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    await this.captureFavoriteAction(owner.id, {
+      sourceEntityType: 'favorite_note',
+      sourceEntityId: note.id,
+      summaryText: `新建收藏笔记《${note.title}》：${note.excerpt}`,
+      payload: {
+        action: 'created',
+        title: note.title,
+        excerpt: note.excerpt,
+        tags: note.tags,
+      },
+      occurredAt: note.updatedAt,
+      dedupeKey: `favorite-note:${note.id}:${note.updatedAt}`,
+    });
     return note;
   }
 
@@ -231,6 +261,20 @@ export class FavoritesService {
       .slice(0, MAX_FAVORITE_NOTES);
 
     await this.writeFavoriteNoteDocuments(nextNotes);
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    await this.captureFavoriteAction(owner.id, {
+      sourceEntityType: 'favorite_note',
+      sourceEntityId: nextNote.id,
+      summaryText: `更新收藏笔记《${nextNote.title}》：${nextNote.excerpt}`,
+      payload: {
+        action: 'updated',
+        title: nextNote.title,
+        excerpt: nextNote.excerpt,
+        tags: nextNote.tags,
+      },
+      occurredAt: nextNote.updatedAt,
+      dedupeKey: `favorite-note:${nextNote.id}:${nextNote.updatedAt}`,
+    });
     return nextNote;
   }
 
@@ -241,10 +285,27 @@ export class FavoritesService {
     }
 
     const current = await this.readFavoriteNoteDocuments();
+    const removedNote =
+      current.find((note) => note.id === normalizedId) ?? null;
     const nextNotes = current.filter((note) => note.id !== normalizedId);
 
     if (nextNotes.length !== current.length) {
       await this.writeFavoriteNoteDocuments(nextNotes);
+    }
+
+    if (removedNote) {
+      const owner = await this.worldOwnerService.getOwnerOrThrow();
+      await this.captureFavoriteAction(owner.id, {
+        sourceEntityType: 'favorite_note',
+        sourceEntityId: removedNote.id,
+        summaryText: `删除收藏笔记《${removedNote.title}》`,
+        payload: {
+          action: 'removed',
+          title: removedNote.title,
+          excerpt: removedNote.excerpt,
+          tags: removedNote.tags,
+        },
+      });
     }
 
     return { success: true as const };
@@ -550,6 +611,30 @@ export class FavoritesService {
       JSON.stringify(notes),
     );
   }
+
+  private async captureFavoriteAction(
+    ownerId: string,
+    input: {
+      sourceEntityType: string;
+      sourceEntityId: string;
+      summaryText: string;
+      payload?: Record<string, unknown>;
+      occurredAt?: string;
+      dedupeKey?: string;
+    },
+  ) {
+    await this.cyberAvatar.captureSignal({
+      ownerId,
+      signalType: 'favorite_action',
+      sourceSurface: 'favorites',
+      sourceEntityType: input.sourceEntityType,
+      sourceEntityId: input.sourceEntityId,
+      dedupeKey: input.dedupeKey,
+      summaryText: truncateFavoriteSignalText(input.summaryText),
+      payload: input.payload ?? null,
+      occurredAt: input.occurredAt ? new Date(input.occurredAt) : undefined,
+    });
+  }
 }
 
 function stripChatReplyPrefix(text: string) {
@@ -619,6 +704,13 @@ function buildFavoriteNoteDocument(input: {
     createdAt: input.createdAt,
     updatedAt: input.updatedAt,
   };
+}
+
+function truncateFavoriteSignalText(value: string) {
+  const normalized = value.trim();
+  return normalized.length > 220
+    ? `${normalized.slice(0, 217)}...`
+    : normalized;
 }
 
 function normalizeFavoriteNoteDocument(

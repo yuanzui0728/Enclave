@@ -7,7 +7,8 @@ export type CelebrityCharacterPresetGroupKey =
   | 'science_and_reasoning'
   | 'business_and_investing'
   | 'public_expression'
-  | 'relationships_and_emotions';
+  | 'relationships_and_emotions'
+  | 'health_and_wellness';
 
 export interface CelebrityCharacterPresetGroup {
   key: CelebrityCharacterPresetGroupKey;
@@ -61,6 +62,12 @@ const PRESET_GROUPS: Record<
     label: '亲密关系',
     description: '偏恋爱决策、边界识别、沟通修复、依恋理解与关系安全。',
     sortOrder: 25,
+  },
+  health_and_wellness: {
+    key: 'health_and_wellness',
+    label: '健康与训练',
+    description: '偏训练执行、恢复管理、体能建立与长期健康习惯。',
+    sortOrder: 27,
   },
 };
 

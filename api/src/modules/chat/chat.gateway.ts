@@ -7,7 +7,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { AiProviderAuthError } from '../ai/ai.types';
@@ -20,6 +20,7 @@ import type {
   LocationCardAttachment,
   Message,
   NoteCardAttachment,
+  VoiceAttachment,
 } from './chat.types';
 
 type SendMessagePayload =
@@ -53,6 +54,13 @@ type SendMessagePayload =
       type: 'file';
       text?: string;
       attachment: FileAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'voice';
+      text?: string;
+      attachment: VoiceAttachment;
     }
   | {
       conversationId: string;
@@ -96,6 +104,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(ChatGateway.name);
 
   constructor(
+    @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
     private readonly replyLogicRules: ReplyLogicRulesService,
   ) {}
@@ -114,6 +123,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     this.server.to(roomId).emit('new_message', message);
+  }
+
+  emitTypingStart(
+    roomId: string,
+    characterId: string,
+    stage: 'reply' | 'image_generation' = 'reply',
+  ) {
+    if (!this.server) {
+      return;
+    }
+
+    this.server
+      .to(roomId)
+      .emit('typing_start', { conversationId: roomId, characterId, stage });
+  }
+
+  emitTypingStop(
+    roomId: string,
+    characterId: string,
+    stage: 'reply' | 'image_generation' = 'reply',
+  ) {
+    if (!this.server) {
+      return;
+    }
+
+    this.server
+      .to(roomId)
+      .emit('typing_stop', { conversationId: roomId, characterId, stage });
   }
 
   emitConversationUpdated(payload: {
@@ -151,6 +188,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           ? (payload.text ?? `[图片] ${payload.attachment.fileName}`)
           : payload.type === 'file'
             ? (payload.text ?? `[文件] ${payload.attachment.fileName}`)
+            : payload.type === 'voice'
+              ? (payload.text ?? '[语音消息]')
             : payload.type === 'contact_card'
               ? (payload.text ?? `[名片] ${payload.attachment.name}`)
               : payload.type === 'location_card'
@@ -281,12 +320,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: SendMessagePayload,
     replyText: string,
   ) {
-    this.server
-      .to(convId)
-      .emit('typing_start', { conversationId: convId, characterId });
+    this.emitTypingStart(convId, characterId, 'reply');
 
     try {
-      const messages = await this.chatService.sendMessage(convId, payload);
+      const { messages, scheduledReplyArtifactJobIds } =
+        await this.chatService.sendMessageDetailed(convId, payload);
       const aiReply = messages.find(
         (message) => message.senderType === 'character',
       );
@@ -297,17 +335,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      this.server
-        .to(convId)
-        .emit('typing_stop', { conversationId: convId, characterId });
+      this.emitTypingStop(convId, characterId, 'reply');
 
       for (const message of messages) {
         this.emitThreadMessage(convId, message);
       }
+
+      void this.chatService.activateReplyArtifactJobs(
+        scheduledReplyArtifactJobIds,
+      );
     } catch (error) {
-      this.server
-        .to(convId)
-        .emit('typing_stop', { conversationId: convId, characterId });
+      this.emitTypingStop(convId, characterId, 'reply');
       await this.emitConversationFailure(convId);
       const failureMessage = this.describeReplyFailure(error);
       if (this.shouldPersistReplyFailure(error)) {

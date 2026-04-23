@@ -61,6 +61,11 @@ const FollowupRuntimePage = lazy(async () => {
   return { default: mod.FollowupRuntimePage };
 });
 
+const ReminderRuntimePage = lazy(async () => {
+  const mod = await import("./routes/reminder-runtime-page");
+  return { default: mod.ReminderRuntimePage };
+});
+
 const ActionRuntimePage = lazy(async () => {
   const mod = await import("./routes/action-runtime-page");
   return { default: mod.ActionRuntimePage };
@@ -89,6 +94,11 @@ const TokenUsagePage = lazy(async () => {
 const SetupPage = lazy(async () => {
   const mod = await import("./routes/setup-page");
   return { default: mod.SetupPage };
+});
+
+const InferencePage = lazy(async () => {
+  const mod = await import("./routes/inference-page");
+  return { default: mod.InferencePage };
 });
 
 const rootRoute = createRootRoute({
@@ -167,6 +177,12 @@ const followupRuntimeRoute = createRoute({
   component: FollowupRuntimePage,
 });
 
+const reminderRuntimeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reminder-runtime",
+  component: ReminderRuntimePage,
+});
+
 const actionRuntimeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/action-runtime",
@@ -197,6 +213,12 @@ const tokenUsageRoute = createRoute({
   component: TokenUsagePage,
 });
 
+const inferenceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/inference",
+  component: InferencePage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   setupRoute,
@@ -210,11 +232,13 @@ const routeTree = rootRoute.addChildren([
   replyLogicRoute,
   needDiscoveryRoute,
   followupRuntimeRoute,
+  reminderRuntimeRoute,
   actionRuntimeRoute,
   cyberAvatarRoute,
   realWorldSyncRoute,
   chatRecordsRoute,
   tokenUsageRoute,
+  inferenceRoute,
 ]);
 
 export const router = createRouter({

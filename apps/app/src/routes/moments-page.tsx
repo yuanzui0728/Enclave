@@ -88,6 +88,10 @@ export function MomentsPage() {
   const [showCompose, setShowCompose] = useState(false);
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const [noticeActionLabel, setNoticeActionLabel] = useState<string | null>(
+    null,
+  );
+  const [noticeAction, setNoticeAction] = useState<(() => void) | null>(null);
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
   const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<{
     anchorElement: HTMLButtonElement;
@@ -147,6 +151,8 @@ export function MomentsPage() {
       composeDraft.reset();
       setShowCompose(false);
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("朋友圈已发布。");
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
@@ -158,6 +164,8 @@ export function MomentsPage() {
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onSuccess: async () => {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("朋友圈互动已更新。");
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
@@ -183,6 +191,8 @@ export function MomentsPage() {
     onSuccess: async (_, momentId) => {
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice("朋友圈互动已更新。");
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
@@ -220,7 +230,9 @@ export function MomentsPage() {
   const isDiscoverSubPage = pathname === "/discover/moments";
   const desktopMomentsPath = "/tabs/moments";
   const isDesktopMomentsRoute =
-    pathname === desktopMomentsPath || pathname === "/discover/moments";
+    pathname === desktopMomentsPath ||
+    pathname === "/moments" ||
+    pathname === "/discover/moments";
   const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试读取";
   const handleDesktopRouteStateChange = useEffectEvent(
     (state: { momentId?: string }) => {
@@ -301,10 +313,14 @@ export function MomentsPage() {
     const flashNotice = consumeMomentPublishFlash();
     if (flashNotice) {
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice(flashNotice);
       return;
     }
 
+    setNoticeActionLabel(null);
+    setNoticeAction(null);
     setNotice("");
   }, [baseUrl, resetComposeDraft]);
 
@@ -360,7 +376,11 @@ export function MomentsPage() {
       return;
     }
 
-    const timer = window.setTimeout(() => setNotice(""), 2400);
+    const timer = window.setTimeout(() => {
+      setNotice("");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
+    }, 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
 
@@ -523,6 +543,8 @@ export function MomentsPage() {
 
       if (shared) {
         setNoticeTone("success");
+        setNoticeActionLabel(null);
+        setNoticeAction(null);
         setNotice("已打开系统分享面板。");
         return;
       }
@@ -534,6 +556,14 @@ export function MomentsPage() {
       typeof navigator.clipboard.writeText !== "function"
     ) {
       setNoticeTone("info");
+      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : null);
+      setNoticeAction(
+        nativeMobileShareSupported
+          ? () => () => {
+              void handleShareMoment(moment);
+            }
+          : null,
+      );
       setNotice(
         nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
@@ -545,6 +575,8 @@ export function MomentsPage() {
     try {
       await navigator.clipboard.writeText(summaryText);
       setNoticeTone("success");
+      setNoticeActionLabel(null);
+      setNoticeAction(null);
       setNotice(
         nativeMobileShareSupported
           ? "系统分享暂时不可用，已复制动态摘要。"
@@ -552,6 +584,10 @@ export function MomentsPage() {
       );
     } catch {
       setNoticeTone("info");
+      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : "重试复制");
+      setNoticeAction(() => () => {
+        void handleShareMoment(moment);
+      });
       setNotice(
         nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
@@ -835,15 +871,28 @@ export function MomentsPage() {
               tone={noticeTone}
               action={
                 noticeTone === "info" ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
-                    onClick={handleStatusBack}
-                  >
-                    {safeReturnPath ? "返回上一页" : "重试读取"}
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    {noticeAction && noticeActionLabel ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                        onClick={noticeAction}
+                      >
+                        {noticeActionLabel}
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      onClick={handleStatusBack}
+                    >
+                      {interactionActionLabel}
+                    </Button>
+                  </div>
                 ) : undefined
               }
             >

@@ -1,3 +1,6 @@
+export const SELF_CHARACTER_SOURCE_KEY = "self" as const;
+export const ACTION_OPERATOR_SOURCE_KEY = "action_operator" as const;
+
 export type RelationshipType =
   | "family"
   | "friend"
@@ -12,14 +15,19 @@ export type CharacterSourceType =
   | "need_generated"
   | "shake_generated"
   | "ai_generated"
-  | "wechat_import";
+  | "wechat_import"
+  | "model_persona";
 export type CharacterDeletionPolicy = "protected" | "archive_allowed";
+export type CharacterModelRoutingMode =
+  | "inherit_default"
+  | "character_override";
 export type CharacterPresetGroupKey =
   | "technology_and_product"
   | "science_and_reasoning"
   | "business_and_investing"
   | "public_expression"
-  | "relationships_and_emotions";
+  | "relationships_and_emotions"
+  | "health_and_wellness";
 export type ResponseLength = "short" | "medium" | "long";
 export type EmojiUsage = "none" | "occasional" | "frequent";
 
@@ -279,6 +287,11 @@ export interface Character {
   currentStatus?: string | null;
   currentActivity?: string | null;
   activityMode?: "auto" | "manual";
+  modelRoutingMode?: CharacterModelRoutingMode;
+  inferenceProviderAccountId?: string | null;
+  inferenceModelId?: string | null;
+  allowOwnerKeyOverride?: boolean;
+  modelRoutingNotes?: string | null;
 }
 
 export interface CharacterPresetSummary {

@@ -34,6 +34,7 @@ import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
 import { useConsoleNotice } from "../components/console-notice";
 import {
   DEFAULT_ADMIN_SESSIONS_ROUTE_SEARCH,
+  buildAdminSessionsPermalink,
   buildAdminSessionsRouteSearch,
   type AdminSessionsRouteSearch,
 } from "../lib/admin-sessions-route-search";
@@ -62,12 +63,16 @@ import {
   cloudAdminApi,
   getCloudAdminApiErrorRequestId,
 } from "../lib/cloud-admin-api";
+import { copyTextToClipboard } from "../lib/clipboard";
 import {
   createRequestScopedNotice,
   type RequestScopedNotice,
   showRequestScopedNotice,
   showRequestScopedNoticeAndInvalidate,
 } from "../lib/request-scoped-notice";
+
+const ADMIN_SESSION_ACTION_LINK_CLASS_NAME =
+  "rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--text-primary)] transition hover:border-[color:var(--border-strong)]";
 
 function formatDateTime(value?: string | null) {
   if (!value) {
@@ -1274,6 +1279,26 @@ export function AdminSessionsPage() {
     });
   }
 
+  const currentPermalink = useMemo(
+    () => buildAdminSessionsPermalink(filters),
+    [filters],
+  );
+
+  async function copyAdminSessionsPermalink() {
+    const absolutePermalink =
+      typeof window !== "undefined" && window.location?.origin
+        ? `${window.location.origin}${currentPermalink}`
+        : currentPermalink;
+    const copied = await copyTextToClipboard(absolutePermalink);
+
+    showNotice(
+      copied
+        ? "Admin sessions permalink copied."
+        : "Clipboard copy failed in this environment.",
+      copied ? "success" : "danger",
+    );
+  }
+
   const sessionFilters = {
     status: filters.status === "all" ? undefined : filters.status,
     revocationReason:
@@ -2066,9 +2091,25 @@ export function AdminSessionsPage() {
           description="Review live admin sessions, inspect where they were issued from, filter by revocation path, and page through longer audit history."
           variant="page"
         />
-        <AdminSessionSummaryChip className="tracking-[0.2em]">
-          {summary}
-        </AdminSessionSummaryChip>
+        <div className="flex flex-wrap items-center gap-3">
+          <AdminSessionSummaryChip className="tracking-[0.2em]">
+            {summary}
+          </AdminSessionSummaryChip>
+          <AdminSessionActionButton
+            tone="neutral"
+            onClick={copyAdminSessionsPermalink}
+          >
+            Copy sessions permalink
+          </AdminSessionActionButton>
+          <a
+            href={currentPermalink}
+            target="_blank"
+            rel="noreferrer"
+            className={ADMIN_SESSION_ACTION_LINK_CLASS_NAME}
+          >
+            Open sessions permalink
+          </a>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">

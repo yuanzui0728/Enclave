@@ -1,4 +1,8 @@
 import {
+  ACTION_OPERATOR_CHARACTER_ID,
+  ACTION_OPERATOR_SOURCE_KEY,
+} from './action-operator-character';
+import {
   BAR_EXPERT_CHARACTER_ID,
   BAR_EXPERT_SOURCE_KEY,
 } from './bar-expert-character';
@@ -8,6 +12,10 @@ import {
 } from './default-characters';
 import { DOCTOR_CHARACTER_ID, DOCTOR_SOURCE_KEY } from './doctor-character';
 import { LAWYER_CHARACTER_ID, LAWYER_SOURCE_KEY } from './lawyer-character';
+import {
+  REMINDER_CHARACTER_ID,
+  REMINDER_CHARACTER_SOURCE_KEY,
+} from './reminder-character';
 import {
   WORLD_NEWS_DESK_CHARACTER_ID,
   WORLD_NEWS_DESK_SOURCE_KEY,
@@ -44,6 +52,28 @@ describe('default characters', () => {
     expect(character?.profile?.cognitiveBoundaries?.refusalStyle).toContain(
       '会直接拒绝',
     );
+  });
+
+  it('includes the action operator with expected runtime defaults', () => {
+    const character = buildDefaultCharacters().find(
+      (item) => item.id === ACTION_OPERATOR_CHARACTER_ID,
+    );
+
+    expect(character).toBeDefined();
+    expect(character).toMatchObject({
+      id: ACTION_OPERATOR_CHARACTER_ID,
+      sourceType: 'default_seed',
+      sourceKey: ACTION_OPERATOR_SOURCE_KEY,
+      relationshipType: 'custom',
+      momentsFrequency: 0,
+      feedFrequency: 0,
+      currentActivity: 'working',
+      expertDomains: ['management', 'general', 'lifestyle'],
+    });
+
+    expect(character?.profile?.coreLogic).toContain('真实世界里的事往前推进');
+    expect(character?.profile?.scenePrompts?.chat).toContain('先复述目标');
+    expect(character?.profile?.memorySummary).toContain('真实世界动作');
   });
 
   it('includes the doctor with expected runtime defaults', () => {
@@ -114,6 +144,30 @@ describe('default characters', () => {
     expect(character?.profile?.scenePrompts?.chat).toContain('上来先说判断');
     expect(character?.profile?.memory?.coreMemory).toContain(
       '替用户先把新闻捋顺的人',
+    );
+  });
+
+  it('includes the reminder keeper with expected runtime defaults', () => {
+    const character = buildDefaultCharacters().find(
+      (item) => item.id === REMINDER_CHARACTER_ID,
+    );
+
+    expect(character).toBeDefined();
+    expect(character).toMatchObject({
+      id: REMINDER_CHARACTER_ID,
+      sourceType: 'default_seed',
+      sourceKey: REMINDER_CHARACTER_SOURCE_KEY,
+      relationshipType: 'friend',
+      momentsFrequency: 1,
+      feedFrequency: 0,
+      currentActivity: 'free',
+      expertDomains: ['management', 'general', 'lifestyle'],
+    });
+
+    expect(character?.profile?.coreLogic).toContain('专门替用户记事和提醒');
+    expect(character?.profile?.scenePrompts?.chat).toContain('用户给提醒');
+    expect(character?.profile?.scenePrompts?.proactive).toContain(
+      '允许主动发消息',
     );
   });
 });

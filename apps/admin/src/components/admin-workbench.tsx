@@ -40,15 +40,36 @@ type AdminPageHeroProps = {
   eyebrow: string;
   title: string;
   description: string;
+  badges?: string[];
   actions?: ReactNode;
   metrics?: Array<{ label: string; value: string | number }>;
   className?: string;
 };
 
+export function AdminContextBadge({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border border-[color:var(--border-subtle)] bg-white/80 px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
+        className,
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
 export function AdminPageHero({
   eyebrow,
   title,
   description,
+  badges,
   actions,
   metrics,
   className,
@@ -65,6 +86,13 @@ export function AdminPageHero({
           <div className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">{eyebrow}</div>
           <h2 className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">{title}</h2>
           <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</p>
+          {badges?.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {badges.map((badge) => (
+                <AdminContextBadge key={`${title}-${badge}`} label={badge} />
+              ))}
+            </div>
+          ) : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
       </div>

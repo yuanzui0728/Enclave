@@ -358,6 +358,8 @@ export function ChatMessageList({
     tone: "success" | "danger" | "warning";
     actionLabel?: string;
     onAction?: () => void;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
   } | null>(null);
   const [pendingDirectCallInvite, setPendingDirectCallInvite] = useState<{
     source: CallInviteSource | null;
@@ -798,11 +800,17 @@ export function ChatMessageList({
         });
       }, 500);
     },
-    onError: (error) => {
+    onError: (error, input) => {
       setActionNotice({
         message:
           error instanceof Error ? error.message : "转发失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续转发消息",
+        onAction: () => {
+          void forwardMutation.mutateAsync(input);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
@@ -876,11 +884,17 @@ export function ChatMessageList({
         queryKey: ["app-conversations", baseUrl],
       });
     },
-    onError: (error) => {
+    onError: (error, message) => {
       setActionNotice({
         message:
           error instanceof Error ? error.message : "撤回失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续撤回",
+        onAction: () => {
+          recallMutation.mutate(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
@@ -940,11 +954,17 @@ export function ChatMessageList({
         queryKey: ["app-conversations", baseUrl],
       });
     },
-    onError: (error) => {
+    onError: (error, message) => {
       setActionNotice({
         message:
           error instanceof Error ? error.message : "删除失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续删除",
+        onAction: () => {
+          deleteMutation.mutate(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
@@ -979,13 +999,19 @@ export function ChatMessageList({
         queryKey: ["app-sticker-catalog", baseUrl],
       });
     },
-    onError: (error) => {
+    onError: (error, message) => {
       setActionNotice({
         message:
           error instanceof Error
             ? error.message
             : "添加到表情失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续添加到表情",
+        onAction: () => {
+          addToStickerMutation.mutate(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     },
   });
@@ -1013,6 +1039,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "复制失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "重试复制",
+        onAction: () => {
+          void copyToClipboard(text, successMessage);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1047,6 +1079,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "当前设备暂时无法打开系统分享，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareLocationSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }
@@ -1061,6 +1099,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "系统分享失败，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareLocationSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel ?? undefined,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1102,6 +1146,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "当前设备暂时无法打开系统分享，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareContactSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }
@@ -1116,6 +1166,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "系统分享失败，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareContactSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel ?? undefined,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1151,6 +1207,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "当前设备暂时无法打开系统分享，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareNoteSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }
@@ -1165,6 +1227,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "系统分享失败，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareNoteSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel ?? undefined,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1593,6 +1661,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "收藏失败，请稍后再试。",
         tone: "danger",
+        actionLabel: collected ? "继续取消收藏" : "继续收藏",
+        onAction: () => {
+          void handleToggleFavorite(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1708,17 +1782,30 @@ export function ChatMessageList({
     }
 
     if (attachment.kind === "file") {
-      void openRemoteFile({
-        url: resolveAttachmentUrl(attachment.url),
-        fileName: attachment.fileName,
-        mimeType: attachment.mimeType,
-        dialogTitle: "打开文件",
-      }).then((result) => {
+      const openFileAttachment = () =>
+        openRemoteFile({
+          url: resolveAttachmentUrl(attachment.url),
+          fileName: attachment.fileName,
+          mimeType: attachment.mimeType,
+          dialogTitle: "打开文件",
+        });
+
+      const showFileOpenResult = (result: Awaited<ReturnType<typeof openRemoteFile>>) => {
         setActionNotice({
           message: result.message,
           tone: result.opened ? "success" : "danger",
+          actionLabel: result.opened ? undefined : "重试打开文件",
+          onAction: result.opened
+            ? undefined
+            : () => {
+                void openFileAttachment().then(showFileOpenResult);
+              },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
         });
-      });
+      };
+
+      void openFileAttachment().then(showFileOpenResult);
     }
   };
 
@@ -1727,6 +1814,8 @@ export function ChatMessageList({
     fileName: string;
     kind: "image" | "file";
   }) => {
+    const retryLabel = input.kind === "image" ? "重试保存图片" : "重试保存文件";
+
     void saveRemoteFile({
       url: input.url,
       fileName: input.fileName,
@@ -1744,19 +1833,33 @@ export function ChatMessageList({
       setActionNotice({
         message: result.message,
         tone: result.status === "failed" ? "danger" : "success",
-        actionLabel: canRevealSavedFile ? "打开位置" : undefined,
-        onAction: savedPath
-          ? () => {
-              void revealSavedFile(savedPath).then((revealed) => {
-                setActionNotice({
-                  message: revealed
-                    ? "已打开所在位置。"
-                    : "打开所在位置失败，请稍后再试。",
-                  tone: revealed ? "success" : "danger",
-                });
-              });
-            }
-          : undefined,
+        actionLabel:
+          result.status === "failed"
+            ? retryLabel
+            : canRevealSavedFile
+              ? "打开位置"
+              : undefined,
+        onAction:
+          result.status === "failed"
+            ? () => {
+                saveAttachmentFile(input);
+              }
+            : savedPath
+              ? () => {
+                  void revealSavedFile(savedPath).then((revealed) => {
+                    setActionNotice({
+                      message: revealed
+                        ? "已打开所在位置。"
+                        : "打开所在位置失败，请稍后再试。",
+                      tone: revealed ? "success" : "danger",
+                    });
+                  });
+                }
+              : undefined,
+        secondaryActionLabel:
+          result.status === "failed" ? errorActionLabel : undefined,
+        onSecondaryAction:
+          result.status === "failed" ? onErrorAction ?? undefined : undefined,
       });
     });
   };
@@ -1855,6 +1958,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "重试发送失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续重试发送",
+        onAction: () => {
+          void handleRetryMessage(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1938,6 +2047,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "设置提醒失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续设置提醒",
+        onAction: () => {
+          void handleSelectReminder(option);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }
@@ -2156,6 +2271,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "收藏失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续收藏所选消息",
+        onAction: () => {
+          void handleFavoriteSelectedMessages();
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     } finally {
       setSelectionActionPending(null);
@@ -2254,6 +2375,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "批量删除失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续删除所选消息",
+        onAction: () => {
+          void handleDeleteSelectedMessages();
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     } finally {
       setSelectionActionPending(null);
@@ -2327,6 +2454,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "批量撤回失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续撤回所选消息",
+        onAction: () => {
+          void handleRecallSelectedMessages();
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     } finally {
       setSelectionActionPending(null);
@@ -2366,10 +2499,19 @@ export function ChatMessageList({
         >
           <span>{actionNotice.message}</span>
           {actionNotice.actionLabel && actionNotice.onAction ? (
-            <InlineNoticeActionButton
-              label={actionNotice.actionLabel}
-              onClick={actionNotice.onAction}
-            />
+            <div className="flex items-center gap-2">
+              <InlineNoticeActionButton
+                label={actionNotice.actionLabel}
+                onClick={actionNotice.onAction}
+              />
+              {actionNotice.secondaryActionLabel &&
+              actionNotice.onSecondaryAction ? (
+                <InlineNoticeActionButton
+                  label={actionNotice.secondaryActionLabel}
+                  onClick={actionNotice.onSecondaryAction}
+                />
+              ) : null}
+            </div>
           ) : actionNotice.tone === "danger" &&
             errorActionLabel &&
             onErrorAction ? (

@@ -8,6 +8,14 @@ import {
 } from "../contacts/character-detail-route-state";
 import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";
 import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "../chat/mobile-chat-route-state";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../chat/mobile-group-route-state";
+import {
   buildDesktopChatRouteHash,
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
@@ -25,6 +33,7 @@ import {
   buildDesktopMomentsRouteHash,
   parseDesktopMomentsRouteState,
 } from "../moments/moments-route-state";
+import { parseMobileMomentsPublishRouteState } from "../moments/mobile-moments-publish-route-state";
 import {
   buildDesktopChannelsRouteHash,
   parseDesktopChannelsRouteHash,
@@ -41,6 +50,10 @@ import {
   buildMobileMiniProgramsRouteSearch,
   parseMobileMiniProgramsRouteSearch,
 } from "../mini-programs/mobile-mini-programs-route-state";
+import {
+  buildCreateGroupRouteHash,
+  parseCreateGroupRouteHash,
+} from "../../lib/create-group-route-state";
 
 type SearchNavigationTargetInput = {
   to: string;
@@ -188,6 +201,48 @@ export function applyDesktopSearchReturnContext(
     };
   }
 
+  const chatBackgroundMatch = target.to.match(
+    /^\/chat\/([^/?#]+)\/background$/,
+  );
+  if (chatBackgroundMatch?.[1]?.trim()) {
+    const targetRouteState = parseMobileChatRouteState(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildMobileChatRouteHash({
+        highlightedMessageId: targetRouteState.highlightedMessageId,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  const groupToolsMatch = target.to.match(/^\/group\/([^/?#]+)\/(background|qr)$/);
+  if (groupToolsMatch?.[1]?.trim()) {
+    const targetRouteState = parseMobileGroupRouteState(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildMobileGroupRouteHash({
+        highlightedMessageId: targetRouteState.highlightedMessageId,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  if (target.to === "/group/new") {
+    const targetRouteState = parseCreateGroupRouteHash(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildCreateGroupRouteHash({
+        source: targetRouteState.source,
+        conversationId: targetRouteState.conversationId,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+        seedMemberIds: targetRouteState.seedMemberIds,
+      }),
+    };
+  }
+
   return target;
 }
 
@@ -204,6 +259,20 @@ function resolveDesktopWorkspaceNavigationTarget(
   if (target.to === "/contacts") {
     return {
       to: "/tabs/contacts",
+      hash: target.hash,
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/profile") {
+    return {
+      to: "/tabs/profile",
+      hash: target.hash,
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/search") {
+    return {
+      to: "/tabs/search",
       hash: target.hash,
     } satisfies SearchNavigationTarget;
   }
@@ -273,6 +342,7 @@ function normalizeHashString(value: string | undefined) {
 function resolveDesktopConversationNavigationTarget(
   target: SearchNavigationTarget,
 ) {
+  const highlightedMessageId = parseLegacyHighlightedMessageId(target.hash);
   const conversationMatch = target.to.match(/^\/(?:chat|group)\/([^/?#]+)$/);
   if (conversationMatch) {
     const conversationId = conversationMatch[1]?.trim();
@@ -284,9 +354,76 @@ function resolveDesktopConversationNavigationTarget(
       to: "/tabs/chat",
       hash: buildDesktopChatRouteHash({
         conversationId,
-        messageId: parseLegacyHighlightedMessageId(target.hash),
+        messageId: highlightedMessageId,
       }),
     } satisfies SearchNavigationTarget;
+  }
+
+  const detailsMatch = target.to.match(/^\/(?:chat|group)\/([^/?#]+)\/details$/);
+  if (detailsMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: detailsMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+    });
+  }
+
+  const searchMatch = target.to.match(/^\/(?:chat|group)\/([^/?#]+)\/search$/);
+  if (searchMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: searchMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "history",
+    });
+  }
+
+  const callMatch = target.to.match(
+    /^\/(?:chat|group)\/([^/?#]+)\/(voice-call|video-call)$/,
+  );
+  if (callMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: callMatch[1].trim(),
+      messageId: highlightedMessageId,
+      callAction: callMatch[2] === "voice-call" ? "voice" : "video",
+    });
+  }
+
+  const groupAnnouncementMatch = target.to.match(
+    /^\/group\/([^/?#]+)\/announcement$/,
+  );
+  if (groupAnnouncementMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: groupAnnouncementMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+      detailsAction: "announcement",
+    });
+  }
+
+  const groupEditMatch = target.to.match(
+    /^\/group\/([^/?#]+)\/edit\/(name|nickname)$/,
+  );
+  if (groupEditMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: groupEditMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+      detailsAction:
+        groupEditMatch[2] === "name" ? "group-name" : "group-nickname",
+    });
+  }
+
+  const groupMembersMatch = target.to.match(
+    /^\/group\/([^/?#]+)\/members\/(add|remove)$/,
+  );
+  if (groupMembersMatch?.[1]?.trim()) {
+    return buildDesktopConversationNavigationTarget({
+      conversationId: groupMembersMatch[1].trim(),
+      messageId: highlightedMessageId,
+      panel: "details",
+      detailsAction:
+        groupMembersMatch[2] === "add" ? "member-add" : "member-remove",
+    });
   }
 
   if (target.to === "/chat/subscription-inbox") {
@@ -300,6 +437,24 @@ function resolveDesktopConversationNavigationTarget(
   }
 
   return null;
+}
+
+function buildDesktopConversationNavigationTarget(input: {
+  conversationId: string;
+  messageId?: string;
+  panel?: "history" | "details";
+  callAction?: "voice" | "video";
+  detailsAction?:
+    | "announcement"
+    | "member-add"
+    | "member-remove"
+    | "group-name"
+    | "group-nickname";
+}) {
+  return {
+    to: "/tabs/chat",
+    hash: buildDesktopChatRouteHash(input),
+  } satisfies SearchNavigationTarget;
 }
 
 function resolveDesktopOfficialNavigationTarget(
@@ -480,11 +635,16 @@ function resolveDesktopDiscoverNavigationTarget(target: SearchNavigationTarget) 
 
   return {
     to: "/tabs/discover",
+    hash: target.hash,
   } satisfies SearchNavigationTarget;
 }
 
 function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
-  if (target.to === "/discover/moments" || target.to === "/tabs/moments") {
+  if (
+    target.to === "/moments" ||
+    target.to === "/discover/moments" ||
+    target.to === "/tabs/moments"
+  ) {
     const routeState = parseDesktopMomentsRouteState(target.hash ?? "");
     return {
       to: "/tabs/moments",
@@ -497,7 +657,20 @@ function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
     } satisfies SearchNavigationTarget;
   }
 
-  const friendMomentsMatch = target.to.match(/^\/friend-moments\/([^/?#]+)$/);
+  if (target.to === "/discover/moments/publish") {
+    const routeState = parseMobileMomentsPublishRouteState(target.hash ?? "");
+    return {
+      to: "/tabs/moments",
+      hash: buildDesktopMomentsRouteHash({
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  const friendMomentsMatch = target.to.match(
+    /^\/(?:friend-moments|moments\/friend)\/([^/?#]+)$/,
+  );
   if (!friendMomentsMatch?.[1]?.trim()) {
     return null;
   }
@@ -511,7 +684,11 @@ function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
 }
 
 function resolveDesktopFeedNavigationTarget(target: SearchNavigationTarget) {
-  if (target.to !== "/discover/feed" && target.to !== "/tabs/feed") {
+  if (
+    target.to !== "/feed" &&
+    target.to !== "/discover/feed" &&
+    target.to !== "/tabs/feed"
+  ) {
     return null;
   }
 
@@ -551,6 +728,7 @@ function resolveDesktopMiniProgramsNavigationTarget(
   target: SearchNavigationTarget,
 ) {
   if (
+    target.to !== "/mini-programs" &&
     target.to !== "/discover/mini-programs" &&
     target.to !== "/tabs/mini-programs"
   ) {
@@ -571,11 +749,30 @@ function resolveDesktopMiniProgramsNavigationTarget(
 }
 
 function resolveDesktopChannelsNavigationTarget(target: SearchNavigationTarget) {
-  if (target.to !== "/discover/channels" && target.to !== "/tabs/channels") {
+  const routeState = parseDesktopChannelsRouteHash(target.hash ?? "");
+  const authorMatch = target.to.match(/^\/channels\/authors\/([^/?#]+)$/);
+
+  if (authorMatch?.[1]?.trim()) {
+    return {
+      to: "/tabs/channels",
+      hash: buildDesktopChannelsRouteHash({
+        authorId: authorMatch[1].trim(),
+        postId: routeState.postId,
+        returnPath: routeState.returnPath,
+        returnHash: routeState.returnHash,
+        section: routeState.section,
+      }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (
+    target.to !== "/channels" &&
+    target.to !== "/discover/channels" &&
+    target.to !== "/tabs/channels"
+  ) {
     return null;
   }
 
-  const routeState = parseDesktopChannelsRouteHash(target.hash ?? "");
   return {
     to: "/tabs/channels",
     hash: buildDesktopChannelsRouteHash({

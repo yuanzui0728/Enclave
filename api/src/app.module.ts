@@ -25,6 +25,8 @@ import { CyberAvatarModule } from './modules/cyber-avatar/cyber-avatar.module';
 import { NeedDiscoveryModule } from './modules/need-discovery/need-discovery.module';
 import { RealWorldSyncModule } from './modules/real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from './modules/followup-runtime/followup-runtime.module';
+import { InferenceModule } from './modules/inference/inference.module';
+import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runtime.module';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -45,6 +47,7 @@ import { GroupEntity } from './modules/chat/group.entity';
 import { GroupMemberEntity } from './modules/chat/group-member.entity';
 import { GroupMessageEntity } from './modules/chat/group-message.entity';
 import { GroupReplyTaskEntity } from './modules/chat/group-reply-task.entity';
+import { ReplyArtifactJobEntity } from './modules/chat/reply-artifact-job.entity';
 import { ChatCustomStickerEntity } from './modules/chat/custom-sticker.entity';
 import { FeedPostEntity } from './modules/feed/feed-post.entity';
 import { FeedCommentEntity } from './modules/feed/feed-comment.entity';
@@ -81,6 +84,9 @@ import { CharacterRealWorldSyncRunEntity } from './modules/real-world-sync/chara
 import { FollowupRunEntity } from './modules/followup-runtime/followup-run.entity';
 import { FollowupOpenLoopEntity } from './modules/followup-runtime/followup-open-loop.entity';
 import { FollowupRecommendationEntity } from './modules/followup-runtime/followup-recommendation.entity';
+import { ReminderTaskEntity } from './modules/reminder-runtime/reminder-task.entity';
+import { InferenceProviderAccountEntity } from './modules/inference/inference-provider-account.entity';
+import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import {
   prepareDatabasePath,
   resolveApiPath,
@@ -119,6 +125,7 @@ import {
           GroupMemberEntity,
           GroupMessageEntity,
           GroupReplyTaskEntity,
+          ReplyArtifactJobEntity,
           ChatCustomStickerEntity,
           FeedPostEntity,
           FeedCommentEntity,
@@ -155,6 +162,9 @@ import {
           FollowupRunEntity,
           FollowupOpenLoopEntity,
           FollowupRecommendationEntity,
+          ReminderTaskEntity,
+          InferenceProviderAccountEntity,
+          InferenceModelCatalogEntryEntity,
         ],
         synchronize: true,
       }),
@@ -179,6 +189,8 @@ import {
     CyberAvatarModule,
     RealWorldSyncModule,
     FollowupRuntimeModule,
+    ReminderRuntimeModule,
+    InferenceModule,
     CloudRuntimeModule,
     SystemModule,
   ],

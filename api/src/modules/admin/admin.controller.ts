@@ -23,9 +23,11 @@ import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
 import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
+import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import type { RealWorldSyncRulesValue } from '../real-world-sync/real-world-sync.types';
 import type { NeedDiscoveryConfig } from '../need-discovery/need-discovery.types';
 import type { FollowupRuntimeRulesValue } from '../followup-runtime/followup-runtime.types';
+import type { ReminderRuntimeRulesValue } from '../reminder-runtime/reminder-runtime.types';
 import type {
   WechatSyncImportRequestValue,
   WechatSyncPreviewRequestValue,
@@ -47,6 +49,7 @@ export class AdminController {
     private readonly realWorldSyncService: RealWorldSyncService,
     private readonly schedulerService: SchedulerService,
     private readonly followupRuntimeService: FollowupRuntimeService,
+    private readonly reminderRuntimeService: ReminderRuntimeService,
   ) {}
 
   @Get('stats')
@@ -82,6 +85,39 @@ export class AdminController {
   @Get('followup-runtime/overview')
   getFollowupRuntimeOverview() {
     return this.followupRuntimeService.getOverview();
+  }
+
+  @Get('reminder-runtime/overview')
+  getReminderRuntimeOverview() {
+    return this.reminderRuntimeService.getOverview();
+  }
+
+  @Get('reminder-runtime/rules')
+  getReminderRuntimeRules() {
+    return this.reminderRuntimeService.getRules();
+  }
+
+  @Patch('reminder-runtime/rules')
+  setReminderRuntimeRules(@Body() body: Partial<ReminderRuntimeRulesValue>) {
+    return this.reminderRuntimeService.setRules(body);
+  }
+
+  @Post('reminder-runtime/tasks/:id/complete')
+  completeReminderRuntimeTask(@Param('id') id: string) {
+    return this.reminderRuntimeService.completeTask(id);
+  }
+
+  @Post('reminder-runtime/tasks/:id/snooze')
+  snoozeReminderRuntimeTask(
+    @Param('id') id: string,
+    @Body() body: { minutes?: number; hours?: number; until?: string },
+  ) {
+    return this.reminderRuntimeService.snoozeTask(id, body);
+  }
+
+  @Delete('reminder-runtime/tasks/:id')
+  cancelReminderRuntimeTask(@Param('id') id: string) {
+    return this.reminderRuntimeService.cancelTask(id);
   }
 
   @Get('followup-runtime/rules')

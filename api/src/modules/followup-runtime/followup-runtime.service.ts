@@ -18,6 +18,7 @@ import { ChatService } from '../chat/chat.service';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { MessageRemindersService } from '../chat/message-reminders.service';
 import { MessageEntity } from '../chat/message.entity';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialService } from '../social/social.service';
@@ -95,6 +96,7 @@ export class FollowupRuntimeService {
     private readonly chatGateway: ChatGateway,
     private readonly messageRemindersService: MessageRemindersService,
     private readonly socialService: SocialService,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
 
   async getOverview(): Promise<FollowupRuntimeOverviewValue> {
@@ -312,6 +314,8 @@ export class FollowupRuntimeService {
         now,
         rules,
       );
+      const cyberAvatarPromptContext =
+        await this.buildCyberAvatarProactivePromptContext();
       run.inputSnapshot = signalSnapshot as unknown as Record<string, unknown>;
       await this.runRepo.save(run);
 
@@ -349,6 +353,7 @@ export class FollowupRuntimeService {
         signalSnapshot,
         owner.id,
         rules,
+        cyberAvatarPromptContext,
       );
       run.promptSnapshot = {
         openLoopExtractionPrompt:
@@ -358,6 +363,7 @@ export class FollowupRuntimeService {
           rules.promptTemplates.friendRequestGreetingPrompt,
         friendRequestNoticePrompt:
           rules.promptTemplates.friendRequestNoticePrompt,
+        cyberAvatarPromptContext: cyberAvatarPromptContext || null,
       };
       run.llmOutputPayload = extraction as unknown as Record<string, unknown>;
       const loops = this.normalizeExtractedLoops(
@@ -460,6 +466,7 @@ export class FollowupRuntimeService {
               candidate,
               rules,
               ownerId: owner.id,
+              cyberAvatarPromptContext,
             });
             recommendation.friendRequestId = startedFriendRequest.id;
             recommendation.friendRequestStartedAt =
@@ -490,12 +497,14 @@ export class FollowupRuntimeService {
                 candidate,
                 rules,
                 ownerId: owner.id,
+                cyberAvatarPromptContext,
               })
             : await this.buildHandoffMessage({
                 loop: draft.loop,
                 candidate,
                 rules,
                 ownerId: owner.id,
+                cyberAvatarPromptContext,
               });
           recommendation.handoffSummary = handoffMessage;
 
@@ -717,6 +726,17 @@ export class FollowupRuntimeService {
     };
   }
 
+  private async buildCyberAvatarProactivePromptContext() {
+    return this.cyberAvatar.buildPromptContext({
+      sections: [
+        'coreInstruction',
+        'worldInteractionPrompt',
+        'proactivePrompt',
+        'memoryBlock',
+      ],
+    });
+  }
+
   private async collectSignalSnapshot(
     ownerId: string,
     windowStartedAt: Date,
@@ -808,8 +828,12 @@ export class FollowupRuntimeService {
     signalSnapshot: FollowupSignalSnapshotValue,
     ownerId: string,
     rules: FollowupRuntimeRulesValue,
+    cyberAvatarPromptContext = '',
   ): Promise<{ loops: unknown[] }> {
     const prompt = [
+      cyberAvatarPromptContext
+        ? `赛博分身主动跟进上下文：\n${cyberAvatarPromptContext}`
+        : '',
       rules.promptTemplates.openLoopExtractionPrompt,
       '',
       '最近安静下来的私聊线程：',
@@ -822,7 +846,9 @@ export class FollowupRuntimeService {
       signalSnapshot.domainCatalog.length
         ? signalSnapshot.domainCatalog.join('、')
         : '暂无',
-    ].join('\n');
+    ]
+      .filter(Boolean)
+      .join('\n');
 
     const response = await this.ai.generateJsonObject({
       prompt,
@@ -1104,10 +1130,13 @@ export class FollowupRuntimeService {
     candidate: RecommendationCandidate;
     rules: FollowupRuntimeRulesValue;
     ownerId: string;
+    cyberAvatarPromptContext?: string;
   }) {
-    const prompt = renderTemplate(
-      input.rules.promptTemplates.handoffMessagePrompt,
-      {
+    const prompt = [
+      input.cyberAvatarPromptContext
+        ? `赛博分身主动跟进上下文：\n${input.cyberAvatarPromptContext}`
+        : '',
+      renderTemplate(input.rules.promptTemplates.handoffMessagePrompt, {
         loopSummary: input.loop.summary,
         sourceThreadTitle:
           input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
@@ -1118,8 +1147,10 @@ export class FollowupRuntimeService {
           input.loop.reasonSummary ??
           (input.candidate.matchReasons.join('，') ||
             `${input.candidate.character.name}更适合继续接住这个话题。`),
-      },
-    );
+      }),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     const fallback = renderTemplate(input.rules.textTemplates.fallbackMessage, {
       targetCharacterName: input.candidate.character.name,
     });
@@ -1148,10 +1179,13 @@ export class FollowupRuntimeService {
     candidate: RecommendationCandidate;
     rules: FollowupRuntimeRulesValue;
     ownerId: string;
+    cyberAvatarPromptContext?: string;
   }) {
-    const prompt = renderTemplate(
-      input.rules.promptTemplates.friendRequestGreetingPrompt,
-      {
+    const prompt = [
+      input.cyberAvatarPromptContext
+        ? `赛博分身主动跟进上下文：\n${input.cyberAvatarPromptContext}`
+        : '',
+      renderTemplate(input.rules.promptTemplates.friendRequestGreetingPrompt, {
         loopSummary: input.loop.summary,
         sourceThreadTitle:
           input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
@@ -1162,8 +1196,10 @@ export class FollowupRuntimeService {
           input.loop.reasonSummary ??
           (input.candidate.matchReasons.join('，') ||
             `${input.candidate.character.name}更适合继续接住这个话题。`),
-      },
-    );
+      }),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     const fallback = renderTemplate(
       input.rules.textTemplates.friendRequestFallbackGreeting,
       {
@@ -1211,10 +1247,13 @@ export class FollowupRuntimeService {
     candidate: RecommendationCandidate;
     rules: FollowupRuntimeRulesValue;
     ownerId: string;
+    cyberAvatarPromptContext?: string;
   }) {
-    const prompt = renderTemplate(
-      input.rules.promptTemplates.friendRequestNoticePrompt,
-      {
+    const prompt = [
+      input.cyberAvatarPromptContext
+        ? `赛博分身主动跟进上下文：\n${input.cyberAvatarPromptContext}`
+        : '',
+      renderTemplate(input.rules.promptTemplates.friendRequestNoticePrompt, {
         loopSummary: input.loop.summary,
         sourceThreadTitle:
           input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
@@ -1225,8 +1264,10 @@ export class FollowupRuntimeService {
           input.loop.reasonSummary ??
           (input.candidate.matchReasons.join('，') ||
             `${input.candidate.character.name}更适合继续接住这个话题。`),
-      },
-    );
+      }),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     const fallback = renderTemplate(
       input.rules.textTemplates.friendRequestFallbackMessage,
       {

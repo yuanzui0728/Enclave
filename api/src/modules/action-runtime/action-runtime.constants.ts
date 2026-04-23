@@ -1,6 +1,8 @@
+import { ACTION_OPERATOR_SOURCE_KEY } from '../characters/action-operator-character';
 import type {
   ActionConnectorOperationValue,
   ActionConnectorSeedValue,
+  ActionRuntimePolicyValue,
   ActionRuntimePromptTemplatesValue,
   ActionRuntimeRulesValue,
 } from './action-runtime.types';
@@ -8,7 +10,7 @@ import type {
 export const ACTION_RUNTIME_RULES_CONFIG_KEY = 'action_runtime_rules';
 
 const DEFAULT_PROMPT_TEMPLATES: ActionRuntimePromptTemplatesValue = {
-  plannerSystemPrompt: `你现在在替“我自己”处理真实世界动作请求。
+  plannerSystemPrompt: `你现在代表“行动助理”处理真实世界动作请求。
 
 你的任务不是闲聊，也不是客服回执，而是把用户真正想让你动的那一步压缩成动作草案：
 1. 判断这是智能家居、外卖、订票，还是普通聊天
@@ -38,7 +40,7 @@ export const DEFAULT_ACTION_RUNTIME_RULES: ActionRuntimeRulesValue = {
   promptTemplates: DEFAULT_PROMPT_TEMPLATES,
   policy: {
     enabled: true,
-    selfRoleOnly: true,
+    entryCharacterSourceKey: ACTION_OPERATOR_SOURCE_KEY,
     confirmationKeywords: ['确认', '确认执行', '就这么办', '执行吧', '下单吧'],
     rejectionKeywords: ['取消', '先别', '不要了', '算了', '暂停'],
     autoExecuteRiskLevels: ['read_only', 'reversible_low_risk'],
@@ -229,10 +231,29 @@ function sanitizeStringArray(value: string[] | undefined, fallback: string[]) {
   return normalized.length > 0 ? normalized : fallback;
 }
 
+type LegacyActionRuntimePolicyInput = Partial<ActionRuntimePolicyValue> & {
+  selfRoleOnly?: boolean;
+};
+
+type LegacyActionRuntimeRulesInput = Omit<
+  Partial<ActionRuntimeRulesValue>,
+  'policy'
+> & {
+  policy?: LegacyActionRuntimePolicyInput | null;
+};
+
 export function normalizeActionRuntimeRules(
-  input?: Partial<ActionRuntimeRulesValue> | null,
+  input?: LegacyActionRuntimeRulesInput | null,
 ): ActionRuntimeRulesValue {
   const defaults = DEFAULT_ACTION_RUNTIME_RULES;
+  const legacyPolicy = input?.policy;
+  const entryCharacterSourceKey =
+    typeof legacyPolicy?.entryCharacterSourceKey === 'string'
+      ? legacyPolicy.entryCharacterSourceKey.trim()
+      : legacyPolicy?.selfRoleOnly === false
+        ? ''
+        : defaults.policy.entryCharacterSourceKey;
+
   return {
     plannerMode:
       input?.plannerMode === 'heuristic' || input?.plannerMode === 'llm'
@@ -270,7 +291,7 @@ export function normalizeActionRuntimeRules(
     },
     policy: {
       enabled: input?.policy?.enabled !== false,
-      selfRoleOnly: input?.policy?.selfRoleOnly !== false,
+      entryCharacterSourceKey,
       confirmationKeywords: sanitizeStringArray(
         input?.policy?.confirmationKeywords,
         defaults.policy.confirmationKeywords,

@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import type { AiMessagePart } from '../ai/ai.types';
+import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
 import { MomentEntity } from './moment.entity';
 import { MomentPostEntity } from './moment-post.entity';
@@ -21,6 +22,7 @@ import { WorldOwnerService } from '../auth/world-owner.service';
 import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import {
   normalizeMomentMediaDisplayName,
   normalizeOptionalPositiveNumber,
@@ -72,6 +74,14 @@ type MomentAvatarContext = {
   characterAvatarById: Map<string, string>;
 };
 
+function hashTextSeed(seed: string) {
+  let hash = 0;
+  for (const char of seed) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash;
+}
+
 @Injectable()
 export class MomentsService implements OnModuleInit {
   private readonly logger = new Logger(MomentsService.name);
@@ -83,6 +93,7 @@ export class MomentsService implements OnModuleInit {
     private readonly socialService: SocialService,
     private readonly feedService: FeedService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly reminderRuntime: ReminderRuntimeService,
     @InjectRepository(MomentEntity)
     private momentRepo: Repository<MomentEntity>,
     @InjectRepository(MomentPostEntity)
@@ -249,19 +260,29 @@ export class MomentsService implements OnModuleInit {
     if (!char || !profile) return null;
 
     try {
-      const text = await this.ai.generateMoment({
-        profile,
-        currentTime: new Date(),
-        usageContext: {
-          surface: 'app',
-          scene: 'moment_post_generate',
-          scopeType: 'character',
-          scopeId: char.id,
-          scopeLabel: char.name,
-          characterId: char.id,
-          characterName: char.name,
-        },
-      });
+      const currentTime = new Date();
+      const reminderMoment =
+        characterId === REMINDER_CHARACTER_ID
+          ? await this.reminderRuntime.buildMomentNudgePayload({
+              now: currentTime,
+              seedKey: `manual:${currentTime.toISOString().slice(0, 10)}`,
+            })
+          : null;
+      const text =
+        reminderMoment?.text ??
+        (await this.ai.generateMoment({
+          profile,
+          currentTime,
+          usageContext: {
+            surface: 'app',
+            scene: 'moment_post_generate',
+            scopeType: 'character',
+            scopeId: char.id,
+            scopeLabel: char.name,
+            characterId: char.id,
+            characterName: char.name,
+          },
+        }));
       if (!text) return null;
 
       const post = this.postRepo.create({
@@ -382,6 +403,49 @@ export class MomentsService implements OnModuleInit {
     return normalized;
   }
 
+  private async buildReminderCharacterCommentText(post: MomentPostEntity) {
+    const nudges = await this.reminderRuntime.getMomentNudgeTasks(2);
+    if (nudges.length === 0) {
+      return null;
+    }
+
+    const primary = nudges[0];
+    const focus = this.truncateReminderLabel(primary.title, 8);
+    let variants: string[] = [];
+
+    if (/英语|背单词/.test(primary.title)) {
+      variants = ['发完这条，英语也打个卡。', '今天的英语，别断。'];
+    } else if (/锻炼|运动|健身/.test(primary.title)) {
+      variants = ['这条发完，今天动一动。', '今天的运动，也别断。'];
+    } else if (/早睡|睡觉/.test(primary.title)) {
+      variants = ['刷完这条就早点睡。', '今晚别又熬太晚。'];
+    } else if (/喝水/.test(primary.title)) {
+      variants = ['看完这条顺手喝口水。', '先去喝口水。'];
+    } else if (/吃饭/.test(primary.title)) {
+      variants = ['记得先吃饭。', '先把饭吃了。'];
+    } else if (/吃药/.test(primary.title)) {
+      variants = ['这条发完，药别忘了。', '药我还替你记着。'];
+    } else {
+      variants = [
+        `这条发完，${focus}也别断。`,
+        `今天的${focus}，我还记着。`,
+        `顺手把${focus}也安排上。`,
+      ];
+    }
+
+    return variants[hashTextSeed(`${post.id}:${primary.id}`) % variants.length];
+  }
+
+  private truncateReminderLabel(value: string, maxLength: number) {
+    const normalized = value
+      .replace(/[，。、“”‘’：:！!？?；;,.]/g, '')
+      .trim();
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+    return `${normalized.slice(0, maxLength)}…`;
+  }
+
   private async scheduleCharacterInteractions(post: MomentPostEntity) {
     const visibleCharacterIds = await this.getVisibleCharacterIdSet();
     if (
@@ -426,6 +490,22 @@ export class MomentsService implements OnModuleInit {
 
             const isComment = Math.random() < 0.4;
             if (isComment) {
+              if (char.id === REMINDER_CHARACTER_ID && post.authorType === 'user') {
+                const reminderComment =
+                  await this.buildReminderCharacterCommentText(post);
+                if (reminderComment) {
+                  await this.addComment(
+                    post.id,
+                    char.id,
+                    char.name,
+                    char.avatar,
+                    reminderComment,
+                    'character',
+                  );
+                  return;
+                }
+              }
+
               const profile = await this.characters.getProfile(char.id);
               if (!profile) return;
               const observation = await this.buildMomentAiObservation(post);
@@ -1013,7 +1093,8 @@ export class MomentsService implements OnModuleInit {
 
     return {
       summary:
-        (await this.appendMomentTranscriptSummary(summary, media)) ?? summary,
+        (await this.appendMomentTranscriptSummary(summary, media, post)) ??
+        summary,
       parts: parts.length ? parts : undefined,
     };
   }
@@ -1021,6 +1102,7 @@ export class MomentsService implements OnModuleInit {
   private async appendMomentTranscriptSummary(
     summary: string,
     media: MomentMediaAsset[],
+    post: MomentPostEntity,
   ) {
     const video = media.find(
       (asset): asset is MomentVideoAsset => asset.kind === 'video',
@@ -1033,6 +1115,7 @@ export class MomentsService implements OnModuleInit {
       url: video.url,
       mimeType: video.mimeType,
       fileName: video.fileName,
+      characterId: post.authorType === 'character' ? post.authorId : undefined,
       mode: 'moment_media',
     });
     if (!transcription?.text) {

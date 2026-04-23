@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BookText,
   ChevronRight,
@@ -15,10 +16,35 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 export function ProfilePage() {
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const search = useRouterState({
+    select: (state) => state.location.searchStr,
+  });
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
   const username = useWorldOwnerStore((state) => state.username);
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
+  const desktopProfilePath = "/tabs/profile";
+  const desktopPathMismatch =
+    isDesktopLayout && pathname !== desktopProfilePath;
   const settingsPath = isDesktopLayout ? "/desktop/settings" : "/profile/settings";
+
+  useEffect(() => {
+    if (!desktopPathMismatch) {
+      return;
+    }
+
+    void navigate({
+      to: desktopProfilePath,
+      search: search || undefined,
+      hash: hash || undefined,
+      replace: true,
+    });
+  }, [desktopPathMismatch, desktopProfilePath, hash, navigate, search]);
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">

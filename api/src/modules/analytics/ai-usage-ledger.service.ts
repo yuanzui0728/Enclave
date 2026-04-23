@@ -280,18 +280,14 @@ const IMMEDIATE_CONTINUATION_WINDOW_MS = 15 * 60 * 1000;
 
 @Injectable()
 export class AiUsageLedgerService {
-  private pricingCache:
-    | {
-        expiresAt: number;
-        value: TokenPricingCatalog;
-      }
-    | null = null;
-  private budgetCache:
-    | {
-        expiresAt: number;
-        value: TokenUsageBudgetConfig;
-      }
-    | null = null;
+  private pricingCache: {
+    expiresAt: number;
+    value: TokenPricingCatalog;
+  } | null = null;
+  private budgetCache: {
+    expiresAt: number;
+    value: TokenUsageBudgetConfig;
+  } | null = null;
 
   constructor(
     @InjectRepository(AiUsageLedgerEntity)
@@ -309,7 +305,9 @@ export class AiUsageLedgerService {
     const catalog = await this.getPricingCatalog();
     const pricing = this.findPricingItem(catalog, input.model);
     const promptTokens = this.normalizeInteger(input.usage?.promptTokens);
-    const completionTokens = this.normalizeInteger(input.usage?.completionTokens);
+    const completionTokens = this.normalizeInteger(
+      input.usage?.completionTokens,
+    );
     const totalTokens = this.normalizeInteger(
       input.usage?.totalTokens ??
         ((promptTokens ?? 0) || (completionTokens ?? 0)
@@ -320,7 +318,10 @@ export class AiUsageLedgerService {
       ((promptTokens ?? 0) / 1000) * (pricing?.inputPer1kTokens ?? 0) +
         ((completionTokens ?? 0) / 1000) * (pricing?.outputPer1kTokens ?? 0),
     );
-    const rawUsagePayload = this.mergeRawUsagePayload(input.usage?.raw, input.audit);
+    const rawUsagePayload = this.mergeRawUsagePayload(
+      input.usage?.raw,
+      input.audit,
+    );
 
     const entity = this.repo.create({
       occurredAt: input.occurredAt ?? new Date(),
@@ -359,10 +360,7 @@ export class AiUsageLedgerService {
   }
 
   async getPricingCatalog(): Promise<TokenPricingCatalog> {
-    if (
-      this.pricingCache &&
-      this.pricingCache.expiresAt > Date.now()
-    ) {
+    if (this.pricingCache && this.pricingCache.expiresAt > Date.now()) {
       return this.pricingCache.value;
     }
 
@@ -389,10 +387,7 @@ export class AiUsageLedgerService {
   }
 
   async getBudgetConfig(): Promise<TokenUsageBudgetConfig> {
-    if (
-      this.budgetCache &&
-      this.budgetCache.expiresAt > Date.now()
-    ) {
+    if (this.budgetCache && this.budgetCache.expiresAt > Date.now()) {
       return this.budgetCache.value;
     }
 
@@ -522,7 +517,8 @@ export class AiUsageLedgerService {
       where: this.buildWhere(normalized),
       order: { occurredAt: 'DESC' },
     });
-    const currency = records[0]?.currency ?? (await this.getPricingCatalog()).currency;
+    const currency =
+      records[0]?.currency ?? (await this.getPricingCatalog()).currency;
     const activeCharacterCount = new Set(
       records
         .map((record) => record.characterId)
@@ -536,8 +532,10 @@ export class AiUsageLedgerService {
       totalTokens: this.sum(records, 'totalTokens'),
       estimatedCost: this.roundCost(this.sum(records, 'estimatedCost')),
       requestCount: records.length,
-      successCount: records.filter((record) => record.status === 'success').length,
-      failedCount: records.filter((record) => record.status === 'failed').length,
+      successCount: records.filter((record) => record.status === 'success')
+        .length,
+      failedCount: records.filter((record) => record.status === 'failed')
+        .length,
       activeCharacterCount,
     };
   }
@@ -551,7 +549,10 @@ export class AiUsageLedgerService {
     const bucketMap = new Map<string, AggregateBucket>();
 
     records.forEach((record) => {
-      const bucketStart = this.toBucketStart(record.occurredAt, normalized.grain);
+      const bucketStart = this.toBucketStart(
+        record.occurredAt,
+        normalized.grain,
+      );
       const key = bucketStart.toISOString();
       const bucket = this.ensureBucket(
         bucketMap,
@@ -582,7 +583,8 @@ export class AiUsageLedgerService {
       where: this.buildWhere(normalized),
       order: { occurredAt: 'DESC' },
     });
-    const currency = records[0]?.currency ?? (await this.getPricingCatalog()).currency;
+    const currency =
+      records[0]?.currency ?? (await this.getPricingCatalog()).currency;
 
     return {
       currency,
@@ -701,7 +703,8 @@ export class AiUsageLedgerService {
 
       const audit = this.parseUsageAuditPayload(record.rawUsagePayload);
       const requestedModel = audit?.requestedModel?.trim() || null;
-      const appliedModel = audit?.appliedModel?.trim() || record.model?.trim() || null;
+      const appliedModel =
+        audit?.appliedModel?.trim() || record.model?.trim() || null;
       const actualCost = this.normalizeAggregateNumber(record.estimatedCost);
       const originalCost = requestedModel
         ? this.estimateCostForModel(
@@ -742,7 +745,9 @@ export class AiUsageLedgerService {
     });
 
     const requestCount = records.length;
-    const successCount = records.filter((record) => record.status === 'success').length;
+    const successCount = records.filter(
+      (record) => record.status === 'success',
+    ).length;
     const savingsValue = Math.max(0, estimatedOriginalCost - estimatedCost);
 
     return {
@@ -757,7 +762,10 @@ export class AiUsageLedgerService {
       savingsRate:
         estimatedOriginalCost > 0 ? savingsValue / estimatedOriginalCost : null,
       traceableRequestCount,
-      untraceableRequestCount: Math.max(0, requestCount - traceableRequestCount),
+      untraceableRequestCount: Math.max(
+        0,
+        requestCount - traceableRequestCount,
+      ),
       byModelSwitch: Array.from(switchMap.values())
         .sort((left, right) => {
           if (right.estimatedSavings !== left.estimatedSavings) {
@@ -801,7 +809,9 @@ export class AiUsageLedgerService {
     const unscopedRequestCount = requestCount - conversationScopedRequestCount;
     const conversationIds = Array.from(
       new Set(
-        conversationScopedRecords.map((record) => record.conversationId!.trim()),
+        conversationScopedRecords.map((record) =>
+          record.conversationId!.trim(),
+        ),
       ),
     );
 
@@ -835,37 +845,39 @@ export class AiUsageLedgerService {
       };
     }
 
-    const earliestOccurredAt = conversationScopedRecords[0]?.occurredAt ?? new Date();
+    const earliestOccurredAt =
+      conversationScopedRecords[0]?.occurredAt ?? new Date();
     const latestOccurredAt =
-      conversationScopedRecords[conversationScopedRecords.length - 1]?.occurredAt ??
-      earliestOccurredAt;
-    const analysisEndAt = new Date(
-      latestOccurredAt.getTime() + DAY_MS,
-    );
+      conversationScopedRecords[conversationScopedRecords.length - 1]
+        ?.occurredAt ?? earliestOccurredAt;
+    const analysisEndAt = new Date(latestOccurredAt.getTime() + DAY_MS);
     const messageRepo = this.repo.manager.getRepository(MessageEntity);
-    const reviewRepo = this.repo.manager.getRepository(AdminConversationReviewEntity);
-    const [messages, followupLedgerRecords, reviews, labelMaps] = await Promise.all([
-      messageRepo.find({
-        where: {
-          conversationId: In(conversationIds),
-          createdAt: Between(earliestOccurredAt, analysisEndAt),
-        },
-        order: { createdAt: 'ASC' },
-      }),
-      this.repo.find({
-        where: {
-          conversationId: In(conversationIds),
-          occurredAt: Between(earliestOccurredAt, analysisEndAt),
-        },
-        order: { occurredAt: 'ASC' },
-      }),
-      reviewRepo.find({
-        where: {
-          conversationId: In(conversationIds),
-        },
-      }),
-      this.buildLabelMaps(conversationScopedRecords),
-    ]);
+    const reviewRepo = this.repo.manager.getRepository(
+      AdminConversationReviewEntity,
+    );
+    const [messages, followupLedgerRecords, reviews, labelMaps] =
+      await Promise.all([
+        messageRepo.find({
+          where: {
+            conversationId: In(conversationIds),
+            createdAt: Between(earliestOccurredAt, analysisEndAt),
+          },
+          order: { createdAt: 'ASC' },
+        }),
+        this.repo.find({
+          where: {
+            conversationId: In(conversationIds),
+            occurredAt: Between(earliestOccurredAt, analysisEndAt),
+          },
+          order: { occurredAt: 'ASC' },
+        }),
+        reviewRepo.find({
+          where: {
+            conversationId: In(conversationIds),
+          },
+        }),
+        this.buildLabelMaps(conversationScopedRecords),
+      ]);
 
     const messagesByConversation = new Map<string, MessageEntity[]>();
     messages.forEach((message) => {
@@ -1002,7 +1014,9 @@ export class AiUsageLedgerService {
         : null;
     const acceptableReviewRate =
       reviewedConversationCount > 0
-        ? this.roundRatio(acceptableConversationCount / reviewedConversationCount)
+        ? this.roundRatio(
+            acceptableConversationCount / reviewedConversationCount,
+          )
         : null;
     const tooWeakReviewRate =
       reviewedConversationCount > 0
@@ -1036,11 +1050,11 @@ export class AiUsageLedgerService {
     const proxyQualityScore =
       requestCount > 0
         ? this.roundRatio(
-            ((immediateContinuationRate ?? 0) * 0.35) +
-              ((continuedWithin24hRate ?? 0) * 0.25) +
-              ((1 - (postDowngradeFailureRate ?? 0)) * 0.2) +
-              ((1 - (postDowngradeBlockedRate ?? 0)) * 0.1) +
-              ((reviewCoverageRate ?? 0) * 0.1),
+            (immediateContinuationRate ?? 0) * 0.35 +
+              (continuedWithin24hRate ?? 0) * 0.25 +
+              (1 - (postDowngradeFailureRate ?? 0)) * 0.2 +
+              (1 - (postDowngradeBlockedRate ?? 0)) * 0.1 +
+              (reviewCoverageRate ?? 0) * 0.1,
           )
         : null;
 
@@ -1093,10 +1107,14 @@ export class AiUsageLedgerService {
   }): DowngradeReviewSample[] {
     return [...input.reviews]
       .filter(input.predicate)
-      .sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime())
+      .sort(
+        (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
+      )
       .slice(0, input.limit)
       .map((review) => {
-        const record = input.latestDowngradeRecordByConversation.get(review.conversationId);
+        const record = input.latestDowngradeRecordByConversation.get(
+          review.conversationId,
+        );
         return {
           conversationId: review.conversationId,
           occurredAt: (record?.occurredAt ?? review.updatedAt).toISOString(),
@@ -1218,77 +1236,97 @@ export class AiUsageLedgerService {
       }
     });
 
-    input.latestDowngradeRecordByConversation.forEach((record, conversationId) => {
-      const review = reviewMap.get(conversationId);
-      if (!review) {
-        return;
-      }
-      const bucket = ensureBucket(record);
-      bucket.reviewedConversationCount += 1;
-      const acceptable = this.reviewHasTag(review.tags, 'downgrade-acceptable');
-      const tooWeak = this.reviewHasTag(review.tags, 'downgrade-too-weak');
-      if (acceptable) {
-        bucket.acceptableConversationCount += 1;
-      }
-      if (tooWeak) {
-        bucket.tooWeakConversationCount += 1;
-      }
-      if (!acceptable && !tooWeak) {
-        bucket.pendingOutcomeConversationCount += 1;
-      }
+    input.latestDowngradeRecordByConversation.forEach(
+      (record, conversationId) => {
+        const review = reviewMap.get(conversationId);
+        if (!review) {
+          return;
+        }
+        const bucket = ensureBucket(record);
+        bucket.reviewedConversationCount += 1;
+        const acceptable = this.reviewHasTag(
+          review.tags,
+          'downgrade-acceptable',
+        );
+        const tooWeak = this.reviewHasTag(review.tags, 'downgrade-too-weak');
+        if (acceptable) {
+          bucket.acceptableConversationCount += 1;
+        }
+        if (tooWeak) {
+          bucket.tooWeakConversationCount += 1;
+        }
+        if (!acceptable && !tooWeak) {
+          bucket.pendingOutcomeConversationCount += 1;
+        }
 
-      const sample: DowngradeReviewSample = {
-        conversationId: review.conversationId,
-        occurredAt: (record.occurredAt ?? review.updatedAt).toISOString(),
-        reviewUpdatedAt: review.updatedAt.toISOString(),
-        targetLabel: this.resolveTargetLabel(record, input.labelMaps),
-        characterId: record.characterId ?? null,
-        characterName: record.characterName ?? null,
-        scene: record.scene ?? 'chat_reply',
-        reviewStatus: review.status,
-        reviewTags: Array.isArray(review.tags) ? review.tags : [],
-        reviewNote: review.note ?? null,
-      };
+        const sample: DowngradeReviewSample = {
+          conversationId: review.conversationId,
+          occurredAt: (record.occurredAt ?? review.updatedAt).toISOString(),
+          reviewUpdatedAt: review.updatedAt.toISOString(),
+          targetLabel: this.resolveTargetLabel(record, input.labelMaps),
+          characterId: record.characterId ?? null,
+          characterName: record.characterName ?? null,
+          scene: record.scene ?? 'chat_reply',
+          reviewStatus: review.status,
+          reviewTags: Array.isArray(review.tags) ? review.tags : [],
+          reviewNote: review.note ?? null,
+        };
 
-      if (tooWeak && bucket.tooWeakSamples.length < 2) {
-        bucket.tooWeakSamples.push(sample);
-      }
-      if (!acceptable && !tooWeak && bucket.pendingOutcomeSamples.length < 2) {
-        bucket.pendingOutcomeSamples.push(sample);
-      }
-    });
+        if (tooWeak && bucket.tooWeakSamples.length < 2) {
+          bucket.tooWeakSamples.push(sample);
+        }
+        if (
+          !acceptable &&
+          !tooWeak &&
+          bucket.pendingOutcomeSamples.length < 2
+        ) {
+          bucket.pendingOutcomeSamples.push(sample);
+        }
+      },
+    );
 
     return Array.from(buckets.values())
       .map((bucket) => {
         const reviewCoverageRate = bucket.conversationIds.size
-          ? this.roundRatio(bucket.reviewedConversationCount / bucket.conversationIds.size)
+          ? this.roundRatio(
+              bucket.reviewedConversationCount / bucket.conversationIds.size,
+            )
           : null;
         const acceptableReviewRate = bucket.reviewedConversationCount
           ? this.roundRatio(
-              bucket.acceptableConversationCount / bucket.reviewedConversationCount,
+              bucket.acceptableConversationCount /
+                bucket.reviewedConversationCount,
             )
           : null;
         const tooWeakReviewRate = bucket.reviewedConversationCount
           ? this.roundRatio(
-              bucket.tooWeakConversationCount / bucket.reviewedConversationCount,
+              bucket.tooWeakConversationCount /
+                bucket.reviewedConversationCount,
             )
           : null;
         const immediateContinuationRate = bucket.requestCount
-          ? this.roundRatio(bucket.immediateContinuationCount / bucket.requestCount)
+          ? this.roundRatio(
+              bucket.immediateContinuationCount / bucket.requestCount,
+            )
           : null;
         const continuedWithin24hRate = bucket.requestCount
-          ? this.roundRatio(bucket.continuedWithin24hCount / bucket.requestCount)
+          ? this.roundRatio(
+              bucket.continuedWithin24hCount / bucket.requestCount,
+            )
           : null;
         const postDowngradeFailureRate = bucket.requestCount
-          ? this.roundRatio(bucket.postDowngradeFailureCount / bucket.requestCount)
+          ? this.roundRatio(
+              bucket.postDowngradeFailureCount / bucket.requestCount,
+            )
           : null;
         const postDowngradeBlockedRate = bucket.requestCount
-          ? this.roundRatio(bucket.postDowngradeBlockedCount / bucket.requestCount)
+          ? this.roundRatio(
+              bucket.postDowngradeBlockedCount / bucket.requestCount,
+            )
           : null;
         const costWeight = Math.min(bucket.estimatedCost / 5, 1);
         const priorityScore = Math.round(
-          (
-            (tooWeakReviewRate ?? 0) * 0.34 +
+          ((tooWeakReviewRate ?? 0) * 0.34 +
             (postDowngradeFailureRate ?? 0) * 0.22 +
             (postDowngradeBlockedRate ?? 0) * 0.12 +
             (bucket.pendingOutcomeConversationCount > 0
@@ -1297,8 +1335,8 @@ export class AiUsageLedgerService {
               : 0) *
               0.12 +
             (1 - (continuedWithin24hRate ?? 0)) * 0.12 +
-            costWeight * 0.08
-          ) * 100,
+            costWeight * 0.08) *
+            100,
         );
 
         return {
@@ -1310,7 +1348,8 @@ export class AiUsageLedgerService {
           reviewedConversationCount: bucket.reviewedConversationCount,
           acceptableConversationCount: bucket.acceptableConversationCount,
           tooWeakConversationCount: bucket.tooWeakConversationCount,
-          pendingOutcomeConversationCount: bucket.pendingOutcomeConversationCount,
+          pendingOutcomeConversationCount:
+            bucket.pendingOutcomeConversationCount,
           immediateContinuationCount: bucket.immediateContinuationCount,
           continuedWithin24hCount: bucket.continuedWithin24hCount,
           postDowngradeFailureCount: bucket.postDowngradeFailureCount,
@@ -1335,7 +1374,8 @@ export class AiUsageLedgerService {
           return (right.tooWeakReviewRate ?? 0) - (left.tooWeakReviewRate ?? 0);
         }
         if (
-          right.pendingOutcomeConversationCount !== left.pendingOutcomeConversationCount
+          right.pendingOutcomeConversationCount !==
+          left.pendingOutcomeConversationCount
         ) {
           return (
             right.pendingOutcomeConversationCount -
@@ -1432,9 +1472,9 @@ export class AiUsageLedgerService {
   private isActionableBudgetRule(rule?: TokenUsageBudgetRule | null) {
     return Boolean(
       rule &&
-        rule.enabled &&
-        rule.enforcement !== 'monitor' &&
-        (rule.dailyLimit != null || rule.monthlyLimit != null),
+      rule.enabled &&
+      rule.enforcement !== 'monitor' &&
+      (rule.dailyLimit != null || rule.monthlyLimit != null),
     );
   }
 
@@ -1643,9 +1683,7 @@ export class AiUsageLedgerService {
     }
 
     const grain =
-      query.grain === 'week' || query.grain === 'month'
-        ? query.grain
-        : 'day';
+      query.grain === 'week' || query.grain === 'month' ? query.grain : 'day';
     const page = this.normalizePositiveInteger(query.page, 1);
     const pageSize = Math.min(
       100,
@@ -1786,15 +1824,15 @@ export class AiUsageLedgerService {
     }
   }
 
-  private normalizePricingCatalog(payload?: Partial<TokenPricingCatalog> | null) {
+  private normalizePricingCatalog(
+    payload?: Partial<TokenPricingCatalog> | null,
+  ) {
     const currency: PricingCurrency =
       payload?.currency === 'USD' ? 'USD' : 'CNY';
     const items = Array.isArray(payload?.items)
       ? payload.items
           .map((item) => this.normalizePricingItem(item))
-          .filter(
-            (item): item is TokenPricingCatalogItem => item !== null,
-          )
+          .filter((item): item is TokenPricingCatalogItem => item !== null)
       : [];
 
     return {
@@ -1860,7 +1898,9 @@ export class AiUsageLedgerService {
       }
 
       const requestedModel = this.normalizeString(
-        typeof audit.requestedModel === 'string' ? audit.requestedModel : undefined,
+        typeof audit.requestedModel === 'string'
+          ? audit.requestedModel
+          : undefined,
       );
       const appliedModel = this.normalizeString(
         typeof audit.appliedModel === 'string' ? audit.appliedModel : undefined,
@@ -1972,10 +2012,7 @@ export class AiUsageLedgerService {
     );
   }
 
-  private findPricingItem(
-    catalog: TokenPricingCatalog,
-    model?: string | null,
-  ) {
+  private findPricingItem(catalog: TokenPricingCatalog, model?: string | null) {
     if (!model?.trim()) {
       return null;
     }
@@ -1983,12 +2020,17 @@ export class AiUsageLedgerService {
     const normalizedModel = model.trim().toLowerCase();
     return (
       catalog.items.find(
-        (item) => item.enabled && item.model.trim().toLowerCase() === normalizedModel,
+        (item) =>
+          item.enabled && item.model.trim().toLowerCase() === normalizedModel,
       ) ?? null
     );
   }
 
-  private parseDate(value: string | undefined, fallback: Date, endOfDay: boolean) {
+  private parseDate(
+    value: string | undefined,
+    fallback: Date,
+    endOfDay: boolean,
+  ) {
     if (!value?.trim()) {
       return new Date(fallback);
     }
@@ -1999,13 +2041,21 @@ export class AiUsageLedgerService {
     }
 
     if (/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
-      parsed.setHours(endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+      parsed.setHours(
+        endOfDay ? 23 : 0,
+        endOfDay ? 59 : 0,
+        endOfDay ? 59 : 0,
+        endOfDay ? 999 : 0,
+      );
     }
 
     return parsed;
   }
 
-  private normalizePositiveInteger(value: number | string | undefined, fallback: number) {
+  private normalizePositiveInteger(
+    value: number | string | undefined,
+    fallback: number,
+  ) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed <= 0) {
       return fallback;
@@ -2149,15 +2199,17 @@ export class AiUsageLedgerService {
   private groupBy(
     records: AiUsageLedgerEntity[],
     limit: number,
-    pick: (
-      record: AiUsageLedgerEntity,
-    ) => { key: string; label: string },
+    pick: (record: AiUsageLedgerEntity) => { key: string; label: string },
   ) {
     const buckets = new Map<string, AggregateBucket>();
 
     records.forEach((record) => {
       const descriptor = pick(record);
-      const bucket = this.ensureBucket(buckets, descriptor.key, descriptor.label);
+      const bucket = this.ensureBucket(
+        buckets,
+        descriptor.key,
+        descriptor.label,
+      );
       this.accumulateBucket(bucket, record);
     });
 
@@ -2187,7 +2239,11 @@ export class AiUsageLedgerService {
 
   private sum(
     records: AiUsageLedgerEntity[],
-    field: 'promptTokens' | 'completionTokens' | 'totalTokens' | 'estimatedCost',
+    field:
+      | 'promptTokens'
+      | 'completionTokens'
+      | 'totalTokens'
+      | 'estimatedCost',
   ) {
     return records.reduce((total, record) => total + (record[field] ?? 0), 0);
   }
@@ -2343,10 +2399,7 @@ export class AiUsageLedgerService {
       character?: { id: string; name: string },
     ) => {
       const summary = period === 'daily' ? status.daily : status.monthly;
-      if (
-        summary.state !== 'warning' &&
-        summary.state !== 'exceeded'
-      ) {
+      if (summary.state !== 'warning' && summary.state !== 'exceeded') {
         return;
       }
       if (summary.limit == null || summary.ratio == null) {
@@ -2407,18 +2460,36 @@ export class AiUsageLedgerService {
 
   private formatSceneLabel(scene: string) {
     const sceneMap: Record<string, string> = {
-      chat_reply: '单聊回复',
-      group_reply: '群聊回复',
-      moment_post_generate: '朋友圈生成',
+      chat_reply: '单聊回复生成',
+      group_reply: '群聊回复生成',
+      moment_post_generate: '朋友圈发帖生成',
       moment_comment_generate: '朋友圈评论生成',
       feed_post_generate: '广场动态生成',
-      feed_comment_generate: '动态评论生成',
-      channel_post_generate: '视频号生成',
+      feed_comment_generate: '广场评论生成',
+      channel_post_generate: '视频号内容生成',
       social_greeting_generate: '社交问候生成',
-      memory_compress: '记忆压缩',
-      character_factory_extract: '角色工厂抽取',
+      memory_compress: '近期记忆压缩',
+      character_factory_extract: '角色工厂资料抽取',
       quick_character_generate: '快速生成角色',
       intent_classify: '意图分类',
+      proactive: '主动消息生成',
+      recent_memory_daily: '近期记忆日更',
+      core_memory_weekly: '核心记忆周更',
+      core_memory_extract: '核心记忆提炼',
+      shake_discovery_plan: '摇一摇候选规划',
+      shake_discovery_generate: '摇一摇候选生成',
+      need_discovery_short_analyze: '短周期需求分析',
+      need_discovery_daily_analyze: '每日需求分析',
+      need_discovery_character_generate: '需求补位角色生成',
+      followup_runtime_open_loop_extract: '主动跟进线索提取',
+      followup_runtime_handoff_message: '主动跟进推荐文案生成',
+      followup_runtime_friend_request_greeting: '主动跟进好友申请问候',
+      followup_runtime_friend_request_notice: '主动跟进好友申请提醒',
+      cyber_avatar_incremental: '赛博分身增量建模',
+      cyber_avatar_deep_refresh: '赛博分身深度刷新',
+      cyber_avatar_full_rebuild: '赛博分身全量重建',
+      cyber_avatar_real_world_brief: '赛博分身现实摘要',
+      action_runtime_plan: '动作执行规划',
     };
 
     return sceneMap[scene] ?? scene;
@@ -2466,7 +2537,9 @@ export class AiUsageLedgerService {
     ]);
 
     return {
-      conversationMap: new Map(conversations.map((item) => [item.id, item.title])),
+      conversationMap: new Map(
+        conversations.map((item) => [item.id, item.title]),
+      ),
       groupMap: new Map(groups.map((item) => [item.id, item.name])),
       characterMap: new Map(characters.map((item) => [item.id, item.name])),
     };
@@ -2483,7 +2556,10 @@ export class AiUsageLedgerService {
     if (record.scopeLabel?.trim()) {
       return record.scopeLabel.trim();
     }
-    if (record.conversationId && labelMaps.conversationMap.has(record.conversationId)) {
+    if (
+      record.conversationId &&
+      labelMaps.conversationMap.has(record.conversationId)
+    ) {
       return labelMaps.conversationMap.get(record.conversationId) as string;
     }
     if (record.groupId && labelMaps.groupMap.has(record.groupId)) {
@@ -2495,6 +2571,8 @@ export class AiUsageLedgerService {
     if (record.characterId && labelMaps.characterMap.has(record.characterId)) {
       return labelMaps.characterMap.get(record.characterId) as string;
     }
-    return record.scopeId || record.characterId || record.groupId || '未识别对象';
+    return (
+      record.scopeId || record.characterId || record.groupId || '未识别对象'
+    );
   }
 }

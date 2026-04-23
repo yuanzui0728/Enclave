@@ -36,15 +36,18 @@ import { NarrativeModule } from '../narrative/narrative.module';
 import { SystemConfigModule } from '../config/config.module';
 import { ActionRuntimeModule } from '../action-runtime/action-runtime.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
+import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 import { ConversationEntity } from './conversation.entity';
 import { MessageEntity } from './message.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import { GroupReplyTaskEntity } from './group-reply-task.entity';
+import { ReplyArtifactJobEntity } from './reply-artifact-job.entity';
 import { ChatCustomStickerEntity } from './custom-sticker.entity';
 import { CustomStickersService } from './custom-stickers.service';
 import { CharacterEntity } from '../characters/character.entity';
+import { ReplyArtifactJobService } from './reply-artifact-job.service';
 
 @Module({
   imports: [
@@ -55,6 +58,7 @@ import { CharacterEntity } from '../characters/character.entity';
     SystemConfigModule,
     ActionRuntimeModule,
     forwardRef(() => CyberAvatarModule),
+    ReminderRuntimeModule,
     TypeOrmModule.forFeature([
       ConversationEntity,
       MessageEntity,
@@ -62,6 +66,7 @@ import { CharacterEntity } from '../characters/character.entity';
       GroupMemberEntity,
       GroupMessageEntity,
       GroupReplyTaskEntity,
+      ReplyArtifactJobEntity,
       ChatCustomStickerEntity,
       CharacterEntity,
     ]),
@@ -74,6 +79,7 @@ import { CharacterEntity } from '../characters/character.entity';
     GroupReplyPlannerService,
     GroupReplyOrchestratorService,
     GroupReplyTaskService,
+    ReplyArtifactJobService,
     FavoritesService,
     SearchActivityService,
     MessageRemindersService,
@@ -102,6 +108,7 @@ import { CharacterEntity } from '../characters/character.entity';
     GroupService,
     ChatGateway,
     GroupReplyTaskService,
+    ReplyArtifactJobService,
     FavoritesService,
     SearchActivityService,
     MessageRemindersService,

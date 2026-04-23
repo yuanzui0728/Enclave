@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SystemConfigService } from '../config/config.service';
+import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 
 export type SearchHistoryRecord = {
   query: string;
@@ -16,10 +17,13 @@ export class SearchActivityService {
   constructor(
     private readonly worldOwnerService: WorldOwnerService,
     private readonly systemConfigService: SystemConfigService,
+    private readonly cyberAvatar: CyberAvatarService,
   ) {}
 
   async listSearchHistory(): Promise<SearchHistoryRecord[]> {
-    const raw = await this.systemConfigService.getConfig(SEARCH_HISTORY_CONFIG_KEY);
+    const raw = await this.systemConfigService.getConfig(
+      SEARCH_HISTORY_CONFIG_KEY,
+    );
     if (!raw?.trim()) {
       return [];
     }
@@ -41,7 +45,7 @@ export class SearchActivityService {
       throw new BadRequestException('搜索词不能为空。');
     }
 
-    await this.worldOwnerService.getOwnerOrThrow();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
     const item: SearchHistoryRecord = {
       query,
       usedAt: new Date().toISOString(),
@@ -60,6 +64,21 @@ export class SearchActivityService {
       SEARCH_HISTORY_CONFIG_KEY,
       JSON.stringify(next),
     );
+    void this.cyberAvatar.captureSignal({
+      ownerId: owner.id,
+      signalType: 'search_activity',
+      sourceSurface: 'search',
+      sourceEntityType: 'search_query',
+      sourceEntityId: item.usedAt,
+      summaryText: `搜索了“${query}”${
+        item.source ? `（来源：${item.source}）` : ''
+      }`,
+      payload: {
+        query,
+        source: item.source,
+      },
+      occurredAt: new Date(item.usedAt),
+    });
 
     return {
       success: true as const,

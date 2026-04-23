@@ -81,6 +81,12 @@ import type {
   MessageReminderRecord,
 } from "./reminders";
 import type {
+  GetReminderTasksQuery,
+  ReminderTaskMutationResult,
+  ReminderTaskRecord,
+  SnoozeReminderTaskRequest,
+} from "./reminder-runtime";
+import type {
   CreateMomentCommentRequest,
   CreateUserMomentRequest,
   Moment,
@@ -2241,6 +2247,70 @@ export function markMessageReminderNotified(
 export function removeMessageReminder(sourceId: string, baseUrl?: string) {
   return requestLegacyApi<SuccessResponse>(
     `/reminders/messages/${encodeURIComponent(sourceId)}`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function getReminderTasks(
+  query: GetReminderTasksQuery = {},
+  baseUrl?: string,
+) {
+  const params = new URLSearchParams();
+  if (query.status?.trim()) {
+    params.set("status", query.status.trim());
+  }
+
+  return requestLegacyApi<ReminderTaskRecord[]>(
+    `/reminder-runtime/tasks${params.size ? `?${params.toString()}` : ""}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getUpcomingReminderTasks(limit?: number, baseUrl?: string) {
+  const params = new URLSearchParams();
+  if (typeof limit === "number" && Number.isFinite(limit) && limit > 0) {
+    params.set("limit", String(limit));
+  }
+
+  return requestLegacyApi<ReminderTaskRecord[]>(
+    `/reminder-runtime/tasks/upcoming${params.size ? `?${params.toString()}` : ""}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function completeReminderTask(id: string, baseUrl?: string) {
+  return requestLegacyApi<ReminderTaskMutationResult>(
+    `/reminder-runtime/tasks/${encodeURIComponent(id)}/complete`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function snoozeReminderTask(
+  id: string,
+  payload: SnoozeReminderTaskRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<ReminderTaskMutationResult>(
+    `/reminder-runtime/tasks/${encodeURIComponent(id)}/snooze`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function cancelReminderTask(id: string, baseUrl?: string) {
+  return requestLegacyApi<ReminderTaskMutationResult>(
+    `/reminder-runtime/tasks/${encodeURIComponent(id)}`,
     {
       method: "DELETE",
     },

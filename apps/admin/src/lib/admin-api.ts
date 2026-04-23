@@ -30,9 +30,20 @@ import type {
   CyberAvatarRuntimeRules,
   FollowupRuntimeOverview,
   FollowupRuntimeRules,
+  InferenceOverview,
+  InferenceProviderAccount,
+  InferenceProviderAccountDraft,
   InstallCharacterPresetsResult,
+  InstallModelPersonasRequest,
+  InstallModelPersonasResult,
+  RebindModelPersonasRequest,
+  RebindModelPersonasResult,
   NeedDiscoveryConfig,
   NeedDiscoveryOverview,
+  ProviderTestResult,
+  ReminderRuntimeOverview,
+  ReminderRuntimeRules,
+  ReminderTaskMutationResult,
   RealWorldNewsBulletinPublishRequest,
   RealWorldNewsBulletinPublishResult,
   RealWorldSyncCharacterDetail,
@@ -65,7 +76,9 @@ import type {
   WechatSyncPreviewResponse,
   WechatSyncRetryFriendshipResponse,
   WechatSyncRollbackResponse,
+  SnoozeReminderTaskRequest,
 } from "@yinjie/contracts";
+import { resolveAdminApiBase } from "./admin-api-base";
 
 const ADMIN_SECRET_KEY = "yinjie_admin_secret";
 const DEV_ADMIN_SECRET =
@@ -83,26 +96,18 @@ function getStorage() {
   }
 }
 
-function resolveAdminApiBase() {
-  const configuredBase = import.meta.env.VITE_API_BASE?.trim();
-  if (configuredBase) {
-    return configuredBase.replace(/\/+$/, "");
-  }
-
-  if (typeof window !== "undefined" && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
-    return `${window.location.origin}/api`;
-  }
-
-  return "http://localhost:3000/api";
-}
-
 export function getAdminSecret(): string {
   const stored = getStorage()?.getItem(ADMIN_SECRET_KEY)?.trim() ?? "";
   return stored || DEV_ADMIN_SECRET;
 }
 
-async function requestWithSecret(path: string, secret: string, options?: RequestInit) {
-  return fetch(`${resolveAdminApiBase()}/admin${path}`, {
+async function requestWithSecret(
+  path: string,
+  secret: string,
+  options?: RequestInit,
+  baseUrl?: string,
+) {
+  return fetch(`${resolveAdminApiBase(baseUrl)}/admin${path}`, {
     headers: {
       "Content-Type": "application/json",
       "X-Admin-Secret": secret,
@@ -120,14 +125,18 @@ export function clearAdminSecret() {
   getStorage()?.removeItem(ADMIN_SECRET_KEY);
 }
 
-async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
+async function adminFetch<T>(
+  path: string,
+  options?: RequestInit,
+  baseUrl?: string,
+): Promise<T> {
   const storedSecret = getStorage()?.getItem(ADMIN_SECRET_KEY)?.trim() ?? "";
   const secret = getAdminSecret();
   if (!secret) {
     throw new Error("请先配置 ADMIN_SECRET。");
   }
 
-  let res = await requestWithSecret(path, secret, options);
+  let res = await requestWithSecret(path, secret, options, baseUrl);
   let rawBody = await res.text();
   const isNotConfigured = (body: string) => {
     try { return ((JSON.parse(body)?.message as string) ?? body).includes("not configured"); } catch { return body.includes("not configured"); }
@@ -140,7 +149,7 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
     storedSecret !== DEV_ADMIN_SECRET &&
     !isNotConfigured(rawBody)
   ) {
-    res = await requestWithSecret(path, DEV_ADMIN_SECRET, options);
+    res = await requestWithSecret(path, DEV_ADMIN_SECRET, options, baseUrl);
     rawBody = await res.text();
     if (res.ok) {
       setAdminSecret(DEV_ADMIN_SECRET);
@@ -190,9 +199,44 @@ export type AdminSystemInfo = {
 };
 
 export const adminApi = {
-  getStats: () => adminFetch<AdminStats>("/stats"),
-  getSystem: () => adminFetch<AdminSystemInfo>("/system"),
+  getStats: (baseUrl?: string) => adminFetch<AdminStats>("/stats", undefined, baseUrl),
+  getSystem: (baseUrl?: string) =>
+    adminFetch<AdminSystemInfo>("/system", undefined, baseUrl),
   getCharacters: () => adminFetch<Character[]>("/characters"),
+  getInferenceOverview: () =>
+    adminFetch<InferenceOverview>("/inference/overview"),
+  createInferenceProviderAccount: (payload: InferenceProviderAccountDraft) =>
+    adminFetch<InferenceProviderAccount>("/inference/providers", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateInferenceProviderAccount: (
+    id: string,
+    payload: Partial<InferenceProviderAccountDraft>,
+  ) =>
+    adminFetch<InferenceProviderAccount>(`/inference/providers/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  setDefaultInferenceProviderAccount: (id: string) =>
+    adminFetch<InferenceProviderAccount>(`/inference/providers/${id}/default`, {
+      method: "POST",
+    }),
+  testInferenceProvider: (payload: Partial<InferenceProviderAccountDraft>) =>
+    adminFetch<ProviderTestResult>("/inference/providers/test", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  installModelPersonas: (payload: InstallModelPersonasRequest) =>
+    adminFetch<InstallModelPersonasResult>("/inference/model-personas/install", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  rebindModelPersonas: (payload: RebindModelPersonasRequest) =>
+    adminFetch<RebindModelPersonasResult>("/inference/model-personas/rebind", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
@@ -324,6 +368,31 @@ export const adminApi = {
     adminFetch<NeedDiscoveryConfig>("/need-discovery/config", {
       method: "PATCH",
       body: JSON.stringify(payload),
+    }),
+  getReminderRuntimeOverview: () =>
+    adminFetch<ReminderRuntimeOverview>("/reminder-runtime/overview"),
+  getReminderRuntimeRules: () =>
+    adminFetch<ReminderRuntimeRules>("/reminder-runtime/rules"),
+  setReminderRuntimeRules: (payload: Partial<ReminderRuntimeRules>) =>
+    adminFetch<ReminderRuntimeRules>("/reminder-runtime/rules", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  completeReminderRuntimeTask: (id: string) =>
+    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}/complete`, {
+      method: "POST",
+    }),
+  snoozeReminderRuntimeTask: (
+    id: string,
+    payload: SnoozeReminderTaskRequest,
+  ) =>
+    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}/snooze`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  cancelReminderRuntimeTask: (id: string) =>
+    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}`, {
+      method: "DELETE",
     }),
   getFollowupRuntimeOverview: () =>
     adminFetch<FollowupRuntimeOverview>("/followup-runtime/overview"),

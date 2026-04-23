@@ -44,6 +44,11 @@ const emptyCharacterDraft: CharacterDraft = {
   sourceType: "manual_admin",
   deletionPolicy: "archive_allowed",
   isTemplate: false,
+  modelRoutingMode: "inherit_default",
+  inferenceProviderAccountId: null,
+  inferenceModelId: null,
+  allowOwnerKeyOverride: true,
+  modelRoutingNotes: "",
   expertDomains: [],
   activityFrequency: "normal",
   momentsFrequency: 1,
@@ -239,6 +244,7 @@ function listToCsv(items?: string[] | null) {
 
 const TABS = [
   { key: "basics", label: "基础信息" },
+  { key: "model_routing", label: "模型路由" },
   { key: "core_logic", label: "底层逻辑" },
   { key: "chat", label: "聊天回复" },
   { key: "scenes", label: "场景提示词" },
@@ -259,6 +265,10 @@ export function CharacterEditorPage() {
     queryKey: ["admin-character-edit", characterId, baseUrl],
     queryFn: () => getCharacter(characterId, baseUrl),
     enabled: !isNew,
+  });
+  const inferenceOverviewQuery = useQuery({
+    queryKey: ["admin-character-inference-overview"],
+    queryFn: () => adminApi.getInferenceOverview(),
   });
   useEffect(() => {
     if (isNew) {
@@ -389,6 +399,8 @@ export function CharacterEditorPage() {
   });
 
   const profile = draft.profile ?? emptyCharacterDraft.profile!;
+  const providerAccounts = inferenceOverviewQuery.data?.providerAccounts ?? [];
+  const modelCatalog = inferenceOverviewQuery.data?.modelCatalog ?? [];
   const canSave = Boolean(draft.name?.trim() && draft.relationship?.trim());
 
   return (
@@ -576,6 +588,104 @@ export function CharacterEditorPage() {
               }
             />
           </div>
+        </Card>
+      ) : null}
+
+      {activeTab === "model_routing" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>模型路由</SectionHeading>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+            给这个角色绑定默认实例路由，或切到角色专属的 Provider 账户 + 模型。切换后，这个角色的聊天、记忆压缩、发圈等主链路都会走对应模型。
+          </p>
+          <InlineNotice className="mt-4" tone="muted">
+            多 Provider 账户和模型目录在
+            {" "}
+            <Link to="/inference" className="font-medium text-[color:var(--brand-primary)]">
+              模型与路由
+            </Link>
+            {" "}
+            页统一管理。
+          </InlineNotice>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <SelectField
+              label="路由模式"
+              value={draft.modelRoutingMode ?? "inherit_default"}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  modelRoutingMode: value as "inherit_default" | "character_override",
+                }))
+              }
+              options={[
+                { value: "inherit_default", label: "继承实例默认路由" },
+                { value: "character_override", label: "角色专属模型路由" },
+              ]}
+            />
+            <SelectField
+              label="Provider 账户"
+              value={draft.inferenceProviderAccountId ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  inferenceProviderAccountId: value || null,
+                }))
+              }
+              options={[
+                { value: "", label: "默认账户" },
+                ...providerAccounts.map((account) => ({
+                  value: account.id,
+                  label: `${account.name}${account.isDefault ? "（默认）" : ""}`,
+                })),
+              ]}
+            />
+            <SelectField
+              label="模型目录项"
+              value={draft.inferenceModelId ?? ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  inferenceModelId: value || null,
+                }))
+              }
+              options={[
+                { value: "", label: "沿用账户默认模型" },
+                ...modelCatalog.map((entry) => ({
+                  value: entry.id,
+                  label: `${entry.label} · ${entry.vendor}`,
+                })),
+              ]}
+            />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Toggle
+              label="允许世界主人 API Key 覆盖"
+              checked={draft.allowOwnerKeyOverride ?? true}
+              onChange={(checked) =>
+                setDraft((current) => ({
+                  ...current,
+                  allowOwnerKeyOverride: checked,
+                }))
+              }
+            />
+          </div>
+          <TextAreaField
+            className="mt-4"
+            label="路由备注"
+            value={draft.modelRoutingNotes ?? ""}
+            onChange={(value) =>
+              setDraft((current) => ({
+                ...current,
+                modelRoutingNotes: value,
+              }))
+            }
+          />
+          {inferenceOverviewQuery.isError &&
+          inferenceOverviewQuery.error instanceof Error ? (
+            <ErrorBlock
+              className="mt-4"
+              message={inferenceOverviewQuery.error.message}
+            />
+          ) : null}
         </Card>
       ) : null}
 
@@ -1052,6 +1162,12 @@ function normalizeDraft(
     feedFrequency: draft.feedFrequency ?? 1,
     activeHoursStart: draft.activeHoursStart ?? 8,
     activeHoursEnd: draft.activeHoursEnd ?? 23,
+    modelRoutingMode: draft.modelRoutingMode ?? "inherit_default",
+    inferenceProviderAccountId:
+      draft.inferenceProviderAccountId?.trim() || null,
+    inferenceModelId: draft.inferenceModelId?.trim() || null,
+    allowOwnerKeyOverride: draft.allowOwnerKeyOverride ?? true,
+    modelRoutingNotes: draft.modelRoutingNotes?.trim() || "",
     profile: {
       ...profile,
       characterId: normalizedId,

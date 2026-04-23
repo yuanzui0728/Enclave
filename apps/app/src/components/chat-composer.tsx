@@ -86,6 +86,7 @@ type ChatComposerProps = {
   speechInput?: {
     baseUrl?: string;
     conversationId: string;
+    characterId?: string;
     enabled: boolean;
   };
   onSendSticker?: (sticker: StickerAttachment) => void | Promise<void>;
@@ -432,6 +433,7 @@ export function ChatComposer({
   const speech = useSpeechInput({
     baseUrl: speechInput?.baseUrl,
     conversationId: speechInput?.conversationId ?? "",
+    characterId: speechInput?.characterId,
     enabled: showSpeechEntry,
     mode: isDesktop ? "dictation" : "voice",
   });
@@ -1306,6 +1308,8 @@ export function ChatComposer({
             onOpenSettings: () => {
               void openAppSettings();
             },
+            onPickAlbum: pickAlbum,
+            onRetry: pickCamera,
           }),
         );
       }
@@ -1367,7 +1371,12 @@ export function ChatComposer({
     const result = await pickFileWithNativeShell();
     if (!result.asset) {
       if (result.error) {
-        setAttachmentError(resolveNativeFilePickErrorMessage(result.error));
+        setAttachmentError(null);
+        setMobilePlusNotice(
+          resolveNativeFilePickNotice(result.error, {
+            onRetry: pickFile,
+          }),
+        );
       }
       return;
     }
@@ -5614,6 +5623,8 @@ function resolveNativeCameraCaptureNotice(
   options?: {
     nativeBridgeAvailable?: boolean;
     onOpenSettings?: () => void;
+    onPickAlbum?: () => void;
+    onRetry?: () => void;
   },
 ): MobilePlusNoticeState {
   const normalizedMessage = errorMessage.toLowerCase();
@@ -5637,22 +5648,39 @@ function resolveNativeCameraCaptureNotice(
   if (normalizedMessage.includes("unavailable")) {
     return {
       message: "当前设备暂时无法打开相机，请先改用相册选图。",
+      actionLabel: options?.onPickAlbum ? "改用相册" : undefined,
+      onAction: options?.onPickAlbum,
     };
   }
 
   return {
     message: "打开相机失败，请稍后再试。",
+    actionLabel: options?.onRetry ? "重试打开相机" : undefined,
+    onAction: options?.onRetry,
   };
 }
 
-function resolveNativeFilePickErrorMessage(errorMessage: string) {
+function resolveNativeFilePickNotice(
+  errorMessage: string,
+  options?: {
+    onRetry?: () => void;
+  },
+): MobilePlusNoticeState {
   const normalizedMessage = errorMessage.toLowerCase();
 
   if (normalizedMessage.includes("unavailable")) {
-    return "当前设备暂时无法打开文件选择器，请稍后再试。";
+    return {
+      message: "当前设备暂时无法打开文件选择器，请稍后再试。",
+      actionLabel: options?.onRetry ? "重试打开文件" : undefined,
+      onAction: options?.onRetry,
+    };
   }
 
-  return "打开文件失败，请稍后再试。";
+  return {
+    message: "打开文件失败，请稍后再试。",
+    actionLabel: options?.onRetry ? "重试打开文件" : undefined,
+    onAction: options?.onRetry,
+  };
 }
 
 function waitForCaptureVideo(video: HTMLVideoElement) {

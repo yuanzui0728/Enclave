@@ -28,6 +28,15 @@ describe('celebrity character presets', () => {
     });
   });
 
+  it('exposes the health and wellness preset group', () => {
+    expect(getCelebrityCharacterPresetGroup('health_and_wellness')).toMatchObject(
+      {
+        key: 'health_and_wellness',
+        label: '健康与训练',
+      },
+    );
+  });
+
   it('includes the relationship expert preset with expected guardrails', () => {
     const preset = getCelebrityCharacterPreset('jian_ning_relationship_expert');
 
@@ -64,12 +73,26 @@ describe('celebrity character presets', () => {
     );
   });
 
+  it('registers the english coach bio copy', () => {
+    expect(getPresetCharacterBio('su_yu_english_coach')).toBe(
+      '先别怕说错。你先开口，我负责把你的英语慢慢拉顺。',
+    );
+  });
+
+  it('registers the fitness coach bio copy', () => {
+    expect(getPresetCharacterBio('zhou_ran_fitness_coach')).toBe(
+      '先别把计划写满。你先出现，我把训练和恢复排顺。',
+    );
+  });
+
   it('includes fixed world character presets alongside celebrity presets', () => {
     const presets = listBuiltInCharacterPresets();
     const axunPreset = getBuiltInCharacterPreset('moments_interactor_axun');
     const linChenPreset = getBuiltInCharacterPreset('lin_chen_sleep_support');
     const linMianPreset = getBuiltInCharacterPreset('lin_mian_sleep_support');
     const xuZhePreset = getBuiltInCharacterPreset('xu_zhe_career_growth');
+    const suYuPreset = getBuiltInCharacterPreset('su_yu_english_coach');
+    const zhouRanPreset = getBuiltInCharacterPreset('zhou_ran_fitness_coach');
 
     expect(presets.length).toBeGreaterThan(
       listCelebrityCharacterPresets().length,
@@ -94,9 +117,46 @@ describe('celebrity character presets', () => {
       name: '许哲',
       groupKey: 'technology_and_product',
     });
+    expect(suYuPreset).toMatchObject({
+      id: 'char-preset-su-yu-english-coach',
+      name: '苏语',
+      groupKey: 'public_expression',
+    });
+    expect(zhouRanPreset).toMatchObject({
+      id: 'char-preset-zhou-ran-fitness-coach',
+      name: '周燃',
+      groupKey: 'health_and_wellness',
+    });
     expect(
       axunPreset?.character.profile?.scenePrompts?.moments_comment,
     ).toContain('错别字');
     expect(xuZhePreset?.character.profile?.coreLogic).toContain('职业规划');
+    expect(suYuPreset?.character.relationshipType).toBe('mentor');
+    expect(suYuPreset?.character.profile?.coreLogic).toContain(
+      '先判断用户现在是要讲解、翻译、改写、陪练还是复盘',
+    );
+    expect(suYuPreset?.character.profile?.scenePrompts?.chat).toContain(
+      '如果用户说“陪我练口语”，直接进入英语对话',
+    );
+    expect(
+      suYuPreset?.character.profile?.scenePrompts?.moments_comment,
+    ).toContain('不要公开羞辱式纠错');
+    expect(suYuPreset?.character.profile?.memory?.coreMemory).toContain(
+      '长期目标',
+    );
+    expect(zhouRanPreset?.character.relationshipType).toBe('expert');
+    expect(zhouRanPreset?.character.triggerScenes).toContain('gym');
+    expect(zhouRanPreset?.character.profile?.coreLogic).toContain(
+      '用户断练后，优先帮他重启',
+    );
+    expect(zhouRanPreset?.character.profile?.scenePrompts?.chat).toContain(
+      '默认先给今天或这周能做的版本',
+    );
+    expect(
+      zhouRanPreset?.character.profile?.scenePrompts?.proactive,
+    ).toContain('优先降低执行门槛');
+    expect(
+      zhouRanPreset?.character.profile?.cognitiveBoundaries?.knowledgeLimits,
+    ).toContain('胸痛');
   });
 });

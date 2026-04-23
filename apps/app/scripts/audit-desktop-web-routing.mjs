@@ -1,20 +1,39 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appDir = join(scriptDir, "..");
+
+async function loadTypeScriptModule(relativePath) {
+  const source = readFileSync(join(appDir, relativePath), "utf8");
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2022,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: relativePath,
+  });
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(
+    transpiled.outputText,
+    "utf8",
+  ).toString("base64")}`;
+
+  return import(moduleUrl);
+}
 
 const expectations = [
   {
     file: "src/features/shell/desktop-shell.tsx",
     description:
-      "desktop shell records SPA navigation state, treats /desktop/settings as part of the desktop profile surface, and opens the self-chat shortcut through the desktop chat workspace",
+      "desktop shell records SPA navigation state, treats legacy /profile and /desktop/settings as part of the desktop profile surface, and opens the self-chat shortcut through the desktop chat workspace",
     includes: [
       'select: (state) => state.location.searchStr,',
       'import { recordAppNavigation } from "../../lib/history-back";',
       'import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";',
       'recordAppNavigation(`${pathname}${search}${hash}`);',
+      'pathname.startsWith("/profile") ||',
       'pathname.startsWith("/desktop/settings") ||',
       "to: buildDesktopChatThreadPath({",
       "conversationId: conversation.id,",
@@ -23,10 +42,11 @@ const expectations = [
   {
     file: "src/routes/games-page.tsx",
     description:
-      "desktop games route restores query-driven selection from the raw search string, self-heals legacy desktop discover paths back to /tabs/games even when the query already matches, normalizes stale desktop return paths away from /games and /discover/games, and reuses the normalized return target inside delivered invite links",
+      "desktop games route restores query-driven selection from the raw search string, self-heals legacy /games and /discover/games paths back to /tabs/games even when the query already matches, normalizes stale desktop return paths away from /games and /discover/games, and reuses the normalized return target inside delivered invite links",
     includes: [
       'select: (state) => state.location.searchStr,',
       ">(inviteActivityFromSearch?.id ?? null);",
+      'pathname === "/games" ||',
       'const normalizedDesktopReturnPath =',
       'routeState.returnPath === "/games" ||',
       'routeState.returnPath === "/discover/games"',
@@ -44,10 +64,11 @@ const expectations = [
   {
     file: "src/routes/mini-programs-page.tsx",
     description:
-      "desktop mini programs route restores query-driven selection from the raw search string, scopes group relay context to the group relay workspace, self-heals legacy desktop discover paths back to /tabs/mini-programs, normalizes stale desktop return paths away from /discover/mini-programs, and routes desktop group-relay returns back through /tabs/chat",
+      "desktop mini programs route restores query-driven selection from the raw search string, scopes group relay context to the group relay workspace, self-heals legacy /mini-programs and /discover/mini-programs paths back to /tabs/mini-programs, normalizes stale desktop return paths away from /discover/mini-programs, and routes desktop group-relay returns back through /tabs/chat",
     includes: [
       'select: (state) => state.location.searchStr,',
       'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
+      'pathname === "/mini-programs" ||',
       'const normalizedDesktopReturnPath =',
       'routeState.returnPath === "/discover/mini-programs"',
       '"/tabs/mini-programs"',
@@ -96,6 +117,28 @@ const expectations = [
       'setSuccessNotice("随机相遇已写入通讯录。");',
       "onClick={() => shakeMutation.mutate()}",
       "disabled={shakeMutation.isPending}",
+    ],
+  },
+  {
+    file: "src/routes/discover-encounter-page.tsx",
+    description:
+      "legacy desktop /discover/encounter redirects preserve the current hash when they fold back into /tabs/discover",
+    includes: [
+      "useRouterState",
+      'to: "/tabs/discover",',
+      "hash: hash || undefined,",
+      "replace: true,",
+    ],
+  },
+  {
+    file: "src/routes/discover-scene-page.tsx",
+    description:
+      "legacy desktop /discover/scene redirects preserve the current hash when they fold back into /tabs/discover",
+    includes: [
+      "useRouterState",
+      'to: "/tabs/discover",',
+      "hash: hash || undefined,",
+      "replace: true,",
     ],
   },
   {
@@ -495,9 +538,19 @@ const expectations = [
   {
     file: "src/routes/profile-page.tsx",
     description:
-      "desktop profile settings entries stop reviving the old /profile/settings path and open the dedicated desktop settings route instead",
+      "desktop profile page self-heals legacy /profile paths back to /tabs/profile and its settings entries stop reviving the old /profile/settings path",
     includes: [
+      'import { useEffect } from "react";',
+      "useRouterState",
       'import { useDesktopLayout } from "../features/shell/use-desktop-layout";',
+      'const desktopProfilePath = "/tabs/profile";',
+      "const desktopPathMismatch =",
+      "pathname !== desktopProfilePath;",
+      "if (!desktopPathMismatch) {",
+      "to: desktopProfilePath,",
+      "search: search || undefined,",
+      "hash: hash || undefined,",
+      "replace: true,",
       "const settingsPath = isDesktopLayout ? \"/desktop/settings\" : \"/profile/settings\";",
       "void navigate({ to: settingsPath });",
       "to={settingsPath as never}",
@@ -588,7 +641,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /contacts, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /chat/$conversationId/details|search|voice-call|video-call, /group/$groupId/details|search|voice-call|video-call|announcement|edit/*|members/*, /contacts, /profile, /search, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /moments, /moments/friend/$characterId, /discover/moments, /discover/moments/publish, /feed, /games, /discover/games, /discover/feed, /mini-programs, /discover/mini-programs, /channels, /discover/channels, /channels/authors/$authorId, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
       "buildDesktopMomentsRouteHash,",
@@ -622,36 +675,66 @@ const expectations = [
       "resolveDesktopOfficialNavigationTarget(normalizedTarget)",
       'target.to === "/chat"',
       'target.to === "/contacts"',
+      'target.to === "/profile"',
+      'to: "/tabs/profile",',
+      'target.to === "/search"',
+      'to: "/tabs/search",',
       'target.to === "/favorites" || target.to === "/tabs/favorites"',
       'target.to === "/notes"',
       'category: "notes",',
       'target.to === "/profile/settings"',
       'to: "/desktop/settings",',
       'to: "/tabs/chat",',
+      'const detailsMatch = target.to.match(/^\\/(?:chat|group)\\/([^/?#]+)\\/details$/);',
+      'const searchMatch = target.to.match(/^\\/(?:chat|group)\\/([^/?#]+)\\/search$/);',
+      'const callMatch = target.to.match(',
+      'const groupAnnouncementMatch = target.to.match(',
+      'const groupEditMatch = target.to.match(',
+      'const groupMembersMatch = target.to.match(',
+      "detailsAction: \"announcement\",",
+      "detailsAction:",
+      'panel: "details",',
+      'panel: "history",',
       'target.to !== "/discover" &&',
       'target.to !== "/tabs/discover" &&',
       'target.to !== "/discover/encounter" &&',
       'target.to !== "/discover/scene"',
       'to: "/tabs/discover",',
-      'target.to === "/discover/moments" || target.to === "/tabs/moments"',
+      "hash: target.hash,",
+      'target.to === "/moments" ||',
+      'target.to === "/moments" ||',
+      'target.to === "/discover/moments" ||',
+      'target.to === "/tabs/moments"',
+      'target.to === "/discover/moments/publish"',
+      "parseMobileMomentsPublishRouteState",
       'to: "/tabs/moments",',
-      'target.to !== "/discover/feed" && target.to !== "/tabs/feed"',
+      'const friendMomentsMatch = target.to.match(',
+      'friend-moments|moments\\/friend',
+      'target.to !== "/feed" &&',
+      'target.to !== "/feed" &&',
+      'target.to !== "/discover/feed" &&',
+      'target.to !== "/tabs/feed"',
       'to: "/tabs/feed",',
       'target.to !== "/games" &&',
       'target.to !== "/discover/games" &&',
       'target.to !== "/tabs/games"',
       'to: "/tabs/games",',
+      'target.to !== "/mini-programs" &&',
+      'target.to !== "/mini-programs" &&',
       'target.to !== "/discover/mini-programs" &&',
       'target.to !== "/tabs/mini-programs"',
       'to: "/tabs/mini-programs",',
-      'target.to !== "/discover/channels" && target.to !== "/tabs/channels"',
+      'const authorMatch = target.to.match(/^\\/channels\\/authors\\/',
+      'target.to !== "/channels" &&',
+      'target.to !== "/channels" &&',
+      'target.to !== "/discover/channels" &&',
+      'target.to !== "/tabs/channels"',
       'to: "/tabs/channels",',
       'target.to === "/friend-requests"',
       'target.to === "/contacts/starred"',
       'target.to === "/contacts/tags"',
       'target.to === "/contacts/groups"',
       'target.to === "/contacts/world-characters"',
-      'const friendMomentsMatch = target.to.match(/^\\/friend-moments\\/',
       'pane: "new-friends",',
       'pane: "starred-friends",',
       'pane: "tags",',
@@ -664,14 +747,22 @@ const expectations = [
       'pane: "official-accounts",',
       '(routeState.officialMode ??',
       '(hasAccountSelection ? "accounts" : "feed"))',
-      "messageId: parseLegacyHighlightedMessageId(target.hash),",
+      "const highlightedMessageId = parseLegacyHighlightedMessageId(target.hash);",
+      "messageId: highlightedMessageId,",
     ],
   },
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, and mini-program targets so desktop search surfaces return to the active search workspace",
+      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group targets so desktop search surfaces return to the active search workspace",
     includes: [
+      'import {',
+      "buildMobileChatRouteHash,",
+      "parseMobileChatRouteState,",
+      "buildMobileGroupRouteHash,",
+      "parseMobileGroupRouteState,",
+      "buildCreateGroupRouteHash,",
+      "parseCreateGroupRouteHash,",
       "buildCharacterDetailRouteHash,",
       "parseCharacterDetailRouteState,",
       'const DESKTOP_SEARCH_PATH = "/tabs/search";',
@@ -683,6 +774,15 @@ const expectations = [
       'target.to === "/tabs/channels"',
       'target.to === "/tabs/games"',
       'target.to === "/tabs/mini-programs"',
+      'const chatBackgroundMatch = target.to.match(',
+      'parseMobileChatRouteState(target.hash ?? "")',
+      "buildMobileChatRouteHash({",
+      'const groupToolsMatch = target.to.match(/^\\/group\\/([^/?#]+)\\/(background|qr)$/);',
+      'parseMobileGroupRouteState(target.hash ?? "")',
+      "buildMobileGroupRouteHash({",
+      'target.to === "/group/new"',
+      "parseCreateGroupRouteHash(target.hash ?? \"\")",
+      "seedMemberIds: targetRouteState.seedMemberIds,",
       "returnPath: DESKTOP_SEARCH_PATH,",
     ],
   },
@@ -732,7 +832,7 @@ const expectations = [
   {
     file: "src/routes/search-page.tsx",
     description:
-      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, and mini-program opens, and self-heals legacy /search paths back to /tabs/search even when the hash already matches",
+      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group opens, and self-heals legacy /search paths back to /tabs/search even when the hash already matches",
     includes: [
       "applyDesktopSearchReturnContext,",
       "resolveSearchNavigationTarget(item, {",
@@ -850,11 +950,40 @@ const expectations = [
   {
     file: "src/routes/desktop-mobile-page.tsx",
     description:
-      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
+      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, classifies legacy chat/contacts/discover/discover-tool/search/favorites/moments/feed roots plus desktop and legacy games/channel/mini-program histories and official/profile/settings shortcut histories into the right buckets even when old records carry query or hash state, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
     includes: [
+      'const normalizedPath = item.path.split(/[?#]/, 1)[0] ?? item.path;',
       "desktopTo?: string;",
       'desktopTo: "/desktop/settings",',
       "to={(item.desktopTo ?? item.to) as never}",
+      'normalizedPath === "/chat/subscription-inbox"',
+      'normalizedPath === "/contacts/official-accounts"',
+      'return "official";',
+      'normalizedPath === "/chat"',
+      'normalizedPath === "/contacts"',
+      'normalizedPath === "/discover"',
+      'normalizedPath === "/discover/encounter"',
+      'normalizedPath === "/discover/scene"',
+      'normalizedPath === "/tabs/moments"',
+      'normalizedPath === "/moments"',
+      'normalizedPath === "/tabs/feed"',
+      'normalizedPath === "/feed"',
+      'normalizedPath === "/tabs/search"',
+      'normalizedPath === "/search"',
+      'normalizedPath === "/tabs/favorites"',
+      'normalizedPath === "/favorites"',
+      'normalizedPath === "/notes"',
+      'normalizedPath === "/tabs/games"',
+      'normalizedPath === "/games"',
+      'normalizedPath === "/tabs/channels"',
+      'normalizedPath === "/channels"',
+      'normalizedPath === "/tabs/mini-programs"',
+      'normalizedPath === "/mini-programs"',
+      'normalizedPath === "/tabs/profile"',
+      'normalizedPath === "/profile"',
+      'normalizedPath === "/desktop/settings"',
+      'normalizedPath.startsWith("/legal/")',
+      'return "shortcut";',
       "const nextHash = buildDesktopMobileCallHandoffHash({",
       "title: callHandoffConversation.title,",
       "callHandoffConversation?.title?.trim() ||",
@@ -972,6 +1101,70 @@ const expectations = [
     ],
   },
   {
+    file: "src/features/shell/desktop-nav-matching.ts",
+    description:
+      "desktop shell nav keeps its route ownership and path-segment matching in a shared matcher that both runtime code and audits can execute, including legacy root paths before desktop pages self-heal them back into /tabs workspaces",
+    includes: [
+      'export type DesktopNavAction =',
+      "export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [",
+      "export const desktopBottomNavBindings: DesktopNavActionBinding[] = [",
+      "function normalizeDesktopNavMatchPath(value: string) {",
+      "function matchesDesktopNavPath(pathname: string, match: string) {",
+      "normalizedPathname === normalizedMatch ||",
+      "normalizedPathname.startsWith(`${normalizedMatch}/`)",
+      "item.matches?.some((prefix) => matchesDesktopNavPath(pathname, prefix))",
+      "item.excludedMatches?.some((prefix) =>",
+      "matchesDesktopNavPath(pathname, prefix)",
+      'label: "消息",',
+      '"/chat",',
+      '"/chat/subscription-inbox",',
+      'label: "通讯录",',
+      '"/contacts",',
+      '"/official-accounts",',
+      'label: "收藏",',
+      '"/favorites",',
+      'label: "朋友圈",',
+      '"/moments",',
+      '"/moments/friend/",',
+      '"/discover/moments/publish",',
+      '"/friend-moments/",',
+      'label: "广场动态",',
+      '"/feed",',
+      'label: "视频号",',
+      '"/channels",',
+      'matches: ["/tabs/channels", "/channels", "/discover/channels"],',
+      'label: "搜一搜",',
+      '"/search"',
+      'label: "游戏中心",',
+      '"/games",',
+      '"/discover/games"',
+      'label: "小程序面板",',
+      '"/mini-programs",',
+      '"/discover/mini-programs"',
+      'label: "更多",',
+      '"/profile/settings",',
+      '"/legal/",',
+      '"/desktop/channels/",',
+    ],
+  },
+  {
+    file: "src/features/shell/desktop-nav-config.ts",
+    description:
+      "desktop shell nav UI consumes the shared matcher bindings instead of duplicating the path ownership table in the icon config",
+    includes: [
+      'import {',
+      'desktopBottomNavBindings,',
+      'desktopPrimaryNavBindings,',
+      'type DesktopNavActionBinding,',
+      'type DesktopNavRouteBinding,',
+      'const desktopPrimaryNavIcons: Record<',
+      "desktopPrimaryNavBindings.map((item) => ({",
+      'const desktopBottomNavIcons: Record<',
+      "desktopBottomNavBindings.map((item) => ({",
+      "export { isDesktopNavItemActive };",
+    ],
+  },
+  {
     file: "src/features/desktop/chat/desktop-notes-workspace.tsx",
     description:
       "desktop notes workspace keeps note-window close, missing-note, and delete fallbacks on the shared close/returnTo path, including rewriting missing standalone chat-window returns back to the main chat workspace",
@@ -1085,18 +1278,26 @@ const expectations = [
   },
   {
     file: "src/routes/mobile-moments-publish-page.tsx",
-    description: "mobile moments publish clears returnHash when returnPath is unsafe",
+    description:
+      "mobile moments publish clears returnHash when returnPath is unsafe and carries safe desktop return context into /tabs/moments when the legacy publish page is opened on desktop",
     includes: [
+      'import {',
+      "buildDesktopMomentsRouteHash,",
       "const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;",
+      'to: "/tabs/moments",',
+      "hash:",
+      "buildDesktopMomentsRouteHash({",
+      "returnPath: safeReturnPath,",
+      "returnHash: safeReturnHash,",
     ],
   },
   {
     file: "src/features/channels/channels-route-state.ts",
     description:
-      "desktop channels route state normalizes legacy /discover/channels return paths to /tabs/channels before pages or back links consume them",
+      "desktop channels route state normalizes legacy /channels and /discover/channels return paths to /tabs/channels before pages or back links consume them",
     includes: [
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/discover/channels") {',
+      'if (nextValue === "/channels" || nextValue === "/discover/channels") {',
       'return "/tabs/channels";',
       "const returnPath = normalizeReturnPath(params.get(\"returnPath\"));",
       "const returnPath = normalizeReturnPath(input?.returnPath);",
@@ -1105,10 +1306,10 @@ const expectations = [
   {
     file: "src/features/feed/feed-route-state.ts",
     description:
-      "feed route state normalizes legacy /discover/feed return paths to /tabs/feed before feed pages, desktop search, or saved links reuse them",
+      "feed route state normalizes legacy /feed and /discover/feed return paths to /tabs/feed before feed pages, desktop search, or saved links reuse them",
     includes: [
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/discover/feed") {',
+      'if (nextValue === "/feed" || nextValue === "/discover/feed") {',
       'return "/tabs/feed";',
       'const returnPath = normalizeReturnPath(params.get("returnPath"));',
       "const returnPath = normalizeReturnPath(input?.returnPath);",
@@ -1129,10 +1330,11 @@ const expectations = [
   {
     file: "src/features/mini-programs/mobile-mini-programs-route-state.ts",
     description:
-      "mini-programs route state normalizes legacy /discover/mini-programs return paths to /tabs/mini-programs before desktop mini-program pages, search, or saved links reuse them",
+      "mini-programs route state normalizes legacy /mini-programs and /discover/mini-programs return paths to /tabs/mini-programs before desktop mini-program pages, search, or saved links reuse them",
     includes: [
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/discover/mini-programs") {',
+      'nextValue === "/mini-programs" ||',
+      'nextValue === "/discover/mini-programs"',
       'return "/tabs/mini-programs";',
       'const returnPath = normalizeReturnPath(params.get("returnPath"));',
       "const returnPath = normalizeReturnPath(state.returnPath);",
@@ -1141,11 +1343,12 @@ const expectations = [
   {
     file: "src/routes/channels-page.tsx",
     description:
-      "desktop channels route only keeps the author side panel when it still matches the current desktop-selected post, self-heals legacy /discover/channels paths back to /tabs/channels even when the hash already matches, and normalizes stale desktop return paths away from /discover/channels",
+      "desktop channels route only keeps the author side panel when it still matches the current desktop-selected post, self-heals legacy /channels and /discover/channels paths back to /tabs/channels even when the hash already matches, and normalizes stale desktop return paths away from /discover/channels",
     includes: [
       'const normalizedDesktopReturnPath =',
       'routeState.returnPath === "/discover/channels"',
       '"/tabs/channels"',
+      'pathname === "/channels" ||',
       "desktopSelectedPost?.authorId === routeSelectedAuthorId",
       "? routeSelectedAuthorId",
       ": undefined;",
@@ -1343,10 +1546,13 @@ const expectations = [
   {
     file: "src/features/official-accounts/official-article-route-shell.tsx",
     description:
-      "desktop official-article route shell writes officialMode=accounts into article-window return targets instead of relying on the contacts workspace to infer a mode from articleId alone",
+      "desktop official-article route shell writes officialMode=accounts into article-window return targets and preserves the current accountId when the legacy article route already matches the same article",
     includes: [
+      'import { useNavigate, useRouterState } from "@tanstack/react-router";',
       'buildDesktopContactsRouteHash({',
       'pane: "official-accounts",',
+      "desktopPaneState?.articleId === articleId",
+      "desktopPaneState.accountId",
       "articleId,",
       'officialMode: "accounts",',
       'returnTo: `/tabs/contacts',
@@ -1424,9 +1630,10 @@ const expectations = [
   {
     file: "src/routes/moments-page.tsx",
     description:
-      "desktop moments self-heals legacy /discover/moments paths back to /tabs/moments and only opens character authors in the friend moments workspace with desktop return paths",
+      "desktop moments self-heals legacy /moments and /discover/moments paths back to /tabs/moments and only opens character authors in the friend moments workspace with desktop return paths",
     includes: [
       'const desktopMomentsPath = "/tabs/moments";',
+      'pathname === "/moments" ||',
       'const desktopPathMismatch = pathname !== desktopMomentsPath;',
       "(!desktopPathMismatch && currentRouteHash === normalizedHash)",
       "to: desktopMomentsPath,",
@@ -1453,9 +1660,9 @@ const expectations = [
   {
     file: "src/features/moments/friend-moments-route-state.ts",
     description:
-      "desktop friend-moments route state normalizes legacy /discover/moments and old contacts return paths back into desktop tabs, and it fills missing pane hashes for legacy starred/tags returns",
+      "desktop friend-moments route state normalizes legacy /moments, /discover/moments, and old contacts return paths back into desktop tabs, and it fills missing pane hashes for legacy starred/tags returns",
     includes: [
-      'if (nextValue === "/discover/moments") {',
+      'if (nextValue === "/moments" || nextValue === "/discover/moments") {',
       'return "/tabs/moments";',
       'if (nextValue === "/contacts/starred" || nextValue === "/contacts/tags") {',
       'return "/tabs/contacts";',
@@ -1468,9 +1675,9 @@ const expectations = [
   {
     file: "src/features/moments/moments-route-state.ts",
     description:
-      "desktop moments route state normalizes legacy /discover/moments return paths back to /tabs/moments",
+      "desktop moments route state normalizes legacy /moments and /discover/moments return paths back to /tabs/moments",
     includes: [
-      'if (nextValue === "/discover/moments") {',
+      'if (nextValue === "/moments" || nextValue === "/discover/moments") {',
       'return "/tabs/moments";',
     ],
   },
@@ -1492,6 +1699,114 @@ const guardedRouteFiles = [
   "src/routes/subscription-inbox-page.tsx",
   "src/routes/tags-page.tsx",
   "src/routes/world-characters-page.tsx",
+];
+
+const desktopNavRegressionCases = [
+  { pathname: "/tabs/chat", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/tabs/chat/", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/chat", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/chat/123", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/group/123", primaryTo: "/tabs/chat", bottomAction: null },
+  { pathname: "/group/new", primaryTo: "/tabs/chat", bottomAction: null },
+  {
+    pathname: "/official-accounts/service/42",
+    primaryTo: "/tabs/chat",
+    bottomAction: null,
+  },
+  { pathname: "/tabs/contacts", primaryTo: "/tabs/contacts", bottomAction: null },
+  { pathname: "/contacts", primaryTo: "/tabs/contacts", bottomAction: null },
+  {
+    pathname: "/official-accounts",
+    primaryTo: "/tabs/contacts",
+    bottomAction: null,
+  },
+  {
+    pathname: "/official-accounts/articles/42",
+    primaryTo: "/tabs/contacts",
+    bottomAction: null,
+  },
+  {
+    pathname: "/tabs/favorites",
+    primaryTo: "/tabs/favorites",
+    bottomAction: null,
+  },
+  { pathname: "/favorites", primaryTo: "/tabs/favorites", bottomAction: null },
+  { pathname: "/notes", primaryTo: "/tabs/favorites", bottomAction: null },
+  { pathname: "/tabs/moments", primaryTo: "/tabs/moments", bottomAction: null },
+  {
+    pathname: "/discover/moments/publish",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  {
+    pathname: "/friend-moments/abc",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  {
+    pathname: "/moments/friend/abc",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  {
+    pathname: "/desktop/friend-moments/abc",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  { pathname: "/discover/feed", primaryTo: "/tabs/feed", bottomAction: null },
+  {
+    pathname: "/tabs/channels/",
+    primaryTo: "/tabs/channels",
+    bottomAction: null,
+  },
+  {
+    pathname: "/discover/channels",
+    primaryTo: "/tabs/channels",
+    bottomAction: null,
+  },
+  {
+    pathname: "/channels/authors/42",
+    primaryTo: "/tabs/channels",
+    bottomAction: null,
+  },
+  { pathname: "/tabs/search", primaryTo: "/tabs/search", bottomAction: null },
+  { pathname: "/search", primaryTo: "/tabs/search", bottomAction: null },
+  { pathname: "/games", primaryTo: "/tabs/games", bottomAction: null },
+  {
+    pathname: "/discover/games",
+    primaryTo: "/tabs/games",
+    bottomAction: null,
+  },
+  {
+    pathname: "/discover/mini-programs",
+    primaryTo: "/tabs/mini-programs",
+    bottomAction: null,
+  },
+  {
+    pathname: "/desktop/mobile",
+    primaryTo: null,
+    bottomAction: "open-mobile-panel",
+  },
+  {
+    pathname: "/desktop/settings",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
+  {
+    pathname: "/profile/settings",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
+  {
+    pathname: "/legal/privacy",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
+  {
+    pathname: "/desktop/channels/live-companion",
+    primaryTo: null,
+    bottomAction: "open-more-menu",
+  },
 ];
 
 const failures = [];
@@ -1520,8 +1835,58 @@ for (const relativePath of guardedRouteFiles) {
   }
 }
 
+const desktopNavMatchingModule = await loadTypeScriptModule(
+  "src/features/shell/desktop-nav-matching.ts",
+);
+const {
+  desktopBottomNavBindings,
+  desktopPrimaryNavBindings,
+  isDesktopNavItemActive,
+} = desktopNavMatchingModule;
+
+for (const testCase of desktopNavRegressionCases) {
+  const activePrimaryItems = desktopPrimaryNavBindings.filter((item) =>
+    isDesktopNavItemActive(testCase.pathname, item),
+  );
+  if (activePrimaryItems.length > 1) {
+    failures.push(
+      `${testCase.pathname}: expected at most one primary nav match, got ${activePrimaryItems
+        .map((item) => item.to)
+        .join(", ")}`,
+    );
+  }
+
+  const activeBottomItems = desktopBottomNavBindings.filter((item) =>
+    isDesktopNavItemActive(testCase.pathname, item),
+  );
+  if (activeBottomItems.length > 1) {
+    failures.push(
+      `${testCase.pathname}: expected at most one bottom nav match, got ${activeBottomItems
+        .map((item) => item.action)
+        .join(", ")}`,
+    );
+  }
+
+  const actualPrimaryTo = activePrimaryItems[0]?.to ?? null;
+  if (actualPrimaryTo !== testCase.primaryTo) {
+    failures.push(
+      `${testCase.pathname}: expected primary nav ${String(testCase.primaryTo)}, got ${String(actualPrimaryTo)}`,
+    );
+  }
+
+  const actualBottomAction = activeBottomItems[0]?.action ?? null;
+  if (actualBottomAction !== testCase.bottomAction) {
+    failures.push(
+      `${testCase.pathname}: expected bottom nav ${String(testCase.bottomAction)}, got ${String(actualBottomAction)}`,
+    );
+  }
+}
+
 console.log("Desktop web routing audit");
-console.log(`- Checked files: ${expectations.length + guardedRouteFiles.length}`);
+console.log(
+  `- Checked files: ${expectations.length + guardedRouteFiles.length}`,
+);
+console.log(`- Nav regression cases: ${desktopNavRegressionCases.length}`);
 
 if (failures.length > 0) {
   console.error("Desktop web routing audit failed:");

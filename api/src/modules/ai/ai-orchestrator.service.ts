@@ -28,17 +28,22 @@ import { PromptBuilderService } from './prompt-builder.service';
 import { sanitizeAiText } from './ai-text-sanitizer';
 import { validateGeneratedSceneOutput } from './moment-output-validator';
 import { MomentGenerationContextService } from './moment-generation-context.service';
-import { SystemConfigService } from '../config/config.service';
 import { WorldService } from '../world/world.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { resolveReadableChatAttachmentPath } from '../chat/chat-attachment-storage';
 import { resolveReadableMomentMediaPath } from '../moments/moment-media.storage';
+import {
+  InferenceService,
+  type ResolvedInferenceCapabilityProfile,
+} from '../inference/inference.service';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 const DEFAULT_TTS_VOICE = 'alloy';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_DOCUMENT_EXTRACTION_BYTES = 512 * 1024;
+const MAX_DOCUMENT_EXTRACTED_TEXT_CHARS = 1800;
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
   'audio/mp4',
   'audio/x-m4a',
@@ -64,7 +69,16 @@ type LoadedAsset = {
   fileName?: string;
 };
 
+type ResponseInputFilePart = Extract<
+  OpenAI.Responses.ResponseInputMessageContentList[number],
+  { type: 'input_file' }
+>;
+
 type ResolvedProviderConfig = {
+  accountId?: string;
+  accountName?: string;
+  allowOwnerKeyOverride?: boolean;
+  appliedOwnerKeyOverride?: boolean;
   endpoint: string;
   model: string;
   apiKey: string;
@@ -94,11 +108,27 @@ type SpeechSynthesisResult = {
   voice: string;
 };
 
+type ImageGenerationOptions = {
+  prompt: string;
+  conversationId?: string;
+  characterId?: string;
+  size?: '1024x1024' | '1024x1536' | '1536x1024';
+};
+
+type ImageGenerationResult = {
+  buffer: Buffer;
+  mimeType: string;
+  fileExtension: string;
+  provider: string;
+  revisedPrompt?: string;
+};
+
 type PreparedReplyRequest = {
   systemPrompt: string;
   conversationHistory: ChatMessage[];
   currentUserMessage: ChatMessage;
   isGroupChat?: boolean;
+  emptyTextFallback?: string;
 };
 
 type BudgetAwareProviderResult = {
@@ -119,6 +149,36 @@ type BudgetAwareProviderResult = {
   };
 };
 
+type ProviderFallbackCapability =
+  | 'text'
+  | 'transcription'
+  | 'tts'
+  | 'image_generation';
+
+type ProviderFallbackCandidate = {
+  provider: ResolvedProviderConfig;
+  billingSource: AiUsageBillingSource;
+  reason: 'character_instance_route' | 'instance_default_route';
+};
+
+type ChatCompletionTaskResult = {
+  usage?:
+    | {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        input_tokens?: number;
+        output_tokens?: number;
+        total_tokens?: number;
+      }
+    | null;
+  model?: string | null;
+  choices: Array<{
+    message?: {
+      content?: string | null;
+    } | null;
+  }>;
+};
+
 @Injectable()
 export class AiOrchestratorService {
   private readonly logger = new Logger(AiOrchestratorService.name);
@@ -127,7 +187,7 @@ export class AiOrchestratorService {
   constructor(
     private readonly config: ConfigService,
     private readonly promptBuilder: PromptBuilderService,
-    private readonly configService: SystemConfigService,
+    private readonly inferenceService: InferenceService,
     private readonly worldService: WorldService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly usageLedger: AiUsageLedgerService,
@@ -154,69 +214,32 @@ export class AiOrchestratorService {
   }
 
   private async resolveProviderConfig(): Promise<ResolvedProviderConfig> {
-    const endpoint =
-      (await this.configService.getConfig('provider_endpoint')) ??
-      this.config.get<string>('OPENAI_BASE_URL') ??
-      'https://api.deepseek.com';
-    const model =
-      (await this.configService.getConfig('provider_model')) ??
-      this.config.get<string>('AI_MODEL') ??
-      'deepseek-chat';
-    const apiKey =
-      (await this.configService.getConfig('provider_api_key')) ??
-      this.config.get<string>('DEEPSEEK_API_KEY') ??
-      '';
-    const transcriptionModel =
-      (await this.configService.getConfig('provider_transcription_model')) ??
-      DEFAULT_TRANSCRIPTION_MODEL;
-    const transcriptionEndpoint =
-      (await this.configService.getConfig('provider_transcription_endpoint')) ??
-      endpoint;
-    const transcriptionApiKey =
-      (await this.configService.getConfig('provider_transcription_api_key')) ??
-      apiKey;
-    const ttsModel =
-      (await this.configService.getConfig('provider_tts_model')) ??
-      DEFAULT_TTS_MODEL;
-    const ttsVoice =
-      (await this.configService.getConfig('provider_tts_voice')) ??
-      DEFAULT_TTS_VOICE;
-    const apiStyle =
-      (await this.configService.getConfig('provider_api_style')) ??
-      'openai-chat-completions';
-    const mode =
-      (await this.configService.getConfig('provider_mode')) ?? 'cloud';
-
-    return {
-      endpoint: this.normalizeProviderEndpoint(endpoint),
-      model,
-      apiKey: apiKey.trim(),
-      transcriptionEndpoint: this.normalizeProviderEndpoint(
-        (transcriptionEndpoint || endpoint).trim(),
-      ),
-      transcriptionApiKey: (transcriptionApiKey || apiKey).trim(),
-      transcriptionModel,
-      ttsModel,
-      ttsVoice,
-      apiStyle:
-        apiStyle === 'openai-responses'
-          ? 'openai-responses'
-          : 'openai-chat-completions',
-      mode: mode === 'local-compatible' ? 'local-compatible' : 'cloud',
-    };
+    return this.inferenceService.resolveRuntimeProviderConfig();
   }
 
   private async resolveRuntimeProvider(
-    override?: AiKeyOverride,
+    options?: {
+      override?: AiKeyOverride;
+      characterId?: string | null;
+    },
   ): Promise<ResolvedProviderConfig> {
-    const provider = await this.resolveProviderConfig();
+    const provider = await this.inferenceService.resolveRuntimeProviderConfig({
+      characterId: options?.characterId,
+    });
 
     return {
       ...provider,
-      endpoint: override?.apiBase
-        ? this.normalizeProviderEndpoint(override.apiBase)
+      appliedOwnerKeyOverride:
+        Boolean(options?.override?.apiKey?.trim()) &&
+        provider.allowOwnerKeyOverride !== false,
+      endpoint:
+        options?.override?.apiBase && provider.allowOwnerKeyOverride !== false
+          ? this.normalizeProviderEndpoint(options.override.apiBase)
         : provider.endpoint,
-      apiKey: override?.apiKey?.trim() || provider.apiKey,
+      apiKey:
+        provider.allowOwnerKeyOverride !== false
+          ? options?.override?.apiKey?.trim() || provider.apiKey
+          : provider.apiKey,
       model: provider.model,
       transcriptionEndpoint: provider.transcriptionEndpoint,
       transcriptionApiKey: provider.transcriptionApiKey,
@@ -235,11 +258,16 @@ export class AiOrchestratorService {
     });
   }
 
-  private modelSupportsImageInput(model: string) {
-    const normalized = model.toLowerCase();
-    return /(vision|gpt-4o|gpt-4\.1|gpt-5|gemini|claude|vl|multimodal)/.test(
-      normalized,
-    );
+  private async resolveProviderCapabilityProfile(
+    provider: ResolvedProviderConfig,
+  ): Promise<ResolvedInferenceCapabilityProfile> {
+    return this.inferenceService.resolveCapabilityProfile({
+      model: provider.model,
+      ttsModel: provider.ttsModel,
+      transcriptionModel: provider.transcriptionModel,
+      apiStyle: provider.apiStyle,
+      mode: provider.mode,
+    });
   }
 
   private isPrivateHostname(hostname: string) {
@@ -269,7 +297,7 @@ export class AiOrchestratorService {
     return false;
   }
 
-  private isReachableImageUrl(url: string, provider: ResolvedProviderConfig) {
+  private isReachableAssetUrl(url: string, provider: ResolvedProviderConfig) {
     if (url.startsWith('data:')) {
       return true;
     }
@@ -288,6 +316,10 @@ export class AiOrchestratorService {
     } catch {
       return false;
     }
+  }
+
+  private isReachableImageUrl(url: string, provider: ResolvedProviderConfig) {
+    return this.isReachableAssetUrl(url, provider);
   }
 
   private normalizeMediaMimeType(value?: string | null) {
@@ -338,6 +370,26 @@ export class AiOrchestratorService {
         return 'video/mp4';
       case '.mov':
         return 'video/quicktime';
+      case '.txt':
+        return 'text/plain';
+      case '.md':
+      case '.markdown':
+        return 'text/markdown';
+      case '.csv':
+        return 'text/csv';
+      case '.json':
+        return 'application/json';
+      case '.xml':
+        return 'application/xml';
+      case '.html':
+      case '.htm':
+        return 'text/html';
+      case '.pdf':
+        return 'application/pdf';
+      case '.doc':
+        return 'application/msword';
+      case '.docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       default:
         return undefined;
     }
@@ -455,6 +507,81 @@ export class AiOrchestratorService {
     return `data:${mimeType};base64,${loadedAsset.buffer.toString('base64')}`;
   }
 
+  private isTextExtractableDocument(mimeType?: string, fileName?: string) {
+    const normalizedMimeType = this.normalizeMediaMimeType(mimeType);
+    if (normalizedMimeType) {
+      if (/^text\//i.test(normalizedMimeType)) {
+        return true;
+      }
+
+      if (
+        /^(application\/json|application\/xml|application\/xhtml\+xml)$/i.test(
+          normalizedMimeType,
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return /\.(txt|md|markdown|csv|json|xml|html|htm)$/i.test(fileName ?? '');
+  }
+
+  private normalizeExtractedDocumentText(text: string, mimeType?: string) {
+    let normalized = text.replace(/\u0000/g, ' ').trim();
+    if (/html|xml/i.test(mimeType ?? '')) {
+      normalized = normalized.replace(/<[^>]+>/g, ' ');
+    }
+
+    normalized = normalized.replace(/\r\n/g, '\n');
+    normalized = normalized.replace(/[ \t]+\n/g, '\n');
+    normalized = normalized.replace(/\n{3,}/g, '\n\n');
+    normalized = normalized.replace(/[ \t]{2,}/g, ' ');
+    normalized = normalized.trim();
+
+    if (normalized.length <= MAX_DOCUMENT_EXTRACTED_TEXT_CHARS) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, MAX_DOCUMENT_EXTRACTED_TEXT_CHARS).trim()}…`;
+  }
+
+  async tryExtractDocumentTextFromUrl(input: {
+    url: string;
+    mimeType?: string | null;
+    fileName?: string | null;
+    maxBytes?: number;
+  }) {
+    const normalizedMimeType =
+      this.normalizeMediaMimeType(input.mimeType) ??
+      this.inferMimeTypeFromFileName(input.fileName);
+    if (
+      !this.isTextExtractableDocument(
+        normalizedMimeType,
+        input.fileName ?? undefined,
+      )
+    ) {
+      return null;
+    }
+
+    const asset = await this.loadAssetFromUrl(
+      input.url,
+      input.maxBytes ?? MAX_DOCUMENT_EXTRACTION_BYTES,
+    );
+    if (!asset?.buffer.length) {
+      return null;
+    }
+
+    try {
+      const extracted = this.normalizeExtractedDocumentText(
+        asset.buffer.toString('utf8'),
+        normalizedMimeType ?? asset.mimeType,
+      );
+      return extracted || null;
+    } catch {
+      return null;
+    }
+  }
+
   private extractErrorMessage(error: unknown) {
     if (error instanceof Error) {
       return error.message;
@@ -488,7 +615,7 @@ export class AiOrchestratorService {
     );
   }
 
-  private isTransientSpeechFailure(error: unknown) {
+  private isTransientProviderFailure(error: unknown) {
     const message = this.extractErrorMessage(error);
     const status = this.extractErrorStatus(error);
 
@@ -507,6 +634,74 @@ export class AiOrchestratorService {
 
     return /rate limit|too many requests|overloaded|temporarily unavailable|timeout|timed out|负载已饱和|稍后再试|服务繁忙/i.test(
       message,
+    );
+  }
+
+  private isTransientSpeechFailure(error: unknown) {
+    return this.isTransientProviderFailure(error);
+  }
+
+  private resolveImageGenerationModel(provider: ResolvedProviderConfig) {
+    const normalizedModel = provider.model.trim().toLowerCase();
+    if (!normalizedModel) {
+      return null;
+    }
+
+    if (/^(gpt-image|chatgpt-image|dall-e)/i.test(normalizedModel)) {
+      return provider.model;
+    }
+
+    if (/^(gpt-|o\d)/i.test(normalizedModel)) {
+      return 'gpt-image-1';
+    }
+
+    try {
+      const hostname = new URL(provider.endpoint).hostname.toLowerCase();
+      if (hostname.includes('openai.com')) {
+        return 'gpt-image-1';
+      }
+    } catch {
+      // ignore malformed endpoint and fall through
+    }
+
+    return null;
+  }
+
+  private getImageFileExtension(mimeType?: string | null) {
+    const normalizedMimeType = this.normalizeMediaMimeType(mimeType);
+    switch (normalizedMimeType) {
+      case 'image/jpeg':
+        return 'jpg';
+      case 'image/webp':
+        return 'webp';
+      default:
+        return 'png';
+    }
+  }
+
+  private isModelOrCapabilityFailure(error: unknown) {
+    const message = this.extractErrorMessage(error);
+    const status = this.extractErrorStatus(error);
+    if (status === 404) {
+      return true;
+    }
+
+    if (status === 400) {
+      return /model|unsupported|not support|not supported|audio|speech|transcription|tts|responses api/i.test(
+        message,
+      );
+    }
+
+    return /model.+not found|no such model|unknown model|does not exist|unsupported|not support|not supported|audio.+not support|speech.+not support|transcription.+not support|tts.+not support|responses api/i.test(
+      message,
+    );
+  }
+
+  private isFallbackEligibleProviderFailure(error: unknown) {
+    return (
+      this.isAuthenticationFailure(error) ||
+      this.isTransientProviderFailure(error) ||
+      this.isModelOrCapabilityFailure(error)
     );
   }
 
@@ -536,6 +731,125 @@ export class AiOrchestratorService {
     }
 
     throw new BadGatewayException('语音请求重试失败。');
+  }
+
+  private hasProviderCapability(
+    provider: ResolvedProviderConfig,
+    capability: ProviderFallbackCapability,
+  ) {
+    switch (capability) {
+      case 'transcription':
+        return Boolean(
+          provider.transcriptionApiKey?.trim() &&
+            provider.transcriptionModel?.trim() &&
+            provider.transcriptionEndpoint?.trim(),
+        );
+      case 'image_generation':
+        return Boolean(
+          provider.apiKey?.trim() && this.resolveImageGenerationModel(provider),
+        );
+      case 'tts':
+        return Boolean(provider.apiKey?.trim() && provider.ttsModel?.trim());
+      case 'text':
+      default:
+        return Boolean(provider.apiKey?.trim() && provider.model?.trim());
+    }
+  }
+
+  private buildFallbackProviderKey(
+    provider: ResolvedProviderConfig,
+    capability: ProviderFallbackCapability,
+  ) {
+    switch (capability) {
+      case 'transcription':
+        return [
+          provider.mode,
+          provider.transcriptionEndpoint,
+          provider.transcriptionApiKey,
+          provider.transcriptionModel,
+        ].join('|');
+      case 'image_generation':
+        return [
+          provider.mode,
+          provider.endpoint,
+          provider.apiKey,
+          this.resolveImageGenerationModel(provider),
+        ].join('|');
+      case 'tts':
+        return [
+          provider.mode,
+          provider.endpoint,
+          provider.apiKey,
+          provider.ttsModel,
+        ].join('|');
+      case 'text':
+      default:
+        return [
+          provider.mode,
+          provider.endpoint,
+          provider.apiKey,
+          provider.model,
+          provider.apiStyle,
+        ].join('|');
+    }
+  }
+
+  private async resolveFallbackProviders(options: {
+    currentProvider: ResolvedProviderConfig;
+    characterId?: string | null;
+    capability: ProviderFallbackCapability;
+    includeSameRouteInstanceProvider?: boolean;
+  }): Promise<ProviderFallbackCandidate[]> {
+    const candidates: ProviderFallbackCandidate[] = [];
+    const seenKeys = new Set<string>([
+      this.buildFallbackProviderKey(
+        options.currentProvider,
+        options.capability,
+      ),
+    ]);
+
+    const pushCandidate = (
+      provider: ResolvedProviderConfig,
+      billingSource: AiUsageBillingSource,
+      reason: ProviderFallbackCandidate['reason'],
+    ) => {
+      if (!this.hasProviderCapability(provider, options.capability)) {
+        return;
+      }
+
+      const providerKey = this.buildFallbackProviderKey(
+        provider,
+        options.capability,
+      );
+      if (seenKeys.has(providerKey)) {
+        return;
+      }
+
+      seenKeys.add(providerKey);
+      candidates.push({
+        provider,
+        billingSource,
+        reason,
+      });
+    };
+
+    if (options.includeSameRouteInstanceProvider) {
+      pushCandidate(
+        await this.resolveRuntimeProvider({
+          characterId: options.characterId,
+        }),
+        'instance_default',
+        'character_instance_route',
+      );
+    }
+
+    pushCandidate(
+      await this.resolveRuntimeProvider(),
+      'instance_default',
+      'instance_default_route',
+    );
+
+    return candidates;
   }
 
   private buildProviderKey(provider: ResolvedProviderConfig) {
@@ -764,6 +1078,107 @@ export class AiOrchestratorService {
     throw new HttpException(decision.message, HttpStatus.TOO_MANY_REQUESTS);
   }
 
+  private async requestChatTaskWithFallback(options: {
+    usageContext: AiUsageContext;
+    characterId?: string | null;
+    label: string;
+    request: (
+      client: OpenAI,
+      provider: ResolvedProviderConfig,
+    ) => Promise<ChatCompletionTaskResult>;
+  }): Promise<ChatCompletionTaskResult> {
+    const characterId = options.characterId ?? options.usageContext.characterId;
+    const primaryProvider = await this.resolveRuntimeProvider({
+      characterId,
+    });
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId,
+      capability: 'text',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        billingSource: 'instance_default' as const,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
+    );
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      if (!this.hasProviderCapability(attempt.provider, 'text')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const budgetedProvider = await this.prepareBudgetAwareProvider(
+        attempt.provider,
+        attempt.billingSource,
+        options.usageContext,
+      );
+      const provider = budgetedProvider.provider;
+      const client = this.createProviderClient(provider);
+
+      try {
+        const response = await options.request(client, provider);
+        const usage = this.normalizeUsageMetrics(response.usage);
+        await this.recordSuccessfulUsage(
+          provider,
+          attempt.billingSource,
+          options.usageContext,
+          {
+            usage,
+            model: response.model ?? provider.model,
+          },
+          budgetedProvider.usageAudit,
+        );
+        return response;
+      } catch (error) {
+        lastError = error;
+        await this.recordFailedUsage(
+          provider,
+          attempt.billingSource,
+          options.usageContext,
+          error,
+        );
+
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error(`${options.label} failed`, {
+            scene: options.usageContext.scene,
+            characterId: characterId ?? null,
+            model: provider.model,
+            billingSource: attempt.billingSource,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw error;
+        }
+
+        this.logger.warn(`${options.label} fallback scheduled`, {
+          scene: options.usageContext.scene,
+          characterId: characterId ?? null,
+          fromModel: provider.model,
+          toModel: attempts[index + 1]?.provider.model,
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
+      }
+    }
+
+    if (!attemptedProvider) {
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
+      );
+    }
+
+    throw lastError;
+  }
+
   private async requestReplyFromProvider(
     provider: ResolvedProviderConfig,
     request: PreparedReplyRequest,
@@ -774,11 +1189,19 @@ export class AiOrchestratorService {
       conversationHistory,
       currentUserMessage,
       isGroupChat,
+      emptyTextFallback,
     } = request;
     const hasImageInput = this.requestContainsImageInput(request);
+    const hasDocumentInput = this.requestContainsDocumentInput(request);
+    const capabilities = await this.resolveProviderCapabilityProfile(provider);
+    const allowNativeImageInput =
+      hasImageInput && capabilities.supportsNativeImageInput;
+    const allowNativeDocumentInput =
+      hasDocumentInput && capabilities.supportsNativeDocumentInput;
 
     const execute = async (
       allowImageInput: boolean,
+      allowDocumentInput: boolean,
     ): Promise<GenerateReplyResult> => {
       if (provider.apiStyle === 'openai-responses') {
         const historyMessages = await Promise.all(
@@ -786,16 +1209,20 @@ export class AiOrchestratorService {
             this.buildResponsesMessage(
               message,
               provider,
+              capabilities,
               isGroupChat,
               allowImageInput,
+              allowDocumentInput,
             ),
           ),
         );
         const currentMessage = await this.buildResponsesMessage(
           currentUserMessage,
           provider,
+          capabilities,
           isGroupChat,
           allowImageInput,
+          allowDocumentInput,
         );
         const response = await client.responses.create({
           model: provider.model,
@@ -805,8 +1232,9 @@ export class AiOrchestratorService {
           temperature: 0.85,
         });
 
-        const rawText = response.output_text ?? '（无回复）';
-        const text = sanitizeAiText(rawText) || '（无回复）';
+        const rawText = response.output_text ?? '';
+        const text =
+          sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
         const usage = this.normalizeUsageMetrics(response.usage);
         return {
           text,
@@ -843,8 +1271,9 @@ export class AiOrchestratorService {
         temperature: 0.85,
       });
 
-      const rawText = response.choices[0]?.message?.content ?? '（无回复）';
-      const text = sanitizeAiText(rawText) || '（无回复）';
+      const rawText = response.choices[0]?.message?.content ?? '';
+      const text =
+        sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
       const usage = this.normalizeUsageMetrics(response.usage);
 
       return {
@@ -856,32 +1285,36 @@ export class AiOrchestratorService {
     };
 
     try {
-      return await execute(true);
+      return await execute(allowNativeImageInput, allowNativeDocumentInput);
     } catch (error) {
-      if (hasImageInput && this.isUnsupportedImageInputError(error)) {
+      if (
+        (allowNativeImageInput && this.isUnsupportedImageInputError(error)) ||
+        (allowNativeDocumentInput &&
+          this.isUnsupportedDocumentInputError(error))
+      ) {
         this.logger.warn(
-          'Provider rejected image input, retrying with text-only fallback',
+          'Provider rejected native multimodal input, retrying with text-only fallback',
           {
             model: provider.model,
             errorMessage: this.extractErrorMessage(error),
           },
         );
-        return execute(false);
+        return execute(false, false);
       }
 
       throw error;
     }
   }
 
-  private canRetryWithDefaultProvider(
-    currentProvider: ResolvedProviderConfig,
-    defaultProvider: ResolvedProviderConfig,
-  ) {
-    return (
-      Boolean(defaultProvider.apiKey) &&
-      (defaultProvider.apiKey !== currentProvider.apiKey ||
-        defaultProvider.endpoint !== currentProvider.endpoint)
-    );
+  async resolveRuntimeCapabilityProfile(options?: {
+    override?: AiKeyOverride;
+    characterId?: string | null;
+  }) {
+    const provider = await this.resolveRuntimeProvider({
+      override: options?.override,
+      characterId: options?.characterId,
+    });
+    return this.resolveProviderCapabilityProfile(provider);
   }
 
   private buildMessageText(
@@ -922,6 +1355,53 @@ export class AiOrchestratorService {
     return resolvedParts.filter(
       (part): part is Extract<AiMessagePart, { type: 'image' }> =>
         Boolean(part),
+    );
+  }
+
+  private async collectUsableDocumentParts(
+    parts: AiMessagePart[] | undefined,
+    provider: ResolvedProviderConfig,
+    capabilities: ResolvedInferenceCapabilityProfile,
+  ): Promise<ResponseInputFilePart[]> {
+    if (!parts?.length || !capabilities.supportsNativeDocumentInput) {
+      return [];
+    }
+
+    const documentParts = parts.filter(
+      (part): part is Extract<AiMessagePart, { type: 'document' }> =>
+        part.type === 'document',
+    );
+    const resolvedParts: Array<ResponseInputFilePart | null> =
+      await Promise.all(
+        documentParts.map(async (part) => {
+          if (this.isReachableAssetUrl(part.url, provider)) {
+            return {
+              type: 'input_file',
+              file_url: part.url,
+              filename: part.fileName,
+              detail: 'high',
+            };
+          }
+
+          const loadedAsset = await this.loadAssetFromUrl(
+            part.url,
+            capabilities.maxInlineFileBytes,
+          );
+          if (!loadedAsset?.buffer.length) {
+            return null;
+          }
+
+          return {
+            type: 'input_file',
+            file_data: loadedAsset.buffer.toString('base64'),
+            filename: part.fileName || loadedAsset.fileName,
+            detail: 'high',
+          };
+        }),
+      );
+
+    return resolvedParts.filter((part): part is ResponseInputFilePart =>
+      Boolean(part),
     );
   }
 
@@ -969,14 +1449,26 @@ export class AiOrchestratorService {
   private async buildResponsesMessage(
     message: ChatMessage,
     provider: ResolvedProviderConfig,
+    capabilities: ResolvedInferenceCapabilityProfile,
     isGroupChat?: boolean,
     allowImageInput = true,
+    allowDocumentInput = true,
   ): Promise<OpenAI.Responses.EasyInputMessage> {
     const textContent = this.buildMessageText(message, isGroupChat);
     const imageParts = allowImageInput
       ? await this.collectUsableImageParts(message.parts, provider)
       : [];
-    if (!imageParts.length) {
+    const documentParts = allowDocumentInput
+      ? await this.collectUsableDocumentParts(
+          message.parts,
+          provider,
+          capabilities,
+        )
+      : [];
+    if (
+      message.role !== 'user' ||
+      (!imageParts.length && !documentParts.length)
+    ) {
       return {
         role: message.role as 'user' | 'assistant' | 'system' | 'developer',
         content: textContent,
@@ -996,6 +1488,10 @@ export class AiOrchestratorService {
       });
     });
 
+    documentParts.forEach((part) => {
+      contentParts.push(part);
+    });
+
     return {
       role: message.role as 'user' | 'assistant' | 'system' | 'developer',
       content: contentParts,
@@ -1005,6 +1501,12 @@ export class AiOrchestratorService {
   private requestContainsImageInput(request: PreparedReplyRequest) {
     return [...request.conversationHistory, request.currentUserMessage].some(
       (message) => message.parts?.some((part) => part.type === 'image'),
+    );
+  }
+
+  private requestContainsDocumentInput(request: PreparedReplyRequest) {
+    return [...request.conversationHistory, request.currentUserMessage].some(
+      (message) => message.parts?.some((part) => part.type === 'document'),
     );
   }
 
@@ -1021,6 +1523,23 @@ export class AiOrchestratorService {
     }
 
     return /image|input_image|image_url|vision|multimodal|does not support images|unsupported image|content part/i.test(
+      message,
+    );
+  }
+
+  private isUnsupportedDocumentInputError(error: unknown) {
+    const status = this.extractErrorStatus(error);
+    const message = this.extractErrorMessage(error);
+    if (
+      status !== undefined &&
+      status !== 400 &&
+      status !== 415 &&
+      status !== 422
+    ) {
+      return false;
+    }
+
+    return /file|input_file|document|unsupported.*file|content part/i.test(
       message,
     );
   }
@@ -1052,14 +1571,19 @@ export class AiOrchestratorService {
       userMessage,
       isGroupChat,
       chatContext,
+      extraSystemPromptSections,
       aiKeyOverride,
     } = options;
-    const provider = await this.resolveRuntimeProvider(aiKeyOverride);
+    const provider = await this.resolveRuntimeProvider({
+      override: aiKeyOverride,
+      characterId: profile.characterId,
+    });
     const systemPrompt = await this.buildSystemPrompt(
       profile,
       isGroupChat,
       chatContext,
       this.resolveSceneKey(options.usageContext?.scene),
+      extraSystemPromptSections,
     );
     const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
@@ -1107,6 +1631,7 @@ export class AiOrchestratorService {
     mimeType?: string | null;
     fileName?: string | null;
     conversationId?: string;
+    characterId?: string;
     mode?: string;
   }) {
     const normalizedMimeType =
@@ -1136,6 +1661,7 @@ export class AiOrchestratorService {
         },
         {
           conversationId: input.conversationId,
+          characterId: input.characterId,
           mode: input.mode,
         },
       );
@@ -1154,6 +1680,7 @@ export class AiOrchestratorService {
     isGroupChat?: boolean,
     chatContext?: GenerateReplyOptions['chatContext'],
     sceneKey?: import('./ai.types').SceneKey,
+    extraSystemPromptSections?: string[],
   ) {
     let systemPrompt: string;
     if (sceneKey && sceneKey !== 'chat') {
@@ -1190,6 +1717,13 @@ export class AiOrchestratorService {
       // ignore world context errors
     }
 
+    if (extraSystemPromptSections?.length) {
+      systemPrompt = [
+        systemPrompt,
+        ...extraSystemPromptSections.map((item) => item.trim()).filter(Boolean),
+      ].join('\n\n');
+    }
+
     return systemPrompt;
   }
 
@@ -1220,10 +1754,16 @@ export class AiOrchestratorService {
       userMessageParts,
       isGroupChat,
       chatContext,
+      extraSystemPromptSections,
       aiKeyOverride,
+      emptyTextFallback,
     } = options;
     const usageContext = this.resolveReplyUsageContext(profile, options);
-    const runtimeProvider = await this.resolveRuntimeProvider(aiKeyOverride);
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      override: aiKeyOverride,
+      characterId: profile.characterId,
+    });
+    const ownerKeyApplied = runtimeProvider.appliedOwnerKeyOverride === true;
     if (!runtimeProvider.apiKey) {
       return this.buildUnavailableReply(profile);
     }
@@ -1233,6 +1773,7 @@ export class AiOrchestratorService {
       isGroupChat,
       chatContext,
       this.resolveSceneKey(usageContext.scene),
+      extraSystemPromptSections,
     );
     const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
@@ -1253,8 +1794,9 @@ export class AiOrchestratorService {
       conversationHistory: sanitizedHistory,
       currentUserMessage,
       isGroupChat,
+      emptyTextFallback,
     };
-    const billingSource: AiUsageBillingSource = aiKeyOverride
+    const billingSource: AiUsageBillingSource = ownerKeyApplied
       ? 'owner_custom'
       : 'instance_default';
     const budgetedProvider = await this.prepareBudgetAwareProvider(
@@ -1278,78 +1820,82 @@ export class AiOrchestratorService {
         billingSource,
       };
     } catch (err) {
-      if (aiKeyOverride && this.isAuthenticationFailure(err)) {
-        await this.recordFailedUsage(
-          provider,
-          'owner_custom',
-          usageContext,
-          err,
-        );
-        const defaultProvider = await this.resolveProviderConfig();
-        if (this.canRetryWithDefaultProvider(provider, defaultProvider)) {
-          this.logger.warn(
-            `Owner-level AI key failed authentication for ${profile.characterId}; retrying with instance provider.`,
-          );
-          let fallbackProvider = defaultProvider;
+      let failedProvider = provider;
+      let failedBillingSource = billingSource;
+      let failedError: unknown = err;
+      await this.recordFailedUsage(provider, billingSource, usageContext, err);
+
+      if (this.isFallbackEligibleProviderFailure(err)) {
+        const fallbackCandidates = await this.resolveFallbackProviders({
+          currentProvider: provider,
+          characterId: profile.characterId,
+          capability: 'text',
+          includeSameRouteInstanceProvider: ownerKeyApplied,
+        });
+
+        for (const candidate of fallbackCandidates) {
+          this.logger.warn('AI reply provider fallback scheduled', {
+            characterId: profile.characterId,
+            fromModel: failedProvider.model,
+            toModel: candidate.provider.model,
+            reason: candidate.reason,
+            errorMessage: this.extractErrorMessage(failedError),
+          });
+
+          let fallbackProvider = candidate.provider;
           try {
-            const budgetedDefaultProvider =
+            const budgetedFallbackProvider =
               await this.prepareBudgetAwareProvider(
-                defaultProvider,
-                'instance_default',
+                candidate.provider,
+                candidate.billingSource,
                 usageContext,
               );
-            fallbackProvider = budgetedDefaultProvider.provider;
+            fallbackProvider = budgetedFallbackProvider.provider;
             const fallbackResult = await this.requestReplyFromProvider(
               fallbackProvider,
               request,
             );
             await this.recordSuccessfulUsage(
               fallbackProvider,
-              'instance_default',
+              candidate.billingSource,
               usageContext,
               fallbackResult,
-              budgetedDefaultProvider.usageAudit,
+              budgetedFallbackProvider.usageAudit,
             );
             return {
               ...fallbackResult,
-              billingSource: 'instance_default',
+              billingSource: candidate.billingSource,
             };
           } catch (fallbackError) {
+            failedProvider = fallbackProvider;
+            failedBillingSource = candidate.billingSource;
+            failedError = fallbackError;
             await this.recordFailedUsage(
               fallbackProvider,
-              'instance_default',
+              candidate.billingSource,
               usageContext,
               fallbackError,
             );
-            this.logger.error('AI provider fallback error', fallbackError);
-            if (this.isAuthenticationFailure(fallbackError)) {
-              throw new AiProviderAuthError('instance_default');
+            this.logger.warn('AI reply provider fallback failed', {
+              characterId: profile.characterId,
+              model: fallbackProvider.model,
+              reason: candidate.reason,
+              errorMessage: this.extractErrorMessage(fallbackError),
+            });
+
+            if (!this.isFallbackEligibleProviderFailure(fallbackError)) {
+              break;
             }
-            throw fallbackError;
           }
         }
-
-        throw new AiProviderAuthError('owner_custom');
       }
 
-      if (this.isAuthenticationFailure(err)) {
-        await this.recordFailedUsage(
-          provider,
-          'instance_default',
-          usageContext,
-          err,
-        );
-        throw new AiProviderAuthError('instance_default');
+      this.logger.error('AI provider error', failedError);
+      if (this.isAuthenticationFailure(failedError)) {
+        throw new AiProviderAuthError(failedBillingSource);
       }
 
-      await this.recordFailedUsage(
-        provider,
-        aiKeyOverride ? 'owner_custom' : 'instance_default',
-        usageContext,
-        err,
-      );
-      this.logger.error('AI provider error', err);
-      throw err;
+      throw failedError;
     }
   }
 
@@ -1375,121 +1921,38 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
-    const runtimeProvider = await this.resolveRuntimeProvider();
-    const budgetedProvider = await this.prepareBudgetAwareProvider(
-      runtimeProvider,
-      'instance_default',
-      resolvedUsageContext,
-    );
-    const provider = budgetedProvider.provider;
-    const client = this.createProviderClient(provider);
-
-    try {
-      if (sceneKey !== 'moments_post') {
-        const systemPrompt = await this.buildSystemPrompt(
-          profile,
-          false,
-          undefined,
-          sceneKey,
-        );
-        const taskPrompts = [
-          this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, false),
-          this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, true),
-        ];
-
-        for (let attempt = 0; attempt < taskPrompts.length; attempt += 1) {
-          const response = await client.chat.completions.create({
-            model: provider.model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: taskPrompts[attempt] },
-            ],
-            max_tokens: sceneKey === 'channel_post' ? 220 : 170,
-            temperature: attempt === 0 ? 0.9 : 0.72,
-          });
-
-          const usage = this.normalizeUsageMetrics(response.usage);
-          await this.recordSuccessfulUsage(
-            provider,
-            'instance_default',
-            resolvedUsageContext,
-            {
-              usage,
-              model: response.model ?? provider.model,
-            },
-            budgetedProvider.usageAudit,
-          );
-
-          const text = sanitizeAiText(
-            response.choices[0]?.message?.content ?? '',
-          );
-          const validation = validateGeneratedSceneOutput({
-            text,
-            profile,
-            sceneKey,
-          });
-          if (validation.valid) {
-            return validation.normalizedText;
-          }
-
-          this.logger.warn(
-            `Discarded low-quality ${sceneKey} output for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
-          );
-        }
-
-        this.logger.warn(
-          `Skipped ${sceneKey} generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
-        );
-        return '';
-      }
-
-      const resolvedGenerationContext =
-        generationContext ??
-        (await this.momentGenerationContext.buildContext({
-          currentTime,
-          recentTopics,
-          usageContext: resolvedUsageContext,
-        }));
-      const promptRequest = await this.promptBuilder.buildMomentRequest(
+    if (sceneKey !== 'moments_post') {
+      const systemPrompt = await this.buildSystemPrompt(
         profile,
-        currentTime,
-        resolvedGenerationContext,
+        false,
+        undefined,
         sceneKey,
       );
-      const userPrompts = [
-        promptRequest.userPrompt,
-        promptRequest.retryUserPrompt,
+      const taskPrompts = [
+        this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, false),
+        this.promptBuilder.buildSceneGenerationTaskPrompt(sceneKey, true),
       ];
 
-      for (let attempt = 0; attempt < userPrompts.length; attempt += 1) {
-        const response = await client.chat.completions.create({
-          model: provider.model,
-          messages: [
-            { role: 'system', content: promptRequest.systemPrompt },
-            { role: 'user', content: userPrompts[attempt] },
-          ],
-          max_tokens: 180,
-          temperature: attempt === 0 ? 0.9 : 0.75,
+      for (let attempt = 0; attempt < taskPrompts.length; attempt += 1) {
+        const response = await this.requestChatTaskWithFallback({
+          usageContext: resolvedUsageContext,
+          characterId: profile.characterId,
+          label: `${sceneKey} generation`,
+          request: (client, activeProvider) =>
+            client.chat.completions.create({
+              model: activeProvider.model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: taskPrompts[attempt] },
+              ],
+              max_tokens: sceneKey === 'channel_post' ? 220 : 170,
+              temperature: attempt === 0 ? 0.9 : 0.72,
+            }),
         });
 
-        const usage = this.normalizeUsageMetrics(response.usage);
-        await this.recordSuccessfulUsage(
-          provider,
-          'instance_default',
-          resolvedUsageContext,
-          {
-            usage,
-            model: response.model ?? provider.model,
-          },
-          budgetedProvider.usageAudit,
-        );
-
-        const text = sanitizeAiText(
-          response.choices[0]?.message?.content ?? '',
-        );
+        const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
         const validation = validateGeneratedSceneOutput({
           text,
-          context: resolvedGenerationContext,
           profile,
           sceneKey,
         });
@@ -1498,23 +1961,68 @@ export class AiOrchestratorService {
         }
 
         this.logger.warn(
-          `Discarded low-quality moment for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
+          `Discarded low-quality ${sceneKey} output for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
         );
       }
 
       this.logger.warn(
-        `Skipped moment generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
+        `Skipped ${sceneKey} generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
       );
       return '';
-    } catch (error) {
-      await this.recordFailedUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        error,
-      );
-      throw error;
     }
+
+    const resolvedGenerationContext =
+      generationContext ??
+      (await this.momentGenerationContext.buildContext({
+        currentTime,
+        recentTopics,
+        usageContext: resolvedUsageContext,
+      }));
+    const promptRequest = await this.promptBuilder.buildMomentRequest(
+      profile,
+      currentTime,
+      resolvedGenerationContext,
+      sceneKey,
+    );
+    const userPrompts = [promptRequest.userPrompt, promptRequest.retryUserPrompt];
+
+    for (let attempt = 0; attempt < userPrompts.length; attempt += 1) {
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: profile.characterId,
+        label: 'moment generation',
+        request: (client, activeProvider) =>
+          client.chat.completions.create({
+            model: activeProvider.model,
+            messages: [
+              { role: 'system', content: promptRequest.systemPrompt },
+              { role: 'user', content: userPrompts[attempt] },
+            ],
+            max_tokens: 180,
+            temperature: attempt === 0 ? 0.9 : 0.75,
+          }),
+      });
+
+      const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
+      const validation = validateGeneratedSceneOutput({
+        text,
+        context: resolvedGenerationContext,
+        profile,
+        sceneKey,
+      });
+      if (validation.valid) {
+        return validation.normalizedText;
+      }
+
+      this.logger.warn(
+        `Discarded low-quality moment for ${resolvedUsageContext.characterName ?? profile.name} (attempt ${attempt + 1}): ${validation.reasons.join('；') || '未通过校验'}`,
+      );
+    }
+
+    this.logger.warn(
+      `Skipped moment generation for ${resolvedUsageContext.characterName ?? profile.name} after validation.`,
+    );
+    return '';
   }
 
   async extractPersonality(
@@ -1527,7 +2035,6 @@ export class AiOrchestratorService {
       personName,
     );
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
     const resolvedUsageContext: AiUsageContext = {
       surface: usageContext?.surface ?? 'admin',
       scene: usageContext?.scene ?? 'character_factory_extract',
@@ -1540,50 +2047,26 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
-    const budgetedProvider = await this.prepareBudgetAwareProvider(
-      runtimeProvider,
-      'instance_default',
-      resolvedUsageContext,
-    );
-    const provider = budgetedProvider.provider;
-    const client = this.createProviderClient(provider);
+    const response = await this.requestChatTaskWithFallback({
+      usageContext: resolvedUsageContext,
+      characterId: resolvedUsageContext.characterId,
+      label: 'personality extraction',
+      request: (client, provider) =>
+        client.chat.completions.create({
+          model: provider.model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 600,
+          temperature: 0.3,
+          response_format: { type: 'json_object' },
+        }),
+    });
 
+    const raw = response.choices[0]?.message?.content ?? '{}';
     try {
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 600,
-        temperature: 0.3,
-        response_format: { type: 'json_object' },
-      });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
-
-      const raw = response.choices[0]?.message?.content ?? '{}';
-      try {
-        return JSON.parse(raw) as Record<string, unknown>;
-      } catch {
-        this.logger.error('Failed to parse personality JSON', raw);
-        return {};
-      }
-    } catch (error) {
-      await this.recordFailedUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        error,
-      );
-      throw error;
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      this.logger.error('Failed to parse personality JSON', raw);
+      return {};
     }
   }
 
@@ -1625,64 +2108,31 @@ export class AiOrchestratorService {
   "basePrompt": "这个人自己的说话方式和边界（2-4句话，不要写成助理说明书，不要出现括号动作）"
 }`;
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
     const usageContext: AiUsageContext = {
       surface: 'admin',
       scene: 'quick_character_generate',
       scopeType: 'admin_task',
       scopeLabel: description.slice(0, 48) || 'quick-character',
     };
-    const budgetedProvider = await this.prepareBudgetAwareProvider(
-      runtimeProvider,
-      'instance_default',
+    const response = await this.requestChatTaskWithFallback({
       usageContext,
-    );
-    const provider = budgetedProvider.provider;
-    const client = this.createProviderClient(provider);
-    const timeoutMs =
-      typeof options?.timeoutMs === 'number' && options.timeoutMs > 0
-        ? Math.min(options.timeoutMs, 120_000)
-        : undefined;
-
-    try {
-      const response = await client.chat.completions.create(
-        {
+      label: 'quick character generation',
+      request: (client, provider) =>
+        client.chat.completions.create({
           model: provider.model,
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 800,
           temperature: 0.8,
           response_format: { type: 'json_object' },
-        },
-        timeoutMs ? { timeout: timeoutMs, maxRetries: 0 } : undefined,
-      );
+        }),
+    });
 
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        usageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
-
-      const raw = response.choices[0]?.message?.content ?? '{}';
-      try {
-        return JSON.parse(raw) as Record<string, unknown>;
-      } catch {
-        this.logger.error('Failed to parse quick character JSON', raw);
-        return {};
-      }
-    } catch (error) {
-      await this.recordFailedUsage(
-        provider,
-        'instance_default',
-        usageContext,
-        error,
-      );
-      throw error;
+    const raw = response.choices[0]?.message?.content ?? '{}';
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      this.logger.error('Failed to parse quick character JSON', raw);
+      return {};
     }
   }
 
@@ -1693,37 +2143,20 @@ export class AiOrchestratorService {
     temperature?: number;
     fallback?: Record<string, unknown>;
   }): Promise<Record<string, unknown>> {
-    const runtimeProvider = await this.resolveRuntimeProvider();
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        options.usageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: options.prompt }],
-        max_tokens: options.maxTokens ?? 1200,
-        temperature: options.temperature ?? 0.3,
-        response_format: { type: 'json_object' },
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: options.usageContext,
+        characterId: options.usageContext.characterId,
+        label: 'json generation',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: options.prompt }],
+            max_tokens: options.maxTokens ?? 1200,
+            temperature: options.temperature ?? 0.3,
+            response_format: { type: 'json_object' },
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        options.usageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       const raw = response.choices[0]?.message?.content ?? '{}';
       try {
@@ -1733,12 +2166,6 @@ export class AiOrchestratorService {
         return options.fallback ?? {};
       }
     } catch (error) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        options.usageContext,
-        error,
-      );
       this.logger.error('generateJsonObject error', error);
       return options.fallback ?? {};
     }
@@ -1751,45 +2178,22 @@ export class AiOrchestratorService {
     temperature?: number;
     fallback?: string;
   }): Promise<string> {
-    const runtimeProvider = await this.resolveRuntimeProvider();
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        options.usageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: options.prompt }],
-        max_tokens: options.maxTokens ?? 800,
-        temperature: options.temperature ?? 0.4,
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: options.usageContext,
+        characterId: options.usageContext.characterId,
+        label: 'plain text generation',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: options.prompt }],
+            max_tokens: options.maxTokens ?? 800,
+            temperature: options.temperature ?? 0.4,
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        options.usageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (error) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        options.usageContext,
-        error,
-      );
       this.logger.error('generatePlainText error', error);
       return options.fallback ?? '';
     }
@@ -1810,7 +2214,6 @@ export class AiOrchestratorService {
       profile,
     );
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
     const resolvedUsageContext: AiUsageContext = {
       surface: usageContext?.surface ?? 'app',
       scene: usageContext?.scene ?? 'memory_compress',
@@ -1823,44 +2226,23 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
-    let failureProvider = runtimeProvider;
 
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        resolvedUsageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 200,
-        temperature: 0.3,
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: profile.characterId,
+        label: 'memory compression',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 200,
+            temperature: 0.3,
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (err) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        resolvedUsageContext,
-        err,
-      );
       this.logger.error('compressMemory error', err);
       return profile.memory?.recentSummary ?? profile.memorySummary;
     }
@@ -1876,7 +2258,6 @@ export class AiOrchestratorService {
       profile,
     );
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
     const resolvedUsageContext: AiUsageContext = {
       surface: usageContext?.surface ?? 'scheduler',
       scene: usageContext?.scene ?? 'core_memory_extract',
@@ -1887,44 +2268,22 @@ export class AiOrchestratorService {
       characterId: usageContext?.characterId ?? profile.characterId,
       characterName: usageContext?.characterName ?? profile.name,
     };
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        resolvedUsageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 300,
-        temperature: 0.3,
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: resolvedUsageContext.characterId,
+        label: 'core memory extraction',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 300,
+            temperature: 0.3,
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (err) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        resolvedUsageContext,
-        err,
-      );
       this.logger.error('extractCoreMemory error', err);
       return profile.memory?.coreMemory ?? profile.memorySummary ?? '';
     }
@@ -1940,11 +2299,6 @@ export class AiOrchestratorService {
     reason: string;
     requiredDomains: string[];
   }> {
-    const runtimeProvider = await this.resolveRuntimeProvider();
-    if (!runtimeProvider.apiKey) {
-      return { needsGroupChat: false, reason: '', requiredDomains: [] };
-    }
-
     const prompt = await this.promptBuilder.buildIntentClassificationPrompt(
       userMessage,
       characterName,
@@ -1963,36 +2317,20 @@ export class AiOrchestratorService {
       groupId: usageContext?.groupId,
     };
 
-    let failureProvider = runtimeProvider;
-
     try {
-      const budgetedProvider = await this.prepareBudgetAwareProvider(
-        runtimeProvider,
-        'instance_default',
-        resolvedUsageContext,
-      );
-      const provider = budgetedProvider.provider;
-      failureProvider = provider;
-      const client = this.createProviderClient(provider);
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 200,
-        temperature: 0.1,
-        response_format: { type: 'json_object' },
+      const response = await this.requestChatTaskWithFallback({
+        usageContext: resolvedUsageContext,
+        characterId: resolvedUsageContext.characterId,
+        label: 'intent classification',
+        request: (client, provider) =>
+          client.chat.completions.create({
+            model: provider.model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 200,
+            temperature: 0.1,
+            response_format: { type: 'json_object' },
+          }),
       });
-
-      const usage = this.normalizeUsageMetrics(response.usage);
-      await this.recordSuccessfulUsage(
-        provider,
-        'instance_default',
-        resolvedUsageContext,
-        {
-          usage,
-          model: response.model ?? provider.model,
-        },
-        budgetedProvider.usageAudit,
-      );
 
       const raw = response.choices[0]?.message?.content ?? '{}';
       return JSON.parse(raw) as {
@@ -2001,19 +2339,222 @@ export class AiOrchestratorService {
         requiredDomains: string[];
       };
     } catch (error) {
-      await this.recordFailedUsage(
-        failureProvider,
-        'instance_default',
-        resolvedUsageContext,
-        error,
-      );
       return { needsGroupChat: false, reason: '', requiredDomains: [] };
     }
   }
 
+  private toSpeechTranscriptionException(error: unknown) {
+    if (
+      error instanceof BadRequestException ||
+      error instanceof BadGatewayException ||
+      error instanceof ServiceUnavailableException
+    ) {
+      return error;
+    }
+
+    if (this.isAuthenticationFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音转写配置鉴权失败，请检查 Provider Key。',
+      );
+    }
+
+    if (this.isTransientSpeechFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音转写通道繁忙，请稍后再试。',
+      );
+    }
+
+    return new BadGatewayException(
+      '当前 Provider 暂不支持语音转写，请切换支持转写的模型或网关。',
+    );
+  }
+
+  private toSpeechSynthesisException(error: unknown) {
+    if (
+      error instanceof BadRequestException ||
+      error instanceof BadGatewayException ||
+      error instanceof ServiceUnavailableException
+    ) {
+      return error;
+    }
+
+    if (this.isAuthenticationFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音播报配置鉴权失败，请检查 Provider Key。',
+      );
+    }
+
+    if (this.isTransientSpeechFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音播报通道繁忙，请稍后再试。',
+      );
+    }
+
+    return new BadGatewayException(
+      '当前 Provider 暂不支持语音合成，请切换支持播报的模型或网关。',
+    );
+  }
+
+  private toImageGenerationException(error: unknown) {
+    if (
+      error instanceof BadRequestException ||
+      error instanceof BadGatewayException ||
+      error instanceof ServiceUnavailableException
+    ) {
+      return error;
+    }
+
+    if (this.isAuthenticationFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前图片生成配置鉴权失败，请检查 Provider Key。',
+      );
+    }
+
+    if (this.isTransientProviderFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前图片生成通道繁忙，请稍后再试。',
+      );
+    }
+
+    return new BadGatewayException(
+      '当前 Provider 暂不支持图片生成，请切换支持出图的模型或网关。',
+    );
+  }
+
+  async generateImage(
+    options: ImageGenerationOptions,
+  ): Promise<ImageGenerationResult> {
+    const prompt = options.prompt.trim();
+    if (!prompt) {
+      throw new BadRequestException('请先提供图片生成描述。');
+    }
+
+    const primaryProvider = await this.resolveRuntimeProvider({
+      characterId: options.characterId,
+    });
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId: options.characterId,
+      capability: 'image_generation',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的图片生成通道。',
+    );
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      const provider = attempt.provider;
+      const imageModel = this.resolveImageGenerationModel(provider);
+      if (!imageModel || !this.hasProviderCapability(provider, 'image_generation')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const client = this.createProviderClient(provider);
+      try {
+        const body: OpenAI.Images.ImageGenerateParamsNonStreaming = {
+          model: imageModel,
+          prompt,
+        };
+        if (/^(gpt-image|chatgpt-image)/i.test(imageModel)) {
+          body.output_format = 'png';
+          body.quality = 'medium';
+          body.size = options.size ?? '1024x1024';
+        } else if (/^dall-e-3/i.test(imageModel)) {
+          body.quality = 'standard';
+          body.response_format = 'b64_json';
+          body.size = '1024x1024';
+        } else if (/^dall-e-2/i.test(imageModel)) {
+          body.response_format = 'b64_json';
+          body.size = '1024x1024';
+        }
+
+        const response = await client.images.generate(body);
+        const image = 'data' in response ? response.data?.[0] : undefined;
+        if (!image) {
+          throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+        }
+
+        if (image.b64_json) {
+          const buffer = Buffer.from(image.b64_json, 'base64');
+          if (!buffer.length) {
+            throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+          }
+
+          return {
+            buffer,
+            mimeType: 'image/png',
+            fileExtension: 'png',
+            provider: imageModel,
+            revisedPrompt: image.revised_prompt,
+          };
+        }
+
+        if (image.url) {
+          const asset = await this.loadAssetFromUrl(image.url, 10 * 1024 * 1024);
+          if (!asset?.buffer.length) {
+            throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+          }
+
+          const mimeType =
+            this.normalizeMediaMimeType(asset.mimeType) ?? 'image/png';
+          return {
+            buffer: asset.buffer,
+            mimeType,
+            fileExtension: this.getImageFileExtension(mimeType),
+            provider: imageModel,
+            revisedPrompt: image.revised_prompt,
+          };
+        }
+
+        throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+      } catch (error) {
+        lastError = error;
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error('image generation failed', {
+            conversationId: options.conversationId,
+            characterId: options.characterId,
+            model: imageModel,
+            promptLength: prompt.length,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw this.toImageGenerationException(error);
+        }
+
+        this.logger.warn('image generation fallback scheduled', {
+          conversationId: options.conversationId,
+          characterId: options.characterId,
+          fromModel: imageModel,
+          toModel: this.resolveImageGenerationModel(
+            attempts[index + 1]?.provider ?? provider,
+          ),
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
+      }
+    }
+
+    if (!attemptedProvider) {
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的图片生成通道。',
+      );
+    }
+
+    throw this.toImageGenerationException(lastError);
+  }
+
   async transcribeAudio(
     file: UploadedAudioFile,
-    options: { conversationId?: string; mode?: string },
+    options: { conversationId?: string; characterId?: string; mode?: string },
   ) {
     if (!file.buffer?.length) {
       throw new BadRequestException('没有收到可转写的音频内容。');
@@ -2029,153 +2570,207 @@ export class AiOrchestratorService {
       );
     }
 
-    const provider = await this.resolveProviderConfig();
-    if (!provider.transcriptionApiKey.trim()) {
+    const primaryProvider = await this.resolveRuntimeProvider({
+      characterId: options.characterId,
+    });
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId: options.characterId,
+      capability: 'transcription',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
+    const startedAt = Date.now();
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的 AI Key，暂时无法转写语音。',
+    );
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      const provider = attempt.provider;
+      if (!this.hasProviderCapability(provider, 'transcription')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const client = new OpenAI({
+        apiKey: provider.transcriptionApiKey,
+        baseURL: provider.transcriptionEndpoint,
+      });
+
+      try {
+        const response = await this.retrySpeechRequest(
+          'speech transcription',
+          async () =>
+            client.audio.transcriptions.create({
+              file: await toFile(
+                file.buffer,
+                file.originalname || 'speech-input.webm',
+                {
+                  type: file.mimetype || 'audio/webm',
+                },
+              ),
+              model: provider.transcriptionModel,
+              language: 'zh',
+              prompt: '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
+            }),
+        );
+        const text = response.text.trim();
+
+        if (!text) {
+          throw new BadGatewayException(
+            '这段语音没有识别出有效文字，请再说一遍。',
+          );
+        }
+
+        return {
+          text,
+          durationMs: Date.now() - startedAt,
+          provider: provider.transcriptionModel || provider.model,
+        };
+      } catch (error) {
+        lastError = error;
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error('speech transcription failed', {
+            conversationId: options.conversationId,
+            characterId: options.characterId,
+            mode: options.mode,
+            mimetype: file.mimetype,
+            size: file.size,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw this.toSpeechTranscriptionException(error);
+        }
+
+        this.logger.warn('speech transcription fallback scheduled', {
+          conversationId: options.conversationId,
+          characterId: options.characterId,
+          mode: options.mode,
+          fromModel: provider.transcriptionModel || provider.model,
+          toModel:
+            attempts[index + 1]?.provider.transcriptionModel ||
+            attempts[index + 1]?.provider.model,
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
+      }
+    }
+
+    if (!attemptedProvider) {
       throw new ServiceUnavailableException(
         '当前实例未配置可用的 AI Key，暂时无法转写语音。',
       );
     }
 
-    const client = new OpenAI({
-      apiKey: provider.transcriptionApiKey,
-      baseURL: provider.transcriptionEndpoint,
-    });
-    const startedAt = Date.now();
-
-    try {
-      const response = await this.retrySpeechRequest(
-        'speech transcription',
-        async () =>
-          client.audio.transcriptions.create({
-            file: await toFile(
-              file.buffer,
-              file.originalname || 'speech-input.webm',
-              {
-                type: file.mimetype || 'audio/webm',
-              },
-            ),
-            model: provider.transcriptionModel,
-            language: 'zh',
-            prompt: '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
-          }),
-      );
-      const text = response.text.trim();
-
-      if (!text) {
-        throw new BadGatewayException(
-          '这段语音没有识别出有效文字，请再说一遍。',
-        );
-      }
-
-      return {
-        text,
-        durationMs: Date.now() - startedAt,
-        provider: provider.model,
-      };
-    } catch (error) {
-      if (error instanceof BadGatewayException) {
-        throw error;
-      }
-
-      this.logger.error('speech transcription failed', {
-        conversationId: options.conversationId,
-        mode: options.mode,
-        mimetype: file.mimetype,
-        size: file.size,
-        errorMessage: this.extractErrorMessage(error),
-      });
-
-      if (this.isAuthenticationFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音转写配置鉴权失败，请检查 Provider Key。',
-        );
-      }
-
-      if (this.isTransientSpeechFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音转写通道繁忙，请稍后再试。',
-        );
-      }
-
-      throw new BadGatewayException(
-        '当前 Provider 暂不支持语音转写，请切换支持转写的模型或网关。',
-      );
-    }
+    throw this.toSpeechTranscriptionException(lastError);
   }
 
   async synthesizeSpeech(
     options: SpeechSynthesisOptions,
   ): Promise<SpeechSynthesisResult> {
-    const provider = await this.resolveProviderConfig();
-    if (!provider.apiKey.trim()) {
-      throw new ServiceUnavailableException(
-        '当前实例未配置可用的 AI Key，暂时无法生成语音。',
-      );
-    }
+    const primaryProvider = await this.resolveRuntimeProvider({
+      characterId: options.characterId,
+    });
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId: options.characterId,
+      capability: 'tts',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
 
     const text = options.text.trim();
     if (!text) {
       throw new BadRequestException('请先提供要播报的文本。');
     }
 
-    const voice =
-      options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE;
-    const client = this.createProviderClient(provider);
     const startedAt = Date.now();
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的 AI Key，暂时无法生成语音。',
+    );
 
-    try {
-      const response = await this.retrySpeechRequest('speech synthesis', () =>
-        client.audio.speech.create({
-          model: provider.ttsModel,
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      const provider = attempt.provider;
+      if (!this.hasProviderCapability(provider, 'tts')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const voice =
+        options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE;
+      const client = this.createProviderClient(provider);
+
+      try {
+        const response = await this.retrySpeechRequest('speech synthesis', () =>
+          client.audio.speech.create({
+            model: provider.ttsModel,
+            voice,
+            input: text,
+            response_format: 'mp3',
+            instructions: options.instructions?.trim() || undefined,
+          }),
+        );
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        if (!buffer.length) {
+          throw new BadGatewayException('语音生成结果为空，请稍后再试。');
+        }
+
+        return {
+          buffer,
+          mimeType: 'audio/mpeg',
+          fileExtension: 'mp3',
+          durationMs: Date.now() - startedAt,
+          provider: provider.ttsModel,
           voice,
-          input: text,
-          response_format: 'mp3',
-          instructions: options.instructions?.trim() || undefined,
-        }),
-      );
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+        };
+      } catch (error) {
+        lastError = error;
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error('speech synthesis failed', {
+            conversationId: options.conversationId,
+            characterId: options.characterId,
+            voice,
+            textLength: text.length,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw this.toSpeechSynthesisException(error);
+        }
 
-      if (!buffer.length) {
-        throw new BadGatewayException('语音生成结果为空，请稍后再试。');
+        this.logger.warn('speech synthesis fallback scheduled', {
+          conversationId: options.conversationId,
+          characterId: options.characterId,
+          voice,
+          fromModel: provider.ttsModel,
+          toModel: attempts[index + 1]?.provider.ttsModel,
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
       }
+    }
 
-      return {
-        buffer,
-        mimeType: 'audio/mpeg',
-        fileExtension: 'mp3',
-        durationMs: Date.now() - startedAt,
-        provider: provider.ttsModel,
-        voice,
-      };
-    } catch (error) {
-      if (error instanceof BadGatewayException) {
-        throw error;
-      }
-
-      this.logger.error('speech synthesis failed', {
-        conversationId: options.conversationId,
-        characterId: options.characterId,
-        voice,
-        textLength: text.length,
-        errorMessage: this.extractErrorMessage(error),
-      });
-
-      if (this.isAuthenticationFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音播报配置鉴权失败，请检查 Provider Key。',
-        );
-      }
-
-      if (this.isTransientSpeechFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音播报通道繁忙，请稍后再试。',
-        );
-      }
-
-      throw new BadGatewayException(
-        '当前 Provider 暂不支持语音合成，请切换支持播报的模型或网关。',
+    if (!attemptedProvider) {
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的 AI Key，暂时无法生成语音。',
       );
     }
+
+    throw this.toSpeechSynthesisException(lastError);
   }
 }

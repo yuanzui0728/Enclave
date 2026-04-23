@@ -19,6 +19,7 @@ import type {
   CyberAvatarLiveState,
   CyberAvatarProfilePayload,
   CyberAvatarPromptProjection,
+  CyberAvatarPromptProjectionSection,
   CyberAvatarRunMode,
   CyberAvatarRunTrigger,
   CyberAvatarSignalInput,
@@ -69,11 +70,13 @@ function normalizeStringList(value: unknown, limit = 6) {
     return [];
   }
 
-  return [...new Set(
-    value
-      .map((item) => (typeof item === 'string' ? item.trim() : ''))
-      .filter(Boolean),
-  )].slice(0, limit);
+  return [
+    ...new Set(
+      value
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter(Boolean),
+    ),
+  ].slice(0, limit);
 }
 
 function normalizeScore(value: unknown, fallback = 0.5) {
@@ -103,6 +106,18 @@ type NormalizedIncrementalOutput = {
   confidence: CyberAvatarProfilePayload['confidence'];
   changeSummary: string[];
   shouldRefreshStableCore: boolean;
+};
+
+const DEFAULT_PROMPT_SECTION_LABELS: Record<
+  CyberAvatarPromptProjectionSection,
+  string
+> = {
+  coreInstruction: '核心约束',
+  worldInteractionPrompt: '世界内互动',
+  realWorldInteractionPrompt: '真实世界互动',
+  proactivePrompt: '主动跟进',
+  actionPlanningPrompt: '动作规划',
+  memoryBlock: '赛博分身记忆',
 };
 
 @Injectable()
@@ -223,6 +238,59 @@ export class CyberAvatarService {
     return this.serializeProfile(await this.ensureProfile(owner.id));
   }
 
+  async buildPromptContext(options?: {
+    sections?: CyberAvatarPromptProjectionSection[];
+    sectionLabels?: Partial<Record<CyberAvatarPromptProjectionSection, string>>;
+  }) {
+    try {
+      const profile = await this.getProfile();
+      if ((profile.signalCount ?? 0) <= 0) {
+        return '';
+      }
+
+      const sections =
+        options?.sections?.length &&
+        options.sections.every((section) => typeof section === 'string')
+          ? options.sections
+          : ([
+              'coreInstruction',
+              'worldInteractionPrompt',
+              'memoryBlock',
+            ] satisfies CyberAvatarPromptProjectionSection[]);
+
+      return sections
+        .map((section) => {
+          const value = profile.promptProjection[section]?.trim();
+          if (!value) {
+            return '';
+          }
+
+          const label =
+            options?.sectionLabels?.[section] ??
+            DEFAULT_PROMPT_SECTION_LABELS[section];
+          return label ? `【${label}】\n${value}` : value;
+        })
+        .filter(Boolean)
+        .join('\n\n');
+    } catch {
+      return '';
+    }
+  }
+
+  async buildPromptSections(options?: {
+    sections?: CyberAvatarPromptProjectionSection[];
+    sectionLabels?: Partial<Record<CyberAvatarPromptProjectionSection, string>>;
+    tagName?: string;
+  }) {
+    const content = await this.buildPromptContext(options);
+    if (!content) {
+      return [] as string[];
+    }
+
+    const tagName = options?.tagName?.trim() || 'owner_cyber_avatar_context';
+    return [`<${tagName}>\n${content}\n</${tagName}>`];
+  }
+
   async listSignals(options?: { limit?: number }) {
     const signals = await this.listSignalEntities(options);
     return signals.map((item) => this.serializeSignal(item));
@@ -259,9 +327,7 @@ export class CyberAvatarService {
     return run ? this.serializeRunDetail(run) : null;
   }
 
-  async runIncrementalRefresh(options?: {
-    trigger?: CyberAvatarRunTrigger;
-  }) {
+  async runIncrementalRefresh(options?: { trigger?: CyberAvatarRunTrigger }) {
     return this.executeRefresh({
       mode: 'incremental',
       trigger: options?.trigger ?? 'manual',
@@ -367,9 +433,12 @@ export class CyberAvatarService {
     }
 
     if (input.mode === 'incremental') {
-      await this.signalRepo.update(sourceSignals.map((item) => item.id), {
-        status: 'processing',
-      });
+      await this.signalRepo.update(
+        sourceSignals.map((item) => item.id),
+        {
+          status: 'processing',
+        },
+      );
     }
 
     try {
@@ -417,13 +486,10 @@ export class CyberAvatarService {
           rules,
         );
       } else {
-        const prompt = renderTemplate(
-          rules.promptTemplates.deepRefreshPrompt,
-          {
-            currentProfile: JSON.stringify(currentPayload, null, 2),
-            aggregation: JSON.stringify(aggregation, null, 2),
-          },
-        );
+        const prompt = renderTemplate(rules.promptTemplates.deepRefreshPrompt, {
+          currentProfile: JSON.stringify(currentPayload, null, 2),
+          aggregation: JSON.stringify(aggregation, null, 2),
+        });
         promptSnapshot.deepRefreshPrompt = prompt;
         llmOutputPayload = await this.ai.generateJsonObject({
           prompt,
@@ -475,7 +541,8 @@ export class CyberAvatarService {
           sourceSignals[sourceSignals.length - 1]?.occurredAt ??
           profile.lastSignalAt ??
           now,
-        lastBuiltAt: input.mode === 'projection_only' ? profile.lastBuiltAt : now,
+        lastBuiltAt:
+          input.mode === 'projection_only' ? profile.lastBuiltAt : now,
         lastProjectedAt: now,
       });
 
@@ -535,7 +602,9 @@ export class CyberAvatarService {
           profileVersion: profile.version,
           skipReason: null,
           errorMessage:
-            error instanceof Error ? error.message : 'Unknown cyber avatar error',
+            error instanceof Error
+              ? error.message
+              : 'Unknown cyber avatar error',
         }),
       );
       await this.profileRepo.save({
@@ -551,7 +620,9 @@ export class CyberAvatarService {
 
   private isSignalEnabled(
     signalType: string,
-    toggles: Awaited<ReturnType<CyberAvatarRulesService['getRules']>>['sourceToggles'],
+    toggles: Awaited<
+      ReturnType<CyberAvatarRulesService['getRules']>
+    >['sourceToggles'],
   ) {
     switch (signalType) {
       case 'direct_message':
@@ -570,6 +641,12 @@ export class CyberAvatarService {
         return toggles.includeFriendshipEvents;
       case 'owner_profile_update':
         return toggles.includeOwnerProfileUpdates;
+      case 'search_activity':
+        return toggles.includeSearchActivity;
+      case 'favorite_action':
+        return toggles.includeFavoriteActions;
+      case 'real_world_action':
+        return toggles.includeRealWorldActions;
       case 'location_update':
         return toggles.includeLocationUpdates;
       case 'real_world_item':
@@ -628,7 +705,9 @@ export class CyberAvatarService {
     );
   }
 
-  private readProfilePayload(entity: CyberAvatarProfileEntity): CyberAvatarProfilePayload {
+  private readProfilePayload(
+    entity: CyberAvatarProfileEntity,
+  ): CyberAvatarProfilePayload {
     const empty = createEmptyCyberAvatarProfile();
     return {
       liveState: {
@@ -658,7 +737,9 @@ export class CyberAvatarService {
     };
   }
 
-  private aggregateSignals(signals: CyberAvatarSignalEntity[]): CyberAvatarAggregationPayload {
+  private aggregateSignals(
+    signals: CyberAvatarSignalEntity[],
+  ): CyberAvatarAggregationPayload {
     if (!signals.length) {
       return createEmptyCyberAvatarAggregation();
     }
@@ -668,8 +749,10 @@ export class CyberAvatarService {
     const keywords = new Map<string, number>();
 
     for (const signal of signals) {
-      signalTypes[signal.signalType] = (signalTypes[signal.signalType] ?? 0) + 1;
-      surfaces[signal.sourceSurface] = (surfaces[signal.sourceSurface] ?? 0) + 1;
+      signalTypes[signal.signalType] =
+        (signalTypes[signal.signalType] ?? 0) + 1;
+      surfaces[signal.sourceSurface] =
+        (surfaces[signal.sourceSurface] ?? 0) + 1;
 
       for (const keyword of this.extractKeywords(signal.summaryText)) {
         keywords.set(keyword, (keywords.get(keyword) ?? 0) + signal.weight);
@@ -692,9 +775,8 @@ export class CyberAvatarService {
 
   private extractKeywords(text: string) {
     const matches =
-      text
-        .toLowerCase()
-        .match(/[\u4e00-\u9fa5]{2,}|[a-z0-9][a-z0-9_-]{2,}/g) ?? [];
+      text.toLowerCase().match(/[\u4e00-\u9fa5]{2,}|[a-z0-9][a-z0-9_-]{2,}/g) ??
+      [];
     return [...new Set(matches.filter((item) => !STOP_WORDS.has(item)))];
   }
 
@@ -707,19 +789,25 @@ export class CyberAvatarService {
     const normalized = this.normalizeIncrementalOutput(raw, aggregation);
     const stableCoreChanged =
       normalized.shouldRefreshStableCore ||
-      normalized.confidence.stableCore >= rules.mergeRules.stableCoreChangeThreshold;
+      normalized.confidence.stableCore >=
+        rules.mergeRules.stableCoreChangeThreshold;
     const next: CyberAvatarProfilePayload = {
       liveState: normalized.liveState,
       recentState: normalized.recentState,
       stableCore: stableCoreChanged
-        ? this.mergeStableCore(current.stableCore, normalized.stableCoreCandidate)
+        ? this.mergeStableCore(
+            current.stableCore,
+            normalized.stableCoreCandidate,
+          )
         : current.stableCore,
       confidence: normalized.confidence,
       sourceCoverage: {
         windowDays: rules.scheduling.recentWindowDays,
         signalCount: aggregation.signalCount,
         coveredSurfaces: Object.keys(aggregation.surfaces),
-        missingSurfaces: this.buildMissingSurfaces(Object.keys(aggregation.surfaces)),
+        missingSurfaces: this.buildMissingSurfaces(
+          Object.keys(aggregation.surfaces),
+        ),
       },
       promptProjection: current.promptProjection,
     };
@@ -740,7 +828,10 @@ export class CyberAvatarService {
     );
     const next: CyberAvatarProfilePayload = {
       liveState: this.normalizeLiveState(raw?.liveState, fallback.liveState),
-      recentState: this.normalizeRecentState(raw?.recentState, fallback.recentState),
+      recentState: this.normalizeRecentState(
+        raw?.recentState,
+        fallback.recentState,
+      ),
       stableCore,
       confidence: {
         liveState: normalizeScore(
@@ -763,7 +854,9 @@ export class CyberAvatarService {
             : rules.scheduling.stableCoreWindowDays,
         signalCount: aggregation.signalCount,
         coveredSurfaces: Object.keys(aggregation.surfaces),
-        missingSurfaces: this.buildMissingSurfaces(Object.keys(aggregation.surfaces)),
+        missingSurfaces: this.buildMissingSurfaces(
+          Object.keys(aggregation.surfaces),
+        ),
       },
       promptProjection: current.promptProjection,
     };
@@ -775,10 +868,16 @@ export class CyberAvatarService {
     raw: Record<string, unknown> | null,
     aggregation: CyberAvatarAggregationPayload,
   ): NormalizedIncrementalOutput {
-    const fallback = this.buildFallbackProfile(createEmptyCyberAvatarProfile(), aggregation);
+    const fallback = this.buildFallbackProfile(
+      createEmptyCyberAvatarProfile(),
+      aggregation,
+    );
     return {
       liveState: this.normalizeLiveState(raw?.liveState, fallback.liveState),
-      recentState: this.normalizeRecentState(raw?.recentState, fallback.recentState),
+      recentState: this.normalizeRecentState(
+        raw?.recentState,
+        fallback.recentState,
+      ),
       stableCoreCandidate: this.normalizeStableCore(
         raw?.stableCoreCandidate,
         fallback.stableCore,
@@ -869,7 +968,8 @@ export class CyberAvatarService {
     const value = (raw ?? {}) as Record<string, unknown>;
     return {
       identitySummary:
-        typeof value.identitySummary === 'string' && value.identitySummary.trim()
+        typeof value.identitySummary === 'string' &&
+        value.identitySummary.trim()
           ? value.identitySummary.trim()
           : fallback.identitySummary,
       communicationStyle: this.pickList(
@@ -930,7 +1030,9 @@ export class CyberAvatarService {
           ? candidate.routinePatterns
           : current.routinePatterns,
       boundaries:
-        candidate.boundaries.length > 0 ? candidate.boundaries : current.boundaries,
+        candidate.boundaries.length > 0
+          ? candidate.boundaries
+          : current.boundaries,
       riskTolerance:
         candidate.riskTolerance.length > 0
           ? candidate.riskTolerance
@@ -954,8 +1056,7 @@ export class CyberAvatarService {
       (signalTypes.feed_post ?? 0) +
       (signalTypes.channel_post ?? 0);
     const realWorldSignals =
-      (signalTypes.real_world_item ?? 0) +
-      (signalTypes.real_world_brief ?? 0);
+      (signalTypes.real_world_item ?? 0) + (signalTypes.real_world_brief ?? 0);
 
     const liveState: CyberAvatarLiveState = {
       focus,
@@ -976,7 +1077,7 @@ export class CyberAvatarService {
             ? '近期更偏向公开表达。'
             : realWorldSignals > 0
               ? '近期开始持续吸收外部世界信息。'
-            : current.liveState.socialTemperature,
+              : current.liveState.socialTemperature,
       activeTopics: aggregation.topKeywords.slice(0, 6),
       openLoops: summaries.slice(-3),
     };
@@ -1035,19 +1136,20 @@ export class CyberAvatarService {
       recentState,
       stableCore,
       confidence: {
-        liveState: aggregation.signalCount > 0 ? 0.6 : current.confidence.liveState,
+        liveState:
+          aggregation.signalCount > 0 ? 0.6 : current.confidence.liveState,
         recentState:
           aggregation.signalCount >= 3 ? 0.55 : current.confidence.recentState,
         stableCore:
-          aggregation.signalCount >= 15
-            ? 0.55
-            : current.confidence.stableCore,
+          aggregation.signalCount >= 15 ? 0.55 : current.confidence.stableCore,
       },
       sourceCoverage: {
         windowDays: 0,
         signalCount: aggregation.signalCount,
         coveredSurfaces: Object.keys(aggregation.surfaces),
-        missingSurfaces: this.buildMissingSurfaces(Object.keys(aggregation.surfaces)),
+        missingSurfaces: this.buildMissingSurfaces(
+          Object.keys(aggregation.surfaces),
+        ),
       },
       promptProjection: current.promptProjection,
     };
@@ -1123,7 +1225,8 @@ export class CyberAvatarService {
       liveStateChanged:
         JSON.stringify(current.liveState) !== JSON.stringify(next.liveState),
       recentStateChanged:
-        JSON.stringify(current.recentState) !== JSON.stringify(next.recentState),
+        JSON.stringify(current.recentState) !==
+        JSON.stringify(next.recentState),
       stableCoreChanged:
         JSON.stringify(current.stableCore) !== JSON.stringify(next.stableCore),
       promptProjectionChanged:

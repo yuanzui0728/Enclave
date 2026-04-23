@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
+import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { type AiMessagePart, type ChatMessage } from '../ai/ai.types';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharactersService } from '../characters/characters.service';
@@ -31,6 +32,11 @@ import {
   type GroupReplyTaskArchiveStore,
 } from './group-reply-task-observability';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
+import { ReplyArtifactJobService } from './reply-artifact-job.service';
+import {
+  type GroupMessage,
+  type MessageAttachment,
+} from './chat.types';
 
 const GROUP_REPLY_TASK_BATCH_SIZE = 12;
 const GROUP_REPLY_PROCESSING_RETRY_MS = 2 * 60 * 1000;
@@ -60,6 +66,7 @@ export class GroupReplyTaskService {
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly chatGateway: ChatGateway,
     private readonly groupReplyOrchestrator: GroupReplyOrchestratorService,
+    private readonly replyArtifactJobs: ReplyArtifactJobService,
   ) {}
 
   async scheduleTurn(input: {
@@ -81,6 +88,13 @@ export class GroupReplyTaskService {
     await this.cancelPendingTasksForGroup(
       groupId,
       'superseded_by_new_user_message',
+    );
+    await this.replyArtifactJobs.cancelGroupJobs(
+      groupId,
+      'superseded_by_new_user_message',
+      {
+        beforeSourceMessageCreatedAt: triggerMessageCreatedAt,
+      },
     );
     const selectedActors = plannerDecision.selectedActors;
     if (!selectedActors.length) {
@@ -394,43 +408,67 @@ export class GroupReplyTaskService {
         where: {
           groupId: task.groupId,
           senderType: 'character',
+          type: 'text',
           createdAt: MoreThan(task.triggerMessageCreatedAt),
         },
         order: { createdAt: 'ASC' },
       });
 
-      const reply = await this.groupReplyOrchestrator.generateTaskReply({
-        actor: {
+      this.chatGateway.emitTypingStart(task.groupId, character.id, 'reply');
+      try {
+        const reply = await this.groupReplyOrchestrator.generateTaskReply({
+          actor: {
+            character,
+            profile: runtimeProfile,
+            score: 0,
+            randomPassed: true,
+            isExplicitTarget: false,
+            isReplyTarget: false,
+            recentSpeakerIndex: -1,
+          },
+          groupId: task.groupId,
+          groupName: group?.name,
+          conversationHistory,
+          baseUserPrompt: task.userPromptText,
+          userMessageParts,
+          followupReplies: followupReplies.map((message) => ({
+            senderName: message.senderName,
+            text: message.text,
+          })),
+          allowMultiModal:
+            task.sequenceIndex === 0 ||
+            task.isExplicitTarget ||
+            task.isReplyTarget,
+        });
+
+        if (await this.hasNewerUserMessage(task)) {
+          await this.markTaskCancelled(task, 'superseded_by_new_user_message');
+          return;
+        }
+
+        const sentAt = await this.persistCharacterReply(
+          task.groupId,
           character,
-          profile: runtimeProfile,
-          score: 0,
-          randomPassed: true,
-          isExplicitTarget: false,
-          isReplyTarget: false,
-          recentSpeakerIndex: -1,
-        },
-        groupId: task.groupId,
-        groupName: group?.name,
-        conversationHistory,
-        baseUserPrompt: task.userPromptText,
-        userMessageParts,
-        followupReplies: followupReplies.map((message) => ({
-          senderName: message.senderName,
-          text: message.text,
-        })),
-      });
-
-      if (await this.hasNewerUserMessage(task)) {
-        await this.markTaskCancelled(task, 'superseded_by_new_user_message');
-        return;
+          reply.text,
+        );
+        await this.markTaskSent(task, sentAt);
+        if (reply.modalities.includeVoice || reply.modalities.imagePrompt) {
+          await this.replyArtifactJobs.scheduleGroupReplyArtifactJobs({
+            groupId: task.groupId,
+            groupReplyTaskId: task.id,
+            sourceMessageId: task.triggerMessageId,
+            sourceMessageCreatedAt: task.triggerMessageCreatedAt,
+            characterId: character.id,
+            characterName: character.name,
+            characterAvatar: character.avatar ?? null,
+            text: reply.text,
+            modalities: reply.modalities,
+          });
+          void this.replyArtifactJobs.processDueJobs();
+        }
+      } finally {
+        this.chatGateway.emitTypingStop(task.groupId, character.id, 'reply');
       }
-
-      const sentAt = await this.persistCharacterReply(
-        task.groupId,
-        character,
-        reply.text,
-      );
-      await this.markTaskSent(task, sentAt);
     } catch (error) {
       task.status = 'failed';
       task.errorMessage =
@@ -510,6 +548,7 @@ export class GroupReplyTaskService {
         groupId: task.groupId,
         senderType: 'character',
         senderId: task.actorCharacterId,
+        type: 'text',
         createdAt: MoreThan(task.triggerMessageCreatedAt),
       },
       order: { createdAt: 'ASC' },
@@ -537,18 +576,54 @@ export class GroupReplyTaskService {
     });
     await this.groupMessageRepo.save(message);
     await this.touchGroupActivity(group, message.createdAt ?? new Date());
-    this.chatGateway.emitThreadMessage(groupId, {
-      id: message.id,
-      groupId,
-      senderId: message.senderId,
-      senderType: 'character',
-      senderName: message.senderName,
-      senderAvatar: message.senderAvatar ?? undefined,
-      type: 'text',
-      text,
-      createdAt: message.createdAt,
-    });
+    this.chatGateway.emitThreadMessage(groupId, this.toGroupMessage(message));
     return message.createdAt ?? new Date();
+  }
+
+  private toGroupMessage(entity: GroupMessageEntity): GroupMessage {
+    return {
+      id: entity.id,
+      groupId: entity.groupId,
+      senderId: entity.senderId,
+      senderType: entity.senderType as 'user' | 'character' | 'system',
+      senderName: entity.senderName,
+      senderAvatar: entity.senderAvatar ?? undefined,
+      type: entity.type as
+        | 'text'
+        | 'system'
+        | 'sticker'
+        | 'image'
+        | 'file'
+        | 'voice'
+        | 'contact_card'
+        | 'location_card'
+        | 'note_card',
+      text:
+        entity.senderType === 'user'
+          ? entity.text
+          : sanitizeAiText(entity.text),
+      attachment: this.parseAttachment(entity),
+      createdAt: entity.createdAt,
+    };
+  }
+
+  private parseAttachment(
+    entity: GroupMessageEntity,
+  ): MessageAttachment | undefined {
+    if (!entity.attachmentKind || !entity.attachmentPayload) {
+      return undefined;
+    }
+
+    try {
+      const parsed = JSON.parse(entity.attachmentPayload) as MessageAttachment;
+      if (parsed.kind !== entity.attachmentKind) {
+        return undefined;
+      }
+
+      return parsed;
+    } catch {
+      return undefined;
+    }
   }
 
   private async markTaskCancelled(task: GroupReplyTaskEntity, reason: string) {
@@ -556,6 +631,9 @@ export class GroupReplyTaskService {
     task.cancelReason = reason;
     task.cancelledAt = new Date();
     await this.taskRepo.save(task);
+    await this.replyArtifactJobs.cancelGroupJobs(task.groupId, reason, {
+      groupReplyTaskId: task.id,
+    });
   }
 
   private async markTaskSent(task: GroupReplyTaskEntity, sentAt: Date) {
