@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { type ChatMessage } from '../ai/ai.types';
-import { SELF_CHARACTER_ID } from '../characters/default-characters';
-import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import {
   buildReplyModalityPromptSections,
   extractRequestedImagePrompt,
@@ -20,10 +18,7 @@ import {
 export class GroupReplyOrchestratorService {
   private readonly latestTriggerMessageByGroup = new Map<string, string>();
 
-  constructor(
-    private readonly ai: AiOrchestratorService,
-    private readonly cyberAvatar: CyberAvatarService,
-  ) {}
+  constructor(private readonly ai: AiOrchestratorService) {}
 
   async generateTaskReply(input: {
     actor: GroupReplyCandidate;
@@ -55,10 +50,7 @@ export class GroupReplyOrchestratorService {
           includeVoice: false,
           promptSections: [],
         };
-    const extraSystemPromptSections = [
-      ...(await this.buildCyberAvatarPromptSections(actor.character.id)),
-      ...replyModalities.promptSections,
-    ];
+    const extraSystemPromptSections = [...replyModalities.promptSections];
 
     for (const reply of followupReplies) {
       rollingHistory.push({
@@ -131,8 +123,6 @@ export class GroupReplyOrchestratorService {
       }
 
       try {
-        const extraSystemPromptSections =
-          await this.buildCyberAvatarPromptSections(actor.character.id);
         const reply = await this.ai.generateReply({
           profile: actor.profile,
           conversationHistory: rollingHistory,
@@ -142,7 +132,6 @@ export class GroupReplyOrchestratorService {
           ),
           userMessageParts: currentUserContext.parts,
           isGroupChat: true,
-          extraSystemPromptSections,
           emptyTextFallback: '',
           usageContext: {
             surface: 'app',
@@ -189,16 +178,6 @@ export class GroupReplyOrchestratorService {
       content: sanitizeAiText(text) || '（无回复）',
       characterId: actor.character.name,
     };
-  }
-
-  private async buildCyberAvatarPromptSections(characterId: string) {
-    if (characterId !== SELF_CHARACTER_ID) {
-      return [] as string[];
-    }
-
-    return this.cyberAvatar.buildPromptSections({
-      sections: ['coreInstruction', 'worldInteractionPrompt', 'memoryBlock'],
-    });
   }
 
   private async planAssistantReplyModalities(input: {
