@@ -2200,6 +2200,8 @@ function resolveMobileHandoffCategory(
     normalizedPath === "/contacts" ||
     normalizedPath === "/tabs/discover" ||
     normalizedPath === "/discover" ||
+    normalizedPath === "/discover/encounter" ||
+    normalizedPath === "/discover/scene" ||
     normalizedPath === "/tabs/moments" ||
     normalizedPath === "/moments" ||
     normalizedPath.startsWith("/discover/moments") ||
