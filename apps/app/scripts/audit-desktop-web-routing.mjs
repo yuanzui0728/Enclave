@@ -589,8 +589,9 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /contacts, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
     includes: [
+      'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
       "buildDesktopMomentsRouteHash,",
       "parseDesktopMomentsRouteState,",
       "buildDesktopChannelsRouteHash,",
@@ -610,6 +611,7 @@ const expectations = [
       "buildDesktopOfficialServiceThreadPath,",
       "buildDesktopSubscriptionInboxPath,",
       "options?: SearchNavigationOptions,",
+      "resolveDesktopWorkspaceNavigationTarget(normalizedTarget)",
       "resolveDesktopConversationNavigationTarget(normalizedTarget)",
       "resolveDesktopContactsNavigationTarget(normalizedTarget)",
       "resolveDesktopDiscoverNavigationTarget(normalizedTarget)",
@@ -619,6 +621,13 @@ const expectations = [
       "resolveDesktopChannelsNavigationTarget(normalizedTarget)",
       "resolveDesktopMomentsNavigationTarget(normalizedTarget)",
       "resolveDesktopOfficialNavigationTarget(normalizedTarget)",
+      'target.to === "/chat"',
+      'target.to === "/contacts"',
+      'target.to === "/favorites" || target.to === "/tabs/favorites"',
+      'target.to === "/notes"',
+      'category: "notes",',
+      'target.to === "/profile/settings"',
+      'to: "/desktop/settings",',
       'to: "/tabs/chat",',
       'target.to !== "/discover" &&',
       'target.to !== "/tabs/discover" &&',

@@ -2,6 +2,7 @@ import {
   buildDesktopContactsRouteHash,
   parseDesktopContactsRouteState,
 } from "../contacts/contacts-route-state";
+import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";
 import {
   buildDesktopChatRouteHash,
   buildDesktopOfficialServiceThreadPath,
@@ -77,6 +78,7 @@ export function resolveSearchNavigationTarget(
   }
 
   return (
+    resolveDesktopWorkspaceNavigationTarget(normalizedTarget) ??
     resolveDesktopConversationNavigationTarget(normalizedTarget) ??
     resolveDesktopContactsNavigationTarget(normalizedTarget) ??
     resolveDesktopDiscoverNavigationTarget(normalizedTarget) ??
@@ -88,6 +90,50 @@ export function resolveSearchNavigationTarget(
     resolveDesktopOfficialNavigationTarget(normalizedTarget) ??
     normalizedTarget
   );
+}
+
+function resolveDesktopWorkspaceNavigationTarget(
+  target: SearchNavigationTarget,
+) {
+  if (target.to === "/chat") {
+    return {
+      to: "/tabs/chat",
+      hash: target.hash,
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/contacts") {
+    return {
+      to: "/tabs/contacts",
+      hash: target.hash,
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/favorites" || target.to === "/tabs/favorites") {
+    return {
+      to: "/tabs/favorites",
+      hash: target.hash,
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/notes") {
+    return {
+      to: "/tabs/favorites",
+      hash:
+        target.hash ??
+        buildDesktopFavoritesWorkspaceRouteHash({
+          category: "notes",
+        }),
+    } satisfies SearchNavigationTarget;
+  }
+
+  if (target.to === "/profile/settings") {
+    return {
+      to: "/desktop/settings",
+    } satisfies SearchNavigationTarget;
+  }
+
+  return null;
 }
 
 function parseEmbeddedNavigationTarget(path: string) {
