@@ -265,11 +265,16 @@ export function DesktopMobilePage() {
   const conversationPathSet = useMemo(
     () =>
       new Set(
-        (conversationsQuery.data ?? []).map((conversation) =>
-          isPersistedGroupConversation(conversation)
+        (conversationsQuery.data ?? []).flatMap((conversation) => {
+          const legacyPath = isPersistedGroupConversation(conversation)
             ? `/group/${conversation.id}`
-            : `/chat/${conversation.id}`,
-        ),
+            : `/chat/${conversation.id}`;
+          const desktopPath = buildDesktopChatThreadPath({
+            conversationId: conversation.id,
+          });
+
+          return [legacyPath, desktopPath];
+        }),
       ),
     [conversationsQuery.data],
   );
@@ -2279,7 +2284,23 @@ function resolveGroupInviteDesktopOpenPath(path: string) {
 function resolveConversationRootPath(path: string) {
   const match = path.match(/^\/(chat|group)\/([^/?#]+)/);
   if (!match) {
-    return null;
+    const rawPath = path.split(/[?#]/, 1)[0] ?? path;
+    const normalizedPath =
+      rawPath.length > 1 ? rawPath.replace(/\/+$/, "") : rawPath;
+
+    if (normalizedPath !== "/tabs/chat") {
+      return null;
+    }
+
+    const hashIndex = path.indexOf("#");
+    const rawHash = hashIndex >= 0 ? path.slice(hashIndex) : "";
+    const routeState = parseDesktopChatRouteHash(rawHash);
+
+    return routeState.conversationId
+      ? buildDesktopChatThreadPath({
+          conversationId: routeState.conversationId,
+        })
+      : null;
   }
 
   return `/${match[1]}/${match[2]}`;

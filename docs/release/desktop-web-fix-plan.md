@@ -76,6 +76,7 @@
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/official-accounts` 根入口现在也会直接收成桌面通讯录里的公众号工作区，不再先打开共享公众号列表页再靠兼容页跳回桌面；如果旧 hash 里已经带了 `accountId / articleId`，这层选择态也会继续保住。
 - `desktop/mobile` 里的公众号接力历史现在会把订阅号入口 `/chat/subscription-inbox` 和旧 `/contacts/official-accounts` 一起归进“公众号”分组，不再误落到“消息”或“其他”。之前订阅号接力卡片会因为先命中 `/chat/*` 分类，被错放到消息分组里。
 - `desktop/mobile` 的历史分组现在也会识别当前桌面公众号工作区协议：像 `/tabs/chat#officialView=...` 和 `/tabs/contacts#pane=official-accounts...` 这类已经收口到桌面协议的历史记录，也会继续归进“公众号”，不再被错分到“消息”或“快捷入口”。
+- `desktop/mobile` 的“仍可继续”历史过滤现在也会识别当前桌面会话协议 `/tabs/chat#conversationId=...`。之前这类已经收口到桌面消息工作区的历史记录会被当成永远有效，即使对应会话已经失效也还会继续留在列表里。
 - `desktop/mobile` 里的旧快捷入口历史现在也会按根路径归对组：旧 `/chat` 会回“消息”，旧 `/contacts`、`/discover` 会回“快捷入口”；旧资料/设置接力 `/profile`、`/tabs/profile`、`/profile/settings`、`/desktop/settings`、`/legal/*` 也一样，即使老记录里还带着 query 或 hash 也不会再掉进“其他”。
 - `desktop/mobile` 里的游戏接力历史现在也会认桌面工作区根路径 `/tabs/games`。之前这类记录虽然语义上还是“游戏中心”，但会因为分组器只认旧 `/games`、`/discover/games` 而掉进“其他”。
 - `desktop/mobile` 里的视频号和小程序接力历史现在也会认旧根路径 `/channels`、`/mini-programs`。之前这类老记录虽然已经能自愈回桌面工作区，但历史分组器只认 `/discover/channels`、`/discover/mini-programs` 和 `/tabs/*`，会把它们错放到“其他”。
