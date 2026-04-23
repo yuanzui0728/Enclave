@@ -411,7 +411,13 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 void handleShareGroup();
               },
             }
-          : { showBackAction: true },
+          : {
+              showBackAction: true,
+              actionLabel: "重试复制",
+              onAction: () => {
+                void handleShareGroup();
+              },
+            },
       );
       return;
     }
