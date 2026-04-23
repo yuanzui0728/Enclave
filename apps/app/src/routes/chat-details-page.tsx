@@ -375,8 +375,14 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         message: nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制联系人摘要。",
-        actionLabel: statusBackLabel,
-        onAction: handleOperationBack,
+        actionLabel: nativeMobileShareSupported ? "重试分享" : statusBackLabel,
+        onAction: nativeMobileShareSupported ? handleShareContact : handleOperationBack,
+        secondaryActionLabel: nativeMobileShareSupported
+          ? statusBackLabel
+          : undefined,
+        onSecondaryAction: nativeMobileShareSupported
+          ? handleOperationBack
+          : undefined,
       });
       return;
     }
