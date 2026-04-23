@@ -298,6 +298,8 @@ type MobilePlusNoticeState = {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 };
 
 type MobileComposerMode = "text" | "speech" | "sticker" | "plus";
@@ -1312,6 +1314,8 @@ export function ChatComposer({
             },
             onPickAlbum: pickAlbum,
             onRetry: pickCamera,
+            secondaryActionLabel: errorActionLabel ?? undefined,
+            onSecondaryAction: onErrorAction ?? undefined,
           }),
         );
       }
@@ -2796,6 +2800,8 @@ export function ChatComposer({
         label: mobilePlusNotice.message,
         actionLabel: mobilePlusNotice.actionLabel,
         onAction: mobilePlusNotice.onAction,
+        secondaryActionLabel: mobilePlusNotice.secondaryActionLabel,
+        onSecondaryAction: mobilePlusNotice.onSecondaryAction,
       };
     }
 
@@ -5648,6 +5654,8 @@ function resolveNativeCameraCaptureNotice(
     onOpenSettings?: () => void;
     onPickAlbum?: () => void;
     onRetry?: () => void;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
   },
 ): MobilePlusNoticeState {
   const normalizedMessage = errorMessage.toLowerCase();
@@ -5664,6 +5672,14 @@ function resolveNativeCameraCaptureNotice(
       onAction:
         options?.nativeBridgeAvailable && options.onOpenSettings
           ? options.onOpenSettings
+          : undefined,
+      secondaryActionLabel:
+        options?.nativeBridgeAvailable && options.onOpenSettings
+          ? options.secondaryActionLabel
+          : undefined,
+      onSecondaryAction:
+        options?.nativeBridgeAvailable && options.onOpenSettings
+          ? options.onSecondaryAction
           : undefined,
     };
   }
