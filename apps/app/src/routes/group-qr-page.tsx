@@ -775,9 +775,7 @@ export function GroupQrPage() {
       actionLabel: canRevealSavedFile
         ? "打开位置"
         : !isDesktopLayout && result.status === "failed"
-          ? safeReturnPath
-            ? "返回上一页"
-            : "返回群聊信息"
+          ? "重试保存邀请卡"
           : undefined,
       onAction:
         savedPath
@@ -792,8 +790,13 @@ export function GroupQrPage() {
               });
             }
           : !isDesktopLayout && result.status === "failed"
-            ? handleNoticeBackAction
-          : undefined,
+            ? () => {
+                void downloadInviteCard();
+              }
+            : undefined,
+      ...(!isDesktopLayout && result.status === "failed" && !canRevealSavedFile
+        ? getMobileDangerBackAction()
+        : {}),
     });
   }
 
