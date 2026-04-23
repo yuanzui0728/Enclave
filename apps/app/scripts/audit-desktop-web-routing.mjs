@@ -492,9 +492,8 @@ const expectations = [
       "desktop legacy direct-chat routes self-heal to /tabs/chat hashes instead of lingering on /chat/$conversationId, desktop game-invite notices normalize old /games and /discover/games returns back to /tabs/games, and mobile-only shortcut search cleanup stays off in desktop layout",
     includes: [
       'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
-      "function normalizeDesktopGameInviteReturnPath(",
-      'pathname !== "/games" && pathname !== "/discover/games"',
-      '"/tabs/games"',
+      'import {',
+      "normalizeDesktopGameInviteReturnPath,",
       "const safeRouteContext = routeContext",
       "if (isDesktopLayout) {",
       "to: buildDesktopChatThreadPath({",
@@ -584,13 +583,19 @@ const expectations = [
   {
     file: "src/routes/group-chat-page.tsx",
     description:
-      "desktop legacy group-chat routes self-heal to /tabs/chat hashes instead of lingering on /group/$groupId, while mobile-only shortcut search cleanup stays off in desktop layout",
+      "desktop legacy group-chat routes self-heal to /tabs/chat hashes instead of lingering on /group/$groupId, and desktop group-chat game-invite notices normalize old /games and /discover/games returns back to /tabs/games while mobile-only shortcut search cleanup stays off in desktop layout",
     includes: [
       'import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";',
+      'import {',
+      "normalizeDesktopGameInviteReturnPath,",
+      "resolveGameInviteRouteContext,",
+      "const safeRouteContext = routeContext",
+      "returnPath: normalizeDesktopGameInviteReturnPath(",
       "if (isDesktopLayout) {",
       "to: buildDesktopChatThreadPath({",
       "conversationId: groupId,",
       "messageId: highlightedMessageId ?? undefined,",
+      "resolveGameInviteRouteContext(window.location.search) ??",
       'to: "/group/$groupId",',
       "if (isDesktopLayout) {",
     ],

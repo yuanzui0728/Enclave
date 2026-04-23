@@ -13,6 +13,10 @@ import {
 import { parseMobileGroupRouteState } from "../features/chat/mobile-group-route-state";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
 import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
+import {
+  normalizeDesktopGameInviteReturnPath,
+  resolveGameInviteRouteContext,
+} from "../features/games/game-invite-route";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
@@ -40,6 +44,15 @@ export function GroupChatPage() {
     useState<ChatComposeShortcutAction | null>(null);
   const [routeCallReturnKind, setRouteCallReturnKind] =
     useState<ChatCallReturnKind | null>(null);
+  const safeRouteContext = routeContext
+    ? {
+        ...routeContext,
+        returnPath: normalizeDesktopGameInviteReturnPath(
+          routeContext.returnPath,
+          isDesktopLayout,
+        ),
+      }
+    : null;
 
   useEffect(() => {
     setRouteContext(resolveRouteContext(groupId));
@@ -216,12 +229,12 @@ export function GroupChatPage() {
           highlightedMessageId={highlightedMessageId}
           routeContextNotice={
             callReturnNotice ??
-            (routeContext
+            (safeRouteContext
               ? {
-                  actionLabel: routeContext.actionLabel,
-                  description: routeContext.description,
+                  actionLabel: safeRouteContext.actionLabel,
+                  description: safeRouteContext.description,
                   onAction: () => {
-                    void navigate({ to: routeContext.returnPath });
+                    void navigate({ to: safeRouteContext.returnPath });
                   },
                 }
               : undefined)
@@ -242,12 +255,12 @@ export function GroupChatPage() {
           onRouteMobileShortcutHandled={handleRouteMobileShortcutHandled}
           routeContextNotice={
             callReturnNotice ??
-            (routeContext
+            (safeRouteContext
               ? {
-                  actionLabel: routeContext.actionLabel,
-                  description: routeContext.description,
+                  actionLabel: safeRouteContext.actionLabel,
+                  description: safeRouteContext.description,
                   onAction: () => {
-                    void navigate({ to: routeContext.returnPath });
+                    void navigate({ to: safeRouteContext.returnPath });
                   },
                 }
               : undefined)
@@ -259,7 +272,7 @@ export function GroupChatPage() {
               }
 
               void navigate({
-                to: routeContext?.returnPath ?? "/tabs/chat",
+                to: safeRouteContext?.returnPath ?? "/tabs/chat",
               });
             });
           }}
@@ -274,5 +287,8 @@ function resolveRouteContext(groupId: string) {
     return null;
   }
 
-  return resolveGroupInviteRouteContext(`/group/${groupId}`);
+  return (
+    resolveGameInviteRouteContext(window.location.search) ??
+    resolveGroupInviteRouteContext(`/group/${groupId}`)
+  );
 }

@@ -20,6 +20,23 @@ export type GameInviteRouteContext = {
   returnPath: string;
 };
 
+export function normalizeDesktopGameInviteReturnPath(
+  path: string,
+  isDesktopLayout: boolean,
+) {
+  if (!isDesktopLayout) {
+    return path;
+  }
+
+  const [pathname, ...searchParts] = path.split("?");
+  if (pathname !== "/games" && pathname !== "/discover/games") {
+    return path;
+  }
+
+  const search = searchParts.join("?");
+  return search ? `/tabs/games?${search}` : "/tabs/games";
+}
+
 function normalizeReturnPath(value?: string | null) {
   const nextValue = value?.trim();
   if (

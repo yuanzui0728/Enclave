@@ -14,7 +14,10 @@ import {
 import { parseMobileChatRouteState } from "../features/chat/mobile-chat-route-state";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
-import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
+import {
+  normalizeDesktopGameInviteReturnPath,
+  resolveGameInviteRouteContext,
+} from "../features/games/game-invite-route";
 import { buildDesktopChatThreadPath } from "../features/desktop/chat/desktop-chat-route-state";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
@@ -29,23 +32,6 @@ const DesktopChatWorkspace = lazy(async () => {
   const mod = await import("../features/chat/chat-workspace-shell");
   return { default: mod.DesktopChatWorkspace };
 });
-
-function normalizeDesktopGameInviteReturnPath(
-  path: string,
-  isDesktopLayout: boolean,
-) {
-  if (!isDesktopLayout) {
-    return path;
-  }
-
-  const [pathname, ...searchParts] = path.split("?");
-  if (pathname !== "/games" && pathname !== "/discover/games") {
-    return path;
-  }
-
-  const search = searchParts.join("?");
-  return search ? `/tabs/games?${search}` : "/tabs/games";
-}
 
 export function ChatRoomPage() {
   const { conversationId } = useParams({ from: "/chat/$conversationId" });
