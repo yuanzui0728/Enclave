@@ -54,7 +54,12 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "消息",
     shortLabel: "消息",
     to: "/tabs/chat",
-    matches: ["/tabs/chat", "/chat/", "/group/", "/official-accounts/service/"],
+    matches: [
+      "/tabs/chat",
+      "/chat",
+      "/group/",
+      "/official-accounts/service/",
+    ],
   },
   {
     kind: "route",
@@ -64,10 +69,12 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     to: "/tabs/contacts",
     matches: [
       "/tabs/contacts",
+      "/contacts",
       "/contacts/starred",
       "/contacts/tags",
       "/contacts/official-accounts",
       "/desktop/add-friend",
+      "/official-accounts",
       "/official-accounts/",
       "/character/",
       "/friend-requests",
@@ -80,7 +87,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "收藏",
     shortLabel: "收藏",
     to: "/tabs/favorites",
-    matches: ["/tabs/favorites", "/notes", "/desktop/note-window"],
+    matches: ["/tabs/favorites", "/favorites", "/notes", "/desktop/note-window"],
   },
   {
     kind: "route",
@@ -88,7 +95,12 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "朋友圈",
     shortLabel: "朋友圈",
     to: "/tabs/moments",
-    matches: ["/tabs/moments", "/discover/moments", "/desktop/friend-moments/"],
+    matches: [
+      "/tabs/moments",
+      "/discover/moments",
+      "/discover/moments/publish",
+      "/desktop/friend-moments/",
+    ],
   },
   {
     kind: "route",
@@ -104,7 +116,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "视频号",
     shortLabel: "视频号",
     to: "/tabs/channels",
-    matches: ["/tabs/channels"],
+    matches: ["/tabs/channels", "/discover/channels", "/channels/authors/"],
   },
   {
     kind: "route",
@@ -112,7 +124,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "搜一搜",
     shortLabel: "搜索",
     to: "/tabs/search",
-    matches: ["/tabs/search"],
+    matches: ["/tabs/search", "/search"],
   },
   {
     kind: "route",
@@ -120,7 +132,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "游戏中心",
     shortLabel: "游戏",
     to: "/tabs/games",
-    matches: ["/tabs/games"],
+    matches: ["/tabs/games", "/games", "/discover/games"],
   },
   {
     kind: "route",
@@ -128,7 +140,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "小程序面板",
     shortLabel: "小程序",
     to: "/tabs/mini-programs",
-    matches: ["/tabs/mini-programs"],
+    matches: ["/tabs/mini-programs", "/discover/mini-programs"],
   },
 ];
 
