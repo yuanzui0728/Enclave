@@ -74,10 +74,6 @@ type MomentAvatarContext = {
   characterAvatarById: Map<string, string>;
 };
 
-type ReminderMomentNudge = Awaited<
-  ReturnType<ReminderRuntimeService['getMomentNudgeTasks']>
->[number];
-
 function hashTextSeed(seed: string) {
   let hash = 0;
   for (const char of seed) {
@@ -265,10 +261,15 @@ export class MomentsService implements OnModuleInit {
 
     try {
       const currentTime = new Date();
+      const reminderMoment =
+        characterId === REMINDER_CHARACTER_ID
+          ? await this.reminderRuntime.buildMomentNudgePayload({
+              now: currentTime,
+              seedKey: `manual:${currentTime.toISOString().slice(0, 10)}`,
+            })
+          : null;
       const text =
-        (characterId === REMINDER_CHARACTER_ID
-          ? await this.buildReminderCharacterMomentText(currentTime)
-          : null) ??
+        reminderMoment?.text ??
         (await this.ai.generateMoment({
           profile,
           currentTime,
@@ -400,94 +401,6 @@ export class MomentsService implements OnModuleInit {
     }
 
     return normalized;
-  }
-
-  private async buildReminderCharacterMomentText(now: Date) {
-    const nudges = await this.reminderRuntime.getMomentNudgeTasks(3);
-    if (nudges.length === 0) {
-      return null;
-    }
-
-    const primary = nudges[0];
-    const focus = this.truncateReminderLabel(primary.title, 14);
-    const companionLine = this.buildReminderCompanionLine(nudges);
-    let variants: string[] = [];
-
-    if (/英语|背单词/.test(primary.title)) {
-      variants = [
-        '英语这件事，不靠哪天突然开窍，靠的是今天也没断。',
-        `今天的${focus}，做一点就不算掉线。`,
-        companionLine || `先别跟“明天开始”合作了。${focus}，今天动一下。`,
-      ];
-    } else if (/锻炼|运动|健身/.test(primary.title)) {
-      variants = [
-        '锻炼不靠等状态，靠今天先动一下。',
-        `今天不必练很猛，${focus}别断就行。`,
-        companionLine || `长期的事最怕连续说“明天”。${focus}，先做一点。`,
-      ];
-    } else if (/早睡|睡觉/.test(primary.title)) {
-      variants = [
-        '早睡这件事，嘴上说一次不算，今晚早点放下手机才算。',
-        `今天的${focus}，别又让“再刷一会儿”赢了。`,
-        companionLine || '消息可以晚回一点，觉别总晚睡。',
-      ];
-    } else if (/喝水|吃饭/.test(primary.title)) {
-      variants = [
-        `再忙也别把${focus}排到最后。`,
-        '照顾身体这种事，不该总靠想起来。',
-        companionLine || `今天的${focus}，也照样算数。`,
-      ];
-    } else if (/吃药|复诊|体检/.test(primary.title)) {
-      variants = [
-        `跟身体有关的事别拿来讨价还价。${focus}。`,
-        `重要的不是记性好，是到点就动。${focus}。`,
-        companionLine || `该做的${focus}，今天别拖。`,
-      ];
-    } else {
-      switch (primary.category) {
-        case 'growth':
-          variants = [
-            `长期的事最怕“明天开始”。${focus}，今天做一点也算没掉线。`,
-            companionLine || `今天先盯住${focus}，别让计划继续停在计划里。`,
-            `热血不一定天天有，${focus}做一点也算推进。`,
-          ];
-          break;
-        case 'lifestyle':
-          variants = [
-            `再忙也别把身体放到待办最后。${focus}，今天照样算数。`,
-            companionLine || `今天也照顾一下自己。${focus}别再往后拖。`,
-            `人可以慢一点，${focus}别一直往后顺。`,
-          ];
-          break;
-        case 'health':
-          variants = [
-            `身体相关的事，不适合跟自己讲价。${focus}。`,
-            companionLine || `今天先把${focus}处理掉，别拖。`,
-            `我这边盯的不是效率，是${focus}这种不能一直拖的事。`,
-          ];
-          break;
-        default:
-          variants = [
-            companionLine || `我这边今天继续盯着：${focus}。先做一点，别全留给明天。`,
-            `怕忘的事不用都塞给脑子。${focus}，今天往前推一点。`,
-            `先做一件也行，${focus}别一直挂在嘴上。`,
-          ];
-          break;
-      }
-    }
-
-    return variants[hashTextSeed(`${now.toISOString().slice(0, 10)}:${primary.id}`) % variants.length];
-  }
-
-  private buildReminderCompanionLine(nudges: ReminderMomentNudge[]) {
-    if (nudges.length <= 1) {
-      return '';
-    }
-
-    const labels = nudges
-      .slice(0, 3)
-      .map((item) => this.truncateReminderLabel(item.title, 8));
-    return `我这边今天继续盯着：${labels.join('、')}。长期的事，别又一起拖到明天。`;
   }
 
   private async buildReminderCharacterCommentText(post: MomentPostEntity) {

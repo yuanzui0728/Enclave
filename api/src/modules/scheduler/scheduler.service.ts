@@ -48,6 +48,13 @@ type NewsBulletinSlot = {
   label: '早报' | '午报' | '晚报';
 };
 
+type ReminderMomentSlot = {
+  key: 'morning' | 'evening';
+  label: '晨间轻提醒' | '晚间轻提醒';
+  referenceHour: number;
+  referenceMinute: number;
+};
+
 type PublishWorldNewsBulletinResult = {
   success: boolean;
   created: boolean;
@@ -55,6 +62,8 @@ type PublishWorldNewsBulletinResult = {
   summary: string;
   postId?: string | null;
 };
+
+const REMINDER_MOMENT_GENERATION_KIND = 'reminder_nudge';
 
 function renderTemplate(
   template: string,
@@ -774,6 +783,29 @@ export class SchedulerService {
     let generatedCount = 0;
 
     for (const char of chars) {
+      if (char.id === REMINDER_CHARACTER_ID) {
+        const reminderPost = await this.tryGenerateScheduledReminderMoment({
+          char,
+          now,
+          startOfDay,
+        });
+        if (reminderPost) {
+          generatedCount += 1;
+          this.telemetry.recordCharacterEvent({
+            characterId: char.id,
+            characterName: char.name,
+            kind: 'moment_posted',
+            title: runtimeRules.schedulerTextTemplates.eventTitleMomentPosted,
+            summary: renderTemplate(
+              runtimeRules.schedulerTextTemplates.eventSummaryMomentPosted,
+              { postId: reminderPost.id },
+            ),
+            jobId: 'check_moment_schedule',
+          });
+        }
+        continue;
+      }
+
       if (!char.momentsFrequency || char.momentsFrequency < 1) {
         continue;
       }
@@ -1345,12 +1377,88 @@ export class SchedulerService {
     return value;
   }
 
+  private async tryGenerateScheduledReminderMoment(input: {
+    char: CharacterEntity;
+    now: Date;
+    startOfDay: Date;
+  }) {
+    const slot = this.resolveReminderMomentSlot(input.now);
+    if (!slot) {
+      return null;
+    }
+
+    const existingPosts = await this.momentPostRepo.find({
+      where: {
+        authorId: input.char.id,
+        generationKind: REMINDER_MOMENT_GENERATION_KIND,
+        postedAt: Between(input.startOfDay, input.now),
+      },
+      order: { postedAt: 'DESC' },
+    });
+    if (
+      existingPosts.some((post) => post.generationMetadata?.slot === slot.key)
+    ) {
+      return null;
+    }
+
+    const reminderMoment =
+      await this.reminderRuntimeService.buildMomentNudgePayload({
+        now: input.now,
+        slot: slot.key,
+        seedKey: `scheduler:${slot.key}:${input.now.toISOString().slice(0, 10)}`,
+      });
+    if (!reminderMoment) {
+      return null;
+    }
+
+    return this.generateMomentForChar(input.char, {
+      currentTime: this.resolveReminderMomentReferenceTime(slot),
+      generationKind: REMINDER_MOMENT_GENERATION_KIND,
+      generationMetadata: {
+        slot: slot.key,
+        slotLabel: slot.label,
+        reminderTaskCount: reminderMoment.tasks.length,
+        taskTitles: reminderMoment.tasks.map((item) => item.title),
+        taskCategories: reminderMoment.tasks.map((item) => item.category),
+      },
+      text: reminderMoment.text,
+    });
+  }
+
+  private resolveReminderMomentSlot(now: Date): ReminderMomentSlot | null {
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    if (minutes >= 8 * 60 && minutes < 10 * 60 + 45) {
+      return {
+        key: 'morning',
+        label: '晨间轻提醒',
+        referenceHour: 8,
+        referenceMinute: 30,
+      };
+    }
+    if (minutes >= 20 * 60 && minutes < 22 * 60 + 30) {
+      return {
+        key: 'evening',
+        label: '晚间轻提醒',
+        referenceHour: 20,
+        referenceMinute: 30,
+      };
+    }
+    return null;
+  }
+
+  private resolveReminderMomentReferenceTime(slot: ReminderMomentSlot) {
+    const value = new Date();
+    value.setHours(slot.referenceHour, slot.referenceMinute, 0, 0);
+    return value;
+  }
+
   private async generateMomentForChar(
     char: CharacterEntity,
     options?: {
       currentTime?: Date;
       generationKind?: string;
       generationMetadata?: Record<string, unknown> | null;
+      text?: string | null;
     },
   ) {
     try {
@@ -1358,19 +1466,29 @@ export class SchedulerService {
         (await this.charactersService.getRuntimeProfileFromCharacter(char)) ??
         char.profile;
       const currentTime = options?.currentTime ?? new Date();
-      const text = await this.ai.generateMoment({
-        profile: runtimeProfile,
-        currentTime,
-        usageContext: {
-          surface: 'scheduler',
-          scene: 'moment_post_generate',
-          scopeType: 'character',
-          scopeId: char.id,
-          scopeLabel: char.name,
-          characterId: char.id,
-          characterName: char.name,
-        },
-      });
+      const reminderMoment =
+        !options?.text && char.id === REMINDER_CHARACTER_ID
+          ? await this.reminderRuntimeService.buildMomentNudgePayload({
+              now: currentTime,
+              seedKey: `scheduler:${options?.generationKind ?? 'routine'}:${currentTime.toISOString().slice(0, 10)}`,
+            })
+          : null;
+      const text =
+        options?.text ??
+        reminderMoment?.text ??
+        (await this.ai.generateMoment({
+          profile: runtimeProfile,
+          currentTime,
+          usageContext: {
+            surface: 'scheduler',
+            scene: 'moment_post_generate',
+            scopeType: 'character',
+            scopeId: char.id,
+            scopeLabel: char.name,
+            characterId: char.id,
+            characterName: char.name,
+          },
+        }));
       if (!text) return null;
 
       const post = this.momentPostRepo.create({

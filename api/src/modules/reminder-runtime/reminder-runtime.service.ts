@@ -41,6 +41,8 @@ type ReminderDispatch = {
   text: string;
 };
 
+type ReminderMomentSlot = 'morning' | 'evening' | 'general';
+
 type ReminderMomentNudge = {
   id: string;
   title: string;
@@ -111,6 +113,14 @@ function padTime(value: number) {
 
 function formatTime(hour: number, minute: number) {
   return `${padTime(hour)}:${padTime(minute)}`;
+}
+
+function hashTextSeed(seed: string) {
+  let hash = 0;
+  for (const char of seed) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash;
 }
 
 function normalizeComparableText(value: string) {
@@ -281,6 +291,126 @@ export class ReminderRuntimeService {
       scheduleText: this.describeSchedule(task),
       completionCount: task.completionCount ?? 0,
     }));
+  }
+
+  async buildMomentNudgePayload(input?: {
+    now?: Date;
+    seedKey?: string;
+    slot?: ReminderMomentSlot;
+    limit?: number;
+  }): Promise<{ text: string; tasks: ReminderMomentNudge[] } | null> {
+    const now = input?.now ?? new Date();
+    const slot = input?.slot ?? 'general';
+    const tasks = await this.getMomentNudgeTasks(input?.limit ?? 3);
+    if (tasks.length === 0) {
+      return null;
+    }
+
+    const primary = tasks[0];
+    const focus = this.truncateReminderLabel(primary.title, 14);
+    const companionLine = this.buildReminderCompanionLine(tasks, slot);
+    let variants: string[] = [];
+
+    if (/英语|背单词/.test(primary.title)) {
+      variants =
+        slot === 'morning'
+          ? [
+              `今天的${focus}，早一点开个头。`,
+              '英语这件事，先开口一点，就不算断。',
+              companionLine || `别把${focus}又顺到晚上。`,
+            ]
+          : [
+              '英语这件事，不靠哪天突然开窍，靠的是今天也没断。',
+              `今天的${focus}，做一点就不算掉线。`,
+              companionLine || `先别跟“明天开始”合作了。${focus}，今天动一下。`,
+            ];
+    } else if (/锻炼|运动|健身/.test(primary.title)) {
+      variants =
+        slot === 'morning'
+          ? [
+              `今天的${focus}，先动一下就算开张。`,
+              '锻炼不靠等状态，靠今天先动一下。',
+              companionLine || `把${focus}留到太晚，通常就没下文了。`,
+            ]
+          : [
+              '锻炼不靠等状态，靠今天先动一下。',
+              `今天不必练很猛，${focus}别断就行。`,
+              companionLine || `长期的事最怕连续说“明天”。${focus}，先做一点。`,
+            ];
+    } else if (/早睡|睡觉/.test(primary.title)) {
+      variants = [
+        '早睡这件事，嘴上说一次不算，今晚早点放下手机才算。',
+        `今天的${focus}，别又让“再刷一会儿”赢了。`,
+        companionLine || '消息可以晚回一点，觉别总晚睡。',
+      ];
+    } else if (/喝水|吃饭/.test(primary.title)) {
+      variants =
+        slot === 'morning'
+          ? [
+              `今天别一忙就把${focus}忘了。`,
+              `先把${focus}放进今天的节奏里。`,
+              companionLine || `从现在开始，${focus}也算一件正事。`,
+            ]
+          : [
+              `再忙也别把${focus}排到最后。`,
+              '照顾身体这种事，不该总靠想起来。',
+              companionLine || `今天的${focus}，也照样算数。`,
+            ];
+    } else if (/吃药|复诊|体检/.test(primary.title)) {
+      variants = [
+        `跟身体有关的事别拿来讨价还价。${focus}。`,
+        `重要的不是记性好，是到点就动。${focus}。`,
+        companionLine || `该做的${focus}，今天别拖。`,
+      ];
+    } else {
+      switch (primary.category) {
+        case 'growth':
+          variants =
+            slot === 'morning'
+              ? [
+                  `今天先盯住${focus}，别还没开始就让一天过去。`,
+                  companionLine || `先动一下${focus}，今天才算真正开场。`,
+                  `热血不一定天天有，${focus}先做一点也行。`,
+                ]
+              : [
+                  `长期的事最怕“明天开始”。${focus}，今天做一点也算没掉线。`,
+                  companionLine || `今天先盯住${focus}，别让计划继续停在计划里。`,
+                  `热血不一定天天有，${focus}做一点也算推进。`,
+                ];
+          break;
+        case 'lifestyle':
+          variants = [
+            `再忙也别把身体放到待办最后。${focus}，今天照样算数。`,
+            companionLine || `今天也照顾一下自己。${focus}别再往后拖。`,
+            `人可以慢一点，${focus}别一直往后顺。`,
+          ];
+          break;
+        case 'health':
+          variants = [
+            `身体相关的事，不适合跟自己讲价。${focus}。`,
+            companionLine || `今天先把${focus}处理掉，别拖。`,
+            `我这边盯的不是效率，是${focus}这种不能一直拖的事。`,
+          ];
+          break;
+        default:
+          variants = [
+            companionLine || `我这边今天继续盯着：${focus}。先做一点，别全留给明天。`,
+            `怕忘的事不用都塞给脑子。${focus}，今天往前推一点。`,
+            `先做一件也行，${focus}别一直挂在嘴上。`,
+          ];
+          break;
+      }
+    }
+
+    return {
+      text:
+        variants[
+          hashTextSeed(
+            `${input?.seedKey ?? now.toISOString().slice(0, 10)}:${slot}:${primary.id}`,
+          ) % variants.length
+        ],
+      tasks,
+    };
   }
 
   async completeTask(id: string) {
@@ -1077,6 +1207,33 @@ export class ReminderRuntimeService {
       task.category === 'lifestyle' ||
       task.category === 'health'
     );
+  }
+
+  private buildReminderCompanionLine(
+    tasks: ReminderMomentNudge[],
+    slot: ReminderMomentSlot,
+  ) {
+    if (tasks.length <= 1) {
+      return '';
+    }
+
+    const labels = tasks
+      .slice(0, 3)
+      .map((item) => this.truncateReminderLabel(item.title, 8));
+    if (slot === 'morning') {
+      return `我这边今天先盯着：${labels.join('、')}。别一忙起来就全忘了。`;
+    }
+    return `我这边今天继续盯着：${labels.join('、')}。长期的事，别又一起拖到明天。`;
+  }
+
+  private truncateReminderLabel(value: string, maxLength: number) {
+    const normalized = value
+      .replace(/[，。、“”‘’：:！!？?；;,.]/g, '')
+      .trim();
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+    return `${normalized.slice(0, maxLength)}…`;
   }
 
   private buildDueReminderMessage(task: ReminderTaskEntity) {
