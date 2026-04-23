@@ -82,8 +82,10 @@ export function OfficialArticleViewer({
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
           : "当前环境暂不支持复制链接。",
         tone: "info",
-        actionLabel: nativeMobileShareSupported ? options?.retryLabel : undefined,
-        onAction: nativeMobileShareSupported ? options?.onRetry : undefined,
+        actionLabel:
+          options?.retryLabel ?? (nativeMobileShareSupported ? "重试分享" : "重试复制"),
+        onAction:
+          options?.onRetry ?? (nativeMobileShareSupported ? retryShareArticle : retryCopyLink),
       });
       return;
     }
