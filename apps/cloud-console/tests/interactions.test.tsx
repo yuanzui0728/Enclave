@@ -3982,7 +3982,7 @@ describe("cloud-console interactions", () => {
 
   it("copies a compact admin-sessions permalink from the admin-sessions page", async () => {
     renderRoute(
-      "/admin-sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12",
+      "/sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12",
     );
 
     expect(await screen.findByText("Admin sessions")).toBeTruthy();
@@ -3995,7 +3995,7 @@ describe("cloud-console interactions", () => {
       await screen.findByText("Admin sessions permalink copied."),
     ).toBeTruthy();
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
-      `${window.location.origin}/admin-sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12`,
+      `${window.location.origin}/sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12`,
     );
   });
 
