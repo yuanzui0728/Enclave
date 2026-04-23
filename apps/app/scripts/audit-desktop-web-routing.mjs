@@ -1355,8 +1355,14 @@ const expectations = [
   },
   {
     file: "src/lib/history-back.ts",
-    description: "desktop-only route helper is available",
-    includes: ['export function isDesktopOnlyPath(path?: string | null) {'],
+    description:
+      "SPA navigation state trims trailing slashes before app back fallbacks decide whether to use browser history, and the desktop-only route helper is available",
+    includes: [
+      'import { normalizePathname } from "./normalize-pathname";',
+      "const normalizedPathname = normalizePathname(normalizedUrl.pathname);",
+      "return `${normalizedPathname}${normalizedUrl.search}${normalizedUrl.hash}`;",
+      'export function isDesktopOnlyPath(path?: string | null) {',
+    ],
   },
   {
     file: "src/lib/normalize-pathname.ts",

@@ -120,6 +120,7 @@
 - 旧 `/discover/moments` 朋友圈地址现在在桌面布局下也会主动自愈回 `/tabs/moments`；同时桌面朋友圈跳好友朋友圈时，`returnPath` 也统一收成 `/tabs/moments`，并兼容修正历史上已经写进好友朋友圈 hash 的旧 `/discover/moments` 返回地址，不再让旧 discover 路径在回跳链路里反复复活。
 - 桌面朋友圈总工作区自己的路由态现在也会把旧 `returnPath=/discover/moments` 收成 `/tabs/moments`。之前只要桌面地址里还残留这类旧返回目标，当前页虽然已经在 `/tabs/moments`，但点“返回上一页”仍会把旧 discover 路径重新带活；现在总朋友圈和好友朋友圈两边都只认桌面返回地址。
 - 桌面朋友圈、好友朋友圈、广场动态、视频号、游戏、小程序这几条工作区的 route-state 现在也会先去掉旧 `returnPath` 尾斜杠，再把旧根返回地址 `/moments`、`/feed`、`/channels`、`/games`、`/mini-programs` 一起收成 `/tabs/*`。之前这批共享根路径虽然已经会自愈到桌面工作区，但历史 hash/search 里的 `returnPath=/discover/*/` 仍可能把旧根路径复活；现在后续“返回上一页”也会稳定留在桌面主路由。
+- SPA 导航状态现在写入 session 前也会先收掉 pathname 尾斜杠。之前桌面入口已经能把 `/tabs/chat/`、`/tabs/feed/` 这类地址 replace 回标准路径，但导航状态里可能仍把尾斜杠旧地址记成上一页，后续 `navigateBackOrFallback` 会把用户又带回刚自愈过的 URL；现在浏览器回退兜底读取到的 current/previous path 也保持同一套标准路径。
 - 旧 `/discover/moments/publish` 在桌面布局下现在也会把原来的 `returnPath / returnHash` 一起带回 `/tabs/moments`，不再只是裸跳朋友圈工作区。之前这条旧发表页虽然会回桌面朋友圈，但会把来源上下文直接丢掉；现在从旧链接或旧返回链路进来后，后续返回仍能命中原桌面来源。
 - 桌面视频号的路由态现在也会把旧 `returnPath=/discover/channels` 直接收成 `/tabs/channels`。这样不只是工作区页面和旧作者页 `/channels/authors/$authorId` 在桌面下折回 `/tabs/channels` 时会归一，历史 hash 本身在被解析或重新写回时也不会再把旧 discover 返回地址原样带活。
 - 桌面看一看、游戏中心、小程序工作区现在也会把旧 `returnPath` 一起收敛掉：旧 `/discover/feed`、`/games`、`/discover/games`、`/discover/mini-programs` 在桌面自愈到 `/tabs/*` 时，不会再把这些旧返回地址继续写进新的 hash/search；游戏中心发出的组局邀约路径也会跟着改吃收敛后的桌面返回地址，避免旧 discover 路径从“返回上一页”或“回到刚才页面”链路里再次复活。

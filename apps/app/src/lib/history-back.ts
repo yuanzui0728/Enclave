@@ -1,3 +1,5 @@
+import { normalizePathname } from "./normalize-pathname";
+
 const APP_NAVIGATION_STATE_STORAGE_KEY = "yinjie-app-navigation-state";
 
 type AppNavigationState = {
@@ -25,7 +27,8 @@ function normalizeAppPath(path: string) {
   }
 
   const normalizedUrl = new URL(path, "https://yinjie.app");
-  return `${normalizedUrl.pathname}${normalizedUrl.search}${normalizedUrl.hash}`;
+  const normalizedPathname = normalizePathname(normalizedUrl.pathname);
+  return `${normalizedPathname}${normalizedUrl.search}${normalizedUrl.hash}`;
 }
 
 export function isDesktopOnlyPath(path?: string | null) {
