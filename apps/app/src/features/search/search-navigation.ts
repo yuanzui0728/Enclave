@@ -640,7 +640,11 @@ function resolveDesktopDiscoverNavigationTarget(target: SearchNavigationTarget) 
 }
 
 function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
-  if (target.to === "/discover/moments" || target.to === "/tabs/moments") {
+  if (
+    target.to === "/moments" ||
+    target.to === "/discover/moments" ||
+    target.to === "/tabs/moments"
+  ) {
     const routeState = parseDesktopMomentsRouteState(target.hash ?? "");
     return {
       to: "/tabs/moments",
@@ -664,7 +668,9 @@ function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
     } satisfies SearchNavigationTarget;
   }
 
-  const friendMomentsMatch = target.to.match(/^\/friend-moments\/([^/?#]+)$/);
+  const friendMomentsMatch = target.to.match(
+    /^\/(?:friend-moments|moments\/friend)\/([^/?#]+)$/,
+  );
   if (!friendMomentsMatch?.[1]?.trim()) {
     return null;
   }
@@ -678,7 +684,11 @@ function resolveDesktopMomentsNavigationTarget(target: SearchNavigationTarget) {
 }
 
 function resolveDesktopFeedNavigationTarget(target: SearchNavigationTarget) {
-  if (target.to !== "/discover/feed" && target.to !== "/tabs/feed") {
+  if (
+    target.to !== "/feed" &&
+    target.to !== "/discover/feed" &&
+    target.to !== "/tabs/feed"
+  ) {
     return null;
   }
 
@@ -718,6 +728,7 @@ function resolveDesktopMiniProgramsNavigationTarget(
   target: SearchNavigationTarget,
 ) {
   if (
+    target.to !== "/mini-programs" &&
     target.to !== "/discover/mini-programs" &&
     target.to !== "/tabs/mini-programs"
   ) {
@@ -754,7 +765,11 @@ function resolveDesktopChannelsNavigationTarget(target: SearchNavigationTarget) 
     } satisfies SearchNavigationTarget;
   }
 
-  if (target.to !== "/discover/channels" && target.to !== "/tabs/channels") {
+  if (
+    target.to !== "/channels" &&
+    target.to !== "/discover/channels" &&
+    target.to !== "/tabs/channels"
+  ) {
     return null;
   }
 

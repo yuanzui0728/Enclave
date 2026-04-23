@@ -230,7 +230,9 @@ export function MomentsPage() {
   const isDiscoverSubPage = pathname === "/discover/moments";
   const desktopMomentsPath = "/tabs/moments";
   const isDesktopMomentsRoute =
-    pathname === desktopMomentsPath || pathname === "/discover/moments";
+    pathname === desktopMomentsPath ||
+    pathname === "/moments" ||
+    pathname === "/discover/moments";
   const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试读取";
   const handleDesktopRouteStateChange = useEffectEvent(
     (state: { momentId?: string }) => {

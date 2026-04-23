@@ -69,6 +69,7 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     to: "/tabs/moments",
     matches: [
       "/tabs/moments",
+      "/moments",
       "/discover/moments",
       "/discover/moments/publish",
       "/friend-moments/",
@@ -79,13 +80,13 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     label: "广场动态",
     shortLabel: "广场",
     to: "/tabs/feed",
-    matches: ["/tabs/feed", "/discover/feed"],
+    matches: ["/tabs/feed", "/feed", "/discover/feed"],
   },
   {
     label: "视频号",
     shortLabel: "视频号",
     to: "/tabs/channels",
-    matches: ["/tabs/channels", "/discover/channels", "/channels/authors/"],
+    matches: ["/tabs/channels", "/channels", "/discover/channels"],
   },
   {
     label: "搜一搜",
@@ -103,7 +104,7 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     label: "小程序面板",
     shortLabel: "小程序",
     to: "/tabs/mini-programs",
-    matches: ["/tabs/mini-programs", "/discover/mini-programs"],
+    matches: ["/tabs/mini-programs", "/mini-programs", "/discover/mini-programs"],
   },
 ];
 

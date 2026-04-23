@@ -98,7 +98,9 @@ export function ChannelsPage() {
       ? "/tabs/channels"
       : routeState.returnPath;
   const isDesktopChannelsRoute =
-    pathname === "/tabs/channels" || pathname === "/discover/channels";
+    pathname === "/tabs/channels" ||
+    pathname === "/channels" ||
+    pathname === "/discover/channels";
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const safeReturnPath =
     normalizedDesktopReturnPath &&

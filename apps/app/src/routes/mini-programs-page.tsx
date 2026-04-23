@@ -115,6 +115,7 @@ export function MiniProgramsPage() {
     onAction: () => void;
   } | null>(null);
   const isDesktopMiniProgramsRoute =
+    pathname === "/mini-programs" ||
     pathname === "/tabs/mini-programs" ||
     pathname === "/discover/mini-programs";
   const normalizedDesktopReturnPath =

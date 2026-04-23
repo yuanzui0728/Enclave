@@ -56,11 +56,13 @@
 - 桌面壳里的 `视频号直播伴侣` 现在只归底部“更多”入口，不再同时点亮顶部“视频号”主导航。之前 `/desktop/channels/live-companion` 会同时命中两套导航匹配，造成桌面侧栏双高亮；现在直播伴侣作为独立工具页只保留“更多”选中态。
 - 桌面壳左侧主导航现在也会认旧根路径：旧 `/chat`、`/chat/subscription-inbox`、`/contacts`、`/favorites`、`/official-accounts`、`/search`、`/games`、`/discover/games`、`/discover/channels`、`/channels/authors/*`、`/discover/mini-programs`、`/discover/moments/publish`、`/friend-moments/*` 在桌面自愈前就会先点亮对应工作区，不再出现“界面还是旧路径、侧栏高亮却掉线”的错位。
 - 桌面壳左侧主导航现在也会把旧 `/group/new` 归到“消息”。之前桌面里直接打开旧发起群聊页时，对话框已经是消息链路的一部分，但侧栏没有任何主导航高亮，会出现“窗口已打开、主入口掉线”的错位。
+- 桌面壳左侧主导航现在也会把旧 `/moments`、`/feed`、`/channels`、`/mini-programs` 这批共享根路径提前归到对应工作区；桌面朋友圈、视频号、小程序页本身也会把旧 `/moments`、`/channels`、`/mini-programs` 主路径主动收回 `/tabs/*`。之前这几条旧根地址在桌面下会出现“工作区已经打开，但地址和主导航还停在旧共享页”的短暂错位。
 - 桌面壳底部“更多”入口现在也会认旧 `/profile/settings`。之前桌面设置页在自愈回 `/desktop/settings` 之前，底部“更多”不会先亮，设置工作区会短暂出现“页面已打开、入口未选中”的错位。
 - 桌面壳底部“更多”入口现在也会认协议文档页 `/legal/*`。之前桌面里打开隐私政策、用户协议、社区规范时，页面虽然仍属于设置链路，但底部“更多”不会保持选中，导致设置子页导航态掉线。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/games`、`/discover/games` 目标现在也会直接收成 `/tabs/games`，而且 `mobile-games-route-state` 会把历史 `returnPath=/games|/discover/games` 一起归一成桌面游戏中心返回地址。之前这类旧游戏中心链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧游戏中心路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/mini-programs` 目标现在也会直接收成 `/tabs/mini-programs`，而且 `mobile-mini-programs-route-state` 会把历史 `returnPath=/discover/mini-programs` 一起归一成桌面小程序返回地址。之前这类旧小程序链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/channels`、`/channels/authors/$authorId` 目标现在也会直接收成 `/tabs/channels`，而且旧作者页会把现有 `postId / returnPath / returnHash / section` 一起带回桌面视频号工作区。之前这类旧视频号链接会先打开共享页或共享作者页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
+- 桌面搜索页、搜索启动器和收藏页现在也会把旧 `/moments`、`/moments/friend/$characterId`、`/feed`、`/channels`、`/mini-programs` 这批共享根路径直接收成对应桌面工作区，不再先打开共享根页再靠页面自愈。之前这些老链接会在桌面里短暂停在旧共享页，朋友圈/视频号/小程序还可能让主导航在自愈前掉线。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/chat`、`/contacts`、`/profile`、`/search`、`/favorites`、`/notes`、`/profile/settings` 目标现在也会直接收成各自的桌面主工作区，不再先打开共享根页再靠页面自愈。其中旧 `/notes` 会直接落到 `/tabs/favorites#category=notes`，旧设置页会直接落到 `/desktop/settings`，旧资料页会直接落到 `/tabs/profile`，旧搜索页会直接落到 `/tabs/search`。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/chat/$conversationId/details|search|voice-call|video-call`，以及 `/group/$groupId/details|search|voice-call|video-call|announcement|edit/*|members/*` 目标现在也会直接收成 `/tabs/chat#...` 的桌面消息状态，不再先打开共享兼容页再重定向回桌面工作区；旧 hash 里的 `messageId` 也会一起保住。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/official-accounts` 根入口现在也会直接收成桌面通讯录里的公众号工作区，不再先打开共享公众号列表页再靠兼容页跳回桌面；如果旧 hash 里已经带了 `accountId / articleId`，这层选择态也会继续保住。
