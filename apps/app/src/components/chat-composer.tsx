@@ -1381,6 +1381,8 @@ export function ChatComposer({
         setMobilePlusNotice(
           resolveNativeFilePickNotice(result.error, {
             onRetry: pickFile,
+            secondaryActionLabel: errorActionLabel ?? undefined,
+            onSecondaryAction: onErrorAction ?? undefined,
           }),
         );
       }
@@ -5703,6 +5705,8 @@ function resolveNativeFilePickNotice(
   errorMessage: string,
   options?: {
     onRetry?: () => void;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
   },
 ): MobilePlusNoticeState {
   const normalizedMessage = errorMessage.toLowerCase();
@@ -5712,6 +5716,8 @@ function resolveNativeFilePickNotice(
       message: "当前设备暂时无法打开文件选择器，请稍后再试。",
       actionLabel: options?.onRetry ? "重试打开文件" : undefined,
       onAction: options?.onRetry,
+      secondaryActionLabel: options?.secondaryActionLabel,
+      onSecondaryAction: options?.onSecondaryAction,
     };
   }
 
@@ -5719,6 +5725,8 @@ function resolveNativeFilePickNotice(
     message: "打开文件失败，请稍后再试。",
     actionLabel: options?.onRetry ? "重试打开文件" : undefined,
     onAction: options?.onRetry,
+    secondaryActionLabel: options?.secondaryActionLabel,
+    onSecondaryAction: options?.onSecondaryAction,
   };
 }
 
