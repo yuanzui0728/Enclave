@@ -32,6 +32,8 @@ export function MobileDocumentShell({
   const [notice, setNotice] = useState<{
     tone: "success" | "info";
     message: string;
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
 
   async function handleShareDocument() {
@@ -89,6 +91,10 @@ export function MobileDocumentShell({
         message: nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制文档摘要失败，请稍后重试。",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShareDocument();
+        },
       });
     }
   }
@@ -132,7 +138,41 @@ export function MobileDocumentShell({
       <div className="space-y-2 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         {notice ? (
           <div className="px-4">
-            <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+            <InlineNotice tone={notice.tone}>
+              {notice.tone === "info" ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1">{notice.message}</span>
+                  <div className="flex items-center gap-1.5">
+                    {notice.actionLabel && notice.onAction ? (
+                      <button
+                        type="button"
+                        onClick={notice.onAction}
+                        className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      >
+                        {notice.actionLabel}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateBackOrFallback(() => {
+                          void navigate({
+                            to: isDesktopLayout
+                              ? "/desktop/settings"
+                              : "/profile/settings",
+                          });
+                        })
+                      }
+                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    >
+                      返回上一页
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                notice.message
+              )}
+            </InlineNotice>
           </div>
         ) : null}
         <section className="border-y border-[color:var(--border-faint)] bg-white px-4 py-4">
