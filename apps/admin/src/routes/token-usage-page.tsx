@@ -1256,6 +1256,7 @@ export function TokenUsagePage() {
               items={breakdown?.byScene ?? []}
               currency={currency}
               emptyText="当前还没有场景维度的账本。"
+              labelFormatter={(item) => formatScene(item.key)}
             />
             <BreakdownCard
               title="模型排行"
@@ -1810,6 +1811,7 @@ export function TokenUsagePage() {
                     title="阻断场景"
                     items={blockedBreakdown?.byScene ?? []}
                     emptyText="当前还没有场景维度的阻断记录。"
+                    labelFormatter={(item) => formatScene(item.key)}
                   />
                 </div>
               </div>
@@ -1964,6 +1966,7 @@ export function TokenUsagePage() {
                     title="降级场景"
                     items={downgradedBreakdown?.byScene ?? []}
                     emptyText="当前还没有场景维度的降级记录。"
+                    labelFormatter={(item) => formatScene(item.key)}
                   />
                 </div>
               </div>
@@ -3091,11 +3094,13 @@ function BreakdownCard({
   items,
   currency,
   emptyText,
+  labelFormatter,
 }: {
   title: string;
   items: TokenUsageBreakdownItem[];
   currency: "CNY" | "USD";
   emptyText: string;
+  labelFormatter?: (item: TokenUsageBreakdownItem) => string;
 }) {
   const maxTokens = Math.max(...items.map((item) => item.totalTokens), 1);
 
@@ -3109,7 +3114,7 @@ function BreakdownCard({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-medium text-[color:var(--text-primary)]">
-                    {item.label}
+                    {labelFormatter?.(item) ?? item.label}
                   </div>
                   <div className="text-xs text-[color:var(--text-muted)]">
                     {formatInteger(item.requestCount)} 次请求 /{" "}
@@ -3142,10 +3147,12 @@ function RequestBreakdownCard({
   title,
   items,
   emptyText,
+  labelFormatter,
 }: {
   title: string;
   items: TokenUsageBreakdownItem[];
   emptyText: string;
+  labelFormatter?: (item: TokenUsageBreakdownItem) => string;
 }) {
   const maxRequests = Math.max(...items.map((item) => item.requestCount), 1);
 
@@ -3159,7 +3166,7 @@ function RequestBreakdownCard({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-medium text-[color:var(--text-primary)]">
-                    {item.label}
+                    {labelFormatter?.(item) ?? item.label}
                   </div>
                   <div className="text-xs text-[color:var(--text-muted)]">
                     {formatInteger(item.requestCount)} 次请求
