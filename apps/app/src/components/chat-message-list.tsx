@@ -2351,6 +2351,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "批量删除失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续删除所选消息",
+        onAction: () => {
+          void handleDeleteSelectedMessages();
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     } finally {
       setSelectionActionPending(null);
