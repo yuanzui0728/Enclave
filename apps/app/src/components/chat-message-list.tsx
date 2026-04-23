@@ -1619,6 +1619,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "收藏失败，请稍后再试。",
         tone: "danger",
+        actionLabel: collected ? "继续取消收藏" : "继续收藏",
+        onAction: () => {
+          void handleToggleFavorite(message);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
