@@ -1087,6 +1087,7 @@ const expectations = [
       "matchesDesktopNavPath(pathname, prefix)",
       'label: "消息",',
       '"/chat",',
+      '"/chat/subscription-inbox",',
       'label: "通讯录",',
       '"/contacts",',
       '"/official-accounts",',

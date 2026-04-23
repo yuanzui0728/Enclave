@@ -33,6 +33,7 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     matches: [
       "/tabs/chat",
       "/chat",
+      "/chat/subscription-inbox",
       "/group/",
       "/group/new",
       "/official-accounts/service/",
