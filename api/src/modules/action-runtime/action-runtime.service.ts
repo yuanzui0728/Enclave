@@ -151,6 +151,11 @@ export class ActionRuntimeService {
       return { handled: false };
     }
 
+    const canHandleCurrentCharacter = this.canCreateActionPlan(
+      input.character,
+      rules,
+    );
+
     const pendingRun = await this.findLatestPendingRun(
       input.conversationId,
       input.ownerId,
@@ -158,6 +163,15 @@ export class ActionRuntimeService {
     );
 
     if (pendingRun) {
+      if (!canHandleCurrentCharacter) {
+        await this.cancelStalePendingRun({
+          run: pendingRun,
+          rules,
+          reason: 'entry_character_mismatch',
+          currentCharacter: input.character,
+        });
+        return { handled: false };
+      }
       const connectors = await this.listReadyConnectorEntities();
       return this.handlePendingRun({
         run: pendingRun,
@@ -167,7 +181,7 @@ export class ActionRuntimeService {
       });
     }
 
-    if (!this.canCreateActionPlan(input.character, rules)) {
+    if (!canHandleCurrentCharacter) {
       return { handled: false };
     }
 
@@ -722,6 +736,31 @@ export class ActionRuntimeService {
       ],
       order: { updatedAt: 'DESC' },
     });
+  }
+
+  private async cancelStalePendingRun(input: {
+    run: ActionRunEntity;
+    rules: ActionRuntimeRulesValue;
+    reason: string;
+    currentCharacter: CharacterEntity;
+  }) {
+    const { run, rules, reason, currentCharacter } = input;
+    run.status = 'cancelled';
+    run.tracePayload = appendTrace(run.tracePayload, {
+      phase: 'cancelled',
+      reason,
+      activeEntryCharacterSourceKey: rules.policy.entryCharacterSourceKey,
+      currentCharacterId: currentCharacter.id,
+      currentCharacterSourceKey: currentCharacter.sourceKey ?? null,
+    });
+    run.policyDecisionPayload = {
+      ...(run.policyDecisionPayload ?? {}),
+      reason,
+      activeEntryCharacterSourceKey: rules.policy.entryCharacterSourceKey,
+      currentCharacterId: currentCharacter.id,
+      currentCharacterSourceKey: currentCharacter.sourceKey ?? null,
+    };
+    await this.runRepo.save(run);
   }
 
   private async handlePendingRun(input: {
