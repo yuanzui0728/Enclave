@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { AppPage, LoadingBlock } from "@yinjie/ui";
 
 type RouteRedirectStateProps = {
-  title: string;
-  description: string;
-  loadingLabel: string;
+  title: ReactNode;
+  description: ReactNode;
+  loadingLabel: ReactNode;
 };
 
 export function RouteRedirectState({

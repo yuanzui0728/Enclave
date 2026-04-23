@@ -8,11 +8,11 @@ import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { TabPageTopBar } from "./tab-page-top-bar";
 
 type MobileDiscoverToolShellProps = {
-  title: string;
-  subtitle?: string;
-  heroBadge?: string;
-  heroTitle: string;
-  heroDescription: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
+  heroBadge?: ReactNode;
+  heroTitle: ReactNode;
+  heroDescription: ReactNode;
   heroVisual: ReactNode;
   heroAction?: ReactNode;
   notice?: ReactNode;

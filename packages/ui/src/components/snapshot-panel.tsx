@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
-type SnapshotPanelProps = HTMLAttributes<HTMLDivElement> & {
+type SnapshotPanelProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   title: ReactNode;
   value: Record<string, unknown> | null | undefined;
 };

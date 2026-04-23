@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
-type ListItemCardProps = HTMLAttributes<HTMLDivElement> & {
+type ListItemCardProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   title: ReactNode;
   subtitle?: ReactNode;
   meta?: ReactNode;

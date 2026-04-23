@@ -1,10 +1,11 @@
+import type { ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AppPage, Button } from "@yinjie/ui";
 
 type DesktopLayoutRequiredStateProps = {
-  title: string;
-  description: string;
-  actionLabel: string;
+  title: ReactNode;
+  description: ReactNode;
+  actionLabel: ReactNode;
   fallbackTo: string;
 };
 

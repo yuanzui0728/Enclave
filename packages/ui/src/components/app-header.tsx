@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
-type AppHeaderProps = HTMLAttributes<HTMLElement> & {
+type AppHeaderProps = Omit<HTMLAttributes<HTMLElement>, "title"> & {
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;

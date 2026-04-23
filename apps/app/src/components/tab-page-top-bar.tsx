@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { cn } from "@yinjie/ui";
 
-type TabPageTopBarProps = HTMLAttributes<HTMLDivElement> & {
-  title: string;
-  eyebrow?: string;
-  subtitle?: string;
+type TabPageTopBarProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
+  title: ReactNode;
+  eyebrow?: ReactNode;
+  subtitle?: ReactNode;
   leftActions?: ReactNode;
   rightActions?: ReactNode;
   titleAlign?: "left" | "center";

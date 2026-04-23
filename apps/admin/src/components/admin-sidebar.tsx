@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { Link } from "@tanstack/react-router";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -6,8 +7,8 @@ import { AdminContextBadge, AdminEyebrow } from "./admin-workbench";
 import type { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 type SidebarLink = {
-  label: string;
-  roleBadge?: string;
+  label: ReactNode;
+  roleBadge?: ReactNode;
   to:
     | "/"
     | "/setup"
@@ -23,12 +24,12 @@ type SidebarLink = {
     | "/cyber-avatar"
     | "/real-world-sync"
     | "/evals";
-  hint: string;
+  hint: ReactNode;
 };
 
 type SidebarIssue = {
-  label: string;
-  detail: string;
+  label: ReactNode;
+  detail: ReactNode;
   to:
     | "/"
     | "/characters"
@@ -174,9 +175,9 @@ export function AdminSidebar({
       {issueCount > 0 ? (
         <section className="mt-3 rounded-[20px] border border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))] p-3 shadow-[var(--shadow-soft)]">
           <div className="space-y-2">
-            {issues.map((issue) => (
+            {issues.map((issue, index) => (
               <Link
-                key={issue.label}
+                key={`${issue.to}-${index}`}
                 to={issue.to}
                 className="block rounded-[14px] border border-amber-200/70 bg-white/70 px-3 py-2.5 transition hover:border-amber-300 hover:bg-white"
               >

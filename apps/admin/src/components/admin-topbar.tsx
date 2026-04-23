@@ -1,13 +1,14 @@
+import type { ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { LanguageSwitcher, translateRuntimeMessage } from "@yinjie/i18n";
 
 type AdminTopbarProps = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  statusLabel: string;
+  eyebrow: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  statusLabel: ReactNode;
   statusTone: "healthy" | "warning" | "muted";
-  statusDetailLabel?: string;
+  statusDetailLabel?: ReactNode;
 };
 
 export function AdminTopbar({

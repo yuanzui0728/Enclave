@@ -14,14 +14,15 @@ import {
 } from "@yinjie/ui";
 
 export type AdminSectionNavItem = {
-  label: string;
-  detail: string;
+  id?: string;
+  label: ReactNode;
+  detail: ReactNode;
   onClick: () => void;
   disabled?: boolean;
 };
 
 export type AdminInfoRowItem = {
-  label: string;
+  label: ReactNode;
   value: ReactNode;
 };
 
@@ -37,12 +38,12 @@ type AdminCalloutTone = "warning" | "success" | "info" | "muted";
 type AdminActionFeedbackTone = "busy" | "success" | "warning" | "info";
 
 type AdminPageHeroProps = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  badges?: string[];
+  eyebrow: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  badges?: ReactNode[];
   actions?: ReactNode;
-  metrics?: Array<{ label: string; value: string | number }>;
+  metrics?: Array<{ label: ReactNode; value: ReactNode }>;
   className?: string;
 };
 
@@ -50,7 +51,7 @@ export function AdminContextBadge({
   label,
   className,
 }: {
-  label: string;
+  label: ReactNode;
   className?: string;
 }) {
   return (
@@ -88,8 +89,8 @@ export function AdminPageHero({
           <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</p>
           {badges?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              {badges.map((badge) => (
-                <AdminContextBadge key={`${title}-${badge}`} label={badge} />
+              {badges.map((badge, index) => (
+                <AdminContextBadge key={index} label={badge} />
               ))}
             </div>
           ) : null}
@@ -99,8 +100,8 @@ export function AdminPageHero({
 
       {metrics?.length ? (
         <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {metrics.map((item) => (
-            <MetricCard key={item.label} label={item.label} value={item.value} />
+          {metrics.map((item, index) => (
+            <MetricCard key={index} label={item.label} value={item.value} />
           ))}
         </div>
       ) : null}
@@ -112,16 +113,16 @@ export function AdminSectionNav({
   title = "段落导航",
   items,
 }: {
-  title?: string;
+  title?: ReactNode;
   items: AdminSectionNavItem[];
 }) {
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <SectionHeading>{title}</SectionHeading>
       <div className="mt-4 grid gap-2">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <button
-            key={item.label}
+            key={item.id ?? index}
             type="button"
             onClick={item.onClick}
             disabled={item.disabled}
@@ -162,14 +163,16 @@ export function AdminInfoRows({
   title,
   rows,
 }: {
-  title: string;
+  title: ReactNode;
   rows: AdminInfoRowItem[];
 }) {
   return (
     <Card className="bg-[color:var(--surface-console)]">
       <SectionHeading>{title}</SectionHeading>
       <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
-        {rows.map((row) => <AdminInfoRow key={row.label} label={row.label} value={row.value} />)}
+        {rows.map((row, index) => (
+          <AdminInfoRow key={index} label={row.label} value={row.value} />
+        ))}
       </div>
     </Card>
   );
@@ -204,7 +207,7 @@ export function AdminCallout({
   actions,
   className,
 }: {
-  title: string;
+  title: ReactNode;
   description: ReactNode;
   tone?: AdminCalloutTone;
   actions?: ReactNode;
@@ -241,7 +244,7 @@ export function AdminEmptyState({
   actions,
   className,
 }: {
-  title: string;
+  title: ReactNode;
   description: ReactNode;
   actions?: ReactNode;
   className?: string;
@@ -294,7 +297,7 @@ export function AdminPanelEmpty({
   message,
   className,
 }: {
-  message: string;
+  message: ReactNode;
   className?: string;
 }) {
   return (
@@ -464,7 +467,7 @@ export function AdminActionGroup({
   children,
   className,
 }: {
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -491,7 +494,7 @@ export function AdminDangerZone({
   children,
   className,
 }: {
-  title?: string;
+  title?: ReactNode;
   description: ReactNode;
   children: ReactNode;
   className?: string;
@@ -517,7 +520,7 @@ export function AdminActionFeedback({
   className,
 }: {
   tone: AdminActionFeedbackTone;
-  title: string;
+  title: ReactNode;
   description: ReactNode;
   className?: string;
 }) {
@@ -550,9 +553,9 @@ export function AdminDraftStatusPill({
 }: {
   ready: boolean;
   dirty: boolean;
-  loadingLabel?: string;
-  dirtyLabel?: string;
-  syncedLabel?: string;
+  loadingLabel?: ReactNode;
+  dirtyLabel?: ReactNode;
+  syncedLabel?: ReactNode;
 }) {
   return (
     <StatusPill tone={!ready ? "muted" : dirty ? "warning" : "healthy"}>
@@ -567,10 +570,10 @@ export function AdminStatusCard({
   tone,
   statusLabel,
 }: {
-  title: string;
+  title: ReactNode;
   description: ReactNode;
   tone: "healthy" | "warning" | "muted";
-  statusLabel: string;
+  statusLabel: ReactNode;
 }) {
   return (
     <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
@@ -589,8 +592,8 @@ export function AdminCompactStatusCard({
   tone,
   className,
 }: {
-  label: string;
-  value: string;
+  label: ReactNode;
+  value: ReactNode;
   tone: "healthy" | "warning";
   className?: string;
 }) {
@@ -619,7 +622,7 @@ export function AdminJumpCard({
   disabled,
 }: {
   to: AdminWorkbenchLink;
-  title: string;
+  title: ReactNode;
   detail: ReactNode;
   emphasis?: "primary" | "secondary";
   disabled?: boolean;
@@ -694,7 +697,7 @@ export function AdminHintCard({
   title,
   detail,
 }: {
-  title: string;
+  title: ReactNode;
   detail: ReactNode;
 }) {
   return (
@@ -709,7 +712,7 @@ export function AdminFormSection({
   title,
   children,
 }: {
-  title: string;
+  title: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -725,7 +728,7 @@ export function AdminValueCard({
   value,
   className,
 }: {
-  label: string;
+  label: ReactNode;
   value: ReactNode;
   className?: string;
 }) {
@@ -748,7 +751,7 @@ export function AdminToggle({
   onChange,
   className,
 }: {
-  label: string;
+  label: ReactNode;
   checked: boolean;
   onChange: (checked: boolean) => void;
   className?: string;
@@ -904,7 +907,7 @@ export function AdminTextField({
   disabled,
   className,
 }: {
-  label: string;
+  label: ReactNode;
   value: string | number;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -944,11 +947,11 @@ export function AdminTextArea({
   className,
   textareaClassName,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  description?: string;
+  description?: ReactNode;
   defaultPrompt?: string;
   className?: string;
   textareaClassName?: string;
@@ -997,10 +1000,10 @@ export function AdminSelectField({
   options,
   className,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
+  options: Array<{ value: string; label: ReactNode }>;
   className?: string;
 }) {
   return (
@@ -1010,7 +1013,7 @@ export function AdminSelectField({
       </div>
       <SelectField value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((item) => (
-          <option key={`${label}-${item.value}`} value={item.value}>
+          <option key={item.value} value={item.value}>
             {item.label}
           </option>
         ))}
@@ -1044,7 +1047,7 @@ export function AdminTabs({
   onChange,
   className,
 }: {
-  tabs: Array<{ key: string; label: string }>;
+  tabs: Array<{ key: string; label: ReactNode }>;
   activeKey: string;
   onChange: (key: string) => void;
   className?: string;
@@ -1080,7 +1083,7 @@ export function AdminSubTabs({
   onChange,
   className,
 }: {
-  tabs: Array<{ key: string; label: string }>;
+  tabs: Array<{ key: string; label: ReactNode }>;
   activeKey: string;
   onChange: (key: string) => void;
   className?: string;
