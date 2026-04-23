@@ -1,3 +1,5 @@
+import { normalizePathname } from "../../lib/normalize-pathname";
+
 export type ChannelsSectionKey =
   | "recommended"
   | "friends"
@@ -27,11 +29,13 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
-  if (nextValue === "/channels" || nextValue === "/discover/channels") {
+  const normalizedPath = normalizePathname(nextValue);
+
+  if (normalizedPath === "/channels" || normalizedPath === "/discover/channels") {
     return "/tabs/channels";
   }
 
-  return nextValue;
+  return normalizedPath;
 }
 
 function normalizeSection(value?: string | null) {

@@ -3,6 +3,7 @@ import {
   getGameCenterGame,
 } from "./game-center-data";
 import { isDesktopOnlyPath } from "../../lib/history-back";
+import { normalizePathname } from "../../lib/normalize-pathname";
 import { parseMobileGamesRouteSearch } from "./mobile-games-route-state";
 
 type BuildGameInvitePathInput = {
@@ -29,7 +30,11 @@ export function normalizeDesktopGameInviteReturnPath(
   }
 
   const [pathname, ...searchParts] = path.split("?");
-  if (pathname !== "/games" && pathname !== "/discover/games") {
+  const normalizedPathname = normalizePathname(pathname);
+  if (
+    normalizedPathname !== "/games" &&
+    normalizedPathname !== "/discover/games"
+  ) {
     return path;
   }
 
@@ -47,7 +52,7 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
-  return nextValue;
+  return normalizePathname(nextValue);
 }
 
 function normalizeHash(value?: string | null) {

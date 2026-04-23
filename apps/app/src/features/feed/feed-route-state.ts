@@ -1,4 +1,5 @@
 import { isDesktopOnlyPath } from "../../lib/history-back";
+import { normalizePathname } from "../../lib/normalize-pathname";
 
 export type FeedRouteState = {
   postId: string | null;
@@ -16,11 +17,13 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
-  if (nextValue === "/feed" || nextValue === "/discover/feed") {
+  const normalizedPath = normalizePathname(nextValue);
+
+  if (normalizedPath === "/feed" || normalizedPath === "/discover/feed") {
     return "/tabs/feed";
   }
 
-  return nextValue;
+  return normalizedPath;
 }
 
 function normalizeHash(value?: string | null) {

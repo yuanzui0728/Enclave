@@ -622,6 +622,18 @@ const expectations = [
     ],
   },
   {
+    file: "src/features/games/game-invite-route.ts",
+    description:
+      "game invite route helpers trim trailing slashes before desktop legacy /games and /discover/games return paths are folded back into /tabs/games",
+    includes: [
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
+      "const normalizedPathname = normalizePathname(pathname);",
+      'normalizedPathname !== "/games"',
+      'normalizedPathname !== "/discover/games"',
+      "return normalizePathname(nextValue);",
+    ],
+  },
+  {
     file: "src/features/official-accounts/official-message-workspace-shell.tsx",
     description:
       "desktop legacy official-message routes self-heal to /tabs/chat officialView hashes and only preserve articleId when the incoming hash already belongs to the same official view",
@@ -1376,10 +1388,13 @@ const expectations = [
   {
     file: "src/features/channels/channels-route-state.ts",
     description:
-      "desktop channels route state normalizes legacy /channels and /discover/channels return paths to /tabs/channels before pages or back links consume them",
+      "desktop channels route state trims trailing slashes and normalizes legacy /channels and /discover/channels return paths to /tabs/channels before pages or back links consume them",
     includes: [
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/channels" || nextValue === "/discover/channels") {',
+      "const normalizedPath = normalizePathname(nextValue);",
+      'normalizedPath === "/channels"',
+      'normalizedPath === "/discover/channels"',
       'return "/tabs/channels";',
       "const returnPath = normalizeReturnPath(params.get(\"returnPath\"));",
       "const returnPath = normalizeReturnPath(input?.returnPath);",
@@ -1388,10 +1403,13 @@ const expectations = [
   {
     file: "src/features/feed/feed-route-state.ts",
     description:
-      "feed route state normalizes legacy /feed and /discover/feed return paths to /tabs/feed before feed pages, desktop search, or saved links reuse them",
+      "feed route state trims trailing slashes and normalizes legacy /feed and /discover/feed return paths to /tabs/feed before feed pages, desktop search, or saved links reuse them",
     includes: [
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/feed" || nextValue === "/discover/feed") {',
+      "const normalizedPath = normalizePathname(nextValue);",
+      'normalizedPath === "/feed"',
+      'normalizedPath === "/discover/feed"',
       'return "/tabs/feed";',
       'const returnPath = normalizeReturnPath(params.get("returnPath"));',
       "const returnPath = normalizeReturnPath(input?.returnPath);",
@@ -1400,10 +1418,13 @@ const expectations = [
   {
     file: "src/features/games/mobile-games-route-state.ts",
     description:
-      "games route state normalizes legacy /games and /discover/games return paths to /tabs/games before desktop game pages, search, or saved links reuse them",
+      "games route state trims trailing slashes and normalizes legacy /games and /discover/games return paths to /tabs/games before desktop game pages, search, or saved links reuse them",
     includes: [
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
       "function normalizeReturnPath(value?: string | null) {",
-      'if (nextValue === "/games" || nextValue === "/discover/games") {',
+      "const normalizedPath = normalizePathname(nextValue);",
+      'normalizedPath === "/games"',
+      'normalizedPath === "/discover/games"',
       'return "/tabs/games";',
       'const returnPath = normalizeReturnPath(params.get("returnPath"));',
       "const returnPath = normalizeReturnPath(state.returnPath);",
@@ -1412,11 +1433,13 @@ const expectations = [
   {
     file: "src/features/mini-programs/mobile-mini-programs-route-state.ts",
     description:
-      "mini-programs route state normalizes legacy /mini-programs and /discover/mini-programs return paths to /tabs/mini-programs before desktop mini-program pages, search, or saved links reuse them",
+      "mini-programs route state trims trailing slashes and normalizes legacy /mini-programs and /discover/mini-programs return paths to /tabs/mini-programs before desktop mini-program pages, search, or saved links reuse them",
     includes: [
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
       "function normalizeReturnPath(value?: string | null) {",
-      'nextValue === "/mini-programs" ||',
-      'nextValue === "/discover/mini-programs"',
+      "const normalizedPath = normalizePathname(nextValue);",
+      'normalizedPath === "/mini-programs"',
+      'normalizedPath === "/discover/mini-programs"',
       'return "/tabs/mini-programs";',
       'const returnPath = normalizeReturnPath(params.get("returnPath"));',
       "const returnPath = normalizeReturnPath(state.returnPath);",
@@ -1747,24 +1770,32 @@ const expectations = [
   {
     file: "src/features/moments/friend-moments-route-state.ts",
     description:
-      "desktop friend-moments route state normalizes legacy /moments, /discover/moments, and old contacts return paths back into desktop tabs, and it fills missing pane hashes for legacy starred/tags returns",
+      "desktop friend-moments route state trims trailing slashes, normalizes legacy /moments, /discover/moments, and old contacts return paths back into desktop tabs, and fills missing pane hashes for legacy starred/tags returns",
     includes: [
-      'if (nextValue === "/moments" || nextValue === "/discover/moments") {',
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
+      "const normalizedPath = normalizePathname(nextValue);",
+      'normalizedPath === "/moments"',
+      'normalizedPath === "/discover/moments"',
       'return "/tabs/moments";',
-      'if (nextValue === "/contacts/starred" || nextValue === "/contacts/tags") {',
+      'normalizedPath === "/contacts/starred"',
+      'normalizedPath === "/contacts/tags"',
       'return "/tabs/contacts";',
-      'rawReturnPath === "/contacts/starred"',
+      "const normalizedRawReturnPath = rawReturnPath",
+      'normalizedRawReturnPath === "/contacts/starred"',
       'pane: "starred-friends",',
-      'rawReturnPath === "/contacts/tags"',
+      'normalizedRawReturnPath === "/contacts/tags"',
       'pane: "tags",',
     ],
   },
   {
     file: "src/features/moments/moments-route-state.ts",
     description:
-      "desktop moments route state normalizes legacy /moments and /discover/moments return paths back to /tabs/moments",
+      "desktop moments route state trims trailing slashes and normalizes legacy /moments and /discover/moments return paths back to /tabs/moments",
     includes: [
-      'if (nextValue === "/moments" || nextValue === "/discover/moments") {',
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
+      "const normalizedPath = normalizePathname(nextValue);",
+      'normalizedPath === "/moments"',
+      'normalizedPath === "/discover/moments"',
       'return "/tabs/moments";',
     ],
   },

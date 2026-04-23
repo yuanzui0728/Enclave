@@ -1,5 +1,6 @@
 import { getMiniProgramEntry } from "./mini-programs-data";
 import { isDesktopOnlyPath } from "../../lib/history-back";
+import { normalizePathname } from "../../lib/normalize-pathname";
 
 export type MobileMiniProgramsRouteState = {
   miniProgramId?: string;
@@ -19,14 +20,16 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
+  const normalizedPath = normalizePathname(nextValue);
+
   if (
-    nextValue === "/mini-programs" ||
-    nextValue === "/discover/mini-programs"
+    normalizedPath === "/mini-programs" ||
+    normalizedPath === "/discover/mini-programs"
   ) {
     return "/tabs/mini-programs";
   }
 
-  return nextValue;
+  return normalizedPath;
 }
 
 function normalizeHash(value?: string | null) {

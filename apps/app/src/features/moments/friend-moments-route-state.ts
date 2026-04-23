@@ -1,4 +1,5 @@
 import { buildDesktopContactsRouteHash } from "../contacts/contacts-route-state";
+import { normalizePathname } from "../../lib/normalize-pathname";
 
 const DESKTOP_FRIEND_MOMENTS_BASE_PATH = "/desktop/friend-moments";
 
@@ -36,15 +37,20 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
-  if (nextValue === "/moments" || nextValue === "/discover/moments") {
+  const normalizedPath = normalizePathname(nextValue);
+
+  if (normalizedPath === "/moments" || normalizedPath === "/discover/moments") {
     return "/tabs/moments";
   }
 
-  if (nextValue === "/contacts/starred" || nextValue === "/contacts/tags") {
+  if (
+    normalizedPath === "/contacts/starred" ||
+    normalizedPath === "/contacts/tags"
+  ) {
     return "/tabs/contacts";
   }
 
-  return nextValue;
+  return normalizedPath;
 }
 
 function normalizeHash(value?: string | null) {
@@ -68,15 +74,18 @@ export function parseDesktopFriendMomentsRouteState(
   const momentId = params.get("moment")?.trim();
   const source = params.get("source")?.trim();
   const rawReturnPath = params.get("returnPath");
+  const normalizedRawReturnPath = rawReturnPath
+    ? normalizePathname(rawReturnPath.trim())
+    : undefined;
   const returnPath = normalizeReturnPath(rawReturnPath);
   const explicitReturnHash = normalizeHash(params.get("returnHash"));
   const defaultLegacyContactsReturnHash =
-    rawReturnPath === "/contacts/starred"
+    normalizedRawReturnPath === "/contacts/starred"
       ? buildDesktopContactsRouteHash({
           pane: "starred-friends",
           showWorldCharacters: false,
         })
-      : rawReturnPath === "/contacts/tags"
+      : normalizedRawReturnPath === "/contacts/tags"
         ? buildDesktopContactsRouteHash({
             pane: "tags",
             showWorldCharacters: false,

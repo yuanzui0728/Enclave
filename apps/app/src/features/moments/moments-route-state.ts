@@ -1,4 +1,5 @@
 import { isDesktopOnlyPath } from "../../lib/history-back";
+import { normalizePathname } from "../../lib/normalize-pathname";
 
 export type DesktopMomentsRouteState = {
   authorId?: string;
@@ -17,11 +18,13 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
-  if (nextValue === "/moments" || nextValue === "/discover/moments") {
+  const normalizedPath = normalizePathname(nextValue);
+
+  if (normalizedPath === "/moments" || normalizedPath === "/discover/moments") {
     return "/tabs/moments";
   }
 
-  return nextValue;
+  return normalizedPath;
 }
 
 function normalizeHash(value?: string | null) {

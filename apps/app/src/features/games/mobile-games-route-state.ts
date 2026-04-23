@@ -1,5 +1,6 @@
 import { gameCenterFriendActivities, getGameCenterGame } from "./game-center-data";
 import { isDesktopOnlyPath } from "../../lib/history-back";
+import { normalizePathname } from "../../lib/normalize-pathname";
 
 export type MobileGamesRouteState = {
   gameId?: string;
@@ -18,11 +19,13 @@ function normalizeReturnPath(value?: string | null) {
     return undefined;
   }
 
-  if (nextValue === "/games" || nextValue === "/discover/games") {
+  const normalizedPath = normalizePathname(nextValue);
+
+  if (normalizedPath === "/games" || normalizedPath === "/discover/games") {
     return "/tabs/games";
   }
 
-  return nextValue;
+  return normalizedPath;
 }
 
 function normalizeHash(value?: string | null) {
