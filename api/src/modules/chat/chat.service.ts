@@ -844,13 +844,18 @@ export class ChatService {
               },
             })
           ).text;
+    const normalizedAssistantReplyText =
+      this.normalizeAssistantReplyTextForModalities(
+        assistantReplyText,
+        replyModalities,
+      );
 
-    if (assistantReplyText) {
+    if (normalizedAssistantReplyText) {
       const assistantDrafts = await this.createAssistantReplyMessages({
         conversationId: convId,
         characterId: charId,
         characterName: profile.name,
-        text: assistantReplyText,
+        text: normalizedAssistantReplyText,
         modalities: replyModalities,
       });
       const savedAiEntities = await this.msgRepo.save(
@@ -863,11 +868,13 @@ export class ChatService {
           latestAiEntity.createdAt ?? new Date(),
         );
       }
-      if (this.shouldIncludeAssistantMessageInHistory(assistantReplyText)) {
+      if (
+        this.shouldIncludeAssistantMessageInHistory(normalizedAssistantReplyText)
+      ) {
         history.push({
           role: 'assistant',
-          content: assistantReplyText,
-          parts: this.buildTextAiParts(assistantReplyText),
+          content: normalizedAssistantReplyText,
+          parts: this.buildTextAiParts(normalizedAssistantReplyText),
           characterId: charId,
         });
       }
@@ -984,7 +991,7 @@ export class ChatService {
 
     if (plan.imagePrompt) {
       sections.push(
-        '<reply_image_mode>\n如果用户希望你直接画图或发图，系统会根据用户请求生成一张图片附在你这轮回复里。你的文字回复应简短自然，可作为配文或交付说明；不要说自己无法生成图片，也不要暴露底层流程。\n</reply_image_mode>',
+        '<reply_image_mode>\n如果用户希望你直接画图或发图，系统会根据用户请求生成一张图片附在你这轮回复里。你的文字回复应简短自然，可作为配文或交付说明；不要说自己无法生成图片，不要暴露底层流程，也不要输出 Markdown 图片语法、attachment 占位或文件链接占位。\n</reply_image_mode>',
       );
     }
 
@@ -1019,6 +1026,23 @@ export class ChatService {
     };
     plan.promptSections = this.buildReplyModalityPromptSections(plan);
     return plan;
+  }
+
+  private normalizeAssistantReplyTextForModalities(
+    text: string,
+    plan: AssistantReplyModalitiesPlan,
+  ) {
+    const normalized = text.trim();
+    if (!plan.imagePrompt) {
+      return normalized;
+    }
+
+    const stripped = normalized
+      .replace(/!\[[^\]]*]\([^)]+\)/g, ' ')
+      .replace(/attachment:[^) \n]+/gi, ' ')
+      .trim();
+
+    return stripped || '给你发过去了。';
   }
 
   private async createAssistantReplyMessages(input: {
