@@ -1,4 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  HttpException,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThanOrEqual, Repository } from 'typeorm';
@@ -29,6 +36,7 @@ const ACTIVE_MEDIA_INSIGHT_JOB_STATUSES: MediaInsightJobStatus[] = [
 type MediaInsightResultPayload = {
   transcriptText?: string;
   extractedText?: string;
+  provider?: string;
 };
 
 type InsightDescriptor = {
@@ -230,10 +238,14 @@ export class MediaInsightJobService {
       job.status = 'completed';
       job.executeAfter = new Date();
       job.errorMessage = null;
+      job.errorCode = null;
       job.completedAt = new Date();
-      job.resultPayload = JSON.stringify(
-        this.buildResultPayload(input.attachment, descriptor.kind),
+      const resultPayload = this.buildResultPayload(
+        input.attachment,
+        descriptor.kind,
       );
+      job.resultPayload = JSON.stringify(resultPayload);
+      job.resultProvider = resultPayload.provider ?? null;
       job = await this.jobRepo.save(job);
       const completedAttachment = this.applyAttachmentInsightState(
         input.attachment,
@@ -250,7 +262,9 @@ export class MediaInsightJobService {
 
     job.status = 'pending';
     job.errorMessage = null;
+    job.errorCode = null;
     job.completedAt = null;
+    job.resultProvider = null;
     job.executeAfter = new Date();
     job = await this.jobRepo.save(job);
 
@@ -315,13 +329,16 @@ export class MediaInsightJobService {
 
       return this.requeueOrFailJob(job, source.attachment);
     } catch (error) {
+      const classifiedError = this.classifyInsightError(error);
       this.logger.warn(`Failed to process media insight job ${job.id}`, {
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorCode: classifiedError.errorCode,
+        errorMessage: classifiedError.errorMessage,
       });
       return this.requeueOrFailJob(
         job,
         null,
-        error instanceof Error ? error.message : String(error),
+        classifiedError.errorMessage,
+        classifiedError.errorCode,
       );
     }
   }
@@ -343,10 +360,12 @@ export class MediaInsightJobService {
         mode:
           explicitMode ??
           (job.threadType === 'group' ? 'group_attachment' : 'chat_attachment'),
+        throwOnFailure: true,
       });
       return transcription?.text
         ? {
             transcriptText: transcription.text,
+            provider: transcription.provider,
           }
         : null;
     }
@@ -371,11 +390,12 @@ export class MediaInsightJobService {
     job.completedAt = new Date();
     job.executeAfter = new Date();
     job.errorMessage = null;
+    job.errorCode = null;
     job.cancelReason = null;
     job.cancelledAt = null;
-    job.resultPayload = JSON.stringify(
-      this.buildResultPayload(attachment, job.insightKind),
-    );
+    const resultPayload = this.buildResultPayload(attachment, job.insightKind);
+    job.resultPayload = JSON.stringify(resultPayload);
+    job.resultProvider = resultPayload.provider ?? null;
     const savedJob = await this.jobRepo.save(job);
     const completedAttachment = this.applyAttachmentInsightState(
       attachment,
@@ -394,11 +414,14 @@ export class MediaInsightJobService {
     job: MediaInsightJobEntity,
     attachment: MessageAttachment | null,
     errorMessage?: string,
+    errorCode?: string,
   ) {
     const finalStatus: MediaInsightJobStatus =
       job.attemptCount >= MAX_MEDIA_INSIGHT_ATTEMPTS ? 'failed' : 'pending';
     job.status = finalStatus;
     job.errorMessage = errorMessage?.trim() || 'insight_unavailable';
+    job.errorCode = errorCode?.trim() || 'INSIGHT_UNAVAILABLE';
+    job.resultProvider = null;
     job.executeAfter = new Date(Date.now() + MEDIA_INSIGHT_PROCESSING_RETRY_MS);
     if (finalStatus === 'failed') {
       job.completedAt = new Date();
@@ -438,6 +461,7 @@ export class MediaInsightJobService {
         ...job,
         status: 'pending' as const,
         executeAfter: new Date(),
+        errorCode: job.errorCode ?? 'STALE_PROCESSING_JOB_REQUEUED',
         errorMessage: job.errorMessage ?? 'stale_processing_job_requeued',
       })),
     );
@@ -500,6 +524,7 @@ export class MediaInsightJobService {
     job.status = 'cancelled';
     job.cancelReason = reason;
     job.cancelledAt = new Date();
+    job.errorCode = null;
     job.errorMessage = null;
     await this.jobRepo.save(job);
   }
@@ -519,6 +544,7 @@ export class MediaInsightJobService {
         status: 'cancelled' as const,
         cancelReason: reason,
         cancelledAt,
+        errorCode: null,
       })),
     );
     return jobs.length;
@@ -602,6 +628,7 @@ export class MediaInsightJobService {
     if (attachment.kind === 'file' || attachment.kind === 'voice') {
       return {
         transcriptText: attachment.transcriptText,
+        provider: attachment.insight?.provider,
       };
     }
 
@@ -662,7 +689,13 @@ export class MediaInsightJobService {
     attachment: MessageAttachment,
     job: Pick<
       MediaInsightJobEntity,
-      'id' | 'insightKind' | 'status' | 'updatedAt' | 'errorMessage'
+      | 'id'
+      | 'insightKind'
+      | 'status'
+      | 'updatedAt'
+      | 'errorCode'
+      | 'errorMessage'
+      | 'resultProvider'
     >,
   ): MessageAttachment {
     if (attachment.kind !== 'file' && attachment.kind !== 'voice') {
@@ -674,6 +707,8 @@ export class MediaInsightJobService {
       kind: job.insightKind,
       status: job.status,
       updatedAt: job.updatedAt.toISOString(),
+      provider: job.resultProvider?.trim() || undefined,
+      errorCode: job.errorCode?.trim() || undefined,
       errorMessage: job.errorMessage?.trim() || undefined,
     };
 
@@ -718,5 +753,59 @@ export class MediaInsightJobService {
     return /\.(txt|md|markdown|csv|json|xml|html|htm|pdf|docx?)$/i.test(
       fileName ?? '',
     );
+  }
+
+  private classifyInsightError(error: unknown) {
+    if (error instanceof BadRequestException) {
+      return {
+        errorCode: 'BAD_REQUEST',
+        errorMessage: error.message,
+      };
+    }
+
+    if (error instanceof ServiceUnavailableException) {
+      const status = this.extractHttpStatus(error);
+      return {
+        errorCode: status === 429 ? 'RATE_LIMITED' : 'TRANSIENT_PROVIDER_FAILURE',
+        errorMessage: error.message,
+      };
+    }
+
+    if (error instanceof BadGatewayException) {
+      return {
+        errorCode: 'UNSUPPORTED_OR_EMPTY_RESULT',
+        errorMessage: error.message,
+      };
+    }
+
+    if (error instanceof HttpException) {
+      const status = this.extractHttpStatus(error);
+      return {
+        errorCode:
+          status === 401 || status === 403
+            ? 'AUTH_FAILURE'
+            : status === 429
+              ? 'RATE_LIMITED'
+              : `HTTP_${status}`,
+        errorMessage: error.message,
+      };
+    }
+
+    if (error instanceof Error) {
+      return {
+        errorCode: 'UNEXPECTED_ERROR',
+        errorMessage: error.message,
+      };
+    }
+
+    return {
+      errorCode: 'UNEXPECTED_ERROR',
+      errorMessage: String(error),
+    };
+  }
+
+  private extractHttpStatus(error: HttpException) {
+    const status = error.getStatus?.();
+    return typeof status === 'number' ? status : 500;
   }
 }

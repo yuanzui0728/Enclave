@@ -958,39 +958,97 @@ export class InferenceService implements OnModuleInit {
     };
   }
 
+  private toResolvedProviderConfig(input: {
+    account: InferenceProviderAccountEntity;
+    modelId: string;
+    allowOwnerKeyOverride: boolean;
+  }) {
+    const apiKey = this.decodeSecret(input.account.apiKeyEncrypted);
+    const transcriptionApiKey = this.decodeSecret(
+      input.account.transcriptionApiKeyEncrypted,
+    );
+
+    return {
+      accountId: input.account.id,
+      accountName: input.account.name,
+      providerKind: this.normalizeProviderKind(),
+      allowOwnerKeyOverride: input.allowOwnerKeyOverride,
+      endpoint: input.account.endpoint,
+      model: input.modelId,
+      apiKey,
+      transcriptionEndpoint:
+        input.account.transcriptionEndpoint?.trim() || input.account.endpoint,
+      transcriptionApiKey: transcriptionApiKey || apiKey,
+      transcriptionModel:
+        input.account.transcriptionModel?.trim() || DEFAULT_TRANSCRIPTION_MODEL,
+      ttsModel: input.account.ttsModel?.trim() || DEFAULT_TTS_MODEL,
+      ttsVoice: input.account.ttsVoice?.trim() || DEFAULT_TTS_VOICE,
+      apiStyle:
+        input.account.apiStyle === 'openai-responses'
+          ? 'openai-responses'
+          : 'openai-chat-completions',
+      mode:
+        input.account.mode === 'local-compatible'
+          ? 'local-compatible'
+          : 'cloud',
+    } satisfies ResolvedInferenceProviderConfig;
+  }
+
   async resolveRuntimeProviderConfig(options?: { characterId?: string | null }) {
     const defaultAccount = await this.getDefaultProviderAccountEntity();
     const route = await this.findCharacterRoute(
       options?.characterId,
       defaultAccount,
     );
-    const account = route.account;
-    const apiKey = this.decodeSecret(account.apiKeyEncrypted);
-    const transcriptionApiKey = this.decodeSecret(
-      account.transcriptionApiKeyEncrypted,
-    );
-
-    return {
-      accountId: account.id,
-      accountName: account.name,
-      providerKind: this.normalizeProviderKind(),
+    return this.toResolvedProviderConfig({
+      account: route.account,
+      modelId: route.modelId,
       allowOwnerKeyOverride: route.allowOwnerKeyOverride,
-      endpoint: account.endpoint,
-      model: route.modelId,
-      apiKey,
-      transcriptionEndpoint:
-        account.transcriptionEndpoint?.trim() || account.endpoint,
-      transcriptionApiKey: transcriptionApiKey || apiKey,
-      transcriptionModel:
-        account.transcriptionModel?.trim() || DEFAULT_TRANSCRIPTION_MODEL,
-      ttsModel: account.ttsModel?.trim() || DEFAULT_TTS_MODEL,
-      ttsVoice: account.ttsVoice?.trim() || DEFAULT_TTS_VOICE,
-      apiStyle:
-        account.apiStyle === 'openai-responses'
-          ? 'openai-responses'
-          : 'openai-chat-completions',
-      mode: account.mode === 'local-compatible' ? 'local-compatible' : 'cloud',
-    } satisfies ResolvedInferenceProviderConfig;
+    });
+  }
+
+  async listEnabledRuntimeProviderConfigs(options?: {
+    characterId?: string | null;
+  }) {
+    const defaultAccount = await this.getDefaultProviderAccountEntity();
+    const route = await this.findCharacterRoute(
+      options?.characterId,
+      defaultAccount,
+    );
+    const accounts = (await this.getAllProviderAccountEntities()).filter(
+      (account) => account.isEnabled,
+    );
+    const configs: ResolvedInferenceProviderConfig[] = [];
+    const seenAccountIds = new Set<string>();
+
+    const pushConfig = (input: {
+      account: InferenceProviderAccountEntity;
+      modelId: string;
+      allowOwnerKeyOverride: boolean;
+    }) => {
+      if (seenAccountIds.has(input.account.id)) {
+        return;
+      }
+
+      seenAccountIds.add(input.account.id);
+      configs.push(this.toResolvedProviderConfig(input));
+    };
+
+    pushConfig({
+      account: route.account,
+      modelId: route.modelId,
+      allowOwnerKeyOverride: route.allowOwnerKeyOverride,
+    });
+
+    accounts.forEach((account) => {
+      pushConfig({
+        account,
+        modelId: account.defaultModelId,
+        allowOwnerKeyOverride: true,
+      });
+    });
+
+    return configs;
   }
 
   private createModelPersonaId(modelId: string) {

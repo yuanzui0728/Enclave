@@ -158,7 +158,10 @@ type ProviderFallbackCapability =
 type ProviderFallbackCandidate = {
   provider: ResolvedProviderConfig;
   billingSource: AiUsageBillingSource;
-  reason: 'character_instance_route' | 'instance_default_route';
+  reason:
+    | 'character_instance_route'
+    | 'instance_default_route'
+    | 'enabled_provider_route';
 };
 
 type ChatCompletionTaskResult = {
@@ -843,11 +846,17 @@ export class AiOrchestratorService {
       );
     }
 
-    pushCandidate(
-      await this.resolveRuntimeProvider(),
-      'instance_default',
-      'instance_default_route',
-    );
+    const runtimeProviders =
+      await this.inferenceService.listEnabledRuntimeProviderConfigs({
+        characterId: options.characterId,
+      });
+    runtimeProviders.forEach((provider, index) => {
+      pushCandidate(
+        provider,
+        'instance_default',
+        index === 0 ? 'instance_default_route' : 'enabled_provider_route',
+      );
+    });
 
     return candidates;
   }
@@ -1633,6 +1642,7 @@ export class AiOrchestratorService {
     conversationId?: string;
     characterId?: string;
     mode?: string;
+    throwOnFailure?: boolean;
   }) {
     const normalizedMimeType =
       this.normalizeMediaMimeType(input.mimeType) ??
@@ -1666,6 +1676,10 @@ export class AiOrchestratorService {
         },
       );
     } catch (error) {
+      if (input.throwOnFailure) {
+        throw error;
+      }
+
       this.logger.warn('media transcription skipped', {
         url: input.url,
         mimeType: normalizedMimeType,

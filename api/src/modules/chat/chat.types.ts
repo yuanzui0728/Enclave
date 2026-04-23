@@ -50,6 +50,8 @@ export interface AttachmentInsight {
     | 'document_text_extraction';
   status: 'pending' | 'processing' | 'completed' | 'cancelled' | 'failed';
   updatedAt?: string;
+  provider?: string;
+  errorCode?: string;
   errorMessage?: string;
 }
 

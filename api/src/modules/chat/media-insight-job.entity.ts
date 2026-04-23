@@ -70,7 +70,13 @@ export class MediaInsightJobEntity {
   resultPayload?: string | null;
 
   @Column('text', { nullable: true })
+  resultProvider?: string | null;
+
+  @Column('text', { nullable: true })
   cancelReason?: string | null;
+
+  @Column('text', { nullable: true })
+  errorCode?: string | null;
 
   @Column('text', { nullable: true })
   errorMessage?: string | null;
