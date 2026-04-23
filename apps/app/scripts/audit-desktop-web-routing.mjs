@@ -42,10 +42,11 @@ const expectations = [
   {
     file: "src/routes/games-page.tsx",
     description:
-      "desktop games route restores query-driven selection from the raw search string, self-heals legacy desktop discover paths back to /tabs/games even when the query already matches, normalizes stale desktop return paths away from /games and /discover/games, and reuses the normalized return target inside delivered invite links",
+      "desktop games route restores query-driven selection from the raw search string, self-heals legacy /games and /discover/games paths back to /tabs/games even when the query already matches, normalizes stale desktop return paths away from /games and /discover/games, and reuses the normalized return target inside delivered invite links",
     includes: [
       'select: (state) => state.location.searchStr,',
       ">(inviteActivityFromSearch?.id ?? null);",
+      'pathname === "/games" ||',
       'const normalizedDesktopReturnPath =',
       'routeState.returnPath === "/games" ||',
       'routeState.returnPath === "/discover/games"',

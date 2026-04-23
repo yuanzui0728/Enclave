@@ -155,7 +155,9 @@ export function GamesPage() {
     onAction: () => void;
   } | null>(null);
   const isDesktopGamesRoute =
-    pathname === "/tabs/games" || pathname === "/discover/games";
+    pathname === "/tabs/games" ||
+    pathname === "/games" ||
+    pathname === "/discover/games";
   const normalizedDesktopReturnPath =
     isDesktopLayout &&
     (routeState.returnPath === "/games" ||
