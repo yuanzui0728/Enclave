@@ -50,6 +50,7 @@
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/feed` 目标现在也会直接收成 `/tabs/feed`，而且 `feed-route-state` 会把历史 `returnPath=/discover/feed` 一起归一成桌面广场动态返回地址。之前这类旧广场动态链接会先打开共享广场页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/games`、`/discover/games` 目标现在也会直接收成 `/tabs/games`，而且 `mobile-games-route-state` 会把历史 `returnPath=/games|/discover/games` 一起归一成桌面游戏中心返回地址。之前这类旧游戏中心链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧游戏中心路径。
 - 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/mini-programs` 目标现在也会直接收成 `/tabs/mini-programs`，而且 `mobile-mini-programs-route-state` 会把历史 `returnPath=/discover/mini-programs` 一起归一成桌面小程序返回地址。之前这类旧小程序链接会先打开共享页，再靠页面自愈；如果 query 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
+- 桌面搜索页、搜索启动器和收藏页里的旧 `/discover/channels` 目标现在也会直接收成 `/tabs/channels`，而且 `channels-route-state` 会把历史 `returnPath=/discover/channels` 一起归一成桌面视频号返回地址。之前这类旧视频号链接会先打开共享页，再靠页面自愈；如果 hash 里还残留旧返回目标，后续“返回上一页”也可能继续复活旧 discover 路径。
 - 桌面壳右上角“我”的资料卡里，“给自己发消息”快捷入口也已经改成桌面消息协议 `/tabs/chat#conversationId=...`。之前这里还在直跳移动 `/chat/$conversationId`，会把用户从桌面壳直接切回移动聊天页。
 - 桌面通讯录里的“群聊”分组现在也统一回桌面消息工作区：`进入群聊` 走 `/tabs/chat#conversationId=...`，`群聊信息` 走 `/tabs/chat#conversationId=...&panel=details`。之前这两个入口还会直接掉进移动 `/group/$groupId` 和 `/group/$groupId/details`。
 - 桌面通讯录联系人详情里的“共同群聊”入口也已经对齐到同一套桌面协议，点击后直接回 `/tabs/chat#conversationId=...`。之前这里也会把用户从桌面联系人详情带回移动 `/group/$groupId`。

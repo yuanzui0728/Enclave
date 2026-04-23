@@ -7,6 +7,7 @@ import {
   showCloudAdminErrorNotice,
 } from "../components/cloud-admin-error-block";
 import { ConsoleConfirmDialog } from "../components/console-confirm-dialog";
+import { RequestsPermalinkLink } from "../components/requests-permalink-link";
 import { useConsoleNotice } from "../components/console-notice";
 import {
   getWaitingSessionSyncActionLinkClassName,
@@ -19,6 +20,7 @@ import {
   WaitingSessionSyncStatusPills,
   WaitingSessionSyncTaskStatusBadge,
 } from "../components/waiting-session-sync-controls";
+import { WorldsPermalinkLink } from "../components/worlds-permalink-link";
 import {
   cloudAdminApi,
   getCloudAdminApiErrorRequestId,
@@ -53,8 +55,6 @@ import {
   type WaitingSessionSyncRouteSearch,
   buildWaitingSessionSyncTasksCsv,
 } from "../lib/waiting-session-sync-helpers";
-import { buildRequestsRouteSearch } from "../lib/request-route-search";
-import { buildWorldsRouteSearch } from "../lib/world-route-search";
 import { copyTextToClipboard } from "../lib/clipboard";
 import {
   showRequestScopedNotice,
@@ -1085,28 +1085,26 @@ export function WaitingSessionSyncPage() {
                 >
                   Export focus CSV
                 </WaitingSessionSyncActionButton>
-                <Link
-                  to="/requests"
-                  search={buildRequestsRouteSearch({
+                <RequestsPermalinkLink
+                  search={{
                     query: focusedTarget.targetValue,
-                  })}
+                  }}
                   className={getWaitingSessionSyncActionLinkClassName({
                     tone: "emerald",
                   })}
                 >
                   Open requests
-                </Link>
-                <Link
-                  to="/worlds"
-                  search={buildWorldsRouteSearch({
+                </RequestsPermalinkLink>
+                <WorldsPermalinkLink
+                  search={{
                     query: focusedTarget.targetValue,
-                  })}
+                  }}
                   className={getWaitingSessionSyncActionLinkClassName({
                     tone: "emerald",
                   })}
                 >
                   Open worlds
-                </Link>
+                </WorldsPermalinkLink>
               </div>
             </div>
           ) : null}
@@ -1475,28 +1473,26 @@ export function WaitingSessionSyncPage() {
                           </Link>
                         ) : (
                           <>
-                            <Link
-                              to="/requests"
-                              search={buildRequestsRouteSearch({
+                            <RequestsPermalinkLink
+                              search={{
                                 query: task.targetValue,
-                              })}
+                              }}
                               className={getWaitingSessionSyncActionLinkClassName({
                                 tone: "sky",
                               })}
                             >
                               Open requests
-                            </Link>
-                            <Link
-                              to="/worlds"
-                              search={buildWorldsRouteSearch({
+                            </RequestsPermalinkLink>
+                            <WorldsPermalinkLink
+                              search={{
                                 query: task.targetValue,
-                              })}
+                              }}
                               className={getWaitingSessionSyncActionLinkClassName({
                                 tone: "sky",
                               })}
                             >
                               Open worlds
-                            </Link>
+                            </WorldsPermalinkLink>
                           </>
                         )}
                       </div>
@@ -1689,30 +1685,28 @@ export function WaitingSessionSyncPage() {
                           </Link>
                         ) : (
                           <>
-                            <Link
-                              to="/requests"
-                              search={buildRequestsRouteSearch({
+                            <RequestsPermalinkLink
+                              search={{
                                 query: task.targetValue,
-                              })}
+                              }}
                               className={getWaitingSessionSyncActionLinkClassName({
                                 tone: "neutral",
                                 variant: "chip",
                               })}
                             >
                               Open requests
-                            </Link>
-                            <Link
-                              to="/worlds"
-                              search={buildWorldsRouteSearch({
+                            </RequestsPermalinkLink>
+                            <WorldsPermalinkLink
+                              search={{
                                 query: task.targetValue,
-                              })}
+                              }}
                               className={getWaitingSessionSyncActionLinkClassName({
                                 tone: "neutral",
                                 variant: "chip",
                               })}
                             >
                               Open worlds
-                            </Link>
+                            </WorldsPermalinkLink>
                           </>
                         )}
                       </div>

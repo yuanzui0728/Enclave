@@ -955,6 +955,32 @@ async function exportAdminSessionFocusedSourceSnapshot(sessionCount: number) {
       ).toBeGreaterThan(0);
 }
 
+async function expectAdminSessionFocusedSourceOverview({
+  includeThresholds = false,
+  includeCurrentRationale = false,
+}: {
+  includeThresholds?: boolean;
+  includeCurrentRationale?: boolean;
+} = {}) {
+  expect(await screen.findByText("Risk timeline")).toBeTruthy();
+  expect(await screen.findByText("Current snapshot")).toBeTruthy();
+
+  if (includeThresholds) {
+    expect(
+      await screen.findByText("Watch threshold: 2+ active or 2+ revoked"),
+    ).toBeTruthy();
+    expect(
+      await screen.findByText(
+        "Critical threshold: 4+ active or any refresh reuse",
+      ),
+    ).toBeTruthy();
+  }
+
+  if (includeCurrentRationale) {
+    expect(await screen.findByText("Current rationale")).toBeTruthy();
+  }
+}
+
 async function expectAdminSessionFocusedSourceTimelineDetail({
   includeLastRefreshed = false,
   includeLatestSnapshot = false,
@@ -1020,6 +1046,26 @@ async function openAdminSessionTimelineSessionInList({
       }),
     ).toBe(true);
   });
+}
+
+async function renderFocusedAdminSessionTimelineSessionDetail({
+  requests,
+  sourceKey,
+  sessionId = ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID,
+  detailOptions,
+}: {
+  requests: CloudAdminRequestLog[];
+  sourceKey: string;
+  sessionId?: string;
+  detailOptions?: Parameters<typeof expectAdminSessionFocusedSourceTimelineDetail>[0];
+}) {
+  await renderFocusedAdminSessionSourceGroup({ showMatches: true });
+  await openAdminSessionTimelineSessionInList({
+    requests,
+    sourceKey,
+    sessionId,
+  });
+  await expectAdminSessionFocusedSourceTimelineDetail(detailOptions);
 }
 
 async function expectAdminSessionFocusedSourceSnapshotReceipt({
@@ -2144,17 +2190,10 @@ describe("cloud-console interactions", () => {
     });
     const focusedSourceCard = await renderFocusedAdminSessionSourceGroup();
 
-    expect(await screen.findByText("Risk timeline")).toBeTruthy();
-    expect(await screen.findByText("Current snapshot")).toBeTruthy();
-    expect(
-      await screen.findByText("Watch threshold: 2+ active or 2+ revoked"),
-    ).toBeTruthy();
-    expect(
-      await screen.findByText(
-        "Critical threshold: 4+ active or any refresh reuse",
-      ),
-    ).toBeTruthy();
-    expect(await screen.findByText("Current rationale")).toBeTruthy();
+    await expectAdminSessionFocusedSourceOverview({
+      includeThresholds: true,
+      includeCurrentRationale: true,
+    });
 
     await showAdminSessionCurrentSnapshotMatches();
     expect(
@@ -2203,23 +2242,17 @@ describe("cloud-console interactions", () => {
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderFocusedAdminSessionSourceGroup({ showMatches: true });
-
-    await openAdminSessionTimelineSessionInList({
+    await renderFocusedAdminSessionTimelineSessionDetail({
       requests,
       sourceKey: expectedSourceKey,
-      sessionId: ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID,
+      detailOptions: {
+        includeLastRefreshed: true,
+        includeLatestSnapshot: true,
+        includeSyncedLabel: true,
+        includeWatchRisk: true,
+      },
     });
-
-    expect(
-      (await screen.findAllByText("Showing 1-1 of 1")).length,
-    ).toBeGreaterThan(0);
-    await expectAdminSessionFocusedSourceTimelineDetail({
-      includeLastRefreshed: true,
-      includeLatestSnapshot: true,
-      includeSyncedLabel: true,
-      includeWatchRisk: true,
-    });
+    expect((await screen.findAllByText("Showing 1-1 of 1")).length).toBeGreaterThan(0);
 
     await exportAdminSessionFocusedSourceSnapshot(1);
     await expectAdminSessionFocusedSourceSnapshotReceipt({
@@ -2234,13 +2267,10 @@ describe("cloud-console interactions", () => {
     const { requests } = installCloudAdminApiMock({
       adminSessions: groupedSessions,
     });
-    await renderFocusedAdminSessionSourceGroup({ showMatches: true });
-    await openAdminSessionTimelineSessionInList({
+    await renderFocusedAdminSessionTimelineSessionDetail({
       requests,
       sourceKey: expectedSourceKey,
-      sessionId: ADMIN_SESSION_FOCUSED_SOURCE_CURRENT_ID,
     });
-    await expectAdminSessionFocusedSourceTimelineDetail();
 
     await revokeAdminSessionSourceGroupAndAssert({
       requests,
@@ -2315,8 +2345,7 @@ describe("cloud-console interactions", () => {
       includeRequestId: false,
       title: "Timeline Source Browser",
       beforeExport: async () => {
-        expect(await screen.findByText("Risk timeline")).toBeTruthy();
-        expect(await screen.findByText("Current snapshot")).toBeTruthy();
+        await expectAdminSessionFocusedSourceOverview();
         await expectAdminSessionTimelineSummaryViews();
       },
     });
@@ -2932,7 +2961,11 @@ describe("cloud-console interactions", () => {
     });
     await renderWaitingSessionSyncPageWithTaskKey("refresh-phone:+8613800138001");
 
-    fireEvent.click(screen.getByRole("link", { name: "Open requests" }));
+    const requestsLink = screen.getByRole("link", { name: "Open requests" });
+    expect(requestsLink.getAttribute("href")).toBe(
+      `/requests?query=${encodeURIComponent(WAITING_SYNC_LINKED_PHONE)}`,
+    );
+    fireEvent.click(requestsLink);
 
     await expectWaitingSessionSyncLinkedRequestsView();
   });
@@ -2949,7 +2982,11 @@ describe("cloud-console interactions", () => {
     });
     await renderWaitingSessionSyncPageWithTaskKey("invalidate-phone:+8613800138002");
 
-    fireEvent.click(screen.getByRole("link", { name: "Open worlds" }));
+    const worldsLink = screen.getByRole("link", { name: "Open worlds" });
+    expect(worldsLink.getAttribute("href")).toBe(
+      `/worlds?query=${encodeURIComponent(WAITING_SYNC_LINKED_PHONE)}`,
+    );
+    fireEvent.click(worldsLink);
 
     await expectWaitingSessionSyncLinkedWorldsView();
   });

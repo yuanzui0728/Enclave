@@ -12,6 +12,7 @@ import {
   updateGroupPreferences,
 } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
+import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatCallFallbackSection } from "../features/chat-details/chat-call-fallback-section";
@@ -68,6 +69,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const [notice, setNotice] = useState<{
     message: string;
     showBackAction?: boolean;
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const [memberGridExpanded, setMemberGridExpanded] = useState(false);
   const [managementSheetOpen, setManagementSheetOpen] = useState(false);
@@ -164,11 +167,19 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     message: string,
     options?: {
       showBackAction?: boolean;
+      actionLabel?: string;
+      onAction?: () => void;
     },
   ) => {
     setNotice({
       message,
       ...(options?.showBackAction ? { showBackAction: true } : {}),
+      ...(options?.actionLabel && options?.onAction
+        ? {
+            actionLabel: options.actionLabel,
+            onAction: options.onAction,
+          }
+        : {}),
     });
   };
 
@@ -409,7 +420,13 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制群聊摘要失败，请稍后重试。",
-        { showBackAction: true },
+        {
+          showBackAction: true,
+          actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+          onAction: () => {
+            void handleShareGroup();
+          },
+        },
       );
     }
   }
@@ -561,10 +578,18 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             tone="info"
             className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
-            {notice.showBackAction ? (
+            {notice.showBackAction || (notice.actionLabel && notice.onAction) ? (
               <div className="flex items-start justify-between gap-2">
                 <span className="min-w-0 flex-1">{notice.message}</span>
-                {renderOperationBackAction()}
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {notice.actionLabel && notice.onAction ? (
+                    <InlineNoticeActionButton
+                      label={notice.actionLabel}
+                      onClick={notice.onAction}
+                    />
+                  ) : null}
+                  {notice.showBackAction ? renderOperationBackAction() : null}
+                </div>
               </div>
             ) : (
               notice.message

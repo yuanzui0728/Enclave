@@ -17,6 +17,10 @@ import {
   parseDesktopFriendMomentsRouteState,
 } from "../moments/friend-moments-route-state";
 import {
+  buildDesktopChannelsRouteHash,
+  parseDesktopChannelsRouteHash,
+} from "../channels/channels-route-state";
+import {
   buildFeedRouteHash,
   parseFeedRouteHash,
 } from "../feed/feed-route-state";
@@ -74,6 +78,7 @@ export function resolveSearchNavigationTarget(
     resolveDesktopFeedNavigationTarget(normalizedTarget) ??
     resolveDesktopGamesNavigationTarget(normalizedTarget) ??
     resolveDesktopMiniProgramsNavigationTarget(normalizedTarget) ??
+    resolveDesktopChannelsNavigationTarget(normalizedTarget) ??
     resolveDesktopMomentsNavigationTarget(normalizedTarget) ??
     resolveDesktopOfficialNavigationTarget(normalizedTarget) ??
     normalizedTarget
@@ -380,6 +385,24 @@ function resolveDesktopMiniProgramsNavigationTarget(
       sourceGroupName: routeState.sourceGroupName,
       returnPath: routeState.returnPath,
       returnHash: routeState.returnHash,
+    }),
+  } satisfies SearchNavigationTarget;
+}
+
+function resolveDesktopChannelsNavigationTarget(target: SearchNavigationTarget) {
+  if (target.to !== "/discover/channels" && target.to !== "/tabs/channels") {
+    return null;
+  }
+
+  const routeState = parseDesktopChannelsRouteHash(target.hash ?? "");
+  return {
+    to: "/tabs/channels",
+    hash: buildDesktopChannelsRouteHash({
+      authorId: routeState.authorId,
+      postId: routeState.postId,
+      returnPath: routeState.returnPath,
+      returnHash: routeState.returnHash,
+      section: routeState.section,
     }),
   } satisfies SearchNavigationTarget;
 }

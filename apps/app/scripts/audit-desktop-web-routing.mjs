@@ -589,8 +589,10 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /games, /discover/games, /discover/feed, /discover/mini-programs, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets to desktop workspace routes while preserving legacy mobile behavior elsewhere",
     includes: [
+      "buildDesktopChannelsRouteHash,",
+      "parseDesktopChannelsRouteHash,",
       "buildFeedRouteHash,",
       "parseFeedRouteHash,",
       "buildMobileGamesRouteSearch,",
@@ -611,6 +613,7 @@ const expectations = [
       "resolveDesktopFeedNavigationTarget(normalizedTarget)",
       "resolveDesktopGamesNavigationTarget(normalizedTarget)",
       "resolveDesktopMiniProgramsNavigationTarget(normalizedTarget)",
+      "resolveDesktopChannelsNavigationTarget(normalizedTarget)",
       "resolveDesktopMomentsNavigationTarget(normalizedTarget)",
       "resolveDesktopOfficialNavigationTarget(normalizedTarget)",
       'to: "/tabs/chat",',
@@ -623,6 +626,8 @@ const expectations = [
       'target.to !== "/discover/mini-programs" &&',
       'target.to !== "/tabs/mini-programs"',
       'to: "/tabs/mini-programs",',
+      'target.to !== "/discover/channels" && target.to !== "/tabs/channels"',
+      'to: "/tabs/channels",',
       'target.to === "/friend-requests"',
       'target.to === "/contacts/starred"',
       'target.to === "/contacts/tags"',
