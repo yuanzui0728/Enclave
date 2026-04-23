@@ -17,6 +17,7 @@
 | 主 App             | React + Vite，承载 Web / iOS / Android / Desktop 共享业务界面（`apps/app/`） | 5180 |
 | **管理后台**       | React + Vite + `@yinjie/ui`（`apps/admin/`）                                 | 5181 |
 | **云世界管理平台** | React + Vite（`apps/cloud-console/`）                                        | 5182 |
+| 微信同步本地连接器 | Node.js loopback HTTP 适配层（`apps/wechat-connector/`）                    | 17364 |
 | 桌面端壳           | Tauri 远程客户端壳（`apps/desktop/`）                                        | -    |
 | Android 壳         | Capacitor 壳（`apps/android-shell/`）                                        | -    |
 | iOS 壳             | Capacitor 壳（`apps/ios-shell/`）                                            | -    |
@@ -486,6 +487,15 @@
 - `POST /api/admin/wechat-sync/history/:characterId/retry-friendship`
 - `DELETE /api/admin/wechat-sync/history/:characterId`
 
+## 微信同步本地连接器路由
+
+- `GET /health`
+- `GET /api/config`
+- `PATCH /api/config`
+- `POST /api/scan`
+- `GET /api/contacts`
+- `POST /api/contact-bundles`
+
 ## 系统评测路由
 
 - `GET /api/system/evals/overview`
@@ -508,6 +518,10 @@
 ## 环境变量（`apps/cloud-api/.env`）
 
 `PORT` · `CLOUD_DATABASE_PATH` · `CLOUD_ADMIN_SECRET` · `CLOUD_JWT_SECRET` · `CLOUD_AUTH_TOKEN_TTL` · `CLOUD_AUTH_TOKEN_TTL_MS` · `CLOUD_CODE_TTL_SECONDS`
+
+## 环境变量（`apps/wechat-connector/.env`）
+
+`WECHAT_CONNECTOR_HOST` · `WECHAT_CONNECTOR_PORT` · `WECHAT_CONNECTOR_LABEL` · `WECHAT_CONNECTOR_PROVIDER` · `WECHAT_CONNECTOR_MANUAL_JSON_PATH` · `WECHAT_DECRYPT_BASE_URL` · `WECHAT_CONNECTOR_WECHAT_DECRYPT_BASE_URL` · `WEFLOW_BASE_URL` · `WECHAT_CONNECTOR_WEFLOW_BASE_URL` · `WEFLOW_ACCESS_TOKEN` · `WECHAT_CONNECTOR_WEFLOW_ACCESS_TOKEN` · `WECHAT_CONNECTOR_ALLOWED_ORIGINS`
 
 ## 共享包（`packages/`）
 
@@ -540,6 +554,7 @@
 - 云世界：手机号验证后进入已开通世界，未开通时提交建世界申请
 - 管理后台：访问 `apps/admin`，输入 `ADMIN_SECRET` 鉴权
 - 云世界管理平台：访问 `apps/cloud-console`，输入 `CLOUD_ADMIN_SECRET` 鉴权
+- 微信同步本地连接器：`pnpm dev:wechat-connector`，仅监听 loopback，供管理后台微信同步页读取本机授权导出的联系人与聊天摘要
 - 云平台当前不是自动实例编排器，如需“每用户一个独立实例”的自动化托管能力，需要额外实现
 
 ## Single-world cleanup notes (2026-04-09)
