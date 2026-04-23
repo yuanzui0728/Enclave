@@ -91,4 +91,15 @@ export class InferenceAdminController {
   ) {
     return this.inferenceService.installModelPersonas(body);
   }
+
+  @Post('model-personas/rebind')
+  rebindModelPersonas(
+    @Body()
+    body: {
+      modelIds?: string[];
+      providerAccountId?: string;
+    },
+  ) {
+    return this.inferenceService.rebindModelPersonas(body);
+  }
 }

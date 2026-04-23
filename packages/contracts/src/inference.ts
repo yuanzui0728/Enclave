@@ -79,3 +79,15 @@ export interface InstallModelPersonasResult {
   skippedCount: number;
   characters: Character[];
 }
+
+export interface RebindModelPersonasRequest {
+  modelIds?: string[];
+  providerAccountId?: string;
+}
+
+export interface RebindModelPersonasResult {
+  updatedCount: number;
+  skippedCount: number;
+  missingCount: number;
+  characters: Character[];
+}

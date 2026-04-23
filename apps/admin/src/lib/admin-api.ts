@@ -36,9 +36,12 @@ import type {
   InstallCharacterPresetsResult,
   InstallModelPersonasRequest,
   InstallModelPersonasResult,
+  RebindModelPersonasRequest,
+  RebindModelPersonasResult,
   NeedDiscoveryConfig,
   NeedDiscoveryOverview,
   ProviderTestResult,
+  ReminderRuntimeOverview,
   RealWorldNewsBulletinPublishRequest,
   RealWorldNewsBulletinPublishResult,
   RealWorldSyncCharacterDetail,
@@ -228,6 +231,11 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  rebindModelPersonas: (payload: RebindModelPersonasRequest) =>
+    adminFetch<RebindModelPersonasResult>("/inference/model-personas/rebind", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
@@ -360,6 +368,8 @@ export const adminApi = {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
+  getReminderRuntimeOverview: () =>
+    adminFetch<ReminderRuntimeOverview>("/reminder-runtime/overview"),
   getFollowupRuntimeOverview: () =>
     adminFetch<FollowupRuntimeOverview>("/followup-runtime/overview"),
   setFollowupRuntimeRules: (payload: Partial<FollowupRuntimeRules>) =>

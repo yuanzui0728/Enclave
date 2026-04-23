@@ -72,6 +72,7 @@ export function InferencePage() {
   const [providerDraft, setProviderDraft] =
     useState<InferenceProviderAccountDraft>(emptyDraft);
   const [modelSearch, setModelSearch] = useState("");
+  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
 
   const overviewQuery = useQuery({
     queryKey: ["admin-inference-overview"],
@@ -113,6 +114,17 @@ export function InferencePage() {
       providerAccounts.find((item) => item.id === selectedProviderId) ?? null,
     [providerAccounts, selectedProviderId],
   );
+  const selectedModelIdSet = useMemo(
+    () => new Set(selectedModelIds),
+    [selectedModelIds],
+  );
+  const selectedRoutingProviderId =
+    selectedProviderId && selectedProviderId !== "new"
+      ? selectedProviderId
+      : providerAccounts.find((item) => item.isDefault)?.id ?? "";
+  const selectedRoutingProvider =
+    providerAccounts.find((item) => item.id === selectedRoutingProviderId) ??
+    null;
 
   const filteredModels = useMemo(() => {
     const normalizedSearch = modelSearch.trim().toLowerCase();
@@ -127,6 +139,21 @@ export function InferencePage() {
         .includes(normalizedSearch),
     );
   }, [modelCatalog, modelSearch]);
+  const visibleModelIds = useMemo(
+    () => filteredModels.map((entry) => entry.id),
+    [filteredModels],
+  );
+  const selectedVisibleCount = useMemo(
+    () => filteredModels.filter((entry) => selectedModelIdSet.has(entry.id)).length,
+    [filteredModels, selectedModelIdSet],
+  );
+
+  useEffect(() => {
+    const knownModelIds = new Set(modelCatalog.map((entry) => entry.id));
+    setSelectedModelIds((current) =>
+      current.filter((modelId) => knownModelIds.has(modelId)),
+    );
+  }, [modelCatalog]);
 
   const saveMutation = useMutation({
     mutationFn: () => {
@@ -185,6 +212,47 @@ export function InferencePage() {
       ]);
     },
   });
+  const installSelectedMutation = useMutation({
+    mutationFn: (forceUpdateExisting: boolean) =>
+      adminApi.installModelPersonas({
+        providerAccountId: selectedRoutingProviderId || undefined,
+        modelIds: selectedModelIds,
+        forceUpdateExisting,
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["admin-inference-overview"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters-crud"],
+        }),
+      ]);
+    },
+  });
+  const rebindMutation = useMutation({
+    mutationFn: () =>
+      adminApi.rebindModelPersonas({
+        providerAccountId: selectedRoutingProviderId || undefined,
+        modelIds: selectedModelIds,
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["admin-inference-overview"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin-characters-crud"],
+        }),
+      ]);
+    },
+  });
 
   const canSave = Boolean(
     providerDraft.name?.trim() &&
@@ -195,13 +263,41 @@ export function InferencePage() {
     (selectedProviderId && selectedProviderId !== "new") ||
       providerAccounts.some((item) => item.isDefault),
   );
+  const canInstallSelected = selectedModelIds.length > 0 && canInstall;
+  const canRebindSelected = Boolean(
+    selectedModelIds.length > 0 && selectedRoutingProviderId,
+  );
+
+  const toggleModelSelection = (modelId: string) => {
+    setSelectedModelIds((current) => {
+      if (current.includes(modelId)) {
+        return current.filter((item) => item !== modelId);
+      }
+      return [...current, modelId];
+    });
+  };
+
+  const toggleVisibleModelSelection = () => {
+    setSelectedModelIds((current) => {
+      const next = new Set(current);
+      const allVisibleSelected =
+        visibleModelIds.length > 0 &&
+        visibleModelIds.every((modelId) => next.has(modelId));
+      if (allVisibleSelected) {
+        visibleModelIds.forEach((modelId) => next.delete(modelId));
+      } else {
+        visibleModelIds.forEach((modelId) => next.add(modelId));
+      }
+      return Array.from(next);
+    });
+  };
 
   return (
     <div className="space-y-6">
       <AdminPageHero
         eyebrow="模型与路由"
         title="多模型账户、模型目录与角色绑定"
-        description="把默认推理账户、多个 Provider Key、模型目录和模型角色批量安装收口到一个工作台。角色编辑页里可以直接切换到任意默认路由或角色专属模型。"
+        description="把默认推理账户、多个 Provider Key、模型目录，以及模型人格角色的批量安装和批量换绑收口到一个工作台。角色编辑页里可以直接切换到任意默认路由或角色专属模型。"
         metrics={[
           {
             label: "Provider 账户",
@@ -268,6 +364,20 @@ export function InferencePage() {
           description={`新增 ${installMutation.data.installedCount} 个，更新 ${installMutation.data.updatedCount} 个，跳过 ${installMutation.data.skippedCount} 个。`}
         />
       ) : null}
+      {installSelectedMutation.data ? (
+        <AdminActionFeedback
+          tone="success"
+          title="选中模型角色已处理"
+          description={`新增 ${installSelectedMutation.data.installedCount} 个，更新 ${installSelectedMutation.data.updatedCount} 个，跳过 ${installSelectedMutation.data.skippedCount} 个。`}
+        />
+      ) : null}
+      {rebindMutation.data ? (
+        <AdminActionFeedback
+          tone={rebindMutation.data.missingCount > 0 ? "warning" : "success"}
+          title="模型人格角色换绑完成"
+          description={`已更新 ${rebindMutation.data.updatedCount} 个，跳过 ${rebindMutation.data.skippedCount} 个，未安装 ${rebindMutation.data.missingCount} 个。`}
+        />
+      ) : null}
       {saveMutation.isError && saveMutation.error instanceof Error ? (
         <ErrorBlock message={saveMutation.error.message} />
       ) : null}
@@ -276,6 +386,13 @@ export function InferencePage() {
       ) : null}
       {installMutation.isError && installMutation.error instanceof Error ? (
         <ErrorBlock message={installMutation.error.message} />
+      ) : null}
+      {installSelectedMutation.isError &&
+      installSelectedMutation.error instanceof Error ? (
+        <ErrorBlock message={installSelectedMutation.error.message} />
+      ) : null}
+      {rebindMutation.isError && rebindMutation.error instanceof Error ? (
+        <ErrorBlock message={rebindMutation.error.message} />
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
@@ -517,7 +634,7 @@ export function InferencePage() {
       <AdminCallout
         tone="info"
         title="模型角色批量安装"
-        description="点击“安装全部模型角色”后，系统会为目录里的主流模型各建一个世界角色，并把角色路由锁到它对应的模型。后续你也可以在角色编辑页单独换模型、换 Provider 账户。"
+        description="点击“安装全部模型角色”后，系统会为目录里的主流模型各建一个世界角色，并把角色路由锁到它对应的模型。下面的模型目录还支持按搜索结果勾选后批量安装，或把已安装的模型人格角色统一换绑到当前 Provider。"
         actions={
           <Button
             variant="secondary"
@@ -533,20 +650,80 @@ export function InferencePage() {
         <AdminSectionHeader
           title="模型目录"
           actions={
-            <div className="w-[280px]">
-              <Field
-                label="搜索模型"
-                value={modelSearch}
-                onChange={setModelSearch}
-              />
+            <div className="flex flex-wrap items-end justify-end gap-3">
+              <div className="w-[280px]">
+                <Field
+                  label="搜索模型"
+                  value={modelSearch}
+                  onChange={setModelSearch}
+                />
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={toggleVisibleModelSelection}
+                disabled={visibleModelIds.length === 0}
+              >
+                {visibleModelIds.length > 0 &&
+                selectedVisibleCount === visibleModelIds.length
+                  ? "取消当前筛选"
+                  : "选中当前筛选"}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSelectedModelIds([])}
+                disabled={selectedModelIds.length === 0}
+              >
+                清空选择
+              </Button>
             </div>
           }
         />
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3">
+          <StatusPill tone="muted">已选 {selectedModelIds.length} 个模型</StatusPill>
+          <div className="text-sm text-[color:var(--text-secondary)]">
+            当前批量路由目标：
+            {selectedRoutingProvider ? selectedRoutingProvider.name : "未选择 Provider"}
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => installSelectedMutation.mutate(false)}
+            disabled={!canInstallSelected || installSelectedMutation.isPending}
+          >
+            {installSelectedMutation.isPending ? "安装中..." : "安装选中模型角色"}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => installSelectedMutation.mutate(true)}
+            disabled={!canInstallSelected || installSelectedMutation.isPending}
+          >
+            {installSelectedMutation.isPending ? "刷新中..." : "覆盖刷新选中角色"}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => rebindMutation.mutate()}
+            disabled={!canRebindSelected || rebindMutation.isPending}
+          >
+            {rebindMutation.isPending
+              ? "换绑中..."
+              : "换绑选中模型人格角色到当前 Provider"}
+          </Button>
+        </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filteredModels.map((entry) => (
+          {filteredModels.map((entry) => {
+            const selected = selectedModelIdSet.has(entry.id);
+            return (
             <div
               key={entry.id}
-              className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 shadow-[var(--shadow-soft)]"
+              className={`rounded-[20px] border bg-[color:var(--surface-card)] px-4 py-3 shadow-[var(--shadow-soft)] ${
+                selected
+                  ? "border-[color:var(--border-brand)] ring-1 ring-[color:var(--border-brand)]"
+                  : "border-[color:var(--border-faint)]"
+              }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -557,17 +734,28 @@ export function InferencePage() {
                     {entry.vendor} · {entry.region === "domestic" ? "国内" : "国际"}
                   </div>
                 </div>
-                <StatusPill
-                  tone={
-                    entry.status === "active"
-                      ? "healthy"
-                      : entry.status === "preview"
-                        ? "warning"
-                        : "muted"
-                  }
-                >
-                  {entry.status}
-                </StatusPill>
+                <div className="flex flex-col items-end gap-2">
+                  <label className="inline-flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-[color:var(--brand-primary)]"
+                      checked={selected}
+                      onChange={() => toggleModelSelection(entry.id)}
+                    />
+                    选中
+                  </label>
+                  <StatusPill
+                    tone={
+                      entry.status === "active"
+                        ? "healthy"
+                        : entry.status === "preview"
+                          ? "warning"
+                          : "muted"
+                    }
+                  >
+                    {entry.status}
+                  </StatusPill>
+                </div>
               </div>
               <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
                 {entry.description}
@@ -584,7 +772,8 @@ export function InferencePage() {
                 ) : null}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         {filteredModels.length === 0 ? (
           <div className="mt-4">

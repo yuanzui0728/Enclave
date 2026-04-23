@@ -1004,6 +1004,24 @@ export class InferenceService implements OnModuleInit {
     return `model_${normalized || 'role'}_${suffix}`;
   }
 
+  private createModelPersonaSourceKey(modelId: string) {
+    return `model_persona:${modelId.trim()}`;
+  }
+
+  private resolveModelPersonaModelId(
+    character: Pick<CharacterEntity, 'sourceKey' | 'inferenceModelId'>,
+  ) {
+    const sourceKey = character.sourceKey?.trim();
+    if (sourceKey?.startsWith('model_persona:')) {
+      const modelId = sourceKey.slice('model_persona:'.length).trim();
+      if (modelId) {
+        return modelId;
+      }
+    }
+
+    return character.inferenceModelId?.trim() || null;
+  }
+
   async installModelPersonas(options?: {
     modelIds?: string[];
     providerAccountId?: string;
@@ -1038,7 +1056,7 @@ export class InferenceService implements OnModuleInit {
     const characters: CharacterEntity[] = [];
 
     for (const entry of modelCatalog) {
-      const sourceKey = `model_persona:${entry.id}`;
+      const sourceKey = this.createModelPersonaSourceKey(entry.id);
       const existing = await this.characterRepo.findOne({
         where: [
           { sourceType: 'model_persona', sourceKey },
@@ -1153,6 +1171,128 @@ export class InferenceService implements OnModuleInit {
       installedCount,
       updatedCount,
       skippedCount,
+      characters,
+    };
+  }
+
+  async rebindModelPersonas(options?: {
+    modelIds?: string[];
+    providerAccountId?: string;
+  }) {
+    await this.seedModelCatalog();
+    const defaultAccount = await this.getDefaultProviderAccountEntity();
+    const modelIds =
+      options?.modelIds
+        ?.map((item) => item.trim())
+        .filter((item) => item.length > 0) ?? [];
+    const providerAccountId =
+      options?.providerAccountId?.trim() || defaultAccount.id;
+    const providerAccount = await this.providerRepo.findOneBy({
+      id: providerAccountId,
+    });
+    if (!providerAccount) {
+      throw new NotFoundException(`Provider account ${providerAccountId} not found.`);
+    }
+    if (!providerAccount.isEnabled) {
+      throw new BadRequestException(
+        '请先启用目标 Provider 账户，再批量换绑模型人格角色。',
+      );
+    }
+
+    const selectedCatalogEntries =
+      modelIds.length > 0
+        ? await this.modelCatalogRepo.find({
+            where: modelIds.map((id) => ({ id })),
+            order: { sortOrder: 'ASC', label: 'ASC' },
+          })
+        : [];
+    if (modelIds.length > 0 && selectedCatalogEntries.length === 0) {
+      throw new BadRequestException('至少选择一个已登记的模型目录项。');
+    }
+
+    const existingCharacters =
+      modelIds.length > 0
+        ? await this.characterRepo.find({
+            where: selectedCatalogEntries.map((entry) => ({
+              sourceType: 'model_persona',
+              sourceKey: this.createModelPersonaSourceKey(entry.id),
+            })),
+          })
+        : await this.characterRepo.find({
+            where: { sourceType: 'model_persona' },
+          });
+
+    const modelRoutingNotes = `由模型路由批量换绑器更新，锁定到 ${providerAccount.name}。`;
+    let updatedCount = 0;
+    let skippedCount = 0;
+    let missingCount = 0;
+    const characters: CharacterEntity[] = [];
+
+    const applyBinding = async (
+      character: CharacterEntity,
+      modelId: string,
+    ): Promise<CharacterEntity> => {
+      const normalizedModelId = modelId.trim();
+      const shouldUpdate =
+        character.modelRoutingMode !== 'character_override' ||
+        (character.inferenceProviderAccountId?.trim() || null) !==
+          providerAccount.id ||
+        (character.inferenceModelId?.trim() || null) !== normalizedModelId ||
+        character.allowOwnerKeyOverride !== false ||
+        (character.modelRoutingNotes?.trim() || null) !== modelRoutingNotes;
+      if (!shouldUpdate) {
+        skippedCount += 1;
+        return character;
+      }
+
+      updatedCount += 1;
+      return this.characterRepo.save(
+        this.characterRepo.create({
+          ...character,
+          modelRoutingMode: 'character_override',
+          inferenceProviderAccountId: providerAccount.id,
+          inferenceModelId: normalizedModelId,
+          allowOwnerKeyOverride: false,
+          modelRoutingNotes,
+        }),
+      );
+    };
+
+    if (selectedCatalogEntries.length > 0) {
+      const existingBySourceKey = new Map(
+        existingCharacters.map((character) => [
+          character.sourceKey?.trim() || '',
+          character,
+        ]),
+      );
+
+      for (const entry of selectedCatalogEntries) {
+        const sourceKey = this.createModelPersonaSourceKey(entry.id);
+        const existing = existingBySourceKey.get(sourceKey);
+        if (!existing) {
+          missingCount += 1;
+          continue;
+        }
+
+        characters.push(await applyBinding(existing, entry.id));
+      }
+    } else {
+      for (const character of existingCharacters) {
+        const modelId = this.resolveModelPersonaModelId(character);
+        if (!modelId) {
+          skippedCount += 1;
+          characters.push(character);
+          continue;
+        }
+
+        characters.push(await applyBinding(character, modelId));
+      }
+    }
+
+    return {
+      updatedCount,
+      skippedCount,
+      missingCount,
       characters,
     };
   }
