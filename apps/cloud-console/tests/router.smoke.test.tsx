@@ -38,6 +38,11 @@ describe("cloud-console router smoke", () => {
         "href",
       ),
     ).toBe("/sessions");
+    expect(
+      (await screen.findByRole("link", { name: "Waiting Sync" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/waiting-sync");
   });
 
   it("navigates through compact request and world nav links", async () => {

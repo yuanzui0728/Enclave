@@ -5,13 +5,13 @@ import { InlineNotice } from "@yinjie/ui";
 import { JobsPermalinkLink } from "./jobs-permalink-link";
 import { RequestsPermalinkLink } from "./requests-permalink-link";
 import { SessionsPermalinkLink } from "./sessions-permalink-link";
+import { WaitingSyncPermalinkLink } from "./waiting-sync-permalink-link";
 import { WorldsPermalinkLink } from "./worlds-permalink-link";
 import {
   getCloudAdminSecret,
   revokeStoredCloudAdminSession,
   setCloudAdminSecret,
 } from "../lib/cloud-admin-api";
-import { DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH } from "../lib/waiting-session-sync-helpers";
 import { ConsoleNoticeProvider, useConsoleNotice } from "./console-notice";
 
 const NAV_LINK =
@@ -144,14 +144,13 @@ function RootLayoutContent() {
             >
               Sessions
             </SessionsPermalinkLink>
-            <Link
-              to="/waiting-sync"
-              search={DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH}
-              className={NAV_LINK}
-              activeProps={{ className: NAV_LINK_ACTIVE }}
+            <WaitingSyncPermalinkLink
+              className={
+                pathname === "/waiting-sync" ? NAV_LINK_ACTIVE : NAV_LINK
+              }
             >
               Waiting Sync
-            </Link>
+            </WaitingSyncPermalinkLink>
           </div>
         </div>
 
