@@ -1294,6 +1294,62 @@ async function clearAdminSessionReceiptsAndExpectClosed() {
   });
 }
 
+function installAdminSessionSourceGroupsMock({
+  adminSessions,
+  includeDefaultAdminSessions = false,
+}: {
+  adminSessions: typeof mockAdminSessions;
+  includeDefaultAdminSessions?: boolean;
+}) {
+  return installCloudAdminApiMock({
+    adminSessions: includeDefaultAdminSessions
+      ? [...mockAdminSessions, ...adminSessions]
+      : adminSessions,
+  });
+}
+
+async function renderInstalledAdminSessionSourceGroupsPage({
+  adminSessions,
+  includeDefaultAdminSessions = false,
+  search,
+  riskFilter,
+}: {
+  adminSessions: typeof mockAdminSessions;
+  includeDefaultAdminSessions?: boolean;
+  search?: string;
+  riskFilter?: string;
+}) {
+  const { requests } = installAdminSessionSourceGroupsMock({
+    adminSessions,
+    includeDefaultAdminSessions,
+  });
+  await renderAdminSessionSourceGroupsPage({
+    requests,
+    search,
+    riskFilter,
+  });
+  return { requests };
+}
+
+async function renderInstalledAdminSessionRiskQuickViewPage({
+  adminSessions,
+  buttonName = "Watch risk",
+  riskLevel = "watch",
+}: {
+  adminSessions: typeof mockAdminSessions;
+  buttonName?: string;
+  riskLevel?: string;
+}) {
+  const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
+    adminSessions,
+  });
+  await switchAdminSessionRiskQuickView(requests, {
+    buttonName,
+    riskLevel,
+  });
+  return { requests };
+}
+
 async function expectAdminSessionDownloadNotice(message: ScreenTextMatcher) {
   expect(await screen.findByText(message)).toBeTruthy();
   await expectAdminSessionRequestIdNotice();
@@ -1350,14 +1406,14 @@ async function exportAdminSessionSourceGroupScenario({
   title?: string;
   beforeExport?: () => Promise<void> | void;
 }) {
-  const { requests } = installCloudAdminApiMock({
+  const { requests } = installAdminSessionSourceGroupsMock({
     adminSessions,
   });
 
   if (title) {
     await renderFocusedAdminSessionSourceGroup({ title });
   } else {
-    await renderAdminSessionSourceGroupsPage({ search });
+    await renderAdminSessionSourceGroupsPage({ requests, search });
   }
 
   await beforeExport?.();
@@ -1541,17 +1597,16 @@ async function exportAdminSessionRiskQuickViewScenario({
   quickViewButtonName?: string;
   riskLevel?: string;
 }) {
-  const { requests } = installCloudAdminApiMock({
+  const { requests } = await renderInstalledAdminSessionRiskQuickViewPage({
     adminSessions,
-  });
-
-  await renderAdminSessionsPage();
-  await exportAdminSessionRiskQuickViewArtifact(requests, {
-    buttonName,
-    message,
-    quickViewButtonName,
+    buttonName: quickViewButtonName,
     riskLevel,
   });
+  await exportAdminSessionDownloadArtifact({
+    buttonName,
+    message,
+  });
+  expectAdminSessionRiskSnapshotRequest(requests, riskLevel);
 }
 
 async function expectAdminSessionTimelineSummaryViews() {
@@ -2246,14 +2301,9 @@ describe("cloud-console interactions", () => {
         },
       ],
     });
-    const groupedSessions = [
-      ...mockAdminSessions,
-      ...sharedSourceSessions,
-    ];
-    const { requests } = installCloudAdminApiMock({
-      adminSessions: groupedSessions,
-    });
-    await renderAdminSessionSourceGroupsPage({
+    const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
+      adminSessions: sharedSourceSessions,
+      includeDefaultAdminSessions: true,
       search: "Shared Source Browser",
     });
 
@@ -2478,11 +2528,8 @@ describe("cloud-console interactions", () => {
           },
         ],
       });
-    const { requests } = installCloudAdminApiMock({
+    const { requests } = await renderInstalledAdminSessionSourceGroupsPage({
       adminSessions: groupedSessions,
-    });
-    await renderAdminSessionSourceGroupsPage({
-      requests,
       riskFilter: "watch",
     });
 
@@ -3940,6 +3987,22 @@ describe("cloud-console interactions", () => {
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
       `${window.location.origin}/waiting-sync?status=failed&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&page=2&pageSize=10`,
     );
+  });
+
+  it("opens the current waiting-sync permalink in a new tab", async () => {
+    renderRoute(
+      "/waiting-sync?status=failed&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&page=2&pageSize=10",
+    );
+
+    expect(await screen.findByText("Waiting session sync")).toBeTruthy();
+
+    const permalinkLink = screen.getByRole("link", {
+      name: "Open waiting sync permalink",
+    });
+    expect(permalinkLink.getAttribute("href")).toBe(
+      "/waiting-sync?status=failed&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&page=2&pageSize=10",
+    );
+    expect(permalinkLink.getAttribute("target")).toBe("_blank");
   });
 
   it("opens superseded jobs views from dashboard shortcuts", async () => {
