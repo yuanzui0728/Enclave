@@ -283,6 +283,129 @@ const ADMIN_SESSION_FOCUSED_SOURCE_SECONDARY_ID =
 const ADMIN_SESSION_FOCUSED_SOURCE_OTHER_ID =
   "99999999-9999-4999-8999-999999999999";
 
+const ADMIN_SESSION_SOURCE_GROUP_EXPORT_CASES = [
+  {
+    name: "exports the focused source-group risk timeline as CSV",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.189",
+      issuedUserAgent: "Timeline Source Browser",
+      sourceSessions: [
+        {
+          template: mockAdminSessions[0],
+          id: "a1111111-1111-4111-8111-111111111111",
+          isCurrent: true,
+          status: "active" as const,
+        },
+        {
+          id: "a2222222-2222-4222-8222-222222222222",
+          isCurrent: false,
+          status: "active" as const,
+        },
+      ],
+    },
+    exportOptions: {
+      buttonName: "Export timeline CSV",
+      message: /Downloaded weekly risk timeline CSV for \d+ point\(s\)\./,
+      includeRequestId: false,
+      title: "Timeline Source Browser",
+      beforeExport: async () => {
+        await expectAdminSessionFocusedSourceOverview();
+        await expectAdminSessionTimelineSummaryViews();
+      },
+    },
+  },
+  {
+    name: "exports an admin session source-group snapshot",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.200",
+      issuedUserAgent: "Snapshot Source Browser",
+      sourceSessions: [
+        {
+          template: mockAdminSessions[0],
+          id: "12121212-1212-4121-8121-121212121212",
+          isCurrent: true,
+          status: "active" as const,
+        },
+        {
+          id: "34343434-3434-4343-8343-343434343434",
+          isCurrent: false,
+          status: "revoked" as const,
+          revocationReason: "refresh-token-reuse" as const,
+        },
+      ],
+    },
+    exportOptions: {
+      buttonName: "Export snapshot",
+      message: "Downloaded admin session audit snapshot for 2 session(s).",
+      beforeExport: async () => {
+        expect((await screen.findAllByText("Critical risk")).length).toBeGreaterThan(0);
+        expect(await screen.findByText("Refresh reuse detected")).toBeTruthy();
+      },
+    },
+  },
+] as const;
+
+const ADMIN_SESSION_RISK_QUICK_VIEW_EXPORT_CASES = [
+  {
+    name: "switches to a risk quick view and exports the matching risk snapshot",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.211",
+      issuedUserAgent: "Quick View Watch Browser",
+      sourceSessionIds: [
+        "89898989-8989-4898-8898-898989898989",
+        "90909090-9090-4909-8909-909090909090",
+      ] as [string, string],
+      otherSessions: [
+        {
+          template: mockAdminSessions[2],
+          id: "91919191-9191-4919-8919-919191919191",
+          issuedFromIp: "198.51.100.211",
+          issuedUserAgent: "Quick View Normal Browser",
+          isCurrent: true,
+          status: "active" as const,
+          revocationReason: null,
+          revokedAt: null,
+          revokedBySessionId: null,
+        },
+      ],
+    },
+    exportOptions: {
+      buttonName: "Export risk snapshot",
+      message: "Downloaded risk snapshot for 1 group(s) and 2 session(s).",
+    },
+  },
+  {
+    name: "exports the matching risk snapshot as groups CSV",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.212",
+      issuedUserAgent: "Quick View Csv Browser",
+      sourceSessionIds: [
+        "92929292-9292-4929-8929-929292929292",
+        "93939393-9393-4939-8939-939393939393",
+      ] as [string, string],
+    },
+    exportOptions: {
+      buttonName: "Export risk groups CSV",
+      message: "Downloaded risk groups CSV for 1 group(s).",
+    },
+  },
+  {
+    name: "exports the matching risk snapshot as sessions CSV",
+    sourceScenario: {
+      issuedFromIp: "203.0.113.213",
+      issuedUserAgent: "Quick View Session Csv Browser",
+      sourceSessionIds: [
+        "94949494-9494-4949-8949-949494949494",
+        "95959595-9595-4959-8959-959595959595",
+      ] as [string, string],
+    },
+    exportOptions: {
+      buttonName: "Export risk sessions CSV",
+      message: "Downloaded risk sessions CSV for 2 session(s).",
+    },
+  },
+] as const;
+
 function buildAdminSessionSourceKey(
   issuedFromIp: string,
   issuedUserAgent: string,
@@ -2416,70 +2539,17 @@ describe("cloud-console interactions", () => {
     });
   });
 
-  it("exports the focused source-group risk timeline as CSV", async () => {
+  it.each(ADMIN_SESSION_SOURCE_GROUP_EXPORT_CASES)("$name", async ({
+    sourceScenario,
+    exportOptions,
+  }) => {
     const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario({
-        issuedFromIp: "203.0.113.189",
-        issuedUserAgent: "Timeline Source Browser",
-        sourceSessions: [
-          {
-            template: mockAdminSessions[0],
-            id: "a1111111-1111-4111-8111-111111111111",
-            isCurrent: true,
-            status: "active",
-          },
-          {
-            id: "a2222222-2222-4222-8222-222222222222",
-            isCurrent: false,
-            status: "active",
-          },
-        ],
-      });
+      buildAdminSessionSourceScenario(sourceScenario);
 
     await exportAdminSessionSourceGroupScenario({
       adminSessions: groupedSessions,
       sourceKey: expectedSourceKey,
-      buttonName: "Export timeline CSV",
-      message: /Downloaded weekly risk timeline CSV for \d+ point\(s\)\./,
-      includeRequestId: false,
-      title: "Timeline Source Browser",
-      beforeExport: async () => {
-        await expectAdminSessionFocusedSourceOverview();
-        await expectAdminSessionTimelineSummaryViews();
-      },
-    });
-  });
-
-  it("exports an admin session source-group snapshot", async () => {
-    const { adminSessions: groupedSessions, sourceKey: expectedSourceKey } =
-      buildAdminSessionSourceScenario({
-        issuedFromIp: "203.0.113.200",
-        issuedUserAgent: "Snapshot Source Browser",
-        sourceSessions: [
-          {
-            template: mockAdminSessions[0],
-            id: "12121212-1212-4121-8121-121212121212",
-            isCurrent: true,
-            status: "active",
-          },
-          {
-            id: "34343434-3434-4343-8343-343434343434",
-            isCurrent: false,
-            status: "revoked",
-            revocationReason: "refresh-token-reuse" as const,
-          },
-        ],
-      });
-
-    await exportAdminSessionSourceGroupScenario({
-      adminSessions: groupedSessions,
-      sourceKey: expectedSourceKey,
-      buttonName: "Export snapshot",
-      message: "Downloaded admin session audit snapshot for 2 session(s).",
-      beforeExport: async () => {
-        expect((await screen.findAllByText("Critical risk")).length).toBeGreaterThan(0);
-        expect(await screen.findByText("Refresh reuse detected")).toBeTruthy();
-      },
+      ...exportOptions,
     });
   });
 
@@ -2514,70 +2584,16 @@ describe("cloud-console interactions", () => {
     });
   });
 
-  it("switches to a risk quick view and exports the matching risk snapshot", async () => {
+  it.each(ADMIN_SESSION_RISK_QUICK_VIEW_EXPORT_CASES)("$name", async ({
+    sourceScenario,
+    exportOptions,
+  }) => {
     const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
-        issuedFromIp: "203.0.113.211",
-        issuedUserAgent: "Quick View Watch Browser",
-        sourceSessionIds: [
-          "89898989-8989-4898-8898-898989898989",
-          "90909090-9090-4909-8909-909090909090",
-        ],
-        otherSessions: [
-          {
-            template: mockAdminSessions[2],
-            id: "91919191-9191-4919-8919-919191919191",
-            issuedFromIp: "198.51.100.211",
-            issuedUserAgent: "Quick View Normal Browser",
-            isCurrent: true,
-            status: "active",
-            revocationReason: null,
-            revokedAt: null,
-            revokedBySessionId: null,
-          },
-        ],
-      });
+      buildAdminSessionActiveSourcePairScenario(sourceScenario);
 
     await exportAdminSessionRiskQuickViewScenario({
       adminSessions: groupedSessions,
-      buttonName: "Export risk snapshot",
-      message: "Downloaded risk snapshot for 1 group(s) and 2 session(s).",
-    });
-  });
-
-  it("exports the matching risk snapshot as groups CSV", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
-        issuedFromIp: "203.0.113.212",
-        issuedUserAgent: "Quick View Csv Browser",
-        sourceSessionIds: [
-          "92929292-9292-4929-8929-929292929292",
-          "93939393-9393-4939-8939-939393939393",
-        ],
-      });
-
-    await exportAdminSessionRiskQuickViewScenario({
-      adminSessions: groupedSessions,
-      buttonName: "Export risk groups CSV",
-      message: "Downloaded risk groups CSV for 1 group(s).",
-    });
-  });
-
-  it("exports the matching risk snapshot as sessions CSV", async () => {
-    const { adminSessions: groupedSessions } =
-      buildAdminSessionActiveSourcePairScenario({
-        issuedFromIp: "203.0.113.213",
-        issuedUserAgent: "Quick View Session Csv Browser",
-        sourceSessionIds: [
-          "94949494-9494-4949-8949-949494949494",
-          "95959595-9595-4959-8959-959595959595",
-        ],
-      });
-
-    await exportAdminSessionRiskQuickViewScenario({
-      adminSessions: groupedSessions,
-      buttonName: "Export risk sessions CSV",
-      message: "Downloaded risk sessions CSV for 2 session(s).",
+      ...exportOptions,
     });
   });
 
@@ -3961,6 +3977,25 @@ describe("cloud-console interactions", () => {
     ).toBeTruthy();
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
       `${window.location.origin}/waiting-sync?status=failed&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&page=2&pageSize=10`,
+    );
+  });
+
+  it("copies a compact admin-sessions permalink from the admin-sessions page", async () => {
+    renderRoute(
+      "/admin-sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12",
+    );
+
+    expect(await screen.findByText("Admin sessions")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy sessions permalink" }),
+    );
+
+    expect(
+      await screen.findByText("Admin sessions permalink copied."),
+    ).toBeTruthy();
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/admin-sessions?status=revoked&revocationReason=manual-revocation&scope=current&query=admin%40example.com&sourceKey=browser%3Achrome&sourceIssuedFromIp=10.0.0.8&sourceIssuedUserAgent=Mozilla%2F5.0&sortBy=revokedAt&sortDirection=asc&page=2&pageSize=20&sourceSortBy=totalSessions&sourceSortDirection=asc&sourceRiskLevel=watch&sourcePage=3&sourcePageSize=12`,
     );
   });
 
