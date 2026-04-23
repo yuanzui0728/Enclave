@@ -30,6 +30,14 @@ const MULTIMODAL_DIAGNOSTICS_CONFIG_KEY =
 const IMAGE_INPUT_PROBE_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAIElEQVR4nGO4o6CAHX3AjhhGNdBIwwfs6AN2NKqBJhoAXkPsEKPssDYAAAAASUVORK5CYII=';
 
+const AUDIO_INPUT_DIAGNOSTIC_MESSAGES = {
+  missingProviderConfig:
+    'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_MISSING_PROVIDER_CONFIG',
+  undeclaredCapability:
+    'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_UNDECLARED_CAPABILITY',
+  success: 'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_SUCCESS',
+} as const;
+
 const DIAGNOSTIC_CAPABILITIES = [
   'text',
   'image_input',
@@ -1178,7 +1186,7 @@ export class InferenceService implements OnModuleInit {
         ),
         buildMatrixItem(
           'audio_input',
-          '原生音频理解',
+          'Native audio input',
           Boolean(provider.apiKey?.trim() && provider.model?.trim()),
           capabilities.supportsNativeAudioInput,
         ),
@@ -1530,7 +1538,7 @@ export class InferenceService implements OnModuleInit {
         'audio_input',
         provider,
         startedAt,
-        '原生音频输入诊断缺少主推理 API Key 或默认模型。',
+        AUDIO_INPUT_DIAGNOSTIC_MESSAGES.missingProviderConfig,
       );
     }
     if (!capabilities.supportsNativeAudioInput) {
@@ -1538,7 +1546,7 @@ export class InferenceService implements OnModuleInit {
         'audio_input',
         provider,
         startedAt,
-        '当前模型目录或启发式判断未声明 Chat Completions 原生音频输入能力。',
+        AUDIO_INPUT_DIAGNOSTIC_MESSAGES.undeclaredCapability,
         {
           apiStyle: provider.apiStyle,
           capabilitySource: capabilities.capabilitySource,
@@ -1561,7 +1569,7 @@ export class InferenceService implements OnModuleInit {
               type: 'text',
               text:
                 input.prompt?.trim() ||
-                '这是一次原生音频输入诊断。请只回复“收到”。',
+                'This is a native audio input diagnostic. Reply only with ok.',
             },
             {
               type: 'input_audio',
@@ -1581,7 +1589,7 @@ export class InferenceService implements OnModuleInit {
       status: 'ok',
       success: true,
       real: true,
-      message: '主推理 provider 原生音频输入调用成功。',
+      message: AUDIO_INPUT_DIAGNOSTIC_MESSAGES.success,
       metadata: {
         format: 'wav',
         capabilitySource: capabilities.capabilitySource,

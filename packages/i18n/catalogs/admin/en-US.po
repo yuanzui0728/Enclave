@@ -22,7 +22,7 @@ msgstr "{0} pending items"
 msgid "{0}，其余项也需要继续检查。"
 msgstr "{0}; the remaining items also need review."
 
-#: apps/admin/src/components/admin-sidebar.tsx:152
+#: apps/admin/src/components/admin-sidebar.tsx:153
 msgid "{issueCount} 项待处理"
 msgstr "{issueCount} pending items"
 
@@ -67,7 +67,7 @@ msgstr "Next, add callbackToken so provider-state callbacks can be authenticated
 msgid "下一步补外部 provider 模板和回调，把内置播放器替换成真实数字人服务。"
 msgstr "Next, add the external provider template and callback, replacing the built-in player with a real digital-human service."
 
-#: apps/admin/src/components/admin-sidebar.tsx:112
+#: apps/admin/src/components/admin-sidebar.tsx:113
 #: apps/admin/src/components/root-layout.tsx:63
 msgid "世界主人数量异常"
 msgstr "World owner count is abnormal"
@@ -80,7 +80,7 @@ msgstr "World Samples and Conversation Records"
 msgid "世界级回复调试台"
 msgstr "World-Level Reply Debugger"
 
-#: apps/admin/src/components/admin-sidebar.tsx:129
+#: apps/admin/src/components/admin-sidebar.tsx:130
 msgid "主人"
 msgstr "Owner"
 
@@ -89,15 +89,19 @@ msgstr "Owner"
 msgid "主动跟进"
 msgstr "Proactive Follow-up"
 
-#: apps/admin/src/components/admin-sidebar.tsx:241
+#: apps/admin/src/routes/inference-page.tsx:187
+msgid "主推理 provider 原生音频输入调用成功。"
+msgstr "Main inference provider native audio input call succeeded."
+
+#: apps/admin/src/components/admin-sidebar.tsx:242
 msgid "保存密钥"
 msgstr "Save secret"
 
-#: apps/admin/src/components/admin-sidebar.tsx:254
+#: apps/admin/src/components/admin-sidebar.tsx:255
 msgid "修改"
 msgstr "Edit"
 
-#: apps/admin/src/components/admin-sidebar.tsx:92
+#: apps/admin/src/components/admin-sidebar.tsx:93
 msgid "先恢复世界实例连接，再继续后台操作。"
 msgstr "Restore the world instance connection before continuing admin operations."
 
@@ -113,9 +117,18 @@ msgstr "Built-in iframe"
 msgid "内置舞台"
 msgstr "Built-in stage"
 
-#: apps/admin/src/components/admin-sidebar.tsx:113
+#: apps/admin/src/components/admin-sidebar.tsx:114
 msgid "单世界实例必须且只能有一个世界主人。"
 msgstr "A single-world instance must have exactly one world owner."
+
+#: apps/admin/src/routes/inference-page.tsx:171
+#: apps/admin/src/routes/inference-page.tsx:181
+msgid "原生音频理解"
+msgstr "Native audio understanding"
+
+#: apps/admin/src/routes/inference-page.tsx:185
+msgid "原生音频输入诊断缺少主推理 API Key 或默认模型。"
+msgstr "Native audio input diagnostics are missing the main inference API key or default model."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:33
 msgid "参数无效"
@@ -190,15 +203,15 @@ msgstr "Instance Status and Configuration"
 msgid "实例状态待确认"
 msgstr "Instance status needs confirmation"
 
-#: apps/admin/src/components/admin-sidebar.tsx:247
+#: apps/admin/src/components/admin-sidebar.tsx:248
 msgid "密钥已配置"
 msgstr "Secret configured"
 
-#: apps/admin/src/components/admin-sidebar.tsx:247
+#: apps/admin/src/components/admin-sidebar.tsx:248
 msgid "密钥未配置"
 msgstr "Secret not configured"
 
-#: apps/admin/src/components/admin-sidebar.tsx:198
+#: apps/admin/src/components/admin-sidebar.tsx:199
 msgid "导航"
 msgstr "Navigation"
 
@@ -206,7 +219,7 @@ msgstr "Navigation"
 msgid "小盯的任务、触发与轻提醒发圈"
 msgstr "Xiaoding Tasks, Triggers, and Light Reminder Posts"
 
-#: apps/admin/src/components/admin-sidebar.tsx:156
+#: apps/admin/src/components/admin-sidebar.tsx:157
 msgid "已就绪"
 msgstr "Ready"
 
@@ -225,6 +238,10 @@ msgstr "Still using the built-in digital human player mode; the player shell is 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:58
 msgid "当前仍在内置数字人舞台模式，适合先验证会话、语音和状态链路。"
 msgstr "Still using built-in digital human stage mode; suitable for validating sessions, voice, and state flow first."
+
+#: apps/admin/src/routes/inference-page.tsx:186
+msgid "当前模型目录或启发式判断未声明 Chat Completions 原生音频输入能力。"
+msgstr "The model catalog or heuristic detection does not declare Chat Completions native audio input support."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:93
 msgid "当前模式不依赖外部播放器模板。"
@@ -274,11 +291,11 @@ msgstr "Organize profile basics, personality settings, and behavior constraints 
 msgid "接入检查、推理配置、数字人设置和运维操作的统一入口。"
 msgstr "Unified entry for onboarding checks, inference configuration, digital human settings, and operations."
 
-#: apps/admin/src/components/admin-sidebar.tsx:121
+#: apps/admin/src/components/admin-sidebar.tsx:122
 msgid "接口"
 msgstr "API"
 
-#: apps/admin/src/components/admin-sidebar.tsx:125
+#: apps/admin/src/components/admin-sidebar.tsx:126
 msgid "推理"
 msgstr "Inference"
 
@@ -286,7 +303,7 @@ msgstr "Inference"
 msgid "推理服务待配置"
 msgstr "Inference service needs setup"
 
-#: apps/admin/src/components/admin-sidebar.tsx:98
+#: apps/admin/src/components/admin-sidebar.tsx:99
 msgid "推理服务未配置"
 msgstr "Inference service not configured"
 
@@ -295,12 +312,12 @@ msgstr "Inference service not configured"
 msgid "提醒运行时"
 msgstr "Reminder Runtime"
 
-#: apps/admin/src/components/admin-sidebar.tsx:133
+#: apps/admin/src/components/admin-sidebar.tsx:134
 msgid "数字人"
 msgstr "Digital human"
 
 #. placeholder {0}: digitalHumanSummary.statusLabel
-#: apps/admin/src/components/admin-sidebar.tsx:105
+#: apps/admin/src/components/admin-sidebar.tsx:106
 msgid "数字人 {0}"
 msgstr "Digital human {0}"
 
@@ -429,7 +446,7 @@ msgstr "User Behavior Modeling and Prompt Projection"
 msgid "真实世界动作"
 msgstr "Real-World Actions"
 
-#: apps/admin/src/components/admin-sidebar.tsx:254
+#: apps/admin/src/components/admin-sidebar.tsx:255
 msgid "立即配置"
 msgstr "Configure now"
 
@@ -445,7 +462,7 @@ msgstr "Manage Provider accounts, model catalog, default routing, and batch inst
 msgid "管理后台"
 msgstr "Admin Console"
 
-#: apps/admin/src/components/admin-sidebar.tsx:226
+#: apps/admin/src/components/admin-sidebar.tsx:227
 msgid "管理密钥"
 msgstr "Admin secret"
 
@@ -474,7 +491,7 @@ msgstr "Action Assistant Runtime"
 msgid "补齐推理 Provider、实例连通性和运行前置条件，确保后台操作与真实生成链路可用。"
 msgstr "Complete inference Provider, instance connectivity, and runtime prerequisites so admin operations and real generation are available."
 
-#: apps/admin/src/components/admin-sidebar.tsx:99
+#: apps/admin/src/components/admin-sidebar.tsx:100
 msgid "补齐模型、接口和 API Key，否则无法跑真实生成。"
 msgstr "Complete model, endpoint, and API Key setup, otherwise real generation cannot run."
 
@@ -533,16 +550,16 @@ msgstr "Eval Runs and Trace Workbench"
 msgid "赛博分身"
 msgstr "Cyber Avatar"
 
-#: apps/admin/src/components/admin-sidebar.tsx:231
+#: apps/admin/src/components/admin-sidebar.tsx:232
 msgid "输入后台密钥"
 msgstr "Enter admin secret"
 
-#: apps/admin/src/components/admin-topbar.tsx:47
+#: apps/admin/src/components/admin-topbar.tsx:48
 #: apps/admin/src/components/root-layout.tsx:395
 msgid "运营工作台"
 msgstr "Operations Workbench"
 
-#: apps/admin/src/components/admin-sidebar.tsx:147
+#: apps/admin/src/components/admin-sidebar.tsx:148
 #: apps/admin/src/components/root-layout.tsx:223
 msgid "运营控制台"
 msgstr "Operations Console"
@@ -563,7 +580,7 @@ msgstr "Runtime Settings"
 msgid "进入设置页补齐播放器 URL 模板"
 msgstr "Go to the setup page to complete the player URL template"
 
-#: apps/admin/src/components/admin-sidebar.tsx:91
+#: apps/admin/src/components/admin-sidebar.tsx:92
 msgid "远程 API 离线"
 msgstr "Remote API offline"
 

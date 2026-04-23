@@ -22,7 +22,7 @@ msgstr "{0} 件の要対応"
 msgid "{0}，其余项也需要继续检查。"
 msgstr "{0}。残りの項目も確認が必要です。"
 
-#: apps/admin/src/components/admin-sidebar.tsx:152
+#: apps/admin/src/components/admin-sidebar.tsx:153
 msgid "{issueCount} 项待处理"
 msgstr "{issueCount} 件の要対応"
 
@@ -67,7 +67,7 @@ msgstr "次に callbackToken を追加し、provider-state コールバックを
 msgid "下一步补外部 provider 模板和回调，把内置播放器替换成真实数字人服务。"
 msgstr "次に外部 provider テンプレートとコールバックを追加し、内蔵プレイヤーを実デジタルヒューマンサービスに置き換えます。"
 
-#: apps/admin/src/components/admin-sidebar.tsx:112
+#: apps/admin/src/components/admin-sidebar.tsx:113
 #: apps/admin/src/components/root-layout.tsx:63
 msgid "世界主人数量异常"
 msgstr "世界の主人の数が異常です"
@@ -80,7 +80,7 @@ msgstr "世界サンプルと会話アーカイブ"
 msgid "世界级回复调试台"
 msgstr "世界レベル返信デバッグ台"
 
-#: apps/admin/src/components/admin-sidebar.tsx:129
+#: apps/admin/src/components/admin-sidebar.tsx:130
 msgid "主人"
 msgstr "主人"
 
@@ -89,15 +89,19 @@ msgstr "主人"
 msgid "主动跟进"
 msgstr "能動フォローアップ"
 
-#: apps/admin/src/components/admin-sidebar.tsx:241
+#: apps/admin/src/routes/inference-page.tsx:187
+msgid "主推理 provider 原生音频输入调用成功。"
+msgstr "メイン推論 provider のネイティブ音声入力呼び出しに成功しました。"
+
+#: apps/admin/src/components/admin-sidebar.tsx:242
 msgid "保存密钥"
 msgstr "キーを保存"
 
-#: apps/admin/src/components/admin-sidebar.tsx:254
+#: apps/admin/src/components/admin-sidebar.tsx:255
 msgid "修改"
 msgstr "変更"
 
-#: apps/admin/src/components/admin-sidebar.tsx:92
+#: apps/admin/src/components/admin-sidebar.tsx:93
 msgid "先恢复世界实例连接，再继续后台操作。"
 msgstr "管理操作を続ける前に、世界インスタンスの接続を復旧してください。"
 
@@ -113,9 +117,18 @@ msgstr "内蔵 iframe"
 msgid "内置舞台"
 msgstr "内蔵ステージ"
 
-#: apps/admin/src/components/admin-sidebar.tsx:113
+#: apps/admin/src/components/admin-sidebar.tsx:114
 msgid "单世界实例必须且只能有一个世界主人。"
 msgstr "単一世界インスタンスには、世界の主人が必ず 1 人だけ必要です。"
+
+#: apps/admin/src/routes/inference-page.tsx:171
+#: apps/admin/src/routes/inference-page.tsx:181
+msgid "原生音频理解"
+msgstr "ネイティブ音声理解"
+
+#: apps/admin/src/routes/inference-page.tsx:185
+msgid "原生音频输入诊断缺少主推理 API Key 或默认模型。"
+msgstr "ネイティブ音声入力診断には、メイン推論 API Key またはデフォルトモデルが不足しています。"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:33
 msgid "参数无效"
@@ -190,15 +203,15 @@ msgstr "インスタンス状態と設定"
 msgid "实例状态待确认"
 msgstr "インスタンス状態の確認が必要です"
 
-#: apps/admin/src/components/admin-sidebar.tsx:247
+#: apps/admin/src/components/admin-sidebar.tsx:248
 msgid "密钥已配置"
 msgstr "キー設定済み"
 
-#: apps/admin/src/components/admin-sidebar.tsx:247
+#: apps/admin/src/components/admin-sidebar.tsx:248
 msgid "密钥未配置"
 msgstr "キー未設定"
 
-#: apps/admin/src/components/admin-sidebar.tsx:198
+#: apps/admin/src/components/admin-sidebar.tsx:199
 msgid "导航"
 msgstr "ナビゲーション"
 
@@ -206,7 +219,7 @@ msgstr "ナビゲーション"
 msgid "小盯的任务、触发与轻提醒发圈"
 msgstr "小盯のタスク、トリガー、軽いリマインド投稿"
 
-#: apps/admin/src/components/admin-sidebar.tsx:156
+#: apps/admin/src/components/admin-sidebar.tsx:157
 msgid "已就绪"
 msgstr "準備完了"
 
@@ -225,6 +238,10 @@ msgstr "現在は内蔵デジタルヒューマンプレイヤーモードです
 #: apps/admin/src/lib/digital-human-admin-summary.ts:58
 msgid "当前仍在内置数字人舞台模式，适合先验证会话、语音和状态链路。"
 msgstr "現在は内蔵デジタルヒューマンステージモードです。まず会話、音声、状態フローを検証するのに適しています。"
+
+#: apps/admin/src/routes/inference-page.tsx:186
+msgid "当前模型目录或启发式判断未声明 Chat Completions 原生音频输入能力。"
+msgstr "現在のモデルカタログまたはヒューリスティック判定では、Chat Completions のネイティブ音声入力能力が宣言されていません。"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:93
 msgid "当前模式不依赖外部播放器模板。"
@@ -274,11 +291,11 @@ msgstr "基本情報、人格設定、行動制約をモジュールごとに整
 msgid "接入检查、推理配置、数字人设置和运维操作的统一入口。"
 msgstr "接続チェック、推論設定、デジタルヒューマン設定、運用操作の統合入口です。"
 
-#: apps/admin/src/components/admin-sidebar.tsx:121
+#: apps/admin/src/components/admin-sidebar.tsx:122
 msgid "接口"
 msgstr "API"
 
-#: apps/admin/src/components/admin-sidebar.tsx:125
+#: apps/admin/src/components/admin-sidebar.tsx:126
 msgid "推理"
 msgstr "推論"
 
@@ -286,7 +303,7 @@ msgstr "推論"
 msgid "推理服务待配置"
 msgstr "推論サービスの設定が必要です"
 
-#: apps/admin/src/components/admin-sidebar.tsx:98
+#: apps/admin/src/components/admin-sidebar.tsx:99
 msgid "推理服务未配置"
 msgstr "推論サービス未設定"
 
@@ -295,12 +312,12 @@ msgstr "推論サービス未設定"
 msgid "提醒运行时"
 msgstr "リマインダーランタイム"
 
-#: apps/admin/src/components/admin-sidebar.tsx:133
+#: apps/admin/src/components/admin-sidebar.tsx:134
 msgid "数字人"
 msgstr "デジタルヒューマン"
 
 #. placeholder {0}: digitalHumanSummary.statusLabel
-#: apps/admin/src/components/admin-sidebar.tsx:105
+#: apps/admin/src/components/admin-sidebar.tsx:106
 msgid "数字人 {0}"
 msgstr "デジタルヒューマン {0}"
 
@@ -429,7 +446,7 @@ msgstr "ユーザー行動モデリングと Prompt 投影"
 msgid "真实世界动作"
 msgstr "現実世界アクション"
 
-#: apps/admin/src/components/admin-sidebar.tsx:254
+#: apps/admin/src/components/admin-sidebar.tsx:255
 msgid "立即配置"
 msgstr "今すぐ設定"
 
@@ -445,7 +462,7 @@ msgstr "Provider アカウント、モデルカタログ、デフォルトルー
 msgid "管理后台"
 msgstr "管理コンソール"
 
-#: apps/admin/src/components/admin-sidebar.tsx:226
+#: apps/admin/src/components/admin-sidebar.tsx:227
 msgid "管理密钥"
 msgstr "管理キー"
 
@@ -474,7 +491,7 @@ msgstr "行動アシスタント実行環境"
 msgid "补齐推理 Provider、实例连通性和运行前置条件，确保后台操作与真实生成链路可用。"
 msgstr "推論 Provider、インスタンス接続性、実行前提条件を補完し、管理操作と実生成フローを利用可能にします。"
 
-#: apps/admin/src/components/admin-sidebar.tsx:99
+#: apps/admin/src/components/admin-sidebar.tsx:100
 msgid "补齐模型、接口和 API Key，否则无法跑真实生成。"
 msgstr "モデル、エンドポイント、API Key を補完してください。未設定だと実生成を実行できません。"
 
@@ -533,16 +550,16 @@ msgstr "評価実行と Trace ワークベンチ"
 msgid "赛博分身"
 msgstr "サイバー分身"
 
-#: apps/admin/src/components/admin-sidebar.tsx:231
+#: apps/admin/src/components/admin-sidebar.tsx:232
 msgid "输入后台密钥"
 msgstr "管理キーを入力"
 
-#: apps/admin/src/components/admin-topbar.tsx:47
+#: apps/admin/src/components/admin-topbar.tsx:48
 #: apps/admin/src/components/root-layout.tsx:395
 msgid "运营工作台"
 msgstr "運用ワークベンチ"
 
-#: apps/admin/src/components/admin-sidebar.tsx:147
+#: apps/admin/src/components/admin-sidebar.tsx:148
 #: apps/admin/src/components/root-layout.tsx:223
 msgid "运营控制台"
 msgstr "運用コンソール"
@@ -563,7 +580,7 @@ msgstr "ランタイム設定"
 msgid "进入设置页补齐播放器 URL 模板"
 msgstr "設定ページでプレイヤー URL テンプレートを補完"
 
-#: apps/admin/src/components/admin-sidebar.tsx:91
+#: apps/admin/src/components/admin-sidebar.tsx:92
 msgid "远程 API 离线"
 msgstr "リモート API オフライン"
 

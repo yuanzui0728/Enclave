@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   InferenceDiagnosticCapability,
@@ -7,6 +8,7 @@ import type {
   InferenceProviderAccount,
   InferenceProviderAccountDraft,
 } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   Button,
   Card,
@@ -36,6 +38,7 @@ import { formatAdminDateTime as formatLocalizedDateTime } from "../lib/format";
 type WorkspaceTab = "overview" | "providers" | "models";
 type ModelStatusFilter = "all" | InferenceModelCatalogEntry["status"];
 type ModelCapabilityFilter = "all" | "reasoning" | "vision" | "audio";
+type RuntimeMessage = Parameters<typeof translateRuntimeMessage>[0];
 
 const WORKSPACE_TABS: Array<{ key: WorkspaceTab; label: string }> = [
   { key: "overview", label: "总览" },
@@ -161,16 +164,46 @@ function normalizeDraftForCompare(draft: InferenceProviderAccountDraft) {
 
 const DIAGNOSTIC_CAPABILITIES: Array<{
   capability: InferenceDiagnosticCapability;
-  label: string;
+  label: string | RuntimeMessage;
 }> = [
   { capability: "text", label: "文本" },
   { capability: "image_input", label: "图片理解" },
-  { capability: "audio_input", label: "原生音频理解" },
+  { capability: "audio_input", label: msg`原生音频理解` },
   { capability: "transcription", label: "语音转写" },
   { capability: "tts", label: "TTS" },
   { capability: "image_generation", label: "图片生成" },
   { capability: "digital_human", label: "数字人" },
 ];
+
+const DIAGNOSTIC_CAPABILITY_LABELS: Partial<
+  Record<InferenceDiagnosticCapability, RuntimeMessage>
+> = {
+  audio_input: msg`原生音频理解`,
+};
+
+const DIAGNOSTIC_MESSAGE_LABELS: Record<string, RuntimeMessage> = {
+  INFERENCE_DIAGNOSTIC_AUDIO_INPUT_MISSING_PROVIDER_CONFIG: msg`原生音频输入诊断缺少主推理 API Key 或默认模型。`,
+  INFERENCE_DIAGNOSTIC_AUDIO_INPUT_UNDECLARED_CAPABILITY: msg`当前模型目录或启发式判断未声明 Chat Completions 原生音频输入能力。`,
+  INFERENCE_DIAGNOSTIC_AUDIO_INPUT_SUCCESS: msg`主推理 provider 原生音频输入调用成功。`,
+};
+
+function resolveDiagnosticCapabilityLabel(
+  capability: InferenceDiagnosticCapability,
+  fallback: string | RuntimeMessage,
+) {
+  const label = DIAGNOSTIC_CAPABILITY_LABELS[capability];
+  if (label) {
+    return translateRuntimeMessage(label);
+  }
+  return typeof fallback === "string"
+    ? fallback
+    : translateRuntimeMessage(fallback);
+}
+
+function resolveDiagnosticMessage(message: string) {
+  const label = DIAGNOSTIC_MESSAGE_LABELS[message];
+  return label ? translateRuntimeMessage(label) : message;
+}
 
 function formatDateTime(value?: string | null) {
   return formatLocalizedDateTime(
@@ -1191,7 +1224,10 @@ export function InferencePage() {
                       {diagnosticMutation.isPending &&
                       diagnosticMutation.variables === item.capability
                         ? "诊断中..."
-                        : item.label}
+                        : resolveDiagnosticCapabilityLabel(
+                            item.capability,
+                            item.label,
+                          )}
                     </Button>
                   ))}
                 </div>
@@ -1213,7 +1249,7 @@ export function InferencePage() {
                 >
                   {diagnosticResult.capability} · {diagnosticResult.status} ·{" "}
                   {diagnosticResult.real ? "真实可用" : "未证明可用"} ·{" "}
-                  {diagnosticResult.message}
+                  {resolveDiagnosticMessage(diagnosticResult.message)}
                 </InlineNotice>
               ) : null}
               {multimodalOverviewQuery.data?.latestDiagnostics ? (
@@ -1245,7 +1281,10 @@ export function InferencePage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="font-semibold text-[color:var(--text-primary)]">
-                            {item.label}
+                            {resolveDiagnosticCapabilityLabel(
+                              item.capability,
+                              item.label,
+                            )}
                           </div>
                           <div className="mt-1 text-xs text-[color:var(--text-tertiary)]">
                             {item.model ?? item.providerName ?? "未绑定诊断结果"}
@@ -1264,7 +1303,7 @@ export function InferencePage() {
                         </StatusPill>
                       </div>
                       <div className="mt-3 text-xs leading-5 text-[color:var(--text-secondary)]">
-                        {item.message}
+                        {resolveDiagnosticMessage(item.message)}
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-tertiary)]">
                         <span>{item.configured ? "已配置" : "未配置"}</span>
