@@ -20,6 +20,7 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
 import { EventsModule } from '../events/events.module';
 import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.module';
+import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.modu
     EventsModule,
     RealWorldSyncModule,
     FollowupRuntimeModule,
+    ReminderRuntimeModule,
   ],
   providers: [SchedulerService, SchedulerTelemetryService],
   exports: [SchedulerService, SchedulerTelemetryService],

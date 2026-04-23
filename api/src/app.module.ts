@@ -26,6 +26,7 @@ import { NeedDiscoveryModule } from './modules/need-discovery/need-discovery.mod
 import { RealWorldSyncModule } from './modules/real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from './modules/followup-runtime/followup-runtime.module';
 import { InferenceModule } from './modules/inference/inference.module';
+import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runtime.module';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -82,6 +83,7 @@ import { CharacterRealWorldSyncRunEntity } from './modules/real-world-sync/chara
 import { FollowupRunEntity } from './modules/followup-runtime/followup-run.entity';
 import { FollowupOpenLoopEntity } from './modules/followup-runtime/followup-open-loop.entity';
 import { FollowupRecommendationEntity } from './modules/followup-runtime/followup-recommendation.entity';
+import { ReminderTaskEntity } from './modules/reminder-runtime/reminder-task.entity';
 import { InferenceProviderAccountEntity } from './modules/inference/inference-provider-account.entity';
 import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import {
@@ -158,6 +160,7 @@ import {
           FollowupRunEntity,
           FollowupOpenLoopEntity,
           FollowupRecommendationEntity,
+          ReminderTaskEntity,
           InferenceProviderAccountEntity,
           InferenceModelCatalogEntryEntity,
         ],
@@ -184,6 +187,7 @@ import {
     CyberAvatarModule,
     RealWorldSyncModule,
     FollowupRuntimeModule,
+    ReminderRuntimeModule,
     InferenceModule,
     CloudRuntimeModule,
     SystemModule,

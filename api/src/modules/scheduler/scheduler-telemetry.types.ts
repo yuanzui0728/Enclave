@@ -1,5 +1,21 @@
 export const SCHEDULER_JOB_DEFINITIONS = [
   {
+    id: 'trigger_due_reminder_tasks',
+    name: '到点提醒调度',
+    cadence: '*/5 * * * *',
+    description: '扫描到点的提醒任务，并通过提醒角色发出私聊提醒。',
+    nextRunHint: '每 5 分钟',
+    enabled: true,
+  },
+  {
+    id: 'trigger_reminder_checkins',
+    name: '提醒问询调度',
+    cadence: '0 * * * *',
+    description: '按小时判断是否需要由提醒角色主动追问有没有新的待提醒事项。',
+    nextRunHint: '每小时整点',
+    enabled: true,
+  },
+  {
     id: 'world_context_snapshot',
     name: '世界快照',
     cadence: '*/30 * * * *',

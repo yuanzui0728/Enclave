@@ -7,6 +7,10 @@ import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 import { buildDoctorCharacter, DOCTOR_CHARACTER_ID } from './doctor-character';
 import { buildLawyerCharacter, LAWYER_CHARACTER_ID } from './lawyer-character';
 import {
+  buildReminderCharacter,
+  REMINDER_CHARACTER_ID,
+} from './reminder-character';
+import {
   buildWeddingPlannerCharacter,
   WEDDING_PLANNER_CHARACTER_ID,
 } from './wedding-planner-character';
@@ -22,6 +26,7 @@ export const DEFAULT_CHARACTER_IDS = [
   BAR_EXPERT_CHARACTER_ID,
   DOCTOR_CHARACTER_ID,
   LAWYER_CHARACTER_ID,
+  REMINDER_CHARACTER_ID,
   WEDDING_PLANNER_CHARACTER_ID,
   WORLD_NEWS_DESK_CHARACTER_ID,
 ] as const;
@@ -223,6 +228,7 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
     buildBarExpertCharacter(),
     buildDoctorCharacter(),
     buildLawyerCharacter(),
+    buildReminderCharacter(),
     buildWeddingPlannerCharacter(),
     buildWorldNewsDeskCharacter(),
   ];

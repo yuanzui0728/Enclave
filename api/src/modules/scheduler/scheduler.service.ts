@@ -20,9 +20,11 @@ import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
+import { ChatService } from '../chat/chat.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 import type { SchedulerJobId } from './scheduler-telemetry.types';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
@@ -31,6 +33,7 @@ import { NeedDiscoveryService } from '../need-discovery/need-discovery.service';
 import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service';
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
+import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import {
   WORLD_NEWS_BULLETIN_GENERATION_KIND,
   WORLD_NEWS_DESK_CHARACTER_ID,
@@ -87,6 +90,7 @@ export class SchedulerService {
     private readonly ai: AiOrchestratorService,
     private readonly socialService: SocialService,
     private readonly feedService: FeedService,
+    private readonly chatService: ChatService,
     private readonly chatGateway: ChatGateway,
     private readonly telemetry: SchedulerTelemetryService,
     private readonly replyLogicRules: ReplyLogicRulesService,
@@ -95,7 +99,26 @@ export class SchedulerService {
     private readonly eventBus: EventBusService,
     private readonly realWorldSync: RealWorldSyncService,
     private readonly followupRuntimeService: FollowupRuntimeService,
+    private readonly reminderRuntimeService: ReminderRuntimeService,
   ) {}
+
+  @Cron('*/5 * * * *')
+  async triggerDueReminderTasks() {
+    await this.runScheduledJob(
+      'trigger_due_reminder_tasks',
+      () => this.handleTriggerDueReminderTasks(),
+      'Failed to trigger due reminder tasks',
+    );
+  }
+
+  @Cron('0 * * * *')
+  async triggerReminderCheckins() {
+    await this.runScheduledJob(
+      'trigger_reminder_checkins',
+      () => this.handleTriggerReminderCheckins(),
+      'Failed to trigger reminder checkins',
+    );
+  }
 
   @Cron('*/30 * * * *')
   async updateWorldContext() {
@@ -374,6 +397,18 @@ export class SchedulerService {
 
   private async executeManualJob(jobId: SchedulerJobId) {
     switch (jobId) {
+      case 'trigger_due_reminder_tasks':
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleTriggerDueReminderTasks(),
+          )
+        ).summary;
+      case 'trigger_reminder_checkins':
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleTriggerReminderCheckins(),
+          )
+        ).summary;
       case 'world_context_snapshot':
         return (
           await this.executeTrackedJob(jobId, () =>
@@ -493,6 +528,73 @@ export class SchedulerService {
         runtimeRules.schedulerTextTemplates.jobSummaryWorldContextUpdated,
         {},
       ),
+    };
+  }
+
+  private async handleTriggerDueReminderTasks(): Promise<TrackedJobResult> {
+    const dispatches = await this.reminderRuntimeService.prepareDueDispatches();
+    let sentCount = 0;
+
+    for (const dispatch of dispatches) {
+      const conversation = await this.chatService.getOrCreateConversation(
+        dispatch.characterId,
+        dispatch.conversationId,
+      );
+      await this.chatGateway.sendProactiveMessage(
+        conversation.id,
+        dispatch.characterId,
+        dispatch.characterName,
+        dispatch.text,
+      );
+      if (dispatch.taskId) {
+        await this.reminderRuntimeService.markTaskDelivered(dispatch.taskId);
+      }
+      sentCount += 1;
+    }
+
+    if (sentCount > 0) {
+      this.telemetry.recordCharacterEvent({
+        characterId: REMINDER_CHARACTER_ID,
+        characterName:
+          this.reminderRuntimeService.getReminderCharacterIdentity().name,
+        kind: 'proactive_message',
+        title: '提醒任务已触发',
+        summary: `提醒角色本轮发送了 ${sentCount} 条到点提醒。`,
+        jobId: 'trigger_due_reminder_tasks',
+      });
+    }
+
+    return {
+      summary:
+        sentCount > 0
+          ? `本轮发送了 ${sentCount} 条到点提醒。`
+          : '当前没有到点的提醒任务。',
+    };
+  }
+
+  private async handleTriggerReminderCheckins(): Promise<TrackedJobResult> {
+    const dispatches = await this.reminderRuntimeService.collectCheckinDispatches();
+    let sentCount = 0;
+
+    for (const dispatch of dispatches) {
+      const conversation = await this.chatService.getOrCreateConversation(
+        dispatch.characterId,
+        dispatch.conversationId,
+      );
+      await this.chatGateway.sendProactiveMessage(
+        conversation.id,
+        dispatch.characterId,
+        dispatch.characterName,
+        dispatch.text,
+      );
+      sentCount += 1;
+    }
+
+    return {
+      summary:
+        sentCount > 0
+          ? `提醒角色本轮发出了 ${sentCount} 条问询消息。`
+          : '当前不满足提醒问询条件，跳过本轮。',
     };
   }
 
@@ -999,6 +1101,9 @@ export class SchedulerService {
     let sentMessages = 0;
 
     for (const char of chars) {
+      if (char.id === REMINDER_CHARACTER_ID) {
+        continue;
+      }
       try {
         const memory = char.profile?.memory;
         const memoryText = [memory?.coreMemory, memory?.recentSummary]

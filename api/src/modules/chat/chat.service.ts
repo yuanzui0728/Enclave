@@ -15,8 +15,10 @@ import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
 import { NarrativeService } from '../narrative/narrative.service';
+import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ConversationEntity } from './conversation.entity';
@@ -123,6 +125,7 @@ export class ChatService {
     private readonly actionRuntime: ActionRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly customStickersService: CustomStickersService,
+    private readonly reminderRuntime: ReminderRuntimeService,
     @InjectRepository(ConversationEntity)
     private convRepo: Repository<ConversationEntity>,
     @InjectRepository(MessageEntity)
@@ -772,9 +775,19 @@ export class ChatService {
           userMessage: normalizedInput.promptText,
         })
       : { handled: false };
+    const reminderResult =
+      charId === REMINDER_CHARACTER_ID
+        ? await this.reminderRuntime.handleConversationTurn({
+            conversationId: convId,
+            userMessage: normalizedInput.promptText,
+            sourceMessageId: userMsgEntity.id,
+          })
+        : { handled: false };
 
     const assistantReplyText = actionResult.handled
       ? (actionResult.responseText?.trim() ?? '')
+      : reminderResult.handled
+        ? (reminderResult.responseText?.trim() ?? '')
       : (
           await this.ai.generateReply({
             profile,

@@ -151,6 +151,8 @@ export type ReplyLogicRuntimeNoteTemplates = {
 };
 
 export type ReplyLogicSchedulerDescriptions = {
+  trigger_due_reminder_tasks: string;
+  trigger_reminder_checkins: string;
   world_context_snapshot: string;
   expire_friend_requests: string;
   update_ai_active_status: string;
@@ -203,6 +205,8 @@ export type ReplyLogicSchedulerTextTemplates = {
 };
 
 export type ReplyLogicSchedulerNames = {
+  trigger_due_reminder_tasks: string;
+  trigger_reminder_checkins: string;
   world_context_snapshot: string;
   expire_friend_requests: string;
   update_ai_active_status: string;
@@ -217,6 +221,8 @@ export type ReplyLogicSchedulerNames = {
 };
 
 export type ReplyLogicSchedulerNextRunHints = {
+  trigger_due_reminder_tasks: string;
+  trigger_reminder_checkins: string;
   world_context_snapshot: string;
   expire_friend_requests: string;
   update_ai_active_status: string;
@@ -628,6 +634,8 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_NOTE_TEMPLATES: ReplyLogicRuntimeNoteTe
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_DESCRIPTIONS: ReplyLogicSchedulerDescriptions =
   Object.freeze({
+    trigger_due_reminder_tasks: '扫描到点的提醒任务，并通过提醒角色发出私聊提醒。',
+    trigger_reminder_checkins: '按小时判断是否需要由提醒角色主动追问有没有新的待提醒事项。',
     world_context_snapshot: '刷新 WorldContext 快照，供回复链路读取当前世界状态。',
     expire_friend_requests: '清理当天过期的待处理好友请求。',
     update_ai_active_status: '根据活跃时间窗口更新角色在线状态，并推进 AI 角色关系。',
@@ -696,6 +704,8 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTe
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_NAMES: ReplyLogicSchedulerNames =
   Object.freeze({
+    trigger_due_reminder_tasks: '到点提醒调度',
+    trigger_reminder_checkins: '提醒问询调度',
     world_context_snapshot: '世界快照',
     expire_friend_requests: '过期好友请求',
     update_ai_active_status: '在线状态调度',
@@ -711,6 +721,8 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_NAMES: ReplyLogicSchedulerNames =
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_NEXT_RUN_HINTS: ReplyLogicSchedulerNextRunHints =
   Object.freeze({
+    trigger_due_reminder_tasks: '每 5 分钟',
+    trigger_reminder_checkins: '每小时整点',
     world_context_snapshot: '每 30 分钟',
     expire_friend_requests: '每日 23:59',
     update_ai_active_status: '每 10 分钟',
@@ -1300,6 +1312,14 @@ function normalizeSchedulerDescriptions(
 ): ReplyLogicSchedulerDescriptions {
   const defaults = DEFAULT_REPLY_LOGIC_SCHEDULER_DESCRIPTIONS;
   return {
+    trigger_due_reminder_tasks: sanitizeTemplate(
+      value?.trigger_due_reminder_tasks,
+      defaults.trigger_due_reminder_tasks,
+    ),
+    trigger_reminder_checkins: sanitizeTemplate(
+      value?.trigger_reminder_checkins,
+      defaults.trigger_reminder_checkins,
+    ),
     world_context_snapshot: sanitizeTemplate(
       value?.world_context_snapshot,
       defaults.world_context_snapshot,
@@ -1500,6 +1520,14 @@ function normalizeSchedulerNames(
 ): ReplyLogicSchedulerNames {
   const defaults = DEFAULT_REPLY_LOGIC_SCHEDULER_NAMES;
   return {
+    trigger_due_reminder_tasks: sanitizeTemplate(
+      value?.trigger_due_reminder_tasks,
+      defaults.trigger_due_reminder_tasks,
+    ),
+    trigger_reminder_checkins: sanitizeTemplate(
+      value?.trigger_reminder_checkins,
+      defaults.trigger_reminder_checkins,
+    ),
     world_context_snapshot: sanitizeTemplate(
       value?.world_context_snapshot,
       defaults.world_context_snapshot,
@@ -1552,6 +1580,14 @@ function normalizeSchedulerNextRunHints(
 ): ReplyLogicSchedulerNextRunHints {
   const defaults = DEFAULT_REPLY_LOGIC_SCHEDULER_NEXT_RUN_HINTS;
   return {
+    trigger_due_reminder_tasks: sanitizeTemplate(
+      value?.trigger_due_reminder_tasks,
+      defaults.trigger_due_reminder_tasks,
+    ),
+    trigger_reminder_checkins: sanitizeTemplate(
+      value?.trigger_reminder_checkins,
+      defaults.trigger_reminder_checkins,
+    ),
     world_context_snapshot: sanitizeTemplate(
       value?.world_context_snapshot,
       defaults.world_context_snapshot,

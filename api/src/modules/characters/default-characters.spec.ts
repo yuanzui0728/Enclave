@@ -9,6 +9,10 @@ import {
 import { DOCTOR_CHARACTER_ID, DOCTOR_SOURCE_KEY } from './doctor-character';
 import { LAWYER_CHARACTER_ID, LAWYER_SOURCE_KEY } from './lawyer-character';
 import {
+  REMINDER_CHARACTER_ID,
+  REMINDER_CHARACTER_SOURCE_KEY,
+} from './reminder-character';
+import {
   WORLD_NEWS_DESK_CHARACTER_ID,
   WORLD_NEWS_DESK_SOURCE_KEY,
 } from './world-news-desk-character';
@@ -114,6 +118,30 @@ describe('default characters', () => {
     expect(character?.profile?.scenePrompts?.chat).toContain('上来先说判断');
     expect(character?.profile?.memory?.coreMemory).toContain(
       '替用户先把新闻捋顺的人',
+    );
+  });
+
+  it('includes the reminder keeper with expected runtime defaults', () => {
+    const character = buildDefaultCharacters().find(
+      (item) => item.id === REMINDER_CHARACTER_ID,
+    );
+
+    expect(character).toBeDefined();
+    expect(character).toMatchObject({
+      id: REMINDER_CHARACTER_ID,
+      sourceType: 'default_seed',
+      sourceKey: REMINDER_CHARACTER_SOURCE_KEY,
+      relationshipType: 'friend',
+      momentsFrequency: 1,
+      feedFrequency: 0,
+      currentActivity: 'free',
+      expertDomains: ['management', 'general', 'lifestyle'],
+    });
+
+    expect(character?.profile?.coreLogic).toContain('专门替用户记事和提醒');
+    expect(character?.profile?.scenePrompts?.chat).toContain('用户给提醒');
+    expect(character?.profile?.scenePrompts?.proactive).toContain(
+      '允许主动发消息',
     );
   });
 });

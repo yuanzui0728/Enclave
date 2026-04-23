@@ -2623,7 +2623,7 @@ export class SystemService {
       },
       worldSurface: {
         apiPrefix: '/api',
-        migratedModules: ['config', 'characters', 'world', 'social', 'chat', 'moments', 'feed'],
+        migratedModules: ['config', 'characters', 'world', 'social', 'chat', 'moments', 'feed', 'reminder-runtime'],
         ownerCount,
         charactersCount,
         narrativeArcsCount,

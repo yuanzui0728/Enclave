@@ -36,6 +36,7 @@ import { NarrativeModule } from '../narrative/narrative.module';
 import { SystemConfigModule } from '../config/config.module';
 import { ActionRuntimeModule } from '../action-runtime/action-runtime.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
+import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 import { ConversationEntity } from './conversation.entity';
 import { MessageEntity } from './message.entity';
 import { GroupEntity } from './group.entity';
@@ -55,6 +56,7 @@ import { CharacterEntity } from '../characters/character.entity';
     SystemConfigModule,
     ActionRuntimeModule,
     forwardRef(() => CyberAvatarModule),
+    ReminderRuntimeModule,
     TypeOrmModule.forFeature([
       ConversationEntity,
       MessageEntity,
