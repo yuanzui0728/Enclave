@@ -1109,6 +1109,7 @@ const expectations = [
       '"/favorites",',
       'label: "朋友圈",',
       '"/moments",',
+      '"/moments/friend/",',
       '"/discover/moments/publish",',
       '"/friend-moments/",',
       'label: "广场动态",',
@@ -1722,6 +1723,11 @@ const desktopNavRegressionCases = [
   },
   {
     pathname: "/friend-moments/abc",
+    primaryTo: "/tabs/moments",
+    bottomAction: null,
+  },
+  {
+    pathname: "/moments/friend/abc",
     primaryTo: "/tabs/moments",
     bottomAction: null,
   },

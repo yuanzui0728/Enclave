@@ -70,6 +70,7 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     matches: [
       "/tabs/moments",
       "/moments",
+      "/moments/friend/",
       "/discover/moments",
       "/discover/moments/publish",
       "/friend-moments/",
