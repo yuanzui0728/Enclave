@@ -1,4 +1,11 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
@@ -8,7 +15,14 @@ import type {
   WechatSyncImportResponse,
   WechatSyncPreviewItem,
 } from "@yinjie/contracts";
-import { Button, Card, ErrorBlock, LoadingBlock, StatusPill } from "@yinjie/ui";
+import {
+  Button,
+  Card,
+  ErrorBlock,
+  InlineNotice,
+  LoadingBlock,
+  StatusPill,
+} from "@yinjie/ui";
 import {
   AdminActionFeedback,
   AdminCallout,
@@ -137,6 +151,11 @@ export function WechatSyncPage() {
   const [manualBundleError, setManualBundleError] = useState<string | null>(
     null,
   );
+  const [manualBundleFileName, setManualBundleFileName] = useState<
+    string | null
+  >(null);
+  const [connectorProbeRequested, setConnectorProbeRequested] = useState(false);
+  const manualBundleFileInputRef = useRef<HTMLInputElement | null>(null);
   const [historySearch, setHistorySearch] = useState(
     initialViewState.historySearch,
   );
@@ -256,8 +275,12 @@ export function WechatSyncPage() {
   const connectorHealthQuery = useQuery({
     queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
     queryFn: () => getWechatConnectorHealth(connectorSettings.baseUrl),
+    enabled: connectorProbeRequested,
     retry: false,
-    refetchInterval: 10_000,
+    refetchInterval: (query) =>
+      connectorProbeRequested && query.state.status === "success"
+        ? 10_000
+        : false,
   });
 
   const contactsQuery = useQuery({
@@ -273,7 +296,7 @@ export function WechatSyncPage() {
         includeGroups,
         limit: 200,
       }),
-    enabled: connectorHealthQuery.isSuccess,
+    enabled: connectorProbeRequested && connectorHealthQuery.isSuccess,
     retry: false,
   });
   const historyQuery = useQuery({
@@ -456,6 +479,11 @@ export function WechatSyncPage() {
     setAuditExpandedRecordId(null);
     setLinkedAuditVersion(null);
     setFocusedHistorySnapshotKey(null);
+  }
+
+  function requestConnectorProbe() {
+    setConnectorProbeRequested(true);
+    void connectorHealthQuery.refetch();
   }
 
   const scanMutation = useMutation({
@@ -995,6 +1023,7 @@ export function WechatSyncPage() {
     restoreSnapshotMutation.reset();
     setPendingSnapshotRestore(null);
     setManualBundleError(null);
+    setManualBundleFileName(null);
     setManualBundleJson(JSON.stringify([bundle], null, 2));
     setPreviewItems([]);
     setSelectedPreviewUsernames([]);
@@ -1010,6 +1039,7 @@ export function WechatSyncPage() {
     restoreSnapshotMutation.reset();
     setPendingSnapshotRestore(null);
     setManualBundleError(null);
+    setManualBundleFileName(null);
     setManualBundleJson(
       JSON.stringify(
         [
@@ -1032,6 +1062,7 @@ export function WechatSyncPage() {
     restoreSnapshotMutation.reset();
     setPendingSnapshotRestore(null);
     setManualBundleError(null);
+    setManualBundleFileName(null);
     setManualBundleJson(
       JSON.stringify([buildContactBundleFromImportSnapshot(snapshot)], null, 2),
     );
@@ -1039,6 +1070,43 @@ export function WechatSyncPage() {
     setPreviewItems([restoredItem]);
     setSelectedUsernames([restoredItem.contact.username]);
     setSelectedPreviewUsernames([restoredItem.contact.username]);
+  }
+
+  function handleManualBundleTextChange(value: string) {
+    setManualBundleJson(value);
+    setManualBundleFileName(null);
+  }
+
+  function previewManualBundles(raw: string, sourceLabel?: string | null) {
+    setManualBundleJson(raw);
+    setManualBundleFileName(sourceLabel?.trim() || null);
+    const bundles = parseWechatSyncContactBundles(raw);
+    setManualBundleError(null);
+    setPreviewItems([]);
+    setSelectedPreviewUsernames([]);
+    setSelectedUsernames(bundles.map((item) => item.username));
+    previewMutation.mutate(bundles);
+  }
+
+  function handleManualBundleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const raw = await file.text();
+        previewManualBundles(raw, file.name);
+      } catch (error) {
+        setManualBundleError(
+          error instanceof Error
+            ? error.message
+            : "读取联系人快照文件失败。",
+        );
+      }
+    })();
   }
 
   return (
@@ -1138,7 +1206,15 @@ export function WechatSyncPage() {
           <AdminSectionHeader
             title="连接器设置"
             actions={
-              <StatusPill tone={connectorReady ? "healthy" : "warning"}>
+              <StatusPill
+                tone={
+                  connectorReady
+                    ? "healthy"
+                    : connectorProbeRequested
+                      ? "warning"
+                      : "muted"
+                }
+              >
                 {connectorReady ? "已连接" : "待启动"}
               </StatusPill>
             }
@@ -1160,35 +1236,36 @@ export function WechatSyncPage() {
           <div className="mt-4 flex flex-wrap gap-3">
             <Button
               variant="primary"
-              onClick={() => scanMutation.mutate()}
+              onClick={() => {
+                setConnectorProbeRequested(true);
+                scanMutation.mutate();
+              }}
               disabled={scanMutation.isPending}
             >
               {scanMutation.isPending ? "刷新中..." : "刷新本地索引"}
             </Button>
             <Button
               variant="secondary"
-              onClick={() =>
-                queryClient.invalidateQueries({
-                  queryKey: [
-                    "wechat-connector-health",
-                    connectorSettings.baseUrl,
-                  ],
-                })
-              }
+              onClick={requestConnectorProbe}
             >
               刷新连接状态
             </Button>
           </div>
 
-          {connectorHealthQuery.isLoading ? (
+          {!connectorProbeRequested ? (
+            <InlineNotice className="mt-4" tone="muted">
+              当前未探测本地微信连接器。下方手动 JSON / 本地文件导入仍可直接使用；只有在你要读取本地联系人列表时，才需要启动连接器探测。
+            </InlineNotice>
+          ) : null}
+          {connectorProbeRequested && connectorHealthQuery.isLoading ? (
             <LoadingBlock className="mt-4" label="正在探测本地微信连接器..." />
           ) : null}
-          {connectorHealthQuery.isError &&
+          {connectorProbeRequested &&
+          connectorHealthQuery.isError &&
           connectorHealthQuery.error instanceof Error ? (
-            <ErrorBlock
-              className="mt-4"
-              message={connectorHealthQuery.error.message}
-            />
+            <InlineNotice className="mt-4" tone="warning">
+              {connectorHealthQuery.error.message}
+            </InlineNotice>
           ) : null}
           {scanMutation.isError && scanMutation.error instanceof Error ? (
             <ErrorBlock className="mt-4" message={scanMutation.error.message} />
@@ -1249,7 +1326,18 @@ export function WechatSyncPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setManualBundleJson(SAMPLE_WECHAT_SYNC_JSON)}
+                  onClick={() => manualBundleFileInputRef.current?.click()}
+                  disabled={previewMutation.isPending}
+                >
+                  选择本地 JSON
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setManualBundleFileName(null);
+                    setManualBundleJson(SAMPLE_WECHAT_SYNC_JSON);
+                  }}
                 >
                   填入示例
                 </Button>
@@ -1258,14 +1346,7 @@ export function WechatSyncPage() {
                   size="sm"
                   onClick={() => {
                     try {
-                      const bundles =
-                        parseWechatSyncContactBundles(manualBundleJson);
-                      setManualBundleError(null);
-                      setPreviewItems([]);
-                      setSelectedUsernames(
-                        bundles.map((item) => item.username),
-                      );
-                      previewMutation.mutate(bundles);
+                      previewManualBundles(manualBundleJson);
                     } catch (error) {
                       setManualBundleError(
                         error instanceof Error
@@ -1281,16 +1362,28 @@ export function WechatSyncPage() {
               </div>
             }
           />
+          <input
+            ref={manualBundleFileInputRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleManualBundleFileChange}
+          />
           <div className="mt-4">
             <AdminTextArea
               label="联系人快照 JSON"
               value={manualBundleJson}
-              onChange={setManualBundleJson}
+              onChange={handleManualBundleTextChange}
               textareaClassName="min-h-52 font-mono text-xs"
               description="粘贴 `WechatSyncContactBundle[]` 数组即可直接生成预览。只适用于你本人合法导出的联系人资料和聊天摘要。"
               placeholder='[{"username":"wxid_alice","displayName":"Alice","tags":["同事"],"isGroup":false,"messageCount":128,"ownerMessageCount":62,"contactMessageCount":66,"latestMessageAt":"2026-04-16T11:20:00.000Z","chatSummary":"经常聊产品迭代、周末约饭和出差安排。","topicKeywords":["产品","出差","周末"],"sampleMessages":[{"timestamp":"2026-04-16 19:20","text":"周五一起吃饭？","sender":"Alice","direction":"contact"}],"momentHighlights":[]}]'
             />
           </div>
+          {manualBundleFileName ? (
+            <InlineNotice className="mt-4" tone="muted">
+              已载入本地文件：{manualBundleFileName}
+            </InlineNotice>
+          ) : null}
 
           {rollbackGuideItem ? (
             <div className="mt-4 space-y-4">
@@ -2053,6 +2146,7 @@ export function WechatSyncPage() {
                   ? () => {
                       setRollbackGuideItem(selectedHistoryItem);
                       setManualBundleError(null);
+                      setManualBundleFileName(null);
                       setManualBundleJson(
                         JSON.stringify(
                           [
