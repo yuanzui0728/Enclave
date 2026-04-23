@@ -138,6 +138,22 @@ export function OfficialArticleViewer({
     });
   }
 
+  async function openArticleContentLink(href: string) {
+    const opened = await openExternalUrl(href);
+    if (opened) {
+      return;
+    }
+
+    setShareNotice({
+      message: "打开链接失败，请稍后重试。",
+      tone: "info",
+      actionLabel: "重试打开",
+      onAction: () => {
+        void openArticleContentLink(href);
+      },
+    });
+  }
+
   async function handleContentLinkClick(event: MouseEvent<HTMLDivElement>) {
     if (!nativeMobileShareSupported) {
       return;
@@ -163,15 +179,7 @@ export function OfficialArticleViewer({
     }
 
     event.preventDefault();
-    const opened = await openExternalUrl(anchor.href || rawHref);
-    if (opened) {
-      return;
-    }
-
-    setShareNotice({
-      message: "打开链接失败，请稍后重试。",
-      tone: "info",
-    });
+    await openArticleContentLink(anchor.href || rawHref);
   }
 
   return (
