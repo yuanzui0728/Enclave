@@ -2189,6 +2189,7 @@ function resolveMobileHandoffCategory(
   if (
     normalizedPath === "/tabs/channels" ||
     normalizedPath === "/channels" ||
+    normalizedPath.startsWith("/channels/authors/") ||
     normalizedPath.startsWith("/discover/channels") ||
     normalizedPath.startsWith("/desktop/channels")
   ) {
@@ -2202,6 +2203,9 @@ function resolveMobileHandoffCategory(
     normalizedPath === "/discover" ||
     normalizedPath === "/discover/encounter" ||
     normalizedPath === "/discover/scene" ||
+    normalizedPath.startsWith("/friend-moments/") ||
+    normalizedPath.startsWith("/moments/friend/") ||
+    normalizedPath.startsWith("/desktop/friend-moments/") ||
     normalizedPath === "/tabs/moments" ||
     normalizedPath === "/moments" ||
     normalizedPath.startsWith("/discover/moments") ||
