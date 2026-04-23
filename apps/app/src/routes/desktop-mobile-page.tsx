@@ -2189,7 +2189,11 @@ function resolveMobileHandoffCategory(
   if (
     item.path === "/tabs/contacts" ||
     item.path === "/tabs/discover" ||
-    item.path === "/profile/settings"
+    item.path === "/tabs/profile" ||
+    item.path === "/profile" ||
+    item.path === "/profile/settings" ||
+    item.path === "/desktop/settings" ||
+    item.path.startsWith("/legal/")
   ) {
     return "shortcut";
   }

@@ -906,7 +906,7 @@ const expectations = [
   {
     file: "src/routes/desktop-mobile-page.tsx",
     description:
-      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, classifies subscription-inbox and legacy contacts official paths under the official handoff bucket, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
+      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, classifies official and profile/settings shortcut histories into the right buckets, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
     includes: [
       "desktopTo?: string;",
       'desktopTo: "/desktop/settings",',
@@ -914,6 +914,11 @@ const expectations = [
       'item.path === "/chat/subscription-inbox"',
       'item.path === "/contacts/official-accounts"',
       'return "official";',
+      'item.path === "/tabs/profile"',
+      'item.path === "/profile"',
+      'item.path === "/desktop/settings"',
+      'item.path.startsWith("/legal/")',
+      'return "shortcut";',
       "const nextHash = buildDesktopMobileCallHandoffHash({",
       "title: callHandoffConversation.title,",
       "callHandoffConversation?.title?.trim() ||",
