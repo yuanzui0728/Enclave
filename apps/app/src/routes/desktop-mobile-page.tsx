@@ -2152,15 +2152,19 @@ function resolveMobileHandoffCategory(
   }
 
   if (
+    item.path === "/chat/subscription-inbox" ||
+    item.path === "/contacts/official-accounts" ||
+    item.path.startsWith("/official-accounts")
+  ) {
+    return "official";
+  }
+
+  if (
     item.path === "/tabs/chat" ||
     item.path.startsWith("/chat/") ||
     item.path.startsWith("/group/")
   ) {
     return "messages";
-  }
-
-  if (item.path.startsWith("/official-accounts")) {
-    return "official";
   }
 
   if (
