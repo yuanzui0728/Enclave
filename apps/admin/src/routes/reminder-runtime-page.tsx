@@ -233,7 +233,9 @@ function buildTomorrowReminderIso(task: ReminderTaskRecord) {
   return next.toISOString();
 }
 
-function momentTone(moment: ReminderRuntimeMomentRecord) {
+function momentTone(
+  moment: ReminderRuntimeMomentRecord,
+): ReminderRuntimeActivityItem["tone"] {
   return moment.generationKind === "reminder_nudge" ? "healthy" : "muted";
 }
 
@@ -331,10 +333,10 @@ function buildRecentActivity(overview: ReminderRuntimeOverview) {
   const items: ReminderRuntimeActivityItem[] = [
     ...overview.recentDeliveredTasks
       .filter((task) => Boolean(task.lastDeliveredAt))
-      .map((task) => ({
+      .map<ReminderRuntimeActivityItem>((task) => ({
         id: `delivered-${task.id}`,
         badge: "触发",
-        tone: task.priority === "hard" ? "warning" : "muted",
+        tone: task.priority === "hard" ? ("warning" as const) : ("muted" as const),
         title: task.title,
         description: task.detail || `已按计划发出提醒，调度为 ${task.scheduleText}。`,
         meta: task.lastDeliveredAt
@@ -344,7 +346,7 @@ function buildRecentActivity(overview: ReminderRuntimeOverview) {
       })),
     ...overview.recentCompletedTasks
       .filter((task) => Boolean(task.lastCompletedAt))
-      .map((task) => ({
+      .map<ReminderRuntimeActivityItem>((task) => ({
         id: `completed-${task.id}`,
         badge: "完成",
         tone: "healthy",
@@ -355,7 +357,7 @@ function buildRecentActivity(overview: ReminderRuntimeOverview) {
           : "任务完成",
         timestamp: task.lastCompletedAt ?? task.updatedAt,
       })),
-    ...overview.recentMessages.map((record) => ({
+    ...overview.recentMessages.map<ReminderRuntimeActivityItem>((record) => ({
       id: `message-${record.id}`,
       badge: "私聊",
       tone: "healthy" as const,
@@ -364,7 +366,7 @@ function buildRecentActivity(overview: ReminderRuntimeOverview) {
       meta: `会话 ${record.conversationId}`,
       timestamp: record.createdAt,
     })),
-    ...overview.recentMoments.map((moment) => ({
+    ...overview.recentMoments.map<ReminderRuntimeActivityItem>((moment) => ({
       id: `moment-${moment.id}`,
       badge: "发圈",
       tone: momentTone(moment),
