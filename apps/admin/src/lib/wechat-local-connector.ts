@@ -132,10 +132,53 @@ async function connectorFetch<T>(
 
   const rawBody = await response.text();
   if (!response.ok) {
-    throw new Error(rawBody || `本地微信连接器请求失败：${response.status}`);
+    throw new Error(
+      extractConnectorError(rawBody) ||
+        `本地微信连接器请求失败：${response.status}`,
+    );
   }
 
-  return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  try {
+    return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  } catch (error) {
+    throw new Error(
+      `本地微信连接器返回了非 JSON 响应。${
+        error instanceof Error ? error.message : ""
+      }`,
+    );
+  }
+}
+
+function extractConnectorError(rawBody: string) {
+  const normalized = rawBody.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(normalized) as unknown;
+    if (!isRecord(parsed)) {
+      return normalized;
+    }
+
+    const error = parsed.error;
+    if (typeof error === "string" && error.trim()) {
+      return error.trim();
+    }
+
+    const message = parsed.message;
+    if (typeof message === "string" && message.trim()) {
+      return message.trim();
+    }
+  } catch {
+    return normalized;
+  }
+
+  return normalized;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 export function getWechatConnectorHealth(baseUrl: string) {

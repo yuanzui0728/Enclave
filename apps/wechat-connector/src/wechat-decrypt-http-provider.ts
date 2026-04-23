@@ -41,6 +41,9 @@ export interface WechatDecryptHttpScanResult {
   message: string;
 }
 
+const FETCH_TIMEOUT_MS = 5_000;
+const ERROR_BODY_PREVIEW_LENGTH = 240;
+
 export class WechatDecryptHttpProvider {
   async scan(baseUrl: string): Promise<WechatDecryptHttpScanResult> {
     const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
@@ -62,17 +65,38 @@ export class WechatDecryptHttpProvider {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error(`wechat-decrypt HTTP 请求失败：${response.status} ${url}`);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    throw new Error(formatFetchFailure(url, error));
+  } finally {
+    clearTimeout(timeout);
   }
 
-  return (await response.json()) as T;
+  const rawBody = await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      `wechat-decrypt HTTP 请求失败：${response.status} ${response.statusText} ${url}${formatBodyPreview(rawBody)}`,
+    );
+  }
+
+  try {
+    return JSON.parse(rawBody) as T;
+  } catch (error) {
+    throw new Error(
+      `wechat-decrypt HTTP 响应不是合法 JSON：${url}${formatBodyPreview(rawBody)}${formatCause(error)}`,
+    );
+  }
 }
 
 function normalizeBaseUrl(value: string) {
@@ -292,4 +316,28 @@ function normalizeText(value: string | undefined | null) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function formatFetchFailure(url: string, error: unknown) {
+  const timeoutHint =
+    error instanceof Error && error.name === "AbortError"
+      ? `，请求超过 ${FETCH_TIMEOUT_MS / 1000} 秒未响应`
+      : "";
+
+  return `无法连接 wechat-decrypt 服务：${url}${timeoutHint}。请确认 5678 服务已启动，并且地址可从本机访问。${formatCause(error)}`;
+}
+
+function formatBodyPreview(rawBody: string) {
+  const normalized = rawBody.trim();
+  if (!normalized) {
+    return "";
+  }
+
+  return `，响应：${normalized.slice(0, ERROR_BODY_PREVIEW_LENGTH)}`;
+}
+
+function formatCause(error: unknown) {
+  return error instanceof Error && error.message
+    ? ` 原始错误：${error.message}`
+    : "";
 }
