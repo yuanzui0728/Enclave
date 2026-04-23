@@ -358,6 +358,8 @@ export function ChatMessageList({
     tone: "success" | "danger" | "warning";
     actionLabel?: string;
     onAction?: () => void;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
   } | null>(null);
   const [pendingDirectCallInvite, setPendingDirectCallInvite] = useState<{
     source: CallInviteSource | null;
@@ -1061,6 +1063,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "系统分享失败，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareLocationSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel ?? undefined,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1116,6 +1124,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "系统分享失败，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareContactSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel ?? undefined,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -1165,6 +1179,12 @@ export function ChatMessageList({
       setActionNotice({
         message: "系统分享失败，请稍后重试。",
         tone: "danger",
+        actionLabel: "重试分享",
+        onAction: () => {
+          void shareNoteSummary(attachment);
+        },
+        secondaryActionLabel: errorActionLabel ?? undefined,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
     }
   };
@@ -2366,10 +2386,19 @@ export function ChatMessageList({
         >
           <span>{actionNotice.message}</span>
           {actionNotice.actionLabel && actionNotice.onAction ? (
-            <InlineNoticeActionButton
-              label={actionNotice.actionLabel}
-              onClick={actionNotice.onAction}
-            />
+            <div className="flex items-center gap-2">
+              <InlineNoticeActionButton
+                label={actionNotice.actionLabel}
+                onClick={actionNotice.onAction}
+              />
+              {actionNotice.secondaryActionLabel &&
+              actionNotice.onSecondaryAction ? (
+                <InlineNoticeActionButton
+                  label={actionNotice.secondaryActionLabel}
+                  onClick={actionNotice.onSecondaryAction}
+                />
+              ) : null}
+            </div>
           ) : actionNotice.tone === "danger" &&
             errorActionLabel &&
             onErrorAction ? (
