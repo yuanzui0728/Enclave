@@ -90,6 +90,8 @@ export function GroupQrPage() {
     tone: "success" | "danger";
     actionLabel?: string;
     onAction?: () => void;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
   } | null>(null);
   const [deliveredConversation, setDeliveredConversation] =
     useState<GroupInviteDeliveryRecord | null>(() =>
@@ -653,20 +655,19 @@ export function GroupQrPage() {
     });
   };
 
+  const getMobileDangerBackAction = () =>
+    !isDesktopLayout
+      ? {
+          secondaryActionLabel: safeReturnPath ? "返回上一页" : "返回群聊信息",
+          onSecondaryAction: handleNoticeBackAction,
+        }
+      : {};
+
   function showNotice(message: string, tone: "success" | "danger" = "success") {
     setNotice({
       message,
       tone,
-      actionLabel:
-        !isDesktopLayout && tone === "danger"
-          ? safeReturnPath
-            ? "返回上一页"
-            : "返回群聊信息"
-          : undefined,
-      onAction:
-        !isDesktopLayout && tone === "danger"
-          ? handleNoticeBackAction
-          : undefined,
+      ...(tone === "danger" ? getMobileDangerBackAction() : {}),
     });
   }
 
@@ -697,7 +698,28 @@ export function GroupQrPage() {
     }
   };
 
-  async function copyText(value: string, successMessage: string) {
+  function showRetryNotice(
+    message: string,
+    actionLabel: string,
+    onAction: () => void,
+  ) {
+    setNotice({
+      message,
+      tone: "danger",
+      actionLabel,
+      onAction,
+      ...getMobileDangerBackAction(),
+    });
+  }
+
+  async function copyText(
+    value: string,
+    successMessage: string,
+    retryOptions?: {
+      actionLabel: string;
+      onAction: () => void;
+    },
+  ) {
     if (
       typeof navigator === "undefined" ||
       !navigator.clipboard ||
@@ -711,6 +733,11 @@ export function GroupQrPage() {
       await navigator.clipboard.writeText(value);
       showNotice(successMessage);
     } catch {
+      if (retryOptions) {
+        showRetryNotice("复制失败，请稍后重试。", retryOptions.actionLabel, retryOptions.onAction);
+        return;
+      }
+
       showNotice("复制失败，请稍后重试。", "danger");
     }
   }
@@ -779,7 +806,9 @@ export function GroupQrPage() {
       });
       showNotice("群邀请入口已复制到手机。");
     } catch {
-      showNotice("复制到手机失败，请稍后重试。", "danger");
+      showRetryNotice("复制到手机失败，请稍后重试。", "重试复制到手机", () => {
+        void sendToMobile();
+      });
     }
   }
 
@@ -809,13 +838,20 @@ export function GroupQrPage() {
       await navigator.clipboard.writeText(inviteText);
       showNotice("系统分享暂时不可用，已复制群邀请文案。");
     } catch {
-      showNotice("系统分享失败，请稍后重试。", "danger");
+      showRetryNotice("系统分享失败，请稍后重试。", "重试分享", () => {
+        void shareInvite();
+      });
     }
   }
 
   async function shareInviteLink() {
     if (!nativeMobileShareSupported) {
-      await copyText(inviteLink, "群链接已复制。");
+      await copyText(inviteLink, "群链接已复制。", {
+        actionLabel: "重试复制",
+        onAction: () => {
+          void shareInviteLink();
+        },
+      });
       return;
     }
 
@@ -831,12 +867,22 @@ export function GroupQrPage() {
       return;
     }
 
-    await copyText(inviteLink, "系统分享暂时不可用，已复制群链接。");
+    await copyText(inviteLink, "系统分享暂时不可用，已复制群链接。", {
+      actionLabel: "重试分享",
+      onAction: () => {
+        void shareInviteLink();
+      },
+    });
   }
 
   async function shareInviteTextOnly() {
     if (!nativeMobileShareSupported) {
-      await copyText(inviteText, "群邀请文案已复制。");
+      await copyText(inviteText, "群邀请文案已复制。", {
+        actionLabel: "重试复制",
+        onAction: () => {
+          void shareInviteTextOnly();
+        },
+      });
       return;
     }
 
@@ -852,7 +898,12 @@ export function GroupQrPage() {
       return;
     }
 
-    await copyText(inviteText, "系统分享暂时不可用，已复制群邀请文案。");
+    await copyText(inviteText, "系统分享暂时不可用，已复制群邀请文案。", {
+      actionLabel: "重试分享",
+      onAction: () => {
+        void shareInviteTextOnly();
+      },
+    });
   }
 
   async function sendToConversation(conversation: ConversationListItem) {
@@ -1012,9 +1063,22 @@ export function GroupQrPage() {
         >
           <span>{notice.message}</span>
           {notice.actionLabel && notice.onAction ? (
+            <div className="flex items-center gap-2">
+              <InlineNoticeActionButton
+                label={notice.actionLabel}
+                onClick={notice.onAction}
+              />
+              {notice.secondaryActionLabel && notice.onSecondaryAction ? (
+                <InlineNoticeActionButton
+                  label={notice.secondaryActionLabel}
+                  onClick={notice.onSecondaryAction}
+                />
+              ) : null}
+            </div>
+          ) : notice.secondaryActionLabel && notice.onSecondaryAction ? (
             <InlineNoticeActionButton
-              label={notice.actionLabel}
-              onClick={notice.onAction}
+              label={notice.secondaryActionLabel}
+              onClick={notice.onSecondaryAction}
             />
           ) : null}
         </InlineNotice>
