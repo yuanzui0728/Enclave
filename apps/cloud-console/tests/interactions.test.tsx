@@ -2012,6 +2012,80 @@ async function revokeAdminSessionRiskGroupAndAssert(
   expectAdminSessionSourceGroupRiskRevokeRequest(requests, riskLevel);
 }
 
+async function revokeInstalledAdminSessionSourceScenario({
+  sourceScenario,
+  includeDefaultAdminSessions = false,
+  search,
+  summaryLabels = [],
+  triggerName = "Revoke group",
+  message,
+  requestBody,
+  absentKeys = [],
+  includeRequestId = false,
+  confirmButtonIndex = -1,
+}: {
+  sourceScenario: AdminSessionSourceScenarioInput;
+  includeDefaultAdminSessions?: boolean;
+  search?: string;
+  summaryLabels?: string[];
+  triggerName?: string;
+  message: string;
+  requestBody:
+    | Record<string, unknown>
+    | ((sourceKey: string) => Record<string, unknown>);
+  absentKeys?: string[];
+  includeRequestId?: boolean;
+  confirmButtonIndex?: number;
+}) {
+  const { requests, sourceKey } = await renderInstalledAdminSessionSourceScenarioPage({
+    sourceScenario,
+    includeDefaultAdminSessions,
+    search,
+  });
+
+  for (const summaryLabel of summaryLabels) {
+    expect(await screen.findAllByText(summaryLabel)).toHaveLength(1);
+  }
+
+  await revokeAdminSessionSourceGroupAndAssert({
+    requests,
+    trigger: screen.getByRole("button", { name: triggerName }),
+    message,
+    requestBody:
+      typeof requestBody === "function" ? requestBody(sourceKey) : requestBody,
+    absentKeys,
+    includeRequestId,
+    confirmButtonIndex,
+  });
+
+  return { requests, sourceKey };
+}
+
+async function revokeInstalledAdminSessionRiskScenario({
+  sourceScenario,
+  riskFilter = "watch",
+  message,
+  includeRequestId = true,
+}: {
+  sourceScenario: AdminSessionActiveSourcePairScenarioInput;
+  riskFilter?: string;
+  message: string;
+  includeRequestId?: boolean;
+}) {
+  const { requests } = await renderInstalledAdminSessionActiveSourcePairPage({
+    sourceScenario,
+    riskFilter,
+  });
+
+  await revokeAdminSessionRiskGroupAndAssert(requests, {
+    message,
+    riskLevel: riskFilter,
+    includeRequestId,
+  });
+
+  return { requests };
+}
+
 describe("cloud-console interactions", () => {
   beforeEach(() => {
     window.scrollTo = vi.fn();
@@ -2404,45 +2478,37 @@ describe("cloud-console interactions", () => {
   });
 
   it("revokes a matching admin session source group", async () => {
-    const { requests, sourceKey: expectedSourceKey } =
-      await renderInstalledAdminSessionSourceScenarioPage({
-        sourceScenario: {
-          issuedFromIp: "203.0.113.88",
-          issuedUserAgent: "Shared Source Browser",
-          sourceSessions: [
-            {
-              id: "44444444-4444-4444-8444-444444444444",
-              isCurrent: false,
-              createdAt: "2026-04-20T00:10:00.000Z",
-              updatedAt: "2026-04-20T00:20:00.000Z",
-              lastUsedAt: "2026-04-20T00:20:00.000Z",
-              expiresAt: "2026-04-27T01:00:00.000Z",
-            },
-            {
-              id: "55555555-5555-4555-8555-555555555555",
-              isCurrent: false,
-              createdAt: "2026-04-20T00:15:00.000Z",
-              updatedAt: "2026-04-20T00:25:00.000Z",
-              lastUsedAt: "2026-04-20T00:25:00.000Z",
-              expiresAt: "2026-04-27T02:00:00.000Z",
-            },
-          ],
-        },
-        includeDefaultAdminSessions: true,
-        search: "Shared Source Browser",
-      });
-
-    expect(await screen.findAllByText("2 active")).toHaveLength(1);
-    expect(await screen.findAllByText("2 total")).toHaveLength(1);
-
-    await revokeAdminSessionSourceGroupAndAssert({
-      requests,
-      trigger: screen.getByRole("button", { name: "Revoke group" }),
-      message: "Revoked 2 matching active session(s) in the selected source group.",
-      requestBody: {
-        query: "Shared Source Browser",
-        sourceKey: expectedSourceKey,
+    await revokeInstalledAdminSessionSourceScenario({
+      sourceScenario: {
+        issuedFromIp: "203.0.113.88",
+        issuedUserAgent: "Shared Source Browser",
+        sourceSessions: [
+          {
+            id: "44444444-4444-4444-8444-444444444444",
+            isCurrent: false,
+            createdAt: "2026-04-20T00:10:00.000Z",
+            updatedAt: "2026-04-20T00:20:00.000Z",
+            lastUsedAt: "2026-04-20T00:20:00.000Z",
+            expiresAt: "2026-04-27T01:00:00.000Z",
+          },
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            isCurrent: false,
+            createdAt: "2026-04-20T00:15:00.000Z",
+            updatedAt: "2026-04-20T00:25:00.000Z",
+            lastUsedAt: "2026-04-20T00:25:00.000Z",
+            expiresAt: "2026-04-27T02:00:00.000Z",
+          },
+        ],
       },
+      includeDefaultAdminSessions: true,
+      search: "Shared Source Browser",
+      summaryLabels: ["2 active", "2 total"],
+      message: "Revoked 2 matching active session(s) in the selected source group.",
+      requestBody: (sourceKey) => ({
+        query: "Shared Source Browser",
+        sourceKey,
+      }),
       confirmButtonIndex: 1,
     });
   });
@@ -2577,7 +2643,7 @@ describe("cloud-console interactions", () => {
   });
 
   it("filters source groups by risk level and revokes the matching groups", async () => {
-    const { requests } = await renderInstalledAdminSessionActiveSourcePairPage({
+    await revokeInstalledAdminSessionRiskScenario({
       sourceScenario: {
         issuedFromIp: "203.0.113.210",
         issuedUserAgent: "Risk Watch Browser",
@@ -2597,9 +2663,6 @@ describe("cloud-console interactions", () => {
         ],
       },
       riskFilter: "watch",
-    });
-
-    await revokeAdminSessionRiskGroupAndAssert(requests, {
       message: "Revoked 2 active session(s) across 1 risk group(s).",
       includeRequestId: true,
     });
