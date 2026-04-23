@@ -1612,6 +1612,36 @@ export function WechatSyncPage() {
       ) : null}
 
       <Card className="bg-[color:var(--surface-console)]">
+        <div className="grid gap-4 xl:grid-cols-[0.9fr_1.15fr_0.95fr]">
+          <AdminMiniPanel title="页面介绍" tone="soft" className="h-full">
+            <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+              <p>这页用于把你本机已经整理好的微信联系人资料和聊天摘要，转换成隐界里的角色与好友关系。</p>
+              <p>它只负责读取、整理、预览和导入，不会直接控制微信，也不会自动给真实微信好友发消息。</p>
+              <p>如果你不想走本地服务，也可以直接粘贴联系人快照 JSON 来完成同样的导入流程。</p>
+            </div>
+          </AdminMiniPanel>
+
+          <AdminMiniPanel title="如何操作" tone="soft" className="h-full">
+            <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+              <p>1. 先准备数据源：启动本机 `17364` 连接器，并根据需要启动 `5678` 的 `wechat-decrypt` 服务，或者直接准备 JSON 快照。</p>
+              <p>2. 在“步骤 1”里选择数据源，确认地址后点“刷新连接状态”与“刷新本地索引”。</p>
+              <p>3. 在“步骤 2”里筛选并勾选联系人，再点“生成预览”。</p>
+              <p>4. 在“步骤 3”里检查角色草稿，补齐缺失字段后执行导入。</p>
+              <p>5. 导入完成后，到“步骤 4”查看历史、补建好友关系或回滚。</p>
+            </div>
+          </AdminMiniPanel>
+
+          <AdminMiniPanel title="常见问题" tone="soft" className="h-full">
+            <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+              <p>如果看到 `fetch failed`，优先检查 `http://127.0.0.1:5678` 和 `http://127.0.0.1:17364` 是否都能从本机访问。</p>
+              <p>当前版本只支持导入单聊联系人，群聊会保留在列表中供筛查，但不会被真正导入。</p>
+              <p>本页不会自动启动 `wechat-decrypt`；如果你选择的是 `wechat-decrypt HTTP`，请先在本机把 `5678` 服务跑起来。</p>
+            </div>
+          </AdminMiniPanel>
+        </div>
+      </Card>
+
+      <Card className="bg-[color:var(--surface-console)]">
         <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
           <div>
             <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
