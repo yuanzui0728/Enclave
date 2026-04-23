@@ -963,7 +963,7 @@ const expectations = [
   {
     file: "src/routes/desktop-mobile-page.tsx",
     description:
-      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, trims query/hash and trailing slashes before classifying legacy chat/contacts/discover/discover-tool/search/favorites/moments/friend-moments/feed roots plus desktop and legacy games/channel/channel-author/mini-program histories and official/profile/settings shortcut histories into the right buckets, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
+      "desktop mobile rewrites stale call handoff titles from the live conversation, keeps mobile handoff copies on mobile chat paths, trims query/hash and trailing slashes before classifying legacy chat/contacts/discover/discover-tool/search/favorites/moments/friend-moments/feed roots plus desktop and legacy games/channel/channel-author/mini-program histories, folds legacy contacts panes and add-friend paths into shortcuts, classifies official/profile/settings shortcut histories into the right buckets, routes group-invite returns and desktop-open actions through /tabs/chat, opens the settings quick shortcut directly on /desktop/settings, and repairs stale official handoffs from live account/article data",
     includes: [
       'const rawPath = item.path.split(/[?#]/, 1)[0] ?? item.path;',
       "rawPath.length > 1 ? rawPath.replace(/\\/+$/, \"\") : rawPath;",
@@ -975,6 +975,12 @@ const expectations = [
       'return "official";',
       'normalizedPath === "/chat"',
       'normalizedPath === "/contacts"',
+      'normalizedPath === "/friend-requests"',
+      'normalizedPath === "/desktop/add-friend"',
+      'normalizedPath === "/contacts/starred"',
+      'normalizedPath === "/contacts/tags"',
+      'normalizedPath === "/contacts/groups"',
+      'normalizedPath === "/contacts/world-characters"',
       'normalizedPath === "/discover"',
       'normalizedPath === "/discover/encounter"',
       'normalizedPath === "/discover/scene"',

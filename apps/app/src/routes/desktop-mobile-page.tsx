@@ -2201,6 +2201,12 @@ function resolveMobileHandoffCategory(
   if (
     normalizedPath === "/tabs/contacts" ||
     normalizedPath === "/contacts" ||
+    normalizedPath === "/friend-requests" ||
+    normalizedPath === "/desktop/add-friend" ||
+    normalizedPath === "/contacts/starred" ||
+    normalizedPath === "/contacts/tags" ||
+    normalizedPath === "/contacts/groups" ||
+    normalizedPath === "/contacts/world-characters" ||
     normalizedPath === "/tabs/discover" ||
     normalizedPath === "/discover" ||
     normalizedPath === "/discover/encounter" ||

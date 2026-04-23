@@ -80,6 +80,7 @@
 - `desktop/mobile` 里的旧发现子工具 `/discover/encounter`、`/discover/scene` 现在也会归进“快捷入口”。之前这两条老发现工具页虽然最终都会收回桌面发现工作区，但历史分组器仍会把它们错放到“其他”。
 - `desktop/mobile` 里的旧好友朋友圈 `/friend-moments/*`、`/moments/friend/*`，以及旧视频号作者页 `/channels/authors/*` 现在也会归进正确分组：好友朋友圈回“快捷入口”，作者页回“视频号 / 直播”。之前这批老记录即使还能自愈回桌面工作区，历史分组器仍会把它们错放到“其他”。
 - `desktop/mobile` 的历史分组器现在也会在分类前统一去掉末尾斜杠。之前像 `/tabs/channels/`、`/tabs/search/`、`/profile/settings/` 这类老记录，即使语义上已经和当前桌面工作区完全一致，仍可能因为尾部 `/` 被误丢到“其他”。
+- `desktop/mobile` 里的旧通讯录细分入口现在也会归进“快捷入口”，包括 `/friend-requests`、`/desktop/add-friend`、`/contacts/starred`、`/contacts/tags`、`/contacts/groups`、`/contacts/world-characters`。之前这批桌面通讯录子页历史即使还能自愈回工作区，分组器仍会把它们错放到“其他”。
 - 桌面壳右上角“我”的资料卡里，“给自己发消息”快捷入口也已经改成桌面消息协议 `/tabs/chat#conversationId=...`。之前这里还在直跳移动 `/chat/$conversationId`，会把用户从桌面壳直接切回移动聊天页。
 - 桌面通讯录里的“群聊”分组现在也统一回桌面消息工作区：`进入群聊` 走 `/tabs/chat#conversationId=...`，`群聊信息` 走 `/tabs/chat#conversationId=...&panel=details`。之前这两个入口还会直接掉进移动 `/group/$groupId` 和 `/group/$groupId/details`。
 - 桌面通讯录联系人详情里的“共同群聊”入口也已经对齐到同一套桌面协议，点击后直接回 `/tabs/chat#conversationId=...`。之前这里也会把用户从桌面联系人详情带回移动 `/group/$groupId`。
