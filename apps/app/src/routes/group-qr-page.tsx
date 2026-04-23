@@ -830,7 +830,9 @@ export function GroupQrPage() {
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      showNotice("当前设备暂时无法打开系统分享，请稍后重试。", "danger");
+      showRetryNotice("当前设备暂时无法打开系统分享，请稍后重试。", "重试分享", () => {
+        void shareInvite();
+      });
       return;
     }
 
