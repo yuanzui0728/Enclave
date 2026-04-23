@@ -1,5 +1,6 @@
-import { describe } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
+  buildCompactWaitingSessionSyncRouteSearch,
   buildWaitingSessionSyncRouteSearch,
   DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH,
   validateWaitingSessionSyncRouteSearch,
@@ -143,5 +144,39 @@ describe("waiting session sync route search", () => {
         },
       },
     ],
+  });
+
+  it("builds compact waiting-sync route search without default fields", () => {
+    expect(
+      buildCompactWaitingSessionSyncRouteSearch({
+        status: "all",
+        taskType: "all",
+        query: "",
+        reviewContext: "",
+        reviewTaskId: "",
+        page: 1,
+        pageSize: 20,
+      }),
+    ).toEqual({});
+
+    expect(
+      buildCompactWaitingSessionSyncRouteSearch({
+        status: "pending",
+        taskType: "refresh_phone",
+        query: "runtime.heartbeat",
+        reviewContext: "cloud.updateWorld",
+        reviewTaskId: "44444444-4444-4444-8444-444444444444",
+        page: 2,
+        pageSize: 10,
+      }),
+    ).toEqual({
+      status: "pending",
+      taskType: "refresh_phone",
+      query: "runtime.heartbeat",
+      reviewContext: "cloud.updateWorld",
+      reviewTaskId: "44444444-4444-4444-8444-444444444444",
+      page: 2,
+      pageSize: 10,
+    });
   });
 });

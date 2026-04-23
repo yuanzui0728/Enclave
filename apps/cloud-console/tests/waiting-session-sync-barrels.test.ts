@@ -61,6 +61,7 @@ describe("waiting session sync barrels", () => {
       "WAITING_SESSION_SYNC_PAGE_SIZE_OPTIONS",
       "WAITING_SESSION_SYNC_STATUS_FILTERS",
       "WAITING_SESSION_SYNC_TASK_TYPE_FILTERS",
+      "buildCompactWaitingSessionSyncRouteSearch",
       "buildWaitingSessionSyncArtifactFilename",
       "buildWaitingSessionSyncContextGroupsCsv",
       "buildWaitingSessionSyncContextReviewCopy",
@@ -101,6 +102,9 @@ describe("waiting session sync barrels", () => {
     expect(waitingSessionSyncHelpers.WAITING_SESSION_SYNC_TASK_TYPE_FILTERS).toBe(
       waitingSessionSyncRouteSearch.WAITING_SESSION_SYNC_TASK_TYPE_FILTERS,
     );
+    expect(
+      waitingSessionSyncHelpers.buildCompactWaitingSessionSyncRouteSearch,
+    ).toBe(waitingSessionSyncRouteSearch.buildCompactWaitingSessionSyncRouteSearch);
     expect(waitingSessionSyncHelpers.buildWaitingSessionSyncArtifactFilename).toBe(
       waitingSessionSyncCopy.buildWaitingSessionSyncArtifactFilename,
     );

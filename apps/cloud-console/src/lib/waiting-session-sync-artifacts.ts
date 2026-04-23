@@ -1,10 +1,14 @@
 import type { CloudWaitingSessionSyncTaskSummary } from "@yinjie/contracts";
-import { buildRequestsRouteSearch } from "./request-route-search";
 import {
+  buildRequestsPermalink,
+  buildRequestsRouteSearch,
+} from "./request-route-search";
+import {
+  buildCompactWaitingSessionSyncRouteSearch,
   buildWaitingSessionSyncRouteSearch,
   type WaitingSessionSyncRouteSearch,
 } from "./waiting-session-sync-route-search";
-import { buildWorldsRouteSearch } from "./world-route-search";
+import { buildWorldsPermalink, buildWorldsRouteSearch } from "./world-route-search";
 
 type WaitingSessionSyncContextGroupLike = {
   context: string;
@@ -135,9 +139,9 @@ export function buildWaitingSessionSyncSnapshotLookup(
 
   return {
     requestsRoute,
-    requestsPath: buildRouteSearchPath("/requests", requestsRoute),
+    requestsPath: buildRequestsPermalink(requestsRoute),
     worldsRoute,
-    worldsPath: buildRouteSearchPath("/worlds", worldsRoute),
+    worldsPath: buildWorldsPermalink(worldsRoute),
     worldDetailPath:
       task.taskType === "refresh_world"
         ? `/worlds/${encodeURIComponent(task.targetValue)}`
@@ -160,11 +164,13 @@ function buildWaitingSessionSyncFocusPath(
 ) {
   return buildRouteSearchPath(
     "/waiting-sync",
-    buildWaitingSessionSyncRouteSearch({
-      ...filters,
-      query: context,
-      page: 1,
-    }),
+    buildCompactWaitingSessionSyncRouteSearch(
+      buildWaitingSessionSyncRouteSearch({
+        ...filters,
+        query: context,
+        page: 1,
+      }),
+    ),
   );
 }
 

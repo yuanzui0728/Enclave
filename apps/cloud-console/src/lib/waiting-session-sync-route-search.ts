@@ -116,3 +116,40 @@ export function validateWaitingSessionSyncRouteSearch(
     pageSize: search.pageSize,
   });
 }
+
+export function buildCompactWaitingSessionSyncRouteSearch(
+  search?: Partial<WaitingSessionSyncRouteSearch>,
+) {
+  const normalized = buildWaitingSessionSyncRouteSearch(search);
+  const compact: Partial<WaitingSessionSyncRouteSearch> = {};
+
+  if (
+    normalized.status !== DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH.status
+  ) {
+    compact.status = normalized.status;
+  }
+  if (
+    normalized.taskType !== DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH.taskType
+  ) {
+    compact.taskType = normalized.taskType;
+  }
+  if (normalized.query) {
+    compact.query = normalized.query;
+  }
+  if (normalized.reviewContext) {
+    compact.reviewContext = normalized.reviewContext;
+  }
+  if (normalized.reviewTaskId) {
+    compact.reviewTaskId = normalized.reviewTaskId;
+  }
+  if (normalized.page !== DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH.page) {
+    compact.page = normalized.page;
+  }
+  if (
+    normalized.pageSize !== DEFAULT_WAITING_SESSION_SYNC_ROUTE_SEARCH.pageSize
+  ) {
+    compact.pageSize = normalized.pageSize;
+  }
+
+  return compact;
+}

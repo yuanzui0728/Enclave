@@ -79,6 +79,10 @@ describe("waiting session sync copy", () => {
     ).toBe(
       "/waiting-sync?status=pending&taskType=refresh_phone&query=runtime.heartbeat&reviewContext=cloud.updateWorld&reviewTaskId=44444444-4444-4444-8444-444444444444&page=2&pageSize=10",
     );
+
+    expect(
+      buildWaitingSessionSyncPermalink(mockWaitingSessionSyncAllFilters),
+    ).toBe("/waiting-sync");
   });
 
   it("describes batch action guard copy from one shared helper", () => {
@@ -155,8 +159,7 @@ describe("waiting session sync copy", () => {
       taskTypes: ["refresh_world", "refresh_phone"],
       refreshWorldTarget: "world-1",
       taskTypeLabels: ["Refresh world", "Refresh phone"],
-      focusPath:
-        "/waiting-sync?status=all&taskType=all&query=runtime.heartbeat&page=1&pageSize=20",
+      focusPath: "/waiting-sync?query=runtime.heartbeat",
       worldDetailPath: "/worlds/world-1",
       taskIds: [
         "44444444-4444-4444-8444-444444444444",
@@ -202,8 +205,7 @@ describe("waiting session sync copy", () => {
     expect(
       buildWaitingSessionSyncContextReviewCopy({
         artifact: contextArtifact,
-        reviewPath:
-          "/waiting-sync?status=all&taskType=all&query=&page=1&pageSize=20",
+        reviewPath: "/waiting-sync",
         summary: {
           failed: 1,
           pending: 1,
@@ -219,8 +221,8 @@ describe("waiting session sync copy", () => {
         "Running: 0",
         "Task types: Refresh world | Refresh phone",
         "Latest update: 2026-04-21T00:00:00.000Z",
-        "Review permalink: /waiting-sync?status=all&taskType=all&query=&page=1&pageSize=20",
-        "Focus path: /waiting-sync?status=all&taskType=all&query=runtime.heartbeat&page=1&pageSize=20",
+        "Review permalink: /waiting-sync",
+        "Focus path: /waiting-sync?query=runtime.heartbeat",
         "World detail: /worlds/world-1",
         "Task ids: 44444444-4444-4444-8444-444444444444 | 77777777-7777-4777-8777-777777777777",
         "Task keys: refresh-world:world-1 | refresh-phone:+8613800138099",
@@ -231,7 +233,7 @@ describe("waiting session sync copy", () => {
     expect(
       buildWaitingSessionSyncTaskReviewCopy({
         reviewPath:
-          "/waiting-sync?status=all&taskType=all&query=&reviewContext=runtime.heartbeat&reviewTaskId=44444444-4444-4444-8444-444444444444&page=1&pageSize=20",
+          "/waiting-sync?reviewContext=runtime.heartbeat&reviewTaskId=44444444-4444-4444-8444-444444444444",
         task: mockWaitingSessionSyncReviewTasks[0],
       }),
     ).toBe(
@@ -247,9 +249,9 @@ describe("waiting session sync copy", () => {
         "Finished: 2026-04-20T00:16:00.000Z",
         "Lease owner: Not available",
         "Last error: heartbeat callback failed",
-        "Review permalink: /waiting-sync?status=all&taskType=all&query=&reviewContext=runtime.heartbeat&reviewTaskId=44444444-4444-4444-8444-444444444444&page=1&pageSize=20",
-        "Requests path: /requests?status=all&projectedWorldStatus=all&desiredState=all&query=world-1",
-        "Worlds path: /worlds?status=all&provider=all&powerState=all&attention=all&health=all&query=world-1",
+        "Review permalink: /waiting-sync?reviewContext=runtime.heartbeat&reviewTaskId=44444444-4444-4444-8444-444444444444",
+        "Requests path: /requests?query=world-1",
+        "Worlds path: /worlds?query=world-1",
         "World detail: /worlds/world-1",
       ].join("\n"),
     );

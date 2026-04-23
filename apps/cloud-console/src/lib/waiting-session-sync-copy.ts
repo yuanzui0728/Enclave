@@ -5,6 +5,7 @@ import {
   type WaitingSessionSyncStatusSummary,
 } from "./waiting-session-sync-artifacts";
 import {
+  buildCompactWaitingSessionSyncRouteSearch,
   buildWaitingSessionSyncRouteSearch,
   type WaitingSessionSyncRouteSearch,
 } from "./waiting-session-sync-route-search";
@@ -167,7 +168,9 @@ export function buildWaitingSessionSyncPermalink(
 ) {
   return buildRouteSearchPath(
     "/waiting-sync",
-    buildWaitingSessionSyncRouteSearch(search),
+    buildCompactWaitingSessionSyncRouteSearch(
+      buildWaitingSessionSyncRouteSearch(search),
+    ),
   );
 }
 

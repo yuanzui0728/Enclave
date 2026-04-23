@@ -70,6 +70,12 @@ describe("waiting session sync artifact builders", () => {
       },
       contextGroups: [MOCK_GROUP],
     });
+    expect(filteredPayload.tasks[0]?.lookup.requestsPath).toBe(
+      "/requests?query=world-1",
+    );
+    expect(filteredPayload.tasks[0]?.lookup.worldsPath).toBe(
+      "/worlds?query=world-1",
+    );
 
     const focusPayload = createWaitingSessionSyncFocusSnapshotPayload({
       generatedAt: "2026-04-21T01:15:00.000Z",
@@ -138,8 +144,7 @@ describe("waiting session sync artifact builders", () => {
       taskIds: ["task-1", "task-2"],
       targetValues: ["world-1", "+8613800138000"],
       worldDetailPath: "/worlds/world-1",
-      focusPath:
-        "/waiting-sync?status=failed&taskType=refresh_world&query=runtime.heartbeat&page=1&pageSize=20",
+      focusPath: "/waiting-sync?status=failed&taskType=refresh_world&query=runtime.heartbeat",
     });
   });
 });
