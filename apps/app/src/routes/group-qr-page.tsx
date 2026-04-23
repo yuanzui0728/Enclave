@@ -803,7 +803,9 @@ export function GroupQrPage() {
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      showNotice("当前环境暂不支持复制到手机。", "danger");
+      showRetryNotice("当前环境暂不支持复制到手机。", "重试复制到手机", () => {
+        void sendToMobile();
+      });
       return;
     }
 
@@ -863,6 +865,7 @@ export function GroupQrPage() {
         onAction: () => {
           void shareInviteLink();
         },
+        unavailableMessage: "当前环境暂不支持复制群链接。",
       });
       return;
     }
@@ -895,6 +898,7 @@ export function GroupQrPage() {
         onAction: () => {
           void shareInviteTextOnly();
         },
+        unavailableMessage: "当前环境暂不支持复制群邀请文案。",
       });
       return;
     }
