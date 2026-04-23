@@ -216,6 +216,13 @@ function resolveDesktopWorkspaceNavigationTarget(
     } satisfies SearchNavigationTarget;
   }
 
+  if (target.to === "/search") {
+    return {
+      to: "/tabs/search",
+      hash: target.hash,
+    } satisfies SearchNavigationTarget;
+  }
+
   if (target.to === "/favorites" || target.to === "/tabs/favorites") {
     return {
       to: "/tabs/favorites",
