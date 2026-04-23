@@ -9,11 +9,13 @@ import { SystemConfigModule } from '../config/config.module';
 import { SystemController } from './system.controller';
 import { SystemService } from './system.service';
 import { SchedulerModule } from '../scheduler/scheduler.module';
+import { InferenceModule } from '../inference/inference.module';
 
 @Module({
   imports: [
     ConfigModule,
     SystemConfigModule,
+    InferenceModule,
     SchedulerModule,
     TypeOrmModule.forFeature([
       UserEntity,

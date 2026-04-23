@@ -16,6 +16,7 @@ export * from "./feed";
 export * from "./favorites";
 export * from "./followup-runtime";
 export * from "./games";
+export * from "./inference";
 export * from "./moments";
 export * from "./moderation";
 export * from "./need-discovery";

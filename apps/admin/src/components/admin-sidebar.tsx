@@ -9,6 +9,7 @@ type SidebarLink = {
     | "/"
     | "/setup"
     | "/characters"
+    | "/inference"
     | "/games"
     | "/chat-records"
     | "/need-discovery"
@@ -27,6 +28,7 @@ type SidebarIssue = {
   to:
     | "/"
     | "/characters"
+    | "/inference"
     | "/chat-records"
     | "/token-usage"
     | "/evals";

@@ -141,6 +141,11 @@ const NAV_ITEMS = [
     hint: "查看角色名册、角色工厂和运行逻辑台。",
   },
   {
+    to: "/inference",
+    label: "模型与路由",
+    hint: "管理 Provider 账户、模型目录、默认路由和模型角色批量安装。",
+  },
+  {
     to: "/games",
     label: "游戏目录",
     hint: "查看 AI 游戏中心目录、来源结构和当前审核状态。",
@@ -210,6 +215,15 @@ function resolveRouteMeta(pathname: string) {
       eyebrow: "角色中心",
       title: "角色名册与工作入口",
       description: "在一个工作区里完成角色筛选、摘要查看和快捷跳转。",
+    };
+  }
+
+  if (pathname === "/inference") {
+    return {
+      eyebrow: "模型与路由",
+      title: "多模型账户与角色路由",
+      description:
+        "集中管理多个 Provider 账户、模型目录、默认模型路由，以及批量安装模型人格角色。",
     };
   }
 

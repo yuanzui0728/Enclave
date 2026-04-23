@@ -87,4 +87,19 @@ export class CharacterEntity {
 
   @Column({ default: 'auto' })
   activityMode: string;
+
+  @Column({ default: 'inherit_default' })
+  modelRoutingMode: string;
+
+  @Column('text', { nullable: true })
+  inferenceProviderAccountId?: string | null;
+
+  @Column('text', { nullable: true })
+  inferenceModelId?: string | null;
+
+  @Column({ default: true })
+  allowOwnerKeyOverride: boolean;
+
+  @Column('text', { nullable: true })
+  modelRoutingNotes?: string | null;
 }

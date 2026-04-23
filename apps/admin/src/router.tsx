@@ -91,6 +91,11 @@ const SetupPage = lazy(async () => {
   return { default: mod.SetupPage };
 });
 
+const InferencePage = lazy(async () => {
+  const mod = await import("./routes/inference-page");
+  return { default: mod.InferencePage };
+});
+
 const rootRoute = createRootRoute({
   component: RootLayout,
 });
@@ -197,6 +202,12 @@ const tokenUsageRoute = createRoute({
   component: TokenUsagePage,
 });
 
+const inferenceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/inference",
+  component: InferencePage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   setupRoute,
@@ -215,6 +226,7 @@ const routeTree = rootRoute.addChildren([
   realWorldSyncRoute,
   chatRecordsRoute,
   tokenUsageRoute,
+  inferenceRoute,
 ]);
 
 export const router = createRouter({

@@ -28,12 +28,12 @@ import { PromptBuilderService } from './prompt-builder.service';
 import { sanitizeAiText } from './ai-text-sanitizer';
 import { validateGeneratedSceneOutput } from './moment-output-validator';
 import { MomentGenerationContextService } from './moment-generation-context.service';
-import { SystemConfigService } from '../config/config.service';
 import { WorldService } from '../world/world.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { resolveReadableChatAttachmentPath } from '../chat/chat-attachment-storage';
 import { resolveReadableMomentMediaPath } from '../moments/moment-media.storage';
+import { InferenceService } from '../inference/inference.service';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
@@ -65,6 +65,8 @@ type LoadedAsset = {
 };
 
 type ResolvedProviderConfig = {
+  accountId?: string;
+  accountName?: string;
   endpoint: string;
   model: string;
   apiKey: string;
@@ -127,7 +129,7 @@ export class AiOrchestratorService {
   constructor(
     private readonly config: ConfigService,
     private readonly promptBuilder: PromptBuilderService,
-    private readonly configService: SystemConfigService,
+    private readonly inferenceService: InferenceService,
     private readonly worldService: WorldService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly usageLedger: AiUsageLedgerService,
@@ -154,69 +156,25 @@ export class AiOrchestratorService {
   }
 
   private async resolveProviderConfig(): Promise<ResolvedProviderConfig> {
-    const endpoint =
-      (await this.configService.getConfig('provider_endpoint')) ??
-      this.config.get<string>('OPENAI_BASE_URL') ??
-      'https://api.deepseek.com';
-    const model =
-      (await this.configService.getConfig('provider_model')) ??
-      this.config.get<string>('AI_MODEL') ??
-      'deepseek-chat';
-    const apiKey =
-      (await this.configService.getConfig('provider_api_key')) ??
-      this.config.get<string>('DEEPSEEK_API_KEY') ??
-      '';
-    const transcriptionModel =
-      (await this.configService.getConfig('provider_transcription_model')) ??
-      DEFAULT_TRANSCRIPTION_MODEL;
-    const transcriptionEndpoint =
-      (await this.configService.getConfig('provider_transcription_endpoint')) ??
-      endpoint;
-    const transcriptionApiKey =
-      (await this.configService.getConfig('provider_transcription_api_key')) ??
-      apiKey;
-    const ttsModel =
-      (await this.configService.getConfig('provider_tts_model')) ??
-      DEFAULT_TTS_MODEL;
-    const ttsVoice =
-      (await this.configService.getConfig('provider_tts_voice')) ??
-      DEFAULT_TTS_VOICE;
-    const apiStyle =
-      (await this.configService.getConfig('provider_api_style')) ??
-      'openai-chat-completions';
-    const mode =
-      (await this.configService.getConfig('provider_mode')) ?? 'cloud';
-
-    return {
-      endpoint: this.normalizeProviderEndpoint(endpoint),
-      model,
-      apiKey: apiKey.trim(),
-      transcriptionEndpoint: this.normalizeProviderEndpoint(
-        (transcriptionEndpoint || endpoint).trim(),
-      ),
-      transcriptionApiKey: (transcriptionApiKey || apiKey).trim(),
-      transcriptionModel,
-      ttsModel,
-      ttsVoice,
-      apiStyle:
-        apiStyle === 'openai-responses'
-          ? 'openai-responses'
-          : 'openai-chat-completions',
-      mode: mode === 'local-compatible' ? 'local-compatible' : 'cloud',
-    };
+    return this.inferenceService.resolveRuntimeProviderConfig();
   }
 
   private async resolveRuntimeProvider(
-    override?: AiKeyOverride,
+    options?: {
+      override?: AiKeyOverride;
+      characterId?: string | null;
+    },
   ): Promise<ResolvedProviderConfig> {
-    const provider = await this.resolveProviderConfig();
+    const provider = await this.inferenceService.resolveRuntimeProviderConfig({
+      characterId: options?.characterId,
+    });
 
     return {
       ...provider,
-      endpoint: override?.apiBase
-        ? this.normalizeProviderEndpoint(override.apiBase)
+      endpoint: options?.override?.apiBase
+        ? this.normalizeProviderEndpoint(options.override.apiBase)
         : provider.endpoint,
-      apiKey: override?.apiKey?.trim() || provider.apiKey,
+      apiKey: options?.override?.apiKey?.trim() || provider.apiKey,
       model: provider.model,
       transcriptionEndpoint: provider.transcriptionEndpoint,
       transcriptionApiKey: provider.transcriptionApiKey,
@@ -1054,7 +1012,10 @@ export class AiOrchestratorService {
       chatContext,
       aiKeyOverride,
     } = options;
-    const provider = await this.resolveRuntimeProvider(aiKeyOverride);
+    const provider = await this.resolveRuntimeProvider({
+      override: aiKeyOverride,
+      characterId: profile.characterId,
+    });
     const systemPrompt = await this.buildSystemPrompt(
       profile,
       isGroupChat,
@@ -1223,7 +1184,10 @@ export class AiOrchestratorService {
       aiKeyOverride,
     } = options;
     const usageContext = this.resolveReplyUsageContext(profile, options);
-    const runtimeProvider = await this.resolveRuntimeProvider(aiKeyOverride);
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      override: aiKeyOverride,
+      characterId: profile.characterId,
+    });
     if (!runtimeProvider.apiKey) {
       return this.buildUnavailableReply(profile);
     }
@@ -1285,7 +1249,9 @@ export class AiOrchestratorService {
           usageContext,
           err,
         );
-        const defaultProvider = await this.resolveProviderConfig();
+        const defaultProvider = await this.resolveRuntimeProvider({
+          characterId: profile.characterId,
+        });
         if (this.canRetryWithDefaultProvider(provider, defaultProvider)) {
           this.logger.warn(
             `Owner-level AI key failed authentication for ${profile.characterId}; retrying with instance provider.`,
@@ -1375,7 +1341,9 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
-    const runtimeProvider = await this.resolveRuntimeProvider();
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      characterId: profile.characterId,
+    });
     const budgetedProvider = await this.prepareBudgetAwareProvider(
       runtimeProvider,
       'instance_default',
@@ -1527,7 +1495,6 @@ export class AiOrchestratorService {
       personName,
     );
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
     const resolvedUsageContext: AiUsageContext = {
       surface: usageContext?.surface ?? 'admin',
       scene: usageContext?.scene ?? 'character_factory_extract',
@@ -1540,6 +1507,9 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      characterId: resolvedUsageContext.characterId,
+    });
     const budgetedProvider = await this.prepareBudgetAwareProvider(
       runtimeProvider,
       'instance_default',
@@ -1683,7 +1653,9 @@ export class AiOrchestratorService {
     temperature?: number;
     fallback?: Record<string, unknown>;
   }): Promise<Record<string, unknown>> {
-    const runtimeProvider = await this.resolveRuntimeProvider();
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      characterId: options.usageContext.characterId,
+    });
     let failureProvider = runtimeProvider;
 
     try {
@@ -1741,7 +1713,9 @@ export class AiOrchestratorService {
     temperature?: number;
     fallback?: string;
   }): Promise<string> {
-    const runtimeProvider = await this.resolveRuntimeProvider();
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      characterId: options.usageContext.characterId,
+    });
     let failureProvider = runtimeProvider;
 
     try {
@@ -1800,7 +1774,9 @@ export class AiOrchestratorService {
       profile,
     );
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      characterId: profile.characterId,
+    });
     const resolvedUsageContext: AiUsageContext = {
       surface: usageContext?.surface ?? 'app',
       scene: usageContext?.scene ?? 'memory_compress',
@@ -1866,7 +1842,6 @@ export class AiOrchestratorService {
       profile,
     );
 
-    const runtimeProvider = await this.resolveRuntimeProvider();
     const resolvedUsageContext: AiUsageContext = {
       surface: usageContext?.surface ?? 'scheduler',
       scene: usageContext?.scene ?? 'core_memory_extract',
@@ -1877,6 +1852,9 @@ export class AiOrchestratorService {
       characterId: usageContext?.characterId ?? profile.characterId,
       characterName: usageContext?.characterName ?? profile.name,
     };
+    const runtimeProvider = await this.resolveRuntimeProvider({
+      characterId: resolvedUsageContext.characterId,
+    });
     let failureProvider = runtimeProvider;
 
     try {

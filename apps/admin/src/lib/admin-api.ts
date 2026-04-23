@@ -30,9 +30,15 @@ import type {
   CyberAvatarRuntimeRules,
   FollowupRuntimeOverview,
   FollowupRuntimeRules,
+  InferenceOverview,
+  InferenceProviderAccount,
+  InferenceProviderAccountDraft,
   InstallCharacterPresetsResult,
+  InstallModelPersonasRequest,
+  InstallModelPersonasResult,
   NeedDiscoveryConfig,
   NeedDiscoveryOverview,
+  ProviderTestResult,
   RealWorldNewsBulletinPublishRequest,
   RealWorldNewsBulletinPublishResult,
   RealWorldSyncCharacterDetail,
@@ -193,6 +199,35 @@ export const adminApi = {
   getStats: () => adminFetch<AdminStats>("/stats"),
   getSystem: () => adminFetch<AdminSystemInfo>("/system"),
   getCharacters: () => adminFetch<Character[]>("/characters"),
+  getInferenceOverview: () =>
+    adminFetch<InferenceOverview>("/inference/overview"),
+  createInferenceProviderAccount: (payload: InferenceProviderAccountDraft) =>
+    adminFetch<InferenceProviderAccount>("/inference/providers", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateInferenceProviderAccount: (
+    id: string,
+    payload: Partial<InferenceProviderAccountDraft>,
+  ) =>
+    adminFetch<InferenceProviderAccount>(`/inference/providers/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  setDefaultInferenceProviderAccount: (id: string) =>
+    adminFetch<InferenceProviderAccount>(`/inference/providers/${id}/default`, {
+      method: "POST",
+    }),
+  testInferenceProvider: (payload: Partial<InferenceProviderAccountDraft>) =>
+    adminFetch<ProviderTestResult>("/inference/providers/test", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  installModelPersonas: (payload: InstallModelPersonasRequest) =>
+    adminFetch<InstallModelPersonasResult>("/inference/model-personas/install", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),

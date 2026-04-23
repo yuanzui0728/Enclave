@@ -570,6 +570,11 @@ export class WechatSyncAdminService {
       aiRelationships: [],
       currentStatus: '已从微信同步',
       currentActivity: 'free',
+      modelRoutingMode: 'inherit_default',
+      inferenceProviderAccountId: null,
+      inferenceModelId: null,
+      allowOwnerKeyOverride: true,
+      modelRoutingNotes: '',
       activityMode: 'auto',
     };
   }

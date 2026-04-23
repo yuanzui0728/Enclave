@@ -14,10 +14,12 @@ import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { GroupEntity } from '../chat/group.entity';
 import { MessageEntity } from '../chat/message.entity';
+import { InferenceModule } from '../inference/inference.module';
 
 @Module({
   imports: [
     SystemConfigModule,
+    InferenceModule,
     forwardRef(() => WorldModule),
     TypeOrmModule.forFeature([
       AiUsageLedgerEntity,

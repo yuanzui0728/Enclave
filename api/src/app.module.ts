@@ -25,6 +25,7 @@ import { CyberAvatarModule } from './modules/cyber-avatar/cyber-avatar.module';
 import { NeedDiscoveryModule } from './modules/need-discovery/need-discovery.module';
 import { RealWorldSyncModule } from './modules/real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from './modules/followup-runtime/followup-runtime.module';
+import { InferenceModule } from './modules/inference/inference.module';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -81,6 +82,8 @@ import { CharacterRealWorldSyncRunEntity } from './modules/real-world-sync/chara
 import { FollowupRunEntity } from './modules/followup-runtime/followup-run.entity';
 import { FollowupOpenLoopEntity } from './modules/followup-runtime/followup-open-loop.entity';
 import { FollowupRecommendationEntity } from './modules/followup-runtime/followup-recommendation.entity';
+import { InferenceProviderAccountEntity } from './modules/inference/inference-provider-account.entity';
+import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import {
   prepareDatabasePath,
   resolveApiPath,
@@ -155,6 +158,8 @@ import {
           FollowupRunEntity,
           FollowupOpenLoopEntity,
           FollowupRecommendationEntity,
+          InferenceProviderAccountEntity,
+          InferenceModelCatalogEntryEntity,
         ],
         synchronize: true,
       }),
@@ -179,6 +184,7 @@ import {
     CyberAvatarModule,
     RealWorldSyncModule,
     FollowupRuntimeModule,
+    InferenceModule,
     CloudRuntimeModule,
     SystemModule,
   ],
