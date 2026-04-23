@@ -8,6 +8,14 @@ import {
 } from "../contacts/character-detail-route-state";
 import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";
 import {
+  buildMobileChatRouteHash,
+  parseMobileChatRouteState,
+} from "../chat/mobile-chat-route-state";
+import {
+  buildMobileGroupRouteHash,
+  parseMobileGroupRouteState,
+} from "../chat/mobile-group-route-state";
+import {
   buildDesktopChatRouteHash,
   buildDesktopOfficialServiceThreadPath,
   buildDesktopSubscriptionInboxPath,
@@ -187,6 +195,34 @@ export function applyDesktopSearchReturnContext(
       ...target,
       search: buildMobileMiniProgramsRouteSearch({
         ...targetRouteState,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  const chatBackgroundMatch = target.to.match(
+    /^\/chat\/([^/?#]+)\/background$/,
+  );
+  if (chatBackgroundMatch?.[1]?.trim()) {
+    const targetRouteState = parseMobileChatRouteState(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildMobileChatRouteHash({
+        highlightedMessageId: targetRouteState.highlightedMessageId,
+        returnPath: DESKTOP_SEARCH_PATH,
+        returnHash,
+      }),
+    };
+  }
+
+  const groupToolsMatch = target.to.match(/^\/group\/([^/?#]+)\/(background|qr)$/);
+  if (groupToolsMatch?.[1]?.trim()) {
+    const targetRouteState = parseMobileGroupRouteState(target.hash ?? "");
+    return {
+      ...target,
+      hash: buildMobileGroupRouteHash({
+        highlightedMessageId: targetRouteState.highlightedMessageId,
         returnPath: DESKTOP_SEARCH_PATH,
         returnHash,
       }),

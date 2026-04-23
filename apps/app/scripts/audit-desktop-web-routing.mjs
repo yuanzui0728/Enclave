@@ -740,9 +740,13 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, and create-group targets so desktop search surfaces return to the active search workspace",
+      "desktop search navigation can also attach /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group targets so desktop search surfaces return to the active search workspace",
     includes: [
       'import {',
+      "buildMobileChatRouteHash,",
+      "parseMobileChatRouteState,",
+      "buildMobileGroupRouteHash,",
+      "parseMobileGroupRouteState,",
       "buildCreateGroupRouteHash,",
       "parseCreateGroupRouteHash,",
       "buildCharacterDetailRouteHash,",
@@ -756,6 +760,12 @@ const expectations = [
       'target.to === "/tabs/channels"',
       'target.to === "/tabs/games"',
       'target.to === "/tabs/mini-programs"',
+      'const chatBackgroundMatch = target.to.match(',
+      'parseMobileChatRouteState(target.hash ?? "")',
+      "buildMobileChatRouteHash({",
+      'const groupToolsMatch = target.to.match(/^\\/group\\/([^/?#]+)\\/(background|qr)$/);',
+      'parseMobileGroupRouteState(target.hash ?? "")',
+      "buildMobileGroupRouteHash({",
       'target.to === "/group/new"',
       "parseCreateGroupRouteHash(target.hash ?? \"\")",
       "seedMemberIds: targetRouteState.seedMemberIds,",
@@ -808,7 +818,7 @@ const expectations = [
   {
     file: "src/routes/search-page.tsx",
     description:
-      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, and mini-program opens, and self-heals legacy /search paths back to /tabs/search even when the hash already matches",
+      "desktop search page passes desktopLayout-aware normalization into quick-link and result navigation so legacy favorite routes open directly in desktop workspaces, applies shared /tabs/search return context to desktop character-detail, moments, friend-moments, feed, channels, games, mini-program, chat/group background, group-qr, and create-group opens, and self-heals legacy /search paths back to /tabs/search even when the hash already matches",
     includes: [
       "applyDesktopSearchReturnContext,",
       "resolveSearchNavigationTarget(item, {",
