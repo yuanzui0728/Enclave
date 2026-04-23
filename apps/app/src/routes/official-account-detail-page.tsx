@@ -102,6 +102,8 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
   const [actionNotice, setActionNotice] = useState<{
     tone: "success" | "info";
     message: string;
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const safeReturnPath =
     routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
@@ -249,6 +251,10 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         message: nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制公众号摘要失败，请稍后重试。",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShareAccount();
+        },
       });
     }
   }
@@ -418,15 +424,28 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               {actionNotice.tone === "info" ? (
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 flex-1">{actionNotice.message}</span>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
-                    onClick={handleStatusBack}
-                  >
-                    {safeReturnPath ? "返回上一页" : "返回公众号列表"}
-                  </Button>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {actionNotice.actionLabel && actionNotice.onAction ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                        onClick={actionNotice.onAction}
+                      >
+                        {actionNotice.actionLabel}
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      onClick={handleStatusBack}
+                    >
+                      {safeReturnPath ? "返回上一页" : "返回公众号列表"}
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 actionNotice.message

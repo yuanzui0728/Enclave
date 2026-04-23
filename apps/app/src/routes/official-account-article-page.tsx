@@ -89,6 +89,8 @@ function MobileOfficialAccountArticlePage({
   const [shareNotice, setShareNotice] = useState<{
     message: string;
     tone: "success" | "info";
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const nativeMobileShareSupported = isNativeMobileShareSurface();
 
@@ -246,6 +248,10 @@ function MobileOfficialAccountArticlePage({
           ? "系统分享失败，请稍后重试。"
           : "复制文章链接失败，请稍后重试。",
         tone: "info",
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShareArticle();
+        },
       });
     }
   }
@@ -422,15 +428,28 @@ function MobileOfficialAccountArticlePage({
               {shareNotice.tone === "info" ? (
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 flex-1">{shareNotice.message}</span>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
-                    onClick={handleStatusBack}
-                  >
-                    {statusBackLabel}
-                  </Button>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {shareNotice.actionLabel && shareNotice.onAction ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                        onClick={shareNotice.onAction}
+                      >
+                        {shareNotice.actionLabel}
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                      onClick={handleStatusBack}
+                    >
+                      {statusBackLabel}
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 shareNotice.message

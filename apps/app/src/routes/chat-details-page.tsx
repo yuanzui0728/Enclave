@@ -392,8 +392,12 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         message: nativeMobileShareSupported
           ? "系统分享失败，请稍后重试。"
           : "复制联系人摘要失败，请稍后重试。",
-        actionLabel: statusBackLabel,
-        onAction: handleOperationBack,
+        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+        onAction: () => {
+          void handleShareContact();
+        },
+        secondaryActionLabel: statusBackLabel,
+        onSecondaryAction: handleOperationBack,
       });
     }
   }
