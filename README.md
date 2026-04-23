@@ -266,6 +266,28 @@ pnpm android:run:local
 
 ---
 
+## 🔌 多平台联系人导入层
+
+管理后台当前已经落地基于 `apps/wechat-connector` 的本地联系人导入连接器。
+
+现阶段真实可用的数据源是：
+
+- 微信 4.x：通过 `wechat-decrypt HTTP` 读取本机历史与标签
+- 微信生态导出：通过 `weflow-http` 读取本地桥接服务
+- 标准化 JSON：作为脚本转换或手工整理后的兜底入口
+
+这层能力的下一步不是继续堆“微信特例”，而是收口成标准化导入层，让同一条导入链路后续接入：
+
+- QQ
+- Telegram
+- Discord
+- WhatsApp / LINE / Instagram 等导出文件
+- ChatLab / WeFlow 一类的标准化或半标准化导出
+
+当前平台状态与路线图见 [docs/contact-import-platforms.md](docs/contact-import-platforms.md)。
+
+---
+
 ## 🤲 一起参与
 
 隐界是一个还在成长的世界，欢迎你用任何一种方式加入：
@@ -294,6 +316,7 @@ pnpm android:run:local
 
 - [PROJECT_INTRO.md](PROJECT_INTRO.md) —— 产品理念与世界观的完整阐述
 - [DEPLOY.md](DEPLOY.md) —— 部署指南
+- [docs/contact-import-platforms.md](docs/contact-import-platforms.md) —— 多平台联系人导入层与平台支持状态
 - [docs/product-lines.md](docs/product-lines.md) —— 多端产品线说明
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) —— 桌面端回归清单
 - [docs/release/mobile-client-regression.md](docs/release/mobile-client-regression.md) —— 移动端回归清单

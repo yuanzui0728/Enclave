@@ -267,6 +267,31 @@ It's not "creating an account." It's **walking into a story.**
 
 ---
 
+## 🔌 Multi-Platform Contact Import Layer
+
+The admin workspace already ships with a local contact import connector at
+`apps/wechat-connector`.
+
+Live sources today:
+
+- WeChat 4.x through `wechat-decrypt HTTP`
+- WeFlow-based WeChat exports through `weflow-http`
+- Standardized JSON bundles as a fallback bridge
+
+The next step is not to keep piling up WeChat-only special cases. The goal is a
+standardized import layer that can later absorb:
+
+- QQ
+- Telegram
+- Discord
+- export files from WhatsApp / LINE / Instagram
+- standardized or semi-standardized exports such as ChatLab / WeFlow
+
+Status and roadmap live in
+[docs/contact-import-platforms.md](docs/contact-import-platforms.md).
+
+---
+
 ## 🤲 Contributing
 
 Enclave is a world still growing. Come help build it:
@@ -295,6 +320,7 @@ We chose MIT because we want this to travel as far as possible, with as few gate
 
 - [PROJECT_INTRO.md](PROJECT_INTRO.md) — The long-form product thesis (Chinese, for now).
 - [DEPLOY.md](DEPLOY.md) — Deployment guide.
+- [docs/contact-import-platforms.md](docs/contact-import-platforms.md) — Multi-platform contact import layer and platform status.
 - [docs/product-lines.md](docs/product-lines.md) — Cross-platform product lines.
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) — Desktop regression checklist.
 - [docs/release/mobile-client-regression.md](docs/release/mobile-client-regression.md) — Mobile regression checklist.
