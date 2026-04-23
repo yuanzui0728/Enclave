@@ -46,6 +46,7 @@ import { type GroupUserMessageContext } from './group-reply.types';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyTaskService } from './group-reply-task.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { ReplyArtifactJobService } from './reply-artifact-job.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -149,6 +150,7 @@ export class GroupService {
     private readonly cyberAvatar: CyberAvatarService,
     private readonly groupReplyPlanner: GroupReplyPlannerService,
     private readonly groupReplyTaskService: GroupReplyTaskService,
+    private readonly replyArtifactJobs: ReplyArtifactJobService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -429,6 +431,7 @@ export class GroupService {
       lastReadAt: now,
     });
 
+    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'group_cleared');
     await this.emitGroupConversationUpdated(groupId);
     return this.toGroup(updated);
   }
@@ -512,6 +515,9 @@ export class GroupService {
       attachmentPayload: null,
     });
 
+    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_recalled', {
+      sourceMessageId: message.id,
+    });
     const recalledMessage = this.toGroupMessage(recalled);
     this.chatGateway.emitThreadMessage(groupId, recalledMessage);
     return recalledMessage;
@@ -532,6 +538,9 @@ export class GroupService {
     }
 
     await this.messageRepo.delete({ id: message.id });
+    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_deleted', {
+      sourceMessageId: message.id,
+    });
     await this.syncGroupLastActivity(group);
     await this.emitGroupConversationUpdated(groupId);
 

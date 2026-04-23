@@ -7,7 +7,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { AiProviderAuthError } from '../ai/ai.types';
@@ -104,6 +104,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(ChatGateway.name);
 
   constructor(
+    @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
     private readonly replyLogicRules: ReplyLogicRulesService,
   ) {}
@@ -322,7 +323,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.emitTypingStart(convId, characterId, 'reply');
 
     try {
-      const { messages, deferredImageReply } =
+      const { messages, scheduledReplyArtifactJobIds } =
         await this.chatService.sendMessageDetailed(convId, payload);
       const aiReply = messages.find(
         (message) => message.senderType === 'character',
@@ -340,13 +341,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.emitThreadMessage(convId, message);
       }
 
-      if (deferredImageReply) {
-        void this.deliverDeferredAssistantImageReply(
-          convId,
-          characterId,
-          deferredImageReply,
-        );
-      }
+      void this.chatService.activateReplyArtifactJobs(
+        scheduledReplyArtifactJobIds,
+      );
     } catch (error) {
       this.emitTypingStop(convId, characterId, 'reply');
       await this.emitConversationFailure(convId);
@@ -356,27 +353,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
       this.emitConversationError(convId, failureMessage);
-    }
-  }
-
-  private async deliverDeferredAssistantImageReply(
-    convId: string,
-    characterId: string,
-    deferredImageReply: Parameters<
-      ChatService['completeDeferredAssistantImageReply']
-    >[0],
-  ) {
-    this.emitTypingStart(convId, characterId, 'image_generation');
-
-    try {
-      const imageMessage = await this.chatService.completeDeferredAssistantImageReply(
-        deferredImageReply,
-      );
-      if (imageMessage) {
-        this.emitThreadMessage(convId, imageMessage);
-      }
-    } finally {
-      this.emitTypingStop(convId, characterId, 'image_generation');
     }
   }
 

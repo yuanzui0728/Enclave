@@ -3,9 +3,11 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import {
   BadRequestException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
@@ -50,6 +52,12 @@ import {
   resolveReadableChatAttachmentPath,
 } from './chat-attachment-storage';
 import {
+  guessChatAttachmentExtension,
+  normalizeChatAttachmentDisplayName,
+  resolveChatPublicApiBaseUrl,
+  sanitizeChatAttachmentFileName,
+} from './chat-attachment-file.utils';
+import {
   buildAssistantSpeechInstructions,
   buildReplyModalityPromptSections,
   extractRequestedImagePrompt,
@@ -59,6 +67,7 @@ import {
   type AssistantReplyModalitiesPlan,
   type AssistantReplyTargetMessage,
 } from './assistant-reply-modalities';
+import { ReplyArtifactJobService } from './reply-artifact-job.service';
 
 type SendConversationMessageInput =
   | {
@@ -121,7 +130,7 @@ type DeferredAssistantImageReply = {
 
 type SendConversationResult = {
   messages: Message[];
-  deferredImageReply?: DeferredAssistantImageReply;
+  scheduledReplyArtifactJobIds?: string[];
 };
 
 type ConversationMessageListQuery = {
@@ -149,6 +158,8 @@ export class ChatService {
     private readonly cyberAvatar: CyberAvatarService,
     private readonly customStickersService: CustomStickersService,
     private readonly reminderRuntime: ReminderRuntimeService,
+    @Inject(forwardRef(() => ReplyArtifactJobService))
+    private readonly replyArtifactJobs: ReplyArtifactJobService,
     @InjectRepository(ConversationEntity)
     private convRepo: Repository<ConversationEntity>,
     @InjectRepository(MessageEntity)
@@ -380,6 +391,11 @@ export class ChatService {
       attachmentPayload: null,
     });
 
+    await this.replyArtifactJobs.cancelConversationJobs(
+      convId,
+      'source_message_recalled',
+      message.id,
+    );
     this.conversationHistory.delete(entity.id);
     return this.serializeMessage(recalled);
   }
@@ -399,6 +415,11 @@ export class ChatService {
     }
 
     await this.msgRepo.delete({ id: message.id });
+    await this.replyArtifactJobs.cancelConversationJobs(
+      convId,
+      'source_message_deleted',
+      message.id,
+    );
     this.conversationHistory.delete(entity.id);
     await this.syncConversationLastActivity(entity);
 
@@ -474,6 +495,10 @@ export class ChatService {
       lastReadAt: now,
     });
 
+    await this.replyArtifactJobs.cancelConversationJobs(
+      convId,
+      'conversation_cleared',
+    );
     this.conversationHistory.set(convId, []);
     return this.serializeConversation(updated);
   }
@@ -547,15 +572,15 @@ export class ChatService {
   ): Promise<ImageAttachment | FileAttachment | VoiceAttachment> {
     const isImage = file.mimetype.startsWith('image/');
     const isVoice = file.mimetype.startsWith('audio/');
-    const displayName = normalizeDisplayAttachmentName(
+    const displayName = normalizeChatAttachmentDisplayName(
       file.originalname,
       isImage ? 'image' : isVoice ? 'voice' : 'file',
       file.mimetype,
     );
     const extension =
-      path.extname(displayName) || guessAttachmentExtension(file.mimetype);
+      path.extname(displayName) || guessChatAttachmentExtension(file.mimetype);
     const baseName = path.basename(displayName, extension) || 'attachment';
-    const storedFileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeAttachmentFileName(baseName)}${extension}`;
+    const storedFileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeChatAttachmentFileName(baseName)}${extension}`;
     const storageDir = this.resolveAttachmentStorageDir();
     const normalizedMimeType = file.mimetype || 'application/octet-stream';
 
@@ -717,7 +742,19 @@ export class ChatService {
     input: SendConversationMessageInput,
   ): Promise<Message[]> {
     const result = await this.sendMessageDetailed(convId, input);
+    if (result.scheduledReplyArtifactJobIds?.length) {
+      void this.activateReplyArtifactJobs(result.scheduledReplyArtifactJobIds);
+    }
     return result.messages;
+  }
+
+  async activateReplyArtifactJobs(jobIds?: string[]) {
+    const normalizedJobIds = jobIds?.map((jobId) => jobId.trim()).filter(Boolean);
+    if (!normalizedJobIds?.length) {
+      return 0;
+    }
+
+    return this.replyArtifactJobs.activateJobs(normalizedJobIds);
   }
 
   async sendMessageDetailed(
@@ -900,6 +937,16 @@ export class ChatService {
       );
 
       if (assistantReply.deferredImageReply) {
+        const scheduledImageJob =
+          await this.replyArtifactJobs.scheduleConversationImageReplyJob({
+            conversationId: convId,
+            sourceMessageId: userMsgEntity.id,
+            sourceMessageCreatedAt: userMsgEntity.createdAt ?? new Date(),
+            characterId: charId,
+            characterName: profile.name,
+            characterAvatar: charEntity?.avatar ?? null,
+            imagePrompt: assistantReply.deferredImageReply.imagePrompt,
+          });
         const runtimeRules = await this.replyLogicRules.getRules();
         if (
           history.length % runtimeRules.memoryCompressionEveryMessages === 0 &&
@@ -942,7 +989,7 @@ export class ChatService {
         await this.syncNarrativeArc(entity);
         return {
           messages: results,
-          deferredImageReply: assistantReply.deferredImageReply,
+          scheduledReplyArtifactJobIds: [scheduledImageJob.id],
         };
       }
     }
@@ -1137,59 +1184,6 @@ export class ChatService {
       drafts,
       deferredImageReply,
     };
-  }
-
-  async completeDeferredAssistantImageReply(
-    input: DeferredAssistantImageReply,
-  ): Promise<Message | null> {
-    try {
-      const generated = await this.ai.generateImage({
-        prompt: input.imagePrompt,
-        conversationId: input.conversationId,
-        characterId: input.characterId,
-      });
-      const generatedAttachment = await this.saveUploadedAttachment(
-        {
-          buffer: generated.buffer,
-          mimetype: generated.mimeType,
-          originalname: `chat-reply-image.${generated.fileExtension}`,
-          size: generated.buffer.length,
-        },
-        {},
-      );
-      if (generatedAttachment.kind !== 'image') {
-        return null;
-      }
-
-      const entity = await this.requireOwnedConversation(input.conversationId);
-      const imageMessageEntity = this.msgRepo.create({
-        id: `msg_${Date.now()}_ai_image_${randomUUID().slice(0, 8)}`,
-        conversationId: input.conversationId,
-        senderType: 'character',
-        senderId: input.characterId,
-        senderName: input.characterName,
-        type: 'image',
-        text: '',
-        attachmentKind: generatedAttachment.kind,
-        attachmentPayload: JSON.stringify(generatedAttachment),
-      });
-      await this.msgRepo.save(imageMessageEntity);
-      await this.touchConversationActivity(
-        entity,
-        imageMessageEntity.createdAt ?? new Date(),
-      );
-      return this.serializeMessage(imageMessageEntity);
-    } catch (error) {
-      this.logger.warn(
-        'Failed to generate deferred assistant image reply, skipping image.',
-        {
-          conversationId: input.conversationId,
-          characterId: input.characterId,
-          errorMessage: error instanceof Error ? error.message : String(error),
-        },
-      );
-      return null;
-    }
   }
 
   private async enrichAttachmentForAi(
@@ -2142,20 +2136,8 @@ export class ChatService {
   }
 
   private resolvePublicApiBaseUrl(): string {
-    return (
-      process.env.PUBLIC_API_BASE_URL?.trim() ||
-      `http://localhost:${process.env.PORT ?? 3000}`
-    ).replace(/\/+$/, '');
+    return resolveChatPublicApiBaseUrl();
   }
-}
-
-function sanitizeAttachmentFileName(value: string) {
-  return value
-    .normalize('NFKD')
-    .replace(/[^\w.-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase();
 }
 
 function formatAttachmentSize(size: number) {
@@ -2188,72 +2170,6 @@ function formatAttachmentDuration(durationMs: number) {
     : `${seconds}"`;
 }
 
-function guessAttachmentExtension(mimeType: string) {
-  if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
-    return '.jpg';
-  }
-
-  if (mimeType === 'image/png') {
-    return '.png';
-  }
-
-  if (mimeType === 'image/webp') {
-    return '.webp';
-  }
-
-  if (mimeType === 'image/gif') {
-    return '.gif';
-  }
-
-  if (mimeType === 'application/pdf') {
-    return '.pdf';
-  }
-
-  if (mimeType === 'audio/webm' || mimeType === 'audio/webm;codecs=opus') {
-    return '.webm';
-  }
-
-  if (mimeType === 'audio/ogg' || mimeType === 'audio/ogg;codecs=opus') {
-    return '.ogg';
-  }
-
-  if (mimeType === 'audio/mp4') {
-    return '.m4a';
-  }
-
-  if (mimeType === 'audio/mpeg') {
-    return '.mp3';
-  }
-
-  if (mimeType === 'audio/wav') {
-    return '.wav';
-  }
-
-  if (mimeType === 'text/plain') {
-    return '.txt';
-  }
-
-  if (mimeType === 'application/zip') {
-    return '.zip';
-  }
-
-  return '.bin';
-}
-
-function normalizeDisplayAttachmentName(
-  originalName: string | undefined,
-  fallbackBaseName: string,
-  mimeType: string,
-) {
-  const rawName = (originalName ?? '').trim();
-  const baseName = rawName ? path.basename(rawName) : fallbackBaseName;
-  const extension =
-    path.extname(baseName) || guessAttachmentExtension(mimeType);
-  const nameWithoutExtension =
-    path.basename(baseName, extension).trim() || fallbackBaseName;
-
-  return `${nameWithoutExtension}${extension}`;
-}
 
 function normalizeOptionalDimension(value?: number) {
   if (!value || !Number.isFinite(value) || value <= 0) {
