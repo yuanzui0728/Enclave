@@ -556,14 +556,10 @@ export function MomentsPage() {
       typeof navigator.clipboard.writeText !== "function"
     ) {
       setNoticeTone("info");
-      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : null);
-      setNoticeAction(
-        nativeMobileShareSupported
-          ? () => () => {
-              void handleShareMoment(moment);
-            }
-          : null,
-      );
+      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : "重试复制");
+      setNoticeAction(() => () => {
+        void handleShareMoment(moment);
+      });
       setNotice(
         nativeMobileShareSupported
           ? "当前设备暂时无法打开系统分享，请稍后重试。"
