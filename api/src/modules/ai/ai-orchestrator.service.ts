@@ -42,6 +42,8 @@ const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 const DEFAULT_TTS_VOICE = 'alloy';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_DOCUMENT_EXTRACTION_BYTES = 512 * 1024;
+const MAX_DOCUMENT_EXTRACTED_TEXT_CHARS = 1800;
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
   'audio/mp4',
   'audio/x-m4a',
@@ -66,6 +68,11 @@ type LoadedAsset = {
   mimeType?: string;
   fileName?: string;
 };
+
+type ResponseInputFilePart = Extract<
+  OpenAI.Responses.ResponseInputMessageContentList[number],
+  { type: 'input_file' }
+>;
 
 type ResolvedProviderConfig = {
   accountId?: string;
@@ -124,6 +131,14 @@ type BudgetAwareProviderResult = {
       budgetLimit?: number;
     };
   };
+};
+
+type ProviderFallbackCapability = 'text' | 'transcription' | 'tts';
+
+type ProviderFallbackCandidate = {
+  provider: ResolvedProviderConfig;
+  billingSource: AiUsageBillingSource;
+  reason: 'character_instance_route' | 'instance_default_route';
 };
 
 @Injectable()
@@ -244,7 +259,7 @@ export class AiOrchestratorService {
     return false;
   }
 
-  private isReachableImageUrl(url: string, provider: ResolvedProviderConfig) {
+  private isReachableAssetUrl(url: string, provider: ResolvedProviderConfig) {
     if (url.startsWith('data:')) {
       return true;
     }
@@ -263,6 +278,10 @@ export class AiOrchestratorService {
     } catch {
       return false;
     }
+  }
+
+  private isReachableImageUrl(url: string, provider: ResolvedProviderConfig) {
+    return this.isReachableAssetUrl(url, provider);
   }
 
   private normalizeMediaMimeType(value?: string | null) {
@@ -313,6 +332,26 @@ export class AiOrchestratorService {
         return 'video/mp4';
       case '.mov':
         return 'video/quicktime';
+      case '.txt':
+        return 'text/plain';
+      case '.md':
+      case '.markdown':
+        return 'text/markdown';
+      case '.csv':
+        return 'text/csv';
+      case '.json':
+        return 'application/json';
+      case '.xml':
+        return 'application/xml';
+      case '.html':
+      case '.htm':
+        return 'text/html';
+      case '.pdf':
+        return 'application/pdf';
+      case '.doc':
+        return 'application/msword';
+      case '.docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       default:
         return undefined;
     }
@@ -430,6 +469,81 @@ export class AiOrchestratorService {
     return `data:${mimeType};base64,${loadedAsset.buffer.toString('base64')}`;
   }
 
+  private isTextExtractableDocument(mimeType?: string, fileName?: string) {
+    const normalizedMimeType = this.normalizeMediaMimeType(mimeType);
+    if (normalizedMimeType) {
+      if (/^text\//i.test(normalizedMimeType)) {
+        return true;
+      }
+
+      if (
+        /^(application\/json|application\/xml|application\/xhtml\+xml)$/i.test(
+          normalizedMimeType,
+        )
+      ) {
+        return true;
+      }
+    }
+
+    return /\.(txt|md|markdown|csv|json|xml|html|htm)$/i.test(fileName ?? '');
+  }
+
+  private normalizeExtractedDocumentText(text: string, mimeType?: string) {
+    let normalized = text.replace(/\u0000/g, ' ').trim();
+    if (/html|xml/i.test(mimeType ?? '')) {
+      normalized = normalized.replace(/<[^>]+>/g, ' ');
+    }
+
+    normalized = normalized.replace(/\r\n/g, '\n');
+    normalized = normalized.replace(/[ \t]+\n/g, '\n');
+    normalized = normalized.replace(/\n{3,}/g, '\n\n');
+    normalized = normalized.replace(/[ \t]{2,}/g, ' ');
+    normalized = normalized.trim();
+
+    if (normalized.length <= MAX_DOCUMENT_EXTRACTED_TEXT_CHARS) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, MAX_DOCUMENT_EXTRACTED_TEXT_CHARS).trim()}…`;
+  }
+
+  async tryExtractDocumentTextFromUrl(input: {
+    url: string;
+    mimeType?: string | null;
+    fileName?: string | null;
+    maxBytes?: number;
+  }) {
+    const normalizedMimeType =
+      this.normalizeMediaMimeType(input.mimeType) ??
+      this.inferMimeTypeFromFileName(input.fileName);
+    if (
+      !this.isTextExtractableDocument(
+        normalizedMimeType,
+        input.fileName ?? undefined,
+      )
+    ) {
+      return null;
+    }
+
+    const asset = await this.loadAssetFromUrl(
+      input.url,
+      input.maxBytes ?? MAX_DOCUMENT_EXTRACTION_BYTES,
+    );
+    if (!asset?.buffer.length) {
+      return null;
+    }
+
+    try {
+      const extracted = this.normalizeExtractedDocumentText(
+        asset.buffer.toString('utf8'),
+        normalizedMimeType ?? asset.mimeType,
+      );
+      return extracted || null;
+    } catch {
+      return null;
+    }
+  }
+
   private extractErrorMessage(error: unknown) {
     if (error instanceof Error) {
       return error.message;
@@ -463,7 +577,7 @@ export class AiOrchestratorService {
     );
   }
 
-  private isTransientSpeechFailure(error: unknown) {
+  private isTransientProviderFailure(error: unknown) {
     const message = this.extractErrorMessage(error);
     const status = this.extractErrorStatus(error);
 
@@ -482,6 +596,36 @@ export class AiOrchestratorService {
 
     return /rate limit|too many requests|overloaded|temporarily unavailable|timeout|timed out|负载已饱和|稍后再试|服务繁忙/i.test(
       message,
+    );
+  }
+
+  private isTransientSpeechFailure(error: unknown) {
+    return this.isTransientProviderFailure(error);
+  }
+
+  private isModelOrCapabilityFailure(error: unknown) {
+    const message = this.extractErrorMessage(error);
+    const status = this.extractErrorStatus(error);
+    if (status === 404) {
+      return true;
+    }
+
+    if (status === 400) {
+      return /model|unsupported|not support|not supported|audio|speech|transcription|tts|responses api/i.test(
+        message,
+      );
+    }
+
+    return /model.+not found|no such model|unknown model|does not exist|unsupported|not support|not supported|audio.+not support|speech.+not support|transcription.+not support|tts.+not support|responses api/i.test(
+      message,
+    );
+  }
+
+  private isFallbackEligibleProviderFailure(error: unknown) {
+    return (
+      this.isAuthenticationFailure(error) ||
+      this.isTransientProviderFailure(error) ||
+      this.isModelOrCapabilityFailure(error)
     );
   }
 
@@ -511,6 +655,114 @@ export class AiOrchestratorService {
     }
 
     throw new BadGatewayException('语音请求重试失败。');
+  }
+
+  private hasProviderCapability(
+    provider: ResolvedProviderConfig,
+    capability: ProviderFallbackCapability,
+  ) {
+    switch (capability) {
+      case 'transcription':
+        return Boolean(
+          provider.transcriptionApiKey?.trim() &&
+            provider.transcriptionModel?.trim() &&
+            provider.transcriptionEndpoint?.trim(),
+        );
+      case 'tts':
+        return Boolean(provider.apiKey?.trim() && provider.ttsModel?.trim());
+      case 'text':
+      default:
+        return Boolean(provider.apiKey?.trim() && provider.model?.trim());
+    }
+  }
+
+  private buildFallbackProviderKey(
+    provider: ResolvedProviderConfig,
+    capability: ProviderFallbackCapability,
+  ) {
+    switch (capability) {
+      case 'transcription':
+        return [
+          provider.mode,
+          provider.transcriptionEndpoint,
+          provider.transcriptionApiKey,
+          provider.transcriptionModel,
+        ].join('|');
+      case 'tts':
+        return [
+          provider.mode,
+          provider.endpoint,
+          provider.apiKey,
+          provider.ttsModel,
+        ].join('|');
+      case 'text':
+      default:
+        return [
+          provider.mode,
+          provider.endpoint,
+          provider.apiKey,
+          provider.model,
+          provider.apiStyle,
+        ].join('|');
+    }
+  }
+
+  private async resolveFallbackProviders(options: {
+    currentProvider: ResolvedProviderConfig;
+    characterId?: string | null;
+    capability: ProviderFallbackCapability;
+    includeSameRouteInstanceProvider?: boolean;
+  }): Promise<ProviderFallbackCandidate[]> {
+    const candidates: ProviderFallbackCandidate[] = [];
+    const seenKeys = new Set<string>([
+      this.buildFallbackProviderKey(
+        options.currentProvider,
+        options.capability,
+      ),
+    ]);
+
+    const pushCandidate = (
+      provider: ResolvedProviderConfig,
+      billingSource: AiUsageBillingSource,
+      reason: ProviderFallbackCandidate['reason'],
+    ) => {
+      if (!this.hasProviderCapability(provider, options.capability)) {
+        return;
+      }
+
+      const providerKey = this.buildFallbackProviderKey(
+        provider,
+        options.capability,
+      );
+      if (seenKeys.has(providerKey)) {
+        return;
+      }
+
+      seenKeys.add(providerKey);
+      candidates.push({
+        provider,
+        billingSource,
+        reason,
+      });
+    };
+
+    if (options.includeSameRouteInstanceProvider) {
+      pushCandidate(
+        await this.resolveRuntimeProvider({
+          characterId: options.characterId,
+        }),
+        'instance_default',
+        'character_instance_route',
+      );
+    }
+
+    pushCandidate(
+      await this.resolveRuntimeProvider(),
+      'instance_default',
+      'instance_default_route',
+    );
+
+    return candidates;
   }
 
   private buildProviderKey(provider: ResolvedProviderConfig) {
@@ -751,12 +1003,16 @@ export class AiOrchestratorService {
       isGroupChat,
     } = request;
     const hasImageInput = this.requestContainsImageInput(request);
+    const hasDocumentInput = this.requestContainsDocumentInput(request);
     const capabilities = await this.resolveProviderCapabilityProfile(provider);
     const allowNativeImageInput =
       hasImageInput && capabilities.supportsNativeImageInput;
+    const allowNativeDocumentInput =
+      hasDocumentInput && capabilities.supportsNativeDocumentInput;
 
     const execute = async (
       allowImageInput: boolean,
+      allowDocumentInput: boolean,
     ): Promise<GenerateReplyResult> => {
       if (provider.apiStyle === 'openai-responses') {
         const historyMessages = await Promise.all(
@@ -764,16 +1020,20 @@ export class AiOrchestratorService {
             this.buildResponsesMessage(
               message,
               provider,
+              capabilities,
               isGroupChat,
               allowImageInput,
+              allowDocumentInput,
             ),
           ),
         );
         const currentMessage = await this.buildResponsesMessage(
           currentUserMessage,
           provider,
+          capabilities,
           isGroupChat,
           allowImageInput,
+          allowDocumentInput,
         );
         const response = await client.responses.create({
           model: provider.model,
@@ -834,17 +1094,21 @@ export class AiOrchestratorService {
     };
 
     try {
-      return await execute(allowNativeImageInput);
+      return await execute(allowNativeImageInput, allowNativeDocumentInput);
     } catch (error) {
-      if (allowNativeImageInput && this.isUnsupportedImageInputError(error)) {
+      if (
+        (allowNativeImageInput && this.isUnsupportedImageInputError(error)) ||
+        (allowNativeDocumentInput &&
+          this.isUnsupportedDocumentInputError(error))
+      ) {
         this.logger.warn(
-          'Provider rejected image input, retrying with text-only fallback',
+          'Provider rejected native multimodal input, retrying with text-only fallback',
           {
             model: provider.model,
             errorMessage: this.extractErrorMessage(error),
           },
         );
-        return execute(false);
+        return execute(false, false);
       }
 
       throw error;
@@ -860,17 +1124,6 @@ export class AiOrchestratorService {
       characterId: options?.characterId,
     });
     return this.resolveProviderCapabilityProfile(provider);
-  }
-
-  private canRetryWithDefaultProvider(
-    currentProvider: ResolvedProviderConfig,
-    defaultProvider: ResolvedProviderConfig,
-  ) {
-    return (
-      Boolean(defaultProvider.apiKey) &&
-      (defaultProvider.apiKey !== currentProvider.apiKey ||
-        defaultProvider.endpoint !== currentProvider.endpoint)
-    );
   }
 
   private buildMessageText(
@@ -911,6 +1164,53 @@ export class AiOrchestratorService {
     return resolvedParts.filter(
       (part): part is Extract<AiMessagePart, { type: 'image' }> =>
         Boolean(part),
+    );
+  }
+
+  private async collectUsableDocumentParts(
+    parts: AiMessagePart[] | undefined,
+    provider: ResolvedProviderConfig,
+    capabilities: ResolvedInferenceCapabilityProfile,
+  ): Promise<ResponseInputFilePart[]> {
+    if (!parts?.length || !capabilities.supportsNativeDocumentInput) {
+      return [];
+    }
+
+    const documentParts = parts.filter(
+      (part): part is Extract<AiMessagePart, { type: 'document' }> =>
+        part.type === 'document',
+    );
+    const resolvedParts: Array<ResponseInputFilePart | null> =
+      await Promise.all(
+        documentParts.map(async (part) => {
+          if (this.isReachableAssetUrl(part.url, provider)) {
+            return {
+              type: 'input_file',
+              file_url: part.url,
+              filename: part.fileName,
+              detail: 'high',
+            };
+          }
+
+          const loadedAsset = await this.loadAssetFromUrl(
+            part.url,
+            capabilities.maxInlineFileBytes,
+          );
+          if (!loadedAsset?.buffer.length) {
+            return null;
+          }
+
+          return {
+            type: 'input_file',
+            file_data: loadedAsset.buffer.toString('base64'),
+            filename: part.fileName || loadedAsset.fileName,
+            detail: 'high',
+          };
+        }),
+      );
+
+    return resolvedParts.filter((part): part is ResponseInputFilePart =>
+      Boolean(part),
     );
   }
 
@@ -958,14 +1258,26 @@ export class AiOrchestratorService {
   private async buildResponsesMessage(
     message: ChatMessage,
     provider: ResolvedProviderConfig,
+    capabilities: ResolvedInferenceCapabilityProfile,
     isGroupChat?: boolean,
     allowImageInput = true,
+    allowDocumentInput = true,
   ): Promise<OpenAI.Responses.EasyInputMessage> {
     const textContent = this.buildMessageText(message, isGroupChat);
     const imageParts = allowImageInput
       ? await this.collectUsableImageParts(message.parts, provider)
       : [];
-    if (!imageParts.length) {
+    const documentParts = allowDocumentInput
+      ? await this.collectUsableDocumentParts(
+          message.parts,
+          provider,
+          capabilities,
+        )
+      : [];
+    if (
+      message.role !== 'user' ||
+      (!imageParts.length && !documentParts.length)
+    ) {
       return {
         role: message.role as 'user' | 'assistant' | 'system' | 'developer',
         content: textContent,
@@ -985,6 +1297,10 @@ export class AiOrchestratorService {
       });
     });
 
+    documentParts.forEach((part) => {
+      contentParts.push(part);
+    });
+
     return {
       role: message.role as 'user' | 'assistant' | 'system' | 'developer',
       content: contentParts,
@@ -994,6 +1310,12 @@ export class AiOrchestratorService {
   private requestContainsImageInput(request: PreparedReplyRequest) {
     return [...request.conversationHistory, request.currentUserMessage].some(
       (message) => message.parts?.some((part) => part.type === 'image'),
+    );
+  }
+
+  private requestContainsDocumentInput(request: PreparedReplyRequest) {
+    return [...request.conversationHistory, request.currentUserMessage].some(
+      (message) => message.parts?.some((part) => part.type === 'document'),
     );
   }
 
@@ -1010,6 +1332,23 @@ export class AiOrchestratorService {
     }
 
     return /image|input_image|image_url|vision|multimodal|does not support images|unsupported image|content part/i.test(
+      message,
+    );
+  }
+
+  private isUnsupportedDocumentInputError(error: unknown) {
+    const status = this.extractErrorStatus(error);
+    const message = this.extractErrorMessage(error);
+    if (
+      status !== undefined &&
+      status !== 400 &&
+      status !== 415 &&
+      status !== 422
+    ) {
+      return false;
+    }
+
+    return /file|input_file|document|unsupported.*file|content part/i.test(
       message,
     );
   }
@@ -1288,80 +1627,82 @@ export class AiOrchestratorService {
         billingSource,
       };
     } catch (err) {
-      if (ownerKeyApplied && this.isAuthenticationFailure(err)) {
-        await this.recordFailedUsage(
-          provider,
-          'owner_custom',
-          usageContext,
-          err,
-        );
-        const defaultProvider = await this.resolveRuntimeProvider({
+      let failedProvider = provider;
+      let failedBillingSource = billingSource;
+      let failedError: unknown = err;
+      await this.recordFailedUsage(provider, billingSource, usageContext, err);
+
+      if (this.isFallbackEligibleProviderFailure(err)) {
+        const fallbackCandidates = await this.resolveFallbackProviders({
+          currentProvider: provider,
           characterId: profile.characterId,
+          capability: 'text',
+          includeSameRouteInstanceProvider: ownerKeyApplied,
         });
-        if (this.canRetryWithDefaultProvider(provider, defaultProvider)) {
-          this.logger.warn(
-            `Owner-level AI key failed authentication for ${profile.characterId}; retrying with instance provider.`,
-          );
-          let fallbackProvider = defaultProvider;
+
+        for (const candidate of fallbackCandidates) {
+          this.logger.warn('AI reply provider fallback scheduled', {
+            characterId: profile.characterId,
+            fromModel: failedProvider.model,
+            toModel: candidate.provider.model,
+            reason: candidate.reason,
+            errorMessage: this.extractErrorMessage(failedError),
+          });
+
+          let fallbackProvider = candidate.provider;
           try {
-            const budgetedDefaultProvider =
+            const budgetedFallbackProvider =
               await this.prepareBudgetAwareProvider(
-                defaultProvider,
-                'instance_default',
+                candidate.provider,
+                candidate.billingSource,
                 usageContext,
               );
-            fallbackProvider = budgetedDefaultProvider.provider;
+            fallbackProvider = budgetedFallbackProvider.provider;
             const fallbackResult = await this.requestReplyFromProvider(
               fallbackProvider,
               request,
             );
             await this.recordSuccessfulUsage(
               fallbackProvider,
-              'instance_default',
+              candidate.billingSource,
               usageContext,
               fallbackResult,
-              budgetedDefaultProvider.usageAudit,
+              budgetedFallbackProvider.usageAudit,
             );
             return {
               ...fallbackResult,
-              billingSource: 'instance_default',
+              billingSource: candidate.billingSource,
             };
           } catch (fallbackError) {
+            failedProvider = fallbackProvider;
+            failedBillingSource = candidate.billingSource;
+            failedError = fallbackError;
             await this.recordFailedUsage(
               fallbackProvider,
-              'instance_default',
+              candidate.billingSource,
               usageContext,
               fallbackError,
             );
-            this.logger.error('AI provider fallback error', fallbackError);
-            if (this.isAuthenticationFailure(fallbackError)) {
-              throw new AiProviderAuthError('instance_default');
+            this.logger.warn('AI reply provider fallback failed', {
+              characterId: profile.characterId,
+              model: fallbackProvider.model,
+              reason: candidate.reason,
+              errorMessage: this.extractErrorMessage(fallbackError),
+            });
+
+            if (!this.isFallbackEligibleProviderFailure(fallbackError)) {
+              break;
             }
-            throw fallbackError;
           }
         }
-
-        throw new AiProviderAuthError('owner_custom');
       }
 
-      if (this.isAuthenticationFailure(err)) {
-        await this.recordFailedUsage(
-          provider,
-          'instance_default',
-          usageContext,
-          err,
-        );
-        throw new AiProviderAuthError('instance_default');
+      this.logger.error('AI provider error', failedError);
+      if (this.isAuthenticationFailure(failedError)) {
+        throw new AiProviderAuthError(failedBillingSource);
       }
 
-      await this.recordFailedUsage(
-        provider,
-        billingSource,
-        usageContext,
-        err,
-      );
-      this.logger.error('AI provider error', err);
-      throw err;
+      throw failedError;
     }
   }
 
@@ -2025,6 +2366,58 @@ export class AiOrchestratorService {
     }
   }
 
+  private toSpeechTranscriptionException(error: unknown) {
+    if (
+      error instanceof BadRequestException ||
+      error instanceof BadGatewayException ||
+      error instanceof ServiceUnavailableException
+    ) {
+      return error;
+    }
+
+    if (this.isAuthenticationFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音转写配置鉴权失败，请检查 Provider Key。',
+      );
+    }
+
+    if (this.isTransientSpeechFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音转写通道繁忙，请稍后再试。',
+      );
+    }
+
+    return new BadGatewayException(
+      '当前 Provider 暂不支持语音转写，请切换支持转写的模型或网关。',
+    );
+  }
+
+  private toSpeechSynthesisException(error: unknown) {
+    if (
+      error instanceof BadRequestException ||
+      error instanceof BadGatewayException ||
+      error instanceof ServiceUnavailableException
+    ) {
+      return error;
+    }
+
+    if (this.isAuthenticationFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音播报配置鉴权失败，请检查 Provider Key。',
+      );
+    }
+
+    if (this.isTransientSpeechFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前语音播报通道繁忙，请稍后再试。',
+      );
+    }
+
+    return new BadGatewayException(
+      '当前 Provider 暂不支持语音合成，请切换支持播报的模型或网关。',
+    );
+  }
+
   async transcribeAudio(
     file: UploadedAudioFile,
     options: { conversationId?: string; characterId?: string; mode?: string },
@@ -2043,81 +2436,106 @@ export class AiOrchestratorService {
       );
     }
 
-    const provider = await this.resolveRuntimeProvider({
+    const primaryProvider = await this.resolveRuntimeProvider({
       characterId: options.characterId,
     });
-    if (!provider.transcriptionApiKey.trim()) {
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId: options.characterId,
+      capability: 'transcription',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
+    const startedAt = Date.now();
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的 AI Key，暂时无法转写语音。',
+    );
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      const provider = attempt.provider;
+      if (!this.hasProviderCapability(provider, 'transcription')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const client = new OpenAI({
+        apiKey: provider.transcriptionApiKey,
+        baseURL: provider.transcriptionEndpoint,
+      });
+
+      try {
+        const response = await this.retrySpeechRequest(
+          'speech transcription',
+          async () =>
+            client.audio.transcriptions.create({
+              file: await toFile(
+                file.buffer,
+                file.originalname || 'speech-input.webm',
+                {
+                  type: file.mimetype || 'audio/webm',
+                },
+              ),
+              model: provider.transcriptionModel,
+              language: 'zh',
+              prompt: '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
+            }),
+        );
+        const text = response.text.trim();
+
+        if (!text) {
+          throw new BadGatewayException(
+            '这段语音没有识别出有效文字，请再说一遍。',
+          );
+        }
+
+        return {
+          text,
+          durationMs: Date.now() - startedAt,
+          provider: provider.transcriptionModel || provider.model,
+        };
+      } catch (error) {
+        lastError = error;
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error('speech transcription failed', {
+            conversationId: options.conversationId,
+            characterId: options.characterId,
+            mode: options.mode,
+            mimetype: file.mimetype,
+            size: file.size,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw this.toSpeechTranscriptionException(error);
+        }
+
+        this.logger.warn('speech transcription fallback scheduled', {
+          conversationId: options.conversationId,
+          characterId: options.characterId,
+          mode: options.mode,
+          fromModel: provider.transcriptionModel || provider.model,
+          toModel:
+            attempts[index + 1]?.provider.transcriptionModel ||
+            attempts[index + 1]?.provider.model,
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
+      }
+    }
+
+    if (!attemptedProvider) {
       throw new ServiceUnavailableException(
         '当前实例未配置可用的 AI Key，暂时无法转写语音。',
       );
     }
 
-    const client = new OpenAI({
-      apiKey: provider.transcriptionApiKey,
-      baseURL: provider.transcriptionEndpoint,
-    });
-    const startedAt = Date.now();
-
-    try {
-      const response = await this.retrySpeechRequest(
-        'speech transcription',
-        async () =>
-          client.audio.transcriptions.create({
-            file: await toFile(
-              file.buffer,
-              file.originalname || 'speech-input.webm',
-              {
-                type: file.mimetype || 'audio/webm',
-              },
-            ),
-            model: provider.transcriptionModel,
-            language: 'zh',
-            prompt: '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
-          }),
-      );
-      const text = response.text.trim();
-
-      if (!text) {
-        throw new BadGatewayException(
-          '这段语音没有识别出有效文字，请再说一遍。',
-        );
-      }
-
-      return {
-        text,
-        durationMs: Date.now() - startedAt,
-        provider: provider.transcriptionModel || provider.model,
-      };
-    } catch (error) {
-      if (error instanceof BadGatewayException) {
-        throw error;
-      }
-
-      this.logger.error('speech transcription failed', {
-        conversationId: options.conversationId,
-        characterId: options.characterId,
-        mode: options.mode,
-        mimetype: file.mimetype,
-        size: file.size,
-        errorMessage: this.extractErrorMessage(error),
-      });
-
-      if (this.isAuthenticationFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音转写配置鉴权失败，请检查 Provider Key。',
-        );
-      }
-
-      if (this.isTransientSpeechFailure(error)) {
-        throw new ServiceUnavailableException(
-          '当前语音转写通道繁忙，请稍后再试。',
-        );
-      }
-
-      throw new BadGatewayException(
-        '当前 Provider 暂不支持语音转写，请切换支持转写的模型或网关。',
-      );
-    }
+    throw this.toSpeechTranscriptionException(lastError);
   }
 
   async synthesizeSpeech(

@@ -897,20 +897,18 @@ export class ChatService {
     return results;
   }
 
-  private shouldCreateVoiceReply(
-    input: {
-      type:
-        | 'text'
-        | 'sticker'
-        | 'image'
-        | 'file'
-        | 'voice'
-        | 'contact_card'
-        | 'location_card'
-        | 'note_card';
-      attachment?: MessageAttachment;
-    },
-  ) {
+  private shouldCreateVoiceReply(input: {
+    type:
+      | 'text'
+      | 'sticker'
+      | 'image'
+      | 'file'
+      | 'voice'
+      | 'contact_card'
+      | 'location_card'
+      | 'note_card';
+    attachment?: MessageAttachment;
+  }) {
     if (input.type === 'voice') {
       return true;
     }
@@ -1062,6 +1060,24 @@ export class ChatService {
         ? {
             ...attachment,
             transcriptText: transcription.text,
+          }
+        : attachment;
+    }
+
+    if (attachment.kind === 'file') {
+      if (attachment.extractedText?.trim()) {
+        return attachment;
+      }
+
+      const extractedText = await this.ai.tryExtractDocumentTextFromUrl({
+        url: attachment.url,
+        mimeType: attachment.mimeType,
+        fileName: attachment.fileName,
+      });
+      return extractedText
+        ? {
+            ...attachment,
+            extractedText,
           }
         : attachment;
     }
@@ -1420,7 +1436,9 @@ export class ChatService {
     };
   }
 
-  private async serializeMessages(entities: MessageEntity[]): Promise<Message[]> {
+  private async serializeMessages(
+    entities: MessageEntity[],
+  ): Promise<Message[]> {
     return Promise.all(entities.map((entity) => this.serializeMessage(entity)));
   }
 
@@ -1679,6 +1697,7 @@ export class ChatService {
             url: attachment.url,
             mimeType: attachment.mimeType,
             fileName: attachment.fileName,
+            extractedText: attachment.extractedText,
             summaryText: promptText,
           },
         ];
@@ -1842,6 +1861,10 @@ export class ChatService {
           ? '视频'
           : '音频';
         return `发来一个${mediaLabel}文件《${attachment.fileName}》${sizeText ? `，大小：${sizeText}` : ''}${captionText}，转写内容：${attachment.transcriptText.trim()}`.trim();
+      }
+
+      if (attachment.extractedText?.trim()) {
+        return `发来一个文档《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}，提取内容：${attachment.extractedText.trim()}`.trim();
       }
 
       return `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();

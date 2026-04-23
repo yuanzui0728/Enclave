@@ -880,6 +880,24 @@ export class GroupService {
         : attachment;
     }
 
+    if (attachment.kind === 'file') {
+      if (attachment.extractedText?.trim()) {
+        return attachment;
+      }
+
+      const extractedText = await this.ai.tryExtractDocumentTextFromUrl({
+        url: attachment.url,
+        mimeType: attachment.mimeType,
+        fileName: attachment.fileName,
+      });
+      return extractedText
+        ? {
+            ...attachment,
+            extractedText,
+          }
+        : attachment;
+    }
+
     return attachment;
   }
 
@@ -1043,6 +1061,7 @@ export class GroupService {
             url: attachment.url,
             mimeType: attachment.mimeType,
             fileName: attachment.fileName,
+            extractedText: attachment.extractedText,
             summaryText: promptText,
           },
         ];
@@ -1183,6 +1202,9 @@ export class GroupService {
           : '音频';
         attachmentSummary =
           `发来一个${mediaLabel}文件《${attachment.fileName}》${sizeText ? `，大小：${sizeText}` : ''}${captionText}，转写内容：${attachment.transcriptText.trim()}`.trim();
+      } else if (attachment.extractedText?.trim()) {
+        attachmentSummary =
+          `发来一个文档《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}，提取内容：${attachment.extractedText.trim()}`.trim();
       } else {
         attachmentSummary =
           `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();

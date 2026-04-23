@@ -23,6 +23,7 @@ const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 const DEFAULT_TTS_VOICE = 'alloy';
 const DEFAULT_PROVIDER_ID = 'provider_default';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_INLINE_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_TRANSCRIPTION_BYTES = 10 * 1024 * 1024;
 
 type ProviderPayload = {
@@ -64,12 +65,14 @@ export type ResolvedInferenceCapabilityProfile = {
   supportsNativeImageInput: boolean;
   supportsNativeAudioInput: boolean;
   supportsNativeVideoInput: boolean;
+  supportsNativeDocumentInput: boolean;
   supportsStructuredDocumentInput: true;
   supportsSpeechSynthesis: boolean;
   supportsTranscription: boolean;
   supportsResponsesApi: boolean;
   requiresPublicAssetUrl: boolean;
   maxInlineImageBytes: number;
+  maxInlineFileBytes: number;
   maxTranscriptionBytes: number;
   capabilitySource: 'catalog' | 'heuristic';
 };
@@ -608,12 +611,14 @@ export class InferenceService implements OnModuleInit {
       supportsNativeAudioInput:
         supportsAudio && input.apiStyle === 'openai-responses',
       supportsNativeVideoInput: false,
+      supportsNativeDocumentInput: input.apiStyle === 'openai-responses',
       supportsStructuredDocumentInput: true,
       supportsSpeechSynthesis: Boolean(input.ttsModel?.trim()),
       supportsTranscription: Boolean(input.transcriptionModel?.trim()),
       supportsResponsesApi: input.apiStyle === 'openai-responses',
       requiresPublicAssetUrl: input.mode !== 'local-compatible',
       maxInlineImageBytes: MAX_INLINE_IMAGE_BYTES,
+      maxInlineFileBytes: MAX_INLINE_FILE_BYTES,
       maxTranscriptionBytes: MAX_TRANSCRIPTION_BYTES,
       capabilitySource: catalogEntry ? 'catalog' : 'heuristic',
     };
