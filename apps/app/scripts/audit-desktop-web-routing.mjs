@@ -27,14 +27,18 @@ const expectations = [
   {
     file: "src/features/shell/desktop-shell.tsx",
     description:
-      "desktop shell records SPA navigation state, treats legacy /profile and /desktop/settings as part of the desktop profile surface, and opens the self-chat shortcut through the desktop chat workspace",
+      "desktop shell records SPA navigation state, normalizes trailing-slash entry and standalone window routes, treats legacy /profile and /desktop/settings as part of the desktop profile surface, and opens the self-chat shortcut through the desktop chat workspace",
     includes: [
       'select: (state) => state.location.searchStr,',
       'import { recordAppNavigation } from "../../lib/history-back";',
+      'import { normalizePathname } from "../../lib/normalize-pathname";',
       'import { buildDesktopChatThreadPath } from "../desktop/chat/desktop-chat-route-state";',
       'recordAppNavigation(`${pathname}${search}${hash}`);',
-      'pathname.startsWith("/profile") ||',
-      'pathname.startsWith("/desktop/settings") ||',
+      "const normalizedPathname = normalizePathname(pathname);",
+      'normalizedPathname === "/desktop/chat-window" ||',
+      'normalizedPathname === "/welcome" ||',
+      'normalizedPathname.startsWith("/profile") ||',
+      'normalizedPathname.startsWith("/desktop/settings") ||',
       "to: buildDesktopChatThreadPath({",
       "conversationId: conversation.id,",
     ],

@@ -23,6 +23,7 @@ import {
 import { Button, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
 import { recordAppNavigation } from "../../lib/history-back";
+import { normalizePathname } from "../../lib/normalize-pathname";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
   DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT,
@@ -1065,30 +1066,33 @@ export function DesktopShell({ children }: PropsWithChildren) {
 }
 
 function isStandaloneDesktopRoute(pathname: string) {
+  const normalizedPathname = normalizePathname(pathname);
   return (
-    pathname === "/desktop/chat-image-viewer" ||
-    pathname === "/desktop/chat-window" ||
-    pathname === "/desktop/official-article-window" ||
-    pathname === "/desktop/note-window"
+    normalizedPathname === "/desktop/chat-image-viewer" ||
+    normalizedPathname === "/desktop/chat-window" ||
+    normalizedPathname === "/desktop/official-article-window" ||
+    normalizedPathname === "/desktop/note-window"
   );
 }
 
 function isDesktopEntryRoute(pathname: string) {
+  const normalizedPathname = normalizePathname(pathname);
   return (
-    pathname === "/" ||
-    pathname === "/welcome" ||
-    pathname === "/setup" ||
-    pathname === "/onboarding"
+    normalizedPathname === "/" ||
+    normalizedPathname === "/welcome" ||
+    normalizedPathname === "/setup" ||
+    normalizedPathname === "/onboarding"
   );
 }
 
 function isDesktopProfileRoute(pathname: string) {
+  const normalizedPathname = normalizePathname(pathname);
   return (
-    pathname.startsWith("/tabs/profile") ||
-    pathname.startsWith("/profile") ||
-    pathname.startsWith("/desktop/settings") ||
-    pathname.startsWith("/profile/settings") ||
-    pathname.startsWith("/legal/")
+    normalizedPathname.startsWith("/tabs/profile") ||
+    normalizedPathname.startsWith("/profile") ||
+    normalizedPathname.startsWith("/desktop/settings") ||
+    normalizedPathname.startsWith("/profile/settings") ||
+    normalizedPathname.startsWith("/legal/")
   );
 }
 
