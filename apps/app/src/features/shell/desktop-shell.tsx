@@ -131,6 +131,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const ownerSignature = useWorldOwnerStore((state) => state.signature);
+  const onboardingCompleted = useWorldOwnerStore(
+    (state) => state.onboardingCompleted,
+  );
   const appTitle = runtimeConfig.publicAppName.trim() || "Yinjie";
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
@@ -423,6 +426,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const shellInsetClass = nativeDesktopShell
     ? "rounded-none"
     : "m-2 rounded-[20px]";
+  const showDesktopNavigation =
+    !standaloneDesktopRoute &&
+    onboardingCompleted &&
+    !isDesktopEntryRoute(pathname);
 
   const handleTitleBarMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !desktopWindow) {
@@ -569,7 +576,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           <div className="absolute bottom-[-6%] left-1/3 h-44 w-44 rounded-full bg-[rgba(148,163,184,0.08)] blur-3xl" />
         </div>
 
-        {nativeDesktopShell && !standaloneDesktopRoute ? (
+        {nativeDesktopShell && showDesktopNavigation ? (
           <header className="relative z-10 flex h-14 shrink-0 items-center gap-3 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.74)] px-4 backdrop-blur-xl">
             <div
               className={cn(
@@ -649,11 +656,15 @@ export function DesktopShell({ children }: PropsWithChildren) {
         <div
           className={cn(
             "relative z-10 flex min-h-0 flex-1",
-            standaloneDesktopRoute ? undefined : "gap-3 p-3",
-            nativeDesktopShell && !standaloneDesktopRoute ? "pt-2" : undefined,
+            standaloneDesktopRoute
+              ? undefined
+              : showDesktopNavigation
+                ? "gap-3 p-3"
+                : "p-3",
+            nativeDesktopShell && showDesktopNavigation ? "pt-2" : undefined,
           )}
         >
-          {(isMoreMenuOpen || isOwnerCardOpen) && !standaloneDesktopRoute ? (
+          {(isMoreMenuOpen || isOwnerCardOpen) && showDesktopNavigation ? (
             <button
               type="button"
               aria-label="关闭浮层"
@@ -666,7 +677,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
             />
           ) : null}
 
-          {standaloneDesktopRoute ? null : (
+          {showDesktopNavigation ? (
             <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2 text-white shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
               <div className="relative mb-2.5 flex justify-center">
                 <button
@@ -784,7 +795,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 ) : null}
               </div>
             </aside>
-          )}
+          ) : null}
 
           <main
             className={cn(
@@ -1003,6 +1014,15 @@ function isStandaloneDesktopRoute(pathname: string) {
     pathname === "/desktop/chat-window" ||
     pathname === "/desktop/official-article-window" ||
     pathname === "/desktop/note-window"
+  );
+}
+
+function isDesktopEntryRoute(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname === "/welcome" ||
+    pathname === "/setup" ||
+    pathname === "/onboarding"
   );
 }
 
