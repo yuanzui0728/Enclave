@@ -100,6 +100,28 @@ const expectations = [
     ],
   },
   {
+    file: "src/routes/discover-encounter-page.tsx",
+    description:
+      "legacy desktop /discover/encounter redirects preserve the current hash when they fold back into /tabs/discover",
+    includes: [
+      "useRouterState",
+      'to: "/tabs/discover",',
+      "hash: hash || undefined,",
+      "replace: true,",
+    ],
+  },
+  {
+    file: "src/routes/discover-scene-page.tsx",
+    description:
+      "legacy desktop /discover/scene redirects preserve the current hash when they fold back into /tabs/discover",
+    includes: [
+      "useRouterState",
+      'to: "/tabs/discover",',
+      "hash: hash || undefined,",
+      "replace: true,",
+    ],
+  },
+  {
     file: "src/features/desktop/chat/desktop-chat-details-panel.tsx",
     description:
       "desktop chat details carries group-qr source context, sends pending-friend shortcuts to the desktop new-friends pane, preserves desktop return hashes for chat/group background and group qr pages, and opens common groups through the desktop chat workspace",
@@ -599,7 +621,7 @@ const expectations = [
   {
     file: "src/features/search/search-navigation.ts",
     description:
-      "desktop search navigation rewrites legacy /chat, /group, /contacts, /profile, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy mobile behavior elsewhere",
+      "desktop search navigation rewrites legacy /chat, /group, /contacts, /profile, /favorites, /notes, /profile/settings, /discover, /discover/encounter, /discover/scene, /discover/moments, /games, /discover/games, /discover/feed, /discover/mini-programs, /discover/channels, contact-directory, and official-account quick-link targets including the old /official-accounts root to desktop workspace routes while preserving legacy desktop hash/search context and legacy mobile behavior elsewhere",
     includes: [
       'import { buildDesktopFavoritesWorkspaceRouteHash } from "../favorites/favorites-route-state";',
       "buildDesktopMomentsRouteHash,",
@@ -646,6 +668,7 @@ const expectations = [
       'target.to !== "/discover/encounter" &&',
       'target.to !== "/discover/scene"',
       'to: "/tabs/discover",',
+      "hash: target.hash,",
       'target.to === "/discover/moments" || target.to === "/tabs/moments"',
       'to: "/tabs/moments",',
       'target.to !== "/discover/feed" && target.to !== "/tabs/feed"',

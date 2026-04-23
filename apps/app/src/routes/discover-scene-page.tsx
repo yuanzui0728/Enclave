@@ -50,14 +50,21 @@ const scenes = [
 export function DiscoverScenePage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
 
   useEffect(() => {
     if (!isDesktopLayout) {
       return;
     }
 
-    void navigate({ to: "/tabs/discover", replace: true });
-  }, [isDesktopLayout, navigate]);
+    void navigate({
+      to: "/tabs/discover",
+      hash: hash || undefined,
+      replace: true,
+    });
+  }, [hash, isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
     return (

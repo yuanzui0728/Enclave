@@ -487,6 +487,7 @@ function resolveDesktopDiscoverNavigationTarget(target: SearchNavigationTarget) 
 
   return {
     to: "/tabs/discover",
+    hash: target.hash,
   } satisfies SearchNavigationTarget;
 }
 
