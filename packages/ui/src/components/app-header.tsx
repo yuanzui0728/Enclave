@@ -2,9 +2,9 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
 type AppHeaderProps = HTMLAttributes<HTMLElement> & {
-  eyebrow?: string;
-  title: string;
-  description?: string;
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
   actions?: ReactNode;
 };
 

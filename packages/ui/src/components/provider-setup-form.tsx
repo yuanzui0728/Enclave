@@ -1,34 +1,39 @@
+import type { ReactNode } from "react";
+import { Trans } from "@lingui/react/macro";
 import type { ProviderConfig } from "@yinjie/config";
 
 type ProviderSetupFormProps = {
-  title: string;
-  description: string;
-  statusLabel: string;
-  endpointLabel: string;
-  modeLabel: string;
-  modelLabel: string;
-  apiKeyLabel: string;
-  transcriptionSectionTitle?: string;
-  transcriptionSectionDescription?: string;
-  transcriptionEndpointLabel?: string;
-  transcriptionModelLabel?: string;
-  transcriptionApiKeyLabel?: string;
+  title: ReactNode;
+  description: ReactNode;
+  statusLabel: ReactNode;
+  statusTone?: "configured" | "pending" | "success" | "warning";
+  endpointLabel: ReactNode;
+  modeLabel: ReactNode;
+  modelLabel: ReactNode;
+  apiKeyLabel: ReactNode;
+  localCompatibleModeLabel?: ReactNode;
+  cloudModeLabel?: ReactNode;
+  transcriptionSectionTitle?: ReactNode;
+  transcriptionSectionDescription?: ReactNode;
+  transcriptionEndpointLabel?: ReactNode;
+  transcriptionModelLabel?: ReactNode;
+  transcriptionApiKeyLabel?: ReactNode;
   apiKeyPlaceholder: string;
   endpointPlaceholder: string;
   modelPlaceholder: string;
   transcriptionEndpointPlaceholder?: string;
   transcriptionModelPlaceholder?: string;
   transcriptionApiKeyPlaceholder?: string;
-  probeLabel: string;
-  saveLabel: string;
+  probeLabel: ReactNode;
+  saveLabel: ReactNode;
   draft: ProviderConfig;
   availableModels: string[];
   availableModelsId: string;
   disabled: boolean;
-  validationMessage?: string | null;
-  errorMessage?: string | null;
-  actionErrorMessage?: string | null;
-  footerMessage: string;
+  validationMessage?: ReactNode;
+  errorMessage?: ReactNode;
+  actionErrorMessage?: ReactNode;
+  footerMessage: ReactNode;
   onSubmit: () => void;
   onProbe: () => void;
   onChange: <K extends keyof ProviderConfig>(
@@ -44,10 +49,13 @@ export function ProviderSetupForm({
   title,
   description,
   statusLabel,
+  statusTone,
   endpointLabel,
   modeLabel,
   modelLabel,
   apiKeyLabel,
+  localCompatibleModeLabel,
+  cloudModeLabel,
   transcriptionSectionTitle,
   transcriptionSectionDescription,
   transcriptionEndpointLabel,
@@ -76,6 +84,11 @@ export function ProviderSetupForm({
   probePending,
   className,
 }: ProviderSetupFormProps) {
+  const configured =
+    statusTone === "configured" ||
+    statusTone === "success" ||
+    (typeof statusLabel === "string" && statusLabel === "configured");
+
   return (
     <section
       className={
@@ -93,7 +106,7 @@ export function ProviderSetupForm({
           </div>
         </div>
         <div
-          className={`rounded-full px-3 py-1 text-[11px] ${statusLabel === "configured" || statusLabel === "已配置" ? "bg-emerald-500/15 text-emerald-700" : "bg-amber-500/15 text-amber-700"}`}
+          className={`rounded-full px-3 py-1 text-[11px] ${configured ? "bg-emerald-500/15 text-emerald-700" : "bg-amber-500/15 text-amber-700"}`}
         >
           {statusLabel}
         </div>
@@ -131,8 +144,12 @@ export function ProviderSetupForm({
               disabled={disabled}
               className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--border-brand)] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="local-compatible">本地兼容</option>
-              <option value="cloud">云端模式</option>
+              <option value="local-compatible">
+                {localCompatibleModeLabel ?? <Trans>本地兼容</Trans>}
+              </option>
+              <option value="cloud">
+                {cloudModeLabel ?? <Trans>云端模式</Trans>}
+              </option>
             </select>
           </label>
 
@@ -180,7 +197,9 @@ export function ProviderSetupForm({
             </div>
 
             <label className="block space-y-2 text-sm text-[color:var(--text-primary)]">
-              <span>{transcriptionEndpointLabel ?? "转写接口地址"}</span>
+              <span>
+                {transcriptionEndpointLabel ?? <Trans>转写接口地址</Trans>}
+              </span>
               <input
                 value={draft.transcriptionEndpoint ?? ""}
                 onChange={(event) =>
@@ -196,7 +215,9 @@ export function ProviderSetupForm({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-2 text-sm text-[color:var(--text-primary)]">
-                <span>{transcriptionModelLabel ?? "转写模型"}</span>
+                <span>
+                  {transcriptionModelLabel ?? <Trans>转写模型</Trans>}
+                </span>
                 <input
                   value={draft.transcriptionModel ?? ""}
                   onChange={(event) =>
@@ -212,7 +233,9 @@ export function ProviderSetupForm({
               </label>
 
               <label className="block space-y-2 text-sm text-[color:var(--text-primary)]">
-                <span>{transcriptionApiKeyLabel ?? "转写 API 密钥"}</span>
+                <span>
+                  {transcriptionApiKeyLabel ?? <Trans>转写 API 密钥</Trans>}
+                </span>
                 <input
                   value={draft.transcriptionApiKey ?? ""}
                   onChange={(event) =>
@@ -221,10 +244,7 @@ export function ProviderSetupForm({
                   disabled={disabled}
                   type="password"
                   className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--border-brand)] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder={
-                    transcriptionApiKeyPlaceholder ??
-                    "为空时回退主推理服务 API 密钥"
-                  }
+                  placeholder={transcriptionApiKeyPlaceholder ?? ""}
                 />
               </label>
             </div>

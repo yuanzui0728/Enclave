@@ -1,11 +1,13 @@
+import type { ReactNode } from "react";
+
 type DesktopRuntimeActionsProps = {
-  title: string;
-  probeLabel: string;
-  startLabel: string;
-  restartLabel: string;
-  stopLabel?: string;
-  message: string;
-  errorMessage?: string | null;
+  title: ReactNode;
+  probeLabel: ReactNode;
+  startLabel: ReactNode;
+  restartLabel: ReactNode;
+  stopLabel?: ReactNode;
+  message: ReactNode;
+  errorMessage?: ReactNode;
   busy?: boolean;
   onProbe: () => void;
   onStart: () => void;

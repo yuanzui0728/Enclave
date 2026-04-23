@@ -12,6 +12,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: packages/ui/src/components/provider-setup-form.tsx:151
+msgid "云端模式"
+msgstr "Cloud mode"
+
 #: packages/i18n/src/runtime/language-switcher.tsx:28
 msgid "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
 msgstr "After switching, it is saved for the current client and applies immediately to connected interface copy and formatting rules."
@@ -24,10 +28,42 @@ msgstr "Just now"
 msgid "加载中..."
 msgstr "Loading..."
 
+#: packages/ui/src/components/setup-step-list.tsx:45
+msgid "处理中"
+msgstr "In progress"
+
+#: packages/ui/src/components/setup-status-card.tsx:38
+msgid "就绪"
+msgstr "Ready"
+
+#: packages/ui/src/components/setup-status-card.tsx:39
+msgid "待完善"
+msgstr "Needs setup"
+
 #: packages/i18n/src/runtime/formatters.ts:65
 msgid "昨天"
 msgstr "Yesterday"
 
+#: packages/ui/src/components/provider-setup-form.tsx:148
+msgid "本地兼容"
+msgstr "Local compatible"
+
 #: packages/i18n/src/runtime/language-switcher.tsx:58
 msgid "界面语言"
 msgstr "Interface language"
+
+#: packages/ui/src/components/provider-setup-form.tsx:237
+msgid "转写 API 密钥"
+msgstr "Transcription API key"
+
+#: packages/ui/src/components/provider-setup-form.tsx:201
+msgid "转写接口地址"
+msgstr "Transcription endpoint"
+
+#: packages/ui/src/components/provider-setup-form.tsx:219
+msgid "转写模型"
+msgstr "Transcription model"
+
+#: packages/ui/src/components/setup-step-list.tsx:44
+msgid "通过"
+msgstr "Passed"

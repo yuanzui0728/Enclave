@@ -1,8 +1,8 @@
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
 type PanelEmptyProps = HTMLAttributes<HTMLDivElement> & {
-  message: string;
+  message: ReactNode;
 };
 
 export function PanelEmpty({ className, message, ...props }: PanelEmptyProps) {

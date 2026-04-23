@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 type SetupScaffoldProps = {
-  badge: string;
-  title: string;
-  description: string;
+  badge: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
   heroAside?: ReactNode;
   left: ReactNode;
   right?: ReactNode;

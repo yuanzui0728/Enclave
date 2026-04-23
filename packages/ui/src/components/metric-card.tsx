@@ -2,9 +2,9 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
 type MetricCardProps = HTMLAttributes<HTMLDivElement> & {
-  label: string;
-  value: string | number;
-  detail?: string;
+  label: ReactNode;
+  value: ReactNode;
+  detail?: ReactNode;
   meta?: ReactNode;
 };
 

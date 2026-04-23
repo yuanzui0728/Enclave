@@ -12,6 +12,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: packages/ui/src/components/provider-setup-form.tsx:151
+msgid "云端模式"
+msgstr "クラウドモード"
+
 #: packages/i18n/src/runtime/language-switcher.tsx:28
 msgid "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
 msgstr "切り替えると現在のクライアントに保存され、対応済みの画面文言と書式設定にすぐ反映されます。"
@@ -24,10 +28,42 @@ msgstr "たった今"
 msgid "加载中..."
 msgstr "読み込み中..."
 
+#: packages/ui/src/components/setup-step-list.tsx:45
+msgid "处理中"
+msgstr "処理中"
+
+#: packages/ui/src/components/setup-status-card.tsx:38
+msgid "就绪"
+msgstr "準備完了"
+
+#: packages/ui/src/components/setup-status-card.tsx:39
+msgid "待完善"
+msgstr "要設定"
+
 #: packages/i18n/src/runtime/formatters.ts:65
 msgid "昨天"
 msgstr "昨日"
 
+#: packages/ui/src/components/provider-setup-form.tsx:148
+msgid "本地兼容"
+msgstr "ローカル互換"
+
 #: packages/i18n/src/runtime/language-switcher.tsx:58
 msgid "界面语言"
 msgstr "表示言語"
+
+#: packages/ui/src/components/provider-setup-form.tsx:237
+msgid "转写 API 密钥"
+msgstr "文字起こし API キー"
+
+#: packages/ui/src/components/provider-setup-form.tsx:201
+msgid "转写接口地址"
+msgstr "文字起こしエンドポイント"
+
+#: packages/ui/src/components/provider-setup-form.tsx:219
+msgid "转写模型"
+msgstr "文字起こしモデル"
+
+#: packages/ui/src/components/setup-step-list.tsx:44
+msgid "通过"
+msgstr "通過"

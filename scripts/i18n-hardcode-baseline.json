@@ -51,7 +51,7 @@
       "rules": {
         "jsx-literal-prop": 0,
         "object-ui-string": 0,
-        "jsx-cjk-text": 2,
+        "jsx-cjk-text": 0,
         "toast-dialog-string": 0,
         "setter-message-string": 0,
         "literal-error-message": 1,
@@ -59,7 +59,7 @@
         "locale-compare-literal": 0,
         "speech-lang-literal": 0,
         "prompt-locale-instruction": 0,
-        "raw-cjk-line": 10
+        "raw-cjk-line": 1
       }
     },
     "api/src": {

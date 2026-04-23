@@ -2,7 +2,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
 type ErrorBlockProps = HTMLAttributes<HTMLDivElement> & {
-  message: string;
+  message: ReactNode;
   children?: ReactNode;
 };
 

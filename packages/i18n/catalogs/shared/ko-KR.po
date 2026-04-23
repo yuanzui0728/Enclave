@@ -12,6 +12,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: packages/ui/src/components/provider-setup-form.tsx:151
+msgid "云端模式"
+msgstr "클라우드 모드"
+
 #: packages/i18n/src/runtime/language-switcher.tsx:28
 msgid "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
 msgstr "변경하면 현재 클라이언트에 저장되며, 연결된 화면 문구와 형식 규칙에 즉시 적용됩니다."
@@ -24,10 +28,42 @@ msgstr "방금"
 msgid "加载中..."
 msgstr "로딩 중..."
 
+#: packages/ui/src/components/setup-step-list.tsx:45
+msgid "处理中"
+msgstr "처리 중"
+
+#: packages/ui/src/components/setup-status-card.tsx:38
+msgid "就绪"
+msgstr "준비됨"
+
+#: packages/ui/src/components/setup-status-card.tsx:39
+msgid "待完善"
+msgstr "보완 필요"
+
 #: packages/i18n/src/runtime/formatters.ts:65
 msgid "昨天"
 msgstr "어제"
 
+#: packages/ui/src/components/provider-setup-form.tsx:148
+msgid "本地兼容"
+msgstr "로컬 호환"
+
 #: packages/i18n/src/runtime/language-switcher.tsx:58
 msgid "界面语言"
 msgstr "인터페이스 언어"
+
+#: packages/ui/src/components/provider-setup-form.tsx:237
+msgid "转写 API 密钥"
+msgstr "전사 API 키"
+
+#: packages/ui/src/components/provider-setup-form.tsx:201
+msgid "转写接口地址"
+msgstr "전사 엔드포인트"
+
+#: packages/ui/src/components/provider-setup-form.tsx:219
+msgid "转写模型"
+msgstr "전사 모델"
+
+#: packages/ui/src/components/setup-step-list.tsx:44
+msgid "通过"
+msgstr "통과"

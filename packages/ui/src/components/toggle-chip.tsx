@@ -1,8 +1,8 @@
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
 type ToggleChipProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
-  label: string;
+  label: ReactNode;
 };
 
 export function ToggleChip({ className, label, checked, ...props }: ToggleChipProps) {

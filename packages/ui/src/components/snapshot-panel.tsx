@@ -1,8 +1,8 @@
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "../cn";
 
 type SnapshotPanelProps = HTMLAttributes<HTMLDivElement> & {
-  title: string;
+  title: ReactNode;
   value: Record<string, unknown> | null | undefined;
 };
 
