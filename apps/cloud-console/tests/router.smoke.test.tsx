@@ -96,6 +96,11 @@ describe("cloud-console router smoke", () => {
 
     expect(await screen.findByText("Admin sessions")).toBeTruthy();
     expect(await screen.findByText("Current")).toBeTruthy();
+    expect(
+      (
+        await screen.findByRole("link", { name: "Open sessions permalink" })
+      ).getAttribute("href"),
+    ).toBe("/sessions");
   });
 
   it("renders the waiting session sync route", async () => {

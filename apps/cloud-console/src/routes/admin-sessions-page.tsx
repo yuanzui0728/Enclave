@@ -71,6 +71,9 @@ import {
   showRequestScopedNoticeAndInvalidate,
 } from "../lib/request-scoped-notice";
 
+const ADMIN_SESSION_ACTION_LINK_CLASS_NAME =
+  "rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--text-primary)] transition hover:border-[color:var(--border-strong)]";
+
 function formatDateTime(value?: string | null) {
   if (!value) {
     return "Not available";
@@ -1276,12 +1279,16 @@ export function AdminSessionsPage() {
     });
   }
 
+  const currentPermalink = useMemo(
+    () => buildAdminSessionsPermalink(filters),
+    [filters],
+  );
+
   async function copyAdminSessionsPermalink() {
-    const relativePermalink = buildAdminSessionsPermalink(filters);
     const absolutePermalink =
       typeof window !== "undefined" && window.location?.origin
-        ? `${window.location.origin}${relativePermalink}`
-        : relativePermalink;
+        ? `${window.location.origin}${currentPermalink}`
+        : currentPermalink;
     const copied = await copyTextToClipboard(absolutePermalink);
 
     showNotice(
@@ -2094,6 +2101,14 @@ export function AdminSessionsPage() {
           >
             Copy sessions permalink
           </AdminSessionActionButton>
+          <a
+            href={currentPermalink}
+            target="_blank"
+            rel="noreferrer"
+            className={ADMIN_SESSION_ACTION_LINK_CLASS_NAME}
+          >
+            Open sessions permalink
+          </a>
         </div>
       </div>
 

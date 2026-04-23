@@ -66,6 +66,7 @@ export type ResolvedInferenceCapabilityProfile = {
   supportsNativeAudioInput: boolean;
   supportsNativeVideoInput: boolean;
   supportsNativeDocumentInput: boolean;
+  supportsImageGeneration: boolean;
   supportsStructuredDocumentInput: true;
   supportsSpeechSynthesis: boolean;
   supportsTranscription: boolean;
@@ -306,6 +307,12 @@ export class InferenceService implements OnModuleInit {
 
   private inferAudioSupport(modelId: string) {
     return /(gpt-4o|gemini|audio|omni|realtime|speech)/i.test(modelId);
+  }
+
+  private inferImageGenerationSupport(modelId: string) {
+    return /^(gpt-|o\d|dall-e|gpt-image|chatgpt-image)/i.test(
+      modelId.trim().toLowerCase(),
+    );
   }
 
   private getDefaultProviderName() {
@@ -604,6 +611,8 @@ export class InferenceService implements OnModuleInit {
       catalogEntry?.supportsVision ?? this.inferVisionSupport(input.model);
     const supportsAudio =
       catalogEntry?.supportsAudio ?? this.inferAudioSupport(input.model);
+    const supportsImageGeneration =
+      this.inferImageGenerationSupport(input.model);
 
     return {
       supportsTextInput: true,
@@ -612,6 +621,7 @@ export class InferenceService implements OnModuleInit {
         supportsAudio && input.apiStyle === 'openai-responses',
       supportsNativeVideoInput: false,
       supportsNativeDocumentInput: input.apiStyle === 'openai-responses',
+      supportsImageGeneration,
       supportsStructuredDocumentInput: true,
       supportsSpeechSynthesis: Boolean(input.ttsModel?.trim()),
       supportsTranscription: Boolean(input.transcriptionModel?.trim()),

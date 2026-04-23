@@ -2005,6 +2005,12 @@ export function ChatMessageList({
         message:
           error instanceof Error ? error.message : "设置提醒失败，请稍后再试。",
         tone: "danger",
+        actionLabel: "继续设置提醒",
+        onAction: () => {
+          void handleSelectReminder(option);
+        },
+        secondaryActionLabel: errorActionLabel,
+        onSecondaryAction: onErrorAction ?? undefined,
       });
       return;
     }

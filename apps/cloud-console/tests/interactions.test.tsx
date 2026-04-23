@@ -1045,6 +1045,62 @@ async function setAdminSessionsSearch(query: string) {
   });
 }
 
+async function switchAdminSessionsQuickViewAndAssert({
+  requests,
+  buttonName,
+  summary,
+  rowText,
+  query,
+}: {
+  requests?: CloudAdminRequestLog[];
+  buttonName: string;
+  summary: string;
+  rowText?: string;
+  query?: Record<string, string>;
+}) {
+  fireEvent.click(screen.getByRole("button", { name: buttonName }));
+  await expectAdminSessionsSummary(summary);
+
+  if (rowText) {
+    expect(await screen.findByText(rowText)).toBeTruthy();
+  }
+
+  if (requests && query) {
+    await expectAdminSessionsQuery(requests, query);
+  }
+}
+
+async function setAdminSessionsSortAndDirectionAndAssert({
+  requests,
+  sortBy,
+  sortDirection,
+  rowText,
+  query,
+}: {
+  requests?: CloudAdminRequestLog[];
+  sortBy: string;
+  sortDirection: string;
+  rowText?: string;
+  query?: Record<string, string>;
+}) {
+  fireEvent.change(screen.getByLabelText("Sort by"), {
+    target: { value: sortBy },
+  });
+  fireEvent.change(screen.getByLabelText("Direction"), {
+    target: { value: sortDirection },
+  });
+
+  if (rowText) {
+    await waitFor(() => {
+      expectAdminSessionsFirstDataRowContains(rowText);
+    });
+  }
+
+  if (requests && query) {
+    await expectAdminSessionsQuery(requests, query);
+  }
+}
+
 async function renderAdminSessionSourceGroupsPage({
   search,
   requests,
@@ -3262,37 +3318,21 @@ describe("cloud-console interactions", () => {
       await screen.findByText("00000012-2222-4222-8222-222222222222"),
     ).toBeTruthy();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Recently revoked" }),
-    );
-
-    await expectAdminSessionsSummary("Showing 1-1 of 1");
-    expect(
-      await screen.findByText("00000012-2222-4222-8222-222222222222"),
-    ).toBeTruthy();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Expiring soon" }),
-    );
-
-    await expectAdminSessionsSummary("Showing 1-10 of 11");
-    await waitFor(() => {
-      expectAdminSessionsFirstDataRowContains(
-        "00000011-2222-4222-8222-222222222222",
-      );
+    await switchAdminSessionsQuickViewAndAssert({
+      buttonName: "Recently revoked",
+      summary: "Showing 1-1 of 1",
+      rowText: "00000012-2222-4222-8222-222222222222",
     });
 
-    fireEvent.change(screen.getByLabelText("Sort by"), {
-      target: { value: "createdAt" },
-    });
-    fireEvent.change(screen.getByLabelText("Direction"), {
-      target: { value: "asc" },
+    await switchAdminSessionsQuickViewAndAssert({
+      buttonName: "Expiring soon",
+      summary: "Showing 1-10 of 11",
     });
 
-    await waitFor(() => {
-      expectAdminSessionsFirstDataRowContains(
-        "00000011-2222-4222-8222-222222222222",
-      );
+    await setAdminSessionsSortAndDirectionAndAssert({
+      sortBy: "createdAt",
+      sortDirection: "asc",
+      rowText: "00000011-2222-4222-8222-222222222222",
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
@@ -3305,11 +3345,11 @@ describe("cloud-console interactions", () => {
     });
 
     await expectAdminSessionsQuery(requests, {
-        sortBy: "updatedAt",
-        sortDirection: "desc",
-        page: "1",
-        pageSize: "10",
-      });
+      sortBy: "updatedAt",
+      sortDirection: "desc",
+      page: "1",
+      pageSize: "10",
+    });
   });
 
   it("issues admin session quick-view and sorting query params", async () => {
@@ -3329,55 +3369,55 @@ describe("cloud-console interactions", () => {
 
     expect(await screen.findByText("Admin sessions")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Current session" }));
-
-    await expectAdminSessionsSummary("Showing 1-1 of 1");
-    expect(
-      await screen.findByText("00000001-3333-4333-8333-333333333333"),
-    ).toBeTruthy();
-    await expectAdminSessionsQuery(requests, {
-          currentOnly: "true",
-          sortBy: "updatedAt",
-          sortDirection: "desc",
-          page: "1",
-          pageSize: "10",
-        });
-
-    fireEvent.click(screen.getByRole("button", { name: "Expiring soon" }));
-
-    await expectAdminSessionsSummary("Showing 1-10 of 11");
-    await expectAdminSessionsQuery(requests, {
-          status: "active",
-          sortBy: "expiresAt",
-          sortDirection: "asc",
-          page: "1",
-          pageSize: "10",
-        });
-
-    fireEvent.change(screen.getByLabelText("Sort by"), {
-      target: { value: "createdAt" },
-    });
-    fireEvent.change(screen.getByLabelText("Direction"), {
-      target: { value: "asc" },
+    await switchAdminSessionsQuickViewAndAssert({
+      requests,
+      buttonName: "Current session",
+      summary: "Showing 1-1 of 1",
+      rowText: "00000001-3333-4333-8333-333333333333",
+      query: {
+        currentOnly: "true",
+        sortBy: "updatedAt",
+        sortDirection: "desc",
+        page: "1",
+        pageSize: "10",
+      },
     });
 
-    await expectAdminSessionsQuery(requests, {
-          status: "active",
-          sortBy: "createdAt",
-          sortDirection: "asc",
-          page: "1",
-          pageSize: "10",
-        });
+    await switchAdminSessionsQuickViewAndAssert({
+      requests,
+      buttonName: "Expiring soon",
+      summary: "Showing 1-10 of 11",
+      query: {
+        status: "active",
+        sortBy: "expiresAt",
+        sortDirection: "asc",
+        page: "1",
+        pageSize: "10",
+      },
+    });
+
+    await setAdminSessionsSortAndDirectionAndAssert({
+      requests,
+      sortBy: "createdAt",
+      sortDirection: "asc",
+      query: {
+        status: "active",
+        sortBy: "createdAt",
+        sortDirection: "asc",
+        page: "1",
+        pageSize: "10",
+      },
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
 
     await expectAdminSessionsSummary("Showing 1-10 of 12");
     await expectAdminSessionsQuery(requests, {
-          sortBy: "updatedAt",
-          sortDirection: "desc",
-          page: "1",
-          pageSize: "10",
-        });
+      sortBy: "updatedAt",
+      sortDirection: "desc",
+      page: "1",
+      pageSize: "10",
+    });
   });
 
   it("clears bulk-selected admin sessions when paging to a different result set", async () => {

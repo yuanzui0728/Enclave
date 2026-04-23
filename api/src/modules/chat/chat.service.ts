@@ -102,6 +102,26 @@ type UploadedAttachmentFile = {
   size: number;
 };
 
+type AssistantReplyTargetMessage = {
+  type:
+    | 'text'
+    | 'sticker'
+    | 'image'
+    | 'file'
+    | 'voice'
+    | 'contact_card'
+    | 'location_card'
+    | 'note_card';
+  text: string;
+  attachment?: MessageAttachment;
+};
+
+type AssistantReplyModalitiesPlan = {
+  includeVoice: boolean;
+  imagePrompt?: string;
+  promptSections: string[];
+};
+
 type ConversationMessageListQuery = {
   limit?: number;
   aroundMessageId?: string;
@@ -785,8 +805,18 @@ export class ChatService {
             sourceMessageId: userMsgEntity.id,
           })
         : { handled: false };
-    const extraSystemPromptSections =
-      await this.buildCyberAvatarChatPromptSections(charId);
+    const replyModalities = await this.planAssistantReplyModalities({
+      characterId: charId,
+      message: {
+        type: normalizedInput.type,
+        text: normalizedInput.text,
+        attachment: normalizedInput.attachment,
+      },
+    });
+    const extraSystemPromptSections = [
+      ...(await this.buildCyberAvatarChatPromptSections(charId)),
+      ...replyModalities.promptSections,
+    ];
 
     const assistantReplyText = actionResult.handled
       ? (actionResult.responseText?.trim() ?? '')
@@ -821,10 +851,7 @@ export class ChatService {
         characterId: charId,
         characterName: profile.name,
         text: assistantReplyText,
-        replyToMessage: {
-          type: normalizedInput.type,
-          attachment: normalizedInput.attachment,
-        },
+        modalities: replyModalities,
       });
       const savedAiEntities = await this.msgRepo.save(
         assistantDrafts.map((draft) => this.msgRepo.create(draft)),
@@ -897,18 +924,7 @@ export class ChatService {
     return results;
   }
 
-  private shouldCreateVoiceReply(input: {
-    type:
-      | 'text'
-      | 'sticker'
-      | 'image'
-      | 'file'
-      | 'voice'
-      | 'contact_card'
-      | 'location_card'
-      | 'note_card';
-    attachment?: MessageAttachment;
-  }) {
+  private shouldCreateVoiceReplyFromAttachment(input: AssistantReplyTargetMessage) {
     if (input.type === 'voice') {
       return true;
     }
@@ -920,24 +936,112 @@ export class ChatService {
     );
   }
 
+  private shouldCreateVoiceReplyFromText(text: string) {
+    return /语音回复|语音回答|发语音|用语音|说给我听|念给我听|读给我听|播报给我听/i.test(
+      text.trim(),
+    );
+  }
+
+  private extractRequestedImagePrompt(message: AssistantReplyTargetMessage) {
+    if (message.type !== 'text' || message.attachment) {
+      return null;
+    }
+
+    const rawText = message.text.trim().replace(/[。！？!?]+$/g, '');
+    if (rawText.length < 4) {
+      return null;
+    }
+
+    const wantsImage =
+      /(画|生成|做|来|发|出|整).{0,12}(图|图片|插画|配图|头像|壁纸|海报|封面|表情包)/i.test(
+        rawText,
+      ) ||
+      /(图|图片|插画|配图|头像|壁纸|海报|封面|表情包).{0,12}(画|生成|做|来|发|出|整)/i.test(
+        rawText,
+      );
+    if (!wantsImage) {
+      return null;
+    }
+
+    const prompt = rawText
+      .replace(/^(请|麻烦)?\s*(帮我|给我)?\s*/i, '')
+      .replace(/^(画|生成|做|来|发|出|整)(一张|张|个|幅)?/i, '')
+      .trim();
+
+    return (prompt || rawText).slice(0, 320);
+  }
+
+  private buildReplyModalityPromptSections(
+    plan: AssistantReplyModalitiesPlan,
+  ) {
+    const sections: string[] = [];
+
+    if (plan.includeVoice) {
+      sections.push(
+        '<reply_voice_mode>\n如果用户希望你用语音回复，系统会把你本轮文字内容自动转成语音播报。你的文字回复应更像自然口语，不要提到技术流程，也不要说“我现在发语音给你”。\n</reply_voice_mode>',
+      );
+    }
+
+    if (plan.imagePrompt) {
+      sections.push(
+        '<reply_image_mode>\n如果用户希望你直接画图或发图，系统会根据用户请求生成一张图片附在你这轮回复里。你的文字回复应简短自然，可作为配文或交付说明；不要说自己无法生成图片，也不要暴露底层流程。\n</reply_image_mode>',
+      );
+    }
+
+    return sections;
+  }
+
+  private async planAssistantReplyModalities(input: {
+    characterId: string;
+    message: AssistantReplyTargetMessage;
+  }): Promise<AssistantReplyModalitiesPlan> {
+    const wantsVoice =
+      this.shouldCreateVoiceReplyFromAttachment(input.message) ||
+      this.shouldCreateVoiceReplyFromText(input.message.text);
+    const requestedImagePrompt = this.extractRequestedImagePrompt(input.message);
+    if (!wantsVoice && !requestedImagePrompt) {
+      return {
+        includeVoice: false,
+        promptSections: [],
+      };
+    }
+
+    const capabilities = await this.ai.resolveRuntimeCapabilityProfile({
+      characterId: input.characterId,
+    });
+    const plan: AssistantReplyModalitiesPlan = {
+      includeVoice: wantsVoice && capabilities.supportsSpeechSynthesis,
+      imagePrompt:
+        requestedImagePrompt && capabilities.supportsImageGeneration
+          ? requestedImagePrompt
+          : undefined,
+      promptSections: [],
+    };
+    plan.promptSections = this.buildReplyModalityPromptSections(plan);
+    return plan;
+  }
+
   private async createAssistantReplyMessages(input: {
     conversationId: string;
     characterId: string;
     characterName: string;
     text: string;
-    replyToMessage: {
-      type:
-        | 'text'
-        | 'sticker'
-        | 'image'
-        | 'file'
-        | 'voice'
-        | 'contact_card'
-        | 'location_card'
-        | 'note_card';
-      attachment?: MessageAttachment;
-    };
+    modalities: AssistantReplyModalitiesPlan;
   }) {
+    const drafts: Array<
+      Pick<
+        MessageEntity,
+        | 'id'
+        | 'conversationId'
+        | 'senderType'
+        | 'senderId'
+        | 'senderName'
+        | 'type'
+        | 'text'
+        | 'attachmentKind'
+        | 'attachmentPayload'
+      >
+    > = [];
     const textMessage = {
       id: `msg_${Date.now()}_ai_text_${randomUUID().slice(0, 8)}`,
       conversationId: input.conversationId,
@@ -949,16 +1053,51 @@ export class ChatService {
       attachmentKind: null as string | null,
       attachmentPayload: null as string | null,
     };
+    drafts.push(textMessage);
 
-    if (!this.shouldCreateVoiceReply(input.replyToMessage)) {
-      return [textMessage];
+    if (input.modalities.imagePrompt) {
+      try {
+        const generated = await this.ai.generateImage({
+          prompt: input.modalities.imagePrompt,
+          conversationId: input.conversationId,
+          characterId: input.characterId,
+        });
+        const generatedAttachment = await this.saveUploadedAttachment(
+          {
+            buffer: generated.buffer,
+            mimetype: generated.mimeType,
+            originalname: `chat-reply-image.${generated.fileExtension}`,
+            size: generated.buffer.length,
+          },
+          {},
+        );
+        if (generatedAttachment.kind === 'image') {
+          drafts.push({
+            id: `msg_${Date.now()}_ai_image_${randomUUID().slice(0, 8)}`,
+            conversationId: input.conversationId,
+            senderType: 'character' as const,
+            senderId: input.characterId,
+            senderName: input.characterName,
+            type: 'image' as const,
+            text: '',
+            attachmentKind: generatedAttachment.kind,
+            attachmentPayload: JSON.stringify(generatedAttachment),
+          });
+        }
+      } catch (error) {
+        this.logger.warn(
+          'Failed to generate assistant image reply, falling back to text.',
+          {
+            conversationId: input.conversationId,
+            characterId: input.characterId,
+            errorMessage: error instanceof Error ? error.message : String(error),
+          },
+        );
+      }
     }
 
-    const capabilities = await this.ai.resolveRuntimeCapabilityProfile({
-      characterId: input.characterId,
-    });
-    if (!capabilities.supportsSpeechSynthesis) {
-      return [textMessage];
+    if (!input.modalities.includeVoice) {
+      return drafts;
     }
 
     try {
@@ -985,22 +1124,17 @@ export class ChatService {
         durationMs: synthesized.durationMs,
         transcriptText: input.text,
       };
-      const voiceMessageId = `msg_${Date.now()}_ai_voice_${randomUUID().slice(0, 8)}`;
-
-      return [
-        textMessage,
-        {
-          id: voiceMessageId,
-          conversationId: input.conversationId,
-          senderType: 'character' as const,
-          senderId: input.characterId,
-          senderName: input.characterName,
-          type: 'voice' as const,
-          text: input.text,
-          attachmentKind: attachment.kind,
-          attachmentPayload: JSON.stringify(attachment),
-        },
-      ];
+      drafts.push({
+        id: `msg_${Date.now()}_ai_voice_${randomUUID().slice(0, 8)}`,
+        conversationId: input.conversationId,
+        senderType: 'character' as const,
+        senderId: input.characterId,
+        senderName: input.characterName,
+        type: 'voice' as const,
+        text: input.text,
+        attachmentKind: attachment.kind,
+        attachmentPayload: JSON.stringify(attachment),
+      });
     } catch (error) {
       this.logger.warn(
         'Failed to synthesize assistant voice reply, falling back to text.',
@@ -1010,8 +1144,9 @@ export class ChatService {
           errorMessage: error instanceof Error ? error.message : String(error),
         },
       );
-      return [textMessage];
     }
+
+    return drafts;
   }
 
   private async enrichAttachmentForAi(

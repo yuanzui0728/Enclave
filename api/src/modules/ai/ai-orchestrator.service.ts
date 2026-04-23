@@ -640,6 +640,44 @@ export class AiOrchestratorService {
     return this.isTransientProviderFailure(error);
   }
 
+  private resolveImageGenerationModel(provider: ResolvedProviderConfig) {
+    const normalizedModel = provider.model.trim().toLowerCase();
+    if (!normalizedModel) {
+      return null;
+    }
+
+    if (/^(gpt-image|chatgpt-image|dall-e)/i.test(normalizedModel)) {
+      return provider.model;
+    }
+
+    if (/^(gpt-|o\d)/i.test(normalizedModel)) {
+      return 'gpt-image-1';
+    }
+
+    try {
+      const hostname = new URL(provider.endpoint).hostname.toLowerCase();
+      if (hostname.includes('openai.com')) {
+        return 'gpt-image-1';
+      }
+    } catch {
+      // ignore malformed endpoint and fall through
+    }
+
+    return null;
+  }
+
+  private getImageFileExtension(mimeType?: string | null) {
+    const normalizedMimeType = this.normalizeMediaMimeType(mimeType);
+    switch (normalizedMimeType) {
+      case 'image/jpeg':
+        return 'jpg';
+      case 'image/webp':
+        return 'webp';
+      default:
+        return 'png';
+    }
+  }
+
   private isModelOrCapabilityFailure(error: unknown) {
     const message = this.extractErrorMessage(error);
     const status = this.extractErrorStatus(error);
@@ -705,6 +743,10 @@ export class AiOrchestratorService {
             provider.transcriptionModel?.trim() &&
             provider.transcriptionEndpoint?.trim(),
         );
+      case 'image_generation':
+        return Boolean(
+          provider.apiKey?.trim() && this.resolveImageGenerationModel(provider),
+        );
       case 'tts':
         return Boolean(provider.apiKey?.trim() && provider.ttsModel?.trim());
       case 'text':
@@ -724,6 +766,13 @@ export class AiOrchestratorService {
           provider.transcriptionEndpoint,
           provider.transcriptionApiKey,
           provider.transcriptionModel,
+        ].join('|');
+      case 'image_generation':
+        return [
+          provider.mode,
+          provider.endpoint,
+          provider.apiKey,
+          this.resolveImageGenerationModel(provider),
         ].join('|');
       case 'tts':
         return [
@@ -2335,6 +2384,163 @@ export class AiOrchestratorService {
     return new BadGatewayException(
       '当前 Provider 暂不支持语音合成，请切换支持播报的模型或网关。',
     );
+  }
+
+  private toImageGenerationException(error: unknown) {
+    if (
+      error instanceof BadRequestException ||
+      error instanceof BadGatewayException ||
+      error instanceof ServiceUnavailableException
+    ) {
+      return error;
+    }
+
+    if (this.isAuthenticationFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前图片生成配置鉴权失败，请检查 Provider Key。',
+      );
+    }
+
+    if (this.isTransientProviderFailure(error)) {
+      return new ServiceUnavailableException(
+        '当前图片生成通道繁忙，请稍后再试。',
+      );
+    }
+
+    return new BadGatewayException(
+      '当前 Provider 暂不支持图片生成，请切换支持出图的模型或网关。',
+    );
+  }
+
+  async generateImage(
+    options: ImageGenerationOptions,
+  ): Promise<ImageGenerationResult> {
+    const prompt = options.prompt.trim();
+    if (!prompt) {
+      throw new BadRequestException('请先提供图片生成描述。');
+    }
+
+    const primaryProvider = await this.resolveRuntimeProvider({
+      characterId: options.characterId,
+    });
+    const fallbackProviders = await this.resolveFallbackProviders({
+      currentProvider: primaryProvider,
+      characterId: options.characterId,
+      capability: 'image_generation',
+    });
+    const attempts = [
+      {
+        provider: primaryProvider,
+        reason: 'primary' as const,
+      },
+      ...fallbackProviders,
+    ];
+    let attemptedProvider = false;
+    let lastError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的图片生成通道。',
+    );
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      const provider = attempt.provider;
+      const imageModel = this.resolveImageGenerationModel(provider);
+      if (!imageModel || !this.hasProviderCapability(provider, 'image_generation')) {
+        continue;
+      }
+
+      attemptedProvider = true;
+      const client = this.createProviderClient(provider);
+      try {
+        const body: OpenAI.Images.ImageGenerateParamsNonStreaming = {
+          model: imageModel,
+          prompt,
+        };
+        if (/^(gpt-image|chatgpt-image)/i.test(imageModel)) {
+          body.output_format = 'png';
+          body.quality = 'medium';
+          body.size = options.size ?? '1024x1024';
+        } else if (/^dall-e-3/i.test(imageModel)) {
+          body.quality = 'standard';
+          body.response_format = 'b64_json';
+          body.size = '1024x1024';
+        } else if (/^dall-e-2/i.test(imageModel)) {
+          body.response_format = 'b64_json';
+          body.size = '1024x1024';
+        }
+
+        const response = await client.images.generate(body);
+        const image = 'data' in response ? response.data?.[0] : undefined;
+        if (!image) {
+          throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+        }
+
+        if (image.b64_json) {
+          const buffer = Buffer.from(image.b64_json, 'base64');
+          if (!buffer.length) {
+            throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+          }
+
+          return {
+            buffer,
+            mimeType: 'image/png',
+            fileExtension: 'png',
+            provider: imageModel,
+            revisedPrompt: image.revised_prompt,
+          };
+        }
+
+        if (image.url) {
+          const asset = await this.loadAssetFromUrl(image.url, 10 * 1024 * 1024);
+          if (!asset?.buffer.length) {
+            throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+          }
+
+          const mimeType =
+            this.normalizeMediaMimeType(asset.mimeType) ?? 'image/png';
+          return {
+            buffer: asset.buffer,
+            mimeType,
+            fileExtension: this.getImageFileExtension(mimeType),
+            provider: imageModel,
+            revisedPrompt: image.revised_prompt,
+          };
+        }
+
+        throw new BadGatewayException('图片生成结果为空，请稍后再试。');
+      } catch (error) {
+        lastError = error;
+        const hasMoreFallback = index < attempts.length - 1;
+        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+          this.logger.error('image generation failed', {
+            conversationId: options.conversationId,
+            characterId: options.characterId,
+            model: imageModel,
+            promptLength: prompt.length,
+            errorMessage: this.extractErrorMessage(error),
+          });
+          throw this.toImageGenerationException(error);
+        }
+
+        this.logger.warn('image generation fallback scheduled', {
+          conversationId: options.conversationId,
+          characterId: options.characterId,
+          fromModel: imageModel,
+          toModel: this.resolveImageGenerationModel(
+            attempts[index + 1]?.provider ?? provider,
+          ),
+          reason: attempt.reason,
+          errorMessage: this.extractErrorMessage(error),
+        });
+      }
+    }
+
+    if (!attemptedProvider) {
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的图片生成通道。',
+      );
+    }
+
+    throw this.toImageGenerationException(lastError);
   }
 
   async transcribeAudio(
