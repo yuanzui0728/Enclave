@@ -33,6 +33,7 @@ const IMAGE_INPUT_PROBE_DATA_URL =
 const DIAGNOSTIC_CAPABILITIES = [
   'text',
   'image_input',
+  'audio_input',
   'transcription',
   'tts',
   'image_generation',
@@ -42,6 +43,7 @@ const DIAGNOSTIC_CAPABILITIES = [
 export type InferenceDiagnosticCapability =
   | 'text'
   | 'image_input'
+  | 'audio_input'
   | 'transcription'
   | 'tts'
   | 'image_generation'
@@ -816,7 +818,7 @@ export class InferenceService implements OnModuleInit {
       supportsTextInput: true,
       supportsNativeImageInput: supportsVision,
       supportsNativeAudioInput:
-        supportsAudio && input.apiStyle === 'openai-responses',
+        supportsAudio && input.apiStyle === 'openai-chat-completions',
       supportsNativeVideoInput: false,
       supportsNativeDocumentInput: input.apiStyle === 'openai-responses',
       supportsImageGeneration,
@@ -1175,6 +1177,12 @@ export class InferenceService implements OnModuleInit {
           capabilities.supportsNativeImageInput,
         ),
         buildMatrixItem(
+          'audio_input',
+          '原生音频理解',
+          Boolean(provider.apiKey?.trim() && provider.model?.trim()),
+          capabilities.supportsNativeAudioInput,
+        ),
+        buildMatrixItem(
           'transcription',
           '语音 / 视频转写理解',
           capabilities.supportsTranscription,
@@ -1221,6 +1229,10 @@ export class InferenceService implements OnModuleInit {
 
       if (capability === 'image_input') {
         return await this.runImageInputDiagnostic(provider, input, startedAt);
+      }
+
+      if (capability === 'audio_input') {
+        return await this.runAudioInputDiagnostic(provider, input, startedAt);
       }
 
       if (capability === 'transcription') {
@@ -1504,6 +1516,76 @@ export class InferenceService implements OnModuleInit {
       real: true,
       message: '主推理 provider 原生图片输入调用成功。',
       metadata: { capabilitySource: capabilities.capabilitySource },
+    });
+  }
+
+  private async runAudioInputDiagnostic(
+    provider: ResolvedInferenceProviderConfig,
+    input: InferenceDiagnosticInput,
+    startedAt: number,
+  ) {
+    const capabilities = await this.resolveCapabilityProfile(provider);
+    if (!provider.apiKey?.trim() || !provider.model?.trim()) {
+      return this.buildUnavailableDiagnosticResult(
+        'audio_input',
+        provider,
+        startedAt,
+        '原生音频输入诊断缺少主推理 API Key 或默认模型。',
+      );
+    }
+    if (!capabilities.supportsNativeAudioInput) {
+      return this.buildUnavailableDiagnosticResult(
+        'audio_input',
+        provider,
+        startedAt,
+        '当前模型目录或启发式判断未声明 Chat Completions 原生音频输入能力。',
+        {
+          apiStyle: provider.apiStyle,
+          capabilitySource: capabilities.capabilitySource,
+        },
+      );
+    }
+
+    const client = this.buildProviderClient({
+      endpoint: provider.endpoint,
+      apiKey: provider.apiKey,
+      model: provider.model,
+    });
+    await client.chat.completions.create({
+      model: provider.model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text:
+                input.prompt?.trim() ||
+                '这是一次原生音频输入诊断。请只回复“收到”。',
+            },
+            {
+              type: 'input_audio',
+              input_audio: {
+                data: createSpeechProbeAudioBuffer().toString('base64'),
+                format: 'wav',
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 16,
+      temperature: 0,
+    });
+
+    return this.buildDiagnosticResult('audio_input', provider, startedAt, {
+      status: 'ok',
+      success: true,
+      real: true,
+      message: '主推理 provider 原生音频输入调用成功。',
+      metadata: {
+        format: 'wav',
+        capabilitySource: capabilities.capabilitySource,
+      },
     });
   }
 

@@ -165,6 +165,7 @@ const DIAGNOSTIC_CAPABILITIES: Array<{
 }> = [
   { capability: "text", label: "文本" },
   { capability: "image_input", label: "图片理解" },
+  { capability: "audio_input", label: "原生音频理解" },
   { capability: "transcription", label: "语音转写" },
   { capability: "tts", label: "TTS" },
   { capability: "image_generation", label: "图片生成" },

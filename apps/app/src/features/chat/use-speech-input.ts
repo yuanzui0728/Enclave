@@ -34,6 +34,11 @@ type RecordedSpeechAudio = {
   durationMs: number;
 };
 
+type WebAudioWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+
 function getRecognitionConstructor() {
   if (typeof window === "undefined") {
     return null;
@@ -62,6 +67,112 @@ function getSupportedRecordingMimeType() {
   return candidates.find((candidate) =>
     MediaRecorder.isTypeSupported(candidate),
   );
+}
+
+function isNativeModelAudioMimeType(mimeType?: string) {
+  const normalized = mimeType?.toLowerCase() ?? "";
+  return (
+    normalized.includes("audio/wav") ||
+    normalized.includes("audio/wave") ||
+    normalized.includes("audio/x-wav") ||
+    normalized.includes("audio/mpeg") ||
+    normalized.includes("audio/mp3")
+  );
+}
+
+async function prepareVoiceMessageAudioBlob(blob: Blob) {
+  if (isNativeModelAudioMimeType(blob.type)) {
+    return blob;
+  }
+
+  const wavBlob = await convertAudioBlobToWav(blob);
+  return wavBlob?.size ? wavBlob : blob;
+}
+
+async function convertAudioBlobToWav(blob: Blob): Promise<Blob | null> {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const audioWindow = window as WebAudioWindow;
+  const AudioContextConstructor =
+    audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
+  if (!AudioContextConstructor) {
+    return null;
+  }
+
+  const audioContext = new AudioContextConstructor();
+  try {
+    const audioBuffer = await audioContext.decodeAudioData(
+      await blob.arrayBuffer(),
+    );
+    return encodeAudioBufferToWav(audioBuffer);
+  } catch {
+    return null;
+  } finally {
+    void audioContext.close().catch(() => undefined);
+  }
+}
+
+function encodeAudioBufferToWav(audioBuffer: AudioBuffer) {
+  const channelCount = Math.max(
+    1,
+    Math.min(2, audioBuffer.numberOfChannels),
+  );
+  const bytesPerSample = 2;
+  const blockAlign = channelCount * bytesPerSample;
+  const byteRate = audioBuffer.sampleRate * blockAlign;
+  const dataSize = audioBuffer.length * blockAlign;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  let offset = 0;
+
+  const writeString = (value: string) => {
+    for (let index = 0; index < value.length; index += 1) {
+      view.setUint8(offset + index, value.charCodeAt(index));
+    }
+    offset += value.length;
+  };
+
+  writeString("RIFF");
+  view.setUint32(offset, 36 + dataSize, true);
+  offset += 4;
+  writeString("WAVE");
+  writeString("fmt ");
+  view.setUint32(offset, 16, true);
+  offset += 4;
+  view.setUint16(offset, 1, true);
+  offset += 2;
+  view.setUint16(offset, channelCount, true);
+  offset += 2;
+  view.setUint32(offset, audioBuffer.sampleRate, true);
+  offset += 4;
+  view.setUint32(offset, byteRate, true);
+  offset += 4;
+  view.setUint16(offset, blockAlign, true);
+  offset += 2;
+  view.setUint16(offset, 16, true);
+  offset += 2;
+  writeString("data");
+  view.setUint32(offset, dataSize, true);
+  offset += 4;
+
+  const channelData = Array.from({ length: channelCount }, (_, index) =>
+    audioBuffer.getChannelData(index),
+  );
+  for (let frame = 0; frame < audioBuffer.length; frame += 1) {
+    for (let channel = 0; channel < channelCount; channel += 1) {
+      const sample = Math.max(-1, Math.min(1, channelData[channel][frame]));
+      view.setInt16(
+        offset,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true,
+      );
+      offset += bytesPerSample;
+    }
+  }
+
+  return new Blob([buffer], { type: "audio/wav" });
 }
 
 function mapRecognitionError(error: string) {
@@ -365,11 +476,11 @@ export function useSpeechInput({
           return;
         }
 
-        const audioBlob = new Blob(recordedChunks, {
+        const recordedBlob = new Blob(recordedChunks, {
           type: mediaRecorder.mimeType || mimeType || "audio/webm",
         });
 
-        if (!audioBlob.size) {
+        if (!recordedBlob.size) {
           setStatus("error");
           setError(
             translateRuntimeMessage(msg`没有录到有效语音，请再试一次。`),
@@ -377,6 +488,22 @@ export function useSpeechInput({
           setPermissionDenied(false);
           return;
         }
+
+        if (recordedBlob.size > MAX_AUDIO_BYTES) {
+          setStatus("error");
+          setError(
+            translateRuntimeMessage(
+              msg`这段录音太长了，请缩短单次语音输入时长。`,
+            ),
+          );
+          setPermissionDenied(false);
+          return;
+        }
+
+        const audioBlob =
+          mode === "voice"
+            ? await prepareVoiceMessageAudioBlob(recordedBlob)
+            : recordedBlob;
 
         if (audioBlob.size > MAX_AUDIO_BYTES) {
           setStatus("error");
@@ -390,10 +517,12 @@ export function useSpeechInput({
         }
 
         if (mode === "voice") {
+          const resolvedMimeType =
+            audioBlob.type || recordedBlob.type || mimeType || "audio/webm";
           setRecordedAudio({
             blob: audioBlob,
-            mimeType: audioBlob.type || mimeType || "audio/webm",
-            fileName: buildRecordedAudioFileName(audioBlob.type || mimeType),
+            mimeType: resolvedMimeType,
+            fileName: buildRecordedAudioFileName(resolvedMimeType),
             size: audioBlob.size,
             durationMs,
           });
@@ -413,7 +542,7 @@ export function useSpeechInput({
           formData.append(
             "file",
             audioBlob,
-            buildRecordedAudioFileName(audioBlob.type),
+            buildRecordedAudioFileName(audioBlob.type || recordedBlob.type),
           );
           formData.append("conversationId", conversationId);
           if (characterId) {

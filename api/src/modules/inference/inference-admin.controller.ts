@@ -124,6 +124,18 @@ export class InferenceAdminController {
     return this.inferenceService.runDiagnostic('image_input', body);
   }
 
+  @Post('diagnostics/audio-input')
+  diagnoseAudioInput(
+    @Body()
+    body: {
+      providerAccountId?: string;
+      characterId?: string;
+      prompt?: string;
+    },
+  ) {
+    return this.inferenceService.runDiagnostic('audio_input', body);
+  }
+
   @Post('diagnostics/transcription')
   diagnoseTranscription(
     @Body()

@@ -457,6 +457,7 @@
 - `POST /api/admin/inference/providers/test`
 - `POST /api/admin/inference/diagnostics/text`
 - `POST /api/admin/inference/diagnostics/image-input`
+- `POST /api/admin/inference/diagnostics/audio-input`
 - `POST /api/admin/inference/diagnostics/transcription`
 - `POST /api/admin/inference/diagnostics/tts`
 - `POST /api/admin/inference/diagnostics/image-generation`

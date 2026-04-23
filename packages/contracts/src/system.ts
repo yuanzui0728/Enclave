@@ -27,6 +27,7 @@ export interface InferenceStatus {
   speechReady: boolean;
   speechSynthesisReady?: boolean;
   imageInputReady?: boolean;
+  audioInputReady?: boolean;
   imageGenerationReady?: boolean;
   speechMessage?: string;
   imageGenerationMessage?: string;

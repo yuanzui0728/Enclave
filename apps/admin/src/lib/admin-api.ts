@@ -241,6 +241,7 @@ export const adminApi = {
     const pathByCapability: Record<InferenceDiagnosticCapability, string> = {
       text: "text",
       image_input: "image-input",
+      audio_input: "audio-input",
       transcription: "transcription",
       tts: "tts",
       image_generation: "image-generation",

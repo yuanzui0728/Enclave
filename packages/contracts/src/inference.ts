@@ -77,6 +77,7 @@ export interface InferenceOverview {
 export type InferenceDiagnosticCapability =
   | "text"
   | "image_input"
+  | "audio_input"
   | "transcription"
   | "tts"
   | "image_generation"

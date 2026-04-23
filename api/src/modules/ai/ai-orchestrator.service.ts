@@ -40,6 +40,7 @@ import {
 
 const DEFAULT_TTS_VOICE = 'alloy';
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_INLINE_AUDIO_BYTES = 2 * 1024 * 1024;
 const MAX_DOCUMENT_EXTRACTION_BYTES = 512 * 1024;
 const MAX_DOCUMENT_EXTRACTED_TEXT_CHARS = 1800;
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
@@ -71,6 +72,10 @@ type ResponseInputFilePart = Extract<
   OpenAI.Responses.ResponseInputMessageContentList[number],
   { type: 'input_file' }
 >;
+
+type NativeAudioInputFormat = 'wav' | 'mp3';
+
+type NativeAudioInputPart = OpenAI.Chat.ChatCompletionContentPartInputAudio;
 
 type ResolvedProviderConfig = {
   accountId?: string;
@@ -506,6 +511,75 @@ export class AiOrchestratorService {
     } catch {
       return null;
     }
+  }
+
+  private loadAssetFromDataUrl(url: string): LoadedAsset | null {
+    const match = url.match(/^data:([^;,]+)?(;base64)?,(.*)$/is);
+    if (!match) {
+      return null;
+    }
+
+    try {
+      const mimeType = this.normalizeMediaMimeType(match[1]);
+      const buffer = match[2]
+        ? Buffer.from(match[3] ?? '', 'base64')
+        : Buffer.from(decodeURIComponent(match[3] ?? ''), 'utf8');
+      return { buffer, mimeType };
+    } catch {
+      return null;
+    }
+  }
+
+  private inferNativeAudioInputFormatFromMimeType(
+    mimeType?: string | null,
+  ): NativeAudioInputFormat | undefined {
+    const normalized = this.normalizeMediaMimeType(mimeType);
+    if (!normalized) {
+      return undefined;
+    }
+
+    if (normalized === 'audio/mpeg') {
+      return 'mp3';
+    }
+    if (
+      normalized === 'audio/wav' ||
+      normalized === 'audio/wave' ||
+      normalized === 'audio/x-wav' ||
+      normalized === 'audio/vnd.wave'
+    ) {
+      return 'wav';
+    }
+
+    return undefined;
+  }
+
+  private inferNativeAudioInputFormatFromFileName(
+    fileName?: string | null,
+  ): NativeAudioInputFormat | undefined {
+    const ext = path
+      .extname(fileName ?? '')
+      .trim()
+      .toLowerCase();
+    if (ext === '.mp3') {
+      return 'mp3';
+    }
+    if (ext === '.wav' || ext === '.wave') {
+      return 'wav';
+    }
+
+    return undefined;
+  }
+
+  private inferNativeAudioInputFormat(
+    part: Extract<AiMessagePart, { type: 'audio' }>,
+    asset: LoadedAsset,
+  ): NativeAudioInputFormat | undefined {
+    return (
+      this.inferNativeAudioInputFormatFromMimeType(part.mimeType) ??
+      this.inferNativeAudioInputFormatFromMimeType(asset.mimeType) ??
+      this.inferNativeAudioInputFormatFromFileName(part.fileName) ??
+      this.inferNativeAudioInputFormatFromFileName(asset.fileName)
+    );
   }
 
   private async resolveImageInputUrl(
@@ -1210,15 +1284,19 @@ export class AiOrchestratorService {
       emptyTextFallback,
     } = request;
     const hasImageInput = this.requestContainsImageInput(request);
+    const hasAudioInput = this.requestContainsAudioInput(request);
     const hasDocumentInput = this.requestContainsDocumentInput(request);
     const capabilities = await this.resolveProviderCapabilityProfile(provider);
     const allowNativeImageInput =
       hasImageInput && capabilities.supportsNativeImageInput;
+    const allowNativeAudioInput =
+      hasAudioInput && capabilities.supportsNativeAudioInput;
     const allowNativeDocumentInput =
       hasDocumentInput && capabilities.supportsNativeDocumentInput;
 
     const execute = async (
       allowImageInput: boolean,
+      allowAudioInput: boolean,
       allowDocumentInput: boolean,
     ): Promise<GenerateReplyResult> => {
       if (provider.apiStyle === 'openai-responses') {
@@ -1269,6 +1347,7 @@ export class AiOrchestratorService {
             provider,
             isGroupChat,
             allowImageInput,
+            allowAudioInput,
           ),
         ),
       );
@@ -1277,6 +1356,7 @@ export class AiOrchestratorService {
         provider,
         isGroupChat,
         allowImageInput,
+        allowAudioInput,
       );
       const response = await client.chat.completions.create({
         model: provider.model,
@@ -1303,10 +1383,15 @@ export class AiOrchestratorService {
     };
 
     try {
-      return await execute(allowNativeImageInput, allowNativeDocumentInput);
+      return await execute(
+        allowNativeImageInput,
+        allowNativeAudioInput,
+        allowNativeDocumentInput,
+      );
     } catch (error) {
       if (
         (allowNativeImageInput && this.isUnsupportedImageInputError(error)) ||
+        (allowNativeAudioInput && this.isUnsupportedAudioInputError(error)) ||
         (allowNativeDocumentInput &&
           this.isUnsupportedDocumentInputError(error))
       ) {
@@ -1317,7 +1402,7 @@ export class AiOrchestratorService {
             errorMessage: this.extractErrorMessage(error),
           },
         );
-        return execute(false, false);
+        return execute(false, false, false);
       }
 
       throw error;
@@ -1423,17 +1508,68 @@ export class AiOrchestratorService {
     );
   }
 
+  private async collectUsableAudioParts(
+    parts: AiMessagePart[] | undefined,
+  ): Promise<NativeAudioInputPart[]> {
+    if (!parts?.length) {
+      return [];
+    }
+
+    const audioParts = parts.filter(
+      (part): part is Extract<AiMessagePart, { type: 'audio' }> =>
+        part.type === 'audio',
+    );
+    const resolvedParts: Array<NativeAudioInputPart | null> =
+      await Promise.all(
+        audioParts.map(async (part) => {
+          const loadedAsset = part.audioUrl.startsWith('data:')
+            ? this.loadAssetFromDataUrl(part.audioUrl)
+            : await this.loadAssetFromUrl(part.audioUrl, MAX_INLINE_AUDIO_BYTES);
+          if (
+            !loadedAsset?.buffer.length ||
+            loadedAsset.buffer.byteLength > MAX_INLINE_AUDIO_BYTES
+          ) {
+            return null;
+          }
+
+          const format = this.inferNativeAudioInputFormat(part, loadedAsset);
+          if (!format) {
+            return null;
+          }
+
+          return {
+            type: 'input_audio',
+            input_audio: {
+              data: loadedAsset.buffer.toString('base64'),
+              format,
+            },
+          };
+        }),
+      );
+
+    return resolvedParts.filter((part): part is NativeAudioInputPart =>
+      Boolean(part),
+    );
+  }
+
   private async buildChatCompletionMessage(
     message: ChatMessage,
     provider: ResolvedProviderConfig,
     isGroupChat?: boolean,
     allowImageInput = true,
+    allowAudioInput = true,
   ): Promise<OpenAI.Chat.ChatCompletionMessageParam> {
     const textContent = this.buildMessageText(message, isGroupChat);
     const imageParts = allowImageInput
       ? await this.collectUsableImageParts(message.parts, provider)
       : [];
-    if (!imageParts.length || message.role !== 'user') {
+    const audioParts = allowAudioInput
+      ? await this.collectUsableAudioParts(message.parts)
+      : [];
+    if (
+      message.role !== 'user' ||
+      (!imageParts.length && !audioParts.length)
+    ) {
       return {
         role: message.role,
         content: textContent,
@@ -1443,6 +1579,7 @@ export class AiOrchestratorService {
     const contentParts: Array<
       | OpenAI.Chat.ChatCompletionContentPartText
       | OpenAI.Chat.ChatCompletionContentPartImage
+      | NativeAudioInputPart
     > = [];
     if (textContent.trim()) {
       contentParts.push({ type: 'text', text: textContent });
@@ -1456,6 +1593,10 @@ export class AiOrchestratorService {
           detail: part.detail ?? 'auto',
         },
       });
+    });
+
+    audioParts.forEach((part) => {
+      contentParts.push(part);
     });
 
     return {
@@ -1522,6 +1663,12 @@ export class AiOrchestratorService {
     );
   }
 
+  private requestContainsAudioInput(request: PreparedReplyRequest) {
+    return [...request.conversationHistory, request.currentUserMessage].some(
+      (message) => message.parts?.some((part) => part.type === 'audio'),
+    );
+  }
+
   private requestContainsDocumentInput(request: PreparedReplyRequest) {
     return [...request.conversationHistory, request.currentUserMessage].some(
       (message) => message.parts?.some((part) => part.type === 'document'),
@@ -1541,6 +1688,23 @@ export class AiOrchestratorService {
     }
 
     return /image|input_image|image_url|vision|multimodal|does not support images|unsupported image|content part/i.test(
+      message,
+    );
+  }
+
+  private isUnsupportedAudioInputError(error: unknown) {
+    const status = this.extractErrorStatus(error);
+    const message = this.extractErrorMessage(error);
+    if (
+      status !== undefined &&
+      status !== 400 &&
+      status !== 415 &&
+      status !== 422
+    ) {
+      return false;
+    }
+
+    return /audio|input_audio|unsupported.*audio|does not support audio|content part/i.test(
       message,
     );
   }

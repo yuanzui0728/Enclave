@@ -2593,6 +2593,7 @@ export class SystemService {
     const speechSynthesisReady = isRealDiagnosticOk('tts');
     const imageGenerationReady = isRealDiagnosticOk('image_generation');
     const imageInputReady = isRealDiagnosticOk('image_input');
+    const audioInputReady = isRealDiagnosticOk('audio_input');
     const digitalHumanRealReady = isRealDiagnosticOk('digital_human');
     const speechReady = transcriptionReady && speechSynthesisReady;
     const speechMessage = speechReady
@@ -2652,6 +2653,7 @@ export class SystemService {
         speechReady,
         speechSynthesisReady,
         imageInputReady,
+        audioInputReady,
         imageGenerationReady,
         speechMessage,
         imageGenerationMessage,
