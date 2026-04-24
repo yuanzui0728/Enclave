@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BellRing,
   CheckCheck,
@@ -24,8 +24,6 @@ type ReminderPanelNotice = {
   message: string;
 };
 
-const DEFAULT_VISIBLE_TASK_COUNT = 3;
-
 export function ReminderTaskPanel({
   conversationId,
   variant = "mobile",
@@ -33,7 +31,7 @@ export function ReminderTaskPanel({
 }: ReminderTaskPanelProps) {
   const isDesktop = variant === "desktop";
   const isDetailsSurface = surface === "details";
-  const [expanded, setExpanded] = useState(isDesktop);
+  const [expanded, setExpanded] = useState(false);
   const [notice, setNotice] = useState<ReminderPanelNotice | null>(null);
   const {
     tasks,
@@ -48,9 +46,9 @@ export function ReminderTaskPanel({
   } = useReminderRuntimeTasks();
 
   useEffect(() => {
-    setExpanded(isDesktop);
+    setExpanded(false);
     setNotice(null);
-  }, [conversationId, isDesktop]);
+  }, [conversationId]);
 
   useEffect(() => {
     if (!notice) {
@@ -60,12 +58,6 @@ export function ReminderTaskPanel({
     const timer = window.setTimeout(() => setNotice(null), 2200);
     return () => window.clearTimeout(timer);
   }, [notice]);
-
-  const visibleTasks = useMemo(
-    () => (expanded ? tasks : tasks.slice(0, DEFAULT_VISIBLE_TASK_COUNT)),
-    [expanded, tasks],
-  );
-  const hiddenCount = Math.max(tasks.length - visibleTasks.length, 0);
 
   const handleComplete = async (task: ReminderTaskRecord) => {
     try {
@@ -161,7 +153,12 @@ export function ReminderTaskPanel({
           !isDetailsSurface && (isDesktop ? "px-4 py-3" : "px-3 py-2.5"),
         )}
       >
-        <div className="flex items-start justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          className="flex w-full items-start justify-between gap-3 text-left"
+        >
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(7,193,96,0.12)] text-[#07c160]">
@@ -172,134 +169,129 @@ export function ReminderTaskPanel({
                   小盯替你记着 {tasks.length} 件事
                 </div>
                 <div className="mt-0.5 text-[11px] text-[color:var(--text-secondary)]">
-                  直接点按就能完成、延后或删掉提醒。
+                  {expanded
+                    ? "直接点按就能完成、延后或删掉提醒。"
+                    : "点按展开查看提醒。"}
                 </div>
               </div>
             </div>
           </div>
 
-          {tasks.length > DEFAULT_VISIBLE_TASK_COUNT ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 rounded-full px-3 text-[11px]"
-              onClick={() => setExpanded((current) => !current)}
-            >
-              {expanded ? "收起" : "展开"}
-              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </Button>
-          ) : null}
-        </div>
+          <span className="mt-0.5 flex shrink-0 items-center gap-1 text-[11px] text-[color:var(--text-secondary)]">
+            {expanded ? "收起" : "展开"}
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </span>
+        </button>
 
-        {notice ? (
-          <InlineNotice
-            tone={notice.tone === "success" ? "success" : "danger"}
-            className="mt-3 rounded-[16px] px-3 py-2 text-[11px]"
-          >
-            {notice.message}
-          </InlineNotice>
-        ) : null}
-
-        {error ? (
-          <InlineNotice tone="danger" className="mt-3 rounded-[16px] px-3 py-2 text-[11px]">
-            {error}
-          </InlineNotice>
-        ) : null}
-
-        {isLoading ? (
-          <div className="mt-3 flex items-center gap-2 text-[11px] text-[color:var(--text-secondary)]">
-            <LoaderCircle size={14} className="animate-spin" />
-            正在同步提醒任务…
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className="mt-3 rounded-[16px] border border-dashed border-[rgba(15,23,42,0.1)] bg-[rgba(255,255,255,0.86)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-secondary)]">
-            还没有在替你记的事。直接发一句“明早8点提醒我吃药”或“每周五提醒我买猫粮”就行。
-          </div>
-        ) : (
-          <div className="mt-3 space-y-2.5">
-            {visibleTasks.map((task) => {
-              const taskPending =
-                completePendingTaskId === task.id ||
-                snoozePendingTaskId === task.id ||
-                cancelPendingTaskId === task.id;
-
-              return (
-                <article
-                  key={task.id}
-                  className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/95 px-3 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
-                          {task.title}
-                        </div>
-                        <TagBadge
-                          tone={task.priority === "hard" ? "warning" : "info"}
-                          className="px-2 py-0.5 text-[10px]"
-                        >
-                          {getReminderTaskBadgeLabel(task)}
-                        </TagBadge>
-                      </div>
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[color:var(--text-secondary)]">
-                        <Clock3 size={12} />
-                        <span>{buildReminderTaskMeta(task)}</span>
-                      </div>
-                    </div>
-
-                    {taskPending ? (
-                      <LoaderCircle
-                        size={14}
-                        className="mt-0.5 shrink-0 animate-spin text-[color:var(--text-muted)]"
-                      />
-                    ) : null}
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <ActionButton
-                      label="完成"
-                      icon={<CheckCheck size={13} />}
-                      disabled={taskPending}
-                      onClick={() => {
-                        void handleComplete(task);
-                      }}
-                    />
-                    <ActionButton
-                      label="30分后"
-                      disabled={taskPending}
-                      onClick={() => {
-                        void handleSnooze30Minutes(task);
-                      }}
-                    />
-                    <ActionButton
-                      label="明天"
-                      disabled={taskPending}
-                      onClick={() => {
-                        void handleSnoozeTomorrow(task);
-                      }}
-                    />
-                    <ActionButton
-                      label="删除"
-                      icon={<Trash2 size={12} />}
-                      tone="danger"
-                      disabled={taskPending}
-                      onClick={() => {
-                        void handleCancel(task);
-                      }}
-                    />
-                  </div>
-                </article>
-              );
-            })}
-
-            {!expanded && hiddenCount > 0 ? (
-              <div className="px-1 text-[11px] text-[color:var(--text-secondary)]">
-                还有 {hiddenCount} 件提醒，点右上角展开。
-              </div>
+        {expanded ? (
+          <>
+            {notice ? (
+              <InlineNotice
+                tone={notice.tone === "success" ? "success" : "danger"}
+                className="mt-3 rounded-[16px] px-3 py-2 text-[11px]"
+              >
+                {notice.message}
+              </InlineNotice>
             ) : null}
-          </div>
-        )}
+
+            {error ? (
+              <InlineNotice
+                tone="danger"
+                className="mt-3 rounded-[16px] px-3 py-2 text-[11px]"
+              >
+                {error}
+              </InlineNotice>
+            ) : null}
+
+            {isLoading ? (
+              <div className="mt-3 flex items-center gap-2 text-[11px] text-[color:var(--text-secondary)]">
+                <LoaderCircle size={14} className="animate-spin" />
+                正在同步提醒任务…
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="mt-3 rounded-[16px] border border-dashed border-[rgba(15,23,42,0.1)] bg-[rgba(255,255,255,0.86)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+                还没有在替你记的事。直接发一句“明早8点提醒我吃药”或“每周五提醒我买猫粮”就行。
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2.5">
+                {tasks.map((task) => {
+                  const taskPending =
+                    completePendingTaskId === task.id ||
+                    snoozePendingTaskId === task.id ||
+                    cancelPendingTaskId === task.id;
+
+                  return (
+                    <article
+                      key={task.id}
+                      className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/95 px-3 py-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                              {task.title}
+                            </div>
+                            <TagBadge
+                              tone={task.priority === "hard" ? "warning" : "info"}
+                              className="px-2 py-0.5 text-[10px]"
+                            >
+                              {getReminderTaskBadgeLabel(task)}
+                            </TagBadge>
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[color:var(--text-secondary)]">
+                            <Clock3 size={12} />
+                            <span>{buildReminderTaskMeta(task)}</span>
+                          </div>
+                        </div>
+
+                        {taskPending ? (
+                          <LoaderCircle
+                            size={14}
+                            className="mt-0.5 shrink-0 animate-spin text-[color:var(--text-muted)]"
+                          />
+                        ) : null}
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <ActionButton
+                          label="完成"
+                          icon={<CheckCheck size={13} />}
+                          disabled={taskPending}
+                          onClick={() => {
+                            void handleComplete(task);
+                          }}
+                        />
+                        <ActionButton
+                          label="30分后"
+                          disabled={taskPending}
+                          onClick={() => {
+                            void handleSnooze30Minutes(task);
+                          }}
+                        />
+                        <ActionButton
+                          label="明天"
+                          disabled={taskPending}
+                          onClick={() => {
+                            void handleSnoozeTomorrow(task);
+                          }}
+                        />
+                        <ActionButton
+                          label="删除"
+                          icon={<Trash2 size={12} />}
+                          tone="danger"
+                          disabled={taskPending}
+                          onClick={() => {
+                            void handleCancel(task);
+                          }}
+                        />
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ) : null}
       </div>
     </section>
   );
