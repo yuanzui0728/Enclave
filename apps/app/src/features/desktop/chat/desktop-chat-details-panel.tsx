@@ -8,6 +8,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -39,6 +40,7 @@ import {
   type GroupMember,
   type UpdateFriendProfileRequest,
 } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { ChevronRight, Minus, Plus, Search, X } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
@@ -139,6 +141,8 @@ type DesktopGroupMemberBrowserFilter = "all" | "owner" | "admin" | "character";
 type EditableDirectProfileField = "remarkName" | "tags" | null;
 
 const DESKTOP_GROUP_MEMBER_PREVIEW_COUNT = 10;
+const DESKTOP_CHAT_DETAILS_REPORT_REASON = "desktop_chat_details_report";
+const DESKTOP_CHAT_DETAILS_BLOCK_REASON = "desktop_chat_details_block";
 
 export function DesktopChatDetailsPanel({
   conversation,
@@ -170,6 +174,7 @@ function DirectChatDetailsPanel({
   onOpenHistory,
   onCreateGroup,
 }: DesktopChatDetailsPanelProps) {
+  const t = translateRuntimeMessage;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
@@ -265,21 +270,23 @@ function DirectChatDetailsPanel({
   const signature =
     targetCharacter?.currentStatus?.trim() ||
     targetCharacter?.bio?.trim() ||
-    (isFriend ? "这个联系人还没有签名。" : "这个角色还没有签名。");
+    (isFriend
+      ? t(msg`这个联系人还没有签名。`)
+      : t(msg`这个角色还没有签名。`));
   const identifier = targetCharacterId
     ? `yinjie_${targetCharacterId.slice(0, 8)}`
     : undefined;
   const relationshipSummary = isFriend
     ? remarkName
-      ? `昵称：${targetCharacter?.name ?? conversation.title}`
-      : targetCharacter?.relationship || "联系人"
-    : targetCharacter?.relationship || "世界角色";
+      ? t(msg`昵称：${targetCharacter?.name ?? conversation.title}`)
+      : targetCharacter?.relationship || t(msg`联系人`)
+    : targetCharacter?.relationship || t(msg`世界角色`);
   const backgroundLabel = getChatBackgroundLabel(
     backgroundQuery.data?.effectiveBackground ?? null,
   );
   const tagValue = friendship?.tags?.length
     ? friendship.tags.join("、")
-    : "未设置";
+    : t(msg`未设置`);
 
   useEffect(() => {
     setProfileForm({
@@ -292,7 +299,7 @@ function DirectChatDetailsPanel({
     mutationFn: (pinned: boolean) =>
       setConversationPinned(conversation.id, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
-      setNotice(pinned ? "聊天已置顶。" : "聊天已取消置顶。");
+      setNotice(pinned ? t(msg`聊天已置顶。`) : t(msg`聊天已取消置顶。`));
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -303,7 +310,7 @@ function DirectChatDetailsPanel({
     mutationFn: (muted: boolean) =>
       setConversationMuted(conversation.id, { muted }, baseUrl),
     onSuccess: async (_, muted) => {
-      setNotice(muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+      setNotice(muted ? t(msg`已开启消息免打扰。`) : t(msg`已关闭消息免打扰。`));
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -314,7 +321,7 @@ function DirectChatDetailsPanel({
     mutationFn: (starred: boolean) =>
       setFriendStarred(targetCharacterId, { starred }, baseUrl),
     onSuccess: async (_, starred) => {
-      setNotice(starred ? "已设为星标朋友。" : "已取消星标朋友。");
+      setNotice(starred ? t(msg`已设为星标朋友。`) : t(msg`已取消星标朋友。`));
       await queryClient.invalidateQueries({
         queryKey: ["app-friends", baseUrl],
       });
@@ -330,7 +337,7 @@ function DirectChatDetailsPanel({
       return updateFriendProfile(targetCharacterId, payload, baseUrl);
     },
     onSuccess: async () => {
-      setNotice("联系人资料已更新。");
+      setNotice(t(msg`联系人资料已更新。`));
       await queryClient.invalidateQueries({
         queryKey: ["app-friends", baseUrl],
       });
@@ -340,7 +347,7 @@ function DirectChatDetailsPanel({
   const clearMutation = useMutation({
     mutationFn: () => clearConversationHistory(conversation.id, baseUrl),
     onSuccess: async () => {
-      setNotice("聊天记录已清空。");
+      setNotice(t(msg`聊天记录已清空。`));
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversation-messages", baseUrl, conversation.id],
@@ -372,14 +379,14 @@ function DirectChatDetailsPanel({
         {
           targetType: "character",
           targetId: targetCharacterId,
-          reason: "桌面聊天信息面板举报",
-          details: `来自会话 ${conversation.id}`,
+          reason: DESKTOP_CHAT_DETAILS_REPORT_REASON,
+          details: `conversation:${conversation.id}`,
         },
         baseUrl,
       );
     },
     onSuccess: () => {
-      setNotice("已提交投诉。");
+      setNotice(t(msg`已提交投诉。`));
     },
   });
 
@@ -392,13 +399,13 @@ function DirectChatDetailsPanel({
       return blockCharacter(
         {
           characterId: targetCharacterId,
-          reason: "来自桌面聊天信息面板加入黑名单",
+          reason: DESKTOP_CHAT_DETAILS_BLOCK_REASON,
         },
         baseUrl,
       );
     },
     onSuccess: async () => {
-      setNotice("已加入黑名单。");
+      setNotice(t(msg`已加入黑名单。`));
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-chat-details-blocked", baseUrl],
@@ -461,9 +468,9 @@ function DirectChatDetailsPanel({
   const currentEditDialog =
     editingField === "remarkName"
       ? {
-          title: "设置备注",
-          description: "备注名会优先显示在聊天信息和通讯录里。",
-          placeholder: "给联系人设置备注名",
+          title: t(msg`设置备注`),
+          description: t(msg`备注名会优先显示在聊天信息和通讯录里。`),
+          placeholder: t(msg`给联系人设置备注名`),
           initialValue: profileForm.remarkName,
           onConfirm: async (value: string) => {
             const nextForm = { ...profileForm, remarkName: value };
@@ -474,9 +481,9 @@ function DirectChatDetailsPanel({
         }
       : editingField === "tags"
         ? {
-            title: "设置标签",
-            description: "用逗号分隔多个标签，例如：同事，插画，策展。",
-            placeholder: "输入联系人标签",
+            title: t(msg`设置标签`),
+            description: t(msg`用逗号分隔多个标签，例如：同事，插画，策展。`),
+            placeholder: t(msg`输入联系人标签`),
             initialValue: profileForm.tags,
             onConfirm: async (value: string) => {
               const nextForm = { ...profileForm, tags: value };
@@ -512,11 +519,11 @@ function DirectChatDetailsPanel({
   const activeConfirm =
     confirmAction === "hide"
       ? {
-          title: "删除聊天",
+          title: t(msg`删除聊天`),
           description:
-            "删除后，这段聊天会从消息列表中移除；有新消息时会再次出现。",
-          confirmLabel: "删除聊天",
-          pendingLabel: "正在删除...",
+            t(msg`删除后，这段聊天会从消息列表中移除；有新消息时会再次出现。`),
+          confirmLabel: t(msg`删除聊天`),
+          pendingLabel: t(msg`正在删除...`),
           onConfirm: () => {
             setConfirmAction(null);
             hideMutation.mutate();
@@ -524,10 +531,10 @@ function DirectChatDetailsPanel({
         }
       : confirmAction === "clear"
         ? {
-            title: "清空聊天记录",
-            description: "确认清空这段聊天记录吗？此操作只影响当前会话视图。",
-            confirmLabel: "清空记录",
-            pendingLabel: "正在清空...",
+            title: t(msg`清空聊天记录`),
+            description: t(msg`确认清空这段聊天记录吗？此操作只影响当前会话视图。`),
+            confirmLabel: t(msg`清空记录`),
+            pendingLabel: t(msg`正在清空...`),
             danger: true,
             onConfirm: () => {
               setConfirmAction(null);
@@ -536,11 +543,11 @@ function DirectChatDetailsPanel({
           }
         : confirmAction === "report"
           ? {
-              title: "提交投诉",
+              title: t(msg`提交投诉`),
               description:
-                "确认提交投诉吗？系统会记录当前会话上下文用于后续处理。",
-              confirmLabel: "提交投诉",
-              pendingLabel: "正在提交...",
+                t(msg`确认提交投诉吗？系统会记录当前会话上下文用于后续处理。`),
+              confirmLabel: t(msg`提交投诉`),
+              pendingLabel: t(msg`正在提交...`),
               danger: true,
               onConfirm: () => {
                 setConfirmAction(null);
@@ -549,11 +556,11 @@ function DirectChatDetailsPanel({
             }
           : confirmAction === "block"
             ? {
-                title: "加入黑名单",
+                title: t(msg`加入黑名单`),
                 description:
-                  "加入黑名单后，将不再接收该角色的互动。确认继续吗？",
-                confirmLabel: "加入黑名单",
-                pendingLabel: "正在加入...",
+                  t(msg`加入黑名单后，将不再接收该角色的互动。确认继续吗？`),
+                confirmLabel: t(msg`加入黑名单`),
+                pendingLabel: t(msg`正在加入...`),
                 danger: true,
                 onConfirm: () => {
                   setConfirmAction(null);
@@ -607,50 +614,50 @@ function DirectChatDetailsPanel({
               disabled={busy || !targetCharacterId}
               className="rounded-[10px] bg-[#07c160] px-4 text-white shadow-none hover:bg-[#06ad56]"
             >
-              {hasPendingFriendRequest ? "待处理" : "添加到通讯录"}
+              {hasPendingFriendRequest ? t(msg`待处理`) : t(msg`添加到通讯录`)}
             </Button>
           ) : undefined
         }
       />
 
       {characterQuery.isLoading ? (
-        <DesktopContactProfileSection title="资料">
+        <DesktopContactProfileSection title={t(msg`资料`)}>
           <div className="px-6 py-4">
-            <LoadingBlock label="正在读取聊天信息..." />
+            <LoadingBlock label={t(msg`正在读取聊天信息...`)} />
           </div>
         </DesktopContactProfileSection>
       ) : (
         <>
-          <DesktopContactProfileSection title="基础资料">
+          <DesktopContactProfileSection title={t(msg`基础资料`)}>
             {isFriend ? (
               <>
                 <DesktopContactProfileActionRow
-                  label="备注"
-                  value={remarkName || "未设置"}
+                  label={t(msg`备注`)}
+                  value={remarkName || t(msg`未设置`)}
                   onClick={() => setEditingField("remarkName")}
                   valueMuted={!remarkName}
                 />
                 <DesktopContactProfileRow
-                  label="昵称"
+                  label={t(msg`昵称`)}
                   value={targetCharacter?.name ?? conversation.title}
                 />
                 <DesktopContactProfileRow
-                  label="隐界号"
-                  value={identifier ?? "未设置"}
+                  label={t(msg`隐界号`)}
+                  value={identifier ?? t(msg`未设置`)}
                   muted={!identifier}
                 />
                 <DesktopContactProfileRow
-                  label="地区"
-                  value={friendship?.region?.trim() || "未设置"}
+                  label={t(msg`地区`)}
+                  value={friendship?.region?.trim() || t(msg`未设置`)}
                   muted={!friendship?.region?.trim()}
                 />
                 <DesktopContactProfileRow
-                  label="来源"
-                  value={friendship?.source?.trim() || "未设置"}
+                  label={t(msg`来源`)}
+                  value={friendship?.source?.trim() || t(msg`未设置`)}
                   muted={!friendship?.source?.trim()}
                 />
                 <DesktopContactProfileActionRow
-                  label="标签"
+                  label={t(msg`标签`)}
                   value={tagValue}
                   onClick={() => setEditingField("tags")}
                   valueMuted={!friendship?.tags?.length}
@@ -659,34 +666,34 @@ function DirectChatDetailsPanel({
             ) : (
               <>
                 <DesktopContactProfileRow
-                  label="昵称"
+                  label={t(msg`昵称`)}
                   value={targetCharacter?.name ?? conversation.title}
                 />
                 <DesktopContactProfileRow
-                  label="身份"
-                  value={targetCharacter?.relationship || "世界角色"}
+                  label={t(msg`身份`)}
+                  value={targetCharacter?.relationship || t(msg`世界角色`)}
                 />
                 <DesktopContactProfileRow
-                  label="隐界号"
-                  value={identifier ?? "未设置"}
+                  label={t(msg`隐界号`)}
+                  value={identifier ?? t(msg`未设置`)}
                   muted={!identifier}
                 />
               </>
             )}
           </DesktopContactProfileSection>
 
-          <DesktopContactProfileSection title="内容入口">
+          <DesktopContactProfileSection title={t(msg`内容入口`)}>
             <DesktopContactProfileActionRow
-              label="朋友圈"
-              value="查看这位角色最近的朋友圈"
+              label={t(msg`朋友圈`)}
+              value={t(msg`查看这位角色最近的朋友圈`)}
               onClick={handleOpenMoments}
             />
             <DesktopContactProfileActionRow
-              label="共同群聊"
+              label={t(msg`共同群聊`)}
               value={
                 commonGroups.length
-                  ? `${commonGroups.length} 个共同群聊`
-                  : "暂时没有共同群聊"
+                  ? t(msg`${commonGroups.length} 个共同群聊`)
+                  : t(msg`暂时没有共同群聊`)
               }
               onClick={() => {
                 if (!commonGroups[0]) {
@@ -703,8 +710,12 @@ function DirectChatDetailsPanel({
               valueMuted={!commonGroups.length}
             />
             <DesktopContactProfileActionRow
-              label="更多资料"
-              value={isFriend ? "查看角色档案与扩展介绍" : "查看角色资料"}
+              label={t(msg`更多资料`)}
+              value={
+                isFriend
+                  ? t(msg`查看角色档案与扩展介绍`)
+                  : t(msg`查看角色资料`)
+              }
               onClick={() => {
                 if (!targetCharacterId) {
                   return;
@@ -726,9 +737,9 @@ function DirectChatDetailsPanel({
             />
           </DesktopContactProfileSection>
 
-          <DesktopContactProfileSection title="更多信息">
+          <DesktopContactProfileSection title={t(msg`更多信息`)}>
             <DesktopContactProfileRow
-              label="个性签名"
+              label={t(msg`个性签名`)}
               value={signature}
               multiline
               muted={
@@ -738,15 +749,15 @@ function DirectChatDetailsPanel({
             />
           </DesktopContactProfileSection>
 
-          <DesktopContactProfileSection title="聊天信息">
+          <DesktopContactProfileSection title={t(msg`聊天信息`)}>
             <DesktopContactProfileActionRow
-              label="查找记录"
-              value="搜索当前聊天"
+              label={t(msg`查找记录`)}
+              value={t(msg`搜索当前聊天`)}
               onClick={onOpenHistory}
             />
             <DesktopContactProfileActionRow
-              label="聊天文件"
-              value="查看本聊天附件"
+              label={t(msg`聊天文件`)}
+              value={t(msg`查看本聊天附件`)}
               onClick={() => {
                 void navigate({
                   to: "/desktop/chat-files",
@@ -755,7 +766,7 @@ function DirectChatDetailsPanel({
               }}
             />
             <DesktopContactProfileActionRow
-              label="聊天背景"
+              label={t(msg`聊天背景`)}
               value={backgroundLabel}
               onClick={() => {
                 void navigate({
@@ -772,8 +783,8 @@ function DirectChatDetailsPanel({
               }}
             />
             <DesktopContactProfileActionRow
-              label="发起群聊"
-              value="和对方创建新群"
+              label={t(msg`发起群聊`)}
+              value={t(msg`和对方创建新群`)}
               onClick={() => {
                 if (onCreateGroup) {
                   onCreateGroup({
@@ -796,9 +807,9 @@ function DirectChatDetailsPanel({
           </DesktopContactProfileSection>
 
           {isFriend ? (
-            <DesktopContactProfileSection title="聊天设置">
+            <DesktopContactProfileSection title={t(msg`聊天设置`)}>
               <DesktopContactProfileToggleRow
-                label="星标朋友"
+                label={t(msg`星标朋友`)}
                 checked={friendship?.isStarred ?? false}
                 disabled={busy}
                 onToggle={() =>
@@ -806,13 +817,13 @@ function DirectChatDetailsPanel({
                 }
               />
               <DesktopContactProfileToggleRow
-                label="置顶聊天"
+                label={t(msg`置顶聊天`)}
                 checked={conversation.isPinned}
                 disabled={busy}
                 onToggle={() => pinMutation.mutate(!conversation.isPinned)}
               />
               <DesktopContactProfileToggleRow
-                label="消息免打扰"
+                label={t(msg`消息免打扰`)}
                 checked={conversation.isMuted}
                 disabled={busy}
                 onToggle={() => muteMutation.mutate(!conversation.isMuted)}
@@ -821,12 +832,16 @@ function DirectChatDetailsPanel({
           ) : null}
 
           <DesktopContactProfileSection
-            title={isFriend ? "联系人管理" : "聊天管理"}
+            title={isFriend ? t(msg`联系人管理`) : t(msg`聊天管理`)}
           >
             {isFriend ? (
               <DesktopContactProfileActionRow
-                label="加入黑名单"
-                value={isBlocked ? "已加入黑名单" : "不再接收该角色互动"}
+                label={t(msg`加入黑名单`)}
+                value={
+                  isBlocked
+                    ? t(msg`已加入黑名单`)
+                    : t(msg`不再接收该角色互动`)
+                }
                 danger
                 disabled={busy || isBlocked || !targetCharacterId}
                 onClick={() => setConfirmAction("block")}
@@ -834,28 +849,32 @@ function DirectChatDetailsPanel({
             ) : null}
             {!isFriend ? (
               <DesktopContactProfileActionRow
-                label="添加到通讯录"
-                value={hasPendingFriendRequest ? "待处理" : "发送好友申请"}
+                label={t(msg`添加到通讯录`)}
+                value={
+                  hasPendingFriendRequest
+                    ? t(msg`待处理`)
+                    : t(msg`发送好友申请`)
+                }
                 disabled={busy || !targetCharacterId}
                 onClick={handleAddToContacts}
               />
             ) : null}
             <DesktopContactProfileActionRow
-              label="删除聊天"
-              value="从消息列表移除"
+              label={t(msg`删除聊天`)}
+              value={t(msg`从消息列表移除`)}
               disabled={busy}
               onClick={() => setConfirmAction("hide")}
             />
             <DesktopContactProfileActionRow
-              label="清空聊天记录"
-              value="删除当前聊天内容"
+              label={t(msg`清空聊天记录`)}
+              value={t(msg`删除当前聊天内容`)}
               danger
               disabled={busy}
               onClick={() => setConfirmAction("clear")}
             />
             <DesktopContactProfileActionRow
-              label="投诉"
-              value="提交聊天相关投诉"
+              label={t(msg`投诉`)}
+              value={t(msg`提交聊天相关投诉`)}
               danger
               disabled={busy || !targetCharacterId}
               onClick={() => setConfirmAction("report")}

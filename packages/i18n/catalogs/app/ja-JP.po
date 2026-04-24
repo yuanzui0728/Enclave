@@ -25,6 +25,11 @@ msgstr " 現在の経路: {speechProviderSummary}。"
 msgid "[表情] {0}"
 msgstr "[スタンプ] {0}"
 
+#. placeholder {0}: commonGroups.length
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:695
+msgid "{0} 个共同群聊"
+msgstr "{0}件の共通グループチャット"
+
 #. placeholder {0}: membersQuery.data.length
 #: apps/app/src/routes/group-chat-details-page.tsx:542
 msgid "{0} 人群聊"
@@ -100,6 +105,10 @@ msgstr "AI が再生中"
 msgid "AI 语音"
 msgstr "AI音声"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:843
+msgid "不再接收该角色互动"
+msgstr "このキャラクターからのやり取りを受け取りません"
+
 #: apps/app/src/routes/chat-details-page.tsx:1205
 msgid "不再接收该角色后续互动"
 msgstr "このキャラクターから今後のやり取りを受け取りません"
@@ -124,6 +133,15 @@ msgstr "世界の主人は削除一覧に表示されません。"
 #: apps/app/src/routes/chat-details-page.tsx:320
 msgid "世界联系人"
 msgstr "世界の連絡先"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:283
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:674
+msgid "世界角色"
+msgstr "世界のキャラクター"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:742
+msgid "个性签名"
+msgstr "シグネチャ"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:509
 msgid "仅清空当前群聊历史消息，群成员和群资料会继续保留。"
@@ -150,6 +168,14 @@ msgstr "左側でメンバーを選択すると、現在のグループチャッ
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:282
 msgid "从左侧勾选联系人后，就可以一次性把他们加入当前群聊。"
 msgstr "左側で連絡先を選択すると、現在のグループチャットへまとめて追加できます。"
+
+#: apps/app/src/features/contacts/desktop-contact-profile-blocks.tsx:21
+msgid "从左侧通讯录选择好友后，这里会显示联系人资料、内容入口和管理操作。"
+msgstr "左側の連絡先から友だちを選ぶと、ここに連絡先情報、入口、管理操作が表示されます。"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:864
+msgid "从消息列表移除"
+msgstr "メッセージ一覧から削除"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:117
 msgid "从通讯录里选择要加入“{groupName}”的角色。"
@@ -235,6 +261,10 @@ msgstr "全グループメンバー"
 msgid "共 {totalResults} 条"
 msgstr "全{totalResults}件"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:692
+msgid "共同群聊"
+msgstr "共通のグループチャット"
+
 #. placeholder {0}: input.keyword
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1046
 msgid "关键词 · {0}"
@@ -308,6 +338,10 @@ msgstr "メンバー削除ダイアログを閉じる"
 msgid "内容不能为空"
 msgstr "内容は空にできません"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:685
+msgid "内容入口"
+msgstr "コンテンツ入口"
+
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:78
 msgid "最多支持 9 张图片一起发送，可逐张移除。"
 msgstr "最大 9 枚の画像をまとめて送信でき、1 枚ずつ削除できます。"
@@ -364,6 +398,10 @@ msgstr "グループチャットを共有"
 msgid "分类 · {0}"
 msgstr "分類 · {0}"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:524
+msgid "删除后，这段聊天会从消息列表中移除；有新消息时会再次出现。"
+msgstr "削除すると、このチャットはメッセージ一覧から消え、新しいメッセージが届くと再表示されます。"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:518
 #: apps/app/src/routes/group-chat-details-page.tsx:523
 #: apps/app/src/routes/group-chat-details-page.tsx:868
@@ -374,10 +412,23 @@ msgstr "削除して退出"
 msgid "删除并退出后，该群聊会从当前世界中移除，后续需要重新建群才能继续使用。"
 msgstr "削除して退出すると、このグループチャットは現在の世界から削除されます。今後使うには新しくグループを作成する必要があります。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:870
+msgid "删除当前聊天内容"
+msgstr "現在のチャット内容を削除"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:522
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:525
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:863
+msgid "删除聊天"
+msgstr "チャットを削除"
+
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:310
 msgid "加入群聊"
 msgstr "グループに追加"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:559
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:562
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:839
 #: apps/app/src/routes/chat-details-page.tsx:718
 #: apps/app/src/routes/chat-details-page.tsx:721
 #: apps/app/src/routes/chat-details-page.tsx:1202
@@ -387,6 +438,10 @@ msgstr "ブロック"
 #: apps/app/src/routes/chat-details-page.tsx:720
 msgid "加入黑名单后，将不再接收该角色的互动，也不会再继续这段聊天。"
 msgstr "ブロックすると、このキャラクターからのやり取りは届かなくなり、このチャットも続行されません。"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:561
+msgid "加入黑名单后，将不再接收该角色的互动。确认继续吗？"
+msgstr "ブロックすると、このキャラクターからのやり取りは届かなくなります。続行しますか？"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:401
 msgid "单聊"
@@ -409,6 +464,7 @@ msgstr "設定へ"
 msgid "发布或修改群内置顶公告"
 msgstr "グループ内の固定告知を公開または編集"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:786
 #: apps/app/src/routes/chat-details-page.tsx:671
 msgid "发起群聊"
 msgstr "グループチャットを始める"
@@ -456,6 +512,10 @@ msgstr "送信後、対象の会話には開けるノートカードとして表
 msgid "发送图片"
 msgstr "画像を送信"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:856
+msgid "发送好友申请"
+msgstr "友だち申請を送信"
+
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:112
 msgid "发送文件"
 msgstr "ファイルを送信"
@@ -498,6 +558,10 @@ msgstr "世界の主人を同期"
 msgid "名片"
 msgstr "連絡先カード"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:787
+msgid "和对方创建新群"
+msgstr "相手と新しいグループを作成"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:968
 msgid "回到紧凑预览状态"
 msgstr "コンパクト表示に戻る"
@@ -519,6 +583,22 @@ msgstr "画像と動画"
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:104
 msgid "在独立窗口打开"
 msgstr "別ウィンドウで開く"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:650
+msgid "地区"
+msgstr "地域"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:631
+msgid "基础资料"
+msgstr "基本情報"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:635
+msgid "备注"
+msgstr "備考"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:472
+msgid "备注名会优先显示在聊天信息和通讯录里。"
+msgstr "備考名はチャット情報と連絡先で優先表示されます。"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:563
 msgid "复制群聊摘要"
@@ -581,6 +661,7 @@ msgstr "強リマインダーをオフにしました。"
 msgid "已关闭显示群成员昵称。"
 msgstr "グループメンバーのニックネーム表示をオフにしました。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:313
 #: apps/app/src/routes/chat-details-page.tsx:444
 msgid "已关闭消息免打扰。"
 msgstr "チャット通知のサイレントをオフにしました。"
@@ -589,13 +670,19 @@ msgstr "チャット通知のサイレントをオフにしました。"
 msgid "已关闭群消息免打扰。"
 msgstr "グループ通知のサイレントをオフにしました。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:842
 #: apps/app/src/routes/chat-details-page.tsx:1202
 msgid "已加入黑名单"
 msgstr "ブロック済み"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:408
 #: apps/app/src/routes/chat-details-page.tsx:624
 msgid "已加入黑名单。"
 msgstr "ブロック済みにしました。"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:324
+msgid "已取消星标朋友。"
+msgstr "星付きの友だちから外しました。"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:291
 msgid "已在群里的成员不会重复出现。"
@@ -625,6 +712,7 @@ msgstr "3時間の強リマインダーをオンにしました。"
 msgid "已开启显示群成员昵称。"
 msgstr "グループメンバーのニックネーム表示をオンにしました。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:313
 #: apps/app/src/routes/chat-details-page.tsx:443
 msgid "已开启消息免打扰。"
 msgstr "チャット通知をサイレントにしました。"
@@ -642,6 +730,7 @@ msgstr "録音済み"
 msgid "已打开系统分享面板。"
 msgstr "システム共有シートを開きました。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:389
 #: apps/app/src/routes/chat-details-page.tsx:602
 msgid "已提交投诉。"
 msgstr "通報を送信しました。"
@@ -657,6 +746,10 @@ msgstr "追加済み"
 #: apps/app/src/routes/chat-details-page.tsx:523
 msgid "已添加到通讯录。"
 msgstr "連絡先に追加しました。"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:324
+msgid "已设为星标朋友。"
+msgstr "星付きの友だちに設定しました。"
 
 #. placeholder {0}: imagePreviews.length
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:68
@@ -778,6 +871,11 @@ msgstr "この端末では今システム共有を開けません。後でもう
 msgid "当前语音链路："
 msgstr "現在の音声経路:"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:617
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:855
+msgid "待处理"
+msgstr "保留中"
+
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:235
 msgid "待开启"
 msgstr "未開始"
@@ -837,6 +935,7 @@ msgstr "招待カードと共有入口を開く"
 msgid "把这条收藏笔记发到最近会话。"
 msgstr "このお気に入りノートを最近の会話に送信します。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:876
 #: apps/app/src/routes/chat-details-page.tsx:1191
 msgid "投诉"
 msgstr "通報"
@@ -889,9 +988,15 @@ msgstr "友だちにすすめる"
 msgid "提交一次聊天场景投诉"
 msgstr "チャット場面の通報を送信"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:546
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:549
 #: apps/app/src/routes/chat-details-page.tsx:709
 msgid "提交投诉"
 msgstr "通報を送信"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:877
+msgid "提交聊天相关投诉"
+msgstr "チャット関連の通報を送信"
 
 #: apps/app/src/routes/chat-details-page.tsx:937
 msgid "提醒管理"
@@ -913,6 +1018,10 @@ msgstr "最近の会話を検索"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:712
 msgid "搜索失败"
 msgstr "検索に失敗しました"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:755
+msgid "搜索当前聊天"
+msgstr "現在のチャットを検索"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:672
 msgid "搜索结果"
@@ -999,12 +1108,23 @@ msgstr "日付 · {label}"
 msgid "日期 · {quickDateLabel}"
 msgstr "日付 · {quickDateLabel}"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:812
+msgid "星标朋友"
+msgstr "星付きの友だち"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1298
 msgid "昨天"
 msgstr "昨日"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:641
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:669
+msgid "昵称"
+msgstr "ニックネーム"
+
 #. placeholder {0}: character.name
+#. placeholder {0}: targetCharacter?.name ?? conversation.title
 #. placeholder {0}: targetCharacter?.name ?? t(msg`未设置`)
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:281
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:175
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:245
 #: apps/app/src/routes/chat-details-page.tsx:295
@@ -1019,19 +1139,35 @@ msgstr "グループメンバーのニックネームを表示"
 msgid "暂无"
 msgstr "なし"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:696
+msgid "暂时没有共同群聊"
+msgstr "共通のグループチャットはまだありません"
+
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:37
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:38
 msgid "暂未开放"
 msgstr "未対応"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:740
+msgid "更多信息"
+msgstr "追加情報"
+
 #: apps/app/src/routes/chat-details-page.tsx:1040
 msgid "更多聊天操作"
 msgstr "その他のチャット操作"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:713
+msgid "更多资料"
+msgstr "さらに詳しい情報"
 
 #. placeholder {0}: formatMessageTimestamp(note.updatedAt)
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:260
 msgid "更新于 {0}"
 msgstr "{0} に更新"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:687
+msgid "朋友圈"
+msgstr "モーメンツ"
 
 #: apps/app/src/routes/chat-details-page.tsx:885
 msgid "朋友资料"
@@ -1050,6 +1186,12 @@ msgid "未知时间"
 msgstr "不明な時刻"
 
 #: apps/app/src/features/chat/backgrounds/chat-background-helpers.ts:26
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:289
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:636
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:646
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:651
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:656
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:678
 #: apps/app/src/routes/chat-details-page.tsx:295
 #: apps/app/src/routes/group-chat-details-page.tsx:813
 msgid "未设置"
@@ -1098,6 +1240,10 @@ msgstr "この音声ターンは送信済みです。整理中..."
 msgid "本轮语音消息、可用字幕和 AI 回复都会同步保存在当前聊天里。"
 msgstr "この音声メッセージ、利用可能な字幕、AI の応答はすべて現在のチャットに保存されます。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:655
+msgid "来源"
+msgstr "ソース"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1080
 msgid "来自聊天信息"
 msgstr "チャット情報から"
@@ -1106,6 +1252,10 @@ msgstr "チャット情報から"
 #: apps/app/src/routes/group-chat-details-page.tsx:730
 msgid "查找聊天记录"
 msgstr "チャット履歴を検索"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:754
+msgid "查找记录"
+msgstr "記録を検索"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:965
 msgid "查看全部群成员"
@@ -1127,9 +1277,25 @@ msgstr "さらにグループメンバーを表示"
 msgid "查看更多聊天记录"
 msgstr "さらにチャット履歴を表示"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:760
+msgid "查看本聊天附件"
+msgstr "このチャットの添付を表示"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:1020
 msgid "查看群二维码"
 msgstr "グループQRコードを表示"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:716
+msgid "查看角色档案与扩展介绍"
+msgstr "キャラクタープロフィールと詳細紹介を見る"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:717
+msgid "查看角色资料"
+msgstr "キャラクター資料を見る"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:688
+msgid "查看这位角色最近的朋友圈"
+msgstr "このキャラクターの最近のモーメンツを見る"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:715
 msgid "查看邀请卡"
@@ -1146,6 +1312,10 @@ msgstr "既読にする"
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:134
 msgid "标为未读"
 msgstr "未読にする"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:660
+msgid "标签"
+msgstr "タグ"
 
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
@@ -1164,6 +1334,14 @@ msgstr "デスクトップチャットワークスペースのグループ情報
 msgid "正在切换到桌面聊天工作区中的聊天信息侧栏。"
 msgstr "デスクトップチャットワークスペースのチャット情報サイドバーに切り替えています。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:526
+msgid "正在删除..."
+msgstr "削除中..."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:563
+msgid "正在加入..."
+msgstr "ブロック中..."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:821
 msgid "正在加载..."
 msgstr "読み込み中..."
@@ -1175,6 +1353,10 @@ msgstr "デスクトップのグループチャット情報を開いています
 #: apps/app/src/routes/chat-details-page.tsx:74
 msgid "正在打开桌面聊天信息"
 msgstr "デスクトップのチャット情報を開いています"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:550
+msgid "正在提交..."
+msgstr "送信中..."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:678
 msgid "正在搜索..."
@@ -1196,6 +1378,10 @@ msgstr "今回の入場経路を整えています。まもなく前回の続き
 msgid "正在添加..."
 msgstr "追加中..."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:537
+msgid "正在清空..."
+msgstr "消去中..."
+
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:236
 msgid "正在移除..."
 msgstr "削除中..."
@@ -1215,6 +1401,10 @@ msgstr "グループチャット情報を読み込み中"
 #: apps/app/src/routes/chat-details-page.tsx:750
 msgid "正在读取聊天信息"
 msgstr "チャット情報を読み込んでいます"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:626
+msgid "正在读取聊天信息..."
+msgstr "チャット情報を読み込んでいます..."
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:139
 msgid "正在读取联系人..."
@@ -1277,6 +1467,7 @@ msgstr "メ"
 msgid "消息"
 msgstr "メッセージ"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:826
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:119
 #: apps/app/src/routes/chat-details-page.tsx:966
 #: apps/app/src/routes/group-chat-details-page.tsx:760
@@ -1296,6 +1487,11 @@ msgstr "メッセージ設定"
 msgid "添加"
 msgstr "追加"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:617
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:852
+msgid "添加到通讯录"
+msgstr "連絡先に追加"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:981
 msgid "添加成员"
 msgstr "メンバーを追加"
@@ -1312,6 +1508,8 @@ msgstr "クリア"
 msgid "清空搜索词"
 msgstr "検索語をクリア"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:534
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:869
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:152
 #: apps/app/src/routes/chat-details-page.tsx:699
 #: apps/app/src/routes/chat-details-page.tsx:702
@@ -1322,6 +1520,10 @@ msgstr "検索語をクリア"
 msgid "清空聊天记录"
 msgstr "チャット履歴を消去"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:536
+msgid "清空记录"
+msgstr "履歴を消去"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:503
 msgid "清除指定日期"
 msgstr "指定日付をクリア"
@@ -1329,6 +1531,10 @@ msgstr "指定日付をクリア"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:242
 msgid "点下方按钮可重新接通本地画面"
 msgstr "下のボタンを押すとローカル映像を再接続できます"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:485
+msgid "用逗号分隔多个标签，例如：同事，插画，策展。"
+msgstr "複数のタグはカンマで区切ってください。例: 同僚、イラスト、キュレーション。"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:239
 msgid "申请摄像头权限中"
@@ -1345,6 +1551,14 @@ msgstr "入口を確認"
 #: apps/app/src/routes/chat-details-page.tsx:711
 msgid "确认投诉"
 msgstr "通報を確定"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:548
+msgid "确认提交投诉吗？系统会记录当前会话上下文用于后续处理。"
+msgstr "通報を送信しますか？現在の会話コンテキストが後続処理のために記録されます。"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:535
+msgid "确认清空这段聊天记录吗？此操作只影响当前会话视图。"
+msgstr "このチャット履歴を消去しますか？この操作は現在の会話表示にのみ影響します。"
 
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:58
 msgid "视频通话"
@@ -1426,6 +1640,10 @@ msgstr "システム共有は現在利用できないため、連絡先概要を
 msgid "纯文本笔记"
 msgstr "テキストのみのノート"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:473
+msgid "给联系人设置备注名"
+msgstr "連絡先の備考名を設定"
+
 #: apps/app/src/components/bootstrap-screen.tsx:57
 msgid "继续开启对话"
 msgstr "会話を続ける"
@@ -1442,6 +1660,7 @@ msgstr "グループ告知を編集"
 msgid "网页链接"
 msgstr "Webリンク"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:820
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:113
 #: apps/app/src/routes/chat-details-page.tsx:972
 #: apps/app/src/routes/group-chat-details-page.tsx:798
@@ -1552,6 +1771,7 @@ msgstr "グループ音声"
 msgid "群语音通话暂未开放"
 msgstr "グループ音声通話はまだ利用できません"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:752
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:112
 #: apps/app/src/routes/chat-details-page.tsx:737
 msgid "聊天信息"
@@ -1565,10 +1785,12 @@ msgstr "チャット情報から開く"
 msgid "聊天信息暂时不可用"
 msgstr "チャット情報は一時的に利用できません"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:302
 #: apps/app/src/routes/chat-details-page.tsx:429
 msgid "聊天已取消置顶。"
 msgstr "チャットのピン留めを解除しました。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:302
 #: apps/app/src/routes/chat-details-page.tsx:429
 msgid "聊天已置顶。"
 msgstr "チャットをピン留めしました。"
@@ -1581,11 +1803,17 @@ msgstr "チャットを非表示にしました。"
 msgid "聊天扩展"
 msgstr "チャット拡張"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:759
+msgid "聊天文件"
+msgstr "チャットファイル"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:835
 #: apps/app/src/routes/chat-details-page.tsx:1037
 #: apps/app/src/routes/chat-details-page.tsx:1162
 msgid "聊天管理"
 msgstr "チャット管理"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:769
 #: apps/app/src/routes/group-chat-details-page.tsx:741
 msgid "聊天背景"
 msgstr "チャット背景"
@@ -1595,14 +1823,17 @@ msgstr "チャット背景"
 msgid "聊天记录"
 msgstr "チャット履歴"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:350
 #: apps/app/src/routes/chat-details-page.tsx:553
 msgid "聊天记录已清空。"
 msgstr "チャット履歴を消去しました。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:810
 #: apps/app/src/routes/group-chat-details-page.tsx:757
 msgid "聊天设置"
 msgstr "チャット設定"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:282
 #: apps/app/src/routes/chat-details-page.tsx:317
 msgid "联系人"
 msgstr "連絡先"
@@ -1610,6 +1841,14 @@ msgstr "連絡先"
 #: apps/app/src/routes/chat-details-page.tsx:403
 msgid "联系人摘要已复制。"
 msgstr "連絡先概要をコピーしました。"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:835
+msgid "联系人管理"
+msgstr "連絡先管理"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:340
+msgid "联系人资料已更新。"
+msgstr "連絡先情報を更新しました。"
 
 #: apps/app/src/routes/chat-details-page.tsx:774
 msgid "联系人资料暂时不可用"
@@ -1623,9 +1862,17 @@ msgstr "スタンプ"
 msgid "表情消息"
 msgstr "スタンプメッセージ"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:471
+msgid "设置备注"
+msgstr "備考を設定"
+
 #: apps/app/src/routes/chat-details-page.tsx:1021
 msgid "设置当前聊天背景"
 msgstr "現在のチャット背景を設定"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:484
+msgid "设置标签"
+msgstr "タグを設定"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1138
 msgid "试试换个关键词，或者缩小筛选范围后再查找。"
@@ -1713,6 +1960,14 @@ msgstr "読み込み失敗"
 msgid "读取群成员失败"
 msgstr "グループメンバーの読み込みに失敗しました"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:624
+msgid "资料"
+msgstr "情報"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:673
+msgid "身份"
+msgstr "役割"
+
 #. placeholder {0}: formatCallLatency(turn.transcriptionDurationMs)
 #. placeholder {0}: speechStatus.activeTranscriptionProvider ?? configuredLabel
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:254
@@ -1723,6 +1978,10 @@ msgstr "文字起こし {0}"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:256
 msgid "转写未配置"
 msgstr "文字起こし未設定"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:486
+msgid "输入联系人标签"
+msgstr "連絡先タグを入力"
 
 #: apps/app/src/features/chat-details/chat-details-shell.tsx:45
 msgid "返回"
@@ -1788,6 +2047,14 @@ msgstr "このグループには現在削除できるキャラクターメンバ
 msgid "这个群聊暂时不可用，可以先重试读取，或返回消息列表后再试。"
 msgstr "このグループチャットは一時的に利用できません。再読み込みするか、メッセージ一覧に戻って後で再試行してください。"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:274
+msgid "这个联系人还没有签名。"
+msgstr "この連絡先にはまだシグネチャがありません。"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:275
+msgid "这个角色还没有签名。"
+msgstr "このキャラクターにはまだシグネチャがありません。"
+
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:265
 msgid "这条笔记还没有正文摘要。"
 msgstr "このノートにはまだ本文要約がありません。"
@@ -1812,6 +2079,10 @@ msgstr "ここは単なるアカウント情報の集まりではなく、成長
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:507
 msgid "选择某一天的聊天记录"
 msgstr "特定の日のチャット履歴を選択"
+
+#: apps/app/src/features/contacts/desktop-contact-profile-blocks.tsx:18
+msgid "选择联系人"
+msgstr "連絡先を選択"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:97
 msgid "选择要从“{groupName}”中移除的角色成员。"
@@ -1871,6 +2142,15 @@ msgstr "リンク"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1369
 msgid "链路详情"
 msgstr "経路詳細"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:645
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:677
+msgid "隐界号"
+msgstr "Yinjie ID"
+
+#: apps/app/src/features/contacts/desktop-contact-profile-blocks.tsx:106
+msgid "隐界号：{identifier}"
+msgstr "Yinjie ID: {identifier}"
 
 #. placeholder {0}: targetCharacterId.slice(0, 8)
 #: apps/app/src/routes/chat-details-page.tsx:299

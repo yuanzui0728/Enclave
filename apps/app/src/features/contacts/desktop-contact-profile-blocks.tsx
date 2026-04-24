@@ -1,7 +1,11 @@
 import { type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { ChevronRight } from "lucide-react";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
+
+const t = translateRuntimeMessage;
 
 export function DesktopContactPaneEmptyState() {
   return (
@@ -11,10 +15,10 @@ export function DesktopContactPaneEmptyState() {
           ···
         </div>
         <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
-          选择联系人
+          {t(msg`选择联系人`)}
         </div>
         <p className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-          从左侧通讯录选择好友后，这里会显示联系人资料、内容入口和管理操作。
+          {t(msg`从左侧通讯录选择好友后，这里会显示联系人资料、内容入口和管理操作。`)}
         </p>
       </div>
     </div>
@@ -99,7 +103,7 @@ export function DesktopContactProfileHeader({
             ) : null}
             {identifier ? (
               <div className="mt-2 truncate text-[12px] text-[color:var(--text-dim)]">
-                隐界号：{identifier}
+                {t(msg`隐界号：${identifier}`)}
               </div>
             ) : null}
           </div>
