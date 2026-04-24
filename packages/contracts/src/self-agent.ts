@@ -18,6 +18,27 @@ export type SelfAgentHeartbeatFindingType =
   | "upcoming_reminder"
   | "action_confirmation"
   | "action_missing_slots";
+export type SelfAgentRunTriggerType = "conversation" | "heartbeat";
+export type SelfAgentRunStatus =
+  | "handled"
+  | "suggested"
+  | "skipped"
+  | "blocked"
+  | "error";
+export type SelfAgentRunRouteKey =
+  | "action_runtime"
+  | "reminder_runtime"
+  | "self_chat"
+  | "heartbeat"
+  | "ignored";
+export type SelfAgentRunPolicyDecision =
+  | "delegated"
+  | "confirm_required"
+  | "clarify_required"
+  | "suggest_only"
+  | "fallback"
+  | "blocked"
+  | "disabled";
 
 export interface SelfAgentWorkspaceDocumentSummary {
   name: SelfAgentWorkspaceDocumentName;
@@ -69,11 +90,55 @@ export interface SelfAgentOverviewStats {
   awaitingActionConfirmationCount: number;
   awaitingActionSlotsCount: number;
   heartbeatRunCount: number;
+  runCount: number;
+}
+
+export interface SelfAgentPolicyRules {
+  enabled: boolean;
+  allowActionRuntimeDelegation: boolean;
+  allowReminderRuntimeDelegation: boolean;
+  forceConfirmationForDelegatedActions: boolean;
+  blockedActionConnectorKeys: string[];
+  blockedActionOperationKeys: string[];
+}
+
+export interface SelfAgentHeartbeatRules {
+  enabled: boolean;
+  everyMinutes: number;
+  activeHoursStart: number;
+  activeHoursEnd: number;
+  maxItemsPerCategory: number;
+  allowNightlySilentScan: boolean;
+}
+
+export interface SelfAgentRules {
+  policy: SelfAgentPolicyRules;
+  heartbeat: SelfAgentHeartbeatRules;
+}
+
+export interface SelfAgentRunRecord {
+  id: string;
+  triggerType: SelfAgentRunTriggerType;
+  status: SelfAgentRunStatus;
+  routeKey: SelfAgentRunRouteKey;
+  policyDecision: SelfAgentRunPolicyDecision;
+  conversationId?: string | null;
+  sourceMessageId?: string | null;
+  ownerId?: string | null;
+  characterId?: string | null;
+  summary: string;
+  inputPreview?: string | null;
+  outputPreview?: string | null;
+  details?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SelfAgentOverview {
   identity: SelfAgentOverviewIdentity;
+  rules: SelfAgentRules;
   workspaceDocuments: SelfAgentWorkspaceDocumentSummary[];
   stats: SelfAgentOverviewStats;
   recentHeartbeatRuns: SelfAgentHeartbeatRun[];
+  recentRuns: SelfAgentRunRecord[];
 }
