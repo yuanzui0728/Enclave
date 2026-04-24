@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -402,14 +402,15 @@ export function DashboardPage() {
     });
   }
 
-  const resetDashboardMutations = useEffectEvent(() => {
+  const resetDashboardMutationsRef = useRef(() => {});
+  resetDashboardMutationsRef.current = () => {
     setSuccessNotice("");
     previewMutation.reset();
     exportDiagnosticsMutation.reset();
     createBackupMutation.reset();
     restoreBackupMutation.reset();
     schedulerRunMutation.reset();
-  });
+  };
 
   useEffect(() => {
     if (!successNotice) {
@@ -421,8 +422,8 @@ export function DashboardPage() {
   }, [successNotice]);
 
   useEffect(() => {
-    resetDashboardMutations();
-  }, [baseUrl, resetDashboardMutations]);
+    resetDashboardMutationsRef.current();
+  }, [baseUrl]);
 
   const pendingIssueTitle = dutyIssues[0]?.title ?? t(msg`待处理事项`);
   const unknownLabel = t(msg`未知`);

@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useAppLocale } from "@yinjie/i18n";
 import { translateAdminUiText } from "../lib/admin-ui-translation";
 
@@ -28,6 +22,8 @@ const SKIP_SELECTOR = [
   "textarea",
 ].join(",");
 
+const TRANSLATION_BATCH_SIZE = 250;
+
 export function AdminAutoTranslationBoundary({
   children,
 }: AdminAutoTranslationBoundaryProps) {
@@ -36,6 +32,9 @@ export function AdminAutoTranslationBoundary({
   const attributeOriginalsRef = useRef(
     new WeakMap<Element, Partial<Record<(typeof TRANSLATABLE_ATTRIBUTES)[number], string>>>(),
   );
+  const observerRef = useRef<MutationObserver | null>(null);
+  const idleCallbackIdRef = useRef<number | null>(null);
+  const timeoutIdRef = useRef<number | null>(null);
   const { locale } = useAppLocale();
 
   const translate = useCallback(
@@ -126,18 +125,22 @@ export function AdminAutoTranslationBoundary({
         }
       };
 
-      const walkSubtree = (root: Node) => {
-        if (root.nodeType === Node.ELEMENT_NODE) {
-          translateElementAttributes(root as Element);
+      const collectTargets = (root: Node) => {
+        const targets: Node[] = [];
+
+        if (root.nodeType === Node.TEXT_NODE) {
+          targets.push(root);
+          return targets;
         }
 
-        const textWalker = document.createTreeWalker(
-          root,
-          NodeFilter.SHOW_TEXT,
-        );
+        if (root.nodeType === Node.ELEMENT_NODE) {
+          targets.push(root);
+        }
+
+        const textWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         let textNode = textWalker.nextNode();
         while (textNode) {
-          translateTextNode(textNode as Text);
+          targets.push(textNode);
           textNode = textWalker.nextNode();
         }
 
@@ -147,9 +150,11 @@ export function AdminAutoTranslationBoundary({
         );
         let elementNode = elementWalker.nextNode();
         while (elementNode) {
-          translateElementAttributes(elementNode as Element);
+          targets.push(elementNode);
           elementNode = elementWalker.nextNode();
         }
+
+        return targets;
       };
 
       const applyTarget = (target: Node) => {
@@ -158,41 +163,106 @@ export function AdminAutoTranslationBoundary({
           return;
         }
 
-        walkSubtree(target);
+        if (target.nodeType === Node.ELEMENT_NODE) {
+          translateElementAttributes(target as Element);
+        }
       };
 
       return {
-        applyRoot: walkSubtree,
+        collectTargets,
         applyTarget,
       };
     },
     [locale, translate],
   );
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current;
     if (!root) {
       return undefined;
     }
 
-    applyTranslations.applyRoot(root);
+    let cancelled = false;
     let frameId = 0;
     const pendingTargets = new Set<Node>();
-    const scheduleApply = () => {
+
+    const clearScheduledWork = () => {
+      if (idleCallbackIdRef.current !== null && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallbackIdRef.current);
+        idleCallbackIdRef.current = null;
+      }
+
+      if (timeoutIdRef.current !== null) {
+        globalThis.clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+    };
+
+    const scheduleBatch = (targets: Node[]) => {
+      clearScheduledWork();
+      let cursor = 0;
+
+      const runBatch = () => {
+        if (cancelled) {
+          return;
+        }
+
+        const observer = observerRef.current;
+        observer?.disconnect();
+
+        const end = Math.min(cursor + TRANSLATION_BATCH_SIZE, targets.length);
+        while (cursor < end) {
+          const target = targets[cursor];
+          cursor += 1;
+          if (target && root.contains(target)) {
+            applyTranslations.applyTarget(target);
+          }
+        }
+
+        observer?.observe(root, {
+          attributes: true,
+          attributeFilter: [...TRANSLATABLE_ATTRIBUTES],
+          childList: true,
+          subtree: true,
+        });
+
+        if (cursor >= targets.length) {
+          idleCallbackIdRef.current = null;
+          timeoutIdRef.current = null;
+          return;
+        }
+
+        scheduleNextBatch();
+      };
+
+      const scheduleNextBatch = () => {
+        if ("requestIdleCallback" in window) {
+          idleCallbackIdRef.current = window.requestIdleCallback(runBatch, {
+            timeout: 120,
+          });
+          return;
+        }
+
+        timeoutIdRef.current = globalThis.setTimeout(runBatch, 16);
+      };
+
+      scheduleNextBatch();
+    };
+
+    scheduleBatch(applyTranslations.collectTargets(root));
+
+    const schedulePendingApply = () => {
       if (frameId) {
         return;
       }
 
       frameId = window.requestAnimationFrame(() => {
         frameId = 0;
-        const targets = Array.from(pendingTargets);
+        const targets = Array.from(pendingTargets).flatMap((target) =>
+          applyTranslations.collectTargets(target),
+        );
         pendingTargets.clear();
-
-        for (const target of targets) {
-          if (root.contains(target)) {
-            applyTranslations.applyTarget(target);
-          }
-        }
+        scheduleBatch(targets);
       });
     };
 
@@ -207,23 +277,28 @@ export function AdminAutoTranslationBoundary({
       }
 
       if (pendingTargets.size > 0) {
-        scheduleApply();
+        schedulePendingApply();
       }
     });
+    observerRef.current = observer;
 
     observer.observe(root, {
       attributes: true,
       attributeFilter: [...TRANSLATABLE_ATTRIBUTES],
-      characterData: true,
       childList: true,
       subtree: true,
     });
 
     return () => {
+      cancelled = true;
       observer.disconnect();
+      if (observerRef.current === observer) {
+        observerRef.current = null;
+      }
       if (frameId) {
         window.cancelAnimationFrame(frameId);
       }
+      clearScheduledWork();
     };
   }, [applyTranslations]);
 
