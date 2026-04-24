@@ -16,6 +16,10 @@ import type {
   WechatSyncPreviewItem,
 } from "@yinjie/contracts";
 import {
+  mergeWechatSyncContactBundles,
+  parseWechatSyncContactBundlesFromText,
+} from "@yinjie/contracts";
+import {
   Button,
   Card,
   ErrorBlock,
@@ -105,6 +109,44 @@ const WECHAT_SYNC_ANNOTATIONS_STORAGE_KEY =
   "yinjie.admin.wechat-sync.annotations.v1";
 const WECHAT_SYNC_ANNOTATION_TEMPLATES_STORAGE_KEY =
   "yinjie.admin.wechat-sync.annotation-templates.v1";
+const WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT_CONFIG_KEY =
+  "wechat_sync_analysis_system_prompt";
+const WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE_CONFIG_KEY =
+  "wechat_sync_analysis_user_prompt_template";
+const DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT = `你是隐界的一名“真人微信熟人重建分析师”。
+
+你的任务不是创作一个好玩的虚构角色，而是根据微信聊天记录、备注、标签、近况和互动节奏，尽可能还原这个真实人物在用户心中的样子，并生成一个可导入隐界的角色 JSON 草稿。
+
+分析原则：
+1. 准确性和真人一致性优先，不要为了更戏剧化、更讨喜或更容易聊天而美化、脑补或改写人物。
+2. 只根据证据下结论。职业、身份、价值观、关系亲密度、说话习惯、边界感都必须来自聊天样本、标签或上下文线索。
+3. 如果证据不足，要保守表达，宁可写“看起来像”“更像是”“倾向于”，也不要编造确定事实。
+4. 这类联系人本质上是用户微信里的真实熟人，不要生成成客服、助理、导师模板或万能陪伴型角色。
+5. 输出必须让认识这个真人的人读起来觉得“像他/她”，而不是“像一个 AI 帮我总结出来的人设”。
+6. basePrompt 必须保留真人的表达节奏、互动边界、主动性和禁区，不要写操作手册，不要写系统提示词，不要让角色显得全知全能。
+7. relationshipType 默认优先保持 friend；只有证据非常强，才改成 family、mentor 或 custom。
+8. expertDomains 只保留聊天中稳定出现或身份证据很强的领域，不要堆砌泛化标签。
+
+请先在内部充分分析，再只输出最终 JSON，不要输出解释、分析过程或额外文字。`;
+const DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE = `请基于以下微信联系人资料，重建一个“尽量贴近现实人物”的隐界角色草稿。
+
+任务要求：
+1. 先综合判断这个人与用户的真实关系、熟悉程度、互动方式、说话口气、边界感、常聊主题、生活状态和可能身份。
+2. 优先还原“真人感”，不要为了好聊而把人写得过分温柔、过分健谈、过分全能。
+3. 如果样本不足，请明确走保守推断：少下结论、少补设定、少发散脑补。
+4. bio、background、motivation、worldview、memorySummary 都要像现实熟人画像，而不是心理测评报告或人物小传。
+5. speechPatterns、catchphrases、topicsOfInterest 要来自真实聊天表达，不要写空泛套话。
+6. basePrompt 需要保留这个真人的说话方式、聊天边界、主动性、熟悉程度和禁区，像“这个人真的会这么说”，不要写成客服或万能助理。
+7. 如果你无法确定某个字段，就用更保守、更贴近证据的表达，不要虚构确定细节。
+
+可用资料如下：
+{{contact_context}}
+
+再次提醒：
+- 这是在重建用户微信里的真实熟人，不是在创造虚构 OC。
+- 宁可保守，不要错配。
+- 宁可少写，不要编造。
+- 最终只输出合法 JSON。`;
 
 const DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES: WechatSyncAnnotationTemplate[] =
   [
@@ -142,11 +184,7 @@ const DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES: WechatSyncAnnotationTemplate[] =
     },
   ];
 
-type WechatSyncWorkflowStepState =
-  | "done"
-  | "active"
-  | "pending"
-  | "attention";
+type WechatSyncWorkflowStepState = "done" | "active" | "pending" | "attention";
 
 type WechatSyncWorkflowSummaryItem = {
   key: string;
@@ -174,6 +212,11 @@ type WechatSyncImportProgressState = {
   currentLabel?: string | null;
   currentUsername?: string | null;
   errorMessage?: string | null;
+};
+
+type WechatSyncAnalysisPromptDraft = {
+  systemPrompt: string;
+  userPromptTemplate: string;
 };
 
 function createEmptyWechatSyncImportResult(): WechatSyncImportResponse {
@@ -340,6 +383,11 @@ export function WechatSyncPage() {
   const [previewItems, setPreviewItems] = useState<WechatSyncPreviewItem[]>([]);
   const [importProgress, setImportProgress] =
     useState<WechatSyncImportProgressState | null>(null);
+  const [wechatSyncAnalysisPromptDraft, setWechatSyncAnalysisPromptDraft] =
+    useState<WechatSyncAnalysisPromptDraft>(() => ({
+      systemPrompt: DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT,
+      userPromptTemplate: DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE,
+    }));
   const deferredSearch = useDeferredValue(search.trim());
   const deferredHistorySearch = useDeferredValue(
     historySearch.trim().toLowerCase(),
@@ -440,6 +488,31 @@ export function WechatSyncPage() {
     queryKey: ["admin-wechat-sync-history", baseUrl],
     queryFn: () => adminApi.getWechatSyncHistory(),
   });
+  const configQuery = useQuery({
+    queryKey: ["admin-config", baseUrl],
+    queryFn: () => adminApi.getConfig(),
+  });
+  const resolvedWechatSyncAnalysisPromptDraft = useMemo<
+    WechatSyncAnalysisPromptDraft
+  >(
+    () => ({
+      systemPrompt:
+        normalizeWechatSyncAnalysisPromptValue(
+          configQuery.data?.[WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT_CONFIG_KEY],
+        ) || DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT,
+      userPromptTemplate:
+        normalizeWechatSyncAnalysisPromptValue(
+          configQuery.data?.[
+            WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE_CONFIG_KEY
+          ],
+        ) || DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE,
+    }),
+    [configQuery.data],
+  );
+
+  useEffect(() => {
+    setWechatSyncAnalysisPromptDraft(resolvedWechatSyncAnalysisPromptDraft);
+  }, [resolvedWechatSyncAnalysisPromptDraft]);
 
   useEffect(() => {
     setConnectorConfigHydrated(false);
@@ -458,13 +531,12 @@ export function WechatSyncPage() {
     setConnectorWechatDecryptBaseUrl(
       activeConfig.wechatDecryptBaseUrl ?? "http://127.0.0.1:5678",
     );
-    setConnectorWeFlowBaseUrl(activeConfig.weflowBaseUrl ?? "http://127.0.0.1:5031");
+    setConnectorWeFlowBaseUrl(
+      activeConfig.weflowBaseUrl ?? "http://127.0.0.1:5031",
+    );
     setConnectorWeFlowAccessToken(activeConfig.weflowAccessToken ?? "");
     setConnectorConfigHydrated(true);
-  }, [
-    connectorConfigHydrated,
-    connectorHealthQuery.data?.activeConfig,
-  ]);
+  }, [connectorConfigHydrated, connectorHealthQuery.data?.activeConfig]);
 
   const connectorReady =
     connectorHealthQuery.isSuccess && connectorHealthQuery.data.ok;
@@ -477,6 +549,19 @@ export function WechatSyncPage() {
     [selectedPreviewUsernames],
   );
   const selectedCount = selectedUsernames.length;
+  const wechatSyncAnalysisPromptDirty =
+    normalizeWechatSyncAnalysisPromptValue(
+      wechatSyncAnalysisPromptDraft.systemPrompt,
+    ) !==
+      normalizeWechatSyncAnalysisPromptValue(
+        resolvedWechatSyncAnalysisPromptDraft.systemPrompt,
+      ) ||
+    normalizeWechatSyncAnalysisPromptValue(
+      wechatSyncAnalysisPromptDraft.userPromptTemplate,
+    ) !==
+      normalizeWechatSyncAnalysisPromptValue(
+        resolvedWechatSyncAnalysisPromptDraft.userPromptTemplate,
+      );
   const previewValidation = useMemo(
     () =>
       new Map(
@@ -661,6 +746,13 @@ export function WechatSyncPage() {
     setFocusedHistorySnapshotKey(null);
   }
 
+  function restoreWechatSyncAnalysisPromptsToDefault() {
+    setWechatSyncAnalysisPromptDraft({
+      systemPrompt: DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT,
+      userPromptTemplate: DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE,
+    });
+  }
+
   function requestConnectorProbe() {
     setConnectorProbeRequested(true);
     void connectorHealthQuery.refetch();
@@ -707,6 +799,25 @@ export function WechatSyncPage() {
       setConnectorProbeRequested(true);
       await queryClient.invalidateQueries({
         queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
+      });
+    },
+  });
+  const wechatSyncAnalysisPromptMutation = useMutation({
+    mutationFn: async () => {
+      await Promise.all([
+        adminApi.setConfig(
+          WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT_CONFIG_KEY,
+          wechatSyncAnalysisPromptDraft.systemPrompt.trim(),
+        ),
+        adminApi.setConfig(
+          WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE_CONFIG_KEY,
+          wechatSyncAnalysisPromptDraft.userPromptTemplate.trim(),
+        ),
+      ]);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["admin-config", baseUrl],
       });
     },
   });
@@ -1522,10 +1633,11 @@ export function WechatSyncPage() {
   }
 
   function previewManualBundles(raw: string, sourceLabel?: string | null) {
+    const parsed = parseWechatSyncContactBundlesFromText(raw);
+    const bundles = parsed.contacts;
     resetImportFeedback();
-    setManualBundleJson(raw);
+    setManualBundleJson(JSON.stringify(bundles, null, 2));
     setManualBundleFileName(sourceLabel?.trim() || null);
-    const bundles = parseWechatSyncContactBundles(raw);
     setManualBundleError(null);
     setPreviewItems([]);
     setSelectedPreviewUsernames([]);
@@ -1534,21 +1646,38 @@ export function WechatSyncPage() {
   }
 
   function handleManualBundleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!file) {
+    if (!files.length) {
       return;
     }
 
     void (async () => {
       try {
-        const raw = await file.text();
-        previewManualBundles(raw, file.name);
+        const parsedFiles = await Promise.all(
+          files.map(async (file) => ({
+            file,
+            parsed: parseWechatSyncContactBundlesFromText(await file.text()),
+          })),
+        );
+        const bundles = mergeWechatSyncContactBundles(
+          parsedFiles.flatMap((item) => item.parsed.contacts),
+        );
+        resetImportFeedback();
+        setManualBundleJson(JSON.stringify(bundles, null, 2));
+        setManualBundleFileName(
+          files.length === 1
+            ? files[0]!.name
+            : `${files.length} files (${files.map((file) => file.name).join(", ")})`,
+        );
+        setManualBundleError(null);
+        setPreviewItems([]);
+        setSelectedPreviewUsernames([]);
+        setSelectedUsernames(bundles.map((item) => item.username));
+        previewMutation.mutate(bundles);
       } catch (error) {
         setManualBundleError(
-          error instanceof Error
-            ? error.message
-            : "读取联系人快照文件失败。",
+          error instanceof Error ? error.message : "读取联系人快照文件失败。",
         );
       }
     })();
@@ -1603,6 +1732,127 @@ export function WechatSyncPage() {
         ]}
       />
 
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader
+          title="深度分析提示词"
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={restoreWechatSyncAnalysisPromptsToDefault}
+                disabled={wechatSyncAnalysisPromptMutation.isPending}
+              >
+                恢复默认
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => wechatSyncAnalysisPromptMutation.mutate()}
+                disabled={
+                  wechatSyncAnalysisPromptMutation.isPending ||
+                  !wechatSyncAnalysisPromptDirty
+                }
+              >
+                {wechatSyncAnalysisPromptMutation.isPending
+                  ? "保存中..."
+                  : "保存提示词"}
+              </Button>
+            </div>
+          }
+        />
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-[color:var(--text-secondary)]">
+          这里配置“一键同步微信朋友”在分析聊天记录时使用的核心提示词。当前链路会优先使用更长上下文和更保守的真人重建策略，以准确性和真人一致性优先。
+        </p>
+
+        {configQuery.isError && configQuery.error instanceof Error ? (
+          <ErrorBlock className="mt-4" message={configQuery.error.message} />
+        ) : null}
+        {wechatSyncAnalysisPromptMutation.isError &&
+        wechatSyncAnalysisPromptMutation.error instanceof Error ? (
+          <ErrorBlock
+            className="mt-4"
+            message={wechatSyncAnalysisPromptMutation.error.message}
+          />
+        ) : null}
+        {wechatSyncAnalysisPromptDirty ? (
+          <InlineNotice className="mt-4" tone="muted">
+            当前有未保存的分析提示词修改。保存后，新一轮“生成预览”会直接按这里的版本执行。
+          </InlineNotice>
+        ) : null}
+
+        <div className="mt-4 grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
+          <div className="space-y-4">
+            <AdminMiniPanel title="当前分析策略" tone="soft">
+              <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                <p>
+                  会尽量带入更多聊天样本、标签和近况线索，优先还原真人，而不是生成一个“更会聊天”的模板角色。
+                </p>
+                <p>
+                  当证据不足时，提示词会要求模型保守表达，避免虚构职业、关系亲密度、价值观或生活背景。
+                </p>
+                <p>
+                  如果你要做更像“同事 / 前同学 / 客户 /
+                  家人”的定向重建，优先改这里，而不是在导入后逐个手工修角色。
+                </p>
+              </div>
+            </AdminMiniPanel>
+
+            <AdminMiniPanel title="模板占位符" tone="soft">
+              <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                <p>
+                  <code>{"{{contact_context}}"}</code>
+                  ：完整联系人分析上下文，包含标签、摘要、消息统计、近况和聊天样本。
+                </p>
+                <p>
+                  <code>{"{{username}}"}</code> /{" "}
+                  <code>{"{{display_name}}"}</code> /{" "}
+                  <code>{"{{remark_name}}"}</code> /{" "}
+                  <code>{"{{nickname}}"}</code>
+                  ：基础身份字段。
+                </p>
+                <p>
+                  <code>{"{{chat_summary}}"}</code> /{" "}
+                  <code>{"{{topic_keywords}}"}</code> /{" "}
+                  <code>{"{{sample_messages}}"}</code> /{" "}
+                  <code>{"{{moment_highlights}}"}</code>
+                  ：可单独拼进模板的分析材料。
+                </p>
+              </div>
+            </AdminMiniPanel>
+          </div>
+
+          <div className="grid gap-4">
+            <AdminTextArea
+              label="System Prompt"
+              value={wechatSyncAnalysisPromptDraft.systemPrompt}
+              onChange={(value) =>
+                setWechatSyncAnalysisPromptDraft((current) => ({
+                  ...current,
+                  systemPrompt: value,
+                }))
+              }
+              description="定义分析师角色、证据原则和“真人一致性优先”的总要求。"
+              defaultPrompt={DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT}
+              textareaClassName="min-h-56"
+            />
+            <AdminTextArea
+              label="User Prompt Template"
+              value={wechatSyncAnalysisPromptDraft.userPromptTemplate}
+              onChange={(value) =>
+                setWechatSyncAnalysisPromptDraft((current) => ({
+                  ...current,
+                  userPromptTemplate: value,
+                }))
+              }
+              description="定义每次分析联系人时实际发送给模型的模板。支持上方占位符。"
+              defaultPrompt={DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE}
+              textareaClassName="min-h-72"
+            />
+          </div>
+        </div>
+      </Card>
+
       {preserveSharedViewState ? (
         <AdminCallout
           title="当前正在查看分享审计视图"
@@ -1638,16 +1888,29 @@ export function WechatSyncPage() {
         <div className="grid gap-4 xl:grid-cols-[0.9fr_1.15fr_0.95fr]">
           <AdminMiniPanel title="页面介绍" tone="soft" className="h-full">
             <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              <p>这页用于把你本机已经整理好的微信联系人资料和聊天摘要，转换成隐界里的角色与好友关系。</p>
-              <p>它只负责读取、整理、预览和导入，不会直接控制微信，也不会自动给真实微信好友发消息。</p>
-              <p>如果你不想走本地服务，也可以直接粘贴联系人快照 JSON 来完成同样的导入流程。</p>
+              <p>
+                这页用于把你本机已经整理好的微信联系人资料和聊天摘要，转换成隐界里的角色与好友关系。
+              </p>
+              <p>
+                它只负责读取、整理、预览和导入，不会直接控制微信，也不会自动给真实微信好友发消息。
+              </p>
+              <p>
+                如果你不想走本地服务，也可以直接粘贴联系人快照 JSON
+                来完成同样的导入流程。
+              </p>
             </div>
           </AdminMiniPanel>
 
           <AdminMiniPanel title="如何操作" tone="soft" className="h-full">
             <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              <p>1. 先准备数据源：启动本机 `17364` 连接器，并按需选择 `5678` 的 `wechat-decrypt`、`5031` 的 WeFlow API，或者直接准备 JSON 快照。</p>
-              <p>2. 在“步骤 1”里选择数据源，确认地址后点“刷新连接状态”与“刷新本地索引”。</p>
+              <p>
+                1. 先准备数据源：启动本机 `17364` 连接器，并按需选择 `5678` 的
+                `wechat-decrypt`、`5031` 的 WeFlow API，或者直接准备 JSON 快照。
+              </p>
+              <p>
+                2. 在“步骤
+                1”里选择数据源，确认地址后点“刷新连接状态”与“刷新本地索引”。
+              </p>
               <p>3. 在“步骤 2”里筛选并勾选联系人，再点“生成预览”。</p>
               <p>4. 在“步骤 3”里检查角色草稿，补齐缺失字段后执行导入。</p>
               <p>5. 导入完成后，到“步骤 4”查看历史、补建好友关系或回滚。</p>
@@ -1656,9 +1919,19 @@ export function WechatSyncPage() {
 
           <AdminMiniPanel title="常见问题" tone="soft" className="h-full">
             <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              <p>如果看到 `fetch failed`，优先检查 `http://127.0.0.1:17364` 和你当前选择的上游地址（如 `5678` 或 `5031`）是否都能从本机访问。</p>
-              <p>当前版本只支持导入单聊联系人，群聊会保留在列表中供筛查，但不会被真正导入。</p>
-              <p>本页不会自动启动 `wechat-decrypt` 或 WeFlow；如果你选择的是 WeFlow API，还需要先在 WeFlow 设置里开启 API 服务并填写 Access Token。</p>
+              <p>
+                如果看到 `fetch failed`，优先检查 `http://127.0.0.1:17364`
+                和你当前选择的上游地址（如 `5678` 或
+                `5031`）是否都能从本机访问。
+              </p>
+              <p>
+                当前版本只支持导入单聊联系人，群聊会保留在列表中供筛查，但不会被真正导入。
+              </p>
+              <p>
+                本页不会自动启动 `wechat-decrypt` 或 WeFlow；如果你选择的是
+                WeFlow API，还需要先在 WeFlow 设置里开启 API 服务并填写 Access
+                Token。
+              </p>
             </div>
           </AdminMiniPanel>
         </div>
@@ -1680,13 +1953,17 @@ export function WechatSyncPage() {
                 {!connectorReady ? (
                   <p>先连上本地连接器，或直接用右侧手动 JSON 入口生成预览。</p>
                 ) : !selectedCount ? (
-                  <p>从联系人列表里勾选本轮想导入的人，页面会马上显示已选数量。</p>
+                  <p>
+                    从联系人列表里勾选本轮想导入的人，页面会马上显示已选数量。
+                  </p>
                 ) : !previewItems.length ? (
                   <p>已经选好联系人了，下一步生成角色预览并检查草稿字段。</p>
                 ) : invalidImportTargetCount > 0 ? (
                   <p>当前导入目标里还有字段缺失，先在预览区补齐后再导入。</p>
                 ) : importProgress?.phase === "done" ? (
-                  <p>最近一次导入已经完成，可以去历史区复核、补建关系或回滚。</p>
+                  <p>
+                    最近一次导入已经完成，可以去历史区复核、补建关系或回滚。
+                  </p>
                 ) : (
                   <p>当前目标已经可以导入，导入时会显示逐项进度和刷新阶段。</p>
                 )}
@@ -1694,8 +1971,13 @@ export function WechatSyncPage() {
             </AdminMiniPanel>
             <AdminMiniPanel title="本地运行前提" tone="soft">
               <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-                <p>后台只消费你本地已经授权整理好的联系人资料和聊天摘要，不提供密钥提取或聊天记录破解能力。</p>
-                <p>如果没有本地连接器，也可以把联系人快照 JSON 直接粘贴到下方手动导入区。</p>
+                <p>
+                  后台只消费你本地已经授权整理好的联系人资料和聊天摘要，不提供密钥提取或聊天记录破解能力。
+                </p>
+                <p>
+                  如果没有本地连接器，也可以把联系人快照 JSON
+                  直接粘贴到下方手动导入区。
+                </p>
               </div>
             </AdminMiniPanel>
           </div>
@@ -1739,8 +2021,8 @@ export function WechatSyncPage() {
               <div className="grid gap-3 md:grid-cols-3">
                 <AdminSelectableCard
                   active={connectorProviderKey === "manual-json"}
-                  title="本地 JSON / 文件"
-                  subtitle="从你授权导出的联系人快照读取"
+                  title="标准化文件 / JSON"
+                  subtitle="支持 WechatSync bundle、ContactImportBundle、ChatLab JSON/JSONL"
                   activeLabel="当前数据源"
                   onClick={() => setConnectorProviderKey("manual-json")}
                 />
@@ -1762,9 +2044,9 @@ export function WechatSyncPage() {
             </div>
             {connectorProviderKey === "manual-json" ? (
               <AdminTextField
-                label="连接器侧 JSON 路径（可选）"
+                label="连接器侧导入文件路径（可选）"
                 value={connectorManualJsonPath}
-                placeholder="D:\\exports\\wechat-contacts.json"
+                placeholder="D:\\exports\\contacts.chatlab.jsonl"
                 onChange={setConnectorManualJsonPath}
               />
             ) : connectorProviderKey === "wechat-decrypt-http" ? (
@@ -1801,7 +2083,9 @@ export function WechatSyncPage() {
                 connectorConfigMutation.isPending || !connectorSourceConfigReady
               }
             >
-              {connectorConfigMutation.isPending ? "保存中..." : "保存数据源配置"}
+              {connectorConfigMutation.isPending
+                ? "保存中..."
+                : "保存数据源配置"}
             </Button>
             <Button
               variant="primary"
@@ -1813,17 +2097,15 @@ export function WechatSyncPage() {
             >
               {scanMutation.isPending ? "刷新中..." : "刷新本地索引"}
             </Button>
-            <Button
-              variant="secondary"
-              onClick={requestConnectorProbe}
-            >
+            <Button variant="secondary" onClick={requestConnectorProbe}>
               刷新连接状态
             </Button>
           </div>
 
           {!connectorProbeRequested ? (
             <InlineNotice className="mt-4" tone="muted">
-              当前未探测本地微信连接器。下方手动 JSON / 本地文件导入仍可直接使用；只有在你要读取本地联系人列表时，才需要启动连接器探测。
+              当前未探测本地微信连接器。下方手动 JSON /
+              本地文件导入仍可直接使用；只有在你要读取本地联系人列表时，才需要启动连接器探测。
             </InlineNotice>
           ) : null}
           {connectorProbeRequested && connectorHealthQuery.isLoading ? (
@@ -1884,7 +2166,8 @@ export function WechatSyncPage() {
                       connectorHealthQuery.data.activeConfig.providerKey,
                     )}
                   </div>
-                  {connectorHealthQuery.data.activeConfig.wechatDecryptBaseUrl ? (
+                  {connectorHealthQuery.data.activeConfig
+                    .wechatDecryptBaseUrl ? (
                     <div>
                       wechat-decrypt：
                       {
@@ -1937,7 +2220,7 @@ export function WechatSyncPage() {
                   onClick={() => manualBundleFileInputRef.current?.click()}
                   disabled={previewMutation.isPending}
                 >
-                  选择本地 JSON
+                  选择本地文件
                 </Button>
                 <Button
                   variant="secondary"
@@ -1973,17 +2256,18 @@ export function WechatSyncPage() {
           <input
             ref={manualBundleFileInputRef}
             type="file"
-            accept=".json,application/json"
+            accept=".json,.jsonl,application/json,text/plain"
+            multiple
             className="hidden"
             onChange={handleManualBundleFileChange}
           />
           <div className="mt-4">
             <AdminTextArea
-              label="联系人快照 JSON"
+              label="联系人导入内容"
               value={manualBundleJson}
               onChange={handleManualBundleTextChange}
               textareaClassName="min-h-52 font-mono text-xs"
-              description="粘贴 `WechatSyncContactBundle[]` 数组即可直接生成预览。只适用于你本人合法导出的联系人资料和聊天摘要。"
+              description="支持 `WechatSyncContactBundle[]`、`ContactImportBundle[]`、ChatLab `json/jsonl`。只适用于你本人合法导出的联系人资料和聊天摘要。"
               placeholder='[{"username":"wxid_alice","displayName":"Alice","tags":["同事"],"isGroup":false,"messageCount":128,"ownerMessageCount":62,"contactMessageCount":66,"latestMessageAt":"2026-04-16T11:20:00.000Z","chatSummary":"经常聊产品迭代、周末约饭和出差安排。","topicKeywords":["产品","出差","周末"],"sampleMessages":[{"timestamp":"2026-04-16 19:20","text":"周五一起吃饭？","sender":"Alice","direction":"contact"}],"momentHighlights":[]}]'
             />
           </div>
@@ -2164,7 +2448,8 @@ export function WechatSyncPage() {
 
           {!connectorReady ? (
             <InlineNotice className="mt-4" tone="muted">
-              连接器未就绪时，这里不会拉取联系人列表。你仍然可以使用上方手动 JSON 入口继续生成预览。
+              连接器未就绪时，这里不会拉取联系人列表。你仍然可以使用上方手动
+              JSON 入口继续生成预览。
             </InlineNotice>
           ) : (
             <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -2974,7 +3259,9 @@ function WechatSyncImportProgressPanel({
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[color:var(--text-muted)]">
             <span>当前进度 {progressRatio}%</span>
-            <span>{formatWechatSyncDuration(progress.startedAt, progress.updatedAt)}</span>
+            <span>
+              {formatWechatSyncDuration(progress.startedAt, progress.updatedAt)}
+            </span>
           </div>
         </div>
 
@@ -5985,7 +6272,9 @@ function formatDateTime(value?: string | null) {
   );
 }
 
-function formatConnectorProviderLabel(value?: WechatConnectorProviderKey | null) {
+function formatConnectorProviderLabel(
+  value?: WechatConnectorProviderKey | null,
+) {
   switch (value) {
     case "weflow-http":
       return "WeFlow API";
@@ -8218,4 +8507,8 @@ function inferContactDomains(contact: WechatSyncContactBundle) {
   return inferred.length
     ? Array.from(new Set(inferred)).slice(0, 6)
     : ["general"];
+}
+
+function normalizeWechatSyncAnalysisPromptValue(value?: string | null) {
+  return value?.trim() ?? "";
 }
