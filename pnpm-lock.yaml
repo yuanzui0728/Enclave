@@ -387,6 +387,55 @@ importers:
         specifier: ^7.0.0
         version: 7.6.1
 
+  apps/site:
+    dependencies:
+      '@tanstack/react-router':
+        specifier: ^1.109.2
+        version: 1.168.10(react-dom@19.2.4)(react@19.2.4)
+      '@yinjie/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
+      '@yinjie/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lucide-react:
+        specifier: ^0.475.0
+        version: 0.475.0(react@19.2.4)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@lingui/babel-plugin-lingui-macro':
+        specifier: 5.9.5
+        version: 5.9.5(typescript@5.9.3)
+      '@lingui/vite-plugin':
+        specifier: 5.9.5
+        version: 5.9.5(typescript@5.9.3)(vite@6.4.1)
+      '@tailwindcss/vite':
+        specifier: ^4.0.9
+        version: 4.2.2(vite@6.4.1)
+      '@types/react':
+        specifier: ^19.0.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.4
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.4.1
+        version: 4.7.0(vite@6.4.1)
+      tailwindcss:
+        specifier: ^4.0.9
+        version: 4.2.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^6.1.0
+        version: 6.4.1
+
   apps/wechat-connector:
     devDependencies:
       '@types/node':

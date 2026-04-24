@@ -6,7 +6,7 @@ export const SUPPORTED_LOCALES = [
 ] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
-export type I18nAppSurface = "app" | "admin" | "cloud-console";
+export type I18nAppSurface = "app" | "admin" | "cloud-console" | "site";
 export type TextDirection = "ltr" | "rtl";
 
 export const DEFAULT_LOCALE: SupportedLocale = "zh-CN";

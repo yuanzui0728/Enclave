@@ -38,10 +38,18 @@ const cloudConsoleCatalogLoaders: CatalogLoaderMap = {
   "ko-KR": () => import("../../catalogs/cloud-console/ko-KR.po"),
 };
 
+const siteCatalogLoaders: CatalogLoaderMap = {
+  "zh-CN": () => import("../../catalogs/site/zh-CN.po"),
+  "en-US": () => import("../../catalogs/site/en-US.po"),
+  "ja-JP": () => import("../../catalogs/site/ja-JP.po"),
+  "ko-KR": () => import("../../catalogs/site/ko-KR.po"),
+};
+
 const surfaceCatalogLoaders: Record<I18nAppSurface, CatalogLoaderMap> = {
   app: appCatalogLoaders,
   admin: adminCatalogLoaders,
   "cloud-console": cloudConsoleCatalogLoaders,
+  site: siteCatalogLoaders,
 };
 
 export async function loadMessagesForSurface(
