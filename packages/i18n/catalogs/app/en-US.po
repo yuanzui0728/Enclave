@@ -76,6 +76,10 @@ msgstr "{0} group chat"
 msgid "{0} 邀请"
 msgstr "{0} invitation"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1087
+msgid "{categoryLabel} · {count} 条"
+msgstr "{categoryLabel} · {count} items"
+
 #: apps/app/src/routes/chat-details-page.tsx:323
 #: apps/app/src/routes/chat-details-page.tsx:325
 msgid "{contactName} 的隐界名片"
@@ -162,6 +166,10 @@ msgstr "{totalMemberCount}-member group chat"
 msgid "{totalSeconds} 秒"
 msgstr "{totalSeconds} sec"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:930
+msgid "{typeLabel}消息"
+msgstr "{typeLabel} message"
+
 #: apps/app/src/routes/group-qr-page.tsx:292
 msgid "【群邀请】"
 msgstr "【Group Invite】"
@@ -194,6 +202,14 @@ msgstr "2. Look again at {0}"
 #: apps/app/src/routes/group-qr-page.tsx:1719
 msgid "3. 冷却后处理 {0}"
 msgstr "3. Handle {0} after cooldown"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:91
+msgid "30天内"
+msgstr "Last 30 days"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:90
+msgid "7天内"
+msgstr "Last 7 days"
 
 #: apps/app/src/routes/chat-details-page.tsx:992
 msgid "AI 数字人"
@@ -306,6 +322,8 @@ msgstr "Only clear this chat's history. The contact profile and chat entry will 
 msgid "仅清空这段聊天，不影响联系人关系"
 msgstr "Only clear this chat. Contact status stays unchanged."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:89
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1226
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:450
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1220
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1294
@@ -359,9 +377,17 @@ msgstr "Conversation"
 msgid "会话不存在"
 msgstr "Conversation not found"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:104
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1001
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1037
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1343
 msgid "位置"
 msgstr "Location"
+
+#. placeholder {0}: message.attachment.title
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1000
+msgid "位置 · {0}"
+msgstr "Location · {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:155
 msgid "侧栏面板"
@@ -440,6 +466,10 @@ msgstr "Just deal with {0} first."
 msgid "先处理主推荐"
 msgstr "Handle the top recommendation first"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:123
+msgid "先按图片消息聚合浏览"
+msgstr "Browse image messages first"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2303
 msgid "先看完整列表，再继续加人、减人或跳转资料。"
 msgstr "Review the full list first, then continue adding, removing, or opening profiles."
@@ -474,6 +504,7 @@ msgstr "The top recommendation is the better choice first, and {0} is still in c
 msgid "先走主推荐更合适，先补 {0} 会先拿掉前排阻塞。"
 msgstr "The top recommendation is the better choice first. Resending {0} clears the first blockage in the queue."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:115
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2060
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2106
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1247
@@ -485,15 +516,25 @@ msgstr "All"
 msgid "全部 {0} 人"
 msgstr "All {0} members"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:510
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:567
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:620
 msgid "全部成员"
 msgstr "All members"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:88
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:441
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:611
 msgid "全部时间"
 msgstr "All time"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:114
+msgid "全部消息"
+msgstr "All messages"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:97
+msgid "全部类型"
+msgstr "All types"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1495
 #: apps/app/src/routes/group-chat-details-page.tsx:666
@@ -623,6 +664,10 @@ msgstr "Last 30 days"
 msgid "最近 7 天"
 msgstr "Last 7 days"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1088
+msgid "最近{categoryLabel} · {count} 条"
+msgstr "Recent {categoryLabel} · {count} items"
+
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1384
 msgid "最近一轮："
 msgstr "Latest turn:"
@@ -660,6 +705,10 @@ msgstr "Recently active"
 #: apps/app/src/routes/group-qr-page.tsx:3046
 msgid "最近活跃 {0}"
 msgstr "Recently active {0}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1083
+msgid "最近消息 · {count} 条"
+msgstr "Recent messages · {count} items"
 
 #. placeholder {0}: formatPendingReturnCooldownRemaining(deliveredAt)
 #: apps/app/src/routes/group-qr-page.tsx:2605
@@ -714,6 +763,10 @@ msgstr "Share invitation copy"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1050
 msgid "分类 · {0}"
 msgstr "Category · {0}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:582
+msgid "分类浏览"
+msgstr "Browse by category"
 
 #: apps/app/src/routes/group-qr-page.tsx:1957
 msgid "切到备选"
@@ -932,9 +985,17 @@ msgstr "Similar single chat"
 msgid "同类群聊"
 msgstr "group chat"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:103
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:995
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1033
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1339
 msgid "名片"
 msgstr "Contact card"
+
+#. placeholder {0}: message.attachment.name
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:994
+msgid "名片 · {0}"
+msgstr "Contact card · {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:787
 msgid "和对方创建新群"
@@ -965,10 +1026,20 @@ msgstr "Reply {0}"
 msgid "回流于 {0}"
 msgstr "Returned at {0}"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:99
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:979
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1021
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1327
 msgid "图片"
 msgstr "Image"
 
+#. placeholder {0}: message.attachment.fileName
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:978
+msgid "图片 · {0}"
+msgstr "Image · {0}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:121
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:122
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:633
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1236
 msgid "图片与视频"
@@ -1225,6 +1296,11 @@ msgstr "Removed {0} group members."
 msgid "已移除 1 位群成员。"
 msgstr "Removed 1 group member."
 
+#. placeholder {0}: activeFilterLabels.length
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:419
+msgid "已筛选 {0} 项"
+msgstr "{0} filters active"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:324
 msgid "已设为星标朋友。"
 msgstr "Added to starred friends."
@@ -1276,13 +1352,30 @@ msgstr "Turned on group announcement notifications."
 msgid "强提醒"
 msgstr "Strong reminder"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:631
+msgid "当前"
+msgstr "Current"
+
 #: apps/app/src/routes/group-qr-page.tsx:585
 msgid "当前主推荐本身就在冷却中，结构不会立刻变化，先等它恢复优先位。"
 msgstr "The current top recommendation is already in cooldown, so the queue will not change right away. Wait for it to regain priority."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:858
+msgid "当前仅展示前 {MAX_VISIBLE_RESULTS} 条结果，请继续缩小范围查找。"
+msgstr "Showing only the first {MAX_VISIBLE_RESULTS} results. Narrow the scope to find more."
+
 #: apps/app/src/routes/group-qr-page.tsx:1671
 msgid "当前仍在等待回流的会话数"
 msgstr "Conversations still waiting for return"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:574
+msgid "当前会话还没有聊天记录"
+msgstr "This conversation has no chat history yet"
+
+#. placeholder {0}: activeCategoryMeta.shortLabel
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:651
+msgid "当前会话里暂时没有可浏览的{0}消息。"
+msgstr "There are no {0} messages to browse in this conversation yet."
 
 #. placeholder {0}: resolveCategoryLabel(input.activeCategory)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1144
@@ -1296,6 +1389,11 @@ msgstr "{totalMemberCount} members total"
 #: apps/app/src/routes/group-qr-page.tsx:1834
 msgid "当前最值得优先补发"
 msgstr "Best conversation to resend now"
+
+#. placeholder {0}: results.length
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:404
+msgid "当前分类 {0} 条"
+msgstr "Current category {0} items"
 
 #: apps/app/src/routes/group-qr-page.tsx:1237
 msgid "当前回流来源"
@@ -1389,6 +1487,11 @@ msgstr "Current chat"
 msgid "当前聊天 · {0}"
 msgstr "Current chat · {0}"
 
+#. placeholder {0}: indexedMessages.length
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:398
+msgid "当前范围 {0} 条"
+msgstr "Current scope {0} items"
+
 #: apps/app/src/features/chat/use-speech-input.ts:753
 msgid "当前设备不支持录音转写。"
 msgstr "This device doesn't support speech transcription."
@@ -1442,6 +1545,8 @@ msgstr "Quick select"
 msgid "总耗时 {0}"
 msgstr "Total {0}"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:503
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:694
 #: apps/app/src/routes/group-chat-details-page.tsx:599
 #: apps/app/src/routes/group-qr-page.tsx:1133
 msgid "成员"
@@ -1449,6 +1554,8 @@ msgstr "Member"
 
 #. placeholder {0}: input.selectedSenderLabel
 #. placeholder {0}: selectedSender.label
+#. placeholder {0}: senderFilter === UNKNOWN_SENDER_FILTER ? unknownSenderLabel : senderFilter
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:319
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:328
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1054
 msgid "成员 · {0}"
@@ -1487,9 +1594,17 @@ msgstr "Failed to open the location, please try again later."
 msgid "打开桌面群聊信息..."
 msgstr "Opening desktop group chat details..."
 
+#: apps/app/src/routes/group-message-search-page.tsx:30
+msgid "打开桌面群聊记录..."
+msgstr "Opening desktop group history..."
+
 #: apps/app/src/routes/chat-details-page.tsx:76
 msgid "打开桌面聊天信息..."
 msgstr "Opening desktop chat details..."
+
+#: apps/app/src/routes/chat-message-search-page.tsx:31
+msgid "打开桌面聊天记录..."
+msgstr "Opening desktop chat history..."
 
 #: apps/app/src/routes/chat-details-page.tsx:920
 msgid "打开系统分享面板"
@@ -1512,6 +1627,10 @@ msgstr "Send the current group chat entry to other devices to continue opening."
 msgid "把当前群邀请入口复制到手机，并进入接力历史。"
 msgstr "Copy the current group invitation entry to your mobile phone and enter the relay history."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:137
+msgid "把聊天里的 URL 单独拎出来"
+msgstr "Pull URLs out of the chat on their own"
+
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:101
 msgid "把这条收藏笔记发到最近会话。"
 msgstr "Send this favorite note to a recent conversation."
@@ -1533,6 +1652,7 @@ msgstr "It has been waiting a long time and is still active. Follow up here firs
 msgid "拖得久又还活跃，现在补最值。"
 msgstr "It has been waiting a long time and is still active. Best to resend now."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:486
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:479
 msgid "指定日期"
 msgstr "Specific date"
@@ -1553,6 +1673,10 @@ msgstr "Search by content"
 msgid "按当前排序先做这条。"
 msgstr "Do this first in the current order."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:130
+msgid "按文件名和文件消息筛选"
+msgstr "Filter by file name and file messages"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:432
 msgid "按日期查找"
 msgstr "Search by date"
@@ -1565,9 +1689,26 @@ msgstr "Search by filters"
 msgid "按群成员查找"
 msgstr "Search by group member"
 
+#: apps/app/src/routes/chat-message-search-page.tsx:117
+#: apps/app/src/routes/group-message-search-page.tsx:108
+msgid "换个关键词试试，或者切到图片、文件、链接分类继续找。"
+msgstr "Try a different keyword, or switch to Images, Files, or Links to keep looking."
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:702
+msgid "换个成员试试，或者切回全部成员继续浏览。"
+msgstr "Try another member, or switch back to all members to keep browsing."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1159
 msgid "换个日期试试，或者返回筛选页清空时间条件。"
 msgstr "Try another date, or go back to filters and clear the date condition."
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:757
+msgid "换个时间试试，或者清空时间筛选继续浏览。"
+msgstr "Try a different time range, or clear the time filter to keep browsing."
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:734
+msgid "换个消息类型试试，或者切回全部类型继续浏览。"
+msgstr "Try another message type, or switch back to all types to keep browsing."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1152
 msgid "换个群成员试试，或者返回筛选页查看全部成员。"
@@ -1591,10 +1732,27 @@ msgstr "Submit report"
 msgid "提交聊天相关投诉"
 msgstr "Submit a chat-related report"
 
+#. placeholder {0}: formatMessageTimestamp(item.reminderAt)
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:833
+msgid "提醒 · {0}"
+msgstr "Reminder · {0}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:410
+msgid "提醒 {reminderCount} 条"
+msgstr "{reminderCount} reminders"
+
 #: apps/app/src/routes/chat-details-page.tsx:937
 msgid "提醒管理"
 msgstr "Reminder management"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:116
+msgid "搜文本、附件和系统提示"
+msgstr "Search text, attachments, and system notices"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:381
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:392
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:538
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:670
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:384
 msgid "搜索"
 msgstr "Search"
@@ -1607,6 +1765,11 @@ msgstr "Search “{0}”"
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:140
 msgid "搜索最近会话"
 msgstr "Search recent conversations"
+
+#. placeholder {0}: results.length
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:403
+msgid "搜索命中 {0} 条"
+msgstr "{0} search hits"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:712
 msgid "搜索失败"
@@ -1627,6 +1790,10 @@ msgstr "Search nicknames, roles, or member IDs"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:672
 msgid "搜索结果"
 msgstr "Search results"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1082
+msgid "搜索结果 · {count} 条"
+msgstr "Search results · {count} items"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:530
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:109
@@ -1676,12 +1843,24 @@ msgstr "Change to next priority option"
 msgid "数字人播报文案、本地预览和本轮文本都会同步保存在当前聊天里。"
 msgstr "The digital-human speech copy, local preview, and this turn's text will all be saved to the current chat."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:100
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:128
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:129
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:985
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1025
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:640
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1240
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1331
 msgid "文件"
 msgstr "File"
 
+#. placeholder {0}: message.attachment.fileName
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:984
+msgid "文件 · {0}"
+msgstr "File · {0}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:98
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1052
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1354
 msgid "文本"
 msgstr "Text"
@@ -1724,6 +1903,24 @@ msgstr "Date · {label}"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1062
 msgid "日期 · {quickDateLabel}"
 msgstr "Date · {quickDateLabel}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:341
+msgid "日期 · {specificDate}"
+msgstr "Date · {specificDate}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:441
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:755
+msgid "时间"
+msgstr "Time"
+
+#. placeholder {0}: searchDateFilters.find((item) => item.id === dateFilter)?.label ?? t(msg`时间筛选`)
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:345
+msgid "时间 · {0}"
+msgstr "Time · {0}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:347
+msgid "时间筛选"
+msgstr "Time filter"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:812
 msgid "星标朋友"
@@ -1838,6 +2035,7 @@ msgstr "Unnamed member"
 msgid "未就绪"
 msgstr "Not ready"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1217
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1285
 msgid "未知时间"
 msgstr "Unknown time"
@@ -1914,6 +2112,10 @@ msgstr "This voice turn has been sent. Processing..."
 msgid "本轮语音消息、可用字幕和 AI 回复都会同步保存在当前聊天里。"
 msgstr "This voice message, available captions, and the AI reply will all be saved to the current chat."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:631
+msgid "条"
+msgstr "items"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:655
 msgid "来源"
 msgstr "Source"
@@ -1931,6 +2133,7 @@ msgstr "from {0}"
 msgid "来自聊天信息"
 msgstr "From chat details"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:377
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1542
 #: apps/app/src/routes/chat-details-page.tsx:950
 #: apps/app/src/routes/group-chat-details-page.tsx:730
@@ -1940,6 +2143,18 @@ msgstr "Search chat history"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:754
 msgid "查找记录"
 msgstr "Search history"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:710
+msgid "查看全部成员"
+msgstr "View all members"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:660
+msgid "查看全部消息"
+msgstr "View all messages"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:743
+msgid "查看全部类型"
+msgstr "View all types"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:965
 msgid "查看全部群成员"
@@ -2023,9 +2238,17 @@ msgstr "Saving..."
 msgid "正在切换到桌面聊天工作区中的群聊信息侧栏。"
 msgstr "Switching to the group details sidebar in the desktop chat workspace."
 
+#: apps/app/src/routes/group-message-search-page.tsx:29
+msgid "正在切换到桌面聊天工作区中的群聊记录搜索侧栏。"
+msgstr "Switching to the group history search sidebar in the desktop chat workspace."
+
 #: apps/app/src/routes/chat-details-page.tsx:75
 msgid "正在切换到桌面聊天工作区中的聊天信息侧栏。"
 msgstr "Switching to the chat details sidebar in the desktop chat workspace."
+
+#: apps/app/src/routes/chat-message-search-page.tsx:30
+msgid "正在切换到桌面聊天工作区中的聊天记录搜索侧栏。"
+msgstr "Switching to the chat history search sidebar in the desktop chat workspace."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:526
 msgid "正在删除..."
@@ -2043,9 +2266,17 @@ msgstr "Loading..."
 msgid "正在打开桌面群聊信息"
 msgstr "Opening desktop group chat details"
 
+#: apps/app/src/routes/group-message-search-page.tsx:28
+msgid "正在打开桌面群聊记录"
+msgstr "Opening desktop group history"
+
 #: apps/app/src/routes/chat-details-page.tsx:74
 msgid "正在打开桌面聊天信息"
 msgstr "Opening desktop chat details"
+
+#: apps/app/src/routes/chat-message-search-page.tsx:29
+msgid "正在打开桌面聊天记录"
+msgstr "Opening desktop chat history"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:550
 msgid "正在提交..."
@@ -2109,6 +2340,10 @@ msgstr "Loading group members..."
 msgid "正在读取群聊信息"
 msgstr "Loading group chat details"
 
+#: apps/app/src/routes/group-message-search-page.tsx:105
+msgid "正在读取群聊记录..."
+msgstr "Loading group history..."
+
 #: apps/app/src/routes/chat-details-page.tsx:750
 msgid "正在读取聊天信息"
 msgstr "Loading chat details"
@@ -2116,6 +2351,10 @@ msgstr "Loading chat details"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:626
 msgid "正在读取聊天信息..."
 msgstr "Loading chat details..."
+
+#: apps/app/src/routes/chat-message-search-page.tsx:114
+msgid "正在读取聊天记录..."
+msgstr "Loading chat history..."
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:139
 msgid "正在读取联系人..."
@@ -2129,6 +2368,11 @@ msgstr "Leaving..."
 #: apps/app/src/routes/group-chat-details-page.tsx:512
 msgid "此操作不可恢复"
 msgstr "This action cannot be undone"
+
+#. placeholder {0}: searchMessageTypeFilters.find( (item) => item.id === messageTypeFilter, )?.label ?? unknownSenderLabel
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:727
+msgid "没有匹配的{0}"
+msgstr "No matching {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:161
 msgid "没有匹配的最近会话。"
@@ -2169,10 +2413,21 @@ msgstr "No matching {0} found"
 msgid "没有找到匹配的群成员。"
 msgstr "No matching group members found."
 
+#: apps/app/src/routes/group-message-search-page.tsx:106
+msgid "没有找到相关群聊记录"
+msgstr "No matching group history found"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1137
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1164
+#: apps/app/src/routes/chat-message-search-page.tsx:115
 msgid "没有找到相关聊天记录"
 msgstr "No related chat history found"
+
+#. placeholder {0}: senderFilter === UNKNOWN_SENDER_FILTER ? unknownSenderLabel : senderFilter
+#. placeholder {1}: activeCategoryMeta.shortLabel
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:696
+msgid "没有来自 {0} 的{1}"
+msgstr "No {1} from {0}"
 
 #: apps/app/src/routes/group-qr-page.tsx:2679
 msgid "活跃单聊触达"
@@ -2191,6 +2446,7 @@ msgstr "Browser speech recognition hit a network error. You can switch to record
 msgid "消"
 msgstr "M"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:172
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:773
 msgid "消息"
 msgstr "Message"
@@ -2231,13 +2487,22 @@ msgstr "Add members"
 msgid "添加群成员"
 msgstr "Add group members"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:428
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:361
 msgid "清空"
 msgstr "Clear"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:680
+msgid "清空关键词"
+msgstr "Clear keyword"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:392
 msgid "清空搜索词"
 msgstr "Clear search"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:768
+msgid "清空时间筛选"
+msgstr "Clear time filter"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:534
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:869
@@ -2387,6 +2652,10 @@ msgstr "One moment, syncing chat profile and settings."
 msgid "稍等一下，正在整理最近可投递的聊天入口。"
 msgstr "Wait a moment, we are sorting out the chat entries that can be delivered recently."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:530
+msgid "稍等一下，正在整理这段聊天里的消息索引。"
+msgstr "One moment. Building the message index for this chat."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:548
 msgid "稍等一下，马上就好。"
 msgstr "One moment, almost there."
@@ -2394,6 +2663,17 @@ msgstr "One moment, almost there."
 #: apps/app/src/components/empty-state.tsx:20
 msgid "空"
 msgstr "Empty"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:105
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1007
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1041
+msgid "笔记"
+msgstr "Note"
+
+#. placeholder {0}: message.attachment.title
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1006
+msgid "笔记 · {0}"
+msgstr "Note · {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:658
 msgid "等待下一轮"
@@ -2407,6 +2687,10 @@ msgstr "Waiting for return"
 msgid "等待已经偏长，现在补更顺。"
 msgstr "It has been waiting long enough. Resending now is smoother."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:576
+msgid "等有消息后，这里会按关键词、图片、文件和链接帮你集中查找。"
+msgstr "Once messages arrive, you can search them here by keyword, images, files, and links."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1313
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1317
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2062
@@ -2416,6 +2700,18 @@ msgstr "It has been waiting long enough. Resending now is smoother."
 msgid "管理员"
 msgstr "Admin"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:462
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:725
+msgid "类型"
+msgstr "Type"
+
+#. placeholder {0}: searchMessageTypeFilters.find( (item) => item.id === messageTypeFilter, )?.label ?? unknownSenderLabel
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:331
+msgid "类型 · {0}"
+msgstr "Type · {0}"
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:106
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1049
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1351
 msgid "系统"
 msgstr "System"
@@ -2551,6 +2847,7 @@ msgstr "Group management"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:401
 #: apps/app/src/routes/group-chat-details-page.tsx:588
 #: apps/app/src/routes/group-chat-details-page.tsx:636
+#: apps/app/src/routes/group-message-search-page.tsx:96
 #: apps/app/src/routes/group-qr-page.tsx:189
 #: apps/app/src/routes/group-qr-page.tsx:1099
 #: apps/app/src/routes/group-qr-page.tsx:2989
@@ -2667,6 +2964,10 @@ msgstr "Group link: {inviteLink}"
 msgid "群链接已复制。"
 msgstr "The group link has been copied."
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:573
+msgid "聊天"
+msgstr "Chat"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:752
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:112
 #: apps/app/src/routes/chat-details-page.tsx:737
@@ -2718,6 +3019,7 @@ msgstr "Chat background"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:87
 #: apps/app/src/routes/chat-details-page.tsx:947
+#: apps/app/src/routes/chat-message-search-page.tsx:74
 msgid "聊天记录"
 msgstr "Chat history"
 
@@ -2725,6 +3027,10 @@ msgstr "Chat history"
 #: apps/app/src/routes/chat-details-page.tsx:553
 msgid "聊天记录已清空。"
 msgstr "Chat history cleared."
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:539
+msgid "聊天记录暂时不可用"
+msgstr "Chat history is temporarily unavailable"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:810
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1558
@@ -2753,9 +3059,17 @@ msgstr "Contact profile updated."
 msgid "联系人资料暂时不可用"
 msgstr "Contact profile is temporarily unavailable"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:102
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1013
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1045
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1347
 msgid "表情"
 msgstr "Sticker"
+
+#. placeholder {0}: message.attachment.label
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1012
+msgid "表情 · {0}"
+msgstr "Sticker · {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1452
 msgid "表情消息"
@@ -2825,6 +3139,9 @@ msgstr "Future interactions from this character will be blocked"
 msgid "详细资料"
 msgstr "Details"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:101
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:989
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:1029
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1335
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1549
 msgid "语音"
@@ -2871,6 +3188,7 @@ msgstr "Enter a group nickname"
 msgid "请输入群聊名称"
 msgstr "Enter a group name"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:528
 #: apps/app/src/routes/chat-details-page.tsx:749
 #: apps/app/src/routes/group-chat-details-page.tsx:578
 #: apps/app/src/routes/group-qr-page.tsx:1087
@@ -2927,6 +3245,7 @@ msgstr "Back"
 msgid "返回上一层"
 msgstr "Back"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:560
 #: apps/app/src/routes/chat-details-page.tsx:189
 #: apps/app/src/routes/group-chat-details-page.tsx:134
 #: apps/app/src/routes/group-chat-details-page.tsx:167
@@ -2988,6 +3307,11 @@ msgstr "{0} is still in cooldown. Wait for a return first."
 msgid "还在活跃窗口里，适合现在补。"
 msgstr "It is still in the active window, so it is suitable to make up for it now."
 
+#. placeholder {0}: activeCategoryMeta.shortLabel
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:649
+msgid "还没有{0}"
+msgstr "No {0} yet"
+
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:152
 msgid "还没有可发送的最近会话"
 msgstr "There are no recent conversations available for sending yet"
@@ -2999,6 +3323,10 @@ msgstr "There are no recent sessions to deliver yet."
 #: apps/app/src/routes/group-qr-page.tsx:1659
 msgid "这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。"
 msgstr "Targets sent in this round that have not come back from the chat thread yet will avoid conversations that were just resent. Once cooldown ends, they return to the priority slot automatically, then resend priority follows recent activity and send order."
+
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:756
+msgid "这个时间范围内没有匹配消息"
+msgstr "No matching messages in this time range"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1158
 msgid "这个时间范围内没有聊天记录"
@@ -3160,6 +3488,7 @@ msgstr "Retry copying"
 msgid "重试复制到手机"
 msgstr "Try copying to phone again"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:551
 #: apps/app/src/routes/chat-details-page.tsx:209
 #: apps/app/src/routes/group-chat-details-page.tsx:148
 #: apps/app/src/routes/group-qr-page.tsx:1113
@@ -3168,6 +3497,8 @@ msgstr "Try copying to phone again"
 msgid "重试读取"
 msgstr "Retry loading"
 
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:135
+#: apps/app/src/features/chat/chat-message-search-panel.tsx:136
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:647
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1244
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1359
