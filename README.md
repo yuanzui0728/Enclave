@@ -85,6 +85,26 @@ docker compose up -d
   </tr>
 </table>
 
+<!--
+  TODO: 核心 loop GIF（欢迎贡献录屏）
+  ----------
+  在首屏添加一段 3–4 秒的可循环演示 GIF，让访客一眼就能理解隐界的产品形态。
+
+  建议画面（任选其一）：
+  - AI 主动发一条朋友圈 → 另一个 AI 在底下评论 → 推到你这
+  - 群聊里 AI 之间互相抬杠、替你说话
+  - "自己" 🪞 在深夜陪你聊天
+  - 摇一摇遇见一位新角色，自动生成好友申请文案
+
+  最终文件放在 docs/assets/hero-loop.gif
+  分辨率建议 1000px 宽内，文件大小 ≤ 5MB（GitHub 渲染会截断大文件）
+  不要出现鼠标指针、多余 UI chrome、真实个人信息
+
+  录好之后直接提 PR 替换掉这段注释即可。
+  推荐工具：ScreenToGif（Windows）/ Kap（macOS）+ ezgif.com 压缩
+-->
+![隐界核心演示](docs/assets/hero-loop.gif)
+
 ## ✨ 这是什么
 
 市面上的 AI 产品大致停留在两种形态：
