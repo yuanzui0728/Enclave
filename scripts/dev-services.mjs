@@ -15,7 +15,7 @@ const target = process.argv[3] ?? "workspace";
 
 const serviceGroups = {
   workspace: ["app", "admin", "cloud-api", "cloud-console"],
-  all: ["api", "app", "admin", "cloud-api", "cloud-console", "wechat-connector"],
+  all: ["api", "app", "admin", "cloud-api", "cloud-console", "site", "wechat-connector"],
 };
 
 const services = {
@@ -73,6 +73,13 @@ const services = {
     },
     port: 5182,
     url: "http://127.0.0.1:5182/",
+  },
+  site: {
+    cwd: path.join(rootDir, "apps", "site"),
+    command: nodeBinary,
+    args: [path.join(rootDir, "apps", "site", "node_modules", "vite", "bin", "vite.js")],
+    port: 5183,
+    url: "http://127.0.0.1:5183/",
   },
   "wechat-connector": {
     cwd: rootDir,

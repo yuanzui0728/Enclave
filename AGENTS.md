@@ -17,6 +17,7 @@
 | 主 App             | React + Vite，承载 Web / iOS / Android / Desktop 共享业务界面（`apps/app/`） | 5180 |
 | **管理后台**       | React + Vite + `@yinjie/ui`（`apps/admin/`）                                 | 5181 |
 | **云世界管理平台** | React + Vite（`apps/cloud-console/`）                                        | 5182 |
+| 官网               | React + Vite，公开项目介绍、多语言官网与在线体验入口（`apps/site/`）        | 5183 |
 | 微信同步本地连接器 | Node.js loopback HTTP 适配层（`apps/wechat-connector/`）                    | 17364 |
 | 桌面端壳           | Tauri 远程客户端壳（`apps/desktop/`）                                        | -    |
 | Android 壳         | Capacitor 壳（`apps/android-shell/`）                                        | -    |
@@ -29,6 +30,10 @@
 ## 主 App 结构（`apps/app/src/`）
 
 `routes/` · `features/desktop/` · `features/mobile/` · `features/moments/` · `features/games/` · `features/shell/` · `runtime/` · `lib/` · `components/` · `store/`
+
+## 官网结构（`apps/site/src/`）
+
+`routes/` · `site-shell.tsx` · `site-content.ts` · `site-links.ts` · `use-site-copy.ts`
 
 ## 主 App 页面（`apps/app/src/routes/`）
 

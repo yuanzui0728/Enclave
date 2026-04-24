@@ -1,0 +1,35 @@
+{
+  "name": "@yinjie/site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../scripts/dev-services.mjs start site",
+    "dev:raw": "vite",
+    "dev:stop": "node ../../scripts/dev-services.mjs stop site",
+    "dev:restart": "node ../../scripts/dev-services.mjs restart site",
+    "dev:status": "node ../../scripts/dev-services.mjs status site",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "lint": "tsc --noEmit -p tsconfig.app.json"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "^1.109.2",
+    "@yinjie/i18n": "workspace:*",
+    "@yinjie/ui": "workspace:*",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@lingui/babel-plugin-lingui-macro": "5.9.5",
+    "@lingui/vite-plugin": "5.9.5",
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.4.1",
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.9.3",
+    "vite": "^6.1.0"
+  }
+}

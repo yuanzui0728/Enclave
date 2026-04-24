@@ -32,6 +32,11 @@ const config: LinguiConfig = {
       include: ["<rootDir>/apps/cloud-console/src"],
       exclude: ["**/node_modules/**"],
     },
+    {
+      path: "<rootDir>/packages/i18n/catalogs/site/{locale}",
+      include: ["<rootDir>/apps/site/src"],
+      exclude: ["**/node_modules/**"],
+    },
   ],
 };
 
