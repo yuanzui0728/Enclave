@@ -152,11 +152,17 @@ export interface LocalUpstreamServiceInfo {
   };
 }
 
-export interface LocalUpstreamServiceStartResponse {
+export interface LocalUpstreamServiceActionResponse {
   ok: true;
   message: string;
   service: LocalUpstreamServiceInfo;
 }
+
+export type LocalUpstreamServiceStartResponse =
+  LocalUpstreamServiceActionResponse;
+
+export type LocalUpstreamServiceOpenResponse =
+  LocalUpstreamServiceActionResponse;
 
 export function toConfigResponse(config: ConnectorConfig): ConnectorConfigResponse {
   return {

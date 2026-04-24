@@ -104,6 +104,12 @@ export interface WechatConnectorUpstreamServiceStartResponse {
   service: WechatConnectorUpstreamService;
 }
 
+export interface WechatConnectorUpstreamServiceOpenResponse {
+  ok: true;
+  message: string;
+  service: WechatConnectorUpstreamService;
+}
+
 function getStorage() {
   if (typeof window === "undefined") {
     return null;
@@ -296,6 +302,19 @@ export function startWechatConnectorUpstreamService(
   return connectorFetch<WechatConnectorUpstreamServiceStartResponse>(
     baseUrl,
     `/api/upstream-services/${key}/start`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function openWechatConnectorUpstreamService(
+  baseUrl: string,
+  key: WechatConnectorUpstreamServiceKey,
+) {
+  return connectorFetch<WechatConnectorUpstreamServiceOpenResponse>(
+    baseUrl,
+    `/api/upstream-services/${key}/open`,
     {
       method: "POST",
     },

@@ -19,6 +19,7 @@ import {
 import type {
   LocalUpstreamServiceInfo,
   LocalUpstreamServiceKey,
+  LocalUpstreamServiceOpenResponse,
   LocalUpstreamServiceStartResponse,
 } from "./contracts.js";
 
@@ -182,6 +183,41 @@ export class LocalUpstreamServiceManager {
       message: healthReady
         ? `${spec.label} 已成功启动。`
         : `已发起 ${spec.label} 启动请求，请等待本地服务就绪。`,
+      service: await this.describeService(key, config),
+    };
+  }
+
+  async openService(
+    key: LocalUpstreamServiceKey,
+    config: ConnectorConfig,
+  ): Promise<LocalUpstreamServiceOpenResponse> {
+    const spec = this.resolveSpec(key, config);
+
+    if (key !== "weflow") {
+      throw new Error(
+        `${spec.label} 没有桌面窗口可打开，请直接使用它的 HTTP 地址或查看日志。`,
+      );
+    }
+
+    let startedByOpenAction = false;
+    const current = await this.describeService(key, config);
+    if (!current.healthOk) {
+      await this.startService(key, config);
+      startedByOpenAction = true;
+    }
+
+    const focused = await this.focusWeFlowWindow(spec.cwd);
+    if (!focused) {
+      throw new Error(
+        "WeFlow 已启动，但当前没有找到可切到前台的主窗口。请检查任务栏、系统托盘，或在 WeFlow 所在虚拟桌面里切换回来。",
+      );
+    }
+
+    return {
+      ok: true,
+      message: startedByOpenAction
+        ? "已尝试启动 WeFlow，并把桌面窗口切到前台。"
+        : "已将 WeFlow 桌面窗口切到前台。",
       service: await this.describeService(key, config),
     };
   }
@@ -489,6 +525,105 @@ export class LocalUpstreamServiceManager {
     writeFileSync(logPath, content, {
       encoding: "utf8",
       flag: "a",
+    });
+  }
+
+  private async focusWeFlowWindow(cwd: string) {
+    if (process.platform === "win32") {
+      return this.focusWeFlowWindowOnWindows(cwd);
+    }
+
+    return false;
+  }
+
+  private async focusWeFlowWindowOnWindows(cwd: string) {
+    const script = `
+$ErrorActionPreference = 'Stop'
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public static class Win32 {
+  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+}
+"@
+$proc = Get-Process | Where-Object {
+  $_.ProcessName -eq 'electron' -and $_.MainWindowHandle -ne 0
+} | Sort-Object @{ Expression = { if ($_.MainWindowTitle -match 'weflow') { 0 } else { 1 } } }, @{ Expression = { $_.StartTime }; Descending = $true } | Select-Object -First 1
+if (-not $proc) {
+  exit 2
+}
+$handle = [System.IntPtr] $proc.MainWindowHandle
+[void][Win32]::ShowWindowAsync($handle, 9)
+Start-Sleep -Milliseconds 200
+$wshell = New-Object -ComObject WScript.Shell
+[void]$wshell.AppActivate($proc.Id)
+Start-Sleep -Milliseconds 150
+[void][Win32]::SetForegroundWindow($handle)
+Write-Output 'focused'
+`.trim();
+
+    const result = await this.runCapturedCommand(
+      {
+        command: "powershell.exe",
+        args: [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-Command",
+          script,
+        ],
+        preview:
+          "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command <focus-weflow-window>",
+      },
+      cwd,
+      process.env,
+    );
+
+    return result.code === 0 && result.stdout.includes("focused");
+  }
+
+  private async runCapturedCommand(
+    command: ShellCommandSpec,
+    cwd: string,
+    env: NodeJS.ProcessEnv,
+  ) {
+    const child = spawn(command.command, command.args, {
+      cwd,
+      env,
+      detached: false,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
+
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+
+    child.stdout?.on("data", (chunk) => {
+      stdoutChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderrChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+
+    return new Promise<{
+      code: number;
+      stdout: string;
+      stderr: string;
+    }>((resolve, reject) => {
+      child.on("error", reject);
+      child.on("exit", (code, signal) => {
+        if (signal) {
+          reject(new Error(`${command.preview} was interrupted by signal ${signal}.`));
+          return;
+        }
+
+        resolve({
+          code: code ?? 0,
+          stdout: Buffer.concat(stdoutChunks).toString("utf8").trim(),
+          stderr: Buffer.concat(stderrChunks).toString("utf8").trim(),
+        });
+      });
     });
   }
 

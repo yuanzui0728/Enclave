@@ -87,6 +87,17 @@ export function createConnectorServer(runtime: ConnectorRuntime) {
         return;
       }
 
+      const openMatch = url.pathname.match(
+        /^\/api\/upstream-services\/(wechat-decrypt|weflow)\/open$/u,
+      );
+      if (method === "POST" && openMatch) {
+        sendJson(
+          response,
+          await runtime.openUpstreamService(openMatch[1] as LocalUpstreamServiceKey),
+        );
+        return;
+      }
+
       sendJson(response, { error: "Not found" }, 404);
     } catch (error) {
       sendJson(

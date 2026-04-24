@@ -212,6 +212,10 @@ export class ConnectorRuntime {
     return this.upstreamServiceManager.startService(key, this.config);
   }
 
+  async openUpstreamService(key: "wechat-decrypt" | "weflow") {
+    return this.upstreamServiceManager.openService(key, this.config);
+  }
+
   private async scanConfiguredPath(filePath: string) {
     await stat(filePath);
     return this.manualJsonProvider.scanFromPath(filePath);

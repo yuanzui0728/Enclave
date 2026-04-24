@@ -46,6 +46,7 @@ import {
   listWechatConnectorContacts,
   listWechatConnectorUpstreamServices,
   loadWechatConnectorSettings,
+  openWechatConnectorUpstreamService,
   patchWechatConnectorConfig,
   saveWechatConnectorSettings,
   scanWechatConnector,
@@ -809,6 +810,11 @@ export function WechatSyncPage() {
     upstreamServiceStartMutation.mutate(key);
   }
 
+  function openLocalUpstreamService(key: WechatConnectorUpstreamServiceKey) {
+    setConnectorProbeRequested(true);
+    upstreamServiceOpenMutation.mutate(key);
+  }
+
   const connectorSourceConfigReady =
     connectorProviderKey === "wechat-decrypt-http"
       ? connectorWechatDecryptBaseUrl.trim().length > 0
@@ -834,6 +840,24 @@ export function WechatSyncPage() {
   const upstreamServiceStartMutation = useMutation({
     mutationFn: (key: WechatConnectorUpstreamServiceKey) =>
       startWechatConnectorUpstreamService(connectorSettings.baseUrl, key),
+    onSuccess: async () => {
+      setConnectorProbeRequested(true);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            "wechat-connector-upstream-services",
+            connectorSettings.baseUrl,
+          ],
+        }),
+      ]);
+    },
+  });
+  const upstreamServiceOpenMutation = useMutation({
+    mutationFn: (key: WechatConnectorUpstreamServiceKey) =>
+      openWechatConnectorUpstreamService(connectorSettings.baseUrl, key),
     onSuccess: async () => {
       setConnectorProbeRequested(true);
       await Promise.all([
@@ -2173,6 +2197,13 @@ export function WechatSyncPage() {
                 upstreamServiceStartMutation.variables === "weflow"
               }
               onStart={() => startLocalUpstreamService("weflow")}
+              isOpening={
+                upstreamServiceOpenMutation.isPending &&
+                upstreamServiceOpenMutation.variables === "weflow"
+              }
+              onOpenWindow={() => openLocalUpstreamService("weflow")}
+              targetLabel="WeFlow API 地址"
+              targetHint="这里是本地 HTTP API，不是 WeFlow 的页面地址。要配置微信 ID，请点下方“打开 WeFlow 窗口”。"
             />
           </div>
 
@@ -2209,6 +2240,13 @@ export function WechatSyncPage() {
               message={upstreamServiceStartMutation.error.message}
             />
           ) : null}
+          {upstreamServiceOpenMutation.isError &&
+          upstreamServiceOpenMutation.error instanceof Error ? (
+            <ErrorBlock
+              className="mt-4"
+              message={upstreamServiceOpenMutation.error.message}
+            />
+          ) : null}
           {connectorConfigMutation.isError &&
           connectorConfigMutation.error instanceof Error ? (
             <ErrorBlock
@@ -2238,6 +2276,14 @@ export function WechatSyncPage() {
               tone="success"
               title="启动请求已发送"
               description={upstreamServiceStartMutation.data.message}
+            />
+          ) : null}
+          {upstreamServiceOpenMutation.isSuccess ? (
+            <AdminActionFeedback
+              className="mt-4"
+              tone="success"
+              title="窗口操作已完成"
+              description={upstreamServiceOpenMutation.data.message}
             />
           ) : null}
 
@@ -2274,7 +2320,7 @@ export function WechatSyncPage() {
                   ) : null}
                   {connectorHealthQuery.data.activeConfig.weflowBaseUrl ? (
                     <div>
-                      WeFlow API：
+                      WeFlow API（不是页面地址）：
                       {connectorHealthQuery.data.activeConfig.weflowBaseUrl}
                     </div>
                   ) : null}
@@ -6390,7 +6436,11 @@ function ConnectorUpstreamServiceCard({
   connectorBaseUrlReady,
   isLoading,
   isStarting,
+  isOpening = false,
   onStart,
+  onOpenWindow,
+  targetLabel = "目标地址",
+  targetHint,
 }: {
   label: string;
   summary: string;
@@ -6398,16 +6448,30 @@ function ConnectorUpstreamServiceCard({
   connectorBaseUrlReady: boolean;
   isLoading: boolean;
   isStarting: boolean;
+  isOpening?: boolean;
   onStart: () => void;
+  onOpenWindow?: () => void;
+  targetLabel?: string;
+  targetHint?: string;
 }) {
   const statusTone = resolveUpstreamServiceStatusTone(service?.status);
-  const statusLabel = formatUpstreamServiceStatus(service?.status, isLoading);
-  const buttonDisabled =
+  const statusLabel = formatUpstreamServiceStatus(
+    service?.status,
+    isLoading || isOpening,
+  );
+  const startButtonDisabled =
     !connectorBaseUrlReady ||
     isLoading ||
     isStarting ||
+    isOpening ||
     service?.canStart === false ||
     Boolean(service?.healthOk);
+  const openButtonDisabled =
+    !connectorBaseUrlReady ||
+    isLoading ||
+    isStarting ||
+    isOpening ||
+    service?.canStart === false;
 
   return (
     <AdminMiniPanel title={`${label} 快捷启动`}>
@@ -6419,7 +6483,10 @@ function ConnectorUpstreamServiceCard({
           <StatusPill tone={statusTone}>{statusLabel}</StatusPill>
         </div>
         <p className="leading-6">{summary}</p>
-        <div>目标地址：{service?.baseUrl ?? "等待连接器返回"}</div>
+        <div>
+          {targetLabel}：{service?.baseUrl ?? "等待连接器返回"}
+        </div>
+        {targetHint ? <div>{targetHint}</div> : null}
         {service?.cwd ? <div>启动目录：{service.cwd}</div> : null}
         {service?.commandPreview ? (
           <div>默认命令：{service.commandPreview}</div>
@@ -6441,7 +6508,7 @@ function ConnectorUpstreamServiceCard({
           <Button
             variant="secondary"
             onClick={onStart}
-            disabled={buttonDisabled}
+            disabled={startButtonDisabled}
           >
             {service?.healthOk
               ? "已运行"
@@ -6449,6 +6516,19 @@ function ConnectorUpstreamServiceCard({
                 ? "启动中..."
                 : `启动 ${service?.label ?? label}`}
           </Button>
+          {onOpenWindow ? (
+            <Button
+              variant="secondary"
+              onClick={onOpenWindow}
+              disabled={openButtonDisabled}
+            >
+              {isOpening
+                ? "打开中..."
+                : service?.healthOk
+                  ? `打开 ${service?.label ?? label} 窗口`
+                  : `启动并打开 ${service?.label ?? label}`}
+            </Button>
+          ) : null}
         </div>
       </div>
     </AdminMiniPanel>

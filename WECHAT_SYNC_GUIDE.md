@@ -113,9 +113,12 @@
   - `GET /health`
   - `GET /api/config`
   - `PATCH /api/config`
-  - `POST /api/scan`
-  - `GET /api/contacts`
-  - `POST /api/contact-bundles`
+- `POST /api/scan`
+- `GET /api/contacts`
+- `POST /api/contact-bundles`
+- `GET /api/upstream-services`
+- `POST /api/upstream-services/:service/start`
+- `POST /api/upstream-services/:service/open`
 
 ### `apps/admin`
 
@@ -209,6 +212,11 @@ python -m venv .venv
 
 - [http://127.0.0.1:5031/health](http://127.0.0.1:5031/health)
 
+注意：
+- `http://127.0.0.1:5031/` 是 WeFlow 的 HTTP API 根地址，不是桌面页面
+- 如果浏览器打开后看到 `Cannot GET /`、`401` 或 `404`，这是正常现象
+- 要配置微信 ID、数据库路径和密钥，请打开 WeFlow 桌面窗口本体，而不是访问 `5031` 根路径
+
 如果你要自己对 API 做验证，WeFlow 文档里推荐用 Header：
 
 ```http
@@ -253,7 +261,8 @@ pnpm dev:wechat-connector
    - `WeFlow API 地址` 填 `http://127.0.0.1:5031`
    - `WeFlow Access Token` 填你在 WeFlow 设置中看到的 Token
 5. 点击：
-   - `启动 wechat-decrypt` 或 `启动 WeFlow`（可选，但现在支持）
+   - `启动 wechat-decrypt` 或 `启动 WeFlow`
+   - 如果是 WeFlow，再点 `打开 WeFlow 窗口`
    - `保存数据源配置`
    - `刷新连接状态`
    - `刷新本地索引`

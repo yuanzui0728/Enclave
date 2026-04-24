@@ -501,6 +501,9 @@
 - `POST /api/contact-bundles`
 - `GET /api/upstream-services`
 - `POST /api/upstream-services/:service/start`
+- `POST /api/upstream-services/:service/open`
+- `GET /api/upstream-services`
+- `POST /api/upstream-services/:service/start`
 
 ## 系统评测路由
 
