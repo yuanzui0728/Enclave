@@ -308,6 +308,20 @@ pnpm android:run:local
 
 ---
 
+## ⭐ Star History
+
+<p align="center">
+  <a href="https://star-history.com/#yuanzui0728/enclave&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=yuanzui0728/enclave&type=Date&theme=dark" />
+      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=yuanzui0728/enclave&type=Date" />
+      <img alt="隐界 Star History 图" src="https://api.star-history.com/svg?repos=yuanzui0728/enclave&type=Date" />
+    </picture>
+  </a>
+</p>
+
+---
+
 ## 🤲 一起参与
 
 隐界是一个还在成长的世界，欢迎你用任何一种方式加入：
