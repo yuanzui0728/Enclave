@@ -9,8 +9,17 @@ import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { FollowupOpenLoopEntity } from '../followup-runtime/followup-open-loop.entity';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { ReminderTaskEntity } from '../reminder-runtime/reminder-task.entity';
-import { SelfAgentWorkspaceService } from './self-agent-workspace.service';
 import { SelfAgentHeartbeatRunEntity } from './self-agent-heartbeat-run.entity';
+import { SelfAgentRulesService } from './self-agent-rules.service';
+import { SelfAgentRunEntity } from './self-agent-run.entity';
+import { SelfAgentWorkspaceService } from './self-agent-workspace.service';
+import type {
+  SelfAgentRulesValue,
+  SelfAgentRunPolicyDecisionValue,
+  SelfAgentRunRouteKeyValue,
+  SelfAgentRunStatusValue,
+  SelfAgentRunTriggerTypeValue,
+} from './self-agent.types';
 
 type SelfAgentHandlingResult = {
   handled: boolean;
@@ -41,6 +50,21 @@ type SelfAgentHeartbeatFindingRecord = {
   items: string[];
 };
 
+type SelfAgentRunRecordInput = {
+  triggerType: SelfAgentRunTriggerTypeValue;
+  status: SelfAgentRunStatusValue;
+  routeKey: SelfAgentRunRouteKeyValue;
+  policyDecision: SelfAgentRunPolicyDecisionValue;
+  summary: string;
+  conversationId?: string | null;
+  sourceMessageId?: string | null;
+  ownerId?: string | null;
+  characterId?: string | null;
+  inputPreview?: string | null;
+  outputPreview?: string | null;
+  detailsPayload?: Record<string, unknown> | null;
+};
+
 @Injectable()
 export class SelfAgentService {
   constructor(
@@ -56,8 +80,11 @@ export class SelfAgentService {
     private readonly followupOpenLoopRepo: Repository<FollowupOpenLoopEntity>,
     @InjectRepository(SelfAgentHeartbeatRunEntity)
     private readonly heartbeatRunRepo: Repository<SelfAgentHeartbeatRunEntity>,
+    @InjectRepository(SelfAgentRunEntity)
+    private readonly runRepo: Repository<SelfAgentRunEntity>,
     private readonly actionRuntime: ActionRuntimeService,
     private readonly reminderRuntime: ReminderRuntimeService,
+    private readonly rulesService: SelfAgentRulesService,
     private readonly workspace: SelfAgentWorkspaceService,
   ) {}
 
@@ -72,32 +99,105 @@ export class SelfAgentService {
       return { handled: false };
     }
 
-    const actionResult = await this.actionRuntime.handleConversationTurn({
-      conversationId: input.conversationId,
-      ownerId: input.ownerId,
-      character: input.character,
-      userMessage: input.userMessage,
-      delegatedBy: 'self_agent',
-    });
-    if (actionResult.handled) {
-      return {
-        handled: true,
-        responseText: actionResult.responseText,
-        handledBy: 'action_runtime',
-      };
+    const rules = await this.rulesService.getRules();
+    if (!rules.policy.enabled) {
+      await this.saveRunRecord({
+        triggerType: 'conversation',
+        status: 'skipped',
+        routeKey: 'ignored',
+        policyDecision: 'disabled',
+        summary: 'self-agent 当前已关闭，本轮没有接管这条消息。',
+        conversationId: input.conversationId,
+        sourceMessageId: input.sourceMessageId,
+        ownerId: input.ownerId,
+        characterId: input.character.id,
+        inputPreview: input.userMessage,
+        detailsPayload: {
+          reason: 'policy_disabled',
+        },
+      });
+      return { handled: false };
     }
 
-    const reminderResult = await this.reminderRuntime.handleConversationTurn({
-      conversationId: input.conversationId,
-      userMessage: input.userMessage,
-      sourceMessageId: input.sourceMessageId,
-    });
-    if (reminderResult.handled) {
-      return {
-        handled: true,
-        responseText: reminderResult.responseText,
-        handledBy: 'reminder_runtime',
-      };
+    if (rules.policy.allowActionRuntimeDelegation) {
+      const actionResult = await this.actionRuntime.handleConversationTurn({
+        conversationId: input.conversationId,
+        ownerId: input.ownerId,
+        character: input.character,
+        userMessage: input.userMessage,
+        delegatedBy: 'self_agent',
+        forceConfirmation:
+          rules.policy.forceConfirmationForDelegatedActions,
+        blockedConnectorKeys: rules.policy.blockedActionConnectorKeys,
+        blockedOperationKeys: rules.policy.blockedActionOperationKeys,
+      });
+      if (actionResult.handled) {
+        const latestActionRun = await this.findLatestActionRun({
+          conversationId: input.conversationId,
+          ownerId: input.ownerId,
+          characterId: input.character.id,
+        });
+        await this.saveRunRecord({
+          triggerType: 'conversation',
+          status:
+            latestActionRun?.status === 'cancelled' &&
+            latestActionRun.policyDecisionPayload?.reason ===
+              'blocked_by_delegate_policy'
+              ? 'blocked'
+              : 'handled',
+          routeKey: 'action_runtime',
+          policyDecision: this.resolveActionPolicyDecision(latestActionRun),
+          summary: this.buildActionRunSummary(latestActionRun),
+          conversationId: input.conversationId,
+          sourceMessageId: input.sourceMessageId,
+          ownerId: input.ownerId,
+          characterId: input.character.id,
+          inputPreview: input.userMessage,
+          outputPreview: actionResult.responseText ?? null,
+          detailsPayload: latestActionRun
+            ? {
+                actionRunId: latestActionRun.id,
+                actionRunStatus: latestActionRun.status,
+                connectorKey: latestActionRun.connectorKey,
+                operationKey: latestActionRun.operationKey,
+                title: latestActionRun.title,
+              }
+            : null,
+        });
+        return {
+          handled: true,
+          responseText: actionResult.responseText,
+          handledBy: 'action_runtime',
+        };
+      }
+    }
+
+    if (rules.policy.allowReminderRuntimeDelegation) {
+      const reminderResult = await this.reminderRuntime.handleConversationTurn({
+        conversationId: input.conversationId,
+        userMessage: input.userMessage,
+        sourceMessageId: input.sourceMessageId,
+      });
+      if (reminderResult.handled) {
+        await this.saveRunRecord({
+          triggerType: 'conversation',
+          status: 'handled',
+          routeKey: 'reminder_runtime',
+          policyDecision: 'delegated',
+          summary: 'self-agent 将这条消息路由给了 reminder-runtime。',
+          conversationId: input.conversationId,
+          sourceMessageId: input.sourceMessageId,
+          ownerId: input.ownerId,
+          characterId: input.character.id,
+          inputPreview: input.userMessage,
+          outputPreview: reminderResult.responseText ?? null,
+        });
+        return {
+          handled: true,
+          responseText: reminderResult.responseText,
+          handledBy: 'reminder_runtime',
+        };
+      }
     }
 
     return { handled: false };
@@ -109,6 +209,46 @@ export class SelfAgentService {
     }
 
     return this.workspace.buildChatPromptSections(input);
+  }
+
+  async getRules(): Promise<SelfAgentRulesValue> {
+    return this.rulesService.getRules();
+  }
+
+  async setRules(patch: Partial<SelfAgentRulesValue>) {
+    return this.rulesService.setRules(patch);
+  }
+
+  async recordFallbackConversationTurn(input: {
+    conversationId: string;
+    ownerId: string;
+    character: CharacterEntity;
+    sourceMessageId: string;
+    userMessage: string;
+    assistantReplyText: string;
+    workspaceSectionCount: number;
+  }) {
+    if (!this.isSelfCharacter(input.character)) {
+      return null;
+    }
+
+    const rules = await this.rulesService.getRules();
+    return this.saveRunRecord({
+      triggerType: 'conversation',
+      status: 'handled',
+      routeKey: 'self_chat',
+      policyDecision: rules.policy.enabled ? 'fallback' : 'disabled',
+      summary: 'self-agent 本轮回落到普通自我对话回复。',
+      conversationId: input.conversationId,
+      sourceMessageId: input.sourceMessageId,
+      ownerId: input.ownerId,
+      characterId: input.character.id,
+      inputPreview: input.userMessage,
+      outputPreview: input.assistantReplyText,
+      detailsPayload: {
+        workspaceSectionCount: input.workspaceSectionCount,
+      },
+    });
   }
 
   async getAdminOverview() {
@@ -123,7 +263,9 @@ export class SelfAgentService {
       upcomingReminderCount,
       awaitingActionConfirmationCount,
       awaitingActionSlotsCount,
+      rules,
       recentHeartbeatRuns,
+      recentRuns,
     ] = await Promise.all([
       this.workspace.listWorkspaceDocuments({ character: selfCharacter }),
       this.followupOpenLoopRepo.count({
@@ -150,9 +292,14 @@ export class SelfAgentService {
           status: 'awaiting_slots',
         },
       }),
+      this.rulesService.getRules(),
       this.heartbeatRunRepo.find({
         order: { updatedAt: 'DESC', createdAt: 'DESC' },
         take: 12,
+      }),
+      this.runRepo.find({
+        order: { updatedAt: 'DESC', createdAt: 'DESC' },
+        take: 20,
       }),
     ]);
 
@@ -165,6 +312,7 @@ export class SelfAgentService {
         characterName: selfCharacter.name,
         characterSourceKey: selfCharacter.sourceKey?.trim() || null,
       },
+      rules,
       workspaceDocuments,
       stats: {
         activeOpenLoopCount,
@@ -172,10 +320,12 @@ export class SelfAgentService {
         awaitingActionConfirmationCount,
         awaitingActionSlotsCount,
         heartbeatRunCount: recentHeartbeatRuns.length,
+        runCount: recentRuns.length,
       },
       recentHeartbeatRuns: recentHeartbeatRuns.map((item) =>
         this.serializeHeartbeatRun(item),
       ),
+      recentRuns: recentRuns.map((item) => this.serializeRun(item)),
     };
   }
 
@@ -200,17 +350,74 @@ export class SelfAgentService {
   }
 
   async runHeartbeat(options?: { trigger?: SelfAgentHeartbeatTrigger }) {
-    await this.requireSelfCharacter();
-    const owner = await this.requireOwner();
+    const [selfCharacter, owner, rules] = await Promise.all([
+      this.requireSelfCharacter(),
+      this.requireOwner(),
+      this.rulesService.getRules(),
+    ]);
     const trigger = options?.trigger ?? 'manual';
     const now = new Date();
+    const baseRunInput = {
+      conversationId: null,
+      sourceMessageId: null,
+      ownerId: owner.id,
+      characterId: selfCharacter.id,
+      inputPreview: null,
+    };
+
+    if (!rules.heartbeat.enabled) {
+      const disabledRun = await this.heartbeatRunRepo.save(
+        this.heartbeatRunRepo.create({
+          triggerType: trigger,
+          status: 'noop',
+          summary: 'heartbeat 已关闭，本轮跳过巡检。',
+          suggestedMessage: null,
+          findingsPayload: [],
+          errorMessage: null,
+        }),
+      );
+      await this.saveRunRecord({
+        triggerType: 'heartbeat',
+        status: 'skipped',
+        routeKey: 'heartbeat',
+        policyDecision: 'disabled',
+        summary: disabledRun.summary,
+        ...baseRunInput,
+      });
+      return this.serializeHeartbeatRun(disabledRun);
+    }
+
+    if (
+      !rules.heartbeat.allowNightlySilentScan &&
+      !this.isWithinHeartbeatWindow(now, rules)
+    ) {
+      const skippedRun = await this.heartbeatRunRepo.save(
+        this.heartbeatRunRepo.create({
+          triggerType: trigger,
+          status: 'noop',
+          summary: 'heartbeat 当前不在主动时段，本轮保持静默。',
+          suggestedMessage: null,
+          findingsPayload: [],
+          errorMessage: null,
+        }),
+      );
+      await this.saveRunRecord({
+        triggerType: 'heartbeat',
+        status: 'skipped',
+        routeKey: 'heartbeat',
+        policyDecision: 'suggest_only',
+        summary: skippedRun.summary,
+        ...baseRunInput,
+      });
+      return this.serializeHeartbeatRun(skippedRun);
+    }
 
     const [openLoops, upcomingReminders, awaitingConfirmationRuns, awaitingSlotRuns] =
       await Promise.all([
         this.followupOpenLoopRepo.find({
           where: { status: In(['open', 'watching', 'recommended']) },
           order: { updatedAt: 'DESC', createdAt: 'DESC' },
-          take: 3,
+          take: rules.heartbeat.maxItemsPerCategory,
         }),
         this.reminderTaskRepo.find({
           where: {
@@ -221,7 +428,7 @@ export class SelfAgentService {
             ),
           },
           order: { nextTriggerAt: 'ASC', dueAt: 'ASC', updatedAt: 'DESC' },
-          take: 3,
+          take: rules.heartbeat.maxItemsPerCategory,
         }),
         this.actionRunRepo.find({
           where: {
@@ -229,7 +436,7 @@ export class SelfAgentService {
             status: 'awaiting_confirmation',
           },
           order: { updatedAt: 'DESC', createdAt: 'DESC' },
-          take: 3,
+          take: rules.heartbeat.maxItemsPerCategory,
         }),
         this.actionRunRepo.find({
           where: {
@@ -237,7 +444,7 @@ export class SelfAgentService {
             status: 'awaiting_slots',
           },
           order: { updatedAt: 'DESC', createdAt: 'DESC' },
-          take: 3,
+          take: rules.heartbeat.maxItemsPerCategory,
         }),
       ]);
 
@@ -292,6 +499,18 @@ export class SelfAgentService {
       errorMessage: null,
     });
     const saved = await this.heartbeatRunRepo.save(run);
+    await this.saveRunRecord({
+      triggerType: 'heartbeat',
+      status: findings.length > 0 ? 'suggested' : 'skipped',
+      routeKey: 'heartbeat',
+      policyDecision: 'suggest_only',
+      summary: saved.summary,
+      outputPreview: saved.suggestedMessage ?? null,
+      detailsPayload: {
+        findingsCount: findings.length,
+      },
+      ...baseRunInput,
+    });
     return this.serializeHeartbeatRun(saved);
   }
 
@@ -324,6 +543,21 @@ export class SelfAgentService {
     return owner;
   }
 
+  private async findLatestActionRun(input: {
+    conversationId: string;
+    ownerId: string;
+    characterId: string;
+  }) {
+    return this.actionRunRepo.findOne({
+      where: {
+        conversationId: input.conversationId,
+        ownerId: input.ownerId,
+        characterId: input.characterId,
+      },
+      order: { updatedAt: 'DESC', createdAt: 'DESC' },
+    });
+  }
+
   private serializeHeartbeatRun(run: SelfAgentHeartbeatRunEntity) {
     return {
       id: run.id,
@@ -338,6 +572,111 @@ export class SelfAgentService {
       createdAt: run.createdAt.toISOString(),
       updatedAt: run.updatedAt.toISOString(),
     };
+  }
+
+  private serializeRun(run: SelfAgentRunEntity) {
+    return {
+      id: run.id,
+      triggerType: run.triggerType,
+      status: run.status,
+      routeKey: run.routeKey,
+      policyDecision: run.policyDecision,
+      conversationId: run.conversationId ?? null,
+      sourceMessageId: run.sourceMessageId ?? null,
+      ownerId: run.ownerId ?? null,
+      characterId: run.characterId ?? null,
+      summary: run.summary,
+      inputPreview: run.inputPreview ?? null,
+      outputPreview: run.outputPreview ?? null,
+      details: run.detailsPayload ?? null,
+      createdAt: run.createdAt.toISOString(),
+      updatedAt: run.updatedAt.toISOString(),
+    };
+  }
+
+  private async saveRunRecord(input: SelfAgentRunRecordInput) {
+    const run = this.runRepo.create({
+      triggerType: input.triggerType,
+      status: input.status,
+      routeKey: input.routeKey,
+      policyDecision: input.policyDecision,
+      conversationId: input.conversationId ?? null,
+      sourceMessageId: input.sourceMessageId ?? null,
+      ownerId: input.ownerId ?? null,
+      characterId: input.characterId ?? null,
+      summary: input.summary,
+      inputPreview: this.truncatePreview(input.inputPreview),
+      outputPreview: this.truncatePreview(input.outputPreview),
+      detailsPayload: input.detailsPayload ?? null,
+    });
+    return this.runRepo.save(run);
+  }
+
+  private resolveActionPolicyDecision(run: ActionRunEntity | null) {
+    if (!run) {
+      return 'delegated' as const;
+    }
+
+    if (
+      run.status === 'cancelled' &&
+      run.policyDecisionPayload?.reason === 'blocked_by_delegate_policy'
+    ) {
+      return 'blocked' as const;
+    }
+    if (run.status === 'awaiting_confirmation') {
+      return 'confirm_required' as const;
+    }
+    if (run.status === 'awaiting_slots') {
+      return 'clarify_required' as const;
+    }
+    return 'delegated' as const;
+  }
+
+  private buildActionRunSummary(run: ActionRunEntity | null) {
+    if (!run) {
+      return 'self-agent 将消息路由给了 action-runtime。';
+    }
+
+    if (
+      run.status === 'cancelled' &&
+      run.policyDecisionPayload?.reason === 'blocked_by_delegate_policy'
+    ) {
+      return `self-agent 命中动作链，但被统一策略拦下：${run.title}`;
+    }
+    if (run.status === 'awaiting_confirmation') {
+      return `self-agent 已转入动作确认：${run.title}`;
+    }
+    if (run.status === 'awaiting_slots') {
+      return `self-agent 已转入动作补参数：${run.title}`;
+    }
+    if (run.status === 'succeeded') {
+      return `self-agent 已委托 action-runtime 执行完成：${run.title}`;
+    }
+    if (run.status === 'failed') {
+      return `self-agent 委托 action-runtime 失败：${run.title}`;
+    }
+    return `self-agent 已委托 action-runtime：${run.title}`;
+  }
+
+  private isWithinHeartbeatWindow(
+    now: Date,
+    rules: SelfAgentRulesValue,
+  ) {
+    const hour = now.getHours();
+    return (
+      hour >= rules.heartbeat.activeHoursStart &&
+      hour <= rules.heartbeat.activeHoursEnd
+    );
+  }
+
+  private truncatePreview(value?: string | null) {
+    const normalized = value?.trim();
+    if (!normalized) {
+      return null;
+    }
+    return normalized.length > 220
+      ? `${normalized.slice(0, 217).trimEnd()}...`
+      : normalized;
   }
 
   private buildHeartbeatMessage(findings: SelfAgentHeartbeatFindingRecord[]) {

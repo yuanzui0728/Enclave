@@ -89,6 +89,7 @@ import { ReminderTaskEntity } from './modules/reminder-runtime/reminder-task.ent
 import { InferenceProviderAccountEntity } from './modules/inference/inference-provider-account.entity';
 import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import { SelfAgentHeartbeatRunEntity } from './modules/self-agent/self-agent-heartbeat-run.entity';
+import { SelfAgentRunEntity } from './modules/self-agent/self-agent-run.entity';
 import {
   prepareDatabasePath,
   resolveApiPath,
@@ -169,6 +170,7 @@ import {
           InferenceProviderAccountEntity,
           InferenceModelCatalogEntryEntity,
           SelfAgentHeartbeatRunEntity,
+          SelfAgentRunEntity,
         ],
         synchronize: true,
       }),

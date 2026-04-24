@@ -113,6 +113,16 @@ export class AdminController {
     return this.selfAgentService.getAdminOverview();
   }
 
+  @Get('self-agent/rules')
+  getSelfAgentRules() {
+    return this.selfAgentService.getRules();
+  }
+
+  @Patch('self-agent/rules')
+  setSelfAgentRules(@Body() body: Record<string, unknown>) {
+    return this.selfAgentService.setRules(body);
+  }
+
   @Get('self-agent/workspace/:name')
   getSelfAgentWorkspaceDocument(@Param('name') name: string) {
     return this.selfAgentService.getWorkspaceDocument(

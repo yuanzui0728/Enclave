@@ -946,6 +946,7 @@ export class ChatService {
       },
     });
     const extraSystemPromptSections = [...replyModalities.promptSections];
+    let selfAgentWorkspaceSections: string[] = [];
     if (
       isSelfConversation &&
       charEntity &&
@@ -953,11 +954,10 @@ export class ChatService {
       !actionResult.handled &&
       !reminderResult.handled
     ) {
-      extraSystemPromptSections.push(
-        ...(await this.selfAgent.buildChatPromptSections({
-          character: charEntity,
-        })),
-      );
+      selfAgentWorkspaceSections = await this.selfAgent.buildChatPromptSections({
+        character: charEntity,
+      });
+      extraSystemPromptSections.push(...selfAgentWorkspaceSections);
     }
 
     const assistantReplyText = selfAgentResult.handled
@@ -995,6 +995,24 @@ export class ChatService {
       plan: replyModalities,
       fallbackText: '收到。',
     });
+    if (
+      normalizedAssistantReplyText &&
+      isSelfConversation &&
+      charEntity &&
+      !selfAgentResult.handled &&
+      !actionResult.handled &&
+      !reminderResult.handled
+    ) {
+      await this.selfAgent.recordFallbackConversationTurn({
+        conversationId: convId,
+        ownerId: owner.id,
+        character: charEntity,
+        sourceMessageId: userMsgEntity.id,
+        userMessage: resolvedInput.promptText,
+        assistantReplyText: normalizedAssistantReplyText,
+        workspaceSectionCount: selfAgentWorkspaceSections.length,
+      });
+    }
 
     if (normalizedAssistantReplyText) {
       const assistantReply = await this.createAssistantReplyMessages({

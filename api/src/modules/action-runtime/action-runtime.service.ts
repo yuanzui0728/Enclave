@@ -143,6 +143,9 @@ export class ActionRuntimeService {
     character: CharacterEntity;
     userMessage: string;
     delegatedBy?: string | null;
+    forceConfirmation?: boolean;
+    blockedConnectorKeys?: string[] | null;
+    blockedOperationKeys?: string[] | null;
   }): Promise<ActionHandlingResultValue> {
     await this.ensureDefaultConnectors();
     const rules = await this.rulesService.getRules();
@@ -199,6 +202,51 @@ export class ActionRuntimeService {
     }
 
     const plan = preview.plan;
+    const blockedConnectorKeys = input.blockedConnectorKeys ?? [];
+    const blockedOperationKeys = input.blockedOperationKeys ?? [];
+    if (
+      this.isPlanBlockedByDelegatePolicy(
+        plan,
+        blockedConnectorKeys,
+        blockedOperationKeys,
+      )
+    ) {
+      const blockedRun = this.runRepo.create({
+        id: createRunId(),
+        conversationId: input.conversationId,
+        ownerId: input.ownerId,
+        characterId: input.character.id,
+        connectorKey: plan.connectorKey,
+        operationKey: plan.operationKey,
+        title: plan.title,
+        status: 'cancelled',
+        riskLevel: plan.riskLevel,
+        requiresConfirmation: true,
+        userGoal: plan.goal,
+        slotPayload: { ...plan.slots },
+        missingSlots: [...plan.missingSlots],
+        planPayload: plan,
+        policyDecisionPayload: {
+          reason: 'blocked_by_delegate_policy',
+          forceConfirmation: Boolean(input.forceConfirmation),
+          blockedConnectorKeys,
+          blockedOperationKeys,
+        },
+        tracePayload: appendTrace(null, {
+          phase: 'blocked_by_delegate_policy',
+          entryMode: input.delegatedBy ? 'delegated' : 'direct',
+          delegatedBy: input.delegatedBy ?? null,
+          blockedConnectorKeys,
+          blockedOperationKeys,
+        }),
+      });
+      await this.runRepo.save(blockedRun);
+      return {
+        handled: true,
+        responseText: this.renderBlockedByDelegatePolicy(plan),
+      };
+    }
+
     const run = this.runRepo.create({
       id: createRunId(),
       conversationId: input.conversationId,
@@ -214,10 +262,16 @@ export class ActionRuntimeService {
       slotPayload: { ...plan.slots },
       missingSlots: [...plan.missingSlots],
       planPayload: plan,
+      policyDecisionPayload: {
+        forceConfirmation: Boolean(input.forceConfirmation),
+        blockedConnectorKeys,
+        blockedOperationKeys,
+      },
       tracePayload: appendTrace(null, {
         phase: 'plan_created',
         entryMode: input.delegatedBy ? 'delegated' : 'direct',
         delegatedBy: input.delegatedBy ?? null,
+        forceConfirmation: Boolean(input.forceConfirmation),
         plannerMode: rules.plannerMode,
         plannerReason: preview.reason,
         matchedKeywords: plan.matchedKeywords,
@@ -228,6 +282,7 @@ export class ActionRuntimeService {
     if (plan.missingSlots.length > 0) {
       run.status = 'awaiting_slots';
       run.policyDecisionPayload = {
+        ...(run.policyDecisionPayload ?? {}),
         reason: 'missing_required_slots',
         missingSlots: [...plan.missingSlots],
       };
@@ -238,9 +293,16 @@ export class ActionRuntimeService {
       };
     }
 
-    if (this.requiresConfirmation(plan, rules)) {
+    if (
+      this.shouldRequireConfirmation(
+        plan,
+        rules,
+        Boolean(input.forceConfirmation),
+      )
+    ) {
       run.status = 'awaiting_confirmation';
       run.policyDecisionPayload = {
+        ...(run.policyDecisionPayload ?? {}),
         reason: 'requires_confirmation',
         autoExecutable: false,
       };
@@ -261,6 +323,7 @@ export class ActionRuntimeService {
 
     run.status = 'running';
     run.policyDecisionPayload = {
+      ...(run.policyDecisionPayload ?? {}),
       reason: 'auto_execute',
       autoExecutable: true,
     };
@@ -570,7 +633,11 @@ export class ActionRuntimeService {
       run.confirmationPayload.confirmedAt,
     );
     if (
-      this.requiresConfirmation(refreshedPlan, rules) &&
+      this.shouldRequireConfirmation(
+        refreshedPlan,
+        rules,
+        this.resolveForceConfirmationFromRun(run),
+      ) &&
       !confirmationRecorded
     ) {
       run.status = 'awaiting_confirmation';
@@ -580,6 +647,7 @@ export class ActionRuntimeService {
         confirmationKeywords: [...rules.policy.confirmationKeywords],
       };
       run.policyDecisionPayload = {
+        ...(run.policyDecisionPayload ?? {}),
         reason: 'requires_confirmation',
         autoExecutable: false,
       };
@@ -629,7 +697,7 @@ export class ActionRuntimeService {
     let responsePreview: string;
     if (plan.missingSlots.length > 0) {
       responsePreview = this.renderClarification(plan, rules);
-    } else if (this.requiresConfirmation(plan, rules)) {
+    } else if (this.shouldRequireConfirmation(plan, rules, false)) {
       responsePreview = this.renderConfirmation(plan, rules);
     } else {
       const connector = connectors.find(
@@ -836,7 +904,13 @@ export class ActionRuntimeService {
       };
     }
 
-    if (this.requiresConfirmation(mergedPlan, rules)) {
+    if (
+      this.shouldRequireConfirmation(
+        mergedPlan,
+        rules,
+        this.resolveForceConfirmationFromRun(run),
+      )
+    ) {
       run.status = 'awaiting_confirmation';
       run.confirmationPayload = {
         requestedAt: new Date().toISOString(),
@@ -1989,6 +2063,41 @@ export class ActionRuntimeService {
       return false;
     }
     return plan.requiresConfirmation;
+  }
+
+  private shouldRequireConfirmation(
+    plan: ActionPlanValue,
+    rules: ActionRuntimeRulesValue,
+    forceConfirmation: boolean,
+  ) {
+    if (forceConfirmation) {
+      return true;
+    }
+    return this.requiresConfirmation(plan, rules);
+  }
+
+  private resolveForceConfirmationFromRun(run: ActionRunEntity) {
+    return Boolean(
+      run.policyDecisionPayload &&
+        typeof run.policyDecisionPayload === 'object' &&
+        'forceConfirmation' in run.policyDecisionPayload &&
+        run.policyDecisionPayload.forceConfirmation === true,
+    );
+  }
+
+  private isPlanBlockedByDelegatePolicy(
+    plan: ActionPlanValue,
+    blockedConnectorKeys: string[],
+    blockedOperationKeys: string[],
+  ) {
+    return (
+      blockedConnectorKeys.includes(plan.connectorKey) ||
+      blockedOperationKeys.includes(plan.operationKey)
+    );
+  }
+
+  private renderBlockedByDelegatePolicy(plan: ActionPlanValue) {
+    return `这类动作我先不直接接管：${plan.title}。当前主代理规则要求先停在讨论或人工确认。`;
   }
 
   private matchesKeyword(message: string, keywords: string[]) {
