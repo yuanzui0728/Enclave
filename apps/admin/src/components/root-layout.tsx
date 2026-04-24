@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
+import { AdminAutoTranslationBoundary } from "./admin-auto-translation-boundary";
 import { AdminShell } from "./admin-shell";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
@@ -101,36 +102,38 @@ export function RootLayout() {
   return (
     <>
       <DesktopRuntimeGuard />
-      <AdminShell
-        sidebar={
-          <AdminSidebar
-            secret={secret}
-            editingSecret={editingSecret}
-            draft={draft}
-            onDraftChange={setDraft}
-            onSaveSecret={saveSecret}
-            onEditSecret={() => setEditingSecret(true)}
-            coreApiHealthy={Boolean(statusQuery.data?.coreApi.healthy)}
-            providerReady={Boolean(
-              statusQuery.data?.inferenceGateway.activeProvider,
-            )}
-            digitalHumanSummary={digitalHumanSummary}
-            ownerCount={statusQuery.data?.worldSurface.ownerCount ?? null}
-            navLinks={navItems}
-          />
-        }
-        topbar={
-          <AdminTopbar
-            eyebrow={routeMeta.eyebrow}
-            title={routeMeta.title}
-            statusLabel={shellStatus.label}
-            statusTone={shellStatus.tone}
-            statusDetailLabel={shellStatus.detailLabel}
-          />
-        }
-      >
-        <Outlet />
-      </AdminShell>
+      <AdminAutoTranslationBoundary>
+        <AdminShell
+          sidebar={
+            <AdminSidebar
+              secret={secret}
+              editingSecret={editingSecret}
+              draft={draft}
+              onDraftChange={setDraft}
+              onSaveSecret={saveSecret}
+              onEditSecret={() => setEditingSecret(true)}
+              coreApiHealthy={Boolean(statusQuery.data?.coreApi.healthy)}
+              providerReady={Boolean(
+                statusQuery.data?.inferenceGateway.activeProvider,
+              )}
+              digitalHumanSummary={digitalHumanSummary}
+              ownerCount={statusQuery.data?.worldSurface.ownerCount ?? null}
+              navLinks={navItems}
+            />
+          }
+          topbar={
+            <AdminTopbar
+              eyebrow={routeMeta.eyebrow}
+              title={routeMeta.title}
+              statusLabel={shellStatus.label}
+              statusTone={shellStatus.tone}
+              statusDetailLabel={shellStatus.detailLabel}
+            />
+          }
+        >
+          <Outlet />
+        </AdminShell>
+      </AdminAutoTranslationBoundary>
     </>
   );
 }

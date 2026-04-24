@@ -52,17 +52,37 @@ const surfaceCatalogLoaders: Record<I18nAppSurface, CatalogLoaderMap> = {
   site: siteCatalogLoaders,
 };
 
+const messageCache = new Map<string, Promise<Messages>>();
+
 export async function loadMessagesForSurface(
   surface: I18nAppSurface,
   locale: SupportedLocale,
 ) {
-  const [sharedCatalog, surfaceCatalog] = await Promise.all([
+  const cacheKey = `${surface}:${locale}`;
+  const cachedMessages = messageCache.get(cacheKey);
+  if (cachedMessages) {
+    return cachedMessages;
+  }
+
+  const messagesPromise = Promise.all([
     sharedCatalogLoaders[locale](),
     surfaceCatalogLoaders[surface][locale](),
-  ]);
-
-  return {
+  ]).then(([sharedCatalog, surfaceCatalog]) => ({
     ...sharedCatalog.messages,
     ...surfaceCatalog.messages,
-  } satisfies Messages;
+  }) satisfies Messages);
+
+  messageCache.set(cacheKey, messagesPromise);
+  return messagesPromise;
+}
+
+export function prefetchMessagesForSurface(
+  surface: I18nAppSurface,
+  locales: readonly SupportedLocale[],
+) {
+  locales.forEach((locale) => {
+    void loadMessagesForSurface(surface, locale).catch(() => {
+      messageCache.delete(`${surface}:${locale}`);
+    });
+  });
 }

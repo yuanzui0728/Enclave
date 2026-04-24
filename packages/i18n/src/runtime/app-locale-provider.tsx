@@ -4,8 +4,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
+  startTransition,
 } from "react";
 import { I18nProvider } from "@lingui/react";
 import {
@@ -19,7 +21,10 @@ import {
   syncDocumentLocale,
 } from "../locales";
 import { appI18n, setActiveLocale } from "./i18n-instance";
-import { loadMessagesForSurface } from "./catalog-loaders";
+import {
+  loadMessagesForSurface,
+  prefetchMessagesForSurface,
+} from "./catalog-loaders";
 
 type AppLocaleContextValue = {
   availableLocales: readonly SupportedLocale[];
@@ -48,15 +53,18 @@ export function AppLocaleProvider({
   );
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const hasActivatedLocaleRef = useRef(false);
 
   const setLocale = useCallback(
     (nextLocale: string) => {
       const resolvedLocale =
         resolveSupportedLocale(nextLocale) ?? DEFAULT_LOCALE;
       persistPreferredLocale(surface, resolvedLocale);
-      setLocaleState((currentLocale) =>
-        currentLocale === resolvedLocale ? currentLocale : resolvedLocale,
-      );
+      startTransition(() => {
+        setLocaleState((currentLocale) =>
+          currentLocale === resolvedLocale ? currentLocale : resolvedLocale,
+        );
+      });
     },
     [surface],
   );
@@ -65,7 +73,9 @@ export function AppLocaleProvider({
     let cancelled = false;
 
     async function activateLocale() {
-      setIsReady(false);
+      if (!hasActivatedLocaleRef.current) {
+        setIsReady(false);
+      }
       setError(null);
 
       try {
@@ -78,6 +88,7 @@ export function AppLocaleProvider({
         appI18n.activate(locale);
         setActiveLocale(locale);
         syncDocumentLocale(locale);
+        hasActivatedLocaleRef.current = true;
         setIsReady(true);
       } catch (cause) {
         if (cancelled) {
@@ -89,12 +100,13 @@ export function AppLocaleProvider({
 
         if (locale !== DEFAULT_LOCALE) {
           persistPreferredLocale(surface, DEFAULT_LOCALE);
-          setLocaleState(DEFAULT_LOCALE);
+          startTransition(() => setLocaleState(DEFAULT_LOCALE));
           return;
         }
 
         syncDocumentLocale(DEFAULT_LOCALE);
         setActiveLocale(DEFAULT_LOCALE);
+        hasActivatedLocaleRef.current = true;
         setError(nextError);
         setIsReady(true);
       }
@@ -106,6 +118,21 @@ export function AppLocaleProvider({
       cancelled = true;
     };
   }, [locale, surface]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      prefetchMessagesForSurface(
+        surface,
+        SUPPORTED_LOCALES.filter((availableLocale) => availableLocale !== locale),
+      );
+    }, 200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isReady, locale, surface]);
 
   const contextValue = useMemo<AppLocaleContextValue>(
     () => ({

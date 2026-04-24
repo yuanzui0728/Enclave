@@ -34,6 +34,7 @@ export function LanguageSwitcher({
 
   return (
     <div
+      data-i18n-skip="true"
       className={cx(
         compact
           ? "inline-flex items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-primary)] px-2.5 py-1"
