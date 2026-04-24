@@ -143,7 +143,7 @@ export function AdminSidebar({
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
           <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--text-muted)]">
-            隐界
+            {t(msg`隐界`)}
           </div>
           <div className="text-base font-semibold leading-tight text-[color:var(--text-primary)]">
             {t(msg`运营控制台`)}

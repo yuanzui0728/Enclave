@@ -177,9 +177,9 @@ function resolveNavItems() {
     },
     {
       to: "/self-agent",
-      label: "主代理",
-      roleBadge: "承接：我自己主代理",
-      hint: "查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。",
+      label: t(msg`主代理`),
+      roleBadge: t(msg`承接：我自己主代理`),
+      hint: t(msg`查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。`),
     },
     {
       to: "/reminder-runtime",
@@ -292,10 +292,11 @@ function resolveRouteMeta(pathname: string) {
 
   if (pathname === "/self-agent") {
     return {
-      eyebrow: "Self Agent",
-      title: "我自己的 workspace 与 heartbeat",
-      description:
-        "把“我自己”升级成主代理后，在这里查看 standing orders、workspace 文件、巡检结果和近期待处理事项。",
+      eyebrow: t(msg`Self Agent`),
+      title: t(msg`我自己的 workspace 与 heartbeat`),
+      description: t(
+        msg`把“我自己”升级成主代理后，在这里查看 standing orders、workspace 文件、巡检结果和近期待处理事项。`,
+      ),
     };
   }
 
