@@ -50,6 +50,7 @@ import { CustomStickersService } from './custom-stickers.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
 import { MediaInsightJobService } from './media-insight-job.service';
+import { DocumentExtractionService } from './document-extraction.service';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { MediaInsightJobService } from './media-insight-job.service';
     GroupReplyTaskService,
     ReplyArtifactJobService,
     MediaInsightJobService,
+    DocumentExtractionService,
     FavoritesService,
     SearchActivityService,
     MessageRemindersService,

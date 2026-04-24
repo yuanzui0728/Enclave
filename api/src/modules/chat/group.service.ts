@@ -49,6 +49,8 @@ import { GroupReplyTaskService } from './group-reply-task.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
 import { MediaInsightJobService } from './media-insight-job.service';
+import { buildDocumentPromptExcerpt } from './document-chunk-selection';
+import { resolveGeneratedAttachmentHistoryText } from './assistant-attachment-history';
 
 export interface CreateGroupDto {
   name: string;
@@ -1080,16 +1082,37 @@ export class GroupService {
     let attachmentSummary = '';
 
     if (attachment.kind === 'image') {
+      const generatedImagePrompt =
+        attachment.generatedContext?.imagePrompt?.trim() || '';
+      const generatedImageHistoryText =
+        resolveGeneratedAttachmentHistoryText(attachment);
       const dimensions =
         attachment.width && attachment.height
           ? `，尺寸 ${attachment.width}x${attachment.height}`
           : '';
       const captionText = caption ? `，补充说明：${caption}` : '';
-      attachmentSummary =
-        `发来一张图片，文件名：${attachment.fileName}${dimensions}${captionText}`.trim();
+      if (generatedImagePrompt) {
+        attachmentSummary =
+          `发来一张图片，内容大致是：${generatedImagePrompt}${dimensions}${captionText}`.trim();
+      } else if (generatedImageHistoryText) {
+        attachmentSummary = [
+          generatedImageHistoryText,
+          caption ? `补充说明：${caption}` : '',
+        ]
+          .filter(Boolean)
+          .join('，')
+          .trim();
+      } else {
+        attachmentSummary =
+          `发来一张图片，文件名：${attachment.fileName}${dimensions}${captionText}`.trim();
+      }
     } else if (attachment.kind === 'file') {
       const sizeText = formatGroupAttachmentSize(attachment.size);
       const captionText = caption ? `，补充说明：${caption}` : '';
+      const documentExcerpt = buildDocumentPromptExcerpt({
+        attachment,
+        queryText: caption,
+      });
       if (
         /^(audio|video)\//i.test(attachment.mimeType) &&
         attachment.transcriptText?.trim()
@@ -1099,9 +1122,9 @@ export class GroupService {
           : '音频';
         attachmentSummary =
           `发来一个${mediaLabel}文件《${attachment.fileName}》${sizeText ? `，大小：${sizeText}` : ''}${captionText}，转写内容：${attachment.transcriptText.trim()}`.trim();
-      } else if (attachment.extractedText?.trim()) {
+      } else if (documentExcerpt) {
         attachmentSummary =
-          `发来一个文档《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}，提取内容：${attachment.extractedText.trim()}`.trim();
+          `发来一个文档《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}，提取内容：${documentExcerpt}`.trim();
       } else {
         attachmentSummary =
           `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();

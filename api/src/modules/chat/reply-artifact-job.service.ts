@@ -21,6 +21,7 @@ import {
   buildAssistantSpeechInstructions,
   type AssistantReplyModalitiesPlan,
 } from './assistant-reply-modalities';
+import { applyGeneratedImageContext } from './assistant-attachment-history';
 import {
   normalizeChatAttachmentDisplayName,
   guessChatAttachmentExtension,
@@ -28,6 +29,7 @@ import {
   sanitizeChatAttachmentFileName,
 } from './chat-attachment-file.utils';
 import { resolvePrimaryChatAttachmentStorageDir } from './chat-attachment-storage';
+import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
 import type {
   GroupMessage,
@@ -81,6 +83,8 @@ export class ReplyArtifactJobService {
     private readonly groupReplyTaskRepo: Repository<GroupReplyTaskEntity>,
     private readonly ai: AiOrchestratorService,
     private readonly speechAssets: AiSpeechAssetsService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
   ) {}
@@ -357,12 +361,19 @@ export class ReplyArtifactJobService {
         return;
       }
 
-      const attachment = await this.saveGeneratedImageAttachment({
-        buffer: generated.buffer,
-        mimeType: generated.mimeType,
-        fileExtension: generated.fileExtension,
-        originalName: `chat-reply-image.${generated.fileExtension}`,
-      });
+      const attachment = applyGeneratedImageContext(
+        await this.saveGeneratedImageAttachment({
+          buffer: generated.buffer,
+          mimeType: generated.mimeType,
+          fileExtension: generated.fileExtension,
+          originalName: `chat-reply-image.${generated.fileExtension}`,
+        }),
+        {
+          sourceReplyArtifactJobId: job.id,
+          sourceMessageId: job.sourceMessageId,
+          imagePrompt: input.imagePrompt,
+        },
+      );
       const messageEntity = this.messageRepo.create({
         id: `msg_${Date.now()}_ai_image_${randomUUID().slice(0, 8)}`,
         conversationId: job.threadId,
@@ -379,6 +390,7 @@ export class ReplyArtifactJobService {
         ...latestContext.conversation,
         lastActivityAt: messageEntity.createdAt ?? new Date(),
       });
+      this.chatService.invalidateConversationHistory(job.threadId);
       await this.markJobCompleted(job.id, messageEntity.id);
       this.chatGateway.emitThreadMessage(
         job.threadId,
@@ -475,12 +487,19 @@ export class ReplyArtifactJobService {
         return;
       }
 
-      const attachment = await this.saveGeneratedImageAttachment({
-        buffer: generated.buffer,
-        mimeType: generated.mimeType,
-        fileExtension: generated.fileExtension,
-        originalName: `group-reply-image.${generated.fileExtension}`,
-      });
+      const attachment = applyGeneratedImageContext(
+        await this.saveGeneratedImageAttachment({
+          buffer: generated.buffer,
+          mimeType: generated.mimeType,
+          fileExtension: generated.fileExtension,
+          originalName: `group-reply-image.${generated.fileExtension}`,
+        }),
+        {
+          sourceReplyArtifactJobId: job.id,
+          sourceMessageId: job.sourceMessageId,
+          imagePrompt: input.imagePrompt,
+        },
+      );
       const messageEntity = this.groupMessageRepo.create({
         groupId: job.threadId,
         senderId: job.characterId,

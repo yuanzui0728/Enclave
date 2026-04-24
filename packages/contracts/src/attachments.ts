@@ -21,6 +21,21 @@ export interface ImageAttachment {
   size: number;
   width?: number;
   height?: number;
+  generatedContext?: GeneratedAttachmentContext;
+}
+
+export interface DocumentAttachmentInsight {
+  extractionMode:
+    | "plain_text"
+    | "pdf_text"
+    | "docx_text"
+    | "legacy_word_text"
+    | "provider_file_fallback";
+  parser?: string;
+  previewText?: string;
+  pageCount?: number;
+  characterCount?: number;
+  truncated?: boolean;
 }
 
 export interface FileAttachment {
@@ -31,6 +46,7 @@ export interface FileAttachment {
   size: number;
   transcriptText?: string;
   extractedText?: string;
+  documentInsight?: DocumentAttachmentInsight;
   insight?: AttachmentInsight;
 }
 
@@ -56,6 +72,13 @@ export interface AttachmentInsight {
   provider?: string;
   errorCode?: string;
   errorMessage?: string;
+}
+
+export interface GeneratedAttachmentContext {
+  sourceReplyArtifactJobId?: string;
+  sourceMessageId?: string;
+  historyText?: string;
+  imagePrompt?: string;
 }
 
 export interface ContactCardAttachment {

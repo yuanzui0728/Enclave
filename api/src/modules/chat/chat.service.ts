@@ -73,6 +73,8 @@ import {
 } from './assistant-reply-modalities';
 import { ReplyArtifactJobService } from './reply-artifact-job.service';
 import { MediaInsightJobService } from './media-insight-job.service';
+import { buildDocumentPromptExcerpt } from './document-chunk-selection';
+import { resolveGeneratedAttachmentHistoryText } from './assistant-attachment-history';
 
 type SendConversationMessageInput =
   | {
@@ -222,6 +224,10 @@ export class ChatService {
     }
 
     return this.serializeConversation(entity);
+  }
+
+  invalidateConversationHistory(conversationId: string) {
+    this.conversationHistory.delete(conversationId);
   }
 
   async getConversation(convId: string): Promise<Conversation | undefined> {
@@ -733,12 +739,18 @@ export class ChatService {
     );
 
     const history = await this.ensureConversationHistory(entity);
-    history.push({
-      role: 'assistant',
-      content: fallbackText,
-      parts: this.buildAiParts(fallbackText, attachment),
-      characterId,
-    });
+    const assistantHistoryText = this.resolveAssistantHistoryText(
+      fallbackText,
+      attachment,
+    );
+    if (this.shouldIncludeAssistantMessageInHistory(assistantHistoryText)) {
+      history.push({
+        role: 'assistant',
+        content: assistantHistoryText,
+        parts: this.buildTextAiParts(assistantHistoryText),
+        characterId,
+      });
+    }
     this.conversationHistory.set(conversationId, history);
 
     return this.serializeMessage(messageEntity);
@@ -1291,10 +1303,14 @@ export class ChatService {
         message.senderType === 'user'
           ? message.text
           : sanitizeAiText(message.text);
+      const assistantHistoryText =
+        message.senderType === 'character'
+          ? this.resolveAssistantHistoryText(baseText, attachment)
+          : '';
 
       if (
         message.senderType === 'character' &&
-        !this.shouldIncludeAssistantMessageInHistory(baseText)
+        !this.shouldIncludeAssistantMessageInHistory(assistantHistoryText)
       ) {
         continue;
       }
@@ -1304,11 +1320,11 @@ export class ChatService {
         content:
           message.senderType === 'user'
             ? this.buildMessagePromptText(baseText, attachment)
-            : baseText,
+            : assistantHistoryText,
         parts:
           message.senderType === 'user'
             ? this.buildAiParts(baseText, attachment)
-            : this.buildTextAiParts(baseText),
+            : this.buildTextAiParts(assistantHistoryText),
         characterId:
           message.senderType === 'character' ? message.senderId : undefined,
       });
@@ -1390,6 +1406,23 @@ export class ChatService {
       normalized.includes('AI Key 无效') ||
       normalized.includes('专属 AI Key 已失效')
     );
+  }
+
+  private resolveAssistantHistoryText(
+    text: string,
+    attachment?: MessageAttachment,
+  ) {
+    const generatedHistoryText = resolveGeneratedAttachmentHistoryText(attachment);
+    if (generatedHistoryText) {
+      return generatedHistoryText;
+    }
+
+    const normalizedText = sanitizeAiText(text).trim();
+    if (normalizedText) {
+      return normalizedText;
+    }
+
+    return attachment ? this.getAttachmentFallbackText(attachment) : '';
   }
 
   private getSortableTimestamp(value?: Date): number {
@@ -1957,17 +1990,34 @@ export class ChatService {
       text.trim() && text.trim() !== fallbackText ? text.trim() : undefined;
 
     if (attachment.kind === 'image') {
+      const generatedImagePrompt =
+        attachment.generatedContext?.imagePrompt?.trim() || '';
+      const generatedImageHistoryText =
+        resolveGeneratedAttachmentHistoryText(attachment);
       const dimensions =
         attachment.width && attachment.height
           ? `，尺寸 ${attachment.width}x${attachment.height}`
           : '';
       const captionText = caption ? `，补充说明：${caption}` : '';
+      if (generatedImagePrompt) {
+        return `发来一张图片，内容大致是：${generatedImagePrompt}${dimensions}${captionText}`.trim();
+      }
+      if (generatedImageHistoryText) {
+        return [generatedImageHistoryText, caption ? `补充说明：${caption}` : '']
+          .filter(Boolean)
+          .join('，')
+          .trim();
+      }
       return `发来一张图片，文件名：${attachment.fileName}${dimensions}${captionText}`.trim();
     }
 
     if (attachment.kind === 'file') {
       const sizeText = formatAttachmentSize(attachment.size);
       const captionText = caption ? `，补充说明：${caption}` : '';
+      const documentExcerpt = buildDocumentPromptExcerpt({
+        attachment,
+        queryText: caption,
+      });
       if (
         /^(audio|video)\//i.test(attachment.mimeType) &&
         attachment.transcriptText?.trim()
@@ -1978,8 +2028,8 @@ export class ChatService {
         return `发来一个${mediaLabel}文件《${attachment.fileName}》${sizeText ? `，大小：${sizeText}` : ''}${captionText}，转写内容：${attachment.transcriptText.trim()}`.trim();
       }
 
-      if (attachment.extractedText?.trim()) {
-        return `发来一个文档《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}，提取内容：${attachment.extractedText.trim()}`.trim();
+      if (documentExcerpt) {
+        return `发来一个文档《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}，提取内容：${documentExcerpt}`.trim();
       }
 
       return `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();

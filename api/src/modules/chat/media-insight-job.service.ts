@@ -20,10 +20,12 @@ import {
 import { MessageEntity } from './message.entity';
 import type {
   AttachmentInsight,
+  DocumentAttachmentInsight,
   FileAttachment,
   MessageAttachment,
   VoiceAttachment,
 } from './chat.types';
+import { DocumentExtractionService } from './document-extraction.service';
 
 const MEDIA_INSIGHT_JOB_BATCH_SIZE = 12;
 const MEDIA_INSIGHT_PROCESSING_RETRY_MS = 2 * 60 * 1000;
@@ -37,6 +39,9 @@ type MediaInsightResultPayload = {
   transcriptText?: string;
   extractedText?: string;
   provider?: string;
+  documentInsight?: DocumentAttachmentInsight;
+  errorCode?: string;
+  errorMessage?: string;
 };
 
 type InsightDescriptor = {
@@ -59,6 +64,7 @@ export class MediaInsightJobService {
     @InjectRepository(GroupMessageEntity)
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     private readonly ai: AiOrchestratorService,
+    private readonly documentExtraction: DocumentExtractionService,
   ) {}
 
   async ensureConversationMessageInsight(input: {
@@ -327,7 +333,12 @@ export class MediaInsightJobService {
         return this.completeJob(job, resolvedAttachment);
       }
 
-      return this.requeueOrFailJob(job, source.attachment);
+      return this.requeueOrFailJob(
+        job,
+        source.attachment,
+        result?.errorMessage,
+        result?.errorCode,
+      );
     } catch (error) {
       const classifiedError = this.classifyInsightError(error);
       this.logger.warn(`Failed to process media insight job ${job.id}`, {
@@ -370,16 +381,29 @@ export class MediaInsightJobService {
         : null;
     }
 
-    const extractedText = await this.ai.tryExtractDocumentTextFromUrl({
+    const extractedText = await this.documentExtraction.extractFromUrl({
       url: job.sourceUrl,
       mimeType: job.mimeType,
       fileName: job.fileName,
     });
-    return extractedText
-      ? {
-          extractedText,
-        }
-      : null;
+    if (extractedText.status === 'completed') {
+      return {
+        extractedText: extractedText.extractedText,
+        documentInsight: {
+          extractionMode: extractedText.extractionMode,
+          parser: extractedText.parser,
+          previewText: extractedText.previewText,
+          pageCount: extractedText.pageCount,
+          characterCount: extractedText.characterCount,
+          truncated: extractedText.truncated,
+        },
+      };
+    }
+
+    return {
+      errorCode: extractedText.errorCode,
+      errorMessage: extractedText.errorMessage,
+    };
   }
 
   private async completeJob(
@@ -622,6 +646,7 @@ export class MediaInsightJobService {
     if (insightKind === 'document_text_extraction' && attachment.kind === 'file') {
       return {
         extractedText: attachment.extractedText,
+        documentInsight: attachment.documentInsight,
       };
     }
 
@@ -673,12 +698,15 @@ export class MediaInsightJobService {
 
     if (
       insightKind === 'document_text_extraction' &&
-      attachment.kind === 'file' &&
-      result.extractedText?.trim()
+      attachment.kind === 'file'
     ) {
+      const extractedText = result.extractedText?.trim();
       return {
         ...attachment,
-        extractedText: result.extractedText.trim(),
+        ...(extractedText ? { extractedText } : {}),
+        ...(result.documentInsight
+          ? { documentInsight: result.documentInsight }
+          : {}),
       };
     }
 
