@@ -4,6 +4,7 @@ import {
   getConversationMessages,
   getConversations,
   markConversationRead,
+  REMINDER_CHARACTER_ID,
   uploadChatAttachment,
   type ConversationListItem,
   type Message,
@@ -87,6 +88,19 @@ export function useConversationThread(conversationId: string) {
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === conversationId,
   );
+  const isReminderConversation =
+    conversationId === `direct_${REMINDER_CHARACTER_ID}` ||
+    activeConversation?.participants.includes(REMINDER_CHARACTER_ID) === true;
+  const invalidateReminderQueries = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["app-reminder-runtime-tasks", baseUrl],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["app-reminder-runtime-upcoming", baseUrl],
+      }),
+    ]);
+  }, [baseUrl, queryClient]);
   const syncConversationListCache = useCallback(
     (updater: (current: ConversationListItem[]) => ConversationListItem[]) => {
       queryClient.setQueryData<ConversationListItem[]>(
@@ -205,6 +219,9 @@ export function useConversationThread(conversationId: string) {
       setSocketError(null);
       setMessages((current) => upsertIncomingDirectMessage(current, payload));
       syncActiveConversationMessage(payload);
+      if (isReminderConversation) {
+        void invalidateReminderQueries();
+      }
 
       if (payload.senderType === "character") {
         setTypingState((current) =>
@@ -271,6 +288,8 @@ export function useConversationThread(conversationId: string) {
   }, [
     baseUrl,
     conversationId,
+    invalidateReminderQueries,
+    isReminderConversation,
     ownerId,
     queryClient,
     syncActiveConversationMessage,
