@@ -474,10 +474,9 @@ export function WechatSyncPage() {
   const connectorUpstreamServicesQuery = useQuery({
     queryKey: ["wechat-connector-upstream-services", connectorSettings.baseUrl],
     queryFn: () => listWechatConnectorUpstreamServices(connectorSettings.baseUrl),
-    enabled: connectorProbeRequested && connectorHealthQuery.isSuccess,
+    enabled: connectorProbeRequested,
     retry: false,
-    refetchInterval:
-      connectorProbeRequested && connectorHealthQuery.isSuccess ? 10_000 : false,
+    refetchInterval: connectorProbeRequested ? 10_000 : false,
   });
 
   const contactsQuery = useQuery({
@@ -549,6 +548,7 @@ export function WechatSyncPage() {
     setConnectorConfigHydrated(true);
   }, [connectorConfigHydrated, connectorHealthQuery.data?.activeConfig]);
 
+  const connectorBaseUrlReady = connectorSettings.baseUrl.trim().length > 0;
   const connectorReady =
     connectorHealthQuery.isSuccess && connectorHealthQuery.data.ok;
   const upstreamServicesByKey = useMemo(
@@ -2154,7 +2154,7 @@ export function WechatSyncPage() {
               label="wechat-decrypt"
               summary="拉起 5678 本地 HTTP 服务，适合直接读取微信历史与标签。"
               service={wechatDecryptUpstreamService}
-              connectorReady={connectorReady}
+              connectorBaseUrlReady={connectorBaseUrlReady}
               isLoading={connectorUpstreamServicesQuery.isLoading}
               isStarting={
                 upstreamServiceStartMutation.isPending &&
@@ -2166,7 +2166,7 @@ export function WechatSyncPage() {
               label="WeFlow"
               summary="拉起 WeFlow 桌面应用本体；如果你之前开过 API 服务，5031 会自动恢复。"
               service={weflowUpstreamService}
-              connectorReady={connectorReady}
+              connectorBaseUrlReady={connectorBaseUrlReady}
               isLoading={connectorUpstreamServicesQuery.isLoading}
               isStarting={
                 upstreamServiceStartMutation.isPending &&
@@ -6387,7 +6387,7 @@ function ConnectorUpstreamServiceCard({
   label,
   summary,
   service,
-  connectorReady,
+  connectorBaseUrlReady,
   isLoading,
   isStarting,
   onStart,
@@ -6395,7 +6395,7 @@ function ConnectorUpstreamServiceCard({
   label: string;
   summary: string;
   service?: WechatConnectorUpstreamService;
-  connectorReady: boolean;
+  connectorBaseUrlReady: boolean;
   isLoading: boolean;
   isStarting: boolean;
   onStart: () => void;
@@ -6403,10 +6403,10 @@ function ConnectorUpstreamServiceCard({
   const statusTone = resolveUpstreamServiceStatusTone(service?.status);
   const statusLabel = formatUpstreamServiceStatus(service?.status, isLoading);
   const buttonDisabled =
-    !connectorReady ||
+    !connectorBaseUrlReady ||
     isLoading ||
     isStarting ||
-    !service?.canStart ||
+    service?.canStart === false ||
     Boolean(service?.healthOk);
 
   return (
@@ -6434,8 +6434,8 @@ function ConnectorUpstreamServiceCard({
         {service?.lastError ? (
           <div className="text-rose-600">最近错误：{service.lastError}</div>
         ) : null}
-        {!connectorReady ? (
-          <div>需要先让本地 `wechat-connector` 连上，按钮才可用。</div>
+        {!connectorBaseUrlReady ? (
+          <div>需要先填写本地 `wechat-connector` 地址，启动按钮才可用。</div>
         ) : null}
         <div className="flex flex-wrap gap-3">
           <Button
