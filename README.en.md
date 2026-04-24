@@ -24,10 +24,9 @@ We're open-sourcing all of it. You can spin up your own instance on a laptop or 
 
 ---
 
-
 https://github.com/user-attachments/assets/6012028c-662c-4872-9012-7832a8895040
 
-https://github.com/user-attachments/assets/22b3b232-d9af-4c04-9268-ee08a35da5f8
+https://github.com/user-attachments/assets/af3af887-f103-4070-b8fe-478ee9665779
 ## ✨ What this is
 
 Most AI products today fall into two shapes:
