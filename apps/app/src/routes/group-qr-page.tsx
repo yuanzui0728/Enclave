@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { msg } from "@lingui/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Copy, Download, Link2, Share2 } from "lucide-react";
@@ -52,27 +53,55 @@ import {
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import {
-  formatConversationTimestamp,
-  parseTimestamp,
-} from "../lib/format";
+import { formatConversationTimestamp, parseTimestamp } from "../lib/format";
 import { isDesktopOnlyPath } from "../lib/history-back";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import {
   isMobileWebShareSurface,
   isNativeMobileShareSurface,
 } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
+import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
+
+const t = translateRuntimeMessage;
+
+type PendingReturnReasonCode =
+  | "wait_for_reopen"
+  | "stale_and_active"
+  | "stale"
+  | "active_group_reach"
+  | "active_direct_reach"
+  | "group_reach_priority"
+  | "direct_targeted_resend";
+
+type PendingReturnActionStatusCode =
+  | "not_recommended"
+  | "best_now"
+  | "prioritize"
+  | "can_wait";
+
+type PendingReturnReason = {
+  code: PendingReturnReasonCode;
+  label: string;
+  tone: string;
+};
+
+type PendingReturnActionStatus = {
+  code: PendingReturnActionStatusCode;
+  label: string;
+  tone: string;
+};
+
+type ConversationActionContext = "source" | "related" | "recent";
 
 export function GroupQrPage() {
   const { groupId } = useParams({ from: "/group/$groupId/qr" });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { locale } = useAppLocale();
   const runtimeConfig = useAppRuntimeConfig();
   const nativeDesktopGroupInvite = runtimeConfig.appPlatform === "desktop";
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -83,7 +112,9 @@ export function GroupQrPage() {
   const mobileWebCopyFallback = isMobileWebShareSurface({
     isDesktopLayout,
   });
-  const search = useRouterState({ select: (state) => state.location.searchStr });
+  const search = useRouterState({
+    select: (state) => state.location.searchStr,
+  });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const [notice, setNotice] = useState<{
     message: string;
@@ -153,9 +184,17 @@ export function GroupQrPage() {
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
   });
+  const defaultGroupName = t(msg`隐界群聊`);
+  const defaultGroupInviteLabel = t(msg`群聊邀请`);
+  const fallbackGroupLabel = t(msg`群聊`);
+  const fallbackCurrentGroupLabel = t(msg`当前群聊`);
+  const groupDisplayName = groupQuery.data?.name ?? defaultGroupName;
 
   useEffect(() => {
-    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+    if (
+      groupQuery.isLoading ||
+      !isMissingGroupError(groupQuery.error, groupId)
+    ) {
       return;
     }
 
@@ -187,19 +226,27 @@ export function GroupQrPage() {
   }, [groupId]);
   const inviteCode = `YJ-GROUP-${groupId.replace(/-/g, "").slice(0, 10).toUpperCase()}`;
   const inviteText = useMemo(() => {
-    const groupName = groupQuery.data?.name ?? "隐界群聊";
-    return [`邀请你加入「${groupName}」`, `群链接：${inviteLink}`, `邀请码：${inviteCode}`].join(
-      "\n",
-    );
-  }, [groupQuery.data?.name, inviteCode, inviteLink]);
+    return [
+      t(msg`邀请你加入「${groupDisplayName}」`),
+      t(msg`群链接：${inviteLink}`),
+      t(msg`邀请码：${inviteCode}`),
+    ].join("\n");
+  }, [groupDisplayName, inviteCode, inviteLink, locale]);
   const qrSvgMarkup = useMemo(
     () =>
       buildInviteMatrixSvg({
         code: inviteCode,
-        label: groupQuery.data?.name ?? "群聊邀请",
-        subtitle: `${membersQuery.data?.length ?? 0} 人群聊`,
+        footerLabel: t(msg`群邀请卡`),
+        label: groupQuery.data?.name ?? defaultGroupInviteLabel,
+        subtitle: t(msg`${membersQuery.data?.length ?? 0} 人群聊`),
       }),
-    [groupQuery.data?.name, inviteCode, membersQuery.data?.length],
+    [
+      defaultGroupInviteLabel,
+      groupQuery.data?.name,
+      inviteCode,
+      locale,
+      membersQuery.data?.length,
+    ],
   );
   const mobileLink = useMemo(
     () => resolveMobileHandoffLink(`/group/${groupId}`),
@@ -242,12 +289,12 @@ export function GroupQrPage() {
   const inviteMessage = useMemo(
     () =>
       [
-        "【群邀请】",
-        `邀请你加入「${groupQuery.data?.name ?? "隐界群聊"}」`,
-        `群链接：${inviteLink}`,
-        `邀请码：${inviteCode}`,
+        t(msg`【群邀请】`),
+        t(msg`邀请你加入「${groupDisplayName}」`),
+        t(msg`群链接：${inviteLink}`),
+        t(msg`邀请码：${inviteCode}`),
       ].join(" "),
-    [groupQuery.data?.name, inviteCode, inviteLink],
+    [groupDisplayName, inviteCode, inviteLink, locale],
   );
   const currentReturnSource = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -268,7 +315,9 @@ export function GroupQrPage() {
       return null;
     }
 
-    return conversationPathMap.get(currentReturnSource.conversationPath) ?? null;
+    return (
+      conversationPathMap.get(currentReturnSource.conversationPath) ?? null
+    );
   }, [conversationPathMap, currentReturnSource]);
   const prioritizedRecentConversations = useMemo(() => {
     if (!currentReturnSourceConversation) {
@@ -306,9 +355,9 @@ export function GroupQrPage() {
       : buildConversationPath(conversation);
   const resolveConversationOpenPath = (conversationPath: string) =>
     isDesktopLayout
-      ? conversationDesktopPathMap.get(conversationPath) ??
+      ? (conversationDesktopPathMap.get(conversationPath) ??
         buildDesktopChatThreadPathFromConversationPath(conversationPath) ??
-        conversationPath
+        conversationPath)
       : conversationPath;
   const reopenedPaths = useMemo(
     () => new Set(validReopenRecords.map((record) => record.conversationPath)),
@@ -333,11 +382,13 @@ export function GroupQrPage() {
         (conversation) =>
           isPersistedGroupConversation(conversation) === sourceIsGroup,
       )
-        .sort((left, right) => {
+      .sort((left, right) => {
         const leftReopenWeight = reopenedPaths.has(buildConversationPath(left))
           ? 1
           : 0;
-        const rightReopenWeight = reopenedPaths.has(buildConversationPath(right))
+        const rightReopenWeight = reopenedPaths.has(
+          buildConversationPath(right),
+        )
           ? 1
           : 0;
 
@@ -379,9 +430,12 @@ export function GroupQrPage() {
           status: "closed" | "reopened" | "pending";
         }>
       >((result, record) => {
-        const targetBatch = result.find((item) => item.batchId === record.batchId);
+        const targetBatch = result.find(
+          (item) => item.batchId === record.batchId,
+        );
         const hasReopened = validReopenRecords.some(
-          (reopenRecord) => reopenRecord.conversationPath === record.conversationPath,
+          (reopenRecord) =>
+            reopenRecord.conversationPath === record.conversationPath,
         );
         if (targetBatch) {
           targetBatch.items.push(record);
@@ -408,10 +462,13 @@ export function GroupQrPage() {
   );
   const deliveryBatchRankById = useMemo(
     () =>
-      deliveryTargetBatches.reduce<Record<string, number>>((result, batch, index) => {
-        result[batch.batchId] = index;
-        return result;
-      }, {}),
+      deliveryTargetBatches.reduce<Record<string, number>>(
+        (result, batch, index) => {
+          result[batch.batchId] = index;
+          return result;
+        },
+        {},
+      ),
     [deliveryTargetBatches],
   );
   const pendingCurrentBatchConversations = useMemo(() => {
@@ -445,7 +502,9 @@ export function GroupQrPage() {
         } => Boolean(item),
       )
       .sort((left, right) => {
-        const leftCoolingDown = isPendingReturnCoolingDown(left.target.deliveredAt)
+        const leftCoolingDown = isPendingReturnCoolingDown(
+          left.target.deliveredAt,
+        )
           ? 1
           : 0;
         const rightCoolingDown = isPendingReturnCoolingDown(
@@ -485,7 +544,8 @@ export function GroupQrPage() {
     pendingCurrentBatchConversations.find(
       (item) =>
         isPendingReturnCoolingDown(item.target.deliveredAt) &&
-        item.conversation.id !== topPendingReturnConversation?.conversation.id &&
+        item.conversation.id !==
+          topPendingReturnConversation?.conversation.id &&
         item.conversation.id !==
           fallbackPendingReturnConversation?.conversation.id,
     ) ?? null;
@@ -497,8 +557,7 @@ export function GroupQrPage() {
     return {
       total: pendingCurrentBatchConversations.length,
       coolingDownCount,
-      readyCount:
-        pendingCurrentBatchConversations.length - coolingDownCount,
+      readyCount: pendingCurrentBatchConversations.length - coolingDownCount,
     };
   }, [pendingCurrentBatchConversations]);
   const pendingReturnExpectedOutcome = useMemo(() => {
@@ -523,10 +582,12 @@ export function GroupQrPage() {
       nextReadyCount,
       nextCoolingDownCount,
       summary: topIsCoolingDown
-        ? "当前主推荐本身就在冷却中，结构不会立刻变化，先等它恢复优先位。"
-        : `处理完 ${topPendingReturnConversation.conversation.title} 后，这轮可立即补发会话会先减少一条，刚处理的目标会进入短暂冷却等待回流。`,
+        ? t(msg`当前主推荐本身就在冷却中，结构不会立刻变化，先等它恢复优先位。`)
+        : t(
+            msg`处理完 ${topPendingReturnConversation.conversation.title} 后，这轮可立即补发会话会先减少一条，刚处理的目标会进入短暂冷却等待回流。`,
+          ),
     };
-  }, [pendingReturnOverview, topPendingReturnConversation]);
+  }, [locale, pendingReturnOverview, topPendingReturnConversation]);
   const fallbackPendingReturnExpectedOutcome = useMemo(() => {
     if (!fallbackPendingReturnConversation) {
       return null;
@@ -549,10 +610,12 @@ export function GroupQrPage() {
       nextReadyCount,
       nextCoolingDownCount,
       summary: fallbackIsCoolingDown
-        ? "如果改做备选，这轮结构也不会立刻变化，因为它当前还在冷却里。"
-        : `如果先改做 ${fallbackPendingReturnConversation.conversation.title}，可立即补发会话同样会减少一条，但主推荐仍会保留在前面等待处理。`,
+        ? t(msg`如果改做备选，这轮结构也不会立刻变化，因为它当前还在冷却里。`)
+        : t(
+            msg`如果先改做 ${fallbackPendingReturnConversation.conversation.title}，可立即补发会话同样会减少一条，但主推荐仍会保留在前面等待处理。`,
+          ),
     };
-  }, [fallbackPendingReturnConversation, pendingReturnOverview]);
+  }, [fallbackPendingReturnConversation, locale, pendingReturnOverview]);
 
   useEffect(() => {
     if (nativeDesktopGroupInvite) {
@@ -658,7 +721,9 @@ export function GroupQrPage() {
   const getMobileDangerBackAction = () =>
     !isDesktopLayout
       ? {
-          secondaryActionLabel: safeReturnPath ? "返回上一页" : "返回群聊信息",
+          secondaryActionLabel: safeReturnPath
+            ? t(msg`返回上一页`)
+            : t(msg`返回群聊信息`),
           onSecondaryAction: handleNoticeBackAction,
         }
       : {};
@@ -735,7 +800,7 @@ export function GroupQrPage() {
         return;
       }
 
-      showNotice("当前环境暂不支持复制。", "danger");
+      showNotice(t(msg`当前环境暂不支持复制。`), "danger");
       return;
     }
 
@@ -744,11 +809,15 @@ export function GroupQrPage() {
       showNotice(successMessage);
     } catch {
       if (retryOptions) {
-        showRetryNotice("复制失败，请稍后重试。", retryOptions.actionLabel, retryOptions.onAction);
+        showRetryNotice(
+          t(msg`复制失败，请稍后重试。`),
+          retryOptions.actionLabel,
+          retryOptions.onAction,
+        );
         return;
       }
 
-      showNotice("复制失败，请稍后重试。", "danger");
+      showNotice(t(msg`复制失败，请稍后重试。`), "danger");
     }
   }
 
@@ -757,8 +826,8 @@ export function GroupQrPage() {
       contents: qrSvgMarkup,
       fileName: `${groupQuery.data?.name ?? "group"}-invite-card.svg`,
       mimeType: "image/svg+xml;charset=utf-8",
-      dialogTitle: "保存群邀请卡",
-      kindLabel: "群邀请卡",
+      dialogTitle: t(msg`保存群邀请卡`),
+      kindLabel: t(msg`群邀请卡`),
     });
 
     if (result.status === "cancelled") {
@@ -773,27 +842,26 @@ export function GroupQrPage() {
       message: result.message,
       tone: result.status === "failed" ? "danger" : "success",
       actionLabel: canRevealSavedFile
-        ? "打开位置"
+        ? t(msg`打开位置`)
         : !isDesktopLayout && result.status === "failed"
-          ? "重试保存邀请卡"
+          ? t(msg`重试保存邀请卡`)
           : undefined,
-      onAction:
-        savedPath
+      onAction: savedPath
+        ? () => {
+            void revealSavedFile(savedPath).then((revealed) => {
+              showNotice(
+                revealed
+                  ? t(msg`已打开邀请卡所在位置。`)
+                  : t(msg`打开所在位置失败，请稍后再试。`),
+                revealed ? "success" : "danger",
+              );
+            });
+          }
+        : !isDesktopLayout && result.status === "failed"
           ? () => {
-              void revealSavedFile(savedPath).then((revealed) => {
-                showNotice(
-                  revealed
-                    ? "已打开邀请卡所在位置。"
-                    : "打开所在位置失败，请稍后再试。",
-                  revealed ? "success" : "danger",
-                );
-              });
+              void downloadInviteCard();
             }
-          : !isDesktopLayout && result.status === "failed"
-            ? () => {
-                void downloadInviteCard();
-              }
-            : undefined,
+          : undefined,
       ...(!isDesktopLayout && result.status === "failed" && !canRevealSavedFile
         ? getMobileDangerBackAction()
         : {}),
@@ -806,37 +874,46 @@ export function GroupQrPage() {
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      showRetryNotice("当前环境暂不支持复制到手机。", "重试复制到手机", () => {
-        void sendToMobile();
-      });
+      showRetryNotice(
+        t(msg`当前环境暂不支持复制到手机。`),
+        t(msg`重试复制到手机`),
+        () => {
+          void sendToMobile();
+        },
+      );
       return;
     }
 
     try {
       await navigator.clipboard.writeText(mobileLink);
       pushMobileHandoffRecord({
-        label: `${groupQuery.data?.name ?? "群聊"} 邀请`,
-        description: `把 ${groupQuery.data?.name ?? "当前群聊"} 的邀请入口发到手机继续查看和转发。`,
+        label: t(msg`${groupQuery.data?.name ?? fallbackGroupLabel} 邀请`),
+        description: t(
+          msg`把 ${groupQuery.data?.name ?? fallbackCurrentGroupLabel} 的邀请入口发到手机继续查看和转发。`,
+        ),
         path: `/group/${groupId}`,
       });
-      showNotice("群邀请入口已复制到手机。");
+      showNotice(t(msg`群邀请入口已复制到手机。`));
     } catch {
-      showRetryNotice("复制到手机失败，请稍后重试。", "重试复制到手机", () => {
-        void sendToMobile();
-      });
+      showRetryNotice(
+        t(msg`复制到手机失败，请稍后重试。`),
+        t(msg`重试复制到手机`),
+        () => {
+          void sendToMobile();
+        },
+      );
     }
   }
 
   async function shareInvite() {
-    const groupName = groupQuery.data?.name ?? "隐界群聊";
     const shared = await shareWithNativeShell({
-      title: `${groupName} 邀请`,
+      title: t(msg`${groupDisplayName} 邀请`),
       text: inviteText,
       url: inviteLink,
     });
 
     if (shared) {
-      showNotice("已打开系统分享面板。");
+      showNotice(t(msg`已打开系统分享面板。`));
       return;
     }
 
@@ -845,85 +922,91 @@ export function GroupQrPage() {
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      showRetryNotice("当前设备暂时无法打开系统分享，请稍后重试。", "重试分享", () => {
-        void shareInvite();
-      });
+      showRetryNotice(
+        t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
+        t(msg`重试分享`),
+        () => {
+          void shareInvite();
+        },
+      );
       return;
     }
 
     try {
       await navigator.clipboard.writeText(inviteText);
-      showNotice("系统分享暂时不可用，已复制群邀请文案。");
+      showNotice(t(msg`系统分享暂时不可用，已复制群邀请文案。`));
     } catch {
-      showRetryNotice("系统分享失败，请稍后重试。", "重试分享", () => {
-        void shareInvite();
-      });
+      showRetryNotice(
+        t(msg`系统分享失败，请稍后重试。`),
+        t(msg`重试分享`),
+        () => {
+          void shareInvite();
+        },
+      );
     }
   }
 
   async function shareInviteLink() {
     if (!nativeMobileShareSupported) {
-      await copyText(inviteLink, "群链接已复制。", {
-        actionLabel: "重试复制",
+      await copyText(inviteLink, t(msg`群链接已复制。`), {
+        actionLabel: t(msg`重试复制`),
         onAction: () => {
           void shareInviteLink();
         },
-        unavailableMessage: "当前环境暂不支持复制群链接。",
+        unavailableMessage: t(msg`当前环境暂不支持复制群链接。`),
       });
       return;
     }
 
-    const groupName = groupQuery.data?.name ?? "隐界群聊";
     const shared = await shareWithNativeShell({
-      title: `${groupName} 群链接`,
-      text: `${groupName}\n${inviteLink}`,
+      title: t(msg`${groupDisplayName} 群链接`),
+      text: `${groupDisplayName}\n${inviteLink}`,
       url: inviteLink,
     });
 
     if (shared) {
-      showNotice("已打开系统分享面板。");
+      showNotice(t(msg`已打开系统分享面板。`));
       return;
     }
 
-    await copyText(inviteLink, "系统分享暂时不可用，已复制群链接。", {
-      actionLabel: "重试分享",
+    await copyText(inviteLink, t(msg`系统分享暂时不可用，已复制群链接。`), {
+      actionLabel: t(msg`重试分享`),
       onAction: () => {
         void shareInviteLink();
       },
-      unavailableMessage: "当前设备暂时无法打开系统分享，请稍后重试。",
+      unavailableMessage: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
     });
   }
 
   async function shareInviteTextOnly() {
     if (!nativeMobileShareSupported) {
-      await copyText(inviteText, "群邀请文案已复制。", {
-        actionLabel: "重试复制",
+      await copyText(inviteText, t(msg`群邀请文案已复制。`), {
+        actionLabel: t(msg`重试复制`),
         onAction: () => {
           void shareInviteTextOnly();
         },
-        unavailableMessage: "当前环境暂不支持复制群邀请文案。",
+        unavailableMessage: t(msg`当前环境暂不支持复制群邀请文案。`),
       });
       return;
     }
 
-    const groupName = groupQuery.data?.name ?? "隐界群聊";
     const shared = await shareWithNativeShell({
-      title: `${groupName} 邀请文案`,
+      title: t(msg`${groupDisplayName} 邀请文案`),
       text: inviteText,
       url: inviteLink,
     });
 
     if (shared) {
-      showNotice("已打开系统分享面板。");
+      showNotice(t(msg`已打开系统分享面板。`));
       return;
     }
 
-    await copyText(inviteText, "系统分享暂时不可用，已复制群邀请文案。", {
-      actionLabel: "重试分享",
+    await copyText(inviteText, t(msg`系统分享暂时不可用，已复制群邀请文案。`), {
+      actionLabel: t(msg`重试分享`),
       onAction: () => {
         void shareInviteTextOnly();
       },
-      unavailableMessage: "当前设备暂时无法打开系统分享，请稍后重试。",
+      unavailableMessage: t(msg`当前设备暂时无法打开系统分享，请稍后重试。`),
     });
   }
 
@@ -952,7 +1035,7 @@ export function GroupQrPage() {
         }),
       );
       setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
-      showNotice(`已把群邀请发到 ${conversation.title}。`);
+      showNotice(t(msg`已把群邀请发到 ${conversation.title}。`));
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -961,7 +1044,10 @@ export function GroupQrPage() {
 
     const characterId = conversation.participants[0];
     if (!characterId) {
-      showNotice("这条单聊暂时没有可用的角色目标，无法发送群邀请。", "danger");
+      showNotice(
+        t(msg`这条单聊暂时没有可用的角色目标，无法发送群邀请。`),
+        "danger",
+      );
       return;
     }
 
@@ -988,19 +1074,19 @@ export function GroupQrPage() {
       }),
     );
     setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
-    showNotice(`已把群邀请发到 ${conversation.title}。`);
+    showNotice(t(msg`已把群邀请发到 ${conversation.title}。`));
   }
 
   const content = (
     <>
       {groupQuery.isLoading || membersQuery.isLoading ? (
         isDesktopLayout ? (
-          <LoadingBlock label="正在生成群邀请卡..." />
+          <LoadingBlock label={t(msg`正在生成群邀请卡...`)} />
         ) : (
           <MobileGroupInviteStatusCard
-            badge="读取中"
-            title="正在生成群邀请卡"
-            description="稍等一下，正在同步群资料和成员信息。"
+            badge={t(msg`读取中`)}
+            title={t(msg`正在生成群邀请卡`)}
+            description={t(msg`稍等一下，正在同步群资料和成员信息。`)}
             tone="loading"
           />
         )
@@ -1010,8 +1096,8 @@ export function GroupQrPage() {
           <ErrorBlock message={groupQuery.error.message} />
         ) : (
           <MobileGroupInviteStatusCard
-            badge="群聊"
-            title="群邀请页暂时不可用"
+            badge={t(msg`群聊`)}
+            title={t(msg`群邀请页暂时不可用`)}
             description={groupQuery.error.message}
             tone="danger"
             action={
@@ -1024,7 +1110,7 @@ export function GroupQrPage() {
                   }}
                   className="rounded-full"
                 >
-                  重试读取
+                  {t(msg`重试读取`)}
                 </Button>
                 <Button
                   type="button"
@@ -1032,7 +1118,7 @@ export function GroupQrPage() {
                   onClick={handleStatusBackAction}
                   className="rounded-full"
                 >
-                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                  {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回群聊信息`)}
                 </Button>
               </div>
             }
@@ -1044,8 +1130,8 @@ export function GroupQrPage() {
           <ErrorBlock message={membersQuery.error.message} />
         ) : (
           <MobileGroupInviteStatusCard
-            badge="成员"
-            title="群成员信息暂时不可用"
+            badge={t(msg`成员`)}
+            title={t(msg`群成员信息暂时不可用`)}
             description={membersQuery.error.message}
             tone="danger"
             action={
@@ -1058,7 +1144,7 @@ export function GroupQrPage() {
                   }}
                   className="rounded-full"
                 >
-                  重试读取
+                  {t(msg`重试读取`)}
                 </Button>
                 <Button
                   type="button"
@@ -1066,7 +1152,7 @@ export function GroupQrPage() {
                   onClick={handleStatusBackAction}
                   className="rounded-full"
                 >
-                  {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                  {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回群聊信息`)}
                 </Button>
               </div>
             }
@@ -1113,7 +1199,9 @@ export function GroupQrPage() {
               : "-mx-3 space-y-4 border-y border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-4 py-4"
           }
         >
-          <div className={`flex items-start ${isDesktopLayout ? "gap-4" : "gap-3"}`}>
+          <div
+            className={`flex items-start ${isDesktopLayout ? "gap-4" : "gap-3"}`}
+          >
             <GroupAvatarChip
               name={groupQuery.data.name}
               members={membersQuery.data?.map((item) => item.memberId) ?? []}
@@ -1124,10 +1212,12 @@ export function GroupQrPage() {
                 {groupQuery.data.name}
               </div>
               <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-                {membersQuery.data?.length ?? 0} 人群聊
+                {t(msg`${membersQuery.data?.length ?? 0} 人群聊`)}
               </div>
               <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                最近活跃 {formatConversationTimestamp(groupQuery.data.lastActivityAt)}
+                {t(
+                  msg`最近活跃 ${formatConversationTimestamp(groupQuery.data.lastActivityAt)}`,
+                )}
               </div>
             </div>
           </div>
@@ -1144,13 +1234,15 @@ export function GroupQrPage() {
                 <div
                   className={`text-xs font-medium ${isDesktopLayout ? "tracking-[0.16em] text-[color:var(--brand-primary)]" : "tracking-[0.12em] text-[color:var(--brand-primary)]"}`}
                 >
-                  当前回流来源
+                  {t(msg`当前回流来源`)}
                 </div>
                 <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  来自 {currentReturnSourceConversation.title}
+                  {t(msg`来自 ${currentReturnSourceConversation.title}`)}
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                  这次是从聊天线程直接回到群邀请页，可继续转发或回到原会话。
+                  {t(
+                    msg`这次是从聊天线程直接回到群邀请页，可继续转发或回到原会话。`,
+                  )}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1166,7 +1258,7 @@ export function GroupQrPage() {
                   }}
                   className="shrink-0 rounded-full"
                 >
-                  回到会话
+                  {t(msg`回到会话`)}
                 </Button>
                 <Button
                   size="sm"
@@ -1175,7 +1267,7 @@ export function GroupQrPage() {
                   }}
                   className="shrink-0 rounded-full"
                 >
-                  再发回这个会话
+                  {t(msg`再发回这个会话`)}
                 </Button>
               </div>
             </section>
@@ -1204,15 +1296,23 @@ export function GroupQrPage() {
             <ActionCard
               compact={!isDesktopLayout}
               icon={
-                nativeMobileShareSupported ? <Share2 size={16} /> : <Link2 size={16} />
+                nativeMobileShareSupported ? (
+                  <Share2 size={16} />
+                ) : (
+                  <Link2 size={16} />
+                )
               }
-              title={nativeMobileShareSupported ? "分享群链接" : "复制群链接"}
+              title={
+                nativeMobileShareSupported
+                  ? t(msg`分享群链接`)
+                  : t(msg`复制群链接`)
+              }
               description={
                 nativeMobileShareSupported
-                  ? "直接通过系统分享发送群入口链接。"
+                  ? t(msg`直接通过系统分享发送群入口链接。`)
                   : mobileWebCopyFallback
-                    ? "复制当前群聊入口链接，稍后可直接粘贴发送。"
-                    : "把当前群聊入口发给别的设备继续打开。"
+                    ? t(msg`复制当前群聊入口链接，稍后可直接粘贴发送。`)
+                    : t(msg`把当前群聊入口发给别的设备继续打开。`)
               }
               onClick={() => {
                 void shareInviteLink();
@@ -1221,13 +1321,17 @@ export function GroupQrPage() {
             <ActionCard
               compact={!isDesktopLayout}
               icon={<Share2 size={16} />}
-              title={nativeMobileShareSupported ? "分享邀请文案" : "复制邀请文案"}
+              title={
+                nativeMobileShareSupported
+                  ? t(msg`分享邀请文案`)
+                  : t(msg`复制邀请文案`)
+              }
               description={
                 nativeMobileShareSupported
-                  ? "直接通过系统分享发送完整邀请文案。"
+                  ? t(msg`直接通过系统分享发送完整邀请文案。`)
                   : mobileWebCopyFallback
-                    ? "复制带群链接和邀请码的完整邀请文案。"
-                    : "带上群链接和邀请码，一次性发给对方。"
+                    ? t(msg`复制带群链接和邀请码的完整邀请文案。`)
+                    : t(msg`带上群链接和邀请码，一次性发给对方。`)
               }
               onClick={() => {
                 void shareInviteTextOnly();
@@ -1243,11 +1347,15 @@ export function GroupQrPage() {
                     <Copy size={16} />
                   )
                 }
-                title={nativeMobileShareSupported ? "系统分享" : "发到手机"}
+                title={
+                  nativeMobileShareSupported
+                    ? t(msg`系统分享`)
+                    : t(msg`发到手机`)
+                }
                 description={
                   nativeMobileShareSupported
-                    ? "直接通过系统分享面板发给联系人或其他应用。"
-                    : "把当前群邀请入口复制到手机，并进入接力历史。"
+                    ? t(msg`直接通过系统分享面板发给联系人或其他应用。`)
+                    : t(msg`把当前群邀请入口复制到手机，并进入接力历史。`)
                 }
                 onClick={() => {
                   if (nativeMobileShareSupported) {
@@ -1262,8 +1370,8 @@ export function GroupQrPage() {
             <ActionCard
               compact={!isDesktopLayout}
               icon={<Download size={16} />}
-              title="保存邀请卡"
-              description="保存当前邀请卡 SVG，后续可继续转发。"
+              title={t(msg`保存邀请卡`)}
+              description={t(msg`保存当前邀请卡 SVG，后续可继续转发。`)}
               onClick={downloadInviteCard}
             />
           </div>
@@ -1275,8 +1383,9 @@ export function GroupQrPage() {
                 : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
             }
           >
-            当前邀请卡会承载群聊链接和邀请码。
-            在同一世界实例内打开链接，可直接回到这个群聊。
+            {t(
+              msg`当前邀请卡会承载群聊链接和邀请码。 在同一世界实例内打开链接，可直接回到这个群聊。`,
+            )}
           </div>
 
           {activeDeliveredConversation ? (
@@ -1289,10 +1398,14 @@ export function GroupQrPage() {
             >
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  最近投递到 {activeDeliveredConversation.conversationTitle}
+                  {t(
+                    msg`最近投递到 ${activeDeliveredConversation.conversationTitle}`,
+                  )}
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  {formatConversationTimestamp(activeDeliveredConversation.deliveredAt)}
+                  {formatConversationTimestamp(
+                    activeDeliveredConversation.deliveredAt,
+                  )}
                 </div>
               </div>
               <Button
@@ -1307,7 +1420,7 @@ export function GroupQrPage() {
                 }}
                 className="shrink-0 rounded-full"
               >
-                回到会话
+                {t(msg`回到会话`)}
               </Button>
             </section>
           ) : null}
@@ -1316,10 +1429,12 @@ export function GroupQrPage() {
             <section className="space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  最近已发邀请会话
+                  {t(msg`最近已发邀请会话`)}
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                  这些会话已经收到过这张群邀请，并按发送批次归组，方便判断这一轮已经扩散到哪里。
+                  {t(
+                    msg`这些会话已经收到过这张群邀请，并按发送批次归组，方便判断这一轮已经扩散到哪里。`,
+                  )}
                 </div>
               </div>
 
@@ -1332,7 +1447,9 @@ export function GroupQrPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
-                          {index === 0 ? "最新发送批次" : `更早批次 ${index + 1}`}
+                          {index === 0
+                            ? t(msg`最新发送批次`)
+                            : t(msg`更早批次 ${index + 1}`)}
                         </div>
                         <span
                           className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
@@ -1344,17 +1461,18 @@ export function GroupQrPage() {
                           }`}
                         >
                           {batch.status === "closed"
-                            ? "本轮已闭环"
+                            ? t(msg`本轮已闭环`)
                             : batch.status === "reopened"
-                              ? "已有回流"
-                              : "等待回流"}
+                              ? t(msg`已有回流`)
+                              : t(msg`等待回流`)}
                         </span>
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {batch.items.length} 条会话 · 开始于{" "}
-                        {formatConversationTimestamp(batch.batchStartedAt)}
+                        {t(
+                          msg`${batch.items.length} 条会话 · 开始于 ${formatConversationTimestamp(batch.batchStartedAt)}`,
+                        )}
                         {batch.reopenedCount
-                          ? ` · 已回流 ${batch.reopenedCount} 条`
+                          ? t(msg` · 已回流 ${batch.reopenedCount} 条`)
                           : ""}
                       </div>
                     </div>
@@ -1368,7 +1486,9 @@ export function GroupQrPage() {
                             {record.conversationTitle}
                           </div>
                           <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                            发送于 {formatConversationTimestamp(record.deliveredAt)}
+                            {t(
+                              msg`发送于 ${formatConversationTimestamp(record.deliveredAt)}`,
+                            )}
                           </div>
                         </div>
                         <Button
@@ -1383,7 +1503,7 @@ export function GroupQrPage() {
                           }}
                           className="shrink-0 rounded-full"
                         >
-                          回到会话
+                          {t(msg`回到会话`)}
                         </Button>
                       </div>
                     ))}
@@ -1403,10 +1523,12 @@ export function GroupQrPage() {
             >
               <div className={isDesktopLayout ? undefined : "px-4 py-4"}>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  最近从这些会话回到邀请页
+                  {t(msg`最近从这些会话回到邀请页`)}
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                  从聊天线程点了“回到群邀请”后，会把最近回流入口记在这里，方便再次回到消息流。
+                  {t(
+                    msg`从聊天线程点了“回到群邀请”后，会把最近回流入口记在这里，方便再次回到消息流。`,
+                  )}
                 </div>
               </div>
 
@@ -1431,7 +1553,9 @@ export function GroupQrPage() {
                         {record.conversationTitle}
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        回流于 {formatConversationTimestamp(record.reopenedAt)}
+                        {t(
+                          msg`回流于 ${formatConversationTimestamp(record.reopenedAt)}`,
+                        )}
                       </div>
                     </div>
                     <Button
@@ -1446,7 +1570,7 @@ export function GroupQrPage() {
                       }}
                       className="shrink-0 rounded-full"
                     >
-                      回到会话
+                      {t(msg`回到会话`)}
                     </Button>
                   </div>
                 ))}
@@ -1463,22 +1587,24 @@ export function GroupQrPage() {
           >
             <div className={isDesktopLayout ? undefined : "px-4 py-4"}>
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                发到最近会话
+                {t(msg`发到最近会话`)}
               </div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                直接把当前群邀请投递到最近会话，回到消息流里继续转发。
+                {t(msg`直接把当前群邀请投递到最近会话，回到消息流里继续转发。`)}
               </div>
             </div>
 
             {conversationsQuery.isLoading ? (
               isDesktopLayout ? (
-                <LoadingBlock label="正在读取最近会话..." />
+                <LoadingBlock label={t(msg`正在读取最近会话...`)} />
               ) : (
                 <div className="px-4 pb-4">
                   <MobileGroupInviteStatusCard
-                    badge="会话"
-                    title="正在读取最近会话"
-                    description="稍等一下，正在整理最近可投递的聊天入口。"
+                    badge={t(msg`会话`)}
+                    title={t(msg`正在读取最近会话`)}
+                    description={t(
+                      msg`稍等一下，正在整理最近可投递的聊天入口。`,
+                    )}
                     tone="loading"
                   />
                 </div>
@@ -1491,8 +1617,8 @@ export function GroupQrPage() {
               ) : (
                 <div className="px-4 pb-4">
                   <MobileGroupInviteStatusCard
-                    badge="会话"
-                    title="最近会话暂时不可用"
+                    badge={t(msg`会话`)}
+                    title={t(msg`最近会话暂时不可用`)}
                     description={conversationsQuery.error.message}
                     tone="danger"
                     action={
@@ -1505,7 +1631,7 @@ export function GroupQrPage() {
                           }}
                           className="rounded-full"
                         >
-                          重试读取
+                          {t(msg`重试读取`)}
                         </Button>
                         <Button
                           type="button"
@@ -1513,7 +1639,9 @@ export function GroupQrPage() {
                           onClick={handleStatusBackAction}
                           className="rounded-full"
                         >
-                          {safeReturnPath ? "返回上一页" : "返回群聊信息"}
+                          {safeReturnPath
+                            ? t(msg`返回上一页`)
+                            : t(msg`返回群聊信息`)}
                         </Button>
                       </div>
                     }
@@ -1524,88 +1652,99 @@ export function GroupQrPage() {
             {pendingCurrentBatchConversations.length ? (
               <div className="space-y-2">
                 <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
-                  本轮待回流会话
+                  {t(msg`本轮待回流会话`)}
                 </div>
                 <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                  这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。
+                  {t(
+                    msg`这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。`,
+                  )}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   <div className="rounded-[14px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-3 py-3">
                     <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                      本轮待处理
+                      {t(msg`本轮待处理`)}
                     </div>
                     <div className="mt-1 text-lg font-semibold text-[color:var(--text-primary)]">
                       {pendingReturnOverview.total}
                     </div>
                     <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                      当前仍在等待回流的会话数
+                      {t(msg`当前仍在等待回流的会话数`)}
                     </div>
                   </div>
                   <div className="rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.07)] px-3 py-3">
                     <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
-                      可立即补发
+                      {t(msg`可立即补发`)}
                     </div>
                     <div className="mt-1 text-lg font-semibold text-[color:var(--text-primary)]">
                       {pendingReturnOverview.readyCount}
                     </div>
                     <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                      不在冷却中，可直接继续补发
+                      {t(msg`不在冷却中，可直接继续补发`)}
                     </div>
                   </div>
                   <div className="rounded-[14px] border border-[rgba(15,23,42,0.08)] bg-[rgba(15,23,42,0.04)] px-3 py-3">
                     <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                      冷却暂缓
+                      {t(msg`冷却暂缓`)}
                     </div>
                     <div className="mt-1 text-lg font-semibold text-[color:var(--text-primary)]">
                       {pendingReturnOverview.coolingDownCount}
                     </div>
                     <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                      刚补发过，先等一轮回流
+                      {t(msg`刚补发过，先等一轮回流`)}
                     </div>
                   </div>
                 </div>
                 <div className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-4 py-3">
                   <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                    处理顺序
+                    {t(msg`处理顺序`)}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     {topPendingReturnConversation ? (
                       <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-2.5 py-1 font-medium text-[color:var(--brand-primary)]">
-                        1. 先补 {topPendingReturnConversation.conversation.title}
+                        {t(
+                          msg`1. 先补 ${topPendingReturnConversation.conversation.title}`,
+                        )}
                       </span>
                     ) : null}
                     {fallbackPendingReturnConversation ? (
                       <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 font-medium text-[color:var(--text-secondary)]">
-                        2. 再看 {fallbackPendingReturnConversation.conversation.title}
+                        {t(
+                          msg`2. 再看 ${fallbackPendingReturnConversation.conversation.title}`,
+                        )}
                       </span>
                     ) : null}
                     {deferredPendingReturnConversation ? (
                       <span className="rounded-full bg-[rgba(15,23,42,0.04)] px-2.5 py-1 font-medium text-[color:var(--text-muted)]">
-                        3. 冷却后处理 {deferredPendingReturnConversation.conversation.title}
+                        {t(
+                          msg`3. 冷却后处理 ${deferredPendingReturnConversation.conversation.title}`,
+                        )}
                       </span>
                     ) : null}
                   </div>
                   <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
                     {topPendingReturnConversation
-                      ? `先走主推荐${
-                          fallbackPendingReturnConversation ? "，不走第一条就切备选" : ""
-                        }${
-                          deferredPendingReturnConversation
-                            ? "，冷却目标等恢复后再补。"
-                            : "。"
-                        }`
-                      : "当前没有可执行顺序。"}
+                      ? fallbackPendingReturnConversation &&
+                        deferredPendingReturnConversation
+                        ? t(
+                            msg`先走主推荐，不走第一条就切备选，冷却目标等恢复后再补。`,
+                          )
+                        : fallbackPendingReturnConversation
+                          ? t(msg`先走主推荐，不走第一条就切备选。`)
+                          : deferredPendingReturnConversation
+                            ? t(msg`先走主推荐，冷却目标等恢复后再补。`)
+                            : t(msg`先走主推荐。`)
+                      : t(msg`当前没有可执行顺序。`)}
                   </div>
                 </div>
                 {pendingReturnExpectedOutcome ? (
                   <div className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,255,255,0.72)] px-4 py-3">
                     <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                      预计处理后
+                      {t(msg`预计处理后`)}
                     </div>
                     <div className="mt-2 grid gap-2 lg:grid-cols-2">
                       <div className="rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-3">
                         <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
-                          先处理主推荐
+                          {t(msg`先处理主推荐`)}
                         </div>
                         <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
                           {topPendingReturnConversation?.conversation.title}
@@ -1613,7 +1752,7 @@ export function GroupQrPage() {
                         <div className="mt-2 grid gap-2 sm:grid-cols-2">
                           <div className="rounded-[12px] bg-[rgba(7,193,96,0.07)] px-3 py-3">
                             <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
-                              可立即补发
+                              {t(msg`可立即补发`)}
                             </div>
                             <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
                               {pendingReturnExpectedOutcome.nextReadyCount}
@@ -1621,10 +1760,12 @@ export function GroupQrPage() {
                           </div>
                           <div className="rounded-[12px] bg-[rgba(15,23,42,0.04)] px-3 py-3">
                             <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                              冷却暂缓
+                              {t(msg`冷却暂缓`)}
                             </div>
                             <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
-                              {pendingReturnExpectedOutcome.nextCoolingDownCount}
+                              {
+                                pendingReturnExpectedOutcome.nextCoolingDownCount
+                              }
                             </div>
                           </div>
                         </div>
@@ -1634,29 +1775,33 @@ export function GroupQrPage() {
                       </div>
                       <div className="rounded-[12px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-3 py-3">
                         <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                          改做次优先备选
+                          {t(msg`改做次优先备选`)}
                         </div>
                         <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
-                          {fallbackPendingReturnConversation?.conversation.title ??
-                            "暂无备选"}
+                          {fallbackPendingReturnConversation?.conversation
+                            .title ?? t(msg`暂无备选`)}
                         </div>
                         {fallbackPendingReturnExpectedOutcome ? (
                           <>
                             <div className="mt-2 grid gap-2 sm:grid-cols-2">
                               <div className="rounded-[12px] bg-[rgba(7,193,96,0.07)] px-3 py-3">
                                 <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
-                                  可立即补发
+                                  {t(msg`可立即补发`)}
                                 </div>
                                 <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
-                                  {fallbackPendingReturnExpectedOutcome.nextReadyCount}
+                                  {
+                                    fallbackPendingReturnExpectedOutcome.nextReadyCount
+                                  }
                                 </div>
                               </div>
                               <div className="rounded-[12px] bg-[rgba(15,23,42,0.04)] px-3 py-3">
                                 <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                                  冷却暂缓
+                                  {t(msg`冷却暂缓`)}
                                 </div>
                                 <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
-                                  {fallbackPendingReturnExpectedOutcome.nextCoolingDownCount}
+                                  {
+                                    fallbackPendingReturnExpectedOutcome.nextCoolingDownCount
+                                  }
                                 </div>
                               </div>
                             </div>
@@ -1666,7 +1811,7 @@ export function GroupQrPage() {
                           </>
                         ) : (
                           <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-                            当前没有次优先备选。
+                            {t(msg`当前没有次优先备选。`)}
                           </div>
                         )}
                       </div>
@@ -1686,7 +1831,7 @@ export function GroupQrPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
-                          当前最值得优先补发
+                          {t(msg`当前最值得优先补发`)}
                         </div>
                         <div className="mt-2 truncate text-sm font-medium text-[color:var(--text-primary)]">
                           {topPendingReturnConversation.conversation.title}
@@ -1707,10 +1852,12 @@ export function GroupQrPage() {
                       <div className="shrink-0 text-right">
                         <div className="mb-2 flex justify-end">
                           <span
-                            className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${resolvePendingReturnActionStatus(
-                              topPendingReturnConversation.conversation,
-                              topPendingReturnConversation.target.deliveredAt,
-                            ).tone}`}
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                              resolvePendingReturnActionStatus(
+                                topPendingReturnConversation.conversation,
+                                topPendingReturnConversation.target.deliveredAt,
+                              ).tone
+                            }`}
                           >
                             {
                               resolvePendingReturnActionStatus(
@@ -1732,8 +1879,8 @@ export function GroupQrPage() {
                           {isPendingReturnCoolingDown(
                             topPendingReturnConversation.target.deliveredAt,
                           )
-                            ? "稍后补发"
-                            : "现在补发"}
+                            ? t(msg`稍后补发`)
+                            : t(msg`现在补发`)}
                         </button>
                         <div className="mt-2 max-w-[12rem] text-[11px] leading-5 text-[color:var(--text-secondary)]">
                           {resolvePendingReturnActionHint(
@@ -1754,30 +1901,38 @@ export function GroupQrPage() {
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                              次优先备选
+                              {t(msg`次优先备选`)}
                             </div>
                             <div className="mt-2">
                               <span
-                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${resolvePendingReturnActionStatus(
-                                  fallbackPendingReturnConversation.conversation,
-                                  fallbackPendingReturnConversation.target.deliveredAt,
-                                ).tone}`}
+                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                                  resolvePendingReturnActionStatus(
+                                    fallbackPendingReturnConversation.conversation,
+                                    fallbackPendingReturnConversation.target
+                                      .deliveredAt,
+                                  ).tone
+                                }`}
                               >
                                 {
                                   resolvePendingReturnActionStatus(
                                     fallbackPendingReturnConversation.conversation,
-                                    fallbackPendingReturnConversation.target.deliveredAt,
+                                    fallbackPendingReturnConversation.target
+                                      .deliveredAt,
                                   ).label
                                 }
                               </span>
                             </div>
                             <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
-                              {fallbackPendingReturnConversation.conversation.title}
+                              {
+                                fallbackPendingReturnConversation.conversation
+                                  .title
+                              }
                             </div>
                             <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                               {resolvePendingReturnCardMetaSummary(
                                 fallbackPendingReturnConversation.conversation,
-                                fallbackPendingReturnConversation.target.deliveredAt,
+                                fallbackPendingReturnConversation.target
+                                  .deliveredAt,
                               )}
                             </div>
                             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
@@ -1785,7 +1940,8 @@ export function GroupQrPage() {
                                 topPendingReturnConversation.conversation,
                                 topPendingReturnConversation.target.deliveredAt,
                                 fallbackPendingReturnConversation.conversation,
-                                fallbackPendingReturnConversation.target.deliveredAt,
+                                fallbackPendingReturnConversation.target
+                                  .deliveredAt,
                               )}
                             </div>
                           </div>
@@ -1798,7 +1954,7 @@ export function GroupQrPage() {
                             }}
                             className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                           >
-                            切到备选
+                            {t(msg`切到备选`)}
                           </button>
                         </div>
                       </div>
@@ -1808,34 +1964,44 @@ export function GroupQrPage() {
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                              暂缓处理
+                              {t(msg`暂缓处理`)}
                             </div>
                             <div className="mt-2">
                               <span
-                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${resolvePendingReturnActionStatus(
-                                  deferredPendingReturnConversation.conversation,
-                                  deferredPendingReturnConversation.target.deliveredAt,
-                                ).tone}`}
+                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                                  resolvePendingReturnActionStatus(
+                                    deferredPendingReturnConversation.conversation,
+                                    deferredPendingReturnConversation.target
+                                      .deliveredAt,
+                                  ).tone
+                                }`}
                               >
                                 {
                                   resolvePendingReturnActionStatus(
                                     deferredPendingReturnConversation.conversation,
-                                    deferredPendingReturnConversation.target.deliveredAt,
+                                    deferredPendingReturnConversation.target
+                                      .deliveredAt,
                                   ).label
                                 }
                               </span>
                             </div>
                             <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
-                              {deferredPendingReturnConversation.conversation.title}
+                              {
+                                deferredPendingReturnConversation.conversation
+                                  .title
+                              }
                             </div>
                             <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                               {resolvePendingReturnCardMetaSummary(
                                 deferredPendingReturnConversation.conversation,
-                                deferredPendingReturnConversation.target.deliveredAt,
+                                deferredPendingReturnConversation.target
+                                  .deliveredAt,
                               )}
                             </div>
                             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                              这条刚补发过，等冷却结束后会自动回到优先位。
+                              {t(
+                                msg`这条刚补发过，等冷却结束后会自动回到优先位。`,
+                              )}
                             </div>
                           </div>
                           <button
@@ -1847,86 +2013,93 @@ export function GroupQrPage() {
                             }}
                             className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-muted)] transition hover:border-[rgba(15,23,42,0.14)] hover:text-[color:var(--text-primary)]"
                           >
-                            暂缓处理
+                            {t(msg`暂缓处理`)}
                           </button>
                         </div>
                       </div>
                     ) : null}
                   </div>
                 ) : null}
-                {pendingCurrentBatchConversations.map(({ conversation, target }) => (
-                  <button
-                    key={`${conversation.id}:${target.deliveredAt}`}
-                    type="button"
-                    onClick={() => {
-                      void sendToConversation(conversation);
-                    }}
-                    className={
-                      isDesktopLayout
-                        ? "flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:bg-[color:var(--surface-console)]"
-                        : "flex w-full items-center justify-between gap-3 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-3 text-left shadow-none transition active:bg-[color:var(--surface-card-hover)]"
-                    }
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
-                        <span
-                          className={`rounded-full px-2.5 py-1 font-medium ${resolvePendingReturnActionStatus(
+                {pendingCurrentBatchConversations.map(
+                  ({ conversation, target }) => (
+                    <button
+                      key={`${conversation.id}:${target.deliveredAt}`}
+                      type="button"
+                      onClick={() => {
+                        void sendToConversation(conversation);
+                      }}
+                      className={
+                        isDesktopLayout
+                          ? "flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:bg-[color:var(--surface-console)]"
+                          : "flex w-full items-center justify-between gap-3 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-3 text-left shadow-none transition active:bg-[color:var(--surface-card-hover)]"
+                      }
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
+                          <span
+                            className={`rounded-full px-2.5 py-1 font-medium ${
+                              resolvePendingReturnActionStatus(
+                                conversation,
+                                target.deliveredAt,
+                              ).tone
+                            }`}
+                          >
+                            {
+                              resolvePendingReturnActionStatus(
+                                conversation,
+                                target.deliveredAt,
+                              ).label
+                            }
+                          </span>
+                          <span
+                            className={`rounded-full px-2.5 py-1 font-medium ${
+                              resolvePendingReturnPrimaryReason(
+                                conversation,
+                                target.deliveredAt,
+                              ).tone
+                            }`}
+                          >
+                            {
+                              resolvePendingReturnPrimaryReason(
+                                conversation,
+                                target.deliveredAt,
+                              ).label
+                            }
+                          </span>
+                        </div>
+                        <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                          {conversation.title}
+                        </div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          {resolvePendingReturnMetaSummary(
+                            conversation,
+                            target,
+                            deliveryBatchRankById,
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                          {resolvePendingReturnRecommendationSummary(
                             conversation,
                             target.deliveredAt,
-                          ).tone}`}
-                        >
-                          {
-                            resolvePendingReturnActionStatus(
-                              conversation,
-                              target.deliveredAt,
-                            ).label
-                          }
-                        </span>
-                        <span
-                          className={`rounded-full px-2.5 py-1 font-medium ${resolvePendingReturnPrimaryReason(
-                            conversation,
-                            target.deliveredAt,
-                          ).tone}`}
-                        >
-                          {
-                            resolvePendingReturnPrimaryReason(
-                              conversation,
-                              target.deliveredAt,
-                            ).label
-                          }
-                        </span>
+                          )}
+                        </div>
+                        {isPendingReturnCoolingDown(target.deliveredAt) ? (
+                          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                            {t(
+                              msg`冷却剩余 ${formatPendingReturnCooldownRemaining(target.deliveredAt)}，结束后会自动回到优先位。`,
+                            )}
+                          </div>
+                        ) : null}
                       </div>
-                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                        {conversation.title}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {resolvePendingReturnMetaSummary(
-                          conversation,
-                          target,
-                          deliveryBatchRankById,
-                        )}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                        {resolvePendingReturnRecommendationSummary(
+                      <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-xs text-[color:var(--brand-primary)]">
+                        {resolvePendingReturnActionLabel(
                           conversation,
                           target.deliveredAt,
                         )}
-                      </div>
-                      {isPendingReturnCoolingDown(target.deliveredAt) ? (
-                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          冷却剩余 {formatPendingReturnCooldownRemaining(target.deliveredAt)}
-                          ，结束后会自动回到优先位。
-                        </div>
-                      ) : null}
-                    </div>
-                    <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-xs text-[color:var(--brand-primary)]">
-                      {resolvePendingReturnActionLabel(
-                        conversation,
-                        target.deliveredAt,
-                      )}
-                    </span>
-                  </button>
-                ))}
+                      </span>
+                    </button>
+                  ),
+                )}
               </div>
             ) : null}
             {!conversationsQuery.isLoading && !recentConversations.length ? (
@@ -1937,11 +2110,17 @@ export function GroupQrPage() {
                     : "border-t border-dashed border-[color:var(--border-subtle)] px-4 py-4 text-sm text-[color:var(--text-secondary)]"
                 }
               >
-                还没有可投递的最近会话。
+                {t(msg`还没有可投递的最近会话。`)}
               </div>
             ) : null}
             {currentReturnSourceConversation ? (
-              <div className={isDesktopLayout ? undefined : "border-t border-[color:var(--border-subtle)]"}>
+              <div
+                className={
+                  isDesktopLayout
+                    ? undefined
+                    : "border-t border-[color:var(--border-subtle)]"
+                }
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -1955,28 +2134,34 @@ export function GroupQrPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
-                      优先回发给来源会话
+                      {t(msg`优先回发给来源会话`)}
                     </div>
                     <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
                       {currentReturnSourceConversation.title}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
                       <span
-                        className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
-                          currentReturnSourceConversation,
-                          deliveredTargetByPath[
-                            buildConversationPath(currentReturnSourceConversation)
-                          ],
-                          "优先处理",
-                        ).tone}`}
+                        className={`rounded-full px-2.5 py-1 font-medium ${
+                          resolveConversationActionStatus(
+                            currentReturnSourceConversation,
+                            deliveredTargetByPath[
+                              buildConversationPath(
+                                currentReturnSourceConversation,
+                              )
+                            ],
+                            "prioritize",
+                          ).tone
+                        }`}
                       >
                         {
                           resolveConversationActionStatus(
                             currentReturnSourceConversation,
                             deliveredTargetByPath[
-                              buildConversationPath(currentReturnSourceConversation)
+                              buildConversationPath(
+                                currentReturnSourceConversation,
+                              )
                             ],
-                            "优先处理",
+                            "prioritize",
                           ).label
                         }
                       </span>
@@ -1987,7 +2172,7 @@ export function GroupQrPage() {
                         deliveredTargetByPath[
                           buildConversationPath(currentReturnSourceConversation)
                         ],
-                        "来源会话",
+                        "source",
                       )}
                     </div>
                     <div className="mt-1 text-xs text-[color:var(--text-muted)]">
@@ -2006,7 +2191,7 @@ export function GroupQrPage() {
                       deliveredTargetByPath[
                         buildConversationPath(currentReturnSourceConversation)
                       ],
-                      "优先处理",
+                      "prioritize",
                     )}
                   </span>
                 </button>
@@ -2022,7 +2207,7 @@ export function GroupQrPage() {
               >
                 <div className={isDesktopLayout ? undefined : "px-4 py-3"}>
                   <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-primary)]">
-                    来源会话附近相关会话
+                    {t(msg`来源会话附近相关会话`)}
                   </div>
                 </div>
                 <div
@@ -2048,11 +2233,15 @@ export function GroupQrPage() {
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
                           <span
-                            className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
-                              conversation,
-                              deliveredTargetByPath[buildConversationPath(conversation)],
-                              "优先处理",
-                            ).tone}`}
+                            className={`rounded-full px-2.5 py-1 font-medium ${
+                              resolveConversationActionStatus(
+                                conversation,
+                                deliveredTargetByPath[
+                                  buildConversationPath(conversation)
+                                ],
+                                "prioritize",
+                              ).tone
+                            }`}
                           >
                             {
                               resolveConversationActionStatus(
@@ -2060,7 +2249,7 @@ export function GroupQrPage() {
                                 deliveredTargetByPath[
                                   buildConversationPath(conversation)
                                 ],
-                                "优先处理",
+                                "prioritize",
                               ).label
                             }
                           </span>
@@ -2071,14 +2260,18 @@ export function GroupQrPage() {
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                           {resolveConversationActionDescription(
                             conversation,
-                            deliveredTargetByPath[buildConversationPath(conversation)],
-                            "相关会话",
+                            deliveredTargetByPath[
+                              buildConversationPath(conversation)
+                            ],
+                            "related",
                           )}
                         </div>
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                           {resolveConversationMetaSummary(
                             conversation,
-                            deliveredTargetByPath[buildConversationPath(conversation)],
+                            deliveredTargetByPath[
+                              buildConversationPath(conversation)
+                            ],
                             deliveryBatchRankById,
                           )}
                         </div>
@@ -2086,8 +2279,10 @@ export function GroupQrPage() {
                       <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-xs text-[color:var(--brand-primary)]">
                         {resolveConversationActionLabel(
                           conversation,
-                          deliveredTargetByPath[buildConversationPath(conversation)],
-                          "优先处理",
+                          deliveredTargetByPath[
+                            buildConversationPath(conversation)
+                          ],
+                          "prioritize",
                         )}
                       </span>
                     </button>
@@ -2119,11 +2314,15 @@ export function GroupQrPage() {
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
                         <span
-                          className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
-                            conversation,
-                            deliveredTargetByPath[buildConversationPath(conversation)],
-                            "现在补最值",
-                          ).tone}`}
+                          className={`rounded-full px-2.5 py-1 font-medium ${
+                            resolveConversationActionStatus(
+                              conversation,
+                              deliveredTargetByPath[
+                                buildConversationPath(conversation)
+                              ],
+                              "best_now",
+                            ).tone
+                          }`}
                         >
                           {
                             resolveConversationActionStatus(
@@ -2131,7 +2330,7 @@ export function GroupQrPage() {
                               deliveredTargetByPath[
                                 buildConversationPath(conversation)
                               ],
-                              "现在补最值",
+                              "best_now",
                             ).label
                           }
                         </span>
@@ -2142,14 +2341,18 @@ export function GroupQrPage() {
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                         {resolveConversationActionDescription(
                           conversation,
-                          deliveredTargetByPath[buildConversationPath(conversation)],
-                          "最近会话",
+                          deliveredTargetByPath[
+                            buildConversationPath(conversation)
+                          ],
+                          "recent",
                         )}
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                         {resolveConversationMetaSummary(
                           conversation,
-                          deliveredTargetByPath[buildConversationPath(conversation)],
+                          deliveredTargetByPath[
+                            buildConversationPath(conversation)
+                          ],
                           deliveryBatchRankById,
                         )}
                       </div>
@@ -2157,8 +2360,10 @@ export function GroupQrPage() {
                     <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.07)] px-3 py-1 text-xs text-[color:var(--brand-primary)]">
                       {resolveConversationActionLabel(
                         conversation,
-                        deliveredTargetByPath[buildConversationPath(conversation)],
-                        "现在就补",
+                        deliveredTargetByPath[
+                          buildConversationPath(conversation)
+                        ],
+                        "best_now",
                       )}
                     </span>
                   </button>
@@ -2178,14 +2383,14 @@ export function GroupQrPage() {
           <div className="flex items-center justify-between rounded-[28px] border border-black/5 bg-white/88 px-5 py-4 shadow-[var(--shadow-section)] backdrop-blur">
             <div className="min-w-0">
               <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--brand-primary)]">
-                Group Invite
+                {t(msg`群邀请`)}
               </div>
               <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                群二维码
+                {t(msg`群二维码`)}
               </div>
               {currentReturnSourceConversation ? (
                 <div className="mt-2 text-xs text-[color:var(--text-secondary)]">
-                  当前来自 {currentReturnSourceConversation.title}
+                  {t(msg`当前来自 ${currentReturnSourceConversation.title}`)}
                 </div>
               ) : null}
             </div>
@@ -2202,7 +2407,7 @@ export function GroupQrPage() {
                   }}
                   className="rounded-full"
                 >
-                  回到来源会话
+                  {t(msg`回到来源会话`)}
                 </Button>
               ) : null}
               <Button
@@ -2210,7 +2415,11 @@ export function GroupQrPage() {
                 onClick={() => {
                   void navigate({
                     to: safeReturnPath ?? "/tabs/chat",
-                    ...((safeReturnPath ? safeReturnHash : desktopDetailsFallbackHash)
+                    ...((
+                      safeReturnPath
+                        ? safeReturnHash
+                        : desktopDetailsFallbackHash
+                    )
                       ? {
                           hash:
                             (safeReturnPath
@@ -2221,7 +2430,7 @@ export function GroupQrPage() {
                   });
                 }}
               >
-                返回群聊信息
+                {t(msg`返回群聊信息`)}
               </Button>
             </div>
           </div>
@@ -2233,8 +2442,8 @@ export function GroupQrPage() {
 
   return (
     <ChatDetailsShell
-      title="群二维码"
-      subtitle={groupQuery.data?.name ?? "群聊邀请"}
+      title={t(msg`群二维码`)}
+      subtitle={groupQuery.data?.name ?? t(msg`群聊邀请`)}
       onBack={() => {
         void navigate({
           to: "/group/$groupId/details",
@@ -2355,19 +2564,19 @@ function resolveDeliveredBatchLabel(
   batchRankById: Record<string, number>,
 ) {
   if (!record) {
-    return "新会话";
+    return t(msg`新会话`);
   }
 
   const rank = batchRankById[record.batchId];
   if (rank === 0) {
-    return "本轮批次";
+    return t(msg`本轮批次`);
   }
 
   if (typeof rank === "number") {
-    return `更早批次 ${rank + 1}`;
+    return t(msg`更早批次 ${rank + 1}`);
   }
 
-  return "更早批次";
+  return t(msg`更早批次`);
 }
 
 function resolvePendingReturnMetaSummary(
@@ -2378,9 +2587,11 @@ function resolvePendingReturnMetaSummary(
   return [
     getConversationThreadLabel(conversation),
     resolveDeliveredBatchLabel(target, deliveryBatchRankById),
-    `待回流 ${formatPendingReturnDuration(target.deliveredAt)}`,
-    `上次发送于 ${formatConversationTimestamp(target.deliveredAt)}`,
-    `最近活跃 ${formatConversationTimestamp(conversation.lastActivityAt)}`,
+    t(msg`待回流 ${formatPendingReturnDuration(target.deliveredAt)}`),
+    t(msg`上次发送于 ${formatConversationTimestamp(target.deliveredAt)}`),
+    t(
+      msg`最近活跃 ${formatConversationTimestamp(conversation.lastActivityAt)}`,
+    ),
   ].join(" · ");
 }
 
@@ -2391,40 +2602,42 @@ function resolvePendingReturnCardMetaSummary(
   return [
     resolvePendingReturnPrimaryReason(conversation, deliveredAt).label,
     isPendingReturnCoolingDown(deliveredAt)
-      ? `冷却剩余 ${formatPendingReturnCooldownRemaining(deliveredAt)}`
-      : `待回流 ${formatPendingReturnDuration(deliveredAt)}`,
-    `最近活跃 ${formatConversationTimestamp(conversation.lastActivityAt)}`,
+      ? t(msg`冷却剩余 ${formatPendingReturnCooldownRemaining(deliveredAt)}`)
+      : t(msg`待回流 ${formatPendingReturnDuration(deliveredAt)}`),
+    t(
+      msg`最近活跃 ${formatConversationTimestamp(conversation.lastActivityAt)}`,
+    ),
   ].join(" · ");
 }
 
 function formatPendingReturnDuration(deliveredAt: string) {
   const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
   if (elapsedMinutes === null) {
-    return "一段时间";
+    return t(msg`一段时间`);
   }
 
   if (elapsedMinutes < 1) {
-    return "不到 1 分钟";
+    return t(msg`不到 1 分钟`);
   }
 
   if (elapsedMinutes < 60) {
-    return `${elapsedMinutes} 分钟`;
+    return t(msg`${elapsedMinutes} 分钟`);
   }
 
   const elapsedHours = Math.floor(elapsedMinutes / 60);
   const remainderMinutes = elapsedMinutes % 60;
 
   if (!remainderMinutes) {
-    return `${elapsedHours} 小时`;
+    return t(msg`${elapsedHours} 小时`);
   }
 
-  return `${elapsedHours} 小时 ${remainderMinutes} 分钟`;
+  return t(msg`${elapsedHours} 小时 ${remainderMinutes} 分钟`);
 }
 
 function resolvePendingReturnPrimaryReason(
   conversation: ConversationListItem,
   deliveredAt: string,
-) {
+): PendingReturnReason {
   const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
   const recentActivityMinutes = resolveConversationRecentActivityMinutes(
     conversation.lastActivityAt,
@@ -2433,7 +2646,8 @@ function resolvePendingReturnPrimaryReason(
 
   if (isPendingReturnCoolingDown(deliveredAt)) {
     return {
-      label: "先等回流",
+      code: "wait_for_reopen",
+      label: t(msg`先等回流`),
       tone: "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
     };
   }
@@ -2445,27 +2659,33 @@ function resolvePendingReturnPrimaryReason(
     recentActivityMinutes <= 6 * 60
   ) {
     return {
-      label: "超时且活跃",
+      code: "stale_and_active",
+      label: t(msg`超时且活跃`),
       tone: "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]",
     };
   }
 
   if (elapsedMinutes !== null && elapsedMinutes >= 60) {
     return {
-      label: "长时间未回流",
+      code: "stale",
+      label: t(msg`长时间未回流`),
       tone: "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]",
     };
   }
 
   if (recentActivityMinutes !== null && recentActivityMinutes <= 6 * 60) {
     return {
-      label: isGroupConversation ? "活跃群聊扩散" : "活跃单聊触达",
+      code: isGroupConversation ? "active_group_reach" : "active_direct_reach",
+      label: isGroupConversation ? t(msg`活跃群聊扩散`) : t(msg`活跃单聊触达`),
       tone: "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
     };
   }
 
   return {
-    label: isGroupConversation ? "群聊扩散优先" : "单聊定向补发",
+    code: isGroupConversation
+      ? "group_reach_priority"
+      : "direct_targeted_resend",
+    label: isGroupConversation ? t(msg`群聊扩散优先`) : t(msg`单聊定向补发`),
     tone: "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
   };
 }
@@ -2474,38 +2694,27 @@ function resolvePendingReturnRecommendationSummary(
   conversation: ConversationListItem,
   deliveredAt: string,
 ) {
-  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
-  const recentActivityMinutes = resolveConversationRecentActivityMinutes(
-    conversation.lastActivityAt,
+  const primaryReason = resolvePendingReturnPrimaryReason(
+    conversation,
+    deliveredAt,
   );
-  const isGroupConversation = isPersistedGroupConversation(conversation);
 
-  if (isPendingReturnCoolingDown(deliveredAt)) {
-    return "刚补发过，先等回流。";
+  switch (primaryReason.code) {
+    case "wait_for_reopen":
+      return t(msg`刚补发过，先等回流。`);
+    case "stale_and_active":
+      return t(msg`拖得久且还活跃，先追这条。`);
+    case "stale":
+      return t(msg`长时间未回流，先补这条。`);
+    case "active_group_reach":
+      return t(msg`群聊还活跃，可以继续扩散。`);
+    case "active_direct_reach":
+      return t(msg`单聊还活跃，可以趁热补发。`);
+    case "group_reach_priority":
+      return t(msg`群聊触达更广，可以放扩散位。`);
+    default:
+      return t(msg`这条更适合做定向补发。`);
   }
-
-  if (
-    elapsedMinutes !== null &&
-    elapsedMinutes >= 60 &&
-    recentActivityMinutes !== null &&
-    recentActivityMinutes <= 6 * 60
-  ) {
-    return "拖得久且还活跃，先追这条。";
-  }
-
-  if (elapsedMinutes !== null && elapsedMinutes >= 60) {
-    return "长时间未回流，先补这条。";
-  }
-
-  if (recentActivityMinutes !== null && recentActivityMinutes <= 6 * 60) {
-    return isGroupConversation
-      ? "群聊还活跃，可以继续扩散。"
-      : "单聊还活跃，可以趁热补发。";
-  }
-
-  return isGroupConversation
-    ? "群聊触达更广，可以放扩散位。"
-    : "这条更适合做定向补发。";
 }
 
 function resolvePendingReturnFallbackReason(
@@ -2515,7 +2724,7 @@ function resolvePendingReturnFallbackReason(
   fallbackDeliveredAt: string,
 ) {
   if (isPendingReturnCoolingDown(fallbackDeliveredAt)) {
-    return "这条备选刚补发过，还在冷却，所以暂时排在主推荐后面。";
+    return t(msg`这条备选刚补发过，还在冷却，所以暂时排在主推荐后面。`);
   }
 
   const topActivityMinutes = resolveConversationRecentActivityMinutes(
@@ -2529,7 +2738,7 @@ function resolvePendingReturnFallbackReason(
     fallbackActivityMinutes !== null &&
     topActivityMinutes < fallbackActivityMinutes
   ) {
-    return "主推荐对应的会话更新近，还在更活跃的窗口里，所以优先级更高。";
+    return t(msg`主推荐对应的会话更新近，还在更活跃的窗口里，所以优先级更高。`);
   }
 
   const topElapsedMinutes = resolvePendingReturnElapsedMinutes(topDeliveredAt);
@@ -2540,57 +2749,54 @@ function resolvePendingReturnFallbackReason(
     fallbackElapsedMinutes !== null &&
     topElapsedMinutes > fallbackElapsedMinutes
   ) {
-    return "主推荐已经等待回流更久，当前更值得先补这一轮。";
+    return t(msg`主推荐已经等待回流更久，当前更值得先补这一轮。`);
   }
 
   if (
     isPersistedGroupConversation(topConversation) &&
     !isPersistedGroupConversation(fallbackConversation)
   ) {
-    return "主推荐是群聊扩散位，当前触达面更大，所以先放在第一位。";
+    return t(msg`主推荐是群聊扩散位，当前触达面更大，所以先放在第一位。`);
   }
 
-  return "这条也值得补发，但综合活跃度和回流时长后仍排在主推荐后面。";
+  return t(msg`这条也值得补发，但综合活跃度和回流时长后仍排在主推荐后面。`);
 }
 
 function resolvePendingReturnOutcomeConclusion(
-  topPendingReturnConversation:
-    | {
-        conversation: ConversationListItem;
-        target: GroupInviteDeliveryTarget;
-      }
-    | null,
-  fallbackPendingReturnConversation:
-    | {
-        conversation: ConversationListItem;
-        target: GroupInviteDeliveryTarget;
-      }
-    | null,
-  fallbackPendingReturnExpectedOutcome:
-    | {
-        nextReadyCount: number;
-        nextCoolingDownCount: number;
-        summary: string;
-      }
-    | null,
-  pendingReturnExpectedOutcome:
-    | {
-        nextReadyCount: number;
-        nextCoolingDownCount: number;
-        summary: string;
-      }
-    | null,
+  topPendingReturnConversation: {
+    conversation: ConversationListItem;
+    target: GroupInviteDeliveryTarget;
+  } | null,
+  fallbackPendingReturnConversation: {
+    conversation: ConversationListItem;
+    target: GroupInviteDeliveryTarget;
+  } | null,
+  fallbackPendingReturnExpectedOutcome: {
+    nextReadyCount: number;
+    nextCoolingDownCount: number;
+    summary: string;
+  } | null,
+  pendingReturnExpectedOutcome: {
+    nextReadyCount: number;
+    nextCoolingDownCount: number;
+    summary: string;
+  } | null,
 ) {
   if (!pendingReturnExpectedOutcome) {
-    return "当前没有可预测结果。";
+    return t(msg`当前没有可预测结果。`);
   }
 
   if (!topPendingReturnConversation) {
     return pendingReturnExpectedOutcome.summary;
   }
 
-  if (!fallbackPendingReturnConversation || !fallbackPendingReturnExpectedOutcome) {
-    return `先处理 ${topPendingReturnConversation.conversation.title} 就行。`;
+  if (
+    !fallbackPendingReturnConversation ||
+    !fallbackPendingReturnExpectedOutcome
+  ) {
+    return t(
+      msg`先处理 ${topPendingReturnConversation.conversation.title} 就行。`,
+    );
   }
 
   if (
@@ -2598,10 +2804,14 @@ function resolvePendingReturnOutcomeConclusion(
       fallbackPendingReturnConversation.target.deliveredAt,
     )
   ) {
-    return `先走主推荐更合适，${fallbackPendingReturnConversation.conversation.title} 还在冷却里。`;
+    return t(
+      msg`先走主推荐更合适，${fallbackPendingReturnConversation.conversation.title} 还在冷却里。`,
+    );
   }
 
-  return `先走主推荐更合适，先补 ${topPendingReturnConversation.conversation.title} 会先拿掉前排阻塞。`;
+  return t(
+    msg`先走主推荐更合适，先补 ${topPendingReturnConversation.conversation.title} 会先拿掉前排阻塞。`,
+  );
 }
 
 function resolvePendingReturnActionHint(
@@ -2609,7 +2819,7 @@ function resolvePendingReturnActionHint(
   deliveredAt: string,
 ) {
   if (isPendingReturnCoolingDown(deliveredAt)) {
-    return `还在冷却，先等回流再看 ${conversation.title}。`;
+    return t(msg`还在冷却，先等回流再看 ${conversation.title}。`);
   }
 
   const primaryReason = resolvePendingReturnPrimaryReason(
@@ -2617,22 +2827,17 @@ function resolvePendingReturnActionHint(
     deliveredAt,
   );
 
-  if (primaryReason.label === "超时且活跃") {
-    return "拖得久又还活跃，现在补最值。";
+  switch (primaryReason.code) {
+    case "stale_and_active":
+      return t(msg`拖得久又还活跃，现在补最值。`);
+    case "stale":
+      return t(msg`等待已经偏长，现在补更顺。`);
+    case "active_group_reach":
+    case "active_direct_reach":
+      return t(msg`还在活跃窗口里，适合现在补。`);
+    default:
+      return t(msg`按当前排序先做这条。`);
   }
-
-  if (primaryReason.label === "长时间未回流") {
-    return "等待已经偏长，现在补更顺。";
-  }
-
-  if (
-    primaryReason.label === "活跃群聊扩散" ||
-    primaryReason.label === "活跃单聊触达"
-  ) {
-    return "还在活跃窗口里，适合现在补。";
-  }
-
-  return "按当前排序先做这条。";
 }
 
 function resolvePendingReturnActionRiskHint(
@@ -2640,7 +2845,7 @@ function resolvePendingReturnActionRiskHint(
   deliveredAt: string,
 ) {
   if (isPendingReturnCoolingDown(deliveredAt)) {
-    return "现在追也不会立刻改善结构。";
+    return t(msg`现在追也不会立刻改善结构。`);
   }
 
   const primaryReason = resolvePendingReturnPrimaryReason(
@@ -2648,33 +2853,25 @@ function resolvePendingReturnActionRiskHint(
     deliveredAt,
   );
 
-  if (primaryReason.label === "超时且活跃") {
-    return "再拖下去，最好的回流口会变钝。";
+  switch (primaryReason.code) {
+    case "stale_and_active":
+      return t(msg`再拖下去，最好的回流口会变钝。`);
+    case "stale":
+      return t(msg`再后放，这条只会继续积压。`);
+    case "active_group_reach":
+    case "active_direct_reach":
+      return t(msg`错过活跃窗口，再补会更难接回流。`);
+    default:
+      return t(msg`先不动 ${conversation.title}，主路径还会堵在前面。`);
   }
-
-  if (primaryReason.label === "长时间未回流") {
-    return "再后放，这条只会继续积压。";
-  }
-
-  if (
-    primaryReason.label === "活跃群聊扩散" ||
-    primaryReason.label === "活跃单聊触达"
-  ) {
-    return "错过活跃窗口，再补会更难接回流。";
-  }
-
-  return `先不动 ${conversation.title}，主路径还会堵在前面。`;
 }
 
 function resolvePendingReturnActionStatus(
   conversation: ConversationListItem,
   deliveredAt: string,
-) {
+): PendingReturnActionStatus {
   if (isPendingReturnCoolingDown(deliveredAt)) {
-    return {
-      label: "暂不建议",
-      tone: "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
-    };
+    return buildPendingReturnActionStatus("not_recommended");
   }
 
   const primaryReason = resolvePendingReturnPrimaryReason(
@@ -2682,30 +2879,16 @@ function resolvePendingReturnActionStatus(
     deliveredAt,
   );
 
-  if (
-    primaryReason.label === "超时且活跃" ||
-    primaryReason.label === "长时间未回流"
-  ) {
-    return {
-      label: "现在补最值",
-      tone: "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]",
-    };
+  switch (primaryReason.code) {
+    case "stale_and_active":
+    case "stale":
+      return buildPendingReturnActionStatus("best_now");
+    case "active_group_reach":
+    case "active_direct_reach":
+      return buildPendingReturnActionStatus("prioritize");
+    default:
+      return buildPendingReturnActionStatus("can_wait");
   }
-
-  if (
-    primaryReason.label === "活跃群聊扩散" ||
-    primaryReason.label === "活跃单聊触达"
-  ) {
-    return {
-      label: "优先处理",
-      tone: "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-    };
-  }
-
-  return {
-    label: "可以稍放",
-    tone: "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-  };
 }
 
 function resolvePendingReturnActionLabel(
@@ -2713,32 +2896,62 @@ function resolvePendingReturnActionLabel(
   deliveredAt: string,
 ) {
   const status = resolvePendingReturnActionStatus(conversation, deliveredAt);
+  return resolvePendingReturnActionLabelByCode(status.code);
+}
 
-  if (status.label === "现在补最值") {
-    return "现在就补";
+function buildPendingReturnActionStatus(
+  code: PendingReturnActionStatusCode,
+): PendingReturnActionStatus {
+  switch (code) {
+    case "not_recommended":
+      return {
+        code,
+        label: t(msg`暂不建议`),
+        tone: "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
+      };
+    case "best_now":
+      return {
+        code,
+        label: t(msg`现在补最值`),
+        tone: "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]",
+      };
+    case "prioritize":
+      return {
+        code,
+        label: t(msg`优先处理`),
+        tone: "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
+      };
+    default:
+      return {
+        code,
+        label: t(msg`可以稍放`),
+        tone: "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
+      };
   }
+}
 
-  if (status.label === "优先处理") {
-    return "优先处理";
+function resolvePendingReturnActionLabelByCode(
+  code: PendingReturnActionStatusCode,
+) {
+  switch (code) {
+    case "best_now":
+      return t(msg`现在就补`);
+    case "prioritize":
+      return t(msg`优先处理`);
+    case "can_wait":
+      return t(msg`稍后再补`);
+    default:
+      return t(msg`暂不建议`);
   }
-
-  if (status.label === "可以稍放") {
-    return "稍后再补";
-  }
-
-  return "暂不建议";
 }
 
 function resolveConversationActionStatus(
   conversation: ConversationListItem,
   deliveredTarget: GroupInviteDeliveryTarget | undefined,
-  fallbackLabel: string,
-) {
+  fallbackStatus: PendingReturnActionStatusCode,
+): PendingReturnActionStatus {
   if (!deliveredTarget) {
-    return {
-      label: fallbackLabel,
-      tone: "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-    };
+    return buildPendingReturnActionStatus(fallbackStatus);
   }
 
   return resolvePendingReturnActionStatus(
@@ -2750,54 +2963,65 @@ function resolveConversationActionStatus(
 function resolveConversationActionLabel(
   conversation: ConversationListItem,
   deliveredTarget: GroupInviteDeliveryTarget | undefined,
-  fallbackLabel: string,
+  fallbackStatus: PendingReturnActionStatusCode,
 ) {
   if (!deliveredTarget) {
-    return fallbackLabel;
+    return resolvePendingReturnActionLabelByCode(fallbackStatus);
   }
 
-  return resolvePendingReturnActionLabel(conversation, deliveredTarget.deliveredAt);
+  return resolvePendingReturnActionLabel(
+    conversation,
+    deliveredTarget.deliveredAt,
+  );
 }
 
 function resolveConversationActionDescription(
   conversation: ConversationListItem,
   deliveredTarget: GroupInviteDeliveryTarget | undefined,
-  context: "来源会话" | "相关会话" | "最近会话",
+  context: ConversationActionContext,
 ) {
   const recentActivityLabel = formatConversationTimestamp(
     conversation.lastActivityAt,
   );
   const conversationKind = isPersistedGroupConversation(conversation)
-    ? context === "相关会话"
-      ? "同类群聊"
-      : "群聊"
-    : context === "相关会话"
-      ? "同类单聊"
-      : "单聊";
+    ? context === "related"
+      ? t(msg`同类群聊`)
+      : t(msg`群聊`)
+    : context === "related"
+      ? t(msg`同类单聊`)
+      : t(msg`单聊`);
 
   if (!deliveredTarget) {
-    if (context === "来源会话") {
-      return "这条就是刚回流的来源会话，可以直接接着补。";
+    if (context === "source") {
+      return t(msg`这条就是刚回流的来源会话，可以直接接着补。`);
     }
 
-    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 还没发过这一轮邀请。`;
+    return t(
+      msg`${conversationKind} · 最近活跃 ${recentActivityLabel} · 还没发过这一轮邀请。`,
+    );
   }
 
   const actionStatus = resolveConversationActionStatus(
     conversation,
     deliveredTarget,
-    "优先处理",
+    "prioritize",
   );
 
-  if (actionStatus.label === "暂不建议") {
-    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 刚补发过，先等一轮回流。`;
+  if (actionStatus.code === "not_recommended") {
+    return t(
+      msg`${conversationKind} · 最近活跃 ${recentActivityLabel} · 刚补发过，先等一轮回流。`,
+    );
   }
 
-  if (actionStatus.label === "可以稍放") {
-    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 已经触达过，可放后手。`;
+  if (actionStatus.code === "can_wait") {
+    return t(
+      msg`${conversationKind} · 最近活跃 ${recentActivityLabel} · 已经触达过，可放后手。`,
+    );
   }
 
-  return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 这一轮可以继续跟进。`;
+  return t(
+    msg`${conversationKind} · 最近活跃 ${recentActivityLabel} · 这一轮可以继续跟进。`,
+  );
 }
 
 function resolveConversationMetaSummary(
@@ -2810,10 +3034,18 @@ function resolveConversationMetaSummary(
   ];
 
   if (deliveredTarget) {
-    parts.push(`上次发送于 ${formatConversationTimestamp(deliveredTarget.deliveredAt)}`);
+    parts.push(
+      t(
+        msg`上次发送于 ${formatConversationTimestamp(deliveredTarget.deliveredAt)}`,
+      ),
+    );
   }
 
-  parts.push(`最近活跃 ${formatConversationTimestamp(conversation.lastActivityAt)}`);
+  parts.push(
+    t(
+      msg`最近活跃 ${formatConversationTimestamp(conversation.lastActivityAt)}`,
+    ),
+  );
   return parts.join(" · ");
 }
 
@@ -2825,15 +3057,15 @@ function isPendingReturnCoolingDown(deliveredAt: string) {
 function formatPendingReturnCooldownRemaining(deliveredAt: string) {
   const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
   if (elapsedMinutes === null) {
-    return "一段时间";
+    return t(msg`一段时间`);
   }
 
   const remainingMinutes = Math.max(5 - elapsedMinutes, 0);
   if (remainingMinutes < 1) {
-    return "不到 1 分钟";
+    return t(msg`不到 1 分钟`);
   }
 
-  return `${remainingMinutes} 分钟`;
+  return t(msg`${remainingMinutes} 分钟`);
 }
 
 function resolvePendingReturnElapsedMinutes(deliveredAt: string) {
@@ -2856,10 +3088,12 @@ function resolveConversationRecentActivityMinutes(lastActivityAt: string) {
 
 function buildInviteMatrixSvg({
   code,
+  footerLabel,
   label,
   subtitle,
 }: {
   code: string;
+  footerLabel: string;
   label: string;
   subtitle: string;
 }) {
@@ -2908,7 +3142,9 @@ function buildInviteMatrixSvg({
   <text x="${width / 2}" y="${offsetY + matrixSize + 44}" text-anchor="middle" font-size="12" font-family="monospace" fill="#374151">${escapeXml(
     code,
   )}</text>
-  <text x="${width / 2}" y="${offsetY + matrixSize + 66}" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#9ca3af">群邀请卡</text>
+  <text x="${width / 2}" y="${offsetY + matrixSize + 66}" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#9ca3af">${escapeXml(
+    footerLabel,
+  )}</text>
 </svg>`.trim();
 }
 
