@@ -36,6 +36,7 @@ import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { SelfAgentService } from '../self-agent/self-agent.service';
 import {
   WORLD_NEWS_BULLETIN_GENERATION_KIND,
   WORLD_NEWS_DESK_CHARACTER_ID,
@@ -112,6 +113,7 @@ export class SchedulerService {
     private readonly followupRuntimeService: FollowupRuntimeService,
     private readonly reminderRuntimeService: ReminderRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly selfAgentService: SelfAgentService,
   ) {}
 
   @Cron('*/5 * * * *')
@@ -192,6 +194,15 @@ export class SchedulerService {
       'trigger_followup_recommendations',
       () => this.handleTriggerFollowupRecommendations(),
       'Failed to trigger followup recommendations',
+    );
+  }
+
+  @Cron('*/30 * * * *')
+  async triggerSelfAgentHeartbeat() {
+    await this.runScheduledJob(
+      'trigger_self_agent_heartbeat',
+      () => this.handleTriggerSelfAgentHeartbeat(),
+      'Failed to trigger self agent heartbeat',
     );
   }
 
@@ -463,6 +474,12 @@ export class SchedulerService {
             this.handleTriggerFollowupRecommendations(true),
           )
         ).summary;
+      case 'trigger_self_agent_heartbeat':
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleTriggerSelfAgentHeartbeat(),
+          )
+        ).summary;
       case 'check_real_world_news_bulletins':
         return (
           await this.executeTrackedJob(jobId, () =>
@@ -540,6 +557,15 @@ export class SchedulerService {
         runtimeRules.schedulerTextTemplates.jobSummaryWorldContextUpdated,
         {},
       ),
+    };
+  }
+
+  private async handleTriggerSelfAgentHeartbeat(): Promise<TrackedJobResult> {
+    const run = await this.selfAgentService.runHeartbeat({
+      trigger: 'scheduler',
+    });
+    return {
+      summary: run.summary,
     };
   }
 

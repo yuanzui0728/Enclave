@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { WorldOwnerService } from '../auth/world-owner.service';
@@ -32,6 +32,21 @@ const PROMPT_FILE_CHAR_LIMITS: Record<SelfAgentWorkspaceFileName, number> = {
   'TOOLS.md': 1200,
   'HEARTBEAT.md': 1000,
   'MEMORY.md': 1800,
+};
+
+export type SelfAgentWorkspaceDocumentRecord = {
+  name: SelfAgentWorkspaceFileName;
+  content: string;
+  size: number;
+  updatedAt: string | null;
+};
+
+export type SelfAgentWorkspaceDocumentSummaryRecord = {
+  name: SelfAgentWorkspaceFileName;
+  exists: boolean;
+  size: number;
+  updatedAt: string | null;
+  preview: string;
 };
 
 @Injectable()
@@ -69,6 +84,71 @@ export class SelfAgentWorkspaceService {
     }
 
     return sections;
+  }
+
+  async listWorkspaceDocuments(input: { character: CharacterEntity }) {
+    await this.ensureWorkspace(input.character);
+    const summaries: SelfAgentWorkspaceDocumentSummaryRecord[] = [];
+    for (const fileName of BASE_WORKSPACE_FILES) {
+      const filePath = path.join(this.resolveWorkspaceRoot(), fileName);
+      if (!(await this.fileExists(filePath))) {
+        summaries.push({
+          name: fileName,
+          exists: false,
+          size: 0,
+          updatedAt: null,
+          preview: '',
+        });
+        continue;
+      }
+
+      const [content, fileStat] = await Promise.all([
+        readFile(filePath, 'utf8'),
+        stat(filePath),
+      ]);
+      summaries.push({
+        name: fileName,
+        exists: true,
+        size: fileStat.size,
+        updatedAt: fileStat.mtime.toISOString(),
+        preview: this.buildPreview(content),
+      });
+    }
+
+    return summaries;
+  }
+
+  async getWorkspaceDocument(input: {
+    character: CharacterEntity;
+    name: SelfAgentWorkspaceFileName;
+  }): Promise<SelfAgentWorkspaceDocumentRecord> {
+    await this.ensureWorkspace(input.character);
+    const filePath = path.join(this.resolveWorkspaceRoot(), input.name);
+    const [content, fileStat] = await Promise.all([
+      readFile(filePath, 'utf8'),
+      stat(filePath),
+    ]);
+
+    return {
+      name: input.name,
+      content,
+      size: fileStat.size,
+      updatedAt: fileStat.mtime.toISOString(),
+    };
+  }
+
+  async updateWorkspaceDocument(input: {
+    character: CharacterEntity;
+    name: SelfAgentWorkspaceFileName;
+    content: string;
+  }): Promise<SelfAgentWorkspaceDocumentRecord> {
+    await this.ensureWorkspace(input.character);
+    const filePath = path.join(this.resolveWorkspaceRoot(), input.name);
+    await writeFile(filePath, `${input.content.trimEnd()}\n`, 'utf8');
+    return this.getWorkspaceDocument({
+      character: input.character,
+      name: input.name,
+    });
   }
 
   private async ensureWorkspace(character: CharacterEntity) {
@@ -235,5 +315,12 @@ export class SelfAgentWorkspaceService {
     } catch {
       return false;
     }
+  }
+
+  private buildPreview(content: string) {
+    return this.normalizePromptContent(
+      content.replace(/\n{2,}/g, '\n').trim(),
+      180,
+    );
   }
 }

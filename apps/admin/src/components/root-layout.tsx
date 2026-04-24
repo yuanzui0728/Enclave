@@ -176,6 +176,12 @@ function resolveNavItems() {
       hint: t(msg`配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。`),
     },
     {
+      to: "/self-agent",
+      label: "主代理",
+      roleBadge: "承接：我自己主代理",
+      hint: "查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。",
+    },
+    {
       to: "/reminder-runtime",
       label: t(msg`提醒运行时`),
       roleBadge: t(msg`承接：小盯`),
@@ -281,6 +287,15 @@ function resolveRouteMeta(pathname: string) {
       description: t(
         msg`配置 open loop 提取、推荐候选打分、我自己主动消息文案，并查看推荐后的打开、加好友和开聊动作。`,
       ),
+    };
+  }
+
+  if (pathname === "/self-agent") {
+    return {
+      eyebrow: "Self Agent",
+      title: "我自己的 workspace 与 heartbeat",
+      description:
+        "把“我自己”升级成主代理后，在这里查看 standing orders、workspace 文件、巡检结果和近期待处理事项。",
     };
   }
 
