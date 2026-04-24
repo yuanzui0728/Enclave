@@ -1,7 +1,9 @@
 import { useEffect } from "react";
+import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { getGroup, getGroupMessages } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
 import {
   buildMobileGroupRouteHash,
@@ -16,15 +18,16 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 export function GroupMessageSearchPage() {
   const { groupId } = useParams({ from: "/group/$groupId/search" });
   const isDesktopLayout = useDesktopLayout();
+  const t = translateRuntimeMessage;
 
   if (isDesktopLayout) {
     return (
       <DesktopChatRouteRedirectShell
         conversationId={groupId}
         panel="history"
-        title="正在打开桌面群聊记录"
-        description="正在切换到桌面聊天工作区中的群聊记录搜索侧栏。"
-        loadingLabel="打开桌面群聊记录..."
+        title={t(msg`正在打开桌面群聊记录`)}
+        description={t(msg`正在切换到桌面聊天工作区中的群聊记录搜索侧栏。`)}
+        loadingLabel={t(msg`打开桌面群聊记录...`)}
       />
     );
   }
@@ -33,6 +36,7 @@ export function GroupMessageSearchPage() {
 }
 
 function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
+  const t = translateRuntimeMessage;
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const runtimeConfig = useAppRuntimeConfig();
@@ -89,7 +93,7 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
 
   return (
     <ChatMessageSearchPanel
-      subtitle={groupQuery.data?.name ?? "群聊"}
+      subtitle={groupQuery.data?.name ?? t(msg`群聊`)}
       messages={messagesQuery.data}
       enableSenderFilter
       isLoading={messagesQuery.isLoading}
@@ -98,9 +102,11 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
           ? messagesQuery.error
           : null
       }
-      loadingLabel="正在读取群聊记录..."
-      emptyResultTitle="没有找到相关群聊记录"
-      emptyResultDescription="换个关键词试试，或者切到图片、文件、链接分类继续找。"
+      loadingLabel={t(msg`正在读取群聊记录...`)}
+      emptyResultTitle={t(msg`没有找到相关群聊记录`)}
+      emptyResultDescription={t(
+        msg`换个关键词试试，或者切到图片、文件、链接分类继续找。`,
+      )}
       onRetry={() => {
         void messagesQuery.refetch();
       }}

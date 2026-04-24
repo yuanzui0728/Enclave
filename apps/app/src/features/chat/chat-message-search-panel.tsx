@@ -1,3 +1,4 @@
+import { msg } from "@lingui/macro";
 import { useMemo, useState, type ReactNode } from "react";
 import {
   FileText,
@@ -8,6 +9,13 @@ import {
 } from "lucide-react";
 import type { GroupMessage, Message } from "@yinjie/contracts";
 import { Button, cn } from "@yinjie/ui";
+import {
+  compareByLocale,
+  formatDateTime,
+  getYesterdayLabel,
+  translateRuntimeMessage,
+  useAppLocale,
+} from "@yinjie/i18n";
 import { ChatDetailsSection } from "../chat-details/chat-details-section";
 import { ChatDetailsShell } from "../chat-details/chat-details-shell";
 import {
@@ -21,6 +29,11 @@ import {
   formatMessageTimestamp,
   parseTimestamp,
 } from "../../lib/format";
+import {
+  describeAttachmentForDisplay,
+  resolveAttachmentSearchableText,
+  resolveMessageSemanticPreview,
+} from "../../lib/message-attachment-semantic";
 
 type SearchableChatMessage = Message | GroupMessage;
 type SearchCategoryId = "all" | "media" | "files" | "links";
@@ -57,32 +70,6 @@ type SearchResultSection = {
 
 const MAX_VISIBLE_RESULTS = 80;
 
-const SEARCH_DATE_FILTERS: Array<{
-  id: SearchDateFilter;
-  label: string;
-}> = [
-  { id: "all", label: "全部时间" },
-  { id: "today", label: "今天" },
-  { id: "7d", label: "7天内" },
-  { id: "30d", label: "30天内" },
-];
-
-const SEARCH_MESSAGE_TYPE_FILTERS: Array<{
-  id: SearchMessageTypeFilter;
-  label: string;
-}> = [
-  { id: "all", label: "全部类型" },
-  { id: "text", label: "文本" },
-  { id: "image", label: "图片" },
-  { id: "file", label: "文件" },
-  { id: "voice", label: "语音" },
-  { id: "sticker", label: "表情" },
-  { id: "contact_card", label: "名片" },
-  { id: "location_card", label: "位置" },
-  { id: "note_card", label: "笔记" },
-  { id: "system", label: "系统" },
-];
-
 type ChatMessageSearchPanelProps = {
   subtitle: string;
   messages: SearchableChatMessage[] | undefined;
@@ -98,43 +85,65 @@ type ChatMessageSearchPanelProps = {
 };
 
 const urlPattern = /https?:\/\/[^\s]+/giu;
+const UNKNOWN_SENDER_FILTER = "__unknown__";
+const t = translateRuntimeMessage;
 
-const SEARCH_CATEGORIES = [
-  {
-    id: "all",
-    label: "全部消息",
-    shortLabel: "全部",
-    description: "搜文本、附件和系统提示",
-    icon: MessageSquareText,
-  },
-  {
-    id: "media",
-    label: "图片与视频",
-    shortLabel: "图片与视频",
-    description: "先按图片消息聚合浏览",
-    icon: ImageIcon,
-  },
-  {
-    id: "files",
-    label: "文件",
-    shortLabel: "文件",
-    description: "按文件名和文件消息筛选",
-    icon: FileText,
-  },
-  {
-    id: "links",
-    label: "链接",
-    shortLabel: "链接",
-    description: "把聊天里的 URL 单独拎出来",
-    icon: Link2,
-  },
-] as const satisfies ReadonlyArray<{
-  id: SearchCategoryId;
-  label: string;
-  shortLabel: string;
-  description: string;
-  icon: typeof MessageSquareText;
-}>;
+function getSearchDateFilters() {
+  return [
+    { id: "all" as const, label: t(msg`全部时间`) },
+    { id: "today" as const, label: t(msg`今天`) },
+    { id: "7d" as const, label: t(msg`7天内`) },
+    { id: "30d" as const, label: t(msg`30天内`) },
+  ];
+}
+
+function getSearchMessageTypeFilters() {
+  return [
+    { id: "all" as const, label: t(msg`全部类型`) },
+    { id: "text" as const, label: t(msg`文本`) },
+    { id: "image" as const, label: t(msg`图片`) },
+    { id: "file" as const, label: t(msg`文件`) },
+    { id: "voice" as const, label: t(msg`语音`) },
+    { id: "sticker" as const, label: t(msg`表情`) },
+    { id: "contact_card" as const, label: t(msg`名片`) },
+    { id: "location_card" as const, label: t(msg`位置`) },
+    { id: "note_card" as const, label: t(msg`笔记`) },
+    { id: "system" as const, label: t(msg`系统`) },
+  ];
+}
+
+function getSearchCategories() {
+  return [
+    {
+      id: "all" as const,
+      label: t(msg`全部消息`),
+      shortLabel: t(msg`全部`),
+      description: t(msg`搜文本、附件和系统提示`),
+      icon: MessageSquareText,
+    },
+    {
+      id: "media" as const,
+      label: t(msg`图片与视频`),
+      shortLabel: t(msg`图片与视频`),
+      description: t(msg`先按图片消息聚合浏览`),
+      icon: ImageIcon,
+    },
+    {
+      id: "files" as const,
+      label: t(msg`文件`),
+      shortLabel: t(msg`文件`),
+      description: t(msg`按文件名和文件消息筛选`),
+      icon: FileText,
+    },
+    {
+      id: "links" as const,
+      label: t(msg`链接`),
+      shortLabel: t(msg`链接`),
+      description: t(msg`把聊天里的 URL 单独拎出来`),
+      icon: Link2,
+    },
+  ];
+}
 
 export function ChatMessageSearchPanel({
   subtitle,
@@ -149,6 +158,7 @@ export function ChatMessageSearchPanel({
   onOpenMessage,
   onRetry,
 }: ChatMessageSearchPanelProps) {
+  const { locale } = useAppLocale();
   const [keyword, setKeyword] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategoryId>("all");
   const [senderFilter, setSenderFilter] = useState("all");
@@ -158,6 +168,13 @@ export function ChatMessageSearchPanel({
   const [specificDate, setSpecificDate] = useState("");
   const localMessageActionState = useLocalChatMessageActionState();
   const { reminders } = useMessageReminders();
+  const searchDateFilters = useMemo(() => getSearchDateFilters(), [locale]);
+  const searchMessageTypeFilters = useMemo(
+    () => getSearchMessageTypeFilters(),
+    [locale],
+  );
+  const searchCategories = useMemo(() => getSearchCategories(), [locale]);
+  const unknownSenderLabel = t(msg`消息`);
   const reminderMap = useMemo(
     () => new Map(reminders.map((item) => [item.messageId, item])),
     [reminders],
@@ -175,15 +192,18 @@ export function ChatMessageSearchPanel({
         .map((message) =>
           buildIndexedSearchMessage(message, reminderMap.get(message.id)),
         ),
-    [localMessageActionState, messages, reminderMap],
+    [localMessageActionState, locale, messages, reminderMap],
   );
 
   const matchedMessages = useMemo(() => {
     return indexedMessages.filter((item) => {
+      const senderKey =
+        item.message.senderName?.trim() || UNKNOWN_SENDER_FILTER;
+
       if (
         enableSenderFilter &&
         senderFilter !== "all" &&
-        (item.message.senderName || "消息") !== senderFilter
+        senderKey !== senderFilter
       ) {
         return false;
       }
@@ -227,8 +247,12 @@ export function ChatMessageSearchPanel({
     }
 
     return Array.from(
-      new Set(indexedMessages.map((item) => item.message.senderName || "消息")),
-    ).sort((left, right) => left.localeCompare(right, "zh-CN"));
+      new Set(
+        indexedMessages.map(
+          (item) => item.message.senderName?.trim() || UNKNOWN_SENDER_FILTER,
+        ),
+      ),
+    ).sort((left, right) => compareByLocale(left, right));
   }, [enableSenderFilter, indexedMessages]);
   const availableMessageTypeFilters = useMemo(() => {
     const counts = indexedMessages.reduce<
@@ -251,13 +275,13 @@ export function ChatMessageSearchPanel({
       },
     );
 
-    return SEARCH_MESSAGE_TYPE_FILTERS.filter(
+    return searchMessageTypeFilters.filter(
       (item) => item.id === "all" || counts[item.id as keyof typeof counts] > 0,
     );
-  }, [indexedMessages]);
+  }, [indexedMessages, searchMessageTypeFilters]);
 
   const categoryCounts = useMemo(() => {
-    return SEARCH_CATEGORIES.reduce<Record<SearchCategoryId, number>>(
+    return searchCategories.reduce<Record<SearchCategoryId, number>>(
       (result, category) => {
         result[category.id] = matchedMessages.filter((item) =>
           item.categories.includes(category.id),
@@ -271,7 +295,7 @@ export function ChatMessageSearchPanel({
         links: 0,
       },
     );
-  }, [matchedMessages]);
+  }, [matchedMessages, searchCategories]);
 
   const results = useMemo(() => {
     return matchedMessages.filter((item) =>
@@ -284,47 +308,65 @@ export function ChatMessageSearchPanel({
   );
   const resultSections = useMemo(
     () => buildSearchResultSections(visibleResults),
-    [visibleResults],
+    [locale, visibleResults],
   );
   const reminderCount = indexedMessages.filter((item) =>
     Boolean(item.reminderAt),
   ).length;
   const isKeywordSearch = Boolean(trimmedKeyword);
   const isPartialResult = results.length > visibleResults.length;
+  const senderFilterDisplayLabel =
+    senderFilter === UNKNOWN_SENDER_FILTER ? unknownSenderLabel : senderFilter;
   const activeFilterLabels = useMemo(() => {
     const labels: string[] = [];
 
     if (senderFilter !== "all") {
-      labels.push(`成员 · ${senderFilter}`);
+      labels.push(t(msg`成员 · ${senderFilterDisplayLabel}`));
     }
 
     if (messageTypeFilter !== "all") {
       labels.push(
-        `类型 · ${
-          SEARCH_MESSAGE_TYPE_FILTERS.find(
-            (item) => item.id === messageTypeFilter,
-          )?.label ?? "消息"
-        }`,
+        t(
+          msg`类型 · ${
+            searchMessageTypeFilters.find(
+              (item) => item.id === messageTypeFilter,
+            )?.label ?? unknownSenderLabel
+          }`,
+        ),
       );
     }
 
     if (specificDate) {
-      labels.push(`日期 · ${specificDate}`);
+      labels.push(t(msg`日期 · ${specificDate}`));
     } else if (dateFilter !== "all") {
       labels.push(
-        `时间 · ${
-          SEARCH_DATE_FILTERS.find((item) => item.id === dateFilter)?.label ??
-          "时间筛选"
-        }`,
+        t(
+          msg`时间 · ${
+            searchDateFilters.find((item) => item.id === dateFilter)?.label ??
+            t(msg`时间筛选`)
+          }`,
+        ),
       );
     }
 
     return labels;
-  }, [dateFilter, messageTypeFilter, senderFilter, specificDate]);
+  }, [
+    dateFilter,
+    messageTypeFilter,
+    searchDateFilters,
+    searchMessageTypeFilters,
+    senderFilter,
+    senderFilterDisplayLabel,
+    specificDate,
+    unknownSenderLabel,
+  ]);
 
   const activeCategoryMeta =
-    SEARCH_CATEGORIES.find((item) => item.id === activeCategory) ??
-    SEARCH_CATEGORIES[0];
+    searchCategories.find((item) => item.id === activeCategory) ??
+    searchCategories[0];
+  const emptySenderResultTitle = `${t(
+    msg`没有来自 ${senderFilterDisplayLabel} 的`,
+  )}${activeCategoryMeta.shortLabel}`;
   const resetFilters = () => {
     setKeyword("");
     setSenderFilter("all");
@@ -334,8 +376,12 @@ export function ChatMessageSearchPanel({
   };
 
   return (
-    <ChatDetailsShell title="查找聊天记录" subtitle={subtitle} onBack={onBack}>
-      <ChatDetailsSection title="搜索" variant="wechat">
+    <ChatDetailsShell
+      title={t(msg`查找聊天记录`)}
+      subtitle={subtitle}
+      onBack={onBack}
+    >
+      <ChatDetailsSection title={t(msg`搜索`)} variant="wechat">
         <div className="px-4 py-3">
           <label className="flex items-center gap-2 rounded-[11px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5">
             <Search
@@ -346,29 +392,34 @@ export function ChatMessageSearchPanel({
               type="search"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              placeholder="搜索"
+              placeholder={t(msg`搜索`)}
               className="min-w-0 flex-1 bg-transparent text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
-            <SearchStatPill label={`当前范围 ${indexedMessages.length} 条`} />
+            <SearchStatPill
+              label={t(msg`当前范围 ${indexedMessages.length} 条`)}
+            />
             <SearchStatPill
               label={
                 isKeywordSearch
-                  ? `搜索命中 ${results.length} 条`
-                  : `当前分类 ${results.length} 条`
+                  ? t(msg`搜索命中 ${results.length} 条`)
+                  : t(msg`当前分类 ${results.length} 条`)
               }
               tone="brand"
             />
             {reminderCount ? (
-              <SearchStatPill label={`提醒 ${reminderCount} 条`} tone="blue" />
+              <SearchStatPill
+                label={t(msg`提醒 ${reminderCount} 条`)}
+                tone="blue"
+              />
             ) : null}
           </div>
           {activeFilterLabels.length ? (
             <div className="mt-2.5 rounded-[10px] bg-[color:var(--surface-panel)] px-3 py-2.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
-                  已筛选 {activeFilterLabels.length} 项
+                  {t(msg`已筛选 ${activeFilterLabels.length} 项`)}
                 </div>
                 <Button
                   type="button"
@@ -377,7 +428,7 @@ export function ChatMessageSearchPanel({
                   onClick={resetFilters}
                   className="h-6.5 rounded-full px-2 text-[10px] text-[color:var(--text-secondary)]"
                 >
-                  清空
+                  {t(msg`清空`)}
                 </Button>
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -390,11 +441,11 @@ export function ChatMessageSearchPanel({
           <div className="mt-2.5 space-y-3 rounded-[10px] bg-[color:var(--surface-panel)] px-3 py-3">
             <div>
               <div className="text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
-                时间
+                {t(msg`时间`)}
               </div>
               <div className="-mx-3 mt-1.5 overflow-x-auto px-3">
                 <div className="flex min-w-max gap-1.5">
-                  {SEARCH_DATE_FILTERS.map((item) => (
+                  {searchDateFilters.map((item) => (
                     <SearchFilterChip
                       key={item.id}
                       active={dateFilter === item.id && !specificDate}
@@ -411,7 +462,7 @@ export function ChatMessageSearchPanel({
             </div>
             <div>
               <div className="text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
-                类型
+                {t(msg`类型`)}
               </div>
               <div className="-mx-3 mt-1.5 overflow-x-auto px-3">
                 <div className="flex min-w-max gap-1.5">
@@ -435,7 +486,7 @@ export function ChatMessageSearchPanel({
           >
             <label className="flex min-w-0 flex-col gap-1 rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
               <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
-                指定日期
+                {t(msg`指定日期`)}
               </span>
               <input
                 type="date"
@@ -452,17 +503,19 @@ export function ChatMessageSearchPanel({
             {enableSenderFilter ? (
               <label className="flex min-w-0 flex-col gap-1 rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
                 <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
-                  成员
+                  {t(msg`成员`)}
                 </span>
                 <select
                   value={senderFilter}
                   onChange={(event) => setSenderFilter(event.target.value)}
                   className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none"
                 >
-                  <option value="all">全部成员</option>
-                  {senderOptions.map((senderName) => (
-                    <option key={senderName} value={senderName}>
-                      {senderName}
+                  <option value="all">{t(msg`全部成员`)}</option>
+                  {senderOptions.map((senderKey) => (
+                    <option key={senderKey} value={senderKey}>
+                      {senderKey === UNKNOWN_SENDER_FILTER
+                        ? unknownSenderLabel
+                        : senderKey}
                     </option>
                   ))}
                 </select>
@@ -475,9 +528,9 @@ export function ChatMessageSearchPanel({
       {isLoading ? (
         <div className="px-3">
           <MobileSearchStatusCard
-            badge="读取中"
+            badge={t(msg`读取中`)}
             title={loadingLabel}
-            description="稍等一下，正在整理这段聊天里的消息索引。"
+            description={t(msg`稍等一下，正在整理这段聊天里的消息索引。`)}
             tone="loading"
           />
         </div>
@@ -485,8 +538,8 @@ export function ChatMessageSearchPanel({
       {error ? (
         <div className="px-3">
           <MobileSearchStatusCard
-            badge="搜索"
-            title="聊天记录暂时不可用"
+            badge={t(msg`搜索`)}
+            title={t(msg`聊天记录暂时不可用`)}
             description={error.message}
             tone="danger"
             action={
@@ -498,7 +551,7 @@ export function ChatMessageSearchPanel({
                     onClick={onRetry}
                     className="rounded-full"
                   >
-                    重试读取
+                    {t(msg`重试读取`)}
                   </Button>
                 ) : null}
                 <Button
@@ -507,7 +560,7 @@ export function ChatMessageSearchPanel({
                   onClick={onBack}
                   className="rounded-full"
                 >
-                  返回上一页
+                  {t(msg`返回上一页`)}
                 </Button>
               </div>
             }
@@ -520,16 +573,18 @@ export function ChatMessageSearchPanel({
           {!indexedMessages.length ? (
             <div className="px-3">
               <MobileSearchStatusCard
-                badge="聊天"
-                title="当前会话还没有聊天记录"
-                description="等有消息后，这里会按关键词、图片、文件和链接帮你集中查找。"
+                badge={t(msg`聊天`)}
+                title={t(msg`当前会话还没有聊天记录`)}
+                description={t(
+                  msg`等有消息后，这里会按关键词、图片、文件和链接帮你集中查找。`,
+                )}
               />
             </div>
           ) : null}
 
-          <ChatDetailsSection title="分类浏览" variant="wechat">
+          <ChatDetailsSection title={t(msg`分类浏览`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
-              {SEARCH_CATEGORIES.map((category) => {
+              {searchCategories.map((category) => {
                 const Icon = category.icon;
                 const active = activeCategory === category.id;
                 return (
@@ -576,7 +631,7 @@ export function ChatMessageSearchPanel({
                             : "text-[color:var(--text-muted)]",
                         )}
                       >
-                        {active ? "当前" : "条"}
+                        {active ? t(msg`当前`) : t(msg`条`)}
                       </div>
                     </div>
                   </button>
@@ -594,8 +649,10 @@ export function ChatMessageSearchPanel({
             <div className="px-3">
               <MobileSearchStatusCard
                 badge={activeCategoryMeta.shortLabel}
-                title={`还没有${activeCategoryMeta.shortLabel}`}
-                description={`当前会话里暂时没有可浏览的${activeCategoryMeta.shortLabel}消息。`}
+                title={t(msg`还没有${activeCategoryMeta.shortLabel}`)}
+                description={t(
+                  msg`当前会话里暂时没有可浏览的${activeCategoryMeta.shortLabel}消息。`,
+                )}
                 action={
                   <Button
                     type="button"
@@ -603,7 +660,7 @@ export function ChatMessageSearchPanel({
                     onClick={() => setActiveCategory("all")}
                     className="rounded-full"
                   >
-                    查看全部消息
+                    {t(msg`查看全部消息`)}
                   </Button>
                 }
               />
@@ -613,7 +670,7 @@ export function ChatMessageSearchPanel({
           {trimmedKeyword && !results.length ? (
             <div className="px-3">
               <MobileSearchStatusCard
-                badge="搜索"
+                badge={t(msg`搜索`)}
                 title={emptyResultTitle}
                 description={emptyResultDescription}
                 action={
@@ -623,7 +680,7 @@ export function ChatMessageSearchPanel({
                     onClick={() => setKeyword("")}
                     className="rounded-full"
                   >
-                    清空关键词
+                    {t(msg`清空关键词`)}
                   </Button>
                 }
               />
@@ -637,9 +694,9 @@ export function ChatMessageSearchPanel({
           !results.length ? (
             <div className="px-3">
               <MobileSearchStatusCard
-                badge="成员"
-                title={`没有来自 ${senderFilter} 的${activeCategoryMeta.shortLabel}`}
-                description="换个成员试试，或者切回全部成员继续浏览。"
+                badge={t(msg`成员`)}
+                title={emptySenderResultTitle}
+                description={t(msg`换个成员试试，或者切回全部成员继续浏览。`)}
                 action={
                   <Button
                     type="button"
@@ -647,7 +704,7 @@ export function ChatMessageSearchPanel({
                     onClick={() => setSenderFilter("all")}
                     className="rounded-full"
                   >
-                    查看全部成员
+                    {t(msg`查看全部成员`)}
                   </Button>
                 }
               />
@@ -662,13 +719,17 @@ export function ChatMessageSearchPanel({
           !results.length ? (
             <div className="px-3">
               <MobileSearchStatusCard
-                badge="类型"
-                title={`没有匹配的${
-                  SEARCH_MESSAGE_TYPE_FILTERS.find(
-                    (item) => item.id === messageTypeFilter,
-                  )?.label ?? "消息"
-                }`}
-                description="换个消息类型试试，或者切回全部类型继续浏览。"
+                badge={t(msg`类型`)}
+                title={t(
+                  msg`没有匹配的${
+                    searchMessageTypeFilters.find(
+                      (item) => item.id === messageTypeFilter,
+                    )?.label ?? unknownSenderLabel
+                  }`,
+                )}
+                description={t(
+                  msg`换个消息类型试试，或者切回全部类型继续浏览。`,
+                )}
                 action={
                   <Button
                     type="button"
@@ -676,7 +737,7 @@ export function ChatMessageSearchPanel({
                     onClick={() => setMessageTypeFilter("all")}
                     className="rounded-full"
                   >
-                    查看全部类型
+                    {t(msg`查看全部类型`)}
                   </Button>
                 }
               />
@@ -688,9 +749,9 @@ export function ChatMessageSearchPanel({
           !results.length ? (
             <div className="px-3">
               <MobileSearchStatusCard
-                badge="时间"
-                title="这个时间范围内没有匹配消息"
-                description="换个时间试试，或者清空时间筛选继续浏览。"
+                badge={t(msg`时间`)}
+                title={t(msg`这个时间范围内没有匹配消息`)}
+                description={t(msg`换个时间试试，或者清空时间筛选继续浏览。`)}
                 action={
                   <Button
                     type="button"
@@ -701,7 +762,7 @@ export function ChatMessageSearchPanel({
                     }}
                     className="rounded-full"
                   >
-                    清空时间筛选
+                    {t(msg`清空时间筛选`)}
                   </Button>
                 }
               />
@@ -711,6 +772,7 @@ export function ChatMessageSearchPanel({
           {resultSections.length ? (
             <ChatDetailsSection
               title={buildResultSectionTitle(
+                activeCategoryMeta.id,
                 activeCategoryMeta.shortLabel,
                 trimmedKeyword,
                 results.length,
@@ -735,10 +797,11 @@ export function ChatMessageSearchPanel({
                             <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
                               {trimmedKeyword
                                 ? renderHighlightedText(
-                                    item.message.senderName || "消息",
+                                    item.message.senderName ||
+                                      unknownSenderLabel,
                                     trimmedKeyword,
                                   )
-                                : item.message.senderName || "消息"}
+                                : item.message.senderName || unknownSenderLabel}
                             </div>
                             <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
                               {formatDetailedMessageTimestamp(
@@ -763,7 +826,9 @@ export function ChatMessageSearchPanel({
                             </span>
                             {item.reminderAt ? (
                               <span className="rounded-full bg-[rgba(59,130,246,0.08)] px-2 py-0.5 text-[10px] text-[#2563eb]">
-                                提醒 · {formatMessageTimestamp(item.reminderAt)}
+                                {t(
+                                  msg`提醒 · ${formatMessageTimestamp(item.reminderAt)}`,
+                                )}
                               </span>
                             ) : null}
                             {item.supportText &&
@@ -786,8 +851,9 @@ export function ChatMessageSearchPanel({
                 ))}
                 {isPartialResult ? (
                   <div className="border-t border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.96)] px-4 py-2.5 text-[11px] text-[color:var(--text-muted)]">
-                    当前仅展示前 {MAX_VISIBLE_RESULTS}{" "}
-                    条结果，请继续缩小范围查找。
+                    {t(
+                      msg`当前仅展示前 ${MAX_VISIBLE_RESULTS} 条结果，请继续缩小范围查找。`,
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -804,7 +870,12 @@ function buildIndexedSearchMessage(
   reminder?: { remindAt: string },
 ): IndexedSearchMessage {
   const normalizedText = sanitizeDisplayedChatText(message.text).trim();
-  const supportText = resolveSupportText(message);
+  const supportText = describeAttachmentForDisplay(message.attachment, {
+    maxChars: 120,
+  });
+  const attachmentSearchableText = resolveAttachmentSearchableText(
+    message.attachment,
+  );
   const linkText = extractFirstLink(normalizedText);
   const typeLabel = resolveMessageTypeLabel(message);
   const messageType = resolveMessageTypeFilter(message);
@@ -823,13 +894,14 @@ function buildIndexedSearchMessage(
   }
 
   const previewText =
-    normalizedText ||
-    supportText ||
-    `${typeLabel}消息`.replace("文本消息", "文本");
+    resolveMessageSemanticPreview(message, {
+      maxChars: 200,
+    }) || buildDefaultPreviewText(typeLabel, messageType);
   const searchableText = [
     message.senderName,
     normalizedText,
     supportText,
+    attachmentSearchableText,
     linkText,
     typeLabel,
   ]
@@ -848,6 +920,17 @@ function buildIndexedSearchMessage(
     typeLabel,
     reminderAt: reminder?.remindAt,
   };
+}
+
+function buildDefaultPreviewText(
+  typeLabel: string,
+  messageType: Exclude<SearchMessageTypeFilter, "all">,
+) {
+  if (messageType === "text") {
+    return typeLabel;
+  }
+
+  return t(msg`${typeLabel}消息`);
 }
 
 function resolveMessageTypeFilter(
@@ -892,84 +975,40 @@ function resolveMessageTypeFilter(
   return "text";
 }
 
-function resolveSupportText(message: SearchableChatMessage) {
-  if (message.attachment?.kind === "image") {
-    return message.attachment.fileName
-      ? `图片 · ${message.attachment.fileName}`
-      : "图片";
-  }
-
-  if (message.attachment?.kind === "file") {
-    return message.attachment.fileName
-      ? `文件 · ${message.attachment.fileName}`
-      : "文件";
-  }
-
-  if (message.attachment?.kind === "voice") {
-    return "语音";
-  }
-
-  if (message.attachment?.kind === "contact_card") {
-    return message.attachment.name
-      ? `名片 · ${message.attachment.name}`
-      : "名片";
-  }
-
-  if (message.attachment?.kind === "location_card") {
-    return message.attachment.title
-      ? `位置 · ${message.attachment.title}`
-      : "位置";
-  }
-
-  if (message.attachment?.kind === "note_card") {
-    return message.attachment.title
-      ? `笔记 · ${message.attachment.title}`
-      : "笔记";
-  }
-
-  if (message.attachment?.kind === "sticker") {
-    return message.attachment.label
-      ? `表情 · ${message.attachment.label}`
-      : "表情";
-  }
-
-  return "";
-}
-
 function resolveMessageTypeLabel(message: SearchableChatMessage) {
   if (message.type === "image") {
-    return "图片";
+    return t(msg`图片`);
   }
 
   if (message.type === "file") {
-    return "文件";
+    return t(msg`文件`);
   }
 
   if (message.type === "voice") {
-    return "语音";
+    return t(msg`语音`);
   }
 
   if (message.type === "contact_card") {
-    return "名片";
+    return t(msg`名片`);
   }
 
   if (message.type === "location_card") {
-    return "位置";
+    return t(msg`位置`);
   }
 
   if (message.type === "note_card") {
-    return "笔记";
+    return t(msg`笔记`);
   }
 
   if (message.type === "sticker") {
-    return "表情";
+    return t(msg`表情`);
   }
 
   if (message.type === "system") {
-    return "系统";
+    return t(msg`系统`);
   }
 
-  return "文本";
+  return t(msg`文本`);
 }
 
 function extractFirstLink(text: string) {
@@ -992,17 +1031,20 @@ function resolvePreviewSource(item: IndexedSearchMessage, keyword: string) {
 }
 
 function buildResultSectionTitle(
+  categoryId: SearchCategoryId,
   categoryLabel: string,
   keyword: string,
   count: number,
 ) {
-  if (categoryLabel === "全部") {
-    return keyword ? `搜索结果 · ${count} 条` : `最近消息 · ${count} 条`;
+  if (categoryId === "all") {
+    return keyword
+      ? t(msg`搜索结果 · ${count} 条`)
+      : t(msg`最近消息 · ${count} 条`);
   }
 
   return keyword
-    ? `${categoryLabel} · ${count} 条`
-    : `最近${categoryLabel} · ${count} 条`;
+    ? t(msg`${categoryLabel} · ${count} 条`)
+    : t(msg`最近${categoryLabel} · ${count} 条`);
 }
 
 function renderHighlightedText(text: string, keyword: string) {
@@ -1131,7 +1173,7 @@ function resolveSearchSectionKey(createdAt: string) {
 function resolveSearchSectionLabel(createdAt: string) {
   const timestamp = parseTimestamp(createdAt);
   if (timestamp === null) {
-    return "未知时间";
+    return t(msg`未知时间`);
   }
 
   const date = new Date(timestamp);
@@ -1140,27 +1182,27 @@ function resolveSearchSectionLabel(createdAt: string) {
   yesterday.setDate(now.getDate() - 1);
 
   if (isSameDay(date, now)) {
-    return "今天";
+    return t(msg`今天`);
   }
 
   if (isSameDay(date, yesterday)) {
-    return "昨天";
+    return getYesterdayLabel();
   }
 
   if (date.getFullYear() === now.getFullYear()) {
-    return new Intl.DateTimeFormat("zh-CN", {
+    return formatDateTime(date, {
       month: "numeric",
       day: "numeric",
       weekday: "short",
-    }).format(date);
+    });
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatDateTime(date, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
     weekday: "short",
-  }).format(date);
+  });
 }
 
 function isSameDay(left: Date, right: Date) {

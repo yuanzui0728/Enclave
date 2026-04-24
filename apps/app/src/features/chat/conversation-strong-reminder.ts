@@ -1,6 +1,6 @@
 import type { Message } from "@yinjie/contracts";
-import { sanitizeDisplayedChatText } from "../../lib/chat-text";
 import { parseTimestamp } from "../../lib/format";
+import { resolveMessageSemanticPreview } from "../../lib/message-attachment-semantic";
 
 export const CONVERSATION_STRONG_REMINDER_DURATION_HOURS = 3;
 
@@ -44,25 +44,10 @@ export function formatConversationStrongReminderRemaining(
 }
 
 export function describeStrongReminderMessage(message: Message) {
-  const text = sanitizeDisplayedChatText(message.text).trim();
-  if (text) {
-    return text;
-  }
-
-  switch (message.type) {
-    case "image":
-      return "[图片]";
-    case "file":
-      return "[文件]";
-    case "voice":
-      return "[语音]";
-    case "contact_card":
-      return "[名片]";
-    case "location_card":
-      return "[位置]";
-    case "sticker":
-      return "[表情]";
-    default:
-      return "发来了一条新消息";
-  }
+  return (
+    resolveMessageSemanticPreview(message, {
+      maxChars: 120,
+      bracketedFallback: true,
+    }) || "发来了一条新消息"
+  );
 }

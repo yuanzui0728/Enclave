@@ -1,16 +1,71 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 
+export type MobileHandoffCategory =
+  | "messages"
+  | "group_invite"
+  | "official"
+  | "mini_program"
+  | "games"
+  | "channel"
+  | "shortcut"
+  | "other";
+
 export type MobileHandoffRecord = {
   id: string;
   label: string;
   description: string;
   path: string;
   sentAt: string;
+  category?: MobileHandoffCategory;
 };
 
 const MOBILE_HANDOFF_STORAGE_KEY = "yinjie-desktop-mobile-handoff-history";
 const MAX_HANDOFF_RECORDS = 8;
 let mobileHandoffNativeWriteQueue: Promise<void> = Promise.resolve();
+const mobileHandoffCategories = new Set<MobileHandoffCategory>([
+  "messages",
+  "group_invite",
+  "official",
+  "mini_program",
+  "games",
+  "channel",
+  "shortcut",
+  "other",
+]);
+
+function isMobileHandoffCategory(
+  value: unknown,
+): value is MobileHandoffCategory {
+  return (
+    typeof value === "string" &&
+    mobileHandoffCategories.has(value as MobileHandoffCategory)
+  );
+}
+
+function parseMobileHandoffRecord(input: unknown) {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    typeof (input as MobileHandoffRecord).id !== "string" ||
+    typeof (input as MobileHandoffRecord).label !== "string" ||
+    typeof (input as MobileHandoffRecord).description !== "string" ||
+    typeof (input as MobileHandoffRecord).path !== "string" ||
+    typeof (input as MobileHandoffRecord).sentAt !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    id: (input as MobileHandoffRecord).id,
+    label: (input as MobileHandoffRecord).label,
+    description: (input as MobileHandoffRecord).description,
+    path: (input as MobileHandoffRecord).path,
+    sentAt: (input as MobileHandoffRecord).sentAt,
+    ...(isMobileHandoffCategory((input as MobileHandoffRecord).category)
+      ? { category: (input as MobileHandoffRecord).category }
+      : {}),
+  } satisfies MobileHandoffRecord;
+}
 
 function readLocalStorageHistory() {
   if (typeof window === "undefined") {
@@ -28,14 +83,10 @@ function readLocalStorageHistory() {
       return [] as MobileHandoffRecord[];
     }
 
-    return parsed.filter(
-      (item): item is MobileHandoffRecord =>
-        typeof item?.id === "string" &&
-        typeof item?.label === "string" &&
-        typeof item?.description === "string" &&
-        typeof item?.path === "string" &&
-        typeof item?.sentAt === "string",
-    );
+    return parsed.flatMap((item) => {
+      const parsedItem = parseMobileHandoffRecord(item);
+      return parsedItem ? [parsedItem] : [];
+    });
   } catch {
     return [] as MobileHandoffRecord[];
   }
@@ -94,14 +145,10 @@ function parseMobileHandoffHistory(raw: string | null | undefined) {
       return [] as MobileHandoffRecord[];
     }
 
-    return parsed.filter(
-      (item): item is MobileHandoffRecord =>
-        typeof item?.id === "string" &&
-        typeof item?.label === "string" &&
-        typeof item?.description === "string" &&
-        typeof item?.path === "string" &&
-        typeof item?.sentAt === "string",
-    );
+    return parsed.flatMap((item) => {
+      const parsedItem = parseMobileHandoffRecord(item);
+      return parsedItem ? [parsedItem] : [];
+    });
   } catch {
     return [] as MobileHandoffRecord[];
   }
@@ -162,6 +209,7 @@ export function pushMobileHandoffRecord(input: {
   description: string;
   label: string;
   path: string;
+  category?: MobileHandoffCategory;
 }) {
   if (typeof window === "undefined") {
     return [] as MobileHandoffRecord[];
@@ -173,6 +221,7 @@ export function pushMobileHandoffRecord(input: {
     description: input.description,
     path: input.path,
     sentAt: new Date().toISOString(),
+    ...(input.category ? { category: input.category } : {}),
   };
 
   const nextHistory = [

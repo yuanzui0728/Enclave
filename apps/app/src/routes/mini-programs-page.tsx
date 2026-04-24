@@ -483,6 +483,7 @@ export function MiniProgramsPage() {
     try {
       await navigator.clipboard.writeText(link);
       pushMobileHandoffRecord({
+        category: "mini_program",
         description: `把 ${miniProgram?.name ?? "小程序"} 的当前工作台发到手机继续，保留最近使用和本地待办上下文。`,
         label: `${miniProgram?.name ?? "小程序"} 接力`,
         path,

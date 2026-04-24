@@ -51,6 +51,7 @@ import { ReplyArtifactJobService } from './reply-artifact-job.service';
 import { MediaInsightJobService } from './media-insight-job.service';
 import { buildDocumentPromptExcerpt } from './document-chunk-selection';
 import { resolveGeneratedAttachmentHistoryText } from './assistant-attachment-history';
+import { describeAttachmentForDisplay } from './attachment-semantic-text';
 
 export interface CreateGroupDto {
   name: string;
@@ -1175,35 +1176,11 @@ export class GroupService {
   }
 
   private getAttachmentFallbackText(attachment: MessageAttachment) {
-    if (attachment.kind === 'image') {
-      return `[图片] ${attachment.fileName}`.trim();
-    }
-
-    if (attachment.kind === 'file') {
-      return `[文件] ${attachment.fileName}`.trim();
-    }
-
-    if (attachment.kind === 'voice') {
-      const durationText =
-        attachment.durationMs && attachment.durationMs > 0
-          ? ` ${formatGroupAttachmentDuration(attachment.durationMs)}`
-          : '';
-      return `[语音]${durationText}`.trim();
-    }
-
-    if (attachment.kind === 'contact_card') {
-      return `[名片] ${attachment.name}`.trim();
-    }
-
-    if (attachment.kind === 'location_card') {
-      return `[位置] ${attachment.title}`.trim();
-    }
-
-    if (attachment.kind === 'note_card') {
-      return `[笔记] ${attachment.title}`.trim();
-    }
-
-    return `[表情] ${attachment.label ?? attachment.stickerId}`.trim();
+    return (
+      describeAttachmentForDisplay(attachment, {
+        maxChars: 160,
+      }) || '附件消息'
+    );
   }
 
   private toGroupMessage(entity: GroupMessageEntity): GroupMessage {
