@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { getSystemStatus } from "@yinjie/contracts";
 import {
@@ -42,52 +43,53 @@ import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 
-const categoryOptions: Array<{
+const categoryOptionConfigs: Array<{
   id: DesktopFeedbackCategory;
-  label: string;
-  description: string;
   icon: typeof Bug;
+  label: ReturnType<typeof msg>;
+  description: ReturnType<typeof msg>;
 }> = [
   {
     id: "bug",
-    label: "功能异常",
-    description: "功能和预期不一致、页面报错、数据错乱。",
+    label: msg`功能异常`,
+    description: msg`功能和预期不一致、页面报错、数据错乱。`,
     icon: Bug,
   },
   {
     id: "interaction",
-    label: "交互体验",
-    description: "导航不顺、信息结构混乱、操作路径别扭。",
+    label: msg`交互体验`,
+    description: msg`导航不顺、信息结构混乱、操作路径别扭。`,
     icon: MessageSquareText,
   },
   {
     id: "performance",
-    label: "性能问题",
-    description: "加载慢、卡顿、输入延迟、工作区切换不稳。",
+    label: msg`性能问题`,
+    description: msg`加载慢、卡顿、输入延迟、工作区切换不稳。`,
     icon: Gauge,
   },
   {
     id: "content",
-    label: "内容口径",
-    description: "文案、频道定义、桌面与微信对齐口径存在偏差。",
+    label: msg`内容口径`,
+    description: msg`文案、频道定义、桌面与微信对齐口径存在偏差。`,
     icon: ClipboardList,
   },
   {
     id: "feature",
-    label: "能力建议",
-    description: "提出下一步应该优先补的真实工作区和交互能力。",
+    label: msg`能力建议`,
+    description: msg`提出下一步应该优先补的真实工作区和交互能力。`,
     icon: Lightbulb,
   },
 ];
 
-const priorityOptions: Array<{
+const priorityOptionConfigs: Array<{
   id: DesktopFeedbackPriority;
-  label: string;
+  label: ReturnType<typeof msg>;
 }> = [
-  { id: "low", label: "低" },
-  { id: "medium", label: "中" },
-  { id: "high", label: "高" },
+  { id: "low", label: msg`低` },
+  { id: "medium", label: msg`中` },
+  { id: "high", label: msg`高` },
 ];
 
 function areDesktopFeedbackDraftsEqual(
@@ -105,12 +107,36 @@ function areDesktopFeedbackHistoriesEqual(
 }
 
 export function DesktopFeedbackPage() {
+  const t = translateRuntimeMessage;
+  const { locale } = useAppLocale();
   const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const nativeDesktopFeedback = runtimeConfig.appPlatform === "desktop";
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerSignature = useWorldOwnerStore((state) => state.signature);
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const worldOwnerLabel = t(msg`世界主人`);
+  const noSignatureLabel = t(msg`暂无签名`);
+  const notConfiguredLabel = t(msg`未配置`);
+  const noSnapshotLabel = t(msg`暂无`);
+  const unknownLabel = t(msg`未知`);
+  const categoryOptions = useMemo(
+    () =>
+      categoryOptionConfigs.map((item) => ({
+        ...item,
+        label: t(item.label),
+        description: t(item.description),
+      })),
+    [locale, t],
+  );
+  const priorityOptions = useMemo(
+    () =>
+      priorityOptionConfigs.map((item) => ({
+        ...item,
+        label: t(item.label),
+      })),
+    [locale, t],
+  );
   const [draft, setDraft] = useState<DesktopFeedbackDraft>(() =>
     readDesktopFeedbackDraft(),
   );
@@ -226,18 +252,26 @@ export function DesktopFeedbackPage() {
 
   const diagnosticSummary = useMemo(() => {
     if (!draft.includeSystemSnapshot || !systemStatusQuery.data) {
-      return "未附带系统摘要";
+      return t(msg`未附带系统摘要`);
     }
 
     const status = systemStatusQuery.data;
     return [
-      `Core API ${status.coreApi.healthy ? "在线" : "异常"}`,
-      `数据库${status.database.connected ? "已连接" : "未连接"}`,
-      `推理网关${status.inferenceGateway.healthy ? "可用" : "待恢复"}`,
-      `世界主人 ${status.worldSurface.ownerCount}/1`,
-      `模式 ${status.appMode}`,
+      t(msg`Core API ${status.coreApi.healthy ? t(msg`在线`) : t(msg`异常`)}`),
+      t(
+        msg`数据库${
+          status.database.connected ? t(msg`已连接`) : t(msg`未连接`)
+        }`,
+      ),
+      t(
+        msg`推理网关${
+          status.inferenceGateway.healthy ? t(msg`可用`) : t(msg`待恢复`)
+        }`,
+      ),
+      t(msg`世界主人 ${status.worldSurface.ownerCount}/1`),
+      t(msg`模式 ${status.appMode}`),
     ].join(" · ");
-  }, [draft.includeSystemSnapshot, systemStatusQuery.data]);
+  }, [draft.includeSystemSnapshot, locale, systemStatusQuery.data, t]);
 
   const recentCount = history.length;
   const highPriorityCount = history.filter(
