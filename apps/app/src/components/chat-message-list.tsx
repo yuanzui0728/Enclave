@@ -98,6 +98,7 @@ import {
   formatMessageTimestamp,
   parseTimestamp,
 } from "../lib/format";
+import { resolveMessageSemanticPreview } from "../lib/message-attachment-semantic";
 import { resolveConfiguredCoreApiBaseUrl } from "../lib/runtime-config";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import {
@@ -4008,49 +4009,12 @@ function buildClipboardText(message: ChatRenderableMessage) {
     return displayedText;
   }
 
-  if (message.type === "image") {
-    return message.attachment?.kind === "image" && message.attachment.fileName
-      ? `[图片] ${message.attachment.fileName}`
-      : "[图片]";
-  }
-
-  if (message.type === "file") {
-    return message.attachment?.kind === "file" && message.attachment.fileName
-      ? `[文件] ${message.attachment.fileName}`
-      : "[文件]";
-  }
-
-  if (message.type === "voice") {
-    return message.attachment?.kind === "voice"
-      ? `[语音] ${formatVoiceDurationLabel(message.attachment.durationMs)}`
-      : "[语音]";
-  }
-
-  if (message.type === "contact_card") {
-    return message.attachment?.kind === "contact_card"
-      ? `[名片] ${message.attachment.name}`
-      : "[名片]";
-  }
-
-  if (message.type === "location_card") {
-    return message.attachment?.kind === "location_card"
-      ? `[位置] ${message.attachment.title}`
-      : "[位置]";
-  }
-
-  if (message.type === "note_card") {
-    return message.attachment?.kind === "note_card"
-      ? `[笔记] ${message.attachment.title}`
-      : "[笔记]";
-  }
-
-  if (message.type === "sticker") {
-    return message.attachment?.kind === "sticker" && message.attachment.label
-      ? `[表情] ${message.attachment.label}`
-      : "[表情]";
-  }
-
-  return "消息";
+  return (
+    resolveMessageSemanticPreview(message, {
+      maxChars: 400,
+      bracketedFallback: true,
+    }) || "消息"
+  );
 }
 
 function buildForwardPreviewText(message: ChatRenderableMessage) {

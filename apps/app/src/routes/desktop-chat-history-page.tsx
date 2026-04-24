@@ -39,6 +39,7 @@ import {
   formatMessageTimestamp,
   parseTimestamp,
 } from "../lib/format";
+import { resolveMessageSemanticPreview } from "../lib/message-attachment-semantic";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const INITIAL_HISTORY_LIMIT = 80;
@@ -544,36 +545,11 @@ function normalizeHistoryRows(
 }
 
 function resolveMessagePreview(item: Message | GroupMessage) {
-  if (item.attachment?.kind === "image") {
-    return item.text.trim() || `图片 · ${item.attachment.fileName}`;
-  }
-
-  if (item.attachment?.kind === "file") {
-    return item.text.trim() || `文件 · ${item.attachment.fileName}`;
-  }
-
-  if (item.attachment?.kind === "voice") {
-    return item.text.trim() || "语音";
-  }
-
-  if (item.attachment?.kind === "contact_card") {
-    return item.text.trim() || `名片 · ${item.attachment.name}`;
-  }
-
-  if (item.attachment?.kind === "location_card") {
-    return item.text.trim() || `位置 · ${item.attachment.title}`;
-  }
-
-  if (item.type === "sticker" && item.attachment?.kind === "sticker") {
-    return `表情 · ${item.attachment.label ?? item.attachment.stickerId}`;
-  }
-
-  const preview =
-    item.senderType === "user"
-      ? item.text.trim()
-      : sanitizeDisplayedChatText(item.text);
-
-  return preview || "这条消息没有文本内容。";
+  return (
+    resolveMessageSemanticPreview(item, {
+      maxChars: 220,
+    }) || "这条消息没有文本内容。"
+  );
 }
 
 function resolveMessageTypeLabel(type: Message["type"] | GroupMessage["type"]) {

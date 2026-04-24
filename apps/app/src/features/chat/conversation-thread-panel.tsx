@@ -20,6 +20,7 @@ import {
   sanitizeDisplayedChatText,
   type ChatReplyMetadata,
 } from "../../lib/chat-text";
+import { resolveMessageSemanticPreview } from "../../lib/message-attachment-semantic";
 import {
   DesktopChatHeaderActions,
   type DesktopChatCallKind,
@@ -903,38 +904,10 @@ function escapeIdSelector(value: string) {
 }
 
 function describeReplyPreview(message: ChatRenderableMessage) {
-  const text = sanitizeDisplayedChatText(message.text);
-  if (text) {
-    return text;
-  }
-
-  if (message.type === "image") {
-    return "[图片]";
-  }
-
-  if (message.type === "file") {
-    return "[文件]";
-  }
-
-  if (message.type === "voice") {
-    return "[语音]";
-  }
-
-  if (message.type === "contact_card") {
-    return "[名片]";
-  }
-
-  if (message.type === "location_card") {
-    return "[位置]";
-  }
-
-  if (message.type === "note_card") {
-    return "[笔记]";
-  }
-
-  if (message.type === "sticker") {
-    return "[表情]";
-  }
-
-  return "消息";
+  return (
+    resolveMessageSemanticPreview(message, {
+      maxChars: 120,
+      bracketedFallback: true,
+    }) || "消息"
+  );
 }

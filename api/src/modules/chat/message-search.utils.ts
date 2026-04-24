@@ -1,4 +1,8 @@
 import type { GroupMessage, Message, MessageAttachment } from './chat.types';
+import {
+  resolveAttachmentSearchableText,
+  resolveMessageSemanticPreview,
+} from './attachment-semantic-text';
 
 export type MessageSearchCategory = 'all' | 'media' | 'files' | 'links';
 
@@ -179,10 +183,12 @@ function matchesMessageDate(createdAt: Date, dateFrom?: Date, dateTo?: Date) {
 
 function buildSearchableText(message: SearchableMessage) {
   const attachment = message.attachment;
+  const attachmentSemanticText = resolveAttachmentSearchableText(attachment);
   const parts = [
     message.senderName,
     message.text,
     resolveMessagePreview(message),
+    attachmentSemanticText,
   ];
 
   if (attachment?.kind === 'image' || attachment?.kind === 'file') {
@@ -220,33 +226,7 @@ function buildSearchableText(message: SearchableMessage) {
 }
 
 function resolveMessagePreview(message: SearchableMessage) {
-  const attachment = message.attachment;
-
-  if (attachment?.kind === 'image') {
-    return message.text.trim() || `图片 · ${attachment.fileName}`;
-  }
-
-  if (attachment?.kind === 'file') {
-    return message.text.trim() || `文件 · ${attachment.fileName}`;
-  }
-
-  if (attachment?.kind === 'voice') {
-    return message.text.trim() || '语音';
-  }
-
-  if (attachment?.kind === 'contact_card') {
-    return message.text.trim() || `名片 · ${attachment.name}`;
-  }
-
-  if (attachment?.kind === 'location_card') {
-    return message.text.trim() || `位置 · ${attachment.title}`;
-  }
-
-  if (attachment?.kind === 'sticker') {
-    return `表情 · ${attachment.label ?? attachment.stickerId}`;
-  }
-
-  return message.text.trim();
+  return resolveMessageSemanticPreview(message);
 }
 
 function resolveMessageSearchCategories(
