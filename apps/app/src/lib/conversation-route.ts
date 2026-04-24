@@ -1,4 +1,6 @@
+import { msg } from "@lingui/macro";
 import type { ConversationType } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 
 export type ConversationThreadRef = {
   id?: string;
@@ -21,7 +23,9 @@ export function getConversationThreadType(
 }
 
 export function getConversationThreadLabel(input: ConversationThreadRef) {
-  return isPersistedGroupConversation(input) ? "群聊" : "单聊";
+  return isPersistedGroupConversation(input)
+    ? translateRuntimeMessage(msg`群聊`)
+    : translateRuntimeMessage(msg`单聊`);
 }
 
 export function getConversationThreadPath(
