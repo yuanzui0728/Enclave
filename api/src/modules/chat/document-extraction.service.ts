@@ -8,6 +8,7 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -15,6 +16,7 @@ import { resolveReadableChatAttachmentPath } from './chat-attachment-storage';
 import type { DocumentAttachmentInsight } from './chat.types';
 
 const execFileAsync = promisify(execFile);
+const localRequire = createRequire(__filename);
 
 const MAX_DOCUMENT_DOWNLOAD_BYTES = 16 * 1024 * 1024;
 const MAX_STORED_DOCUMENT_TEXT_CHARS = 24_000;
@@ -28,6 +30,7 @@ const MAX_PDF_OCR_PAGES = 4;
 const PDF_OCR_RENDER_DPI = 180;
 const PDF_OCR_LANGS = 'chi_sim+eng';
 const MAX_DOCX_OCR_IMAGES = 6;
+const MAX_LEGACY_WORD_DATA_IMAGES = 6;
 const MAX_OFFICE_OCR_PAGES = 6;
 const OFFICE_COMMAND_CANDIDATES = ['soffice', 'libreoffice'];
 
@@ -69,6 +72,13 @@ type YauzlZipFileLike = {
 type YauzlEntryLike = {
   fileName: string;
 };
+
+type OleCompoundDocLike = {
+  read(): Promise<unknown>;
+  stream(streamName: string): NodeJS.ReadableStream;
+};
+
+type BufferReaderLikeConstructor = new (buffer: Buffer) => unknown;
 
 type ExtractionMode = DocumentAttachmentInsight['extractionMode'];
 
@@ -214,6 +224,13 @@ export class DocumentExtractionService {
       );
       if (legacyWordResult.status === 'completed') {
         return legacyWordResult;
+      }
+
+      const legacyWordDataOcrResult = await this.extractLegacyWordDataImageOcr(
+        input.buffer,
+      );
+      if (legacyWordDataOcrResult.status === 'completed') {
+        return legacyWordDataOcrResult;
       }
 
       const officeOcrResult = await this.extractOfficeRenderedOcr(
@@ -467,6 +484,39 @@ export class DocumentExtractionService {
           extractionMode === 'docx_text'
             ? 'DOCX 未提取到可用正文。'
             : 'DOC 未提取到可用正文。',
+      });
+    }
+  }
+
+  private async extractLegacyWordDataImageOcr(
+    buffer: Buffer,
+  ): Promise<DocumentExtractionResult> {
+    try {
+      const imageAssets = await this.extractLegacyWordDataImages(buffer);
+      if (!imageAssets.length) {
+        return {
+          status: 'failed',
+          extractionMode: 'legacy_word_ocr',
+          parser: 'legacy_word_data_ocr',
+          errorCode: 'LEGACY_WORD_DATA_IMAGE_NOT_FOUND',
+          errorMessage: 'DOC 的 Data 流中未找到可 OCR 的图片资源。',
+        };
+      }
+
+      return this.ocrImageAssets({
+        imageAssets,
+        extractionMode: 'legacy_word_ocr',
+        parser: 'legacy_word_data_ocr',
+      });
+    } catch (error) {
+      return toFailedExtractionResult({
+        error,
+        extractionMode: 'legacy_word_ocr',
+        parser: 'legacy_word_data_ocr',
+        binaryMissingCode: 'LEGACY_WORD_DATA_OCR_UNAVAILABLE',
+        failureCode: 'LEGACY_WORD_DATA_OCR_FAILED',
+        emptyCode: 'TEXT_EXTRACTION_EMPTY',
+        emptyMessage: 'DOC Data 流 OCR 未提取到可用正文。',
       });
     }
   }
@@ -731,6 +781,23 @@ export class DocumentExtractionService {
     return (loadedModule.default ?? loadedModule) as YauzlLike;
   }
 
+  private async loadOleCompoundDoc(): Promise<
+    new (reader: unknown) => OleCompoundDocLike
+  > {
+    const loadedModule = localRequire(
+      'word-extractor/lib/ole-compound-doc',
+    ) as new (
+      reader: unknown,
+    ) => OleCompoundDocLike;
+    return loadedModule;
+  }
+
+  private async loadBufferReader(): Promise<BufferReaderLikeConstructor> {
+    return localRequire(
+      'word-extractor/lib/buffer-reader',
+    ) as BufferReaderLikeConstructor;
+  }
+
   private async extractDocxEmbeddedImages(buffer: Buffer) {
     const yauzl = await this.loadYauzl();
     return new Promise<Array<{ fileName: string; buffer: Buffer }>>(
@@ -807,6 +874,23 @@ export class DocumentExtractionService {
         );
       },
     );
+  }
+
+  private async extractLegacyWordDataImages(buffer: Buffer) {
+    const OleCompoundDoc = await this.loadOleCompoundDoc();
+    const BufferReader = await this.loadBufferReader();
+    const doc = new OleCompoundDoc(new BufferReader(buffer));
+    await doc.read();
+    const dataBuffer = await this.streamToBuffer(doc.stream('Data'));
+    return scanRasterImagesInBuffer(dataBuffer, MAX_LEGACY_WORD_DATA_IMAGES);
+  }
+
+  private async streamToBuffer(stream: NodeJS.ReadableStream) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
   }
 }
 
@@ -913,6 +997,120 @@ function isSupportedDocxMediaEntry(fileName: string) {
 function normalizeOcrImageExtension(fileName: string) {
   const extension = path.extname(fileName).trim().toLowerCase();
   return /\.(png|jpe?g|bmp|tif|tiff)$/i.test(extension) ? extension : '.png';
+}
+
+function scanRasterImagesInBuffer(buffer: Buffer, maxImages: number) {
+  const results: Array<{ fileName: string; buffer: Buffer }> = [];
+  let cursor = 0;
+  while (cursor < buffer.length && results.length < maxImages) {
+    const pngStart = buffer.indexOf(PNG_SIGNATURE, cursor);
+    const jpegStart = buffer.indexOf(JPEG_SOI_SIGNATURE, cursor);
+    const bmpStart = buffer.indexOf(BMP_SIGNATURE, cursor);
+    const candidates = [pngStart, jpegStart, bmpStart].filter(
+      (value) => value >= 0,
+    );
+    if (!candidates.length) {
+      break;
+    }
+
+    const start = Math.min(...candidates);
+    const imageAsset =
+      start === pngStart
+        ? readPngAsset(buffer, start, results.length)
+        : start === jpegStart
+          ? readJpegAsset(buffer, start, results.length)
+          : readBmpAsset(buffer, start, results.length);
+    if (!imageAsset) {
+      cursor = start + 1;
+      continue;
+    }
+
+    results.push(imageAsset.asset);
+    cursor = Math.max(imageAsset.nextCursor, start + 1);
+  }
+
+  return results;
+}
+
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
+const PNG_IEND_CHUNK = Buffer.from([
+  0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44,
+]);
+const JPEG_SOI_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff]);
+const JPEG_EOI_SIGNATURE = Buffer.from([0xff, 0xd9]);
+const BMP_SIGNATURE = Buffer.from([0x42, 0x4d]);
+
+function readPngAsset(buffer: Buffer, start: number, index: number) {
+  let cursor = start + PNG_SIGNATURE.length;
+  while (cursor + 12 <= buffer.length) {
+    const chunkLength = buffer.readUInt32BE(cursor);
+    const chunkEnd = cursor + 12 + chunkLength;
+    if (chunkEnd > buffer.length) {
+      return null;
+    }
+
+    const chunkType = buffer.toString('ascii', cursor + 4, cursor + 8);
+    cursor = chunkEnd;
+    if (chunkType === 'IEND') {
+      return {
+        asset: {
+          fileName: `legacy-word-${index + 1}.png`,
+          buffer: buffer.subarray(start, cursor),
+        },
+        nextCursor: cursor,
+      };
+    }
+  }
+
+  const fallbackEnd = buffer.indexOf(PNG_IEND_CHUNK, start + PNG_SIGNATURE.length);
+  if (fallbackEnd >= 0 && fallbackEnd + 12 <= buffer.length) {
+    return {
+      asset: {
+        fileName: `legacy-word-${index + 1}.png`,
+        buffer: buffer.subarray(start, fallbackEnd + 12),
+      },
+      nextCursor: fallbackEnd + 12,
+    };
+  }
+
+  return null;
+}
+
+function readJpegAsset(buffer: Buffer, start: number, index: number) {
+  const endMarkerIndex = buffer.indexOf(JPEG_EOI_SIGNATURE, start + 2);
+  if (endMarkerIndex < 0) {
+    return null;
+  }
+
+  const end = endMarkerIndex + JPEG_EOI_SIGNATURE.length;
+  return {
+    asset: {
+      fileName: `legacy-word-${index + 1}.jpg`,
+      buffer: buffer.subarray(start, end),
+    },
+    nextCursor: end,
+  };
+}
+
+function readBmpAsset(buffer: Buffer, start: number, index: number) {
+  if (start + 6 > buffer.length) {
+    return null;
+  }
+
+  const length = buffer.readUInt32LE(start + 2);
+  if (length <= 0 || start + length > buffer.length) {
+    return null;
+  }
+
+  return {
+    asset: {
+      fileName: `legacy-word-${index + 1}.bmp`,
+      buffer: buffer.subarray(start, start + length),
+    },
+    nextCursor: start + length,
+  };
 }
 
 function extractTextFromDocxXml(xml: string) {
