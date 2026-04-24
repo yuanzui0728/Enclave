@@ -48,7 +48,8 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "word-extractor": "^1.0.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

@@ -29,6 +29,21 @@ const PDF_OCR_RENDER_DPI = 180;
 const PDF_OCR_LANGS = 'chi_sim+eng';
 const OFFICE_COMMAND_CANDIDATES = ['soffice', 'libreoffice'];
 
+type WordExtractorLike = {
+  extract(input: string | Buffer): Promise<{
+    getBody(): string;
+    getFootnotes?(): string;
+    getEndnotes?(): string;
+    getHeaders?(options?: { includeFooters?: boolean }): string;
+    getFooters?(): string;
+    getAnnotations?(): string;
+    getTextboxes?(options?: {
+      includeHeadersAndFooters?: boolean;
+      includeBody?: boolean;
+    }): string;
+  }>;
+};
+
 type ExtractionMode = DocumentAttachmentInsight['extractionMode'];
 
 export type DocumentExtractionResult =
@@ -125,6 +140,14 @@ export class DocumentExtractionService {
         return officeResult;
       }
 
+      const wordExtractorResult = await this.extractWordExtractorText(
+        input.buffer,
+        'docx_text',
+      );
+      if (wordExtractorResult.status === 'completed') {
+        return wordExtractorResult;
+      }
+
       const docxXmlResult = await this.extractDocxXmlText(input.buffer);
       if (docxXmlResult.status === 'completed') {
         return docxXmlResult;
@@ -134,7 +157,24 @@ export class DocumentExtractionService {
     }
 
     if (mimeType === 'application/msword' || extension === '.doc') {
-      return this.extractOfficeText(input.buffer, '.doc', 'legacy_word_text');
+      const officeResult = await this.extractOfficeText(
+        input.buffer,
+        '.doc',
+        'legacy_word_text',
+      );
+      if (officeResult.status === 'completed') {
+        return officeResult;
+      }
+
+      const legacyWordResult = await this.extractWordExtractorText(
+        input.buffer,
+        'legacy_word_text',
+      );
+      if (legacyWordResult.status === 'completed') {
+        return legacyWordResult;
+      }
+
+      return officeResult;
     }
 
     return {
@@ -382,6 +422,52 @@ export class DocumentExtractionService {
     }
   }
 
+  private async extractWordExtractorText(
+    buffer: Buffer,
+    extractionMode: 'docx_text' | 'legacy_word_text',
+  ): Promise<DocumentExtractionResult> {
+    try {
+      const extractor = await this.loadWordExtractor();
+      const doc = await extractor.extract(buffer);
+      const text = [
+        doc.getBody(),
+        doc.getHeaders?.({ includeFooters: false }) ?? '',
+        doc.getFooters?.() ?? '',
+        doc.getFootnotes?.() ?? '',
+        doc.getEndnotes?.() ?? '',
+        doc.getAnnotations?.() ?? '',
+        doc.getTextboxes?.() ?? '',
+      ]
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .join('\n\n');
+      return this.buildCompletedResult({
+        text: normalizeExtractedText(text),
+        extractionMode,
+        parser: 'word_extractor',
+      });
+    } catch (error) {
+      return toFailedExtractionResult({
+        error,
+        extractionMode,
+        parser: 'word_extractor',
+        binaryMissingCode: 'WORD_EXTRACTOR_UNAVAILABLE',
+        failureCode:
+          extractionMode === 'docx_text'
+            ? 'DOCX_PARSE_FAILED'
+            : 'LEGACY_WORD_PARSE_FAILED',
+        emptyCode:
+          extractionMode === 'docx_text'
+            ? 'TEXT_EXTRACTION_EMPTY'
+            : 'LEGACY_WORD_UNSUPPORTED',
+        emptyMessage:
+          extractionMode === 'docx_text'
+            ? 'DOCX 未提取到可用正文。'
+            : 'DOC 未提取到可用正文。',
+      });
+    }
+  }
+
   private async extractDocxXmlText(
     buffer: Buffer,
   ): Promise<DocumentExtractionResult> {
@@ -454,6 +540,13 @@ export class DocumentExtractionService {
       characterCount: fullText.length,
       truncated,
     };
+  }
+
+  private async loadWordExtractor(): Promise<WordExtractorLike> {
+    const loadedModule = await import('word-extractor');
+    const WordExtractor =
+      (loadedModule.default ?? loadedModule) as new () => WordExtractorLike;
+    return new WordExtractor();
   }
 }
 
