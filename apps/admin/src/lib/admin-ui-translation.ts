@@ -1694,156 +1694,6 @@ const KO_TO_JA_EXACT_TRANSLATIONS = buildCrossLocaleExactTranslations(
   JA_EXACT_TRANSLATIONS,
 );
 
-const EN_TO_JA_SEGMENT_TRANSLATIONS = ([
-  ["Operations Console", "運用コンソール"],
-  ["Runtime Overview", "実行概要"],
-  ["Character Center", "キャラクターセンター"],
-  ["Models and Routing", "モデルとルーティング"],
-  ["Game Catalog", "ゲームカタログ"],
-  ["Chat Records", "チャット記録"],
-  ["Need Discovery", "ニーズ発見"],
-  ["Proactive Follow-up", "能動フォローアップ"],
-  ["Self Agent", "メインエージェント"],
-  ["Reminder Runtime", "リマインダーランタイム"],
-  ["Token Usage", "Token 使用量"],
-  ["Real-World Actions", "現実世界アクション"],
-  ["Cyber Avatar", "サイバー分身"],
-  ["Real-World Sync", "現実連動"],
-  ["Evals Analytics", "評価分析"],
-  ["Reply Logic", "返信ロジック"],
-  ["Open Evals", "評価を開く"],
-  ["Go to Evals", "評価へ移動"],
-  ["View Evals", "評価を表示"],
-  ["View Character Center", "キャラクターセンターを表示"],
-  ["Enter Character Center", "キャラクターセンターを開く"],
-  ["View Reply Logic", "返信ロジックを表示"],
-  ["Troubleshoot Reply Logic", "返信ロジックを排障"],
-  ["Open the runs, compare, and trace workspaces.", "runs、compare、trace ワークスペースを開きます。"],
-  ["Check character state and open the factory or runtime console.", "キャラクター状態を確認し、工場または実行コンソールを開きます。"],
-  ["Inspect the real reply chain and global rules.", "実際の返信チェーンとグローバルルールを確認します。"],
-  ["No Pending Blockers on This Dashboard", "このダッシュボードに未処理のブロッカーはありません"],
-  ["Pending Queue", "保留キュー"],
-  ["PENDING QUEUE", "保留キュー"],
-  ["Blockers", "ブロッカー"],
-  ["BLOCKERS", "ブロッカー"],
-  ["Watch Items", "注視項目"],
-  ["WATCH ITEMS", "注視項目"],
-  ["Online Characters", "オンラインキャラクター"],
-  ["ONLINE CHARACTERS", "オンラインキャラクター"],
-  ["Content Output", "コンテンツ出力"],
-  ["CONTENT OUTPUT", "コンテンツ出力"],
-  ["Instance Vitals Summary", "インスタンス状態サマリー"],
-  ["INSTANCE VITALS SUMMARY", "インスタンス状態サマリー"],
-  ["Runtime Vitals", "実行状態"],
-  ["RUNTIME VITALS", "実行状態"],
-  ["World Owner", "世界オーナー"],
-  ["WORLD OWNER", "世界オーナー"],
-  ["Single World", "単一世界"],
-  ["Shift Conclusion", "当番結論"],
-  ["SHIFT CONCLUSION", "当番結論"],
-  ["Operations Can Continue", "運用継続可能"],
-  ["Can Continue", "継続可能"],
-  ["No Blockers", "ブロッカーなし"],
-  ["Priority", "優先"],
-  ["Entry", "入口"],
-  ["Open", "開く"],
-  ["View", "表示"],
-  ["Enter", "開く"],
-  ["Troubleshoot", "排障"],
-  ["Healthy", "正常"],
-  ["Configured", "設定済み"],
-  ["Normal", "正常"],
-  ["Online", "オンライン"],
-  ["Offline", "オフライン"],
-  ["Working", "作業中"],
-  ["Commuting", "移動中"],
-  ["Resting", "休憩中"],
-  ["Sleeping", "睡眠中"],
-  ["Eating", "食事中"],
-  ["Idle", "待機中"],
-  ["Current View", "現在の表示"],
-  ["CURRENT VIEW", "現在の表示"],
-  ["Activity", "活動"],
-  ["ACTIVITY", "活動"],
-] satisfies Array<[string, string]>).sort(
-  (left, right) => right[0].length - left[0].length,
-);
-
-const EN_TO_KO_SEGMENT_TRANSLATIONS = ([
-  ["Operations Console", "운영 콘솔"],
-  ["Runtime Overview", "런타임 개요"],
-  ["Character Center", "캐릭터 센터"],
-  ["Models and Routing", "모델 및 라우팅"],
-  ["Game Catalog", "게임 카탈로그"],
-  ["Chat Records", "채팅 기록"],
-  ["Need Discovery", "니즈 탐색"],
-  ["Proactive Follow-up", "선제 후속 조치"],
-  ["Self Agent", "메인 에이전트"],
-  ["Reminder Runtime", "리마인더 런타임"],
-  ["Token Usage", "Token 사용량"],
-  ["Real-World Actions", "현실 세계 액션"],
-  ["Cyber Avatar", "사이버 아바타"],
-  ["Real-World Sync", "현실 연동"],
-  ["Evals Analytics", "평가 분석"],
-  ["Reply Logic", "답변 로직"],
-  ["Open Evals", "평가 열기"],
-  ["Go to Evals", "평가로 이동"],
-  ["View Evals", "평가 보기"],
-  ["View Character Center", "캐릭터 센터 보기"],
-  ["Enter Character Center", "캐릭터 센터 열기"],
-  ["View Reply Logic", "답변 로직 보기"],
-  ["Troubleshoot Reply Logic", "답변 로직 문제 해결"],
-  ["Open the runs, compare, and trace workspaces.", "runs, compare, trace 워크스페이스를 엽니다."],
-  ["Check character state and open the factory or runtime console.", "캐릭터 상태를 확인하고 공장 또는 런타임 콘솔을 엽니다."],
-  ["Inspect the real reply chain and global rules.", "실제 답변 체인과 전역 규칙을 확인합니다."],
-  ["No Pending Blockers on This Dashboard", "이 대시보드에 대기 중인 차단 항목이 없습니다"],
-  ["Pending Queue", "대기 큐"],
-  ["PENDING QUEUE", "대기 큐"],
-  ["Blockers", "차단 항목"],
-  ["BLOCKERS", "차단 항목"],
-  ["Watch Items", "확인 항목"],
-  ["WATCH ITEMS", "확인 항목"],
-  ["Online Characters", "온라인 캐릭터"],
-  ["ONLINE CHARACTERS", "온라인 캐릭터"],
-  ["Content Output", "콘텐츠 출력"],
-  ["CONTENT OUTPUT", "콘텐츠 출력"],
-  ["Instance Vitals Summary", "인스턴스 상태 요약"],
-  ["INSTANCE VITALS SUMMARY", "인스턴스 상태 요약"],
-  ["Runtime Vitals", "런타임 상태"],
-  ["RUNTIME VITALS", "런타임 상태"],
-  ["World Owner", "월드 소유자"],
-  ["WORLD OWNER", "월드 소유자"],
-  ["Single World", "단일 월드"],
-  ["Shift Conclusion", "당번 결론"],
-  ["SHIFT CONCLUSION", "당번 결론"],
-  ["Operations Can Continue", "운영 계속 가능"],
-  ["Can Continue", "계속 가능"],
-  ["No Blockers", "차단 항목 없음"],
-  ["Priority", "우선순위"],
-  ["Entry", "진입"],
-  ["Open", "열기"],
-  ["View", "보기"],
-  ["Enter", "열기"],
-  ["Troubleshoot", "문제 해결"],
-  ["Healthy", "정상"],
-  ["Configured", "설정됨"],
-  ["Normal", "정상"],
-  ["Online", "온라인"],
-  ["Offline", "오프라인"],
-  ["Working", "작업 중"],
-  ["Commuting", "이동 중"],
-  ["Resting", "휴식 중"],
-  ["Sleeping", "수면 중"],
-  ["Eating", "식사 중"],
-  ["Idle", "대기 중"],
-  ["Current View", "현재 보기"],
-  ["CURRENT VIEW", "현재 보기"],
-  ["Activity", "활동"],
-  ["ACTIVITY", "활동"],
-] satisfies Array<[string, string]>).sort(
-  (left, right) => right[0].length - left[0].length,
-);
-
 const EN_SEGMENT_TRANSLATIONS = ([
   ["角色中心", "Character Center"],
   ["角色名册", "Character Registry"],
@@ -2185,26 +2035,20 @@ export function translateAdminUiText(
     return text;
   }
 
-  const nativeExactTranslation = readNativeExactTranslation(body, locale);
-  if (nativeExactTranslation) {
-    return `${leadingWhitespace}${nativeExactTranslation}${trailingWhitespace}`;
-  }
-
-  if (!CJK_PATTERN.test(body)) {
-    if (locale === "ja-JP" || locale === "ko-KR") {
-      const nativeEnglishFallback = translateNativeEnglishFallbackBody(
-        body,
-        locale,
-      );
-      if (nativeEnglishFallback !== body) {
-        return `${leadingWhitespace}${nativeEnglishFallback}${trailingWhitespace}`;
-      }
-    }
-
+  const hasAdminSourceScript =
+    CJK_PATTERN.test(body) ||
+    JAPANESE_KANA_PATTERN.test(body) ||
+    KOREAN_HANGUL_PATTERN.test(body);
+  if (!hasAdminSourceScript) {
     return text;
   }
 
   if (locale === "ja-JP" || locale === "ko-KR") {
+    const nativeExactTranslation = readNativeExactTranslation(body, locale);
+    if (nativeExactTranslation) {
+      return `${leadingWhitespace}${nativeExactTranslation}${trailingWhitespace}`;
+    }
+
     const nativeTranslatedBody = translateNativeAdminTextBody(
       body,
       locale,
@@ -2293,27 +2137,6 @@ function translateNativeAdminTextBody(
     .replace(/\s+/g, " ")
     .trim();
 
-  return translated === body ? body : translated;
-}
-
-function translateNativeEnglishFallbackBody(
-  body: string,
-  locale: Extract<SupportedLocale, "ja-JP" | "ko-KR">,
-): string {
-  if (!/[A-Za-z]/.test(body) || body.length > 120) {
-    return body;
-  }
-
-  const translations =
-    locale === "ja-JP"
-      ? EN_TO_JA_SEGMENT_TRANSLATIONS
-      : EN_TO_KO_SEGMENT_TRANSLATIONS;
-  let translated = body;
-  for (const [source, target] of translations) {
-    translated = translated.split(source).join(target);
-  }
-
-  translated = translated.replace(/\s+/g, " ").trim();
   return translated === body ? body : translated;
 }
 

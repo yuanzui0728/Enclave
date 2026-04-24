@@ -16,7 +16,7 @@ import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summar
 export function RootLayout() {
   const queryClient = useQueryClient();
   const location = useLocation();
-  const { locale } = useAppLocale();
+  const { activationVersion, locale } = useAppLocale();
   const t = translateRuntimeMessage;
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const [secret, setSecret] = useState(getAdminSecret);
@@ -31,12 +31,12 @@ export function RootLayout() {
 
   const routeMeta = useMemo(
     () => resolveRouteMeta(location.pathname),
-    [locale, location.pathname],
+    [activationVersion, locale, location.pathname],
   );
-  const navItems = useMemo(() => resolveNavItems(), [locale]);
+  const navItems = useMemo(() => resolveNavItems(), [activationVersion, locale]);
   const digitalHumanSummary = useMemo(
     () => buildDigitalHumanAdminSummary(statusQuery.data?.digitalHumanGateway),
-    [locale, statusQuery.data?.digitalHumanGateway],
+    [activationVersion, locale, statusQuery.data?.digitalHumanGateway],
   );
   const shellStatus = useMemo(() => {
     if (statusQuery.isError) {
@@ -87,6 +87,7 @@ export function RootLayout() {
   }, [
     digitalHumanSummary.ready,
     digitalHumanSummary.statusLabel,
+    activationVersion,
     locale,
     statusQuery.data,
     statusQuery.isError,

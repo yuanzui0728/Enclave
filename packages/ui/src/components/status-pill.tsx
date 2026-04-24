@@ -3,7 +3,7 @@ import type { HTMLAttributes } from "react";
 import { cn } from "../cn";
 
 const statusPill = cva(
-  "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium tracking-[0.12em] shadow-[var(--shadow-soft)]",
+  "inline-flex min-w-0 max-w-full items-center justify-center break-words rounded-full border px-3 py-1 text-center text-xs font-medium leading-4 shadow-[var(--shadow-soft)]",
   {
     variants: {
       tone: {

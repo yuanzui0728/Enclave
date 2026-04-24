@@ -22,8 +22,64 @@ const SKIP_SELECTOR = [
   "textarea",
 ].join(",");
 
-const TRANSLATION_BATCH_SIZE = 800;
-const TRANSLATION_PRIORITY_BATCH_SIZE = 1800;
+const TRANSLATION_BATCH_SIZE = 150;
+const TRANSLATION_PRIORITY_BATCH_SIZE = 300;
+const MAX_AUTO_TRANSLATION_TARGETS = 650;
+const MAX_AUTO_TRANSLATION_TEXT_LENGTH = 240;
+const CJK_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
+const KOREAN_HANGUL_PATTERN = /[\uac00-\ud7af]/;
+const ADMIN_ENGLISH_UI_PATTERN =
+  /\b(API|Actions?|Agent|Analytics|Avatar|Catalog|Center|Chat|Configuration|Console|Cyber|Digital|Discovery|Edit|Evals|Follow|Game|Healthy|Inference|Models?|Navigation|Normal|Offline|Online|Operations?|Overview|Owner|Preview|Proactive|Ready|Records?|Reminder|Routing|Rules?|Runtime|Save|Self|Snapshot|Status|Sync|Token|Usage|View|Workspace)\b/i;
+
+function isTranslatableTextValue(value: string) {
+  const normalizedValue = value.trim().replace(/\s+/g, " ");
+  return (
+    normalizedValue.length > 0 &&
+    normalizedValue.length <= MAX_AUTO_TRANSLATION_TEXT_LENGTH
+  );
+}
+
+function isPotentialAutoTranslationText(
+  value: string,
+  locale: string,
+) {
+  if (!isTranslatableTextValue(value)) {
+    return false;
+  }
+
+  if (CJK_PATTERN.test(value)) {
+    return true;
+  }
+
+  if (locale === "zh-CN") {
+    return (
+      JAPANESE_KANA_PATTERN.test(value) ||
+      KOREAN_HANGUL_PATTERN.test(value) ||
+      ADMIN_ENGLISH_UI_PATTERN.test(value)
+    );
+  }
+
+  if (locale === "ja-JP" || locale === "ko-KR") {
+    return (
+      JAPANESE_KANA_PATTERN.test(value) ||
+      KOREAN_HANGUL_PATTERN.test(value) ||
+      ADMIN_ENGLISH_UI_PATTERN.test(value)
+    );
+  }
+
+  return false;
+}
+
+function isCanonicalAdminOriginalValue(value: string) {
+  const normalizedValue = value.trim().replace(/\s+/g, " ");
+  return (
+    CJK_PATTERN.test(normalizedValue) &&
+    !JAPANESE_KANA_PATTERN.test(normalizedValue) &&
+    !KOREAN_HANGUL_PATTERN.test(normalizedValue) &&
+    translateAdminUiText(normalizedValue, "en-US") !== normalizedValue
+  );
+}
 
 export function AdminAutoTranslationBoundary({
   children,
@@ -33,14 +89,15 @@ export function AdminAutoTranslationBoundary({
   const attributeOriginalsRef = useRef(
     new WeakMap<Element, Partial<Record<(typeof TRANSLATABLE_ATTRIBUTES)[number], string>>>(),
   );
+  const hasStoredOriginalsRef = useRef(false);
   const observerRef = useRef<MutationObserver | null>(null);
   const idleCallbackIdRef = useRef<number | null>(null);
   const timeoutIdRef = useRef<number | null>(null);
-  const { locale } = useAppLocale();
+  const { activationVersion, locale } = useAppLocale();
 
   const translate = useCallback(
     (value: string) => translateAdminUiText(value, locale),
-    [locale],
+    [activationVersion, locale],
   );
 
   const applyTranslations = useMemo(
@@ -58,14 +115,22 @@ export function AdminAutoTranslationBoundary({
           return;
         }
 
-        const translatedExistingOriginal = existingOriginal
-          ? translate(existingOriginal)
-          : null;
+        if (
+          !existingOriginal &&
+          locale !== "zh-CN" &&
+          !isCanonicalAdminOriginalValue(currentValue)
+        ) {
+          if (node.nodeValue !== translatedCurrentValue) {
+            node.nodeValue = translatedCurrentValue;
+          }
+          return;
+        }
+
         const shouldRefreshOriginal =
           !existingOriginal ||
-          (currentValue !== existingOriginal &&
-            currentValue !== translatedExistingOriginal &&
-            translate(currentValue) !== currentValue);
+          (locale === "zh-CN" &&
+            currentValue !== existingOriginal &&
+            isCanonicalAdminOriginalValue(currentValue));
         const originalValue = shouldRefreshOriginal
           ? currentValue
           : existingOriginal;
@@ -75,6 +140,7 @@ export function AdminAutoTranslationBoundary({
         }
 
         textOriginalsRef.current.set(node, originalValue);
+        hasStoredOriginalsRef.current = true;
         const nextValue = locale === "zh-CN" ? originalValue : translate(originalValue);
         if (node.nodeValue !== nextValue) {
           node.nodeValue = nextValue;
@@ -100,14 +166,22 @@ export function AdminAutoTranslationBoundary({
             continue;
           }
 
-          const translatedExistingOriginal = existingOriginal
-            ? translate(existingOriginal)
-            : null;
+          if (
+            !existingOriginal &&
+            locale !== "zh-CN" &&
+            !isCanonicalAdminOriginalValue(currentValue)
+          ) {
+            if (element.getAttribute(attribute) !== translatedCurrentValue) {
+              element.setAttribute(attribute, translatedCurrentValue);
+            }
+            continue;
+          }
+
           const shouldRefreshOriginal =
             !existingOriginal ||
-            (currentValue !== existingOriginal &&
-              currentValue !== translatedExistingOriginal &&
-              translate(currentValue) !== currentValue);
+            (locale === "zh-CN" &&
+              currentValue !== existingOriginal &&
+              isCanonicalAdminOriginalValue(currentValue));
           const originalValue = shouldRefreshOriginal
             ? currentValue
             : existingOriginal;
@@ -118,6 +192,7 @@ export function AdminAutoTranslationBoundary({
 
           storedAttributes[attribute] = originalValue;
           attributeOriginalsRef.current.set(element, storedAttributes);
+          hasStoredOriginalsRef.current = true;
           const nextValue =
             locale === "zh-CN" ? originalValue : translate(originalValue);
           if (element.getAttribute(attribute) !== nextValue) {
@@ -130,29 +205,43 @@ export function AdminAutoTranslationBoundary({
         const targets: Node[] = [];
 
         if (root.nodeType === Node.TEXT_NODE) {
-          targets.push(root);
+          if (isPotentialAutoTranslationText(root.nodeValue ?? "", locale)) {
+            targets.push(root);
+          }
           return targets;
         }
 
-        if (root.nodeType === Node.ELEMENT_NODE) {
-          targets.push(root);
-        }
-
-        const textWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-        let textNode = textWalker.nextNode();
-        while (textNode) {
-          targets.push(textNode);
-          textNode = textWalker.nextNode();
-        }
-
-        const elementWalker = document.createTreeWalker(
+        const walker = document.createTreeWalker(
           root,
-          NodeFilter.SHOW_ELEMENT,
+          NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+          {
+            acceptNode(node) {
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                const element = node as Element;
+                if (element !== root && element.matches(SKIP_SELECTOR)) {
+                  return NodeFilter.FILTER_REJECT;
+                }
+
+                return TRANSLATABLE_ATTRIBUTES.some((attribute) =>
+                  element.hasAttribute(attribute),
+                )
+                  ? NodeFilter.FILTER_ACCEPT
+                  : NodeFilter.FILTER_SKIP;
+              }
+
+              const parent = node.parentElement;
+              return !parent ||
+                parent.closest(SKIP_SELECTOR) ||
+                !isPotentialAutoTranslationText(node.nodeValue ?? "", locale)
+                ? NodeFilter.FILTER_REJECT
+                : NodeFilter.FILTER_ACCEPT;
+            },
+          },
         );
-        let elementNode = elementWalker.nextNode();
-        while (elementNode) {
-          targets.push(elementNode);
-          elementNode = elementWalker.nextNode();
+        let node = walker.nextNode();
+        while (node && targets.length < MAX_AUTO_TRANSLATION_TARGETS) {
+          targets.push(node);
+          node = walker.nextNode();
         }
 
         return targets;
@@ -174,12 +263,16 @@ export function AdminAutoTranslationBoundary({
         applyTarget,
       };
     },
-    [locale, translate],
+    [activationVersion, locale, translate],
   );
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) {
+      return undefined;
+    }
+
+    if (locale === "zh-CN" && !hasStoredOriginalsRef.current) {
       return undefined;
     }
 

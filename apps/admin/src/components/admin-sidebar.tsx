@@ -140,12 +140,12 @@ export function AdminSidebar({
   return (
     <aside className="flex h-full flex-col border-b border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]/92 px-4 py-4 shadow-[var(--shadow-shell)] backdrop-blur xl:px-5 xl:py-5 lg:border-b-0 lg:border-r">
       {/* Brand header */}
-      <div className="flex items-center justify-between gap-3 px-1">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+        <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--text-muted)]">
             {t(msg`隐界`)}
           </div>
-          <div className="text-base font-semibold leading-tight text-[color:var(--text-primary)]">
+          <div className="break-words text-base font-semibold leading-tight text-[color:var(--text-primary)]">
             {t(msg`运营控制台`)}
           </div>
         </div>
@@ -161,11 +161,11 @@ export function AdminSidebar({
       </div>
 
       {/* Compact status row */}
-      <div className="mt-3 flex items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-3 py-2">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-3 py-2">
         {statusItems.map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5">
+          <div key={item.label} className="flex min-w-0 items-center gap-1.5">
             <StatusDot tone={item.tone} />
-            <span className="text-xs text-[color:var(--text-muted)]">
+            <span className="min-w-0 break-words text-xs leading-4 text-[color:var(--text-muted)]">
               {item.label}
             </span>
           </div>
@@ -206,12 +206,14 @@ export function AdminSidebar({
                 className={NAV_LINK}
                 activeProps={{ className: NAV_LINK_ACTIVE }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span>{item.label}</span>
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1 break-words leading-5">
+                    {item.label}
+                  </span>
                   {item.roleBadge ? (
                     <AdminContextBadge
                       label={item.roleBadge}
-                      className="shrink-0 bg-[color:var(--surface-primary)]/92"
+                      className="max-w-[8.5rem] shrink-0 bg-[color:var(--surface-primary)]/92"
                     />
                   ) : null}
                 </div>

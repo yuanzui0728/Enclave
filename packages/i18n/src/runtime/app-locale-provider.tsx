@@ -26,6 +26,7 @@ import {
 } from "./catalog-loaders";
 
 type AppLocaleContextValue = {
+  activationVersion: number;
   availableLocales: readonly SupportedLocale[];
   error: Error | null;
   isReady: boolean;
@@ -52,6 +53,7 @@ export function AppLocaleProvider({
   );
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [activationVersion, setActivationVersion] = useState(0);
   const hasActivatedLocaleRef = useRef(false);
 
   const setLocale = useCallback(
@@ -88,6 +90,7 @@ export function AppLocaleProvider({
         syncDocumentLocale(locale);
         hasActivatedLocaleRef.current = true;
         setIsReady(true);
+        setActivationVersion((currentVersion) => currentVersion + 1);
       } catch (cause) {
         if (cancelled) {
           return;
@@ -106,6 +109,7 @@ export function AppLocaleProvider({
         hasActivatedLocaleRef.current = true;
         setError(nextError);
         setIsReady(true);
+        setActivationVersion((currentVersion) => currentVersion + 1);
       }
     }
 
@@ -133,6 +137,7 @@ export function AppLocaleProvider({
 
   const contextValue = useMemo<AppLocaleContextValue>(
     () => ({
+      activationVersion,
       availableLocales: SUPPORTED_LOCALES,
       error,
       isReady,
@@ -140,7 +145,9 @@ export function AppLocaleProvider({
       setLocale,
       surface,
     }),
-    [error, isReady, locale, setLocale, surface],
+    // activationVersion forces consumers that call imperative translation
+    // helpers during render to recompute after Lingui finishes activating.
+    [activationVersion, error, isReady, locale, setLocale, surface],
   );
 
   return (

@@ -59,7 +59,7 @@ export function AdminContextBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border border-[color:var(--border-subtle)] bg-white/80 px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
+        "inline-flex max-w-full min-w-0 items-center justify-center break-words rounded-full border border-[color:var(--border-subtle)] bg-white/80 px-2.5 py-1 text-center text-[11px] font-medium leading-4 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
         className,
       )}
     >
