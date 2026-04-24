@@ -921,6 +921,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           {isReminderConversation ? (
             <ChatDetailsSection title="提醒管理" variant="wechat">
               <ReminderTaskPanel
+                key={`${conversationId}:reminder-panel-v2:details`}
                 conversationId={conversationId}
                 variant="mobile"
                 surface="details"

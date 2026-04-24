@@ -760,6 +760,7 @@ export function ConversationThreadPanel({
         <>
           {isReminderConversation ? (
             <ReminderTaskPanel
+              key={`${conversationId}:reminder-panel-v2`}
               conversationId={conversationId}
               variant={isDesktop ? "desktop" : "mobile"}
             />
