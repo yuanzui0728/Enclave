@@ -28,6 +28,7 @@ import { PromptBuilderService } from './prompt-builder.service';
 import { sanitizeAiText } from './ai-text-sanitizer';
 import { validateGeneratedSceneOutput } from './moment-output-validator';
 import { MomentGenerationContextService } from './moment-generation-context.service';
+import { buildNativeAudioModelCandidates } from './native-audio-routing';
 import { WorldService } from '../world/world.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
@@ -1675,6 +1676,44 @@ export class AiOrchestratorService {
     );
   }
 
+  private buildReplyProviderAttemptChain(
+    provider: ResolvedProviderConfig,
+    request: PreparedReplyRequest,
+  ) {
+    const hasAudioInput = this.requestContainsAudioInput(request);
+    if (!hasAudioInput) {
+      return [provider];
+    }
+
+    if (
+      this.requestContainsImageInput(request) ||
+      this.requestContainsDocumentInput(request)
+    ) {
+      return [provider];
+    }
+
+    const seenModels = new Set<string>();
+    const attempts: ResolvedProviderConfig[] = [];
+    for (const model of buildNativeAudioModelCandidates(provider.model)) {
+      const normalizedModel = model.trim().toLowerCase();
+      if (!normalizedModel || seenModels.has(normalizedModel)) {
+        continue;
+      }
+
+      seenModels.add(normalizedModel);
+      attempts.push(
+        model === provider.model
+          ? provider
+          : {
+              ...provider,
+              model,
+            },
+      );
+    }
+
+    return attempts.length ? attempts : [provider];
+  }
+
   private isUnsupportedImageInputError(error: unknown) {
     const status = this.extractErrorStatus(error);
     const message = this.extractErrorMessage(error);
@@ -1986,104 +2025,142 @@ export class AiOrchestratorService {
     const billingSource: AiUsageBillingSource = ownerKeyApplied
       ? 'owner_custom'
       : 'instance_default';
-    const budgetedProvider = await this.prepareBudgetAwareProvider(
+    const replyProviderAttempts = this.buildReplyProviderAttemptChain(
       runtimeProvider,
-      billingSource,
-      usageContext,
+      request,
     );
-    const provider = budgetedProvider.provider;
+    let failedProvider = runtimeProvider;
+    let failedBillingSource = billingSource;
+    let failedError: unknown = new ServiceUnavailableException(
+      '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
+    );
 
-    try {
-      const result = await this.requestReplyFromProvider(provider, request);
-      await this.recordSuccessfulUsage(
-        provider,
-        billingSource,
-        usageContext,
-        result,
-        budgetedProvider.usageAudit,
-      );
-      return {
-        ...result,
-        billingSource,
+    for (let index = 0; index < replyProviderAttempts.length; index += 1) {
+      const attemptProvider = replyProviderAttempts[index];
+      let budgetedProvider: BudgetAwareProviderResult = {
+        provider: attemptProvider,
       };
-    } catch (err) {
-      let failedProvider = provider;
-      let failedBillingSource = billingSource;
-      let failedError: unknown = err;
-      await this.recordFailedUsage(provider, billingSource, usageContext, err);
+      try {
+        budgetedProvider = await this.prepareBudgetAwareProvider(
+          attemptProvider,
+          billingSource,
+          usageContext,
+        );
+        const result = await this.requestReplyFromProvider(
+          budgetedProvider.provider,
+          request,
+        );
+        await this.recordSuccessfulUsage(
+          budgetedProvider.provider,
+          billingSource,
+          usageContext,
+          result,
+          budgetedProvider.usageAudit,
+        );
+        return {
+          ...result,
+          billingSource,
+        };
+      } catch (err) {
+        failedProvider = budgetedProvider.provider;
+        failedBillingSource = billingSource;
+        failedError = err;
+        await this.recordFailedUsage(
+          budgetedProvider.provider,
+          billingSource,
+          usageContext,
+          err,
+        );
+        const hasMoreReplyCandidates = index < replyProviderAttempts.length - 1;
+        if (
+          hasMoreReplyCandidates &&
+          this.isFallbackEligibleProviderFailure(err)
+        ) {
+          this.logger.warn('AI reply model reroute scheduled', {
+            characterId: profile.characterId,
+            fromModel: budgetedProvider.provider.model,
+            toModel: replyProviderAttempts[index + 1]?.model,
+            reason: 'native_audio_routing',
+            errorMessage: this.extractErrorMessage(err),
+          });
+          continue;
+        }
 
-      if (this.isFallbackEligibleProviderFailure(err)) {
-        const fallbackCandidates = await this.resolveFallbackProviders({
-          currentProvider: provider,
+        break;
+      }
+    }
+
+    if (this.isFallbackEligibleProviderFailure(failedError)) {
+      const fallbackCandidates = await this.resolveFallbackProviders({
+        currentProvider: failedProvider,
+        characterId: profile.characterId,
+        capability: 'text',
+        includeSameRouteInstanceProvider: ownerKeyApplied,
+      });
+
+      for (const candidate of fallbackCandidates) {
+        this.logger.warn('AI reply provider fallback scheduled', {
           characterId: profile.characterId,
-          capability: 'text',
-          includeSameRouteInstanceProvider: ownerKeyApplied,
+          fromModel: failedProvider.model,
+          toModel: candidate.provider.model,
+          reason: candidate.reason,
+          errorMessage: this.extractErrorMessage(failedError),
         });
 
-        for (const candidate of fallbackCandidates) {
-          this.logger.warn('AI reply provider fallback scheduled', {
+        let fallbackProvider = candidate.provider;
+        try {
+          const budgetedFallbackProvider =
+            await this.prepareBudgetAwareProvider(
+              candidate.provider,
+              candidate.billingSource,
+              usageContext,
+            );
+          fallbackProvider = budgetedFallbackProvider.provider;
+          const fallbackResult = await this.requestReplyFromProvider(
+            fallbackProvider,
+            request,
+          );
+          await this.recordSuccessfulUsage(
+            fallbackProvider,
+            candidate.billingSource,
+            usageContext,
+            fallbackResult,
+            budgetedFallbackProvider.usageAudit,
+          );
+          return {
+            ...fallbackResult,
+            billingSource: candidate.billingSource,
+          };
+        } catch (fallbackError) {
+          failedProvider = fallbackProvider;
+          failedBillingSource = candidate.billingSource;
+          failedError = fallbackError;
+          await this.recordFailedUsage(
+            fallbackProvider,
+            candidate.billingSource,
+            usageContext,
+            fallbackError,
+          );
+          this.logger.warn('AI reply provider fallback failed', {
             characterId: profile.characterId,
-            fromModel: failedProvider.model,
-            toModel: candidate.provider.model,
+            model: fallbackProvider.model,
             reason: candidate.reason,
-            errorMessage: this.extractErrorMessage(failedError),
+            errorMessage: this.extractErrorMessage(fallbackError),
           });
 
-          let fallbackProvider = candidate.provider;
-          try {
-            const budgetedFallbackProvider =
-              await this.prepareBudgetAwareProvider(
-                candidate.provider,
-                candidate.billingSource,
-                usageContext,
-              );
-            fallbackProvider = budgetedFallbackProvider.provider;
-            const fallbackResult = await this.requestReplyFromProvider(
-              fallbackProvider,
-              request,
-            );
-            await this.recordSuccessfulUsage(
-              fallbackProvider,
-              candidate.billingSource,
-              usageContext,
-              fallbackResult,
-              budgetedFallbackProvider.usageAudit,
-            );
-            return {
-              ...fallbackResult,
-              billingSource: candidate.billingSource,
-            };
-          } catch (fallbackError) {
-            failedProvider = fallbackProvider;
-            failedBillingSource = candidate.billingSource;
-            failedError = fallbackError;
-            await this.recordFailedUsage(
-              fallbackProvider,
-              candidate.billingSource,
-              usageContext,
-              fallbackError,
-            );
-            this.logger.warn('AI reply provider fallback failed', {
-              characterId: profile.characterId,
-              model: fallbackProvider.model,
-              reason: candidate.reason,
-              errorMessage: this.extractErrorMessage(fallbackError),
-            });
-
-            if (!this.isFallbackEligibleProviderFailure(fallbackError)) {
-              break;
-            }
+          if (!this.isFallbackEligibleProviderFailure(fallbackError)) {
+            break;
           }
         }
       }
-
-      this.logger.error('AI provider error', failedError);
-      if (this.isAuthenticationFailure(failedError)) {
-        throw new AiProviderAuthError(failedBillingSource);
-      }
-
-      throw failedError;
     }
+
+    this.logger.error('AI provider error', failedError);
+    if (this.isAuthenticationFailure(failedError)) {
+      throw new AiProviderAuthError(failedBillingSource);
+    }
+
+    throw failedError;
   }
 
   async generateMoment(options: GenerateMomentOptions): Promise<string> {

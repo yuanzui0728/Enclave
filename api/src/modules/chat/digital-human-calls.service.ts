@@ -172,7 +172,11 @@ export class DigitalHumanCallsService {
     return this.serializeSession(session);
   }
 
-  async createTurn(sessionId: string, file: UploadedAudioFile) {
+  async createTurn(
+    sessionId: string,
+    file: UploadedAudioFile,
+    input?: { durationMs?: number },
+  ) {
     const session = this.requireSession(sessionId);
     if (session.status === 'ended') {
       throw new NotFoundException('当前数字人通话已结束，请重新发起。');
@@ -187,6 +191,7 @@ export class DigitalHumanCallsService {
     const turn = await this.voiceCallsService.createTurn(file, {
       conversationId: session.conversationId,
       characterId: session.characterId,
+      durationMs: input?.durationMs,
     });
     const providerTurn = await this.digitalHumanProvider.prepareTurn({
       sessionId: session.id,

@@ -25,11 +25,13 @@ export interface InferenceStatus {
   activeImageGenerationProvider?: string;
   transcriptionMode?: "dedicated" | "unconfigured";
   speechReady: boolean;
+  voiceCallReady?: boolean;
   speechSynthesisReady?: boolean;
   imageInputReady?: boolean;
   audioInputReady?: boolean;
   imageGenerationReady?: boolean;
   speechMessage?: string;
+  voiceCallMessage?: string;
   imageGenerationMessage?: string;
   lastDiagnosticsAt?: string;
   diagnosticsSummary?: InferenceDiagnosticSummary;

@@ -11,6 +11,7 @@ import OpenAI, { toFile } from 'openai';
 import { createHash } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { applyPersistentNaturalDialogueProfile } from '../ai/prompt-naturalness';
+import { buildNativeAudioModelCandidates } from '../ai/native-audio-routing';
 import { CharacterEntity } from '../characters/character.entity';
 import { SystemConfigService } from '../config/config.service';
 import { decryptUserApiKey, encryptUserApiKey } from '../auth/api-key-crypto';
@@ -29,12 +30,19 @@ const MULTIMODAL_DIAGNOSTICS_CONFIG_KEY =
   'inference_multimodal_diagnostics_latest';
 const IMAGE_INPUT_PROBE_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAIElEQVR4nGO4o6CAHX3AjhhGNdBIwwfs6AN2NKqBJhoAXkPsEKPssDYAAAAASUVORK5CYII=';
+const AUDIO_INPUT_PROBE_TEXT = '青山已过';
+const AUDIO_INPUT_PROBE_PROMPT =
+  '请直接听音频内容，只回复音频里说的四个汉字，不要加任何别的字。';
 
 const AUDIO_INPUT_DIAGNOSTIC_MESSAGES = {
   missingProviderConfig:
     'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_MISSING_PROVIDER_CONFIG',
   undeclaredCapability:
     'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_UNDECLARED_CAPABILITY',
+  missingProbeTts:
+    'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_MISSING_PROBE_TTS_CONFIG',
+  semanticProbeFailed:
+    'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_SEMANTIC_PROBE_FAILED',
   success: 'INFERENCE_DIAGNOSTIC_AUDIO_INPUT_SUCCESS',
 } as const;
 
@@ -248,6 +256,30 @@ function extractErrorMessage(error: unknown) {
   }
 
   return 'Provider connection failed.';
+}
+
+function extractChatCompletionTextContent(
+  content: OpenAI.Chat.ChatCompletionMessage['content'],
+) {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (!Array.isArray(content)) {
+    return '';
+  }
+
+  return (content as Array<{ text?: string }>)
+    .map((part) => part.text ?? '')
+    .join(' ')
+    .trim();
+}
+
+function normalizeAudioProbeReply(text: string) {
+  return text
+    .trim()
+    .replace(/[\s"'“”‘’`，。！？!?、,.]/g, '')
+    .toLowerCase();
 }
 
 @Injectable()
@@ -1554,45 +1586,144 @@ export class InferenceService implements OnModuleInit {
       );
     }
 
-    const client = this.buildProviderClient({
-      endpoint: provider.endpoint,
-      apiKey: provider.apiKey,
-      model: provider.model,
-    });
-    await client.chat.completions.create({
-      model: provider.model,
-      messages: [
+    if (
+      !provider.ttsEndpoint?.trim() ||
+      !provider.ttsApiKey?.trim() ||
+      !provider.ttsModel?.trim()
+    ) {
+      return this.buildUnavailableDiagnosticResult(
+        'audio_input',
+        provider,
+        startedAt,
+        AUDIO_INPUT_DIAGNOSTIC_MESSAGES.missingProbeTts,
         {
-          role: 'user',
-          content: [
+          hasEndpoint: Boolean(provider.ttsEndpoint?.trim()),
+          hasApiKey: Boolean(provider.ttsApiKey?.trim()),
+          hasModel: Boolean(provider.ttsModel?.trim()),
+        },
+      );
+    }
+
+    const ttsClient = this.buildProviderClient({
+      endpoint: provider.ttsEndpoint,
+      apiKey: provider.ttsApiKey,
+      model: provider.ttsModel,
+    });
+    const probeResponse = await ttsClient.audio.speech.create({
+      model: provider.ttsModel,
+      voice: provider.ttsVoice || DEFAULT_TTS_VOICE,
+      input: AUDIO_INPUT_PROBE_TEXT,
+      response_format: 'mp3',
+    });
+    const probeBuffer = Buffer.from(await probeResponse.arrayBuffer());
+    if (!probeBuffer.length) {
+      return this.buildDiagnosticResult('audio_input', provider, startedAt, {
+        status: 'failed',
+        success: false,
+        real: true,
+        message: AUDIO_INPUT_DIAGNOSTIC_MESSAGES.semanticProbeFailed,
+        endpoint: provider.ttsEndpoint,
+        model: provider.ttsModel,
+        metadata: {
+          stage: 'probe_tts',
+          reason: 'empty_probe_audio',
+        },
+      });
+    }
+
+    const attempts: Array<Record<string, unknown>> = [];
+    const expectedReply = normalizeAudioProbeReply(AUDIO_INPUT_PROBE_TEXT);
+
+    for (const candidateModel of buildNativeAudioModelCandidates(provider.model)) {
+      const candidateProvider = {
+        ...provider,
+        model: candidateModel,
+      };
+      const candidateCapabilities =
+        await this.resolveCapabilityProfile(candidateProvider);
+      if (!candidateCapabilities.supportsNativeAudioInput) {
+        attempts.push({
+          model: candidateModel,
+          status: 'unsupported',
+        });
+        continue;
+      }
+
+      try {
+        const client = this.buildProviderClient({
+          endpoint: candidateProvider.endpoint,
+          apiKey: candidateProvider.apiKey,
+          model: candidateProvider.model,
+        });
+        const response = await client.chat.completions.create({
+          model: candidateProvider.model,
+          messages: [
             {
-              type: 'text',
-              text:
-                input.prompt?.trim() ||
-                'This is a native audio input diagnostic. Reply only with ok.',
-            },
-            {
-              type: 'input_audio',
-              input_audio: {
-                data: createSpeechProbeAudioBuffer().toString('base64'),
-                format: 'wav',
-              },
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: input.prompt?.trim() || AUDIO_INPUT_PROBE_PROMPT,
+                },
+                {
+                  type: 'input_audio',
+                  input_audio: {
+                    data: probeBuffer.toString('base64'),
+                    format: 'mp3',
+                  },
+                },
+              ],
             },
           ],
-        },
-      ],
-      max_tokens: 16,
-      temperature: 0,
-    });
+          max_tokens: 32,
+          temperature: 0,
+        });
+        const replyText = extractChatCompletionTextContent(
+          response.choices[0]?.message?.content,
+        );
+        const normalizedReply = normalizeAudioProbeReply(replyText);
+        const matched =
+          Boolean(normalizedReply) && normalizedReply.includes(expectedReply);
+        attempts.push({
+          model: candidateModel,
+          replyText,
+          matched,
+        });
+        if (matched) {
+          return this.buildDiagnosticResult('audio_input', provider, startedAt, {
+            status: 'ok',
+            success: true,
+            real: true,
+            message: AUDIO_INPUT_DIAGNOSTIC_MESSAGES.success,
+            model: candidateModel,
+            metadata: {
+              format: 'mp3',
+              capabilitySource: candidateCapabilities.capabilitySource,
+              semanticVerified: true,
+              probeExpectedText: AUDIO_INPUT_PROBE_TEXT,
+              probeReplyText: replyText,
+              routedFromModel:
+                candidateModel === provider.model ? undefined : provider.model,
+            },
+          });
+        }
+      } catch (error) {
+        attempts.push({
+          model: candidateModel,
+          errorMessage: extractErrorMessage(error),
+        });
+      }
+    }
 
     return this.buildDiagnosticResult('audio_input', provider, startedAt, {
-      status: 'ok',
-      success: true,
+      status: 'failed',
+      success: false,
       real: true,
-      message: AUDIO_INPUT_DIAGNOSTIC_MESSAGES.success,
+      message: AUDIO_INPUT_DIAGNOSTIC_MESSAGES.semanticProbeFailed,
       metadata: {
-        format: 'wav',
-        capabilitySource: capabilities.capabilitySource,
+        format: 'mp3',
+        probeExpectedText: AUDIO_INPUT_PROBE_TEXT,
+        attempts,
       },
     });
   }

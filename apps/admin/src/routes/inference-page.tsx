@@ -184,7 +184,9 @@ const DIAGNOSTIC_CAPABILITY_LABELS: Partial<
 const DIAGNOSTIC_MESSAGE_LABELS: Record<string, RuntimeMessage> = {
   INFERENCE_DIAGNOSTIC_AUDIO_INPUT_MISSING_PROVIDER_CONFIG: msg`原生音频输入诊断缺少主推理 API Key 或默认模型。`,
   INFERENCE_DIAGNOSTIC_AUDIO_INPUT_UNDECLARED_CAPABILITY: msg`当前模型目录或启发式判断未声明 Chat Completions 原生音频输入能力。`,
-  INFERENCE_DIAGNOSTIC_AUDIO_INPUT_SUCCESS: msg`主推理 provider 原生音频输入调用成功。`,
+  INFERENCE_DIAGNOSTIC_AUDIO_INPUT_MISSING_PROBE_TTS_CONFIG: msg`未配置可用 TTS 探针，当前无法做真实的原生音频语义校验。`,
+  INFERENCE_DIAGNOSTIC_AUDIO_INPUT_SEMANTIC_PROBE_FAILED: msg`原生音频输入请求已发出，但语义探针未通过，不能算真实音频理解可用。`,
+  INFERENCE_DIAGNOSTIC_AUDIO_INPUT_SUCCESS: msg`原生音频语义探针通过，系统已确认存在真实可用的音频理解模型。`,
 };
 
 function resolveDiagnosticCapabilityLabel(

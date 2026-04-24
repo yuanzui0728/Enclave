@@ -1,5 +1,11 @@
 export type SpeechTranscriptionMode = "dictation" | "voice_call";
 
+export type VoiceCallTranscriptStatus =
+  | "completed"
+  | "pending"
+  | "failed"
+  | "skipped";
+
 export interface SpeechTranscriptionResult {
   text: string;
   durationMs: number;
@@ -26,12 +32,13 @@ export interface VoiceCallTurnResult {
   conversationId: string;
   characterId: string;
   characterName: string;
-  userTranscript: string;
+  userTranscript?: string;
+  transcriptStatus: VoiceCallTranscriptStatus;
   assistantText: string;
   assistantAudioUrl: string;
   assistantAudioFileName: string;
   assistantAudioMimeType: string;
-  transcriptionDurationMs: number;
+  transcriptionDurationMs?: number;
   synthesisDurationMs: number;
   totalDurationMs: number;
   provider?: string;

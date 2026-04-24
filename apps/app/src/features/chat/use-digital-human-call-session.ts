@@ -116,6 +116,7 @@ export function useDigitalHumanCallSession({
         speech.recordedAudio.blob,
         speech.recordedAudio.fileName,
       );
+      formData.append("durationMs", String(speech.recordedAudio.durationMs));
 
       return createDigitalHumanTurn(sessionRef.current.id, formData, baseUrl);
     },

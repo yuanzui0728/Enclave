@@ -85,6 +85,7 @@ export function useVoiceCallSession({
         speech.recordedAudio.blob,
         speech.recordedAudio.fileName,
       );
+      formData.append("durationMs", String(speech.recordedAudio.durationMs));
       formData.append("conversationId", conversationId);
       if (characterId) {
         formData.append("characterId", characterId);

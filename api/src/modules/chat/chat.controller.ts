@@ -313,7 +313,8 @@ export class VoiceCallsController {
   )
   createTurn(
     @UploadedFile() file: UploadedAttachmentFile | undefined,
-    @Body() body: { conversationId?: string; characterId?: string },
+    @Body()
+    body: { conversationId?: string; characterId?: string; durationMs?: string },
   ) {
     if (!file) {
       throw new BadRequestException('请先录一段语音再试。');
@@ -327,6 +328,7 @@ export class VoiceCallsController {
     return this.voiceCallsService.createTurn(file, {
       conversationId,
       characterId: body.characterId?.trim() || undefined,
+      ...(body.durationMs ? { durationMs: Number(body.durationMs) } : {}),
     });
   }
 }
@@ -487,12 +489,15 @@ export class DigitalHumanCallsController {
   createTurn(
     @Param('sessionId') sessionId: string,
     @UploadedFile() file: UploadedAttachmentFile | undefined,
+    @Body() body: { durationMs?: string },
   ) {
     if (!file) {
       throw new BadRequestException('请先录一段语音再试。');
     }
 
-    return this.digitalHumanCallsService.createTurn(sessionId, file);
+    return this.digitalHumanCallsService.createTurn(sessionId, file, body.durationMs
+      ? { durationMs: Number(body.durationMs) }
+      : undefined);
   }
 }
 
