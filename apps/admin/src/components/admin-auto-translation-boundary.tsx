@@ -22,7 +22,8 @@ const SKIP_SELECTOR = [
   "textarea",
 ].join(",");
 
-const TRANSLATION_BATCH_SIZE = 250;
+const TRANSLATION_BATCH_SIZE = 800;
+const TRANSLATION_PRIORITY_BATCH_SIZE = 1800;
 
 export function AdminAutoTranslationBoundary({
   children,
@@ -202,7 +203,7 @@ export function AdminAutoTranslationBoundary({
       clearScheduledWork();
       let cursor = 0;
 
-      const runBatch = () => {
+      const runBatch = (batchSize = TRANSLATION_BATCH_SIZE) => {
         if (cancelled) {
           return;
         }
@@ -210,7 +211,7 @@ export function AdminAutoTranslationBoundary({
         const observer = observerRef.current;
         observer?.disconnect();
 
-        const end = Math.min(cursor + TRANSLATION_BATCH_SIZE, targets.length);
+        const end = Math.min(cursor + batchSize, targets.length);
         while (cursor < end) {
           const target = targets[cursor];
           cursor += 1;
@@ -237,16 +238,19 @@ export function AdminAutoTranslationBoundary({
 
       const scheduleNextBatch = () => {
         if ("requestIdleCallback" in window) {
-          idleCallbackIdRef.current = window.requestIdleCallback(runBatch, {
-            timeout: 120,
-          });
+          idleCallbackIdRef.current = window.requestIdleCallback(
+            () => runBatch(),
+            {
+              timeout: 120,
+            },
+          );
           return;
         }
 
-        timeoutIdRef.current = globalThis.setTimeout(runBatch, 16);
+        timeoutIdRef.current = globalThis.setTimeout(() => runBatch(), 16);
       };
 
-      scheduleNextBatch();
+      runBatch(TRANSLATION_PRIORITY_BATCH_SIZE);
     };
 
     scheduleBatch(applyTranslations.collectTargets(root));

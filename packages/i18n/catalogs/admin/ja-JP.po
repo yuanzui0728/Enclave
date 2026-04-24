@@ -120,7 +120,7 @@ msgstr "provider-state コールバックで認証を利用できます。"
 
 #: apps/admin/src/components/root-layout.tsx:295
 msgid "Self Agent"
-msgstr ""
+msgstr "メインエージェント"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1746
 msgid "sidecar 已就绪"
@@ -201,11 +201,11 @@ msgstr "世界レベル返信デバッグ台"
 
 #: apps/admin/src/components/admin-sidebar.tsx:131
 msgid "主人"
-msgstr "主人"
+msgstr "オーナー"
 
 #: apps/admin/src/components/root-layout.tsx:180
 msgid "主代理"
-msgstr ""
+msgstr "メインエージェント"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1415
 msgid "主代理巡检调度"
@@ -271,7 +271,7 @@ msgstr "変更"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1289
 msgid "值班总览"
-msgstr ""
+msgstr "当番概要"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1310
 msgid "做推理预览、导出诊断、备份恢复和日志查看。"
@@ -280,7 +280,7 @@ msgstr ""
 #: apps/admin/src/routes/dashboard-page.tsx:503
 #: apps/admin/src/routes/dashboard-page.tsx:705
 msgid "健康"
-msgstr ""
+msgstr "正常"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1720
 msgid "健康探测失败"
@@ -462,7 +462,7 @@ msgstr ""
 #: apps/admin/src/routes/dashboard-page.tsx:518
 #: apps/admin/src/routes/dashboard-page.tsx:639
 msgid "单世界"
-msgstr ""
+msgstr "単一世界"
 
 #: apps/admin/src/components/admin-sidebar.tsx:115
 msgid "单世界实例必须且只能有一个世界主人。"
@@ -1018,7 +1018,7 @@ msgstr "設定待ち"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1317
 msgid "快捷动作"
-msgstr ""
+msgstr "クイックアクション"
 
 #. placeholder {0}: schedulerJobs.length
 #: apps/admin/src/routes/dashboard-page.tsx:965
@@ -1210,7 +1210,7 @@ msgstr ""
 
 #: apps/admin/src/routes/dashboard-page.tsx:495
 msgid "排查回复逻辑"
-msgstr ""
+msgstr "返信ロジックを排障"
 
 #: apps/admin/src/routes/dashboard-page.tsx:575
 msgid "排查真实回复链路和全局规则。"
@@ -1500,7 +1500,7 @@ msgstr "アクションアシスタントのゲート、コネクタ、ルール
 
 #: apps/admin/src/routes/dashboard-page.tsx:490
 msgid "查看角色中心"
-msgstr ""
+msgstr "キャラクターセンターを表示"
 
 #: apps/admin/src/components/root-layout.tsx:150
 msgid "查看角色名册、角色工厂和运行逻辑台。"
@@ -1709,7 +1709,7 @@ msgstr ""
 
 #: apps/admin/src/routes/dashboard-page.tsx:513
 msgid "正常"
-msgstr ""
+msgstr "正常"
 
 #: apps/admin/src/components/admin-workbench.tsx:125
 msgid "段落导航"
@@ -2065,7 +2065,7 @@ msgstr ""
 #: apps/admin/src/routes/dashboard-page.tsx:933
 #: apps/admin/src/routes/dashboard-page.tsx:1304
 msgid "调度与实时"
-msgstr ""
+msgstr "スケジュールとリアルタイム"
 
 #: apps/admin/src/routes/dashboard-page.tsx:224
 msgid "调度任务已执行完成。"
@@ -2082,7 +2082,7 @@ msgstr ""
 #: apps/admin/src/routes/dashboard-page.tsx:1101
 #: apps/admin/src/routes/dashboard-page.tsx:1309
 msgid "调试与运维"
-msgstr ""
+msgstr "デバッグと運用"
 
 #: apps/admin/src/components/admin-workbench.tsx:515
 msgid "谨慎操作"
@@ -2129,11 +2129,11 @@ msgstr ""
 #: apps/admin/src/routes/dashboard-page.tsx:828
 #: apps/admin/src/routes/dashboard-page.tsx:1299
 msgid "运营信号"
-msgstr ""
+msgstr "運用シグナル"
 
 #: apps/admin/src/routes/dashboard-page.tsx:476
 msgid "运营值班首页"
-msgstr ""
+msgstr "運用当番ホーム"
 
 #: apps/admin/src/routes/dashboard-page.tsx:676
 msgid "运营先确认实例连通和模型可用，再决定是否继续做内容抽查、角色观察或回复排障。"
@@ -2142,7 +2142,7 @@ msgstr ""
 #: apps/admin/src/components/admin-topbar.tsx:48
 #: apps/admin/src/components/root-layout.tsx:411
 msgid "运营工作台"
-msgstr "運用ワークベンチ"
+msgstr "運用ワークスペース"
 
 #: apps/admin/src/components/admin-sidebar.tsx:149
 #: apps/admin/src/components/root-layout.tsx:229
@@ -2160,7 +2160,7 @@ msgstr ""
 #: apps/admin/src/routes/dashboard-page.tsx:674
 #: apps/admin/src/routes/dashboard-page.tsx:1294
 msgid "运行体征"
-msgstr ""
+msgstr "実行状態"
 
 #: apps/admin/src/components/root-layout.tsx:144
 msgid "运行总览"
@@ -2299,7 +2299,7 @@ msgstr ""
 
 #: apps/admin/src/components/admin-sidebar.tsx:146
 msgid "隐界"
-msgstr ""
+msgstr "YINJIE"
 
 #: apps/admin/src/components/root-layout.tsx:404
 msgid "集中查看 runs、compare 和 trace，逐步收口成更清晰的多视图结构。"
@@ -2344,7 +2344,7 @@ msgstr ""
 
 #: apps/admin/src/routes/dashboard-page.tsx:1286
 msgid "页面导航"
-msgstr ""
+msgstr "ページナビゲーション"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1149
 msgid "预览执行中..."
