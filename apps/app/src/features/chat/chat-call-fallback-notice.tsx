@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { Phone, Video } from "lucide-react";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 
 export type ChatCallFallbackKind = "voice" | "video";
@@ -6,9 +9,9 @@ export type ChatCallFallbackScope = "direct" | "group";
 
 type ChatCallFallbackNoticeProps = {
   kind: ChatCallFallbackKind;
-  description: string;
-  primaryLabel: string;
-  secondaryLabel: string;
+  description: ReactNode;
+  primaryLabel: ReactNode;
+  secondaryLabel: ReactNode;
   onPrimaryAction: () => void;
   onSecondaryAction: () => void;
   scope?: ChatCallFallbackScope;
@@ -33,8 +36,16 @@ export function ChatCallFallbackNotice({
   secondaryDisabled = false,
   className,
 }: ChatCallFallbackNoticeProps) {
+  const t = translateRuntimeMessage;
   const Icon = kind === "voice" ? Phone : Video;
-  const title = `${scope === "group" ? "群" : ""}${kind === "voice" ? "语音" : "视频"}通话暂未开放`;
+  const title =
+    scope === "group"
+      ? kind === "voice"
+        ? t(msg`群语音通话暂未开放`)
+        : t(msg`群视频通话暂未开放`)
+      : kind === "voice"
+        ? t(msg`语音通话暂未开放`)
+        : t(msg`视频通话暂未开放`);
 
   if (variant === "card") {
     return (

@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import { msg } from "@lingui/macro";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   type ChatCallFallbackKind,
   ChatCallFallbackNotice,
@@ -13,8 +16,8 @@ type ChatCallFallbackSectionProps = {
   disabled?: boolean;
   scope?: "direct" | "group";
   variant?: "default" | "wechat";
-  voiceValue?: string;
-  videoValue?: string;
+  voiceValue?: ReactNode;
+  videoValue?: ReactNode;
 };
 
 export function ChatCallFallbackSection({
@@ -25,15 +28,18 @@ export function ChatCallFallbackSection({
   disabled = false,
   scope = "direct",
   variant = "default",
-  voiceValue = "暂未开放",
-  videoValue = "暂未开放",
+  voiceValue,
+  videoValue,
 }: ChatCallFallbackSectionProps) {
+  const t = translateRuntimeMessage;
   const isGroup = scope === "group";
   const isWechat = variant === "wechat";
+  const resolvedVoiceValue = voiceValue ?? t(msg`暂未开放`);
+  const resolvedVideoValue = videoValue ?? t(msg`暂未开放`);
 
   return (
     <>
-      <ChatDetailsSection title="实时通话" variant={variant}>
+      <ChatDetailsSection title={t(msg`实时通话`)} variant={variant}>
         <div
           className={
             isWechat
@@ -42,15 +48,15 @@ export function ChatCallFallbackSection({
           }
         >
           <ChatSettingRow
-            label="语音通话"
-            value={voiceValue}
+            label={t(msg`语音通话`)}
+            value={resolvedVoiceValue}
             disabled={disabled}
             variant={variant}
             onClick={() => onSelectKind("voice")}
           />
           <ChatSettingRow
-            label="视频通话"
-            value={videoValue}
+            label={t(msg`视频通话`)}
+            value={resolvedVideoValue}
             disabled={disabled}
             variant={variant}
             onClick={() => onSelectKind("video")}
@@ -66,22 +72,30 @@ export function ChatCallFallbackSection({
             description={
               isGroup
                 ? activeKind === "voice"
-                  ? "先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。"
-                  : "先回到群聊继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
+                  ? t(
+                      msg`先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。`,
+                    )
+                  : t(
+                      msg`先回到群聊继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。`,
+                    )
                 : activeKind === "voice"
-                  ? "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
-                  : "先回到聊天页继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
+                  ? t(
+                      msg`先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。`,
+                    )
+                  : t(
+                      msg`先回到聊天页继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。`,
+                    )
             }
             primaryLabel={
               isGroup
                 ? activeKind === "voice"
-                  ? "返回群聊发语音"
-                  : "返回群聊拍摄"
+                  ? t(msg`返回群聊发语音`)
+                  : t(msg`返回群聊拍摄`)
                 : activeKind === "voice"
-                  ? "返回聊天发语音"
-                  : "返回聊天拍摄"
+                  ? t(msg`返回聊天发语音`)
+                  : t(msg`返回聊天拍摄`)
             }
-            secondaryLabel="知道了"
+            secondaryLabel={t(msg`知道了`)}
             onPrimaryAction={() => onPrimaryAction(activeKind)}
             onSecondaryAction={onDismiss}
             primaryVariant="primary"

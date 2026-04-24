@@ -1,4 +1,6 @@
+import { msg } from "@lingui/macro";
 import { FileText, X } from "lucide-react";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
 
 type MobileChatAttachmentPreviewProps = {
@@ -27,6 +29,8 @@ export function MobileChatAttachmentPreview({
   onRemoveImage,
   onSend,
 }: MobileChatAttachmentPreviewProps) {
+  const t = translateRuntimeMessage;
+
   return (
     <div className="mb-1.5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] p-2.5 shadow-none">
       <div className="flex items-center gap-2.5">
@@ -45,7 +49,7 @@ export function MobileChatAttachmentPreview({
                     onClick={() => onRemoveImage(index)}
                     disabled={pending}
                     className="absolute right-0.5 top-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70 disabled:opacity-45"
-                    aria-label={`移除${item.fileName}`}
+                    aria-label={t(msg`移除 ${item.fileName}`)}
                   >
                     <X size={11} />
                   </button>
@@ -61,17 +65,17 @@ export function MobileChatAttachmentPreview({
         <div className="min-w-0 flex-1">
           <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
             {kind === "images" && imagePreviews && imagePreviews.length > 1
-              ? `已选 ${imagePreviews.length} 张图片`
+              ? t(msg`已选 ${imagePreviews.length} 张图片`)
               : fileName}
           </div>
           <div className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-muted)]">
             {kind === "images"
-              ? "将按顺序逐张发送图片。"
-              : "发送前确认一下文件内容。"}
+              ? t(msg`将按顺序逐张发送图片。`)
+              : t(msg`发送前确认一下文件内容。`)}
           </div>
           {kind === "images" ? (
             <div className="mt-0.5 text-[10px] text-[color:var(--text-dim)]">
-              最多支持 9 张图片一起发送，可逐张移除。
+              {t(msg`最多支持 9 张图片一起发送，可逐张移除。`)}
             </div>
           ) : null}
           {kind === "file" ? (
@@ -92,7 +96,7 @@ export function MobileChatAttachmentPreview({
           disabled={pending}
           className="h-8 rounded-full px-3 text-[12px] hover:bg-black/4"
         >
-          取消
+          {t(msg`取消`)}
         </Button>
         <Button
           type="button"
@@ -101,7 +105,11 @@ export function MobileChatAttachmentPreview({
           disabled={pending}
           className="h-8 rounded-full bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
         >
-          {pending ? "发送中..." : kind === "images" ? "发送图片" : "发送文件"}
+          {pending
+            ? t(msg`发送中...`)
+            : kind === "images"
+              ? t(msg`发送图片`)
+              : t(msg`发送文件`)}
         </Button>
       </div>
     </div>

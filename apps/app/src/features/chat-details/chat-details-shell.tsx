@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { ArrowLeft } from "lucide-react";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
 
@@ -20,6 +22,8 @@ export function ChatDetailsShell({
   children,
   className,
 }: ChatDetailsShellProps) {
+  const t = translateRuntimeMessage;
+
   return (
     <AppPage
       className={cn(
@@ -38,7 +42,7 @@ export function ChatDetailsShell({
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
-            aria-label="返回"
+            aria-label={t(msg`返回`)}
           >
             <ArrowLeft size={18} />
           </Button>

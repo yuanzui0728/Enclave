@@ -18,25 +18,81 @@ msgstr ""
 msgid "{0} 字"
 msgstr "{0} chars"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:155
+msgid "侧栏面板"
+msgstr "Side panel"
+
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:68
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:75
 msgid "保存"
 msgstr "Save"
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:79
+msgid "先回到群聊继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
+msgstr "Go back to the group chat first. Taking a photo or sending an image message is closer to the current replacement for video calls."
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:76
+msgid "先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。"
+msgstr "Go back to the group chat first. Using voice messages to sync everyone's status is closer to the experience currently available."
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:86
+msgid "先回到聊天页继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
+msgstr "Go back to the chat first. Taking a photo or sending an image message is closer to the current replacement for video calls."
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:83
+msgid "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
+msgstr "Go back to the chat first. Using hold-to-talk voice messages is closer to the experience currently available."
 
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:111
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:118
 msgid "关闭"
 msgstr "Close"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:81
+#: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:100
+#: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:119
+msgid "关闭侧栏"
+msgstr "Close side panel"
+
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:69
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:76
 msgid "关闭弹层"
 msgstr "Close dialog"
 
+#: apps/app/src/features/chat-details/mobile-details-action-sheet.tsx:42
+msgid "关闭操作菜单"
+msgstr "Close action menu"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
 msgid "内容不能为空"
 msgstr "Content cannot be empty"
 
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:78
+msgid "最多支持 9 张图片一起发送，可逐张移除。"
+msgstr "You can send up to 9 images at once and remove them one by one."
+
+#: apps/app/src/components/inline-notice-action-button.tsx:24
+msgid "去设置"
+msgstr "Go to settings"
+
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:109
+msgid "发送中..."
+msgstr "Sending..."
+
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:74
+msgid "发送前确认一下文件内容。"
+msgstr "Confirm the file content before sending."
+
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:111
+msgid "发送图片"
+msgstr "Send images"
+
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:112
+msgid "发送文件"
+msgstr "Send file"
+
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:99
+#: apps/app/src/features/chat-details/mobile-details-action-sheet.tsx:91
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:140
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:161
 msgid "取消"
@@ -50,9 +106,22 @@ msgstr "Can be saved empty"
 msgid "同步世界主人"
 msgstr "Sync world owner"
 
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:42
+msgid "实时通话"
+msgstr "Real-time calls"
+
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:73
+msgid "将按顺序逐张发送图片。"
+msgstr "Images will be sent one by one in order."
+
 #: apps/app/src/features/chat/use-speech-input.ts:708
 msgid "已录制"
 msgstr "Recorded"
+
+#. placeholder {0}: imagePreviews.length
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:68
+msgid "已选 {0} 张图片"
+msgstr "{0} images selected"
 
 #: apps/app/src/features/chat/use-speech-input.ts:754
 msgid "当前浏览器不支持录音转写。"
@@ -90,6 +159,11 @@ msgstr "Couldn't start recording. Check the app's microphone permission."
 msgid "无法启动录音，请检查浏览器麦克风权限。"
 msgstr "Couldn't start recording. Check the browser's microphone permission."
 
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:37
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:38
+msgid "暂未开放"
+msgstr "Not available yet"
+
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
 msgstr "Welcome back to your world"
@@ -115,13 +189,46 @@ msgstr "No valid audio was recorded. Please try again."
 msgid "浏览器语音识别网络异常，已可改用录音转写。"
 msgstr "Browser speech recognition hit a network error. You can switch to recorded transcription."
 
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:98
+msgid "知道了"
+msgstr "OK"
+
 #: apps/app/src/components/bootstrap-screen.tsx:41
 msgid "确认入口"
 msgstr "Confirm entry"
 
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:58
+msgid "视频通话"
+msgstr "Video call"
+
+#: apps/app/src/features/chat/chat-call-fallback-notice.tsx:48
+msgid "视频通话暂未开放"
+msgstr "Video calls are not available yet"
+
+#. placeholder {0}: item.fileName
+#: apps/app/src/components/mobile-chat-attachment-preview.tsx:52
+msgid "移除 {0}"
+msgstr "Remove {0}"
+
 #: apps/app/src/components/bootstrap-screen.tsx:57
 msgid "继续开启对话"
 msgstr "Resume the conversation"
+
+#: apps/app/src/features/chat/chat-call-fallback-notice.tsx:45
+msgid "群视频通话暂未开放"
+msgstr "Group video calls are not available yet"
+
+#: apps/app/src/features/chat/chat-call-fallback-notice.tsx:44
+msgid "群语音通话暂未开放"
+msgstr "Group voice calls are not available yet"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:112
+msgid "聊天信息"
+msgstr "Chat details"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:87
+msgid "聊天记录"
+msgstr "Chat history"
 
 #: apps/app/src/features/chat/use-speech-input.ts:712
 msgid "语音时长"
@@ -138,6 +245,38 @@ msgstr "Speech recognition hit a network error. You can switch to recorded trans
 #: apps/app/src/features/chat/use-speech-input.ts:570
 msgid "语音转写失败，请稍后再试。"
 msgstr "Speech transcription failed. Please try again later."
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:51
+msgid "语音通话"
+msgstr "Voice call"
+
+#: apps/app/src/features/chat/chat-call-fallback-notice.tsx:47
+msgid "语音通话暂未开放"
+msgstr "Voice calls are not available yet"
+
+#: apps/app/src/features/chat-details/chat-details-shell.tsx:45
+msgid "返回"
+msgstr "Back"
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:92
+msgid "返回群聊发语音"
+msgstr "Back to group chat and send voice"
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:93
+msgid "返回群聊拍摄"
+msgstr "Back to group chat and take a photo"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:67
+msgid "返回聊天信息"
+msgstr "Back to chat details"
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:95
+msgid "返回聊天发语音"
+msgstr "Back to chat and send voice"
+
+#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:96
+msgid "返回聊天拍摄"
+msgstr "Back to chat and take a photo"
 
 #: apps/app/src/features/chat/use-speech-input.ts:496
 #: apps/app/src/features/chat/use-speech-input.ts:512

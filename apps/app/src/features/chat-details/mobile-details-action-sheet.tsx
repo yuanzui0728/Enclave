@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { msg } from "@lingui/macro";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 
 type MobileDetailsActionSheetAction = {
   key: string;
@@ -23,9 +25,11 @@ export function MobileDetailsActionSheet({
   title,
   description,
   actions,
-  cancelLabel = "取消",
+  cancelLabel,
   onClose,
 }: MobileDetailsActionSheetProps) {
+  const t = translateRuntimeMessage;
+
   if (!open) {
     return null;
   }
@@ -35,7 +39,7 @@ export function MobileDetailsActionSheet({
       <button
         type="button"
         className="absolute inset-0"
-        aria-label="关闭操作菜单"
+        aria-label={t(msg`关闭操作菜单`)}
         onClick={onClose}
       />
       <div className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[18px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-1.5 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]">
@@ -84,7 +88,7 @@ export function MobileDetailsActionSheet({
           onClick={onClose}
           className="mt-2 flex h-10 w-full items-center justify-center rounded-[14px] border border-[color:var(--border-subtle)] bg-white text-[15px] font-medium text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
         >
-          {cancelLabel}
+          {cancelLabel ?? t(msg`取消`)}
         </button>
       </div>
     </div>

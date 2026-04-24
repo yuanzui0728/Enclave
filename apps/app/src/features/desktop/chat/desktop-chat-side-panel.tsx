@@ -1,12 +1,14 @@
 import type { ReactNode, Ref } from "react";
+import { msg } from "@lingui/macro";
 import { ChevronLeft, X } from "lucide-react";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { cn } from "@yinjie/ui";
 import type { DesktopChatSidePanelMode } from "./desktop-chat-header-actions";
 
 type DesktopChatSidePanelProps = {
   mode: Exclude<DesktopChatSidePanelMode, null>;
-  title: string;
-  subtitle?: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
   detailsVariant?: "default" | "wechat";
   onBack?: () => void;
   onClose: () => void;
@@ -26,6 +28,7 @@ export function DesktopChatSidePanel({
   className,
   panelRef,
 }: DesktopChatSidePanelProps) {
+  const t = translateRuntimeMessage;
   const historyMode = mode === "history";
   const wechatDetails = !historyMode && detailsVariant === "wechat";
 
@@ -61,7 +64,7 @@ export function DesktopChatSidePanel({
                   type="button"
                   onClick={onBack}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
-                  aria-label="返回聊天信息"
+                  aria-label={t(msg`返回聊天信息`)}
                 >
                   <ChevronLeft size={15} />
                 </button>
@@ -75,13 +78,13 @@ export function DesktopChatSidePanel({
                 type="button"
                 onClick={onClose}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
-                aria-label="关闭侧栏"
+                aria-label={t(msg`关闭侧栏`)}
               >
                 <X size={15} />
               </button>
             </div>
             <div className="mt-1 truncate px-8 text-center text-[12px] text-[color:var(--text-muted)]">
-              {subtitle ?? "聊天记录"}
+              {subtitle ?? t(msg`聊天记录`)}
             </div>
           </>
         ) : wechatDetails ? (
@@ -94,7 +97,7 @@ export function DesktopChatSidePanel({
               type="button"
               onClick={onClose}
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
-              aria-label="关闭侧栏"
+              aria-label={t(msg`关闭侧栏`)}
             >
               <X size={15} />
             </button>
@@ -106,14 +109,14 @@ export function DesktopChatSidePanel({
                 {title}
               </div>
               <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-                {subtitle ?? "聊天信息"}
+                {subtitle ?? t(msg`聊天信息`)}
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
-              aria-label="关闭侧栏"
+              aria-label={t(msg`关闭侧栏`)}
             >
               <X size={15} />
             </button>
@@ -141,13 +144,15 @@ export function DesktopChatSidePanelPlaceholder({
   title,
   description,
 }: {
-  title: string;
-  description: string;
+  title: ReactNode;
+  description: ReactNode;
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <div className="flex h-full flex-col items-center justify-center px-8 text-center">
       <div className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)] shadow-[var(--shadow-soft)]">
-        侧栏面板
+        {t(msg`侧栏面板`)}
       </div>
       <div className="mt-4 text-[15px] font-medium text-[color:var(--text-primary)]">
         {title}
