@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Copy, Share2 } from "lucide-react";
@@ -33,19 +34,21 @@ import { isDesktopOnlyPath } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 
 export function GroupChatDetailsPage() {
   const { groupId } = useParams({ from: "/group/$groupId/details" });
   const isDesktopLayout = useDesktopLayout();
+  const t = translateRuntimeMessage;
 
   if (isDesktopLayout) {
     return (
       <DesktopChatRouteRedirectShell
         conversationId={groupId}
         panel="details"
-        title="正在打开桌面群聊信息"
-        description="正在切换到桌面聊天工作区中的群聊信息侧栏。"
-        loadingLabel="打开桌面群聊信息..."
+        title={t(msg`正在打开桌面群聊信息`)}
+        description={t(msg`正在切换到桌面聊天工作区中的群聊信息侧栏。`)}
+        loadingLabel={t(msg`打开桌面群聊信息...`)}
       />
     );
   }
@@ -54,6 +57,7 @@ export function GroupChatDetailsPage() {
 }
 
 function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
+  const t = translateRuntimeMessage;
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
@@ -127,7 +131,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       }}
       className="rounded-full"
     >
-      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+      {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回消息列表`)}
     </Button>
   );
   const handleRetryLoad = () => {
@@ -141,7 +145,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         onClick={handleRetryLoad}
         className="rounded-full"
       >
-        重试读取
+        {t(msg`重试读取`)}
       </Button>
       {statusBackAction}
     </div>
@@ -160,7 +164,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         void navigate({ to: "/tabs/chat" });
       }}
     >
-      {safeReturnPath ? "返回上一页" : "返回消息列表"}
+      {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回消息列表`)}
     </Button>
   );
   const showNotice = (
@@ -221,7 +225,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     mutationFn: (pinned: boolean) =>
       setGroupPinned(groupId, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
-      showNotice(pinned ? "群聊已置顶。" : "群聊已取消置顶。");
+      showNotice(pinned ? t(msg`群聊已置顶。`) : t(msg`群聊已取消置顶。`));
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
@@ -243,29 +247,29 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       const nextNotice =
         payload.isMuted !== undefined
           ? payload.isMuted
-            ? "已开启群消息免打扰。"
-            : "已关闭群消息免打扰。"
+            ? t(msg`已开启群消息免打扰。`)
+            : t(msg`已关闭群消息免打扰。`)
           : payload.savedToContacts !== undefined
             ? payload.savedToContacts
-              ? "已保存到通讯录。"
-              : "已从通讯录移除。"
+              ? t(msg`已保存到通讯录。`)
+              : t(msg`已从通讯录移除。`)
             : payload.showMemberNicknames !== undefined
               ? payload.showMemberNicknames
-                ? "已开启显示群成员昵称。"
-                : "已关闭显示群成员昵称。"
+                ? t(msg`已开启显示群成员昵称。`)
+                : t(msg`已关闭显示群成员昵称。`)
               : payload.notifyOnAtMe !== undefined
                 ? payload.notifyOnAtMe
-                  ? "开启了 @我 通知。"
-                  : "关闭了 @我 通知。"
+                  ? t(msg`开启了 @我 通知。`)
+                  : t(msg`关闭了 @我 通知。`)
                 : payload.notifyOnAtAll !== undefined
                   ? payload.notifyOnAtAll
-                    ? "开启了 @所有人 通知。"
-                    : "关闭了 @所有人 通知。"
+                    ? t(msg`开启了 @所有人 通知。`)
+                    : t(msg`关闭了 @所有人 通知。`)
                   : payload.notifyOnAnnouncement !== undefined
                     ? payload.notifyOnAnnouncement
-                      ? "开启了群公告通知。"
-                      : "关闭了群公告通知。"
-                    : "群聊设置已更新。";
+                      ? t(msg`开启了群公告通知。`)
+                      : t(msg`关闭了群公告通知。`)
+                    : t(msg`群聊设置已更新。`);
 
       showNotice(nextNotice);
       await Promise.all([
@@ -285,7 +289,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const clearMutation = useMutation({
     mutationFn: () => clearGroupMessages(groupId, baseUrl),
     onSuccess: async () => {
-      showNotice("群聊记录已清空。");
+      showNotice(t(msg`群聊记录已清空。`));
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
@@ -358,7 +362,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     [membersQuery.data],
   );
   const totalMemberCount = membersQuery.data?.length ?? 0;
-  const ownerDisplayName = ownerMember?.memberName?.trim() || "我";
+  const ownerDisplayName = ownerMember?.memberName?.trim() || t(msg`我`);
   const groupSummary = useMemo(() => {
     const group = groupQuery.data;
     if (!group) {
@@ -372,13 +376,15 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
         : `${window.location.origin}${groupPath}`;
 
     return {
-      title: `${group.name} 群聊`,
-      text: [`${group.name} 群聊`, `${totalMemberCount} 人群聊`, groupUrl].join(
-        "\n",
-      ),
+      title: t(msg`${group.name} 群聊`),
+      text: [
+        t(msg`${group.name} 群聊`),
+        t(msg`${totalMemberCount} 人群聊`),
+        groupUrl,
+      ].join("\n"),
       url: groupUrl,
     };
-  }, [groupId, groupQuery.data, totalMemberCount]);
+  }, [groupId, groupQuery.data, t, totalMemberCount]);
 
   async function handleShareGroup() {
     if (!groupSummary) {
@@ -389,7 +395,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       const shared = await shareWithNativeShell(groupSummary);
 
       if (shared) {
-        showNotice("已打开系统分享面板。");
+        showNotice(t(msg`已打开系统分享面板。`));
         return;
       }
     }
@@ -401,19 +407,19 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
     ) {
       showNotice(
         nativeMobileShareSupported
-          ? "当前设备暂时无法打开系统分享，请稍后重试。"
-          : "当前环境暂不支持复制群聊摘要。",
+          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
+          : t(msg`当前环境暂不支持复制群聊摘要。`),
         nativeMobileShareSupported
           ? {
               showBackAction: true,
-              actionLabel: "重试分享",
+              actionLabel: t(msg`重试分享`),
               onAction: () => {
                 void handleShareGroup();
               },
             }
           : {
               showBackAction: true,
-              actionLabel: "重试复制",
+              actionLabel: t(msg`重试复制`),
               onAction: () => {
                 void handleShareGroup();
               },
@@ -426,17 +432,19 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       await navigator.clipboard.writeText(groupSummary.text);
       showNotice(
         nativeMobileShareSupported
-          ? "系统分享暂时不可用，已复制群聊摘要。"
-          : "群聊摘要已复制。",
+          ? t(msg`系统分享暂时不可用，已复制群聊摘要。`)
+          : t(msg`群聊摘要已复制。`),
       );
     } catch {
       showNotice(
         nativeMobileShareSupported
-          ? "系统分享失败，请稍后重试。"
-          : "复制群聊摘要失败，请稍后重试。",
+          ? t(msg`系统分享失败，请稍后重试。`)
+          : t(msg`复制群聊摘要失败，请稍后重试。`),
         {
           showBackAction: true,
-          actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+          actionLabel: nativeMobileShareSupported
+            ? t(msg`重试分享`)
+            : t(msg`重试复制`),
           onAction: () => {
             void handleShareGroup();
           },
@@ -456,7 +464,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       })),
       {
         key: "add",
-        label: "添加",
+        label: t(msg`添加`),
         kind: "add" as const,
         onClick: () => {
           void navigate({
@@ -468,7 +476,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       },
       {
         key: "remove",
-        label: "移除",
+        label: t(msg`移除`),
         kind: "remove" as const,
         onClick: () => {
           void navigate({
@@ -484,30 +492,36 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const hasCollapsedMembers = totalMemberCount > COLLAPSED_MEMBER_PREVIEW_COUNT;
   const dangerSheetConfig =
     dangerSheetAction === "hide"
-      ? {
-          title: "隐藏聊天",
-          description: "该群聊会先从消息列表中隐藏，收到新消息后会再次出现。",
-          confirmLabel: "隐藏聊天",
-          confirmDescription: "不删除聊天记录",
+        ? {
+          title: t(msg`隐藏聊天`),
+          description: t(
+            msg`该群聊会先从消息列表中隐藏，收到新消息后会再次出现。`,
+          ),
+          confirmLabel: t(msg`隐藏聊天`),
+          confirmDescription: t(msg`不删除聊天记录`),
           confirmDanger: false,
           onConfirm: () => hideMutation.mutate(),
         }
       : dangerSheetAction === "clear"
         ? {
-            title: "清空聊天记录",
-            description: "仅清空当前群聊历史消息，群成员和群资料会继续保留。",
-            confirmLabel: "清空聊天记录",
-            confirmDescription: "此操作不可恢复",
+            title: t(msg`清空聊天记录`),
+            description: t(
+              msg`仅清空当前群聊历史消息，群成员和群资料会继续保留。`,
+            ),
+            confirmLabel: t(msg`清空聊天记录`),
+            confirmDescription: t(msg`此操作不可恢复`),
             confirmDanger: true,
             onConfirm: () => clearMutation.mutate(),
           }
         : dangerSheetAction === "leave"
           ? {
-              title: "删除并退出",
+              title: t(msg`删除并退出`),
               description:
-                "删除并退出后，该群聊会从当前世界中移除，后续需要重新建群才能继续使用。",
-              confirmLabel: "删除并退出",
-              confirmDescription: "该群聊会被移除",
+                t(
+                  msg`删除并退出后，该群聊会从当前世界中移除，后续需要重新建群才能继续使用。`,
+                ),
+              confirmLabel: t(msg`删除并退出`),
+              confirmDescription: t(msg`该群聊会被移除`),
               confirmDanger: true,
               onConfirm: () => leaveMutation.mutate(),
             }
@@ -522,9 +536,11 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
 
   return (
     <ChatDetailsShell
-      title={groupQuery.data?.name ?? "群聊信息"}
+      title={groupQuery.data?.name ?? t(msg`群聊信息`)}
       subtitle={
-        membersQuery.data ? `${membersQuery.data.length} 人群聊` : "群聊信息"
+        membersQuery.data
+          ? t(msg`${membersQuery.data.length} 人群聊`)
+          : t(msg`群聊信息`)
       }
       onBack={() => {
         void navigate({
@@ -542,7 +558,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
             aria-label={
-              nativeMobileShareSupported ? "分享群聊" : "复制群聊摘要"
+              nativeMobileShareSupported
+                ? t(msg`分享群聊`)
+                : t(msg`复制群聊摘要`)
             }
           >
             {nativeMobileShareSupported ? (
@@ -557,9 +575,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       {groupQuery.isLoading || membersQuery.isLoading ? (
         <div className="px-2.5">
           <MobileGroupDetailsStatusCard
-            badge="读取中"
-            title="正在读取群聊信息"
-            description="稍等一下，正在同步群成员、群资料和消息设置。"
+            badge={t(msg`读取中`)}
+            title={t(msg`正在读取群聊信息`)}
+            description={t(msg`稍等一下，正在同步群成员、群资料和消息设置。`)}
             tone="loading"
           />
         </div>
@@ -567,8 +585,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       {groupQuery.isError && groupQuery.error instanceof Error ? (
         <div className="px-2.5">
           <MobileGroupDetailsStatusCard
-            badge="群聊"
-            title="群聊信息暂时不可用"
+            badge={t(msg`群聊`)}
+            title={t(msg`群聊信息暂时不可用`)}
             description={groupQuery.error.message}
             tone="danger"
             action={statusRetryAction}
@@ -578,8 +596,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       {membersQuery.isError && membersQuery.error instanceof Error ? (
         <div className="px-2.5">
           <MobileGroupDetailsStatusCard
-            badge="成员"
-            title="群成员信息暂时不可用"
+            badge={t(msg`成员`)}
+            title={t(msg`群成员信息暂时不可用`)}
             description={membersQuery.error.message}
             tone="danger"
             action={statusRetryAction}
@@ -615,9 +633,9 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       {!groupQuery.isLoading && !groupQuery.data ? (
         <div className="px-2.5">
           <MobileGroupDetailsStatusCard
-            badge="群聊"
-            title="群聊不存在"
-            description="这个群聊暂时不可用，可以先重试读取，或返回消息列表后再试。"
+            badge={t(msg`群聊`)}
+            title={t(msg`群聊不存在`)}
+            description={t(msg`这个群聊暂时不可用，可以先重试读取，或返回消息列表后再试。`)}
             action={statusRetryAction}
           />
         </div>
@@ -625,7 +643,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
 
       {groupQuery.data ? (
         <>
-          <ChatDetailsSection title="群聊成员" variant="wechat">
+          <ChatDetailsSection title={t(msg`群聊成员`)} variant="wechat">
             <ChatMemberGrid items={memberItems} variant="wechat" />
             {hasCollapsedMembers || memberGridExpanded ? (
               <button
@@ -633,41 +651,43 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 onClick={() => setMemberGridExpanded((current) => !current)}
                 className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[13px] text-[#576b95]"
               >
-                {memberGridExpanded ? "收起群成员" : "查看更多群成员"}
+                {memberGridExpanded
+                  ? t(msg`收起群成员`)
+                  : t(msg`查看更多群成员`)}
               </button>
             ) : null}
             <div className="divide-y divide-[color:var(--border-faint)] border-t border-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="群主"
+                label={t(msg`群主`)}
                 value={ownerDisplayName}
                 variant="wechat"
               />
               <ChatSettingRow
-                label="全部群成员"
-                value={`${totalMemberCount} 人`}
+                label={t(msg`全部群成员`)}
+                value={t(msg`${totalMemberCount} 人`)}
                 variant="wechat"
                 onClick={() => {
                   if (!hasCollapsedMembers) {
-                    showNotice(`当前群聊共有 ${totalMemberCount} 位成员。`);
+                    showNotice(t(msg`当前群聊共有 ${totalMemberCount} 位成员。`));
                     return;
                   }
                   setMemberGridExpanded(true);
-                  showNotice(`已展开全部 ${totalMemberCount} 位群成员。`);
+                  showNotice(t(msg`已展开全部 ${totalMemberCount} 位群成员。`));
                 }}
               />
               <ChatSettingRow
-                label="群管理"
-                value="成员与资料"
+                label={t(msg`群管理`)}
+                value={t(msg`成员与资料`)}
                 variant="wechat"
                 onClick={() => setManagementSheetOpen(true)}
               />
             </div>
           </ChatDetailsSection>
 
-          <ChatDetailsSection title="群聊资料" variant="wechat">
+          <ChatDetailsSection title={t(msg`群聊资料`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="群聊名称"
+                label={t(msg`群聊名称`)}
                 value={groupQuery.data.name}
                 variant="wechat"
                 onClick={() => {
@@ -679,8 +699,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 }}
               />
               <ChatSettingRow
-                label="群公告"
-                value={groupQuery.data.announcement?.trim() || "暂无"}
+                label={t(msg`群公告`)}
+                value={groupQuery.data.announcement?.trim() || t(msg`暂无`)}
                 variant="wechat"
                 onClick={() => {
                   void navigate({
@@ -691,8 +711,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 }}
               />
               <ChatSettingRow
-                label="群二维码"
-                value="查看邀请卡"
+                label={t(msg`群二维码`)}
+                value={t(msg`查看邀请卡`)}
                 variant="wechat"
                 onClick={() => {
                   void navigate({
@@ -700,14 +720,14 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     params: { groupId },
                     search: buildGroupInviteReturnSearch({
                       conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name ?? "当前群聊",
+                      conversationTitle: groupQuery.data?.name ?? t(msg`当前群聊`),
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });
                 }}
               />
               <ChatSettingRow
-                label="查找聊天记录"
+                label={t(msg`查找聊天记录`)}
                 variant="wechat"
                 onClick={() => {
                   void navigate({
@@ -718,7 +738,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 }}
               />
               <ChatSettingRow
-                label="聊天背景"
+                label={t(msg`聊天背景`)}
                 value={getChatBackgroundLabel(
                   ownerQuery.data?.defaultChatBackground,
                 )}
@@ -734,10 +754,10 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             </div>
           </ChatDetailsSection>
 
-          <ChatDetailsSection title="聊天设置" variant="wechat">
+          <ChatDetailsSection title={t(msg`聊天设置`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="消息免打扰"
+                label={t(msg`消息免打扰`)}
                 variant="wechat"
                 checked={groupQuery.data.isMuted}
                 onToggle={(checked) => {
@@ -747,7 +767,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               {groupQuery.data.isMuted ? (
                 <>
                   <ChatSettingRow
-                    label="@我仍通知"
+                    label={t(msg`@我仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAtMe}
                     onToggle={(checked) => {
@@ -755,7 +775,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     }}
                   />
                   <ChatSettingRow
-                    label="@所有人仍通知"
+                    label={t(msg`@所有人仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAtAll}
                     onToggle={(checked) => {
@@ -763,7 +783,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     }}
                   />
                   <ChatSettingRow
-                    label="群公告仍通知"
+                    label={t(msg`群公告仍通知`)}
                     variant="wechat"
                     checked={groupQuery.data.notifyOnAnnouncement}
                     onToggle={(checked) => {
@@ -775,13 +795,13 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 </>
               ) : null}
               <ChatSettingRow
-                label="置顶聊天"
+                label={t(msg`置顶聊天`)}
                 variant="wechat"
                 checked={groupQuery.data.isPinned}
                 onToggle={(checked) => pinMutation.mutate(checked)}
               />
               <ChatSettingRow
-                label="保存到通讯录"
+                label={t(msg`保存到通讯录`)}
                 variant="wechat"
                 checked={groupQuery.data.savedToContacts}
                 onToggle={(checked) => {
@@ -789,8 +809,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 }}
               />
               <ChatSettingRow
-                label="我在本群的昵称"
-                value={ownerMember?.memberName ?? "未设置"}
+                label={t(msg`我在本群的昵称`)}
+                value={ownerMember?.memberName ?? t(msg`未设置`)}
                 variant="wechat"
                 onClick={() => {
                   void navigate({
@@ -801,7 +821,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 }}
               />
               <ChatSettingRow
-                label="显示群成员昵称"
+                label={t(msg`显示群成员昵称`)}
                 variant="wechat"
                 checked={groupQuery.data.showMemberNicknames}
                 onToggle={(checked) => {
@@ -815,8 +835,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
 
           <ChatCallFallbackSection
             variant="wechat"
-            voiceValue="群语音"
-            videoValue="群视频"
+            voiceValue={t(msg`群语音`)}
+            videoValue={t(msg`群视频`)}
             onSelectKind={(kind) => {
               void navigate({
                 to:
@@ -829,23 +849,23 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             }}
           />
 
-          <ChatDetailsSection title="危险操作" variant="wechat">
+          <ChatDetailsSection title={t(msg`危险操作`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="隐藏聊天"
+                label={t(msg`隐藏聊天`)}
                 disabled={busy}
                 variant="wechat"
                 onClick={() => setDangerSheetAction("hide")}
               />
               <ChatSettingRow
-                label="清空聊天记录"
+                label={t(msg`清空聊天记录`)}
                 danger
                 disabled={busy}
                 variant="wechat"
                 onClick={() => setDangerSheetAction("clear")}
               />
               <ChatSettingRow
-                label="删除并退出"
+                label={t(msg`删除并退出`)}
                 danger
                 disabled={busy}
                 variant="wechat"
@@ -933,20 +953,20 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
 
           <MobileDetailsActionSheet
             open={managementSheetOpen}
-            title="群管理"
-            description={`${ownerDisplayName} 可快速管理成员、公告和群资料。`}
+            title={t(msg`群管理`)}
+            description={t(msg`${ownerDisplayName} 可快速管理成员、公告和群资料。`)}
             onClose={() => setManagementSheetOpen(false)}
             actions={[
               {
                 key: "expand-members",
                 label: memberGridExpanded
-                  ? "收起成员列表"
+                  ? t(msg`收起成员列表`)
                   : hasCollapsedMembers
-                    ? "查看全部群成员"
-                    : "已显示全部群成员",
+                    ? t(msg`查看全部群成员`)
+                    : t(msg`已显示全部群成员`),
                 description: memberGridExpanded
-                  ? "回到紧凑预览状态"
-                  : `当前共 ${totalMemberCount} 人`,
+                  ? t(msg`回到紧凑预览状态`)
+                  : t(msg`当前共 ${totalMemberCount} 人`),
                 disabled: !memberGridExpanded && !hasCollapsedMembers,
                 onClick: () => {
                   setManagementSheetOpen(false);
@@ -958,8 +978,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               },
               {
                 key: "add-member",
-                label: "添加成员",
-                description: "继续把联系人拉进当前群聊",
+                label: t(msg`添加成员`),
+                description: t(msg`继续把联系人拉进当前群聊`),
                 onClick: () => {
                   setManagementSheetOpen(false);
                   void navigate({
@@ -971,8 +991,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               },
               {
                 key: "remove-member",
-                label: "移除成员",
-                description: "选择需要移出群聊的成员",
+                label: t(msg`移除成员`),
+                description: t(msg`选择需要移出群聊的成员`),
                 onClick: () => {
                   setManagementSheetOpen(false);
                   void navigate({
@@ -984,8 +1004,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               },
               {
                 key: "announcement",
-                label: "编辑群公告",
-                description: "发布或修改群内置顶公告",
+                label: t(msg`编辑群公告`),
+                description: t(msg`发布或修改群内置顶公告`),
                 onClick: () => {
                   setManagementSheetOpen(false);
                   void navigate({
@@ -997,8 +1017,8 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               },
               {
                 key: "qr",
-                label: "查看群二维码",
-                description: "打开邀请卡与分享入口",
+                label: t(msg`查看群二维码`),
+                description: t(msg`打开邀请卡与分享入口`),
                 onClick: () => {
                   setManagementSheetOpen(false);
                   void navigate({
@@ -1006,7 +1026,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                     params: { groupId },
                     search: buildGroupInviteReturnSearch({
                       conversationPath: `/group/${groupId}`,
-                      conversationTitle: groupQuery.data?.name ?? "当前群聊",
+                      conversationTitle: groupQuery.data?.name ?? t(msg`当前群聊`),
                     }),
                     ...(groupRouteHash ? { hash: groupRouteHash } : {}),
                   });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   getGroupMembers,
@@ -30,6 +31,7 @@ import {
   parseTimestamp,
 } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
+import { formatDateTime, translateRuntimeMessage } from "@yinjie/i18n";
 
 type DesktopChatHistoryPanelProps = {
   conversation: ConversationListItem;
@@ -54,6 +56,7 @@ type ResultSection = {
 
 const SEARCH_PAGE_SIZE = 40;
 const SEARCH_DEBOUNCE_MS = 280;
+const t = translateRuntimeMessage;
 
 export function DesktopChatHistoryPanel({
   conversation,
@@ -308,34 +311,34 @@ export function DesktopChatHistoryPanel({
     debouncedKeyword
       ? {
           key: "keyword",
-          label: `关键词 · ${debouncedKeyword}`,
+          label: t(msg`关键词 · ${debouncedKeyword}`),
           onRemove: clearKeywordFilter,
         }
       : null,
     activeCategory !== "all"
       ? {
           key: "category",
-          label: `分类 · ${resolveCategoryLabel(activeCategory)}`,
+          label: t(msg`分类 · ${resolveCategoryLabel(activeCategory)}`),
           onRemove: clearCategoryFilter,
         }
       : null,
     selectedSender?.label
       ? {
           key: "sender",
-          label: `成员 · ${selectedSender.label}`,
+          label: t(msg`成员 · ${selectedSender.label}`),
           onRemove: clearSenderFilter,
         }
       : null,
     customDate
       ? {
           key: "date-custom",
-          label: `日期 · ${customDate}`,
+          label: t(msg`日期 · ${customDate}`),
           onRemove: clearDateFilter,
         }
       : quickDateFilter !== "all"
         ? {
             key: "date-quick",
-            label: `日期 · ${resolveQuickDateFilterLabel(quickDateFilter)}`,
+            label: t(msg`日期 · ${resolveQuickDateFilterLabel(quickDateFilter)}`),
             onRemove: clearDateFilter,
           }
         : null,
@@ -355,7 +358,7 @@ export function DesktopChatHistoryPanel({
               onClick={clearAllFilters}
               className="inline-flex h-6 items-center rounded-full bg-[#f6f6f6] px-2.5 text-[11px] text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
             >
-              清空
+              {t(msg`清空`)}
             </button>
           </div>
         ) : null}
@@ -378,16 +381,16 @@ export function DesktopChatHistoryPanel({
               setKeyword(event.target.value);
               setSelectorView(null);
             }}
-            placeholder="搜索"
+            placeholder={t(msg`搜索`)}
             className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
           />
-	          {keyword ? (
-	            <button
-	              type="button"
-	              onClick={() => clearKeywordFilter()}
-	              className="shrink-0 text-[color:var(--text-dim)] transition hover:text-[color:var(--text-primary)]"
-	              aria-label="清空搜索词"
-	            >
+          {keyword ? (
+            <button
+              type="button"
+              onClick={() => clearKeywordFilter()}
+              className="shrink-0 text-[color:var(--text-dim)] transition hover:text-[color:var(--text-primary)]"
+              aria-label={t(msg`清空搜索词`)}
+            >
               <X size={14} />
             </button>
           ) : null}
@@ -395,14 +398,14 @@ export function DesktopChatHistoryPanel({
 
         <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 rounded-[10px] bg-[#f6f6f6] px-3 py-2 text-[11px] text-[color:var(--text-muted)]">
           <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]">
-            {isGroupConversation ? "群聊" : "单聊"}
+            {isGroupConversation ? t(msg`群聊`) : t(msg`单聊`)}
           </span>
           <span className="truncate text-[12px] text-[color:var(--text-primary)]">
             {conversation.title}
           </span>
           {openedFromDetails ? (
             <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.14)]">
-              聊天信息入口
+              {t(msg`聊天信息入口`)}
             </span>
           ) : null}
         </div>
@@ -426,16 +429,16 @@ export function DesktopChatHistoryPanel({
 
       {selectorView === "date" ? (
         <DesktopSearchPickerView
-          title="按日期查找"
+          title={t(msg`按日期查找`)}
           onBack={() => setSelectorView(null)}
         >
           <div className="px-3 pb-4 pt-3">
             <div className="px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-              快速选择
+              {t(msg`快速选择`)}
             </div>
             <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
               <DesktopSearchOptionRow
-                label="全部时间"
+                label={t(msg`全部时间`)}
                 active={quickDateFilter === "all" && !customDate}
                 onClick={() => {
                   setQuickDateFilter("all");
@@ -444,7 +447,7 @@ export function DesktopChatHistoryPanel({
                 }}
               />
               <DesktopSearchOptionRow
-                label="今天"
+                label={t(msg`今天`)}
                 active={quickDateFilter === "today" && !customDate}
                 onClick={() => {
                   setQuickDateFilter("today");
@@ -453,7 +456,7 @@ export function DesktopChatHistoryPanel({
                 }}
               />
               <DesktopSearchOptionRow
-                label="最近 7 天"
+                label={t(msg`最近 7 天`)}
                 active={quickDateFilter === "7d" && !customDate}
                 onClick={() => {
                   setQuickDateFilter("7d");
@@ -462,7 +465,7 @@ export function DesktopChatHistoryPanel({
                 }}
               />
               <DesktopSearchOptionRow
-                label="最近 30 天"
+                label={t(msg`最近 30 天`)}
                 active={quickDateFilter === "30d" && !customDate}
                 onClick={() => {
                   setQuickDateFilter("30d");
@@ -473,7 +476,7 @@ export function DesktopChatHistoryPanel({
             </div>
 
             <div className="mt-4 px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-              指定日期
+              {t(msg`指定日期`)}
             </div>
             <div className="mt-2 rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-4">
               <input
@@ -497,11 +500,11 @@ export function DesktopChatHistoryPanel({
                   }}
                   className="mt-2 text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
                 >
-                  清除指定日期
+                  {t(msg`清除指定日期`)}
                 </button>
               ) : (
                 <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
-                  选择某一天的聊天记录
+                  {t(msg`选择某一天的聊天记录`)}
                 </div>
               )}
             </div>
@@ -511,7 +514,7 @@ export function DesktopChatHistoryPanel({
 
       {selectorView === "sender" ? (
         <DesktopSearchPickerView
-          title="按群成员查找"
+          title={t(msg`按群成员查找`)}
           onBack={() => setSelectorView(null)}
         >
           <div className="px-3 pb-4 pt-3">
@@ -524,12 +527,12 @@ export function DesktopChatHistoryPanel({
                 type="search"
                 value={memberKeyword}
                 onChange={(event) => setMemberKeyword(event.target.value)}
-                placeholder="搜索群成员"
+                placeholder={t(msg`搜索群成员`)}
                 className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
             </label>
             <div className="mt-3 px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-              群成员
+              {t(msg`群成员`)}
             </div>
 
             {membersQuery.isLoading ? (
@@ -541,17 +544,17 @@ export function DesktopChatHistoryPanel({
                     className="animate-spin text-[color:var(--brand-primary)]"
                   />
                 }
-                title="正在读取群成员"
-                description="稍等一下，马上就好。"
+                title={t(msg`正在读取群成员`)}
+                description={t(msg`稍等一下，马上就好。`)}
               />
             ) : null}
             {membersQuery.isError && membersQuery.error instanceof Error ? (
               <DesktopSearchFeedbackState
                 className="mt-2"
                 icon={<AlertCircle size={16} className="text-[#d74b45]" />}
-                title="读取群成员失败"
+                title={t(msg`读取群成员失败`)}
                 description={membersQuery.error.message}
-                actionLabel="重试"
+                actionLabel={t(msg`重试`)}
                 onAction={() => {
                   void membersQuery.refetch();
                 }}
@@ -561,7 +564,7 @@ export function DesktopChatHistoryPanel({
             {!membersQuery.isLoading && !membersQuery.isError ? (
               <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
                 <DesktopSearchOptionRow
-                  label="全部成员"
+                  label={t(msg`全部成员`)}
                   active={!senderId}
                   onClick={() => {
                     setSenderId("");
@@ -582,7 +585,7 @@ export function DesktopChatHistoryPanel({
                 ))}
                 {!visibleSenderOptions.length ? (
                   <div className="px-4 py-10 text-center text-[13px] text-[color:var(--text-muted)]">
-                    没有找到匹配的群成员。
+                    {t(msg`没有找到匹配的群成员。`)}
                   </div>
                 ) : null}
               </div>
@@ -595,17 +598,17 @@ export function DesktopChatHistoryPanel({
         <div className="min-h-0 flex-1 overflow-auto">
           <div className="px-3 pb-4 pt-3">
             <div className="px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-              按条件查找
+              {t(msg`按条件查找`)}
             </div>
             <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
               <DesktopSearchEntryRow
                 icon={<CalendarDays size={16} />}
                 iconTone="calendar"
-                label="日期"
+                label={t(msg`日期`)}
                 value={
                   customDate ||
                   resolveQuickDateFilterLabel(quickDateFilter) ||
-                  "全部时间"
+                  t(msg`全部时间`)
                 }
                 onClick={() => setSelectorView("date")}
               />
@@ -613,36 +616,36 @@ export function DesktopChatHistoryPanel({
                 <DesktopSearchEntryRow
                   icon={<Users size={16} />}
                   iconTone="members"
-                  label="群成员"
-                  value={selectedSender?.label ?? "全部成员"}
+                  label={t(msg`群成员`)}
+                  value={selectedSender?.label ?? t(msg`全部成员`)}
                   onClick={() => setSelectorView("sender")}
                 />
               ) : null}
             </div>
 
             <div className="mt-4 px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-              按内容查找
+              {t(msg`按内容查找`)}
             </div>
             <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
               <DesktopSearchEntryRow
                 icon={<FileImage size={16} />}
                 iconTone="media"
-                label="图片与视频"
-                value="查看媒体消息"
+                label={t(msg`图片与视频`)}
+                value={t(msg`查看媒体消息`)}
                 onClick={() => setActiveCategory("media")}
               />
               <DesktopSearchEntryRow
                 icon={<FileText size={16} />}
                 iconTone="files"
-                label="文件"
-                value="查看文件消息"
+                label={t(msg`文件`)}
+                value={t(msg`查看文件消息`)}
                 onClick={() => setActiveCategory("files")}
               />
               <DesktopSearchEntryRow
                 icon={<Link2 size={16} />}
                 iconTone="links"
-                label="链接"
-                value="查看链接消息"
+                label={t(msg`链接`)}
+                value={t(msg`查看链接消息`)}
                 onClick={() => setActiveCategory("links")}
               />
             </div>
@@ -662,16 +665,18 @@ export function DesktopChatHistoryPanel({
                     className="inline-flex items-center gap-1 text-[12px] text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
                   >
                     <ChevronLeft size={14} />
-                    返回筛选
+                    {t(msg`返回筛选`)}
                   </button>
                 ) : (
                   <div className="text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-                    搜索结果
+                    {t(msg`搜索结果`)}
                   </div>
                 )}
 
                 <div className="rounded-full bg-[#f4f4f4] px-2 py-1 text-[11px] text-[color:var(--text-muted)]">
-                  {resultsQuery.isLoading ? "正在搜索..." : `共 ${totalResults} 条`}
+                  {resultsQuery.isLoading
+                    ? t(msg`正在搜索...`)
+                    : t(msg`共 ${totalResults} 条`)}
                 </div>
               </div>
 
@@ -695,8 +700,8 @@ export function DesktopChatHistoryPanel({
                   className="animate-spin text-[color:var(--brand-primary)]"
                 />
               }
-              title="正在搜索聊天记录"
-              description="正在整理当前聊天里的匹配消息。"
+              title={t(msg`正在搜索聊天记录`)}
+              description={t(msg`正在整理当前聊天里的匹配消息。`)}
             />
           ) : null}
 
@@ -704,9 +709,9 @@ export function DesktopChatHistoryPanel({
             <DesktopSearchFeedbackState
               className="px-4 py-5"
               icon={<AlertCircle size={16} className="text-[#d74b45]" />}
-              title="搜索失败"
+              title={t(msg`搜索失败`)}
               description={resultsQuery.error.message}
-              actionLabel="重试"
+              actionLabel={t(msg`重试`)}
               onAction={() => {
                 void resultsQuery.refetch();
               }}
@@ -734,7 +739,7 @@ export function DesktopChatHistoryPanel({
                 <section key={section.key}>
                   <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-1.5 text-[10px] text-[color:var(--text-dim)]">
                     <span className="tracking-[0.04em]">{section.label}</span>
-                    <span>{section.items.length} 条</span>
+                    <span>{t(msg`${section.items.length} 条`)}</span>
                   </div>
                   <div className="divide-y divide-[rgba(0,0,0,0.06)]">
                     {section.items.map((item) => {
@@ -765,7 +770,7 @@ export function DesktopChatHistoryPanel({
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-2">
                                   <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)] transition-colors group-hover:text-[#2f3a33]">
-                                    {item.senderName || "消息"}
+                                    {item.senderName || t(msg`消息`)}
                                   </div>
                                   <span
                                     className={cn(
@@ -813,8 +818,8 @@ export function DesktopChatHistoryPanel({
                 className="mx-auto flex h-9 items-center justify-center rounded-full px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[#f7f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:text-[color:var(--text-dim)]"
               >
                 {resultsQuery.isFetchingNextPage
-                  ? "正在加载..."
-                  : "查看更多聊天记录"}
+                  ? t(msg`正在加载...`)
+                  : t(msg`查看更多聊天记录`)}
               </button>
             </div>
           ) : null}
@@ -840,7 +845,7 @@ function DesktopSearchPickerView({
           type="button"
           onClick={onBack}
           className="flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
-          aria-label="返回上一层"
+          aria-label={t(msg`返回上一层`)}
         >
           <ChevronLeft size={15} />
         </button>
@@ -1016,15 +1021,15 @@ function buildSenderOptions(members: GroupMember[]): SenderOption[] {
     id: member.memberId,
     label:
       member.memberName?.trim() ||
-      (member.memberType === "user" ? "我" : "未命名成员"),
+      (member.memberType === "user" ? t(msg`我`) : t(msg`未命名成员`)),
     role:
       member.role === "owner"
-        ? "群主"
+        ? t(msg`群主`)
         : member.role === "admin"
-          ? "管理员"
+          ? t(msg`管理员`)
           : member.memberType === "user"
-            ? "我"
-            : "群成员",
+            ? t(msg`我`)
+            : t(msg`群成员`),
   }));
 }
 
@@ -1038,23 +1043,23 @@ function buildActiveFilterLabels(input: {
   const labels: string[] = [];
 
   if (input.keyword) {
-    labels.push(`关键词 · ${input.keyword}`);
+    labels.push(t(msg`关键词 · ${input.keyword}`));
   }
 
   if (input.activeCategory !== "all") {
-    labels.push(`分类 · ${resolveCategoryLabel(input.activeCategory)}`);
+    labels.push(t(msg`分类 · ${resolveCategoryLabel(input.activeCategory)}`));
   }
 
   if (input.selectedSenderLabel) {
-    labels.push(`成员 · ${input.selectedSenderLabel}`);
+    labels.push(t(msg`成员 · ${input.selectedSenderLabel}`));
   }
 
   if (input.customDate) {
-    labels.push(`日期 · ${input.customDate}`);
+    labels.push(t(msg`日期 · ${input.customDate}`));
   } else {
     const quickDateLabel = resolveQuickDateFilterLabel(input.quickDateFilter);
     if (quickDateLabel) {
-      labels.push(`日期 · ${quickDateLabel}`);
+      labels.push(t(msg`日期 · ${quickDateLabel}`));
     }
   }
 
@@ -1070,15 +1075,17 @@ function buildResultSummary(input: {
   conversationTitle: string;
   openedFromDetails: boolean;
 }) {
-  const scopeDescription = `当前聊天 · ${input.conversationTitle}`;
-  const sourceDescription = input.openedFromDetails ? "来自聊天信息" : "";
+  const scopeDescription = t(msg`当前聊天 · ${input.conversationTitle}`);
+  const sourceDescription = input.openedFromDetails
+    ? t(msg`来自聊天信息`)
+    : "";
   const baseDescription = [scopeDescription, sourceDescription]
     .filter(Boolean)
     .join(" · ");
 
   if (input.keyword && input.activeCategory === "all" && !input.selectedSenderLabel) {
     return {
-      title: `关键词“${input.keyword}”`,
+      title: t(msg`关键词“${input.keyword}”`),
       description: baseDescription,
     };
   }
@@ -1092,7 +1099,7 @@ function buildResultSummary(input: {
 
   if (!input.keyword && input.selectedSenderLabel) {
     return {
-      title: `群成员 · ${input.selectedSenderLabel}`,
+      title: t(msg`群成员 · ${input.selectedSenderLabel}`),
       description: baseDescription,
     };
   }
@@ -1100,13 +1107,13 @@ function buildResultSummary(input: {
   if (!input.keyword && (input.customDate || resolveQuickDateFilterLabel(input.quickDateFilter))) {
     const label = input.customDate || resolveQuickDateFilterLabel(input.quickDateFilter);
     return {
-      title: `日期 · ${label}`,
+      title: t(msg`日期 · ${label}`),
       description: baseDescription,
     };
   }
 
   return {
-    title: input.keyword ? `搜索“${input.keyword}”` : "当前筛选结果",
+    title: input.keyword ? t(msg`搜索“${input.keyword}”`) : t(msg`当前筛选结果`),
     description: baseDescription,
   };
 }
@@ -1120,42 +1127,42 @@ function buildEmptyStateCopy(input: {
 }) {
   if (input.keyword && input.activeCategory !== "all") {
     return {
-      title: `没有找到匹配的${resolveCategoryLabel(input.activeCategory)}`,
-      description: "试试换个关键词，或者返回筛选页改用其他分类。",
+      title: t(msg`没有找到匹配的${resolveCategoryLabel(input.activeCategory)}`),
+      description: t(msg`试试换个关键词，或者返回筛选页改用其他分类。`),
     };
   }
 
   if (input.keyword) {
     return {
-      title: "没有找到相关聊天记录",
-      description: "试试换个关键词，或者缩小筛选范围后再查找。",
+      title: t(msg`没有找到相关聊天记录`),
+      description: t(msg`试试换个关键词，或者缩小筛选范围后再查找。`),
     };
   }
 
   if (input.activeCategory !== "all") {
     return {
-      title: `当前会话里还没有${resolveCategoryLabel(input.activeCategory)}`,
-      description: "返回筛选页试试其他分类，或者直接搜索关键词。",
+      title: t(msg`当前会话里还没有${resolveCategoryLabel(input.activeCategory)}`),
+      description: t(msg`返回筛选页试试其他分类，或者直接搜索关键词。`),
     };
   }
 
   if (input.selectedSenderLabel) {
     return {
-      title: `没有找到 ${input.selectedSenderLabel} 的聊天记录`,
-      description: "换个群成员试试，或者返回筛选页查看全部成员。",
+      title: t(msg`没有找到 ${input.selectedSenderLabel} 的聊天记录`),
+      description: t(msg`换个群成员试试，或者返回筛选页查看全部成员。`),
     };
   }
 
   if (input.customDate || resolveQuickDateFilterLabel(input.quickDateFilter)) {
     return {
-      title: "这个时间范围内没有聊天记录",
-      description: "换个日期试试，或者返回筛选页清空时间条件。",
+      title: t(msg`这个时间范围内没有聊天记录`),
+      description: t(msg`换个日期试试，或者返回筛选页清空时间条件。`),
     };
   }
 
   return {
-    title: "没有找到相关聊天记录",
-    description: "试试换个筛选条件，或者稍后再来查看。",
+    title: t(msg`没有找到相关聊天记录`),
+    description: t(msg`试试换个筛选条件，或者稍后再来查看。`),
   };
 }
 
@@ -1210,15 +1217,15 @@ function formatDateInput(date: Date) {
 
 function resolveQuickDateFilterLabel(filter: QuickDateFilter) {
   if (filter === "today") {
-    return "今天";
+    return t(msg`今天`);
   }
 
   if (filter === "7d") {
-    return "最近 7 天";
+    return t(msg`最近 7 天`);
   }
 
   if (filter === "30d") {
-    return "最近 30 天";
+    return t(msg`最近 30 天`);
   }
 
   return "";
@@ -1226,18 +1233,18 @@ function resolveQuickDateFilterLabel(filter: QuickDateFilter) {
 
 function resolveCategoryLabel(category: ChatMessageSearchCategory) {
   if (category === "media") {
-    return "图片与视频";
+    return t(msg`图片与视频`);
   }
 
   if (category === "files") {
-    return "文件";
+    return t(msg`文件`);
   }
 
   if (category === "links") {
-    return "链接";
+    return t(msg`链接`);
   }
 
-  return "全部";
+  return t(msg`全部`);
 }
 
 function buildResultSections(items: ChatMessageSearchItem[]) {
@@ -1275,7 +1282,7 @@ function resolveDateSectionKey(createdAt: string) {
 function resolveDateSectionLabel(createdAt: string) {
   const timestamp = parseTimestamp(createdAt);
   if (timestamp === null) {
-    return "未知时间";
+    return t(msg`未知时间`);
   }
 
   const date = new Date(timestamp);
@@ -1284,27 +1291,27 @@ function resolveDateSectionLabel(createdAt: string) {
   yesterday.setDate(today.getDate() - 1);
 
   if (isSameDay(date, today)) {
-    return "今天";
+    return t(msg`今天`);
   }
 
   if (isSameDay(date, yesterday)) {
-    return "昨天";
+    return t(msg`昨天`);
   }
 
   if (date.getFullYear() === today.getFullYear()) {
-    return new Intl.DateTimeFormat("zh-CN", {
+    return formatDateTime(timestamp, {
       month: "numeric",
       day: "numeric",
       weekday: "short",
-    }).format(date);
+    });
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return formatDateTime(timestamp, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
     weekday: "short",
-  }).format(date);
+  });
 }
 
 function isSameDay(left: Date, right: Date) {
@@ -1317,39 +1324,39 @@ function isSameDay(left: Date, right: Date) {
 
 function resolveMessageTypeLabel(type: ChatMessageSearchItem["messageType"]) {
   if (type === "image") {
-    return "图片";
+    return t(msg`图片`);
   }
 
   if (type === "file") {
-    return "文件";
+    return t(msg`文件`);
   }
 
   if (type === "voice") {
-    return "语音";
+    return t(msg`语音`);
   }
 
   if (type === "contact_card") {
-    return "名片";
+    return t(msg`名片`);
   }
 
   if (type === "location_card") {
-    return "位置";
+    return t(msg`位置`);
   }
 
   if (type === "sticker") {
-    return "表情";
+    return t(msg`表情`);
   }
 
   if (type === "system") {
-    return "系统";
+    return t(msg`系统`);
   }
 
-  return "文本";
+  return t(msg`文本`);
 }
 
 function resolveSearchResultBadgeLabel(item: ChatMessageSearchItem) {
   if (item.categories.includes("links")) {
-    return "链接";
+    return t(msg`链接`);
   }
 
   return resolveMessageTypeLabel(item.messageType);
@@ -1398,17 +1405,17 @@ function resolveSearchResultAvatarTone(item: ChatMessageSearchItem) {
 function resolveSenderAvatarLabel(senderName: string) {
   const trimmed = senderName.trim();
   if (!trimmed) {
-    return "消";
+    return t(msg`消`);
   }
 
-  return Array.from(trimmed)[0] ?? "消";
+  return Array.from(trimmed)[0] ?? t(msg`消`);
 }
 
 function buildSearchResultMeta(item: ChatMessageSearchItem) {
   const attachment = item.attachment;
   if (!attachment) {
     if (item.categories.includes("links")) {
-      return "网页链接";
+      return t(msg`网页链接`);
     }
 
     return null;
@@ -1426,7 +1433,7 @@ function buildSearchResultMeta(item: ChatMessageSearchItem) {
   }
 
   if (attachment.kind === "voice") {
-    return `语音 ${formatVoiceDurationLabel(attachment.durationMs)}`;
+    return t(msg`语音 ${formatVoiceDurationLabel(attachment.durationMs)}`);
   }
 
   if (attachment.kind === "contact_card") {
@@ -1442,7 +1449,7 @@ function buildSearchResultMeta(item: ChatMessageSearchItem) {
   }
 
   if (attachment.kind === "sticker") {
-    return attachment.label || "表情消息";
+    return attachment.label || t(msg`表情消息`);
   }
 
   return null;
@@ -1476,38 +1483,42 @@ function resolveSearchPreviewText(item: ChatMessageSearchItem) {
 
   const attachment = item.attachment;
   if (!attachment) {
-    return item.categories.includes("links") ? "分享了一条链接。" : "消息内容";
+    return item.categories.includes("links")
+      ? t(msg`分享了一条链接。`)
+      : t(msg`消息内容`);
   }
 
   if (attachment.kind === "image") {
-    return `发送了图片 ${attachment.fileName}。`;
+    return t(msg`发送了图片 ${attachment.fileName}。`);
   }
 
   if (attachment.kind === "file") {
-    return `发送了文件 ${attachment.fileName}。`;
+    return t(msg`发送了文件 ${attachment.fileName}。`);
   }
 
   if (attachment.kind === "voice") {
-    return `发送了一条${formatVoiceDurationLabel(attachment.durationMs)}的语音。`;
+    return t(msg`发送了一条${formatVoiceDurationLabel(attachment.durationMs)}的语音。`);
   }
 
   if (attachment.kind === "contact_card") {
-    return `分享了名片 ${attachment.name}。`;
+    return t(msg`分享了名片 ${attachment.name}。`);
   }
 
   if (attachment.kind === "location_card") {
-    return `分享了位置 ${attachment.title}。`;
+    return t(msg`分享了位置 ${attachment.title}。`);
   }
 
   if (attachment.kind === "note_card") {
-    return attachment.excerpt.trim() || `分享了笔记 ${attachment.title}。`;
+    return attachment.excerpt.trim() || t(msg`分享了笔记 ${attachment.title}。`);
   }
 
   if (attachment.kind === "sticker") {
-    return attachment.label ? `[表情] ${attachment.label}` : "发送了一个表情。";
+    return attachment.label
+      ? t(msg`[表情] ${attachment.label}`)
+      : t(msg`发送了一个表情。`);
   }
 
-  return "消息内容";
+  return t(msg`消息内容`);
 }
 
 function renderHighlightedText(text: string, keyword: string) {
@@ -1535,11 +1546,11 @@ function renderHighlightedText(text: string, keyword: string) {
 
 function formatVoiceDurationLabel(durationMs?: number) {
   if (!durationMs || !Number.isFinite(durationMs) || durationMs <= 0) {
-    return "语音";
+    return t(msg`语音`);
   }
 
   const totalSeconds = Math.max(1, Math.round(durationMs / 1000));
-  return `${totalSeconds} 秒`;
+  return t(msg`${totalSeconds} 秒`);
 }
 
 function formatFileSize(size: number) {
