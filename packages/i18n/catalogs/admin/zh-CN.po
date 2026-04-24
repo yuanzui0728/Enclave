@@ -89,10 +89,6 @@ msgstr "主人"
 msgid "主动跟进"
 msgstr "主动跟进"
 
-#: apps/admin/src/routes/inference-page.tsx:187
-msgid "主推理 provider 原生音频输入调用成功。"
-msgstr "主推理 provider 原生音频输入调用成功。"
-
 #: apps/admin/src/components/admin-sidebar.tsx:242
 msgid "保存密钥"
 msgstr "保存密钥"
@@ -126,9 +122,17 @@ msgstr "单世界实例必须且只能有一个世界主人。"
 msgid "原生音频理解"
 msgstr "原生音频理解"
 
+#: apps/admin/src/routes/inference-page.tsx:189
+msgid "原生音频语义探针通过，系统已确认存在真实可用的音频理解模型。"
+msgstr "原生音频语义探针通过，系统已确认存在真实可用的音频理解模型。"
+
 #: apps/admin/src/routes/inference-page.tsx:185
 msgid "原生音频输入诊断缺少主推理 API Key 或默认模型。"
 msgstr "原生音频输入诊断缺少主推理 API Key 或默认模型。"
+
+#: apps/admin/src/routes/inference-page.tsx:188
+msgid "原生音频输入请求已发出，但语义探针未通过，不能算真实音频理解可用。"
+msgstr "原生音频输入请求已发出，但语义探针未通过，不能算真实音频理解可用。"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:33
 msgid "参数无效"
@@ -369,6 +373,10 @@ msgstr "未设置时，provider-state 回调不会附带保护 token。"
 #: apps/admin/src/lib/format.ts:17
 msgid "未配置"
 msgstr "未配置"
+
+#: apps/admin/src/routes/inference-page.tsx:187
+msgid "未配置可用 TTS 探针，当前无法做真实的原生音频语义校验。"
+msgstr "未配置可用 TTS 探针，当前无法做真实的原生音频语义校验。"
 
 #: apps/admin/src/components/root-layout.tsx:160
 msgid "查看 AI 游戏中心目录、来源结构和当前审核状态。"

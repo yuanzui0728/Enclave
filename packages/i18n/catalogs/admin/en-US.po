@@ -89,10 +89,6 @@ msgstr "Owner"
 msgid "主动跟进"
 msgstr "Proactive Follow-up"
 
-#: apps/admin/src/routes/inference-page.tsx:187
-msgid "主推理 provider 原生音频输入调用成功。"
-msgstr "Main inference provider native audio input call succeeded."
-
 #: apps/admin/src/components/admin-sidebar.tsx:242
 msgid "保存密钥"
 msgstr "Save secret"
@@ -126,9 +122,17 @@ msgstr "A single-world instance must have exactly one world owner."
 msgid "原生音频理解"
 msgstr "Native audio understanding"
 
+#: apps/admin/src/routes/inference-page.tsx:189
+msgid "原生音频语义探针通过，系统已确认存在真实可用的音频理解模型。"
+msgstr "The native-audio semantic probe passed. The system has confirmed a real, usable audio-understanding model is available."
+
 #: apps/admin/src/routes/inference-page.tsx:185
 msgid "原生音频输入诊断缺少主推理 API Key 或默认模型。"
 msgstr "Native audio input diagnostics are missing the main inference API key or default model."
+
+#: apps/admin/src/routes/inference-page.tsx:188
+msgid "原生音频输入请求已发出，但语义探针未通过，不能算真实音频理解可用。"
+msgstr "A native-audio input request was sent, but the semantic probe did not pass, so real audio understanding cannot be considered available."
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:33
 msgid "参数无效"
@@ -369,6 +373,10 @@ msgstr "When unset, provider-state callbacks will not include a protection token
 #: apps/admin/src/lib/format.ts:17
 msgid "未配置"
 msgstr "Unconfigured"
+
+#: apps/admin/src/routes/inference-page.tsx:187
+msgid "未配置可用 TTS 探针，当前无法做真实的原生音频语义校验。"
+msgstr "No usable TTS probe is configured, so real native-audio semantic verification cannot be performed right now."
 
 #: apps/admin/src/components/root-layout.tsx:160
 msgid "查看 AI 游戏中心目录、来源结构和当前审核状态。"

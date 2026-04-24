@@ -39,12 +39,17 @@ api/data/database.sqlite
 api/data/database.sqlite-journal
 api/data/database.sqlite-wal
 api/data/database.sqlite-shm
+api/data/app.db
+api/data/app.db-journal
+api/data/app.db-wal
+api/data/app.db-shm
 data/database.sqlite
 data/database.sqlite-journal
 data/database.sqlite-wal
 data/database.sqlite-shm
 data/chat-attachments/
 api/storage/chat-attachments/
+api/storage/ai-speech/
 runtime-data/app-web-nginx/
 cloud-platform.sqlite
 cloud-platform.sqlite-journal

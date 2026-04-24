@@ -89,10 +89,6 @@ msgstr "主人"
 msgid "主动跟进"
 msgstr "能動フォローアップ"
 
-#: apps/admin/src/routes/inference-page.tsx:187
-msgid "主推理 provider 原生音频输入调用成功。"
-msgstr "メイン推論 provider のネイティブ音声入力呼び出しに成功しました。"
-
 #: apps/admin/src/components/admin-sidebar.tsx:242
 msgid "保存密钥"
 msgstr "キーを保存"
@@ -126,9 +122,17 @@ msgstr "単一世界インスタンスには、世界の主人が必ず 1 人だ
 msgid "原生音频理解"
 msgstr "ネイティブ音声理解"
 
+#: apps/admin/src/routes/inference-page.tsx:189
+msgid "原生音频语义探针通过，系统已确认存在真实可用的音频理解模型。"
+msgstr "ネイティブ音声のセマンティックプローブに合格し、実際に利用可能な音声理解モデルが存在することをシステムが確認しました。"
+
 #: apps/admin/src/routes/inference-page.tsx:185
 msgid "原生音频输入诊断缺少主推理 API Key 或默认模型。"
 msgstr "ネイティブ音声入力診断には、メイン推論 API Key またはデフォルトモデルが不足しています。"
+
+#: apps/admin/src/routes/inference-page.tsx:188
+msgid "原生音频输入请求已发出，但语义探针未通过，不能算真实音频理解可用。"
+msgstr "ネイティブ音声入力リクエストは送信されましたが、セマンティックプローブに合格していないため、実際の音声理解が利用可能とは見なせません。"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:33
 msgid "参数无效"
@@ -369,6 +373,10 @@ msgstr "未設定の場合、provider-state コールバックには保護 token
 #: apps/admin/src/lib/format.ts:17
 msgid "未配置"
 msgstr "未設定"
+
+#: apps/admin/src/routes/inference-page.tsx:187
+msgid "未配置可用 TTS 探针，当前无法做真实的原生音频语义校验。"
+msgstr "利用可能なTTSプローブが設定されていないため、現在は実際のネイティブ音声セマンティック検証を行えません。"
 
 #: apps/admin/src/components/root-layout.tsx:160
 msgid "查看 AI 游戏中心目录、来源结构和当前审核状态。"
