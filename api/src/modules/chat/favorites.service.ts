@@ -16,6 +16,7 @@ import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import type { MessageAttachment } from './chat.types';
 import { MessageEntity } from './message.entity';
+import { describeAttachmentForDisplay } from './attachment-semantic-text';
 
 export interface FavoriteRecord {
   id: string;
@@ -436,53 +437,11 @@ export class FavoritesService {
     if (displayedText) {
       return displayedText;
     }
-
-    if (snapshot.type === 'image') {
-      return snapshot.attachment?.kind === 'image' &&
-        snapshot.attachment.fileName
-        ? `[图片] ${snapshot.attachment.fileName}`
-        : '[图片]';
-    }
-
-    if (snapshot.type === 'file') {
-      return snapshot.attachment?.kind === 'file' &&
-        snapshot.attachment.fileName
-        ? `[文件] ${snapshot.attachment.fileName}`
-        : '[文件]';
-    }
-
-    if (snapshot.type === 'voice') {
-      return snapshot.attachment?.kind === 'voice'
-        ? `[语音] ${formatVoiceDurationLabel(snapshot.attachment.durationMs)}`
-        : '[语音]';
-    }
-
-    if (snapshot.type === 'contact_card') {
-      return snapshot.attachment?.kind === 'contact_card'
-        ? `[名片] ${snapshot.attachment.name}`
-        : '[名片]';
-    }
-
-    if (snapshot.type === 'location_card') {
-      return snapshot.attachment?.kind === 'location_card'
-        ? `[位置] ${snapshot.attachment.title}`
-        : '[位置]';
-    }
-
-    if (snapshot.type === 'note_card') {
-      return snapshot.attachment?.kind === 'note_card'
-        ? `[笔记] ${snapshot.attachment.title}`
-        : '[笔记]';
-    }
-
-    if (snapshot.type === 'sticker') {
-      return snapshot.attachment?.kind === 'sticker' &&
-        snapshot.attachment.label
-        ? `[表情] ${snapshot.attachment.label}`
-        : '[表情]';
-    }
-
-    return '消息';
+    return (
+      describeAttachmentForDisplay(snapshot.attachment, {
+        maxChars: 160,
+      }) || '消息'
+    );
   }
 
   private buildFavoriteNoteRecord(note: FavoriteNoteDocument): FavoriteRecord {
