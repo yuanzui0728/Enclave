@@ -17,6 +17,7 @@ export interface ConnectorConfig {
 
 const DEFAULT_PORT = 17364;
 const DEFAULT_HOST = "127.0.0.1";
+export const DEFAULT_WEFLOW_ACCESS_TOKEN = "yinjie-local-weflow";
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://127.0.0.1:5181",
   "http://localhost:5181",
@@ -39,8 +40,10 @@ export function loadConnectorConfig(
       normalizeBaseUrl(env.WEFLOW_BASE_URL) ??
       normalizeBaseUrl(env.WECHAT_CONNECTOR_WEFLOW_BASE_URL),
     weflowAccessToken:
-      normalizeToken(env.WEFLOW_ACCESS_TOKEN) ??
-      normalizeToken(env.WECHAT_CONNECTOR_WEFLOW_ACCESS_TOKEN),
+      normalizeWeFlowAccessToken(
+        normalizeToken(env.WEFLOW_ACCESS_TOKEN) ??
+          normalizeToken(env.WECHAT_CONNECTOR_WEFLOW_ACCESS_TOKEN),
+      ),
     allowedOrigins: normalizeAllowedOrigins(env.WECHAT_CONNECTOR_ALLOWED_ORIGINS),
   };
 }
@@ -79,7 +82,7 @@ export function applyConfigPatch(
     weflowAccessToken:
       patch.weflowAccessToken === undefined
         ? current.weflowAccessToken
-        : normalizeToken(patch.weflowAccessToken),
+        : normalizeWeFlowAccessToken(normalizeToken(patch.weflowAccessToken)),
   };
 }
 
@@ -181,6 +184,10 @@ function normalizeBaseUrl(value: string | null | undefined) {
 function normalizeToken(value: string | null | undefined) {
   const normalized = normalizeText(value);
   return normalized ? normalized : null;
+}
+
+function normalizeWeFlowAccessToken(value: string | null) {
+  return value ?? DEFAULT_WEFLOW_ACCESS_TOKEN;
 }
 
 function normalizeText(value: string | null | undefined) {

@@ -1,15 +1,21 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import {
+  closeSync,
   existsSync,
   mkdirSync,
   openSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { ConnectorConfig } from "./config.js";
+import {
+  DEFAULT_WEFLOW_ACCESS_TOKEN,
+  type ConnectorConfig,
+} from "./config.js";
 import type {
   LocalUpstreamServiceInfo,
   LocalUpstreamServiceKey,
@@ -22,10 +28,18 @@ interface ManagedUpstreamProcessState {
   startedAt: string;
   lastExitedAt: string | null;
   lastError: string | null;
-  logs: {
-    stdout: string;
-    stderr: string;
-  };
+  logs: ProcessLogs;
+}
+
+interface ProcessLogs {
+  stdout: string;
+  stderr: string;
+}
+
+interface ShellCommandSpec {
+  command: string;
+  args: string[];
+  preview: string;
 }
 
 interface UpstreamLaunchSpec {
@@ -45,6 +59,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WORKSPACE_ROOT = path.resolve(__dirname, "../../..");
 const LOG_DIR = path.join(WORKSPACE_ROOT, "logs", "upstream-services");
+
+const WEFLOW_ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/";
+const WEFLOW_ELECTRON_BUILDER_MIRROR =
+  "https://npmmirror.com/mirrors/electron-builder-binaries/";
 
 export class LocalUpstreamServiceManager {
   private readonly processes = new Map<
@@ -81,37 +99,36 @@ export class LocalUpstreamServiceManager {
       );
     }
 
-    if (key === "weflow" && !existsSync(path.join(spec.cwd, "node_modules"))) {
-      throw new Error(
-        `检测到 WeFlow 仓库还没有安装依赖。先在 ${spec.cwd} 执行 npm install，再回来点击启动。`,
-      );
-    }
-
     this.ensureLogDir();
 
     const existing = this.processes.get(key);
     if (existing && this.isPidRunning(existing.pid)) {
       return {
         ok: true,
-        message: `${spec.label} 启动请求已发出，正在等待服务就绪。`,
+        message: `${spec.label} 启动请求已发出，正在等待本地服务就绪。`,
         service: await this.describeService(key, config),
       };
     }
 
-    const logs = {
-      stdout: path.join(LOG_DIR, `${key}.out.log`),
-      stderr: path.join(LOG_DIR, `${key}.err.log`),
-    };
+    const logs = this.getLogPaths(key);
     rmSync(logs.stdout, { force: true });
     rmSync(logs.stderr, { force: true });
 
-    const child = spawn(spec.command, spec.args, {
-      cwd: spec.cwd,
-      env: process.env,
-      detached: true,
-      stdio: ["ignore", openSync(logs.stdout, "w"), openSync(logs.stderr, "w")],
-      windowsHide: true,
-    });
+    if (key === "weflow") {
+      await this.prepareWeFlow(spec, config, logs);
+    }
+
+    const child = this.spawnLoggedProcess(
+      {
+        command: spec.command,
+        args: spec.args,
+        preview: spec.commandPreview,
+      },
+      spec.cwd,
+      this.buildProcessEnv(key),
+      logs,
+      true,
+    );
 
     const startedAt = new Date().toISOString();
     const state: ManagedUpstreamProcessState = {
@@ -153,16 +170,18 @@ export class LocalUpstreamServiceManager {
 
     if (!this.isPidRunning(state.pid)) {
       throw new Error(
-        this.readProcessError(
-          logs.stderr,
-          `${spec.label} 启动失败，请检查日志。`,
-        ),
+        this.readProcessError(logs.stderr, `${spec.label} 启动失败，请检查日志。`),
       );
     }
 
+    const healthTimeoutMs = key === "weflow" ? 25_000 : 6_000;
+    const healthReady = await this.waitForHealth(spec.healthUrl, healthTimeoutMs);
+
     return {
       ok: true,
-      message: `已发起 ${spec.label} 启动请求，请等待本地服务就绪。`,
+      message: healthReady
+        ? `${spec.label} 已成功启动。`
+        : `已发起 ${spec.label} 启动请求，请等待本地服务就绪。`,
       service: await this.describeService(key, config),
     };
   }
@@ -197,12 +216,7 @@ export class LocalUpstreamServiceManager {
       lastExitedAt: processState?.lastExitedAt ?? null,
       lastError: processState?.lastError ?? null,
       notes: spec.notes,
-      logs: processState
-        ? processState.logs
-        : {
-            stdout: path.join(LOG_DIR, `${key}.out.log`),
-            stderr: path.join(LOG_DIR, `${key}.err.log`),
-          },
+      logs: processState ? processState.logs : this.getLogPaths(key),
     };
   }
 
@@ -223,10 +237,14 @@ export class LocalUpstreamServiceManager {
             : "python3";
       const args = ["main.py"];
       const baseUrl = config.wechatDecryptBaseUrl ?? "http://127.0.0.1:5678";
-      const healthUrl = new URL("/api/history?limit=1", withTrailingSlash(baseUrl)).toString();
+      const healthUrl = new URL(
+        "/api/history?limit=1",
+        withTrailingSlash(baseUrl),
+      ).toString();
       const notes = [
         "会在本地 clone 的 wechat-decrypt 目录里执行 main.py，并拉起 5678 HTTP 服务。",
       ];
+
       if (!existsSync(cwd)) {
         notes.unshift(`未找到本地目录：${cwd}`);
       }
@@ -246,18 +264,17 @@ export class LocalUpstreamServiceManager {
     }
 
     const cwd = path.join(WORKSPACE_ROOT, ".cache", "upstreams", "WeFlow");
-    const command = process.platform === "win32" ? "npm.cmd" : "npm";
-    const args = ["run", "electron:dev"];
+    const launchCommand = this.resolveNpmCommand("npm run electron:dev");
     const baseUrl = config.weflowBaseUrl ?? "http://127.0.0.1:5031";
     const healthUrl = new URL("/health", withTrailingSlash(baseUrl)).toString();
     const notes = [
       "会在本地 clone 的 WeFlow 目录里执行 npm run electron:dev，拉起桌面应用本体。",
-      "WeFlow 的 HTTP API 是否真正可用，仍取决于应用内是否已开启 API 服务。",
+      "启动前会自动写入本机 WeFlow 配置，开启 HTTP API 并同步 Access Token。",
+      "首次启动如果检测到依赖未安装，会自动执行 npm install 并使用 Electron 镜像源补齐运行环境。",
     ];
+
     if (!existsSync(cwd)) {
       notes.unshift(`未找到本地目录：${cwd}`);
-    } else if (!existsSync(path.join(cwd, "node_modules"))) {
-      notes.push("检测到 WeFlow 依赖尚未安装，首次使用前需要先在该目录执行 npm install。");
     }
 
     return {
@@ -266,12 +283,178 @@ export class LocalUpstreamServiceManager {
       baseUrl,
       healthUrl,
       cwd,
-      command,
-      args,
-      commandPreview: `${command} ${args.join(" ")}`,
+      command: launchCommand.command,
+      args: launchCommand.args,
+      commandPreview: launchCommand.preview,
       canStart: existsSync(cwd),
       notes,
     };
+  }
+
+  private async prepareWeFlow(
+    spec: UpstreamLaunchSpec,
+    config: ConnectorConfig,
+    logs: ProcessLogs,
+  ) {
+    this.ensureWeFlowConfig(spec.baseUrl, config, logs);
+
+    if (this.hasWeFlowRuntime(spec.cwd)) {
+      return;
+    }
+
+    const installCommand = this.resolveNpmCommand("npm install");
+    this.appendLog(
+      logs.stdout,
+      `[yinjie] WeFlow 依赖缺失，开始执行 ${installCommand.preview}\n`,
+    );
+
+    await this.runForegroundCommand(
+      installCommand,
+      spec.cwd,
+      this.buildProcessEnv("weflow"),
+      logs,
+      "WeFlow 依赖安装失败，请检查日志。",
+    );
+  }
+
+  private hasWeFlowRuntime(cwd: string) {
+    const nodeModulesDir = path.join(cwd, "node_modules");
+    if (!existsSync(nodeModulesDir)) {
+      return false;
+    }
+
+    const electronExecutable =
+      process.platform === "win32"
+        ? path.join(nodeModulesDir, "electron", "dist", "electron.exe")
+        : path.join(nodeModulesDir, "electron", "dist", "electron");
+    const viteBinary = path.join(nodeModulesDir, "vite", "bin", "vite.js");
+    return existsSync(electronExecutable) && existsSync(viteBinary);
+  }
+
+  private ensureWeFlowConfig(
+    baseUrl: string,
+    config: ConnectorConfig,
+    logs: ProcessLogs,
+  ) {
+    const configPath = resolveWeFlowConfigPath();
+    const configDir = path.dirname(configPath);
+    mkdirSync(configDir, { recursive: true });
+
+    const url = new URL(baseUrl);
+    const existingConfig = readJsonObject(configPath);
+    const nextConfig = {
+      ...existingConfig,
+      httpApiEnabled: true,
+      httpApiHost: url.hostname,
+      httpApiPort: normalizeHttpPort(url),
+      httpApiToken: config.weflowAccessToken ?? DEFAULT_WEFLOW_ACCESS_TOKEN,
+    };
+
+    writeFileSync(configPath, `${JSON.stringify(nextConfig, null, 2)}\n`, "utf8");
+    this.appendLog(
+      logs.stdout,
+      `[yinjie] 已写入 WeFlow API 配置：${configPath}\n`,
+    );
+  }
+
+  private resolveNpmCommand(commandLine: string): ShellCommandSpec {
+    if (process.platform === "win32") {
+      return {
+        command: "cmd.exe",
+        args: ["/d", "/s", "/c", commandLine],
+        preview: commandLine,
+      };
+    }
+
+    return {
+      command: "sh",
+      args: ["-lc", commandLine],
+      preview: commandLine,
+    };
+  }
+
+  private buildProcessEnv(key: LocalUpstreamServiceKey) {
+    if (key !== "weflow") {
+      return process.env;
+    }
+
+    return {
+      ...process.env,
+      ELECTRON_MIRROR:
+        process.env.ELECTRON_MIRROR ?? WEFLOW_ELECTRON_MIRROR,
+      npm_config_electron_mirror:
+        process.env.npm_config_electron_mirror ?? WEFLOW_ELECTRON_MIRROR,
+      ELECTRON_BUILDER_BINARIES_MIRROR:
+        process.env.ELECTRON_BUILDER_BINARIES_MIRROR ??
+        WEFLOW_ELECTRON_BUILDER_MIRROR,
+      npm_config_fetch_retries: process.env.npm_config_fetch_retries ?? "5",
+      npm_config_fetch_retry_factor:
+        process.env.npm_config_fetch_retry_factor ?? "2",
+      npm_config_fetch_retry_maxtimeout:
+        process.env.npm_config_fetch_retry_maxtimeout ?? "120000",
+    };
+  }
+
+  private async runForegroundCommand(
+    command: ShellCommandSpec,
+    cwd: string,
+    env: NodeJS.ProcessEnv,
+    logs: ProcessLogs,
+    failureMessage: string,
+  ) {
+    const child = this.spawnLoggedProcess(command, cwd, env, logs, false);
+
+    await new Promise<void>((resolve, reject) => {
+      child.on("error", reject);
+      child.on("exit", (code, signal) => {
+        if (signal) {
+          reject(new Error(`${failureMessage} 进程被信号 ${signal} 中断。`));
+          return;
+        }
+        if (code !== 0) {
+          reject(
+            new Error(this.readProcessError(logs.stderr, `${failureMessage} 退出码 ${code}.`)),
+          );
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  private spawnLoggedProcess(
+    command: ShellCommandSpec,
+    cwd: string,
+    env: NodeJS.ProcessEnv,
+    logs: ProcessLogs,
+    detached: boolean,
+  ) {
+    const stdoutFd = openSync(logs.stdout, "a");
+    const stderrFd = openSync(logs.stderr, "a");
+
+    try {
+      return spawn(command.command, command.args, {
+        cwd,
+        env,
+        detached,
+        stdio: ["ignore", stdoutFd, stderrFd],
+        windowsHide: true,
+      });
+    } finally {
+      closeSync(stdoutFd);
+      closeSync(stderrFd);
+    }
+  }
+
+  private async waitForHealth(url: string, timeoutMs: number) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      if (await this.checkHttpHealth(url)) {
+        return true;
+      }
+      await sleep(1000);
+    }
+    return false;
   }
 
   private async checkHttpHealth(url: string) {
@@ -295,6 +478,20 @@ export class LocalUpstreamServiceManager {
     mkdirSync(LOG_DIR, { recursive: true });
   }
 
+  private getLogPaths(key: LocalUpstreamServiceKey): ProcessLogs {
+    return {
+      stdout: path.join(LOG_DIR, `${key}.out.log`),
+      stderr: path.join(LOG_DIR, `${key}.err.log`),
+    };
+  }
+
+  private appendLog(logPath: string, content: string) {
+    writeFileSync(logPath, content, {
+      encoding: "utf8",
+      flag: "a",
+    });
+  }
+
   private isPidRunning(pid: number) {
     if (!pid) {
       return false;
@@ -316,6 +513,52 @@ export class LocalUpstreamServiceManager {
       return fallbackMessage;
     }
   }
+}
+
+function resolveWeFlowConfigPath() {
+  if (process.platform === "win32") {
+    return path.join(process.env.APPDATA ?? os.homedir(), "WeFlow", "WeFlow-config.json");
+  }
+
+  if (process.platform === "darwin") {
+    return path.join(
+      os.homedir(),
+      "Library",
+      "Application Support",
+      "WeFlow",
+      "WeFlow-config.json",
+    );
+  }
+
+  return path.join(
+    process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config"),
+    "WeFlow",
+    "WeFlow-config.json",
+  );
+}
+
+function readJsonObject(filePath: string) {
+  if (!existsSync(filePath)) {
+    return {};
+  }
+
+  try {
+    const content = readFileSync(filePath, "utf8").replace(/^\uFEFF/, "").trim();
+    return content ? (JSON.parse(content) as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizeHttpPort(url: URL) {
+  if (url.port) {
+    const parsed = Number(url.port);
+    if (Number.isInteger(parsed) && parsed > 0 && parsed <= 65535) {
+      return parsed;
+    }
+  }
+
+  return url.protocol === "https:" ? 443 : 80;
 }
 
 function withTrailingSlash(value: string) {
