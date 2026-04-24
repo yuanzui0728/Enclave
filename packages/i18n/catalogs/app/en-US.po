@@ -12,7 +12,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: batch.reopenedCount
+#: apps/app/src/routes/desktop-mobile-page.tsx:2169
+msgid " · 已加入我的小程序"
+msgstr " · Added to My Mini Programs"
+
 #: apps/app/src/routes/group-qr-page.tsx:1475
 msgid " · 已回流 {0} 条"
 msgstr " · {0} returned"
@@ -25,56 +28,117 @@ msgstr " {speechProviderSummary}."
 msgid " 当前链路：{speechProviderSummary}。"
 msgstr " Current route: {speechProviderSummary}."
 
-#. placeholder {0}: attachment.label
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1517
 msgid "[表情] {0}"
 msgstr "[Sticker] {0}"
 
-#. placeholder {0}: commonGroups.length
+#. placeholder {0}: liveDraft.title
+#. placeholder {1}: liveDraft.topic
+#. placeholder {1}: liveDraft.topic || t(msg`未填写主题`)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1601
+#: apps/app/src/routes/desktop-mobile-page.tsx:1621
+msgid "{0} · {1}"
+msgstr "{0} · {1}"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:695
 msgid "{0} 个共同群聊"
 msgstr "{0} shared group chats"
 
-#. placeholder {0}: groupMembers.length
+#. placeholder {0}: account.name
+#: apps/app/src/routes/desktop-mobile-page.tsx:1365
+msgid "{0} 主页"
+msgstr "{0} Home"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1496
 msgid "{0} 人"
 msgstr "{0} members"
 
-#. placeholder {0}: membersQuery.data.length
-#. placeholder {0}: membersQuery.data?.length ?? 0
 #: apps/app/src/routes/group-chat-details-page.tsx:542
 #: apps/app/src/routes/group-qr-page.tsx:241
 #: apps/app/src/routes/group-qr-page.tsx:1215
 msgid "{0} 人群聊"
 msgstr "{0}-member group chat"
 
-#. placeholder {0}: normalizedDraft.length
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:129
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:150
 msgid "{0} 字"
 msgstr "{0} chars"
 
-#. placeholder {0}: section.items.length
-#: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:742
+#. placeholder {0}: liveHistory[0]?.title ?? t(msg`最近直播`)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1697
+msgid "{0} 已结束，切到手机端继续跟进频道内容。"
+msgstr "{0} has ended. Continue following up on the channel on mobile."
+
+#. placeholder {0}: liveHistory[0].title
+#: apps/app/src/routes/desktop-mobile-page.tsx:1669
+msgid "{0} 已结束，可在手机端继续做频道跟进。"
+msgstr "{0} has ended. Continue following up on the channel on mobile."
+
+#. placeholder {0}: activeMiniProgram.name
+#. placeholder {0}: miniProgram.name
+#: apps/app/src/routes/desktop-mobile-page.tsx:1483
+#: apps/app/src/routes/desktop-mobile-page.tsx:1548
+msgid "{0} 接力"
+msgstr "{0} Handoff"
+
+#. placeholder {0}: group.items.length
+#: apps/app/src/routes/desktop-mobile-page.tsx:942
+#: apps/app/src/routes/desktop-mobile-page.tsx:1962
 msgid "{0} 条"
 msgstr "{0} items"
 
-#. placeholder {0}: batch.items.length
-#. placeholder {1}: formatConversationTimestamp(batch.batchStartedAt)
 #: apps/app/src/routes/group-qr-page.tsx:1472
 msgid "{0} 条会话 · 开始于 {1}"
 msgstr "{0} conversations · started on {1}"
 
-#. placeholder {0}: group.name
+#. placeholder {0}: activeHandoffHistory.length
+#: apps/app/src/routes/desktop-mobile-page.tsx:888
+msgid "{0} 条最近接力"
+msgstr "{0} recent handoffs"
+
+#. placeholder {0}: recentGroupInviteHandoffs.length
+#: apps/app/src/routes/desktop-mobile-page.tsx:1735
+msgid "{0} 条最近邀请"
+msgstr "{0} recent invites"
+
+#. placeholder {0}: activeLiveSession.title
+#: apps/app/src/routes/desktop-mobile-page.tsx:1665
+msgid "{0} 正在直播，可在手机端继续关注频道动线。"
+msgstr "{0} is live. Continue following the channel flow on mobile."
+
+#. placeholder {0}: activeLiveSession.title
+#: apps/app/src/routes/desktop-mobile-page.tsx:1694
+msgid "{0} 正在直播中，切到手机端继续查看频道表现。"
+msgstr "{0} is live. Switch to mobile to keep tracking channel performance."
+
+#. placeholder {0}: activeMiniProgram.name
+#. placeholder {0}: miniProgram.name
+#: apps/app/src/routes/desktop-mobile-page.tsx:1481
+#: apps/app/src/routes/desktop-mobile-page.tsx:1546
+msgid "{0} 的当前工作台，带上最近使用和本地待办上下文。"
+msgstr "The current workspace of {0}, with recent activity and local task context."
+
 #: apps/app/src/routes/group-chat-details-page.tsx:379
 #: apps/app/src/routes/group-chat-details-page.tsx:381
 msgid "{0} 群聊"
 msgstr "{0} group chat"
 
-#. placeholder {0}: groupQuery.data?.name ?? fallbackGroupLabel
 #: apps/app/src/routes/group-qr-page.tsx:890
 msgid "{0} 邀请"
 msgstr "{0} invitation"
+
+#. placeholder {0}: liveDraft.title
+#: apps/app/src/routes/desktop-mobile-page.tsx:1623
+msgid "{0}，在手机上继续直播准备与内容导流。"
+msgstr "{0}. Continue live prep and traffic routing on mobile."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:981
+msgid "{callHandoffKindLabel}接力"
+msgstr "{callHandoffKindLabel} handoff"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1016
+msgid "{callHandoffTitle} {callHandoffKindLabel}"
+msgstr "{callHandoffTitle} {callHandoffKindLabel}"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1087
 msgid "{categoryLabel} · {count} 条"
@@ -129,7 +193,6 @@ msgstr "{groupDisplayName} invitation"
 msgid "{groupDisplayName} 邀请文案"
 msgstr "{groupDisplayName} Invitation invite text"
 
-#. placeholder {0}: members.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2231
 msgid "{groupName} · {0} 人"
 msgstr "{groupName} · {0} members"
@@ -137,6 +200,18 @@ msgstr "{groupName} · {0} members"
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:282
 msgid "{imageCount} 张图片"
 msgstr "{imageCount} images"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2438
+msgid "{label} 已复制到剪贴板，可发送到手机继续。"
+msgstr "{label} copied to clipboard. Send it to your phone to continue."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2173
+msgid "{launchCount} 次"
+msgstr "{launchCount} times"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1053
+msgid "{officialHandoffTypeLabel}接力"
+msgstr "{officialHandoffTypeLabel} handoff"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:957
 msgid "{ownerDisplayName} 可快速管理成员、公告和群资料。"
@@ -188,17 +263,14 @@ msgstr "Notify for @all"
 msgid "↑ ↓ 选择，Enter 打开"
 msgstr "Use ↑ ↓ to select, Enter to open"
 
-#. placeholder {0}: topPendingReturnConversation.conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:1705
 msgid "1. 先补 {0}"
 msgstr "1. Make up {0} first"
 
-#. placeholder {0}: fallbackPendingReturnConversation.conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:1712
 msgid "2. 再看 {0}"
 msgstr "2. Look again at {0}"
 
-#. placeholder {0}: deferredPendingReturnConversation.conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:1719
 msgid "3. 冷却后处理 {0}"
 msgstr "3. Handle {0} after cooldown"
@@ -236,12 +308,15 @@ msgstr "Press Enter or click to view the profile"
 msgid "一段时间"
 msgstr "some time"
 
-#. placeholder {0}: formatConversationTimestamp(deliveredTarget.deliveredAt)
-#. placeholder {0}: formatConversationTimestamp(target.deliveredAt)
 #: apps/app/src/routes/group-qr-page.tsx:2591
 #: apps/app/src/routes/group-qr-page.tsx:3039
 msgid "上次发送于 {0}"
 msgstr "Last sent by {0}"
+
+#. placeholder {0}: formatConversationTimestamp(lastOpenedAt)
+#: apps/app/src/routes/desktop-mobile-page.tsx:2185
+msgid "上次打开 {0}"
+msgstr "Last opened {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:843
 msgid "不再接收该角色互动"
@@ -272,13 +347,18 @@ msgstr "Unavailable"
 msgid "不在冷却中，可直接继续补发"
 msgstr "Not in cooldown and ready to resend"
 
-#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2415
+#: apps/app/src/routes/desktop-mobile-page.tsx:207
+#: apps/app/src/routes/desktop-mobile-page.tsx:1225
 msgid "世界主人"
 msgstr "World owner"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:217
 msgid "世界主人不会出现在移除列表里。"
 msgstr "The world owner will not appear in the removal list."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1204
+msgid "世界在线"
+msgstr "World online"
 
 #: apps/app/src/routes/chat-details-page.tsx:297
 #: apps/app/src/routes/chat-details-page.tsx:320
@@ -305,6 +385,10 @@ msgstr "The main recommendation has been waiting for the return for a longer tim
 #: apps/app/src/routes/group-qr-page.tsx:2759
 msgid "主推荐是群聊扩散位，当前触达面更大，所以先放在第一位。"
 msgstr "The main recommendation is group chat spread, which currently has a larger reach, so we put it first."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2228
+msgid "产品讲解"
+msgstr "Product Walkthrough"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:509
 msgid "仅清空当前群聊历史消息，群成员和群资料会继续保留。"
@@ -342,9 +426,17 @@ msgstr "Select contacts on the left to add them to the current group chat in one
 msgid "从左侧通讯录选择好友后，这里会显示联系人资料、内容入口和管理操作。"
 msgstr "Select a friend from the contacts list on the left. Their profile, entry points, and management actions will appear here."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1014
+msgid "从桌面把 {callHandoffTitle} 的{callHandoffKindLabel}接力到手机继续。"
+msgstr "Hand off {callHandoffTitle}'s {callHandoffKindLabel} from desktop to mobile."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:864
 msgid "从消息列表移除"
 msgstr "Remove from message list"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1730
+msgid "从群二维码页发到手机的邀请，会先集中展示在这里，方便继续发手机或回桌面群页。"
+msgstr "Invites sent from the group QR page to mobile are collected here first, so you can resend them to mobile or jump back to the desktop group page."
 
 #: apps/app/src/routes/group-qr-page.tsx:1530
 msgid "从聊天线程点了“回到群邀请”后，会把最近回流入口记在这里，方便再次回到消息流。"
@@ -384,7 +476,6 @@ msgstr "Conversation not found"
 msgid "位置"
 msgstr "Location"
 
-#. placeholder {0}: message.attachment.title
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1000
 msgid "位置 · {0}"
 msgstr "Location · {0}"
@@ -424,10 +515,13 @@ msgstr "Edit my nickname in this group"
 msgid "修改群聊名称"
 msgstr "Edit group name"
 
-#. placeholder {0}: conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:2865
 msgid "先不动 {0}，主路径还会堵在前面。"
 msgstr "If you don't move {0} for now, the main path will still be blocked in front."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2007
+msgid "先从上面的入口或最近内容复制一个深链接，这里就会开始记录。"
+msgstr "Copy a deep link from the entries or recent content above, and records will start appearing here."
 
 #: apps/app/src/routes/chat-details-page.tsx:1171
 msgid "先从消息列表隐藏，后续有新消息时再次出现"
@@ -436,6 +530,10 @@ msgstr "Hide it from the message list first. It will reappear when new messages 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:153
 msgid "先去消息列表里建立一些聊天线程，再回来发送笔记。"
 msgstr "Create a few chat threads in the message list first, then come back to send the note."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1927
+msgid "先去群二维码页发一条邀请到手机，这里就会变成固定入口。"
+msgstr "Send an invite to mobile from the group QR page first, and this will become a pinned entry."
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:155
 msgid "先去通讯录建立一些关系，再回来把他们拉进群。"
@@ -457,7 +555,22 @@ msgstr "Go back to the chat first. Taking a photo or sending an image message is
 msgid "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
 msgstr "Go back to the chat first. Using hold-to-talk voice messages is closer to the experience currently available."
 
-#. placeholder {0}: topPendingReturnConversation.conversation.title
+#: apps/app/src/routes/desktop-mobile-page.tsx:1300
+msgid "先回消息里产生一些对话，这里就会开始出现手机接力入口。"
+msgstr "Go back to Messages and create a few chats first. Mobile handoff entries will appear here afterward."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1495
+msgid "先在桌面小程序面板里打开一个入口，这里就会出现可接力到手机的工作台。"
+msgstr "Open a mini program from the desktop panel first, and its workspace will appear here for handoff to mobile."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1560
+msgid "先在桌面小程序面板里打开几个入口，这里就会开始出现可接力到手机的最近记录。"
+msgstr "Open a few mini programs from the desktop panel first, and recent records you can hand off to mobile will appear here."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1682
+msgid "先在直播伴侣里启动一场直播。"
+msgstr "Start a live session in Live Companion first."
+
 #: apps/app/src/routes/group-qr-page.tsx:2798
 msgid "先处理 {0} 就行。"
 msgstr "Just deal with {0} first."
@@ -465,6 +578,10 @@ msgstr "Just deal with {0} first."
 #: apps/app/src/routes/group-qr-page.tsx:1747
 msgid "先处理主推荐"
 msgstr "Handle the top recommendation first"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1251
+msgid "先按最近活跃会话做接力，桌面和手机之间切换会更顺。"
+msgstr "Start with recently active conversations for handoff so switching between desktop and mobile stays smooth."
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:123
 msgid "先按图片消息聚合浏览"
@@ -494,12 +611,10 @@ msgstr "Start with the top recommendation. Cooldown targets can wait until they 
 msgid "先走主推荐。"
 msgstr "Start with the top recommendation."
 
-#. placeholder {0}: fallbackPendingReturnConversation.conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:2808
 msgid "先走主推荐更合适，{0} 还在冷却里。"
 msgstr "The top recommendation is the better choice first, and {0} is still in cooldown."
 
-#. placeholder {0}: topPendingReturnConversation.conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:2813
 msgid "先走主推荐更合适，先补 {0} 会先拿掉前排阻塞。"
 msgstr "The top recommendation is the better choice first. Resending {0} clears the first blockage in the queue."
@@ -511,7 +626,6 @@ msgstr "The top recommendation is the better choice first. Resending {0} clears 
 msgid "全部"
 msgstr "All"
 
-#. placeholder {0}: members.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2251
 msgid "全部 {0} 人"
 msgstr "All {0} members"
@@ -541,6 +655,27 @@ msgstr "All types"
 msgid "全部群成员"
 msgstr "All group members"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:129
+#: apps/app/src/routes/desktop-mobile-page.tsx:590
+msgid "公众号"
+msgstr "Official Account"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:599
+msgid "公众号主页"
+msgstr "Official Account Home"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:130
+msgid "公众号主页和文章阅读入口。"
+msgstr "Official account home and article reading entry points."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:592
+msgid "公众号文章"
+msgstr "Official Account Article"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1315
+msgid "公众号阅读在手机上更顺手，这里直接复制最近文章或账号主页。"
+msgstr "Official account reading works better on mobile. Copy the latest article or account home directly from here."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:679
 msgid "共 {totalResults} 条"
 msgstr "{totalResults} total"
@@ -549,7 +684,6 @@ msgstr "{totalResults} total"
 msgid "共同群聊"
 msgstr "Shared group chats"
 
-#. placeholder {0}: input.keyword
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1046
 msgid "关键词 · {0}"
 msgstr "Keyword · {0}"
@@ -558,7 +692,6 @@ msgstr "Keyword · {0}"
 msgid "关键词 · {debouncedKeyword}"
 msgstr "Keyword · {debouncedKeyword}"
 
-#. placeholder {0}: input.keyword
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1088
 msgid "关键词“{0}”"
 msgstr "Keyword “{0}”"
@@ -626,6 +759,10 @@ msgstr "Close remove members dialog"
 msgid "关闭群成员列表"
 msgstr "Close group member list"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:154
+msgid "其他"
+msgstr "Other"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
 msgid "内容不能为空"
 msgstr "Content cannot be empty"
@@ -633,6 +770,12 @@ msgstr "Content cannot be empty"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:685
 msgid "内容入口"
 msgstr "Content entry points"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1784
+#: apps/app/src/routes/desktop-mobile-page.tsx:1905
+#: apps/app/src/routes/desktop-mobile-page.tsx:1997
+msgid "再发一次"
+msgstr "Send Again"
 
 #: apps/app/src/routes/group-qr-page.tsx:1270
 msgid "再发回这个会话"
@@ -672,11 +815,11 @@ msgstr "Recent {categoryLabel} · {count} items"
 msgid "最近一轮："
 msgstr "Latest turn:"
 
-#: apps/app/src/routes/group-qr-page.tsx:1526
+#: apps/app/src/routes/desktop-mobile-page.tsx:1829
 msgid "最近从这些会话回到邀请页"
 msgstr "Recently returned to the invitation page from these conversations"
 
-#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:114
+#: apps/app/src/routes/desktop-mobile-page.tsx:1248
 msgid "最近会话"
 msgstr "Recent conversations"
 
@@ -684,21 +827,59 @@ msgstr "Recent conversations"
 msgid "最近会话暂时不可用"
 msgstr "Recent sessions are temporarily unavailable"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1504
+msgid "最近使用小程序"
+msgstr "Recently Used Mini Programs"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1311
+msgid "最近公众号内容"
+msgstr "Recent Official Account Content"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1940
+msgid "最近发往手机"
+msgstr "Recently Sent to Mobile"
+
+#. placeholder {0}: formatTimestamp(currentGroupInviteHandoff.sentAt)
+#. placeholder {0}: formatTimestamp(item.sentAt)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1757
+#: apps/app/src/routes/desktop-mobile-page.tsx:1885
+msgid "最近发送于 {0}"
+msgstr "Last sent {0}"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:924
+msgid "最近同步"
+msgstr "Latest Sync"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1507
+msgid "最近在桌面打开过的小程序，会直接形成手机继续入口。"
+msgstr "Mini programs recently opened on desktop will automatically become continue-on-mobile entries."
+
 #: apps/app/src/routes/group-qr-page.tsx:1432
 msgid "最近已发邀请会话"
 msgstr "Recently invited sessions have been sent"
 
-#. placeholder {0}: activeDeliveredConversation.conversationTitle
-#: apps/app/src/routes/group-qr-page.tsx:1402
+#. placeholder {0}: formatTimestamp(liveHistory[0].startedAt)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1680
+msgid "最近开播于 {0}"
+msgstr "Most recently went live {0}"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1229
+msgid "最近快照"
+msgstr "Latest Snapshot"
+
+#. placeholder {0}: activeGroupInviteDelivery.conversationTitle
+#: apps/app/src/routes/desktop-mobile-page.tsx:1801
 msgid "最近投递到 {0}"
 msgstr "Recently posted to {0}"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:925
+msgid "最近接力"
+msgstr "Latest Handoff"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:196
 msgid "最近活跃"
 msgstr "Recently active"
 
-#. placeholder {0}: formatConversationTimestamp(conversation.lastActivityAt)
-#. placeholder {0}: formatConversationTimestamp(groupQuery.data.lastActivityAt)
 #: apps/app/src/routes/group-qr-page.tsx:1219
 #: apps/app/src/routes/group-qr-page.tsx:2593
 #: apps/app/src/routes/group-qr-page.tsx:2608
@@ -710,12 +891,23 @@ msgstr "Recently active {0}"
 msgid "最近消息 · {count} 条"
 msgstr "Recent messages · {count} items"
 
-#. placeholder {0}: formatPendingReturnCooldownRemaining(deliveredAt)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1697
+#: apps/app/src/routes/desktop-mobile-page.tsx:1702
+msgid "最近直播"
+msgstr "Latest Live"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1660
+msgid "最近直播状态"
+msgstr "Recent Live Status"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1870
+msgid "最近群邀请记录"
+msgstr "Recent Group Invite Records"
+
 #: apps/app/src/routes/group-qr-page.tsx:2605
 msgid "冷却剩余 {0}"
 msgstr "Cooldown remaining {0}"
 
-#. placeholder {0}: formatPendingReturnCooldownRemaining(target.deliveredAt)
 #: apps/app/src/routes/group-qr-page.tsx:2089
 msgid "冷却剩余 {0}，结束后会自动回到优先位。"
 msgstr "Cooldown remaining {0}. It will return to the priority slot when cooldown ends."
@@ -730,17 +922,14 @@ msgstr "Cooling down"
 msgid "分享了一条链接。"
 msgstr "Shared a link."
 
-#. placeholder {0}: attachment.title
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1508
 msgid "分享了位置 {0}。"
 msgstr "Shared a location: {0}."
 
-#. placeholder {0}: attachment.name
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1504
 msgid "分享了名片 {0}。"
 msgstr "Shared a contact card: {0}."
 
-#. placeholder {0}: attachment.title
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1512
 msgid "分享了笔记 {0}。"
 msgstr "Shared a note: {0}."
@@ -757,8 +946,6 @@ msgstr "Share group link"
 msgid "分享邀请文案"
 msgstr "Share invitation copy"
 
-#. placeholder {0}: resolveCategoryLabel(activeCategory)
-#. placeholder {0}: resolveCategoryLabel(input.activeCategory)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:321
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1050
 msgid "分类 · {0}"
@@ -771,6 +958,10 @@ msgstr "Browse by category"
 #: apps/app/src/routes/group-qr-page.tsx:1957
 msgid "切到备选"
 msgstr "Switch to alternative"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:180
+msgid "切回手机端发现页，继续进入朋友圈与广场动态。"
+msgstr "Go back to Discover on mobile to continue into Moments and the feed."
 
 #: apps/app/src/routes/group-qr-page.tsx:1693
 msgid "刚补发过，先等一轮回流"
@@ -804,7 +995,20 @@ msgstr "Delete current chat content"
 msgid "删除聊天"
 msgstr "Delete chat"
 
-#. placeholder {0}: formatTimestamp(member.joinedAt)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1261
+#: apps/app/src/routes/desktop-mobile-page.tsx:1326
+#: apps/app/src/routes/desktop-mobile-page.tsx:1438
+msgid "刷新"
+msgstr "Refresh"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1653
+msgid "刷新直播状态"
+msgstr "Refresh Live Status"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2232
+msgid "剧情陪看"
+msgstr "Story Watchalong"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2432
 msgid "加入于 {0}"
 msgstr "Joined on {0}"
@@ -830,10 +1034,17 @@ msgstr "After blocking, you will no longer receive interactions from this charac
 msgid "加入黑名单后，将不再接收该角色的互动。确认继续吗？"
 msgstr "After blocking, you will no longer receive interactions from this character. Continue?"
 
-#: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:401
-#: apps/app/src/routes/group-qr-page.tsx:2992
+#: apps/app/src/routes/desktop-mobile-page.tsx:2235
+msgid "单人控台"
+msgstr "Solo Control Desk"
+
+#: apps/app/src/lib/conversation-route.ts:28
 msgid "单聊"
 msgstr "Direct chat"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:120
+msgid "单聊、群聊和消息列表入口。"
+msgstr "Direct chats, group chats, and message list entry points."
 
 #: apps/app/src/routes/group-qr-page.tsx:2688
 msgid "单聊定向补发"
@@ -856,6 +1067,14 @@ msgstr "Native audio understanding"
 msgid "去设置"
 msgstr "Go to settings"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:2123
+msgid "发主页到手机"
+msgstr "Send Home to Mobile"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1634
+msgid "发准备到手机"
+msgstr "Send Prep to Mobile"
+
 #: apps/app/src/routes/group-qr-page.tsx:1590
 msgid "发到最近会话"
 msgstr "Send to recent conversations"
@@ -864,9 +1083,30 @@ msgstr "Send to recent conversations"
 msgid "发到手机"
 msgstr "Send to mobile phone"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1541
+#: apps/app/src/routes/desktop-mobile-page.tsx:2057
+msgid "发到手机继续"
+msgstr "Send to Mobile to Continue"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:1008
 msgid "发布或修改群内置顶公告"
 msgstr "Publish or edit the pinned group announcement"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1476
+msgid "发当前工作台到手机"
+msgstr "Send Current Workspace to Mobile"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2105
+msgid "发文章到手机"
+msgstr "Send Article to Mobile"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:179
+msgid "发现"
+msgstr "Discover"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1711
+msgid "发直播状态到手机"
+msgstr "Send Live Status to Mobile"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:786
 #: apps/app/src/routes/chat-details-page.tsx:671
@@ -889,22 +1129,18 @@ msgstr "Sending..."
 msgid "发送了一个表情。"
 msgstr "Sent a sticker."
 
-#. placeholder {0}: formatVoiceDurationLabel(attachment.durationMs)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1500
 msgid "发送了一条{0}的语音。"
 msgstr "Sent a voice message of {0}."
 
-#. placeholder {0}: attachment.fileName
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1492
 msgid "发送了图片 {0}。"
 msgstr "Sent an image: {0}."
 
-#. placeholder {0}: attachment.fileName
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1496
 msgid "发送了文件 {0}。"
 msgstr "Sent a file: {0}."
 
-#. placeholder {0}: formatConversationTimestamp(record.deliveredAt)
 #: apps/app/src/routes/group-qr-page.tsx:1490
 msgid "发送于 {0}"
 msgstr "Sent by {0}"
@@ -955,6 +1191,10 @@ msgstr "You can add members first, or switch filters to view specific roles."
 msgid "可以稍放"
 msgstr "You can leave it for a while"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1220
+msgid "可用"
+msgstr "Available"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
 msgid "可留空保存"
 msgstr "Can be saved empty"
@@ -977,6 +1217,10 @@ msgstr "Selected members to remove will appear on the right"
 msgid "同步世界主人"
 msgstr "Sync world owner"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1186
+msgid "同步概览"
+msgstr "Sync Overview"
+
 #: apps/app/src/routes/group-qr-page.tsx:2991
 msgid "同类单聊"
 msgstr "Similar single chat"
@@ -992,7 +1236,6 @@ msgstr "group chat"
 msgid "名片"
 msgstr "Contact card"
 
-#. placeholder {0}: message.attachment.name
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:994
 msgid "名片 · {0}"
 msgstr "Contact card · {0}"
@@ -1001,12 +1244,14 @@ msgstr "Contact card · {0}"
 msgid "和对方创建新群"
 msgstr "Create a new group with this contact"
 
-#: apps/app/src/routes/group-qr-page.tsx:1261
-#: apps/app/src/routes/group-qr-page.tsx:1423
-#: apps/app/src/routes/group-qr-page.tsx:1506
-#: apps/app/src/routes/group-qr-page.tsx:1573
+#: apps/app/src/routes/desktop-mobile-page.tsx:1814
+#: apps/app/src/routes/desktop-mobile-page.tsx:1857
 msgid "回到会话"
 msgstr "return to conversation"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:166
+msgid "回到手机端消息列表，继续处理最近会话。"
+msgstr "Return to the mobile message list to continue handling recent conversations."
 
 #: apps/app/src/routes/group-qr-page.tsx:2410
 msgid "回到来源会话"
@@ -1016,13 +1261,12 @@ msgstr "Return to source session"
 msgid "回到紧凑预览状态"
 msgstr "Return to compact preview"
 
-#. placeholder {0}: speechStatus.activeProvider ?? unconfiguredLabel
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:248
 msgid "回复 {0}"
 msgstr "Reply {0}"
 
 #. placeholder {0}: formatConversationTimestamp(record.reopenedAt)
-#: apps/app/src/routes/group-qr-page.tsx:1557
+#: apps/app/src/routes/desktop-mobile-page.tsx:1845
 msgid "回流于 {0}"
 msgstr "Returned at {0}"
 
@@ -1033,7 +1277,6 @@ msgstr "Returned at {0}"
 msgid "图片"
 msgstr "Image"
 
-#. placeholder {0}: message.attachment.fileName
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:978
 msgid "图片 · {0}"
 msgstr "Image · {0}"
@@ -1044,6 +1287,10 @@ msgstr "Image · {0}"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1236
 msgid "图片与视频"
 msgstr "Images and videos"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:173
+msgid "在手机端继续查看联系人、星标朋友和公众号入口。"
+msgstr "Continue viewing contacts, starred friends, and official account entries on mobile."
 
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:104
 msgid "在独立窗口打开"
@@ -1057,7 +1304,6 @@ msgstr "Region"
 msgid "基础资料"
 msgstr "Basic info"
 
-#. placeholder {0}: topPendingReturnConversation.conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:587
 msgid "处理完 {0} 后，这轮可立即补发会话会先减少一条，刚处理的目标会进入短暂冷却等待回流。"
 msgstr "After handling {0}, one fewer conversation will be ready for immediate resend this round, and the one you just handled will enter a short cooldown while waiting for a return."
@@ -1074,12 +1320,17 @@ msgstr "Remark"
 msgid "备注名会优先显示在聊天信息和通讯录里。"
 msgstr "The remark name will be shown first in chat details and contacts."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1025
+#: apps/app/src/routes/desktop-mobile-page.tsx:1093
+#: apps/app/src/routes/desktop-mobile-page.tsx:1169
+msgid "复制到手机"
+msgstr "Copy to Mobile"
+
 #: apps/app/src/routes/group-qr-page.tsx:899
 msgid "复制到手机失败，请稍后重试。"
 msgstr "Failed to copy to mobile phone, please try again later."
 
-#: apps/app/src/routes/group-qr-page.tsx:813
-#: apps/app/src/routes/group-qr-page.tsx:820
+#: apps/app/src/routes/desktop-mobile-page.tsx:2440
 msgid "复制失败，请稍后重试。"
 msgstr "Copy failed, please try again later."
 
@@ -1115,7 +1366,6 @@ msgstr "Failed to copy the contact summary. Please try again later."
 msgid "复制邀请文案"
 msgstr "Copy invitation text"
 
-#. placeholder {0}: fallbackPendingReturnConversation.conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:615
 msgid "如果先改做 {0}，可立即补发会话同样会减少一条，但主推荐仍会保留在前面等待处理。"
 msgstr "If you switch to {0} first, the number of conversations ready for immediate resend also drops by one, but the top recommendation still stays in front waiting."
@@ -1136,7 +1386,6 @@ msgstr "Caption backfill in progress"
 msgid "实时通话"
 msgstr "Real-time calls"
 
-#. placeholder {0}: targetCharacter?.name ?? conversation.title ?? t(msg`当前聊天`)
 #: apps/app/src/routes/chat-details-page.tsx:1164
 msgid "对 {0} 进行隐藏、清空或安全操作。"
 msgstr "Hide, clear, or apply safety actions to {0}."
@@ -1148,6 +1397,22 @@ msgstr "The other person"
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:73
 msgid "将按顺序逐张发送图片。"
 msgstr "Images will be sent one by one in order."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:134
+msgid "小程序"
+msgstr "Mini Program"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:135
+msgid "小程序工作台和最近使用入口。"
+msgstr "Mini program workspace and recently used entry points."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1405
+msgid "小程序接力"
+msgstr "Mini Program Handoff"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1430
+msgid "小程序面板里还没有可同步到手机的最近使用。"
+msgstr "There are no recent mini programs in the panel ready to sync to mobile yet."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1118
 #: apps/app/src/routes/group-chat-details-page.tsx:255
@@ -1181,6 +1446,14 @@ msgstr "Chat notifications are no longer muted."
 #: apps/app/src/routes/group-chat-details-page.tsx:251
 msgid "已关闭群消息免打扰。"
 msgstr "Group notifications are no longer muted."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1429
+msgid "已刷新小程序接力内容。"
+msgstr "Mini program handoff content refreshed."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1645
+msgid "已刷新直播接力内容。"
+msgstr "Live handoff content refreshed."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:842
 #: apps/app/src/routes/chat-details-page.tsx:1202
@@ -1251,7 +1524,6 @@ msgstr "Opened the system share sheet."
 msgid "已打开邀请卡所在位置。"
 msgstr "The location of the invitation card has been opened."
 
-#. placeholder {0}: conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:1038
 #: apps/app/src/routes/group-qr-page.tsx:1077
 msgid "已把群邀请发到 {0}。"
@@ -1274,7 +1546,6 @@ msgstr "Returned already"
 msgid "已添加"
 msgstr "Added"
 
-#. placeholder {0}: memberIds.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1181
 msgid "已添加 {0} 位群成员。"
 msgstr "Added {0} group members."
@@ -1287,7 +1558,6 @@ msgstr "Added 1 group member."
 msgid "已添加到通讯录。"
 msgstr "Added to contacts."
 
-#. placeholder {0}: memberIds.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1228
 msgid "已移除 {0} 位群成员。"
 msgstr "Removed {0} group members."
@@ -1296,16 +1566,23 @@ msgstr "Removed {0} group members."
 msgid "已移除 1 位群成员。"
 msgstr "Removed 1 group member."
 
-#. placeholder {0}: activeFilterLabels.length
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:419
 msgid "已筛选 {0} 项"
 msgstr "{0} filters active"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1760
+msgid "已纳入手机接力固定入口"
+msgstr "Added to pinned mobile handoff entries"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:324
 msgid "已设为星标朋友。"
 msgstr "Added to starred friends."
 
-#. placeholder {0}: imagePreviews.length
+#: apps/app/src/routes/desktop-mobile-page.tsx:636
+#: apps/app/src/routes/desktop-mobile-page.tsx:1212
+msgid "已连接"
+msgstr "Connected"
+
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:68
 msgid "已选 {0} 张图片"
 msgstr "{0} images selected"
@@ -1315,12 +1592,10 @@ msgstr "{0} images selected"
 msgid "已选成员"
 msgstr "Selected members"
 
-#. placeholder {0}: selectedIds.length
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:154
 msgid "已选择 {0} 位群成员"
 msgstr "{0} group members selected"
 
-#. placeholder {0}: selectedIds.length
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:217
 msgid "已选择 {0} 位联系人"
 msgstr "{0} contacts selected"
@@ -1332,6 +1607,10 @@ msgstr "Configured"
 #: apps/app/src/routes/group-qr-page.tsx:1334
 msgid "带上群链接和邀请码，一次性发给对方。"
 msgstr "Bring the group link and invitation code and send them to the other party at once."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1137
+msgid "常用手机端入口先固定在这里，点击即可复制深链接，发到手机后继续浏览。"
+msgstr "Common mobile entries are pinned here first. Click to copy a deep link and continue browsing on your phone."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1125
 #: apps/app/src/routes/group-chat-details-page.tsx:262
@@ -1347,6 +1626,11 @@ msgstr "Turned on @all notifications."
 #: apps/app/src/routes/group-chat-details-page.tsx:270
 msgid "开启了群公告通知。"
 msgstr "Turned on group announcement notifications."
+
+#. placeholder {0}: formatTimestamp(activeLiveSession.startedAt)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1676
+msgid "开播于 {0}"
+msgstr "Went live at {0}"
 
 #: apps/app/src/routes/chat-details-page.tsx:978
 msgid "强提醒"
@@ -1372,12 +1656,10 @@ msgstr "Conversations still waiting for return"
 msgid "当前会话还没有聊天记录"
 msgstr "This conversation has no chat history yet"
 
-#. placeholder {0}: activeCategoryMeta.shortLabel
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:651
 msgid "当前会话里暂时没有可浏览的{0}消息。"
 msgstr "There are no {0} messages to browse in this conversation yet."
 
-#. placeholder {0}: resolveCategoryLabel(input.activeCategory)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1144
 msgid "当前会话里还没有{0}"
 msgstr "There are no {0} in this conversation yet."
@@ -1390,7 +1672,6 @@ msgstr "{totalMemberCount} members total"
 msgid "当前最值得优先补发"
 msgstr "Best conversation to resend now"
 
-#. placeholder {0}: results.length
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:404
 msgid "当前分类 {0} 条"
 msgstr "Current category {0} items"
@@ -1399,11 +1680,18 @@ msgstr "Current category {0} items"
 msgid "当前回流来源"
 msgstr "Current return source"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1446
+msgid "当前小程序工作台"
+msgstr "Current Mini Program Workspace"
+
 #: apps/app/src/routes/chat-details-page.tsx:1204
 msgid "当前已经处于黑名单中"
 msgstr "Already blocked"
 
-#. placeholder {0}: currentReturnSourceConversation.title
+#: apps/app/src/routes/desktop-mobile-page.tsx:1944
+msgid "当前把手机接力记录按内容类型拆开，方便区分消息、群邀请、公众号、小程序和直播链路。"
+msgstr "Mobile handoff records are split by content type here so you can distinguish messages, group invites, official accounts, mini programs, and live flows."
+
 #: apps/app/src/routes/group-qr-page.tsx:2393
 msgid "当前来自 {0}"
 msgstr "Currently from {0}"
@@ -1448,6 +1736,10 @@ msgstr "The current environment does not support replication."
 msgid "当前环境暂不支持复制到手机。"
 msgstr "The current environment does not support copying to mobile phones."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:2425
+msgid "当前环境暂不支持复制手机接力链接。"
+msgstr "This environment does not support copying mobile handoff links yet."
+
 #: apps/app/src/routes/group-chat-details-page.tsx:411
 msgid "当前环境暂不支持复制群聊摘要。"
 msgstr "Copying the group summary is not supported in this environment."
@@ -1464,13 +1756,15 @@ msgstr "The current environment does not support copying group links."
 msgid "当前环境暂不支持复制联系人摘要。"
 msgstr "Copying the contact summary is not supported in this environment."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1596
+msgid "当前直播准备"
+msgstr "Current Live Prep"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1116
 msgid "当前筛选结果"
 msgstr "Current filter results"
 
-#: apps/app/src/routes/group-chat-details-page.tsx:723
-#: apps/app/src/routes/group-chat-details-page.tsx:1029
-#: apps/app/src/routes/group-qr-page.tsx:190
+#: apps/app/src/routes/desktop-mobile-page.tsx:505
 msgid "当前群聊"
 msgstr "Current group chat"
 
@@ -1478,16 +1772,18 @@ msgstr "Current group chat"
 msgid "当前群聊共有 {totalMemberCount} 位成员。"
 msgstr "This group chat currently has {totalMemberCount} members."
 
-#: apps/app/src/routes/chat-details-page.tsx:1164
+#: apps/app/src/routes/desktop-mobile-page.tsx:1746
+msgid "当前群邀请"
+msgstr "Current Group Invite"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:506
 msgid "当前聊天"
 msgstr "Current chat"
 
-#. placeholder {0}: input.conversationTitle
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1078
 msgid "当前聊天 · {0}"
 msgstr "Current chat · {0}"
 
-#. placeholder {0}: indexedMessages.length
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:398
 msgid "当前范围 {0} 条"
 msgstr "Current scope {0} items"
@@ -1520,8 +1816,10 @@ msgstr "Current voice route:"
 msgid "当前邀请卡会承载群聊链接和邀请码。 在同一世界实例内打开链接，可直接回到这个群聊。"
 msgstr "The current invitation card will carry the group chat link and invitation code. Open the link within the same world instance to return directly to the group chat."
 
-#. placeholder {0}: formatPendingReturnDuration(deliveredAt)
-#. placeholder {0}: formatPendingReturnDuration(target.deliveredAt)
+#: apps/app/src/routes/desktop-mobile-page.tsx:2182
+msgid "待办 {completedTaskCount}/{totalTaskCount}"
+msgstr "Tasks {completedTaskCount}/{totalTaskCount}"
+
 #: apps/app/src/routes/group-qr-page.tsx:2590
 #: apps/app/src/routes/group-qr-page.tsx:2606
 msgid "待回流 {0}"
@@ -1536,11 +1834,22 @@ msgstr "Pending"
 msgid "待开启"
 msgstr "Not enabled"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1221
+msgid "待恢复"
+msgstr "Pending Recovery"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:637
+msgid "待检查"
+msgstr "Pending Check"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:149
+msgid "快捷入口"
+msgstr "Quick Entry"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:437
 msgid "快速选择"
 msgstr "Quick select"
 
-#. placeholder {0}: formatCallLatency(turn.totalDurationMs)
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1729
 msgid "总耗时 {0}"
 msgstr "Total {0}"
@@ -1552,9 +1861,6 @@ msgstr "Total {0}"
 msgid "成员"
 msgstr "Member"
 
-#. placeholder {0}: input.selectedSenderLabel
-#. placeholder {0}: selectedSender.label
-#. placeholder {0}: senderFilter === UNKNOWN_SENDER_FILTER ? unknownSenderLabel : senderFilter
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:319
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:328
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1054
@@ -1582,9 +1888,30 @@ msgstr "My nickname in this group"
 msgid "我在本群的昵称已更新。"
 msgstr "My nickname in this group has been updated."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1133
+msgid "手机入口"
+msgstr "Mobile Entry Points"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:884
+#: apps/app/src/routes/desktop-mobile-page.tsx:896
+msgid "手机接力"
+msgstr "Mobile Handoff"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:872
+msgid "手机接力当前仅提供桌面布局"
+msgstr "Mobile Handoff is currently available only in desktop layout"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:874
+msgid "手机接力面板目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续处理会话。"
+msgstr "The Mobile Handoff panel is currently enabled only in the web desktop layout and desktop shell. In mobile layout, go back to Messages first to continue the conversation."
+
 #: apps/app/src/routes/group-qr-page.tsx:845
 msgid "打开位置"
 msgstr "open location"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1418
+msgid "打开小程序面板"
+msgstr "Open Mini Program Panel"
 
 #: apps/app/src/routes/group-qr-page.tsx:855
 msgid "打开所在位置失败，请稍后再试。"
@@ -1606,6 +1933,10 @@ msgstr "Opening desktop chat details..."
 msgid "打开桌面聊天记录..."
 msgstr "Opening desktop chat history..."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1589
+msgid "打开直播伴侣"
+msgstr "Open Live Companion"
+
 #: apps/app/src/routes/chat-details-page.tsx:920
 msgid "打开系统分享面板"
 msgstr "Open system share sheet"
@@ -1614,10 +1945,29 @@ msgstr "Open system share sheet"
 msgid "打开邀请卡与分享入口"
 msgstr "Open the invite card and sharing entry"
 
-#. placeholder {0}: groupQuery.data?.name ?? fallbackCurrentGroupLabel
 #: apps/app/src/routes/group-qr-page.tsx:892
 msgid "把 {0} 的邀请入口发到手机继续查看和转发。"
 msgstr "Send the invitation entry of {0} to your mobile phone to continue viewing and forwarding."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:984
+msgid "把 {callHandoffTitle} 的通话入口带到手机继续。"
+msgstr "Bring the call entry for {callHandoffTitle} to mobile to continue."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:602
+msgid "把 {officialHandoffTitle} 发到手机继续阅读。"
+msgstr "Send {officialHandoffTitle} to your phone to continue reading."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1056
+msgid "把 {officialHandoffTitle} 带到手机继续。"
+msgstr "Bring {officialHandoffTitle} to mobile to continue."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:607
+msgid "把 {officialHandoffTitle} 的公众号主页带到手机继续查看。"
+msgstr "Bring the official account home of {officialHandoffTitle} to mobile to continue browsing."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:604
+msgid "把 {officialHandoffTitle} 的服务消息入口带到手机继续。"
+msgstr "Bring the service message entry of {officialHandoffTitle} to mobile to continue."
 
 #: apps/app/src/routes/group-qr-page.tsx:1315
 msgid "把当前群聊入口发给别的设备继续打开。"
@@ -1627,9 +1977,21 @@ msgstr "Send the current group chat entry to other devices to continue opening."
 msgid "把当前群邀请入口复制到手机，并进入接力历史。"
 msgstr "Copy the current group invitation entry to your mobile phone and enter the relay history."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:606
+msgid "把当前订阅号聚合阅读入口带到手机继续。"
+msgstr "Bring the current subscription reading hub to mobile to continue."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:885
+msgid "把桌面内容带到移动端继续处理。"
+msgstr "Bring desktop content to mobile and continue there."
+
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:137
 msgid "把聊天里的 URL 单独拎出来"
 msgstr "Pull URLs out of the chat on their own"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:187
+msgid "把资料编辑、API Key 和世界配置切到手机端继续处理。"
+msgstr "Move profile editing, API Key, and world settings to mobile to continue."
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:101
 msgid "把这条收藏笔记发到最近会话。"
@@ -1714,6 +2076,10 @@ msgstr "Try another message type, or switch back to all types to keep browsing."
 msgid "换个群成员试试，或者返回筛选页查看全部成员。"
 msgstr "Try another member, or go back to filters to view all members."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1217
+msgid "推理网关"
+msgstr "Inference Gateway"
+
 #: apps/app/src/routes/chat-details-page.tsx:917
 msgid "推荐给朋友"
 msgstr "Recommend to a friend"
@@ -1732,7 +2098,6 @@ msgstr "Submit report"
 msgid "提交聊天相关投诉"
 msgstr "Submit a chat-related report"
 
-#. placeholder {0}: formatMessageTimestamp(item.reminderAt)
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:833
 msgid "提醒 · {0}"
 msgstr "Reminder · {0}"
@@ -1757,7 +2122,6 @@ msgstr "Search text, attachments, and system notices"
 msgid "搜索"
 msgstr "Search"
 
-#. placeholder {0}: input.keyword
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1116
 msgid "搜索“{0}”"
 msgstr "Search “{0}”"
@@ -1766,7 +2130,6 @@ msgstr "Search “{0}”"
 msgid "搜索最近会话"
 msgstr "Search recent conversations"
 
-#. placeholder {0}: results.length
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:403
 msgid "搜索命中 {0} 条"
 msgstr "{0} search hits"
@@ -1804,8 +2167,6 @@ msgstr "Search group members"
 msgid "搜索联系人"
 msgstr "Search contacts"
 
-#. placeholder {0}: formatCallLatency(turn.synthesisDurationMs)
-#. placeholder {0}: speechStatus.activeTtsProvider ?? unconfiguredLabel
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:249
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1728
 msgid "播报 {0}"
@@ -1822,6 +2183,11 @@ msgstr "Empty value can be saved"
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:249
 msgid "收藏笔记"
 msgstr "Favorite note"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1003
+#: apps/app/src/routes/desktop-mobile-page.tsx:1073
+msgid "收起"
+msgstr "Dismiss"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:963
 msgid "收起成员列表"
@@ -1843,6 +2209,10 @@ msgstr "Change to next priority option"
 msgid "数字人播报文案、本地预览和本轮文本都会同步保存在当前聊天里。"
 msgstr "The digital-human speech copy, local preview, and this turn's text will all be saved to the current chat."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1209
+msgid "数据库"
+msgstr "Database"
+
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:100
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:128
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:129
@@ -1854,7 +2224,6 @@ msgstr "The digital-human speech copy, local preview, and this turn's text will 
 msgid "文件"
 msgstr "File"
 
-#. placeholder {0}: message.attachment.fileName
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:984
 msgid "文件 · {0}"
 msgstr "File · {0}"
@@ -1885,8 +2254,6 @@ msgstr "Couldn't start recording. Check the browser's microphone permission."
 msgid "日期"
 msgstr "Date"
 
-#. placeholder {0}: input.customDate
-#. placeholder {0}: resolveQuickDateFilterLabel(quickDateFilter)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:341
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1058
 msgid "日期 · {0}"
@@ -1913,7 +2280,6 @@ msgstr "Date · {specificDate}"
 msgid "时间"
 msgstr "Time"
 
-#. placeholder {0}: searchDateFilters.find((item) => item.id === dateFilter)?.label ?? t(msg`时间筛选`)
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:345
 msgid "时间 · {0}"
 msgstr "Time · {0}"
@@ -1935,9 +2301,6 @@ msgstr "Yesterday"
 msgid "昵称"
 msgstr "Nickname"
 
-#. placeholder {0}: character.name
-#. placeholder {0}: targetCharacter?.name ?? conversation.title
-#. placeholder {0}: targetCharacter?.name ?? t(msg`未设置`)
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:281
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:175
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:245
@@ -1945,8 +2308,6 @@ msgstr "Nickname"
 msgid "昵称：{0}"
 msgstr "Nickname: {0}"
 
-#. placeholder {0}: item.memberName?.trim() || item.memberId
-#. placeholder {1}: item.role === "admin" ? t(msg`管理员`) : t(msg`群成员`)
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1312
 msgid "昵称：{0} · {1}"
 msgstr "Nickname: {0} · {1}"
@@ -1965,7 +2326,7 @@ msgstr "Show group member nicknames"
 msgid "暂不建议"
 msgstr "Not recommended yet"
 
-#: apps/app/src/routes/group-chat-details-page.tsx:703
+#: apps/app/src/routes/desktop-mobile-page.tsx:1235
 msgid "暂无"
 msgstr "None"
 
@@ -1976,6 +2337,10 @@ msgstr "No announcement yet"
 #: apps/app/src/routes/group-qr-page.tsx:1782
 msgid "暂无备选"
 msgstr "No options yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:640
+msgid "暂无记录"
+msgstr "No records yet"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:696
 msgid "暂时没有共同群聊"
@@ -2003,7 +2368,6 @@ msgstr "More chat actions"
 msgid "更多资料"
 msgstr "More profile details"
 
-#. placeholder {0}: formatMessageTimestamp(note.updatedAt)
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:260
 msgid "更新于 {0}"
 msgstr "Updated {0}"
@@ -2012,8 +2376,6 @@ msgstr "Updated {0}"
 msgid "更早批次"
 msgstr "earlier batch"
 
-#. placeholder {0}: index + 1
-#. placeholder {0}: rank + 1
 #: apps/app/src/routes/group-qr-page.tsx:1452
 #: apps/app/src/routes/group-qr-page.tsx:2576
 msgid "更早批次 {0}"
@@ -2027,13 +2389,29 @@ msgstr "Moments"
 msgid "朋友资料"
 msgstr "Friend profile"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:598
+msgid "服务号主页"
+msgstr "Service Account Home"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:594
+msgid "服务号消息"
+msgstr "Service Account Messages"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1024
 msgid "未命名成员"
 msgstr "Unnamed member"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1601
+msgid "未填写主题"
+msgstr "No topic filled in"
+
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:234
 msgid "未就绪"
 msgstr "Not ready"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:155
+msgid "未归入主链路的补充接力入口。"
+msgstr "Supplementary handoff entries not grouped into the main flows."
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1217
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1285
@@ -2056,6 +2434,10 @@ msgstr "Not set"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1725
 msgid "未转写"
 msgstr "Not transcribed"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1213
+msgid "未连接"
+msgstr "Disconnected"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:244
 msgid "未配置"
@@ -2124,7 +2506,6 @@ msgstr "Source"
 msgid "来源会话附近相关会话"
 msgstr "Related conversations near the source"
 
-#. placeholder {0}: currentReturnSourceConversation.title
 #: apps/app/src/routes/group-qr-page.tsx:1240
 msgid "来自 {0}"
 msgstr "from {0}"
@@ -2217,9 +2598,52 @@ msgstr "Mark as read"
 msgid "标为未读"
 msgstr "Mark as unread"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:2240
+msgid "标准"
+msgstr "Standard"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:660
 msgid "标签"
 msgstr "Tags"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1102
+msgid "桌面回到当前工作区"
+msgstr "Back to Current Workspace on Desktop"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1409
+msgid "桌面小程序面板里的当前工作台和最近使用，会从这里直接发到手机继续。"
+msgstr "The current workspace and recent use from the desktop mini program panel can be sent to mobile directly from here."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1175
+#: apps/app/src/routes/desktop-mobile-page.tsx:1790
+#: apps/app/src/routes/desktop-mobile-page.tsx:1915
+msgid "桌面打开"
+msgstr "Open on Desktop"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2132
+msgid "桌面打开主页"
+msgstr "Open Home on Desktop"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2114
+msgid "桌面打开文章"
+msgstr "Open Article on Desktop"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1031
+msgid "桌面打开聊天"
+msgstr "Open Chat on Desktop"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1581
+msgid "桌面直播伴侣里的准备稿和最近直播记录，会优先从这里发到手机继续跟进。"
+msgstr "Drafts and recent live records in Desktop Live Companion will be sent from here first for follow-up on mobile."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:988
+msgid "桌面端先不假做本地通话，直接把当前聊天接力到手机，更贴近微信电脑端“到手机继续”的真实工作流。"
+msgstr "Desktop does not fake a local call first. It hands off the current chat directly to mobile, which is closer to WeChat Desktop's real \"Continue on phone\" workflow."
+
+#. placeholder {0}: resolveLiveModeLabel(liveDraft.mode)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1607
+msgid "模式 {0}"
+msgstr "Mode {0}"
 
 #: apps/app/src/routes/group-qr-page.tsx:1904
 msgid "次优先备选"
@@ -2298,6 +2722,10 @@ msgstr "Gathering matching messages in the current chat."
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
 msgstr "We're restoring the path back into your world and will return you to where you last left off."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1196
+msgid "正在检查同步状态..."
+msgstr "Checking sync status..."
+
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:310
 msgid "正在添加..."
 msgstr "Adding..."
@@ -2318,6 +2746,14 @@ msgstr "Generating group invitation card..."
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:236
 msgid "正在移除..."
 msgstr "Removing..."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1267
+msgid "正在读取会话..."
+msgstr "Loading conversations..."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1332
+msgid "正在读取公众号..."
+msgstr "Loading official accounts..."
 
 #: apps/app/src/routes/group-qr-page.tsx:1604
 msgid "正在读取最近会话"
@@ -2369,7 +2805,6 @@ msgstr "Leaving..."
 msgid "此操作不可恢复"
 msgstr "This action cannot be undone"
 
-#. placeholder {0}: searchMessageTypeFilters.find( (item) => item.id === messageTypeFilter, )?.label ?? unknownSenderLabel
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:727
 msgid "没有匹配的{0}"
 msgstr "No matching {0}"
@@ -2394,17 +2829,14 @@ msgstr "No valid speech was detected. Please say it again."
 msgid "没有录到有效语音，请再试一次。"
 msgstr "No valid audio was recorded. Please try again."
 
-#. placeholder {0}: input.selectedSenderLabel
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1151
 msgid "没有找到 {0} 的聊天记录"
 msgstr "No chat history found for {0}"
 
-#. placeholder {0}: searchTerm.trim()
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2108
 msgid "没有找到“{0}”"
 msgstr "No results for “{0}”"
 
-#. placeholder {0}: resolveCategoryLabel(input.activeCategory)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1130
 msgid "没有找到匹配的{0}"
 msgstr "No matching {0} found"
@@ -2423,8 +2855,6 @@ msgstr "No matching group history found"
 msgid "没有找到相关聊天记录"
 msgstr "No related chat history found"
 
-#. placeholder {0}: senderFilter === UNKNOWN_SENDER_FILTER ? unknownSenderLabel : senderFilter
-#. placeholder {1}: activeCategoryMeta.shortLabel
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:696
 msgid "没有来自 {0} 的{1}"
 msgstr "No {1} from {0}"
@@ -2432,6 +2862,10 @@ msgstr "No {1} from {0}"
 #: apps/app/src/routes/group-qr-page.tsx:2679
 msgid "活跃单聊触达"
 msgstr "Active single chat reach"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:929
+msgid "活跃接力链路"
+msgstr "Active Handoff Flows"
 
 #: apps/app/src/routes/group-qr-page.tsx:2679
 msgid "活跃群聊扩散"
@@ -2446,8 +2880,8 @@ msgstr "Browser speech recognition hit a network error. You can switch to record
 msgid "消"
 msgstr "M"
 
-#: apps/app/src/features/chat/chat-message-search-panel.tsx:172
-#: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:773
+#: apps/app/src/routes/desktop-mobile-page.tsx:119
+#: apps/app/src/routes/desktop-mobile-page.tsx:165
 msgid "消息"
 msgstr "Message"
 
@@ -2527,6 +2961,14 @@ msgstr "Clear history"
 msgid "清除指定日期"
 msgstr "Clear selected date"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:139
+msgid "游戏"
+msgstr "Games"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:140
+msgid "游戏中心、组局邀约和继续游玩入口。"
+msgstr "Game center, party invites, and continue-playing entry points."
+
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:242
 msgid "点下方按钮可重新接通本地画面"
 msgstr "Tap the button below to reconnect the local preview"
@@ -2546,6 +2988,10 @@ msgstr "Resend now"
 #: apps/app/src/routes/group-qr-page.tsx:2848
 msgid "现在追也不会立刻改善结构。"
 msgstr "Chasing now will not immediately improve the structure."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:899
+msgid "用当前世界的真实会话、公众号和运行状态做跨端继续。"
+msgstr "Use the real conversations, official accounts, and runtime state of the current world to continue across devices."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:485
 msgid "用逗号分隔多个标签，例如：同事，插画，策展。"
@@ -2571,6 +3017,22 @@ msgstr "Share and send the group entrance link directly through the system."
 msgid "直接通过系统分享面板发给联系人或其他应用。"
 msgstr "Send directly to contacts or other applications through the system sharing panel."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1646
+msgid "直播伴侣还没有可同步到手机的内容。"
+msgstr "Live Companion has no content ready to sync to mobile yet."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1603
+msgid "直播伴侣里还没有填写准备稿。"
+msgstr "No prep draft has been filled in Live Companion yet."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1625
+msgid "直播准备"
+msgstr "Live Prep"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1577
+msgid "直播接力"
+msgstr "Live Handoff"
+
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:98
 msgid "知道了"
 msgstr "OK"
@@ -2591,7 +3053,11 @@ msgstr "Submit the report? The system will record the current conversation conte
 msgid "确认清空这段聊天记录吗？此操作只影响当前会话视图。"
 msgstr "Clear this chat history? This only affects the current conversation view."
 
-#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:58
+#: apps/app/src/routes/desktop-mobile-page.tsx:144
+msgid "视频号 / 直播"
+msgstr "Channels / Live"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:359
 msgid "视频通话"
 msgstr "Video call"
 
@@ -2608,8 +3074,6 @@ msgstr "Remove from group"
 msgid "移除"
 msgstr "Remove"
 
-#. placeholder {0}: item.fileName
-#. placeholder {0}: member.name
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:52
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:194
 msgid "移除 {0}"
@@ -2670,10 +3134,13 @@ msgstr "Empty"
 msgid "笔记"
 msgstr "Note"
 
-#. placeholder {0}: message.attachment.title
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1006
 msgid "笔记 · {0}"
 msgstr "Note · {0}"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1389
+msgid "等公众号有推送后，这里会直接出现可接力到手机的阅读入口。"
+msgstr "Once there are official account posts, reading entries you can hand off to mobile will appear here."
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:658
 msgid "等待下一轮"
@@ -2705,7 +3172,6 @@ msgstr "Admin"
 msgid "类型"
 msgstr "Type"
 
-#. placeholder {0}: searchMessageTypeFilters.find( (item) => item.id === messageTypeFilter, )?.label ?? unknownSenderLabel
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:331
 msgid "类型 · {0}"
 msgstr "Type · {0}"
@@ -2759,6 +3225,14 @@ msgstr "Resume the conversation"
 msgid "继续把联系人拉进当前群聊"
 msgstr "Continue adding contacts into this group chat"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1364
+msgid "继续查看账号资料与最近推送。"
+msgstr "Continue viewing account details and recent posts."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1376
+msgid "继续阅读这篇公众号文章。"
+msgstr "Continue reading this official account article."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1401
 #: apps/app/src/routes/group-chat-details-page.tsx:1007
 msgid "编辑群公告"
@@ -2784,7 +3258,6 @@ msgstr "Pin chat"
 msgid "群主"
 msgstr "Owner"
 
-#. placeholder {0}: ownerCount + adminCount
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2255
 msgid "群主与管理员 {0} 人"
 msgstr "Owners and admins: {0}"
@@ -2795,6 +3268,10 @@ msgstr "Owners and admins: {0}"
 #: apps/app/src/routes/group-qr-page.tsx:2445
 msgid "群二维码"
 msgstr "Group QR code"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:125
+msgid "群二维码、群邀请卡和群入口接力。"
+msgstr "Group QR codes, invite cards, and group entry handoffs."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1514
 #: apps/app/src/routes/group-chat-details-page.tsx:702
@@ -2821,7 +3298,6 @@ msgstr "Group announcement updated."
 msgid "群成员"
 msgstr "Group members"
 
-#. placeholder {0}: input.selectedSenderLabel
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1102
 msgid "群成员 · {0}"
 msgstr "Group member · {0}"
@@ -2844,13 +3320,7 @@ msgstr "Group video calls are not available yet"
 msgid "群管理"
 msgstr "Group management"
 
-#: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:401
-#: apps/app/src/routes/group-chat-details-page.tsx:588
-#: apps/app/src/routes/group-chat-details-page.tsx:636
-#: apps/app/src/routes/group-message-search-page.tsx:96
-#: apps/app/src/routes/group-qr-page.tsx:189
-#: apps/app/src/routes/group-qr-page.tsx:1099
-#: apps/app/src/routes/group-qr-page.tsx:2989
+#: apps/app/src/lib/conversation-route.ts:27
 msgid "群聊"
 msgstr "Group chat"
 
@@ -2921,10 +3391,13 @@ msgstr "Group info"
 msgid "群聊还活跃，可以继续扩散。"
 msgstr "The group chat is still active, so it can keep spreading."
 
-#: apps/app/src/routes/group-qr-page.tsx:188
-#: apps/app/src/routes/group-qr-page.tsx:2446
+#: apps/app/src/routes/desktop-mobile-page.tsx:124
 msgid "群聊邀请"
 msgstr "Group invite"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1726
+msgid "群聊邀请接力"
+msgstr "Group Invite Handoff"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:838
 msgid "群语音"
@@ -2937,6 +3410,10 @@ msgstr "Group voice calls are not available yet"
 #: apps/app/src/routes/group-qr-page.tsx:2386
 msgid "群邀请"
 msgstr "Group invitation"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1764
+msgid "群邀请入口"
+msgstr "Group Invite Entry"
 
 #: apps/app/src/routes/group-qr-page.tsx:896
 msgid "群邀请入口已复制到手机。"
@@ -3066,7 +3543,6 @@ msgstr "Contact profile is temporarily unavailable"
 msgid "表情"
 msgstr "Sticker"
 
-#. placeholder {0}: message.attachment.label
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1012
 msgid "表情 · {0}"
 msgstr "Sticker · {0}"
@@ -3086,6 +3562,14 @@ msgstr "Character members"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2253
 msgid "角色成员 {characterCount} 人"
 msgstr "Character members: {characterCount}"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:596
+msgid "订阅号消息"
+msgstr "Subscription Messages"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:186
+msgid "设置"
+msgstr "Settings"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:471
 msgid "设置备注"
@@ -3147,7 +3631,6 @@ msgstr "Details"
 msgid "语音"
 msgstr "Voice"
 
-#. placeholder {0}: formatVoiceDurationLabel(attachment.durationMs)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1436
 msgid "语音 {0}"
 msgstr "Voice {0}"
@@ -3168,7 +3651,7 @@ msgstr "Speech recognition hit a network error. You can switch to recorded trans
 msgid "语音转写失败，请稍后再试。"
 msgstr "Speech transcription failed. Please try again later."
 
-#: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:51
+#: apps/app/src/routes/desktop-mobile-page.tsx:360
 msgid "语音通话"
 msgstr "Voice call"
 
@@ -3206,6 +3689,11 @@ msgstr "Load failed"
 msgid "读取群成员失败"
 msgstr "Failed to load group members"
 
+#. placeholder {0}: resolveLiveQualityLabel(liveDraft.quality)
+#: apps/app/src/routes/desktop-mobile-page.tsx:1610
+msgid "质量 {0}"
+msgstr "Quality {0}"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:624
 msgid "资料"
 msgstr "Profile"
@@ -3214,12 +3702,14 @@ msgstr "Profile"
 msgid "超时且活跃"
 msgstr "timed out and active"
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:2244
+msgid "超清"
+msgstr "Ultra HD"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:673
 msgid "身份"
 msgstr "Identity"
 
-#. placeholder {0}: formatCallLatency(turn.transcriptionDurationMs)
-#. placeholder {0}: speechStatus.activeTranscriptionProvider ?? configuredLabel
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:254
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1718
 msgid "转写 {0}"
@@ -3255,6 +3745,10 @@ msgstr "Back"
 #: apps/app/src/routes/group-qr-page.tsx:1643
 msgid "返回上一页"
 msgstr "Back"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:876
+msgid "返回消息"
+msgstr "Back to Messages"
 
 #: apps/app/src/routes/chat-details-page.tsx:190
 #: apps/app/src/routes/group-chat-details-page.tsx:134
@@ -3298,7 +3792,6 @@ msgstr "Back to chat and send voice"
 msgid "返回聊天拍摄"
 msgstr "Back to chat and take a photo"
 
-#. placeholder {0}: conversation.title
 #: apps/app/src/routes/group-qr-page.tsx:2822
 msgid "还在冷却，先等回流再看 {0}。"
 msgstr "{0} is still in cooldown. Wait for a return first."
@@ -3307,10 +3800,25 @@ msgstr "{0} is still in cooldown. Wait for a return first."
 msgid "还在活跃窗口里，适合现在补。"
 msgstr "It is still in the active window, so it is suitable to make up for it now."
 
-#. placeholder {0}: activeCategoryMeta.shortLabel
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:649
 msgid "还没有{0}"
 msgstr "No {0} yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1298
+msgid "还没有最近会话"
+msgstr "No recent conversations yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1558
+msgid "还没有最近小程序"
+msgstr "No recent mini programs yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1387
+msgid "还没有最近文章"
+msgstr "No recent articles yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:650
+msgid "还没有发送记录"
+msgstr "No sent records yet"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:152
 msgid "还没有可发送的最近会话"
@@ -3319,6 +3827,30 @@ msgstr "There are no recent conversations available for sending yet"
 #: apps/app/src/routes/group-qr-page.tsx:2113
 msgid "还没有可投递的最近会话。"
 msgstr "There are no recent sessions to deliver yet."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1493
+msgid "还没有当前小程序"
+msgstr "No current mini program yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:948
+msgid "还没有形成稳定的手机接力记录。"
+msgstr "No stable mobile handoff records yet."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2005
+msgid "还没有手机接力记录"
+msgstr "No mobile handoff records yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2186
+msgid "还没有打开过"
+msgstr "Not opened yet"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1671
+msgid "还没有直播记录。"
+msgstr "No live records yet."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1925
+msgid "还没有群聊邀请接力"
+msgstr "No group invite handoff yet"
 
 #: apps/app/src/routes/group-qr-page.tsx:1659
 msgid "这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。"
@@ -3352,6 +3884,10 @@ msgstr "This character has no signature yet."
 msgid "这些会话已经收到过这张群邀请，并按发送批次归组，方便判断这一轮已经扩散到哪里。"
 msgstr "These conversations have already received this group invitation and are grouped according to the sending batch, making it easier to determine where this round has spread."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:208
+msgid "这台桌面端正在承接你的世界。"
+msgstr "This desktop is currently carrying your world."
+
 #: apps/app/src/routes/group-qr-page.tsx:2762
 msgid "这条也值得补发，但综合活跃度和回流时长后仍排在主推荐后面。"
 msgstr "This one is also worth resending, but it still ranks behind the top recommendation after balancing activity and return wait time."
@@ -3380,6 +3916,10 @@ msgstr "This one is better for a targeted resend."
 msgid "这条笔记还没有正文摘要。"
 msgstr "This note does not have a content summary yet."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1820
+msgid "这条群邀请还没有投递到聊天会话。去群二维码页发到最近会话后，这里会直接显示回跳入口。"
+msgstr "This group invite has not been delivered to a chat yet. Send it from the group QR page to a recent conversation and a jump-back entry will appear here."
+
 #: apps/app/src/routes/group-qr-page.tsx:1244
 msgid "这次是从聊天线程直接回到群邀请页，可继续转发或回到原会话。"
 msgstr "This time, you will return directly from the chat thread to the group invitation page. You can continue forwarding or return to the original conversation."
@@ -3397,9 +3937,21 @@ msgstr "This chat is temporarily unavailable. Try loading again, or go back to t
 msgid "这段语音没有识别出有效文字，请再试一次。"
 msgstr "No valid text was recognized from this audio. Please try again."
 
+#: apps/app/src/routes/desktop-mobile-page.tsx:1190
+msgid "这里不新造设备接口，先用当前世界的真实运行状态来判断手机接力是否值得继续。"
+msgstr "Instead of inventing a new device interface here, use the current world's real runtime state to decide whether mobile handoff is worth continuing."
+
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
 msgstr "This isn't just a bundle of account data, but a personal world that keeps growing and responding to you."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:1205
+msgid "连接异常"
+msgstr "Connection Issue"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:923
+msgid "连接状态"
+msgstr "Connection Status"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1445
 msgid "退出后你将不再收到这个群的消息，当前会话也会从桌面端列表中移除。"
@@ -3430,6 +3982,14 @@ msgstr "Choose the chat to receive the note"
 #: apps/app/src/routes/group-chat-details-page.tsx:995
 msgid "选择需要移出群聊的成员"
 msgstr "Choose members to remove from the group chat"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:172
+msgid "通讯录"
+msgstr "Contacts"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:150
+msgid "通讯录、发现、设置等全局入口。"
+msgstr "Global entries such as Contacts, Discover, and Settings."
 
 #: apps/app/src/routes/chat-details-page.tsx:787
 msgid "通讯录信息暂时不可用"
@@ -3530,7 +4090,6 @@ msgstr "Yinjie ID"
 msgid "隐界号：{identifier}"
 msgstr "Yinjie ID: {identifier}"
 
-#. placeholder {0}: targetCharacterId.slice(0, 8)
 #: apps/app/src/routes/chat-details-page.tsx:299
 #: apps/app/src/routes/chat-details-page.tsx:328
 msgid "隐界号：yinjie_{0}"
@@ -3565,6 +4124,14 @@ msgstr "Previewing"
 #: apps/app/src/routes/group-qr-page.tsx:1742
 msgid "预计处理后"
 msgstr "Expected to be processed"
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:145
+msgid "频道内容和直播接力入口。"
+msgstr "Channel content and live handoff entries."
+
+#: apps/app/src/routes/desktop-mobile-page.tsx:2247
+msgid "高清"
+msgstr "HD"
 
 #: apps/app/src/features/chat/use-speech-input.ts:759
 msgid "麦克风权限被拒绝，请先允许应用访问麦克风。"

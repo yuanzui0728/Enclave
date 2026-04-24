@@ -664,6 +664,7 @@ export function GamesPage() {
       applyFriendInvite(activityId, "invited");
       setSelectedGameId(activity.gameId);
       pushMobileHandoffRecord({
+        category: "games",
         description: `${activity.friendName} 正在玩 ${game?.name ?? "当前游戏"}，把这条组局邀约发到手机继续跟进。`,
         label: `${activity.friendName} 组局邀约`,
         path,
@@ -796,6 +797,7 @@ export function GamesPage() {
     try {
       await navigator.clipboard.writeText(link);
       pushMobileHandoffRecord({
+        category: "games",
         description: `把 ${game?.name ?? "游戏中心"} 的入口发到手机继续，保留最近玩过和活动状态。`,
         label: `${game?.name ?? "游戏中心"} 接力`,
         path,
