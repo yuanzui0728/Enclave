@@ -359,6 +359,202 @@ export function SelfAgentPage() {
         </AdminMiniPanel>
       </div>
 
+      <Card className="space-y-4">
+        <AdminSectionHeader
+          title="统一 policy"
+          actions={
+            <div className="flex items-center gap-3">
+              <AdminDraftStatusPill
+                ready={Boolean(rulesDraft)}
+                dirty={rulesDirty}
+              />
+              <Button
+                variant="primary"
+                onClick={() => saveRulesMutation.mutate(normalizedRulesDraft)}
+                disabled={!rulesDirty || saveRulesMutation.isPending}
+              >
+                {saveRulesMutation.isPending ? "保存中..." : "保存规则"}
+              </Button>
+            </div>
+          }
+        />
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <AdminSoftBox className="space-y-3">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              委托门控
+            </div>
+            <AdminToggle
+              label="启用 self-agent 统一编排"
+              checked={effectiveRules.policy.enabled}
+              onChange={(checked) =>
+                setRulesDraft((current) => ({
+                  ...(current ?? overview.rules),
+                  policy: {
+                    ...(current?.policy ?? overview.rules.policy),
+                    enabled: checked,
+                  },
+                }))
+              }
+            />
+            <AdminToggle
+              label="允许委托 action-runtime"
+              checked={effectiveRules.policy.allowActionRuntimeDelegation}
+              onChange={(checked) =>
+                setRulesDraft((current) => ({
+                  ...(current ?? overview.rules),
+                  policy: {
+                    ...(current?.policy ?? overview.rules.policy),
+                    allowActionRuntimeDelegation: checked,
+                  },
+                }))
+              }
+            />
+            <AdminToggle
+              label="允许委托 reminder-runtime"
+              checked={effectiveRules.policy.allowReminderRuntimeDelegation}
+              onChange={(checked) =>
+                setRulesDraft((current) => ({
+                  ...(current ?? overview.rules),
+                  policy: {
+                    ...(current?.policy ?? overview.rules.policy),
+                    allowReminderRuntimeDelegation: checked,
+                  },
+                }))
+              }
+            />
+            <AdminToggle
+              label="所有委托动作一律先确认"
+              checked={effectiveRules.policy.forceConfirmationForDelegatedActions}
+              onChange={(checked) =>
+                setRulesDraft((current) => ({
+                  ...(current ?? overview.rules),
+                  policy: {
+                    ...(current?.policy ?? overview.rules.policy),
+                    forceConfirmationForDelegatedActions: checked,
+                  },
+                }))
+              }
+            />
+          </AdminSoftBox>
+
+          <AdminSoftBox className="space-y-3">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              Heartbeat 节奏
+            </div>
+            <AdminToggle
+              label="启用 heartbeat"
+              checked={effectiveRules.heartbeat.enabled}
+              onChange={(checked) =>
+                setRulesDraft((current) => ({
+                  ...(current ?? overview.rules),
+                  heartbeat: {
+                    ...(current?.heartbeat ?? overview.rules.heartbeat),
+                    enabled: checked,
+                  },
+                }))
+              }
+            />
+            <AdminToggle
+              label="非主动时段也允许静默巡检"
+              checked={effectiveRules.heartbeat.allowNightlySilentScan}
+              onChange={(checked) =>
+                setRulesDraft((current) => ({
+                  ...(current ?? overview.rules),
+                  heartbeat: {
+                    ...(current?.heartbeat ?? overview.rules.heartbeat),
+                    allowNightlySilentScan: checked,
+                  },
+                }))
+              }
+            />
+            <div className="grid gap-3 md:grid-cols-3">
+              <AdminTextField
+                label="巡检频率(分钟)"
+                value={effectiveRules.heartbeat.everyMinutes}
+                type="number"
+                min={5}
+                max={1440}
+                onChange={(value) =>
+                  setRulesDraft((current) => ({
+                    ...(current ?? overview.rules),
+                    heartbeat: {
+                      ...(current?.heartbeat ?? overview.rules.heartbeat),
+                      everyMinutes: Number(value) || 30,
+                    },
+                  }))
+                }
+              />
+              <AdminTextField
+                label="开始小时"
+                value={effectiveRules.heartbeat.activeHoursStart}
+                type="number"
+                min={0}
+                max={23}
+                onChange={(value) =>
+                  setRulesDraft((current) => ({
+                    ...(current ?? overview.rules),
+                    heartbeat: {
+                      ...(current?.heartbeat ?? overview.rules.heartbeat),
+                      activeHoursStart: Number(value) || 0,
+                    },
+                  }))
+                }
+              />
+              <AdminTextField
+                label="结束小时"
+                value={effectiveRules.heartbeat.activeHoursEnd}
+                type="number"
+                min={0}
+                max={23}
+                onChange={(value) =>
+                  setRulesDraft((current) => ({
+                    ...(current ?? overview.rules),
+                    heartbeat: {
+                      ...(current?.heartbeat ?? overview.rules.heartbeat),
+                      activeHoursEnd: Number(value) || 23,
+                    },
+                  }))
+                }
+              />
+            </div>
+            <AdminTextField
+              label="每类最多扫描条数"
+              value={effectiveRules.heartbeat.maxItemsPerCategory}
+              type="number"
+              min={1}
+              max={10}
+              onChange={(value) =>
+                setRulesDraft((current) => ({
+                  ...(current ?? overview.rules),
+                  heartbeat: {
+                    ...(current?.heartbeat ?? overview.rules.heartbeat),
+                    maxItemsPerCategory: Number(value) || 3,
+                  },
+                }))
+              }
+            />
+          </AdminSoftBox>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <AdminTextArea
+            label="拦截的 connector keys"
+            value={blockedConnectorKeysText}
+            onChange={setBlockedConnectorKeysText}
+            description="每行一个 connector key。命中后，self-agent 会直接拦下这类动作，不让 action-runtime 继续执行。"
+            textareaClassName="min-h-32"
+          />
+          <AdminTextArea
+            label="拦截的 operation keys"
+            value={blockedOperationKeysText}
+            onChange={setBlockedOperationKeysText}
+            description="每行一个 operation key。用于从主代理层统一禁掉某些动作能力。"
+            textareaClassName="min-h-32"
+          />
+        </div>
+      </Card>
+
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <AdminSectionNav
           title="Workspace 文件"
@@ -494,6 +690,56 @@ export function SelfAgentPage() {
                       ))}
                     </div>
                   ) : undefined
+                }
+              />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="space-y-4">
+        <AdminSectionHeader title="近期 self-agent runs" />
+        {!overview.recentRuns.length ? (
+          <AdminEmptyState
+            title="还没有 self-agent run 记录"
+            description="等“我自己”收到新消息，或 heartbeat 再跑几轮，这里就会开始积累主代理的真实编排轨迹。"
+          />
+        ) : (
+          <div className="grid gap-4">
+            {overview.recentRuns.map((run) => (
+              <AdminRecordCard
+                key={run.id}
+                title={run.summary}
+                badges={
+                  <div className="flex flex-wrap gap-2">
+                    <StatusPill tone={resolveRunTone(run.status)}>
+                      {resolveRunLabel(run)}
+                    </StatusPill>
+                    <StatusPill tone="muted">
+                      {run.triggerType === "heartbeat" ? "heartbeat" : "conversation"}
+                    </StatusPill>
+                  </div>
+                }
+                meta={`执行时间：${formatCompactDateTime(run.updatedAt)}${
+                  run.conversationId ? ` · 会话 ${run.conversationId}` : ""
+                }`}
+                description={
+                  run.outputPreview ||
+                  run.inputPreview ||
+                  "当前没有可展示的输入/输出摘要。"
+                }
+                details={
+                  <div className="space-y-3">
+                    <AdminSoftBox>
+                      路由：{run.routeKey} · 决策：{run.policyDecision}
+                    </AdminSoftBox>
+                    {run.inputPreview ? (
+                      <AdminSoftBox>输入：{run.inputPreview}</AdminSoftBox>
+                    ) : null}
+                    {run.outputPreview ? (
+                      <AdminSoftBox>输出：{run.outputPreview}</AdminSoftBox>
+                    ) : null}
+                  </div>
                 }
               />
             ))}
