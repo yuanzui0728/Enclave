@@ -27,7 +27,9 @@ export interface DocumentAttachmentInsight {
     | 'pdf_text'
     | 'pdf_ocr'
     | 'docx_text'
+    | 'docx_ocr'
     | 'legacy_word_text'
+    | 'legacy_word_ocr'
     | 'provider_file_fallback';
   parser?: string;
   previewText?: string;

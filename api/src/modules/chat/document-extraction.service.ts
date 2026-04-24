@@ -27,6 +27,8 @@ const PDF_OCR_PAGE_TIMEOUT_MS = 12_000;
 const MAX_PDF_OCR_PAGES = 4;
 const PDF_OCR_RENDER_DPI = 180;
 const PDF_OCR_LANGS = 'chi_sim+eng';
+const MAX_DOCX_OCR_IMAGES = 6;
+const MAX_OFFICE_OCR_PAGES = 6;
 const OFFICE_COMMAND_CANDIDATES = ['soffice', 'libreoffice'];
 
 type WordExtractorLike = {
@@ -42,6 +44,30 @@ type WordExtractorLike = {
       includeBody?: boolean;
     }): string;
   }>;
+};
+
+type YauzlLike = {
+  fromBuffer(
+    buffer: Buffer,
+    options: { lazyEntries: boolean },
+    callback: (error: Error | null, zipFile?: YauzlZipFileLike) => void,
+  ): void;
+};
+
+type YauzlZipFileLike = {
+  readEntry(): void;
+  openReadStream(
+    entry: YauzlEntryLike,
+    callback: (error: Error | null, stream?: NodeJS.ReadableStream) => void,
+  ): void;
+  close(): void;
+  on(event: 'entry', listener: (entry: YauzlEntryLike) => void): void;
+  on(event: 'end', listener: () => void): void;
+  on(event: 'error', listener: (error: Error) => void): void;
+};
+
+type YauzlEntryLike = {
+  fileName: string;
 };
 
 type ExtractionMode = DocumentAttachmentInsight['extractionMode'];
@@ -148,9 +174,25 @@ export class DocumentExtractionService {
         return wordExtractorResult;
       }
 
+      const docxImageOcrResult = await this.extractDocxEmbeddedImageOcr(
+        input.buffer,
+      );
+      if (docxImageOcrResult.status === 'completed') {
+        return docxImageOcrResult;
+      }
+
       const docxXmlResult = await this.extractDocxXmlText(input.buffer);
       if (docxXmlResult.status === 'completed') {
         return docxXmlResult;
+      }
+
+      const officeOcrResult = await this.extractOfficeRenderedOcr(
+        input.buffer,
+        '.docx',
+        'docx_ocr',
+      );
+      if (officeOcrResult.status === 'completed') {
+        return officeOcrResult;
       }
 
       return officeResult;
@@ -172,6 +214,15 @@ export class DocumentExtractionService {
       );
       if (legacyWordResult.status === 'completed') {
         return legacyWordResult;
+      }
+
+      const officeOcrResult = await this.extractOfficeRenderedOcr(
+        input.buffer,
+        '.doc',
+        'legacy_word_ocr',
+      );
+      if (officeOcrResult.status === 'completed') {
+        return officeOcrResult;
       }
 
       return officeResult;
@@ -313,59 +364,11 @@ export class DocumentExtractionService {
     const tempFilePath = path.join(tempDir, 'source.pdf');
     try {
       await writeFile(tempFilePath, buffer);
-      const imagePrefix = path.join(tempDir, 'page');
-      await execFileAsync(
-        'pdftoppm',
-        [
-          '-f',
-          '1',
-          '-l',
-          String(MAX_PDF_OCR_PAGES),
-          '-r',
-          String(PDF_OCR_RENDER_DPI),
-          '-png',
-          tempFilePath,
-          imagePrefix,
-        ],
-        {
-          timeout: PDF_OCR_RENDER_TIMEOUT_MS,
-          maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
-        },
-      );
-      const files = (await readdir(tempDir))
-        .filter((fileName) => /^page-\d+\.png$/i.test(fileName))
-        .sort((left, right) => left.localeCompare(right, 'en'));
-      if (!files.length) {
-        return {
-          status: 'failed',
-          extractionMode: 'pdf_ocr',
-          parser: 'tesseract_ocr',
-          errorCode: 'PDF_OCR_RENDER_EMPTY',
-          errorMessage: 'PDF OCR 未生成可识别页面。',
-        };
-      }
-
-      const pageTexts: string[] = [];
-      for (const fileName of files) {
-        const { stdout } = await execFileAsync(
-          'tesseract',
-          [path.join(tempDir, fileName), 'stdout', '-l', PDF_OCR_LANGS],
-          {
-            timeout: PDF_OCR_PAGE_TIMEOUT_MS,
-            maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
-          },
-        );
-        const pageText = normalizeExtractedText(stdout);
-        if (pageText) {
-          pageTexts.push(pageText);
-        }
-      }
-
-      return this.buildCompletedResult({
-        text: pageTexts.join('\n\n'),
+      return await this.extractPdfOcrTextFromFilePath({
+        pdfPath: tempFilePath,
+        workingDir: tempDir,
         extractionMode: 'pdf_ocr',
-        parser: 'tesseract_ocr',
-        pageCount: files.length,
+        maxPages: MAX_PDF_OCR_PAGES,
       });
     } catch (error) {
       return toFailedExtractionResult({
@@ -468,6 +471,76 @@ export class DocumentExtractionService {
     }
   }
 
+  private async extractDocxEmbeddedImageOcr(
+    buffer: Buffer,
+  ): Promise<DocumentExtractionResult> {
+    try {
+      const imageAssets = await this.extractDocxEmbeddedImages(buffer);
+      if (!imageAssets.length) {
+        return {
+          status: 'failed',
+          extractionMode: 'docx_ocr',
+          parser: 'docx_media_ocr',
+          errorCode: 'DOCX_MEDIA_NOT_FOUND',
+          errorMessage: 'DOCX 中未找到可 OCR 的嵌入图片。',
+        };
+      }
+
+      return this.ocrImageAssets({
+        imageAssets,
+        extractionMode: 'docx_ocr',
+        parser: 'docx_media_ocr',
+      });
+    } catch (error) {
+      return toFailedExtractionResult({
+        error,
+        extractionMode: 'docx_ocr',
+        parser: 'docx_media_ocr',
+        binaryMissingCode: 'DOCX_MEDIA_OCR_UNAVAILABLE',
+        failureCode: 'DOCX_MEDIA_OCR_FAILED',
+        emptyCode: 'TEXT_EXTRACTION_EMPTY',
+        emptyMessage: 'DOCX 嵌图 OCR 未提取到可用正文。',
+      });
+    }
+  }
+
+  private async extractOfficeRenderedOcr(
+    buffer: Buffer,
+    extension: '.doc' | '.docx',
+    extractionMode: 'docx_ocr' | 'legacy_word_ocr',
+  ): Promise<DocumentExtractionResult> {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'yinjie-office-ocr-'));
+    const tempFilePath = path.join(tempDir, `source${extension}`);
+    try {
+      await writeFile(tempFilePath, buffer);
+      const pdfPath = await convertOfficeToPdf(tempFilePath, tempDir);
+      return await this.extractPdfOcrTextFromFilePath({
+        pdfPath,
+        workingDir: tempDir,
+        extractionMode,
+        maxPages: MAX_OFFICE_OCR_PAGES,
+      });
+    } catch (error) {
+      return toFailedExtractionResult({
+        error,
+        extractionMode,
+        parser: 'libreoffice+tesseract_ocr',
+        binaryMissingCode: 'OFFICE_OCR_UNAVAILABLE',
+        failureCode:
+          extractionMode === 'docx_ocr'
+            ? 'DOCX_OCR_FAILED'
+            : 'LEGACY_WORD_OCR_FAILED',
+        emptyCode: 'TEXT_EXTRACTION_EMPTY',
+        emptyMessage:
+          extractionMode === 'docx_ocr'
+            ? 'DOCX OCR 未提取到可用正文。'
+            : 'DOC OCR 未提取到可用正文。',
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  }
+
   private async extractDocxXmlText(
     buffer: Buffer,
   ): Promise<DocumentExtractionResult> {
@@ -498,6 +571,110 @@ export class DocumentExtractionService {
         failureCode: 'DOCX_XML_PARSE_FAILED',
         emptyCode: 'TEXT_EXTRACTION_EMPTY',
         emptyMessage: 'DOCX XML 未提取到可用正文。',
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  }
+
+  private async extractPdfOcrTextFromFilePath(input: {
+    pdfPath: string;
+    workingDir: string;
+    extractionMode: 'pdf_ocr' | 'docx_ocr' | 'legacy_word_ocr';
+    maxPages: number;
+  }): Promise<DocumentExtractionResult> {
+    const imagePrefix = path.join(input.workingDir, 'page');
+    await execFileAsync(
+      'pdftoppm',
+      [
+        '-f',
+        '1',
+        '-l',
+        String(input.maxPages),
+        '-r',
+        String(PDF_OCR_RENDER_DPI),
+        '-png',
+        input.pdfPath,
+        imagePrefix,
+      ],
+      {
+        timeout: PDF_OCR_RENDER_TIMEOUT_MS,
+        maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
+      },
+    );
+    const imageAssets = (await readdir(input.workingDir))
+      .filter((fileName) => /^page-\d+\.png$/i.test(fileName))
+      .sort((left, right) => left.localeCompare(right, 'en'))
+      .map((fileName) => ({
+        fileName,
+        path: path.join(input.workingDir, fileName),
+      }));
+    if (!imageAssets.length) {
+      return {
+        status: 'failed',
+        extractionMode: input.extractionMode,
+        parser: 'tesseract_ocr',
+        errorCode: 'PDF_OCR_RENDER_EMPTY',
+        errorMessage: 'OCR 渲染阶段未生成可识别页面。',
+      };
+    }
+
+    return this.ocrImageAssets({
+      imageAssets,
+      extractionMode: input.extractionMode,
+      parser: 'tesseract_ocr',
+    });
+  }
+
+  private async ocrImageAssets(input: {
+    imageAssets: Array<
+      | {
+          fileName: string;
+          buffer: Buffer;
+        }
+      | {
+          fileName: string;
+          path: string;
+        }
+    >;
+    extractionMode: 'pdf_ocr' | 'docx_ocr' | 'legacy_word_ocr';
+    parser: string;
+  }): Promise<DocumentExtractionResult> {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'yinjie-image-ocr-'));
+    try {
+      const pageTexts: string[] = [];
+      let index = 0;
+      for (const asset of input.imageAssets) {
+        index += 1;
+        const imagePath =
+          'path' in asset
+            ? asset.path
+            : path.join(
+                tempDir,
+                `ocr-${index}${normalizeOcrImageExtension(asset.fileName)}`,
+              );
+        if ('buffer' in asset) {
+          await writeFile(imagePath, asset.buffer);
+        }
+        const { stdout } = await execFileAsync(
+          'tesseract',
+          [imagePath, 'stdout', '-l', PDF_OCR_LANGS],
+          {
+            timeout: PDF_OCR_PAGE_TIMEOUT_MS,
+            maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
+          },
+        );
+        const pageText = normalizeExtractedText(stdout);
+        if (pageText) {
+          pageTexts.push(pageText);
+        }
+      }
+
+      return this.buildCompletedResult({
+        text: pageTexts.join('\n\n'),
+        extractionMode: input.extractionMode,
+        parser: input.parser,
+        pageCount: input.imageAssets.length,
       });
     } finally {
       await rm(tempDir, { recursive: true, force: true });
@@ -548,6 +725,89 @@ export class DocumentExtractionService {
       (loadedModule.default ?? loadedModule) as new () => WordExtractorLike;
     return new WordExtractor();
   }
+
+  private async loadYauzl(): Promise<YauzlLike> {
+    const loadedModule = await import('yauzl');
+    return (loadedModule.default ?? loadedModule) as YauzlLike;
+  }
+
+  private async extractDocxEmbeddedImages(buffer: Buffer) {
+    const yauzl = await this.loadYauzl();
+    return new Promise<Array<{ fileName: string; buffer: Buffer }>>(
+      (resolve, reject) => {
+        yauzl.fromBuffer(
+          buffer,
+          { lazyEntries: true },
+          (error, zipFile) => {
+            if (error || !zipFile) {
+              reject(error ?? new Error('docx zip open failed'));
+              return;
+            }
+
+            const imageAssets: Array<{ fileName: string; buffer: Buffer }> = [];
+            let settled = false;
+            const finish = (callback: () => void) => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              try {
+                zipFile.close();
+              } catch {}
+              callback();
+            };
+
+            zipFile.on('entry', (entry) => {
+              if (settled) {
+                return;
+              }
+              if (imageAssets.length >= MAX_DOCX_OCR_IMAGES) {
+                finish(() => resolve(imageAssets));
+                return;
+              }
+
+              if (!isSupportedDocxMediaEntry(entry.fileName)) {
+                zipFile.readEntry();
+                return;
+              }
+
+              zipFile.openReadStream(entry, (streamError, stream) => {
+                if (streamError || !stream) {
+                  finish(() =>
+                    reject(streamError ?? new Error('docx media stream unavailable')),
+                  );
+                  return;
+                }
+
+                const chunks: Buffer[] = [];
+                stream.on('data', (chunk) => {
+                  chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+                });
+                stream.on('error', (streamReadError) => {
+                  finish(() => reject(streamReadError));
+                });
+                stream.on('end', () => {
+                  imageAssets.push({
+                    fileName: path.basename(entry.fileName),
+                    buffer: Buffer.concat(chunks),
+                  });
+                  if (imageAssets.length >= MAX_DOCX_OCR_IMAGES) {
+                    finish(() => resolve(imageAssets));
+                    return;
+                  }
+                  zipFile.readEntry();
+                });
+              });
+            });
+
+            zipFile.on('end', () => finish(() => resolve(imageAssets)));
+            zipFile.on('error', (zipError) => finish(() => reject(zipError)));
+            zipFile.readEntry();
+          },
+        );
+      },
+    );
+  }
 }
 
 async function convertOfficeToText(inputPath: string, outputDir: string) {
@@ -582,6 +842,38 @@ async function convertOfficeToText(inputPath: string, outputDir: string) {
   throw lastError ?? new Error('office conversion failed');
 }
 
+async function convertOfficeToPdf(inputPath: string, outputDir: string) {
+  let lastError: unknown = null;
+  for (const command of OFFICE_COMMAND_CANDIDATES) {
+    try {
+      await execFileAsync(
+        command,
+        ['--headless', '--convert-to', 'pdf', '--outdir', outputDir, inputPath],
+        {
+          timeout: OFFICE_CONVERT_TIMEOUT_MS,
+          maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
+        },
+      );
+      const outputPath = path.join(
+        outputDir,
+        `${path.basename(inputPath, path.extname(inputPath))}.pdf`,
+      );
+      const outputStat = await stat(outputPath);
+      if (outputStat.size > 0) {
+        return outputPath;
+      }
+      lastError = new Error('converted pdf output is empty');
+    } catch (error) {
+      lastError = error;
+      if (!isBinaryMissingError(error)) {
+        break;
+      }
+    }
+  }
+
+  throw lastError ?? new Error('office pdf conversion failed');
+}
+
 function resolveLocalChatAttachmentPath(sourceUrl: string) {
   const fileName = extractChatAttachmentFileName(sourceUrl);
   return fileName ? resolveReadableChatAttachmentPath(fileName) : null;
@@ -612,6 +904,15 @@ function normalizeExtractedText(text: string, mimeType?: string | null) {
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
+}
+
+function isSupportedDocxMediaEntry(fileName: string) {
+  return /^word\/media\/[^/]+\.(png|jpe?g|bmp|tif|tiff)$/i.test(fileName);
+}
+
+function normalizeOcrImageExtension(fileName: string) {
+  const extension = path.extname(fileName).trim().toLowerCase();
+  return /\.(png|jpe?g|bmp|tif|tiff)$/i.test(extension) ? extension : '.png';
 }
 
 function extractTextFromDocxXml(xml: string) {
