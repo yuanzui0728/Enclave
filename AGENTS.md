@@ -24,7 +24,7 @@
 
 ## 后端模块（`api/src/modules/`）
 
-`action-runtime` · `admin` · `ai` · `analytics` · `auth` · `characters` · `chat` · `cloud-runtime` · `config` · `cyber-avatar` · `events` · `feed` · `followup-runtime` · `games` · `inference` · `moderation` · `moments` · `narrative` · `need-discovery` · `official-accounts` · `real-world-sync` · `reminder-runtime` · `scheduler` · `social` · `system` · `world`
+`action-runtime` · `admin` · `ai` · `analytics` · `auth` · `characters` · `chat` · `cloud-runtime` · `config` · `cyber-avatar` · `events` · `feed` · `followup-runtime` · `games` · `inference` · `moderation` · `moments` · `narrative` · `need-discovery` · `official-accounts` · `real-world-sync` · `reminder-runtime` · `scheduler` · `self-agent` · `social` · `system` · `world`
 
 ## 主 App 结构（`apps/app/src/`）
 
