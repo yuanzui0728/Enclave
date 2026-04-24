@@ -163,6 +163,14 @@ type ParsedWeeklyRule = {
   matchedKeyword: string;
 };
 
+type ExplicitClockMatch = {
+  rawHour: string;
+  rawMinuteToken?: string;
+  rawMinuteDigits?: string;
+  index: number;
+  text: string;
+};
+
 type ReminderParserDebug = {
   normalizedText: string;
   source: ReminderRuntimePreviewSourceValue;
@@ -323,6 +331,18 @@ function stripReferencedTaskTitle(text: string, title: string) {
     text
       .replace(new RegExp(escapeRegex(normalizedTitle), 'gu'), ' ')
       .replace(/\s+/g, ' ')
+      .trim(),
+  );
+}
+
+function normalizeUpdateScheduleFragment(value: string) {
+  return stripTrailingPunctuation(
+    value
+      .replace(/^(那就|那|就)\s*/u, '')
+      .replace(
+        /\s*(就行|就可以|就好|即可|吧|哈|呀|啊|呗|哦|噢|行吗|可以吗)$/u,
+        '',
+      )
       .trim(),
   );
 }
@@ -974,9 +994,15 @@ export class ReminderRuntimeService {
     }
 
     const clarificationEvaluation =
-      await this.evaluateConversationTurnFromClarification(input);
+      await this.evaluateConversationTurnFromRecentReminderContext(input);
     if (clarificationEvaluation) {
       return clarificationEvaluation;
+    }
+
+    const createClarificationEvaluation =
+      await this.evaluateConversationTurnFromClarification(input);
+    if (createClarificationEvaluation) {
+      return createClarificationEvaluation;
     }
 
     return directEvaluation;
@@ -1058,6 +1084,107 @@ export class ReminderRuntimeService {
       debug: {
         ...clarificationEvaluation.debug,
         canonicalMessage: clarifiedCommand,
+      },
+    };
+  }
+
+  private async evaluateConversationTurnFromRecentReminderContext(
+    input: ReminderConversationEvaluationInput,
+  ): Promise<ReminderConversationEvaluation | null> {
+    const currentText = normalizeUpdateScheduleFragment(input.text.trim());
+    if (
+      !currentText ||
+      !this.hasScheduleCue(currentText, input.rules) ||
+      this.findMatchedKeywords(
+        currentText,
+        input.rules.parserRules.createIntentKeywords,
+      ).length > 0
+    ) {
+      return null;
+    }
+
+    const previousUserMessage = await this.findLatestPreviousUserMessage(
+      input.conversationId,
+      input.sourceMessageId ?? '',
+    );
+    if (!previousUserMessage) {
+      return null;
+    }
+
+    const followupWindowMs = 10 * 60 * 1000;
+    if (
+      input.now.getTime() - previousUserMessage.createdAt.getTime() >
+      followupWindowMs
+    ) {
+      return null;
+    }
+
+    const previousEvaluation =
+      await this.evaluateConversationTurnWithoutClarification({
+        ...input,
+        text: previousUserMessage.text.trim(),
+        now: previousUserMessage.createdAt,
+        sourceMessageId: undefined,
+      });
+    if (
+      !previousEvaluation.handled ||
+      (previousEvaluation.action !== 'create' &&
+        previousEvaluation.action !== 'update')
+    ) {
+      return null;
+    }
+
+    const referencedTask =
+      previousEvaluation.action === 'update'
+        ? previousEvaluation.referencedTask
+        : await this.resolveReferencedTask(
+            input.ownerId,
+            input.conversationId,
+            previousUserMessage.text,
+          );
+    if (!referencedTask) {
+      return null;
+    }
+
+    const updateCommand = this.buildUpdateReminderCommand({
+      text: currentText,
+      task: referencedTask,
+      rules: input.rules,
+    });
+    if (!updateCommand) {
+      return null;
+    }
+
+    const parsedIntent = this.parseCreateIntent(
+      updateCommand,
+      input.timezone,
+      input.now,
+      input.rules,
+    );
+    if (
+      !parsedIntent.handled ||
+      ('needsClarification' in parsedIntent && parsedIntent.needsClarification)
+    ) {
+      return null;
+    }
+
+    return {
+      handled: true,
+      action: 'update',
+      source: 'rules',
+      reason: '已结合上一条提醒上下文，解析为修改当前提醒时间。',
+      responseText: renderTemplate(input.rules.textTemplates.taskUpdateSuccess, {
+        title: referencedTask.title,
+        scheduleText: this.describeIntentSchedule(parsedIntent, input.now),
+      }),
+      referencedTask,
+      parsedIntent,
+      debug: {
+        ...parsedIntent.debug,
+        normalizedText: normalizeComparableText(input.text),
+        source: 'rules',
+        extractedTitle: referencedTask.title,
+        canonicalMessage: updateCommand,
       },
     };
   }
@@ -1196,12 +1323,37 @@ export class ReminderRuntimeService {
         rules,
       });
       if (!updateCommand) {
+        const normalizedUpdateText = normalizeUpdateScheduleFragment(
+          stripUpdateCommand(text),
+        );
+        const hasStructuredUpdateCue =
+          normalizedUpdateText.length > 0 &&
+          (this.hasScheduleCue(normalizedUpdateText, rules) ||
+            this.findMatchedKeywords(
+              normalizedUpdateText,
+              rules.parserRules.createIntentKeywords,
+            ).length > 0);
         if (this.isPlainAffirmation(text)) {
           return {
             handled: false,
             action: 'unhandled',
             source,
             reason: '修改提醒规则命中后，没有解析出有效的新时间信息。',
+            debug: this.createParserDebug(text, {
+              source,
+              matchedIntentPatterns: updatePatterns,
+              extractedTitle: referencedTask.title,
+              canonicalMessage,
+              fallbackReason,
+            }),
+          };
+        }
+        if (!hasStructuredUpdateCue) {
+          return {
+            handled: false,
+            action: 'unhandled',
+            source,
+            reason: '命中修改口令，但没有识别出新的提醒时间信息。',
             debug: this.createParserDebug(text, {
               source,
               matchedIntentPatterns: updatePatterns,
@@ -1953,6 +2105,42 @@ export class ReminderRuntimeService {
     );
   }
 
+  private findExplicitClockMatch(text: string): ExplicitClockMatch | null {
+    const pattern =
+      /(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(?:点|:|：)(半|一刻|三刻|(\d{1,2}|[零〇一二两三四五六七八九十]{1,3}))?分?/u;
+    const match = pattern.exec(text);
+    if (!match) {
+      return null;
+    }
+
+    return {
+      rawHour: match[1] ?? '',
+      rawMinuteToken: match[2] ?? undefined,
+      rawMinuteDigits: match[3] ?? undefined,
+      index: match.index,
+      text: match[0] ?? '',
+    };
+  }
+
+  private isExplicitClockContextLikelySchedule(
+    text: string,
+    explicitMatch: ExplicitClockMatch,
+    matchedPeriodKey: ReminderParserPeriodKey | null,
+  ) {
+    if (/^\d{1,2}$/.test(explicitMatch.rawHour) || matchedPeriodKey != null) {
+      return true;
+    }
+
+    const prefix = normalizeComparableText(text.slice(0, explicitMatch.index));
+    if (!prefix) {
+      return true;
+    }
+
+    return /(改成|改到|改为|改下|改一下|换成|换到|调整到|更正成|更正为|纠正成|纠正为|是|在|约|今天|明天|后天|早上|早晨|上午|中午|下午|傍晚|晚上|今晚|明晚|睡前|提醒我|记得提醒我|帮我记一下|帮我记着|帮我记住|帮我记|记一下|记着|记住|每周[一二三四五六日天七]?|星期[一二三四五六日天七]?|礼拜[一二三四五六日天七]?)$/u.test(
+      prefix,
+    );
+  }
+
   private buildTaskRecurrencePrefix(task: ReminderTaskEntity) {
     const rule = task.recurrenceRule;
     if (!rule) {
@@ -1989,7 +2177,9 @@ export class ReminderRuntimeService {
     task: ReminderTaskEntity;
     rules: ReminderRuntimeRulesValue;
   }) {
-    const strippedText = stripUpdateCommand(input.text);
+    const strippedText = normalizeUpdateScheduleFragment(
+      stripUpdateCommand(input.text),
+    );
     if (!strippedText) {
       return null;
     }
@@ -2006,7 +2196,9 @@ export class ReminderRuntimeService {
     }
 
     const scheduleText =
-      stripReferencedTaskTitle(strippedText, input.task.title) || strippedText;
+      normalizeUpdateScheduleFragment(
+        stripReferencedTaskTitle(strippedText, input.task.title),
+      ) || strippedText;
     if (!this.hasScheduleCue(scheduleText, input.rules)) {
       return null;
     }
@@ -2429,21 +2621,29 @@ export class ReminderRuntimeService {
     text: string,
     rules: ReminderRuntimeRulesValue,
   ): ParsedClock | null {
-    const explicitMatch = text.match(
-      /(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(?:点|:|：)(半|一刻|三刻|(\d{1,2}|[零〇一二两三四五六七八九十]{1,3}))?分?/,
-    );
+    const explicitMatch = this.findExplicitClockMatch(text);
     if (explicitMatch) {
       const matchedPeriod = this.findMatchedPeriod(text, rules);
-      const rawHour = parseChineseNumber(explicitMatch[1]);
+      if (
+        !this.isExplicitClockContextLikelySchedule(
+          text,
+          explicitMatch,
+          matchedPeriod?.key ?? null,
+        )
+      ) {
+        return this.findMatchedPeriod(text, rules)?.clock ?? null;
+      }
+
+      const rawHour = parseChineseNumber(explicitMatch.rawHour);
       const rawMinute =
-        explicitMatch[2] === '半'
+        explicitMatch.rawMinuteToken === '半'
           ? 30
-          : explicitMatch[2] === '一刻'
+          : explicitMatch.rawMinuteToken === '一刻'
             ? 15
-            : explicitMatch[2] === '三刻'
+            : explicitMatch.rawMinuteToken === '三刻'
               ? 45
-              : explicitMatch[3]
-                ? parseChineseNumber(explicitMatch[3])
+              : explicitMatch.rawMinuteDigits
+                ? parseChineseNumber(explicitMatch.rawMinuteDigits)
                 : 0;
       if (
         Number.isFinite(rawHour) &&

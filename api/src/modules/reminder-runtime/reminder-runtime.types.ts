@@ -267,6 +267,7 @@ export const DEFAULT_REMINDER_RUNTIME_PARSER_RULES: ReminderRuntimeParserRulesVa
     updateIntentPatterns: [
       '^(是|改成|改到|改为|改下|改一下|换成|换到|调整到|更正成|更正为|纠正成|纠正为)',
       '^(把).*(改成|改到|改为|改下|改一下|换成|换到|调整到)',
+      '.+(改成|改到|改为|改下|改一下|换成|换到|调整到)',
       '^(不对|不是).*(是|改成|改到|改为|换成|换到|调整到)',
     ],
     completeIntentPatterns: [
