@@ -954,6 +954,7 @@ function GroupChatDetailsPanel({
   actionRequest,
   onOpenHistory,
 }: DesktopChatDetailsPanelProps) {
+  const t = translateRuntimeMessage;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
@@ -1066,7 +1067,9 @@ function GroupChatDetailsPanel({
       updateGroup(conversation.id, payload, baseUrl),
     onSuccess: async (_, payload) => {
       setEditorMode(null);
-      setNotice(payload.name ? "群聊名称已更新。" : "群公告已更新。");
+      setNotice(
+        payload.name ? t(msg`群聊名称已更新。`) : t(msg`群公告已更新。`),
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, conversation.id],
@@ -1085,7 +1088,7 @@ function GroupChatDetailsPanel({
     mutationFn: (pinned: boolean) =>
       setGroupPinned(conversation.id, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
-      setNotice(pinned ? "群聊已置顶。" : "群聊已取消置顶。");
+      setNotice(pinned ? t(msg`群聊已置顶。`) : t(msg`群聊已取消置顶。`));
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, conversation.id],
@@ -1107,29 +1110,29 @@ function GroupChatDetailsPanel({
       const nextNotice =
         payload.isMuted !== undefined
           ? payload.isMuted
-            ? "已开启群消息免打扰。"
-            : "已关闭群消息免打扰。"
+            ? t(msg`已开启群消息免打扰。`)
+            : t(msg`已关闭群消息免打扰。`)
           : payload.savedToContacts !== undefined
             ? payload.savedToContacts
-              ? "已保存到通讯录。"
-              : "已从通讯录移除。"
+              ? t(msg`已保存到通讯录。`)
+              : t(msg`已从通讯录移除。`)
             : payload.showMemberNicknames !== undefined
               ? payload.showMemberNicknames
-                ? "已开启显示群成员昵称。"
-                : "已关闭显示群成员昵称。"
+                ? t(msg`已开启显示群成员昵称。`)
+                : t(msg`已关闭显示群成员昵称。`)
               : payload.notifyOnAtMe !== undefined
                 ? payload.notifyOnAtMe
-                  ? "开启了 @我 通知。"
-                  : "关闭了 @我 通知。"
+                  ? t(msg`开启了 @我 通知。`)
+                  : t(msg`关闭了 @我 通知。`)
                 : payload.notifyOnAtAll !== undefined
                   ? payload.notifyOnAtAll
-                    ? "开启了 @所有人 通知。"
-                    : "关闭了 @所有人 通知。"
+                    ? t(msg`开启了 @所有人 通知。`)
+                    : t(msg`关闭了 @所有人 通知。`)
                   : payload.notifyOnAnnouncement !== undefined
                     ? payload.notifyOnAnnouncement
-                      ? "开启了群公告通知。"
-                      : "关闭了群公告通知。"
-                    : "群聊设置已更新。";
+                      ? t(msg`开启了群公告通知。`)
+                      : t(msg`关闭了群公告通知。`)
+                    : t(msg`群聊设置已更新。`);
 
       setNotice(nextNotice);
       await Promise.all([
@@ -1151,7 +1154,7 @@ function GroupChatDetailsPanel({
       updateGroupOwnerProfile(conversation.id, { nickname }, baseUrl),
     onSuccess: async () => {
       setEditorMode(null);
-      setNotice("我在本群的昵称已更新。");
+      setNotice(t(msg`我在本群的昵称已更新。`));
       await queryClient.invalidateQueries({
         queryKey: ["app-group-members", baseUrl, conversation.id],
       });
@@ -1174,8 +1177,8 @@ function GroupChatDetailsPanel({
     onSuccess: async (_, memberIds) => {
       setNotice(
         memberIds.length === 1
-          ? "已添加 1 位群成员。"
-          : `已添加 ${memberIds.length} 位群成员。`,
+          ? t(msg`已添加 1 位群成员。`)
+          : t(msg`已添加 ${memberIds.length} 位群成员。`),
       );
       setMemberPickerOpen(false);
       await Promise.all([
@@ -1195,7 +1198,7 @@ function GroupChatDetailsPanel({
   const clearMutation = useMutation({
     mutationFn: () => clearGroupMessages(conversation.id, baseUrl),
     onSuccess: async () => {
-      setNotice("群聊记录已清空。");
+      setNotice(t(msg`群聊记录已清空。`));
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, conversation.id],
@@ -1221,8 +1224,8 @@ function GroupChatDetailsPanel({
     onSuccess: async (_, memberIds) => {
       setNotice(
         memberIds.length === 1
-          ? "已移除 1 位群成员。"
-          : `已移除 ${memberIds.length} 位群成员。`,
+          ? t(msg`已移除 1 位群成员。`)
+          : t(msg`已移除 ${memberIds.length} 位群成员。`),
       );
       setMemberPickerOpen(false);
       await Promise.all([
@@ -1305,18 +1308,20 @@ function GroupChatDetailsPanel({
           subtitle:
             resolveGroupMemberDisplayName(item) !==
             (item.memberName?.trim() || item.memberId)
-              ? `昵称：${item.memberName?.trim() || item.memberId} · ${
-                  item.role === "admin" ? "管理员" : "群成员"
-                }`
+              ? t(
+                  msg`昵称：${item.memberName?.trim() || item.memberId} · ${
+                    item.role === "admin" ? t(msg`管理员`) : t(msg`群成员`)
+                  }`,
+                )
               : item.role === "admin"
-                ? "管理员"
-                : "群成员",
+                ? t(msg`管理员`)
+                : t(msg`群成员`),
           avatar: item.memberAvatar,
         })),
-    [membersQuery.data, resolveGroupMemberDisplayName],
+    [membersQuery.data, resolveGroupMemberDisplayName, t],
   );
   const groupMembers = membersQuery.data ?? [];
-  const ownerDisplayName = ownerMember?.memberName?.trim() || "我";
+  const ownerDisplayName = ownerMember?.memberName?.trim() || t(msg`我`);
 
   const memberItems: DesktopMemberGridItem[] = [
     ...groupMembers
@@ -1350,7 +1355,7 @@ function GroupChatDetailsPanel({
       })),
     {
       key: "add",
-      label: "添加",
+      label: t(msg`添加`),
       kind: "add" as const,
       onClick: () => {
         setMemberPickerMode("add");
@@ -1359,7 +1364,7 @@ function GroupChatDetailsPanel({
     },
     {
       key: "remove",
-      label: "移除",
+      label: t(msg`移除`),
       kind: "remove" as const,
       onClick: () => {
         setMemberPickerMode("remove");
@@ -1381,9 +1386,9 @@ function GroupChatDetailsPanel({
   const activeEditor: GroupDetailsEditorConfig | null =
     editorMode === "name"
       ? {
-          title: "修改群聊名称",
-          description: "新的名称会同步显示在聊天页和群成员列表里。",
-          placeholder: "请输入群聊名称",
+          title: t(msg`修改群聊名称`),
+          description: t(msg`新的名称会同步显示在聊天页和群成员列表里。`),
+          placeholder: t(msg`请输入群聊名称`),
           initialValue: group?.name ?? conversation.title,
           multiline: false,
           emptyAllowed: false,
@@ -1393,9 +1398,9 @@ function GroupChatDetailsPanel({
         }
       : editorMode === "announcement"
         ? {
-            title: "编辑群公告",
-            description: "支持换行。留空保存会清空当前群公告。",
-            placeholder: "输入群公告",
+            title: t(msg`编辑群公告`),
+            description: t(msg`支持换行。留空保存会清空当前群公告。`),
+            placeholder: t(msg`输入群公告`),
             initialValue: group?.announcement ?? "",
             multiline: true,
             emptyAllowed: true,
@@ -1407,9 +1412,11 @@ function GroupChatDetailsPanel({
           }
         : editorMode === "nickname"
           ? {
-              title: "修改我在本群的昵称",
-              description: `${ownerDisplayName}在这个群里的展示昵称会同步更新。`,
-              placeholder: "请输入群昵称",
+              title: t(msg`修改我在本群的昵称`),
+              description: t(
+                msg`${ownerDisplayName}在这个群里的展示昵称会同步更新。`,
+              ),
+              placeholder: t(msg`请输入群昵称`),
               initialValue: ownerMember?.memberName ?? "",
               multiline: false,
               emptyAllowed: false,
@@ -1421,10 +1428,10 @@ function GroupChatDetailsPanel({
   const activeConfirm =
     confirmAction === "clear"
       ? {
-          title: "清空聊天记录",
-          description: "仅清空当前群聊里的历史消息，群成员和群资料会继续保留。",
-          confirmLabel: "清空聊天记录",
-          pendingLabel: "正在清空...",
+          title: t(msg`清空聊天记录`),
+          description: t(msg`仅清空当前群聊里的历史消息，群成员和群资料会继续保留。`),
+          confirmLabel: t(msg`清空聊天记录`),
+          pendingLabel: t(msg`正在清空...`),
           danger: true,
           onConfirm: () => {
             setConfirmAction(null);
@@ -1433,11 +1440,11 @@ function GroupChatDetailsPanel({
         }
       : confirmAction === "leave"
         ? {
-            title: "退出群聊",
+            title: t(msg`退出群聊`),
             description:
-              "退出后你将不再收到这个群的消息，当前会话也会从桌面端列表中移除。",
-            confirmLabel: "退出群聊",
-            pendingLabel: "正在退出...",
+              t(msg`退出后你将不再收到这个群的消息，当前会话也会从桌面端列表中移除。`),
+            confirmLabel: t(msg`退出群聊`),
+            pendingLabel: t(msg`正在退出...`),
             danger: true,
             onConfirm: () => {
               setConfirmAction(null);
@@ -1479,14 +1486,14 @@ function GroupChatDetailsPanel({
       <DesktopWechatGroupSection>
         {membersQuery.isLoading ? (
           <div className="px-4 py-5">
-            <LoadingBlock label="正在读取群成员..." />
+            <LoadingBlock label={t(msg`正在读取群成员...`)} />
           </div>
         ) : (
           <>
             <DesktopWechatMemberGrid items={memberItems} />
             <DesktopWechatGroupRow
-              label="全部群成员"
-              value={`${groupMembers.length} 人`}
+              label={t(msg`全部群成员`)}
+              value={t(msg`${groupMembers.length} 人`)}
               onClick={() => {
                 setMemberBrowserAutoFocusSearch(false);
                 setMemberBrowserOpen(true);
@@ -1496,23 +1503,23 @@ function GroupChatDetailsPanel({
         )}
       </DesktopWechatGroupSection>
 
-      <DesktopWechatGroupSection title="群聊资料">
+      <DesktopWechatGroupSection title={t(msg`群聊资料`)}>
         <DesktopWechatGroupRow
-          label="群聊名称"
+          label={t(msg`群聊名称`)}
           value={groupQuery.data?.name ?? conversation.title}
           disabled={busy}
           onClick={() => setEditorMode("name")}
         />
         <DesktopWechatGroupRow
-          label="群公告"
-          value={groupQuery.data?.announcement?.trim() || "暂无公告"}
+          label={t(msg`群公告`)}
+          value={groupQuery.data?.announcement?.trim() || t(msg`暂无公告`)}
           multilineValue
           disabled={busy}
           onClick={() => setEditorMode("announcement")}
         />
         <DesktopWechatGroupRow
-          label="群二维码"
-          value="查看邀请卡"
+          label={t(msg`群二维码`)}
+          value={t(msg`查看邀请卡`)}
           onClick={() => {
             void navigate({
               to: "/group/$groupId/qr",
@@ -1532,13 +1539,13 @@ function GroupChatDetailsPanel({
           }}
         />
         <DesktopWechatGroupRow
-          label="查找聊天记录"
-          value="搜索当前群消息"
+          label={t(msg`查找聊天记录`)}
+          value={t(msg`搜索当前群消息`)}
           onClick={onOpenHistory}
         />
         <DesktopWechatGroupRow
-          label="聊天文件"
-          value="查看本群附件"
+          label={t(msg`聊天文件`)}
+          value={t(msg`查看本群附件`)}
           onClick={() => {
             void navigate({
               to: "/desktop/chat-files",
@@ -1548,9 +1555,9 @@ function GroupChatDetailsPanel({
         />
       </DesktopWechatGroupSection>
 
-      <DesktopWechatGroupSection title="聊天设置">
+      <DesktopWechatGroupSection title={t(msg`聊天设置`)}>
         <DesktopWechatGroupRow
-          label="消息免打扰"
+          label={t(msg`消息免打扰`)}
           checked={isMuted}
           disabled={busy || !group}
           onToggle={(checked) =>
@@ -1560,7 +1567,7 @@ function GroupChatDetailsPanel({
         {isMuted ? (
           <>
             <DesktopWechatGroupRow
-              label="@我仍通知"
+              label={t(msg`@我仍通知`)}
               checked={group?.notifyOnAtMe ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
@@ -1568,7 +1575,7 @@ function GroupChatDetailsPanel({
               }
             />
             <DesktopWechatGroupRow
-              label="@所有人仍通知"
+              label={t(msg`@所有人仍通知`)}
               checked={group?.notifyOnAtAll ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
@@ -1576,7 +1583,7 @@ function GroupChatDetailsPanel({
               }
             />
             <DesktopWechatGroupRow
-              label="群公告仍通知"
+              label={t(msg`群公告仍通知`)}
               checked={group?.notifyOnAnnouncement ?? true}
               disabled={busy || !group}
               onToggle={(checked) =>
@@ -1588,13 +1595,13 @@ function GroupChatDetailsPanel({
           </>
         ) : null}
         <DesktopWechatGroupRow
-          label="置顶聊天"
+          label={t(msg`置顶聊天`)}
           checked={group?.isPinned ?? conversation.isPinned}
           disabled={busy || !group}
           onToggle={(checked) => pinMutation.mutate(checked)}
         />
         <DesktopWechatGroupRow
-          label="保存到通讯录"
+          label={t(msg`保存到通讯录`)}
           checked={group?.savedToContacts ?? false}
           disabled={busy || !group}
           onToggle={(checked) =>
@@ -1602,13 +1609,13 @@ function GroupChatDetailsPanel({
           }
         />
         <DesktopWechatGroupRow
-          label="我在本群的昵称"
-          value={ownerMember?.memberName ?? "未设置"}
+          label={t(msg`我在本群的昵称`)}
+          value={ownerMember?.memberName ?? t(msg`未设置`)}
           disabled={busy}
           onClick={() => setEditorMode("nickname")}
         />
         <DesktopWechatGroupRow
-          label="显示群成员昵称"
+          label={t(msg`显示群成员昵称`)}
           checked={group?.showMemberNicknames ?? true}
           disabled={busy || !group}
           onToggle={(checked) =>
@@ -1616,7 +1623,7 @@ function GroupChatDetailsPanel({
           }
         />
         <DesktopWechatGroupRow
-          label="聊天背景"
+          label={t(msg`聊天背景`)}
           value={backgroundLabel}
           onClick={() => {
             void navigate({
@@ -1636,12 +1643,12 @@ function GroupChatDetailsPanel({
 
       <div className="space-y-2 px-3 pt-1">
         <DesktopWechatDangerButton
-          label="清空聊天记录"
+          label={t(msg`清空聊天记录`)}
           disabled={busy}
           onClick={() => setConfirmAction("clear")}
         />
         <DesktopWechatDangerButton
-          label="退出群聊"
+          label={t(msg`退出群聊`)}
           danger
           disabled={busy}
           onClick={() => setConfirmAction("leave")}
@@ -2003,6 +2010,7 @@ function DesktopGroupMemberBrowserDialog({
     anchorElement: HTMLButtonElement | null,
   ) => void;
 }) {
+  const t = translateRuntimeMessage;
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const memberItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -2049,10 +2057,10 @@ function DesktopGroupMemberBrowserDialog({
     label: string;
     count: number;
   }> = [
-    { id: "all", label: "全部", count: members.length },
-    { id: "owner", label: "群主", count: ownerCount },
-    { id: "admin", label: "管理员", count: adminCount },
-    { id: "character", label: "角色成员", count: characterCount },
+    { id: "all", label: t(msg`全部`), count: members.length },
+    { id: "owner", label: t(msg`群主`), count: ownerCount },
+    { id: "admin", label: t(msg`管理员`), count: adminCount },
+    { id: "character", label: t(msg`角色成员`), count: characterCount },
   ];
 
   const filteredMembers = useMemo(() => {
@@ -2080,30 +2088,32 @@ function DesktopGroupMemberBrowserDialog({
       const rawName = member.memberName ?? member.memberId;
       const roleLabel =
         member.role === "owner"
-          ? "群主"
+          ? t(msg`群主`)
           : member.role === "admin"
-            ? "管理员"
-            : "群成员";
+            ? t(msg`管理员`)
+            : t(msg`群成员`);
 
       return (
         displayName.toLowerCase().includes(keyword) ||
         rawName.toLowerCase().includes(keyword) ||
-        roleLabel.includes(keyword) ||
+        roleLabel.toLowerCase().includes(keyword) ||
         member.memberId.toLowerCase().includes(keyword)
       );
     });
-  }, [activeFilter, members, resolveDisplayName, searchTerm]);
+  }, [activeFilter, members, resolveDisplayName, searchTerm, t]);
 
   const activeFilterLabel =
-    filterTabs.find((tab) => tab.id === activeFilter)?.label ?? "全部";
+    filterTabs.find((tab) => tab.id === activeFilter)?.label ?? t(msg`全部`);
   const emptyStateTitle = searchTerm.trim()
-    ? `没有找到“${searchTerm.trim()}”`
-    : "当前没有匹配成员";
+    ? t(msg`没有找到“${searchTerm.trim()}”`)
+    : t(msg`当前没有匹配成员`);
   const emptyStateDescription = searchTerm.trim()
-    ? `试试切换到其他筛选，或者搜索成员昵称、角色和 ID。当前范围：${activeFilterLabel}`
+    ? t(
+        msg`试试切换到其他筛选，或者搜索成员昵称、角色和 ID。当前范围：${activeFilterLabel}`,
+      )
     : activeFilter === "all"
-      ? "可以先添加成员，或者切换筛选查看特定角色。"
-      : `试试切换到其他筛选。当前范围：${activeFilterLabel}`;
+      ? t(msg`可以先添加成员，或者切换筛选查看特定角色。`)
+      : t(msg`试试切换到其他筛选。当前范围：${activeFilterLabel}`);
 
   useEffect(() => {
     if (!open) {
@@ -2202,7 +2212,7 @@ function DesktopGroupMemberBrowserDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
-        aria-label="关闭群成员列表"
+        aria-label={t(msg`关闭群成员列表`)}
         onClick={() => {
           if (!pending) {
             onClose();
@@ -2215,10 +2225,10 @@ function DesktopGroupMemberBrowserDialog({
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div>
             <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
-              群成员
+              {t(msg`群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-              {groupName} · {members.length} 人
+              {t(msg`${groupName} · ${members.length} 人`)}
             </div>
           </div>
           <button
@@ -2230,7 +2240,7 @@ function DesktopGroupMemberBrowserDialog({
             }}
             disabled={pending}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-            aria-label="关闭"
+            aria-label={t(msg`关闭`)}
           >
             <X size={16} />
           </button>
@@ -2238,11 +2248,11 @@ function DesktopGroupMemberBrowserDialog({
 
         <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-6 py-4">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
-            <span>全部 {members.length} 人</span>
+            <span>{t(msg`全部 ${members.length} 人`)}</span>
             <span className="text-black/10">·</span>
-            <span>角色成员 {characterCount} 人</span>
+            <span>{t(msg`角色成员 ${characterCount} 人`)}</span>
             <span className="text-black/10">·</span>
-            <span>群主与管理员 {ownerCount + adminCount} 人</span>
+            <span>{t(msg`群主与管理员 ${ownerCount + adminCount} 人`)}</span>
           </div>
 
           <div className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
@@ -2258,7 +2268,7 @@ function DesktopGroupMemberBrowserDialog({
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="搜索昵称、角色或成员 ID"
+                  placeholder={t(msg`搜索昵称、角色或成员 ID`)}
                   className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
                 />
               </label>
@@ -2282,7 +2292,7 @@ function DesktopGroupMemberBrowserDialog({
                   ))}
                 </div>
                 <div className="text-[11px] text-[color:var(--text-dim)]">
-                  ↑ ↓ 选择，Enter 打开
+                  {t(msg`↑ ↓ 选择，Enter 打开`)}
                 </div>
               </div>
             </div>
@@ -2290,7 +2300,7 @@ function DesktopGroupMemberBrowserDialog({
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--border-faint)] pt-4">
             <div className="text-[11px] leading-5 text-[color:var(--text-dim)]">
-              先看完整列表，再继续加人、减人或跳转资料。
+              {t(msg`先看完整列表，再继续加人、减人或跳转资料。`)}
             </div>
             <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white p-1">
               <Button
@@ -2300,7 +2310,7 @@ function DesktopGroupMemberBrowserDialog({
                 disabled={pending || !canRemoveMembers}
                 className="h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
               >
-                移除成员
+                {t(msg`移除成员`)}
               </Button>
               <Button
                 type="button"
@@ -2309,7 +2319,7 @@ function DesktopGroupMemberBrowserDialog({
                 disabled={pending}
                 className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-white hover:opacity-95"
               >
-                添加成员
+                {t(msg`添加成员`)}
               </Button>
             </div>
           </div>
@@ -2325,10 +2335,10 @@ function DesktopGroupMemberBrowserDialog({
                 const rawName = member.memberName?.trim() || member.memberId;
                 const roleLabel =
                   member.role === "owner"
-                    ? "群主"
+                    ? t(msg`群主`)
                     : member.role === "admin"
-                      ? "管理员"
-                      : "群成员";
+                      ? t(msg`管理员`)
+                      : t(msg`群成员`);
                 const canViewProfile =
                   member.memberType === "character" ||
                   member.memberType === "user";
@@ -2401,23 +2411,25 @@ function DesktopGroupMemberBrowserDialog({
                               : "bg-[rgba(47,122,63,0.10)] text-[#2f7a3f]",
                           )}
                         >
-                          {member.memberType === "user" ? "世界主人" : "角色"}
+                          {member.memberType === "user"
+                            ? t(msg`世界主人`)
+                            : t(msg`角色`)}
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
                         {displayName !== rawName ? (
                           <>
-                            <span>{`昵称：${rawName}`}</span>
+                            <span>{t(msg`昵称：${rawName}`)}</span>
                             <span className="text-black/10">·</span>
                           </>
                         ) : null}
                         <span>
                           {member.memberType === "user"
-                            ? "Enter 或点击查看我的资料"
-                            : "Enter 或点击查看资料"}
+                            ? t(msg`Enter 或点击查看我的资料`)
+                            : t(msg`Enter 或点击查看资料`)}
                         </span>
                         <span className="text-black/10">·</span>
-                        <span>加入于 {formatTimestamp(member.joinedAt)}</span>
+                        <span>{t(msg`加入于 ${formatTimestamp(member.joinedAt)}`)}</span>
                         <span className="truncate">ID {member.memberId}</span>
                       </div>
                     </div>

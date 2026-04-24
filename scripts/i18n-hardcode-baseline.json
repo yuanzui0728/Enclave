@@ -4,17 +4,17 @@
   "scopes": {
     "apps/app/src": {
       "rules": {
-        "jsx-literal-prop": 1085,
-        "object-ui-string": 646,
+        "jsx-literal-prop": 1062,
+        "object-ui-string": 628,
         "jsx-cjk-text": 60,
         "toast-dialog-string": 2,
-        "setter-message-string": 78,
+        "setter-message-string": 76,
         "literal-error-message": 73,
         "intl-locale-literal": 9,
         "locale-compare-literal": 6,
         "speech-lang-literal": 0,
         "prompt-locale-instruction": 0,
-        "raw-cjk-line": 6431
+        "raw-cjk-line": 6327
       }
     },
     "apps/admin/src": {

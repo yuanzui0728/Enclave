@@ -30,6 +30,11 @@ msgstr "[Sticker] {0}"
 msgid "{0} 个共同群聊"
 msgstr "{0} shared group chats"
 
+#. placeholder {0}: groupMembers.length
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1496
+msgid "{0} 人"
+msgstr "{0} members"
+
 #. placeholder {0}: membersQuery.data.length
 #: apps/app/src/routes/group-chat-details-page.tsx:542
 msgid "{0} 人群聊"
@@ -61,6 +66,11 @@ msgstr "{contactName}'s Yinjie contact card"
 msgid "{fileCount} 个文件"
 msgstr "{fileCount} files"
 
+#. placeholder {0}: members.length
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2231
+msgid "{groupName} · {0} 人"
+msgstr "{groupName} · {0} members"
+
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:282
 msgid "{imageCount} 张图片"
 msgstr "{imageCount} images"
@@ -68,6 +78,10 @@ msgstr "{imageCount} images"
 #: apps/app/src/routes/group-chat-details-page.tsx:957
 msgid "{ownerDisplayName} 可快速管理成员、公告和群资料。"
 msgstr "{ownerDisplayName} can quickly manage members, announcements, and group details."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1417
+msgid "{ownerDisplayName}在这个群里的展示昵称会同步更新。"
+msgstr "{ownerDisplayName}'s display nickname in this group will be updated as well."
 
 #: apps/app/src/routes/chat-details-page.tsx:514
 msgid "{ownerName} 想把你加到通讯录里。"
@@ -85,13 +99,19 @@ msgstr "{totalMemberCount}-member group chat"
 msgid "{totalSeconds} 秒"
 msgstr "{totalSeconds} sec"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1570
 #: apps/app/src/routes/group-chat-details-page.tsx:770
 msgid "@我仍通知"
 msgstr "Notify for @me"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1578
 #: apps/app/src/routes/group-chat-details-page.tsx:778
 msgid "@所有人仍通知"
 msgstr "Notify for @all"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2295
+msgid "↑ ↓ 选择，Enter 打开"
+msgstr "Use ↑ ↓ to select, Enter to open"
 
 #: apps/app/src/routes/chat-details-page.tsx:992
 msgid "AI 数字人"
@@ -104,6 +124,14 @@ msgstr "AI is speaking"
 #: apps/app/src/routes/chat-details-page.tsx:991
 msgid "AI 语音"
 msgstr "AI voice"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2428
+msgid "Enter 或点击查看我的资料"
+msgstr "Press Enter or click to view my profile"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2429
+msgid "Enter 或点击查看资料"
+msgstr "Press Enter or click to view the profile"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:843
 msgid "不再接收该角色互动"
@@ -124,6 +152,10 @@ msgstr "Keep chat history"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:232
 msgid "不可用"
 msgstr "Unavailable"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2415
+msgid "世界主人"
+msgstr "World owner"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:217
 msgid "世界主人不会出现在移除列表里。"
@@ -146,6 +178,10 @@ msgstr "Signature"
 #: apps/app/src/routes/group-chat-details-page.tsx:509
 msgid "仅清空当前群聊历史消息，群成员和群资料会继续保留。"
 msgstr "Only clear this group chat's history. Members and group details will remain."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1432
+msgid "仅清空当前群聊里的历史消息，群成员和群资料会继续保留。"
+msgstr "Only clear this group's history messages. Members and group details will remain."
 
 #: apps/app/src/routes/chat-details-page.tsx:701
 msgid "仅清空当前聊天历史消息，对方资料和会话入口会继续保留。"
@@ -206,10 +242,19 @@ msgstr "Side panel"
 msgid "保存"
 msgstr "Save"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1604
 #: apps/app/src/routes/chat-details-page.tsx:1014
 #: apps/app/src/routes/group-chat-details-page.tsx:804
 msgid "保存到通讯录"
 msgstr "Save to contacts"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1415
+msgid "修改我在本群的昵称"
+msgstr "Edit my nickname in this group"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1389
+msgid "修改群聊名称"
+msgstr "Edit group name"
 
 #: apps/app/src/routes/chat-details-page.tsx:1171
 msgid "先从消息列表隐藏，后续有新消息时再次出现"
@@ -239,9 +284,20 @@ msgstr "Go back to the chat first. Taking a photo or sending an image message is
 msgid "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
 msgstr "Go back to the chat first. Using hold-to-talk voice messages is closer to the experience currently available."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2303
+msgid "先看完整列表，再继续加人、减人或跳转资料。"
+msgstr "Review the full list first, then continue adding, removing, or opening profiles."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2060
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2106
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1247
 msgid "全部"
 msgstr "All"
+
+#. placeholder {0}: members.length
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2251
+msgid "全部 {0} 人"
+msgstr "All {0} members"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:567
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:620
@@ -253,6 +309,7 @@ msgstr "All members"
 msgid "全部时间"
 msgstr "All time"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1495
 #: apps/app/src/routes/group-chat-details-page.tsx:666
 msgid "全部群成员"
 msgstr "All group members"
@@ -280,6 +337,7 @@ msgid "关键词“{0}”"
 msgstr "Keyword “{0}”"
 
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:111
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2243
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:118
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:229
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:166
@@ -287,14 +345,17 @@ msgstr "Keyword “{0}”"
 msgid "关闭"
 msgstr "Close"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1126
 #: apps/app/src/routes/group-chat-details-page.tsx:263
 msgid "关闭了 @我 通知。"
 msgstr "Turned off @me notifications."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1130
 #: apps/app/src/routes/group-chat-details-page.tsx:267
 msgid "关闭了 @所有人 通知。"
 msgstr "Turned off @all notifications."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1134
 #: apps/app/src/routes/group-chat-details-page.tsx:271
 msgid "关闭了群公告通知。"
 msgstr "Turned off group announcement notifications."
@@ -333,6 +394,10 @@ msgstr "Close add members dialog"
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:81
 msgid "关闭移除群成员弹层"
 msgstr "Close remove members dialog"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2215
+msgid "关闭群成员列表"
+msgstr "Close group member list"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
 msgid "内容不能为空"
@@ -421,6 +486,11 @@ msgstr "Delete current chat content"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:863
 msgid "删除聊天"
 msgstr "Delete chat"
+
+#. placeholder {0}: formatTimestamp(member.joinedAt)
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2432
+msgid "加入于 {0}"
+msgstr "Joined on {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:310
 msgid "加入群聊"
@@ -538,6 +608,10 @@ msgstr "Cancel"
 msgid "取消置顶"
 msgstr "Unpin"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2115
+msgid "可以先添加成员，或者切换筛选查看特定角色。"
+msgstr "You can add members first, or switch filters to view specific roles."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
 msgid "可留空保存"
 msgstr "Can be saved empty"
@@ -641,10 +715,12 @@ msgstr "The other person"
 msgid "将按顺序逐张发送图片。"
 msgstr "Images will be sent one by one in order."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1118
 #: apps/app/src/routes/group-chat-details-page.tsx:255
 msgid "已从通讯录移除。"
 msgstr "Removed from contacts."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1117
 #: apps/app/src/routes/group-chat-details-page.tsx:254
 msgid "已保存到通讯录。"
 msgstr "Saved to contacts."
@@ -657,6 +733,7 @@ msgstr "Closed"
 msgid "已关闭强提醒。"
 msgstr "Strong reminder turned off."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1122
 #: apps/app/src/routes/group-chat-details-page.tsx:259
 msgid "已关闭显示群成员昵称。"
 msgstr "Group member nicknames are now hidden."
@@ -666,6 +743,7 @@ msgstr "Group member nicknames are now hidden."
 msgid "已关闭消息免打扰。"
 msgstr "Chat notifications are no longer muted."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1114
 #: apps/app/src/routes/group-chat-details-page.tsx:251
 msgid "已关闭群消息免打扰。"
 msgstr "Group notifications are no longer muted."
@@ -708,6 +786,7 @@ msgstr "3-hour strong reminder is on, and system notifications are enabled."
 msgid "已开启 3 小时强提醒。"
 msgstr "3-hour strong reminder is on."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1121
 #: apps/app/src/routes/group-chat-details-page.tsx:258
 msgid "已开启显示群成员昵称。"
 msgstr "Group member nicknames are now shown."
@@ -717,6 +796,7 @@ msgstr "Group member nicknames are now shown."
 msgid "已开启消息免打扰。"
 msgstr "Chat notifications muted."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1113
 #: apps/app/src/routes/group-chat-details-page.tsx:250
 msgid "已开启群消息免打扰。"
 msgstr "Group notifications muted."
@@ -743,9 +823,27 @@ msgstr "All group members already shown"
 msgid "已添加"
 msgstr "Added"
 
+#. placeholder {0}: memberIds.length
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1181
+msgid "已添加 {0} 位群成员。"
+msgstr "Added {0} group members."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1180
+msgid "已添加 1 位群成员。"
+msgstr "Added 1 group member."
+
 #: apps/app/src/routes/chat-details-page.tsx:523
 msgid "已添加到通讯录。"
 msgstr "Added to contacts."
+
+#. placeholder {0}: memberIds.length
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1228
+msgid "已移除 {0} 位群成员。"
+msgstr "Removed {0} group members."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1227
+msgid "已移除 1 位群成员。"
+msgstr "Removed 1 group member."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:324
 msgid "已设为星标朋友。"
@@ -775,14 +873,17 @@ msgstr "{0} contacts selected"
 msgid "已配置"
 msgstr "Configured"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1125
 #: apps/app/src/routes/group-chat-details-page.tsx:262
 msgid "开启了 @我 通知。"
 msgstr "Turned on @me notifications."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1129
 #: apps/app/src/routes/group-chat-details-page.tsx:266
 msgid "开启了 @所有人 通知。"
 msgstr "Turned on @all notifications."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1133
 #: apps/app/src/routes/group-chat-details-page.tsx:270
 msgid "开启了群公告通知。"
 msgstr "Turned on group announcement notifications."
@@ -803,6 +904,10 @@ msgstr "{totalMemberCount} members total"
 #: apps/app/src/routes/chat-details-page.tsx:1204
 msgid "当前已经处于黑名单中"
 msgstr "Already blocked"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2109
+msgid "当前没有匹配成员"
+msgstr "No matching members right now"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:119
 msgid "当前没有可移除的成员"
@@ -904,6 +1009,7 @@ msgstr "Member · {0}"
 msgid "成员与资料"
 msgstr "Members and details"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1324
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1024
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1031
 #: apps/app/src/routes/chat-details-page.tsx:106
@@ -911,9 +1017,14 @@ msgstr "Members and details"
 msgid "我"
 msgstr "Me"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1612
 #: apps/app/src/routes/group-chat-details-page.tsx:812
 msgid "我在本群的昵称"
 msgstr "My nickname in this group"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1157
+msgid "我在本群的昵称已更新。"
+msgstr "My nickname in this group has been updated."
 
 #: apps/app/src/routes/group-chat-details-page.tsx:51
 msgid "打开桌面群聊信息..."
@@ -1019,9 +1130,17 @@ msgstr "Search recent conversations"
 msgid "搜索失败"
 msgstr "Search failed"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1543
+msgid "搜索当前群消息"
+msgstr "Search messages in this group"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:755
 msgid "搜索当前聊天"
 msgstr "Search this chat"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2271
+msgid "搜索昵称、角色或成员 ID"
+msgstr "Search nicknames, roles, or member IDs"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:672
 msgid "搜索结果"
@@ -1042,6 +1161,10 @@ msgstr "Search contacts"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1728
 msgid "播报 {0}"
 msgstr "Audio {0}"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1402
+msgid "支持换行。留空保存会清空当前群公告。"
+msgstr "Line breaks are supported. Save it empty to clear the current announcement."
 
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:128
 msgid "支持留空保存"
@@ -1076,6 +1199,10 @@ msgstr "File"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1354
 msgid "文本"
 msgstr "Text"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1390
+msgid "新的名称会同步显示在聊天页和群成员列表里。"
+msgstr "The new name will sync to the chat page and the member list."
 
 #: apps/app/src/features/chat/use-speech-input.ts:765
 msgid "无法启动录音，请检查应用麦克风权限。"
@@ -1131,6 +1258,17 @@ msgstr "Nickname"
 msgid "昵称：{0}"
 msgstr "Nickname: {0}"
 
+#. placeholder {0}: item.memberName?.trim() || item.memberId
+#. placeholder {1}: item.role === "admin" ? t(msg`管理员`) : t(msg`群成员`)
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1312
+msgid "昵称：{0} · {1}"
+msgstr "Nickname: {0} · {1}"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2422
+msgid "昵称：{rawName}"
+msgstr "Nickname: {rawName}"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1618
 #: apps/app/src/routes/group-chat-details-page.tsx:824
 msgid "显示群成员昵称"
 msgstr "Show group member nicknames"
@@ -1138,6 +1276,10 @@ msgstr "Show group member nicknames"
 #: apps/app/src/routes/group-chat-details-page.tsx:703
 msgid "暂无"
 msgstr "None"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1515
+msgid "暂无公告"
+msgstr "No announcement yet"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:696
 msgid "暂时没有共同群聊"
@@ -1192,6 +1334,7 @@ msgstr "Unknown time"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:651
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:656
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:678
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1613
 #: apps/app/src/routes/chat-details-page.tsx:295
 #: apps/app/src/routes/group-chat-details-page.tsx:813
 msgid "未设置"
@@ -1248,6 +1391,7 @@ msgstr "Source"
 msgid "来自聊天信息"
 msgstr "From chat details"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1542
 #: apps/app/src/routes/chat-details-page.tsx:950
 #: apps/app/src/routes/group-chat-details-page.tsx:730
 msgid "查找聊天记录"
@@ -1277,6 +1421,10 @@ msgstr "View more group members"
 msgid "查看更多聊天记录"
 msgstr "View more chat history"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1548
+msgid "查看本群附件"
+msgstr "View attachments in this group"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:760
 msgid "查看本聊天附件"
 msgstr "View attachments in this chat"
@@ -1297,6 +1445,7 @@ msgstr "View character profile"
 msgid "查看这位角色最近的朋友圈"
 msgstr "View this character's recent Moments"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1522
 #: apps/app/src/routes/group-chat-details-page.tsx:715
 msgid "查看邀请卡"
 msgstr "View invite card"
@@ -1379,6 +1528,7 @@ msgid "正在添加..."
 msgstr "Adding..."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:537
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1434
 msgid "正在清空..."
 msgstr "Clearing..."
 
@@ -1393,6 +1543,10 @@ msgstr "Loading recent conversations..."
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:547
 msgid "正在读取群成员"
 msgstr "Loading group members"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1489
+msgid "正在读取群成员..."
+msgstr "Loading group members..."
 
 #: apps/app/src/routes/group-chat-details-page.tsx:579
 msgid "正在读取群聊信息"
@@ -1409,6 +1563,10 @@ msgstr "Loading chat details..."
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:139
 msgid "正在读取联系人..."
 msgstr "Loading contacts..."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1447
+msgid "正在退出..."
+msgstr "Leaving..."
 
 #: apps/app/src/routes/chat-details-page.tsx:703
 #: apps/app/src/routes/group-chat-details-page.tsx:512
@@ -1440,6 +1598,11 @@ msgstr "No valid audio was recorded. Please try again."
 msgid "没有找到 {0} 的聊天记录"
 msgstr "No chat history found for {0}"
 
+#. placeholder {0}: searchTerm.trim()
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2108
+msgid "没有找到“{0}”"
+msgstr "No results for “{0}”"
+
 #. placeholder {0}: resolveCategoryLabel(input.activeCategory)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1130
 msgid "没有找到匹配的{0}"
@@ -1468,6 +1631,7 @@ msgid "消息"
 msgstr "Message"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:826
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1560
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:119
 #: apps/app/src/routes/chat-details-page.tsx:966
 #: apps/app/src/routes/group-chat-details-page.tsx:760
@@ -1483,6 +1647,7 @@ msgstr "Message content"
 msgid "消息设置"
 msgstr "Message settings"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1358
 #: apps/app/src/routes/group-chat-details-page.tsx:467
 msgid "添加"
 msgstr "Add"
@@ -1492,6 +1657,7 @@ msgstr "Add"
 msgid "添加到通讯录"
 msgstr "Add to contacts"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2322
 #: apps/app/src/routes/group-chat-details-page.tsx:981
 msgid "添加成员"
 msgstr "Add members"
@@ -1510,6 +1676,9 @@ msgstr "Clear search"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:534
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:869
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1431
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1433
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1646
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:152
 #: apps/app/src/routes/chat-details-page.tsx:699
 #: apps/app/src/routes/chat-details-page.tsx:702
@@ -1572,6 +1741,7 @@ msgstr "Video calls are not available yet"
 msgid "移出群聊"
 msgstr "Remove from group"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1367
 #: apps/app/src/routes/group-chat-details-page.tsx:479
 msgid "移除"
 msgstr "Remove"
@@ -1587,6 +1757,7 @@ msgstr "Remove {0}"
 msgid "移除 {displayName}"
 msgstr "Remove {displayName}"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2313
 #: apps/app/src/routes/group-chat-details-page.tsx:994
 msgid "移除成员"
 msgstr "Remove members"
@@ -1615,6 +1786,11 @@ msgstr "Empty"
 msgid "等待下一轮"
 msgstr "Waiting for next turn"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1313
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1317
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2062
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2093
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2340
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1029
 msgid "管理员"
 msgstr "Admin"
@@ -1652,6 +1828,7 @@ msgstr "Resume the conversation"
 msgid "继续把联系人拉进当前群聊"
 msgstr "Continue adding contacts into this group chat"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1401
 #: apps/app/src/routes/group-chat-details-page.tsx:1007
 msgid "编辑群公告"
 msgstr "Edit group announcement"
@@ -1661,29 +1838,50 @@ msgid "网页链接"
 msgstr "Web link"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:820
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1598
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:113
 #: apps/app/src/routes/chat-details-page.tsx:972
 #: apps/app/src/routes/group-chat-details-page.tsx:798
 msgid "置顶聊天"
 msgstr "Pin chat"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2061
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2091
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2338
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1027
 #: apps/app/src/routes/group-chat-details-page.tsx:661
 msgid "群主"
 msgstr "Owner"
 
+#. placeholder {0}: ownerCount + adminCount
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2255
+msgid "群主与管理员 {0} 人"
+msgstr "Owners and admins: {0}"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1521
 #: apps/app/src/routes/group-chat-details-page.tsx:714
 msgid "群二维码"
 msgstr "Group QR code"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1514
 #: apps/app/src/routes/group-chat-details-page.tsx:702
 msgid "群公告"
 msgstr "Group announcement"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1586
 #: apps/app/src/routes/group-chat-details-page.tsx:786
 msgid "群公告仍通知"
 msgstr "Notify for announcements"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1071
+msgid "群公告已更新。"
+msgstr "Group announcement updated."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1313
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1318
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2094
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2228
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2341
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:535
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:619
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1032
@@ -1731,14 +1929,21 @@ msgstr "Group details"
 msgid "群聊信息暂时不可用"
 msgstr "Group details are temporarily unavailable"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1508
 #: apps/app/src/routes/group-chat-details-page.tsx:690
 msgid "群聊名称"
 msgstr "Group name"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1071
+msgid "群聊名称已更新。"
+msgstr "Group name updated."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1091
 #: apps/app/src/routes/group-chat-details-page.tsx:228
 msgid "群聊已取消置顶。"
 msgstr "Group chat unpinned."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1091
 #: apps/app/src/routes/group-chat-details-page.tsx:228
 msgid "群聊已置顶。"
 msgstr "Group chat pinned."
@@ -1751,14 +1956,17 @@ msgstr "Group members"
 msgid "群聊摘要已复制。"
 msgstr "Group summary copied."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1201
 #: apps/app/src/routes/group-chat-details-page.tsx:292
 msgid "群聊记录已清空。"
 msgstr "Group chat history cleared."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1135
 #: apps/app/src/routes/group-chat-details-page.tsx:272
 msgid "群聊设置已更新。"
 msgstr "Group settings updated."
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1506
 #: apps/app/src/routes/group-chat-details-page.tsx:687
 msgid "群聊资料"
 msgstr "Group info"
@@ -1804,6 +2012,7 @@ msgid "聊天扩展"
 msgstr "Chat extras"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:759
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1547
 msgid "聊天文件"
 msgstr "Chat files"
 
@@ -1814,6 +2023,7 @@ msgid "聊天管理"
 msgstr "Chat management"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:769
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1626
 #: apps/app/src/routes/group-chat-details-page.tsx:741
 msgid "聊天背景"
 msgstr "Chat background"
@@ -1829,6 +2039,7 @@ msgid "聊天记录已清空。"
 msgstr "Chat history cleared."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:810
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1558
 #: apps/app/src/routes/group-chat-details-page.tsx:757
 msgid "聊天设置"
 msgstr "Chat settings"
@@ -1862,6 +2073,18 @@ msgstr "Sticker"
 msgid "表情消息"
 msgstr "Sticker message"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2416
+msgid "角色"
+msgstr "Character"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2063
+msgid "角色成员"
+msgstr "Character members"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2253
+msgid "角色成员 {characterCount} 人"
+msgstr "Character members: {characterCount}"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:471
 msgid "设置备注"
 msgstr "Set remark"
@@ -1873,6 +2096,14 @@ msgstr "Set current chat background"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:484
 msgid "设置标签"
 msgstr "Set tags"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2112
+msgid "试试切换到其他筛选，或者搜索成员昵称、角色和 ID。当前范围：{activeFilterLabel}"
+msgstr "Try switching to another filter, or search member nicknames, roles, and IDs. Current scope: {activeFilterLabel}"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2116
+msgid "试试切换到其他筛选。当前范围：{activeFilterLabel}"
+msgstr "Try switching to another filter. Current scope: {activeFilterLabel}"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1138
 msgid "试试换个关键词，或者缩小筛选范围后再查找。"
@@ -1944,6 +2175,14 @@ msgstr "Voice calls are not available yet"
 msgid "请求中"
 msgstr "Requesting"
 
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1419
+msgid "请输入群昵称"
+msgstr "Enter a group nickname"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1391
+msgid "请输入群聊名称"
+msgstr "Enter a group name"
+
 #: apps/app/src/routes/chat-details-page.tsx:749
 #: apps/app/src/routes/group-chat-details-page.tsx:578
 msgid "读取中"
@@ -1978,6 +2217,10 @@ msgstr "Transcription {0}"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:256
 msgid "转写未配置"
 msgstr "Transcription not configured"
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1403
+msgid "输入群公告"
+msgstr "Enter a group announcement"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:486
 msgid "输入联系人标签"
@@ -2075,6 +2318,16 @@ msgstr "No valid text was recognized from this audio. Please try again."
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
 msgstr "This isn't just a bundle of account data, but a personal world that keeps growing and responding to you."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1445
+msgid "退出后你将不再收到这个群的消息，当前会话也会从桌面端列表中移除。"
+msgstr "After leaving, you will no longer receive messages from this group, and the current thread will be removed from the desktop list."
+
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1443
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1446
+#: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1651
+msgid "退出群聊"
+msgstr "Leave group"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:507
 msgid "选择某一天的聊天记录"
