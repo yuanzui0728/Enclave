@@ -1,11 +1,13 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import {
   closeSync,
   existsSync,
   mkdirSync,
   openSync,
+  readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
@@ -30,6 +32,7 @@ interface ManagedUpstreamProcessState {
   lastExitedAt: string | null;
   lastError: string | null;
   logs: ProcessLogs;
+  matcher: ManagedProcessMatcher;
 }
 
 interface ProcessLogs {
@@ -53,6 +56,21 @@ interface UpstreamLaunchSpec {
   args: string[];
   commandPreview: string;
   canStart: boolean;
+  notes: string[];
+}
+
+interface ManagedProcessMatcher {
+  commandHints: string[];
+  executableHints: string[];
+}
+
+interface WeFlowBootstrapInfo {
+  configPath: string;
+  config: Record<string, unknown>;
+  resolvedDbPath: string | null;
+  resolvedWxid: string | null;
+  resolvedDecryptKey: string | null;
+  missingFields: string[];
   notes: string[];
 }
 
@@ -113,7 +131,17 @@ export class LocalUpstreamServiceManager {
     this.ensureLogDir();
 
     const existing = this.processes.get(key);
-    if (key === "weflow" && existing && this.isPidRunning(existing.pid)) {
+    const existingPid = existing
+      ? this.resolveManagedProcessPid(existing.pid, existing.matcher)
+      : 0;
+    if (existing && existingPid && existing.pid !== existingPid) {
+      existing.pid = existingPid;
+    }
+    if (
+      key === "weflow" &&
+      existing &&
+      existingPid
+    ) {
       const focused = await this.focusWeFlowWindow(spec.cwd);
       return {
         ok: true,
@@ -123,7 +151,7 @@ export class LocalUpstreamServiceManager {
         service: await this.describeService(key, config),
       };
     }
-    if (existing && this.isPidRunning(existing.pid)) {
+    if (existing && existingPid) {
       return {
         ok: true,
         message: `${spec.label} 启动请求已发出，正在等待本地服务就绪。`,
@@ -159,6 +187,7 @@ export class LocalUpstreamServiceManager {
       lastExitedAt: null,
       lastError: null,
       logs,
+      matcher: this.createProcessMatcher(key, spec),
     };
 
     child.on("error", (error) => {
@@ -176,6 +205,7 @@ export class LocalUpstreamServiceManager {
       }
 
       currentState.lastExitedAt = new Date().toISOString();
+      currentState.pid = 0;
       if (code !== 0 || signal) {
         currentState.lastError = this.readProcessError(
           currentState.logs.stderr,
@@ -189,11 +219,13 @@ export class LocalUpstreamServiceManager {
 
     await sleep(1200);
 
-    if (!this.isPidRunning(state.pid)) {
+    const runningPid = this.resolveManagedProcessPid(state.pid, state.matcher);
+    if (!runningPid) {
       throw new Error(
         this.readProcessError(logs.stderr, `${spec.label} 启动失败，请检查日志。`),
       );
     }
+    state.pid = runningPid;
 
     const healthTimeoutMs = key === "weflow" ? 25_000 : 6_000;
     const healthReady = await this.waitForHealth(spec.healthUrl, healthTimeoutMs);
@@ -263,7 +295,13 @@ export class LocalUpstreamServiceManager {
     const spec = this.resolveSpec(key, config);
     const processState = this.processes.get(key);
     const healthOk = await this.checkHttpHealth(spec.healthUrl);
-    const pidRunning = processState ? this.isPidRunning(processState.pid) : false;
+    const resolvedPid = processState
+      ? this.resolveManagedProcessPid(processState.pid, processState.matcher)
+      : 0;
+    if (processState && resolvedPid && processState.pid !== resolvedPid) {
+      processState.pid = resolvedPid;
+    }
+    const pidRunning = Boolean(resolvedPid);
     const status = healthOk
       ? "running"
       : pidRunning
@@ -271,6 +309,16 @@ export class LocalUpstreamServiceManager {
         : processState?.lastError
           ? "error"
           : "idle";
+    const notes = [...spec.notes];
+    if (key === "weflow" && healthOk) {
+      const readinessNote = await this.probeWeFlowReadiness(
+        spec.baseUrl,
+        config.weflowAccessToken ?? DEFAULT_WEFLOW_ACCESS_TOKEN,
+      );
+      if (readinessNote) {
+        notes.push(readinessNote);
+      }
+    }
 
     return {
       key,
@@ -285,7 +333,7 @@ export class LocalUpstreamServiceManager {
       lastStartedAt: processState?.startedAt ?? null,
       lastExitedAt: processState?.lastExitedAt ?? null,
       lastError: processState?.lastError ?? null,
-      notes: spec.notes,
+      notes,
       logs: processState ? processState.logs : this.getLogPaths(key),
     };
   }
@@ -337,11 +385,13 @@ export class LocalUpstreamServiceManager {
     const launchCommand = this.resolveNpmCommand("npm run electron:dev");
     const baseUrl = config.weflowBaseUrl ?? "http://127.0.0.1:5031";
     const healthUrl = new URL("/health", withTrailingSlash(baseUrl)).toString();
+    const bootstrap = resolveWeFlowBootstrapInfo();
     const notes = [
       "会在本地 clone 的 WeFlow 目录里执行 npm run electron:dev，拉起桌面应用本体。",
       "启动前会自动写入本机 WeFlow 配置，开启 HTTP API 并同步 Access Token。",
       "首次启动如果检测到依赖未安装，会自动执行 npm install 并使用 Electron 镜像源补齐运行环境。",
     ];
+    notes.push(...bootstrap.notes);
 
     if (!existsSync(cwd)) {
       notes.unshift(`未找到本地目录：${cwd}`);
@@ -366,7 +416,8 @@ export class LocalUpstreamServiceManager {
     config: ConnectorConfig,
     logs: ProcessLogs,
   ) {
-    this.ensureWeFlowConfig(spec.baseUrl, config, logs);
+    const bootstrap = resolveWeFlowBootstrapInfo();
+    this.ensureWeFlowConfig(spec.baseUrl, config, logs, bootstrap);
 
     if (this.hasWeFlowRuntime(spec.cwd)) {
       return;
@@ -405,19 +456,40 @@ export class LocalUpstreamServiceManager {
     baseUrl: string,
     config: ConnectorConfig,
     logs: ProcessLogs,
+    bootstrap: WeFlowBootstrapInfo,
   ) {
-    const configPath = resolveWeFlowConfigPath();
+    const configPath = bootstrap.configPath;
     const configDir = path.dirname(configPath);
     mkdirSync(configDir, { recursive: true });
 
     const url = new URL(baseUrl);
-    const existingConfig = readJsonObject(configPath);
+    const existingConfig = bootstrap.config;
+    const currentDbPath = normalizeStringValue(existingConfig.dbPath);
+    const currentDbCandidate = resolveWeChatDataCandidate(currentDbPath);
+    const currentWxid = normalizeStringValue(existingConfig.myWxid);
+    const currentDecryptKey = resolveWeFlowDecryptKey(
+      existingConfig,
+      currentWxid,
+    );
+    const nextDbPath =
+      currentDbCandidate?.rootPath ?? bootstrap.resolvedDbPath;
+    const nextWxid =
+      nextDbPath && currentWxid
+        ? matchWeChatAccountWxid(nextDbPath, currentWxid) ?? currentWxid
+        : bootstrap.resolvedWxid;
+    const nextDecryptKey =
+      currentDecryptKey ??
+      resolveWeFlowDecryptKey(existingConfig, nextWxid) ??
+      bootstrap.resolvedDecryptKey;
     const nextConfig = {
       ...existingConfig,
       httpApiEnabled: true,
       httpApiHost: url.hostname,
       httpApiPort: normalizeHttpPort(url),
       httpApiToken: config.weflowAccessToken ?? DEFAULT_WEFLOW_ACCESS_TOKEN,
+      dbPath: nextDbPath ?? currentDbPath ?? "",
+      myWxid: nextWxid ?? currentWxid ?? "",
+      decryptKey: nextDecryptKey ?? "",
     };
 
     writeFileSync(configPath, `${JSON.stringify(nextConfig, null, 2)}\n`, "utf8");
@@ -661,16 +733,252 @@ Write-Output 'focused'
     });
   }
 
-  private isPidRunning(pid: number) {
+  private async probeWeFlowReadiness(baseUrl: string, accessToken: string) {
+    try {
+      const url = new URL("/api/v1/contacts", withTrailingSlash(baseUrl));
+      url.searchParams.set("limit", "1");
+      url.searchParams.set("access_token", accessToken);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { accept: "application/json" },
+      });
+      if (response.ok) {
+        return null;
+      }
+
+      const body = await response.text();
+      if (body.includes("请先在设置页面配置微信ID")) {
+        return "WeFlow HTTP 已启动，但还没完成微信账号选择。请在桌面窗口里确认 wxid。";
+      }
+      if (body.includes("-3999")) {
+        return "WeFlow HTTP 已启动，但当前 decryptKey 无法解密数据库（错误码 -3999）。请在 WeFlow 里重新“自动获取密钥”。";
+      }
+      return `WeFlow 联系人接口当前返回异常：${body || `HTTP ${response.status}`}`;
+    } catch {
+      return null;
+    }
+  }
+
+  private createProcessMatcher(
+    key: LocalUpstreamServiceKey,
+    spec: UpstreamLaunchSpec,
+  ): ManagedProcessMatcher {
+    if (key === "weflow") {
+      return {
+        commandHints: [spec.cwd, "npm run electron:dev", "vite --mode electron"],
+        executableHints: ["cmd.exe", "node.exe", "electron.exe"],
+      };
+    }
+
+    return {
+      commandHints: [spec.cwd, "main.py", "wechat-decrypt"],
+      executableHints: ["python.exe", "python3", "python"],
+    };
+  }
+
+  private isManagedProcessRunning(
+    pid: number,
+    matcher: ManagedProcessMatcher,
+  ) {
+    return this.resolveManagedProcessPid(pid, matcher) > 0;
+  }
+
+  private resolveManagedProcessPid(
+    pid: number,
+    matcher: ManagedProcessMatcher,
+  ) {
     if (!pid) {
-      return false;
+      return process.platform === "win32"
+        ? this.findManagedProcessPidOnWindows(matcher)
+        : 0;
+    }
+
+    if (process.platform === "win32") {
+      const identity = this.readWindowsProcessIdentity(pid);
+      if (identity) {
+        const haystack = [
+          identity.name,
+          identity.commandLine,
+          identity.executablePath,
+        ]
+          .filter(Boolean)
+          .join("\n")
+          .toLowerCase();
+
+        const commandMatched =
+          matcher.commandHints.length === 0 ||
+          matcher.commandHints.some((hint) =>
+            haystack.includes(hint.toLowerCase()),
+          );
+        const executableMatched =
+          matcher.executableHints.length === 0 ||
+          matcher.executableHints.some((hint) =>
+            haystack.includes(hint.toLowerCase()),
+          );
+        if (commandMatched && executableMatched) {
+          return pid;
+        }
+      }
+
+      return this.findManagedProcessPidOnWindows(matcher);
     }
 
     try {
       process.kill(pid, 0);
-      return true;
+      return pid;
     } catch {
-      return false;
+      return 0;
+    }
+  }
+
+  private findManagedProcessPidOnWindows(matcher: ManagedProcessMatcher) {
+    const candidates = this.listWindowsCandidateProcesses(matcher);
+    for (const candidate of candidates) {
+      const haystack = [
+        candidate.name,
+        candidate.commandLine,
+        candidate.executablePath,
+      ]
+        .filter(Boolean)
+        .join("\n")
+        .toLowerCase();
+
+      const commandMatched =
+        matcher.commandHints.length === 0 ||
+        matcher.commandHints.some((hint) => haystack.includes(hint.toLowerCase()));
+      const executableMatched =
+        matcher.executableHints.length === 0 ||
+        matcher.executableHints.some((hint) =>
+          haystack.includes(hint.toLowerCase()),
+        );
+      if (commandMatched && executableMatched) {
+        return candidate.processId;
+      }
+    }
+
+    return 0;
+  }
+
+  private listWindowsCandidateProcesses(matcher: ManagedProcessMatcher) {
+    const normalizedExecutableHints = matcher.executableHints
+      .map((hint) => path.basename(hint).toLowerCase())
+      .filter(Boolean)
+      .map((hint) => (hint.endsWith(".exe") ? hint : `${hint}.exe`));
+    const processNames = Array.from(
+      new Set([
+        "cmd.exe",
+        "node.exe",
+        "electron.exe",
+        "python.exe",
+        "python3.exe",
+        ...normalizedExecutableHints,
+      ]),
+    );
+    const namesLiteral = processNames
+      .map((name) => `'${name.replaceAll("'", "''")}'`)
+      .join(", ");
+    const script = `
+$ErrorActionPreference = 'Stop'
+$names = @(${namesLiteral})
+$processes = Get-CimInstance Win32_Process | Where-Object {
+  $names -contains $_.Name.ToLower()
+} | Select-Object ProcessId, Name, CommandLine, ExecutablePath
+$processes | ConvertTo-Json -Compress
+`.trim();
+
+    const result = spawnSync(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        script,
+      ],
+      {
+        encoding: "utf8",
+        windowsHide: true,
+      },
+    );
+
+    if (result.status !== 0 || !result.stdout.trim()) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(result.stdout.trim()) as
+        | Array<{
+            ProcessId?: number;
+            Name?: string;
+            CommandLine?: string;
+            ExecutablePath?: string;
+          }>
+        | {
+            ProcessId?: number;
+            Name?: string;
+            CommandLine?: string;
+            ExecutablePath?: string;
+          };
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      return items
+        .map((item) => ({
+          processId: item.ProcessId ?? 0,
+          name: item.Name ?? "",
+          commandLine: item.CommandLine ?? "",
+          executablePath: item.ExecutablePath ?? "",
+        }))
+        .filter((item) => item.processId > 0)
+        .sort((left, right) => right.processId - left.processId);
+    } catch {
+      return [];
+    }
+  }
+
+  private readWindowsProcessIdentity(pid: number) {
+    const script = `\
+$ErrorActionPreference = 'Stop'\
+$process = Get-CimInstance Win32_Process -Filter "ProcessId = ${pid}"\
+if (-not $process) { exit 2 }\
+[pscustomobject]@{\
+  name = $process.Name\
+  commandLine = $process.CommandLine\
+  executablePath = $process.ExecutablePath\
+} | ConvertTo-Json -Compress\
+`;
+
+    const result = spawnSync(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        script,
+      ],
+      {
+        encoding: "utf8",
+        windowsHide: true,
+      },
+    );
+
+    if (result.status !== 0 || !result.stdout.trim()) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(result.stdout.trim()) as {
+        name?: string;
+        commandLine?: string;
+        executablePath?: string;
+      };
+      return {
+        name: parsed.name ?? "",
+        commandLine: parsed.commandLine ?? "",
+        executablePath: parsed.executablePath ?? "",
+      };
+    } catch {
+      return null;
     }
   }
 
@@ -717,6 +1025,296 @@ function readJsonObject(filePath: string) {
   } catch {
     return {};
   }
+}
+
+function normalizeStringValue(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeWeChatAccountWxid(value: string | null) {
+  const normalized = normalizeStringValue(value);
+  if (!normalized) {
+    return "";
+  }
+
+  const match = normalized.match(/^(wxid_[^_]+)(?:_[a-zA-Z0-9]+)?$/i);
+  return match?.[1] ?? normalized;
+}
+
+function listWeChatAccountDirectories(rootPath: string) {
+  try {
+    return readdirSync(rootPath, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .filter((entry) => /^wxid_/i.test(entry.name))
+      .map((entry) => {
+        const accountPath = path.join(rootPath, entry.name);
+        const modifiedTime = statSync(accountPath).mtimeMs;
+        return {
+          name: entry.name,
+          modifiedTime: Number.isFinite(modifiedTime) ? modifiedTime : 0,
+        };
+      })
+      .sort(
+        (left, right) =>
+          right.modifiedTime - left.modifiedTime ||
+          left.name.localeCompare(right.name),
+      );
+  } catch {
+    return [];
+  }
+}
+
+function matchWeChatAccountWxid(dbPath: string, preferredWxid: string) {
+  const normalizedPreferred = normalizeWeChatAccountWxid(preferredWxid);
+  if (!normalizedPreferred) {
+    return null;
+  }
+
+  const accounts = listWeChatAccountDirectories(dbPath);
+  const matchedAccount = accounts.find((account) => {
+    const normalizedAccount = normalizeWeChatAccountWxid(account.name);
+    return normalizedAccount === normalizedPreferred;
+  });
+
+  return matchedAccount?.name ?? null;
+}
+
+function pickPreferredWeChatAccountWxid(
+  dbPath: string,
+  preferredWxids: Array<string | null>,
+) {
+  for (const preferredWxid of preferredWxids) {
+    if (!preferredWxid) {
+      continue;
+    }
+
+    const matched = matchWeChatAccountWxid(dbPath, preferredWxid);
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return listWeChatAccountDirectories(dbPath)[0]?.name ?? null;
+}
+
+function resolveWeChatDataCandidate(input: string | null) {
+  const normalizedInput = normalizeStringValue(input);
+  if (!normalizedInput) {
+    return null;
+  }
+
+  let absolutePath: string;
+  try {
+    absolutePath = path.resolve(normalizedInput);
+  } catch {
+    return null;
+  }
+
+  if (!existsSync(absolutePath)) {
+    return null;
+  }
+
+  try {
+    const targetStat = statSync(absolutePath);
+    if (!targetStat.isDirectory()) {
+      return null;
+    }
+
+    const basename = path.basename(absolutePath);
+    if (basename === "db_storage") {
+      const accountDir = path.dirname(absolutePath);
+      const rootDir = path.dirname(accountDir);
+      if (listWeChatAccountDirectories(rootDir).length === 0) {
+        return null;
+      }
+      return {
+        rootPath: rootDir,
+        wxid: path.basename(accountDir),
+      };
+    }
+
+    if (/^wxid_/i.test(basename)) {
+      const rootDir = path.dirname(absolutePath);
+      if (listWeChatAccountDirectories(rootDir).length === 0) {
+        return null;
+      }
+      return {
+        rootPath: rootDir,
+        wxid: basename,
+      };
+    }
+
+    if (listWeChatAccountDirectories(absolutePath).length === 0) {
+      return null;
+    }
+
+    return {
+      rootPath: absolutePath,
+      wxid: null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isUsableWeChatDataPath(input: string | null) {
+  return Boolean(resolveWeChatDataCandidate(input));
+}
+
+function resolveWeFlowDecryptKey(
+  config: Record<string, unknown>,
+  wxid: string | null,
+) {
+  const topLevelKey = normalizeStringValue(config.decryptKey);
+  if (topLevelKey) {
+    return topLevelKey;
+  }
+
+  const rawWxidConfigs = isRecordValue(config.wxidConfigs)
+    ? config.wxidConfigs
+    : null;
+  if (!rawWxidConfigs) {
+    return null;
+  }
+
+  const normalizedWxid = normalizeWeChatAccountWxid(wxid);
+  for (const [candidateWxid, candidateConfig] of Object.entries(rawWxidConfigs)) {
+    if (
+      normalizedWxid &&
+      normalizeWeChatAccountWxid(candidateWxid) !== normalizedWxid
+    ) {
+      continue;
+    }
+
+    if (!isRecordValue(candidateConfig)) {
+      continue;
+    }
+
+    const candidateKey = normalizeStringValue(candidateConfig.decryptKey);
+    if (candidateKey) {
+      return candidateKey;
+    }
+  }
+
+  return null;
+}
+
+function resolveWeFlowBootstrapInfo(): WeFlowBootstrapInfo {
+  const configPath = resolveWeFlowConfigPath();
+  const config = readJsonObject(configPath);
+  const notes: string[] = [];
+  const missingFields: string[] = [];
+
+  const currentDbPath = normalizeStringValue(config.dbPath);
+  const currentWxid = normalizeStringValue(config.myWxid);
+
+  const candidates: Array<{
+    rootPath: string;
+    wxid: string | null;
+    source: string;
+  }> = [];
+  const seenCandidates = new Set<string>();
+  const addCandidate = (input: string | null, source: string) => {
+    const candidate = resolveWeChatDataCandidate(input);
+    if (!candidate) {
+      return;
+    }
+
+    const cacheKey = `${candidate.rootPath}::${candidate.wxid ?? ""}`;
+    if (seenCandidates.has(cacheKey)) {
+      return;
+    }
+
+    seenCandidates.add(cacheKey);
+    candidates.push({
+      ...candidate,
+      source,
+    });
+  };
+
+  addCandidate(currentDbPath, "当前 WeFlow 配置");
+
+  const wechatDecryptConfig = readJsonObject(
+    path.join(
+      WORKSPACE_ROOT,
+      ".cache",
+      "upstreams",
+      "wechat-decrypt",
+      "config.json",
+    ),
+  );
+  addCandidate(
+    normalizeStringValue(wechatDecryptConfig.db_dir),
+    "wechat-decrypt 本地配置",
+  );
+
+  addCandidate(path.join(os.homedir(), "xwechat_files"), "默认用户目录");
+  addCandidate(
+    path.join(os.homedir(), "Documents", "xwechat_files"),
+    "默认文档目录",
+  );
+
+  const selectedCandidate = candidates[0] ?? null;
+  const resolvedDbPath = selectedCandidate?.rootPath ?? null;
+  const resolvedWxid = resolvedDbPath
+    ? pickPreferredWeChatAccountWxid(
+        resolvedDbPath,
+        [currentWxid, ...candidates.map((candidate) => candidate.wxid)],
+      )
+    : null;
+  const resolvedDecryptKey = resolveWeFlowDecryptKey(
+    config,
+    resolvedWxid ?? currentWxid,
+  );
+
+  if (resolvedDbPath) {
+    notes.push(`已识别微信数据目录：${resolvedDbPath}`);
+    if (selectedCandidate?.source) {
+      notes.push(`目录来源：${selectedCandidate.source}。`);
+    }
+  } else {
+    missingFields.push("dbPath");
+    notes.push(
+      "还没识别到 xwechat_files 根目录。请在 WeFlow 里手动选择微信数据目录。",
+    );
+  }
+
+  if (resolvedWxid) {
+    notes.push(`已识别微信账号目录：${resolvedWxid}`);
+  } else {
+    missingFields.push("myWxid");
+    notes.push(
+      "还没识别到微信账号目录（wxid_*）。请在 WeFlow 里选择正确的账号。",
+    );
+  }
+
+  if (resolvedDecryptKey) {
+    notes.push("当前 WeFlow 配置里已经存在 decryptKey。");
+  } else {
+    missingFields.push("decryptKey");
+    notes.push(
+      "联系人为空时，通常还差 decryptKey。请在 WeFlow 桌面窗口里点击“自动获取密钥”。",
+    );
+  }
+
+  return {
+    configPath,
+    config,
+    resolvedDbPath,
+    resolvedWxid,
+    resolvedDecryptKey,
+    missingFields,
+    notes,
+  };
 }
 
 function normalizeHttpPort(url: URL) {
