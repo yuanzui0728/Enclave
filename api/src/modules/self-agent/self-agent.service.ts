@@ -3,6 +3,7 @@ import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
+import { SelfAgentWorkspaceService } from './self-agent-workspace.service';
 
 type SelfAgentHandlingResult = {
   handled: boolean;
@@ -15,6 +16,7 @@ export class SelfAgentService {
   constructor(
     private readonly actionRuntime: ActionRuntimeService,
     private readonly reminderRuntime: ReminderRuntimeService,
+    private readonly workspace: SelfAgentWorkspaceService,
   ) {}
 
   async handleConversationTurn(input: {
@@ -57,6 +59,14 @@ export class SelfAgentService {
     }
 
     return { handled: false };
+  }
+
+  async buildChatPromptSections(input: { character: CharacterEntity }) {
+    if (!this.isSelfCharacter(input.character)) {
+      return [];
+    }
+
+    return this.workspace.buildChatPromptSections(input);
   }
 
   private isSelfCharacter(character: CharacterEntity) {
