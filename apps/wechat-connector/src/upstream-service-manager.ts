@@ -86,6 +86,16 @@ export class LocalUpstreamServiceManager {
   ): Promise<LocalUpstreamServiceStartResponse> {
     const spec = this.resolveSpec(key, config);
     const current = await this.describeService(key, config);
+    if (key === "weflow" && current.healthOk) {
+      const focused = await this.focusWeFlowWindow(spec.cwd);
+      return {
+        ok: true,
+        message: focused
+          ? `${current.label} 已在运行，并已切到前台。`
+          : `${current.label} 已在运行，但没有成功拉起窗口；你可以再点一次“打开 WeFlow 窗口”。`,
+        service: await this.describeService(key, config),
+      };
+    }
     if (current.healthOk) {
       return {
         ok: true,
@@ -103,6 +113,16 @@ export class LocalUpstreamServiceManager {
     this.ensureLogDir();
 
     const existing = this.processes.get(key);
+    if (key === "weflow" && existing && this.isPidRunning(existing.pid)) {
+      const focused = await this.focusWeFlowWindow(spec.cwd);
+      return {
+        ok: true,
+        message: focused
+          ? `${spec.label} 正在启动中，并已尝试把桌面窗口切到前台。`
+          : `${spec.label} 启动请求已发出，正在等待本地服务就绪。`,
+        service: await this.describeService(key, config),
+      };
+    }
     if (existing && this.isPidRunning(existing.pid)) {
       return {
         ok: true,
@@ -177,6 +197,20 @@ export class LocalUpstreamServiceManager {
 
     const healthTimeoutMs = key === "weflow" ? 25_000 : 6_000;
     const healthReady = await this.waitForHealth(spec.healthUrl, healthTimeoutMs);
+    if (key === "weflow") {
+      const focused = await this.focusWeFlowWindow(spec.cwd);
+      return {
+        ok: true,
+        message: healthReady
+          ? focused
+            ? `${spec.label} 已成功启动，并已打开桌面窗口。`
+            : `${spec.label} 已成功启动，但没有成功拉起桌面窗口；你可以再点一次“打开 WeFlow 窗口”。`
+          : focused
+            ? `已发起 ${spec.label} 启动请求，并已尝试打开桌面窗口。`
+            : `已发起 ${spec.label} 启动请求，请等待本地服务就绪。`,
+        service: await this.describeService(key, config),
+      };
+    }
 
     return {
       ok: true,
