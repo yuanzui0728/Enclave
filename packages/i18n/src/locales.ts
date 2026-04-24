@@ -134,12 +134,8 @@ export function detectBrowserLocale() {
 }
 
 export function resolveInitialLocale(surface: I18nAppSurface) {
-  return (
-    readQueryLocale() ??
-    readPersistedLocale(surface) ??
-    detectBrowserLocale() ??
-    DEFAULT_LOCALE
-  );
+  void surface;
+  return readQueryLocale() ?? DEFAULT_LOCALE;
 }
 
 export function syncDocumentLocale(locale: SupportedLocale) {
