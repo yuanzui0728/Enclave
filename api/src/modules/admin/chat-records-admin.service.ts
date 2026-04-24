@@ -6,6 +6,10 @@ import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { AiUsageLedgerEntity } from '../analytics/ai-usage-ledger.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharacterEntity } from '../characters/character.entity';
+import {
+  describeAttachmentForDisplay,
+  resolveMessageSemanticPreview,
+} from '../chat/attachment-semantic-text';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { filterUserFacingConversations } from '../chat/conversation-visibility';
 import {
@@ -1678,7 +1682,11 @@ export class ChatRecordsAdminService {
       }
 
       blocks.push('');
-      blocks.push(this.quoteMarkdownText(message.text?.trim() || '空消息'));
+      blocks.push(
+        this.quoteMarkdownText(
+          resolveMessageSemanticPreview(message, { maxChars: 400 }) || '空消息',
+        ),
+      );
       blocks.push('');
 
       return blocks;
@@ -1715,34 +1723,11 @@ export class ChatRecordsAdminService {
   }
 
   private describeAttachment(
-    message: Pick<ChatRecordMessage, 'attachment' | 'type'>,
+    message: Pick<ChatRecordMessage, 'attachment'>,
   ) {
-    const attachment = message.attachment;
-    if (!attachment) {
-      return '无';
-    }
-
-    if (
-      attachment.kind === 'image' ||
-      attachment.kind === 'file' ||
-      attachment.kind === 'voice'
-    ) {
-      return `${message.type} · ${attachment.fileName}`;
-    }
-
-    if (attachment.kind === 'sticker') {
-      return `sticker · ${attachment.label ?? attachment.stickerId}`;
-    }
-
-    if (attachment.kind === 'contact_card') {
-      return `contact_card · ${attachment.name}`;
-    }
-
-    if (attachment.kind === 'location_card') {
-      return `location_card · ${attachment.title}`;
-    }
-
-    return `note_card · ${attachment.title}`;
+    return describeAttachmentForDisplay(message.attachment, {
+      maxChars: 160,
+    });
   }
 
   private slugifyFileName(value: string) {
