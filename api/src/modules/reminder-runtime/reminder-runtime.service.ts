@@ -37,6 +37,16 @@ type ReminderTaskQuery = {
   status?: string;
 };
 
+type ReminderConversationEvaluationInput = {
+  ownerId: string;
+  conversationId: string;
+  text: string;
+  timezone: string;
+  now: Date;
+  rules: ReminderRuntimeRulesValue;
+  sourceMessageId?: string;
+};
+
 type ReminderTurnResult = {
   handled: boolean;
   responseText?: string;
@@ -722,6 +732,7 @@ export class ReminderRuntimeService {
       now,
       timezone: worldCalendar.location.timezone,
       rules,
+      sourceMessageId: input.sourceMessageId,
     });
 
     switch (evaluation.action) {
@@ -857,14 +868,31 @@ export class ReminderRuntimeService {
     }
   }
 
-  private async evaluateConversationTurn(input: {
-    ownerId: string;
-    conversationId: string;
-    text: string;
-    timezone: string;
-    now: Date;
-    rules: ReminderRuntimeRulesValue;
-  }): Promise<ReminderConversationEvaluation> {
+  private async evaluateConversationTurn(
+    input: ReminderConversationEvaluationInput,
+  ): Promise<ReminderConversationEvaluation> {
+    const directEvaluation =
+      await this.evaluateConversationTurnWithoutClarification(input);
+    if (
+      directEvaluation.handled ||
+      !input.sourceMessageId ||
+      !input.text.trim()
+    ) {
+      return directEvaluation;
+    }
+
+    const clarificationEvaluation =
+      await this.evaluateConversationTurnFromClarification(input);
+    if (clarificationEvaluation) {
+      return clarificationEvaluation;
+    }
+
+    return directEvaluation;
+  }
+
+  private async evaluateConversationTurnWithoutClarification(
+    input: ReminderConversationEvaluationInput,
+  ): Promise<ReminderConversationEvaluation> {
     const rulesEvaluation = await this.evaluateConversationTurnFromRules(input, {
       source: 'rules',
     });
@@ -879,15 +907,71 @@ export class ReminderRuntimeService {
     return this.evaluateConversationTurnWithLlmFallback(input, rulesEvaluation);
   }
 
+  private async evaluateConversationTurnFromClarification(
+    input: ReminderConversationEvaluationInput,
+  ): Promise<ReminderConversationEvaluation | null> {
+    const previousUserMessage = await this.findLatestPreviousUserMessage(
+      input.conversationId,
+      input.sourceMessageId ?? '',
+    );
+    if (!previousUserMessage) {
+      return null;
+    }
+
+    const previousEvaluation =
+      await this.evaluateConversationTurnWithoutClarification({
+        ...input,
+        text: previousUserMessage.text.trim(),
+        now: previousUserMessage.createdAt,
+        sourceMessageId: undefined,
+      });
+    if (!previousEvaluation.handled || previousEvaluation.action !== 'create') {
+      return null;
+    }
+
+    const clarifiedCommand = this.buildClarifiedCreateCommand({
+      currentText: input.text,
+      previousText: previousUserMessage.text,
+      previousEvaluation,
+    });
+    if (!clarifiedCommand) {
+      return null;
+    }
+
+    const clarificationEvaluation =
+      await this.evaluateConversationTurnWithoutClarification({
+        ...input,
+        text: clarifiedCommand,
+        sourceMessageId: undefined,
+      });
+    if (
+      !clarificationEvaluation.handled ||
+      clarificationEvaluation.action !== 'create'
+    ) {
+      return null;
+    }
+
+    const clarifiedIntent = clarificationEvaluation.parsedIntent;
+    if (
+      !clarifiedIntent.handled ||
+      ('needsClarification' in clarifiedIntent &&
+        clarifiedIntent.needsClarification)
+    ) {
+      return null;
+    }
+
+    return {
+      ...clarificationEvaluation,
+      reason: `${clarificationEvaluation.reason}（已结合上一条待补充提醒）`,
+      debug: {
+        ...clarificationEvaluation.debug,
+        canonicalMessage: clarifiedCommand,
+      },
+    };
+  }
+
   private async evaluateConversationTurnFromRules(
-    input: {
-      ownerId: string;
-      conversationId: string;
-      text: string;
-      timezone: string;
-      now: Date;
-      rules: ReminderRuntimeRulesValue;
-    },
+    input: ReminderConversationEvaluationInput,
     options?: {
       source?: ReminderRuntimePreviewSourceValue;
       canonicalMessage?: string | null;
@@ -1100,14 +1184,7 @@ export class ReminderRuntimeService {
   }
 
   private async evaluateConversationTurnWithLlmFallback(
-    input: {
-      ownerId: string;
-      conversationId: string;
-      text: string;
-      timezone: string;
-      now: Date;
-      rules: ReminderRuntimeRulesValue;
-    },
+    input: ReminderConversationEvaluationInput,
     rulesEvaluation: ReminderConversationEvaluation,
   ): Promise<ReminderConversationEvaluation> {
     const llmResult = await this.resolveLlmFallbackCommand(input);
@@ -1198,6 +1275,65 @@ export class ReminderRuntimeService {
     });
 
     return this.normalizeLlmFallbackResult(raw);
+  }
+
+  private async findLatestPreviousUserMessage(
+    conversationId: string,
+    sourceMessageId: string,
+  ) {
+    const rows = await this.messageRepo.find({
+      where: {
+        conversationId,
+        senderType: 'user',
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      take: 6,
+    });
+
+    return rows.find((item) => item.id !== sourceMessageId) ?? null;
+  }
+
+  private buildClarifiedCreateCommand(input: {
+    currentText: string;
+    previousText: string;
+    previousEvaluation: ReminderConversationEvaluation;
+  }) {
+    if (input.previousEvaluation.action !== 'create') {
+      return null;
+    }
+
+    const parsedIntent = input.previousEvaluation.parsedIntent;
+    if (
+      !parsedIntent.handled ||
+      !('needsClarification' in parsedIntent) ||
+      !parsedIntent.needsClarification
+    ) {
+      return null;
+    }
+
+    const currentText = stripTrailingPunctuation(input.currentText.trim());
+    if (!currentText) {
+      return null;
+    }
+
+    const previousTitle = stripTrailingPunctuation(
+      parsedIntent.debug.extractedTitle ?? '',
+    );
+    if (previousTitle) {
+      return stripTrailingPunctuation(`${currentText} 提醒我 ${previousTitle}`);
+    }
+
+    const previousBase = stripTrailingPunctuation(
+      input.previousEvaluation.debug.canonicalMessage?.trim() ||
+        input.previousText.trim(),
+    );
+    if (!previousBase) {
+      return null;
+    }
+
+    return `${previousBase} ${currentText}`.trim();
   }
 
   private buildLlmFallbackPrompt(input: {
@@ -1973,14 +2109,21 @@ export class ReminderRuntimeService {
     rules: ReminderRuntimeRulesValue,
   ): ParsedClock | null {
     const explicitMatch = text.match(
-      /(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(?:点|:|：)(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})?/,
+      /(\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(?:点|:|：)(半|一刻|三刻|(\d{1,2}|[零〇一二两三四五六七八九十]{1,3}))?分?/,
     );
     if (explicitMatch) {
       const matchedPeriod = this.findMatchedPeriod(text, rules);
       const rawHour = parseChineseNumber(explicitMatch[1]);
-      const rawMinute = explicitMatch[2]
-        ? parseChineseNumber(explicitMatch[2])
-        : 0;
+      const rawMinute =
+        explicitMatch[2] === '半'
+          ? 30
+          : explicitMatch[2] === '一刻'
+            ? 15
+            : explicitMatch[2] === '三刻'
+              ? 45
+              : explicitMatch[3]
+                ? parseChineseNumber(explicitMatch[3])
+                : 0;
       if (
         Number.isFinite(rawHour) &&
         Number.isFinite(rawMinute) &&
