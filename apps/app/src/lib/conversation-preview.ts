@@ -1,11 +1,11 @@
 import type { ConversationListItem } from "@yinjie/contracts";
 import type { LocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import { shouldHideSearchableChatMessage } from "../features/chat/local-chat-message-actions";
-import { sanitizeDisplayedChatText } from "./chat-text";
 import {
   getConversationThreadLabel,
   isPersistedGroupConversation,
 } from "./conversation-route";
+import { resolveMessageSemanticPreview } from "./message-attachment-semantic";
 
 type ConversationPreviewOptions = {
   emptyText?: string;
@@ -67,46 +67,13 @@ export function getConversationPreviewParts(
     lastMessage.senderType !== "system"
       ? `${lastMessage.senderType === "user" ? "我" : lastMessage.senderName || "群成员"}：`
       : "";
-
-  if (lastMessage.type === "image") {
-    return { prefix, text: "[图片]" };
-  }
-
-  if (lastMessage.type === "file") {
-    return { prefix, text: "[文件]" };
-  }
-
-  if (lastMessage.type === "voice") {
-    return { prefix, text: "[语音]" };
-  }
-
-  if (lastMessage.type === "contact_card") {
-    return { prefix, text: "[名片]" };
-  }
-
-  if (lastMessage.type === "location_card") {
-    return { prefix, text: "[位置]" };
-  }
-
-  if (lastMessage.type === "note_card") {
-    return { prefix, text: "[笔记]" };
-  }
-
-  if (lastMessage.type === "sticker") {
-    return {
-      prefix,
-      text:
-        lastMessage.attachment?.kind === "sticker" &&
-        lastMessage.attachment.label
-          ? `[表情] ${lastMessage.attachment.label}`
-          : "[表情]",
-    };
-  }
-
-  const sanitizedText = sanitizeDisplayedChatText(lastMessage.text);
   return {
     prefix,
-    text: sanitizedText || getConversationOpenFallback(conversation),
+    text:
+      resolveMessageSemanticPreview(lastMessage, {
+        maxChars: 80,
+        bracketedFallback: true,
+      }) || getConversationOpenFallback(conversation),
   };
 }
 

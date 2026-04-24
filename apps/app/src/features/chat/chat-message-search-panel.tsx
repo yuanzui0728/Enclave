@@ -29,6 +29,11 @@ import {
   formatMessageTimestamp,
   parseTimestamp,
 } from "../../lib/format";
+import {
+  describeAttachmentForDisplay,
+  resolveAttachmentSearchableText,
+  resolveMessageSemanticPreview,
+} from "../../lib/message-attachment-semantic";
 
 type SearchableChatMessage = Message | GroupMessage;
 type SearchCategoryId = "all" | "media" | "files" | "links";
@@ -865,7 +870,12 @@ function buildIndexedSearchMessage(
   reminder?: { remindAt: string },
 ): IndexedSearchMessage {
   const normalizedText = sanitizeDisplayedChatText(message.text).trim();
-  const supportText = resolveSupportText(message);
+  const supportText = describeAttachmentForDisplay(message.attachment, {
+    maxChars: 120,
+  });
+  const attachmentSearchableText = resolveAttachmentSearchableText(
+    message.attachment,
+  );
   const linkText = extractFirstLink(normalizedText);
   const typeLabel = resolveMessageTypeLabel(message);
   const messageType = resolveMessageTypeFilter(message);
@@ -884,13 +894,14 @@ function buildIndexedSearchMessage(
   }
 
   const previewText =
-    normalizedText ||
-    supportText ||
-    buildDefaultPreviewText(typeLabel, messageType);
+    resolveMessageSemanticPreview(message, {
+      maxChars: 200,
+    }) || buildDefaultPreviewText(typeLabel, messageType);
   const searchableText = [
     message.senderName,
     normalizedText,
     supportText,
+    attachmentSearchableText,
     linkText,
     typeLabel,
   ]
@@ -962,50 +973,6 @@ function resolveMessageTypeFilter(
   }
 
   return "text";
-}
-
-function resolveSupportText(message: SearchableChatMessage) {
-  if (message.attachment?.kind === "image") {
-    return message.attachment.fileName
-      ? t(msg`图片 · ${message.attachment.fileName}`)
-      : t(msg`图片`);
-  }
-
-  if (message.attachment?.kind === "file") {
-    return message.attachment.fileName
-      ? t(msg`文件 · ${message.attachment.fileName}`)
-      : t(msg`文件`);
-  }
-
-  if (message.attachment?.kind === "voice") {
-    return t(msg`语音`);
-  }
-
-  if (message.attachment?.kind === "contact_card") {
-    return message.attachment.name
-      ? t(msg`名片 · ${message.attachment.name}`)
-      : t(msg`名片`);
-  }
-
-  if (message.attachment?.kind === "location_card") {
-    return message.attachment.title
-      ? t(msg`位置 · ${message.attachment.title}`)
-      : t(msg`位置`);
-  }
-
-  if (message.attachment?.kind === "note_card") {
-    return message.attachment.title
-      ? t(msg`笔记 · ${message.attachment.title}`)
-      : t(msg`笔记`);
-  }
-
-  if (message.attachment?.kind === "sticker") {
-    return message.attachment.label
-      ? t(msg`表情 · ${message.attachment.label}`)
-      : t(msg`表情`);
-  }
-
-  return "";
 }
 
 function resolveMessageTypeLabel(message: SearchableChatMessage) {
