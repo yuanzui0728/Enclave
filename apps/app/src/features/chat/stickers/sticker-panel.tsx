@@ -1,3 +1,4 @@
+import { msg } from "@lingui/macro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +11,7 @@ import {
   type StickerAttachment,
 } from "@yinjie/contracts";
 import { Loader2, Plus, Search, Trash2, X } from "lucide-react";
+import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
 import { prepareCustomStickerUpload } from "./prepare-custom-sticker-upload";
 import { removeRecentSticker, type RecentStickerItem } from "./recent-stickers";
 
@@ -54,6 +56,8 @@ type CustomDeleteFeedback = {
   lastDeletedLabel: string | null;
 };
 
+const t = translateRuntimeMessage;
+
 export function StickerPanel({
   baseUrl,
   variant,
@@ -65,6 +69,7 @@ export function StickerPanel({
   onSelect,
   onError,
 }: StickerPanelProps) {
+  const { locale } = useAppLocale();
   const isMobile = variant === "mobile";
   const [keyword, setKeyword] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -231,12 +236,12 @@ export function StickerPanel({
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]) => {
       if (customStickerLibraryFull) {
-        throw new Error("自定义表情已满，请先删除几个再继续添加。");
+        throw new Error(t(msg`自定义表情已满，请先删除几个再继续添加。`));
       }
 
       if (files.length > customSlotsRemaining) {
         throw new Error(
-          `还能再添加 ${customSlotsRemaining} 个表情，请分批上传。`,
+          t(msg`还能再添加 ${customSlotsRemaining} 个表情，请分批上传。`),
         );
       }
 
@@ -274,7 +279,9 @@ export function StickerPanel({
     },
     onError: (error) => {
       onError?.(
-        error instanceof Error ? error.message : "上传表情失败，请稍后再试。",
+        error instanceof Error
+          ? error.message
+          : t(msg`上传表情失败，请稍后再试。`),
       );
     },
   });
@@ -331,7 +338,9 @@ export function StickerPanel({
       clearDeleteTransitionTimer(variables.stickerKey);
       setStickerCollapsing(variables.stickerKey, false);
       onError?.(
-        error instanceof Error ? error.message : "删除表情失败，请稍后再试。",
+        error instanceof Error
+          ? error.message
+          : t(msg`删除表情失败，请稍后再试。`),
       );
     },
   });
@@ -351,6 +360,7 @@ export function StickerPanel({
   }, [
     catalog.builtinPacks,
     catalog.customStickers,
+    locale,
     recentStickerEntries,
     searchKeyword,
     searching,
@@ -467,14 +477,19 @@ export function StickerPanel({
       customSlotsRemaining + 1,
     );
     if (manageableCustomItems.length <= 1) {
-      return `删当前后会清空表情库，可继续添加 ${nextSlotsAvailable} 张。`;
+      return t(
+        msg`删当前后会清空表情库，可继续添加 ${nextSlotsAvailable} 张。`,
+      );
     }
 
-    return `删当前后：剩 ${manageableCustomItems.length - 1} 张，可再加 ${nextSlotsAvailable} 张。`;
+    return t(
+      msg`删当前后：剩 ${manageableCustomItems.length - 1} 张，可再加 ${nextSlotsAvailable} 张。`,
+    );
   }, [
     catalog.maxCustomStickerCount,
     customSlotsRemaining,
     focusedManageSticker,
+    locale,
     manageableCustomItems.length,
   ]);
   const highlightedSearchItem = useMemo(() => {
@@ -541,20 +556,20 @@ export function StickerPanel({
     () => [
       {
         id: "recent",
-        label: isMobile ? "最近" : "最近使用",
-        badgeText: "近",
+        label: isMobile ? t(msg`最近`) : t(msg`最近使用`),
+        badgeText: t(msg`近`),
         coverSticker: recentStickers[0] ?? null,
       },
       {
         id: "featured",
-        label: "精选",
-        badgeText: "荐",
+        label: t(msg`精选`),
+        badgeText: t(msg`荐`),
         coverSticker: featuredStickers[0] ?? null,
       },
       {
         id: "custom",
-        label: `自定义 ${catalog.customStickerCount}`,
-        badgeText: "自",
+        label: t(msg`自定义 ${catalog.customStickerCount}`),
+        badgeText: t(msg`自`),
         coverSticker: customStickers[0] ?? null,
       },
       ...catalog.builtinPacks.map((pack) => ({
@@ -569,6 +584,7 @@ export function StickerPanel({
       customStickers,
       featuredStickers,
       isMobile,
+      locale,
       recentStickers,
     ],
   );
@@ -578,33 +594,37 @@ export function StickerPanel({
   const panelSubtitle =
     trimmedKeyword.length > 0
       ? activeSectionId === "custom" && manageSearchPauseHintVisible
-        ? `${
-            searchPending ? "正在搜索" : "搜索"
-          }“${trimmedKeyword}” · 删除管理已暂停${
+        ? `${t(searchPending ? msg`正在搜索` : msg`搜索`)}“${trimmedKeyword}” · ${t(msg`删除管理已暂停`)}${
             customUploadResumed
-              ? ` · 已腾出 ${customUploadResumedSlots} 个空位，可继续添加`
+              ? t(msg` · 已腾出 ${customUploadResumedSlots} 个空位，可继续添加`)
               : ""
           }`
         : searchPending
-          ? `正在搜索“${trimmedKeyword}”`
-          : `搜索“${trimmedKeyword}”`
+          ? t(msg`正在搜索“${trimmedKeyword}”`)
+          : t(msg`搜索“${trimmedKeyword}”`)
       : activeSectionId === "custom" && customManageMode
         ? customUploadResumed
-          ? `管理自定义表情 · 已腾出 ${customUploadResumedSlots} 个空位，可继续添加`
-          : `管理自定义表情 · 已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}`
+          ? t(
+              msg`管理自定义表情 · 已腾出 ${customUploadResumedSlots} 个空位，可继续添加`,
+            )
+          : t(
+              msg`管理自定义表情 · 已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}`,
+            )
         : activeSectionId === "custom" && customStickerLibraryFull
-          ? "自定义表情已满，请先删除几个再继续添加"
+          ? t(msg`自定义表情已满，请先删除几个再继续添加`)
           : activeSectionId === "custom"
-            ? `已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}，支持图片和 GIF`
+            ? t(
+                msg`已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}，支持图片和 GIF`,
+              )
             : activeSectionId === "recent"
-              ? "最近发送和使用过的表情"
-              : `${activeTab?.label ?? "表情"} · 桌面端连续发送`;
+              ? t(msg`最近发送和使用过的表情`)
+              : t(msg`${activeTab?.label ?? t(msg`表情`)} · 桌面端连续发送`);
   const customCapacityNotice =
     activeSectionId === "custom" && trimmedKeyword.length === 0
       ? customStickerLibraryFull
-        ? "自定义表情已满，请先删除几个再继续添加。"
+        ? t(msg`自定义表情已满，请先删除几个再继续添加。`)
         : customSlotsRemaining <= 20
-          ? `还能再添加 ${customSlotsRemaining} 个自定义表情。`
+          ? t(msg`还能再添加 ${customSlotsRemaining} 个自定义表情。`)
           : null
       : null;
   const customStorageRatio =
@@ -679,8 +699,10 @@ export function StickerPanel({
     searchSectionOffsetFromRecommended &&
     searchSectionOffsetFromRecommended !== 0
       ? searchSectionOffsetFromRecommended > 0
-        ? `当前比首推晚 ${searchSectionOffsetFromRecommended} 组`
-        : `当前比首推早 ${Math.abs(searchSectionOffsetFromRecommended)} 组`
+        ? t(msg`当前比首推晚 ${searchSectionOffsetFromRecommended} 组`)
+        : t(
+            msg`当前比首推早 ${Math.abs(searchSectionOffsetFromRecommended)} 组`,
+          )
       : null;
   const searchSectionStateMap = useMemo(() => {
     const stateMap = new Map<
@@ -717,55 +739,59 @@ export function StickerPanel({
   const searchItemOffsetWithinSectionLabel =
     highlightedSearchSectionState?.highlightedPosition &&
     highlightedSearchSectionState.highlightedPosition > 1
-      ? `当前比本组首项晚 ${
-          highlightedSearchSectionState.highlightedPosition - 1
-        } 项`
+      ? t(msg`当前比本组首项晚 ${highlightedSearchSectionState.highlightedPosition - 1} 项`)
       : null;
   const pausedManageResumeLabel = pausedManageFocusLabel
-    ? `恢复后回到：${pausedManageFocusLabel}`
-    : "恢复后回到上次删除位置";
+    ? t(msg`恢复后回到：${pausedManageFocusLabel}`)
+    : t(msg`恢复后回到上次删除位置`);
   const pausedManageCapacityLabel = customStickerLibraryFull
-    ? "当前仍是满库"
-    : `当前剩余 ${customSlotsRemaining} 个空位`;
+    ? t(msg`当前仍是满库`)
+    : t(msg`当前剩余 ${customSlotsRemaining} 个空位`);
   const pausedManageUploadLabel = customDeleteFeedback?.slotsRemaining
-    ? `已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可直接添加`
+    ? t(msg`已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可直接添加`)
     : null;
   const pausedManagePrimaryHint = customUploadResumed
-    ? "搜索中已暂停删除管理，清空搜索后可继续删除，也可直接继续添加。"
-    : "搜索中已暂停删除管理，清空搜索后可继续删除。";
+    ? t(msg`搜索中已暂停删除管理，清空搜索后可继续删除，也可直接继续添加。`)
+    : t(msg`搜索中已暂停删除管理，清空搜索后可继续删除。`);
   const bottomEnterSearchHint =
-    highlightedSearchPosition === 1 ? "Enter 发首推" : "Enter 发当前";
+    highlightedSearchPosition === 1
+      ? t(msg`Enter 发首推`)
+      : t(msg`Enter 发当前`);
   const bottomHomeSearchHint =
     highlightedSearchPosition && highlightedSearchPosition > 1
-      ? `Home ${
-          firstSearchResultItem?.sticker.label ??
-          firstSearchResultItem?.sticker.stickerId ??
-          "回默认"
-        }`
-      : "Home 回默认";
+      ? t(
+          msg`Home ${
+            firstSearchResultItem?.sticker.label ??
+            firstSearchResultItem?.sticker.stickerId ??
+            t(msg`回默认`)
+          }`,
+        )
+      : t(msg`Home 回默认`);
   const bottomEndSearchHint =
     highlightedSearchPosition &&
     highlightedSearchPosition < activeItems.length &&
     lastSearchResultItem
-      ? `End ${
-          lastSearchResultItem.sticker.label ??
-          lastSearchResultItem.sticker.stickerId
-        }`
-      : "End 末项";
+      ? t(
+          msg`End ${
+            lastSearchResultItem.sticker.label ??
+            lastSearchResultItem.sticker.stickerId
+          }`,
+        )
+      : t(msg`End 末项`);
   const bottomPageUpSearchHint = previousSearchSectionLabel
-    ? `PgUp ${previousSearchSectionLabel}`
-    : "PgUp 上组";
+    ? t(msg`PgUp ${previousSearchSectionLabel}`)
+    : t(msg`PgUp 上组`);
   const bottomPageDownSearchHint = nextSearchSectionLabel
-    ? `PgDn ${nextSearchSectionLabel}`
-    : "PgDn 下组";
+    ? t(msg`PgDn ${nextSearchSectionLabel}`)
+    : t(msg`PgDn 下组`);
   const showManageSearchPauseHint =
     !isMobile &&
     activeSectionId === "custom" &&
     searching &&
     manageSearchPauseHintVisible;
   const bottomEscSearchHint = showManageSearchPauseHint
-    ? "Esc 继续管理"
-    : "Esc 清空";
+    ? t(msg`Esc 继续管理`)
+    : t(msg`Esc 清空`);
   const showSearchSectionJumpHint =
     !isMobile &&
     searching &&
@@ -779,7 +805,7 @@ export function StickerPanel({
             firstSearchResultItem.sticker.stickerId,
           totalCount: activeItems.length,
           sectionCount: searchSections.length,
-          sourceLabel: recommendedSearchSection?.label ?? "搜索结果",
+          sourceLabel: recommendedSearchSection?.label ?? t(msg`搜索结果`),
         }
       : null
     : null;
@@ -817,26 +843,39 @@ export function StickerPanel({
     !showManageSearchPauseHint &&
     (customStickerLibraryFull || customSlotsRemaining <= 20);
   const searchManageActionLabel = customStickerLibraryFull
-    ? "去管理"
-    : "去清理";
+    ? t(msg`去管理`)
+    : t(msg`去清理`);
   const manageShortcutTitle = customStickerLibraryFull
-    ? "表情库已满，进入管理删除后再继续添加。"
-    : "空间不多了，先去清理不常用表情。";
+    ? t(msg`表情库已满，进入管理删除后再继续添加。`)
+    : t(msg`空间不多了，先去清理不常用表情。`);
   const resumeUploadShortcutTitle = customUploadResumed
-    ? `当前已腾出 ${customUploadResumedSlots} 个空位，点这里直接继续添加图片或 GIF。`
+    ? t(
+        msg`当前已腾出 ${customUploadResumedSlots} 个空位，点这里直接继续添加图片或 GIF。`,
+      )
     : undefined;
-  const addFirstUploadShortcutTitle =
-    "打开文件选择，添加第一张自定义表情图片或 GIF。";
-  const addUploadShortcutTitle = "打开文件选择，添加自定义表情图片或 GIF。";
-  const continueUploadShortcutTitle =
-    "打开文件选择，继续添加自定义表情图片或 GIF。";
-  const featuredShortcutTitle = "切到精选表情，先看看内置常用表情。";
-  const customShortcutTitle = "切回自定义表情，查看自己保存的图片和 GIF。";
-  const recentAddedShortcutTitle =
-    "切到最近添加，优先查看和清理最近导入的表情。";
-  const recentUsedSortTitle = "切到最近使用，优先查看最近发过的常用表情。";
-  const recentAddedSortTitle = "切到最近添加，优先查看和整理最近导入的表情。";
-  const closePanelTitle = "收起表情面板。";
+  const addFirstUploadShortcutTitle = t(
+    msg`打开文件选择，添加第一张自定义表情图片或 GIF。`,
+  );
+  const addUploadShortcutTitle = t(
+    msg`打开文件选择，添加自定义表情图片或 GIF。`,
+  );
+  const continueUploadShortcutTitle = t(
+    msg`打开文件选择，继续添加自定义表情图片或 GIF。`,
+  );
+  const featuredShortcutTitle = t(msg`切到精选表情，先看看内置常用表情。`);
+  const customShortcutTitle = t(
+    msg`切回自定义表情，查看自己保存的图片和 GIF。`,
+  );
+  const recentAddedShortcutTitle = t(
+    msg`切到最近添加，优先查看和清理最近导入的表情。`,
+  );
+  const recentUsedSortTitle = t(
+    msg`切到最近使用，优先查看最近发过的常用表情。`,
+  );
+  const recentAddedSortTitle = t(
+    msg`切到最近添加，优先查看和整理最近导入的表情。`,
+  );
+  const closePanelTitle = t(msg`收起表情面板。`);
   const getTabShortcutTitle = (tabId: string, tabLabel: string) => {
     if (tabId === "recent") {
       return recentUsedSortTitle;
@@ -850,55 +889,61 @@ export function StickerPanel({
       return customShortcutTitle;
     }
 
-    return `切到${tabLabel}表情分组。`;
+    return t(msg`切到${tabLabel}表情分组。`);
   };
   const searchResumeUploadButtonLabel = showManageSearchPauseHint
-    ? "现在去添加"
+    ? t(msg`现在去添加`)
     : catalog.customStickerCount === 0
-      ? "继续添加表情"
-      : "继续添加";
+      ? t(msg`继续添加表情`)
+      : t(msg`继续添加`);
   const searchResumeUploadHintLabel = showSearchResumeUploadAction
-    ? `已腾出 ${customUploadResumedSlots} 个空位，可直接添加`
+    ? t(msg`已腾出 ${customUploadResumedSlots} 个空位，可直接添加`)
     : null;
   const desktopManageButtonLabel = showManageSearchPauseHint
-    ? "继续管理"
+    ? t(msg`继续管理`)
     : customManageMode
       ? customUploadResumed
-        ? "完成清理"
-        : "完成"
-      : "管理";
+        ? t(msg`完成清理`)
+        : t(msg`完成`)
+      : t(msg`管理`);
   const desktopManageButtonTitle = showManageSearchPauseHint
     ? pausedManageFocusLabel
-      ? `清空搜索并继续删除管理，恢复到：${pausedManageFocusLabel}。${
-          customUploadResumed
-            ? ` 当前已腾出 ${customUploadResumedSlots} 个空位。`
-            : ""
-        }`
-      : `清空搜索并继续删除管理。${
-          customUploadResumed
-            ? ` 当前已腾出 ${customUploadResumedSlots} 个空位。`
-            : ""
-        }`
+      ? t(
+          msg`清空搜索并继续删除管理，恢复到：${pausedManageFocusLabel}。${
+            customUploadResumed
+              ? t(msg` 当前已腾出 ${customUploadResumedSlots} 个空位。`)
+              : ""
+          }`,
+        )
+      : t(
+          msg`清空搜索并继续删除管理。${
+            customUploadResumed
+              ? t(msg` 当前已腾出 ${customUploadResumedSlots} 个空位。`)
+              : ""
+          }`,
+        )
     : customManageMode
       ? customUploadResumed
-        ? `结束删除管理并回到自定义列表，当前已腾出 ${customUploadResumedSlots} 个空位，可继续添加。`
-        : "结束删除管理并回到自定义列表。"
+        ? t(
+            msg`结束删除管理并回到自定义列表，当前已腾出 ${customUploadResumedSlots} 个空位，可继续添加。`,
+          )
+        : t(msg`结束删除管理并回到自定义列表。`)
       : customStickerLibraryFull
-        ? "进入删除管理，先删几张再继续添加。"
+        ? t(msg`进入删除管理，先删几张再继续添加。`)
         : customSlotsRemaining <= 20
-          ? "进入删除管理，优先清理不常用表情。"
-          : "进入删除管理。";
+          ? t(msg`进入删除管理，优先清理不常用表情。`)
+          : t(msg`进入删除管理。`);
   const resumeManageShortcutTitle = showManageSearchPauseHint
     ? desktopManageButtonTitle
     : undefined;
   const clearSearchShortcutTitle = showManageSearchPauseHint
     ? resumeManageShortcutTitle
-    : "清空当前关键词，重新查看表情结果。";
+    : t(msg`清空当前关键词，重新查看表情结果。`);
   const desktopManageAfterFinishLabel =
     !isMobile && activeSectionId === "custom" && customManageMode
       ? customUploadResumed
-        ? "完成后：顶部可继续添加"
-        : "完成后：回自定义列表"
+        ? t(msg`完成后：顶部可继续添加`)
+        : t(msg`完成后：回自定义列表`)
       : null;
   const customManageKeyboardActive =
     !isMobile && activeSectionId === "custom" && customManageMode && !searching;
@@ -907,15 +952,17 @@ export function StickerPanel({
   const mobileCustomStorageSummary = isMobile
     ? customDeleteFeedback
       ? customDeleteFeedback.slotsRemaining > 0
-        ? `本轮已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可继续添加图片或 GIF。`
-        : `本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`
+        ? t(
+            msg`本轮已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可继续添加图片或 GIF。`,
+          )
+        : t(msg`本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`)
       : catalog.customStickerCount === 0
-        ? "支持上传图片 / GIF，也能把聊天里的图片、动图添加到表情。"
+        ? t(msg`支持上传图片 / GIF，也能把聊天里的图片、动图添加到表情。`)
         : customStickerLibraryFull
-          ? "表情已满，先看最近添加，再直接点右上角删除。"
+          ? t(msg`表情已满，先看最近添加，再直接点右上角删除。`)
           : customSlotsRemaining <= 20
-            ? "空间不多了，建议优先清理最近添加的临时表情。"
-            : "支持继续添加图片和 GIF，常用表情会更好找。"
+            ? t(msg`空间不多了，建议优先清理最近添加的临时表情。`)
+            : t(msg`支持继续添加图片和 GIF，常用表情会更好找。`)
     : null;
   const mobileShowsCustomResumeUploadAction =
     isMobile && customUploadResumed && !customStickerLibraryFull;
@@ -945,14 +992,14 @@ export function StickerPanel({
     customUploadResumed &&
     !uploadMutation.isPending;
   const headerUploadButtonLabel = isMobile
-    ? "添加"
+    ? t(msg`添加`)
     : headerUsesResumeUploadShortcut || showPausedManageResumeUploadShortcut
-      ? "继续添加"
+      ? t(msg`继续添加`)
       : headerUsesManageShortcut
-        ? "去管理"
+        ? t(msg`去管理`)
         : desktopCustomHeaderContext && catalog.customStickerCount === 0
-          ? "添加第一张"
-          : "添加表情";
+          ? t(msg`添加第一张`)
+          : t(msg`添加表情`);
   const headerUploadButtonTone = headerUsesResumeUploadShortcut
     ? "resume"
     : showPausedManageResumeUploadShortcut
@@ -961,7 +1008,7 @@ export function StickerPanel({
         ? "manage"
         : "default";
   const headerUploadButtonTitle = headerUsesManageShortcut
-    ? "自定义表情已满，先去管理里删掉几张再继续添加。"
+    ? t(msg`自定义表情已满，先去管理里删掉几张再继续添加。`)
     : headerUsesResumeUploadShortcut
       ? resumeUploadShortcutTitle
       : showPausedManageResumeUploadShortcut
@@ -969,34 +1016,157 @@ export function StickerPanel({
         : desktopCustomHeaderContext && catalog.customStickerCount === 0
           ? addFirstUploadShortcutTitle
           : customStickerLibraryFull
-            ? "自定义表情已满，请先删除几个再继续添加"
+            ? t(msg`自定义表情已满，请先删除几个再继续添加`)
             : addUploadShortcutTitle;
   const searchInputPlaceholder =
     !isMobile && activeSectionId === "custom"
       ? showManageSearchPauseHint
         ? customUploadResumed
-          ? "搜索表情，Esc 继续管理或直接继续添加"
-          : "搜索表情，Esc 继续管理"
+          ? t(msg`搜索表情，Esc 继续管理或直接继续添加`)
+          : t(msg`搜索表情，Esc 继续管理`)
         : customManageMode && trimmedKeyword.length === 0
           ? customUploadResumed
-            ? "搜索表情，输入后会暂停管理，也可直接继续添加"
-            : "搜索表情，输入后会暂停删除管理"
-          : "搜索表情"
-      : "搜索表情";
+            ? t(msg`搜索表情，输入后会暂停管理，也可直接继续添加`)
+            : t(msg`搜索表情，输入后会暂停删除管理`)
+          : t(msg`搜索表情`)
+      : t(msg`搜索表情`);
   const searchInputTitle =
     !isMobile && activeSectionId === "custom"
       ? showManageSearchPauseHint
         ? customUploadResumed
-          ? "当前搜索已暂停删除管理，并且已经腾出空位，可按 Esc 继续管理或直接继续添加。"
-          : "当前搜索已暂停删除管理，可按 Esc 或清空搜索恢复。"
+          ? t(
+              msg`当前搜索已暂停删除管理，并且已经腾出空位，可按 Esc 继续管理或直接继续添加。`,
+            )
+          : t(msg`当前搜索已暂停删除管理，可按 Esc 或清空搜索恢复。`)
         : customManageMode && trimmedKeyword.length === 0
           ? customUploadResumed
-            ? `当前已腾出 ${customUploadResumedSlots} 个空位，可直接点顶部继续添加；输入关键词后会暂时暂停删除管理，清空搜索后会回到当前删除位置。`
-            : "输入关键词后会暂时暂停删除管理，清空搜索后会回到当前删除位置。"
+            ? t(
+                msg`当前已腾出 ${customUploadResumedSlots} 个空位，可直接点顶部继续添加；输入关键词后会暂时暂停删除管理，清空搜索后会回到当前删除位置。`,
+              )
+            : t(
+                msg`输入关键词后会暂时暂停删除管理，清空搜索后会回到当前删除位置。`,
+              )
           : customStickerLibraryFull
-            ? "自定义表情已满，可先搜索已有表情，也可以切到管理删除后继续添加。"
+            ? t(
+                msg`自定义表情已满，可先搜索已有表情，也可以切到管理删除后继续添加。`,
+              )
             : undefined
       : undefined;
+  const panelTitle = t(msg`表情`);
+  const closePanelLabel = t(msg`收起`);
+  const clearSearchAriaLabel = showManageSearchPauseHint
+    ? t(msg`清空表情搜索并继续删除管理`)
+    : t(msg`清空表情搜索`);
+  const pausedManageKeyboardResumeLabel = t(msg`Esc 继续管理`);
+  const addNowLabel = t(msg`现在去添加`);
+  const resumeManageLabel = t(msg`继续管理`);
+  const searchSendLabel = t(msg`回车发送：`);
+  const searchSourceLabel = t(msg`来源：`);
+  const searchCurrentSourceLabel = t(msg`当前来源`);
+  const searchCurrentGroupLabel = t(msg`本组`);
+  const searchDefaultEnterLabel = t(msg`默认回车`);
+  const searchGroupLeadLabel = t(msg`本组首项：`);
+  const searchDefaultSendLabel = t(msg`默认先发：`);
+  const searchRecommendedLabel = t(msg`默认推荐`);
+  const searchFallbackSourceLabel = t(msg`搜索结果`);
+  const searchSelectHintLabel = t(msg`↑↓←→ 选择`);
+  const customLibraryTitle = t(msg`自定义表情库`);
+  const customLibrarySavedLabel = t(
+    msg`已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}`,
+  );
+  const customStorageStatusLabel = customStickerLibraryFull
+    ? t(msg`已满`)
+    : t(msg`剩余 ${customSlotsRemaining}`);
+  const continueUploadLabel =
+    catalog.customStickerCount === 0 ? t(msg`继续添加表情`) : t(msg`继续添加`);
+  const addFirstLabel = t(msg`添加第一张`);
+  const viewFeaturedLabel = t(msg`去精选看看`);
+  const viewFeaturedShortLabel = t(msg`看精选`);
+  const viewCustomLabel = t(msg`看自定义`);
+  const viewRecentAddedLabel = t(msg`看最近添加`);
+  const mobileDeleteHintLabel = t(msg`直接点右上角删除`);
+  const desktopManageCurrentDeleteLabel = t(msg`当前删除：`);
+  const desktopManagePositionLabel = focusedManageStickerPosition
+    ? t(
+        msg`第 ${focusedManageStickerPosition}/${manageableCustomItems.length} 张`,
+      )
+    : null;
+  const manageSummaryLabel = customDeleteFeedback
+    ? t(
+        msg`已删除 ${customDeleteFeedback.deletedCount} 张，现在还能再加 ${customDeleteFeedback.slotsRemaining} 张。`,
+      )
+    : customStickerLibraryFull
+      ? t(msg`表情已满：先删 1 张，删完会自动顺到下一张。`)
+      : t(
+          msg`管理中：点击表情右上角删除，删完会自动顺到下一张，按 Esc 可直接完成。`,
+        );
+  const manageSwitchHintLabel = t(msg`↑↓←→ 切换`);
+  const manageDeleteHintLabel = t(msg`Delete 删除`);
+  const manageCurrentLabel = t(msg`当前：`);
+  const manageCurrentPositionLabel = focusedManageStickerPosition
+    ? t(
+        msg`当前 ${focusedManageStickerPosition}/${manageableCustomItems.length}`,
+      )
+    : null;
+  const manageNextLabel = nextManageSticker
+    ? t(
+        msg`删后跳到：${nextManageSticker.label ?? nextManageSticker.stickerId}`,
+      )
+    : null;
+  const manageRemainingLabel = t(
+    msg`剩余 ${customDeleteFeedback?.remainingCount ?? catalog.customStickerCount}`,
+  );
+  const loadingLabel = t(msg`正在载入表情...`);
+  const searchRecommendedFromLabel = mobileSearchPreview
+    ? t(msg`首推来自 ${mobileSearchPreview.sourceLabel}`)
+    : null;
+  const searchDefaultPreviewLabel = mobileSearchPreview
+    ? mobileSearchPreview.sectionCount > 1
+      ? t(
+          msg`默认先看 ${mobileSearchPreview.label}，共 ${mobileSearchPreview.sectionCount} 组来源。`,
+        )
+      : t(msg`默认先看 ${mobileSearchPreview.label}。`)
+    : null;
+  const emptyStatePrimaryLabel = searching
+    ? t(msg`没有找到“${trimmedKeyword}”相关表情`)
+    : activeSectionId === "custom"
+      ? customDeleteFeedback?.deletedCount
+        ? t(msg`自定义表情已经清空，可以继续添加新的图片或 GIF。`)
+        : t(
+            msg`还没有自定义表情，可上传图片 / GIF，也能把聊天里的图片、动图添加到表情。`,
+          )
+      : activeSectionId === "recent"
+        ? t(msg`最近还没有使用过表情。`)
+        : t(msg`当前没有可用表情。`);
+  const searchRetryLabel = showManageSearchPauseHint
+    ? t(msg`清空并继续管理`)
+    : t(msg`清空重试`);
+  const searchFallbackHint = showManageSearchPauseHint
+    ? showPausedManageResumeUploadShortcut
+      ? t(msg`也可以直接继续添加图片或 GIF，或者先回到删除管理再清理。`)
+      : t(msg`也可以先继续删除当前自定义表情，之后再回来搜。`)
+    : showSearchResumeUploadAction
+      ? showSearchManageAction
+        ? t(
+            msg`也可以直接继续添加图片或 GIF，或者先去清理不常用表情，再回来搜。`,
+          )
+        : t(msg`也可以直接继续添加图片或 GIF，之后再回来搜。`)
+      : showSearchManageAction
+        ? customStickerLibraryFull
+          ? t(msg`也可以先去管理里删掉几张，再回来继续搜。`)
+          : t(msg`也可以先去清理不常用表情，再回来继续搜。`)
+        : t(msg`试试换个关键词，或者先看看精选 / 自定义里的常用表情`);
+  const customEmptyDeletedSummary = customDeleteFeedback?.deletedCount
+    ? t(msg`已清空 · 释放 ${customDeleteFeedback.deletedCount} 个位置`)
+    : null;
+  const customEmptyReadyLabel = t(msg`现在可继续添加图片或 GIF`);
+  const customEmptyActionLabel = customDeleteFeedback?.deletedCount
+    ? t(msg`继续添加表情`)
+    : t(msg`添加第一张表情`);
+  const customEmptyUploadHint = t(msg`聊天里的图片 / GIF 也能添加为表情`);
+  const mobileCustomEmptyHint = t(
+    msg`也可以先去精选看看，再回来继续补自己的表情`,
+  );
   const openCustomManageMode = () => {
     setCustomSortMode("added");
     setCustomDeleteFeedback(null);
@@ -1687,7 +1857,7 @@ export function StickerPanel({
                   : "text-sm font-medium text-[color:var(--text-primary)]"
               }
             >
-              表情
+              {panelTitle}
             </div>
             {!isMobile ? (
               <div className="pt-0.5 text-[11px] text-[color:var(--text-secondary)]">
@@ -1780,7 +1950,7 @@ export function StickerPanel({
                   : "rounded-full px-2 py-1 text-xs text-[color:var(--text-secondary)] transition hover:bg-white/80"
               }
             >
-              收起
+              {closePanelLabel}
             </button>
           </div>
         </div>
@@ -1813,11 +1983,7 @@ export function StickerPanel({
                 }
                 title={clearSearchShortcutTitle}
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)]"
-                aria-label={
-                  showManageSearchPauseHint
-                    ? "清空表情搜索并继续删除管理"
-                    : "清空表情搜索"
-                }
+                aria-label={clearSearchAriaLabel}
               >
                 <X size={12} />
               </button>
@@ -1841,7 +2007,7 @@ export function StickerPanel({
                       </span>
                     ) : null}
                     <span className="rounded-full bg-white/88 px-2 py-1">
-                      Esc 继续管理
+                      {pausedManageKeyboardResumeLabel}
                     </span>
                   </div>
                 </div>
@@ -1852,7 +2018,7 @@ export function StickerPanel({
                     title={resumeUploadShortcutTitle}
                     className="shrink-0 rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:bg-[rgba(160,90,10,0.18)]"
                   >
-                    现在去添加
+                    {addNowLabel}
                   </button>
                 ) : null}
                 <button
@@ -1861,7 +2027,7 @@ export function StickerPanel({
                   title={resumeManageShortcutTitle}
                   className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:bg-[color:var(--surface-console)]"
                 >
-                  继续管理
+                  {resumeManageLabel}
                 </button>
               </div>
             </div>
@@ -1896,32 +2062,38 @@ export function StickerPanel({
                     </div>
                     <div className="min-w-0">
                       <div className="font-medium text-[#9a5a0a]">
-                        回车发送：
+                        {searchSendLabel}
                         {highlightedSearchItem.sticker.label ??
                           highlightedSearchItem.sticker.stickerId}
                       </div>
                       <div className="truncate pt-0.5 text-[color:var(--text-secondary)]">
-                        来源：{highlightedSearchSourceLabel ?? "搜索结果"}
+                        {searchSourceLabel}
+                        {highlightedSearchSourceLabel ??
+                          searchFallbackSourceLabel}
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
                         {highlightedSearchSection ? (
                           <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                            当前来源 · {highlightedSearchSection.label}
+                            {t(
+                              msg`${searchCurrentSourceLabel} · ${highlightedSearchSection.label}`,
+                            )}
                           </span>
                         ) : null}
                         {highlightedSearchSection &&
                         highlightedSearchSectionState?.highlightedPosition ? (
                           <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                            本组{" "}
-                            {highlightedSearchSectionState.highlightedPosition}/
-                            {highlightedSearchSection.items.length}
+                            {t(
+                              msg`${searchCurrentGroupLabel} ${highlightedSearchSectionState.highlightedPosition}/${highlightedSearchSection.items.length}`,
+                            )}
                           </span>
                         ) : null}
                         {recommendedSearchSection &&
                         recommendedSearchSection.id !==
                           highlightedSearchSection?.id ? (
                           <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[10px] text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                            默认回车 · {recommendedSearchSection.label}
+                            {t(
+                              msg`${searchDefaultEnterLabel} · ${recommendedSearchSection.label}`,
+                            )}
                           </span>
                         ) : null}
                       </div>
@@ -1943,7 +2115,7 @@ export function StickerPanel({
                               loading="lazy"
                             />
                             <span className="truncate">
-                              本组首项：
+                              {searchGroupLeadLabel}
                               {highlightedSearchSectionLeadSticker.label ??
                                 highlightedSearchSectionLeadSticker.stickerId}
                             </span>
@@ -1974,7 +2146,7 @@ export function StickerPanel({
                               loading="lazy"
                             />
                             <span className="truncate">
-                              默认先发：
+                              {searchDefaultSendLabel}
                               {firstSearchResultItem.sticker.label ??
                                 firstSearchResultItem.sticker.stickerId}
                             </span>
@@ -1996,7 +2168,7 @@ export function StickerPanel({
                   <div className="flex shrink-0 items-center gap-2">
                     {highlightedSearchPosition === 1 ? (
                       <span className="rounded-full bg-[rgba(160,90,10,0.14)] px-2 py-1 text-[10px] font-medium text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                        默认推荐
+                        {searchRecommendedLabel}
                       </span>
                     ) : null}
                     {highlightedSearchPosition &&
@@ -2006,7 +2178,7 @@ export function StickerPanel({
                           Home{" "}
                           {firstSearchResultItem?.sticker.label ??
                             firstSearchResultItem?.sticker.stickerId ??
-                            "回默认"}
+                            t(msg`回默认`)}
                         </span>
                       </span>
                     ) : null}
@@ -2017,7 +2189,7 @@ export function StickerPanel({
                           End{" "}
                           {lastSearchResultItem?.sticker.label ??
                             lastSearchResultItem?.sticker.stickerId ??
-                            "末项"}
+                            t(msg`末项`)}
                         </span>
                       </span>
                     ) : null}
@@ -2037,16 +2209,14 @@ export function StickerPanel({
                       </span>
                     ) : null}
                     <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                      {highlightedSearchPosition === 1
-                        ? "Enter 发首推"
-                        : "Enter 发当前"}
+                      {bottomEnterSearchHint}
                     </span>
                   </div>
                 </div>
               ) : null}
               <div className="text-[11px] text-[color:var(--text-muted)]">
                 <span className="rounded-full bg-white/88 px-2 py-1">
-                  ↑↓←→ 选择
+                  {searchSelectHintLabel}
                 </span>
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
                   {bottomEnterSearchHint}
@@ -2113,11 +2283,10 @@ export function StickerPanel({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
-                    自定义表情库
+                    {customLibraryTitle}
                   </div>
                   <div className="pt-0.5 text-[11px] text-[color:var(--text-secondary)]">
-                    已保存 {catalog.customStickerCount} /{" "}
-                    {catalog.maxCustomStickerCount}
+                    {customLibrarySavedLabel}
                   </div>
                 </div>
                 <div
@@ -2129,9 +2298,7 @@ export function StickerPanel({
                         : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-primary)]"
                   } ${customDeleteFeedbackFlashActive ? "animate-pulse" : ""}`}
                 >
-                  {customStickerLibraryFull
-                    ? "已满"
-                    : `剩余 ${customSlotsRemaining}`}
+                  {customStorageStatusLabel}
                 </div>
               </div>
               <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[rgba(15,23,42,0.08)]">
@@ -2167,7 +2334,7 @@ export function StickerPanel({
                               : ""
                           }`}
                         >
-                          +{customDeleteFeedback.deletedCount} 空位
+                          {t(msg`+${customDeleteFeedback.deletedCount} 空位`)}
                         </span>
                       ) : null}
                       <span>{Math.round(customStorageRatio * 100)}%</span>
@@ -2183,11 +2350,13 @@ export function StickerPanel({
                               : ""
                           }`}
                         >
-                          最近删除：{customDeleteFeedback.lastDeletedLabel}
+                          {t(
+                            msg`最近删除：${customDeleteFeedback.lastDeletedLabel}`,
+                          )}
                         </span>
                       ) : null}
                       <span className="rounded-full bg-white/88 px-2 py-1">
-                        剩余 {customDeleteFeedback.remainingCount}
+                        {t(msg`剩余 ${customDeleteFeedback.remainingCount}`)}
                       </span>
                     </div>
                   ) : null}
@@ -2204,9 +2373,7 @@ export function StickerPanel({
                           disabled={uploadMutation.isPending}
                           className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition active:bg-[rgba(160,90,10,0.18)] disabled:opacity-45"
                         >
-                          {catalog.customStickerCount === 0
-                            ? "继续添加表情"
-                            : "继续添加"}
+                          {continueUploadLabel}
                         </button>
                       ) : null}
                       {mobileShowsCustomAddFirstAction ? (
@@ -2218,7 +2385,7 @@ export function StickerPanel({
                             disabled={uploadMutation.isPending}
                             className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition active:bg-[rgba(160,90,10,0.18)] disabled:opacity-45"
                           >
-                            添加第一张
+                            {addFirstLabel}
                           </button>
                           <button
                             type="button"
@@ -2226,7 +2393,7 @@ export function StickerPanel({
                             title={featuredShortcutTitle}
                             className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
                           >
-                            去精选看看
+                            {viewFeaturedLabel}
                           </button>
                         </>
                       ) : null}
@@ -2237,12 +2404,12 @@ export function StickerPanel({
                           title={recentAddedShortcutTitle}
                           className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
                         >
-                          看最近添加
+                          {viewRecentAddedLabel}
                         </button>
                       ) : null}
                       {mobileShowsCustomDeleteHint ? (
                         <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-2 py-1 text-[10px] text-[#9a5a0a]">
-                          直接点右上角删除
+                          {mobileDeleteHintLabel}
                         </span>
                       ) : null}
                     </div>
@@ -2254,15 +2421,23 @@ export function StickerPanel({
                     <span>
                       {customDeleteFeedback
                         ? customDeleteFeedback.slotsRemaining > 0
-                          ? `本轮已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可继续添加图片或 GIF。`
-                          : `本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`
+                          ? t(
+                              msg`本轮已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可继续添加图片或 GIF。`,
+                            )
+                          : t(
+                              msg`本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`,
+                            )
                         : catalog.customStickerCount === 0
-                          ? "支持上传图片 / GIF，也能把聊天里的图片、动图添加到表情。"
+                          ? t(
+                              msg`支持上传图片 / GIF，也能把聊天里的图片、动图添加到表情。`,
+                            )
                           : customStickerLibraryFull
-                            ? "表情库已占满，删除后才能继续导入。"
+                            ? t(msg`表情库已占满，删除后才能继续导入。`)
                             : customSlotsRemaining <= 20
-                              ? "空间不多了，建议先清理不常用表情。"
-                              : "支持继续添加图片和 GIF，建议保留常用项。"}
+                              ? t(msg`空间不多了，建议先清理不常用表情。`)
+                              : t(
+                                  msg`支持继续添加图片和 GIF，建议保留常用项。`,
+                                )}
                     </span>
                     <div className="flex items-center gap-2">
                       {customDeleteFeedback ? (
@@ -2273,7 +2448,7 @@ export function StickerPanel({
                               : ""
                           }`}
                         >
-                          +{customDeleteFeedback.deletedCount} 空位
+                          {t(msg`+${customDeleteFeedback.deletedCount} 空位`)}
                         </span>
                       ) : null}
                       <span>{Math.round(customStorageRatio * 100)}%</span>
@@ -2288,14 +2463,13 @@ export function StickerPanel({
                             : "bg-white/88"
                         }`}
                       >
-                        当前删除：
+                        {desktopManageCurrentDeleteLabel}
                         {focusedManageSticker?.label ??
                           focusedManageSticker?.stickerId}
                       </span>
                       {focusedManageStickerPosition ? (
                         <span className="rounded-full bg-white/88 px-2 py-1">
-                          第 {focusedManageStickerPosition}/
-                          {manageableCustomItems.length} 张
+                          {desktopManagePositionLabel}
                         </span>
                       ) : null}
                       {nextManageDeleteOutcomeLabel ? (
@@ -2319,7 +2493,7 @@ export function StickerPanel({
                           title={addFirstUploadShortcutTitle}
                           className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                         >
-                          添加第一张
+                          {addFirstLabel}
                         </button>
                         <button
                           type="button"
@@ -2327,7 +2501,7 @@ export function StickerPanel({
                           title={featuredShortcutTitle}
                           className="rounded-full bg-white/88 px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
                         >
-                          去精选看看
+                          {viewFeaturedLabel}
                         </button>
                       </>
                     ) : customManageMode ? (
@@ -2339,7 +2513,7 @@ export function StickerPanel({
                             title={resumeUploadShortcutTitle}
                             className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                           >
-                            现在去添加
+                            {addNowLabel}
                           </button>
                         ) : null}
                         <button
@@ -2348,7 +2522,7 @@ export function StickerPanel({
                           title={desktopManageButtonTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                         >
-                          完成清理
+                          {t(msg`完成清理`)}
                         </button>
                       </>
                     ) : (
@@ -2361,7 +2535,7 @@ export function StickerPanel({
                             title={manageShortcutTitle}
                             className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                           >
-                            {customStickerLibraryFull ? "去管理" : "去清理"}
+                            {searchManageActionLabel}
                           </button>
                         ) : null}
                         {catalog.customStickerCount > 1 &&
@@ -2372,7 +2546,7 @@ export function StickerPanel({
                             title={recentAddedShortcutTitle}
                             className="rounded-full bg-white/88 px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
                           >
-                            看最近添加
+                            {viewRecentAddedLabel}
                           </button>
                         ) : null}
                       </>
@@ -2390,19 +2564,13 @@ export function StickerPanel({
                   : "border-[rgba(15,23,42,0.08)] bg-white/82"
               }`}
             >
-              <span>
-                {customDeleteFeedback
-                  ? `已删除 ${customDeleteFeedback.deletedCount} 张，现在还能再加 ${customDeleteFeedback.slotsRemaining} 张。`
-                  : customStickerLibraryFull
-                    ? "表情已满：先删 1 张，删完会自动顺到下一张。"
-                    : "管理中：点击表情右上角删除，删完会自动顺到下一张，按 Esc 可直接完成。"}
-              </span>
+              <span>{manageSummaryLabel}</span>
               <div className="flex shrink-0 items-center gap-2">
                 <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                  ↑↓←→ 切换
+                  {manageSwitchHintLabel}
                 </span>
                 <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                  Delete 删除
+                  {manageDeleteHintLabel}
                 </span>
                 {customDeleteFeedback?.slotsRemaining ? (
                   <button
@@ -2411,7 +2579,7 @@ export function StickerPanel({
                     title={resumeUploadShortcutTitle}
                     className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                   >
-                    现在去添加
+                    {addNowLabel}
                   </button>
                 ) : null}
                 {focusedManageSticker ? (
@@ -2422,21 +2590,19 @@ export function StickerPanel({
                         : "bg-[rgba(15,23,42,0.06)]"
                     }`}
                   >
-                    当前：
+                    {manageCurrentLabel}
                     {focusedManageSticker.label ??
                       focusedManageSticker.stickerId}
                   </span>
                 ) : null}
                 {focusedManageStickerPosition ? (
                   <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                    当前 {focusedManageStickerPosition}/
-                    {manageableCustomItems.length}
+                    {manageCurrentPositionLabel}
                   </span>
                 ) : null}
                 {nextManageSticker && manageableCustomItems.length > 1 ? (
                   <span className="max-w-[150px] truncate rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                    删后跳到：
-                    {nextManageSticker.label ?? nextManageSticker.stickerId}
+                    {manageNextLabel}
                   </span>
                 ) : null}
                 {nextManageDeleteOutcomeLabel ? (
@@ -2450,13 +2616,11 @@ export function StickerPanel({
                       customDeleteFeedbackFlashActive ? "animate-pulse" : ""
                     }`}
                   >
-                    最近删除：{customDeleteFeedback.lastDeletedLabel}
+                    {t(msg`最近删除：${customDeleteFeedback.lastDeletedLabel}`)}
                   </span>
                 ) : null}
                 <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-1 text-[11px] text-[color:var(--text-primary)]">
-                  剩余{" "}
-                  {customDeleteFeedback?.remainingCount ??
-                    catalog.customStickerCount}
+                  {manageRemainingLabel}
                 </span>
               </div>
             </div>
@@ -2471,8 +2635,8 @@ export function StickerPanel({
             >
               {(
                 [
-                  ["recent", "最近使用"],
-                  ["added", "最近添加"],
+                  ["recent", t(msg`最近使用`)],
+                  ["added", t(msg`最近添加`)],
                 ] as const
               ).map(([mode, label]) => {
                 const active = customSortMode === mode;
@@ -2527,7 +2691,7 @@ export function StickerPanel({
                       title={recentAddedShortcutTitle}
                       className="rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium text-[color:var(--text-secondary)] shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
                     >
-                      看最近添加
+                      {viewRecentAddedLabel}
                     </button>
                   ) : null}
                   {customStickerLibraryFull || customSlotsRemaining <= 20 ? (
@@ -2537,7 +2701,7 @@ export function StickerPanel({
                       title={manageShortcutTitle}
                       className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[#92400e] shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
                     >
-                      {customStickerLibraryFull ? "去管理" : "去清理"}
+                      {searchManageActionLabel}
                     </button>
                   ) : null}
                 </div>
@@ -2547,7 +2711,7 @@ export function StickerPanel({
           {stickerCatalogQuery.isLoading && !stickerCatalogQuery.data ? (
             <div className="flex min-h-[160px] items-center justify-center text-sm text-[color:var(--text-secondary)]">
               <Loader2 size={16} className="mr-2 animate-spin" />
-              正在载入表情...
+              {loadingLabel}
             </div>
           ) : activeItems.length ? (
             searching ? (
@@ -2556,18 +2720,14 @@ export function StickerPanel({
                   <div className="rounded-[14px] border border-[rgba(160,90,10,0.16)] bg-[rgba(255,251,235,0.94)] px-3 py-2.5 text-[11px] text-[color:var(--text-secondary)]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-[#9a5a0a]">
-                        首推来自 {mobileSearchPreview.sourceLabel}
+                        {searchRecommendedFromLabel}
                       </span>
                       <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[color:var(--text-secondary)]">
-                        {mobileSearchPreview.totalCount} 项
+                        {t(msg`${mobileSearchPreview.totalCount} 项`)}
                       </span>
                     </div>
                     <div className="pt-1 leading-4">
-                      默认先看 {mobileSearchPreview.label}
-                      {mobileSearchPreview.sectionCount > 1
-                        ? `，共 ${mobileSearchPreview.sectionCount} 组来源`
-                        : ""}
-                      。
+                      {searchDefaultPreviewLabel}
                     </div>
                   </div>
                 ) : null}
@@ -2608,25 +2768,26 @@ export function StickerPanel({
                           </span>
                           {isMobile && sectionState.containsRecommended ? (
                             <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[#9a5a0a]">
-                              首推
+                              {t(msg`首推`)}
                             </span>
                           ) : null}
                           {!isMobile && sectionState.containsHighlighted ? (
                             <span className="rounded-full bg-[rgba(160,90,10,0.14)] px-2 py-1 text-[10px] font-medium text-[#9a5a0a]">
-                              当前高亮
+                              {t(msg`当前高亮`)}
                             </span>
                           ) : null}
                           {!isMobile && sectionState.highlightedPosition ? (
                             <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                              本组 {sectionState.highlightedPosition}/
-                              {section.items.length}
+                              {t(
+                                msg`本组 ${sectionState.highlightedPosition}/${section.items.length}`,
+                              )}
                             </span>
                           ) : null}
                           {!isMobile &&
                           !sectionState.containsHighlighted &&
                           sectionState.containsRecommended ? (
                             <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                              默认回车
+                              {searchDefaultEnterLabel}
                             </span>
                           ) : null}
                         </div>
@@ -2635,7 +2796,7 @@ export function StickerPanel({
                           sectionState.containsHighlighted &&
                           sectionState.containsRecommended ? (
                             <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[#9a5a0a]">
-                              首项所在分组
+                              {t(msg`首项所在分组`)}
                             </span>
                           ) : null}
                           <span className="text-[10px] text-[color:var(--text-muted)]">
@@ -2654,17 +2815,7 @@ export function StickerPanel({
           ) : (
             <div className="flex min-h-[160px] items-center justify-center rounded-[18px] border border-dashed border-[color:var(--border-subtle)] bg-white/70 px-5 text-center text-sm text-[color:var(--text-secondary)]">
               <div className="flex max-w-[240px] flex-col items-center gap-3">
-                <div>
-                  {searching
-                    ? `没有找到“${trimmedKeyword}”相关表情`
-                    : activeSectionId === "custom"
-                      ? customDeleteFeedback?.deletedCount
-                        ? "自定义表情已经清空，可以继续添加新的图片或 GIF。"
-                        : "还没有自定义表情，可上传图片 / GIF，也能把聊天里的图片、动图添加到表情。"
-                      : activeSectionId === "recent"
-                        ? "最近还没有使用过表情。"
-                        : "当前没有可用表情。"}
-                </div>
+                <div>{emptyStatePrimaryLabel}</div>
                 {searching ? (
                   <div className="flex flex-col items-center gap-2">
                     {showManageSearchPauseHint ||
@@ -2704,9 +2855,7 @@ export function StickerPanel({
                         title={clearSearchShortcutTitle}
                         className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                       >
-                        {showManageSearchPauseHint
-                          ? "清空并继续管理"
-                          : "清空重试"}
+                        {searchRetryLabel}
                       </button>
                       {showSearchResumeUploadAction ? (
                         <button
@@ -2735,7 +2884,7 @@ export function StickerPanel({
                           title={featuredShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
-                          看精选
+                          {viewFeaturedShortLabel}
                         </button>
                       ) : null}
                       {catalog.customStickerCount > 0 &&
@@ -2746,7 +2895,7 @@ export function StickerPanel({
                           title={customShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
-                          看自定义
+                          {viewCustomLabel}
                         </button>
                       ) : null}
                       {activeSectionId === "custom" &&
@@ -2758,24 +2907,12 @@ export function StickerPanel({
                           title={recentAddedShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
-                          看最近添加
+                          {viewRecentAddedLabel}
                         </button>
                       ) : null}
                     </div>
                     <div className="text-[11px] text-[color:var(--text-muted)]">
-                      {showManageSearchPauseHint
-                        ? showPausedManageResumeUploadShortcut
-                          ? "也可以直接继续添加图片或 GIF，或者先回到删除管理再清理。"
-                          : "也可以先继续删除当前自定义表情，之后再回来搜。"
-                        : showSearchResumeUploadAction
-                          ? showSearchManageAction
-                            ? "也可以直接继续添加图片或 GIF，或者先去清理不常用表情，再回来搜。"
-                            : "也可以直接继续添加图片或 GIF，之后再回来搜。"
-                          : showSearchManageAction
-                            ? customStickerLibraryFull
-                              ? "也可以先去管理里删掉几张，再回来继续搜。"
-                              : "也可以先去清理不常用表情，再回来继续搜。"
-                            : "试试换个关键词，或者先看看精选 / 自定义里的常用表情"}
+                      {searchFallbackHint}
                     </div>
                   </div>
                 ) : null}
@@ -2784,15 +2921,16 @@ export function StickerPanel({
                     {customDeleteFeedback?.deletedCount ? (
                       <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-[color:var(--text-secondary)]">
                         <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[#9a5a0a]">
-                          已清空 · 释放 {customDeleteFeedback.deletedCount}{" "}
-                          个位置
+                          {customEmptyDeletedSummary}
                         </span>
                         <span className="rounded-full bg-white/88 px-2 py-1">
-                          现在可继续添加图片或 GIF
+                          {customEmptyReadyLabel}
                         </span>
                         {customDeleteFeedback.lastDeletedLabel ? (
                           <span className="rounded-full bg-white/88 px-2 py-1">
-                            最近删除：{customDeleteFeedback.lastDeletedLabel}
+                            {t(
+                              msg`最近删除：${customDeleteFeedback.lastDeletedLabel}`,
+                            )}
                           </span>
                         ) : null}
                       </div>
@@ -2812,9 +2950,7 @@ export function StickerPanel({
                         }
                         className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition disabled:opacity-45"
                       >
-                        {customDeleteFeedback?.deletedCount
-                          ? "继续添加表情"
-                          : "添加第一张表情"}
+                        {customEmptyActionLabel}
                       </button>
                       {isMobile || !customDeleteFeedback?.deletedCount ? (
                         <button
@@ -2823,17 +2959,17 @@ export function StickerPanel({
                           title={featuredShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
-                          去精选看看
+                          {viewFeaturedLabel}
                         </button>
                       ) : null}
                     </div>
                     {!customDeleteFeedback?.deletedCount ? (
                       <div className="text-[11px] text-[color:var(--text-muted)]">
-                        聊天里的图片 / GIF 也能添加为表情
+                        {customEmptyUploadHint}
                       </div>
                     ) : isMobile ? (
                       <div className="text-[11px] text-[color:var(--text-muted)]">
-                        也可以先去精选看看，再回来继续补自己的表情
+                        {mobileCustomEmptyHint}
                       </div>
                     ) : null}
                   </div>
@@ -2845,7 +2981,7 @@ export function StickerPanel({
                     title={featuredShortcutTitle}
                     className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition"
                   >
-                    去精选看看
+                    {viewFeaturedLabel}
                   </button>
                 ) : null}
               </div>
@@ -3019,7 +3155,7 @@ function StickerButton({
               : "absolute left-1.5 top-1.5 z-10 rounded-full bg-[rgba(160,90,10,0.14)] px-2 py-0.5 text-[10px] font-medium text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
           }
         >
-          首推
+          {t(msg`首推`)}
         </span>
       ) : null}
       {showDelete && onDelete ? (
@@ -3044,7 +3180,7 @@ function StickerButton({
                 ? "opacity-100"
                 : "opacity-0 group-hover:opacity-100"
             }`}
-            aria-label="删除自定义表情"
+            aria-label={t(msg`删除自定义表情`)}
             disabled={deleting}
           >
             {deleting ? (
@@ -3245,8 +3381,8 @@ function searchStickerItems(input: {
       canDelete: entry.sticker.sourceType === "custom",
       score,
       sectionId: "recent",
-      sectionLabel: "最近使用",
-      sectionBadgeText: "近",
+      sectionLabel: t(msg`最近使用`),
+      sectionBadgeText: t(msg`近`),
     });
   });
 
@@ -3268,8 +3404,8 @@ function searchStickerItems(input: {
       canDelete: true,
       score,
       sectionId: "custom",
-      sectionLabel: "自定义",
-      sectionBadgeText: "自",
+      sectionLabel: t(msg`自定义`),
+      sectionBadgeText: t(msg`自`),
     });
   });
 
