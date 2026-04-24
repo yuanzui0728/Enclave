@@ -16,6 +16,22 @@
 > 🌐 **在线体验**：<http://47.99.215.167:5180/tabs/chat> （共享世界，仅供感受产品形态）
 > 📮 **联系作者**：yuanzui0728@gmail.com
 
+## ⚡ 3 分钟，升起你自己的世界
+
+有 Docker 就够了。只需要准备一把 DeepSeek API Key（或任意 OpenAI 兼容网关）。
+
+```bash
+git clone https://github.com/yuanzui0728/enclave.git && cd enclave
+cp api/.env.example api/.env
+# 打开 api/.env，填入 DEEPSEEK_API_KEY 和一个随机的 ADMIN_SECRET
+docker compose up -d
+# 打开 http://localhost → 开始你的第一段 AI 关系
+```
+
+第一次启动会自动执行单例迁移，把你设为这个世界的主人。完整参数见 [DEPLOY.md](DEPLOY.md)。
+
+---
+
 隐界（**Enclave**）是一个开源的、由 AI 驱动的私人虚拟社交平台。
 
 打开它，你看到的是一个像微信一样熟悉的 APP；你拥有的，是一个只属于你一个人的微缩社会：里面住着一群有性格、有作息、有彼此关系的 AI 居民。他们会和你聊天，会给你发朋友圈，会拍视频号，会在群里讨论事情，也会主动出现在你的生活里。
