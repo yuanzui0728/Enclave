@@ -947,6 +947,19 @@ export class ChatService {
       },
     });
     const extraSystemPromptSections = [...replyModalities.promptSections];
+    if (
+      isSelfConversation &&
+      charEntity &&
+      !selfAgentResult.handled &&
+      !actionResult.handled &&
+      !reminderResult.handled
+    ) {
+      extraSystemPromptSections.push(
+        ...(await this.selfAgent.buildChatPromptSections({
+          character: charEntity,
+        })),
+      );
+    }
 
     const assistantReplyText = selfAgentResult.handled
       ? (selfAgentResult.responseText?.trim() ?? '')
