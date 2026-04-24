@@ -103,22 +103,34 @@ export class LocalUpstreamServiceManager {
     config: ConnectorConfig,
   ): Promise<LocalUpstreamServiceStartResponse> {
     const spec = this.resolveSpec(key, config);
+    const matcher = this.createProcessMatcher(key, spec);
     const current = await this.describeService(key, config);
-    if (key === "weflow" && current.healthOk) {
+    if (
+      key === "weflow" &&
+      current.healthOk &&
+      !this.hasWeFlowDesktopWindowOnWindows(spec.cwd, matcher)
+    ) {
+      this.stopWindowsManagedProcesses(matcher);
+      this.processes.delete(key);
+    }
+    const refreshedCurrent = key === "weflow"
+      ? await this.describeService(key, config)
+      : current;
+    if (key === "weflow" && refreshedCurrent.healthOk) {
       const focused = await this.focusWeFlowWindow(spec.cwd);
       return {
         ok: true,
         message: focused
-          ? `${current.label} 已在运行，并已切到前台。`
-          : `${current.label} 已在运行，但没有成功拉起窗口；你可以再点一次“打开 WeFlow 窗口”。`,
+          ? `${refreshedCurrent.label} 已在运行，并已切到前台。`
+          : `${refreshedCurrent.label} 已在运行，但没有成功拉起窗口；你可以再点一次“打开 WeFlow 窗口”。`,
         service: await this.describeService(key, config),
       };
     }
-    if (current.healthOk) {
+    if (refreshedCurrent.healthOk) {
       return {
         ok: true,
-        message: `${current.label} 已经在运行。`,
-        service: current,
+        message: `${refreshedCurrent.label} 已经在运行。`,
+        service: refreshedCurrent,
       };
     }
 
@@ -187,7 +199,7 @@ export class LocalUpstreamServiceManager {
       lastExitedAt: null,
       lastError: null,
       logs,
-      matcher: this.createProcessMatcher(key, spec),
+      matcher,
     };
 
     child.on("error", (error) => {
@@ -258,6 +270,7 @@ export class LocalUpstreamServiceManager {
     config: ConnectorConfig,
   ): Promise<LocalUpstreamServiceOpenResponse> {
     const spec = this.resolveSpec(key, config);
+    const matcher = this.createProcessMatcher(key, spec);
 
     if (key !== "weflow") {
       throw new Error(
@@ -267,7 +280,12 @@ export class LocalUpstreamServiceManager {
 
     let startedByOpenAction = false;
     const current = await this.describeService(key, config);
-    if (!current.healthOk) {
+    if (current.healthOk && !this.hasWeFlowDesktopWindowOnWindows(spec.cwd, matcher)) {
+      this.stopWindowsManagedProcesses(matcher);
+      this.processes.delete(key);
+    }
+    const refreshedCurrent = await this.describeService(key, config);
+    if (!refreshedCurrent.healthOk) {
       await this.startService(key, config);
       startedByOpenAction = true;
     }
@@ -382,12 +400,17 @@ export class LocalUpstreamServiceManager {
     }
 
     const cwd = path.join(WORKSPACE_ROOT, ".cache", "upstreams", "WeFlow");
-    const launchCommand = this.resolveNpmCommand("npm run electron:dev");
+    const launchCommand =
+      process.platform === "win32"
+        ? this.resolveWeFlowWindowsLaunchCommand(cwd)
+        : this.resolveNpmCommand("npm run electron:dev");
     const baseUrl = config.weflowBaseUrl ?? "http://127.0.0.1:5031";
     const healthUrl = new URL("/health", withTrailingSlash(baseUrl)).toString();
     const bootstrap = resolveWeFlowBootstrapInfo();
     const notes = [
-      "会在本地 clone 的 WeFlow 目录里执行 npm run electron:dev，拉起桌面应用本体。",
+      process.platform === "win32"
+        ? "会直接以 Electron 桌面窗口启动本地 WeFlow，避免把主窗口误带到 5031 的 HTTP API 根地址。"
+        : "会在本地 clone 的 WeFlow 目录里执行 npm run electron:dev，拉起桌面应用本体。",
       "启动前会自动写入本机 WeFlow 配置，开启 HTTP API 并同步 Access Token。",
       "首次启动如果检测到依赖未安装，会自动执行 npm install 并使用 Electron 镜像源补齐运行环境。",
     ];
@@ -418,8 +441,10 @@ export class LocalUpstreamServiceManager {
   ) {
     const bootstrap = resolveWeFlowBootstrapInfo();
     this.ensureWeFlowConfig(spec.baseUrl, config, logs, bootstrap);
+    const env = this.buildProcessEnv("weflow");
 
     if (this.hasWeFlowRuntime(spec.cwd)) {
+      await this.ensureWeFlowBuild(spec.cwd, env, logs);
       return;
     }
 
@@ -432,10 +457,11 @@ export class LocalUpstreamServiceManager {
     await this.runForegroundCommand(
       installCommand,
       spec.cwd,
-      this.buildProcessEnv("weflow"),
+      env,
       logs,
       "WeFlow 依赖安装失败，请检查日志。",
     );
+    await this.ensureWeFlowBuild(spec.cwd, env, logs);
   }
 
   private hasWeFlowRuntime(cwd: string) {
@@ -520,8 +546,9 @@ export class LocalUpstreamServiceManager {
       return process.env;
     }
 
-    return {
+    const env: NodeJS.ProcessEnv = {
       ...process.env,
+      NODE_ENV: "production",
       ELECTRON_MIRROR:
         process.env.ELECTRON_MIRROR ?? WEFLOW_ELECTRON_MIRROR,
       npm_config_electron_mirror:
@@ -535,6 +562,10 @@ export class LocalUpstreamServiceManager {
       npm_config_fetch_retry_maxtimeout:
         process.env.npm_config_fetch_retry_maxtimeout ?? "120000",
     };
+    delete env.VITE_DEV_SERVER_URL;
+    delete env.ELECTRON_RENDERER_URL;
+    delete env.BROWSER;
+    return env;
   }
 
   private async runForegroundCommand(
@@ -573,6 +604,11 @@ export class LocalUpstreamServiceManager {
   ) {
     const stdoutFd = openSync(logs.stdout, "a");
     const stderrFd = openSync(logs.stderr, "a");
+    const windowsHide = !(
+      process.platform === "win32" &&
+      detached &&
+      path.basename(command.command).toLowerCase() === "electron.exe"
+    );
 
     try {
       return spawn(command.command, command.args, {
@@ -580,7 +616,7 @@ export class LocalUpstreamServiceManager {
         env,
         detached,
         stdio: ["ignore", stdoutFd, stderrFd],
-        windowsHide: true,
+        windowsHide,
       });
     } finally {
       closeSync(stdoutFd);
@@ -760,14 +796,59 @@ Write-Output 'focused'
     }
   }
 
+  private hasWeFlowDesktopWindowOnWindows(
+    cwd: string,
+    matcher: ManagedProcessMatcher,
+  ) {
+    if (process.platform !== "win32") {
+      return true;
+    }
+
+    const candidatePids = new Set(
+      this.listWindowsCandidateProcesses(matcher).map((candidate) =>
+        String(candidate.processId),
+      ),
+    );
+    if (candidatePids.size === 0) {
+      return false;
+    }
+
+    const windowState = this.readWeFlowWindowStateOnWindows(cwd);
+    return windowState.hasWindow && !windowState.showsApiRoot404;
+  }
+
+  private stopWindowsManagedProcesses(matcher: ManagedProcessMatcher) {
+    if (process.platform !== "win32") {
+      return;
+    }
+
+    const candidates = this.listWindowsCandidateProcesses(matcher);
+    for (const candidate of candidates) {
+      spawnSync(
+        "taskkill.exe",
+        ["/PID", String(candidate.processId), "/T", "/F"],
+        {
+          encoding: "utf8",
+          windowsHide: true,
+        },
+      );
+    }
+  }
+
   private createProcessMatcher(
     key: LocalUpstreamServiceKey,
     spec: UpstreamLaunchSpec,
   ): ManagedProcessMatcher {
     if (key === "weflow") {
       return {
-        commandHints: [spec.cwd, "npm run electron:dev", "vite --mode electron"],
-        executableHints: ["cmd.exe", "node.exe", "electron.exe"],
+        commandHints: [
+          spec.cwd,
+          "--no-sandbox",
+          "dist-electron\\main.js",
+          "dist\\index.html",
+          "weflow",
+        ],
+        executableHints: ["electron.exe", "electron"],
       };
     }
 
@@ -979,6 +1060,143 @@ if (-not $process) { exit 2 }\
       };
     } catch {
       return null;
+    }
+  }
+
+  private resolveWeFlowWindowsLaunchCommand(cwd: string): ShellCommandSpec {
+    return {
+      command: path.join(cwd, "node_modules", "electron", "dist", "electron.exe"),
+      args: [".", "--no-sandbox"],
+      preview:
+        ".cache/upstreams/WeFlow/node_modules/electron/dist/electron.exe . --no-sandbox",
+    };
+  }
+
+  private async ensureWeFlowBuild(
+    cwd: string,
+    env: NodeJS.ProcessEnv,
+    logs: ProcessLogs,
+  ) {
+    const builtRendererIndex = path.join(cwd, "dist", "index.html");
+    const builtElectronMain = path.join(cwd, "dist-electron", "main.js");
+    if (existsSync(builtRendererIndex) && existsSync(builtElectronMain)) {
+      return;
+    }
+
+    const viteBinary = path.join(cwd, "node_modules", "vite", "bin", "vite.js");
+    if (!existsSync(viteBinary)) {
+      throw new Error("WeFlow 依赖已安装，但缺少 vite 可执行文件。");
+    }
+
+    const buildCommand: ShellCommandSpec = {
+      command: process.execPath,
+      args: [viteBinary, "build"],
+      preview: "node node_modules/vite/bin/vite.js build",
+    };
+    this.appendLog(
+      logs.stdout,
+      "[yinjie] WeFlow 缺少本地构建产物，开始执行 node node_modules/vite/bin/vite.js build\n",
+    );
+    await this.runForegroundCommand(
+      buildCommand,
+      cwd,
+      env,
+      logs,
+      "WeFlow 构建失败，请检查日志。",
+    );
+  }
+
+  private readWeFlowWindowStateOnWindows(cwd: string) {
+    const script = `
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+$proc = Get-Process | Where-Object {
+  $_.ProcessName -eq 'electron' -and $_.MainWindowHandle -ne 0
+} | Sort-Object @{ Expression = { if ($_.MainWindowTitle -match 'weflow') { 0 } else { 1 } } }, @{ Expression = { $_.StartTime }; Descending = $true } | Select-Object -First 1
+if (-not $proc) {
+  [pscustomobject]@{
+    hasWindow = $false
+    mainWindowTitle = ''
+    observedText = ''
+    showsApiRoot404 = $false
+  } | ConvertTo-Json -Compress
+  exit 0
+}
+$root = [System.Windows.Automation.AutomationElement]::FromHandle($proc.MainWindowHandle)
+$walker = [System.Windows.Automation.TreeWalker]::RawViewWalker
+$queue = New-Object System.Collections.Queue
+$queue.Enqueue($root)
+$names = New-Object System.Collections.Generic.List[string]
+while ($queue.Count -gt 0 -and $names.Count -lt 80) {
+  $node = $queue.Dequeue()
+  try { $name = $node.Current.Name } catch { $name = '' }
+  if ($name -and -not [string]::IsNullOrWhiteSpace($name)) {
+    $names.Add($name)
+  }
+  $child = $walker.GetFirstChild($node)
+  while ($child -ne $null -and $names.Count -lt 80) {
+    $queue.Enqueue($child)
+    $child = $walker.GetNextSibling($child)
+  }
+}
+$text = ($names -join "\`n")
+[pscustomobject]@{
+  hasWindow = $true
+  mainWindowTitle = $proc.MainWindowTitle
+  observedText = $text
+  showsApiRoot404 = (
+    $text -match 'Cannot GET /' -or
+    (($text -match 'statusCode') -and ($text -match '404')) -or
+    $text -match '美观输出'
+  )
+} | ConvertTo-Json -Compress -Depth 4
+`.trim();
+
+    const result = spawnSync(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        script,
+      ],
+      {
+        cwd,
+        encoding: "utf8",
+        windowsHide: true,
+      },
+    );
+
+    if (result.status !== 0 || !result.stdout.trim()) {
+      return {
+        hasWindow: false,
+        mainWindowTitle: "",
+        observedText: "",
+        showsApiRoot404: false,
+      };
+    }
+
+    try {
+      const parsed = JSON.parse(result.stdout.trim()) as {
+        hasWindow?: boolean;
+        mainWindowTitle?: string;
+        observedText?: string;
+        showsApiRoot404?: boolean;
+      };
+      return {
+        hasWindow: parsed.hasWindow === true,
+        mainWindowTitle: parsed.mainWindowTitle ?? "",
+        observedText: parsed.observedText ?? "",
+        showsApiRoot404: parsed.showsApiRoot404 === true,
+      };
+    } catch {
+      return {
+        hasWindow: false,
+        mainWindowTitle: "",
+        observedText: "",
+        showsApiRoot404: false,
+      };
     }
   }
 
