@@ -25,6 +25,9 @@ export interface ReminderRuntimeTextTemplates {
   taskListItem: string;
   taskCancelMissing: string;
   taskCancelSuccess: string;
+  taskUpdateMissing: string;
+  taskUpdateMissingTime: string;
+  taskUpdateSuccess: string;
   taskSnoozeMissing: string;
   taskSnoozeSuccess: string;
   taskCompleteMissing: string;
@@ -75,6 +78,7 @@ export interface ReminderRuntimeParserRules {
   helpIntentPatterns: string[];
   listIntentPatterns: string[];
   cancelIntentPatterns: string[];
+  updateIntentPatterns: string[];
   completeIntentPatterns: string[];
   snoozeIntentPatterns: string[];
   createIntentKeywords: string[];
@@ -183,6 +187,7 @@ export type ReminderRuntimePreviewAction =
   | "help"
   | "list"
   | "cancel"
+  | "update"
   | "complete"
   | "snooze"
   | "create"

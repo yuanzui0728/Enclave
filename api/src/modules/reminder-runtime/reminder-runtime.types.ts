@@ -25,6 +25,9 @@ export type ReminderRuntimeTextTemplatesValue = {
   taskListItem: string;
   taskCancelMissing: string;
   taskCancelSuccess: string;
+  taskUpdateMissing: string;
+  taskUpdateMissingTime: string;
+  taskUpdateSuccess: string;
   taskSnoozeMissing: string;
   taskSnoozeSuccess: string;
   taskCompleteMissing: string;
@@ -75,6 +78,7 @@ export type ReminderRuntimeParserRulesValue = {
   helpIntentPatterns: string[];
   listIntentPatterns: string[];
   cancelIntentPatterns: string[];
+  updateIntentPatterns: string[];
   completeIntentPatterns: string[];
   snoozeIntentPatterns: string[];
   createIntentKeywords: string[];
@@ -129,6 +133,7 @@ export type ReminderRuntimePreviewActionValue =
   | 'help'
   | 'list'
   | 'cancel'
+  | 'update'
   | 'complete'
   | 'snooze'
   | 'create'
@@ -216,6 +221,11 @@ export const DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES: ReminderRuntimeTextTemplat
     taskCancelMissing:
       '我没对上你想删的是哪一个。你把事项名再说一遍就行。',
     taskCancelSuccess: '删掉了：{{title}}。',
+    taskUpdateMissing:
+      '我没对上你想改的是哪一个提醒。你把事项名再说一遍就行。',
+    taskUpdateMissingTime:
+      '我知道你是想改提醒，但新的时间还不够明确。比如“改成今晚7点半”。',
+    taskUpdateSuccess: '改好了。{{title}}，新时间是{{scheduleText}}。',
     taskSnoozeMissing:
       '我没对上要延后的是哪一个。你带上事项名再说一次。',
     taskSnoozeSuccess: '往后顺到了{{untilLabel}}。{{title}}我会再叫你。',
@@ -254,6 +264,11 @@ export const DEFAULT_REMINDER_RUNTIME_PARSER_RULES: ReminderRuntimeParserRulesVa
       '提醒.*(有哪些|有什么|列一下|查一下|看看)',
     ],
     cancelIntentPatterns: ['(取消|删掉|删除|不用提醒|别提醒|不需要提醒)'],
+    updateIntentPatterns: [
+      '^(是|改成|改到|改为|改下|改一下|换成|换到|调整到|更正成|更正为|纠正成|纠正为)',
+      '^(把).*(改成|改到|改为|改下|改一下|换成|换到|调整到)',
+      '^(不对|不是).*(是|改成|改到|改为|换成|换到|调整到)',
+    ],
     completeIntentPatterns: [
       '^(完成了|已完成|搞定了|做完了|买好了|吃过了|吃完了|练了|睡了)',
     ],
@@ -296,18 +311,19 @@ export const DEFAULT_REMINDER_RUNTIME_PARSER_RULES: ReminderRuntimeParserRulesVa
       '1. help: 你能帮我记什么',
       '2. list: 看看我有哪些提醒',
       '3. cancel: 删除提醒 <事项>',
-      '4. complete: 已完成 <事项>',
-      '5. snooze: 明天再提醒 <事项> / 半小时后再提醒 <事项> / 一小时后再提醒 <事项>',
-      '6. create 单次: <日期/时段/时间> 提醒我 <事项>',
-      '7. create 每天: 每天 <时间> 提醒我 <事项>',
-      '8. create 每周: 每周X <时间> 提醒我 <事项>',
-      '9. create 习惯: 提醒我坚持 <事项>',
+      '4. update: 改成 <日期/时段/时间> / 改成 每天 <时间> / 改成 每周X <时间>',
+      '5. complete: 已完成 <事项>',
+      '6. snooze: 明天再提醒 <事项> / 半小时后再提醒 <事项> / 一小时后再提醒 <事项>',
+      '7. create 单次: <日期/时段/时间> 提醒我 <事项>',
+      '8. create 每天: 每天 <时间> 提醒我 <事项>',
+      '9. create 每周: 每周X <时间> 提醒我 <事项>',
+      '10. create 习惯: 提醒我坚持 <事项>',
       '要求：',
       '- 不要编造不存在的任务标题。',
-      '- 如果是删除、完成、顺延，优先复用给定活跃提醒标题里的原词。',
+      '- 如果是删除、修改、完成、顺延，优先复用给定活跃提醒标题里的原词。',
       '- 如果原话信息不够，handled=false，并在 reason 里说明缺什么，不要硬猜。',
       '- canonicalMessage 只能输出一条标准口令。',
-      '输出格式：{"handled":boolean,"action":"help|list|cancel|complete|snooze|create|unhandled","reason":"...","canonicalMessage":"..."}',
+      '输出格式：{"handled":boolean,"action":"help|list|cancel|update|complete|snooze|create|unhandled","reason":"...","canonicalMessage":"..."}',
     ].join('\n'),
     categoryKeywords: {
       health: ['吃药', '复诊', '体检'],
@@ -507,6 +523,18 @@ export function normalizeReminderRuntimeRules(
         textTemplates.taskCancelSuccess,
         DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES.taskCancelSuccess,
       ),
+      taskUpdateMissing: normalizeTemplate(
+        textTemplates.taskUpdateMissing,
+        DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES.taskUpdateMissing,
+      ),
+      taskUpdateMissingTime: normalizeTemplate(
+        textTemplates.taskUpdateMissingTime,
+        DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES.taskUpdateMissingTime,
+      ),
+      taskUpdateSuccess: normalizeTemplate(
+        textTemplates.taskUpdateSuccess,
+        DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES.taskUpdateSuccess,
+      ),
       taskSnoozeMissing: normalizeTemplate(
         textTemplates.taskSnoozeMissing,
         DEFAULT_REMINDER_RUNTIME_TEXT_TEMPLATES.taskSnoozeMissing,
@@ -589,6 +617,10 @@ export function normalizeReminderRuntimeRules(
       cancelIntentPatterns: normalizeStringList(
         parserRules.cancelIntentPatterns,
         DEFAULT_REMINDER_RUNTIME_PARSER_RULES.cancelIntentPatterns,
+      ),
+      updateIntentPatterns: normalizeStringList(
+        parserRules.updateIntentPatterns,
+        DEFAULT_REMINDER_RUNTIME_PARSER_RULES.updateIntentPatterns,
       ),
       completeIntentPatterns: normalizeStringList(
         parserRules.completeIntentPatterns,

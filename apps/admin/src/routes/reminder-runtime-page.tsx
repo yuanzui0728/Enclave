@@ -88,6 +88,7 @@ type ReminderParserArrayFieldKey =
   | "helpIntentPatterns"
   | "listIntentPatterns"
   | "cancelIntentPatterns"
+  | "updateIntentPatterns"
   | "completeIntentPatterns"
   | "snoozeIntentPatterns"
   | "createIntentKeywords"
@@ -188,6 +189,7 @@ const PREVIEW_ACTION_LABELS: Record<string, string> = {
   help: "帮助",
   list: "列表",
   cancel: "删除",
+  update: "修改",
   complete: "完成",
   snooze: "顺延",
   create: "创建",
@@ -1320,7 +1322,7 @@ function ReminderRuntimeConfigPanel({
 
             <ConfigGroup
               title="意图识别"
-              description="决定哪些话会被识别成帮助、列表、删除、完成、顺延。这里适合放正则或强触发片段。"
+              description="决定哪些话会被识别成帮助、列表、删除、修改、完成、顺延。这里适合放正则或强触发片段。"
             >
               <div className="grid gap-4 xl:grid-cols-2">
                 <AdminTextArea
@@ -1344,6 +1346,14 @@ function ReminderRuntimeConfigPanel({
                   value={formatLineList(draft.parserRules.cancelIntentPatterns)}
                   onChange={(value) =>
                     updateParserArrayField("cancelIntentPatterns", value)
+                  }
+                  textareaClassName="min-h-24"
+                />
+                <AdminTextArea
+                  label="修改意图"
+                  value={formatLineList(draft.parserRules.updateIntentPatterns)}
+                  onChange={(value) =>
+                    updateParserArrayField("updateIntentPatterns", value)
                   }
                   textareaClassName="min-h-24"
                 />

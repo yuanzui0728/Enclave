@@ -152,6 +152,11 @@ type ParsedReminderIntent =
       debug: ReminderParserDebug;
     };
 
+type ResolvedReminderIntent = Extract<
+  ParsedReminderIntent,
+  { handled: true; title: string }
+>;
+
 type ParsedWeeklyRule = {
   weekday: number;
   label: string;
@@ -200,6 +205,16 @@ type ReminderConversationEvaluation =
       responseText: string;
       referencedTask: ReminderTaskEntity | null;
       snoozeUntil?: Date;
+      debug: ReminderParserDebug;
+    }
+  | {
+      handled: true;
+      action: 'update';
+      source: ReminderRuntimePreviewSourceValue;
+      reason: string;
+      responseText: string;
+      referencedTask: ReminderTaskEntity | null;
+      parsedIntent: ResolvedReminderIntent | null;
       debug: ReminderParserDebug;
     }
   | {
@@ -265,6 +280,49 @@ function stripReminderCommand(value: string) {
         /(提醒我|记得提醒我|帮我记一下|帮我记着|帮我记住|帮我记|记一下|记着|记住)/g,
         '',
       )
+      .trim(),
+  );
+}
+
+function stripUpdateCommand(value: string) {
+  const text = stripTrailingPunctuation(value.trim());
+  if (!text) {
+    return '';
+  }
+
+  const updateMatch = text.match(
+    /(改成|改到|改为|改下|改一下|换成|换到|调整到|更正成|更正为|纠正成|纠正为)/,
+  );
+  if (updateMatch?.index != null) {
+    return stripTrailingPunctuation(
+      text.slice(updateMatch.index + updateMatch[0].length).trim(),
+    );
+  }
+
+  if (/^(不对|不是)/.test(text)) {
+    const pivot = text.lastIndexOf('是');
+    if (pivot >= 0 && pivot < text.length - 1) {
+      return stripTrailingPunctuation(text.slice(pivot + 1).trim());
+    }
+  }
+
+  if (text.startsWith('是')) {
+    return stripTrailingPunctuation(text.slice(1).trim());
+  }
+
+  return text;
+}
+
+function stripReferencedTaskTitle(text: string, title: string) {
+  const normalizedTitle = title.trim();
+  if (!normalizedTitle) {
+    return stripTrailingPunctuation(text.trim());
+  }
+
+  return stripTrailingPunctuation(
+    text
+      .replace(new RegExp(escapeRegex(normalizedTitle), 'gu'), ' ')
+      .replace(/\s+/g, ' ')
       .trim(),
   );
 }
@@ -784,6 +842,40 @@ export class ReminderRuntimeService {
           task: this.serializeTask(saved),
         };
       }
+      case 'update': {
+        const task = evaluation.referencedTask;
+        const parsedIntent = evaluation.parsedIntent;
+        if (!task || !parsedIntent) {
+          return {
+            handled: true,
+            responseText: evaluation.responseText,
+          };
+        }
+
+        task.sourceMessageId = input.sourceMessageId;
+        task.title = parsedIntent.title;
+        task.category = parsedIntent.category;
+        task.kind = parsedIntent.kind;
+        task.priority = parsedIntent.priority;
+        task.timezone = parsedIntent.timezone;
+        task.dueAt = parsedIntent.dueAt ?? null;
+        task.recurrenceRule = parsedIntent.recurrenceRule ?? null;
+        task.nextTriggerAt = parsedIntent.nextTriggerAt ?? null;
+        task.snoozedUntil = null;
+        task.status = 'active';
+        task.completedAt = null;
+        task.cancelledAt = null;
+
+        const saved = await this.taskRepo.save(task);
+        return {
+          handled: true,
+          responseText: renderTemplate(rules.textTemplates.taskUpdateSuccess, {
+            title: saved.title,
+            scheduleText: this.describeSchedule(saved),
+          }),
+          task: this.serializeTask(saved),
+        };
+      }
       case 'complete': {
         const task = evaluation.referencedTask;
         if (!task) {
@@ -1067,6 +1159,127 @@ export class ReminderRuntimeService {
           canonicalMessage,
           fallbackReason,
         }),
+      };
+    }
+
+    const updatePatterns = this.findMatchedPatterns(
+      text,
+      rules.parserRules.updateIntentPatterns,
+    );
+    if (updatePatterns.length > 0) {
+      const referencedTask = await this.resolveReferencedTask(
+        ownerId,
+        conversationId,
+        text,
+      );
+      if (!referencedTask) {
+        return {
+          handled: true,
+          action: 'update',
+          source,
+          reason: '命中修改提醒规则，但没有匹配到当前提醒。',
+          responseText: rules.textTemplates.taskUpdateMissing,
+          referencedTask: null,
+          parsedIntent: null,
+          debug: this.createParserDebug(text, {
+            source,
+            matchedIntentPatterns: updatePatterns,
+            canonicalMessage,
+            fallbackReason,
+          }),
+        };
+      }
+
+      const updateCommand = this.buildUpdateReminderCommand({
+        text,
+        task: referencedTask,
+        rules,
+      });
+      if (!updateCommand) {
+        if (this.isPlainAffirmation(text)) {
+          return {
+            handled: false,
+            action: 'unhandled',
+            source,
+            reason: '修改提醒规则命中后，没有解析出有效的新时间信息。',
+            debug: this.createParserDebug(text, {
+              source,
+              matchedIntentPatterns: updatePatterns,
+              extractedTitle: referencedTask.title,
+              canonicalMessage,
+              fallbackReason,
+            }),
+          };
+        }
+
+        return {
+          handled: true,
+          action: 'update',
+          source,
+          reason: '命中修改提醒规则，但没有解析出新的时间。',
+          responseText: rules.textTemplates.taskUpdateMissingTime,
+          referencedTask,
+          parsedIntent: null,
+          debug: this.createParserDebug(text, {
+            source,
+            matchedIntentPatterns: updatePatterns,
+            extractedTitle: referencedTask.title,
+            canonicalMessage,
+            fallbackReason,
+          }),
+        };
+      }
+
+      const parsedIntent = this.parseCreateIntent(
+        updateCommand,
+        timezone,
+        now,
+        rules,
+      );
+      if (
+        !parsedIntent.handled ||
+        ('needsClarification' in parsedIntent && parsedIntent.needsClarification)
+      ) {
+        return {
+          handled: true,
+          action: 'update',
+          source,
+          reason: '命中修改提醒规则，但没有解析出新的时间。',
+          responseText: rules.textTemplates.taskUpdateMissingTime,
+          referencedTask,
+          parsedIntent: null,
+          debug: {
+            ...parsedIntent.debug,
+            normalizedText: normalizeComparableText(text),
+            source,
+            matchedIntentPatterns: updatePatterns,
+            extractedTitle: referencedTask.title,
+            canonicalMessage,
+            fallbackReason,
+          },
+        };
+      }
+
+      return {
+        handled: true,
+        action: 'update',
+        source,
+        reason: '命中修改提醒规则，并解析出了新的提醒时间。',
+        responseText: renderTemplate(rules.textTemplates.taskUpdateSuccess, {
+          title: referencedTask.title,
+          scheduleText: this.describeIntentSchedule(parsedIntent, now),
+        }),
+        referencedTask,
+        parsedIntent,
+        debug: {
+          ...parsedIntent.debug,
+          normalizedText: normalizeComparableText(text),
+          source,
+          matchedIntentPatterns: updatePatterns,
+          extractedTitle: referencedTask.title,
+          canonicalMessage,
+          fallbackReason,
+        },
       };
     }
 
@@ -1426,11 +1639,14 @@ export class ReminderRuntimeService {
       parsedTask:
         createResolvedIntent != null
           ? this.serializePreviewParsedTask(createResolvedIntent)
+          : evaluation.action === 'update' && evaluation.parsedIntent
+            ? this.serializePreviewParsedTask(evaluation.parsedIntent)
           : null,
       referencedTask:
         evaluation.action === 'cancel' ||
         evaluation.action === 'complete' ||
-        evaluation.action === 'snooze'
+        evaluation.action === 'snooze' ||
+        evaluation.action === 'update'
           ? this.serializePreviewReferencedTask(evaluation.referencedTask)
           : null,
       matchedRules: this.serializePreviewMatchedRules(evaluation.debug),
@@ -1660,7 +1876,7 @@ export class ReminderRuntimeService {
   }
 
   private serializePreviewParsedTask(
-    parsedIntent: Extract<ParsedReminderIntent, { handled: true; title: string }>,
+    parsedIntent: ResolvedReminderIntent,
   ): ReminderRuntimePreviewParsedTaskValue {
     return {
       title: parsedIntent.title,
@@ -1706,6 +1922,108 @@ export class ReminderRuntimeService {
 
   private findMatchedKeywords(text: string, keywords: string[]) {
     return keywords.filter((keyword) => keyword.trim() && text.includes(keyword));
+  }
+
+  private isPlainAffirmation(text: string) {
+    return /^(是|是的|对|对的|好|好了|嗯|嗯嗯|好的)[!！。]?$/u.test(
+      stripTrailingPunctuation(text.trim()),
+    );
+  }
+
+  private hasRecurrenceCue(text: string, rules: ReminderRuntimeRulesValue) {
+    return (
+      this.findMatchedKeywords(
+        text,
+        rules.parserRules.dailyRecurrenceKeywords,
+      ).length > 0 || this.extractWeeklyRule(text, rules) != null
+    );
+  }
+
+  private hasScheduleCue(text: string, rules: ReminderRuntimeRulesValue) {
+    const matchedPeriod = this.findMatchedPeriod(text, rules);
+    return (
+      this.extractClock(text, rules) != null ||
+      this.extractWeeklyRule(text, rules) != null ||
+      this.findMatchedKeywords(
+        text,
+        rules.parserRules.dailyRecurrenceKeywords,
+      ).length > 0 ||
+      this.resolveRelativeDayOffset(text, matchedPeriod?.matchedPatterns ?? []) !=
+        null
+    );
+  }
+
+  private buildTaskRecurrencePrefix(task: ReminderTaskEntity) {
+    const rule = task.recurrenceRule;
+    if (!rule) {
+      return '';
+    }
+
+    if (rule.unit === 'daily') {
+      return '每天';
+    }
+
+    if (rule.unit === 'weekly' && rule.weekdays?.length) {
+      const labels = ['日', '一', '二', '三', '四', '五', '六'];
+      return `每周${labels[rule.weekdays[0]]}`;
+    }
+
+    return '';
+  }
+
+  private buildTaskClockText(task: ReminderTaskEntity) {
+    if (task.recurrenceRule) {
+      return formatTime(task.recurrenceRule.hour, task.recurrenceRule.minute);
+    }
+
+    const anchor = task.nextTriggerAt ?? task.dueAt;
+    if (!anchor) {
+      return '';
+    }
+
+    return formatTime(anchor.getHours(), anchor.getMinutes());
+  }
+
+  private buildUpdateReminderCommand(input: {
+    text: string;
+    task: ReminderTaskEntity;
+    rules: ReminderRuntimeRulesValue;
+  }) {
+    const strippedText = stripUpdateCommand(input.text);
+    if (!strippedText) {
+      return null;
+    }
+
+    if (
+      this.findMatchedKeywords(
+        strippedText,
+        input.rules.parserRules.createIntentKeywords,
+      ).length > 0
+    ) {
+      return this.hasScheduleCue(strippedText, input.rules)
+        ? strippedText
+        : null;
+    }
+
+    const scheduleText =
+      stripReferencedTaskTitle(strippedText, input.task.title) || strippedText;
+    if (!this.hasScheduleCue(scheduleText, input.rules)) {
+      return null;
+    }
+
+    const recurrencePrefix =
+      input.task.kind !== 'one_time' &&
+      !this.hasRecurrenceCue(scheduleText, input.rules)
+        ? this.buildTaskRecurrencePrefix(input.task)
+        : '';
+    const clockText =
+      this.extractClock(scheduleText, input.rules) == null
+        ? this.buildTaskClockText(input.task)
+        : '';
+
+    return [recurrencePrefix, scheduleText, clockText, '提醒我', input.task.title]
+      .filter((item) => item.trim().length > 0)
+      .join(' ');
   }
 
   private getPeriodRuleEntries(rules: ReminderRuntimeRulesValue) {
@@ -2297,6 +2615,34 @@ export class ReminderRuntimeService {
       target.setDate(target.getDate() + cadenceDays);
     }
     return target;
+  }
+
+  private describeIntentSchedule(intent: ResolvedReminderIntent, now: Date) {
+    if (intent.recurrenceRule?.unit === 'daily') {
+      return `每天 ${formatTime(
+        intent.recurrenceRule.hour,
+        intent.recurrenceRule.minute,
+      )}`;
+    }
+    if (
+      intent.recurrenceRule?.unit === 'weekly' &&
+      intent.recurrenceRule.weekdays?.length
+    ) {
+      const labels = ['日', '一', '二', '三', '四', '五', '六'];
+      return `每周${labels[intent.recurrenceRule.weekdays[0]]} ${formatTime(
+        intent.recurrenceRule.hour,
+        intent.recurrenceRule.minute,
+      )}`;
+    }
+    if (intent.recurrenceRule?.unit === 'habit') {
+      return `每天 ${formatTime(
+        intent.recurrenceRule.hour,
+        intent.recurrenceRule.minute,
+      )} 轻提醒`;
+    }
+
+    const next = intent.nextTriggerAt ?? intent.dueAt;
+    return next ? formatDateTimeLabel(next, now) : '已更新';
   }
 
   private describeSchedule(task: ReminderTaskEntity) {
