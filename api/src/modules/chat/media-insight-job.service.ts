@@ -1,10 +1,12 @@
 import {
   BadGatewayException,
   BadRequestException,
+  Inject,
   HttpException,
   Injectable,
   Logger,
   ServiceUnavailableException,
+  forwardRef,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -26,6 +28,7 @@ import type {
   VoiceAttachment,
 } from './chat.types';
 import { DocumentExtractionService } from './document-extraction.service';
+import { ChatService } from './chat.service';
 
 const MEDIA_INSIGHT_JOB_BATCH_SIZE = 12;
 const MEDIA_INSIGHT_PROCESSING_RETRY_MS = 2 * 60 * 1000;
@@ -65,6 +68,8 @@ export class MediaInsightJobService {
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     private readonly ai: AiOrchestratorService,
     private readonly documentExtraction: DocumentExtractionService,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
   ) {}
 
   async ensureConversationMessageInsight(input: {
@@ -526,6 +531,7 @@ export class MediaInsightJobService {
           attachmentPayload: JSON.stringify(attachment),
         },
       );
+      this.chatService.invalidateConversationHistory(threadId);
       return;
     }
 

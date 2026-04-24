@@ -20,6 +20,7 @@ const MAX_STORED_DOCUMENT_TEXT_CHARS = 24_000;
 const MAX_DOCUMENT_PREVIEW_CHARS = 1_800;
 const PDFTOTEXT_TIMEOUT_MS = 15_000;
 const OFFICE_CONVERT_TIMEOUT_MS = 30_000;
+const DOCX_XML_PARSE_TIMEOUT_MS = 15_000;
 const OFFICE_COMMAND_CANDIDATES = ['soffice', 'libreoffice'];
 
 type ExtractionMode = DocumentAttachmentInsight['extractionMode'];
@@ -109,7 +110,21 @@ export class DocumentExtractionService {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       extension === '.docx'
     ) {
-      return this.extractOfficeText(input.buffer, '.docx', 'docx_text');
+      const officeResult = await this.extractOfficeText(
+        input.buffer,
+        '.docx',
+        'docx_text',
+      );
+      if (officeResult.status === 'completed') {
+        return officeResult;
+      }
+
+      const docxXmlResult = await this.extractDocxXmlText(input.buffer);
+      if (docxXmlResult.status === 'completed') {
+        return docxXmlResult;
+      }
+
+      return officeResult;
     }
 
     if (mimeType === 'application/msword' || extension === '.doc') {
@@ -264,6 +279,42 @@ export class DocumentExtractionService {
     }
   }
 
+  private async extractDocxXmlText(
+    buffer: Buffer,
+  ): Promise<DocumentExtractionResult> {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'yinjie-docx-'));
+    const tempFilePath = path.join(tempDir, 'source.docx');
+    try {
+      await writeFile(tempFilePath, buffer);
+      const { stdout } = await execFileAsync(
+        'unzip',
+        ['-p', tempFilePath, 'word/document.xml'],
+        {
+          timeout: DOCX_XML_PARSE_TIMEOUT_MS,
+          maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
+        },
+      );
+      const text = extractTextFromDocxXml(stdout);
+      return this.buildCompletedResult({
+        text,
+        extractionMode: 'docx_text',
+        parser: 'docx_xml',
+      });
+    } catch (error) {
+      return toFailedExtractionResult({
+        error,
+        extractionMode: 'docx_text',
+        parser: 'docx_xml',
+        binaryMissingCode: 'UNZIP_UNAVAILABLE',
+        failureCode: 'DOCX_XML_PARSE_FAILED',
+        emptyCode: 'TEXT_EXTRACTION_EMPTY',
+        emptyMessage: 'DOCX XML 未提取到可用正文。',
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  }
+
   private buildCompletedResult(input: {
     text: string;
     extractionMode: ExtractionMode;
@@ -365,6 +416,45 @@ function normalizeExtractedText(text: string, mimeType?: string | null) {
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
+}
+
+function extractTextFromDocxXml(xml: string) {
+  return normalizeExtractedText(
+    decodeHtmlEntities(
+      xml
+        .replace(/<w:tab\b[^>]*\/>/gi, '\t')
+        .replace(/<w:br\b[^>]*\/>/gi, '\n')
+        .replace(/<\/w:p>/gi, '\n\n')
+        .replace(/<[^>]+>/g, ' '),
+    ),
+  );
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
+      safeFromCodePoint(Number.parseInt(hex, 16)),
+    )
+    .replace(/&#([0-9]+);/g, (_, decimal: string) =>
+      safeFromCodePoint(Number.parseInt(decimal, 10)),
+    )
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+function safeFromCodePoint(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '';
+  }
+
+  try {
+    return String.fromCodePoint(value);
+  } catch {
+    return '';
+  }
 }
 
 function normalizeMimeType(value?: string | null) {
