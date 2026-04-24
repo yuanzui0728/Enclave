@@ -12,6 +12,7 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { AiProviderAuthError } from '../ai/ai.types';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
+import { describeAttachmentForDisplay } from './attachment-semantic-text';
 import type {
   ContactCardAttachment,
   FileAttachment,
@@ -184,19 +185,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const replyText =
       payload.type === 'sticker'
         ? (payload.text ?? '[表情包]')
-        : payload.type === 'image'
-          ? (payload.text ?? `[图片] ${payload.attachment.fileName}`)
-          : payload.type === 'file'
-            ? (payload.text ?? `[文件] ${payload.attachment.fileName}`)
-            : payload.type === 'voice'
-              ? (payload.text ?? '[语音消息]')
-            : payload.type === 'contact_card'
-              ? (payload.text ?? `[名片] ${payload.attachment.name}`)
-              : payload.type === 'location_card'
-                ? (payload.text ?? `[位置] ${payload.attachment.title}`)
-                : payload.type === 'note_card'
-                  ? (payload.text ?? `[笔记] ${payload.attachment.title}`)
-                  : payload.text;
+        : 'attachment' in payload
+          ? (payload.text ?? describeAttachmentForDisplay(payload.attachment))
+          : payload.text;
 
     try {
       let convId = conversationId;
