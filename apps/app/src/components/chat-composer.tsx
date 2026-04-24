@@ -3168,8 +3168,8 @@ export function ChatComposer({
                     className={cn(
                       "h-[34px] min-w-[76px] rounded-[9px] px-4 text-[13px] font-medium shadow-none",
                       value.trim()
-                        ? "bg-[#07c160] text-white hover:bg-[#06ad56]"
-                        : "bg-[#e8e8e8] text-[#9a9a9a] hover:bg-[#e8e8e8]",
+                        ? "bg-[#07c160] !text-white hover:bg-[#06ad56]"
+                        : "bg-[#e8e8e8] !text-[#9a9a9a] hover:bg-[#e8e8e8]",
                     )}
                   >
                     发送
