@@ -304,6 +304,14 @@ pnpm android:run:local
 
 我们希望隐界的社区是**温柔、尊重、不带偏见**的——和世界里的那位"自己"一样。
 
+### 💬 加入社区
+
+扫码加入隐界微信群，和作者、贡献者、其他世界主人一起聊聊：
+
+<p align="center">
+  <img src="docs/assets/wechat-group-qr.png" alt="隐界微信群二维码" width="240" />
+</p>
+
 ---
 
 ## 📄 License
