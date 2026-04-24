@@ -113,40 +113,40 @@ const WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT_CONFIG_KEY =
   "wechat_sync_analysis_system_prompt";
 const WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE_CONFIG_KEY =
   "wechat_sync_analysis_user_prompt_template";
-const DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT = `你是隐界的一名“真人微信熟人重建分析师”。
-
-你的任务不是创作一个好玩的虚构角色，而是根据微信聊天记录、备注、标签、近况和互动节奏，尽可能还原这个真实人物在用户心中的样子，并生成一个可导入隐界的角色 JSON 草稿。
+const DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT = `你是隐界的“微信熟人角色重建分析师”。
+你的任务不是创造一个更讨喜的虚构角色，而是基于微信聊天记录、备注、标签、朋友圈线索和互动节奏，尽可能还原这个真实联系人在用户心中的样子，并输出可导入隐界的角色 JSON 草稿。
 
 分析原则：
-1. 准确性和真人一致性优先，不要为了更戏剧化、更讨喜或更容易聊天而美化、脑补或改写人物。
-2. 只根据证据下结论。职业、身份、价值观、关系亲密度、说话习惯、边界感都必须来自聊天样本、标签或上下文线索。
-3. 如果证据不足，要保守表达，宁可写“看起来像”“更像是”“倾向于”，也不要编造确定事实。
-4. 这类联系人本质上是用户微信里的真实熟人，不要生成成客服、助理、导师模板或万能陪伴型角色。
-5. 输出必须让认识这个真人的人读起来觉得“像他/她”，而不是“像一个 AI 帮我总结出来的人设”。
-6. basePrompt 必须保留真人的表达节奏、互动边界、主动性和禁区，不要写操作手册，不要写系统提示词，不要让角色显得全知全能。
-7. relationshipType 默认优先保持 friend；只有证据非常强，才改成 family、mentor 或 custom。
-8. expertDomains 只保留聊天中稳定出现或身份证据很强的领域，不要堆砌泛化标签。
+1. 准确性、证据一致性、真人还原度优先于速度、戏剧性和讨喜程度。
+2. 只依据给定材料下结论。职业、身份、关系亲密度、价值观、说话方式、边界感都必须有聊天或资料线索支撑。
+3. 证据不足时必须保守，不要脑补确定事实。可以使用“更像是”“看起来”“倾向于”等表达，但不要编造。
+4. 这是用户微信里的真实熟人，不是客服、助理、导师模板或万能陪伴角色。
+5. 输出要让认识此人的用户读起来觉得“像他/她本人”，而不是“像 AI 总结的人设”。
+6. basePrompt 只保留这个人的表达习惯、互动边界、主动性、熟悉程度和禁区，不要写成系统提示词、操作手册或万能助理说明。
+7. relationshipType 默认优先 friend，只有证据非常强时才改为 family、mentor、expert 或 custom。
+8. expertDomains 只保留稳定且有证据的领域，不要泛化堆标签。
+9. 如果聊天里体现出矛盾、情绪波动、表达克制、回复习惯或身份不确定性，要把这种“不完全确定但真实存在的模糊感”保留下来，不要强行归纳得过于整齐。
+10. 输出前先在内部核对：是否有任何字段明显超出证据、是否把真人写成了服务型 AI、是否过度美化或降噪了此人的真实语气。
 
-请先在内部充分分析，再只输出最终 JSON，不要输出解释、分析过程或额外文字。`;
-const DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE = `请基于以下微信联系人资料，重建一个“尽量贴近现实人物”的隐界角色草稿。
+只输出合法 JSON，不要输出解释、推理过程或额外文字。`;
+const DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE = `请根据以下微信联系人资料，重建一个“尽量接近现实本人”的隐界角色草稿。
 
-任务要求：
-1. 先综合判断这个人与用户的真实关系、熟悉程度、互动方式、说话口气、边界感、常聊主题、生活状态和可能身份。
-2. 优先还原“真人感”，不要为了好聊而把人写得过分温柔、过分健谈、过分全能。
-3. 如果样本不足，请明确走保守推断：少下结论、少补设定、少发散脑补。
-4. bio、background、motivation、worldview、memorySummary 都要像现实熟人画像，而不是心理测评报告或人物小传。
-5. speechPatterns、catchphrases、topicsOfInterest 要来自真实聊天表达，不要写空泛套话。
-6. basePrompt 需要保留这个真人的说话方式、聊天边界、主动性、熟悉程度和禁区，像“这个人真的会这么说”，不要写成客服或万能助理。
-7. 如果你无法确定某个字段，就用更保守、更贴近证据的表达，不要虚构确定细节。
+目标：
+- 优先还原真实关系、熟悉程度、说话口气、互动边界、常聊主题、生活状态和可能身份。
+- 优先保留这个人的真人感，不要为了更好聊而把对方写得更温柔、更积极、更健谈或更懂用户。
+- 如果资料不足，请明确走保守推断：少下结论、少补设定、少发散脑补。
+- bio、background、motivation、worldview、memorySummary 要像熟人画像，而不是心理测评或人物小传。
+- speechPatterns、catchphrases、topicsOfInterest 必须尽量来自真实聊天表达，不要写空泛套话。
+- basePrompt 必须像“这个人本人会怎么说话、怎么回应、有哪些边界”，而不是客服话术或助手提示词。
 
-可用资料如下：
+可用资料：
 {{contact_context}}
 
-再次提醒：
-- 这是在重建用户微信里的真实熟人，不是在创造虚构 OC。
-- 宁可保守，不要错配。
-- 宁可少写，不要编造。
-- 最终只输出合法 JSON。`;
+输出要求：
+1. 所有字段尽量贴近证据，不要虚构确定细节。
+2. 如果某些字段只能弱判断，也要写得保守自然，不要空泛。
+3. 若聊天中能看出关系不对等、长期未联系、只在特定场景互动、或对方回复很克制，请在角色里保留这种分寸感。
+4. 最终只输出合法 JSON。`;
 
 const DEFAULT_WECHAT_SYNC_ANNOTATION_TEMPLATES: WechatSyncAnnotationTemplate[] =
   [
@@ -492,23 +492,22 @@ export function WechatSyncPage() {
     queryKey: ["admin-config", baseUrl],
     queryFn: () => adminApi.getConfig(),
   });
-  const resolvedWechatSyncAnalysisPromptDraft = useMemo<
-    WechatSyncAnalysisPromptDraft
-  >(
-    () => ({
-      systemPrompt:
-        normalizeWechatSyncAnalysisPromptValue(
-          configQuery.data?.[WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT_CONFIG_KEY],
-        ) || DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT,
-      userPromptTemplate:
-        normalizeWechatSyncAnalysisPromptValue(
-          configQuery.data?.[
-            WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE_CONFIG_KEY
-          ],
-        ) || DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE,
-    }),
-    [configQuery.data],
-  );
+  const resolvedWechatSyncAnalysisPromptDraft =
+    useMemo<WechatSyncAnalysisPromptDraft>(
+      () => ({
+        systemPrompt:
+          normalizeWechatSyncAnalysisPromptValue(
+            configQuery.data?.[WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT_CONFIG_KEY],
+          ) || DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT,
+        userPromptTemplate:
+          normalizeWechatSyncAnalysisPromptValue(
+            configQuery.data?.[
+              WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE_CONFIG_KEY
+            ],
+          ) || DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE,
+      }),
+      [configQuery.data],
+    );
 
   useEffect(() => {
     setWechatSyncAnalysisPromptDraft(resolvedWechatSyncAnalysisPromptDraft);
@@ -1761,8 +1760,8 @@ export function WechatSyncPage() {
             </div>
           }
         />
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-[color:var(--text-secondary)]">
-          这里配置“一键同步微信朋友”在分析聊天记录时使用的核心提示词。当前链路会优先使用更长上下文和更保守的真人重建策略，以准确性和真人一致性优先。
+        <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+          这里配置“一键同步微信朋友”在深度分析聊天记录时使用的核心提示词。当前链路会优先使用更长上下文和更保守的真人重建策略，以准确性和真人一致性优先。
         </p>
 
         {configQuery.isError && configQuery.error instanceof Error ? (
@@ -1777,7 +1776,7 @@ export function WechatSyncPage() {
         ) : null}
         {wechatSyncAnalysisPromptDirty ? (
           <InlineNotice className="mt-4" tone="muted">
-            当前有未保存的分析提示词修改。保存后，新一轮“生成预览”会直接按这里的版本执行。
+            当前有未保存的分析提示词修改。保存后，新的“生成预览”会直接按这里的版本执行。
           </InlineNotice>
         ) : null}
 
@@ -1786,14 +1785,14 @@ export function WechatSyncPage() {
             <AdminMiniPanel title="当前分析策略" tone="soft">
               <div className="space-y-2 text-sm leading-6 text-[color:var(--text-secondary)]">
                 <p>
-                  会尽量带入更多聊天样本、标签和近况线索，优先还原真人，而不是生成一个“更会聊天”的模板角色。
+                  预览会尽量带入更多聊天样本、标签和近况线索，优先还原真人，而不是生成一个“更会聊天”的模板角色。
                 </p>
                 <p>
-                  当证据不足时，提示词会要求模型保守表达，避免虚构职业、关系亲密度、价值观或生活背景。
+                  当证据不足时，提示词会要求模型保守表达，避免虚构职业、亲密度、价值观或生活背景。
                 </p>
                 <p>
-                  如果你要做更像“同事 / 前同学 / 客户 /
-                  家人”的定向重建，优先改这里，而不是在导入后逐个手工修角色。
+                  如果你要让导入结果更像“同事 / 前同学 / 客户 /
+                  家人”等具体熟人类型，优先改这里，而不是导入后逐个重写角色。
                 </p>
               </div>
             </AdminMiniPanel>
@@ -1806,14 +1805,14 @@ export function WechatSyncPage() {
                 </p>
                 <p>
                   <code>{"{{username}}"}</code> /{" "}
-                  <code>{"{{display_name}}"}</code> /{" "}
+                  <code>{"{{display_name}}"}</code> /
                   <code>{"{{remark_name}}"}</code> /{" "}
                   <code>{"{{nickname}}"}</code>
                   ：基础身份字段。
                 </p>
                 <p>
                   <code>{"{{chat_summary}}"}</code> /{" "}
-                  <code>{"{{topic_keywords}}"}</code> /{" "}
+                  <code>{"{{topic_keywords}}"}</code> /
                   <code>{"{{sample_messages}}"}</code> /{" "}
                   <code>{"{{moment_highlights}}"}</code>
                   ：可单独拼进模板的分析材料。

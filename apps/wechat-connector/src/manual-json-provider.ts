@@ -1,12 +1,13 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type {
-  WechatSyncContactBundle,
-  WechatSyncMessageDirection,
-  WechatSyncMessageSample,
-  WechatSyncMomentHighlight,
-} from "./contracts.js";
+import type { WechatSyncContactBundle } from "./contracts.js";
+import {
+  mergeWechatSyncContactBundles,
+  parseWechatSyncContactBundlesFromText,
+  parseWechatSyncContactBundlesFromValue,
+  type ParsedWechatSyncContactBundleResult,
+} from "./contact-import-parser.js";
 
 export interface ManualJsonScanResult {
   contacts: WechatSyncContactBundle[];
@@ -14,24 +15,82 @@ export interface ManualJsonScanResult {
   message: string;
 }
 
+const SUPPORTED_IMPORT_FILE_PATTERN = /\.(json|jsonl)$/iu;
+
 export class ManualJsonProvider {
   async scanFromPath(filePath: string): Promise<ManualJsonScanResult> {
-    const raw = await readFile(filePath, "utf8");
-    return this.scanFromValue(JSON.parse(raw) as unknown, path.basename(filePath));
+    const resolvedPath = path.resolve(filePath);
+    const target = await stat(resolvedPath);
+
+    if (target.isDirectory()) {
+      return this.scanFromDirectory(resolvedPath);
+    }
+
+    const raw = await readFile(resolvedPath, "utf8");
+    const parsed = parseWechatSyncContactBundlesFromText(raw);
+    return buildManualJsonScanResult(
+      parsed,
+      path.basename(resolvedPath),
+      `manual-json:${resolvedPath}`,
+    );
   }
 
   scanFromValue(value: unknown, sourceLabel = "request-body"): ManualJsonScanResult {
-    const contacts = extractContactArray(value)
-      .map((item, index) => normalizeBundle(item, index))
-      .filter((item): item is WechatSyncContactBundle => Boolean(item));
+    const parsed = parseWechatSyncContactBundlesFromValue(value);
+    return buildManualJsonScanResult(
+      parsed,
+      sourceLabel,
+      `manual-json:${sourceLabel}`,
+    );
+  }
 
-    return {
+  private async scanFromDirectory(directoryPath: string) {
+    const entries = await readdir(directoryPath, { withFileTypes: true });
+    const candidateFiles = entries
+      .filter((entry) => entry.isFile() && SUPPORTED_IMPORT_FILE_PATTERN.test(entry.name))
+      .map((entry) => path.join(directoryPath, entry.name))
+      .sort((left, right) => left.localeCompare(right));
+
+    if (!candidateFiles.length) {
+      throw new Error(
+        "指定目录里没有可读取的 .json 或 .jsonl 联系人导入文件。",
+      );
+    }
+
+    const parsedFiles = await Promise.all(
+      candidateFiles.map(async (candidatePath) => {
+        const raw = await readFile(candidatePath, "utf8");
+        try {
+          return parseWechatSyncContactBundlesFromText(raw);
+        } catch (error) {
+          throw new Error(
+            `无法解析 ${path.basename(candidatePath)}：${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        }
+      }),
+    );
+
+    const contacts = mergeWechatSyncContactBundles(
+      parsedFiles.flatMap((item) => item.contacts),
+    );
+    const parsed = {
       contacts,
-      sourceSummary: `manual-json:${sourceLabel}`,
-      message: contacts.length
-        ? `已读取 ${contacts.length} 个联系人。`
-        : "连接器已启动，但当前输入里没有可用联系人。",
-    };
+      format:
+        parsedFiles.length === 1
+          ? parsedFiles[0]!.format
+          : "contact-import-bundles-json",
+      platforms: [
+        ...new Set(parsedFiles.flatMap((item) => item.platforms)),
+      ],
+    } satisfies ParsedWechatSyncContactBundleResult;
+
+    return buildManualJsonScanResult(
+      parsed,
+      `${path.basename(directoryPath)} (${candidateFiles.length} files)`,
+      `manual-json:${directoryPath}`,
+    );
   }
 }
 
@@ -68,252 +127,63 @@ export function toContactSummary(
   };
 }
 
-function extractContactArray(value: unknown): unknown[] {
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  if (!isRecord(value)) {
-    return [];
-  }
-
-  for (const key of ["contacts", "items", "data", "bundles"]) {
-    const candidate = value[key];
-    if (Array.isArray(candidate)) {
-      return candidate;
-    }
-  }
-
-  return [];
-}
-
-function normalizeBundle(
-  value: unknown,
-  index: number,
-): WechatSyncContactBundle | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  const username =
-    readString(value, "username") ??
-    readString(value, "wxid") ??
-    readString(value, "contactId") ??
-    readString(value, "id");
-
-  if (!username) {
-    return null;
-  }
-
-  const nickname =
-    readString(value, "nickname") ?? readString(value, "nickName");
-  const remarkName =
-    readString(value, "remarkName") ?? readString(value, "remark");
-  const displayName =
-    readString(value, "displayName") ??
-    remarkName ??
-    nickname ??
-    readString(value, "name") ??
-    username;
-  const sampleMessages = readMessageSamples(value["sampleMessages"]);
-  const latestMessageAt =
-    readString(value, "latestMessageAt") ??
-    inferLatestMessageAt(sampleMessages) ??
-    null;
-  const ownerMessageCount =
-    readNumber(value, "ownerMessageCount") ??
-    sampleMessages.filter((sample) => sample.direction === "owner").length;
-  const contactMessageCount =
-    readNumber(value, "contactMessageCount") ??
-    sampleMessages.filter((sample) => sample.direction === "contact").length;
-  const messageCount =
-    readNumber(value, "messageCount") ??
-    Math.max(sampleMessages.length, ownerMessageCount + contactMessageCount);
-  const tags = readStringArray(value["tags"]);
-  const topicKeywords =
-    readStringArray(value["topicKeywords"]).length > 0
-      ? readStringArray(value["topicKeywords"])
-      : inferKeywords([
-          readString(value, "chatSummary"),
-          ...sampleMessages.map((sample) => sample.text),
-        ]);
+function buildManualJsonScanResult(
+  parsed: ParsedWechatSyncContactBundleResult,
+  sourceLabel: string,
+  sourceSummary: string,
+): ManualJsonScanResult {
+  const platformsLabel = formatPlatforms(parsed.platforms);
+  const formatLabel = formatImportFormat(parsed.format);
 
   return {
-    username,
-    displayName,
-    nickname,
-    remarkName,
-    region: readString(value, "region"),
-    source: readString(value, "source") ?? "manual-json",
-    tags,
-    isGroup: readBoolean(value, "isGroup") ?? username.endsWith("@chatroom"),
-    messageCount,
-    ownerMessageCount,
-    contactMessageCount,
-    latestMessageAt,
-    chatSummary: readString(value, "chatSummary"),
-    topicKeywords,
-    sampleMessages,
-    momentHighlights: readMomentHighlights(value["momentHighlights"]),
+    contacts: parsed.contacts,
+    sourceSummary,
+    message: parsed.contacts.length
+      ? `已读取 ${parsed.contacts.length} 个联系人，来源格式：${formatLabel}，平台：${platformsLabel}。`
+      : "连接器已启动，但当前输入里没有可用联系人。",
   };
 }
 
-function readMessageSamples(value: unknown): WechatSyncMessageSample[] {
-  if (!Array.isArray(value)) {
-    return [];
+function formatImportFormat(format: ParsedWechatSyncContactBundleResult["format"]) {
+  switch (format) {
+    case "chatlab-json":
+      return "ChatLab JSON";
+    case "chatlab-jsonl":
+      return "ChatLab JSONL";
+    case "contact-import-bundles-json":
+      return "ContactImportBundle JSON";
+    default:
+      return "WechatSyncContactBundle JSON";
+  }
+}
+
+function formatPlatforms(platforms: ParsedWechatSyncContactBundleResult["platforms"]) {
+  if (!platforms.length) {
+    return "unknown";
   }
 
-  return value
-    .map((item): WechatSyncMessageSample | null => {
-      if (!isRecord(item)) {
-        return null;
+  return platforms
+    .map((platform) => {
+      switch (platform) {
+        case "wechat":
+          return "WeChat";
+        case "qq":
+          return "QQ";
+        case "telegram":
+          return "Telegram";
+        case "discord":
+          return "Discord";
+        case "whatsapp":
+          return "WhatsApp";
+        case "line":
+          return "LINE";
+        case "instagram":
+          return "Instagram";
+        case "slack":
+          return "Slack";
+        default:
+          return "Unknown";
       }
-
-      const text = readString(item, "text") ?? readString(item, "content");
-      if (!text) {
-        return null;
-      }
-
-      return {
-        timestamp:
-          readString(item, "timestamp") ??
-          readString(item, "createdAt") ??
-          new Date(0).toISOString(),
-        text,
-        sender: readString(item, "sender"),
-        typeLabel: readString(item, "typeLabel") ?? readString(item, "type"),
-        direction: normalizeDirection(readString(item, "direction")),
-      };
     })
-    .filter((sample): sample is WechatSyncMessageSample => Boolean(sample))
-    .slice(0, 40);
-}
-
-function readMomentHighlights(value: unknown): WechatSyncMomentHighlight[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item): WechatSyncMomentHighlight | null => {
-      if (!isRecord(item)) {
-        return null;
-      }
-
-      const text = readString(item, "text") ?? readString(item, "content");
-      if (!text) {
-        return null;
-      }
-
-      return {
-        postedAt: readString(item, "postedAt") ?? readString(item, "timestamp"),
-        text,
-        location: readString(item, "location"),
-        mediaHint: readString(item, "mediaHint"),
-      };
-    })
-    .filter((item): item is WechatSyncMomentHighlight => Boolean(item))
-    .slice(0, 20);
-}
-
-function normalizeDirection(
-  value: string | null,
-): WechatSyncMessageDirection | undefined {
-  if (
-    value === "owner" ||
-    value === "contact" ||
-    value === "group_member" ||
-    value === "system" ||
-    value === "unknown"
-  ) {
-    return value;
-  }
-  return undefined;
-}
-
-function inferLatestMessageAt(samples: WechatSyncMessageSample[]) {
-  const timestamps = samples
-    .map((sample) => Date.parse(sample.timestamp))
-    .filter((timestamp) => Number.isFinite(timestamp));
-
-  if (!timestamps.length) {
-    return null;
-  }
-
-  return new Date(Math.max(...timestamps)).toISOString();
-}
-
-function inferKeywords(values: Array<string | null | undefined>) {
-  const counts = new Map<string, number>();
-  for (const value of values) {
-    for (const token of (value ?? "").match(/[\p{L}\p{N}_]{2,}/gu) ?? []) {
-      const normalized = token.toLowerCase();
-      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
-    }
-  }
-
-  return [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .slice(0, 8)
-    .map(([token]) => token);
-}
-
-function readString(value: Record<string, unknown>, key: string) {
-  const raw = value[key];
-  if (typeof raw === "string") {
-    const trimmed = raw.trim();
-    return trimmed || null;
-  }
-  if (typeof raw === "number" && Number.isFinite(raw)) {
-    return String(raw);
-  }
-  return null;
-}
-
-function readStringArray(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return [
-    ...new Set(
-      value
-        .map((item) => (typeof item === "string" ? item.trim() : ""))
-        .filter(Boolean),
-    ),
-  ];
-}
-
-function readNumber(value: Record<string, unknown>, key: string) {
-  const raw = value[key];
-  if (typeof raw === "number" && Number.isFinite(raw)) {
-    return Math.max(0, Math.trunc(raw));
-  }
-  if (typeof raw === "string") {
-    const parsed = Number(raw);
-    if (Number.isFinite(parsed)) {
-      return Math.max(0, Math.trunc(parsed));
-    }
-  }
-  return null;
-}
-
-function readBoolean(value: Record<string, unknown>, key: string) {
-  const raw = value[key];
-  if (typeof raw === "boolean") {
-    return raw;
-  }
-  if (typeof raw === "string") {
-    if (raw === "true") {
-      return true;
-    }
-    if (raw === "false") {
-      return false;
-    }
-  }
-  return null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+    .join(" / ");
 }

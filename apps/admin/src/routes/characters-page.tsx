@@ -321,7 +321,7 @@ export function CharactersPage() {
                 <Button variant="primary">新建第一个角色</Button>
               </Link>
               <Link to="/characters/wechat-sync">
-                <Button variant="secondary">先从微信导入</Button>
+                <Button variant="secondary">先从联系人导入</Button>
               </Link>
             </>
           ) : (
@@ -384,7 +384,7 @@ export function CharactersPage() {
                   <MetricCard label="离线角色" value={summary.offlineCount} />
                   <MetricCard label="手动托管" value={summary.manualManagedCount} />
                   <MetricCard label="资料待补齐" value={summary.incompleteProfileCount} />
-                  <MetricCard label="微信导入" value={summary.wechatImportedCount} />
+                  <MetricCard label="联系人导入" value={summary.wechatImportedCount} />
                   <MetricCard label="近 7 天活跃" value={summary.recentActiveCount} />
                 </div>
               </Card>
@@ -1165,7 +1165,7 @@ function formatSourceType(value?: Character["sourceType"]) {
     case "ai_generated":
       return "AI 生成";
     case "wechat_import":
-      return "微信导入";
+      return "联系人导入";
     case "model_persona":
       return "模型人格";
     default:

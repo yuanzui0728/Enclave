@@ -35,10 +35,10 @@ export interface ContactImportPlatformDescriptor {
 const CONNECTOR_PROVIDER_CATALOG: ConnectorProviderDescriptor[] = [
   {
     key: "manual-json",
-    label: "Manual JSON bundle",
-    livePlatforms: ["wechat"],
+    label: "Standardized file / JSON",
+    livePlatforms: ["wechat", "qq", "telegram", "discord"],
     notes:
-      "Reads the current WeChat-shaped bundle JSON and works as the lowest-friction fallback source.",
+      "Reads WechatSync bundle JSON, platform-agnostic ContactImportBundle JSON, and ChatLab JSON/JSONL files as the standardized file-import path.",
   },
   {
     key: "wechat-decrypt-http",
@@ -69,33 +69,33 @@ const CONTACT_IMPORT_PLATFORM_CATALOG: ContactImportPlatformDescriptor[] = [
   {
     key: "qq",
     label: "QQ",
-    phase: "standardized",
-    liveProviderKeys: [],
+    phase: "implemented",
+    liveProviderKeys: ["manual-json"],
     roadmapSourceKinds: ["chatlab-json", "chatlab-jsonl", "qq-native-txt"],
     notes:
-      "Next in line once the downstream WeChat-specific source contract is generalized into a platform-agnostic contact import contract.",
+      "Implemented through the standardized file-import path. Recommended input today is ChatLab JSON/JSONL or a normalized ContactImportBundle export.",
   },
   {
     key: "telegram",
     label: "Telegram",
-    phase: "standardized",
-    liveProviderKeys: [],
+    phase: "implemented",
+    liveProviderKeys: ["manual-json"],
     roadmapSourceKinds: [
       "chatlab-json",
       "chatlab-jsonl",
       "telegram-native-json",
     ],
     notes:
-      "Fits the same parser-registry approach as ChatLab. Planned as a file-export adapter first, not a live bot bridge.",
+      "Implemented through the standardized file-import path. Current scope is export-file imports, not a live bot bridge.",
   },
   {
     key: "discord",
     label: "Discord",
-    phase: "standardized",
-    liveProviderKeys: [],
+    phase: "implemented",
+    liveProviderKeys: ["manual-json"],
     roadmapSourceKinds: ["chatlab-json", "chatlab-jsonl", "discord-export"],
     notes:
-      "Will share the same normalized session/member/message model as QQ and Telegram once the import layer is generalized.",
+      "Implemented through the standardized file-import path and shares the same normalized export model as QQ and Telegram.",
   },
   {
     key: "whatsapp",

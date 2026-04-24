@@ -275,16 +275,18 @@ Live sources today:
 
 - WeChat 4.x through `wechat-decrypt HTTP`
 - WeFlow-based WeChat exports through `weflow-http`
-- Standardized JSON bundles as a fallback bridge
+- Standardized file imports for `WechatSyncContactBundle`, `ContactImportBundle`, and ChatLab `JSON/JSONL`
 
-The next step is not to keep piling up WeChat-only special cases. The goal is a
-standardized import layer that can later absorb:
+The same import path can already absorb file-based imports for:
 
 - QQ
 - Telegram
 - Discord
 - export files from WhatsApp / LINE / Instagram
 - standardized or semi-standardized exports such as ChatLab / WeFlow
+
+QQ / Telegram / Discord are currently supported through standardized file imports,
+not native live connectors.
 
 Status and roadmap live in
 [docs/contact-import-platforms.md](docs/contact-import-platforms.md).

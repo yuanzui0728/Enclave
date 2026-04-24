@@ -174,15 +174,13 @@ type ProviderFallbackCandidate = {
 };
 
 type ChatCompletionTaskResult = {
-  usage?:
-    | {
-        prompt_tokens?: number;
-        completion_tokens?: number;
-        input_tokens?: number;
-        output_tokens?: number;
-        total_tokens?: number;
-      }
-    | null;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+  } | null;
   model?: string | null;
   choices: Array<{
     message?: {
@@ -229,12 +227,10 @@ export class AiOrchestratorService {
     return this.inferenceService.resolveRuntimeProviderConfig();
   }
 
-  private async resolveRuntimeProvider(
-    options?: {
-      override?: AiKeyOverride;
-      characterId?: string | null;
-    },
-  ): Promise<ResolvedProviderConfig> {
+  private async resolveRuntimeProvider(options?: {
+    override?: AiKeyOverride;
+    characterId?: string | null;
+  }): Promise<ResolvedProviderConfig> {
     const provider = await this.inferenceService.resolveRuntimeProviderConfig({
       characterId: options?.characterId,
     });
@@ -247,7 +243,7 @@ export class AiOrchestratorService {
       endpoint:
         options?.override?.apiBase && provider.allowOwnerKeyOverride !== false
           ? this.normalizeProviderEndpoint(options.override.apiBase)
-        : provider.endpoint,
+          : provider.endpoint,
       apiKey:
         provider.allowOwnerKeyOverride !== false
           ? options?.override?.apiKey?.trim() || provider.apiKey
@@ -822,20 +818,20 @@ export class AiOrchestratorService {
       case 'transcription':
         return Boolean(
           provider.transcriptionApiKey?.trim() &&
-            provider.transcriptionModel?.trim() &&
-            provider.transcriptionEndpoint?.trim(),
+          provider.transcriptionModel?.trim() &&
+          provider.transcriptionEndpoint?.trim(),
         );
       case 'image_generation':
         return Boolean(
           provider.imageGenerationEndpoint?.trim() &&
-            provider.imageGenerationApiKey?.trim() &&
-            this.resolveImageGenerationModel(provider),
+          provider.imageGenerationApiKey?.trim() &&
+          this.resolveImageGenerationModel(provider),
         );
       case 'tts':
         return Boolean(
           provider.ttsEndpoint?.trim() &&
-            provider.ttsApiKey?.trim() &&
-            provider.ttsModel?.trim(),
+          provider.ttsApiKey?.trim() &&
+          provider.ttsModel?.trim(),
         );
       case 'text':
       default:
@@ -1241,7 +1237,10 @@ export class AiOrchestratorService {
         );
 
         const hasMoreFallback = index < attempts.length - 1;
-        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+        if (
+          !hasMoreFallback ||
+          !this.isFallbackEligibleProviderFailure(error)
+        ) {
           this.logger.error(`${options.label} failed`, {
             scene: options.usageContext.scene,
             characterId: characterId ?? null,
@@ -1371,8 +1370,7 @@ export class AiOrchestratorService {
       });
 
       const rawText = response.choices[0]?.message?.content ?? '';
-      const text =
-        sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
+      const text = sanitizeAiText(rawText) || emptyTextFallback || '（无回复）';
       const usage = this.normalizeUsageMetrics(response.usage);
 
       return {
@@ -2214,7 +2212,9 @@ export class AiOrchestratorService {
             }),
         });
 
-        const text = sanitizeAiText(response.choices[0]?.message?.content ?? '');
+        const text = sanitizeAiText(
+          response.choices[0]?.message?.content ?? '',
+        );
         const validation = validateGeneratedSceneOutput({
           text,
           profile,
@@ -2248,7 +2248,10 @@ export class AiOrchestratorService {
       resolvedGenerationContext,
       sceneKey,
     );
-    const userPrompts = [promptRequest.userPrompt, promptRequest.retryUserPrompt];
+    const userPrompts = [
+      promptRequest.userPrompt,
+      promptRequest.retryUserPrompt,
+    ];
 
     for (let attempt = 0; attempt < userPrompts.length; attempt += 1) {
       const response = await this.requestChatTaskWithFallback({
@@ -2338,9 +2341,15 @@ export class AiOrchestratorService {
     description: string,
     options?: {
       timeoutMs?: number;
+      systemPrompt?: string;
+      userPrompt?: string;
+      maxTokens?: number;
+      temperature?: number;
     },
   ): Promise<Record<string, unknown>> {
-    const prompt = `你是隐界的角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
+    const prompt =
+      options?.userPrompt?.trim() ||
+      `你是隐界的角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
 
 要求：
 1. 角色要像用户现实里真会认识的人，不要像万能助手、客服、课程讲师或系统提示词外壳。
@@ -2378,17 +2387,47 @@ export class AiOrchestratorService {
       scopeType: 'admin_task',
       scopeLabel: description.slice(0, 48) || 'quick-character',
     };
+    const maxTokens =
+      typeof options?.maxTokens === 'number' && options.maxTokens > 0
+        ? Math.min(Math.round(options.maxTokens), 2_000)
+        : 800;
+    const temperature =
+      typeof options?.temperature === 'number'
+        ? Math.min(Math.max(options.temperature, 0), 1.2)
+        : 0.8;
+    const requestMessages: Array<{
+      role: 'system' | 'user';
+      content: string;
+    }> = [];
+    if (options?.systemPrompt?.trim()) {
+      requestMessages.push({
+        role: 'system',
+        content: options.systemPrompt.trim(),
+      });
+    }
+    requestMessages.push({
+      role: 'user',
+      content: prompt,
+    });
     const response = await this.requestChatTaskWithFallback({
       usageContext,
       label: 'quick character generation',
       request: (client, provider) =>
-        client.chat.completions.create({
-          model: provider.model,
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 800,
-          temperature: 0.8,
-          response_format: { type: 'json_object' },
-        }),
+        client.chat.completions.create(
+          {
+            model: provider.model,
+            messages: requestMessages,
+            max_tokens: maxTokens,
+            temperature,
+            response_format: { type: 'json_object' },
+          },
+          typeof options?.timeoutMs === 'number' && options.timeoutMs > 0
+            ? {
+                timeout: Math.min(options.timeoutMs, 120_000),
+                maxRetries: 0,
+              }
+            : undefined,
+        ),
     });
 
     const raw = response.choices[0]?.message?.content ?? '{}';
@@ -2717,7 +2756,10 @@ export class AiOrchestratorService {
       const attempt = attempts[index];
       const provider = attempt.provider;
       const imageModel = this.resolveImageGenerationModel(provider);
-      if (!imageModel || !this.hasProviderCapability(provider, 'image_generation')) {
+      if (
+        !imageModel ||
+        !this.hasProviderCapability(provider, 'image_generation')
+      ) {
         continue;
       }
 
@@ -2766,7 +2808,10 @@ export class AiOrchestratorService {
         }
 
         if (image.url) {
-          const asset = await this.loadAssetFromUrl(image.url, 10 * 1024 * 1024);
+          const asset = await this.loadAssetFromUrl(
+            image.url,
+            10 * 1024 * 1024,
+          );
           if (!asset?.buffer.length) {
             throw new BadGatewayException('图片生成结果为空，请稍后再试。');
           }
@@ -2786,7 +2831,10 @@ export class AiOrchestratorService {
       } catch (error) {
         lastError = error;
         const hasMoreFallback = index < attempts.length - 1;
-        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+        if (
+          !hasMoreFallback ||
+          !this.isFallbackEligibleProviderFailure(error)
+        ) {
           this.logger.error('image generation failed', {
             conversationId: options.conversationId,
             characterId: options.characterId,
@@ -2885,7 +2933,8 @@ export class AiOrchestratorService {
               ),
               model: provider.transcriptionModel,
               language: 'zh',
-              prompt: '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
+              prompt:
+                '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
             }),
         );
         const text = response.text.trim();
@@ -2904,7 +2953,10 @@ export class AiOrchestratorService {
       } catch (error) {
         lastError = error;
         const hasMoreFallback = index < attempts.length - 1;
-        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+        if (
+          !hasMoreFallback ||
+          !this.isFallbackEligibleProviderFailure(error)
+        ) {
           this.logger.error('speech transcription failed', {
             conversationId: options.conversationId,
             characterId: options.characterId,
@@ -3012,7 +3064,10 @@ export class AiOrchestratorService {
       } catch (error) {
         lastError = error;
         const hasMoreFallback = index < attempts.length - 1;
-        if (!hasMoreFallback || !this.isFallbackEligibleProviderFailure(error)) {
+        if (
+          !hasMoreFallback ||
+          !this.isFallbackEligibleProviderFailure(error)
+        ) {
           this.logger.error('speech synthesis failed', {
             conversationId: options.conversationId,
             characterId: options.characterId,

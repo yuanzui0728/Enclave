@@ -27,15 +27,15 @@
 | --- | --- | --- | --- |
 | 微信 4.x 本机历史 | 已落地 | `wechat-decrypt HTTP` | 当前最完整的真实链路，读取本机 `5678` 服务，再走 Admin 预览/导入。 |
 | 微信生态导出桥接 | 已落地 | `weflow-http` | 连接器已支持通过本地 HTTP 桥读取 WeFlow 导出的联系人/消息摘要。 |
-| 手工标准化 JSON | 已落地 | `manual-json` | 适合作为脚本导出或中间转换的兜底入口，但落库语义仍然是 WeChat-shaped。 |
-| QQ | 标准层已规划 | ChatLab / 原生导出 / 中间 JSON | 目标是先走文件导入与标准化映射，不先做在线桥接。 |
-| Telegram | 标准层已规划 | ChatLab / 原生导出 / 中间 JSON | 适合先接 JSON 导出，再复用统一 bundle 生成逻辑。 |
-| Discord | 标准层已规划 | ChatLab / 第三方导出 / 中间 JSON | 适合先接导出文件，不直接做 bot/runtime bridge。 |
+| 标准化文件 / JSON | 已落地 | `manual-json` | 已支持 `WechatSyncContactBundle`、`ContactImportBundle`、ChatLab `JSON/JSONL`。这是 QQ / Telegram / Discord 当前可用的统一文件导入入口。 |
+| QQ | 已落地（文件导入） | ChatLab / 原生导出 / 中间 JSON | 当前通过标准化文件导入接入，不提供原生在线桥接。 |
+| Telegram | 已落地（文件导入） | ChatLab / 原生导出 / 中间 JSON | 当前通过标准化文件导入接入，适合先吃导出文件而不是 bot/runtime bridge。 |
+| Discord | 已落地（文件导入） | ChatLab / 第三方导出 / 中间 JSON | 当前通过标准化文件导入接入，复用同一套 bundle 映射与预览链路。 |
 | WhatsApp / LINE / Instagram / Slack | 计划中 | 标准化文件导入 | 等前面三项跑通之后再接。 |
 
 结论很简单：
 
-- 现在“真实可用”的只有微信链路。
+- 现在已经真实可用：微信实时链路 + 多平台标准化文件导入。
 - 现在“已经值得按多平台来设计”的，是连接器和中间标准化层。
 - 现在“还必须改”的，是 Admin/Core API 最后一公里的 WeChat 专属语义。
 
@@ -191,7 +191,7 @@
 
 优先顺序：
 
-1. ChatLab JSON / JSONL
+1. ChatLab JSON / JSONL（已完成）
 2. QQ 原生导出
 3. Telegram 导出
 4. Discord 导出
@@ -236,6 +236,6 @@
 
 所以对外口径应该非常明确：
 
-- 现在已经落地：微信
+- 现在已经落地：微信实时链路 + QQ / Telegram / Discord 文件导入
 - 现在已经按这个方向设计：多平台标准化导入层
-- 现在下一步最值得做：QQ / Telegram / Discord 的文件导入接入
+- 现在下一步最值得做：QQ / Telegram / Discord 的原生导出适配，以及后端 source metadata 去 WeChat 化

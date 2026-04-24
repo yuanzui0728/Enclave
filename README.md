@@ -274,15 +274,17 @@ pnpm android:run:local
 
 - 微信 4.x：通过 `wechat-decrypt HTTP` 读取本机历史与标签
 - 微信生态导出：通过 `weflow-http` 读取本地桥接服务
-- 标准化 JSON：作为脚本转换或手工整理后的兜底入口
+- 标准化文件导入：支持 `WechatSyncContactBundle`、`ContactImportBundle`、ChatLab `JSON/JSONL`
 
-这层能力的下一步不是继续堆“微信特例”，而是收口成标准化导入层，让同一条导入链路后续接入：
+这条导入链路已经可以通过文件导入覆盖：
 
 - QQ
 - Telegram
 - Discord
 - WhatsApp / LINE / Instagram 等导出文件
 - ChatLab / WeFlow 一类的标准化或半标准化导出
+
+其中 QQ / Telegram / Discord 当前是“标准化文件导入已可用”，不是原生实时连接器。
 
 当前平台状态与路线图见 [docs/contact-import-platforms.md](docs/contact-import-platforms.md)。
 

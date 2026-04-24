@@ -16,6 +16,7 @@ import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
+import { SystemConfigService } from '../config/config.service';
 import type {
   WechatSyncContactBundleValue,
   WechatSyncHistoryResponseValue,
@@ -38,15 +39,60 @@ type ImportChangeRecord = NonNullable<
 
 type ImportChangeDiffRecord = NonNullable<ImportChangeRecord['diffs']>[number];
 
+type WechatSyncAnalysisPromptConfig = {
+  systemPrompt: string;
+  userPromptTemplate: string;
+};
+
 type PreviewContactResult = {
   item: WechatSyncPreviewItemValue;
   aiAvailableForNextContacts: boolean;
 };
 
-const WECHAT_SYNC_PREVIEW_CONCURRENCY = 4;
-const WECHAT_SYNC_AI_PREVIEW_TIMEOUT_MS = 8_000;
+const WECHAT_SYNC_PREVIEW_CONCURRENCY = 1;
+const WECHAT_SYNC_AI_PREVIEW_TIMEOUT_MS = 120_000;
+const WECHAT_SYNC_PREVIEW_MAX_SAMPLE_MESSAGES = 60;
+const WECHAT_SYNC_PREVIEW_MAX_MOMENT_HIGHLIGHTS = 20;
 const WECHAT_SYNC_MIN_MESSAGES_FOR_AI_PREVIEW = 12;
 const WECHAT_SYNC_MIN_SAMPLES_FOR_AI_PREVIEW = 3;
+const WECHAT_SYNC_SYSTEM_PROMPT_CONFIG_KEY =
+  'wechat_sync_analysis_system_prompt';
+const WECHAT_SYNC_USER_PROMPT_TEMPLATE_CONFIG_KEY =
+  'wechat_sync_analysis_user_prompt_template';
+const DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT = `你是隐界的“微信熟人角色重建分析师”。
+你的任务不是创造一个更讨喜的虚构角色，而是基于微信聊天记录、备注、标签、朋友圈线索和互动节奏，尽可能还原这个真实联系人在用户心中的样子，并输出可导入隐界的角色 JSON 草稿。
+
+分析原则：
+1. 准确性、证据一致性、真人还原度优先于速度、戏剧性和讨喜程度。
+2. 只依据给定材料下结论。职业、身份、关系亲密度、价值观、说话方式、边界感都必须有聊天或资料线索支撑。
+3. 证据不足时必须保守，不要脑补确定事实。可以使用“更像是”“看起来”“倾向于”等表达，但不要编造。
+4. 这是用户微信里的真实熟人，不是客服、助理、导师模板或万能陪伴角色。
+5. 输出要让认识此人的用户读起来觉得“像他/她本人”，而不是“像 AI 总结的人设”。
+6. basePrompt 只保留这个人的表达习惯、互动边界、主动性、熟悉程度和禁区，不要写成系统提示词、操作手册或万能助理说明。
+7. relationshipType 默认优先 friend，只有证据非常强时才改为 family、mentor、expert 或 custom。
+8. expertDomains 只保留稳定且有证据的领域，不要泛化堆标签。
+9. 如果聊天里体现出矛盾、情绪波动、表达克制、回复习惯或身份不确定性，要把这种“不完全确定但真实存在的模糊感”保留下来，不要强行归纳得过于整齐。
+10. 输出前先在内部核对：是否有任何字段明显超出证据、是否把真人写成了服务型 AI、是否过度美化或降噪了此人的真实语气。
+
+只输出合法 JSON，不要输出解释、推理过程或额外文字。`;
+const DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE = `请根据以下微信联系人资料，重建一个“尽量接近现实本人”的隐界角色草稿。
+
+目标：
+- 优先还原真实关系、熟悉程度、说话口气、互动边界、常聊主题、生活状态和可能身份。
+- 优先保留这个人的真人感，不要为了更好聊而把对方写得更温柔、更积极、更健谈或更懂用户。
+- 如果资料不足，请明确走保守推断：少下结论、少补设定、少发散脑补。
+- bio、background、motivation、worldview、memorySummary 要像熟人画像，而不是心理测评或人物小传。
+- speechPatterns、catchphrases、topicsOfInterest 必须尽量来自真实聊天表达，不要写空泛套话。
+- basePrompt 必须像“这个人本人会怎么说话、怎么回应、有哪些边界”，而不是客服话术或助手提示词。
+
+可用资料：
+{{contact_context}}
+
+输出要求：
+1. 所有字段尽量贴近证据，不要虚构确定细节。
+2. 如果某些字段只能弱判断，也要写得保守自然，不要空泛。
+3. 若聊天中能看出关系不对等、长期未联系、只在特定场景互动、或对方回复很克制，请在角色里保留这种分寸感。
+4. 最终只输出合法 JSON。`;
 
 @Injectable()
 export class WechatSyncAdminService {
@@ -66,6 +112,7 @@ export class WechatSyncAdminService {
     private readonly worldOwnerService: WorldOwnerService,
     private readonly charactersService: CharactersService,
     private readonly feedService: FeedService,
+    private readonly systemConfigService: SystemConfigService,
   ) {}
 
   async getHistory(): Promise<WechatSyncHistoryResponseValue> {
@@ -149,19 +196,19 @@ export class WechatSyncAdminService {
   ): Promise<WechatSyncPreviewResponseValue> {
     const contacts = normalizeContactBundles(input.contacts);
     if (!contacts.length) {
-      throw new BadRequestException('至少选择一个微信联系人。');
+      throw new BadRequestException('至少选择一个联系人。');
     }
     if (contacts.length > 20) {
-      throw new BadRequestException('单次最多预览 20 个微信联系人。');
+      throw new BadRequestException('单次最多预览 20 个联系人。');
     }
 
+    const promptConfig = await this.resolveWechatSyncAnalysisPromptConfig();
     const items = new Array<WechatSyncPreviewItemValue>(contacts.length);
     const workerCount = Math.min(
       WECHAT_SYNC_PREVIEW_CONCURRENCY,
       contacts.length,
     );
     let nextIndex = 0;
-    let aiAvailableForNextContacts = true;
 
     await Promise.all(
       Array.from({ length: workerCount }, async () => {
@@ -171,13 +218,10 @@ export class WechatSyncAdminService {
             return;
           }
 
-          const result = await this.previewContact(contacts[currentIndex], {
-            allowAi: aiAvailableForNextContacts,
-          });
-          items[currentIndex] = result.item;
-          if (!result.aiAvailableForNextContacts) {
-            aiAvailableForNextContacts = false;
-          }
+          items[currentIndex] = await this.previewContactAccurate(
+            contacts[currentIndex],
+            promptConfig,
+          );
         }
       }),
     );
@@ -192,10 +236,10 @@ export class WechatSyncAdminService {
       item?.contact?.username?.trim(),
     );
     if (!normalizedItems.length) {
-      throw new BadRequestException('至少选择一个预览通过的微信联系人。');
+      throw new BadRequestException('至少选择一个预览通过的联系人。');
     }
     if (normalizedItems.length > 20) {
-      throw new BadRequestException('单次最多导入 20 个微信联系人。');
+      throw new BadRequestException('单次最多导入 20 个联系人。');
     }
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
@@ -222,7 +266,7 @@ export class WechatSyncAdminService {
         continue;
       }
 
-      const sourceKey = buildWechatSourceKey(contact.username);
+      const sourceKey = buildImportedSourceKey(contact);
       const existing = await this.characterRepo.findOneBy({
         sourceType: 'wechat_import',
         sourceKey,
@@ -314,7 +358,7 @@ export class WechatSyncAdminService {
         if (friendship) {
           friendship.remarkName = contact.remarkName || friendship.remarkName;
           friendship.region = contact.region || friendship.region;
-          friendship.source = contact.source || 'wechat_import';
+          friendship.source = contact.source || 'contact_import';
           friendship.tags = contact.tags.length
             ? contact.tags
             : friendship.tags;
@@ -350,10 +394,10 @@ export class WechatSyncAdminService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const character = await this.characterRepo.findOneBy({ id: characterId });
     if (!character) {
-      throw new NotFoundException('微信同步角色不存在。');
+      throw new NotFoundException('联系人导入角色不存在。');
     }
     if (character.sourceType !== 'wechat_import') {
-      throw new BadRequestException('只支持补建微信同步导入的角色好友关系。');
+      throw new BadRequestException('只支持补建联系人导入角色的好友关系。');
     }
 
     const existing = await this.friendshipRepo.findOneBy({
@@ -374,7 +418,7 @@ export class WechatSyncAdminService {
       throw new BadRequestException('好友关系补建失败。');
     }
 
-    friendship.source = friendship.source || 'wechat_import';
+    friendship.source = friendship.source || 'contact_import';
     await this.friendshipRepo.save(friendship);
 
     return {
@@ -392,10 +436,10 @@ export class WechatSyncAdminService {
   ): Promise<WechatSyncRollbackResponseValue> {
     const character = await this.characterRepo.findOneBy({ id: characterId });
     if (!character) {
-      throw new NotFoundException('微信同步角色不存在。');
+      throw new NotFoundException('联系人导入角色不存在。');
     }
     if (character.sourceType !== 'wechat_import') {
-      throw new BadRequestException('只支持回滚微信同步导入的角色。');
+      throw new BadRequestException('只支持回滚联系人导入角色。');
     }
 
     await this.charactersService.delete(characterId);
@@ -484,6 +528,60 @@ export class WechatSyncAdminService {
     };
   }
 
+  private async previewContactAccurate(
+    contact: WechatSyncContactBundleValue,
+    promptConfig: WechatSyncAnalysisPromptConfig,
+  ): Promise<WechatSyncPreviewItemValue> {
+    const warnings = buildPreviewWarnings(contact);
+    const confidence = resolvePreviewConfidence(contact);
+    let draftCharacter: Partial<CharacterEntity>;
+
+    if (!hasWechatSyncAnalysisEvidence(contact)) {
+      warnings.push('当前缺少足够的聊天或资料证据，已回退到保守的基础草稿。');
+      draftCharacter = this.normalizeCharacterDraft({}, contact);
+      return {
+        contact,
+        draftCharacter,
+        warnings,
+        confidence,
+      };
+    }
+
+    try {
+      const raw = await this.ai.generateQuickCharacter(
+        this.buildWechatSyncAnalysisPromptContext(contact),
+        {
+          timeoutMs: WECHAT_SYNC_AI_PREVIEW_TIMEOUT_MS,
+          temperature: 0.2,
+          maxTokens: 1_800,
+          systemPrompt: promptConfig.systemPrompt,
+          userPrompt: this.renderWechatSyncAnalysisUserPrompt(
+            promptConfig.userPromptTemplate,
+            contact,
+          ),
+        },
+      );
+      draftCharacter = this.normalizeCharacterDraft(raw, contact);
+    } catch (error) {
+      this.logger.warn(
+        `Falling back to heuristic character draft for ${contact.username}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      warnings.push(
+        'AI 角色草稿生成失败，已回退到启发式版本，导入前再过一眼。',
+      );
+      draftCharacter = this.normalizeCharacterDraft({}, contact);
+    }
+
+    return {
+      contact,
+      draftCharacter,
+      warnings,
+      confidence,
+    };
+  }
+
   private normalizeCharacterDraft(
     raw: Partial<CharacterEntity> | Record<string, unknown>,
     contact: WechatSyncContactBundleValue,
@@ -506,7 +604,7 @@ export class WechatSyncAdminService {
       contact.displayName;
     const relationship =
       normalizeText(isRecord(raw) ? raw.relationship : undefined) ||
-      `${name} 是你从微信同步来的熟人朋友，和你已经有真实聊天历史。`;
+      `${name} 是你从${formatImportedPlatformLabel(contact)}导入的熟人朋友，和你已经有真实聊天历史。`;
     const bio =
       normalizeText(isRecord(raw) ? raw.bio : undefined) ||
       buildFallbackBio(contact, name);
@@ -552,7 +650,7 @@ export class WechatSyncAdminService {
       isOnline: false,
       onlineMode: 'auto',
       sourceType: 'wechat_import',
-      sourceKey: buildWechatSourceKey(contact.username),
+      sourceKey: buildImportedSourceKey(contact),
       deletionPolicy: 'archive_allowed',
       isTemplate: false,
       expertDomains,
@@ -590,10 +688,12 @@ export class WechatSyncAdminService {
         },
         memorySummary,
         identity: {
-          occupation: normalizeText(identity.occupation) || '微信联系人',
+          occupation:
+            normalizeText(identity.occupation) ||
+            `${formatImportedPlatformLabel(contact)}联系人`,
           background:
             normalizeText(identity.background) ||
-            `用户通过微信认识 ${name}，两人已经积累了真实聊天记录。`,
+            `用户通过${formatImportedPlatformLabel(contact)}认识 ${name}，两人已经积累了真实聊天记录。`,
           motivation:
             normalizeText(identity.motivation) || '维持真实自然的熟人关系。',
           worldview:
@@ -606,7 +706,7 @@ export class WechatSyncAdminService {
             '自然随和，按熟人节奏聊天。',
           socialStyle:
             normalizeText(behavioralPatterns.socialStyle) ||
-            '微信熟人式社交，真实、不端着。',
+            `${formatImportedPlatformLabel(contact)}熟人式社交，真实、不端着。`,
           taboos: normalizeStringList(behavioralPatterns.taboos),
           quirks: normalizeStringList(behavioralPatterns.quirks),
         },
@@ -647,7 +747,7 @@ export class WechatSyncAdminService {
       intimacyLevel: resolveInitialIntimacy(contact),
       lastActiveAt: undefined,
       aiRelationships: [],
-      currentStatus: '已从微信同步',
+      currentStatus: '已从联系人导入',
       currentActivity: 'free',
       modelRoutingMode: 'inherit_default',
       inferenceProviderAccountId: null,
@@ -715,6 +815,144 @@ export class WechatSyncAdminService {
     ].join('\n');
   }
 
+  private async resolveWechatSyncAnalysisPromptConfig(): Promise<WechatSyncAnalysisPromptConfig> {
+    const [configuredSystemPrompt, configuredUserPromptTemplate] =
+      await Promise.all([
+        this.systemConfigService.getConfig(
+          WECHAT_SYNC_SYSTEM_PROMPT_CONFIG_KEY,
+        ),
+        this.systemConfigService.getConfig(
+          WECHAT_SYNC_USER_PROMPT_TEMPLATE_CONFIG_KEY,
+        ),
+      ]);
+
+    return {
+      systemPrompt: normalizePromptConfigValue(
+        configuredSystemPrompt,
+        DEFAULT_WECHAT_SYNC_ANALYSIS_SYSTEM_PROMPT,
+      ),
+      userPromptTemplate: normalizePromptConfigValue(
+        configuredUserPromptTemplate,
+        DEFAULT_WECHAT_SYNC_ANALYSIS_USER_PROMPT_TEMPLATE,
+      ),
+    };
+  }
+
+  private buildWechatSyncAnalysisPromptContext(
+    contact: WechatSyncContactBundleValue,
+  ) {
+    const topicHint = contact.topicKeywords.length
+      ? contact.topicKeywords.join('、')
+      : '无明确高频话题标签';
+    const tagHint = contact.tags.length ? contact.tags.join('、') : '无';
+    const summaryHint = contact.chatSummary?.trim() || '暂无聊天摘要';
+    const momentHint = contact.momentHighlights.length
+      ? contact.momentHighlights
+          .slice(0, WECHAT_SYNC_PREVIEW_MAX_MOMENT_HIGHLIGHTS)
+          .map((item, index) => {
+            const location = item.location?.trim()
+              ? ` / 位置：${item.location.trim()}`
+              : '';
+            const postedAt = item.postedAt?.trim()
+              ? ` / 时间：${item.postedAt.trim()}`
+              : '';
+            return `${index + 1}. ${item.text.trim()}${location}${postedAt}`;
+          })
+          .join('\n')
+      : '暂无朋友圈或近况线索';
+    const samples = contact.sampleMessages
+      .slice(0, WECHAT_SYNC_PREVIEW_MAX_SAMPLE_MESSAGES)
+      .map((item, index) => {
+        const sender = item.sender?.trim() || '未知发送者';
+        const direction = item.direction?.trim() || 'unknown';
+        const typeLabel = item.typeLabel?.trim() || '文本';
+        return `${index + 1}. [${item.timestamp}] [${direction}] [${typeLabel}] ${sender}: ${item.text}`;
+      })
+      .join('\n');
+
+    return [
+      '联系人资料总览：',
+      `- 微信 username：${contact.username}`,
+      `- 微信显示名：${contact.displayName}`,
+      `- 微信备注：${contact.remarkName?.trim() || '无'}`,
+      `- 微信昵称：${contact.nickname?.trim() || '无'}`,
+      `- 地区：${contact.region?.trim() || '无'}`,
+      `- 来源：${contact.source?.trim() || '未知'}`,
+      `- 标签：${tagHint}`,
+      `- 是否群聊：${contact.isGroup ? '是' : '否'}`,
+      '',
+      '互动统计：',
+      `- 总消息数：${contact.messageCount}`,
+      `- 用户发送：${contact.ownerMessageCount}`,
+      `- 对方发送：${contact.contactMessageCount}`,
+      `- 最近消息时间：${contact.latestMessageAt?.trim() || '未知'}`,
+      '',
+      '高频话题与摘要：',
+      `- 高频关键词：${topicHint}`,
+      `- 聊天摘要：${summaryHint}`,
+      '',
+      '朋友圈 / 近况线索：',
+      momentHint,
+      '',
+      '聊天样本（尽量基于这些真实表达判断人物）：',
+      samples || '暂无聊天样本',
+    ].join('\n');
+  }
+
+  private renderWechatSyncAnalysisUserPrompt(
+    template: string,
+    contact: WechatSyncContactBundleValue,
+  ) {
+    const replacements: Record<string, string> = {
+      contact_context: this.buildWechatSyncAnalysisPromptContext(contact),
+      username: contact.username,
+      display_name: contact.displayName,
+      remark_name: contact.remarkName?.trim() || '无',
+      nickname: contact.nickname?.trim() || '无',
+      region: contact.region?.trim() || '无',
+      source: contact.source?.trim() || '未知',
+      tags: contact.tags.length ? contact.tags.join('、') : '无',
+      message_count: String(contact.messageCount),
+      owner_message_count: String(contact.ownerMessageCount),
+      contact_message_count: String(contact.contactMessageCount),
+      latest_message_at: contact.latestMessageAt?.trim() || '未知',
+      chat_summary: contact.chatSummary?.trim() || '暂无聊天摘要',
+      topic_keywords: contact.topicKeywords.length
+        ? contact.topicKeywords.join('、')
+        : '无明确高频关键词',
+      sample_messages:
+        contact.sampleMessages.length > 0
+          ? contact.sampleMessages
+              .map((item, index) => {
+                const sender = item.sender?.trim() || '未知发送者';
+                const direction = item.direction?.trim() || 'unknown';
+                const typeLabel = item.typeLabel?.trim() || '文本';
+                return `${index + 1}. [${item.timestamp}] [${direction}] [${typeLabel}] ${sender}: ${item.text}`;
+              })
+              .join('\n')
+          : '暂无聊天样本',
+      moment_highlights:
+        contact.momentHighlights.length > 0
+          ? contact.momentHighlights
+              .map((item, index) => {
+                const location = item.location?.trim()
+                  ? ` / 位置：${item.location.trim()}`
+                  : '';
+                const postedAt = item.postedAt?.trim()
+                  ? ` / 时间：${item.postedAt.trim()}`
+                  : '';
+                return `${index + 1}. ${item.text.trim()}${location}${postedAt}`;
+              })
+              .join('\n')
+          : '暂无朋友圈或近况线索',
+    };
+
+    return template.replace(
+      /\{\{\s*([a-z_]+)\s*\}\}/g,
+      (_, key: string) => replacements[key] ?? '',
+    );
+  }
+
   private async hasCharacterMoments(characterId: string) {
     return (
       (await this.momentPostRepo.count({
@@ -757,7 +995,7 @@ export class WechatSyncAdminService {
   }
 
   private buildImportedGreeting(characterName: string) {
-    return `已从微信同步导入 ${characterName}，现在可以继续聊天了。`;
+    return `已从本地联系人资料导入 ${characterName}，现在可以继续聊天了。`;
   }
 }
 
@@ -810,7 +1048,7 @@ function normalizeContactBundle(
         direction: normalizeMessageDirection(item?.direction),
       }))
       .filter((item) => item.text.length > 0)
-      .slice(0, 16),
+      .slice(0, WECHAT_SYNC_PREVIEW_MAX_SAMPLE_MESSAGES),
     momentHighlights: (input?.momentHighlights ?? [])
       .map((item) => ({
         postedAt: normalizeNullableText(item?.postedAt),
@@ -819,7 +1057,7 @@ function normalizeContactBundle(
         mediaHint: normalizeNullableText(item?.mediaHint),
       }))
       .filter((item) => item.text.length > 0)
-      .slice(0, 6),
+      .slice(0, WECHAT_SYNC_PREVIEW_MAX_MOMENT_HIGHLIGHTS),
   };
 }
 
@@ -856,8 +1094,122 @@ function resolvePreviewConfidence(contact: WechatSyncContactBundleValue) {
   return 'low' as const;
 }
 
-function buildWechatSourceKey(username: string) {
-  return `wechat:${username}`;
+function buildImportedSourceKey(
+  contact: Pick<WechatSyncContactBundleValue, 'username' | 'source'>,
+) {
+  const platform = inferImportedPlatform(contact);
+  const username = contact.username.trim();
+  if (!username) {
+    return `${platform}:unknown`;
+  }
+  if (platform === 'wechat') {
+    return username.startsWith('wechat:') ? username : `wechat:${username}`;
+  }
+  return username.startsWith(`${platform}:`)
+    ? username
+    : `${platform}:${username}`;
+}
+
+function inferImportedPlatform(
+  contact: Pick<WechatSyncContactBundleValue, 'username' | 'source'>,
+) {
+  const source = contact.source?.trim().toLowerCase() ?? '';
+  if (source.includes('telegram')) {
+    return 'telegram' as const;
+  }
+  if (source.includes('discord')) {
+    return 'discord' as const;
+  }
+  if (source.includes('qq')) {
+    return 'qq' as const;
+  }
+  if (source.includes('whatsapp')) {
+    return 'whatsapp' as const;
+  }
+  if (source.includes('line')) {
+    return 'line' as const;
+  }
+  if (source.includes('instagram')) {
+    return 'instagram' as const;
+  }
+  if (source.includes('slack')) {
+    return 'slack' as const;
+  }
+  if (source.includes('wechat') || source.includes('weflow')) {
+    return 'wechat' as const;
+  }
+
+  const username = contact.username.trim().toLowerCase();
+  if (username.startsWith('telegram:')) {
+    return 'telegram' as const;
+  }
+  if (username.startsWith('discord:')) {
+    return 'discord' as const;
+  }
+  if (username.startsWith('qq:')) {
+    return 'qq' as const;
+  }
+  if (username.startsWith('whatsapp:')) {
+    return 'whatsapp' as const;
+  }
+  if (username.startsWith('line:')) {
+    return 'line' as const;
+  }
+  if (username.startsWith('instagram:')) {
+    return 'instagram' as const;
+  }
+  if (username.startsWith('slack:')) {
+    return 'slack' as const;
+  }
+  if (
+    username.startsWith('wechat:') ||
+    username.startsWith('wxid_') ||
+    username.endsWith('@chatroom')
+  ) {
+    return 'wechat' as const;
+  }
+
+  return 'unknown' as const;
+}
+
+function formatImportedPlatformLabel(
+  contact: Pick<WechatSyncContactBundleValue, 'username' | 'source'>,
+) {
+  switch (inferImportedPlatform(contact)) {
+    case 'telegram':
+      return 'Telegram';
+    case 'discord':
+      return 'Discord';
+    case 'qq':
+      return 'QQ';
+    case 'whatsapp':
+      return 'WhatsApp';
+    case 'line':
+      return 'LINE';
+    case 'instagram':
+      return 'Instagram';
+    case 'slack':
+      return 'Slack';
+    case 'wechat':
+      return '微信';
+    default:
+      return '联系人平台';
+  }
+}
+
+function hasWechatSyncAnalysisEvidence(contact: WechatSyncContactBundleValue) {
+  return Boolean(
+    contact.chatSummary?.trim() ||
+    contact.sampleMessages.some((item) => item.text.trim().length > 0) ||
+    contact.topicKeywords.length > 0 ||
+    contact.tags.length > 0 ||
+    contact.momentHighlights.some((item) => item.text.trim().length > 0),
+  );
+}
+
+function normalizePromptConfigValue(value: string | null, fallback: string) {
+  const normalized = value?.trim();
+  return normalized ? normalized : fallback;
 }
 
 function inferExpertDomains(contact: WechatSyncContactBundleValue) {
@@ -872,12 +1224,12 @@ function buildFallbackBio(contact: WechatSyncContactBundleValue, name: string) {
   }
 
   if (contact.topicKeywords.length) {
-    return `${name} 是你从微信同步导入的熟人朋友，平时常聊 ${contact.topicKeywords
+    return `${name} 是你从${formatImportedPlatformLabel(contact)}导入的熟人朋友，平时常聊 ${contact.topicKeywords
       .slice(0, 4)
       .join('、')}。`;
   }
 
-  return `${name} 是你从微信同步导入的熟人朋友，已经和你有真实聊天历史。`;
+  return `${name} 是你从${formatImportedPlatformLabel(contact)}导入的熟人朋友，已经和你有真实聊天历史。`;
 }
 
 function buildFallbackMemorySummary(
@@ -891,7 +1243,7 @@ function buildFallbackMemorySummary(
   const tags = contact.tags.length
     ? `，常见标签有 ${contact.tags.join('、')}`
     : '';
-  return `${name} 是你从微信同步来的熟人朋友，双方已经通过微信积累了真实互动${tags}。`;
+  return `${name} 是你从${formatImportedPlatformLabel(contact)}导入的熟人朋友，双方已经积累了真实互动${tags}。`;
 }
 
 function buildFallbackCoreMemory(
@@ -904,12 +1256,12 @@ function buildFallbackCoreMemory(
     .filter(Boolean);
 
   if (snippets.length) {
-    return `${name} 和用户已经在微信上聊过不少内容，最近的真实表达包括：${snippets.join(
+    return `${name} 和用户已经在${formatImportedPlatformLabel(contact)}上聊过不少内容，最近的真实表达包括：${snippets.join(
       '；',
     )}`;
   }
 
-  return `${name} 是用户从微信同步进来的现实熟人，互动方式要保持熟人聊天的自然边界。`;
+  return `${name} 是用户从${formatImportedPlatformLabel(contact)}导入的现实熟人，互动方式要保持熟人聊天的自然边界。`;
 }
 
 function buildFallbackCoreLogic(
@@ -922,8 +1274,8 @@ function buildFallbackCoreLogic(
     : '平时聊天内容较生活化，优先保持真实熟人语气。';
   return [
     `你是 ${name}，${relationship}`,
-    '你和用户本来就在微信认识，已经不是陌生人。',
-    '说话方式要像现实里的微信熟人，真实、有边界、有温度，不要像客服、专家机器人或万能助理。',
+    `你和用户本来就在${formatImportedPlatformLabel(contact)}认识，已经不是陌生人。`,
+    `说话方式要像现实里的${formatImportedPlatformLabel(contact)}熟人，真实、有边界、有温度，不要像客服、专家机器人或万能助理。`,
     topics,
   ].join('\n');
 }
@@ -938,9 +1290,9 @@ function buildFallbackChatPrompt(
     .filter(Boolean)
     .join('；');
   if (examples) {
-    return `${name} 回复时尽量保留微信熟人的说话味道。可参考这类真实表达：${examples}`;
+    return `${name} 回复时尽量保留真实熟人聊天的说话味道。可参考这类真实表达：${examples}`;
   }
-  return `${name} 回复时要像已经在微信认识的熟人朋友，语气自然，不端着，不套模板。`;
+  return `${name} 回复时要像已经认识的熟人朋友，语气自然，不端着，不套模板。`;
 }
 
 function normalizeImportedLegacySystemPrompt(
