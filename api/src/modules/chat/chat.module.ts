@@ -37,6 +37,7 @@ import { SystemConfigModule } from '../config/config.module';
 import { ActionRuntimeModule } from '../action-runtime/action-runtime.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
+import { SelfAgentModule } from '../self-agent/self-agent.module';
 import { ConversationEntity } from './conversation.entity';
 import { MessageEntity } from './message.entity';
 import { GroupEntity } from './group.entity';
@@ -62,6 +63,7 @@ import { DocumentExtractionService } from './document-extraction.service';
     ActionRuntimeModule,
     forwardRef(() => CyberAvatarModule),
     ReminderRuntimeModule,
+    SelfAgentModule,
     TypeOrmModule.forFeature([
       ConversationEntity,
       MessageEntity,

@@ -24,7 +24,7 @@
 
 ## 后端模块（`api/src/modules/`）
 
-`action-runtime` · `admin` · `ai` · `analytics` · `auth` · `characters` · `chat` · `cloud-runtime` · `config` · `cyber-avatar` · `events` · `feed` · `followup-runtime` · `games` · `inference` · `moderation` · `moments` · `narrative` · `need-discovery` · `official-accounts` · `real-world-sync` · `reminder-runtime` · `scheduler` · `social` · `system` · `world`
+`action-runtime` · `admin` · `ai` · `analytics` · `auth` · `characters` · `chat` · `cloud-runtime` · `config` · `cyber-avatar` · `events` · `feed` · `followup-runtime` · `games` · `inference` · `moderation` · `moments` · `narrative` · `need-discovery` · `official-accounts` · `real-world-sync` · `reminder-runtime` · `scheduler` · `self-agent` · `social` · `system` · `world`
 
 ## 主 App 结构（`apps/app/src/`）
 
@@ -98,7 +98,7 @@
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（57个，物理表保持兼容）
+## 数据库实体（58个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -129,6 +129,8 @@
 **主动跟进**：FollowupRun · FollowupOpenLoop · FollowupRecommendation
 
 **提醒运行时**：ReminderTask
+
+**主代理**：SelfAgentHeartbeatRun
 
 **赛博分身**：CyberAvatarProfile · CyberAvatarSignal · CyberAvatarRun · CyberAvatarRealWorldItem · CyberAvatarRealWorldBrief
 
@@ -318,6 +320,7 @@
 - `games-page.tsx`：AI 游戏工作台，查看目录、来源、审核状态，并直接编辑游戏资料与新建草稿
 - `need-discovery-page.tsx`：角色缺口识别与自动加友配置页，查看短期/每日 cadence 规则、候选和运行记录
 - `followup-runtime-page.tsx`：主动跟进配置页，查看 open loop、推荐记录、规则、Prompt 与“我自己”推荐链路结果
+- `self-agent-page.tsx`：主代理工作台，查看“我自己”的 workspace 文件、heartbeat 巡检结果、standing orders 与近期待处理事项
 - `reminder-runtime-page.tsx`：提醒运行时页，查看活跃提醒任务、最近触发 / 完成、聊天提醒出站记录与小盯朋友圈轻提醒记录，并直接配置提醒解析规则与消息预演
 - `cyber-avatar-page.tsx`：赛博分身工作台入口页，承接分身画像、真实世界回流、好友需求上游、信号与运行记录视图
 - `real-world-sync-page.tsx`：真实世界联动页，查看每日外部信号、active digest、scene patch、现实发圈锚点与全局规则
@@ -372,6 +375,13 @@
 - `GET /api/admin/followup-runtime/overview`
 - `GET /api/admin/followup-runtime/rules`
 - `PATCH /api/admin/followup-runtime/rules`
+
+## 管理后台主代理路由
+
+- `GET /api/admin/self-agent/overview`
+- `GET /api/admin/self-agent/workspace/:name`
+- `PATCH /api/admin/self-agent/workspace/:name`
+- `POST /api/admin/self-agent/heartbeat/run`
 
 ## 管理后台提醒运行时路由
 

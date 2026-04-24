@@ -39,6 +39,7 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
 import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
+import { SelfAgentModule } from '../self-agent/self-agent.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.modu
     RealWorldSyncModule,
     FollowupRuntimeModule,
     ReminderRuntimeModule,
+    SelfAgentModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CharacterEntity,
