@@ -104,8 +104,9 @@ function normalizeBoolean(value: unknown, fallback: boolean) {
 export function normalizeSelfAgentRules(
   input?: Partial<SelfAgentRulesValue> | null,
 ): SelfAgentRulesValue {
-  const policyInput = input?.policy ?? {};
-  const heartbeatInput = input?.heartbeat ?? {};
+  const policyInput: Partial<SelfAgentPolicyRulesValue> = input?.policy ?? {};
+  const heartbeatInput: Partial<SelfAgentHeartbeatRulesValue> =
+    input?.heartbeat ?? {};
 
   return {
     policy: {

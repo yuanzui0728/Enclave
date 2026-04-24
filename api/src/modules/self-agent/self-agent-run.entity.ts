@@ -29,16 +29,16 @@ export class SelfAgentRunEntity {
   @Column()
   policyDecision: SelfAgentRunPolicyDecisionValue;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   conversationId?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   sourceMessageId?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   ownerId?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   characterId?: string | null;
 
   @Column('text')
