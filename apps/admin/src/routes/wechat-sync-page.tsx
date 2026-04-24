@@ -2192,6 +2192,13 @@ export function WechatSyncPage() {
               {connectorHealthQuery.error.message}
             </InlineNotice>
           ) : null}
+          {connectorProbeRequested &&
+          connectorUpstreamServicesQuery.isError &&
+          connectorUpstreamServicesQuery.error instanceof Error ? (
+            <InlineNotice className="mt-4" tone="warning">
+              上游服务状态读取失败：{connectorUpstreamServicesQuery.error.message}
+            </InlineNotice>
+          ) : null}
           {scanMutation.isError && scanMutation.error instanceof Error ? (
             <ErrorBlock className="mt-4" message={scanMutation.error.message} />
           ) : null}
