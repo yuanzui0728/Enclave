@@ -887,6 +887,7 @@ export function GroupQrPage() {
     try {
       await navigator.clipboard.writeText(mobileLink);
       pushMobileHandoffRecord({
+        category: "group_invite",
         label: t(msg`${groupQuery.data?.name ?? fallbackGroupLabel} 邀请`),
         description: t(
           msg`把 ${groupQuery.data?.name ?? fallbackCurrentGroupLabel} 的邀请入口发到手机继续查看和转发。`,

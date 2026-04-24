@@ -4,17 +4,17 @@
   "scopes": {
     "apps/app/src": {
       "rules": {
-        "jsx-literal-prop": 1050,
-        "object-ui-string": 615,
-        "jsx-cjk-text": 59,
-        "toast-dialog-string": 2,
-        "setter-message-string": 76,
-        "literal-error-message": 73,
-        "intl-locale-literal": 9,
-        "locale-compare-literal": 6,
+        "jsx-literal-prop": 978,
+        "object-ui-string": 546,
+        "jsx-cjk-text": 51,
+        "toast-dialog-string": 1,
+        "setter-message-string": 73,
+        "literal-error-message": 72,
+        "intl-locale-literal": 7,
+        "locale-compare-literal": 5,
         "speech-lang-literal": 0,
         "prompt-locale-instruction": 0,
-        "raw-cjk-line": 6066
+        "raw-cjk-line": 5352
       }
     },
     "apps/admin/src": {

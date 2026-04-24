@@ -1,7 +1,9 @@
 import { useEffect } from "react";
+import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { getConversationMessages, getConversations } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
 import {
   buildMobileChatRouteHash,
@@ -17,15 +19,16 @@ export function ChatMessageSearchPage() {
     from: "/chat/$conversationId/search",
   });
   const isDesktopLayout = useDesktopLayout();
+  const t = translateRuntimeMessage;
 
   if (isDesktopLayout) {
     return (
       <DesktopChatRouteRedirectShell
         conversationId={conversationId}
         panel="history"
-        title="正在打开桌面聊天记录"
-        description="正在切换到桌面聊天工作区中的聊天记录搜索侧栏。"
-        loadingLabel="打开桌面聊天记录..."
+        title={t(msg`正在打开桌面聊天记录`)}
+        description={t(msg`正在切换到桌面聊天工作区中的聊天记录搜索侧栏。`)}
+        loadingLabel={t(msg`打开桌面聊天记录...`)}
       />
     );
   }
@@ -38,6 +41,7 @@ function MobileChatMessageSearchPage({
 }: {
   conversationId: string;
 }) {
+  const t = translateRuntimeMessage;
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const runtimeConfig = useAppRuntimeConfig();
@@ -67,7 +71,7 @@ function MobileChatMessageSearchPage({
 
   const conversation =
     conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
-  const conversationTitle = conversation?.title ?? "聊天记录";
+  const conversationTitle = conversation?.title ?? t(msg`聊天记录`);
 
   useEffect(() => {
     if (
@@ -107,9 +111,11 @@ function MobileChatMessageSearchPage({
           ? messagesQuery.error
           : null
       }
-      loadingLabel="正在读取聊天记录..."
-      emptyResultTitle="没有找到相关聊天记录"
-      emptyResultDescription="换个关键词试试，或者切到图片、文件、链接分类继续找。"
+      loadingLabel={t(msg`正在读取聊天记录...`)}
+      emptyResultTitle={t(msg`没有找到相关聊天记录`)}
+      emptyResultDescription={t(
+        msg`换个关键词试试，或者切到图片、文件、链接分类继续找。`,
+      )}
       onRetry={() => {
         void messagesQuery.refetch();
       }}

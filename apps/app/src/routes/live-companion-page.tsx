@@ -222,6 +222,7 @@ export function LiveCompanionPage() {
     try {
       await navigator.clipboard.writeText(link);
       pushMobileHandoffRecord({
+        category: "channel",
         description: input.description,
         label: input.label,
         path,
