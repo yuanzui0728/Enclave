@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import {
   type ConversationListItem,
   type FavoriteNoteAsset,
 } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button, ErrorBlock, LoadingBlock, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
@@ -44,6 +46,7 @@ export function DesktopNoteSendDialog({
   onClose,
   onSend,
 }: DesktopNoteSendDialogProps) {
+  const t = translateRuntimeMessage;
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -79,7 +82,7 @@ export function DesktopNoteSendDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-3 backdrop-blur-[3px] sm:p-4 lg:p-6">
       <button
         type="button"
-        aria-label="关闭发送笔记弹层"
+        aria-label={t(msg`关闭发送笔记弹层`)}
         onClick={() => {
           if (!pending) {
             onClose();
@@ -92,10 +95,10 @@ export function DesktopNoteSendDialog({
         <section className="flex w-[344px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
-              发送笔记
+              {t(msg`发送笔记`)}
             </div>
             <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
-              把这条收藏笔记发到最近会话。
+              {t(msg`把这条收藏笔记发到最近会话。`)}
             </div>
           </div>
 
@@ -108,10 +111,10 @@ export function DesktopNoteSendDialog({
           <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
             <div className="min-w-0">
               <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-                最近会话
+                {t(msg`最近会话`)}
               </div>
               <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
-                选择要接收笔记的聊天
+                {t(msg`选择要接收笔记的聊天`)}
               </div>
             </div>
             <button
@@ -119,7 +122,7 @@ export function DesktopNoteSendDialog({
               onClick={onClose}
               disabled={pending}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-              aria-label="关闭"
+              aria-label={t(msg`关闭`)}
             >
               <X size={16} />
             </button>
@@ -134,7 +137,7 @@ export function DesktopNoteSendDialog({
               <TextField
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="搜索最近会话"
+                placeholder={t(msg`搜索最近会话`)}
                 disabled={pending}
                 className="h-10 rounded-[10px] border-[color:var(--border-faint)] bg-white pl-10 shadow-none"
               />
@@ -142,12 +145,12 @@ export function DesktopNoteSendDialog({
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
-            {loading ? <LoadingBlock label="正在读取最近会话..." /> : null}
+            {loading ? <LoadingBlock label={t(msg`正在读取最近会话...`)} /> : null}
             {error ? <ErrorBlock message={error} /> : null}
             {!loading && !error && !conversations.length ? (
               <EmptyState
-                title="还没有可发送的最近会话"
-                description="先去消息列表里建立一些聊天线程，再回来发送笔记。"
+                title={t(msg`还没有可发送的最近会话`)}
+                description={t(msg`先去消息列表里建立一些聊天线程，再回来发送笔记。`)}
               />
             ) : null}
             {!loading &&
@@ -155,7 +158,7 @@ export function DesktopNoteSendDialog({
             conversations.length > 0 &&
             !filteredConversations.length ? (
               <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-4 py-5 text-sm text-[color:var(--text-secondary)]">
-                没有匹配的最近会话。
+                {t(msg`没有匹配的最近会话。`)}
               </div>
             ) : null}
 
@@ -189,13 +192,14 @@ export function DesktopNoteSendDialog({
                           {conversation.title}
                         </div>
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          {getConversationThreadLabel(conversation)} · 最近活跃{" "}
+                          {getConversationThreadLabel(conversation)} ·{" "}
+                          {t(msg`最近活跃`)}{" "}
                           {formatMessageTimestamp(conversation.lastActivityAt)}
                         </div>
                       </div>
                     </div>
                     <span className="shrink-0 rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-xs text-[color:var(--text-secondary)]">
-                      {pending ? "发送中" : "发送"}
+                      {pending ? t(msg`发送中`) : t(msg`发送`)}
                     </span>
                   </button>
                 );
@@ -204,7 +208,7 @@ export function DesktopNoteSendDialog({
           </div>
 
           <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 text-[12px] text-[color:var(--text-muted)] backdrop-blur-xl">
-            <div>发送后会在目标会话里显示成一张可打开的笔记卡片。</div>
+            <div>{t(msg`发送后会在目标会话里显示成一张可打开的笔记卡片。`)}</div>
             <Button
               type="button"
               variant="secondary"
@@ -212,7 +216,7 @@ export function DesktopNoteSendDialog({
               disabled={pending}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
-              取消
+              {t(msg`取消`)}
             </Button>
           </div>
         </section>
@@ -222,6 +226,7 @@ export function DesktopNoteSendDialog({
 }
 
 function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
+  const t = translateRuntimeMessage;
   const previewImage = note.assets.find((asset) => asset.kind === "image");
   const fileCount = note.assets.filter((asset) => asset.kind === "file").length;
   const imageCount = note.assets.filter(
@@ -241,7 +246,7 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
       ) : (
         <div className="flex h-[184px] items-end bg-[linear-gradient(160deg,#f3f6f5_0%,#dde6e3_100%)] px-5 py-5">
           <div className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/88 px-4 py-3 text-[11px] tracking-[0.16em] text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
-            收藏笔记
+            {t(msg`收藏笔记`)}
           </div>
         </div>
       )}
@@ -252,12 +257,12 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
             {note.title}
           </div>
           <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
-            更新于 {formatMessageTimestamp(note.updatedAt)}
+            {t(msg`更新于 ${formatMessageTimestamp(note.updatedAt)}`)}
           </div>
         </div>
 
         <div className="line-clamp-5 text-[13px] leading-7 text-[color:var(--text-secondary)]">
-          {note.excerpt || "这条笔记还没有正文摘要。"}
+          {note.excerpt || t(msg`这条笔记还没有正文摘要。`)}
         </div>
 
         {note.tags.length ? (
@@ -274,9 +279,9 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
         ) : null}
 
         <div className="flex items-center gap-2 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-          {imageCount ? <span>{imageCount} 张图片</span> : null}
-          {fileCount ? <span>{fileCount} 个文件</span> : null}
-          {!imageCount && !fileCount ? <span>纯文本笔记</span> : null}
+          {imageCount ? <span>{t(msg`${imageCount} 张图片`)}</span> : null}
+          {fileCount ? <span>{t(msg`${fileCount} 个文件`)}</span> : null}
+          {!imageCount && !fileCount ? <span>{t(msg`纯文本笔记`)}</span> : null}
         </div>
       </div>
     </div>

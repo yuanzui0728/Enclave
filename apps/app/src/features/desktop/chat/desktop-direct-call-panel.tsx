@@ -6,6 +6,7 @@ import {
   type RefObject,
   type ReactNode,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import {
   Camera,
@@ -27,6 +28,7 @@ import {
   getSystemStatus,
   type VoiceCallTurnResult,
 } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { resolveDigitalHumanGatewayStatusCopy } from "../../chat/digital-human-gateway-copy";
 import { DigitalHumanPlayer } from "../../chat/digital-human-player";
@@ -58,6 +60,7 @@ export function DesktopDirectCallPanel({
   onSessionConnected,
   onEndCall,
 }: DesktopDirectCallPanelProps) {
+  const t = translateRuntimeMessage;
   const runtimeConfig = useAppRuntimeConfig();
   const [micMuted, setMicMuted] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(kind === "video");
@@ -634,12 +637,12 @@ export function DesktopDirectCallPanel({
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              {isVideoMode ? "本轮字幕与侧控" : "本轮摘要"}
+              {isVideoMode ? t(msg`本轮字幕与侧控`) : t(msg`本轮摘要`)}
             </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
               {isVideoMode
-                ? "数字人播报文案、本地预览和本轮文本都会同步保存在当前聊天里。"
-                : "本轮用户转写和 AI 文本回复会同步保存在当前聊天里。"}
+                ? t(msg`数字人播报文案、本地预览和本轮文本都会同步保存在当前聊天里。`)
+                : t(msg`本轮语音消息、可用字幕和 AI 回复都会同步保存在当前聊天里。`)}
             </div>
           </div>
           <div
@@ -651,8 +654,8 @@ export function DesktopDirectCallPanel({
             )}
           >
             {activeCall.playbackState === "playing"
-              ? "AI 正在播报"
-              : "等待下一轮"}
+              ? t(msg`AI 正在播报`)
+              : t(msg`等待下一轮`)}
           </div>
         </div>
 
@@ -669,11 +672,11 @@ export function DesktopDirectCallPanel({
             label="我"
             text={
               activeCall.turnMutation.isPending
-                ? speech.displayText || "本轮语音已发出，正在整理..."
-                : latestTurn?.userTranscript ||
+                ? speech.displayText || t(msg`本轮语音已发出，正在整理...`)
+                : resolveLatestTurnTranscript(latestTurn) ||
                   (isVideoMode
-                    ? "按住下方按钮说话，远端数字人舞台会在这一轮回复时自动播报。"
-                    : "按住左侧按钮说话，系统会先转成文字，再交给 AI 回复。")
+                    ? t(msg`按住下方按钮说话，远端数字人舞台会在这一轮回复时自动播报。`)
+                    : t(msg`按住左侧按钮说话，AI 会优先直接理解录音；若转写可用，会补显示字幕。`))
             }
             own
           />
@@ -893,6 +896,29 @@ function TranscriptCard({
       </div>
     </section>
   );
+}
+
+function resolveLatestTurnTranscript(turn: VoiceCallTurnResult | null) {
+  const t = translateRuntimeMessage;
+
+  if (!turn) {
+    return "";
+  }
+
+  const transcript = turn.userTranscript?.trim();
+  if (transcript) {
+    return transcript;
+  }
+
+  switch (turn.transcriptStatus) {
+    case "pending":
+      return t(msg`本轮语音已发出，字幕补跑中，AI 已按原始录音完成理解。`);
+    case "failed":
+      return t(msg`本轮语音已发出，字幕生成失败，AI 已按原始录音完成理解。`);
+    case "skipped":
+    default:
+      return t(msg`本轮语音已发出，AI 已按原始录音完成理解。`);
+  }
 }
 
 function formatDurationLabel(durationMs: number) {

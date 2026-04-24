@@ -12,11 +12,51 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1379
+msgid " {speechProviderSummary}。"
+msgstr " {speechProviderSummary}."
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1358
+msgid " 当前链路：{speechProviderSummary}。"
+msgstr " Current route: {speechProviderSummary}."
+
 #. placeholder {0}: normalizedDraft.length
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:129
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:150
 msgid "{0} 字"
 msgstr "{0} chars"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:283
+msgid "{fileCount} 个文件"
+msgstr "{fileCount} files"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:282
+msgid "{imageCount} 张图片"
+msgstr "{imageCount} images"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:657
+msgid "AI 正在播报"
+msgstr "AI is speaking"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:232
+msgid "不可用"
+msgstr "Unavailable"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:217
+msgid "世界主人不会出现在移除列表里。"
+msgstr "The world owner will not appear in the removal list."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:208
+msgid "从左侧勾选群成员后，就可以一次性把他们移出当前群聊。"
+msgstr "Select group members on the left to remove them from the current group chat in one batch."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:282
+msgid "从左侧勾选联系人后，就可以一次性把他们加入当前群聊。"
+msgstr "Select contacts on the left to add them to the current group chat in one batch."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:117
+msgid "从通讯录里选择要加入“{groupName}”的角色。"
+msgstr "Choose contacts from your list to add to “{groupName}”."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:155
 msgid "侧栏面板"
@@ -26,6 +66,14 @@ msgstr "Side panel"
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:75
 msgid "保存"
 msgstr "Save"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:153
+msgid "先去消息列表里建立一些聊天线程，再回来发送笔记。"
+msgstr "Create a few chat threads in the message list first, then come back to send the note."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:155
+msgid "先去通讯录建立一些关系，再回来把他们拉进群。"
+msgstr "Build a few relationships in contacts first, then come back to add them to the group."
 
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:79
 msgid "先回到群聊继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
@@ -45,14 +93,29 @@ msgstr "Go back to the chat first. Using hold-to-talk voice messages is closer t
 
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:111
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:118
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:229
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:166
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:125
 msgid "关闭"
 msgstr "Close"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:91
+msgid "关闭会话菜单"
+msgstr "Close conversation menu"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:81
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:100
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:119
 msgid "关闭侧栏"
 msgstr "Close side panel"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:119
+msgid "关闭免打扰"
+msgstr "Turn off mute"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:85
+msgid "关闭发送笔记弹层"
+msgstr "Close send note dialog"
 
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:69
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:76
@@ -63,6 +126,14 @@ msgstr "Close dialog"
 msgid "关闭操作菜单"
 msgstr "Close action menu"
 
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:101
+msgid "关闭添加群成员弹层"
+msgstr "Close add members dialog"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:81
+msgid "关闭移除群成员弹层"
+msgstr "Close remove members dialog"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
 msgid "内容不能为空"
 msgstr "Content cannot be empty"
@@ -71,9 +142,37 @@ msgstr "Content cannot be empty"
 msgid "最多支持 9 张图片一起发送，可逐张移除。"
 msgstr "You can send up to 9 images at once and remove them one by one."
 
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1384
+msgid "最近一轮："
+msgstr "Latest turn:"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:114
+msgid "最近会话"
+msgstr "Recent conversations"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:196
+msgid "最近活跃"
+msgstr "Recently active"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:310
+msgid "加入群聊"
+msgstr "Add to group"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:251
+msgid "原生音频理解"
+msgstr "Native audio understanding"
+
 #: apps/app/src/components/inline-notice-action-button.tsx:24
 msgid "去设置"
 msgstr "Go to settings"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:202
+msgid "发送"
+msgstr "Send"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:202
+msgid "发送中"
+msgstr "Sending"
 
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:109
 msgid "发送中..."
@@ -83,6 +182,10 @@ msgstr "Sending..."
 msgid "发送前确认一下文件内容。"
 msgstr "Confirm the file content before sending."
 
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:211
+msgid "发送后会在目标会话里显示成一张可打开的笔记卡片。"
+msgstr "After sending, the target conversation will show an openable note card."
+
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:111
 msgid "发送图片"
 msgstr "Send images"
@@ -91,20 +194,56 @@ msgstr "Send images"
 msgid "发送文件"
 msgstr "Send file"
 
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:98
+msgid "发送笔记"
+msgstr "Send note"
+
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:99
 #: apps/app/src/features/chat-details/mobile-details-action-sheet.tsx:91
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:140
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:161
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:301
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:227
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:219
 msgid "取消"
 msgstr "Cancel"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:113
+msgid "取消置顶"
+msgstr "Unpin"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:148
 msgid "可留空保存"
 msgstr "Can be saved empty"
 
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:279
+msgid "右侧会显示待加入成员"
+msgstr "Selected members to add will appear on the right"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:205
+msgid "右侧会显示待移除成员"
+msgstr "Selected members to remove will appear on the right"
+
 #: apps/app/src/components/bootstrap-screen.tsx:49
 msgid "同步世界主人"
 msgstr "Sync world owner"
+
+#. placeholder {0}: speechStatus.activeProvider ?? unconfiguredLabel
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:248
+msgid "回复 {0}"
+msgstr "Reply {0}"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:104
+msgid "在独立窗口打开"
+msgstr "Open in separate window"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1723
+msgid "字幕失败"
+msgstr "Caption failed"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1721
+msgid "字幕补跑中"
+msgstr "Caption backfill in progress"
 
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:42
 msgid "实时通话"
@@ -114,6 +253,14 @@ msgstr "Real-time calls"
 msgid "将按顺序逐张发送图片。"
 msgstr "Images will be sent one by one in order."
 
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:226
+msgid "已关闭"
+msgstr "Closed"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:291
+msgid "已在群里的成员不会重复出现。"
+msgstr "Members already in the group will not appear again."
+
 #: apps/app/src/features/chat/use-speech-input.ts:708
 msgid "已录制"
 msgstr "Recorded"
@@ -122,6 +269,29 @@ msgstr "Recorded"
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:68
 msgid "已选 {0} 张图片"
 msgstr "{0} images selected"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:214
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:151
+msgid "已选成员"
+msgstr "Selected members"
+
+#. placeholder {0}: selectedIds.length
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:154
+msgid "已选择 {0} 位群成员"
+msgstr "{0} group members selected"
+
+#. placeholder {0}: selectedIds.length
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:217
+msgid "已选择 {0} 位联系人"
+msgstr "{0} contacts selected"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:245
+msgid "已配置"
+msgstr "Configured"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:119
+msgid "当前没有可移除的成员"
+msgstr "There are no removable members right now"
 
 #: apps/app/src/features/chat/use-speech-input.ts:754
 msgid "当前浏览器不支持录音转写。"
@@ -147,9 +317,65 @@ msgstr "This device doesn't support voice sending."
 msgid "当前设备无法采集麦克风音频。"
 msgstr "This device can't capture microphone audio."
 
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1377
+msgid "当前语音链路："
+msgstr "Current voice route:"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:235
+msgid "待开启"
+msgstr "Not enabled"
+
+#. placeholder {0}: formatCallLatency(turn.totalDurationMs)
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1729
+msgid "总耗时 {0}"
+msgstr "Total {0}"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:101
+msgid "把这条收藏笔记发到最近会话。"
+msgstr "Send this favorite note to a recent conversation."
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:678
+msgid "按住下方按钮说话，远端数字人舞台会在这一轮回复时自动播报。"
+msgstr "Hold the button below to speak. The remote digital-human stage will auto-play the reply for this turn."
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:679
+msgid "按住左侧按钮说话，AI 会优先直接理解录音；若转写可用，会补显示字幕。"
+msgstr "Hold the button on the left to speak. AI will prioritize direct audio understanding; if transcription is available, captions will be added."
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:140
+msgid "搜索最近会话"
+msgstr "Search recent conversations"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:109
+msgid "搜索群成员"
+msgstr "Search group members"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:129
+msgid "搜索联系人"
+msgstr "Search contacts"
+
+#. placeholder {0}: formatCallLatency(turn.synthesisDurationMs)
+#. placeholder {0}: speechStatus.activeTtsProvider ?? unconfiguredLabel
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:249
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1728
+msgid "播报 {0}"
+msgstr "Audio {0}"
+
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:128
 msgid "支持留空保存"
 msgstr "Empty value can be saved"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:249
+msgid "收藏笔记"
+msgstr "Favorite note"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1369
+msgid "收起链路详情"
+msgstr "Hide pipeline details"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:644
+msgid "数字人播报文案、本地预览和本轮文本都会同步保存在当前聊天里。"
+msgstr "The digital-human speech copy, local preview, and this turn's text will all be saved to the current chat."
 
 #: apps/app/src/features/chat/use-speech-input.ts:765
 msgid "无法启动录音，请检查应用麦克风权限。"
@@ -159,10 +385,76 @@ msgstr "Couldn't start recording. Check the app's microphone permission."
 msgid "无法启动录音，请检查浏览器麦克风权限。"
 msgstr "Couldn't start recording. Check the browser's microphone permission."
 
+#. placeholder {0}: character.name
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:175
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:245
+msgid "昵称：{0}"
+msgstr "Nickname: {0}"
+
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:37
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:38
 msgid "暂未开放"
 msgstr "Not available yet"
+
+#. placeholder {0}: formatMessageTimestamp(note.updatedAt)
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:260
+msgid "更新于 {0}"
+msgstr "Updated {0}"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:234
+msgid "未就绪"
+msgstr "Not ready"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1725
+msgid "未转写"
+msgstr "Not transcribed"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:244
+msgid "未配置"
+msgstr "Unconfigured"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:237
+msgid "本地摄像头已关闭"
+msgstr "Local camera is off"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:640
+msgid "本轮字幕与侧控"
+msgstr "Captions and controls"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:640
+msgid "本轮摘要"
+msgstr "Turn summary"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1753
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:920
+msgid "本轮语音已发出，AI 已按原始录音完成理解。"
+msgstr "This voice turn has been sent. AI has completed understanding from the original recording."
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1750
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:917
+msgid "本轮语音已发出，字幕生成失败，AI 已按原始录音完成理解。"
+msgstr "This voice turn has been sent. Caption generation failed, but AI has completed understanding from the original recording."
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1748
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:915
+msgid "本轮语音已发出，字幕补跑中，AI 已按原始录音完成理解。"
+msgstr "This voice turn has been sent. Caption backfill is still running, and AI has completed understanding from the original recording."
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:675
+msgid "本轮语音已发出，正在整理..."
+msgstr "This voice turn has been sent. Processing..."
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:645
+msgid "本轮语音消息、可用字幕和 AI 回复都会同步保存在当前聊天里。"
+msgstr "This voice message, available captions, and the AI reply will all be saved to the current chat."
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:126
+msgid "标为已读"
+msgstr "Mark as read"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:134
+msgid "标为未读"
+msgstr "Mark as unread"
 
 #: apps/app/src/components/bootstrap-screen.tsx:27
 msgid "欢迎回到你的世界"
@@ -177,6 +469,34 @@ msgstr "Saving..."
 msgid "正在整理这次进入世界的路径，马上带你回到上次停留的地方。"
 msgstr "We're restoring the path back into your world and will return you to where you last left off."
 
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:310
+msgid "正在添加..."
+msgstr "Adding..."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:236
+msgid "正在移除..."
+msgstr "Removing..."
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:148
+msgid "正在读取最近会话..."
+msgstr "Loading recent conversations..."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:139
+msgid "正在读取联系人..."
+msgstr "Loading contacts..."
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:161
+msgid "没有匹配的最近会话。"
+msgstr "No matching recent conversations."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:127
+msgid "没有匹配的群成员。"
+msgstr "No matching group members."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:166
+msgid "没有可添加的联系人，或者他们已经都在群里了。"
+msgstr "There are no contacts to add, or they are already all in the group."
+
 #: apps/app/src/features/chat/use-speech-input.ts:188
 msgid "没有听到有效语音，请再说一遍。"
 msgstr "No valid speech was detected. Please say it again."
@@ -188,6 +508,26 @@ msgstr "No valid audio was recorded. Please try again."
 #: apps/app/src/features/chat/use-speech-input.ts:201
 msgid "浏览器语音识别网络异常，已可改用录音转写。"
 msgstr "Browser speech recognition hit a network error. You can switch to recorded transcription."
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:119
+msgid "消息免打扰"
+msgstr "Mute notifications"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:114
+msgid "添加群成员"
+msgstr "Add group members"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:152
+msgid "清空聊天记录"
+msgstr "Clear chat history"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:242
+msgid "点下方按钮可重新接通本地画面"
+msgstr "Tap the button below to reconnect the local preview"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:239
+msgid "申请摄像头权限中"
+msgstr "Requesting camera permission"
 
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:98
 msgid "知道了"
@@ -205,14 +545,44 @@ msgstr "Video call"
 msgid "视频通话暂未开放"
 msgstr "Video calls are not available yet"
 
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:236
+msgid "移出群聊"
+msgstr "Remove from group"
+
 #. placeholder {0}: item.fileName
+#. placeholder {0}: member.name
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:52
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:194
 msgid "移除 {0}"
 msgstr "Remove {0}"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:267
+msgid "移除 {displayName}"
+msgstr "Remove {displayName}"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:94
+msgid "移除群成员"
+msgstr "Remove group members"
+
+#: apps/app/src/components/empty-state.tsx:20
+msgid "空"
+msgstr "Empty"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:658
+msgid "等待下一轮"
+msgstr "Waiting for next turn"
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:284
+msgid "纯文本笔记"
+msgstr "Text-only note"
 
 #: apps/app/src/components/bootstrap-screen.tsx:57
 msgid "继续开启对话"
 msgstr "Resume the conversation"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:113
+msgid "置顶聊天"
+msgstr "Pin chat"
 
 #: apps/app/src/features/chat/chat-call-fallback-notice.tsx:45
 msgid "群视频通话暂未开放"
@@ -254,6 +624,21 @@ msgstr "Voice call"
 msgid "语音通话暂未开放"
 msgstr "Voice calls are not available yet"
 
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:230
+msgid "请求中"
+msgstr "Requesting"
+
+#. placeholder {0}: formatCallLatency(turn.transcriptionDurationMs)
+#. placeholder {0}: speechStatus.activeTranscriptionProvider ?? configuredLabel
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:254
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1718
+msgid "转写 {0}"
+msgstr "Transcription {0}"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:256
+msgid "转写未配置"
+msgstr "Transcription not configured"
+
 #: apps/app/src/features/chat-details/chat-details-shell.tsx:45
 msgid "返回"
 msgstr "Back"
@@ -278,6 +663,18 @@ msgstr "Back to chat and send voice"
 msgid "返回聊天拍摄"
 msgstr "Back to chat and take a photo"
 
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:152
+msgid "还没有可发送的最近会话"
+msgstr "There are no recent conversations available for sending yet"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:120
+msgid "这个群目前没有可移除的角色成员。"
+msgstr "There are currently no removable character members in this group."
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:265
+msgid "这条笔记还没有正文摘要。"
+msgstr "This note does not have a content summary yet."
+
 #: apps/app/src/features/chat/use-speech-input.ts:496
 #: apps/app/src/features/chat/use-speech-input.ts:512
 msgid "这段录音太长了，请缩短单次语音输入时长。"
@@ -290,6 +687,30 @@ msgstr "No valid text was recognized from this audio. Please try again."
 #: apps/app/src/components/bootstrap-screen.tsx:30
 msgid "这里不是一串账号信息，而是一整片会继续生长、继续回应你的个人世界。"
 msgstr "This isn't just a bundle of account data, but a personal world that keeps growing and responding to you."
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:97
+msgid "选择要从“{groupName}”中移除的角色成员。"
+msgstr "Choose the members to remove from “{groupName}”."
+
+#: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:117
+msgid "选择要接收笔记的聊天"
+msgstr "Choose the chat to receive the note"
+
+#: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:154
+msgid "通讯录里还没有可选成员"
+msgstr "There are no selectable contacts yet"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1369
+msgid "链路详情"
+msgstr "Pipeline details"
+
+#: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:145
+msgid "隐藏聊天"
+msgstr "Hide chat"
+
+#: apps/app/src/features/chat/mobile-ai-call-screen.tsx:228
+msgid "预览中"
+msgstr "Previewing"
 
 #: apps/app/src/features/chat/use-speech-input.ts:759
 msgid "麦克风权限被拒绝，请先允许应用访问麦克风。"

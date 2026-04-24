@@ -8,13 +8,16 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   getCharacter,
   getConversations,
   getSystemStatus,
+  type VoiceCallTurnResult,
 } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   AppPage,
   Button,
@@ -63,6 +66,7 @@ type MobileAiCallScreenProps = {
 };
 
 export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
+  const t = translateRuntimeMessage;
   const { conversationId } = useParams({
     strict: false,
   }) as {
@@ -208,9 +212,8 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const activeCall = isVideoMode ? digitalHumanCall : voiceCall;
   const speech = activeCall.speech;
   const digitalSession = isVideoMode ? digitalHumanCall.session : null;
-  const lastUserTranscript = isVideoMode
-    ? digitalHumanCall.lastTurn?.userTranscript
-    : voiceCall.lastTurn?.userTranscript;
+  const lastTurn = isVideoMode ? digitalHumanCall.lastTurn : voiceCall.lastTurn;
+  const lastUserTranscript = resolveLatestTurnTranscript(lastTurn);
   const lastAssistantText = isVideoMode
     ? digitalHumanCall.lastTurn?.assistantText
     : voiceCall.lastTurn?.assistantText;
@@ -220,37 +223,40 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     digitalHumanGateway,
   );
   const cameraPreviewMetaLabel = !cameraEnabled
-    ? "已关闭"
+    ? t(msg`已关闭`)
     : cameraPreview.status === "ready"
-      ? "预览中"
+      ? t(msg`预览中`)
       : cameraPreview.status === "requesting-permission"
-        ? "请求中"
+        ? t(msg`请求中`)
         : cameraPreview.status === "unsupported"
-          ? "不可用"
+          ? t(msg`不可用`)
           : cameraPreview.error
-            ? "未就绪"
-            : "待开启";
+            ? t(msg`未就绪`)
+            : t(msg`待开启`);
   const cameraPreviewMessage = !cameraEnabled
-    ? "本地摄像头已关闭"
+    ? t(msg`本地摄像头已关闭`)
     : cameraPreview.status === "requesting-permission"
-      ? "申请摄像头权限中"
+      ? t(msg`申请摄像头权限中`)
       : cameraPreview.error
         ? cameraPreview.error
-        : "点下方按钮可重新接通本地画面";
-  const latencySummary = activeCall.lastTurn
-    ? `转写 ${formatCallLatency(activeCall.lastTurn.transcriptionDurationMs)} · 播报 ${formatCallLatency(activeCall.lastTurn.synthesisDurationMs)} · 总耗时 ${formatCallLatency(activeCall.lastTurn.totalDurationMs)}`
-    : null;
+        : t(msg`点下方按钮可重新接通本地画面`);
+  const latencySummary = lastTurn ? buildCallLatencySummary(lastTurn) : null;
+  const unconfiguredLabel = t(msg`未配置`);
+  const configuredLabel = t(msg`已配置`);
   const speechProviderSummary = speechStatus
     ? [
-        `回复 ${speechStatus.activeProvider ?? "未配置"}`,
-        `转写 ${speechStatus.activeTranscriptionProvider ?? "未配置"}`,
-        `播报 ${speechStatus.activeTtsProvider ?? "未配置"}`,
-        speechStatus.transcriptionMode === "dedicated"
-          ? "独立网关"
-          : "转写未配置",
+        t(msg`回复 ${speechStatus.activeProvider ?? unconfiguredLabel}`),
+        t(msg`播报 ${speechStatus.activeTtsProvider ?? unconfiguredLabel}`),
+        speechStatus.audioInputReady
+          ? t(msg`原生音频理解`)
+          : speechStatus.transcriptionMode === "dedicated"
+            ? t(
+                msg`转写 ${speechStatus.activeTranscriptionProvider ?? configuredLabel}`,
+              )
+            : t(msg`转写未配置`),
       ].join(" · ")
     : null;
-  const showSpeechWarning = Boolean(speechStatus && !speechStatus.speechReady);
+  const showSpeechWarning = Boolean(speechStatus && !speechStatus.voiceCallReady);
   const showDiagnosticsToggle =
     !showSpeechWarning && Boolean(latencySummary || diagnosticsExpanded);
   const showPermissionPrimer =
@@ -1347,8 +1353,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         <div className="mt-3.5 space-y-2.5">
           {showSpeechWarning && speechStatus ? (
             <MobileCallNotice tone="warning">
-              {speechStatus.speechMessage}
-              {speechProviderSummary ? ` 当前链路：${speechProviderSummary}。` : ""}
+              {speechStatus.voiceCallMessage ?? speechStatus.speechMessage}
+              {speechProviderSummary
+                ? t(msg` 当前链路：${speechProviderSummary}。`)
+                : ""}
             </MobileCallNotice>
           ) : null}
           {showDiagnosticsToggle ? (
@@ -1358,7 +1366,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 onClick={() => setDiagnosticsExpanded((current) => !current)}
                 className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] tracking-[0.04em] text-white/62 transition active:bg-white/12 active:text-white/78"
               >
-                {diagnosticsExpanded ? "收起链路详情" : "链路详情"}
+                {diagnosticsExpanded ? t(msg`收起链路详情`) : t(msg`链路详情`)}
               </button>
             </div>
           ) : null}
@@ -1366,14 +1374,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <MobileCallNotice tone="info" className="space-y-1.5">
               {speechStatus ? (
                 <div>
-                  <span className="text-white/48">当前语音链路：</span>
-                  {speechStatus.speechMessage}
-                  {speechProviderSummary ? ` ${speechProviderSummary}。` : ""}
+                  <span className="text-white/48">{t(msg`当前语音链路：`)}</span>
+                  {speechStatus.voiceCallMessage ?? speechStatus.speechMessage}
+                  {speechProviderSummary ? t(msg` ${speechProviderSummary}。`) : ""}
                 </div>
               ) : null}
               {latencySummary ? (
                 <div>
-                  <span className="text-white/48">最近一轮：</span>
+                  <span className="text-white/48">{t(msg`最近一轮：`)}</span>
                   {latencySummary}
                 </div>
               ) : null}
@@ -1699,6 +1707,51 @@ function formatCallLatency(durationMs: number) {
   }
 
   return `${(durationMs / 1000).toFixed(1)}s`;
+}
+
+function buildCallLatencySummary(turn: VoiceCallTurnResult) {
+  const t = translateRuntimeMessage;
+  const segments: string[] = [];
+
+  if (typeof turn.transcriptionDurationMs === "number") {
+    segments.push(
+      t(msg`转写 ${formatCallLatency(turn.transcriptionDurationMs)}`),
+    );
+  } else if (turn.transcriptStatus === "pending") {
+    segments.push(t(msg`字幕补跑中`));
+  } else if (turn.transcriptStatus === "failed") {
+    segments.push(t(msg`字幕失败`));
+  } else if (turn.transcriptStatus === "skipped") {
+    segments.push(t(msg`未转写`));
+  }
+
+  segments.push(t(msg`播报 ${formatCallLatency(turn.synthesisDurationMs)}`));
+  segments.push(t(msg`总耗时 ${formatCallLatency(turn.totalDurationMs)}`));
+
+  return segments.join(" · ");
+}
+
+function resolveLatestTurnTranscript(turn: VoiceCallTurnResult | null) {
+  const t = translateRuntimeMessage;
+
+  if (!turn) {
+    return "";
+  }
+
+  const transcript = turn.userTranscript?.trim();
+  if (transcript) {
+    return transcript;
+  }
+
+  switch (turn.transcriptStatus) {
+    case "pending":
+      return t(msg`本轮语音已发出，字幕补跑中，AI 已按原始录音完成理解。`);
+    case "failed":
+      return t(msg`本轮语音已发出，字幕生成失败，AI 已按原始录音完成理解。`);
+    case "skipped":
+    default:
+      return t(msg`本轮语音已发出，AI 已按原始录音完成理解。`);
+  }
 }
 
 function MobileCallStatusCard({

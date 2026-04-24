@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { msg } from "@lingui/macro";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { AppSection } from "@yinjie/ui";
 
 export function EmptyState({
@@ -10,10 +12,12 @@ export function EmptyState({
   description: ReactNode;
   action?: ReactNode;
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <AppSection className="rounded-[16px] border-[color:var(--border-faint)] bg-[color:var(--surface-section)] px-6 py-9 text-center shadow-none">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[16px] border border-[color:var(--border-faint)] bg-[rgba(7,193,96,0.06)] text-[11px] font-semibold uppercase tracking-[0.18em] text-[#15803d]">
-        空
+        {t(msg`空`)}
       </div>
       <div className="mt-5 text-lg font-medium text-[color:var(--text-primary)]">
         {title}

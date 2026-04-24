@@ -38,6 +38,7 @@ import {
   type MessageSearchQuery,
   type MessageSearchResponse,
 } from './message-search.utils';
+import { buildVoiceAttachmentSummary } from './voice-attachment-summary';
 import {
   ContactCardAttachment,
   Conversation,
@@ -1990,11 +1991,11 @@ export class ChatService {
           ? `，时长：${formatAttachmentDuration(attachment.durationMs)}`
           : '';
       const captionText = caption ? `，补充说明：${caption}` : '';
-      const transcriptText = attachment.transcriptText?.trim();
-      const transcription = transcriptText
-        ? `，转写内容：${transcriptText}`
-        : '';
-      return `发来一条语音消息${durationText}${captionText}${transcription}`.trim();
+      return buildVoiceAttachmentSummary({
+        durationText,
+        captionText,
+        transcriptText: attachment.transcriptText,
+      });
     }
 
     if (attachment.kind === 'contact_card') {

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
@@ -28,6 +30,7 @@ export function DesktopGroupMemberRemovalPicker({
   onClose,
   onConfirm,
 }: DesktopGroupMemberRemovalPickerProps) {
+  const t = translateRuntimeMessage;
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -75,7 +78,7 @@ export function DesktopGroupMemberRemovalPicker({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
-        aria-label="关闭移除群成员弹层"
+        aria-label={t(msg`关闭移除群成员弹层`)}
         onClick={() => {
           if (!pending) {
             onClose();
@@ -88,10 +91,10 @@ export function DesktopGroupMemberRemovalPicker({
         <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
-              移除群成员
+              {t(msg`移除群成员`)}
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-              {`选择要从“${groupName}”中移除的角色成员。`}
+              {t(msg`选择要从“${groupName}”中移除的角色成员。`)}
             </div>
 
             <label className="relative mt-4 block">
@@ -103,7 +106,7 @@ export function DesktopGroupMemberRemovalPicker({
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="搜索群成员"
+                placeholder={t(msg`搜索群成员`)}
                 className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
               />
             </label>
@@ -113,15 +116,15 @@ export function DesktopGroupMemberRemovalPicker({
             {!removableMembers.length ? (
               <div className="px-2 py-8">
                 <EmptyState
-                  title="当前没有可移除的成员"
-                  description="这个群目前没有可移除的角色成员。"
+                  title={t(msg`当前没有可移除的成员`)}
+                  description={t(msg`这个群目前没有可移除的角色成员。`)}
                 />
               </div>
             ) : null}
 
             {removableMembers.length > 0 && !filteredMembers.length ? (
               <div className="px-5 py-10 text-center text-sm leading-6 text-[color:var(--text-muted)]">
-                没有匹配的群成员。
+                {t(msg`没有匹配的群成员。`)}
               </div>
             ) : null}
 
@@ -145,10 +148,10 @@ export function DesktopGroupMemberRemovalPicker({
           <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
             <div>
               <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-                已选成员
+                {t(msg`已选成员`)}
               </div>
               <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
-                已选择 {selectedIds.length} 位群成员
+                {t(msg`已选择 ${selectedIds.length} 位群成员`)}
               </div>
             </div>
             <button
@@ -160,7 +163,7 @@ export function DesktopGroupMemberRemovalPicker({
               }}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={pending}
-              aria-label="关闭"
+              aria-label={t(msg`关闭`)}
             >
               <X size={16} />
             </button>
@@ -188,7 +191,7 @@ export function DesktopGroupMemberRemovalPicker({
                       onClick={() => toggleSelection(member.id)}
                       disabled={pending}
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label={`移除 ${member.name}`}
+                      aria-label={t(msg`移除 ${member.name}`)}
                     >
                       <X size={14} />
                     </button>
@@ -199,10 +202,10 @@ export function DesktopGroupMemberRemovalPicker({
               <div className="flex h-full items-center justify-center px-8">
                 <div className="max-w-[320px] rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-6 py-8 text-center">
                   <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
-                    右侧会显示待移除成员
+                    {t(msg`右侧会显示待移除成员`)}
                   </div>
                   <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
-                    从左侧勾选群成员后，就可以一次性把他们移出当前群聊。
+                    {t(msg`从左侧勾选群成员后，就可以一次性把他们移出当前群聊。`)}
                   </div>
                 </div>
               </div>
@@ -211,7 +214,7 @@ export function DesktopGroupMemberRemovalPicker({
 
           <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
             <div className="text-[12px] text-[color:var(--text-muted)]">
-              世界主人不会出现在移除列表里。
+              {t(msg`世界主人不会出现在移除列表里。`)}
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -221,7 +224,7 @@ export function DesktopGroupMemberRemovalPicker({
                 disabled={pending}
                 className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
               >
-                取消
+                {t(msg`取消`)}
               </Button>
               <Button
                 type="button"
@@ -230,7 +233,7 @@ export function DesktopGroupMemberRemovalPicker({
                 disabled={!selectedIds.length || pending}
                 className="rounded-[10px] bg-[#e14c45] px-6 text-white hover:bg-[#cf433d]"
               >
-                {pending ? "正在移除..." : "移出群聊"}
+                {pending ? t(msg`正在移除...`) : t(msg`移出群聊`)}
               </Button>
             </div>
           </div>

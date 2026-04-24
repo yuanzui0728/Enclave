@@ -18,6 +18,7 @@ import {
   type MessageSearchQuery,
   type MessageSearchResponse,
 } from './message-search.utils';
+import { buildVoiceAttachmentSummary } from './voice-attachment-summary';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import {
   ContactCardAttachment,
@@ -1111,9 +1112,11 @@ export class GroupService {
           ? `，时长：${formatGroupAttachmentDuration(attachment.durationMs)}`
           : '';
       const captionText = caption ? `，补充说明：${caption}` : '';
-      const transcriptText = attachment.transcriptText?.trim();
-      attachmentSummary =
-        `发来一条语音消息${durationText}${captionText}${transcriptText ? `，转写内容：${transcriptText}` : ''}`.trim();
+      attachmentSummary = buildVoiceAttachmentSummary({
+        durationText,
+        captionText,
+        transcriptText: attachment.transcriptText,
+      });
     } else if (attachment.kind === 'contact_card') {
       attachmentSummary =
         `分享了一张名片：${attachment.name}${attachment.relationship ? `，关系：${attachment.relationship}` : ''}${attachment.bio ? `，简介：${attachment.bio}` : ''}`.trim();

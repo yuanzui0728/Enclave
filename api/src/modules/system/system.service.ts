@@ -2595,6 +2595,8 @@ export class SystemService {
     const imageInputReady = isRealDiagnosticOk('image_input');
     const audioInputReady = isRealDiagnosticOk('audio_input');
     const digitalHumanRealReady = isRealDiagnosticOk('digital_human');
+    const voiceCallReady =
+      speechSynthesisReady && (audioInputReady || transcriptionReady);
     const speechReady = transcriptionReady && speechSynthesisReady;
     const speechMessage = speechReady
       ? '语音输入转写与语音回复 TTS 均已通过真实诊断。'
@@ -2608,6 +2610,25 @@ export class SystemService {
         ]
           .filter(Boolean)
           .join('；') || '语音能力未通过真实诊断。';
+    const voiceCallMessage = voiceCallReady
+      ? audioInputReady
+        ? transcriptionReady
+          ? 'Voice calls passed real diagnostics. Native audio understanding is active and captions can also be generated.'
+          : 'Voice calls passed real diagnostics. Native audio understanding is active, but standalone captions are not ready yet.'
+        : 'Voice calls passed real diagnostics and currently rely on transcription plus TTS.'
+      : [
+          audioInputReady
+            ? null
+            : `Native audio understanding: ${getDiagnostic('audio_input')?.message ?? 'Real diagnostics have not run yet'}`,
+          transcriptionReady
+            ? null
+            : `Transcription: ${getDiagnostic('transcription')?.message ?? 'Real diagnostics have not run yet'}`,
+          speechSynthesisReady
+            ? null
+            : `TTS: ${getDiagnostic('tts')?.message ?? 'Real diagnostics have not run yet'}`,
+        ]
+          .filter(Boolean)
+          .join('; ') || 'Voice-call capability has not passed real diagnostics.';
     const imageGenerationMessage = imageGenerationReady
       ? '图片生成通道已通过真实诊断。'
       : getDiagnostic('image_generation')?.message ??
@@ -2651,11 +2672,13 @@ export class SystemService {
           : undefined,
         transcriptionMode,
         speechReady,
+        voiceCallReady,
         speechSynthesisReady,
         imageInputReady,
         audioInputReady,
         imageGenerationReady,
         speechMessage,
+        voiceCallMessage,
         imageGenerationMessage,
         lastDiagnosticsAt: latestDiagnostics?.ranAt,
         diagnosticsSummary: latestDiagnostics?.summary,

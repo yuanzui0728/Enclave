@@ -2096,8 +2096,11 @@ export class ReminderRuntimeService {
     }
 
     title = title.replace(
-      /^((\d{1,2}|[零〇一二两三四五六七八九十]{1,3})(点|:|：)(半|一刻|三刻|(\d{1,2}|[零〇一二两三四五六七八九十]{1,3}))?分?)\s*/,
-      '',
+      new RegExp(
+        "^((\\d{1,2}|[\\u96f6\\u3007\\u4e00\\u4e8c\\u4e24\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341]{1,3})(\\u70b9|:|\\uff1a)(\\u534a|\\u4e00\\u523b|\\u4e09\\u523b|(\\d{1,2}|[\\u96f6\\u3007\\u4e00\\u4e8c\\u4e24\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341]{1,3}))?\\u5206?)\\s*",
+        "u",
+      ),
+      "",
     );
 
     title = stripReminderCommand(title);

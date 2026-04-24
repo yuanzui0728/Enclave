@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import {
   BellOff,
   CheckCheck,
@@ -9,6 +10,7 @@ import {
   Pin,
   Trash2,
 } from "lucide-react";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 
 type DesktopConversationContextMenuProps = {
   x: number;
@@ -24,10 +26,10 @@ type DesktopConversationContextMenuProps = {
   onOpenWindow?: () => void;
   onMarkRead?: () => void;
   onMarkUnread?: () => void;
-  hideLabel?: string;
+  hideLabel?: ReactNode;
   onHide?: () => void;
   onClear: () => void;
-  deleteLabel?: string;
+  deleteLabel?: ReactNode;
   onDelete?: () => void;
 };
 
@@ -50,12 +52,13 @@ export function DesktopConversationContextMenu({
   onOpenWindow,
   onMarkRead,
   onMarkUnread,
-  hideLabel = "隐藏聊天",
+  hideLabel,
   onHide,
   onClear,
   deleteLabel,
   onDelete,
 }: DesktopConversationContextMenuProps) {
+  const t = translateRuntimeMessage;
   const actionCount =
     3 +
     Number(Boolean(onOpenWindow)) +
@@ -85,7 +88,7 @@ export function DesktopConversationContextMenu({
       <button
         type="button"
         onClick={onClose}
-        aria-label="关闭会话菜单"
+        aria-label={t(msg`关闭会话菜单`)}
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
@@ -98,7 +101,7 @@ export function DesktopConversationContextMenu({
           <>
             <ContextMenuButton
               icon={<ExternalLink size={15} />}
-              label="在独立窗口打开"
+              label={t(msg`在独立窗口打开`)}
               onClick={onOpenWindow}
               disabled={busy}
             />
@@ -107,20 +110,20 @@ export function DesktopConversationContextMenu({
         ) : null}
         <ContextMenuButton
           icon={<Pin size={15} />}
-          label={isPinned ? "取消置顶" : "置顶聊天"}
+          label={isPinned ? t(msg`取消置顶`) : t(msg`置顶聊天`)}
           onClick={onTogglePinned}
           disabled={busy}
         />
         <ContextMenuButton
           icon={<BellOff size={15} />}
-          label={isMuted ? "关闭免打扰" : "消息免打扰"}
+          label={isMuted ? t(msg`关闭免打扰`) : t(msg`消息免打扰`)}
           onClick={onToggleMuted}
           disabled={busy}
         />
         {showMarkRead && onMarkRead ? (
           <ContextMenuButton
             icon={<CheckCheck size={15} />}
-            label="标为已读"
+            label={t(msg`标为已读`)}
             onClick={onMarkRead}
             disabled={busy}
           />
@@ -128,7 +131,7 @@ export function DesktopConversationContextMenu({
         {showMarkUnread && onMarkUnread ? (
           <ContextMenuButton
             icon={<Circle size={15} />}
-            label="标为未读"
+            label={t(msg`标为未读`)}
             onClick={onMarkUnread}
             disabled={busy}
           />
@@ -139,14 +142,14 @@ export function DesktopConversationContextMenu({
         {onHide ? (
           <ContextMenuButton
             icon={<EyeOff size={15} />}
-            label={hideLabel}
+            label={hideLabel ?? t(msg`隐藏聊天`)}
             onClick={onHide}
             disabled={busy}
           />
         ) : null}
         <ContextMenuButton
           icon={<Eraser size={15} />}
-          label="清空聊天记录"
+          label={t(msg`清空聊天记录`)}
           onClick={onClear}
           disabled={busy}
           danger
@@ -174,7 +177,7 @@ function ContextMenuButton({
   danger = false,
 }: {
   icon: ReactNode;
-  label: string;
+  label: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   danger?: boolean;
