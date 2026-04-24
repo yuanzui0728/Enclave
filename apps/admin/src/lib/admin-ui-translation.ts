@@ -1,6 +1,10 @@
 import type { SupportedLocale } from "@yinjie/i18n";
 
 const CJK_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
+const KOREAN_HANGUL_PATTERN = /[\uac00-\ud7af]/;
+const SIMPLIFIED_CHINESE_ADMIN_PATTERN =
+  /[个条项进运这为时对队关务续联调实测门复义状数读写优级险备错页启线营语显变]/;
 const EN_EXACT_TRANSLATIONS = new Map<string, string>(
   ([
     ["暂无", "None"],
@@ -107,6 +111,27 @@ const EN_EXACT_TRANSLATIONS = new Map<string, string>(
     ["打开运行设置", "Open Runtime Settings"],
     ["前往评测验证", "Go to Evals"],
     ["去运行设置", "Go to Runtime Settings"],
+    ["隐界", "YINJIE"],
+    ["运营控制台", "Operations Console"],
+    ["控制台", "Console"],
+    ["接口", "API"],
+    ["推理", "Inference"],
+    ["主人", "Owner"],
+    ["导航", "Navigation"],
+    ["密钥已配置", "Secret configured"],
+    ["修改", "Edit"],
+    ["变更", "Edit"],
+    ["界面语言", "Interface language"],
+    ["显示语言", "Interface language"],
+    ["Token 用量", "Token Usage"],
+    ["承接：我自己", "Owner: Myself"],
+    ["承接：我自己主代理", "Owner: Myself Self Agent"],
+    ["承接：小盯", "Owner: Xiaoding"],
+    ["承接：行动助理", "Owner: Action Assistant"],
+    ["承接：界闻/联动角色", "Owner: Jiewen / sync characters"],
+    ["我自己", "Myself"],
+    ["主代理", "Self Agent"],
+    ["联动角色", "sync characters"],
 
     ["运营总览", "Operations Overview"],
     ["运营工作台", "Operations Workspace"],
@@ -881,6 +906,49 @@ const EN_EXACT_TRANSLATIONS = new Map<string, string>(
   ),
 );
 
+const JA_EXACT_TRANSLATIONS = new Map<string, string>(
+  ([
+    ["隐界", "YINJIE"],
+    ["运营控制台", "運用コンソール"],
+    ["控制台", "コンソール"],
+    ["接口", "API"],
+    ["推理", "推論"],
+    ["主人", "オーナー"],
+    ["导航", "ナビゲーション"],
+    ["密钥已配置", "キー設定済み"],
+    ["修改", "変更"],
+    ["变更", "変更"],
+    ["界面语言", "表示言語"],
+    ["显示语言", "表示言語"],
+    ["Token 用量", "Token 使用量"],
+    ["承接：我自己", "担当：自分自身"],
+    ["承接：我自己主代理", "担当：自分自身 メインエージェント"],
+    ["承接：小盯", "担当：小盯"],
+    ["承接：行动助理", "担当：行動アシスタント"],
+    ["承接：界闻/联动角色", "担当：界聞 / 連動キャラクター"],
+    ["我自己", "自分自身"],
+    ["主代理", "メインエージェント"],
+    ["联动角色", "連動キャラクター"],
+    ["运行总览", "実行概要"],
+    ["角色中心", "キャラクターセンター"],
+    ["模型与路由", "モデルとルーティング"],
+    ["游戏目录", "ゲームカタログ"],
+    ["聊天记录", "チャット記録"],
+    ["需求发现", "ニーズ発見"],
+    ["主动跟进", "能動フォローアップ"],
+    ["提醒运行时", "リマインダーランタイム"],
+    ["真实世界动作", "現実世界アクション"],
+    ["现实联动", "現実連動"],
+    ["赛博分身", "サイバー分身"],
+    ["评测分析", "評価分析"],
+    ["数字人", "デジタルヒューマン"],
+    ["就绪", "準備完了"],
+    ["已就绪", "準備完了"],
+  ] satisfies Array<[string, string]>).sort(
+    (left, right) => right[0].length - left[0].length,
+  ),
+);
+
 const EN_SEGMENT_TRANSLATIONS = ([
   ["角色中心", "Character Center"],
   ["角色名册", "Character Registry"],
@@ -1150,7 +1218,6 @@ const EN_SEGMENT_TRANSLATIONS = ([
   ["动态", "dynamic"],
   ["上期", "previous period"],
   ["更", "more"],
-  ["人", "person"],
   ["互动", "interaction"],
   ["选中", "selected"],
   ["停用", "disabled"],
@@ -1212,7 +1279,7 @@ export function translateAdminUiText(
     return text;
   }
 
-  if (locale !== "en-US") {
+  if (locale !== "en-US" && locale !== "ja-JP" && locale !== "ko-KR") {
     return text;
   }
 
@@ -1223,7 +1290,17 @@ export function translateAdminUiText(
     return text;
   }
 
-  const translatedBody = translateEnglishAdminTextBody(body);
+  if (locale === "ja-JP") {
+    const translatedBody = JA_EXACT_TRANSLATIONS.get(body);
+    if (translatedBody) {
+      return `${leadingWhitespace}${translatedBody}${trailingWhitespace}`;
+    }
+  }
+
+  const translatedBody = translateEnglishAdminTextBody(
+    body,
+    locale === "en-US" || isLikelySimplifiedChineseAdminText(body, locale),
+  );
   if (translatedBody === body) {
     return text;
   }
@@ -1231,15 +1308,22 @@ export function translateAdminUiText(
   return `${leadingWhitespace}${translatedBody}${trailingWhitespace}`;
 }
 
-function translateEnglishAdminTextBody(body: string): string {
+function translateEnglishAdminTextBody(
+  body: string,
+  allowSegmentFallback: boolean,
+): string {
   const exact = EN_EXACT_TRANSLATIONS.get(body);
   if (exact) {
     return exact;
   }
 
-  const patterned = translateEnglishAdminPattern(body);
+  const patterned = translateEnglishAdminPattern(body, allowSegmentFallback);
   if (patterned) {
     return patterned;
+  }
+
+  if (!allowSegmentFallback) {
+    return body;
   }
 
   if (body.length > 72) {
@@ -1268,7 +1352,25 @@ function translateEnglishAdminTextBody(body: string): string {
   return translated === body ? body : translated;
 }
 
-function translateEnglishAdminPattern(body: string) {
+function isLikelySimplifiedChineseAdminText(
+  body: string,
+  locale: SupportedLocale,
+) {
+  if (locale === "ja-JP" && JAPANESE_KANA_PATTERN.test(body)) {
+    return false;
+  }
+
+  if (locale === "ko-KR" && KOREAN_HANGUL_PATTERN.test(body)) {
+    return false;
+  }
+
+  return SIMPLIFIED_CHINESE_ADMIN_PATTERN.test(body);
+}
+
+function translateEnglishAdminPattern(
+  body: string,
+  allowSegmentFallback: boolean,
+) {
   let match = body.match(/^当前结果 (\d+) 个$/);
   if (match) {
     return `${match[1]} current results`;
@@ -1351,7 +1453,10 @@ function translateEnglishAdminPattern(body: string) {
 
   match = body.match(/^关系：(.+)$/);
   if (match) {
-    return `Relationship: ${translateEnglishAdminTextBody(match[1])}`;
+    return `Relationship: ${translateEnglishAdminTextBody(
+      match[1],
+      allowSegmentFallback,
+    )}`;
   }
 
   match = body.match(/^当前选中：(.+)$/);
@@ -1381,7 +1486,10 @@ function translateEnglishAdminPattern(body: string) {
 
   match = body.match(/^(.+)中\.\.\.$/);
   if (match) {
-    const translatedPrefix = translateEnglishAdminTextBody(match[1]);
+    const translatedPrefix = translateEnglishAdminTextBody(
+      match[1],
+      allowSegmentFallback,
+    );
     return translatedPrefix === match[1]
       ? body
       : `${translatedPrefix}...`;

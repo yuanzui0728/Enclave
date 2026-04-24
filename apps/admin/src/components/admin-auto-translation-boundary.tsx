@@ -44,7 +44,7 @@ export function AdminAutoTranslationBoundary({
   );
 
   const applyTranslations = useMemo(
-    () => (root: ParentNode) => {
+    () => {
       const translateTextNode = (node: Text) => {
         const parent = node.parentElement;
         if (!parent || parent.closest(SKIP_SELECTOR)) {
@@ -53,6 +53,11 @@ export function AdminAutoTranslationBoundary({
 
         const currentValue = node.nodeValue ?? "";
         const existingOriginal = textOriginalsRef.current.get(node);
+        const translatedCurrentValue = translate(currentValue);
+        if (!existingOriginal && translatedCurrentValue === currentValue) {
+          return;
+        }
+
         const translatedExistingOriginal = existingOriginal
           ? translate(existingOriginal)
           : null;
@@ -90,6 +95,11 @@ export function AdminAutoTranslationBoundary({
           const storedAttributes =
             attributeOriginalsRef.current.get(element) ?? {};
           const existingOriginal = storedAttributes[attribute];
+          const translatedCurrentValue = translate(currentValue);
+          if (!existingOriginal && translatedCurrentValue === currentValue) {
+            continue;
+          }
+
           const translatedExistingOriginal = existingOriginal
             ? translate(existingOriginal)
             : null;
@@ -116,25 +126,45 @@ export function AdminAutoTranslationBoundary({
         }
       };
 
-      const textWalker = document.createTreeWalker(
-        root,
-        NodeFilter.SHOW_TEXT,
-      );
-      let textNode = textWalker.nextNode();
-      while (textNode) {
-        translateTextNode(textNode as Text);
-        textNode = textWalker.nextNode();
-      }
+      const walkSubtree = (root: Node) => {
+        if (root.nodeType === Node.ELEMENT_NODE) {
+          translateElementAttributes(root as Element);
+        }
 
-      const elementWalker = document.createTreeWalker(
-        root,
-        NodeFilter.SHOW_ELEMENT,
-      );
-      let elementNode = elementWalker.nextNode();
-      while (elementNode) {
-        translateElementAttributes(elementNode as Element);
-        elementNode = elementWalker.nextNode();
-      }
+        const textWalker = document.createTreeWalker(
+          root,
+          NodeFilter.SHOW_TEXT,
+        );
+        let textNode = textWalker.nextNode();
+        while (textNode) {
+          translateTextNode(textNode as Text);
+          textNode = textWalker.nextNode();
+        }
+
+        const elementWalker = document.createTreeWalker(
+          root,
+          NodeFilter.SHOW_ELEMENT,
+        );
+        let elementNode = elementWalker.nextNode();
+        while (elementNode) {
+          translateElementAttributes(elementNode as Element);
+          elementNode = elementWalker.nextNode();
+        }
+      };
+
+      const applyTarget = (target: Node) => {
+        if (target.nodeType === Node.TEXT_NODE) {
+          translateTextNode(target as Text);
+          return;
+        }
+
+        walkSubtree(target);
+      };
+
+      return {
+        applyRoot: walkSubtree,
+        applyTarget,
+      };
     },
     [locale, translate],
   );
@@ -145,8 +175,9 @@ export function AdminAutoTranslationBoundary({
       return undefined;
     }
 
-    applyTranslations(root);
+    applyTranslations.applyRoot(root);
     let frameId = 0;
+    const pendingTargets = new Set<Node>();
     const scheduleApply = () => {
       if (frameId) {
         return;
@@ -154,11 +185,31 @@ export function AdminAutoTranslationBoundary({
 
       frameId = window.requestAnimationFrame(() => {
         frameId = 0;
-        applyTranslations(root);
+        const targets = Array.from(pendingTargets);
+        pendingTargets.clear();
+
+        for (const target of targets) {
+          if (root.contains(target)) {
+            applyTranslations.applyTarget(target);
+          }
+        }
       });
     };
 
-    const observer = new MutationObserver(scheduleApply);
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "childList") {
+          mutation.addedNodes.forEach((node) => pendingTargets.add(node));
+          continue;
+        }
+
+        pendingTargets.add(mutation.target);
+      }
+
+      if (pendingTargets.size > 0) {
+        scheduleApply();
+      }
+    });
 
     observer.observe(root, {
       attributes: true,

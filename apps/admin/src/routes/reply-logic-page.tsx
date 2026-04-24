@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   updateCharacter,
@@ -352,35 +352,31 @@ export function ReplyLogicPage() {
     },
   });
 
-  const resetCharacterSaveMutation = useEffectEvent(() => {
-    characterSaveMutation.reset();
-  });
-
-  const resetRuntimeRulesSaveMutation = useEffectEvent(() => {
-    runtimeRulesSaveMutation.reset();
-  });
-
-  const resetPreviewMutation = useEffectEvent(() => {
-    previewMutation.reset();
-  });
+  const resetCharacterSaveMutationRef = useRef(characterSaveMutation.reset);
+  const resetRuntimeRulesSaveMutationRef = useRef(
+    runtimeRulesSaveMutation.reset,
+  );
+  const resetPreviewMutationRef = useRef(previewMutation.reset);
+  resetCharacterSaveMutationRef.current = characterSaveMutation.reset;
+  resetRuntimeRulesSaveMutationRef.current = runtimeRulesSaveMutation.reset;
+  resetPreviewMutationRef.current = previewMutation.reset;
 
   useEffect(() => {
     setCharacterDraft(stableEditableCharacterSeed);
-    resetCharacterSaveMutation();
-  }, [resetCharacterSaveMutation, stableEditableCharacterSeed]);
+    resetCharacterSaveMutationRef.current();
+  }, [stableEditableCharacterSeed]);
 
   useEffect(() => {
     setRuntimeRulesDraft(stableRuntimeRulesSeed);
-    resetRuntimeRulesSaveMutation();
-  }, [resetRuntimeRulesSaveMutation, stableRuntimeRulesSeed]);
+    resetRuntimeRulesSaveMutationRef.current();
+  }, [stableRuntimeRulesSeed]);
 
   useEffect(() => {
-    resetPreviewMutation();
+    resetPreviewMutationRef.current();
   }, [
     activeCharacterId,
     activeConversationId,
     configuredConversationActorId,
-    resetPreviewMutation,
     scope,
   ]);
 
