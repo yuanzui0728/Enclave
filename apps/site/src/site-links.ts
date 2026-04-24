@@ -6,7 +6,7 @@ function readEnvUrl(value: string | undefined, fallback: string) {
 export const siteLinks = {
   app: readEnvUrl(
     import.meta.env.VITE_SITE_APP_URL,
-    "http://47.99.215.167:5180/tabs/chat",
+    "https://www.enclave.top/",
   ),
   deploy: readEnvUrl(
     import.meta.env.VITE_SITE_DEPLOY_URL,
