@@ -9,7 +9,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Search, UserPlus } from "lucide-react";
-import { getFriends, listPresetCatalog } from "@yinjie/contracts";
+import { getFriends, listCharacters } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { RouteRedirectState } from "../components/route-redirect-state";
@@ -96,8 +96,8 @@ function MobileWorldCharactersPage() {
     queryFn: () => getFriends(baseUrl),
   });
   const charactersQuery = useQuery({
-    queryKey: ["app-preset-catalog", baseUrl],
-    queryFn: () => listPresetCatalog(baseUrl),
+    queryKey: ["app-characters", baseUrl],
+    queryFn: () => listCharacters(baseUrl),
   });
 
   const friendIds = useMemo(
