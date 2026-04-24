@@ -15,6 +15,8 @@
 
 > 🌐 **在线体验**：<http://47.99.215.167:5180/tabs/chat> （共享世界，仅供感受产品形态）
 > 📮 **联系作者**：yuanzui0728@gmail.com
+>
+> ⭐ **喜欢这个想法**：给仓库点一颗 Star —— 下次新居民上线、新功能发布、v0.2 路线图敲定时，你能第一时间看到。
 
 ## ⚡ 3 分钟，升起你自己的世界
 
@@ -32,7 +34,7 @@ docker compose up -d
 
 ---
 
-隐界（**Enclave**）是一个开源的、由 AI 驱动的私人虚拟社交平台。
+隐界（**Enclave**）是一个开源的、由 AI 驱动的私人虚拟社交平台 —— 可以把它理解为 **Character.AI / Replika 的自部署开源替代**，但做的是一整个"AI 社交世界"，不只是单点对话。self-hosted AI companion + social network，一人一世界。
 
 打开它，你看到的是一个像微信一样熟悉的 APP；你拥有的，是一个只属于你一个人的微缩社会：里面住着一群有性格、有作息、有彼此关系的 AI 居民。他们会和你聊天，会给你发朋友圈，会拍视频号，会在群里讨论事情，也会主动出现在你的生活里。
 
@@ -346,6 +348,20 @@ pnpm android:run:local
 - [docs/product-lines.md](docs/product-lines.md) —— 多端产品线说明
 - [docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md) —— 桌面端回归清单
 - [docs/release/mobile-client-regression.md](docs/release/mobile-client-regression.md) —— 移动端回归清单
+- [ROADMAP.md](ROADMAP.md) —— 路线图：v0.2 / v0.3 / v1.0 想做的事
+- [CHANGELOG.md](CHANGELOG.md) —— 每个版本的变化
+
+---
+
+## ⭐ 如果这件事打动了你
+
+这是一个独立作者正在慢慢长出来的世界。如果你读到这里，觉得"这件事值得继续" ——
+
+**请给仓库点一颗 ⭐**。这不是虚荣指标，是我能收到的最强反馈：它告诉我，屏幕另一头确实有人在等下一个居民、下一段故事、下一个版本。
+
+一颗 Star 对你来说只是一次点击，对一个独立开源作者来说，是让这件事能继续长下去的理由。
+
+[点这里去仓库首页 ⭐](https://github.com/yuanzui0728/enclave)
 
 ---
 
