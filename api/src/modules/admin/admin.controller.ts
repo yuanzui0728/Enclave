@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -24,6 +25,7 @@ import { RealWorldSyncService } from '../real-world-sync/real-world-sync.service
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
+import { SelfAgentService } from '../self-agent/self-agent.service';
 import type { RealWorldSyncRulesValue } from '../real-world-sync/real-world-sync.types';
 import type { NeedDiscoveryConfig } from '../need-discovery/need-discovery.types';
 import type { FollowupRuntimeRulesValue } from '../followup-runtime/followup-runtime.types';
@@ -32,6 +34,19 @@ import type {
   WechatSyncImportRequestValue,
   WechatSyncPreviewRequestValue,
 } from './wechat-sync-admin.types';
+
+const SELF_AGENT_WORKSPACE_DOCUMENT_NAMES = [
+  'AGENTS.md',
+  'SOUL.md',
+  'USER.md',
+  'IDENTITY.md',
+  'TOOLS.md',
+  'HEARTBEAT.md',
+  'MEMORY.md',
+] as const;
+
+type SelfAgentWorkspaceDocumentName =
+  (typeof SELF_AGENT_WORKSPACE_DOCUMENT_NAMES)[number];
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -50,6 +65,7 @@ export class AdminController {
     private readonly schedulerService: SchedulerService,
     private readonly followupRuntimeService: FollowupRuntimeService,
     private readonly reminderRuntimeService: ReminderRuntimeService,
+    private readonly selfAgentService: SelfAgentService,
   ) {}
 
   @Get('stats')
@@ -90,6 +106,41 @@ export class AdminController {
   @Get('reminder-runtime/overview')
   getReminderRuntimeOverview() {
     return this.reminderRuntimeService.getOverview();
+  }
+
+  @Get('self-agent/overview')
+  getSelfAgentOverview() {
+    return this.selfAgentService.getAdminOverview();
+  }
+
+  @Get('self-agent/workspace/:name')
+  getSelfAgentWorkspaceDocument(@Param('name') name: string) {
+    return this.selfAgentService.getWorkspaceDocument(
+      this.parseSelfAgentWorkspaceDocumentName(name),
+    );
+  }
+
+  @Patch('self-agent/workspace/:name')
+  updateSelfAgentWorkspaceDocument(
+    @Param('name') name: string,
+    @Body() body: { content?: string | null },
+  ) {
+    return this.selfAgentService.updateWorkspaceDocument(
+      this.parseSelfAgentWorkspaceDocumentName(name),
+      body.content ?? '',
+    );
+  }
+
+  @Post('self-agent/heartbeat/run')
+  runSelfAgentHeartbeat(
+    @Body()
+    body: {
+      trigger?: 'manual' | 'scheduler' | null;
+    },
+  ) {
+    return this.selfAgentService.runHeartbeat({
+      trigger: body.trigger === 'scheduler' ? 'scheduler' : 'manual',
+    });
   }
 
   @Get('reminder-runtime/rules')
@@ -764,5 +815,19 @@ export class AdminController {
       body.userMessage?.trim() ?? '',
       body.actorCharacterId?.trim() || undefined,
     );
+  }
+
+  private parseSelfAgentWorkspaceDocumentName(
+    value: string,
+  ): SelfAgentWorkspaceDocumentName {
+    if (
+      SELF_AGENT_WORKSPACE_DOCUMENT_NAMES.includes(
+        value as SelfAgentWorkspaceDocumentName,
+      )
+    ) {
+      return value as SelfAgentWorkspaceDocumentName;
+    }
+
+    throw new BadRequestException('未知的 self-agent workspace 文档名。');
   }
 }

@@ -61,6 +61,11 @@ const FollowupRuntimePage = lazy(async () => {
   return { default: mod.FollowupRuntimePage };
 });
 
+const SelfAgentPage = lazy(async () => {
+  const mod = await import("./routes/self-agent-page");
+  return { default: mod.SelfAgentPage };
+});
+
 const ReminderRuntimePage = lazy(async () => {
   const mod = await import("./routes/reminder-runtime-page");
   return { default: mod.ReminderRuntimePage };
@@ -177,6 +182,12 @@ const followupRuntimeRoute = createRoute({
   component: FollowupRuntimePage,
 });
 
+const selfAgentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/self-agent",
+  component: SelfAgentPage,
+});
+
 const reminderRuntimeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/reminder-runtime",
@@ -232,6 +243,7 @@ const routeTree = rootRoute.addChildren([
   replyLogicRoute,
   needDiscoveryRoute,
   followupRuntimeRoute,
+  selfAgentRoute,
   reminderRuntimeRoute,
   actionRuntimeRoute,
   cyberAvatarRoute,
