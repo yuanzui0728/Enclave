@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   SelfAgentHeartbeatRun,
+  SelfAgentRules,
+  SelfAgentRunRecord,
   SelfAgentWorkspaceDocumentName,
 } from "@yinjie/contracts";
 import {
@@ -18,10 +20,12 @@ import {
   AdminMiniPanel,
   AdminPageHero,
   AdminRecordCard,
+  AdminToggle,
   AdminSectionHeader,
   AdminSectionNav,
   AdminSoftBox,
   AdminTextArea,
+  AdminTextField,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -68,6 +72,49 @@ function resolveHeartbeatLabel(status: SelfAgentHeartbeatRun["status"]) {
   return "本轮无动作";
 }
 
+function resolveRunTone(status: SelfAgentRunRecord["status"]) {
+  if (status === "handled" || status === "suggested") {
+    return "healthy" as const;
+  }
+  if (status === "blocked" || status === "error") {
+    return "warning" as const;
+  }
+  return "muted" as const;
+}
+
+function resolveRunLabel(run: SelfAgentRunRecord) {
+  if (run.status === "blocked") {
+    return "被策略拦下";
+  }
+  if (run.policyDecision === "confirm_required") {
+    return "已转确认";
+  }
+  if (run.policyDecision === "clarify_required") {
+    return "已转补参数";
+  }
+  if (run.routeKey === "self_chat") {
+    return "普通自我对话";
+  }
+  if (run.routeKey === "reminder_runtime") {
+    return "提醒运行时";
+  }
+  if (run.routeKey === "action_runtime") {
+    return "真实动作";
+  }
+  if (run.routeKey === "heartbeat") {
+    return "heartbeat";
+  }
+  return "跳过";
+}
+
+function serializeRuleLines(items: string[]) {
+  return items.join("\n");
+}
+
+function parseRuleLines(value: string) {
+  return [...new Set(value.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean))];
+}
+
 function formatCompactDateTime(value?: string | null) {
   return formatDateTime(
     value,
@@ -87,6 +134,9 @@ export function SelfAgentPage() {
   const [selectedDocumentName, setSelectedDocumentName] =
     useState<SelfAgentWorkspaceDocumentName>("AGENTS.md");
   const [documentDraft, setDocumentDraft] = useState("");
+  const [rulesDraft, setRulesDraft] = useState<SelfAgentRules | null>(null);
+  const [blockedConnectorKeysText, setBlockedConnectorKeysText] = useState("");
+  const [blockedOperationKeysText, setBlockedOperationKeysText] = useState("");
 
   const overviewQuery = useQuery({
     queryKey: ["admin-self-agent-overview", baseUrl],
@@ -120,6 +170,18 @@ export function SelfAgentPage() {
     }
   }, [documentQuery.data]);
 
+  useEffect(() => {
+    if (overviewQuery.data) {
+      setRulesDraft((current) => current ?? overviewQuery.data.rules);
+      setBlockedConnectorKeysText((current) =>
+        current || serializeRuleLines(overviewQuery.data.rules.policy.blockedActionConnectorKeys),
+      );
+      setBlockedOperationKeysText((current) =>
+        current || serializeRuleLines(overviewQuery.data.rules.policy.blockedActionOperationKeys),
+      );
+    }
+  }, [overviewQuery.data]);
+
   const saveDocumentMutation = useMutation({
     mutationFn: (payload: {
       name: SelfAgentWorkspaceDocumentName;
@@ -145,6 +207,23 @@ export function SelfAgentPage() {
   const runHeartbeatMutation = useMutation({
     mutationFn: () => adminApi.runSelfAgentHeartbeat(),
     onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["admin-self-agent-overview", baseUrl],
+      });
+    },
+  });
+
+  const saveRulesMutation = useMutation({
+    mutationFn: (payload: Partial<SelfAgentRules>) =>
+      adminApi.setSelfAgentRules(payload),
+    onSuccess: async (nextRules) => {
+      setRulesDraft(nextRules);
+      setBlockedConnectorKeysText(
+        serializeRuleLines(nextRules.policy.blockedActionConnectorKeys),
+      );
+      setBlockedOperationKeysText(
+        serializeRuleLines(nextRules.policy.blockedActionOperationKeys),
+      );
       await queryClient.invalidateQueries({
         queryKey: ["admin-self-agent-overview", baseUrl],
       });
@@ -179,6 +258,17 @@ export function SelfAgentPage() {
     : false;
   const latestRun =
     runHeartbeatMutation.data ?? overview.recentHeartbeatRuns[0] ?? null;
+  const effectiveRules = rulesDraft ?? overview.rules;
+  const normalizedRulesDraft: SelfAgentRules = {
+    ...effectiveRules,
+    policy: {
+      ...effectiveRules.policy,
+      blockedActionConnectorKeys: parseRuleLines(blockedConnectorKeysText),
+      blockedActionOperationKeys: parseRuleLines(blockedOperationKeysText),
+    },
+  };
+  const rulesDirty =
+    JSON.stringify(normalizedRulesDraft) !== JSON.stringify(overview.rules);
 
   return (
     <div className="space-y-6">

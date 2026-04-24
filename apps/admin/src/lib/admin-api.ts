@@ -53,6 +53,7 @@ import type {
   ReminderTaskMutationResult,
   SelfAgentHeartbeatRun,
   SelfAgentOverview,
+  SelfAgentRules,
   SelfAgentWorkspaceDocument,
   SelfAgentWorkspaceDocumentName,
   RealWorldNewsBulletinPublishRequest,
@@ -416,6 +417,12 @@ export const adminApi = {
     adminFetch<ReminderRuntimeOverview>("/reminder-runtime/overview"),
   getSelfAgentOverview: () =>
     adminFetch<SelfAgentOverview>("/self-agent/overview"),
+  getSelfAgentRules: () => adminFetch<SelfAgentRules>("/self-agent/rules"),
+  setSelfAgentRules: (payload: Partial<SelfAgentRules>) =>
+    adminFetch<SelfAgentRules>("/self-agent/rules", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
   getSelfAgentWorkspaceDocument: (name: SelfAgentWorkspaceDocumentName) =>
     adminFetch<SelfAgentWorkspaceDocument>(`/self-agent/workspace/${name}`),
   updateSelfAgentWorkspaceDocument: (
