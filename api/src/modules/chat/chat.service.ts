@@ -23,6 +23,8 @@ import { NarrativeService } from '../narrative/narrative.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { ActionRuntimeService } from '../action-runtime/action-runtime.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { SELF_CHARACTER_ID } from '../characters/default-characters';
+import { SelfAgentService } from '../self-agent/self-agent.service';
 import { ConversationEntity } from './conversation.entity';
 import {
   filterUserFacingConversations,
@@ -162,6 +164,7 @@ export class ChatService {
     private readonly narrativeService: NarrativeService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly replyLogicRules: ReplyLogicRulesService,
+    private readonly selfAgent: SelfAgentService,
     private readonly actionRuntime: ActionRuntimeService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly customStickersService: CustomStickersService,
@@ -902,14 +905,31 @@ export class ChatService {
       currentActivity: charEntity?.currentActivity,
       lastChatAt: lastMsg?.createdAt,
     };
-    const actionResult = charEntity
-      ? await this.actionRuntime.handleConversationTurn({
-          conversationId: convId,
-          ownerId: owner.id,
-          character: charEntity,
-          userMessage: resolvedInput.promptText,
-        })
-      : { handled: false };
+    const isSelfConversation = Boolean(
+      charEntity &&
+        (charEntity.id === SELF_CHARACTER_ID ||
+          charEntity.relationshipType === 'self' ||
+          charEntity.sourceKey?.trim() === 'self'),
+    );
+    const selfAgentResult =
+      isSelfConversation && charEntity
+        ? await this.selfAgent.handleConversationTurn({
+            conversationId: convId,
+            ownerId: owner.id,
+            character: charEntity,
+            userMessage: resolvedInput.promptText,
+            sourceMessageId: userMsgEntity.id,
+          })
+        : { handled: false };
+    const actionResult =
+      charEntity && !isSelfConversation
+        ? await this.actionRuntime.handleConversationTurn({
+            conversationId: convId,
+            ownerId: owner.id,
+            character: charEntity,
+            userMessage: resolvedInput.promptText,
+          })
+        : { handled: false };
     const reminderResult =
       charId === REMINDER_CHARACTER_ID
         ? await this.reminderRuntime.handleConversationTurn({
@@ -928,9 +948,11 @@ export class ChatService {
     });
     const extraSystemPromptSections = [...replyModalities.promptSections];
 
-    const assistantReplyText = actionResult.handled
-      ? (actionResult.responseText?.trim() ?? '')
-      : reminderResult.handled
+    const assistantReplyText = selfAgentResult.handled
+      ? (selfAgentResult.responseText?.trim() ?? '')
+      : actionResult.handled
+        ? (actionResult.responseText?.trim() ?? '')
+        : reminderResult.handled
         ? (reminderResult.responseText?.trim() ?? '')
         : (
             await this.ai.generateReply({

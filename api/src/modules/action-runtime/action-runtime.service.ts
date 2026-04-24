@@ -142,6 +142,7 @@ export class ActionRuntimeService {
     ownerId: string;
     character: CharacterEntity;
     userMessage: string;
+    delegatedBy?: string | null;
   }): Promise<ActionHandlingResultValue> {
     await this.ensureDefaultConnectors();
     const rules = await this.rulesService.getRules();
@@ -151,10 +152,9 @@ export class ActionRuntimeService {
       return { handled: false };
     }
 
-    const canHandleCurrentCharacter = this.canCreateActionPlan(
-      input.character,
-      rules,
-    );
+    const canHandleCurrentCharacter = input.delegatedBy
+      ? true
+      : this.canCreateActionPlan(input.character, rules);
 
     const pendingRun = await this.findLatestPendingRun(
       input.conversationId,
@@ -216,6 +216,8 @@ export class ActionRuntimeService {
       planPayload: plan,
       tracePayload: appendTrace(null, {
         phase: 'plan_created',
+        entryMode: input.delegatedBy ? 'delegated' : 'direct',
+        delegatedBy: input.delegatedBy ?? null,
         plannerMode: rules.plannerMode,
         plannerReason: preview.reason,
         matchedKeywords: plan.matchedKeywords,
