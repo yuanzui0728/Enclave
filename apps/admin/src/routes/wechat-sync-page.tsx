@@ -44,12 +44,16 @@ import {
   buildWechatConnectorContactBundles,
   getWechatConnectorHealth,
   listWechatConnectorContacts,
+  listWechatConnectorUpstreamServices,
   loadWechatConnectorSettings,
   patchWechatConnectorConfig,
   saveWechatConnectorSettings,
   scanWechatConnector,
+  startWechatConnectorUpstreamService,
   type WechatConnectorProviderKey,
   type WechatConnectorSettings,
+  type WechatConnectorUpstreamService,
+  type WechatConnectorUpstreamServiceKey,
 } from "../lib/wechat-local-connector";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 import {
@@ -467,6 +471,14 @@ export function WechatSyncPage() {
         ? 10_000
         : false,
   });
+  const connectorUpstreamServicesQuery = useQuery({
+    queryKey: ["wechat-connector-upstream-services", connectorSettings.baseUrl],
+    queryFn: () => listWechatConnectorUpstreamServices(connectorSettings.baseUrl),
+    enabled: connectorProbeRequested && connectorHealthQuery.isSuccess,
+    retry: false,
+    refetchInterval:
+      connectorProbeRequested && connectorHealthQuery.isSuccess ? 10_000 : false,
+  });
 
   const contactsQuery = useQuery({
     queryKey: [
@@ -539,6 +551,19 @@ export function WechatSyncPage() {
 
   const connectorReady =
     connectorHealthQuery.isSuccess && connectorHealthQuery.data.ok;
+  const upstreamServicesByKey = useMemo(
+    () =>
+      new Map(
+        (connectorUpstreamServicesQuery.data ?? []).map((service) => [
+          service.key,
+          service,
+        ]),
+      ),
+    [connectorUpstreamServicesQuery.data],
+  );
+  const wechatDecryptUpstreamService =
+    upstreamServicesByKey.get("wechat-decrypt");
+  const weflowUpstreamService = upstreamServicesByKey.get("weflow");
   const selectedSet = useMemo(
     () => new Set(selectedUsernames),
     [selectedUsernames],
@@ -779,6 +804,11 @@ export function WechatSyncPage() {
     };
   }
 
+  function startLocalUpstreamService(key: WechatConnectorUpstreamServiceKey) {
+    setConnectorProbeRequested(true);
+    upstreamServiceStartMutation.mutate(key);
+  }
+
   const connectorSourceConfigReady =
     connectorProviderKey === "wechat-decrypt-http"
       ? connectorWechatDecryptBaseUrl.trim().length > 0
@@ -799,6 +829,24 @@ export function WechatSyncPage() {
       await queryClient.invalidateQueries({
         queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
       });
+    },
+  });
+  const upstreamServiceStartMutation = useMutation({
+    mutationFn: (key: WechatConnectorUpstreamServiceKey) =>
+      startWechatConnectorUpstreamService(connectorSettings.baseUrl, key),
+    onSuccess: async () => {
+      setConnectorProbeRequested(true);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            "wechat-connector-upstream-services",
+            connectorSettings.baseUrl,
+          ],
+        }),
+      ]);
     },
   });
   const wechatSyncAnalysisPromptMutation = useMutation({
@@ -2101,6 +2149,33 @@ export function WechatSyncPage() {
             </Button>
           </div>
 
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <ConnectorUpstreamServiceCard
+              label="wechat-decrypt"
+              summary="拉起 5678 本地 HTTP 服务，适合直接读取微信历史与标签。"
+              service={wechatDecryptUpstreamService}
+              connectorReady={connectorReady}
+              isLoading={connectorUpstreamServicesQuery.isLoading}
+              isStarting={
+                upstreamServiceStartMutation.isPending &&
+                upstreamServiceStartMutation.variables === "wechat-decrypt"
+              }
+              onStart={() => startLocalUpstreamService("wechat-decrypt")}
+            />
+            <ConnectorUpstreamServiceCard
+              label="WeFlow"
+              summary="拉起 WeFlow 桌面应用本体；如果你之前开过 API 服务，5031 会自动恢复。"
+              service={weflowUpstreamService}
+              connectorReady={connectorReady}
+              isLoading={connectorUpstreamServicesQuery.isLoading}
+              isStarting={
+                upstreamServiceStartMutation.isPending &&
+                upstreamServiceStartMutation.variables === "weflow"
+              }
+              onStart={() => startLocalUpstreamService("weflow")}
+            />
+          </div>
+
           {!connectorProbeRequested ? (
             <InlineNotice className="mt-4" tone="muted">
               当前未探测本地微信连接器。下方手动 JSON /
@@ -2119,6 +2194,13 @@ export function WechatSyncPage() {
           ) : null}
           {scanMutation.isError && scanMutation.error instanceof Error ? (
             <ErrorBlock className="mt-4" message={scanMutation.error.message} />
+          ) : null}
+          {upstreamServiceStartMutation.isError &&
+          upstreamServiceStartMutation.error instanceof Error ? (
+            <ErrorBlock
+              className="mt-4"
+              message={upstreamServiceStartMutation.error.message}
+            />
           ) : null}
           {connectorConfigMutation.isError &&
           connectorConfigMutation.error instanceof Error ? (
@@ -2141,6 +2223,14 @@ export function WechatSyncPage() {
               tone="success"
               title="本地索引已刷新"
               description={scanMutation.data.message}
+            />
+          ) : null}
+          {upstreamServiceStartMutation.isSuccess ? (
+            <AdminActionFeedback
+              className="mt-4"
+              tone="success"
+              title="启动请求已发送"
+              description={upstreamServiceStartMutation.data.message}
             />
           ) : null}
 
@@ -6283,6 +6373,113 @@ function formatConnectorProviderLabel(
       return "本地 JSON";
     default:
       return "未回报";
+  }
+}
+
+function ConnectorUpstreamServiceCard({
+  label,
+  summary,
+  service,
+  connectorReady,
+  isLoading,
+  isStarting,
+  onStart,
+}: {
+  label: string;
+  summary: string;
+  service?: WechatConnectorUpstreamService;
+  connectorReady: boolean;
+  isLoading: boolean;
+  isStarting: boolean;
+  onStart: () => void;
+}) {
+  const statusTone = resolveUpstreamServiceStatusTone(service?.status);
+  const statusLabel = formatUpstreamServiceStatus(service?.status, isLoading);
+  const buttonDisabled =
+    !connectorReady ||
+    isLoading ||
+    isStarting ||
+    !service?.canStart ||
+    Boolean(service?.healthOk);
+
+  return (
+    <AdminMiniPanel title={`${label} 快捷启动`}>
+      <div className="space-y-3 text-sm text-[color:var(--text-secondary)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="font-medium text-[color:var(--text-primary)]">
+            {service?.label ?? label}
+          </div>
+          <StatusPill tone={statusTone}>{statusLabel}</StatusPill>
+        </div>
+        <p className="leading-6">{summary}</p>
+        <div>目标地址：{service?.baseUrl ?? "等待连接器返回"}</div>
+        {service?.cwd ? <div>启动目录：{service.cwd}</div> : null}
+        {service?.commandPreview ? (
+          <div>默认命令：{service.commandPreview}</div>
+        ) : null}
+        {service?.notes?.length ? (
+          <div className="space-y-1">
+            {service.notes.map((note) => (
+              <div key={note}>{note}</div>
+            ))}
+          </div>
+        ) : null}
+        {service?.lastError ? (
+          <div className="text-rose-600">最近错误：{service.lastError}</div>
+        ) : null}
+        {!connectorReady ? (
+          <div>需要先让本地 `wechat-connector` 连上，按钮才可用。</div>
+        ) : null}
+        <div className="flex flex-wrap gap-3">
+          <Button
+            variant="secondary"
+            onClick={onStart}
+            disabled={buttonDisabled}
+          >
+            {service?.healthOk
+              ? "已运行"
+              : isStarting
+                ? "启动中..."
+                : `启动 ${service?.label ?? label}`}
+          </Button>
+        </div>
+      </div>
+    </AdminMiniPanel>
+  );
+}
+
+function resolveUpstreamServiceStatusTone(
+  status?: WechatConnectorUpstreamService["status"],
+) {
+  switch (status) {
+    case "running":
+      return "healthy" as const;
+    case "starting":
+      return "warning" as const;
+    case "error":
+      return "warning" as const;
+    default:
+      return "muted" as const;
+  }
+}
+
+function formatUpstreamServiceStatus(
+  status: WechatConnectorUpstreamService["status"] | undefined,
+  isLoading: boolean,
+) {
+  if (isLoading && !status) {
+    return "检测中";
+  }
+
+  switch (status) {
+    case "running":
+      return "已运行";
+    case "starting":
+      return "启动中";
+    case "error":
+      return "启动失败";
+    default:
+      return "未运行";
   }
 }
 

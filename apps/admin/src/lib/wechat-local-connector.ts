@@ -68,6 +68,42 @@ export interface WechatConnectorContactSummary {
   sampleSnippet?: string | null;
 }
 
+export type WechatConnectorUpstreamServiceKey =
+  | "wechat-decrypt"
+  | "weflow";
+
+export type WechatConnectorUpstreamServiceStatus =
+  | "idle"
+  | "starting"
+  | "running"
+  | "error";
+
+export interface WechatConnectorUpstreamService {
+  key: WechatConnectorUpstreamServiceKey;
+  label: string;
+  status: WechatConnectorUpstreamServiceStatus;
+  baseUrl: string;
+  healthUrl: string;
+  healthOk: boolean;
+  canStart: boolean;
+  commandPreview?: string | null;
+  cwd?: string | null;
+  lastStartedAt?: string | null;
+  lastExitedAt?: string | null;
+  lastError?: string | null;
+  notes: string[];
+  logs: {
+    stdout?: string | null;
+    stderr?: string | null;
+  };
+}
+
+export interface WechatConnectorUpstreamServiceStartResponse {
+  ok: true;
+  message: string;
+  service: WechatConnectorUpstreamService;
+}
+
 function getStorage() {
   if (typeof window === "undefined") {
     return null;
@@ -244,4 +280,24 @@ export function buildWechatConnectorContactBundles(
     method: "POST",
     body: JSON.stringify({ usernames }),
   });
+}
+
+export function listWechatConnectorUpstreamServices(baseUrl: string) {
+  return connectorFetch<WechatConnectorUpstreamService[]>(
+    baseUrl,
+    "/api/upstream-services",
+  );
+}
+
+export function startWechatConnectorUpstreamService(
+  baseUrl: string,
+  key: WechatConnectorUpstreamServiceKey,
+) {
+  return connectorFetch<WechatConnectorUpstreamServiceStartResponse>(
+    baseUrl,
+    `/api/upstream-services/${key}/start`,
+    {
+      method: "POST",
+    },
+  );
 }

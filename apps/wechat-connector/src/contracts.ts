@@ -124,6 +124,40 @@ export interface ConnectorContactBundleRequest {
   usernames?: string[];
 }
 
+export type LocalUpstreamServiceKey = "wechat-decrypt" | "weflow";
+
+export type LocalUpstreamServiceStatus =
+  | "idle"
+  | "starting"
+  | "running"
+  | "error";
+
+export interface LocalUpstreamServiceInfo {
+  key: LocalUpstreamServiceKey;
+  label: string;
+  status: LocalUpstreamServiceStatus;
+  baseUrl: string;
+  healthUrl: string;
+  healthOk: boolean;
+  canStart: boolean;
+  commandPreview?: string | null;
+  cwd?: string | null;
+  lastStartedAt?: string | null;
+  lastExitedAt?: string | null;
+  lastError?: string | null;
+  notes: string[];
+  logs: {
+    stdout?: string | null;
+    stderr?: string | null;
+  };
+}
+
+export interface LocalUpstreamServiceStartResponse {
+  ok: true;
+  message: string;
+  service: LocalUpstreamServiceInfo;
+}
+
 export function toConfigResponse(config: ConnectorConfig): ConnectorConfigResponse {
   return {
     host: config.host,

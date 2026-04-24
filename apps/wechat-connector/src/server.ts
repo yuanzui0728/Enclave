@@ -3,6 +3,7 @@ import http from "node:http";
 import type {
   ConnectorContactBundleRequest,
   ConnectorScanRequest,
+  LocalUpstreamServiceKey,
 } from "./contracts.js";
 import type { ConnectorRuntime } from "./runtime.js";
 
@@ -67,6 +68,22 @@ export function createConnectorServer(runtime: ConnectorRuntime) {
       if (method === "POST" && url.pathname === "/api/contact-bundles") {
         const body = await readJsonBody<ConnectorContactBundleRequest>(request);
         sendJson(response, await runtime.buildBundles(body ?? {}));
+        return;
+      }
+
+      if (method === "GET" && url.pathname === "/api/upstream-services") {
+        sendJson(response, await runtime.listUpstreamServices());
+        return;
+      }
+
+      const startMatch = url.pathname.match(
+        /^\/api\/upstream-services\/(wechat-decrypt|weflow)\/start$/u,
+      );
+      if (method === "POST" && startMatch) {
+        sendJson(
+          response,
+          await runtime.startUpstreamService(startMatch[1] as LocalUpstreamServiceKey),
+        );
         return;
       }
 

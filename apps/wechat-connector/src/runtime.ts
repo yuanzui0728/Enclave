@@ -21,6 +21,7 @@ import {
   getContactImportPlatformCatalog,
   getConnectorProviderCatalog,
 } from "./platforms.js";
+import { LocalUpstreamServiceManager } from "./upstream-service-manager.js";
 import { WeFlowHttpProvider } from "./weflow-http-provider.js";
 import { WechatDecryptHttpProvider } from "./wechat-decrypt-http-provider.js";
 
@@ -29,6 +30,7 @@ export class ConnectorRuntime {
   private readonly manualJsonProvider = new ManualJsonProvider();
   private readonly wechatDecryptHttpProvider = new WechatDecryptHttpProvider();
   private readonly weflowHttpProvider = new WeFlowHttpProvider();
+  private readonly upstreamServiceManager = new LocalUpstreamServiceManager();
   private contacts = new Map<string, WechatSyncContactBundle>();
   private lastScanAt: string | null = null;
   private sourceSummary: string | null = null;
@@ -200,6 +202,14 @@ export class ConnectorRuntime {
     return usernames
       .map((username) => this.contacts.get(username))
       .filter((contact): contact is WechatSyncContactBundle => Boolean(contact));
+  }
+
+  async listUpstreamServices() {
+    return this.upstreamServiceManager.listServices(this.config);
+  }
+
+  async startUpstreamService(key: "wechat-decrypt" | "weflow") {
+    return this.upstreamServiceManager.startService(key, this.config);
   }
 
   private async scanConfiguredPath(filePath: string) {
