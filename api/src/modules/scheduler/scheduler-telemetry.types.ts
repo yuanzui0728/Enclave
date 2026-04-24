@@ -64,6 +64,14 @@ export const SCHEDULER_JOB_DEFINITIONS = [
     enabled: true,
   },
   {
+    id: 'trigger_self_agent_heartbeat',
+    name: '主代理巡检调度',
+    cadence: '*/30 * * * *',
+    description: '扫描 self-agent 的未闭环事项、到期提醒和待确认动作。',
+    nextRunHint: '每 30 分钟',
+    enabled: true,
+  },
+  {
     id: 'check_real_world_news_bulletins',
     name: '界闻简报调度',
     cadence: '*/10 * * * *',

@@ -51,6 +51,10 @@ import type {
   ReminderRuntimePreviewResult,
   ReminderRuntimeRules,
   ReminderTaskMutationResult,
+  SelfAgentHeartbeatRun,
+  SelfAgentOverview,
+  SelfAgentWorkspaceDocument,
+  SelfAgentWorkspaceDocumentName,
   RealWorldNewsBulletinPublishRequest,
   RealWorldNewsBulletinPublishResult,
   RealWorldSyncCharacterDetail,
@@ -410,6 +414,23 @@ export const adminApi = {
     }),
   getReminderRuntimeOverview: () =>
     adminFetch<ReminderRuntimeOverview>("/reminder-runtime/overview"),
+  getSelfAgentOverview: () =>
+    adminFetch<SelfAgentOverview>("/self-agent/overview"),
+  getSelfAgentWorkspaceDocument: (name: SelfAgentWorkspaceDocumentName) =>
+    adminFetch<SelfAgentWorkspaceDocument>(`/self-agent/workspace/${name}`),
+  updateSelfAgentWorkspaceDocument: (
+    name: SelfAgentWorkspaceDocumentName,
+    content: string,
+  ) =>
+    adminFetch<SelfAgentWorkspaceDocument>(`/self-agent/workspace/${name}`, {
+      method: "PATCH",
+      body: JSON.stringify({ content }),
+    }),
+  runSelfAgentHeartbeat: () =>
+    adminFetch<SelfAgentHeartbeatRun>("/self-agent/heartbeat/run", {
+      method: "POST",
+      body: JSON.stringify({ trigger: "manual" }),
+    }),
   getReminderRuntimeRules: () =>
     adminFetch<ReminderRuntimeRules>("/reminder-runtime/rules"),
   setReminderRuntimeRules: (payload: Partial<ReminderRuntimeRules>) =>

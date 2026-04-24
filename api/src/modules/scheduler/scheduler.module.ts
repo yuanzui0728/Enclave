@@ -22,6 +22,7 @@ import { RealWorldSyncModule } from '../real-world-sync/real-world-sync.module';
 import { FollowupRuntimeModule } from '../followup-runtime/followup-runtime.module';
 import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
+import { SelfAgentModule } from '../self-agent/self-agent.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
     FollowupRuntimeModule,
     ReminderRuntimeModule,
     CyberAvatarModule,
+    SelfAgentModule,
   ],
   providers: [SchedulerService, SchedulerTelemetryService],
   exports: [SchedulerService, SchedulerTelemetryService],
