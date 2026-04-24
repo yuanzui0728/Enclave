@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Star } from "lucide-react";
@@ -56,6 +57,9 @@ import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+import { translateRuntimeMessage } from "@yinjie/i18n";
+
+const CHARACTER_DETAIL_BLOCK_REASON = "character_detail_block";
 
 type FriendProfileFormState = {
   remarkName: string;
@@ -68,9 +72,8 @@ async function buildDesktopAddFriendRouteHashOnDemand(input: {
   openCompose?: boolean;
   recommendationId?: string;
 }) {
-  const { buildDesktopAddFriendRouteHash } = await import(
-    "../features/contacts/add-friend-route-state"
-  );
+  const { buildDesktopAddFriendRouteHash } =
+    await import("../features/contacts/add-friend-route-state");
   return buildDesktopAddFriendRouteHash(input);
 }
 
@@ -80,9 +83,8 @@ async function buildDesktopFriendMomentsRouteHashOnDemand(input: {
   returnPath?: string;
   returnHash?: string;
 }) {
-  const { buildDesktopFriendMomentsRouteHash } = await import(
-    "../features/moments/friend-moments-route-state"
-  );
+  const { buildDesktopFriendMomentsRouteHash } =
+    await import("../features/moments/friend-moments-route-state");
   return buildDesktopFriendMomentsRouteHash(input);
 }
 
@@ -90,9 +92,8 @@ async function buildDesktopContactsRouteHashOnDemand(input: {
   characterId?: string;
   isFriend: boolean;
 }) {
-  const { buildDesktopContactsRouteHash } = await import(
-    "../features/contacts/contacts-route-state"
-  );
+  const { buildDesktopContactsRouteHash } =
+    await import("../features/contacts/contacts-route-state");
   return buildDesktopContactsRouteHash({
     pane: input.isFriend ? "friend" : "world-character",
     characterId: input.characterId,
@@ -101,6 +102,7 @@ async function buildDesktopContactsRouteHashOnDemand(input: {
 }
 
 export function CharacterDetailPage() {
+  const t = translateRuntimeMessage;
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
   const pathname = useRouterState({
@@ -111,7 +113,7 @@ export function CharacterDetailPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
+  const ownerName = useWorldOwnerStore((state) => state.username) ?? t(msg`我`);
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
@@ -133,7 +135,10 @@ export function CharacterDetailPage() {
     remarkName: "",
     tags: "",
   });
-  const routeState = useMemo(() => parseCharacterDetailRouteState(hash), [hash]);
+  const routeState = useMemo(
+    () => parseCharacterDetailRouteState(hash),
+    [hash],
+  );
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const recommendationId = routeState.recommendationId;
   const safeMobileReturnPath =
@@ -240,25 +245,98 @@ export function CharacterDetailPage() {
   const hasPendingFriendRequest = (friendRequestsQuery.data ?? []).some(
     (item) => item.characterId === characterId && item.status === "pending",
   );
+  const unsetLabel = t(msg`未设置`);
+  const worldContactLabel = t(msg`世界联系人`);
+  const worldRoleLabel = t(msg`世界角色`);
+  const friendInfoLabel = t(msg`朋友信息`);
+  const detailInfoLabel = t(msg`详细资料`);
+  const loadingFriendProfileLabel = t(msg`正在读取朋友资料...`);
+  const loadingFriendProfileTitle = t(msg`正在读取朋友资料`);
+  const loadingFriendProfileDescription = t(
+    msg`稍等一下，正在同步这个联系人的资料和关系状态。`,
+  );
+  const unavailableContactBadge = t(msg`联系人`);
+  const unavailableContactProfileTitle = t(msg`联系人资料暂时不可用`);
+  const missingCharacterTitle = t(msg`角色不存在`);
+  const missingCharacterDescription = t(
+    msg`这个资料暂时不可用，返回通讯录再试一次。`,
+  );
+  const missingCharacterRetryPreviousDescription = t(
+    msg`这个资料暂时不可用，可以先重试读取，或返回上一页后再试。`,
+  );
+  const missingCharacterRetryContactsDescription = t(
+    msg`这个资料暂时不可用，可以先重试读取，或返回通讯录后再试。`,
+  );
+  const retryLoadLabel = t(msg`重试读取`);
+  const backButtonLabel = t(msg`返回`);
+  const backToPreviousPageLabel = t(msg`返回上一页`);
+  const backToContactsLabel = t(msg`返回通讯录`);
+  const loadingBadgeLabel = t(msg`读取中`);
+  const viewCharacterProfileLabel = t(msg`查看角色资料`);
+  const videoConnectingLabel = t(msg`正在接通视频...`);
+  const voiceConnectingLabel = t(msg`正在接通语音...`);
+  const openingLabel = t(msg`正在打开...`);
+  const connectingLabel = t(msg`正在接通...`);
+  const sendMessageLabel = t(msg`发消息`);
+  const voiceCallLabel = t(msg`语音通话`);
+  const audioVideoCallLabel = t(msg`音视频通话`);
+  const viewFriendRequestLabel = t(msg`查看好友申请`);
+  const sendingLabel = t(msg`发送中...`);
+  const addToContactsLabel = t(msg`添加到通讯录`);
+  const profileSectionTitle = t(msg`资料`);
+  const settingsRemarkTagsLabel = t(msg`设置备注和标签`);
+  const remarkLabel = t(msg`备注`);
+  const remarkPlaceholder = t(msg`给朋友设置备注名`);
+  const tagsLabel = t(msg`标签`);
+  const tagsPlaceholder = t(msg`用逗号分隔，例如：同事，策展`);
+  const cancelLabel = t(msg`取消`);
+  const savingLabel = t(msg`保存中...`);
+  const saveLabel = t(msg`保存`);
+  const regionLabel = t(msg`地区`);
+  const sourceLabel = t(msg`来源`);
+  const metInWorldLabel = t(msg`世界内自然认识`);
+  const momentsLabel = t(msg`朋友圈`);
+  const momentsValueLabel = t(msg`查看这位角色最近的朋友圈`);
+  const recommendToFriendLabel = t(msg`推荐给朋友`);
+  const openSystemShareLabel = t(msg`打开系统分享面板`);
+  const copyCardLabel = t(msg`复制这张隐界名片`);
+  const moreInfoTitle = t(msg`更多资料`);
+  const recentInteractionLabel = t(msg`最近互动`);
+  const commonGroupsLabel = t(msg`共同群聊`);
+  const currentStatusLabel = t(msg`当前状态`);
+  const expertiseLabel = t(msg`擅长领域`);
+  const toneStyleLabel = t(msg`语气风格`);
+  const coreDirectiveLabel = t(msg`核心理念`);
+  const bioLabel = t(msg`角色简介`);
+  const noMoreIntroLabel = t(msg`暂时没有更多介绍。`);
+  const friendPermissionsTitle = t(msg`朋友权限`);
+  const relationshipManagementTitle = t(msg`关系管理`);
+  const starredFriendLabel = t(msg`设为星标朋友`);
+  const updatingLabel = t(msg`正在更新...`);
+  const restoreNormalContactLabel = t(msg`恢复正常联系`);
+  const stopReceivingInteractionLabel = t(msg`不再接收对方互动`);
+  const deleteContactLabel = t(msg`删除联系人`);
+  const deletingLabel = t(msg`正在删除...`);
+  const removeFromContactsLabel = t(msg`从通讯录移除`);
   const remarkName = friendship?.remarkName?.trim() ?? "";
-  const displayName = remarkName || character?.name || "详细资料";
+  const displayName = remarkName || character?.name || detailInfoLabel;
   const signature =
     character?.currentStatus?.trim() ||
     character?.bio?.trim() ||
-    "这个角色还没有个性签名。";
+    t(msg`这个角色还没有个性签名。`);
   const expertiseSummary = character?.expertDomains?.length
     ? character.expertDomains.join("、")
-    : "未设置";
+    : unsetLabel;
   const activitySummary =
     character?.currentActivity?.trim() ||
     character?.relationship?.trim() ||
-    "暂无状态";
+    t(msg`暂无状态`);
   const toneSummary =
-    character?.profile?.traits?.emotionalTone?.trim() || "未设置";
+    character?.profile?.traits?.emotionalTone?.trim() || unsetLabel;
   const coreDirective = character?.profile?.coreDirective?.trim() || "";
   const tagSummary = friendship?.tags?.length
     ? friendship.tags.join("、")
-    : "未设置";
+    : unsetLabel;
 
   const navigateToDesktopContactsSelection = ({
     replace = false,
@@ -317,7 +395,7 @@ export function CharacterDetailPage() {
         void navigate({ to: "/tabs/contacts" });
       }}
     >
-      {safeMobileReturnPath ? "返回上一页" : "返回通讯录"}
+      {safeMobileReturnPath ? backToPreviousPageLabel : backToContactsLabel}
     </Button>
   );
   const renderMobileRetryCharacterLoadAction = () => (
@@ -330,7 +408,7 @@ export function CharacterDetailPage() {
         void characterQuery.refetch();
       }}
     >
-      重试读取
+      {retryLoadLabel}
     </Button>
   );
 
@@ -429,7 +507,7 @@ export function CharacterDetailPage() {
       const request = await sendFriendRequest(
         {
           characterId,
-          greeting: `${ownerName} 想把你加到通讯录里。`,
+          greeting: t(msg`${ownerName} 想把你加到通讯录里。`),
           autoAccept: recommendationId ? false : true,
         },
         baseUrl,
@@ -446,7 +524,9 @@ export function CharacterDetailPage() {
     onSuccess: async () => {
       setNotice({
         tone: "success",
-        message: recommendationId ? "好友申请已发送。" : "已添加到通讯录。",
+        message: recommendationId
+          ? t(msg`好友申请已发送。`)
+          : t(msg`已添加到通讯录。`),
       });
       await Promise.all([
         queryClient.invalidateQueries({
@@ -473,7 +553,7 @@ export function CharacterDetailPage() {
     onSuccess: async (_, starred) => {
       setNotice({
         tone: "success",
-        message: starred ? "已设为星标朋友。" : "已取消星标朋友。",
+        message: starred ? t(msg`已设为星标朋友。`) : t(msg`已取消星标朋友。`),
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-friends", baseUrl],
@@ -493,7 +573,7 @@ export function CharacterDetailPage() {
     onSuccess: async (_, pinned) => {
       setNotice({
         tone: "success",
-        message: pinned ? "聊天已置顶。" : "聊天已取消置顶。",
+        message: pinned ? t(msg`聊天已置顶。`) : t(msg`聊天已取消置顶。`),
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
@@ -513,7 +593,9 @@ export function CharacterDetailPage() {
     onSuccess: async (_, muted) => {
       setNotice({
         tone: "success",
-        message: muted ? "已开启消息免打扰。" : "已关闭消息免打扰。",
+        message: muted
+          ? t(msg`已开启消息免打扰。`)
+          : t(msg`已关闭消息免打扰。`),
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
@@ -526,7 +608,7 @@ export function CharacterDetailPage() {
     onSuccess: async () => {
       setNotice({
         tone: "success",
-        message: "朋友资料已更新。",
+        message: t(msg`朋友资料已更新。`),
       });
       setIsEditingProfile(false);
       await queryClient.invalidateQueries({
@@ -544,7 +626,7 @@ export function CharacterDetailPage() {
       await blockCharacter(
         {
           characterId,
-          reason: "来自好友资料页加入黑名单",
+          reason: CHARACTER_DETAIL_BLOCK_REASON,
         },
         baseUrl,
       );
@@ -552,7 +634,7 @@ export function CharacterDetailPage() {
     onSuccess: async (_, blocked) => {
       setNotice({
         tone: "success",
-        message: blocked ? "已移出黑名单。" : "已加入黑名单。",
+        message: blocked ? t(msg`已移出黑名单。`) : t(msg`已加入黑名单。`),
       });
       await Promise.all([
         queryClient.invalidateQueries({
@@ -638,15 +720,15 @@ export function CharacterDetailPage() {
         ? profilePath
         : `${window.location.origin}${profilePath}`;
     const profileSummary = [
-      `${displayName} 的隐界名片`,
-      character.relationship?.trim() || "世界联系人",
-      `隐界号：yinjie_${character.id.slice(0, 8)}`,
+      t(msg`${displayName} 的隐界名片`),
+      character.relationship?.trim() || worldContactLabel,
+      t(msg`隐界号：yinjie_${character.id.slice(0, 8)}`),
       profileUrl,
     ].join("\n");
 
     if (nativeMobileShareSupported) {
       const shared = await shareWithNativeShell({
-        title: `${displayName} 的隐界名片`,
+        title: t(msg`${displayName} 的隐界名片`),
         text: profileSummary,
         url: profileUrl,
       });
@@ -654,7 +736,7 @@ export function CharacterDetailPage() {
       if (shared) {
         setNotice({
           tone: "success",
-          message: "已打开系统分享面板。",
+          message: t(msg`已打开系统分享面板。`),
         });
         return;
       }
@@ -668,9 +750,11 @@ export function CharacterDetailPage() {
       setNotice({
         tone: "info",
         message: nativeMobileShareSupported
-          ? "当前设备暂时无法打开系统分享，请稍后重试。"
-          : "当前环境暂不支持复制名片。",
-        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
+          : t(msg`当前环境暂不支持复制名片。`),
+        actionLabel: nativeMobileShareSupported
+          ? t(msg`重试分享`)
+          : t(msg`重试复制`),
         onAction: () => {
           void handleShareCharacterCard();
         },
@@ -683,16 +767,18 @@ export function CharacterDetailPage() {
       setNotice({
         tone: "success",
         message: nativeMobileShareSupported
-          ? "系统分享暂时不可用，已复制名片摘要。"
-          : "名片摘要已复制。",
+          ? t(msg`系统分享暂时不可用，已复制名片摘要。`)
+          : t(msg`名片摘要已复制。`),
       });
     } catch {
       setNotice({
         tone: "info",
         message: nativeMobileShareSupported
-          ? "系统分享失败，请稍后重试。"
-          : "复制名片失败，请稍后重试。",
-        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+          ? t(msg`系统分享失败，请稍后重试。`)
+          : t(msg`复制名片失败，请稍后重试。`),
+        actionLabel: nativeMobileShareSupported
+          ? t(msg`重试分享`)
+          : t(msg`重试复制`),
         onAction: () => {
           void handleShareCharacterCard();
         },
@@ -703,8 +789,8 @@ export function CharacterDetailPage() {
     if (isDesktopLayout) {
       const confirmed = window.confirm(
         isBlocked
-          ? "确认把这个角色移出黑名单吗？"
-          : "加入黑名单后，将不再接收这个角色的互动。确认继续吗？",
+          ? t(msg`确认把这个角色移出黑名单吗？`)
+          : t(msg`加入黑名单后，将不再接收这个角色的互动。确认继续吗？`),
       );
       if (!confirmed) {
         return;
@@ -718,7 +804,7 @@ export function CharacterDetailPage() {
   };
   const handleDeleteFriendAction = () => {
     if (isDesktopLayout) {
-      if (!window.confirm("确认删除这个联系人吗？")) {
+      if (!window.confirm(t(msg`确认删除这个联系人吗？`))) {
         return;
       }
 
@@ -813,24 +899,24 @@ export function CharacterDetailPage() {
   const mobileSheetConfig =
     mobileSheetAction === "call"
       ? {
-          title: "音视频通话",
-          description: "选择要发起的通话方式。",
+          title: t(msg`音视频通话`),
+          description: t(msg`选择要发起的通话方式。`),
           actions: [
             {
               key: "voice",
               label: openCallMutation.isPending
-                ? "正在接通语音..."
-                : "语音通话",
-              description: "进入语音通话",
+                ? t(msg`正在接通语音...`)
+                : t(msg`语音通话`),
+              description: t(msg`进入语音通话`),
               disabled: openCallMutation.isPending,
               onClick: handleVoiceCall,
             },
             {
               key: "video",
               label: openCallMutation.isPending
-                ? "正在接通视频..."
-                : "视频通话",
-              description: "进入视频通话",
+                ? t(msg`正在接通视频...`)
+                : t(msg`视频通话`),
+              description: t(msg`进入视频通话`),
               disabled: openCallMutation.isPending,
               onClick: handleVideoCall,
             },
@@ -838,15 +924,17 @@ export function CharacterDetailPage() {
         }
       : mobileSheetAction === "block"
         ? {
-            title: isBlocked ? "移出黑名单" : "加入黑名单",
+            title: isBlocked ? t(msg`移出黑名单`) : t(msg`加入黑名单`),
             description: isBlocked
-              ? "移出后将恢复正常联系与互动。"
-              : "加入黑名单后，将不再接收这个角色的互动。",
+              ? t(msg`移出后将恢复正常联系与互动。`)
+              : t(msg`加入黑名单后，将不再接收这个角色的互动。`),
             actions: [
               {
                 key: "confirm",
-                label: isBlocked ? "移出黑名单" : "加入黑名单",
-                description: isBlocked ? "恢复正常联系" : "后续互动会被拦截",
+                label: isBlocked ? t(msg`移出黑名单`) : t(msg`加入黑名单`),
+                description: isBlocked
+                  ? t(msg`恢复正常联系`)
+                  : t(msg`后续互动会被拦截`),
                 danger: !isBlocked,
                 disabled: blockMutation.isPending,
                 onClick: () => blockMutation.mutate(isBlocked),
@@ -855,13 +943,13 @@ export function CharacterDetailPage() {
           }
         : mobileSheetAction === "delete"
           ? {
-              title: "删除联系人",
-              description: "删除后会从通讯录移除这个联系人。",
+              title: t(msg`删除联系人`),
+              description: t(msg`删除后会从通讯录移除这个联系人。`),
               actions: [
                 {
                   key: "confirm",
-                  label: "删除联系人",
-                  description: "此操作不可恢复",
+                  label: t(msg`删除联系人`),
+                  description: t(msg`此操作不可恢复`),
                   danger: true,
                   disabled: deleteFriendMutation.isPending,
                   onClick: () => deleteFriendMutation.mutate(),
@@ -879,13 +967,13 @@ export function CharacterDetailPage() {
               type="button"
               onClick={handleBack}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
-              aria-label="返回"
+              aria-label={backButtonLabel}
             >
               <ArrowLeft size={18} />
             </button>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
-                朋友信息
+                {friendInfoLabel}
               </div>
             </div>
           </div>
@@ -916,12 +1004,12 @@ export function CharacterDetailPage() {
                   }}
                   continueLabel={
                     openCallMutation.isPending
-                      ? "正在接通视频..."
+                      ? videoConnectingLabel
                       : entryNotice.continueLabel
                   }
                   voiceLabel={
                     openCallMutation.isPending
-                      ? "正在接通语音..."
+                      ? voiceConnectingLabel
                       : entryNotice.voiceLabel
                   }
                   compact={false}
@@ -930,7 +1018,7 @@ export function CharacterDetailPage() {
             ) : null}
             {characterQuery.isLoading ? (
               <div className="mx-auto w-full max-w-[640px] px-3">
-                <LoadingBlock label="正在读取朋友资料..." />
+                <LoadingBlock label={loadingFriendProfileLabel} />
               </div>
             ) : null}
             {characterQuery.isError && characterQuery.error instanceof Error ? (
@@ -1047,7 +1135,9 @@ export function CharacterDetailPage() {
     <AppPage
       className={cn(
         "min-h-full space-y-0 bg-[#ededed] px-0 py-0 text-[color:var(--text-primary)]",
-        !isDesktopLayout ? "flex h-full min-h-0 flex-col overflow-hidden" : undefined,
+        !isDesktopLayout
+          ? "flex h-full min-h-0 flex-col overflow-hidden"
+          : undefined,
       )}
     >
       <header
@@ -1061,17 +1151,17 @@ export function CharacterDetailPage() {
             type="button"
             onClick={handleBack}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
-            aria-label="返回"
+            aria-label={backButtonLabel}
           >
             <ArrowLeft size={18} />
           </button>
           <div className="pointer-events-none absolute inset-x-12 text-center">
             <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
-              {isFriend ? "朋友信息" : "详细资料"}
+              {isFriend ? friendInfoLabel : detailInfoLabel}
             </div>
             {isDesktopLayout ? (
               <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
-                {character?.relationship || "查看角色资料"}
+                {character?.relationship || viewCharacterProfileLabel}
               </div>
             ) : null}
           </div>
@@ -1081,18 +1171,20 @@ export function CharacterDetailPage() {
 
       <div
         className={cn(
-          !isDesktopLayout ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : undefined,
+          !isDesktopLayout
+            ? "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+            : undefined,
         )}
       >
         {characterQuery.isLoading ? (
           <div className="px-4 py-3">
             {isDesktopLayout ? (
-              <LoadingBlock label="正在读取朋友资料..." />
+              <LoadingBlock label={loadingFriendProfileLabel} />
             ) : (
               <MobileCharacterStatusCard
-                badge="读取中"
-                title="正在读取朋友资料"
-                description="稍等一下，正在同步这个联系人的资料和关系状态。"
+                badge={loadingBadgeLabel}
+                title={loadingFriendProfileTitle}
+                description={loadingFriendProfileDescription}
                 tone="loading"
               />
             )}
@@ -1105,8 +1197,8 @@ export function CharacterDetailPage() {
               <ErrorBlock message={characterQuery.error.message} />
             ) : (
               <MobileCharacterStatusCard
-                badge="联系人"
-                title="联系人资料暂时不可用"
+                badge={unavailableContactBadge}
+                title={unavailableContactProfileTitle}
                 description={characterQuery.error.message}
                 tone="danger"
                 action={
@@ -1124,17 +1216,17 @@ export function CharacterDetailPage() {
           <div className="px-4 py-3">
             {isDesktopLayout ? (
               <EmptyState
-                title="角色不存在"
-                description="这个资料暂时不可用，返回通讯录再试一次。"
+                title={missingCharacterTitle}
+                description={missingCharacterDescription}
               />
             ) : (
               <MobileCharacterStatusCard
-                badge="联系人"
-                title="角色不存在"
+                badge={unavailableContactBadge}
+                title={missingCharacterTitle}
                 description={
                   safeMobileReturnPath
-                    ? "这个资料暂时不可用，可以先重试读取，或返回上一页后再试。"
-                    : "这个资料暂时不可用，可以先重试读取，或返回通讯录后再试。"
+                    ? missingCharacterRetryPreviousDescription
+                    : missingCharacterRetryContactsDescription
                 }
                 action={
                   <div className="flex flex-wrap gap-2">
@@ -1200,12 +1292,12 @@ export function CharacterDetailPage() {
                 }}
                 continueLabel={
                   openCallMutation.isPending
-                    ? "正在接通视频..."
+                    ? videoConnectingLabel
                     : entryNotice.continueLabel
                 }
                 voiceLabel={
                   openCallMutation.isPending
-                    ? "正在接通语音..."
+                    ? voiceConnectingLabel
                     : entryNotice.voiceLabel
                 }
                 compact={!isDesktopLayout}
@@ -1363,8 +1455,8 @@ export function CharacterDetailPage() {
                     )}
                   >
                     {remarkName
-                      ? `昵称：${character.name}`
-                      : character.relationship || "世界联系人"}
+                      ? t(msg`昵称：${character.name}`)
+                      : character.relationship || worldContactLabel}
                   </div>
                   <div
                     className={cn(
@@ -1372,7 +1464,7 @@ export function CharacterDetailPage() {
                       isDesktopLayout ? "text-sm" : "text-[12px]",
                     )}
                   >
-                    隐界号：yinjie_{character.id.slice(0, 8)}
+                    {t(msg`隐界号：yinjie_${character.id.slice(0, 8)}`)}
                   </div>
                   <div
                     className={cn(
@@ -1381,8 +1473,12 @@ export function CharacterDetailPage() {
                     )}
                   >
                     {isFriend
-                      ? `地区：${friendship?.region?.trim() || "未设置"}`
-                      : `身份：${character.relationship || "世界角色"}`}
+                      ? t(
+                          msg`地区：${friendship?.region?.trim() || unsetLabel}`,
+                        )
+                      : t(
+                          msg`身份：${character.relationship || worldRoleLabel}`,
+                        )}
                   </div>
                 </div>
                 <AvatarChip
@@ -1424,7 +1520,9 @@ export function CharacterDetailPage() {
                         className="h-11 rounded-[12px] bg-[#07c160] text-[15px] text-white shadow-none hover:bg-[#06ad56]"
                         disabled={startChatMutation.isPending}
                       >
-                        {startChatMutation.isPending ? "正在打开..." : "发消息"}
+                        {startChatMutation.isPending
+                          ? openingLabel
+                          : sendMessageLabel}
                       </Button>
                       <Button
                         variant="secondary"
@@ -1436,8 +1534,8 @@ export function CharacterDetailPage() {
                         disabled={openCallMutation.isPending}
                       >
                         {openCallMutation.isPending
-                          ? "正在接通..."
-                          : "语音通话"}
+                          ? connectingLabel
+                          : voiceCallLabel}
                       </Button>
                     </>
                   ) : (
@@ -1454,10 +1552,10 @@ export function CharacterDetailPage() {
                       }
                     >
                       {hasPendingFriendRequest
-                        ? "查看好友申请"
+                        ? viewFriendRequestLabel
                         : sendFriendRequestMutation.isPending
-                          ? "发送中..."
-                          : "添加到通讯录"}
+                          ? sendingLabel
+                          : addToContactsLabel}
                     </Button>
                   )}
                 </div>
@@ -1465,16 +1563,17 @@ export function CharacterDetailPage() {
             ) : null}
 
             <ProfileSection
-              title="资料"
+              title={profileSectionTitle}
               flatOnMobile={!isDesktopLayout}
               compact={!isDesktopLayout}
             >
               {isFriend ? (
                 <ProfileRow
-                  label="设置备注和标签"
+                  label={settingsRemarkTagsLabel}
                   value={buildRemarkSummary(
                     friendship?.remarkName,
                     friendship?.tags,
+                    unsetLabel,
                   )}
                   onClick={() => setIsEditingProfile((current) => !current)}
                   compact={!isDesktopLayout}
@@ -1484,9 +1583,9 @@ export function CharacterDetailPage() {
                 <div className="border-t border-[color:var(--border-faint)] bg-[#f7f7f7] px-4 py-3">
                   <div className="space-y-3">
                     <DetailInputField
-                      label="备注"
+                      label={remarkLabel}
                       value={profileForm.remarkName}
-                      placeholder="给朋友设置备注名"
+                      placeholder={remarkPlaceholder}
                       onChange={(value) =>
                         setProfileForm((current) => ({
                           ...current,
@@ -1496,9 +1595,9 @@ export function CharacterDetailPage() {
                       compact={!isDesktopLayout}
                     />
                     <DetailInputField
-                      label="标签"
+                      label={tagsLabel}
                       value={profileForm.tags}
-                      placeholder="用逗号分隔，例如：同事，策展"
+                      placeholder={tagsPlaceholder}
                       onChange={(value) =>
                         setProfileForm((current) => ({
                           ...current,
@@ -1521,7 +1620,7 @@ export function CharacterDetailPage() {
                       className="h-9 flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[13px] shadow-none hover:bg-[#f5f7f7]"
                       disabled={updateProfileMutation.isPending}
                     >
-                      取消
+                      {cancelLabel}
                     </Button>
                     <Button
                       variant="primary"
@@ -1529,48 +1628,50 @@ export function CharacterDetailPage() {
                       className="h-9 flex-1 rounded-[10px] bg-[#07c160] px-3 text-[13px] text-white shadow-none hover:bg-[#06ad56]"
                       disabled={updateProfileMutation.isPending}
                     >
-                      {updateProfileMutation.isPending ? "保存中..." : "保存"}
+                      {updateProfileMutation.isPending
+                        ? savingLabel
+                        : saveLabel}
                     </Button>
                   </div>
                 </div>
               ) : null}
               <ProfileRow
-                label="地区"
+                label={regionLabel}
                 value={
                   isFriend
-                    ? friendship?.region?.trim() || "未设置"
-                    : character.relationship || "世界角色"
+                    ? friendship?.region?.trim() || unsetLabel
+                    : character.relationship || worldRoleLabel
                 }
                 compact={!isDesktopLayout}
               />
               <ProfileRow
-                label="来源"
+                label={sourceLabel}
                 value={
                   isFriend
-                    ? friendship?.source?.trim() || "未设置"
-                    : "世界内自然认识"
+                    ? friendship?.source?.trim() || unsetLabel
+                    : metInWorldLabel
                 }
                 compact={!isDesktopLayout}
               />
               {isFriend ? (
                 <ProfileRow
-                  label="标签"
+                  label={tagsLabel}
                   value={tagSummary}
                   compact={!isDesktopLayout}
                 />
               ) : null}
               <ProfileRow
-                label="朋友圈"
-                value="查看这位角色最近的朋友圈"
+                label={momentsLabel}
+                value={momentsValueLabel}
                 onClick={handleOpenMoments}
                 compact={!isDesktopLayout}
               />
               <ProfileRow
-                label="推荐给朋友"
+                label={recommendToFriendLabel}
                 value={
                   nativeMobileShareSupported
-                    ? "打开系统分享面板"
-                    : "复制这张隐界名片"
+                    ? openSystemShareLabel
+                    : copyCardLabel
                 }
                 onClick={() => void handleShareCharacterCard()}
                 compact={!isDesktopLayout}
@@ -1578,13 +1679,13 @@ export function CharacterDetailPage() {
             </ProfileSection>
 
             <ProfileSection
-              title="更多资料"
+              title={moreInfoTitle}
               flatOnMobile={!isDesktopLayout}
               compact={!isDesktopLayout}
             >
               {isDesktopLayout ? (
                 <ProfileRow
-                  label="最近互动"
+                  label={recentInteractionLabel}
                   value={
                     isFriend
                       ? formatTimestamp(
@@ -1598,8 +1699,8 @@ export function CharacterDetailPage() {
               ) : null}
               {commonGroups.length ? (
                 <ProfileRow
-                  label="共同群聊"
-                  value={`${commonGroups.length} 个`}
+                  label={commonGroupsLabel}
+                  value={t(msg`${commonGroups.length} 个`)}
                   onClick={() => {
                     const firstGroup = commonGroups[0];
                     if (!firstGroup) {
@@ -1622,14 +1723,14 @@ export function CharacterDetailPage() {
               ) : null}
               {isDesktopLayout ? (
                 <ProfileRow
-                  label="当前状态"
+                  label={currentStatusLabel}
                   value={activitySummary}
                   compact={!isDesktopLayout}
                 />
               ) : null}
               {isDesktopLayout ? (
                 <ProfileRow
-                  label="擅长领域"
+                  label={expertiseLabel}
                   value={expertiseSummary}
                   multiline
                   compact={!isDesktopLayout}
@@ -1637,7 +1738,7 @@ export function CharacterDetailPage() {
               ) : null}
               {isDesktopLayout ? (
                 <ProfileRow
-                  label="语气风格"
+                  label={toneStyleLabel}
                   value={toneSummary}
                   compact={!isDesktopLayout}
                 />
@@ -1652,7 +1753,7 @@ export function CharacterDetailPage() {
                         : "text-[11px]",
                     )}
                   >
-                    核心理念
+                    {coreDirectiveLabel}
                   </div>
                   <div
                     className={cn(
@@ -1675,7 +1776,7 @@ export function CharacterDetailPage() {
                       : "text-[11px]",
                   )}
                 >
-                  角色简介
+                  {bioLabel}
                 </div>
                 <div
                   className={cn(
@@ -1685,19 +1786,21 @@ export function CharacterDetailPage() {
                       : "text-[13px] leading-6",
                   )}
                 >
-                  {character.bio?.trim() || "暂时没有更多介绍。"}
+                  {character.bio?.trim() || noMoreIntroLabel}
                 </div>
               </div>
             </ProfileSection>
 
             <ProfileSection
-              title={isFriend ? "朋友权限" : "关系管理"}
+              title={
+                isFriend ? friendPermissionsTitle : relationshipManagementTitle
+              }
               flatOnMobile={!isDesktopLayout}
               compact={!isDesktopLayout}
             >
               {isFriend ? (
                 <ProfileSwitchRow
-                  label="设为星标朋友"
+                  label={starredFriendLabel}
                   checked={friendship?.isStarred ?? false}
                   onToggle={() =>
                     setStarredMutation.mutate(!(friendship?.isStarred ?? false))
@@ -1707,13 +1810,13 @@ export function CharacterDetailPage() {
                 />
               ) : null}
               <ProfileRow
-                label={isBlocked ? "移出黑名单" : "加入黑名单"}
+                label={isBlocked ? t(msg`移出黑名单`) : t(msg`加入黑名单`)}
                 value={
                   blockMutation.isPending
-                    ? "正在更新..."
+                    ? updatingLabel
                     : isBlocked
-                      ? "恢复正常联系"
-                      : "不再接收对方互动"
+                      ? restoreNormalContactLabel
+                      : stopReceivingInteractionLabel
                 }
                 danger
                 onClick={handleBlockAction}
@@ -1722,11 +1825,11 @@ export function CharacterDetailPage() {
               />
               {isFriend ? (
                 <ProfileRow
-                  label="删除联系人"
+                  label={deleteContactLabel}
                   value={
                     deleteFriendMutation.isPending
-                      ? "正在删除..."
-                      : "从通讯录移除"
+                      ? deletingLabel
+                      : removeFromContactsLabel
                   }
                   danger
                   onClick={handleDeleteFriendAction}
@@ -1752,7 +1855,9 @@ export function CharacterDetailPage() {
                 <MobileProfileActionButton
                   primary
                   label={
-                    startChatMutation.isPending ? "正在打开..." : "发消息"
+                    startChatMutation.isPending
+                      ? openingLabel
+                      : sendMessageLabel
                   }
                   disabled={startChatMutation.isPending}
                   onClick={() => {
@@ -1763,8 +1868,8 @@ export function CharacterDetailPage() {
                 <MobileProfileActionButton
                   label={
                     openCallMutation.isPending
-                      ? "正在接通..."
-                      : "音视频通话"
+                      ? connectingLabel
+                      : audioVideoCallLabel
                   }
                   disabled={openCallMutation.isPending}
                   onClick={() => {
@@ -1778,10 +1883,10 @@ export function CharacterDetailPage() {
                 primary
                 label={
                   hasPendingFriendRequest
-                    ? "查看好友申请"
+                    ? viewFriendRequestLabel
                     : sendFriendRequestMutation.isPending
-                      ? "发送中..."
-                      : "添加到通讯录"
+                      ? sendingLabel
+                      : addToContactsLabel
                 }
                 disabled={
                   sendFriendRequestMutation.isPending &&
@@ -2140,13 +2245,14 @@ function DetailInputField({
 function buildRemarkSummary(
   remarkName?: string | null,
   tags?: string[] | null,
+  emptyLabel?: string,
 ) {
   const segments = [
     remarkName?.trim(),
     tags?.filter(Boolean).join("、"),
   ].filter(Boolean);
 
-  return segments.length ? segments.join(" · ") : "未设置";
+  return segments.length ? segments.join(" · ") : (emptyLabel ?? "");
 }
 
 function isMissingCharacterError(error: unknown, characterId: string) {
