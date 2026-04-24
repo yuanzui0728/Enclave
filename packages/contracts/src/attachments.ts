@@ -28,6 +28,7 @@ export interface DocumentAttachmentInsight {
   extractionMode:
     | "plain_text"
     | "pdf_text"
+    | "pdf_ocr"
     | "docx_text"
     | "legacy_word_text"
     | "provider_file_fallback";

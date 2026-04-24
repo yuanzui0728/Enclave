@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { execFile } from 'node:child_process';
 import {
   mkdtemp,
+  readdir,
   readFile,
   rm,
   stat,
@@ -21,6 +22,11 @@ const MAX_DOCUMENT_PREVIEW_CHARS = 1_800;
 const PDFTOTEXT_TIMEOUT_MS = 15_000;
 const OFFICE_CONVERT_TIMEOUT_MS = 30_000;
 const DOCX_XML_PARSE_TIMEOUT_MS = 15_000;
+const PDF_OCR_RENDER_TIMEOUT_MS = 20_000;
+const PDF_OCR_PAGE_TIMEOUT_MS = 12_000;
+const MAX_PDF_OCR_PAGES = 4;
+const PDF_OCR_RENDER_DPI = 180;
+const PDF_OCR_LANGS = 'chi_sim+eng';
 const OFFICE_COMMAND_CANDIDATES = ['soffice', 'libreoffice'];
 
 type ExtractionMode = DocumentAttachmentInsight['extractionMode'];
@@ -207,6 +213,7 @@ export class DocumentExtractionService {
     buffer: Buffer,
     fileName: string,
   ): Promise<DocumentExtractionResult> {
+    let primaryFailure: DocumentExtractionResult | null = null;
     const tempDir = await mkdtemp(path.join(tmpdir(), 'yinjie-pdf-'));
     const tempFilePath = path.join(tempDir, sanitizeTempFileName(fileName, '.pdf'));
     try {
@@ -219,13 +226,18 @@ export class DocumentExtractionService {
           maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
         },
       );
-      return this.buildCompletedResult({
+      const extractedResult = this.buildCompletedResult({
         text: normalizeExtractedText(stdout, 'application/pdf'),
         extractionMode: 'pdf_text',
         parser: 'pdftotext',
       });
+      if (extractedResult.status === 'completed') {
+        return extractedResult;
+      }
+
+      primaryFailure = extractedResult;
     } catch (error) {
-      return toFailedExtractionResult({
+      primaryFailure = toFailedExtractionResult({
         error,
         extractionMode: 'pdf_text',
         parser: 'pdftotext',
@@ -233,6 +245,97 @@ export class DocumentExtractionService {
         failureCode: 'PDF_TEXT_EXTRACTION_FAILED',
         emptyCode: 'TEXT_EXTRACTION_EMPTY',
         emptyMessage: 'PDF 未提取到可用正文，可能是扫描件或图片型 PDF。',
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+
+    const ocrResult = await this.extractPdfOcrText(buffer);
+    if (ocrResult.status === 'completed') {
+      return ocrResult;
+    }
+
+    return (
+      primaryFailure ?? {
+        status: 'failed',
+        extractionMode: 'pdf_text',
+        parser: 'pdftotext',
+        errorCode: 'PDF_TEXT_EXTRACTION_FAILED',
+        errorMessage: 'PDF 正文抽取失败。',
+      }
+    );
+  }
+
+  private async extractPdfOcrText(
+    buffer: Buffer,
+  ): Promise<DocumentExtractionResult> {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'yinjie-pdf-ocr-'));
+    const tempFilePath = path.join(tempDir, 'source.pdf');
+    try {
+      await writeFile(tempFilePath, buffer);
+      const imagePrefix = path.join(tempDir, 'page');
+      await execFileAsync(
+        'pdftoppm',
+        [
+          '-f',
+          '1',
+          '-l',
+          String(MAX_PDF_OCR_PAGES),
+          '-r',
+          String(PDF_OCR_RENDER_DPI),
+          '-png',
+          tempFilePath,
+          imagePrefix,
+        ],
+        {
+          timeout: PDF_OCR_RENDER_TIMEOUT_MS,
+          maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
+        },
+      );
+      const files = (await readdir(tempDir))
+        .filter((fileName) => /^page-\d+\.png$/i.test(fileName))
+        .sort((left, right) => left.localeCompare(right, 'en'));
+      if (!files.length) {
+        return {
+          status: 'failed',
+          extractionMode: 'pdf_ocr',
+          parser: 'tesseract_ocr',
+          errorCode: 'PDF_OCR_RENDER_EMPTY',
+          errorMessage: 'PDF OCR 未生成可识别页面。',
+        };
+      }
+
+      const pageTexts: string[] = [];
+      for (const fileName of files) {
+        const { stdout } = await execFileAsync(
+          'tesseract',
+          [path.join(tempDir, fileName), 'stdout', '-l', PDF_OCR_LANGS],
+          {
+            timeout: PDF_OCR_PAGE_TIMEOUT_MS,
+            maxBuffer: MAX_DOCUMENT_DOWNLOAD_BYTES,
+          },
+        );
+        const pageText = normalizeExtractedText(stdout);
+        if (pageText) {
+          pageTexts.push(pageText);
+        }
+      }
+
+      return this.buildCompletedResult({
+        text: pageTexts.join('\n\n'),
+        extractionMode: 'pdf_ocr',
+        parser: 'tesseract_ocr',
+        pageCount: files.length,
+      });
+    } catch (error) {
+      return toFailedExtractionResult({
+        error,
+        extractionMode: 'pdf_ocr',
+        parser: 'tesseract_ocr',
+        binaryMissingCode: 'PDF_OCR_UNAVAILABLE',
+        failureCode: 'PDF_OCR_FAILED',
+        emptyCode: 'TEXT_EXTRACTION_EMPTY',
+        emptyMessage: 'PDF OCR 未提取到可用正文。',
       });
     } finally {
       await rm(tempDir, { recursive: true, force: true });
