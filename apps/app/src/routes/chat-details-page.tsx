@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
@@ -53,21 +54,26 @@ import {
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+import { translateRuntimeMessage } from "@yinjie/i18n";
+
+const CHAT_DETAILS_REPORT_REASON = "chat_details_report";
+const CHAT_DETAILS_BLOCK_REASON = "chat_details_block";
 
 export function ChatDetailsPage() {
   const { conversationId } = useParams({
     from: "/chat/$conversationId/details",
   });
   const isDesktopLayout = useDesktopLayout();
+  const t = translateRuntimeMessage;
 
   if (isDesktopLayout) {
     return (
       <DesktopChatRouteRedirectShell
         conversationId={conversationId}
         panel="details"
-        title="正在打开桌面聊天信息"
-        description="正在切换到桌面聊天工作区中的聊天信息侧栏。"
-        loadingLabel="打开桌面聊天信息..."
+        title={t(msg`正在打开桌面聊天信息`)}
+        description={t(msg`正在切换到桌面聊天工作区中的聊天信息侧栏。`)}
+        loadingLabel={t(msg`打开桌面聊天信息...`)}
       />
     );
   }
@@ -76,6 +82,7 @@ export function ChatDetailsPage() {
 }
 
 function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
+  const t = translateRuntimeMessage;
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
@@ -96,7 +103,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       }) || undefined,
     [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
   );
-  const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
+  const ownerName = useWorldOwnerStore((state) => state.username) ?? t(msg`我`);
   const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
@@ -178,7 +185,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
 
     void navigate({ to: "/tabs/chat" });
   };
-  const statusBackLabel = safeReturnPath ? "返回上一页" : "返回消息列表";
+  const statusBackLabel = safeReturnPath
+    ? t(msg`返回上一页`)
+    : t(msg`返回消息列表`);
   const renderStatusBackAction = () => (
     <Button
       type="button"
@@ -197,7 +206,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         onClick={onRetry}
         className="rounded-full"
       >
-        重试读取
+        {t(msg`重试读取`)}
       </Button>
       {renderStatusBackAction()}
     </div>
@@ -281,13 +290,13 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     friendship?.remarkName?.trim() ||
     targetCharacter?.name ||
     conversation?.title ||
-    "对方";
+    t(msg`对方`);
   const contactProfileSubtitle = friendship?.remarkName?.trim()
-    ? `昵称：${targetCharacter?.name ?? "未设置"}`
+    ? t(msg`昵称：${targetCharacter?.name ?? t(msg`未设置`)}`)
     : targetCharacter?.relationship?.trim() ||
-      (isFriend ? "通讯录朋友" : "世界联系人");
+      (isFriend ? t(msg`通讯录朋友`) : t(msg`世界联系人`));
   const contactIdentifier = targetCharacterId
-    ? `隐界号：yinjie_${targetCharacterId.slice(0, 8)}`
+    ? t(msg`隐界号：yinjie_${targetCharacterId.slice(0, 8)}`)
     : null;
   const contactSummary = useMemo(() => {
     if (!conversation) {
@@ -305,18 +314,18 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       friendship?.remarkName?.trim() ||
       targetCharacter?.name ||
       conversation.title ||
-      "联系人";
+      t(msg`联系人`);
     const relationship =
       targetCharacter?.relationship?.trim() ||
-      (isFriend ? "通讯录朋友" : "世界联系人");
+      (isFriend ? t(msg`通讯录朋友`) : t(msg`世界联系人`));
 
     return {
-      title: `${contactName} 的隐界名片`,
+      title: t(msg`${contactName} 的隐界名片`),
       text: [
-        `${contactName} 的隐界名片`,
+        t(msg`${contactName} 的隐界名片`),
         relationship,
         targetCharacterId
-          ? `隐界号：yinjie_${targetCharacterId.slice(0, 8)}`
+          ? t(msg`隐界号：yinjie_${targetCharacterId.slice(0, 8)}`)
           : undefined,
         contactUrl,
       ]
@@ -359,7 +368,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       if (shared) {
         setNotice({
           tone: "success",
-          message: "已打开系统分享面板。",
+          message: t(msg`已打开系统分享面板。`),
         });
         return;
       }
@@ -373,9 +382,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       setNotice({
         tone: "info",
         message: nativeMobileShareSupported
-          ? "当前设备暂时无法打开系统分享，请稍后重试。"
-          : "当前环境暂不支持复制联系人摘要。",
-        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
+          : t(msg`当前环境暂不支持复制联系人摘要。`),
+        actionLabel: nativeMobileShareSupported
+          ? t(msg`重试分享`)
+          : t(msg`重试复制`),
         onAction: handleShareContact,
         secondaryActionLabel: statusBackLabel,
         onSecondaryAction: handleOperationBack,
@@ -388,16 +399,18 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       setNotice({
         tone: "success",
         message: nativeMobileShareSupported
-          ? "系统分享暂时不可用，已复制联系人摘要。"
-          : "联系人摘要已复制。",
+          ? t(msg`系统分享暂时不可用，已复制联系人摘要。`)
+          : t(msg`联系人摘要已复制。`),
       });
     } catch {
       setNotice({
         tone: "info",
         message: nativeMobileShareSupported
-          ? "系统分享失败，请稍后重试。"
-          : "复制联系人摘要失败，请稍后重试。",
-        actionLabel: nativeMobileShareSupported ? "重试分享" : "重试复制",
+          ? t(msg`系统分享失败，请稍后重试。`)
+          : t(msg`复制联系人摘要失败，请稍后重试。`),
+        actionLabel: nativeMobileShareSupported
+          ? t(msg`重试分享`)
+          : t(msg`重试复制`),
         onAction: () => {
           void handleShareContact();
         },
@@ -413,7 +426,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     onSuccess: async (_, pinned) => {
       setNotice({
         tone: "success",
-        message: pinned ? "聊天已置顶。" : "聊天已取消置顶。",
+        message: pinned ? t(msg`聊天已置顶。`) : t(msg`聊天已取消置顶。`),
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
@@ -426,7 +439,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     onSuccess: async (_, muted) => {
       setNotice({
         tone: "success",
-        message: muted ? "已开启消息免打扰。" : "已关闭消息免打扰。",
+        message: muted
+          ? t(msg`已开启消息免打扰。`)
+          : t(msg`已关闭消息免打扰。`),
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
@@ -452,20 +467,20 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       if (!enabled) {
         setNotice({
           tone: "success",
-          message: "已关闭强提醒。",
+          message: t(msg`已关闭强提醒。`),
         });
       } else if (permission === "granted") {
         setNotice({
           tone: "success",
-          message: "已开启 3 小时强提醒，系统通知已开启。",
+          message: t(msg`已开启 3 小时强提醒，系统通知已开启。`),
         });
       } else if (permission === "denied") {
         setNotice({
           tone: "warning",
           message: nativeMobileShareSupported
-            ? "已开启 3 小时强提醒，但系统通知未开启。可前往系统设置继续打开通知。"
-            : "已开启 3 小时强提醒，但系统通知未开启。",
-          actionLabel: nativeMobileShareSupported ? "去设置" : undefined,
+            ? t(msg`已开启 3 小时强提醒，但系统通知未开启。可前往系统设置继续打开通知。`)
+            : t(msg`已开启 3 小时强提醒，但系统通知未开启。`),
+          actionLabel: nativeMobileShareSupported ? t(msg`去设置`) : undefined,
           onAction: nativeMobileShareSupported
             ? () => {
                 void openAppSettings();
@@ -477,7 +492,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       } else {
         setNotice({
           tone: "success",
-          message: "已开启 3 小时强提醒。",
+          message: t(msg`已开启 3 小时强提醒。`),
         });
       }
 
@@ -496,7 +511,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       return sendFriendRequest(
         {
           characterId: targetCharacterId,
-          greeting: `${ownerName} 想把你加到通讯录里。`,
+          greeting: t(msg`${ownerName} 想把你加到通讯录里。`),
           autoAccept: true,
         },
         baseUrl,
@@ -505,7 +520,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     onSuccess: async () => {
       setNotice({
         tone: "success",
-        message: "已添加到通讯录。",
+        message: t(msg`已添加到通讯录。`),
       });
       await Promise.all([
         queryClient.invalidateQueries({
@@ -535,7 +550,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     onSuccess: async () => {
       setNotice({
         tone: "success",
-        message: "聊天记录已清空。",
+        message: t(msg`聊天记录已清空。`),
       });
       await Promise.all([
         queryClient.invalidateQueries({
@@ -552,7 +567,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     onSuccess: async () => {
       setNotice({
         tone: "success",
-        message: "聊天已隐藏。",
+        message: t(msg`聊天已隐藏。`),
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
@@ -575,8 +590,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         {
           targetType: "character",
           targetId: targetCharacterId,
-          reason: "聊天页举报",
-          details: `来自会话 ${conversationId}`,
+          reason: CHAT_DETAILS_REPORT_REASON,
+          details: `conversation:${conversationId}`,
         },
         baseUrl,
       );
@@ -584,7 +599,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     onSuccess: () => {
       setNotice({
         tone: "success",
-        message: "已提交投诉。",
+        message: t(msg`已提交投诉。`),
       });
     },
   });
@@ -598,7 +613,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       return blockCharacter(
         {
           characterId: targetCharacterId,
-          reason: "来自聊天详情页加入黑名单",
+          reason: CHAT_DETAILS_BLOCK_REASON,
         },
         baseUrl,
       );
@@ -606,7 +621,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     onSuccess: async () => {
       setNotice({
         tone: "success",
-        message: "已加入黑名单。",
+        message: t(msg`已加入黑名单。`),
       });
       await Promise.all([
         queryClient.invalidateQueries({
@@ -653,7 +668,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     },
     {
       key: "add",
-      label: "发起群聊",
+      label: t(msg`发起群聊`),
       kind: "add" as const,
       onClick: () => {
         void navigate({
@@ -672,39 +687,39 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const dangerSheetConfig =
     dangerSheetAction === "hide"
       ? {
-          title: "隐藏聊天",
-          description: "该聊天会先从消息列表中隐藏，收到新消息后会再次出现。",
-          confirmLabel: "隐藏聊天",
-          confirmDescription: "不删除现有聊天记录",
+          title: t(msg`隐藏聊天`),
+          description: t(msg`该聊天会先从消息列表中隐藏，收到新消息后会再次出现。`),
+          confirmLabel: t(msg`隐藏聊天`),
+          confirmDescription: t(msg`不删除现有聊天记录`),
           confirmDanger: false,
           onConfirm: () => hideMutation.mutate(),
         }
       : dangerSheetAction === "clear"
         ? {
-            title: "清空聊天记录",
+            title: t(msg`清空聊天记录`),
             description:
-              "仅清空当前聊天历史消息，对方资料和会话入口会继续保留。",
-            confirmLabel: "清空聊天记录",
-            confirmDescription: "此操作不可恢复",
+              t(msg`仅清空当前聊天历史消息，对方资料和会话入口会继续保留。`),
+            confirmLabel: t(msg`清空聊天记录`),
+            confirmDescription: t(msg`此操作不可恢复`),
             confirmDanger: true,
             onConfirm: () => clearMutation.mutate(),
           }
         : dangerSheetAction === "report"
           ? {
-              title: "提交投诉",
-              description: "会以当前会话作为来源，提交一次聊天场景投诉。",
-              confirmLabel: "确认投诉",
-              confirmDescription: "投诉后可继续查看聊天",
+              title: t(msg`提交投诉`),
+              description: t(msg`会以当前会话作为来源，提交一次聊天场景投诉。`),
+              confirmLabel: t(msg`确认投诉`),
+              confirmDescription: t(msg`投诉后可继续查看聊天`),
               confirmDanger: true,
               onConfirm: () => reportMutation.mutate(),
             }
           : dangerSheetAction === "block"
             ? {
-                title: "加入黑名单",
+                title: t(msg`加入黑名单`),
                 description:
-                  "加入黑名单后，将不再接收该角色的互动，也不会再继续这段聊天。",
-                confirmLabel: "加入黑名单",
-                confirmDescription: "该角色后续互动会被拦截",
+                  t(msg`加入黑名单后，将不再接收该角色的互动，也不会再继续这段聊天。`),
+                confirmLabel: t(msg`加入黑名单`),
+                confirmDescription: t(msg`该角色后续互动会被拦截`),
                 confirmDanger: true,
                 onConfirm: () => blockMutation.mutate(),
               }
@@ -719,7 +734,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
 
   return (
     <ChatDetailsShell
-      title={conversation?.title ?? "聊天信息"}
+      title={conversation?.title ?? t(msg`聊天信息`)}
       onBack={() => {
         void navigate({
           to: "/chat/$conversationId",
@@ -731,9 +746,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       {conversationsQuery.isLoading ? (
         <div className="px-2.5">
           <MobileChatDetailsStatusCard
-            badge="读取中"
-            title="正在读取聊天信息"
-            description="稍等一下，正在同步聊天资料和设置。"
+            badge={t(msg`读取中`)}
+            title={t(msg`正在读取聊天信息`)}
+            description={t(msg`稍等一下，正在同步聊天资料和设置。`)}
             tone="loading"
           />
         </div>
@@ -742,8 +757,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       conversationsQuery.error instanceof Error ? (
         <div className="px-2.5">
           <MobileChatDetailsStatusCard
-            badge="读取失败"
-            title="聊天信息暂时不可用"
+            badge={t(msg`读取失败`)}
+            title={t(msg`聊天信息暂时不可用`)}
             description={conversationsQuery.error.message}
             tone="danger"
             action={renderStatusRetryAction(() => {
@@ -755,8 +770,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       {characterQuery.isError && characterQuery.error instanceof Error ? (
         <div className="px-2.5">
           <MobileChatDetailsStatusCard
-            badge="读取失败"
-            title="联系人资料暂时不可用"
+            badge={t(msg`读取失败`)}
+            title={t(msg`联系人资料暂时不可用`)}
             description={characterQuery.error.message}
             tone="danger"
             action={renderStatusRetryAction(() => {
@@ -768,8 +783,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       {friendsQuery.isError && friendsQuery.error instanceof Error ? (
         <div className="px-2.5">
           <MobileChatDetailsStatusCard
-            badge="读取失败"
-            title="通讯录信息暂时不可用"
+            badge={t(msg`读取失败`)}
+            title={t(msg`通讯录信息暂时不可用`)}
             description={friendsQuery.error.message}
             tone="danger"
             action={renderStatusRetryAction(() => {
@@ -781,8 +796,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       {blockedQuery.isError && blockedQuery.error instanceof Error ? (
         <div className="px-2.5">
           <MobileChatDetailsStatusCard
-            badge="读取失败"
-            title="黑名单状态暂时不可用"
+            badge={t(msg`读取失败`)}
+            title={t(msg`黑名单状态暂时不可用`)}
             description={blockedQuery.error.message}
             tone="danger"
             action={renderStatusRetryAction(() => {
@@ -854,9 +869,9 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       {!conversationsQuery.isLoading && !conversation ? (
         <div className="px-2.5">
           <MobileChatDetailsStatusCard
-            badge="会话"
-            title="会话不存在"
-            description="这段聊天暂时不可用，可以先重试读取，或返回消息列表后再试。"
+            badge={t(msg`会话`)}
+            title={t(msg`会话不存在`)}
+            description={t(msg`这段聊天暂时不可用，可以先重试读取，或返回消息列表后再试。`)}
             action={renderStatusRetryAction(() => {
               void conversationsQuery.refetch();
             })}
@@ -867,7 +882,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       {conversation ? (
         <>
           <ChatDetailsSection
-            title={isFriend ? "朋友资料" : "详细资料"}
+            title={isFriend ? t(msg`朋友资料`) : t(msg`详细资料`)}
             variant="wechat"
           >
             <button
@@ -899,11 +914,11 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             {contactSummary ? (
               <div className="border-t border-[color:var(--border-faint)]">
                 <ChatSettingRow
-                  label="推荐给朋友"
+                  label={t(msg`推荐给朋友`)}
                   value={
                     nativeMobileShareSupported
-                      ? "打开系统分享面板"
-                      : "复制联系人摘要"
+                      ? t(msg`打开系统分享面板`)
+                      : t(msg`复制联系人摘要`)
                   }
                   variant="wechat"
                   onClick={() => {
@@ -919,7 +934,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           </ChatDetailsSection>
 
           {isReminderConversation ? (
-            <ChatDetailsSection title="提醒管理" variant="wechat">
+            <ChatDetailsSection title={t(msg`提醒管理`)} variant="wechat">
               <ReminderTaskPanel
                 key={`${conversationId}:reminder-panel-v2:details`}
                 conversationId={conversationId}
@@ -929,10 +944,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             </ChatDetailsSection>
           ) : null}
 
-          <ChatDetailsSection title="聊天记录" variant="wechat">
+          <ChatDetailsSection title={t(msg`聊天记录`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="查找聊天记录"
+                label={t(msg`查找聊天记录`)}
                 variant="wechat"
                 onClick={() => {
                   void navigate({
@@ -945,22 +960,22 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             </div>
           </ChatDetailsSection>
 
-          <ChatDetailsSection title="消息设置" variant="wechat">
+          <ChatDetailsSection title={t(msg`消息设置`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="消息免打扰"
+                label={t(msg`消息免打扰`)}
                 variant="wechat"
                 checked={conversation?.isMuted ?? false}
                 onToggle={(checked) => muteMutation.mutate(checked)}
               />
               <ChatSettingRow
-                label="置顶聊天"
+                label={t(msg`置顶聊天`)}
                 variant="wechat"
                 checked={isPinned}
                 onToggle={(checked) => pinMutation.mutate(checked)}
               />
               <ChatSettingRow
-                label="强提醒"
+                label={t(msg`强提醒`)}
                 value={strongReminderActive ? strongReminderLabel : undefined}
                 variant="wechat"
                 checked={strongReminderActive}
@@ -973,8 +988,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           <ChatCallFallbackSection
             variant="wechat"
             disabled={!targetCharacterId}
-            voiceValue="AI 语音"
-            videoValue="AI 数字人"
+            voiceValue={t(msg`AI 语音`)}
+            videoValue={t(msg`AI 数字人`)}
             onSelectKind={(kind) => {
               setNotice(null);
               if (kind === "video") {
@@ -993,17 +1008,17 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             }}
           />
 
-          <ChatDetailsSection title="聊天扩展" variant="wechat">
+          <ChatDetailsSection title={t(msg`聊天扩展`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="保存到通讯录"
-                value={isFriend ? "已添加" : undefined}
+                label={t(msg`保存到通讯录`)}
+                value={isFriend ? t(msg`已添加`) : undefined}
                 variant="wechat"
                 disabled={isFriend || !targetCharacterId}
                 onClick={handleSaveToContacts}
               />
               <ChatSettingRow
-                label="设置当前聊天背景"
+                label={t(msg`设置当前聊天背景`)}
                 value={getChatBackgroundLabel(
                   backgroundQuery.data?.effectiveBackground,
                 )}
@@ -1019,12 +1034,14 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             </div>
           </ChatDetailsSection>
 
-          <ChatDetailsSection title="聊天管理" variant="wechat">
+          <ChatDetailsSection title={t(msg`聊天管理`)} variant="wechat">
             <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
-                label="更多聊天操作"
+                label={t(msg`更多聊天操作`)}
                 value={
-                  isBlocked ? "隐藏 / 清空 / 投诉" : "隐藏 / 清空 / 投诉 / 拉黑"
+                  isBlocked
+                    ? t(msg`隐藏 / 清空 / 投诉`)
+                    : t(msg`隐藏 / 清空 / 投诉 / 拉黑`)
                 }
                 variant="wechat"
                 disabled={busy}
@@ -1142,14 +1159,16 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
 
           <MobileDetailsActionSheet
             open={managementSheetOpen}
-            title="聊天管理"
-            description={`对 ${targetCharacter?.name ?? conversation.title ?? "当前聊天"} 进行隐藏、清空或安全操作。`}
+            title={t(msg`聊天管理`)}
+            description={t(
+              msg`对 ${targetCharacter?.name ?? conversation.title ?? t(msg`当前聊天`)} 进行隐藏、清空或安全操作。`,
+            )}
             onClose={() => setManagementSheetOpen(false)}
             actions={[
               {
                 key: "hide",
-                label: "隐藏聊天",
-                description: "先从消息列表隐藏，后续有新消息时再次出现",
+                label: t(msg`隐藏聊天`),
+                description: t(msg`先从消息列表隐藏，后续有新消息时再次出现`),
                 disabled: busy,
                 onClick: () => {
                   setManagementSheetOpen(false);
@@ -1158,8 +1177,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               },
               {
                 key: "clear",
-                label: "清空聊天记录",
-                description: "仅清空这段聊天，不影响联系人关系",
+                label: t(msg`清空聊天记录`),
+                description: t(msg`仅清空这段聊天，不影响联系人关系`),
                 danger: true,
                 disabled: busy,
                 onClick: () => {
@@ -1169,8 +1188,8 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               },
               {
                 key: "report",
-                label: "投诉",
-                description: "提交一次聊天场景投诉",
+                label: t(msg`投诉`),
+                description: t(msg`提交一次聊天场景投诉`),
                 danger: true,
                 disabled: busy || !targetCharacterId,
                 onClick: () => {
@@ -1180,10 +1199,10 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               },
               {
                 key: "block",
-                label: isBlocked ? "已加入黑名单" : "加入黑名单",
+                label: isBlocked ? t(msg`已加入黑名单`) : t(msg`加入黑名单`),
                 description: isBlocked
-                  ? "当前已经处于黑名单中"
-                  : "不再接收该角色后续互动",
+                  ? t(msg`当前已经处于黑名单中`)
+                  : t(msg`不再接收该角色后续互动`),
                 danger: true,
                 disabled: busy || isBlocked || !targetCharacterId,
                 onClick: () => {

@@ -1,5 +1,9 @@
 import type { CSSProperties } from "react";
+import { msg } from "@lingui/macro";
 import type { ChatBackgroundAsset } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
+
+const t = translateRuntimeMessage;
 
 export function buildChatBackgroundStyle(
   background?: ChatBackgroundAsset | null,
@@ -19,5 +23,5 @@ export function buildChatBackgroundStyle(
 export function getChatBackgroundLabel(
   background?: ChatBackgroundAsset | null,
 ) {
-  return background?.label?.trim() || "未设置";
+  return background?.label?.trim() || t(msg`未设置`);
 }

@@ -47,6 +47,11 @@ msgstr "{0} items"
 msgid "{0} 群聊"
 msgstr "{0} group chat"
 
+#: apps/app/src/routes/chat-details-page.tsx:323
+#: apps/app/src/routes/chat-details-page.tsx:325
+msgid "{contactName} 的隐界名片"
+msgstr "{contactName}'s Yinjie contact card"
+
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:283
 msgid "{fileCount} 个文件"
 msgstr "{fileCount} files"
@@ -58,6 +63,10 @@ msgstr "{imageCount} images"
 #: apps/app/src/routes/group-chat-details-page.tsx:957
 msgid "{ownerDisplayName} 可快速管理成员、公告和群资料。"
 msgstr "{ownerDisplayName} can quickly manage members, announcements, and group details."
+
+#: apps/app/src/routes/chat-details-page.tsx:514
+msgid "{ownerName} 想把你加到通讯录里。"
+msgstr "{ownerName} wants to add you to contacts."
 
 #: apps/app/src/routes/group-chat-details-page.tsx:667
 msgid "{totalMemberCount} 人"
@@ -79,9 +88,25 @@ msgstr "Notify for @me"
 msgid "@所有人仍通知"
 msgstr "Notify for @all"
 
+#: apps/app/src/routes/chat-details-page.tsx:992
+msgid "AI 数字人"
+msgstr "AI digital human"
+
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:657
 msgid "AI 正在播报"
 msgstr "AI is speaking"
+
+#: apps/app/src/routes/chat-details-page.tsx:991
+msgid "AI 语音"
+msgstr "AI voice"
+
+#: apps/app/src/routes/chat-details-page.tsx:1205
+msgid "不再接收该角色后续互动"
+msgstr "Stop receiving future interactions from this character"
+
+#: apps/app/src/routes/chat-details-page.tsx:693
+msgid "不删除现有聊天记录"
+msgstr "Keep existing chat history"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:501
 msgid "不删除聊天记录"
@@ -95,9 +120,22 @@ msgstr "Unavailable"
 msgid "世界主人不会出现在移除列表里。"
 msgstr "The world owner will not appear in the removal list."
 
+#: apps/app/src/routes/chat-details-page.tsx:297
+#: apps/app/src/routes/chat-details-page.tsx:320
+msgid "世界联系人"
+msgstr "World contact"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:509
 msgid "仅清空当前群聊历史消息，群成员和群资料会继续保留。"
 msgstr "Only clear this group chat's history. Members and group details will remain."
+
+#: apps/app/src/routes/chat-details-page.tsx:701
+msgid "仅清空当前聊天历史消息，对方资料和会话入口会继续保留。"
+msgstr "Only clear this chat's history. The contact profile and chat entry will remain."
+
+#: apps/app/src/routes/chat-details-page.tsx:1181
+msgid "仅清空这段聊天，不影响联系人关系"
+msgstr "Only clear this chat. Contact status stays unchanged."
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:450
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1220
@@ -117,6 +155,18 @@ msgstr "Select contacts on the left to add them to the current group chat in one
 msgid "从通讯录里选择要加入“{groupName}”的角色。"
 msgstr "Choose contacts from your list to add to “{groupName}”."
 
+#: apps/app/src/routes/chat-details-page.tsx:710
+msgid "会以当前会话作为来源，提交一次聊天场景投诉。"
+msgstr "Submit a chat-scene report using the current conversation as the source."
+
+#: apps/app/src/routes/chat-details-page.tsx:872
+msgid "会话"
+msgstr "Conversation"
+
+#: apps/app/src/routes/chat-details-page.tsx:873
+msgid "会话不存在"
+msgstr "Conversation not found"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1343
 msgid "位置"
 msgstr "Location"
@@ -130,9 +180,14 @@ msgstr "Side panel"
 msgid "保存"
 msgstr "Save"
 
+#: apps/app/src/routes/chat-details-page.tsx:1014
 #: apps/app/src/routes/group-chat-details-page.tsx:804
 msgid "保存到通讯录"
 msgstr "Save to contacts"
+
+#: apps/app/src/routes/chat-details-page.tsx:1171
+msgid "先从消息列表隐藏，后续有新消息时再次出现"
+msgstr "Hide it from the message list first. It will reappear when new messages arrive."
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:153
 msgid "先去消息列表里建立一些聊天线程，再回来发送笔记。"
@@ -323,6 +378,16 @@ msgstr "Deleting and leaving will remove this group chat from the current world.
 msgid "加入群聊"
 msgstr "Add to group"
 
+#: apps/app/src/routes/chat-details-page.tsx:718
+#: apps/app/src/routes/chat-details-page.tsx:721
+#: apps/app/src/routes/chat-details-page.tsx:1202
+msgid "加入黑名单"
+msgstr "Block"
+
+#: apps/app/src/routes/chat-details-page.tsx:720
+msgid "加入黑名单后，将不再接收该角色的互动，也不会再继续这段聊天。"
+msgstr "After blocking, you will no longer receive interactions from this character, and this chat will end."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:401
 msgid "单聊"
 msgstr "Direct chat"
@@ -336,12 +401,17 @@ msgid "原生音频理解"
 msgstr "Native audio understanding"
 
 #: apps/app/src/components/inline-notice-action-button.tsx:24
+#: apps/app/src/routes/chat-details-page.tsx:483
 msgid "去设置"
 msgstr "Go to settings"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:1008
 msgid "发布或修改群内置顶公告"
 msgstr "Publish or edit the pinned group announcement"
+
+#: apps/app/src/routes/chat-details-page.tsx:671
+msgid "发起群聊"
+msgstr "Start group chat"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:202
 msgid "发送"
@@ -458,6 +528,14 @@ msgstr "Copy group summary"
 msgid "复制群聊摘要失败，请稍后重试。"
 msgstr "Failed to copy the group summary. Please try again later."
 
+#: apps/app/src/routes/chat-details-page.tsx:921
+msgid "复制联系人摘要"
+msgstr "Copy contact summary"
+
+#: apps/app/src/routes/chat-details-page.tsx:410
+msgid "复制联系人摘要失败，请稍后重试。"
+msgstr "Failed to copy the contact summary. Please try again later."
+
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1723
 msgid "字幕失败"
 msgstr "Caption failed"
@@ -469,6 +547,15 @@ msgstr "Caption backfill in progress"
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:42
 msgid "实时通话"
 msgstr "Real-time calls"
+
+#. placeholder {0}: targetCharacter?.name ?? conversation.title ?? t(msg`当前聊天`)
+#: apps/app/src/routes/chat-details-page.tsx:1164
+msgid "对 {0} 进行隐藏、清空或安全操作。"
+msgstr "Hide, clear, or apply safety actions to {0}."
+
+#: apps/app/src/routes/chat-details-page.tsx:293
+msgid "对方"
+msgstr "The other person"
 
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:73
 msgid "将按顺序逐张发送图片。"
@@ -486,13 +573,29 @@ msgstr "Saved to contacts."
 msgid "已关闭"
 msgstr "Closed"
 
+#: apps/app/src/routes/chat-details-page.tsx:470
+msgid "已关闭强提醒。"
+msgstr "Strong reminder turned off."
+
 #: apps/app/src/routes/group-chat-details-page.tsx:259
 msgid "已关闭显示群成员昵称。"
 msgstr "Group member nicknames are now hidden."
 
+#: apps/app/src/routes/chat-details-page.tsx:444
+msgid "已关闭消息免打扰。"
+msgstr "Chat notifications are no longer muted."
+
 #: apps/app/src/routes/group-chat-details-page.tsx:251
 msgid "已关闭群消息免打扰。"
 msgstr "Group notifications are no longer muted."
+
+#: apps/app/src/routes/chat-details-page.tsx:1202
+msgid "已加入黑名单"
+msgstr "Blocked"
+
+#: apps/app/src/routes/chat-details-page.tsx:624
+msgid "已加入黑名单。"
+msgstr "Added to blocklist."
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:291
 msgid "已在群里的成员不会重复出现。"
@@ -502,9 +605,29 @@ msgstr "Members already in the group will not appear again."
 msgid "已展开全部 {totalMemberCount} 位群成员。"
 msgstr "Expanded all {totalMemberCount} group members."
 
+#: apps/app/src/routes/chat-details-page.tsx:482
+msgid "已开启 3 小时强提醒，但系统通知未开启。"
+msgstr "3-hour strong reminder is on, but system notifications are off."
+
+#: apps/app/src/routes/chat-details-page.tsx:481
+msgid "已开启 3 小时强提醒，但系统通知未开启。可前往系统设置继续打开通知。"
+msgstr "3-hour strong reminder is on, but system notifications are off. Open system settings to enable notifications."
+
+#: apps/app/src/routes/chat-details-page.tsx:475
+msgid "已开启 3 小时强提醒，系统通知已开启。"
+msgstr "3-hour strong reminder is on, and system notifications are enabled."
+
+#: apps/app/src/routes/chat-details-page.tsx:495
+msgid "已开启 3 小时强提醒。"
+msgstr "3-hour strong reminder is on."
+
 #: apps/app/src/routes/group-chat-details-page.tsx:258
 msgid "已开启显示群成员昵称。"
 msgstr "Group member nicknames are now shown."
+
+#: apps/app/src/routes/chat-details-page.tsx:443
+msgid "已开启消息免打扰。"
+msgstr "Chat notifications muted."
 
 #: apps/app/src/routes/group-chat-details-page.tsx:250
 msgid "已开启群消息免打扰。"
@@ -514,13 +637,26 @@ msgstr "Group notifications muted."
 msgid "已录制"
 msgstr "Recorded"
 
+#: apps/app/src/routes/chat-details-page.tsx:371
 #: apps/app/src/routes/group-chat-details-page.tsx:398
 msgid "已打开系统分享面板。"
 msgstr "Opened the system share sheet."
 
+#: apps/app/src/routes/chat-details-page.tsx:602
+msgid "已提交投诉。"
+msgstr "Report submitted."
+
 #: apps/app/src/routes/group-chat-details-page.tsx:966
 msgid "已显示全部群成员"
 msgstr "All group members already shown"
+
+#: apps/app/src/routes/chat-details-page.tsx:1015
+msgid "已添加"
+msgstr "Added"
+
+#: apps/app/src/routes/chat-details-page.tsx:523
+msgid "已添加到通讯录。"
+msgstr "Added to contacts."
 
 #. placeholder {0}: imagePreviews.length
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:68
@@ -558,6 +694,10 @@ msgstr "Turned on @all notifications."
 msgid "开启了群公告通知。"
 msgstr "Turned on group announcement notifications."
 
+#: apps/app/src/routes/chat-details-page.tsx:978
+msgid "强提醒"
+msgstr "Strong reminder"
+
 #. placeholder {0}: resolveCategoryLabel(input.activeCategory)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1144
 msgid "当前会话里还没有{0}"
@@ -566,6 +706,10 @@ msgstr "There are no {0} in this conversation yet."
 #: apps/app/src/routes/group-chat-details-page.tsx:969
 msgid "当前共 {totalMemberCount} 人"
 msgstr "{totalMemberCount} members total"
+
+#: apps/app/src/routes/chat-details-page.tsx:1204
+msgid "当前已经处于黑名单中"
+msgstr "Already blocked"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:119
 msgid "当前没有可移除的成员"
@@ -587,6 +731,10 @@ msgstr "Voice input isn't supported in this environment. Use keyboard input inst
 msgid "当前环境暂不支持复制群聊摘要。"
 msgstr "Copying the group summary is not supported in this environment."
 
+#: apps/app/src/routes/chat-details-page.tsx:386
+msgid "当前环境暂不支持复制联系人摘要。"
+msgstr "Copying the contact summary is not supported in this environment."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1116
 msgid "当前筛选结果"
 msgstr "Current filter results"
@@ -599,6 +747,10 @@ msgstr "Current group chat"
 #: apps/app/src/routes/group-chat-details-page.tsx:671
 msgid "当前群聊共有 {totalMemberCount} 位成员。"
 msgstr "This group chat currently has {totalMemberCount} members."
+
+#: apps/app/src/routes/chat-details-page.tsx:1164
+msgid "当前聊天"
+msgstr "Current chat"
 
 #. placeholder {0}: input.conversationTitle
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1078
@@ -617,6 +769,7 @@ msgstr "This device doesn't support voice sending."
 msgid "当前设备无法采集麦克风音频。"
 msgstr "This device can't capture microphone audio."
 
+#: apps/app/src/routes/chat-details-page.tsx:385
 #: apps/app/src/routes/group-chat-details-page.tsx:410
 msgid "当前设备暂时无法打开系统分享，请稍后重试。"
 msgstr "This device cannot open the system share sheet right now. Please try again later."
@@ -655,6 +808,7 @@ msgstr "Members and details"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1024
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1031
+#: apps/app/src/routes/chat-details-page.tsx:106
 #: apps/app/src/routes/group-chat-details-page.tsx:365
 msgid "我"
 msgstr "Me"
@@ -667,6 +821,14 @@ msgstr "My nickname in this group"
 msgid "打开桌面群聊信息..."
 msgstr "Opening desktop group chat details..."
 
+#: apps/app/src/routes/chat-details-page.tsx:76
+msgid "打开桌面聊天信息..."
+msgstr "Opening desktop chat details..."
+
+#: apps/app/src/routes/chat-details-page.tsx:920
+msgid "打开系统分享面板"
+msgstr "Open system share sheet"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:1021
 msgid "打开邀请卡与分享入口"
 msgstr "Open the invite card and sharing entry"
@@ -674,6 +836,14 @@ msgstr "Open the invite card and sharing entry"
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:101
 msgid "把这条收藏笔记发到最近会话。"
 msgstr "Send this favorite note to a recent conversation."
+
+#: apps/app/src/routes/chat-details-page.tsx:1191
+msgid "投诉"
+msgstr "Report"
+
+#: apps/app/src/routes/chat-details-page.tsx:712
+msgid "投诉后可继续查看聊天"
+msgstr "You can keep viewing the chat after reporting"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:479
 msgid "指定日期"
@@ -710,6 +880,22 @@ msgstr "Try another date, or go back to filters and clear the date condition."
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1152
 msgid "换个群成员试试，或者返回筛选页查看全部成员。"
 msgstr "Try another member, or go back to filters to view all members."
+
+#: apps/app/src/routes/chat-details-page.tsx:917
+msgid "推荐给朋友"
+msgstr "Recommend to a friend"
+
+#: apps/app/src/routes/chat-details-page.tsx:1192
+msgid "提交一次聊天场景投诉"
+msgstr "Submit a chat-scene report"
+
+#: apps/app/src/routes/chat-details-page.tsx:709
+msgid "提交投诉"
+msgstr "Submit report"
+
+#: apps/app/src/routes/chat-details-page.tsx:937
+msgid "提醒管理"
+msgstr "Reminder management"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:384
 msgid "搜索"
@@ -818,8 +1004,10 @@ msgid "昨天"
 msgstr "Yesterday"
 
 #. placeholder {0}: character.name
+#. placeholder {0}: targetCharacter?.name ?? t(msg`未设置`)
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:175
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:245
+#: apps/app/src/routes/chat-details-page.tsx:295
 msgid "昵称：{0}"
 msgstr "Nickname: {0}"
 
@@ -836,10 +1024,18 @@ msgstr "None"
 msgid "暂未开放"
 msgstr "Not available yet"
 
+#: apps/app/src/routes/chat-details-page.tsx:1040
+msgid "更多聊天操作"
+msgstr "More chat actions"
+
 #. placeholder {0}: formatMessageTimestamp(note.updatedAt)
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:260
 msgid "更新于 {0}"
 msgstr "Updated {0}"
+
+#: apps/app/src/routes/chat-details-page.tsx:885
+msgid "朋友资料"
+msgstr "Friend profile"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1024
 msgid "未命名成员"
@@ -853,6 +1049,8 @@ msgstr "Not ready"
 msgid "未知时间"
 msgstr "Unknown time"
 
+#: apps/app/src/features/chat/backgrounds/chat-background-helpers.ts:26
+#: apps/app/src/routes/chat-details-page.tsx:295
 #: apps/app/src/routes/group-chat-details-page.tsx:813
 msgid "未设置"
 msgstr "Not set"
@@ -904,6 +1102,7 @@ msgstr "This voice message, available captions, and the AI reply will all be sav
 msgid "来自聊天信息"
 msgstr "From chat details"
 
+#: apps/app/src/routes/chat-details-page.tsx:950
 #: apps/app/src/routes/group-chat-details-page.tsx:730
 msgid "查找聊天记录"
 msgstr "Search chat history"
@@ -961,6 +1160,10 @@ msgstr "Saving..."
 msgid "正在切换到桌面聊天工作区中的群聊信息侧栏。"
 msgstr "Switching to the group details sidebar in the desktop chat workspace."
 
+#: apps/app/src/routes/chat-details-page.tsx:75
+msgid "正在切换到桌面聊天工作区中的聊天信息侧栏。"
+msgstr "Switching to the chat details sidebar in the desktop chat workspace."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:821
 msgid "正在加载..."
 msgstr "Loading..."
@@ -968,6 +1171,10 @@ msgstr "Loading..."
 #: apps/app/src/routes/group-chat-details-page.tsx:49
 msgid "正在打开桌面群聊信息"
 msgstr "Opening desktop group chat details"
+
+#: apps/app/src/routes/chat-details-page.tsx:74
+msgid "正在打开桌面聊天信息"
+msgstr "Opening desktop chat details"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:678
 msgid "正在搜索..."
@@ -1005,10 +1212,15 @@ msgstr "Loading group members"
 msgid "正在读取群聊信息"
 msgstr "Loading group chat details"
 
+#: apps/app/src/routes/chat-details-page.tsx:750
+msgid "正在读取聊天信息"
+msgstr "Loading chat details"
+
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:139
 msgid "正在读取联系人..."
 msgstr "Loading contacts..."
 
+#: apps/app/src/routes/chat-details-page.tsx:703
 #: apps/app/src/routes/group-chat-details-page.tsx:512
 msgid "此操作不可恢复"
 msgstr "This action cannot be undone"
@@ -1066,6 +1278,7 @@ msgid "消息"
 msgstr "Message"
 
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:119
+#: apps/app/src/routes/chat-details-page.tsx:966
 #: apps/app/src/routes/group-chat-details-page.tsx:760
 msgid "消息免打扰"
 msgstr "Mute notifications"
@@ -1074,6 +1287,10 @@ msgstr "Mute notifications"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1521
 msgid "消息内容"
 msgstr "Message content"
+
+#: apps/app/src/routes/chat-details-page.tsx:963
+msgid "消息设置"
+msgstr "Message settings"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:467
 msgid "添加"
@@ -1096,6 +1313,9 @@ msgid "清空搜索词"
 msgstr "Clear search"
 
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:152
+#: apps/app/src/routes/chat-details-page.tsx:699
+#: apps/app/src/routes/chat-details-page.tsx:702
+#: apps/app/src/routes/chat-details-page.tsx:1180
 #: apps/app/src/routes/group-chat-details-page.tsx:507
 #: apps/app/src/routes/group-chat-details-page.tsx:511
 #: apps/app/src/routes/group-chat-details-page.tsx:861
@@ -1121,6 +1341,10 @@ msgstr "OK"
 #: apps/app/src/components/bootstrap-screen.tsx:41
 msgid "确认入口"
 msgstr "Confirm entry"
+
+#: apps/app/src/routes/chat-details-page.tsx:711
+msgid "确认投诉"
+msgstr "Confirm report"
 
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:58
 msgid "视频通话"
@@ -1161,6 +1385,10 @@ msgstr "Remove group members"
 msgid "稍等一下，正在同步群成员、群资料和消息设置。"
 msgstr "One moment, syncing group members, details, and message settings."
 
+#: apps/app/src/routes/chat-details-page.tsx:751
+msgid "稍等一下，正在同步聊天资料和设置。"
+msgstr "One moment, syncing chat profile and settings."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:548
 msgid "稍等一下，马上就好。"
 msgstr "One moment, almost there."
@@ -1181,6 +1409,7 @@ msgstr "Admin"
 msgid "系统"
 msgstr "System"
 
+#: apps/app/src/routes/chat-details-page.tsx:409
 #: apps/app/src/routes/group-chat-details-page.tsx:441
 msgid "系统分享失败，请稍后重试。"
 msgstr "System sharing failed. Please try again later."
@@ -1188,6 +1417,10 @@ msgstr "System sharing failed. Please try again later."
 #: apps/app/src/routes/group-chat-details-page.tsx:435
 msgid "系统分享暂时不可用，已复制群聊摘要。"
 msgstr "System sharing is unavailable for now. The group summary has been copied."
+
+#: apps/app/src/routes/chat-details-page.tsx:402
+msgid "系统分享暂时不可用，已复制联系人摘要。"
+msgstr "System sharing is unavailable for now. The contact summary has been copied."
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:284
 msgid "纯文本笔记"
@@ -1210,6 +1443,7 @@ msgid "网页链接"
 msgstr "Web link"
 
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:113
+#: apps/app/src/routes/chat-details-page.tsx:972
 #: apps/app/src/routes/group-chat-details-page.tsx:798
 msgid "置顶聊天"
 msgstr "Pin chat"
@@ -1319,6 +1553,7 @@ msgid "群语音通话暂未开放"
 msgstr "Group voice calls are not available yet"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:112
+#: apps/app/src/routes/chat-details-page.tsx:737
 msgid "聊天信息"
 msgstr "Chat details"
 
@@ -1326,17 +1561,59 @@ msgstr "Chat details"
 msgid "聊天信息入口"
 msgstr "Opened from chat details"
 
+#: apps/app/src/routes/chat-details-page.tsx:761
+msgid "聊天信息暂时不可用"
+msgstr "Chat details are temporarily unavailable"
+
+#: apps/app/src/routes/chat-details-page.tsx:429
+msgid "聊天已取消置顶。"
+msgstr "Chat unpinned."
+
+#: apps/app/src/routes/chat-details-page.tsx:429
+msgid "聊天已置顶。"
+msgstr "Chat pinned."
+
+#: apps/app/src/routes/chat-details-page.tsx:570
+msgid "聊天已隐藏。"
+msgstr "Chat hidden."
+
+#: apps/app/src/routes/chat-details-page.tsx:1011
+msgid "聊天扩展"
+msgstr "Chat extras"
+
+#: apps/app/src/routes/chat-details-page.tsx:1037
+#: apps/app/src/routes/chat-details-page.tsx:1162
+msgid "聊天管理"
+msgstr "Chat management"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:741
 msgid "聊天背景"
 msgstr "Chat background"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:87
+#: apps/app/src/routes/chat-details-page.tsx:947
 msgid "聊天记录"
 msgstr "Chat history"
+
+#: apps/app/src/routes/chat-details-page.tsx:553
+msgid "聊天记录已清空。"
+msgstr "Chat history cleared."
 
 #: apps/app/src/routes/group-chat-details-page.tsx:757
 msgid "聊天设置"
 msgstr "Chat settings"
+
+#: apps/app/src/routes/chat-details-page.tsx:317
+msgid "联系人"
+msgstr "Contact"
+
+#: apps/app/src/routes/chat-details-page.tsx:403
+msgid "联系人摘要已复制。"
+msgstr "Contact summary copied."
+
+#: apps/app/src/routes/chat-details-page.tsx:774
+msgid "联系人资料暂时不可用"
+msgstr "Contact profile is temporarily unavailable"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1347
 msgid "表情"
@@ -1345,6 +1622,10 @@ msgstr "Sticker"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1452
 msgid "表情消息"
 msgstr "Sticker message"
+
+#: apps/app/src/routes/chat-details-page.tsx:1021
+msgid "设置当前聊天背景"
+msgstr "Set current chat background"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1138
 msgid "试试换个关键词，或者缩小筛选范围后再查找。"
@@ -1365,6 +1646,18 @@ msgstr "This group chat will be hidden from the message list for now and will re
 #: apps/app/src/routes/group-chat-details-page.tsx:524
 msgid "该群聊会被移除"
 msgstr "This group chat will be removed"
+
+#: apps/app/src/routes/chat-details-page.tsx:691
+msgid "该聊天会先从消息列表中隐藏，收到新消息后会再次出现。"
+msgstr "This chat will be hidden from the message list for now and will reappear when new messages arrive."
+
+#: apps/app/src/routes/chat-details-page.tsx:722
+msgid "该角色后续互动会被拦截"
+msgstr "Future interactions from this character will be blocked"
+
+#: apps/app/src/routes/chat-details-page.tsx:885
+msgid "详细资料"
+msgstr "Details"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1335
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1549
@@ -1404,9 +1697,17 @@ msgstr "Voice calls are not available yet"
 msgid "请求中"
 msgstr "Requesting"
 
+#: apps/app/src/routes/chat-details-page.tsx:749
 #: apps/app/src/routes/group-chat-details-page.tsx:578
 msgid "读取中"
 msgstr "Loading"
+
+#: apps/app/src/routes/chat-details-page.tsx:760
+#: apps/app/src/routes/chat-details-page.tsx:773
+#: apps/app/src/routes/chat-details-page.tsx:786
+#: apps/app/src/routes/chat-details-page.tsx:799
+msgid "读取失败"
+msgstr "Load failed"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:555
 msgid "读取群成员失败"
@@ -1431,11 +1732,13 @@ msgstr "Back"
 msgid "返回上一层"
 msgstr "Back"
 
+#: apps/app/src/routes/chat-details-page.tsx:189
 #: apps/app/src/routes/group-chat-details-page.tsx:134
 #: apps/app/src/routes/group-chat-details-page.tsx:167
 msgid "返回上一页"
 msgstr "Back"
 
+#: apps/app/src/routes/chat-details-page.tsx:190
 #: apps/app/src/routes/group-chat-details-page.tsx:134
 #: apps/app/src/routes/group-chat-details-page.tsx:167
 msgid "返回消息列表"
@@ -1494,6 +1797,10 @@ msgstr "This note does not have a content summary yet."
 msgid "这段录音太长了，请缩短单次语音输入时长。"
 msgstr "This recording is too long. Shorten a single voice input."
 
+#: apps/app/src/routes/chat-details-page.tsx:874
+msgid "这段聊天暂时不可用，可以先重试读取，或返回消息列表后再试。"
+msgstr "This chat is temporarily unavailable. Try loading again, or go back to the message list and try later."
+
 #: apps/app/src/features/chat/use-speech-input.ts:561
 msgid "这段语音没有识别出有效文字，请再试一次。"
 msgstr "No valid text was recognized from this audio. Please try again."
@@ -1518,6 +1825,15 @@ msgstr "Choose the chat to receive the note"
 msgid "选择需要移出群聊的成员"
 msgstr "Choose members to remove from the group chat"
 
+#: apps/app/src/routes/chat-details-page.tsx:787
+msgid "通讯录信息暂时不可用"
+msgstr "Contacts data is temporarily unavailable"
+
+#: apps/app/src/routes/chat-details-page.tsx:297
+#: apps/app/src/routes/chat-details-page.tsx:320
+msgid "通讯录朋友"
+msgstr "Friend in contacts"
+
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:154
 msgid "通讯录里还没有可选成员"
 msgstr "There are no selectable contacts yet"
@@ -1527,16 +1843,21 @@ msgstr "There are no selectable contacts yet"
 msgid "重试"
 msgstr "Retry"
 
+#: apps/app/src/routes/chat-details-page.tsx:388
+#: apps/app/src/routes/chat-details-page.tsx:412
 #: apps/app/src/routes/group-chat-details-page.tsx:415
 #: apps/app/src/routes/group-chat-details-page.tsx:446
 msgid "重试分享"
 msgstr "Retry sharing"
 
+#: apps/app/src/routes/chat-details-page.tsx:389
+#: apps/app/src/routes/chat-details-page.tsx:413
 #: apps/app/src/routes/group-chat-details-page.tsx:422
 #: apps/app/src/routes/group-chat-details-page.tsx:447
 msgid "重试复制"
 msgstr "Retry copying"
 
+#: apps/app/src/routes/chat-details-page.tsx:209
 #: apps/app/src/routes/group-chat-details-page.tsx:148
 msgid "重试读取"
 msgstr "Retry loading"
@@ -1551,7 +1872,24 @@ msgstr "Link"
 msgid "链路详情"
 msgstr "Pipeline details"
 
+#. placeholder {0}: targetCharacterId.slice(0, 8)
+#: apps/app/src/routes/chat-details-page.tsx:299
+#: apps/app/src/routes/chat-details-page.tsx:328
+msgid "隐界号：yinjie_{0}"
+msgstr "Yinjie ID: yinjie_{0}"
+
+#: apps/app/src/routes/chat-details-page.tsx:1043
+msgid "隐藏 / 清空 / 投诉"
+msgstr "Hide / Clear / Report"
+
+#: apps/app/src/routes/chat-details-page.tsx:1044
+msgid "隐藏 / 清空 / 投诉 / 拉黑"
+msgstr "Hide / Clear / Report / Block"
+
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:145
+#: apps/app/src/routes/chat-details-page.tsx:690
+#: apps/app/src/routes/chat-details-page.tsx:692
+#: apps/app/src/routes/chat-details-page.tsx:1170
 #: apps/app/src/routes/group-chat-details-page.tsx:496
 #: apps/app/src/routes/group-chat-details-page.tsx:500
 #: apps/app/src/routes/group-chat-details-page.tsx:855
@@ -1569,3 +1907,7 @@ msgstr "Microphone access was denied. Please allow the app to access your microp
 #: apps/app/src/features/chat/use-speech-input.ts:760
 msgid "麦克风权限被拒绝，请先允许浏览器访问麦克风。"
 msgstr "Microphone access was denied. Please allow the browser to access your microphone first."
+
+#: apps/app/src/routes/chat-details-page.tsx:800
+msgid "黑名单状态暂时不可用"
+msgstr "Blocklist status is temporarily unavailable"
