@@ -12,12 +12,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: issues.length
 #: apps/admin/src/components/root-layout.tsx:72
 msgid "{0} 项待处理"
 msgstr "{0} pending items"
 
-#. placeholder {0}: issues[0]
 #: apps/admin/src/components/root-layout.tsx:77
 msgid "{0}，其余项也需要继续检查。"
 msgstr "{0}; the remaining items also need review."
@@ -178,7 +176,6 @@ msgstr "The external player URL is available, but provider-state callback authen
 msgid "外部数字人 Provider 已就绪，当前可以直接联调真实播放器和状态回写。"
 msgstr "The external digital human Provider is ready; you can now test the real player and state callbacks."
 
-#. placeholder {0}: gateway.paramsCount
 #: apps/admin/src/lib/digital-human-admin-summary.ts:51
 msgid "外部数字人 Provider 已就绪，当前模板会注入 {0} 个上游参数。"
 msgstr "The external digital human Provider is ready; the current template injects {0} upstream parameters."
@@ -320,7 +317,6 @@ msgstr "Reminder Runtime"
 msgid "数字人"
 msgstr "Digital human"
 
-#. placeholder {0}: digitalHumanSummary.statusLabel
 #: apps/admin/src/components/admin-sidebar.tsx:106
 msgid "数字人 {0}"
 msgstr "Digital human {0}"
@@ -329,7 +325,6 @@ msgstr "Digital human {0}"
 msgid "数字人、推理服务或实例连通性还未同步成功。"
 msgstr "Digital human, inference service, or instance connectivity has not synced successfully yet."
 
-#. placeholder {0}: digitalHumanSummary.statusLabel
 #: apps/admin/src/components/root-layout.tsx:66
 #: apps/admin/src/components/root-layout.tsx:84
 msgid "数字人{0}"
