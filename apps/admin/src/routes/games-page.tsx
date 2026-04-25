@@ -977,7 +977,7 @@ function CatalogEditorWorkspace({
 
       <div className="grid gap-6 xl:grid-cols-2">
         <AdminDetailPanel title="基础资料">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 2xl:grid-cols-2">
             <EditorField
               label="游戏 ID"
               value={draft.id}
@@ -1025,7 +1025,7 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, slogan: value }))
               }
               placeholder="例如 三分钟一局，把反应和协作压到最紧"
-              className="md:col-span-2"
+              className="2xl:col-span-2"
             />
             <EditorTextArea
               label="游戏简介"
@@ -1034,13 +1034,13 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, description: value }))
               }
               placeholder="描述这款 AI 游戏的玩法、目标和回流价值"
-              className="md:col-span-2"
+              className="2xl:col-span-2"
             />
           </div>
         </AdminDetailPanel>
 
         <AdminDetailPanel title="前台定位">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 2xl:grid-cols-2">
             <EditorSelect
               label="目录分类"
               value={draft.category}
@@ -1105,7 +1105,7 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, updateNote: value }))
               }
               placeholder="例如 新增赛季对抗、优化新手引导"
-              className="md:col-span-2"
+              className="2xl:col-span-2"
             />
             <EditorTextArea
               label="本局目标"
@@ -1114,13 +1114,13 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, sessionObjective: value }))
               }
               placeholder="说明玩家本轮打开后应该做什么"
-              className="md:col-span-2"
+              className="2xl:col-span-2"
             />
           </div>
         </AdminDetailPanel>
 
         <AdminDetailPanel title="运营与审核">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 2xl:grid-cols-2">
             <EditorSelect
               label="来源"
               value={draft.publisherKind}
@@ -1188,7 +1188,7 @@ function CatalogEditorWorkspace({
         </AdminDetailPanel>
 
         <AdminDetailPanel title="来源与标签">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 2xl:grid-cols-2">
             <EditorField
               label="来源角色 ID"
               value={draft.sourceCharacterId}
@@ -1221,7 +1221,7 @@ function CatalogEditorWorkspace({
                 }))
               }
               placeholder="用逗号或换行分隔，例如 AI 陪练，AI 剧情生成"
-              className="md:col-span-2"
+              className="2xl:col-span-2"
             />
             <EditorTextArea
               label="标签"
@@ -1230,7 +1230,7 @@ function CatalogEditorWorkspace({
                 setDraft((current) => ({ ...current, tagsText: value }))
               }
               placeholder="用逗号或换行分隔，例如 组队，3 分钟，赛季"
-              className="md:col-span-2"
+              className="2xl:col-span-2"
             />
           </div>
         </AdminDetailPanel>

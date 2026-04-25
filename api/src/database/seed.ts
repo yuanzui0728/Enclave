@@ -35,6 +35,7 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
   let seeded = 0;
   let refreshedBios = 0;
   let refreshedProfiles = 0;
+  let refreshedMetadata = 0;
   for (const preset of presets) {
     const materializedProfile = preset.character.profile
       ? applyPersistentNaturalDialogueProfile(preset.character.profile)
@@ -67,6 +68,18 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
       ? applyPersistentNaturalDialogueProfile(existing.profile)
       : materializedProfile;
     const patch: Partial<CharacterEntity> = {};
+    if (existing.sourceType !== 'preset_catalog') {
+      patch.sourceType = 'preset_catalog';
+    }
+    if (existing.sourceKey !== preset.presetKey) {
+      patch.sourceKey = preset.presetKey;
+    }
+    if (existing.deletionPolicy !== 'archive_allowed') {
+      patch.deletionPolicy = 'archive_allowed';
+    }
+    if (existing.isTemplate !== false) {
+      patch.isTemplate = false;
+    }
     if (
       presetBio &&
       (!existing.bio?.trim() ||
@@ -84,6 +97,14 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     }
     if (Object.keys(patch).length > 0) {
       await repo.update({ id: existing.id }, patch);
+      if (
+        patch.sourceType !== undefined ||
+        patch.sourceKey !== undefined ||
+        patch.deletionPolicy !== undefined ||
+        patch.isTemplate !== undefined
+      ) {
+        refreshedMetadata++;
+      }
     }
   }
   if (seeded > 0) {
@@ -96,5 +117,8 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     console.log(
       `✓ Refreshed ${refreshedProfiles} built-in preset reply profiles`,
     );
+  }
+  if (refreshedMetadata > 0) {
+    console.log(`✓ Canonicalized ${refreshedMetadata} built-in preset records`);
   }
 }
