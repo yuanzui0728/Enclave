@@ -21,7 +21,7 @@ export function LanguageSwitcher({
   variant = "panel",
 }: LanguageSwitcherProps) {
   const selectId = useId();
-  const { availableLocales, locale, setLocale } = useAppLocale();
+  const { availableLocales, requestedLocale, setLocale } = useAppLocale();
   const compact = variant === "compact";
   const resolvedDescription =
     description === undefined ? (
@@ -60,7 +60,7 @@ export function LanguageSwitcher({
         </span>
         <select
           id={selectId}
-          value={locale}
+          value={requestedLocale}
           onChange={(event) => setLocale(event.currentTarget.value)}
           className={cx(
             "rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]",

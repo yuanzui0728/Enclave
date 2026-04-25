@@ -1057,7 +1057,7 @@ msgstr "自分自身による未完了事項の回収"
 
 #: apps/admin/src/components/root-layout.tsx:296
 msgid "我自己的 workspace 与 heartbeat"
-msgstr ""
+msgstr "自分自身の workspace と heartbeat"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1321
 msgid "打开回复逻辑"
@@ -1130,7 +1130,7 @@ msgstr "担当：自分自身"
 
 #: apps/admin/src/components/root-layout.tsx:181
 msgid "承接：我自己主代理"
-msgstr ""
+msgstr "担当：自分自身 メインエージェント"
 
 #: apps/admin/src/components/root-layout.tsx:211
 msgid "承接：界闻/联动角色"
@@ -1146,7 +1146,7 @@ msgstr ""
 
 #: apps/admin/src/components/root-layout.tsx:298
 msgid "把“我自己”升级成主代理后，在这里查看 standing orders、workspace 文件、巡检结果和近期待处理事项。"
-msgstr ""
+msgstr "「自分自身」をメインエージェントに昇格した後、ここで standing orders、workspace ファイル、巡回結果、直近の未処理事項を確認します。"
 
 #: apps/admin/src/routes/dashboard-page.tsx:632
 msgid "把世界状态、内容产出、消息体量和运行版本压缩成一屏摘要，避免重复扫读多块卡片。"
@@ -1472,7 +1472,7 @@ msgstr ""
 
 #: apps/admin/src/components/root-layout.tsx:182
 msgid "查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。"
-msgstr ""
+msgstr "self-agent workspace、heartbeat、standing orders、直近の巡回記録を確認します。"
 
 #: apps/admin/src/routes/dashboard-page.tsx:575
 msgid "查看回复逻辑"

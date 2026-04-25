@@ -31,6 +31,7 @@ type AppLocaleContextValue = {
   error: Error | null;
   isReady: boolean;
   locale: SupportedLocale;
+  requestedLocale: SupportedLocale;
   setLocale: (locale: string) => void;
   surface: I18nAppSurface;
 };
@@ -48,9 +49,10 @@ export function AppLocaleProvider({
   fallback = null,
   surface,
 }: AppLocaleProviderProps) {
-  const [locale, setLocaleState] = useState<SupportedLocale>(() =>
-    resolveInitialLocale(surface),
-  );
+  const initialLocale = useMemo(() => resolveInitialLocale(surface), [surface]);
+  const [requestedLocale, setRequestedLocale] =
+    useState<SupportedLocale>(initialLocale);
+  const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [activationVersion, setActivationVersion] = useState(0);
@@ -61,7 +63,7 @@ export function AppLocaleProvider({
       const resolvedLocale =
         resolveSupportedLocale(nextLocale) ?? DEFAULT_LOCALE;
       startTransition(() => {
-        setLocaleState((currentLocale) =>
+        setRequestedLocale((currentLocale) =>
           currentLocale === resolvedLocale ? currentLocale : resolvedLocale,
         );
       });
@@ -79,15 +81,16 @@ export function AppLocaleProvider({
       setError(null);
 
       try {
-        const messages = await loadMessagesForSurface(surface, locale);
+        const messages = await loadMessagesForSurface(surface, requestedLocale);
         if (cancelled) {
           return;
         }
 
-        appI18n.load(locale, messages);
-        appI18n.activate(locale);
-        setActiveLocale(locale);
-        syncDocumentLocale(locale);
+        appI18n.load(requestedLocale, messages);
+        appI18n.activate(requestedLocale);
+        setActiveLocale(requestedLocale);
+        syncDocumentLocale(requestedLocale);
+        setLocaleState(requestedLocale);
         hasActivatedLocaleRef.current = true;
         setIsReady(true);
         setActivationVersion((currentVersion) => currentVersion + 1);
@@ -99,13 +102,14 @@ export function AppLocaleProvider({
         const nextError =
           cause instanceof Error ? cause : new Error(String(cause));
 
-        if (locale !== DEFAULT_LOCALE) {
-          startTransition(() => setLocaleState(DEFAULT_LOCALE));
+        if (requestedLocale !== DEFAULT_LOCALE) {
+          startTransition(() => setRequestedLocale(DEFAULT_LOCALE));
           return;
         }
 
         syncDocumentLocale(DEFAULT_LOCALE);
         setActiveLocale(DEFAULT_LOCALE);
+        setLocaleState(DEFAULT_LOCALE);
         hasActivatedLocaleRef.current = true;
         setError(nextError);
         setIsReady(true);
@@ -118,7 +122,7 @@ export function AppLocaleProvider({
     return () => {
       cancelled = true;
     };
-  }, [locale, surface]);
+  }, [requestedLocale, surface]);
 
   useEffect(() => {
     if (!isReady) {
@@ -142,12 +146,21 @@ export function AppLocaleProvider({
       error,
       isReady,
       locale,
+      requestedLocale,
       setLocale,
       surface,
     }),
     // activationVersion forces consumers that call imperative translation
     // helpers during render to recompute after Lingui finishes activating.
-    [activationVersion, error, isReady, locale, setLocale, surface],
+    [
+      activationVersion,
+      error,
+      isReady,
+      locale,
+      requestedLocale,
+      setLocale,
+      surface,
+    ],
   );
 
   return (

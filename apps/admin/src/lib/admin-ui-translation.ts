@@ -1883,6 +1883,28 @@ const KO_TO_JA_EXACT_TRANSLATIONS = buildCrossLocaleExactTranslations(
   KO_EXACT_TRANSLATIONS,
   JA_EXACT_TRANSLATIONS,
 );
+const EN_TO_JA_EXACT_TRANSLATIONS = buildCrossLocaleExactTranslations(
+  EN_EXACT_TRANSLATIONS,
+  JA_EXACT_TRANSLATIONS,
+);
+const EN_TO_KO_EXACT_TRANSLATIONS = buildCrossLocaleExactTranslations(
+  EN_EXACT_TRANSLATIONS,
+  KO_EXACT_TRANSLATIONS,
+);
+const EN_TO_ZH_EXACT_TRANSLATIONS =
+  buildReverseExactTranslations(EN_EXACT_TRANSLATIONS);
+const JA_TO_EN_EXACT_TRANSLATIONS = buildCrossLocaleExactTranslations(
+  JA_EXACT_TRANSLATIONS,
+  EN_EXACT_TRANSLATIONS,
+);
+const JA_TO_ZH_EXACT_TRANSLATIONS =
+  buildReverseExactTranslations(JA_EXACT_TRANSLATIONS);
+const KO_TO_EN_EXACT_TRANSLATIONS = buildCrossLocaleExactTranslations(
+  KO_EXACT_TRANSLATIONS,
+  EN_EXACT_TRANSLATIONS,
+);
+const KO_TO_ZH_EXACT_TRANSLATIONS =
+  buildReverseExactTranslations(KO_EXACT_TRANSLATIONS);
 
 const EN_SEGMENT_TRANSLATIONS = ([
   ["立即执行 heartbeat", "Run heartbeat now"],
@@ -2240,11 +2262,12 @@ export function translateAdminUiText(
   text: string,
   locale: SupportedLocale,
 ) {
-  if (locale === "zh-CN") {
-    return text;
-  }
-
-  if (locale !== "en-US" && locale !== "ja-JP" && locale !== "ko-KR") {
+  if (
+    locale !== "zh-CN" &&
+    locale !== "en-US" &&
+    locale !== "ja-JP" &&
+    locale !== "ko-KR"
+  ) {
     return text;
   }
 
@@ -2252,6 +2275,15 @@ export function translateAdminUiText(
   const trailingWhitespace = text.match(/\s*$/)?.[0] ?? "";
   const body = text.trim().replace(/\s+/g, " ");
   if (!body) {
+    return text;
+  }
+
+  const exactTranslation = readExactAdminTranslation(body, locale);
+  if (exactTranslation) {
+    return `${leadingWhitespace}${exactTranslation}${trailingWhitespace}`;
+  }
+
+  if (locale === "zh-CN") {
     return text;
   }
 
@@ -2295,15 +2327,42 @@ function readNativeExactTranslation(
   body: string,
   locale: SupportedLocale,
 ): string | undefined {
+  return readExactAdminTranslation(body, locale);
+}
+
+function readExactAdminTranslation(
+  body: string,
+  locale: SupportedLocale,
+): string | undefined {
+  if (locale === "zh-CN") {
+    return (
+      EN_TO_ZH_EXACT_TRANSLATIONS.get(body) ??
+      JA_TO_ZH_EXACT_TRANSLATIONS.get(body) ??
+      KO_TO_ZH_EXACT_TRANSLATIONS.get(body)
+    );
+  }
+
+  if (locale === "en-US") {
+    return (
+      EN_EXACT_TRANSLATIONS.get(body) ??
+      JA_TO_EN_EXACT_TRANSLATIONS.get(body) ??
+      KO_TO_EN_EXACT_TRANSLATIONS.get(body)
+    );
+  }
+
   if (locale === "ja-JP") {
     return (
-      JA_EXACT_TRANSLATIONS.get(body) ?? KO_TO_JA_EXACT_TRANSLATIONS.get(body)
+      JA_EXACT_TRANSLATIONS.get(body) ??
+      KO_TO_JA_EXACT_TRANSLATIONS.get(body) ??
+      EN_TO_JA_EXACT_TRANSLATIONS.get(body)
     );
   }
 
   if (locale === "ko-KR") {
     return (
-      KO_EXACT_TRANSLATIONS.get(body) ?? JA_TO_KO_EXACT_TRANSLATIONS.get(body)
+      KO_EXACT_TRANSLATIONS.get(body) ??
+      JA_TO_KO_EXACT_TRANSLATIONS.get(body) ??
+      EN_TO_KO_EXACT_TRANSLATIONS.get(body)
     );
   }
 
@@ -2323,6 +2382,17 @@ function buildCrossLocaleExactTranslations(
   }
 
   return translations;
+}
+
+function buildReverseExactTranslations(translations: Map<string, string>) {
+  const reversed = new Map<string, string>();
+  for (const [sourceKey, sourceValue] of translations) {
+    if (sourceValue && sourceValue !== sourceKey) {
+      reversed.set(sourceValue, sourceKey);
+    }
+  }
+
+  return reversed;
 }
 
 function translateNativeAdminTextBody(
