@@ -21,7 +21,8 @@ export function LanguageSwitcher({
   variant = "panel",
 }: LanguageSwitcherProps) {
   const selectId = useId();
-  const { availableLocales, requestedLocale, setLocale } = useAppLocale();
+  const { availableLocales, isSwitchingLocale, requestedLocale, setLocale } =
+    useAppLocale();
   const compact = variant === "compact";
   const resolvedDescription =
     description === undefined ? (
@@ -61,6 +62,7 @@ export function LanguageSwitcher({
         <select
           id={selectId}
           value={requestedLocale}
+          aria-busy={isSwitchingLocale}
           onChange={(event) => setLocale(event.currentTarget.value)}
           className={cx(
             "rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]",
@@ -79,6 +81,11 @@ export function LanguageSwitcher({
       {!compact && resolvedDescription ? (
         <p className="mt-2 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
           {resolvedDescription}
+        </p>
+      ) : null}
+      {!compact && isSwitchingLocale ? (
+        <p className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
+          <Trans>正在切换语言...</Trans>
         </p>
       ) : null}
     </div>

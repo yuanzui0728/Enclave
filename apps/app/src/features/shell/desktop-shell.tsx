@@ -4,6 +4,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PropsWithChildren,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useRouterState } from "@tanstack/react-router";
 import {
   Camera,
@@ -20,6 +21,7 @@ import {
   getOrCreateConversation,
   listCharacters,
 } from "@yinjie/contracts";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
 import { recordAppNavigation } from "../../lib/history-back";
@@ -119,6 +121,7 @@ async function resolveDesktopWindowHandle(): Promise<DesktopWindowHandle | null>
 }
 
 export function DesktopShell({ children }: PropsWithChildren) {
+  const t = useRuntimeTranslator();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -827,7 +830,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 {isMoreMenuOpen ? (
                   <div className="absolute bottom-0 left-[calc(100%+0.75rem)] z-30 w-[232px] rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.97)] p-2 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
                     <div className="px-3 pb-2 pt-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
-                      更多功能
+                      {t(msg`更多功能`)}
                     </div>
                     <div className="space-y-1">
                       {desktopMoreMenuItems.map((item) => (
@@ -841,11 +844,11 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       ))}
                     </div>
                     <div className="mt-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[11px] leading-6 text-[color:var(--text-dim)]">
-                      ⌘/Ctrl + K 搜索
+                      ⌘/Ctrl + K {t(msg`搜索`)}
                       <br />
-                      ⌘/Ctrl + , 设置
+                      ⌘/Ctrl + , {t(msg`设置`)}
                       <br />
-                      ⌘/Ctrl + Shift + F 聊天文件
+                      ⌘/Ctrl + Shift + F {t(msg`聊天文件`)}
                     </div>
                   </div>
                 ) : null}
@@ -1258,12 +1261,15 @@ function DesktopNavLink({
   item: (typeof desktopPrimaryNavItems)[number];
 }) {
   const Icon = item.icon;
+  const t = useRuntimeTranslator();
+  const label = t(item.label);
+  const shortLabel = t(item.shortLabel);
 
   return (
     <button
       type="button"
       aria-current={active ? "page" : undefined}
-      title={item.label}
+      title={label}
       onClick={() => {
         window.location.assign(item.to);
       }}
@@ -1289,11 +1295,11 @@ function DesktopNavLink({
         <Icon size={compact ? 14 : 15} />
       </div>
       {compact ? (
-        <span>{item.shortLabel}</span>
+        <span>{shortLabel}</span>
       ) : (
         <>
-          <span className="hidden xl:block">{item.label}</span>
-          <span className="xl:hidden">{item.shortLabel}</span>
+          <span className="hidden xl:block">{label}</span>
+          <span className="xl:hidden">{shortLabel}</span>
         </>
       )}
     </button>
@@ -1312,11 +1318,14 @@ function DesktopActionButton({
   onClick: () => void;
 }) {
   const Icon = item.icon;
+  const t = useRuntimeTranslator();
+  const label = t(item.label);
+  const shortLabel = t(item.shortLabel);
 
   return (
     <button
       type="button"
-      title={item.label}
+      title={label}
       onClick={onClick}
       className={cn(
         "group flex w-full flex-col items-center border-0 bg-transparent leading-none appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
@@ -1341,8 +1350,8 @@ function DesktopActionButton({
       </div>
       {compact ? null : (
         <>
-          <span className="hidden xl:block">{item.label}</span>
-          <span className="xl:hidden">{item.shortLabel}</span>
+          <span className="hidden xl:block">{label}</span>
+          <span className="xl:hidden">{shortLabel}</span>
         </>
       )}
     </button>
@@ -1357,6 +1366,8 @@ function DesktopMoreMenuButton({
   onClick: () => void;
 }) {
   const Icon = item.icon;
+  const t = useRuntimeTranslator();
+  const label = t(item.label);
 
   return (
     <button
@@ -1368,7 +1379,7 @@ function DesktopMoreMenuButton({
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-medium">{item.label}</div>
+        <div className="truncate font-medium">{label}</div>
       </div>
     </button>
   );

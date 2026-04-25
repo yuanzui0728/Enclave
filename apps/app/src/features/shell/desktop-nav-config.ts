@@ -16,6 +16,7 @@ import {
   RadioTower,
   Settings,
 } from "lucide-react";
+import { msg } from "@lingui/macro";
 import {
   desktopBottomNavBindings,
   desktopPrimaryNavBindings,
@@ -84,43 +85,43 @@ export const desktopMoreMenuItems: DesktopNavActionItem[] = [
   {
     kind: "action",
     icon: RadioTower,
-    label: "视频号直播伴侣",
-    shortLabel: "直播伴侣",
+    label: msg`视频号直播伴侣`,
+    shortLabel: msg`直播伴侣`,
     action: "open-live-companion",
   },
   {
     kind: "action",
     icon: FolderOpen,
-    label: "聊天文件",
-    shortLabel: "聊天文件",
+    label: msg`聊天文件`,
+    shortLabel: msg`聊天文件`,
     action: "open-chat-files",
   },
   {
     kind: "action",
     icon: History,
-    label: "聊天记录管理",
-    shortLabel: "聊天记录",
+    label: msg`聊天记录管理`,
+    shortLabel: msg`聊天记录`,
     action: "open-chat-history",
   },
   {
     kind: "action",
     icon: Lock,
-    label: "锁定",
-    shortLabel: "锁定",
+    label: msg`锁定`,
+    shortLabel: msg`锁定`,
     action: "lock",
   },
   {
     kind: "action",
     icon: MessageCircleMore,
-    label: "意见反馈",
-    shortLabel: "反馈",
+    label: msg`意见反馈`,
+    shortLabel: msg`反馈`,
     action: "open-feedback",
   },
   {
     kind: "action",
     icon: Settings,
-    label: "设置",
-    shortLabel: "设置",
+    label: msg`设置`,
+    shortLabel: msg`设置`,
     action: "open-settings",
   },
 ];

@@ -7,7 +7,9 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { msg } from "@lingui/macro";
 import { getConversations } from "@yinjie/contracts";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import {
   Compass,
   MessageCircleMore,
@@ -26,14 +28,15 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 const EMPTY_CONVERSATIONS = Object.freeze([]);
 
 const tabs = [
-  { to: "/tabs/chat", label: "消息", icon: MessageCircleMore },
-  { to: "/tabs/contacts", label: "通讯录", icon: UsersRound },
-  { to: "/tabs/discover", label: "发现", icon: Compass },
-  { to: "/tabs/profile", label: "我", icon: UserRound },
+  { to: "/tabs/chat", label: msg`消息`, icon: MessageCircleMore },
+  { to: "/tabs/contacts", label: msg`通讯录`, icon: UsersRound },
+  { to: "/tabs/discover", label: msg`发现`, icon: Compass },
+  { to: "/tabs/profile", label: msg`我`, icon: UserRound },
 ];
 const KEEP_ALIVE_TAB_PATHS = new Set(tabs.map((tab) => tab.to));
 
 export function MobileShell({ children }: PropsWithChildren) {
+  const t = useRuntimeTranslator();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -166,6 +169,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                       ? "text-[#07c160]"
                       : "text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]",
                   )}
+                  aria-label={t(label)}
                 >
                   <div
                     className={cn(
@@ -185,7 +189,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                       </span>
                     ) : null}
                   </div>
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                 </Link>
               );
             })}

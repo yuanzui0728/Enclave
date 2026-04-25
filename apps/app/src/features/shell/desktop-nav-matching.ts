@@ -1,3 +1,7 @@
+import { msg } from "@lingui/macro";
+
+type ShellMessage = ReturnType<typeof msg>;
+
 export type DesktopNavAction =
   | "open-mobile-panel"
   | "open-more-menu"
@@ -14,21 +18,21 @@ export type DesktopNavMatchItem = {
 };
 
 export type DesktopNavRouteBinding = DesktopNavMatchItem & {
-  label: string;
-  shortLabel: string;
+  label: ShellMessage;
+  shortLabel: ShellMessage;
   to: string;
 };
 
 export type DesktopNavActionBinding = DesktopNavMatchItem & {
-  label: string;
-  shortLabel: string;
+  label: ShellMessage;
+  shortLabel: ShellMessage;
   action: DesktopNavAction;
 };
 
 export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
   {
-    label: "消息",
-    shortLabel: "消息",
+    label: msg`消息`,
+    shortLabel: msg`消息`,
     to: "/tabs/chat",
     matches: [
       "/tabs/chat",
@@ -40,8 +44,8 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     ],
   },
   {
-    label: "通讯录",
-    shortLabel: "通讯录",
+    label: msg`通讯录`,
+    shortLabel: msg`通讯录`,
     to: "/tabs/contacts",
     matches: [
       "/tabs/contacts",
@@ -58,14 +62,14 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     excludedMatches: ["/official-accounts/service/"],
   },
   {
-    label: "收藏",
-    shortLabel: "收藏",
+    label: msg`收藏`,
+    shortLabel: msg`收藏`,
     to: "/tabs/favorites",
     matches: ["/tabs/favorites", "/favorites", "/notes", "/desktop/note-window"],
   },
   {
-    label: "朋友圈",
-    shortLabel: "朋友圈",
+    label: msg`朋友圈`,
+    shortLabel: msg`朋友圈`,
     to: "/tabs/moments",
     matches: [
       "/tabs/moments",
@@ -78,32 +82,32 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
     ],
   },
   {
-    label: "广场动态",
-    shortLabel: "广场",
+    label: msg`广场动态`,
+    shortLabel: msg`广场`,
     to: "/tabs/feed",
     matches: ["/tabs/feed", "/feed", "/discover/feed"],
   },
   {
-    label: "视频号",
-    shortLabel: "视频号",
+    label: msg`视频号`,
+    shortLabel: msg`视频号`,
     to: "/tabs/channels",
     matches: ["/tabs/channels", "/channels", "/discover/channels"],
   },
   {
-    label: "搜一搜",
-    shortLabel: "搜索",
+    label: msg`搜一搜`,
+    shortLabel: msg`搜索`,
     to: "/tabs/search",
     matches: ["/tabs/search", "/search"],
   },
   {
-    label: "游戏中心",
-    shortLabel: "游戏",
+    label: msg`游戏中心`,
+    shortLabel: msg`游戏`,
     to: "/tabs/games",
     matches: ["/tabs/games", "/games", "/discover/games"],
   },
   {
-    label: "小程序面板",
-    shortLabel: "小程序",
+    label: msg`小程序面板`,
+    shortLabel: msg`小程序`,
     to: "/tabs/mini-programs",
     matches: ["/tabs/mini-programs", "/mini-programs", "/discover/mini-programs"],
   },
@@ -111,14 +115,14 @@ export const desktopPrimaryNavBindings: DesktopNavRouteBinding[] = [
 
 export const desktopBottomNavBindings: DesktopNavActionBinding[] = [
   {
-    label: "手机",
-    shortLabel: "手机",
+    label: msg`手机`,
+    shortLabel: msg`手机`,
     action: "open-mobile-panel",
     matches: ["/desktop/mobile"],
   },
   {
-    label: "更多",
-    shortLabel: "更多",
+    label: msg`更多`,
+    shortLabel: msg`更多`,
     action: "open-more-menu",
     matches: [
       "/desktop/chat-files",

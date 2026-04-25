@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Check } from "lucide-react";
@@ -8,7 +9,7 @@ import {
   setWorldOwnerApiKey,
   updateWorldOwner,
 } from "@yinjie/contracts";
-import { LanguageSwitcher } from "@yinjie/i18n";
+import { LanguageSwitcher, useRuntimeTranslator } from "@yinjie/i18n";
 import {
   AppPage,
   Button,
@@ -32,19 +33,20 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 
 type SettingsTab = "profile" | "chat" | "ai" | "language" | "legal";
 type LegalTab = "privacy" | "terms" | "community";
+type ProfileSettingsMessage = ReturnType<typeof msg>;
 
-const settingsTabs: Array<{ id: SettingsTab; label: string }> = [
-  { id: "profile", label: "个人资料" },
-  { id: "chat", label: "聊天" },
-  { id: "ai", label: "AI 设置" },
-  { id: "language", label: "语言" },
-  { id: "legal", label: "协议与规范" },
+const settingsTabs: Array<{ id: SettingsTab; label: ProfileSettingsMessage }> = [
+  { id: "profile", label: msg`个人资料` },
+  { id: "chat", label: msg`聊天` },
+  { id: "ai", label: msg`AI 设置` },
+  { id: "language", label: msg`语言` },
+  { id: "legal", label: msg`协议与规范` },
 ];
 
-const legalTabs: Array<{ id: LegalTab; label: string }> = [
-  { id: "privacy", label: "隐私政策" },
-  { id: "terms", label: "用户协议" },
-  { id: "community", label: "社区规范" },
+const legalTabs: Array<{ id: LegalTab; label: ProfileSettingsMessage }> = [
+  { id: "privacy", label: msg`隐私政策` },
+  { id: "terms", label: msg`用户协议` },
+  { id: "community", label: msg`社区规范` },
 ];
 
 const chatSendShortcutOptions: Array<{
@@ -65,6 +67,7 @@ const chatSendShortcutOptions: Array<{
 ];
 
 export function ProfileSettingsPage() {
+  const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -204,7 +207,7 @@ export function ProfileSettingsPage() {
                     : "text-[color:var(--text-muted)] hover:bg-white/70",
                 )}
               >
-                {tab.label}
+                {t(tab.label)}
               </button>
             ))}
           </div>
@@ -571,22 +574,26 @@ export function ProfileSettingsPage() {
       {activeTab === "language" ? (
         <MobileSettingsSection
           desktop={desktopMode}
-          title={desktopMode ? "界面语言" : undefined}
+          title={desktopMode ? t(msg`界面语言`) : undefined}
           description={
             desktopMode
-              ? "切换桌面端、Web、Android、iOS 共用业务界面的显示语言。"
-              : "切换当前设备的界面语言"
+              ? t(msg`切换桌面端、Web、Android、iOS 共用业务界面的显示语言。`)
+              : t(msg`切换当前设备的界面语言`)
           }
         >
           <LanguageSwitcher />
 
           {desktopMode ? (
             <InlineNotice tone="muted">
-              语言偏好按端保存；后续新增语言会自动出现在这里，不需要每个页面单独加入口。
+              {t(
+                msg`语言偏好按端保存；后续新增语言会自动出现在这里，不需要每个页面单独加入口。`,
+              )}
             </InlineNotice>
           ) : (
             <MobileSettingsInlineNotice tone="muted">
-              语言偏好会保存在当前设备；桌面端、管理后台和云控制台有各自的切换入口。
+              {t(
+                msg`语言偏好会保存在当前设备；桌面端、管理后台和云控制台有各自的切换入口。`,
+              )}
             </MobileSettingsInlineNotice>
           )}
         </MobileSettingsSection>
@@ -626,8 +633,8 @@ export function ProfileSettingsPage() {
           {desktopMode ? (
             <MobileSettingsSection
               desktop
-              title="协议与规范"
-              description="桌面端保留当前文档切换和独立打开入口。"
+              title={t(msg`协议与规范`)}
+              description={t(msg`桌面端保留当前文档切换和独立打开入口。`)}
             >
               <div className="flex gap-1 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-1">
                 {legalTabs.map((tab) => (
@@ -642,7 +649,7 @@ export function ProfileSettingsPage() {
                         : "text-[color:var(--text-muted)] hover:bg-white/70",
                     )}
                   >
-                    {tab.label}
+                    {t(tab.label)}
                   </button>
                 ))}
               </div>
@@ -661,14 +668,14 @@ export function ProfileSettingsPage() {
                     })
                   }
                 >
-                  打开当前文档
+                  {t(msg`打开当前文档`)}
                 </Button>
                 <InlineNotice tone="muted">
                   {activeLegalTab === "privacy"
-                    ? "查看世界隐私政策和数据使用说明。"
+                    ? t(msg`查看世界隐私政策和数据使用说明。`)
                     : activeLegalTab === "terms"
-                      ? "查看世界服务使用协议。"
-                      : "查看世界社区规范和反馈口径。"}
+                      ? t(msg`查看世界服务使用协议。`)
+                      : t(msg`查看世界社区规范和反馈口径。`)}
                 </InlineNotice>
               </div>
             </MobileSettingsSection>
@@ -681,17 +688,19 @@ export function ProfileSettingsPage() {
   if (desktopMode) {
     return (
       <DesktopUtilityShell
-        title={desktopSettingsRoute ? "设置" : "资料与设置"}
+        title={
+          desktopSettingsRoute ? t(msg`设置`) : t(msg`资料与设置`)
+        }
         subtitle={
           activeTab === "profile"
-            ? "在桌面工作区里管理世界主人的资料与签名。"
+            ? t(msg`在桌面工作区里管理世界主人的资料与签名。`)
             : activeTab === "chat"
-              ? "调整桌面和 Web 键盘聊天输入的发送快捷键。"
+              ? t(msg`调整桌面和 Web 键盘聊天输入的发送快捷键。`)
               : activeTab === "ai"
-                ? "管理专属 API Key 和兼容 Base URL。"
+                ? t(msg`管理专属 API Key 和兼容 Base URL。`)
                 : activeTab === "language"
-                  ? "切换当前端的界面语言和本地化格式。"
-                  : "查看当前世界相关的协议和社区规范。"
+                  ? t(msg`切换当前端的界面语言和本地化格式。`)
+                  : t(msg`查看当前世界相关的协议和社区规范。`)
         }
         toolbar={
           <Button
@@ -706,10 +715,10 @@ export function ProfileSettingsPage() {
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                设置分类
+                {t(msg`设置分类`)}
               </div>
               <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                桌面端把资料、AI 配置和协议查看收口到同一个工作区。
+                {t(msg`桌面端把资料、AI 配置和协议查看收口到同一个工作区。`)}
               </div>
             </div>
 
@@ -727,7 +736,7 @@ export function ProfileSettingsPage() {
                         : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
                     )}
                   >
-                    <span>{tab.label}</span>
+                    <span>{t(tab.label)}</span>
                     {activeTab === tab.id ? (
                       <span className="h-2 w-2 rounded-full bg-[color:var(--brand-primary)]" />
                     ) : null}

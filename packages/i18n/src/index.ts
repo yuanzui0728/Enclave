@@ -5,3 +5,4 @@ export * from "./runtime/app-locale-provider";
 export * from "./runtime/formatters";
 export * from "./runtime/i18n-instance";
 export * from "./runtime/language-switcher";
+export * from "./runtime/use-runtime-translator";

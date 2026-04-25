@@ -44,7 +44,11 @@ msgstr "昨天"
 msgid "本地兼容"
 msgstr "本地兼容"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:59
+#: packages/i18n/src/runtime/language-switcher.tsx:88
+msgid "正在切换语言..."
+msgstr "正在切换语言..."
+
+#: packages/i18n/src/runtime/language-switcher.tsx:60
 msgid "界面语言"
 msgstr "界面语言"
 
@@ -64,6 +68,6 @@ msgstr "转写模型"
 msgid "通过"
 msgstr "通过"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:28
+#: packages/i18n/src/runtime/language-switcher.tsx:29
 msgid "默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。"
 msgstr "默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。"

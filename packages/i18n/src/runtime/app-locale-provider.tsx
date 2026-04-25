@@ -17,6 +17,7 @@ import {
   type SupportedLocale,
   resolveInitialLocale,
   resolveSupportedLocale,
+  persistPreferredLocale,
   syncDocumentLocale,
 } from "../locales";
 import { appI18n, setActiveLocale } from "./i18n-instance";
@@ -29,6 +30,7 @@ type AppLocaleContextValue = {
   activationVersion: number;
   availableLocales: readonly SupportedLocale[];
   error: Error | null;
+  isSwitchingLocale: boolean;
   isReady: boolean;
   locale: SupportedLocale;
   requestedLocale: SupportedLocale;
@@ -62,6 +64,7 @@ export function AppLocaleProvider({
     (nextLocale: string) => {
       const resolvedLocale =
         resolveSupportedLocale(nextLocale) ?? DEFAULT_LOCALE;
+      persistPreferredLocale(surface, resolvedLocale);
       startTransition(() => {
         setRequestedLocale((currentLocale) =>
           currentLocale === resolvedLocale ? currentLocale : resolvedLocale,
@@ -144,6 +147,7 @@ export function AppLocaleProvider({
       activationVersion,
       availableLocales: SUPPORTED_LOCALES,
       error,
+      isSwitchingLocale: requestedLocale !== locale,
       isReady,
       locale,
       requestedLocale,
