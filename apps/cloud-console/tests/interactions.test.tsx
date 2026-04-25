@@ -987,6 +987,9 @@ async function expectWaitingSessionSyncLinkedWorldsView({
 async function renderAdminSessionsPage() {
   renderRoute("/sessions");
   expect(await screen.findByText("Admin sessions")).toBeTruthy();
+  await waitFor(() => {
+    expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+  });
 }
 
 async function expectAdminSessionsSummary(summary: string) {
@@ -1855,6 +1858,11 @@ async function openAdminSessionRevokeDialog({
   if (trigger) {
     fireEvent.click(trigger);
   } else {
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole("button", { name: "Revoke" })[buttonIndex],
+      ).toBeTruthy();
+    });
     fireEvent.click(screen.getAllByRole("button", { name: "Revoke" })[buttonIndex]);
   }
   expect(await screen.findByText("Revoke admin session?")).toBeTruthy();
