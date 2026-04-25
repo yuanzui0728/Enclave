@@ -1815,7 +1815,7 @@ async function expectAdminSessionTimelineSummaryViews() {
 
 async function selectAdminSessionsForBulkAction(sessionIds: string[]) {
   for (const sessionId of sessionIds) {
-    fireEvent.click(screen.getByLabelText(`Select ${sessionId}`));
+    fireEvent.click(await screen.findByLabelText(`Select ${sessionId}`));
   }
 }
 
