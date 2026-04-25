@@ -172,7 +172,7 @@ msgstr "{0}. Continue live prep and traffic routing on mobile."
 #. placeholder {0}: matched.label
 #: apps/app/src/routes/desktop-feedback-page.tsx:926
 msgid "{0}优先级"
-msgstr ""
+msgstr "{0}优先级"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:981
 msgid "{callHandoffKindLabel}接力"
@@ -247,7 +247,7 @@ msgstr "{groupName} · {0} members"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:319
 msgid "{highPriorityCount} 条"
-msgstr ""
+msgstr "{highPriorityCount} 条"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:282
 msgid "{imageCount} 张图片"
@@ -280,11 +280,11 @@ msgstr "{ownerName} wants to add you to contacts."
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:315
 msgid "{recentCount} 条"
-msgstr ""
+msgstr "{recentCount} 条"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:298
 msgid "{recentCount} 条本地反馈记录，{highPriorityCount} 条高优先级"
-msgstr ""
+msgstr "{recentCount} 条本地反馈记录，{highPriorityCount} 条高优先级"
 
 #: apps/app/src/routes/group-qr-page.tsx:3069
 msgid "{remainingMinutes} 分钟"
@@ -392,7 +392,7 @@ msgstr "AI voice"
 #. placeholder {0}: status.coreApi.healthy ? t(msg`在线`) : t(msg`异常`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:260
 msgid "Core API {0}"
-msgstr ""
+msgstr "Core API {0}"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1104
 msgid "Delete 删除"
@@ -459,7 +459,7 @@ msgstr "PgUp previous group"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:578
 msgid "一句话说明问题，例如：桌面壳切回聊天后导航状态错乱"
-msgstr ""
+msgstr "一句话说明问题，例如：桌面壳切回聊天后导航状态错乱"
 
 #: apps/app/src/routes/group-qr-page.tsx:2617
 #: apps/app/src/routes/group-qr-page.tsx:3061
@@ -525,12 +525,12 @@ msgstr "World owner"
 #. placeholder {0}: status.worldSurface.ownerCount
 #: apps/app/src/routes/desktop-feedback-page.tsx:271
 msgid "世界主人 {0}/1"
-msgstr ""
+msgstr "世界主人 {0}/1"
 
 #. placeholder {0}: ownerName || worldOwnerLabel
 #: apps/app/src/routes/desktop-feedback-page.tsx:767
 msgid "世界主人：{0}"
-msgstr ""
+msgstr "世界主人：{0}"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:217
 msgid "世界主人不会出现在移除列表里。"
@@ -562,7 +562,7 @@ msgstr "Signature"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:91
 msgid "中"
-msgstr ""
+msgstr "中"
 
 #: apps/app/src/routes/group-qr-page.tsx:2742
 msgid "主推荐对应的会话更新近，还在更活跃的窗口里，所以优先级更高。"
@@ -606,7 +606,7 @@ msgstr "You can add images or GIFs now, or go back to delete mode first and clea
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:62
 msgid "交互体验"
-msgstr ""
+msgstr "交互体验"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:2228
 msgid "产品讲解"
@@ -683,12 +683,12 @@ msgstr "Prioritize processing"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:585
 msgid "优先级"
-msgstr ""
+msgstr "优先级"
 
 #. placeholder {0}: resolvePriorityLabel(draft.priority, priorityOptions, t)
 #: apps/app/src/routes/desktop-feedback-page.tsx:759
 msgid "优先级：{0}"
-msgstr ""
+msgstr "优先级：{0}"
 
 #: apps/app/src/routes/chat-details-page.tsx:710
 msgid "会以当前会话作为来源，提交一次聊天场景投诉。"
@@ -712,7 +712,7 @@ msgstr "Location"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:90
 msgid "低"
-msgstr ""
+msgstr "低"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:155
 msgid "侧栏面板"
@@ -736,12 +736,12 @@ msgstr "Save to contacts"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:677
 msgid "保存反馈"
-msgstr ""
+msgstr "保存反馈"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:695
 #: apps/app/src/routes/desktop-feedback-page.tsx:811
 msgid "保存反馈包"
-msgstr ""
+msgstr "保存反馈包"
 
 #: apps/app/src/routes/group-qr-page.tsx:1375
 msgid "保存当前邀请卡 SVG，后续可继续转发。"
@@ -831,7 +831,7 @@ msgstr "Handle the top recommendation first"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:512
 msgid "先把问题描述、复现步骤和期望结果写清楚，再决定后续如何跟进。"
-msgstr ""
+msgstr "先把问题描述、复现步骤和期望结果写清楚，再决定后续如何跟进。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1251
 msgid "先按最近活跃会话做接力，桌面和手机之间切换会更顺。"
@@ -1037,7 +1037,7 @@ msgstr "Content entry points"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:74
 msgid "内容口径"
-msgstr ""
+msgstr "内容口径"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1784
 #: apps/app/src/routes/desktop-mobile-page.tsx:1905
@@ -1129,7 +1129,7 @@ msgstr "Recently deleted: {0}"
 #: apps/app/src/routes/desktop-feedback-page.tsx:314
 #: apps/app/src/routes/desktop-feedback-page.tsx:333
 msgid "最近反馈"
-msgstr ""
+msgstr "最近反馈"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1940
 msgid "最近发往手机"
@@ -1387,7 +1387,7 @@ msgstr "Refresh Live Status"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:288
 msgid "前往设置"
-msgstr ""
+msgstr "前往设置"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:2232
 msgid "剧情陪看"
@@ -1406,11 +1406,11 @@ msgstr "{customSlotsRemaining} left"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:57
 msgid "功能和预期不一致、页面报错、数据错乱。"
-msgstr ""
+msgstr "功能和预期不一致、页面报错、数据错乱。"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:56
 msgid "功能异常"
-msgstr ""
+msgstr "功能异常"
 
 #. placeholder {0}: formatTimestamp(member.joinedAt)
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2432
@@ -1451,7 +1451,7 @@ msgstr "After blocking, you will no longer receive this character's interactions
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:69
 msgid "加载慢、卡顿、输入延迟、工作区切换不稳。"
-msgstr ""
+msgstr "加载慢、卡顿、输入延迟、工作区切换不稳。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:2235
 msgid "单人控台"
@@ -1504,35 +1504,35 @@ msgstr "Go to settings"
 #. placeholder {0}: resolveCategoryLabel(draft.category, categoryOptions, t)
 #: apps/app/src/routes/desktop-feedback-page.tsx:756
 msgid "反馈分类：{0}"
-msgstr ""
+msgstr "反馈分类：{0}"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:812
 msgid "反馈包"
-msgstr ""
+msgstr "反馈包"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:798
 msgid "反馈包已复制，可直接发给产品或开发继续跟进。"
-msgstr ""
+msgstr "反馈包已复制，可直接发给产品或开发继续跟进。"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:474
 msgid "反馈包摘要"
-msgstr ""
+msgstr "反馈包摘要"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:304
 msgid "反馈历史"
-msgstr ""
+msgstr "反馈历史"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:286
 msgid "反馈工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到设置继续排查或记录问题。"
-msgstr ""
+msgstr "反馈工作区目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到设置继续排查或记录问题。"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:748
 msgid "反馈已保存到本地工作区。"
-msgstr ""
+msgstr "反馈已保存到本地工作区。"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:704
 msgid "反馈草稿已清空。"
-msgstr ""
+msgstr "反馈草稿已清空。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:2123
 msgid "发主页到手机"
@@ -1694,7 +1694,7 @@ msgstr "Selected members to remove will appear on the right"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:390
 msgid "右侧承接当前实例、诊断摘要和系统状态。"
-msgstr ""
+msgstr "右侧承接当前实例、诊断摘要和系统状态。"
 
 #: apps/app/src/components/bootstrap-screen.tsx:49
 msgid "同步世界主人"
@@ -1795,7 +1795,7 @@ msgstr "Open in separate window"
 #: apps/app/src/routes/desktop-feedback-page.tsx:260
 #: apps/app/src/routes/desktop-feedback-page.tsx:433
 msgid "在线"
-msgstr ""
+msgstr "Online"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:650
 #: apps/app/src/routes/character-detail-page.tsx:295
@@ -1841,11 +1841,11 @@ msgstr "Failed to copy to mobile phone, please try again later."
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:686
 msgid "复制反馈包"
-msgstr ""
+msgstr "复制反馈包"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:802
 msgid "复制反馈包失败，请稍后重试。"
-msgstr ""
+msgstr "复制反馈包失败，请稍后重试。"
 
 #: apps/app/src/routes/character-detail-page.tsx:778
 msgid "复制名片失败，请稍后重试。"
@@ -1895,12 +1895,12 @@ msgstr "Copy invitation text"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:624
 msgid "复现步骤"
-msgstr ""
+msgstr "复现步骤"
 
 #. placeholder {0}: draft.reproduction.trim() || t(msg`未填写`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:763
 msgid "复现步骤：{0}"
-msgstr ""
+msgstr "复现步骤：{0}"
 
 #: apps/app/src/routes/character-detail-page.tsx:528
 msgid "好友申请已发送。"
@@ -1942,20 +1942,20 @@ msgstr "Finish cleanup"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:387
 msgid "实例上下文"
-msgstr ""
+msgstr "实例上下文"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:402
 msgid "实例地址"
-msgstr ""
+msgstr "实例地址"
 
 #. placeholder {0}: baseUrl || notConfiguredLabel
 #: apps/app/src/routes/desktop-feedback-page.tsx:765
 msgid "实例地址：{0}"
-msgstr ""
+msgstr "实例地址：{0}"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:454
 msgid "实例模式"
-msgstr ""
+msgstr "实例模式"
 
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:42
 msgid "实时通话"
@@ -1972,7 +1972,7 @@ msgstr "The other person"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:63
 msgid "导航不顺、信息结构混乱、操作路径别扭。"
-msgstr ""
+msgstr "导航不顺、信息结构混乱、操作路径别扭。"
 
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:73
 msgid "将按顺序逐张发送图片。"
@@ -1996,7 +1996,7 @@ msgstr "There are no recent mini programs in the panel ready to sync to mobile y
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:307
 msgid "左侧保留本地草稿和已保存记录，便于继续追问题。"
-msgstr ""
+msgstr "左侧保留本地草稿和已保存记录，便于继续追问题。"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1118
 #: apps/app/src/routes/group-chat-details-page.tsx:255
@@ -2120,7 +2120,7 @@ msgstr "Recorded"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:832
 msgid "已打开反馈包所在位置。"
-msgstr ""
+msgstr "已打开反馈包所在位置。"
 
 #: apps/app/src/routes/character-detail-page.tsx:739
 #: apps/app/src/routes/chat-details-page.tsx:371
@@ -2279,7 +2279,7 @@ msgstr "Went live at {0}"
 #: apps/app/src/routes/desktop-feedback-page.tsx:260
 #: apps/app/src/routes/desktop-feedback-page.tsx:434
 msgid "异常"
-msgstr ""
+msgstr "异常"
 
 #: apps/app/src/routes/chat-details-page.tsx:978
 msgid "强提醒"
@@ -2300,7 +2300,7 @@ msgstr "Current:"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:398
 msgid "当前上下文"
-msgstr ""
+msgstr "当前上下文"
 
 #: apps/app/src/routes/group-qr-page.tsx:585
 msgid "当前主推荐本身就在冷却中，结构不会立刻变化，先等它恢复优先位。"
@@ -2334,7 +2334,7 @@ msgstr "There are no {0} in this conversation yet."
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:664
 msgid "当前会附带世界连接、数据库、推理网关和实例模式摘要，不包含敏感消息正文。"
-msgstr ""
+msgstr "当前会附带世界连接、数据库、推理网关和实例模式摘要，不包含敏感消息正文。"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:969
 msgid "当前共 {totalMemberCount} 人"
@@ -2363,7 +2363,7 @@ msgstr "Current return source"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:322
 msgid "当前实例"
-msgstr ""
+msgstr "当前实例"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1446
 msgid "当前小程序工作台"
@@ -2466,7 +2466,7 @@ msgstr "The current environment does not support copying to mobile phones."
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:790
 msgid "当前环境暂不支持复制反馈包。"
-msgstr ""
+msgstr "当前环境暂不支持复制反馈包。"
 
 #: apps/app/src/routes/character-detail-page.tsx:754
 msgid "当前环境暂不支持复制名片。"
@@ -2603,7 +2603,7 @@ msgstr "Quick select"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:68
 msgid "性能问题"
-msgstr ""
+msgstr "性能问题"
 
 #. placeholder {0}: formatCallLatency(turn.totalDurationMs)
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1729
@@ -2625,11 +2625,11 @@ msgstr "Resume normal contact"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:296
 msgid "意见反馈"
-msgstr ""
+msgstr "意见反馈"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:284
 msgid "意见反馈当前仅提供桌面布局"
-msgstr ""
+msgstr "意见反馈当前仅提供桌面布局"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:506
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:697
@@ -2647,7 +2647,7 @@ msgstr "Member · {0}"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:324
 msgid "成员 · {senderFilterDisplayLabel}"
-msgstr ""
+msgstr "成员 · {senderFilterDisplayLabel}"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:680
 msgid "成员与资料"
@@ -2820,7 +2820,7 @@ msgstr "Specific date"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:625
 msgid "按 1. 2. 3. 描述怎么触发这个问题。"
-msgstr ""
+msgstr "按 1. 2. 3. 描述怎么触发这个问题。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:678
 msgid "按住下方按钮说话，远端数字人舞台会在这一轮回复时自动播报。"
@@ -2887,7 +2887,7 @@ msgstr "Inference Gateway"
 #. placeholder {0}: status.inferenceGateway.healthy ? t(msg`可用`) : t(msg`待恢复`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:267
 msgid "推理网关{0}"
-msgstr ""
+msgstr "推理网关{0}"
 
 #: apps/app/src/routes/character-detail-page.tsx:300
 #: apps/app/src/routes/chat-details-page.tsx:917
@@ -2896,7 +2896,7 @@ msgstr "Recommend to a friend"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:615
 msgid "描述你看到的现象、涉及的页面或入口。"
-msgstr ""
+msgstr "描述你看到的现象、涉及的页面或入口。"
 
 #: apps/app/src/routes/chat-details-page.tsx:1192
 msgid "提交一次聊天场景投诉"
@@ -2904,7 +2904,7 @@ msgstr "Submit a chat-scene report"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:508
 msgid "提交反馈"
-msgstr ""
+msgstr "提交反馈"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:546
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:549
@@ -2918,7 +2918,7 @@ msgstr "Submit a chat-related report"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:81
 msgid "提出下一步应该优先补的真实工作区和交互能力。"
-msgstr ""
+msgstr "提出下一步应该优先补的真实工作区和交互能力。"
 
 #. placeholder {0}: formatMessageTimestamp(item.reminderAt)
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:830
@@ -3102,7 +3102,7 @@ msgstr "Database"
 #. placeholder {0}: status.database.connected ? t(msg`已连接`) : t(msg`未连接`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:262
 msgid "数据库{0}"
-msgstr ""
+msgstr "数据库{0}"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:105
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:133
@@ -3122,7 +3122,7 @@ msgstr "Text"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:75
 msgid "文案、频道定义、桌面与微信对齐口径存在偏差。"
-msgstr ""
+msgstr "文案、频道定义、桌面与微信对齐口径存在偏差。"
 
 #: apps/app/src/routes/group-qr-page.tsx:2568
 msgid "新会话"
@@ -3245,7 +3245,7 @@ msgstr "No status yet"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:119
 msgid "暂无签名"
-msgstr ""
+msgstr "暂无签名"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:640
 msgid "暂无记录"
@@ -3329,16 +3329,16 @@ msgstr "Service Account Messages"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:637
 msgid "期望结果"
-msgstr ""
+msgstr "期望结果"
 
 #. placeholder {0}: draft.expected.trim() || t(msg`未填写`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:764
 msgid "期望结果：{0}"
-msgstr ""
+msgstr "期望结果：{0}"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:917
 msgid "未分类"
-msgstr ""
+msgstr "未分类"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1024
 msgid "未命名成员"
@@ -3349,7 +3349,7 @@ msgstr "Unnamed member"
 #: apps/app/src/routes/desktop-feedback-page.tsx:763
 #: apps/app/src/routes/desktop-feedback-page.tsx:764
 msgid "未填写"
-msgstr ""
+msgstr "未填写"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1601
 msgid "未填写主题"
@@ -3365,11 +3365,11 @@ msgstr "Supplementary handoff entries not grouped into the main flows."
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:926
 msgid "未标记"
-msgstr ""
+msgstr "未标记"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:122
 msgid "未知"
-msgstr ""
+msgstr "未知"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1176
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1285
@@ -3407,7 +3407,7 @@ msgstr "Unconfigured"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:255
 msgid "未附带系统摘要"
-msgstr ""
+msgstr "未附带系统摘要"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:2192
 msgid "末项"
@@ -3617,12 +3617,12 @@ msgstr "Tags"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:566
 msgid "标题"
-msgstr ""
+msgstr "标题"
 
 #. placeholder {0}: draft.title.trim() || t(msg`未填写`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:761
 msgid "标题：{0}"
-msgstr ""
+msgstr "标题：{0}"
 
 #: apps/app/src/routes/character-detail-page.tsx:309
 msgid "核心理念"
@@ -3821,7 +3821,7 @@ msgstr "Loading recent conversations..."
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:426
 msgid "正在读取实例状态..."
-msgstr ""
+msgstr "正在读取实例状态..."
 
 #: apps/app/src/routes/character-detail-page.tsx:254
 msgid "正在读取朋友资料"
@@ -3937,7 +3937,7 @@ msgstr "No related chat history found"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:368
 msgid "没有来自 {senderFilterDisplayLabel} 的"
-msgstr ""
+msgstr "没有来自 {senderFilterDisplayLabel} 的"
 
 #: apps/app/src/routes/group-qr-page.tsx:2680
 msgid "活跃单聊触达"
@@ -4070,7 +4070,7 @@ msgstr "Clear chat history"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:711
 msgid "清空草稿"
-msgstr ""
+msgstr "清空草稿"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1059
 msgid "清空表情搜索"
@@ -4358,7 +4358,7 @@ msgstr "Once messages arrive, you can search them here by keyword, images, files
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:414
 msgid "签名"
-msgstr ""
+msgstr "签名"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:908
 msgid "管理"
@@ -4816,7 +4816,7 @@ msgstr "Contact profile is temporarily unavailable"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:80
 msgid "能力建议"
-msgstr ""
+msgstr "能力建议"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:572
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:3408
@@ -4940,11 +4940,11 @@ msgstr "Set tags"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:422
 msgid "诊断摘要"
-msgstr ""
+msgstr "诊断摘要"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:768
 msgid "诊断摘要：{diagnosticSummary}"
-msgstr ""
+msgstr "诊断摘要：{diagnosticSummary}"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2112
 msgid "试试切换到其他筛选，或者搜索成员昵称、角色和 ID。当前范围：{activeFilterLabel}"
@@ -5036,15 +5036,15 @@ msgstr "Voice calls are not available yet"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:638
 msgid "说明你希望它变成什么样。"
-msgstr ""
+msgstr "说明你希望它变成什么样。"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:725
 msgid "请先填写反馈标题。"
-msgstr ""
+msgstr "请先填写反馈标题。"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:730
 msgid "请先补充问题描述。"
-msgstr ""
+msgstr "请先补充问题描述。"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:230
 msgid "请求中"
@@ -5129,12 +5129,12 @@ msgstr "Enter contact tags"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:406
 msgid "运行平台"
-msgstr ""
+msgstr "运行平台"
 
 #. placeholder {0}: runtimeConfig.appPlatform || "web"
 #: apps/app/src/routes/desktop-feedback-page.tsx:766
 msgid "运行平台：{0}"
-msgstr ""
+msgstr "运行平台：{0}"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:560
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:3385
@@ -5228,7 +5228,7 @@ msgstr "No {0} yet"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:374
 msgid "还没有保存过反馈。先把一个真实问题记下来，后续再接正式提交流。"
-msgstr ""
+msgstr "还没有保存过反馈。先把一个真实问题记下来，后续再接正式提交流。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1298
 msgid "还没有最近会话"
@@ -5566,20 +5566,20 @@ msgstr "This one has waited a long time for a return. Resend it first."
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:519
 msgid "问题分类"
-msgstr ""
+msgstr "问题分类"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:614
 msgid "问题描述"
-msgstr ""
+msgstr "问题描述"
 
 #. placeholder {0}: draft.detail.trim() || t(msg`未填写`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:762
 msgid "问题描述：{0}"
-msgstr ""
+msgstr "问题描述：{0}"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:660
 msgid "附带实例诊断摘要"
-msgstr ""
+msgstr "附带实例诊断摘要"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:645
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:677
@@ -5654,11 +5654,11 @@ msgstr "Group with top item"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:92
 msgid "高"
-msgstr ""
+msgstr "高"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:318
 msgid "高优先级"
-msgstr ""
+msgstr "High priority"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:2247
 msgid "高清"
