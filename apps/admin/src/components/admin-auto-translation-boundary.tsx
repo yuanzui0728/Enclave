@@ -23,14 +23,14 @@ const SKIP_SELECTOR = [
 ].join(",");
 
 const TRANSLATION_BATCH_SIZE = 150;
-const TRANSLATION_PRIORITY_BATCH_SIZE = 300;
-const MAX_AUTO_TRANSLATION_TARGETS = 650;
+const TRANSLATION_PRIORITY_BATCH_SIZE = 450;
+const MAX_AUTO_TRANSLATION_TARGETS = 2200;
 const MAX_AUTO_TRANSLATION_TEXT_LENGTH = 240;
 const CJK_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
 const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
 const KOREAN_HANGUL_PATTERN = /[\uac00-\ud7af]/;
 const ADMIN_ENGLISH_UI_PATTERN =
-  /\b(API|Actions?|Agent|Analytics|Avatar|Catalog|Center|Chat|Configuration|Console|Cyber|Digital|Discovery|Edit|Evals|Follow|Game|Healthy|Inference|Models?|Navigation|Normal|Offline|Online|Operations?|Overview|Owner|Preview|Proactive|Ready|Records?|Reminder|Routing|Rules?|Runtime|Save|Self|Snapshot|Status|Sync|Token|Usage|View|Workspace)\b/i;
+  /\b(API|Actions?|Agent|Analytics|Avatar|Budget|Candidate|Catalog|Center|Chat|Closed|Configuration|Console|Cyber|Dataset|Digital|Discovery|Edit|Evals|Experiment|Filter|Follow|Game|Generation|Healthy|Incident|Inference|Mark|Models?|Navigation|Normal|Offline|Online|Operations?|Order|Overview|Owner|Preset|Preview|Pricing|Proactive|Prompt|Ready|Recommended|Records?|Reminder|Reset|Routing|Rules?|Run|Running|Runtime|Save|Scheduling|Self|Snapshot|Snooze|Standing|Status|Sync|Token|Trace|Trigger|Usage|View|Workspace)\b/i;
 
 function isTranslatableTextValue(value: string) {
   const normalizedValue = value.trim().replace(/\s+/g, " ");
