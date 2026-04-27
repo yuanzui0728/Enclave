@@ -219,6 +219,8 @@ function createInitialRuntimeConfig() {
       envCloudApiBaseUrl,
     environment: injectedConfig?.environment ?? persistedConfig?.environment ?? import.meta.env.MODE,
     publicAppName: injectedConfig?.publicAppName ?? persistedConfig?.publicAppName ?? "Yinjie",
+    preferredLocales:
+      injectedConfig?.preferredLocales ?? persistedConfig?.preferredLocales,
     bootstrapSource: injectedConfig?.bootstrapSource ?? persistedConfig?.bootstrapSource ?? bootstrapSource,
     configStatus: injectedConfig?.configStatus ?? persistedConfig?.configStatus,
   };
@@ -327,6 +329,10 @@ export async function hydrateNativeRuntimeConfig() {
         nativeConfig?.appVersionCode ??
         desktopConfig?.appVersionCode ??
         runtimeConfig.appVersionCode,
+      preferredLocales:
+        nativeConfig?.preferredLocales ??
+        desktopConfig?.preferredLocales ??
+        runtimeConfig.preferredLocales,
       bootstrapSource: nativeConfig ? "native" : desktopConfig ? "storage" : runtimeConfig.bootstrapSource,
       configStatus:
         nativeConfig?.apiBaseUrl || desktopConfig?.apiBaseUrl

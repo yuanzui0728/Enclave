@@ -22,8 +22,16 @@ const LOCALE_ALIASES: Record<string, SupportedLocale> = {
   zh: "zh-CN",
   "zh-cn": "zh-CN",
   "zh-hans": "zh-CN",
+  "zh-hans-cn": "zh-CN",
+  "zh-sg": "zh-CN",
+  "zh-hant": "zh-CN",
+  "zh-hant-tw": "zh-CN",
+  "zh-tw": "zh-CN",
   en: "en-US",
   "en-us": "en-US",
+  "en-gb": "en-US",
+  "en-au": "en-US",
+  "en-ca": "en-US",
   ja: "ja-JP",
   "ja-jp": "ja-JP",
   ko: "ko-KR",
@@ -46,7 +54,7 @@ export function resolveSupportedLocale(
     return null;
   }
 
-  const normalized = value.trim().toLowerCase();
+  const normalized = value.trim().replaceAll("_", "-").toLowerCase();
   if (!normalized) {
     return null;
   }
@@ -58,7 +66,27 @@ export function resolveSupportedLocale(
   const exactMatch = SUPPORTED_LOCALES.find(
     (candidate) => candidate.toLowerCase() === normalized,
   );
-  return exactMatch ?? null;
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  if (normalized.startsWith("zh-")) {
+    return "zh-CN";
+  }
+
+  if (normalized.startsWith("en-")) {
+    return "en-US";
+  }
+
+  if (normalized.startsWith("ja-")) {
+    return "ja-JP";
+  }
+
+  if (normalized.startsWith("ko-")) {
+    return "ko-KR";
+  }
+
+  return null;
 }
 
 export function resolveTextDirection(locale: SupportedLocale): TextDirection {
@@ -123,7 +151,13 @@ export function detectBrowserLocale() {
     navigator.language,
   ].filter(Boolean);
 
-  for (const candidate of candidates) {
+  return resolvePreferredLocale(candidates);
+}
+
+export function resolvePreferredLocale(
+  candidates?: readonly (string | null | undefined)[] | null,
+): SupportedLocale | null {
+  for (const candidate of candidates ?? []) {
     const resolved = resolveSupportedLocale(candidate);
     if (resolved) {
       return resolved;
@@ -133,8 +167,16 @@ export function detectBrowserLocale() {
   return null;
 }
 
-export function resolveInitialLocale(surface: I18nAppSurface) {
-  return readQueryLocale() ?? readPersistedLocale(surface) ?? DEFAULT_LOCALE;
+export function resolveInitialLocale(
+  surface: I18nAppSurface,
+  preferredLocales?: readonly string[] | null,
+) {
+  return (
+    readQueryLocale() ??
+    readPersistedLocale(surface) ??
+    resolvePreferredLocale(preferredLocales) ??
+    DEFAULT_LOCALE
+  );
 }
 
 export function syncDocumentLocale(locale: SupportedLocale) {

@@ -64,12 +64,16 @@ function installStaleAssetRecovery() {
 installStaleAssetRecovery();
 
 async function bootstrap() {
-  await hydrateNativeRuntimeConfig();
+  const runtimeConfig = await hydrateNativeRuntimeConfig();
   configureContractsRuntime();
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <AppLocaleProvider surface="app" fallback={<BootstrapScreen />}>
+      <AppLocaleProvider
+        surface="app"
+        fallback={<BootstrapScreen />}
+        preferredLocales={runtimeConfig.preferredLocales}
+      >
         <QueryClientProvider client={queryClient}>
           <Suspense fallback={<BootstrapScreen />}>
             <RouterProvider router={router} />

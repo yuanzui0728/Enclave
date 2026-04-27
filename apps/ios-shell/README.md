@@ -13,6 +13,7 @@
 - `YinjieMobileBridge` 当前已接通系统图片选择、系统文件选择、系统相机拍照、外链、文本分享、文件分享、文件预览、通知权限与通知落点恢复
 - 真实 `AppDelegate.swift` 已缓存 APNs token 与通知点击落点
 - 真实 `Info.plist` 已补运行时键位和相机 / 相册 / 麦克风权限文案
+- 已接入 `zh-Hans` / `en` / `ja` / `ko` 的 `InfoPlist.strings`，用于本地化 App 名称、公开 App 名称与系统权限弹窗文案
 - `configure` 现在还会在缺失时补实际 `App.entitlements` / `PrivacyInfo.xcprivacy`，并把它们接入 Xcode 工程
 - `configure` 还会在缺失时给真实 `AppDelegate.swift` 补 push token / pending launch target 缓存逻辑，已有实现不覆盖
 - `doctor` 会检查是否在 macOS、是否已生成 `ios/` 工程、`Info.plist` 权限文案、`AppDelegate` push 缓存逻辑、plugin bridge 元数据、Xcode target membership、entitlements、privacy manifest 以及远程 Core API 地址
@@ -59,6 +60,13 @@ Push token 约定：
 - payload 支持 `kind / route / conversationId / groupId / source`
 - `YinjieMobileBridge.getPendingLaunchTarget()` / `clearPendingLaunchTarget()` 负责让 Web 层消费这条落点
 
+## 多语言约定
+
+- iOS 壳支持简体中文、英文、日语、韩语。
+- 首次启动且 Web 层没有手动语言偏好时，`YinjieRuntime.getConfig()` 会把 `Locale.preferredLanguages` 作为 `preferredLocales` 返回给 `apps/app`，业务界面据此跟随 iOS 系统语言。
+- 用户在 App 内“我 -> 设置 -> 语言”手动切换后，语言偏好会保存在当前设备，并覆盖系统语言默认值。
+- iOS 系统可见文案由 `InfoPlist.strings` 本地化，包括 App 显示名、`YinjiePublicAppName`、相机 / 相册 / 麦克风权限弹窗；这些文案由 iOS 系统读取，不会被 Web 内即时语言切换改写。
+
 ## 关键环境变量
 
 - `YINJIE_IOS_CORE_API_BASE_URL`
@@ -76,6 +84,7 @@ Push token 约定：
 - 若 `ios/App/App.xcodeproj/project.pbxproj` 存在，`configure` 还会确保三个 plugin 文件处于 `App/Plugins` group，并加入 `Sources` build phase
 - `ios/App/App/App.entitlements` 与 `ios/App/App/PrivacyInfo.xcprivacy` 会在缺失时按模板补种子，并接入 `CODE_SIGN_ENTITLEMENTS` / `Resources`
 - `ios/App/App/Info.plist` 与 `ios/App/App/AppDelegate.swift` 会在缺少关键键位或 push 落点缓存逻辑时补齐，但不会覆盖已有实现
+- `ios/App/App/{zh-Hans,en,ja,ko}.lproj/InfoPlist.strings` 会按当前壳内置文案同步，并确保 `InfoPlist.strings` 加入 Xcode resources
 
 ## 建议检查命令
 

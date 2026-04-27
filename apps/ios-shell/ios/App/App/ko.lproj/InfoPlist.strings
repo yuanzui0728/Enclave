@@ -1,0 +1,6 @@
+"CFBundleDisplayName" = "Yinjie";
+"YinjiePublicAppName" = "Yinjie";
+"NSCameraUsageDescription" = "프로필 사진이나 게시 이미지 촬영에 사용됩니다.";
+"NSPhotoLibraryUsageDescription" = "사진 보관함에서 프로필 사진이나 게시 이미지를 선택하는 데 사용됩니다.";
+"NSPhotoLibraryAddUsageDescription" = "내보낸 이미지를 사진 보관함에 저장하는 데 사용됩니다.";
+"NSMicrophoneUsageDescription" = "음성 입력 및 음성 상호작용에 사용됩니다.";

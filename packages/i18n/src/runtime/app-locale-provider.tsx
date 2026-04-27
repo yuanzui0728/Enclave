@@ -44,6 +44,7 @@ type AppLocaleContextValue = {
 type AppLocaleProviderProps = {
   children: ReactNode;
   fallback?: ReactNode;
+  preferredLocales?: readonly string[];
   surface: I18nAppSurface;
 };
 
@@ -52,16 +53,17 @@ const AppLocaleContext = createContext<AppLocaleContextValue | null>(null);
 export function AppLocaleProvider({
   children,
   fallback = null,
+  preferredLocales,
   surface,
 }: AppLocaleProviderProps) {
   const initialLocale = useMemo(() => {
     const queryLocale = readQueryLocale();
-    const resolvedLocale = resolveInitialLocale(surface);
+    const resolvedLocale = resolveInitialLocale(surface, preferredLocales);
     if (queryLocale) {
       persistPreferredLocale(surface, queryLocale);
     }
     return resolvedLocale;
-  }, [surface]);
+  }, [preferredLocales, surface]);
   const [requestedLocale, setRequestedLocale] =
     useState<SupportedLocale>(initialLocale);
   const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);

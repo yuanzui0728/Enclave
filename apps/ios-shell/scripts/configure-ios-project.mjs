@@ -40,6 +40,73 @@ const pluginsGroupId = "7A6C0F112B0E4C9200D10021";
 const privacyManifestBuildFileId = "7A6C0F112B0E4C9200D10004";
 const privacyManifestFileRefId = "7A6C0F112B0E4C9200D10014";
 const entitlementsFileRefId = "7A6C0F112B0E4C9200D10015";
+const infoPlistStringsBuildFileId = "7A6C0F112B0E4C9200D10005";
+const infoPlistStringsVariantGroupId = "7A6C0F112B0E4C9200D10030";
+const infoPlistStringLocalizations = [
+  {
+    region: "zh-Hans",
+    directory: "zh-Hans.lproj",
+    fileRefId: "7A6C0F112B0E4C9200D10031",
+    values: {
+      CFBundleDisplayName: "隐界",
+      YinjiePublicAppName: "隐界",
+      NSCameraUsageDescription: "用于拍摄头像或动态图片。",
+      NSPhotoLibraryUsageDescription: "用于从相册选择头像或动态图片。",
+      NSPhotoLibraryAddUsageDescription: "用于将导出图片保存到相册。",
+      NSMicrophoneUsageDescription: "用于语音输入或语音互动功能。",
+    },
+  },
+  {
+    region: "en",
+    directory: "en.lproj",
+    fileRefId: "7A6C0F112B0E4C9200D10032",
+    values: {
+      CFBundleDisplayName: "Yinjie",
+      YinjiePublicAppName: "Yinjie",
+      NSCameraUsageDescription: "Used to take profile photos or moment images.",
+      NSPhotoLibraryUsageDescription:
+        "Used to choose profile photos or moment images from your photo library.",
+      NSPhotoLibraryAddUsageDescription:
+        "Used to save exported images to your photo library.",
+      NSMicrophoneUsageDescription:
+        "Used for voice input and voice interactions.",
+    },
+  },
+  {
+    region: "ja",
+    directory: "ja.lproj",
+    fileRefId: "7A6C0F112B0E4C9200D10033",
+    values: {
+      CFBundleDisplayName: "Yinjie",
+      YinjiePublicAppName: "Yinjie",
+      NSCameraUsageDescription:
+        "プロフィール写真や投稿画像を撮影するために使用します。",
+      NSPhotoLibraryUsageDescription:
+        "写真ライブラリからプロフィール写真や投稿画像を選択するために使用します。",
+      NSPhotoLibraryAddUsageDescription:
+        "書き出した画像を写真ライブラリに保存するために使用します。",
+      NSMicrophoneUsageDescription:
+        "音声入力や音声インタラクションに使用します。",
+    },
+  },
+  {
+    region: "ko",
+    directory: "ko.lproj",
+    fileRefId: "7A6C0F112B0E4C9200D10034",
+    values: {
+      CFBundleDisplayName: "Yinjie",
+      YinjiePublicAppName: "Yinjie",
+      NSCameraUsageDescription:
+        "프로필 사진이나 게시 이미지 촬영에 사용됩니다.",
+      NSPhotoLibraryUsageDescription:
+        "사진 보관함에서 프로필 사진이나 게시 이미지를 선택하는 데 사용됩니다.",
+      NSPhotoLibraryAddUsageDescription:
+        "내보낸 이미지를 사진 보관함에 저장하는 데 사용됩니다.",
+      NSMicrophoneUsageDescription:
+        "음성 입력 및 음성 상호작용에 사용됩니다.",
+    },
+  },
+];
 
 const copies = [
   {
@@ -115,6 +182,42 @@ function escapeXml(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function escapeInfoPlistString(value) {
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll('"', '\\"')
+    .replaceAll("\n", "\\n");
+}
+
+function buildInfoPlistStrings(values) {
+  return `${Object.entries(values)
+    .map(
+      ([key, value]) =>
+        `"${escapeInfoPlistString(key)}" = "${escapeInfoPlistString(value)}";`,
+    )
+    .join("\n")}\n`;
+}
+
+function ensureInfoPlistStrings() {
+  for (const localization of infoPlistStringLocalizations) {
+    const filePath = path.join(
+      appRoot,
+      localization.directory,
+      "InfoPlist.strings",
+    );
+    const contents = buildInfoPlistStrings(localization.values);
+
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    if (fs.existsSync(filePath) && fs.readFileSync(filePath, "utf8") === contents) {
+      console.log(`kept ${path.relative(cwd, filePath)}`);
+      continue;
+    }
+
+    fs.writeFileSync(filePath, contents);
+    console.log(`wrote ${path.relative(cwd, filePath)}`);
+  }
 }
 
 function insertBeforeDictEnd(source, snippet) {
@@ -198,6 +301,7 @@ function ensureInfoPlistDefaults() {
 }
 
 ensureInfoPlistDefaults();
+ensureInfoPlistStrings();
 
 function insertAfterMatch(source, pattern, snippet, errorMessage) {
   const match = source.match(pattern);
@@ -411,6 +515,33 @@ function insertAfter(source, marker, snippet) {
   return `${source.slice(0, endIndex)}${snippet}${source.slice(endIndex)}`;
 }
 
+function formatKnownRegion(region) {
+  return region.includes("-") ? `"${region}"` : region;
+}
+
+function ensureKnownRegion(project, region) {
+  const formattedRegion = formatKnownRegion(region);
+  if (
+    project.includes(`\t\t\t\t${formattedRegion},\n`) ||
+    project.includes(`\t\t\t\t${region},\n`)
+  ) {
+    return project;
+  }
+
+  const marker = "\t\t\tknownRegions = (\n";
+  const startIndex = project.indexOf(marker);
+  if (startIndex === -1) {
+    throw new Error("Failed to patch Xcode project, missing knownRegions.");
+  }
+
+  const endIndex = project.indexOf("\t\t\t);", startIndex);
+  if (endIndex === -1) {
+    throw new Error("Failed to patch Xcode project, malformed knownRegions.");
+  }
+
+  return `${project.slice(0, endIndex)}\t\t\t\t${formattedRegion},\n${project.slice(endIndex)}`;
+}
+
 function ensurePluginTargetMembership() {
   if (!fs.existsSync(xcodeProjectPath)) {
     console.log("warn  App.xcodeproj/project.pbxproj not found, skipped target membership patch");
@@ -418,6 +549,10 @@ function ensurePluginTargetMembership() {
   }
 
   let project = fs.readFileSync(xcodeProjectPath, "utf8");
+
+  for (const localization of infoPlistStringLocalizations) {
+    project = ensureKnownRegion(project, localization.region);
+  }
 
   if (!project.includes("/* YinjieRuntimePlugin.swift in Sources */")) {
     const buildFileEntries = pluginProjectEntries
@@ -447,6 +582,16 @@ function ensurePluginTargetMembership() {
     project = insertBefore(project, "/* End PBXFileReference section */", fileReferences);
   }
 
+  if (!project.includes('path = "zh-Hans.lproj/InfoPlist.strings";')) {
+    const fileReferences = infoPlistStringLocalizations
+      .map(
+        ({ fileRefId, region, directory }) =>
+          `\t\t${fileRefId} /* ${region} */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "${region}"; path = "${directory}/InfoPlist.strings"; sourceTree = "<group>"; };\n`,
+      )
+      .join("");
+    project = insertBefore(project, "/* End PBXFileReference section */", fileReferences);
+  }
+
   if (!project.includes(`${pluginsGroupId} /* Plugins */ = {`)) {
     const pluginChildren = pluginProjectEntries
       .map(({ fileRefId, fileName }) => `\t\t\t\t${fileRefId} /* ${fileName} */,\n`)
@@ -464,6 +609,23 @@ function ensurePluginTargetMembership() {
     project = insertBefore(project, "/* End PBXGroup section */", pluginsGroup);
   }
 
+  if (!project.includes(`${infoPlistStringsVariantGroupId} /* InfoPlist.strings */ = {`)) {
+    const localizationChildren = infoPlistStringLocalizations
+      .map(({ fileRefId, region }) => `\t\t\t\t${fileRefId} /* ${region} */,\n`)
+      .join("");
+    const variantGroup = [
+      `\t\t${infoPlistStringsVariantGroupId} /* InfoPlist.strings */ = {\n`,
+      "\t\t\tisa = PBXVariantGroup;\n",
+      "\t\t\tchildren = (\n",
+      localizationChildren,
+      "\t\t\t);\n",
+      "\t\t\tname = InfoPlist.strings;\n",
+      "\t\t\tsourceTree = \"<group>\";\n",
+      "\t\t};\n",
+    ].join("");
+    project = insertBefore(project, "/* End PBXVariantGroup section */", variantGroup);
+  }
+
   if (!project.includes(`\t\t\t\t${pluginsGroupId} /* Plugins */,`)) {
     project = insertAfter(
       project,
@@ -477,6 +639,14 @@ function ensurePluginTargetMembership() {
       project,
       "\t\t\t\t504EC3131FED79650016851F /* Info.plist */,\n",
       `\t\t\t\t${privacyManifestFileRefId} /* PrivacyInfo.xcprivacy */,\n\t\t\t\t${entitlementsFileRefId} /* App.entitlements */,\n`,
+    );
+  }
+
+  if (!project.includes(`\t\t\t\t${infoPlistStringsVariantGroupId} /* InfoPlist.strings */,`)) {
+    project = insertAfter(
+      project,
+      "\t\t\t\t504EC3131FED79650016851F /* Info.plist */,\n",
+      `\t\t\t\t${infoPlistStringsVariantGroupId} /* InfoPlist.strings */,\n`,
     );
   }
 
@@ -504,11 +674,25 @@ function ensurePluginTargetMembership() {
     project = insertBefore(project, "/* End PBXBuildFile section */", buildFileEntry);
   }
 
+  if (!project.includes(`\t\t${infoPlistStringsBuildFileId} /* InfoPlist.strings in Resources */ =`)) {
+    const buildFileEntry =
+      `\t\t${infoPlistStringsBuildFileId} /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = ${infoPlistStringsVariantGroupId} /* InfoPlist.strings */; };\n`;
+    project = insertBefore(project, "/* End PBXBuildFile section */", buildFileEntry);
+  }
+
   if (!project.includes(`\t\t\t\t${privacyManifestBuildFileId} /* PrivacyInfo.xcprivacy in Resources */,\n`)) {
     project = insertAfter(
       project,
       "\t\t\t\t50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,\n",
       `\t\t\t\t${privacyManifestBuildFileId} /* PrivacyInfo.xcprivacy in Resources */,\n`,
+    );
+  }
+
+  if (!project.includes(`\t\t\t\t${infoPlistStringsBuildFileId} /* InfoPlist.strings in Resources */,\n`)) {
+    project = insertAfter(
+      project,
+      "\t\t\t\t50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,\n",
+      `\t\t\t\t${infoPlistStringsBuildFileId} /* InfoPlist.strings in Resources */,\n`,
     );
   }
 

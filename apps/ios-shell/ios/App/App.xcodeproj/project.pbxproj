@@ -19,6 +19,7 @@
 		7A6C0F112B0E4C9200D10002 /* YinjieSecureStoragePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6C0F112B0E4C9200D10012 /* YinjieSecureStoragePlugin.swift */; };
 		7A6C0F112B0E4C9200D10003 /* YinjieMobileBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6C0F112B0E4C9200D10013 /* YinjieMobileBridgePlugin.swift */; };
 		7A6C0F112B0E4C9200D10004 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7A6C0F112B0E4C9200D10014 /* PrivacyInfo.xcprivacy */; };
+		7A6C0F112B0E4C9200D10005 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7A6C0F112B0E4C9200D10030 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,10 @@
 		7A6C0F112B0E4C9200D10013 /* YinjieMobileBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YinjieMobileBridgePlugin.swift; sourceTree = "<group>"; };
 		7A6C0F112B0E4C9200D10014 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		7A6C0F112B0E4C9200D10015 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		7A6C0F112B0E4C9200D10031 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		7A6C0F112B0E4C9200D10032 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		7A6C0F112B0E4C9200D10033 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		7A6C0F112B0E4C9200D10034 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "ko.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +94,7 @@
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
 				504EC3131FED79650016851F /* Info.plist */,
+				7A6C0F112B0E4C9200D10030 /* InfoPlist.strings */,
 				7A6C0F112B0E4C9200D10014 /* PrivacyInfo.xcprivacy */,
 				7A6C0F112B0E4C9200D10015 /* App.entitlements */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
@@ -161,6 +167,9 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				ja,
+				ko,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
@@ -183,6 +192,7 @@
 				50B271D11FEDC1A000F3C39B /* public in Resources */,
 				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
+				7A6C0F112B0E4C9200D10005 /* InfoPlist.strings in Resources */,
 				7A6C0F112B0E4C9200D10004 /* PrivacyInfo.xcprivacy in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
@@ -256,6 +266,17 @@
 				504EC3111FED79650016851F /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		7A6C0F112B0E4C9200D10030 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7A6C0F112B0E4C9200D10031 /* zh-Hans */,
+				7A6C0F112B0E4C9200D10032 /* en */,
+				7A6C0F112B0E4C9200D10033 /* ja */,
+				7A6C0F112B0E4C9200D10034 /* ko */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

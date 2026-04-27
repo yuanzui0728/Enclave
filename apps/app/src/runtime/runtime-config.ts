@@ -20,6 +20,7 @@ export type AppRuntimeConfig = {
   applicationId?: string;
   appVersionName?: string;
   appVersionCode?: number;
+  preferredLocales?: string[];
 };
 
 type AppRuntimeConfigInput = Partial<Omit<AppRuntimeConfig, "environment">> & {
@@ -60,6 +61,23 @@ function normalizeVersionCode(value?: number | null) {
   }
 
   return Math.trunc(value);
+}
+
+function normalizePreferredLocales(value?: readonly string[] | null) {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const preferredLocales = Array.from(
+    new Set(
+      value
+        .filter((locale): locale is string => typeof locale === "string")
+        .map((locale) => locale.trim())
+        .filter((locale) => locale.length > 0),
+    ),
+  );
+
+  return preferredLocales.length > 0 ? preferredLocales : undefined;
 }
 
 function normalizeBootstrapSource(value?: string | null): AppRuntimeBootstrapSource {
@@ -111,6 +129,7 @@ export function normalizeAppRuntimeConfig(config: AppRuntimeConfigInput, platfor
     applicationId: normalizeOptionalText(config.applicationId),
     appVersionName: normalizeOptionalText(config.appVersionName),
     appVersionCode: normalizeVersionCode(config.appVersionCode),
+    preferredLocales: normalizePreferredLocales(config.preferredLocales),
   };
 }
 
