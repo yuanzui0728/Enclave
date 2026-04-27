@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -41,6 +42,7 @@ import {
   unblockCharacter,
 } from "@yinjie/contracts";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { RouteRedirectState } from "../components/route-redirect-state";
@@ -239,37 +241,40 @@ function buildDesktopSelectionFromRouteState(hash: string): DesktopSelection {
 
 type MobileQuickActionItem = {
   key: string;
-  label: string;
+  label: ContactsMessage;
   icon: typeof Users;
   to?: "/group/new";
   disabled?: boolean;
-  disabledLabel?: string;
+  disabledLabel?: ContactsMessage;
 };
+
+type ContactsMessage = ReturnType<typeof msg>;
 
 const mobileQuickActionItems: MobileQuickActionItem[] = [
   {
     key: "create-group",
-    label: "发起群聊",
+    label: msg`发起群聊`,
     icon: Users,
     to: "/group/new",
   },
   {
     key: "scan",
-    label: "扫一扫",
+    label: msg`扫一扫`,
     icon: QrCode,
     disabled: true,
-    disabledLabel: "暂未开放",
+    disabledLabel: msg`暂未开放`,
   },
   {
     key: "pay",
-    label: "收付款",
+    label: msg`收付款`,
     icon: WalletCards,
     disabled: true,
-    disabledLabel: "暂未开放",
+    disabledLabel: msg`暂未开放`,
   },
 ];
 
 export function ContactsPage() {
+  const t = useRuntimeTranslator();
   const pageRef = useRef<HTMLDivElement | null>(null);
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
@@ -615,7 +620,9 @@ export function ContactsPage() {
       );
     },
     onSuccess: async (_, variables) => {
-      setNotice(variables.blocked ? "已移出黑名单。" : "已加入黑名单。");
+      setNotice(
+        variables.blocked ? t(msg`已移出黑名单。`) : t(msg`已加入黑名单。`),
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-contacts-blocked", baseUrl],
@@ -640,7 +647,7 @@ export function ContactsPage() {
           (request) => request.id === requestId,
         ) ?? null;
 
-      setNotice("已通过好友申请。");
+      setNotice(t(msg`已通过好友申请。`));
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-friend-requests", baseUrl],
@@ -670,7 +677,7 @@ export function ContactsPage() {
   const declineFriendRequestMutation = useMutation({
     mutationFn: (requestId: string) => declineFriendRequest(requestId, baseUrl),
     onSuccess: async () => {
-      setNotice("好友请求已处理。");
+      setNotice(t(msg`好友请求已处理。`));
       await queryClient.invalidateQueries({
         queryKey: ["app-friend-requests", baseUrl],
       });
@@ -685,7 +692,9 @@ export function ContactsPage() {
       starred: boolean;
     }) => setFriendStarred(characterId, { starred }, baseUrl),
     onSuccess: async (_, variables) => {
-      setNotice(variables.starred ? "已设为星标朋友。" : "已取消星标朋友。");
+      setNotice(
+        variables.starred ? t(msg`已设为星标朋友。`) : t(msg`已取消星标朋友。`),
+      );
       await queryClient.invalidateQueries({
         queryKey: ["app-friends", baseUrl],
       });
@@ -708,7 +717,9 @@ export function ContactsPage() {
       return setConversationPinned(conversationId, { pinned }, baseUrl);
     },
     onSuccess: async (_, variables) => {
-      setNotice(variables.pinned ? "聊天已置顶。" : "聊天已取消置顶。");
+      setNotice(
+        variables.pinned ? t(msg`聊天已置顶。`) : t(msg`聊天已取消置顶。`),
+      );
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -731,7 +742,11 @@ export function ContactsPage() {
       return setConversationMuted(conversationId, { muted }, baseUrl);
     },
     onSuccess: async (_, variables) => {
-      setNotice(variables.muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+      setNotice(
+        variables.muted
+          ? t(msg`已开启消息免打扰。`)
+          : t(msg`已关闭消息免打扰。`),
+      );
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -740,7 +755,7 @@ export function ContactsPage() {
   const deleteFriendMutation = useMutation({
     mutationFn: (characterId: string) => deleteFriend(characterId, baseUrl),
     onSuccess: async () => {
-      setNotice("已从通讯录删除联系人。");
+      setNotice(t(msg`已从通讯录删除联系人。`));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
         queryClient.invalidateQueries({
@@ -1090,11 +1105,11 @@ export function ContactsPage() {
   const shortcutItems: ContactShortcutListItem[] = [
     {
       key: "new-friends",
-      label: "新的朋友",
+      label: t(msg`新的朋友`),
       subtitle:
         pendingRequestCount > 0
-          ? `${pendingRequestCount} 条待处理申请`
-          : "查看好友申请",
+          ? t(msg`${pendingRequestCount} 条待处理申请`)
+          : t(msg`查看好友申请`),
       badgeCount: pendingRequestCount,
       active: desktopSelection?.kind === "new-friends",
       icon: UserPlus,
@@ -1116,8 +1131,9 @@ export function ContactsPage() {
     },
     {
       key: "group-chat",
-      label: "群聊",
-      subtitle: groupCount > 0 ? `${groupCount} 个群聊` : "查看全部群聊",
+      label: t(msg`群聊`),
+      subtitle:
+        groupCount > 0 ? t(msg`${groupCount} 个群聊`) : t(msg`查看全部群聊`),
       active: desktopSelection?.kind === "groups",
       icon: Users,
       iconClassName: "bg-[linear-gradient(135deg,#60a5fa,#2563eb)]",
@@ -1139,8 +1155,8 @@ export function ContactsPage() {
     },
     {
       key: "official-accounts",
-      label: "公众号",
-      subtitle: "查看已上线的内容账号",
+      label: t(msg`公众号`),
+      subtitle: t(msg`查看已上线的内容账号`),
       active: desktopSelection?.kind === "official-accounts",
       icon: BookText,
       iconClassName: "bg-[linear-gradient(135deg,#10b981,#0f766e)]",
@@ -1160,16 +1176,18 @@ export function ContactsPage() {
     },
     {
       key: "world-characters",
-      label: "世界角色",
+      label: t(msg`世界角色`),
       subtitle: isDesktopLayout
         ? showWorldCharacters
-          ? "收起角色目录"
+          ? t(msg`收起角色目录`)
           : worldCharacterDirectoryItems.length > 0
-            ? `还有 ${worldCharacterDirectoryItems.length} 个世界角色可浏览`
-            : "当前没有可浏览的世界角色"
+            ? t(
+                msg`还有 ${worldCharacterDirectoryItems.length} 个世界角色可浏览`,
+              )
+            : t(msg`当前没有可浏览的世界角色`)
         : worldCharacterDirectoryItems.length > 0
-          ? `还有 ${worldCharacterDirectoryItems.length} 个世界角色可浏览`
-          : "查看世界角色目录",
+          ? t(msg`还有 ${worldCharacterDirectoryItems.length} 个世界角色可浏览`)
+          : t(msg`查看世界角色目录`),
       active:
         (isDesktopLayout && showWorldCharacters) ||
         desktopSelection?.kind === "world-character",
@@ -1182,11 +1200,11 @@ export function ContactsPage() {
     shortcutItems[0],
     {
       key: "starred-friends",
-      label: "星标朋友",
+      label: t(msg`星标朋友`),
       subtitle:
         starredFriends.length > 0
-          ? `${starredFriends.length} 位常联系好友`
-          : "快速查看设为星标的联系人",
+          ? t(msg`${starredFriends.length} 位常联系好友`)
+          : t(msg`快速查看设为星标的联系人`),
       active: desktopSelection?.kind === "starred-friends",
       icon: Star,
       iconClassName: "bg-[linear-gradient(135deg,#f59e0b,#d97706)]",
@@ -1203,9 +1221,11 @@ export function ContactsPage() {
     },
     {
       key: "tags",
-      label: "标签",
+      label: t(msg`标签`),
       subtitle:
-        tagGroupCount > 0 ? `${tagGroupCount} 个标签分组` : "按标签整理联系人",
+        tagGroupCount > 0
+          ? t(msg`${tagGroupCount} 个标签分组`)
+          : t(msg`按标签整理联系人`),
       active: desktopSelection?.kind === "tags",
       icon: Tag,
       iconClassName: "bg-[linear-gradient(135deg,#22c55e,#15803d)]",
@@ -1224,22 +1244,22 @@ export function ContactsPage() {
   if (friendsQuery.isError && friendsQuery.error instanceof Error) {
     mobileErrorItems.push({
       key: "friends",
-      message: "联系人列表暂时没有刷新成功。",
+      message: t(msg`联系人列表暂时没有刷新成功。`),
       onRetry: () => {
         void friendsQuery.refetch();
       },
-      retryLabel: "重试读取",
+      retryLabel: t(msg`重试读取`),
     });
   }
   if (charactersQuery.isError && charactersQuery.error instanceof Error) {
     mobileErrorItems.push({
       key: "characters",
-      message: "世界角色目录暂时没有刷新成功。",
+      message: t(msg`世界角色目录暂时没有刷新成功。`),
       onRetry: () => {
         void charactersQuery.refetch();
       },
-      retryLabel: "重试读取",
-      actionLabel: "浏览角色",
+      retryLabel: t(msg`重试读取`),
+      actionLabel: t(msg`浏览角色`),
       onAction: () => {
         handleShortcutNavigate("/contacts/world-characters");
       },
@@ -1251,12 +1271,12 @@ export function ContactsPage() {
   ) {
     mobileErrorItems.push({
       key: "friend-requests",
-      message: "好友申请入口暂时没有刷新成功。",
+      message: t(msg`好友申请入口暂时没有刷新成功。`),
       onRetry: () => {
         void friendRequestsQuery.refetch();
       },
-      retryLabel: "重试读取",
-      actionLabel: "查看新的朋友",
+      retryLabel: t(msg`重试读取`),
+      actionLabel: t(msg`查看新的朋友`),
       onAction: () => {
         handleShortcutNavigate("/friend-requests");
       },
@@ -1265,12 +1285,12 @@ export function ContactsPage() {
   if (contactGroupsQuery.isError && contactGroupsQuery.error instanceof Error) {
     mobileErrorItems.push({
       key: "contact-groups",
-      message: "群聊入口暂时没有刷新成功。",
+      message: t(msg`群聊入口暂时没有刷新成功。`),
       onRetry: () => {
         void contactGroupsQuery.refetch();
       },
-      retryLabel: "重试读取",
-      actionLabel: "查看群聊",
+      retryLabel: t(msg`重试读取`),
+      actionLabel: t(msg`查看群聊`),
       onAction: () => {
         handleShortcutNavigate("/contacts/groups");
       },
@@ -1280,7 +1300,9 @@ export function ContactsPage() {
     mobileErrorItems.push({
       key: "start-chat",
       message: startChatMutation.error.message,
-      actionLabel: startChatMutation.variables ? "重试打开聊天" : undefined,
+      actionLabel: startChatMutation.variables
+        ? t(msg`重试打开聊天`)
+        : undefined,
       onAction: startChatMutation.variables
         ? () => {
             handleStartChat(startChatMutation.variables);
@@ -1288,17 +1310,14 @@ export function ContactsPage() {
         : undefined,
     });
   }
-  if (
-    setStarredMutation.isError &&
-    setStarredMutation.error instanceof Error
-  ) {
+  if (setStarredMutation.isError && setStarredMutation.error instanceof Error) {
     mobileErrorItems.push({
       key: "set-starred",
       message: setStarredMutation.error.message,
       actionLabel: setStarredMutation.variables
         ? setStarredMutation.variables.starred
-          ? "重试设为星标"
-          : "重试取消星标"
+          ? t(msg`重试设为星标`)
+          : t(msg`重试取消星标`)
         : undefined,
       onAction: setStarredMutation.variables
         ? () => {
@@ -1332,16 +1351,18 @@ export function ContactsPage() {
       <Suspense
         fallback={
           <RouteRedirectState
-            title="正在打开桌面通讯录"
-            description="正在载入桌面通讯录工作区，马上显示联系人和详情。"
-            loadingLabel="载入桌面通讯录..."
+            title={t(msg`正在打开桌面通讯录`)}
+            description={t(
+              msg`正在载入桌面通讯录工作区，马上显示联系人和详情。`,
+            )}
+            loadingLabel={t(msg`载入桌面通讯录...`)}
           />
         }
       >
         <DesktopContactsWorkspace
-          directoryCountLabel={`${filteredFriendItems.length} 位联系人${
+          directoryCountLabel={`${t(msg`${filteredFriendItems.length} 位联系人`)}${
             showWorldCharacters || normalizedSearchText
-              ? ` · ${filteredWorldCharacterItems.length} 个世界角色`
+              ? ` · ${t(msg`${filteredWorldCharacterItems.length} 个世界角色`)}`
               : ""
           }`}
           searchSource="contacts"
@@ -1377,13 +1398,13 @@ export function ContactsPage() {
                 <EmptyState
                   title={
                     normalizedSearchText
-                      ? "没有找到匹配的联系人"
-                      : "通讯录还是空的"
+                      ? t(msg`没有找到匹配的联系人`)
+                      : t(msg`通讯录还是空的`)
                   }
                   description={
                     normalizedSearchText
-                      ? "换个关键词试试，或者展开世界角色目录继续找人。"
-                      : "先从新的朋友里建立关系，或者去看看世界角色。"
+                      ? t(msg`换个关键词试试，或者展开世界角色目录继续找人。`)
+                      : t(msg`先从新的朋友里建立关系，或者去看看世界角色。`)
                   }
                   action={
                     normalizedSearchText ? (
@@ -1391,14 +1412,14 @@ export function ContactsPage() {
                         variant="secondary"
                         onClick={() => setSearchText("")}
                       >
-                        清空搜索
+                        {t(msg`清空搜索`)}
                       </Button>
                     ) : (
                       <Button
                         variant="secondary"
                         onClick={handleOpenWorldCharacters}
                       >
-                        浏览世界角色
+                        {t(msg`浏览世界角色`)}
                       </Button>
                     )
                   }
@@ -1407,7 +1428,9 @@ export function ContactsPage() {
             ) : null
           }
           worldCharacterTitle={
-            normalizedSearchText ? "世界角色搜索结果" : "世界角色目录"
+            normalizedSearchText
+              ? t(msg`世界角色搜索结果`)
+              : t(msg`世界角色目录`)
           }
           worldCharacterItems={filteredWorldCharacterItems}
           activeWorldCharacterId={
@@ -1748,14 +1771,14 @@ export function ContactsPage() {
         {isQuickMenuOpen ? (
           <button
             type="button"
-            aria-label="关闭快捷菜单"
+            aria-label={t(msg`关闭快捷菜单`)}
             onClick={() => setIsQuickMenuOpen(false)}
             className="fixed inset-0 z-30 bg-black/[0.03]"
           />
         ) : null}
 
         <TabPageTopBar
-          title="通讯录"
+          title={t(msg`通讯录`)}
           titleAlign="center"
           className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           rightActions={
@@ -1766,7 +1789,7 @@ export function ContactsPage() {
                 size="icon"
                 onClick={() => setIsQuickMenuOpen((current) => !current)}
                 className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
-                aria-label="打开快捷菜单"
+                aria-label={t(msg`打开快捷菜单`)}
               >
                 <Plus size={15} strokeWidth={2.4} />
               </Button>
@@ -1788,7 +1811,7 @@ export function ContactsPage() {
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
                             <Icon size={14} />
                           </div>
-                          <span>{item.label}</span>
+                          <span>{t(item.label)}</span>
                         </button>
                       );
                     }
@@ -1814,10 +1837,10 @@ export function ContactsPage() {
                           <Icon size={14} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div>{item.label}</div>
+                          <div>{t(item.label)}</div>
                           {item.disabledLabel ? (
                             <div className="mt-0.5 text-[10px] text-white/62">
-                              {item.disabledLabel}
+                              {t(item.disabledLabel)}
                             </div>
                           ) : null}
                         </div>
@@ -1843,10 +1866,10 @@ export function ContactsPage() {
                 });
               }}
               className="flex h-7.5 w-full items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]"
-              aria-label="打开搜一搜"
+              aria-label={t(msg`打开搜一搜`)}
             >
               <Search size={14} className="shrink-0" />
-              <span className="min-w-0 flex-1 text-left">搜索</span>
+              <span className="min-w-0 flex-1 text-left">{t(msg`搜索`)}</span>
             </button>
           </div>
         </TabPageTopBar>
@@ -1886,7 +1909,7 @@ export function ContactsPage() {
                           onClick={item.onRetry}
                           className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                         >
-                          {item.retryLabel ?? "重试"}
+                          {item.retryLabel ?? t(msg`重试`)}
                         </button>
                       ) : null}
                     </div>
@@ -1905,9 +1928,9 @@ export function ContactsPage() {
           <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {friendsQuery.isLoading ? (
               <MobileContactsStatusCard
-                badge="读取中"
-                title="正在刷新通讯录"
-                description="稍等一下，正在同步联系人、群聊和服务入口。"
+                badge={t(msg`读取中`)}
+                title={t(msg`正在刷新通讯录`)}
+                description={t(msg`稍等一下，正在同步联系人、群聊和服务入口。`)}
                 tone="loading"
               />
             ) : null}
@@ -1917,16 +1940,16 @@ export function ContactsPage() {
             !friendSections.length ? (
               <div className="px-3 py-3">
                 <MobileContactsStatusCard
-                  badge={normalizedSearchText ? "搜索" : "通讯录"}
+                  badge={normalizedSearchText ? t(msg`搜索`) : t(msg`通讯录`)}
                   title={
                     normalizedSearchText
-                      ? "没有找到匹配的联系人"
-                      : "通讯录还是空的"
+                      ? t(msg`没有找到匹配的联系人`)
+                      : t(msg`通讯录还是空的`)
                   }
                   description={
                     normalizedSearchText
-                      ? "换个关键词试试，或者继续搜索世界角色。"
-                      : "先处理新的朋友，或者去浏览世界角色。"
+                      ? t(msg`换个关键词试试，或者继续搜索世界角色。`)
+                      : t(msg`先处理新的朋友，或者去浏览世界角色。`)
                   }
                   action={
                     normalizedSearchText ? (
@@ -1935,7 +1958,7 @@ export function ContactsPage() {
                         onClick={() => setSearchText("")}
                         className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                       >
-                        清空搜索
+                        {t(msg`清空搜索`)}
                       </Button>
                     ) : (
                       <Button
@@ -1943,7 +1966,7 @@ export function ContactsPage() {
                         onClick={handleOpenWorldCharacters}
                         className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                       >
-                        查看世界角色
+                        {t(msg`查看世界角色`)}
                       </Button>
                     )
                   }
@@ -1998,6 +2021,8 @@ function FriendListRow({
   onClick: () => void;
   onDoubleClick?: () => void;
 }) {
+  const t = useRuntimeTranslator();
+
   return (
     <button
       type="button"
@@ -2031,12 +2056,12 @@ function FriendListRow({
         {desktop ? (
           <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
             {pendingCharacterId === item.character.id
-              ? "正在打开会话..."
+              ? t(msg`正在打开会话...`)
               : item.displayName !== item.character.name
-                ? `昵称：${item.character.name}`
+                ? t(msg`昵称：${item.character.name}`)
                 : item.character.currentStatus?.trim() ||
                   item.character.relationship ||
-                  "保持联系"}
+                  t(msg`保持联系`)}
           </div>
         ) : null}
       </div>

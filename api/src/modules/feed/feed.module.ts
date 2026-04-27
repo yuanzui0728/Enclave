@@ -11,6 +11,7 @@ import { CharactersModule } from '../characters/characters.module';
 import { AuthModule } from '../auth/auth.module';
 import { SocialModule } from '../social/social.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
+import { SystemConfigModule } from '../config/config.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
     CharactersModule,
     AuthModule,
     SocialModule,
+    SystemConfigModule,
     forwardRef(() => CyberAvatarModule),
   ],
   providers: [FeedService],

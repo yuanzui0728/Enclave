@@ -5,11 +5,7 @@ import { CharactersService } from '../characters/characters.service';
 import { ChatService } from './chat.service';
 import type { Message, VoiceAttachment } from './chat.types';
 
-type VoiceCallTranscriptStatus =
-  | 'completed'
-  | 'pending'
-  | 'failed'
-  | 'skipped';
+type VoiceCallTranscriptStatus = 'completed' | 'pending' | 'failed' | 'skipped';
 
 const VOICE_CALL_INPUT_ATTACHMENT_MISSING =
   'VOICE_CALL_INPUT_ATTACHMENT_MISSING';
@@ -21,11 +17,10 @@ const VOICE_CALL_CHARACTER_MISMATCH =
   '\u5f53\u524d\u4f1a\u8bdd\u4e0e\u76ee\u6807\u89d2\u8272\u4e0d\u5339\u914d\u3002';
 const VOICE_CALL_INCOMPLETE_TURN =
   '\u672c\u8f6e\u8bed\u8a00\u901a\u8bdd\u672a\u751f\u6210\u5b8c\u6574\u6d88\u606f\u3002';
-const VOICE_CALL_CURRENT_CHARACTER =
-  '\u5f53\u524d\u89d2\u8272';
+const VOICE_CALL_CURRENT_CHARACTER = '\u5f53\u524d\u89d2\u8272';
 const VOICE_CALL_TTS_INSTRUCTIONS_PREFIX =
-  '\u8bf7\u7528\u81ea\u7136\u3001\u53e3\u8bed\u5316\u3001\u9002\u5408\u624b\u673a\u8bed\u97f3\u901a\u8bdd\u7684\u4e2d\u6587\u64ad\u62a5\uff0c\u8bed\u901f\u5e73\u7a33\uff0c\u4e0d\u8981\u8bfb\u51fa\u6807\u70b9\u3002\u8bf4\u8bdd\u4eba\u662f';
-const VOICE_CALL_TTS_INSTRUCTIONS_SUFFIX = '\u3002';
+  'Keep the delivery natural, conversational, and suitable for a mobile voice call. The speaker is ';
+const VOICE_CALL_TTS_INSTRUCTIONS_SUFFIX = '.';
 
 type UploadedAudioFile = {
   buffer: Buffer;
@@ -134,7 +129,9 @@ export class VoiceCallsService {
       synthesizedProvider = fallbackVoiceReply.provider;
     }
 
-    const assistantVoiceAttachment = this.getVoiceAttachment(assistantVoiceMessage);
+    const assistantVoiceAttachment = this.getVoiceAttachment(
+      assistantVoiceMessage,
+    );
     if (!assistantVoiceAttachment) {
       throw new NotFoundException(VOICE_CALL_ASSISTANT_VOICE_REPLY_MISSING);
     }
@@ -161,14 +158,16 @@ export class VoiceCallsService {
       ...(transcriptState.durationMs !== undefined
         ? { transcriptionDurationMs: transcriptState.durationMs }
         : {}),
-      ...(synthesizedProvider ?? transcriptState.provider
+      ...((synthesizedProvider ?? transcriptState.provider)
         ? { provider: synthesizedProvider ?? transcriptState.provider }
         : {}),
     };
   }
 
   private getVoiceAttachment(message?: Message): VoiceAttachment | undefined {
-    return message?.attachment?.kind === 'voice' ? message.attachment : undefined;
+    return message?.attachment?.kind === 'voice'
+      ? message.attachment
+      : undefined;
   }
 
   private resolveTranscriptState(

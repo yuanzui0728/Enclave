@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { msg } from "@lingui/macro";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BookText,
@@ -8,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { AppPage, cn } from "@yinjie/ui";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -15,6 +17,7 @@ import { normalizePathname } from "../lib/normalize-pathname";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function ProfilePage() {
+  const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
   const pathname = useRouterState({
@@ -33,7 +36,9 @@ export function ProfilePage() {
   const normalizedPathname = normalizePathname(pathname);
   const desktopPathMismatch =
     isDesktopLayout && normalizedPathname !== desktopProfilePath;
-  const settingsPath = isDesktopLayout ? "/desktop/settings" : "/profile/settings";
+  const settingsPath = isDesktopLayout
+    ? "/desktop/settings"
+    : "/profile/settings";
 
   useEffect(() => {
     if (!desktopPathMismatch) {
@@ -51,7 +56,7 @@ export function ProfilePage() {
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
-        title="我"
+        title={t(msg`我`)}
         titleAlign="center"
         rightActions={
           <button
@@ -60,7 +65,7 @@ export function ProfilePage() {
               void navigate({ to: settingsPath });
             }}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors active:bg-black/[0.05]"
-            aria-label="打开设置"
+            aria-label={t(msg`打开设置`)}
           >
             <Settings size={17} />
           </button>
@@ -72,18 +77,22 @@ export function ProfilePage() {
           to={settingsPath as never}
           className="mt-1 flex items-center gap-2.5 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
         >
-          <AvatarChip name={username ?? "世界主人"} src={avatar} size="lg" />
+          <AvatarChip
+            name={username ?? t(msg`世界主人`)}
+            src={avatar}
+            size="lg"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
-                {username ?? "世界主人"}
+                {username ?? t(msg`世界主人`)}
               </div>
               <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.25 py-0.5 text-[8px] font-medium tracking-[0.04em] text-[#15803d]">
-                世界主人
+                {t(msg`世界主人`)}
               </div>
             </div>
             <div className="mt-0.5 line-clamp-1 text-[11px] text-[color:var(--text-secondary)]">
-              {signature?.trim() || "查看与编辑个人资料"}
+              {signature?.trim() || t(msg`查看与编辑个人资料`)}
             </div>
           </div>
           <ChevronRight
@@ -96,7 +105,7 @@ export function ProfilePage() {
           <ProfileEntry
             icon={Settings}
             iconClassName="bg-[rgba(7,193,96,0.10)] text-[#15803d]"
-            label="设置"
+            label={t(msg`设置`)}
             to={settingsPath}
           />
         </ProfileEntryGroup>
@@ -105,19 +114,19 @@ export function ProfilePage() {
           <ProfileEntry
             icon={ShieldCheck}
             iconClassName="bg-[rgba(64,169,255,0.12)] text-[#1677ff]"
-            label="隐私政策"
+            label={t(msg`隐私政策`)}
             to="/legal/privacy"
           />
           <ProfileEntry
             icon={FileText}
             iconClassName="bg-[rgba(250,173,20,0.12)] text-[#d48806]"
-            label="服务条款"
+            label={t(msg`服务条款`)}
             to="/legal/terms"
           />
           <ProfileEntry
             icon={BookText}
             iconClassName="bg-[rgba(56,189,248,0.12)] text-[#0891b2]"
-            label="社区规范"
+            label={t(msg`社区规范`)}
             to="/legal/community"
           />
         </ProfileEntryGroup>

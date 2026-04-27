@@ -23,6 +23,10 @@ import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialService } from '../social/social.service';
+import {
+  WorldLanguageService,
+  type WorldLanguageCode,
+} from '../config/world-language.service';
 import type {
   FollowupDirectThreadSnapshotValue,
   FollowupExtractedOpenLoopValue,
@@ -98,6 +102,7 @@ export class FollowupRuntimeService {
     private readonly messageRemindersService: MessageRemindersService,
     private readonly socialService: SocialService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async getOverview(): Promise<FollowupRuntimeOverviewValue> {
@@ -1154,9 +1159,16 @@ export class FollowupRuntimeService {
     ]
       .filter(Boolean)
       .join('\n\n');
-    const fallback = renderTemplate(input.rules.textTemplates.fallbackMessage, {
-      targetCharacterName: input.candidate.character.name,
-    });
+    const language = await this.worldLanguage.getLanguage();
+    const fallback =
+      language === 'zh-CN'
+        ? renderTemplate(input.rules.textTemplates.fallbackMessage, {
+            targetCharacterName: input.candidate.character.name,
+          })
+        : this.buildFollowupHandoffFallback(
+            language,
+            input.candidate.character.name,
+          );
     const text = await this.ai.generatePlainText({
       prompt,
       usageContext: {
@@ -1203,21 +1215,28 @@ export class FollowupRuntimeService {
     ]
       .filter(Boolean)
       .join('\n\n');
-    const fallback = renderTemplate(
-      input.rules.textTemplates.friendRequestFallbackGreeting,
-      {
-        loopSummary: input.loop.summary,
-        sourceThreadTitle:
-          input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
-        targetCharacterName: input.candidate.character.name,
-        targetCharacterRelationship:
-          input.candidate.character.relationship || '更合适的人',
-        reasonSummary:
-          input.loop.reasonSummary ??
-          (input.candidate.matchReasons.join('，') ||
-            `${input.candidate.character.name}更适合继续接住这个话题。`),
-      },
-    );
+    const language = await this.worldLanguage.getLanguage();
+    const fallback =
+      language === 'zh-CN'
+        ? renderTemplate(
+            input.rules.textTemplates.friendRequestFallbackGreeting,
+            {
+              loopSummary: input.loop.summary,
+              sourceThreadTitle:
+                input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
+              targetCharacterName: input.candidate.character.name,
+              targetCharacterRelationship:
+                input.candidate.character.relationship || '更合适的人',
+              reasonSummary:
+                input.loop.reasonSummary ??
+                (input.candidate.matchReasons.join('，') ||
+                  `${input.candidate.character.name}更适合继续接住这个话题。`),
+            },
+          )
+        : this.buildFollowupFriendRequestGreetingFallback(
+            language,
+            input.loop.summary,
+          );
     const text = await this.ai.generatePlainText({
       prompt,
       usageContext: {
@@ -1271,21 +1290,28 @@ export class FollowupRuntimeService {
     ]
       .filter(Boolean)
       .join('\n\n');
-    const fallback = renderTemplate(
-      input.rules.textTemplates.friendRequestFallbackMessage,
-      {
-        loopSummary: input.loop.summary,
-        sourceThreadTitle:
-          input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
-        targetCharacterName: input.candidate.character.name,
-        targetCharacterRelationship:
-          input.candidate.character.relationship || '更合适的人',
-        reasonSummary:
-          input.loop.reasonSummary ??
-          (input.candidate.matchReasons.join('，') ||
-            `${input.candidate.character.name}更适合继续接住这个话题。`),
-      },
-    );
+    const language = await this.worldLanguage.getLanguage();
+    const fallback =
+      language === 'zh-CN'
+        ? renderTemplate(
+            input.rules.textTemplates.friendRequestFallbackMessage,
+            {
+              loopSummary: input.loop.summary,
+              sourceThreadTitle:
+                input.loop.sourceThreadTitle ?? input.loop.sourceThreadId,
+              targetCharacterName: input.candidate.character.name,
+              targetCharacterRelationship:
+                input.candidate.character.relationship || '更合适的人',
+              reasonSummary:
+                input.loop.reasonSummary ??
+                (input.candidate.matchReasons.join('，') ||
+                  `${input.candidate.character.name}更适合继续接住这个话题。`),
+            },
+          )
+        : this.buildFollowupFriendRequestNoticeFallback(
+            language,
+            input.candidate.character.name,
+          );
     const text = await this.ai.generatePlainText({
       prompt,
       usageContext: {
@@ -1304,6 +1330,48 @@ export class FollowupRuntimeService {
     });
 
     return sanitizeHandoffText(text || fallback);
+  }
+
+  private buildFollowupHandoffFallback(
+    language: Exclude<WorldLanguageCode, 'zh-CN'>,
+    targetCharacterName: string,
+  ) {
+    switch (language) {
+      case 'en-US':
+        return `This is still worth following up. ${targetCharacterName} is probably the better person to continue it with.`;
+      case 'ja-JP':
+        return `この件はまだ続ける価値があります。続きは${targetCharacterName}と話すのがよさそうです。`;
+      case 'ko-KR':
+        return `이 일은 아직 이어갈 만해요. 계속 이야기하려면 ${targetCharacterName}이(가) 더 잘 맞을 것 같아요.`;
+    }
+  }
+
+  private buildFollowupFriendRequestGreetingFallback(
+    language: Exclude<WorldLanguageCode, 'zh-CN'>,
+    loopSummary: string,
+  ) {
+    switch (language) {
+      case 'en-US':
+        return `I've been thinking about ${loopSummary}. It felt like you might understand it, so I wanted to connect first.`;
+      case 'ja-JP':
+        return `${loopSummary}のことが少し気になっていました。あなたなら分かってくれそうで、先に繋がってみたくなりました。`;
+      case 'ko-KR':
+        return `${loopSummary} 일이 계속 마음에 남았어요. 당신이라면 이해할 것 같아서 먼저 연결하고 싶었습니다.`;
+    }
+  }
+
+  private buildFollowupFriendRequestNoticeFallback(
+    language: Exclude<WorldLanguageCode, 'zh-CN'>,
+    targetCharacterName: string,
+  ) {
+    switch (language) {
+      case 'en-US':
+        return `This still seems worth moving forward, so I sent ${targetCharacterName} a friend request first.`;
+      case 'ja-JP':
+        return `この件はまだ進める価値がありそうなので、先に${targetCharacterName}へ友だち申請を送りました。`;
+      case 'ko-KR':
+        return `이 일은 아직 이어갈 만해서, 먼저 ${targetCharacterName}에게 친구 요청을 보냈어요.`;
+    }
   }
 
   private async finishRun(

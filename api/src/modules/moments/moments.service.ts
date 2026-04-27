@@ -74,14 +74,6 @@ type MomentAvatarContext = {
   characterAvatarById: Map<string, string>;
 };
 
-function hashTextSeed(seed: string) {
-  let hash = 0;
-  for (const char of seed) {
-    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  }
-  return hash;
-}
-
 @Injectable()
 export class MomentsService implements OnModuleInit {
   private readonly logger = new Logger(MomentsService.name);
@@ -165,7 +157,10 @@ export class MomentsService implements OnModuleInit {
       ownerAvatar: owner.avatar,
     });
     const post = await this.postRepo.findOneBy({ id: postId });
-    if (!post || !this.canOwnerViewPost(post, avatarContext.visibleCharacterIds))
+    if (
+      !post ||
+      !this.canOwnerViewPost(post, avatarContext.visibleCharacterIds)
+    )
       return null;
     return this._enrichPost(post, avatarContext);
   }
@@ -403,49 +398,6 @@ export class MomentsService implements OnModuleInit {
     return normalized;
   }
 
-  private async buildReminderCharacterCommentText(post: MomentPostEntity) {
-    const nudges = await this.reminderRuntime.getMomentNudgeTasks(2);
-    if (nudges.length === 0) {
-      return null;
-    }
-
-    const primary = nudges[0];
-    const focus = this.truncateReminderLabel(primary.title, 8);
-    let variants: string[] = [];
-
-    if (/英语|背单词/.test(primary.title)) {
-      variants = ['发完这条，英语也打个卡。', '今天的英语，别断。'];
-    } else if (/锻炼|运动|健身/.test(primary.title)) {
-      variants = ['这条发完，今天动一动。', '今天的运动，也别断。'];
-    } else if (/早睡|睡觉/.test(primary.title)) {
-      variants = ['刷完这条就早点睡。', '今晚别又熬太晚。'];
-    } else if (/喝水/.test(primary.title)) {
-      variants = ['看完这条顺手喝口水。', '先去喝口水。'];
-    } else if (/吃饭/.test(primary.title)) {
-      variants = ['记得先吃饭。', '先把饭吃了。'];
-    } else if (/吃药/.test(primary.title)) {
-      variants = ['这条发完，药别忘了。', '药我还替你记着。'];
-    } else {
-      variants = [
-        `这条发完，${focus}也别断。`,
-        `今天的${focus}，我还记着。`,
-        `顺手把${focus}也安排上。`,
-      ];
-    }
-
-    return variants[hashTextSeed(`${post.id}:${primary.id}`) % variants.length];
-  }
-
-  private truncateReminderLabel(value: string, maxLength: number) {
-    const normalized = value
-      .replace(/[，。、“”‘’：:！!？?；;,.]/g, '')
-      .trim();
-    if (normalized.length <= maxLength) {
-      return normalized;
-    }
-    return `${normalized.slice(0, maxLength)}…`;
-  }
-
   private async scheduleCharacterInteractions(post: MomentPostEntity) {
     const visibleCharacterIds = await this.getVisibleCharacterIdSet();
     if (
@@ -490,9 +442,15 @@ export class MomentsService implements OnModuleInit {
 
             const isComment = Math.random() < 0.4;
             if (isComment) {
-              if (char.id === REMINDER_CHARACTER_ID && post.authorType === 'user') {
+              if (
+                char.id === REMINDER_CHARACTER_ID &&
+                post.authorType === 'user'
+              ) {
                 const reminderComment =
-                  await this.buildReminderCharacterCommentText(post);
+                  await this.reminderRuntime.buildMomentCommentNudgeText({
+                    seedKey: post.id,
+                    limit: 2,
+                  });
                 if (reminderComment) {
                   await this.addComment(
                     post.id,
@@ -767,10 +725,7 @@ export class MomentsService implements OnModuleInit {
         visibleCharacters.map((character) => character.id),
       ),
       characterAvatarById: new Map(
-        visibleCharacters.map((character) => [
-          character.id,
-          character.avatar,
-        ]),
+        visibleCharacters.map((character) => [character.id, character.avatar]),
       ),
     };
   }
@@ -782,7 +737,9 @@ export class MomentsService implements OnModuleInit {
     avatarContext: MomentAvatarContext,
   ) {
     if (authorType === 'character' && authorId) {
-      return avatarContext.characterAvatarById.get(authorId) ?? currentAvatar ?? '';
+      return (
+        avatarContext.characterAvatarById.get(authorId) ?? currentAvatar ?? ''
+      );
     }
 
     if (
@@ -869,11 +826,15 @@ export class MomentsService implements OnModuleInit {
     );
 
     await Promise.all([
-      pendingPostUpdates.length > 0 ? this.postRepo.save(pendingPostUpdates) : null,
+      pendingPostUpdates.length > 0
+        ? this.postRepo.save(pendingPostUpdates)
+        : null,
       pendingCommentUpdates.length > 0
         ? this.commentRepo.save(pendingCommentUpdates)
         : null,
-      pendingLikeUpdates.length > 0 ? this.likeRepo.save(pendingLikeUpdates) : null,
+      pendingLikeUpdates.length > 0
+        ? this.likeRepo.save(pendingLikeUpdates)
+        : null,
     ]);
   }
 

@@ -36,6 +36,7 @@ import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { WorldLanguageService } from '../config/world-language.service';
 import { ChatGateway } from './chat.gateway';
 import { CustomStickersService } from './custom-stickers.service';
 import {
@@ -157,6 +158,7 @@ export class GroupService {
     private readonly groupReplyTaskService: GroupReplyTaskService,
     private readonly replyArtifactJobs: ReplyArtifactJobService,
     private readonly mediaInsightJobs: MediaInsightJobService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -246,7 +248,9 @@ export class GroupService {
         memberType: 'user',
       },
     });
-    const groupIds = dedupeIds(memberships.map((membership) => membership.groupId));
+    const groupIds = dedupeIds(
+      memberships.map((membership) => membership.groupId),
+    );
     if (!groupIds.length) {
       return [];
     }
@@ -522,9 +526,13 @@ export class GroupService {
       attachmentPayload: null,
     });
 
-    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_recalled', {
-      sourceMessageId: message.id,
-    });
+    await this.replyArtifactJobs.cancelGroupJobs(
+      groupId,
+      'source_message_recalled',
+      {
+        sourceMessageId: message.id,
+      },
+    );
     await this.mediaInsightJobs.cancelGroupJobs(
       groupId,
       'source_message_recalled',
@@ -550,9 +558,13 @@ export class GroupService {
     }
 
     await this.messageRepo.delete({ id: message.id });
-    await this.replyArtifactJobs.cancelGroupJobs(groupId, 'source_message_deleted', {
-      sourceMessageId: message.id,
-    });
+    await this.replyArtifactJobs.cancelGroupJobs(
+      groupId,
+      'source_message_deleted',
+      {
+        sourceMessageId: message.id,
+      },
+    );
     await this.mediaInsightJobs.cancelGroupJobs(
       groupId,
       'source_message_deleted',
@@ -766,12 +778,13 @@ export class GroupService {
       groupId,
       userMessage,
     );
-    const plannerDecision = await this.groupReplyPlanner.selectReplyActorsForTurn({
-      members,
-      history: recentMessages,
-      currentUserContext,
-      runtimeRules,
-    });
+    const plannerDecision =
+      await this.groupReplyPlanner.selectReplyActorsForTurn({
+        members,
+        history: recentMessages,
+        currentUserContext,
+        runtimeRules,
+      });
     if (!plannerDecision.selectedActors.length) {
       return;
     }
@@ -1382,7 +1395,10 @@ export class GroupService {
         senderType: 'system',
         senderName: 'system',
         type: 'system',
-        text: `已分享你和 ${sourceParticipantName} 的 ${selectedMessages.length} 条聊天记录`,
+        text: await this.buildSharedChatRecordsMessage(
+          sourceParticipantName,
+          selectedMessages.length,
+        ),
       }),
     );
 
@@ -1405,6 +1421,24 @@ export class GroupService {
     await this.groupRepo.save(group);
     await this.emitGroupConversationUpdated(group.id);
     return selectedMessages.length;
+  }
+
+  private async buildSharedChatRecordsMessage(
+    sourceParticipantName: string,
+    count: number,
+  ) {
+    const language = await this.worldLanguage.getLanguage();
+    switch (language) {
+      case 'en-US':
+        return `Shared ${count} chat records between you and ${sourceParticipantName}.`;
+      case 'ja-JP':
+        return `あなたと${sourceParticipantName}のチャット履歴を${count}件共有しました。`;
+      case 'ko-KR':
+        return `당신과 ${sourceParticipantName}의 채팅 기록 ${count}개를 공유했어요.`;
+      case 'zh-CN':
+      default:
+        return `已分享你和 ${sourceParticipantName} 的 ${count} 条聊天记录`;
+    }
   }
 
   private toGroup(entity: GroupEntity): Group {

@@ -4,6 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SystemConfigService } from '../config/config.service';
 import {
+  WorldLanguageService,
+  type WorldLanguageCode,
+} from '../config/world-language.service';
+import {
   DEFAULT_REPLY_LOGIC_RUNTIME_RULES,
   REPLY_LOGIC_RUNTIME_RULES_CONFIG_KEY,
   normalizeReplyLogicRuntimeRules,
@@ -26,6 +30,157 @@ const DEFAULT_WORLD_LOCATION = Object.freeze({
   longitude: 120.1551,
   timezone: 'Asia/Shanghai',
 });
+
+const LOCALIZED_TIME_OF_DAY_LABELS: Record<
+  WorldLanguageCode,
+  Record<
+    | 'lateNight'
+    | 'morning'
+    | 'forenoon'
+    | 'noon'
+    | 'afternoon'
+    | 'dusk'
+    | 'evening',
+    string
+  >
+> = {
+  'zh-CN': {
+    lateNight: '深夜',
+    morning: '早上',
+    forenoon: '上午',
+    noon: '中午',
+    afternoon: '下午',
+    dusk: '傍晚',
+    evening: '晚上',
+  },
+  'en-US': {
+    lateNight: 'late night',
+    morning: 'morning',
+    forenoon: 'late morning',
+    noon: 'noon',
+    afternoon: 'afternoon',
+    dusk: 'dusk',
+    evening: 'evening',
+  },
+  'ja-JP': {
+    lateNight: '深夜',
+    morning: '朝',
+    forenoon: '午前',
+    noon: '昼',
+    afternoon: '午後',
+    dusk: '夕方',
+    evening: '夜',
+  },
+  'ko-KR': {
+    lateNight: '심야',
+    morning: '아침',
+    forenoon: '오전',
+    noon: '정오',
+    afternoon: '오후',
+    dusk: '해질녘',
+    evening: '밤',
+  },
+};
+
+const LOCALIZED_SEASON_LABELS: Record<
+  WorldLanguageCode,
+  Record<'spring' | 'summer' | 'autumn' | 'winter', string>
+> = {
+  'zh-CN': {
+    spring: '春天',
+    summer: '夏天',
+    autumn: '秋天',
+    winter: '冬天',
+  },
+  'en-US': {
+    spring: 'spring',
+    summer: 'summer',
+    autumn: 'autumn',
+    winter: 'winter',
+  },
+  'ja-JP': {
+    spring: '春',
+    summer: '夏',
+    autumn: '秋',
+    winter: '冬',
+  },
+  'ko-KR': {
+    spring: '봄',
+    summer: '여름',
+    autumn: '가을',
+    winter: '겨울',
+  },
+};
+
+const LOCALIZED_FALLBACK_WEATHER: Record<
+  WorldLanguageCode,
+  Record<'spring' | 'summer' | 'autumn' | 'winter', string[]>
+> = {
+  'zh-CN': {
+    spring: ['多云微暖', '小雨微凉', '阴天但空气清新'],
+    summer: ['晴朗偏热', '闷热多云', '阵雨将至'],
+    autumn: ['秋高气爽', '晴空微凉', '多云和风'],
+    winter: ['阴冷干燥', '晴冷微风', '多云偏寒'],
+  },
+  'en-US': {
+    spring: ['mild and cloudy', 'cool light rain', 'overcast with fresh air'],
+    summer: ['clear and warm', 'humid and cloudy', 'showers approaching'],
+    autumn: ['crisp autumn air', 'clear and cool', 'cloudy with a soft breeze'],
+    winter: ['cold and dry', 'clear with a cold breeze', 'cloudy and chilly'],
+  },
+  'ja-JP': {
+    spring: ['穏やかな曇り', '少し肌寒い小雨', '曇りでも空気は澄んでいる'],
+    summer: ['晴れて暑い', '蒸し暑い曇り', 'にわか雨が近い'],
+    autumn: ['秋らしく爽やか', '晴れて少し涼しい', '曇りで風が穏やか'],
+    winter: ['冷たく乾燥している', '晴れて冷たい風', '曇りで寒い'],
+  },
+  'ko-KR': {
+    spring: ['구름 끼고 포근함', '조금 서늘한 약한 비', '흐리지만 공기가 맑음'],
+    summer: ['맑고 더움', '후덥지근하고 흐림', '소나기가 다가오는 중'],
+    autumn: [
+      '가을 공기가 상쾌함',
+      '맑고 조금 서늘함',
+      '구름 끼고 바람이 부드러움',
+    ],
+    winter: ['춥고 건조함', '맑고 찬바람', '흐리고 쌀쌀함'],
+  },
+};
+
+const HOLIDAY_TRANSLATIONS: Record<
+  string,
+  Record<Exclude<WorldLanguageCode, 'zh-CN'>, string>
+> = {
+  元旦: {
+    'en-US': "New Year's Day",
+    'ja-JP': '元日',
+    'ko-KR': '새해 첫날',
+  },
+  情人节: {
+    'en-US': "Valentine's Day",
+    'ja-JP': 'バレンタインデー',
+    'ko-KR': '밸런타인데이',
+  },
+  劳动节: {
+    'en-US': 'Labor Day',
+    'ja-JP': 'メーデー',
+    'ko-KR': '노동절',
+  },
+  儿童节: {
+    'en-US': "Children's Day",
+    'ja-JP': 'こどもの日',
+    'ko-KR': '어린이날',
+  },
+  国庆节: {
+    'en-US': 'National Day',
+    'ja-JP': '国慶節',
+    'ko-KR': '국경절',
+  },
+  圣诞节: {
+    'en-US': 'Christmas',
+    'ja-JP': 'クリスマス',
+    'ko-KR': '크리스마스',
+  },
+};
 
 const WEEKDAY_INDEX: Record<string, number> = {
   Sun: 0,
@@ -114,6 +269,7 @@ export class WorldService {
     @InjectRepository(WorldContextEntity)
     private repo: Repository<WorldContextEntity>,
     private readonly systemConfig: SystemConfigService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async snapshot(): Promise<WorldContextEntity> {
@@ -123,21 +279,25 @@ export class WorldService {
 
   async createSnapshot(): Promise<Partial<WorldContextEntity>> {
     const runtimeRules = await this.getRuntimeRules();
+    const language = await this.worldLanguage.getLanguage();
     const worldCalendar = await this.getWorldCalendar();
     const timeOfDay = this.resolveTimeOfDayLabel(
       worldCalendar.hour,
       runtimeRules,
+      language,
     );
-    const season = this.resolveSeasonLabel(worldCalendar.month, runtimeRules);
+    const season = this.resolveSeasonLabel(
+      worldCalendar.month,
+      runtimeRules,
+      language,
+    );
 
     return {
-      localTime: renderTemplate(
+      localTime: this.buildLocalTimeText(
+        language,
         runtimeRules.worldContextRules.localTimeTemplate,
-        {
-          timeOfDay,
-          hour: String(worldCalendar.hour),
-          minute: String(worldCalendar.minute).padStart(2, '0'),
-        },
+        timeOfDay,
+        worldCalendar,
       ),
       season,
       weather: await this.getLiveWeather(
@@ -145,12 +305,14 @@ export class WorldService {
         season,
         worldCalendar.hour,
         runtimeRules,
+        language,
       ),
       location: worldCalendar.displayLocation,
       holiday: this.getHoliday(
         worldCalendar.month,
         worldCalendar.day,
         runtimeRules,
+        language,
       ),
     };
   }
@@ -162,9 +324,15 @@ export class WorldService {
     });
 
     const currentLocation = await this.getResolvedLocation();
-    const expectedLocation = this.buildLocationLabel(currentLocation);
+    const language = await this.worldLanguage.getLanguage();
+    const expectedLocation = this.buildLocationLabel(currentLocation, language);
+    const languageChangedAt = await this.worldLanguage.getChangedAt();
+    const isBeforeLanguageChange =
+      Boolean(latest && languageChangedAt) &&
+      latest!.timestamp.getTime() < Date.parse(languageChangedAt!);
     const isStale =
       !latest ||
+      isBeforeLanguageChange ||
       !latest.localTime?.trim() ||
       !latest.weather?.trim() ||
       !latest.location?.trim() ||
@@ -183,7 +351,12 @@ export class WorldService {
       return '';
     }
 
+    const language = await this.worldLanguage.getLanguage();
     const runtimeRules = await this.getRuntimeRules();
+    if (language !== 'zh-CN') {
+      return this.buildLocalizedContextString(ctx, language);
+    }
+
     const parts: string[] = [
       renderTemplate(
         runtimeRules.worldContextRules.contextFieldTemplates.currentTime,
@@ -246,6 +419,11 @@ export class WorldService {
     }
 
     const runtimeRules = await this.getRuntimeRules();
+    const language = await this.worldLanguage.getLanguage();
+    if (language !== 'zh-CN') {
+      return this.buildLocalizedPromptContextBlock(context, language);
+    }
+
     return renderTemplate(
       runtimeRules.worldContextRules.promptContextTemplate,
       {
@@ -306,6 +484,8 @@ export class WorldService {
 
   async getWorldCalendar(referenceTime = new Date()): Promise<WorldCalendar> {
     const location = await this.getResolvedLocation();
+    const language = await this.worldLanguage.getLanguage();
+    const locale = this.worldLanguage.getIntlLocale(language);
     const dateTimeParts = this.formatDateParts(
       referenceTime,
       location.timezone,
@@ -323,7 +503,7 @@ export class WorldService {
       hour: Number(dateTimeParts.hour),
       minute: Number(dateTimeParts.minute),
       weekday: WEEKDAY_INDEX[weekdayKey] ?? referenceTime.getUTCDay(),
-      dateTimeText: new Intl.DateTimeFormat('zh-CN', {
+      dateTimeText: new Intl.DateTimeFormat(locale, {
         timeZone: location.timezone,
         year: 'numeric',
         month: 'long',
@@ -333,13 +513,13 @@ export class WorldService {
         minute: '2-digit',
         hour12: false,
       }).format(referenceTime),
-      timeText: new Intl.DateTimeFormat('zh-CN', {
+      timeText: new Intl.DateTimeFormat(locale, {
         timeZone: location.timezone,
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
       }).format(referenceTime),
-      displayLocation: this.buildLocationLabel(location),
+      displayLocation: this.buildLocationLabel(location, language),
     };
   }
 
@@ -366,10 +546,16 @@ export class WorldService {
     month: number,
     day: number,
     runtimeRules: Awaited<ReturnType<WorldService['getRuntimeRules']>>,
+    language: WorldLanguageCode,
   ): string | undefined {
-    return runtimeRules.worldContextRules.holidays.find(
+    const label = runtimeRules.worldContextRules.holidays.find(
       (item) => item.month === month && item.day === day,
     )?.label;
+    if (!label || language === 'zh-CN') {
+      return label;
+    }
+
+    return HOLIDAY_TRANSLATIONS[label]?.[language] ?? label;
   }
 
   private async getLiveWeather(
@@ -377,6 +563,7 @@ export class WorldService {
     season: string,
     hour: number,
     runtimeRules: Awaited<ReturnType<WorldService['getRuntimeRules']>>,
+    language: WorldLanguageCode,
   ): Promise<string> {
     try {
       const search = new URLSearchParams({
@@ -400,7 +587,8 @@ export class WorldService {
         throw new Error('weather payload missing current data');
       }
 
-      const label = this.mapWeatherCodeToLabel(
+      const label = this.worldLanguage.mapWeatherCodeToLabel(
+        language,
         current.weather_code,
         current.is_day,
       );
@@ -415,7 +603,7 @@ export class WorldService {
       this.logger.warn(
         `Failed to fetch live weather for ${location.timezone}, falling back to seasonal preset.`,
       );
-      return this.getFallbackWeather(season, hour, runtimeRules);
+      return this.getFallbackWeather(season, hour, runtimeRules, language);
     }
   }
 
@@ -423,16 +611,38 @@ export class WorldService {
     season: string,
     hour: number,
     runtimeRules: Awaited<ReturnType<WorldService['getRuntimeRules']>>,
+    language: WorldLanguageCode,
   ): string {
     const period = hour < 6 ? 0 : hour < 12 ? 1 : hour < 18 ? 2 : 3;
-    const weatherOptions = this.resolveWeatherOptions(season, runtimeRules);
-    return weatherOptions[period % weatherOptions.length] ?? '多云';
+    const weatherOptions = this.resolveWeatherOptions(
+      season,
+      runtimeRules,
+      language,
+    );
+    return (
+      weatherOptions[period % weatherOptions.length] ??
+      this.worldLanguage.mapWeatherCodeToLabel(language)
+    );
   }
 
   private resolveSeasonLabel(
     month: number,
     runtimeRules: Awaited<ReturnType<WorldService['getRuntimeRules']>>,
+    language: WorldLanguageCode,
   ) {
+    if (language !== 'zh-CN') {
+      if (month >= 3 && month <= 5) {
+        return LOCALIZED_SEASON_LABELS[language].spring;
+      }
+      if (month >= 6 && month <= 8) {
+        return LOCALIZED_SEASON_LABELS[language].summer;
+      }
+      if (month >= 9 && month <= 11) {
+        return LOCALIZED_SEASON_LABELS[language].autumn;
+      }
+      return LOCALIZED_SEASON_LABELS[language].winter;
+    }
+
     if (month >= 3 && month <= 5) {
       return runtimeRules.worldContextRules.seasonLabels.spring;
     }
@@ -448,7 +658,25 @@ export class WorldService {
   private resolveWeatherOptions(
     season: string,
     runtimeRules: Awaited<ReturnType<WorldService['getRuntimeRules']>>,
+    language: WorldLanguageCode,
   ) {
+    if (language !== 'zh-CN') {
+      const seasons = LOCALIZED_SEASON_LABELS[language];
+      if (season === seasons.spring) {
+        return LOCALIZED_FALLBACK_WEATHER[language].spring;
+      }
+      if (season === seasons.summer) {
+        return LOCALIZED_FALLBACK_WEATHER[language].summer;
+      }
+      if (season === seasons.autumn) {
+        return LOCALIZED_FALLBACK_WEATHER[language].autumn;
+      }
+      if (season === seasons.winter) {
+        return LOCALIZED_FALLBACK_WEATHER[language].winter;
+      }
+      return LOCALIZED_FALLBACK_WEATHER[language].spring;
+    }
+
     const seasonLabels = runtimeRules.worldContextRules.seasonLabels;
     if (season === seasonLabels.spring) {
       return runtimeRules.worldContextRules.weatherOptions.spring;
@@ -468,8 +696,12 @@ export class WorldService {
   private resolveTimeOfDayLabel(
     hour: number,
     runtimeRules: Awaited<ReturnType<WorldService['getRuntimeRules']>>,
+    language: WorldLanguageCode = 'zh-CN',
   ) {
-    const labels = runtimeRules.semanticLabels.timeOfDayLabels;
+    const labels =
+      language === 'zh-CN'
+        ? runtimeRules.semanticLabels.timeOfDayLabels
+        : LOCALIZED_TIME_OF_DAY_LABELS[language];
     if (hour < 6) {
       return labels.lateNight;
     }
@@ -647,16 +879,124 @@ export class WorldService {
     ) as Record<'year' | 'month' | 'day' | 'hour' | 'minute', string>;
   }
 
-  private buildLocationLabel(location: WorldResolvedLocation) {
+  private buildLocalTimeText(
+    language: WorldLanguageCode,
+    template: string,
+    timeOfDay: string,
+    worldCalendar: WorldCalendar,
+  ) {
+    const hour = String(worldCalendar.hour);
+    const minute = String(worldCalendar.minute).padStart(2, '0');
+    if (language === 'zh-CN') {
+      return renderTemplate(template, {
+        timeOfDay,
+        hour,
+        minute,
+      });
+    }
+
+    switch (language) {
+      case 'en-US':
+        return `${timeOfDay} ${hour}:${minute}`;
+      case 'ja-JP':
+        return `${timeOfDay}${hour}時${minute}分`;
+      case 'ko-KR':
+        return `${timeOfDay} ${hour}시 ${minute}분`;
+      default:
+        return `${timeOfDay} ${hour}:${minute}`;
+    }
+  }
+
+  private buildLocalizedContextString(
+    ctx: WorldContextEntity,
+    language: Exclude<WorldLanguageCode, 'zh-CN'>,
+  ) {
+    const labels: Record<
+      Exclude<WorldLanguageCode, 'zh-CN'>,
+      {
+        currentTime: string;
+        season: string;
+        weather: string;
+        location: string;
+        holiday: string;
+        separator: string;
+      }
+    > = {
+      'en-US': {
+        currentTime: 'Current time',
+        season: 'Season',
+        weather: 'Weather',
+        location: 'Location',
+        holiday: 'Holiday',
+        separator: '; ',
+      },
+      'ja-JP': {
+        currentTime: '現在時刻',
+        season: '季節',
+        weather: '天気',
+        location: '場所',
+        holiday: '祝日',
+        separator: '；',
+      },
+      'ko-KR': {
+        currentTime: '현재 시간',
+        season: '계절',
+        weather: '날씨',
+        location: '위치',
+        holiday: '기념일',
+        separator: '；',
+      },
+    };
+    const activeLabels = labels[language];
+    const parts = [`${activeLabels.currentTime}: ${ctx.localTime}`];
+    if (ctx.season) {
+      parts.push(`${activeLabels.season}: ${ctx.season}`);
+    }
+    if (ctx.weather) {
+      parts.push(`${activeLabels.weather}: ${ctx.weather}`);
+    }
+    if (ctx.location) {
+      parts.push(`${activeLabels.location}: ${ctx.location}`);
+    }
+    if (ctx.holiday) {
+      parts.push(`${activeLabels.holiday}: ${ctx.holiday}`);
+    }
+    return parts.join(activeLabels.separator);
+  }
+
+  private buildLocalizedPromptContextBlock(
+    context: string,
+    language: Exclude<WorldLanguageCode, 'zh-CN'>,
+  ) {
+    switch (language) {
+      case 'en-US':
+        return `[Current world state] ${context}`;
+      case 'ja-JP':
+        return `【現在の世界状態】${context}`;
+      case 'ko-KR':
+        return `【현재 세계 상태】${context}`;
+      default:
+        return context;
+    }
+  }
+
+  private buildLocationLabel(
+    location: WorldResolvedLocation,
+    language: WorldLanguageCode,
+  ) {
+    const fallback = this.worldLanguage.getLocationFallback(language);
     if (location.country === '中国') {
-      return location.city || location.region || DEFAULT_WORLD_LOCATION.city;
+      if (location.city === DEFAULT_WORLD_LOCATION.city) {
+        return fallback;
+      }
+      return location.city || location.region || fallback;
     }
 
     if (location.city && location.region && location.region !== location.city) {
       return `${location.city} · ${location.region}`;
     }
 
-    return location.city || location.region || location.country || '杭州';
+    return location.city || location.region || location.country || fallback;
   }
 
   private extractClientIp(request?: Request | null) {
@@ -703,61 +1043,5 @@ export class WorldService {
       lower.startsWith('fd') ||
       lower.startsWith('fe80:')
     );
-  }
-
-  private mapWeatherCodeToLabel(weatherCode?: number, isDay?: number) {
-    switch (weatherCode) {
-      case 0:
-        return isDay === 0 ? '夜空晴朗' : '晴朗';
-      case 1:
-        return '晴间多云';
-      case 2:
-        return '多云';
-      case 3:
-        return '阴天';
-      case 45:
-      case 48:
-        return '有雾';
-      case 51:
-      case 53:
-      case 55:
-        return '毛毛雨';
-      case 56:
-      case 57:
-        return '冻毛毛雨';
-      case 61:
-        return '小雨';
-      case 63:
-        return '中雨';
-      case 65:
-        return '大雨';
-      case 66:
-      case 67:
-        return '冻雨';
-      case 71:
-        return '小雪';
-      case 73:
-        return '中雪';
-      case 75:
-        return '大雪';
-      case 77:
-        return '雪粒';
-      case 80:
-        return '阵雨';
-      case 81:
-        return '较强阵雨';
-      case 82:
-        return '强阵雨';
-      case 85:
-      case 86:
-        return '阵雪';
-      case 95:
-        return '雷阵雨';
-      case 96:
-      case 99:
-        return '雷暴伴冰雹';
-      default:
-        return '多云';
-    }
   }
 }

@@ -40,6 +40,10 @@ import {
   type ShakeDiscoveryPreview,
   type ShakeDiscoverySessionRecord,
 } from './shake-discovery.types';
+import {
+  WorldLanguageService,
+  type WorldLanguageCode,
+} from '../config/world-language.service';
 
 const ACTIVE_FRIEND_STATUSES = ['friend', 'close', 'best'] as const;
 type CyberAvatarProfile = Awaited<ReturnType<CyberAvatarService['getProfile']>>;
@@ -82,6 +86,7 @@ export class ShakeDiscoveryService {
     private readonly searchActivityService: SearchActivityService,
     private readonly characterBlueprintService: CharacterBlueprintService,
     private readonly socialService: SocialService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async createSessionPreview(options?: {
@@ -157,6 +162,7 @@ export class ShakeDiscoveryService {
     }
 
     const recentShakeHistory = summarizeRecentShakeHistory(sessions);
+    const language = await this.worldLanguage.getLanguage();
     const planningPrompt = renderTemplate(config.planningPrompt, {
       candidateDirectionCount: config.candidateDirectionCount,
       cyberAvatarSummary: buildCyberAvatarSummary(cyberAvatarProfile),
@@ -242,6 +248,7 @@ export class ShakeDiscoveryService {
         const candidateGenerated = normalizeGeneratedCharacterDraft(
           generationRaw,
           candidateDirection,
+          language,
         );
         const candidateRestriction = getGeneratedRestrictionViolation(
           candidateDirection,
@@ -461,7 +468,10 @@ export class ShakeDiscoveryService {
     if (!isActiveFriendshipStatus(friendship?.status)) {
       await this.socialService.sendFriendRequest(
         character.id,
-        session.greeting || `你好，我是${character.name}。`,
+        session.greeting ||
+          (await this.worldLanguage.buildGenericGreetingFallback(
+            character.name,
+          )),
         {
           autoAccept: true,
           triggerScene: 'shake_keep',
@@ -1332,6 +1342,7 @@ function pickDirection(directions: ShakeDiscoveryDirectionDraft[]) {
 function normalizeGeneratedCharacterDraft(
   raw: Record<string, unknown>,
   direction: ShakeDiscoveryDirectionDraft,
+  language: WorldLanguageCode = 'zh-CN',
 ): ShakeDiscoveryGeneratedCharacterDraft {
   const inferredName =
     sanitizeText(raw.name) ||
@@ -1339,25 +1350,22 @@ function normalizeGeneratedCharacterDraft(
     sanitizeText(raw.relationship) ||
     direction.relationshipLabel;
   const expertDomains = normalizeStringList(raw.expertDomains);
+  const fallback = buildShakeGeneratedFallbacks({
+    language,
+    inferredName,
+    direction,
+    expertDomains,
+  });
   return {
-    name: inferredName.slice(0, 24) || '新的相遇对象',
+    name: inferredName.slice(0, 24) || fallback.name,
     avatar: sanitizeText(raw.avatar) || '🙂',
-    relationship:
-      sanitizeText(raw.relationship) || direction.relationshipLabel || '新朋友',
+    relationship: sanitizeText(raw.relationship) || fallback.relationship,
     relationshipType: normalizeRelationshipType(raw.relationshipType),
-    bio:
-      sanitizeText(raw.bio) ||
-      `${inferredName} 会以 ${direction.relationshipLabel} 的方式和用户建立联系。`,
-    occupation: sanitizeText(raw.occupation) || direction.relationshipLabel,
-    background:
-      sanitizeText(raw.background) ||
-      `${inferredName} 长期围绕 ${
-        expertDomains.join('、') || direction.expertDomains.join('、') || '陪伴'
-      } 活动。`,
-    motivation:
-      sanitizeText(raw.motivation) || '希望在合适的时候给用户有分寸的支持。',
-    worldview:
-      sanitizeText(raw.worldview) || '先理解处境，再给出克制而有效的回应。',
+    bio: sanitizeText(raw.bio) || fallback.bio,
+    occupation: sanitizeText(raw.occupation) || fallback.occupation,
+    background: sanitizeText(raw.background) || fallback.background,
+    motivation: sanitizeText(raw.motivation) || fallback.motivation,
+    worldview: sanitizeText(raw.worldview) || fallback.worldview,
     expertDomains: expertDomains.length
       ? expertDomains
       : direction.expertDomains,
@@ -1367,20 +1375,89 @@ function normalizeGeneratedCharacterDraft(
     emotionalTone: normalizeTone(raw.emotionalTone),
     responseLength: normalizeResponseLength(raw.responseLength),
     emojiUsage: normalizeEmojiUsage(raw.emojiUsage),
-    memorySummary:
-      sanitizeText(raw.memorySummary) ||
-      `${inferredName} 对用户最近的状态变化保持敏感。`,
-    basePrompt:
-      sanitizeText(raw.basePrompt) ||
-      `你是${inferredName}，以${direction.relationshipLabel}的身份和用户交流。回答自然、具体、克制，不要把自己说成工具或系统。`,
-    greeting:
-      sanitizeText(raw.greeting) ||
-      `你好，我是${inferredName}。这次想先和你认识一下。`,
+    memorySummary: sanitizeText(raw.memorySummary) || fallback.memorySummary,
+    basePrompt: sanitizeText(raw.basePrompt) || fallback.basePrompt,
+    greeting: sanitizeText(raw.greeting) || fallback.greeting,
     matchReason:
-      sanitizeText(raw.matchReason) ||
-      direction.whyNow ||
-      '这次相遇和你最近的状态有一点巧合的呼应。',
+      sanitizeText(raw.matchReason) || direction.whyNow || fallback.matchReason,
   };
+}
+
+function buildShakeGeneratedFallbacks(input: {
+  language: WorldLanguageCode;
+  inferredName: string;
+  direction: ShakeDiscoveryDirectionDraft;
+  expertDomains: string[];
+}) {
+  const domains =
+    input.expertDomains.join('、') ||
+    input.direction.expertDomains.join('、') ||
+    '陪伴';
+  const relationship = input.direction.relationshipLabel || '新朋友';
+  switch (input.language) {
+    case 'en-US':
+      return {
+        name: 'New encounter',
+        relationship: relationship || 'new friend',
+        occupation: relationship,
+        bio: `${input.inferredName} connects with the owner as ${relationship}.`,
+        background: `${input.inferredName} has long stayed close to ${domains}.`,
+        motivation:
+          'To offer measured support when the timing actually feels right.',
+        worldview:
+          'Understand the situation first, then respond naturally and usefully.',
+        memorySummary: `${input.inferredName} stays attentive to recent changes in the owner's state.`,
+        basePrompt: `You are ${input.inferredName}, speaking with the owner as ${relationship}. Reply naturally, specifically, and with restraint. Do not describe yourself as a tool or system.`,
+        greeting: `Hi, I'm ${input.inferredName}. I'd like to get to know you.`,
+        matchReason:
+          'This encounter quietly echoes something in the owner’s recent state.',
+      };
+    case 'ja-JP':
+      return {
+        name: '新しい出会いの相手',
+        relationship: relationship || '新しい友人',
+        occupation: relationship,
+        bio: `${input.inferredName}は${relationship}としてユーザーとつながります。`,
+        background: `${input.inferredName}は長く${domains}に関わってきました。`,
+        motivation:
+          'ちょうどよいタイミングで、節度のある支えを届けたいと思っています。',
+        worldview: 'まず状況を理解し、自然で役に立つ形で応答します。',
+        memorySummary: `${input.inferredName}はユーザーの最近の状態変化に敏感です。`,
+        basePrompt: `あなたは${input.inferredName}です。${relationship}としてユーザーと話します。自然で具体的、控えめに返答し、自分をツールやシステムとは言わないでください。`,
+        greeting: `こんにちは、${input.inferredName}です。少しお話ししてみたくなりました。`,
+        matchReason:
+          '今回の出会いは、ユーザーの最近の状態と少し偶然に響き合っています。',
+      };
+    case 'ko-KR':
+      return {
+        name: '새로운 만남',
+        relationship: relationship || '새 친구',
+        occupation: relationship,
+        bio: `${input.inferredName}은(는) ${relationship}로서 사용자와 연결됩니다.`,
+        background: `${input.inferredName}은(는) 오랫동안 ${domains}에 가까이 머물러 왔습니다.`,
+        motivation: '적절한 순간에 분별 있는 도움을 건네고 싶어 합니다.',
+        worldview: '먼저 상황을 이해한 뒤 자연스럽고 유용하게 응답합니다.',
+        memorySummary: `${input.inferredName}은(는) 사용자의 최근 상태 변화에 민감합니다.`,
+        basePrompt: `당신은 ${input.inferredName}입니다. ${relationship}로서 사용자와 대화합니다. 자연스럽고 구체적이며 절제되게 답하고, 자신을 도구나 시스템이라고 말하지 마세요.`,
+        greeting: `안녕하세요, 저는 ${input.inferredName}입니다. 먼저 조금 이야기해 보고 싶어요.`,
+        matchReason: '이번 만남은 사용자의 최근 상태와 우연히 맞닿아 있습니다.',
+      };
+    case 'zh-CN':
+    default:
+      return {
+        name: '新的相遇对象',
+        relationship,
+        occupation: relationship,
+        bio: `${input.inferredName} 会以 ${relationship} 的方式和用户建立联系。`,
+        background: `${input.inferredName} 长期围绕 ${domains} 活动。`,
+        motivation: '希望在合适的时候给用户有分寸的支持。',
+        worldview: '先理解处境，再给出克制而有效的回应。',
+        memorySummary: `${input.inferredName} 对用户最近的状态变化保持敏感。`,
+        basePrompt: `你是${input.inferredName}，以${relationship}的身份和用户交流。回答自然、具体、克制，不要把自己说成工具或系统。`,
+        greeting: `你好，我是${input.inferredName}。这次想先和你认识一下。`,
+        matchReason: '这次相遇和你最近的状态有一点巧合的呼应。',
+      };
+  }
 }
 
 function buildRecipeFromGeneratedDraft(

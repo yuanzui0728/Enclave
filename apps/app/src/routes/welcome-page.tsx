@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -18,6 +19,7 @@ import {
   verifyCloudPhoneCode,
   type WorldAccessSessionSummary,
 } from "@yinjie/contracts";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { describeRequestError } from "../lib/request-error";
@@ -27,24 +29,28 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 
 type WorldAccessMode = "cloud" | "local";
 type LocalWorldApiAdjustment = "api-path" | "app-dev-port";
+type WelcomeMessage = ReturnType<typeof msg>;
+type WelcomeTranslator = (message: WelcomeMessage) => string;
 
 const LOCAL_APP_DEV_PORT = "5180";
 const LOCAL_CORE_API_PORT = "3000";
 const WAITING_CLOUD_SESSION_STATUSES = new Set<WorldAccessSessionSummary["status"]>(["pending", "resolving", "waiting"]);
 const FAILURE_CLOUD_SESSION_STATUSES = new Set<WorldAccessSessionSummary["status"]>(["failed", "disabled", "expired"]);
-const WORLD_ACCESS_MESSAGE_MAP: Record<string, string> = {
-  "World is missing an API endpoint.": "世界缺少可用的 API 地址。",
-  "The world finished starting but no apiBaseUrl is available yet.": "世界已经启动完成，但暂时还没有可用的 API 地址。",
-  "World is ready.": "世界已就绪。",
-  "Waking the existing world.": "正在唤醒已有世界。",
-  "World startup failed.": "世界启动失败。",
-  "The world could not be started.": "世界暂时无法启动。",
-  "World is disabled.": "世界已被停用。",
-  "This world is currently disabled by ops.": "该世界当前已被运维停用。",
-  "World is being deleted.": "世界正在删除中。",
-  "The world is being deleted and cannot be resumed.": "世界正在删除，无法恢复。",
-  "Creating a brand new world.": "正在创建全新的世界。",
-  "Cloud access session is missing.": "云世界访问会话缺失。",
+const WORLD_ACCESS_MESSAGE_MAP: Record<string, WelcomeMessage> = {
+  "World is missing an API endpoint.": msg`世界缺少可用的 API 地址。`,
+  "The world finished starting but no apiBaseUrl is available yet.":
+    msg`世界已经启动完成，但暂时还没有可用的 API 地址。`,
+  "World is ready.": msg`世界已就绪。`,
+  "Waking the existing world.": msg`正在唤醒已有世界。`,
+  "World startup failed.": msg`世界启动失败。`,
+  "The world could not be started.": msg`世界暂时无法启动。`,
+  "World is disabled.": msg`世界已被停用。`,
+  "This world is currently disabled by ops.": msg`该世界当前已被运维停用。`,
+  "World is being deleted.": msg`世界正在删除中。`,
+  "The world is being deleted and cannot be resumed.":
+    msg`世界正在删除，无法恢复。`,
+  "Creating a brand new world.": msg`正在创建全新的世界。`,
+  "Cloud access session is missing.": msg`云世界访问会话缺失。`,
 };
 
 function normalizeBaseUrl(value: string) {
@@ -124,65 +130,85 @@ function buildCloudAccessSessionQueryKey(baseUrl: string, sessionId: string, acc
   return ["welcome-cloud-access-session", baseUrl || "default", sessionId, accessToken] as const;
 }
 
-function translateWorldAccessText(message?: string | null) {
+function translateWorldAccessText(
+  t: WelcomeTranslator,
+  message?: string | null,
+) {
   if (!message) {
     return undefined;
   }
 
-  return WORLD_ACCESS_MESSAGE_MAP[message] ?? message;
+  const knownMessage = WORLD_ACCESS_MESSAGE_MAP[message];
+  return knownMessage ? t(knownMessage) : message;
 }
 
-function describeCloudSessionFailure(session: WorldAccessSessionSummary) {
-  return translateWorldAccessText(session.failureReason) ?? translateWorldAccessText(session.displayStatus) ?? "世界当前不可用。";
+function describeCloudSessionFailure(
+  t: WelcomeTranslator,
+  session: WorldAccessSessionSummary,
+) {
+  return (
+    translateWorldAccessText(t, session.failureReason) ??
+    translateWorldAccessText(t, session.displayStatus) ??
+    t(msg`世界当前不可用。`)
+  );
 }
 
-function describeCloudSession(session?: WorldAccessSessionSummary | null) {
+function describeCloudSession(
+  t: WelcomeTranslator,
+  session?: WorldAccessSessionSummary | null,
+) {
   if (!session) {
-    return "请先验证手机号，以解析你的云世界。";
+    return t(msg`请先验证手机号，以解析你的云世界。`);
   }
 
   if (session.status === "ready") {
-    return "世界已就绪，正在连接...";
+    return t(msg`世界已就绪，正在连接...`);
   }
 
   if (FAILURE_CLOUD_SESSION_STATUSES.has(session.status)) {
-    return describeCloudSessionFailure(session);
+    return describeCloudSessionFailure(t, session);
   }
 
-  const translatedDisplayStatus = translateWorldAccessText(session.displayStatus) ?? session.displayStatus;
+  const translatedDisplayStatus =
+    translateWorldAccessText(t, session.displayStatus) ?? session.displayStatus;
   if (session.estimatedWaitSeconds && session.estimatedWaitSeconds > 0) {
-    return `${translatedDisplayStatus} 预计等待：${session.estimatedWaitSeconds} 秒。`;
+    return t(
+      msg`${translatedDisplayStatus} 预计等待：${session.estimatedWaitSeconds} 秒。`,
+    );
   }
 
   return translatedDisplayStatus;
 }
 
 function describeCloudButtonLabel(
+  t: WelcomeTranslator,
   session: WorldAccessSessionSummary | null,
   isContinuing: boolean,
   ownerSyncing: boolean,
 ) {
   if (ownerSyncing) {
-    return "连接中...";
+    return t(msg`连接中...`);
   }
 
   if (isContinuing) {
-    return "解析中...";
+    return t(msg`解析中...`);
   }
 
   if (!session) {
-    return "解析我的世界";
+    return t(msg`解析我的世界`);
   }
 
   if (session.status === "ready") {
-    return "连接中...";
+    return t(msg`连接中...`);
   }
 
   if (WAITING_CLOUD_SESSION_STATUSES.has(session.status)) {
-    return session.phase === "starting" ? "正在唤醒世界..." : "正在创建世界...";
+    return session.phase === "starting"
+      ? t(msg`正在唤醒世界...`)
+      : t(msg`正在创建世界...`);
   }
 
-  return "解析我的世界";
+  return t(msg`解析我的世界`);
 }
 
 function mobileNoticeTone(
@@ -204,6 +230,7 @@ function mobileNoticeTone(
 }
 
 export function WelcomePage() {
+  const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
@@ -301,7 +328,7 @@ export function WelcomePage() {
 
         setReadyBaseUrl(null);
         if (!onboardingCompleted) {
-          setEntryError(describeRequestError(error, "无法连接到所选世界。"));
+          setEntryError(describeRequestError(error, t(msg`无法连接到所选世界。`)));
         }
       })
       .finally(() => {
@@ -313,13 +340,20 @@ export function WelcomePage() {
     return () => {
       active = false;
     };
-  }, [hydrateOwner, navigate, onboardingCompleted, runtimeConfig.apiBaseUrl, runtimeConfig.worldAccessMode]);
+  }, [
+    hydrateOwner,
+    navigate,
+    onboardingCompleted,
+    runtimeConfig.apiBaseUrl,
+    runtimeConfig.worldAccessMode,
+    t,
+  ]);
 
   const cloudAccessSessionQuery = useQuery({
     queryKey: cloudAccessSessionQueryKey ?? ["welcome-cloud-access-session", "idle"],
     queryFn: () => {
       if (!cloudAccessSessionId || !cloudAccessToken) {
-        throw new Error("云世界访问会话缺失。");
+        throw new Error(t(msg`云世界访问会话缺失。`));
       }
 
       return getMyCloudWorldAccessSession(cloudAccessSessionId, cloudAccessToken, normalizedCloudApiBaseUrl || undefined);
@@ -345,7 +379,10 @@ export function WelcomePage() {
     session: WorldAccessSessionSummary,
   ) => {
     if (!session.resolvedApiBaseUrl) {
-      setEntryError(translateWorldAccessText(session.failureReason) ?? "世界已解析完成，但没有可用的 API 地址。");
+      setEntryError(
+        translateWorldAccessText(t, session.failureReason) ??
+          t(msg`世界已解析完成，但没有可用的 API 地址。`),
+      );
       return;
     }
 
@@ -370,18 +407,20 @@ export function WelcomePage() {
       setReadyBaseUrl(session.resolvedApiBaseUrl);
       setOwnerName(owner.username ?? "");
       setConnectedAccessSessionId(session.id);
-      setNotice("已连接到云世界。");
+      setNotice(t(msg`已连接到云世界。`));
 
       if (owner.onboardingCompleted) {
         void navigate({ to: "/tabs/chat", replace: true });
       }
     } catch (error) {
       setReadyBaseUrl(null);
-      setEntryError(describeRequestError(error, "世界已就绪，但暂时还无法访问。"));
+      setEntryError(
+        describeRequestError(error, t(msg`世界已就绪，但暂时还无法访问。`)),
+      );
     } finally {
       setOwnerSyncing(false);
     }
-  }, [hydrateOwner, navigate, normalizedCloudApiBaseUrl]);
+  }, [hydrateOwner, navigate, normalizedCloudApiBaseUrl, t]);
 
   useEffect(() => {
     if (!currentCloudSession || !cloudAccessToken || currentCloudSession.status !== "ready" || !currentCloudSession.resolvedApiBaseUrl) {
@@ -426,7 +465,7 @@ export function WelcomePage() {
       setCloudAccessToken("");
       setCloudAccessSessionId(null);
       setConnectedAccessSessionId(null);
-      setNotice("验证码已发送。");
+      setNotice(t(msg`验证码已发送。`));
       setEntryError("");
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
@@ -449,7 +488,7 @@ export function WelcomePage() {
 
   async function continueWithLocalWorld() {
     if (!normalizedLocalApiBaseUrl) {
-      setEntryError("请输入本地世界 API 地址。");
+      setEntryError(t(msg`请输入本地世界 API 地址。`));
       return;
     }
 
@@ -484,10 +523,10 @@ export function WelcomePage() {
         return;
       }
 
-      setNotice("已连接到本地世界。");
+      setNotice(t(msg`已连接到本地世界。`));
     } catch (error) {
       setReadyBaseUrl(null);
-      setEntryError(describeRequestError(error, "无法连接到本地世界。"));
+      setEntryError(describeRequestError(error, t(msg`无法连接到本地世界。`)));
     } finally {
       setIsContinuing(false);
     }
@@ -495,12 +534,12 @@ export function WelcomePage() {
 
   async function continueWithCloudWorld() {
     if (!phone.trim()) {
-      setEntryError("请输入手机号。");
+      setEntryError(t(msg`请输入手机号。`));
       return;
     }
 
     if (!cloudAccessToken && !code.trim()) {
-      setEntryError("请输入验证码。");
+      setEntryError(t(msg`请输入验证码。`));
       return;
     }
 
@@ -555,18 +594,18 @@ export function WelcomePage() {
       });
 
       if (FAILURE_CLOUD_SESSION_STATUSES.has(session.status)) {
-        setEntryError(describeCloudSessionFailure(session));
+        setEntryError(describeCloudSessionFailure(t, session));
         return;
       }
 
-      setNotice(describeCloudSession(session));
+      setNotice(describeCloudSession(t, session));
 
       if (session.status === "ready") {
         await connectToResolvedCloudWorld(accessToken, verifiedPhone, session);
       }
     } catch (error) {
       setReadyBaseUrl(null);
-      setEntryError(describeRequestError(error, "解析云世界访问失败。"));
+      setEntryError(describeRequestError(error, t(msg`解析云世界访问失败。`)));
     } finally {
       setIsContinuing(false);
     }
@@ -575,12 +614,12 @@ export function WelcomePage() {
   async function submitOwnerName() {
     const username = ownerName.trim();
     if (!username) {
-      setOwnerError("请输入世界主人的名字。");
+      setOwnerError(t(msg`请输入世界主人的名字。`));
       return;
     }
 
     if (!readyBaseUrl) {
-      setOwnerError("请先连接世界，再设置世界主人名称。");
+      setOwnerError(t(msg`请先连接世界，再设置世界主人名称。`));
       return;
     }
 
@@ -598,7 +637,7 @@ export function WelcomePage() {
       hydrateOwner(owner);
       void navigate({ to: "/tabs/chat", replace: true });
     } catch (error) {
-      setOwnerError(describeRequestError(error, "保存世界主人资料失败。"));
+      setOwnerError(describeRequestError(error, t(msg`保存世界主人资料失败。`)));
     } finally {
       setIsContinuing(false);
     }
@@ -635,7 +674,9 @@ export function WelcomePage() {
       return (
         <div className="space-y-4">
           <label className="block space-y-2">
-            <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">手机号</span>
+            <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+              {t(msg`手机号`)}
+            </span>
             <TextField
               value={phone}
               onChange={(event) => {
@@ -646,13 +687,13 @@ export function WelcomePage() {
                 setConnectedAccessSessionId(null);
                 setEntryError("");
               }}
-              placeholder="请输入手机号"
+              placeholder={t(msg`请输入手机号`)}
             />
           </label>
 
           <div className="space-y-2">
             <span className="block text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-              验证码
+              {t(msg`验证码`)}
             </span>
             <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
@@ -662,7 +703,7 @@ export function WelcomePage() {
                     setCode(event.target.value);
                     setEntryError("");
                   }}
-                  placeholder="请输入验证码"
+                  placeholder={t(msg`请输入验证码`)}
                 />
               </div>
               <Button
@@ -672,19 +713,26 @@ export function WelcomePage() {
                 size="lg"
                 className="shrink-0 rounded-2xl border-black/5 bg-[#f5f5f5] px-5 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
               >
-                {sendCodeMutation.isPending ? "发送中..." : "发送验证码"}
+                {sendCodeMutation.isPending
+                  ? t(msg`发送中...`)
+                  : t(msg`发送验证码`)}
               </Button>
             </div>
           </div>
 
           {cloudAccessSessionQuery.isLoading ? (
             isDesktopLayout ? (
-              <LoadingBlock className="px-0 py-0 text-left" label="正在解析你的云世界..." />
+              <LoadingBlock
+                className="px-0 py-0 text-left"
+                label={t(msg`正在解析你的云世界...`)}
+              />
             ) : (
               <MobileWelcomeStatusCard
-                badge="云世界"
-                title="正在解析你的世界"
-                description="我们正在判断是为这个手机号创建新世界，还是唤醒它已拥有的世界。"
+                badge={t(msg`云世界`)}
+                title={t(msg`正在解析你的世界`)}
+                description={t(
+                  msg`我们正在判断是为这个手机号创建新世界，还是唤醒它已拥有的世界。`,
+                )}
               />
             )
           ) : null}
@@ -692,21 +740,27 @@ export function WelcomePage() {
           {currentCloudSession ? (
             isDesktopLayout ? (
               <InlineNotice tone={mobileNoticeTone(currentCloudSession)}>
-                {describeCloudSession(currentCloudSession)}
+                {describeCloudSession(t, currentCloudSession)}
               </InlineNotice>
             ) : (
               <MobileWelcomeNotice tone={mobileNoticeTone(currentCloudSession)}>
-                {describeCloudSession(currentCloudSession)}
+                {describeCloudSession(t, currentCloudSession)}
               </MobileWelcomeNotice>
             )
           ) : null}
 
           {currentCloudSession?.resolvedApiBaseUrl ? (
             isDesktopLayout ? (
-              <InlineNotice tone="muted">已解析到世界地址：{currentCloudSession.resolvedApiBaseUrl}</InlineNotice>
+              <InlineNotice tone="muted">
+                {t(
+                  msg`已解析到世界地址：${currentCloudSession.resolvedApiBaseUrl}`,
+                )}
+              </InlineNotice>
             ) : (
               <MobileWelcomeNotice tone="muted">
-                已解析到世界地址：{currentCloudSession.resolvedApiBaseUrl}
+                {t(
+                  msg`已解析到世界地址：${currentCloudSession.resolvedApiBaseUrl}`,
+                )}
               </MobileWelcomeNotice>
             )
           ) : null}
@@ -718,7 +772,12 @@ export function WelcomePage() {
             size="lg"
             className="w-full rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
           >
-            {describeCloudButtonLabel(currentCloudSession, isContinuing, ownerSyncing)}
+            {describeCloudButtonLabel(
+              t,
+              currentCloudSession,
+              isContinuing,
+              ownerSyncing,
+            )}
           </Button>
         </div>
       );
@@ -727,7 +786,9 @@ export function WelcomePage() {
     return (
       <div className="space-y-4">
         <label className="block space-y-2">
-          <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">本地世界地址</span>
+          <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+            {t(msg`本地世界地址`)}
+          </span>
           <TextField
             value={localApiBaseUrl}
             onChange={(event) => {
@@ -741,8 +802,12 @@ export function WelcomePage() {
         {localApiBaseUrlAdjusted ? (
           <InlineNotice tone="muted">
             {localApiBaseUrlAdjustment === "api-path"
-              ? `检测到你输入的是 /api 路径，已自动换算为对应的世界入口地址：${normalizedLocalApiBaseUrl}`
-              : `检测到你输入的是本机应用地址，已自动换算为对应的 Core API 地址：${normalizedLocalApiBaseUrl}`}
+              ? t(
+                  msg`检测到你输入的是 /api 路径，已自动换算为对应的世界入口地址：${normalizedLocalApiBaseUrl}`,
+                )
+              : t(
+                  msg`检测到你输入的是本机应用地址，已自动换算为对应的 Core API 地址：${normalizedLocalApiBaseUrl}`,
+                )}
           </InlineNotice>
         ) : null}
 
@@ -753,7 +818,7 @@ export function WelcomePage() {
           size="lg"
           className="w-full rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
         >
-          {isContinuing ? "连接中..." : "连接本地世界"}
+          {isContinuing ? t(msg`连接中...`) : t(msg`连接本地世界`)}
         </Button>
       </div>
     );
@@ -762,7 +827,9 @@ export function WelcomePage() {
   function renderOwnerStep() {
     return (
       <div className="space-y-5">
-        <h2 className="text-3xl font-semibold tracking-[0.05em] text-[color:var(--text-primary)]">为世界主人命名</h2>
+        <h2 className="text-3xl font-semibold tracking-[0.05em] text-[color:var(--text-primary)]">
+          {t(msg`为世界主人命名`)}
+        </h2>
 
         <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-none">
           <TextField
@@ -776,7 +843,7 @@ export function WelcomePage() {
                 void submitOwnerName();
               }
             }}
-            placeholder="为这个世界设置主人的名字"
+            placeholder={t(msg`为这个世界设置主人的名字`)}
             className="text-center text-base"
             autoFocus
           />
@@ -796,7 +863,7 @@ export function WelcomePage() {
                       onClick={handleBackToEntryStep}
                       className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                     >
-                      返回上一步
+                      {t(msg`返回上一步`)}
                     </button>
                   }
                 >
@@ -814,7 +881,7 @@ export function WelcomePage() {
               size="lg"
               className="rounded-2xl border-black/5 bg-[#f5f5f5] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
             >
-              返回
+              {t(msg`返回`)}
             </Button>
             <Button
               onClick={() => void submitOwnerName()}
@@ -823,7 +890,7 @@ export function WelcomePage() {
               size="lg"
               className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
             >
-              {isContinuing ? "保存中..." : "进入世界"}
+              {isContinuing ? t(msg`保存中...`) : t(msg`进入世界`)}
             </Button>
           </div>
         </div>
@@ -844,9 +911,13 @@ export function WelcomePage() {
                 : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)]"
             }`}
           >
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">云世界</div>
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              {t(msg`云世界`)}
+            </div>
             <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-              通过手机号登录。新用户会获得一个全新的世界，老用户会唤醒自己已有的世界。
+              {t(
+                msg`通过手机号登录。新用户会获得一个全新的世界，老用户会唤醒自己已有的世界。`,
+              )}
             </div>
           </button>
 
@@ -859,9 +930,13 @@ export function WelcomePage() {
                 : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)]"
             }`}
           >
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">本地世界</div>
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              {t(msg`本地世界`)}
+            </div>
             <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-              输入世界入口地址并直接连接。若你拿到的是 /api 地址，也可以直接粘贴。
+              {t(
+                msg`输入世界入口地址并直接连接。若你拿到的是 /api 地址，也可以直接粘贴。`,
+              )}
             </div>
           </button>
         </div>
@@ -872,12 +947,17 @@ export function WelcomePage() {
 
         {ownerSyncing && runtimeConfig.apiBaseUrl ? (
           isDesktopLayout ? (
-            <LoadingBlock className="px-0 py-0 text-left" label="正在加载世界主人..." />
+            <LoadingBlock
+              className="px-0 py-0 text-left"
+              label={t(msg`正在加载世界主人...`)}
+            />
           ) : (
             <MobileWelcomeStatusCard
-              badge="世界"
-              title="正在加载世界主人"
-              description="世界地址已连通，正在进入应用前同步世界主人资料。"
+              badge={t(msg`世界`)}
+              title={t(msg`正在加载世界主人`)}
+              description={t(
+                msg`世界地址已连通，正在进入应用前同步世界主人资料。`,
+              )}
             />
           )
         ) : null}
@@ -901,7 +981,7 @@ export function WelcomePage() {
                     onClick={handleRetryEntryStep}
                     className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
-                    {mode === "local" ? "重新连接" : "重新解析"}
+                    {mode === "local" ? t(msg`重新连接`) : t(msg`重新解析`)}
                   </button>
                 ) : undefined
               }
@@ -923,7 +1003,7 @@ export function WelcomePage() {
                     onClick={handleRetrySendCode}
                     className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
-                    重试发送
+                    {t(msg`重试发送`)}
                   </button>
                 ) : undefined
               }
@@ -947,7 +1027,7 @@ export function WelcomePage() {
                     onClick={handleRetryCloudSession}
                     className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
                   >
-                    重新解析
+                    {t(msg`重新解析`)}
                   </button>
                 ) : undefined
               }
@@ -969,10 +1049,10 @@ export function WelcomePage() {
           <div className="pointer-events-none absolute inset-0 rounded-[44px] bg-[rgba(255,255,255,0.24)] blur-3xl" />
           <AppSection className="relative mx-auto w-full max-w-xl rounded-[32px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,248,235,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(160,90,10,0.22)] backdrop-blur-2xl">
             <div className="inline-flex rounded-full border border-[rgba(249,115,22,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
-              世界入口
+              {t(msg`世界入口`)}
             </div>
             <h1 className="mt-5 text-3xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
-              连接你的世界
+              {t(msg`连接你的世界`)}
             </h1>
 
             <div className="mt-6">{showOwnerStep ? renderOwnerStep() : renderEntryStep()}</div>
@@ -986,10 +1066,10 @@ export function WelcomePage() {
     <AppPage className="bg-[#f5f5f5] px-4 py-8">
       <AppSection className="mx-auto w-full max-w-xl border-black/5 bg-white px-6 py-8 shadow-none">
         <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[#15803d]">
-          世界入口
+          {t(msg`世界入口`)}
         </div>
         <h1 className="mt-6 text-3xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
-          连接你的世界
+          {t(msg`连接你的世界`)}
         </h1>
 
         <div className="mt-6">{showOwnerStep ? renderOwnerStep() : renderEntryStep()}</div>

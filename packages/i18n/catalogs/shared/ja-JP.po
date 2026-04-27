@@ -44,7 +44,11 @@ msgstr "昨日"
 msgid "本地兼容"
 msgstr "ローカル互換"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:59
+#: packages/i18n/src/runtime/language-switcher.tsx:88
+msgid "正在切换语言..."
+msgstr "言語を切り替えています..."
+
+#: packages/i18n/src/runtime/language-switcher.tsx:60
 msgid "界面语言"
 msgstr "表示言語"
 
@@ -64,6 +68,6 @@ msgstr "文字起こしモデル"
 msgid "通过"
 msgstr "通過"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:28
+#: packages/i18n/src/runtime/language-switcher.tsx:29
 msgid "默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。"
 msgstr "デフォルトでは簡体字中国語を使用します。切り替えは現在のページセッションだけに影響し、対応済みの画面文言と書式設定にすぐ反映されます。"

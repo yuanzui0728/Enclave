@@ -24,6 +24,7 @@ export type CharacterModelRoutingMode =
 export type CharacterPresetGroupKey =
   | "technology_and_product"
   | "science_and_reasoning"
+  | "academic_teachers"
   | "business_and_investing"
   | "public_expression"
   | "relationships_and_emotions"
@@ -312,6 +313,7 @@ export interface Character {
 export interface CharacterPresetSummary {
   presetKey: string;
   groupKey: CharacterPresetGroupKey;
+  autoSeed?: boolean;
   groupLabel: string;
   groupDescription: string;
   groupOrder: number;

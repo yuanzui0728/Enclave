@@ -81,6 +81,7 @@ import type {
   TokenUsageRecordListResponse,
   TokenUsageTrendPoint,
   UpdateActionConnectorRequest,
+  UpdateWorldLanguageRequest,
   WechatSyncHistoryResponse,
   WechatSyncImportRequest,
   WechatSyncImportResponse,
@@ -89,12 +90,14 @@ import type {
   WechatSyncRetryFriendshipResponse,
   WechatSyncRollbackResponse,
   SnoozeReminderTaskRequest,
+  WorldLanguageConfig,
 } from "@yinjie/contracts";
 import { resolveAdminApiBase } from "./admin-api-base";
 
 const ADMIN_SECRET_KEY = "yinjie_admin_secret";
-const DEV_ADMIN_SECRET =
-  import.meta.env.DEV ? import.meta.env.VITE_ADMIN_SECRET?.trim() ?? "" : "";
+const DEV_ADMIN_SECRET = import.meta.env.DEV
+  ? (import.meta.env.VITE_ADMIN_SECRET?.trim() ?? "")
+  : "";
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -151,7 +154,13 @@ async function adminFetch<T>(
   let res = await requestWithSecret(path, secret, options, baseUrl);
   let rawBody = await res.text();
   const isNotConfigured = (body: string) => {
-    try { return ((JSON.parse(body)?.message as string) ?? body).includes("not configured"); } catch { return body.includes("not configured"); }
+    try {
+      return ((JSON.parse(body)?.message as string) ?? body).includes(
+        "not configured",
+      );
+    } catch {
+      return body.includes("not configured");
+    }
   };
 
   if (
@@ -211,7 +220,8 @@ export type AdminSystemInfo = {
 };
 
 export const adminApi = {
-  getStats: (baseUrl?: string) => adminFetch<AdminStats>("/stats", undefined, baseUrl),
+  getStats: (baseUrl?: string) =>
+    adminFetch<AdminStats>("/stats", undefined, baseUrl),
   getSystem: (baseUrl?: string) =>
     adminFetch<AdminSystemInfo>("/system", undefined, baseUrl),
   getCharacters: () => adminFetch<Character[]>("/characters"),
@@ -272,10 +282,13 @@ export const adminApi = {
   getInferenceMultimodalOverview: () =>
     adminFetch<InferenceMultimodalOverview>("/inference/multimodal/overview"),
   installModelPersonas: (payload: InstallModelPersonasRequest) =>
-    adminFetch<InstallModelPersonasResult>("/inference/model-personas/install", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
+    adminFetch<InstallModelPersonasResult>(
+      "/inference/model-personas/install",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
   rebindModelPersonas: (payload: RebindModelPersonasRequest) =>
     adminFetch<RebindModelPersonasResult>("/inference/model-personas/rebind", {
       method: "POST",
@@ -283,14 +296,22 @@ export const adminApi = {
     }),
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
-    adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
+    adminFetch<{ success: boolean }>("/config", {
+      method: "PATCH",
+      body: JSON.stringify({ key, value }),
+    }),
+  getWorldLanguage: () => adminFetch<WorldLanguageConfig>("/world-language"),
+  setWorldLanguage: (payload: UpdateWorldLanguageRequest) =>
+    adminFetch<WorldLanguageConfig>("/world-language", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
   generateQuickCharacter: (description: string) =>
     adminFetch<Record<string, unknown>>("/characters/generate-quick", {
       method: "POST",
       body: JSON.stringify({ description }),
     }),
-  getFriendCharacterIds: () =>
-    adminFetch<string[]>("/characters/friend-ids"),
+  getFriendCharacterIds: () => adminFetch<string[]>("/characters/friend-ids"),
   listCharacterPresets: () =>
     adminFetch<CharacterPresetSummary[]>("/characters/presets"),
   installCharacterPreset: (presetKey: string) =>
@@ -298,10 +319,13 @@ export const adminApi = {
       method: "POST",
     }),
   installCharacterPresetBatch: (presetKeys: string[]) =>
-    adminFetch<InstallCharacterPresetsResult>("/characters/presets/install-batch", {
-      method: "POST",
-      body: JSON.stringify({ presetKeys }),
-    }),
+    adminFetch<InstallCharacterPresetsResult>(
+      "/characters/presets/install-batch",
+      {
+        method: "POST",
+        body: JSON.stringify({ presetKeys }),
+      },
+    ),
   deleteCharacter: (id: string) =>
     adminFetch<{ success: boolean }>(`/characters/${id}`, { method: "DELETE" }),
   getCharacterFactory: (id: string) =>
@@ -325,14 +349,15 @@ export const adminApi = {
       body: JSON.stringify({ summary: summary?.trim() || null }),
     }),
   listCharacterFactoryRevisions: (id: string) =>
-    adminFetch<CharacterBlueprintRevision[]>(`/characters/${id}/factory/revisions`),
+    adminFetch<CharacterBlueprintRevision[]>(
+      `/characters/${id}/factory/revisions`,
+    ),
   restoreCharacterFactoryRevision: (id: string, revisionId: string) =>
     adminFetch<CharacterFactorySnapshot>(
       `/characters/${id}/factory/revisions/${revisionId}/restore`,
       { method: "POST" },
     ),
-  getGamesCatalog: () =>
-    adminFetch<AdminGameCatalogItem[]>("/games"),
+  getGamesCatalog: () => adminFetch<AdminGameCatalogItem[]>("/games"),
   getGameCatalogItem: (id: string) =>
     adminFetch<AdminGameCatalogDetail>(`/games/${id}`),
   createGameCatalogItem: (payload: AdminCreateGameCatalogRequest) =>
@@ -347,7 +372,10 @@ export const adminApi = {
     }),
   getGameCatalogRevisions: (id: string) =>
     adminFetch<AdminGameCatalogRevision[]>(`/games/${id}/revisions`),
-  publishGameCatalogItem: (id: string, payload?: AdminPublishGameCatalogRequest) =>
+  publishGameCatalogItem: (
+    id: string,
+    payload?: AdminPublishGameCatalogRequest,
+  ) =>
     adminFetch<AdminGameCatalogDetail>(`/games/${id}/publish`, {
       method: "POST",
       body: JSON.stringify(payload ?? {}),
@@ -357,10 +385,13 @@ export const adminApi = {
     revisionId: string,
     payload?: AdminRestoreGameCatalogRevisionRequest,
   ) =>
-    adminFetch<AdminGameCatalogDetail>(`/games/${id}/revisions/${revisionId}/restore`, {
-      method: "POST",
-      body: JSON.stringify(payload ?? {}),
-    }),
+    adminFetch<AdminGameCatalogDetail>(
+      `/games/${id}/revisions/${revisionId}/restore`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
   getGameCenterCuration: () =>
     adminFetch<AdminGameCenterCuration>("/games/curation"),
   updateGameCenterCuration: (payload: AdminUpdateGameCenterCurationRequest) =>
@@ -375,16 +406,25 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
-  updateGameSubmission: (id: string, payload: AdminUpdateGameSubmissionRequest) =>
+  updateGameSubmission: (
+    id: string,
+    payload: AdminUpdateGameSubmissionRequest,
+  ) =>
     adminFetch<AdminGameSubmission>(`/games/submissions/${id}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
-  importGameSubmission: (id: string, payload?: AdminImportGameSubmissionRequest) =>
-    adminFetch<AdminImportGameSubmissionResult>(`/games/submissions/${id}/import`, {
-      method: "POST",
-      body: JSON.stringify(payload ?? {}),
-    }),
+  importGameSubmission: (
+    id: string,
+    payload?: AdminImportGameSubmissionRequest,
+  ) =>
+    adminFetch<AdminImportGameSubmissionResult>(
+      `/games/submissions/${id}/import`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
   previewWechatSync: (payload: WechatSyncPreviewRequest) =>
     adminFetch<WechatSyncPreviewResponse>("/wechat-sync/preview", {
       method: "POST",
@@ -403,9 +443,12 @@ export const adminApi = {
       { method: "POST" },
     ),
   rollbackWechatSyncImport: (characterId: string) =>
-    adminFetch<WechatSyncRollbackResponse>(`/wechat-sync/history/${characterId}`, {
-      method: "DELETE",
-    }),
+    adminFetch<WechatSyncRollbackResponse>(
+      `/wechat-sync/history/${characterId}`,
+      {
+        method: "DELETE",
+      },
+    ),
   getNeedDiscoveryOverview: () =>
     adminFetch<NeedDiscoveryOverview>("/need-discovery/overview"),
   setNeedDiscoveryConfig: (payload: Partial<NeedDiscoveryConfig>) =>
@@ -454,17 +497,20 @@ export const adminApi = {
       body: JSON.stringify({ message, rules }),
     }),
   completeReminderRuntimeTask: (id: string) =>
-    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}/complete`, {
-      method: "POST",
-    }),
-  snoozeReminderRuntimeTask: (
-    id: string,
-    payload: SnoozeReminderTaskRequest,
-  ) =>
-    adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}/snooze`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
+    adminFetch<ReminderTaskMutationResult>(
+      `/reminder-runtime/tasks/${id}/complete`,
+      {
+        method: "POST",
+      },
+    ),
+  snoozeReminderRuntimeTask: (id: string, payload: SnoozeReminderTaskRequest) =>
+    adminFetch<ReminderTaskMutationResult>(
+      `/reminder-runtime/tasks/${id}/snooze`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
   cancelReminderRuntimeTask: (id: string) =>
     adminFetch<ReminderTaskMutationResult>(`/reminder-runtime/tasks/${id}`, {
       method: "DELETE",
@@ -502,10 +548,13 @@ export const adminApi = {
     id: string,
     payload?: { sampleMessage?: string | null },
   ) =>
-    adminFetch<ActionConnectorTestResult>(`/action-runtime/connectors/${id}/test`, {
-      method: "POST",
-      body: JSON.stringify(payload ?? {}),
-    }),
+    adminFetch<ActionConnectorTestResult>(
+      `/action-runtime/connectors/${id}/test`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
   discoverActionRuntimeConnector: (
     id: string,
     payload?: {
@@ -558,7 +607,9 @@ export const adminApi = {
   getRealWorldSyncOverview: () =>
     adminFetch<RealWorldSyncOverview>("/real-world-sync/overview"),
   getRealWorldSyncCharacterDetail: (id: string) =>
-    adminFetch<RealWorldSyncCharacterDetail>(`/real-world-sync/characters/${id}`),
+    adminFetch<RealWorldSyncCharacterDetail>(
+      `/real-world-sync/characters/${id}`,
+    ),
   setRealWorldSyncRules: (payload: Partial<RealWorldSyncRules>) =>
     adminFetch<RealWorldSyncRules>("/real-world-sync/rules", {
       method: "PATCH",
@@ -579,8 +630,10 @@ export const adminApi = {
         body: JSON.stringify(payload ?? {}),
       },
     ),
-  getReplyLogicOverview: () => adminFetch<ReplyLogicOverview>("/reply-logic/overview"),
-  getReplyLogicRules: () => adminFetch<ReplyLogicConstantSummary>("/reply-logic/rules"),
+  getReplyLogicOverview: () =>
+    adminFetch<ReplyLogicOverview>("/reply-logic/overview"),
+  getReplyLogicRules: () =>
+    adminFetch<ReplyLogicConstantSummary>("/reply-logic/rules"),
   setReplyLogicRules: (payload: ReplyLogicConstantSummary) =>
     adminFetch<ReplyLogicConstantSummary>("/reply-logic/rules", {
       method: "PATCH",
@@ -589,46 +642,78 @@ export const adminApi = {
   getReplyLogicCharacterSnapshot: (id: string) =>
     adminFetch<ReplyLogicCharacterSnapshot>(`/reply-logic/characters/${id}`),
   previewReplyLogicCharacter: (id: string, payload: ReplyLogicPreviewRequest) =>
-    adminFetch<ReplyLogicPreviewResult>(`/reply-logic/characters/${id}/preview`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
+    adminFetch<ReplyLogicPreviewResult>(
+      `/reply-logic/characters/${id}/preview`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
   getReplyLogicConversationSnapshot: (id: string) =>
-    adminFetch<ReplyLogicConversationSnapshot>(`/reply-logic/conversations/${id}`),
+    adminFetch<ReplyLogicConversationSnapshot>(
+      `/reply-logic/conversations/${id}`,
+    ),
   retryReplyLogicGroupReplyTask: (taskId: string) =>
-    adminFetch<ReplyLogicGroupReplyTaskRetryResult>(`/reply-logic/group-reply-tasks/${taskId}/retry`, {
-      method: "POST",
-    }),
+    adminFetch<ReplyLogicGroupReplyTaskRetryResult>(
+      `/reply-logic/group-reply-tasks/${taskId}/retry`,
+      {
+        method: "POST",
+      },
+    ),
   retryReplyLogicGroupReplyTurn: (turnId: string) =>
-    adminFetch<ReplyLogicGroupReplyTurnRetryResult>(`/reply-logic/group-reply-turns/${turnId}/retry`, {
-      method: "POST",
-    }),
+    adminFetch<ReplyLogicGroupReplyTurnRetryResult>(
+      `/reply-logic/group-reply-turns/${turnId}/retry`,
+      {
+        method: "POST",
+      },
+    ),
   cleanupReplyLogicGroupReplyTasks: (payload?: {
     olderThanDays?: number | null;
     groupId?: string | null;
     statuses?: string[] | null;
   }) =>
-    adminFetch<ReplyLogicGroupReplyTaskCleanupResult>("/reply-logic/group-reply-tasks/cleanup", {
-      method: "POST",
-      body: JSON.stringify(payload ?? {}),
-    }),
-  previewReplyLogicConversation: (id: string, payload: ReplyLogicPreviewRequest) =>
-    adminFetch<ReplyLogicPreviewResult>(`/reply-logic/conversations/${id}/preview`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
+    adminFetch<ReplyLogicGroupReplyTaskCleanupResult>(
+      "/reply-logic/group-reply-tasks/cleanup",
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    ),
+  previewReplyLogicConversation: (
+    id: string,
+    payload: ReplyLogicPreviewRequest,
+  ) =>
+    adminFetch<ReplyLogicPreviewResult>(
+      `/reply-logic/conversations/${id}/preview`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
   getTokenUsageOverview: (query?: TokenUsageQuery) =>
-    adminFetch<TokenUsageOverview>(`/token-usage/overview${buildQueryString(query)}`),
+    adminFetch<TokenUsageOverview>(
+      `/token-usage/overview${buildQueryString(query)}`,
+    ),
   getTokenUsageTrend: (query?: TokenUsageQuery) =>
-    adminFetch<TokenUsageTrendPoint[]>(`/token-usage/trend${buildQueryString(query)}`),
+    adminFetch<TokenUsageTrendPoint[]>(
+      `/token-usage/trend${buildQueryString(query)}`,
+    ),
   getTokenUsageBreakdown: (query?: TokenUsageQuery) =>
-    adminFetch<TokenUsageBreakdownResponse>(`/token-usage/breakdown${buildQueryString(query)}`),
+    adminFetch<TokenUsageBreakdownResponse>(
+      `/token-usage/breakdown${buildQueryString(query)}`,
+    ),
   getTokenUsageRecords: (query?: TokenUsageQuery) =>
-    adminFetch<TokenUsageRecordListResponse>(`/token-usage/records${buildQueryString(query)}`),
+    adminFetch<TokenUsageRecordListResponse>(
+      `/token-usage/records${buildQueryString(query)}`,
+    ),
   getTokenUsageDowngradeInsights: (query?: TokenUsageQuery) =>
-    adminFetch<TokenUsageDowngradeInsights>(`/token-usage/downgrade-insights${buildQueryString(query)}`),
+    adminFetch<TokenUsageDowngradeInsights>(
+      `/token-usage/downgrade-insights${buildQueryString(query)}`,
+    ),
   getTokenUsageDowngradeQuality: (query?: TokenUsageQuery) =>
-    adminFetch<TokenUsageDowngradeQualityInsights>(`/token-usage/downgrade-quality${buildQueryString(query)}`),
+    adminFetch<TokenUsageDowngradeQualityInsights>(
+      `/token-usage/downgrade-quality${buildQueryString(query)}`,
+    ),
   getTokenUsagePricing: () =>
     adminFetch<TokenPricingCatalog>("/token-usage/pricing"),
   setTokenUsagePricing: (payload: TokenPricingCatalog) =>

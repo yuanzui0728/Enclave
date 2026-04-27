@@ -2,8 +2,12 @@ import type {
   ConversationListItem,
   MessageReminderRecord,
 } from "@yinjie/contracts";
+import { msg } from "@lingui/macro";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import { buildDesktopChatRouteHash } from "./chat-route-state";
 import { formatMessageTimestamp, parseTimestamp } from "../../lib/format";
+
+const t = translateRuntimeMessage;
 
 export type ChatReminderEntry = {
   messageId: string;
@@ -63,9 +67,9 @@ export function buildChatReminderEntries(
         title:
           conversation?.title ||
           item.threadTitle?.trim() ||
-          (item.threadType === "group" ? "群聊" : "聊天"),
+          (item.threadType === "group" ? t(msg`群聊`) : t(msg`聊天`)),
         avatar: conversation?.avatar,
-        previewText: item.previewText?.trim() || "聊天消息",
+        previewText: item.previewText?.trim() || t(msg`聊天消息`),
         remindAt: item.remindAt,
         isDue: remindTimestamp <= nowTimestamp,
         participants: conversation?.participants ?? [],
@@ -88,7 +92,7 @@ export function filterChatReminderEntries(
     return (
       entry.title.toLowerCase().includes(normalizedKeyword) ||
       entry.previewText.toLowerCase().includes(normalizedKeyword) ||
-      (entry.threadType === "group" ? "群聊" : "聊天").includes(
+      (entry.threadType === "group" ? t(msg`群聊`) : t(msg`聊天`)).includes(
         normalizedKeyword,
       )
     );
@@ -156,32 +160,34 @@ export function getChatReminderStatusLabel(
 ) {
   const status = getChatReminderStatus(entry);
   if (status === "notified") {
-    return "已通知";
+    return t(msg`已通知`);
   }
 
-  return status === "due" ? "已到时间" : "待提醒";
+  return status === "due" ? t(msg`已到时间`) : t(msg`待提醒`);
 }
 
 export function getChatReminderActionLabel(
   entry: Pick<ChatReminderEntry, "isDue" | "notifiedAt">,
 ) {
-  return getChatReminderStatus(entry) === "pending" ? "取消提醒" : "完成";
+  return getChatReminderStatus(entry) === "pending"
+    ? t(msg`取消提醒`)
+    : t(msg`完成`);
 }
 
 export function getChatReminderActionNotice(
   entry: Pick<ChatReminderEntry, "isDue" | "notifiedAt">,
 ) {
   return getChatReminderStatus(entry) === "pending"
-    ? "已取消消息提醒。"
-    : "已完成消息提醒。";
+    ? t(msg`已取消消息提醒。`)
+    : t(msg`已完成消息提醒。`);
 }
 
 export function getChatReminderActionErrorMessage(
   entry: Pick<ChatReminderEntry, "isDue" | "notifiedAt">,
 ) {
   return getChatReminderStatus(entry) === "pending"
-    ? "取消提醒失败，请稍后再试。"
-    : "完成提醒失败，请稍后再试。";
+    ? t(msg`取消提醒失败，请稍后再试。`)
+    : t(msg`完成提醒失败，请稍后再试。`);
 }
 
 export function getChatReminderActionTone(
@@ -196,11 +202,11 @@ export function formatReminderListTimestamp(
   notifiedAt?: string,
 ) {
   if (notifiedAt) {
-    return `已于 ${formatMessageTimestamp(notifiedAt)} 通知`;
+    return t(msg`已于 ${formatMessageTimestamp(notifiedAt)} 通知`);
   }
 
   const label = formatMessageTimestamp(remindAt);
-  return isDue ? `提醒时间 ${label}` : `将在 ${label} 提醒`;
+  return isDue ? t(msg`提醒时间 ${label}`) : t(msg`将在 ${label} 提醒`);
 }
 
 export function countChatReminderStatuses(
@@ -233,12 +239,12 @@ export function countChatReminderStatuses(
 
 export function formatChatReminderSummary(counts: ChatReminderStatusCounts) {
   const parts = [
-    counts.dueCount > 0 ? `${counts.dueCount} 条已到时间` : null,
-    counts.notifiedCount > 0 ? `${counts.notifiedCount} 条已通知` : null,
-    counts.pendingCount > 0 ? `${counts.pendingCount} 条待提醒` : null,
+    counts.dueCount > 0 ? t(msg`${counts.dueCount} 条已到时间`) : null,
+    counts.notifiedCount > 0 ? t(msg`${counts.notifiedCount} 条已通知`) : null,
+    counts.pendingCount > 0 ? t(msg`${counts.pendingCount} 条待提醒`) : null,
   ].filter((part): part is string => Boolean(part));
 
-  return parts.length > 0 ? parts.join(" · ") : "暂无提醒";
+  return parts.length > 0 ? parts.join(" · ") : t(msg`暂无提醒`);
 }
 
 export function groupChatReminderEntries(
@@ -283,7 +289,7 @@ export function isChatReminderGroupClearable(status: ChatReminderStatus) {
 }
 
 export function getChatReminderGroupClearLabel(status: ChatReminderStatus) {
-  return status === "notified" ? "清理已通知" : "清理提醒";
+  return status === "notified" ? t(msg`清理已通知`) : t(msg`清理提醒`);
 }
 
 export function getChatReminderGroupClearNotice(
@@ -291,16 +297,16 @@ export function getChatReminderGroupClearNotice(
   count: number,
 ) {
   return status === "notified"
-    ? `已清理 ${count} 条已通知提醒。`
-    : `已清理 ${count} 条提醒。`;
+    ? t(msg`已清理 ${count} 条已通知提醒。`)
+    : t(msg`已清理 ${count} 条提醒。`);
 }
 
 export function getChatReminderGroupClearErrorMessage(
   status: ChatReminderStatus,
 ) {
   return status === "notified"
-    ? "清理已通知提醒失败，请稍后再试。"
-    : "清理提醒失败，请稍后再试。";
+    ? t(msg`清理已通知提醒失败，请稍后再试。`)
+    : t(msg`清理提醒失败，请稍后再试。`);
 }
 
 function compareChatReminderEntries(
@@ -346,10 +352,10 @@ function getOrderedChatReminderStatuses(): ChatReminderStatus[] {
 function getChatReminderStatusTitle(status: ChatReminderStatus) {
   switch (status) {
     case "due":
-      return "已到时间";
+      return t(msg`已到时间`);
     case "notified":
-      return "已通知";
+      return t(msg`已通知`);
     case "pending":
-      return "待提醒";
+      return t(msg`待提醒`);
   }
 }

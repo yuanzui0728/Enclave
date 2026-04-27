@@ -894,7 +894,7 @@ export const FIXED_WORLD_CHARACTER_PRESETS: CelebrityCharacterPreset[] = [
   },
   {
     presetKey: SU_YU_SOURCE_KEY,
-    groupKey: 'public_expression',
+    groupKey: 'academic_teachers',
     id: 'char-preset-su-yu-english-coach',
     name: '苏语',
     avatar: getCharacterAvatarBySourceKey(SU_YU_SOURCE_KEY),

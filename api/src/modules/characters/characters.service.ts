@@ -178,6 +178,7 @@ export class CharactersService implements OnModuleInit {
       return {
         presetKey: preset.presetKey,
         groupKey: group.key,
+        autoSeed: preset.autoSeed !== false,
         groupLabel: group.label,
         groupDescription: group.description,
         groupOrder: group.sortOrder,

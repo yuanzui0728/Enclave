@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { LanguageSwitcher, translateRuntimeMessage } from "@yinjie/i18n";
+import { WorldLanguageSwitcher } from "./world-language-switcher";
 
 type AdminTopbarProps = {
   eyebrow: ReactNode;
@@ -33,6 +34,7 @@ export function AdminTopbar({
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
           <LanguageSwitcher variant="compact" description={null} />
+          <WorldLanguageSwitcher />
           <div
             className={
               statusTone === "healthy"

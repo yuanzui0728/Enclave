@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -24,6 +25,7 @@ import {
   likeFeedPost,
 } from "@yinjie/contracts";
 import { AppPage, Button, InlineNotice, TextField } from "@yinjie/ui";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
 import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
 import { MomentMediaGallery } from "../components/moment-media-gallery";
@@ -64,6 +66,7 @@ const DesktopFeedWorkspace = lazy(async () => {
 });
 
 export function DiscoverFeedPage() {
+  const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
   const pathname = useRouterState({
@@ -111,7 +114,7 @@ export function DiscoverFeedPage() {
     string | null
   >(routeSelectedPostId);
   const routeSelectionAlreadySynced =
-    (!desktopPathMismatch && routeSelectedPostId === desktopSelectedPostId);
+    !desktopPathMismatch && routeSelectedPostId === desktopSelectedPostId;
   const safeReturnPath =
     normalizedDesktopReturnPath &&
     !isDesktopOnlyPath(normalizedDesktopReturnPath)
@@ -143,7 +146,7 @@ export function DiscoverFeedPage() {
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
-      setNotice("广场动态已发布，世界居民公开可见。");
+      setNotice(t(msg`广场动态已发布，世界居民公开可见。`));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
@@ -169,7 +172,7 @@ export function DiscoverFeedPage() {
     mutationFn: (postId: string) => {
       const text = commentDrafts[postId]?.trim();
       if (!text) {
-        throw new Error("请先输入评论内容。");
+        throw new Error(t(msg`请先输入评论内容。`));
       }
 
       return addFeedComment(
@@ -185,7 +188,7 @@ export function DiscoverFeedPage() {
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
-      setNotice("广场互动已更新。");
+      setNotice(t(msg`广场互动已更新。`));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
@@ -241,8 +244,12 @@ export function DiscoverFeedPage() {
 
     focusComposer();
   }
-  const interactionActionLabel = safeReturnPath ? "返回上一页" : "重试读取";
-  const composerErrorActionLabel = safeReturnPath ? "返回上一页" : "继续编辑";
+  const interactionActionLabel = safeReturnPath
+    ? t(msg`返回上一页`)
+    : t(msg`重试读取`);
+  const composerErrorActionLabel = safeReturnPath
+    ? t(msg`返回上一页`)
+    : t(msg`继续编辑`);
 
   useEffect(() => {
     resetComposeDraft();
@@ -373,7 +380,9 @@ export function DiscoverFeedPage() {
       await composeDraft.addImageFiles(files);
     } catch (error) {
       composeDraft.setMediaError(
-        error instanceof Error ? error.message : "图片选择失败，请稍后重试。",
+        error instanceof Error
+          ? error.message
+          : t(msg`图片选择失败，请稍后重试。`),
       );
     }
   }
@@ -383,7 +392,9 @@ export function DiscoverFeedPage() {
       await composeDraft.replaceVideoFile(file);
     } catch (error) {
       composeDraft.setMediaError(
-        error instanceof Error ? error.message : "视频选择失败，请稍后重试。",
+        error instanceof Error
+          ? error.message
+          : t(msg`视频选择失败，请稍后重试。`),
       );
     }
   }
@@ -421,8 +432,8 @@ export function DiscoverFeedPage() {
 
     if (nativeMobileShareSupported) {
       const shared = await shareWithNativeShell({
-        title: `${post.authorName} 的广场动态`,
-        text: `${post.authorName}：${postSummary}`,
+        title: t(msg`${post.authorName} 的广场动态`),
+        text: t(msg`${post.authorName}：${postSummary}`),
         url: shareUrl,
       });
 
@@ -430,7 +441,7 @@ export function DiscoverFeedPage() {
         setNoticeTone("success");
         setNoticeActionLabel(null);
         setNoticeAction(null);
-        setNotice("已打开系统分享面板。");
+        setNotice(t(msg`已打开系统分享面板。`));
         return;
       }
     }
@@ -441,14 +452,16 @@ export function DiscoverFeedPage() {
       typeof navigator.clipboard.writeText !== "function"
     ) {
       setNoticeTone("info");
-      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : "重试复制");
+      setNoticeActionLabel(
+        nativeMobileShareSupported ? t(msg`重试分享`) : t(msg`重试复制`),
+      );
       setNoticeAction(() => () => {
         void handleSharePost(post);
       });
       setNotice(
         nativeMobileShareSupported
-          ? "当前设备暂时无法打开系统分享，请稍后重试。"
-          : "当前环境暂不支持复制动态摘要。",
+          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
+          : t(msg`当前环境暂不支持复制动态摘要。`),
       );
       return;
     }
@@ -460,19 +473,21 @@ export function DiscoverFeedPage() {
       setNoticeAction(null);
       setNotice(
         nativeMobileShareSupported
-          ? "系统分享暂时不可用，已复制动态摘要。"
-          : "动态摘要已复制。",
+          ? t(msg`系统分享暂时不可用，已复制动态摘要。`)
+          : t(msg`动态摘要已复制。`),
       );
     } catch {
       setNoticeTone("info");
-      setNoticeActionLabel(nativeMobileShareSupported ? "重试分享" : "重试复制");
+      setNoticeActionLabel(
+        nativeMobileShareSupported ? t(msg`重试分享`) : t(msg`重试复制`),
+      );
       setNoticeAction(() => () => {
         void handleSharePost(post);
       });
       setNotice(
         nativeMobileShareSupported
-          ? "系统分享失败，请稍后重试。"
-          : "复制动态摘要失败，请稍后重试。",
+          ? t(msg`系统分享失败，请稍后重试。`)
+          : t(msg`复制动态摘要失败，请稍后重试。`),
       );
     }
   }
@@ -492,9 +507,11 @@ export function DiscoverFeedPage() {
       <Suspense
         fallback={
           <RouteRedirectState
-            title="正在打开桌面发现"
-            description="正在载入桌面看一看工作区，马上显示当前动态内容。"
-            loadingLabel="载入桌面发现工作区..."
+            title={t(msg`正在打开桌面发现`)}
+            description={t(
+              msg`正在载入桌面看一看工作区，马上显示当前动态内容。`,
+            )}
+            loadingLabel={t(msg`载入桌面发现工作区...`)}
           />
         }
       >
@@ -575,9 +592,9 @@ export function DiscoverFeedPage() {
                   category: "feed",
                   title: post.authorName,
                   description: getFeedSummaryText(post),
-                  meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
+                  meta: t(msg`广场动态 · ${formatTimestamp(post.createdAt)}`),
                   to: `/tabs/feed${buildFeedRouteHash({ postId: post.id }) ? `#${buildFeedRouteHash({ postId: post.id })}` : ""}`,
-                  badge: "广场动态",
+                  badge: t(msg`广场动态`),
                   avatarName: post.authorName,
                   avatarSrc: post.authorAvatar,
                 });
@@ -597,8 +614,8 @@ export function DiscoverFeedPage() {
   return (
     <AppPage className="space-y-0 px-0 pb-0 pt-0">
       <TabPageTopBar
-        title="广场动态"
-        subtitle="世界居民公开可见"
+        title={t(msg`广场动态`)}
+        subtitle={t(msg`世界居民公开可见`)}
         titleAlign="center"
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
@@ -630,7 +647,7 @@ export function DiscoverFeedPage() {
             size="icon"
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={focusComposer}
-            aria-label="发一条广场动态"
+            aria-label={t(msg`发一条广场动态`)}
           >
             <PenSquare size={17} />
           </Button>
@@ -641,16 +658,20 @@ export function DiscoverFeedPage() {
         <MobileSocialComposerCard
           sectionId={FEED_COMPOSER_SECTION_ID}
           textareaId={FEED_COMPOSER_TEXTAREA_ID}
-          title="发一条广场动态"
-          description="发到广场后，世界里的居民都可能看到、点赞，甚至继续接话。"
-          scopeLabel="公开可见"
+          title={t(msg`发一条广场动态`)}
+          description={t(
+            msg`发到广场后，世界里的居民都可能看到、点赞，甚至继续接话。`,
+          )}
+          scopeLabel={t(msg`公开可见`)}
           scopeClassName="bg-[rgba(7,193,96,0.12)] text-[#07c160]"
           value={composeDraft.text}
           onChange={composeDraft.setText}
-          placeholder="写点想让世界居民都能看到的内容..."
-          helperText="这条内容会进入公开动态流，更适合发讨论、状态和世界广播。"
-          submitLabel="发布"
-          submittingLabel="正在发布..."
+          placeholder={t(msg`写点想让世界居民都能看到的内容...`)}
+          helperText={t(
+            msg`这条内容会进入公开动态流，更适合发讨论、状态和世界广播。`,
+          )}
+          submitLabel={t(msg`发布`)}
+          submittingLabel={t(msg`正在发布...`)}
           mediaPreview={
             composeDraft.imageDrafts.length > 0 || composeDraft.videoDraft ? (
               <MomentComposeMediaPreview
@@ -675,7 +696,7 @@ export function DiscoverFeedPage() {
                 onClick={() => imageInputRef.current?.click()}
               >
                 <ImagePlus size={14} className="mr-1" />
-                添加图片
+                {t(msg`添加图片`)}
               </Button>
               <Button
                 type="button"
@@ -686,7 +707,7 @@ export function DiscoverFeedPage() {
                 onClick={() => videoInputRef.current?.click()}
               >
                 <Video size={14} className="mr-1" />
-                {composeDraft.videoDraft ? "更换视频" : "添加视频"}
+                {composeDraft.videoDraft ? t(msg`更换视频`) : t(msg`添加视频`)}
               </Button>
             </>
           }
@@ -714,10 +735,10 @@ export function DiscoverFeedPage() {
         <section className="space-y-2">
           <div className="px-1">
             <div className="text-[11px] text-[color:var(--text-muted)]">
-              最近动态
+              {t(msg`最近动态`)}
             </div>
             <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
-              这里不只看朋友，也能看到世界里的居民正在说什么。
+              {t(msg`这里不只看朋友，也能看到世界里的居民正在说什么。`)}
             </div>
           </div>
           {notice ? (
@@ -743,7 +764,7 @@ export function DiscoverFeedPage() {
                       onClick={handleStatusBack}
                       className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
-                      {safeReturnPath ? "返回上一页" : "重试读取"}
+                      {safeReturnPath ? t(msg`返回上一页`) : t(msg`重试读取`)}
                     </button>
                   </div>
                 </div>
@@ -754,16 +775,16 @@ export function DiscoverFeedPage() {
           ) : null}
           {feedQuery.isLoading ? (
             <MobileFeedStatusCard
-              badge="读取中"
-              title="正在刷新广场动态"
-              description="稍等一下，正在同步居民公开动态和互动状态。"
+              badge={t(msg`读取中`)}
+              title={t(msg`正在刷新广场动态`)}
+              description={t(msg`稍等一下，正在同步居民公开动态和互动状态。`)}
               tone="loading"
             />
           ) : null}
           {feedQuery.isError && feedQuery.error instanceof Error ? (
             <MobileFeedStatusCard
-              badge="读取失败"
-              title="广场动态暂时不可用"
+              badge={t(msg`读取失败`)}
+              title={t(msg`广场动态暂时不可用`)}
               description={feedQuery.error.message}
               tone="danger"
               action={
@@ -774,7 +795,7 @@ export function DiscoverFeedPage() {
                     className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                     onClick={handleRetryLoad}
                   >
-                    重试读取
+                    {t(msg`重试读取`)}
                   </Button>
                   <Button
                     variant="secondary"
@@ -782,7 +803,7 @@ export function DiscoverFeedPage() {
                     className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                     onClick={handleStatusBack}
                   >
-                    {safeReturnPath ? "返回上一页" : "重试读取"}
+                    {safeReturnPath ? t(msg`返回上一页`) : t(msg`重试读取`)}
                   </Button>
                 </div>
               }
@@ -801,7 +822,11 @@ export function DiscoverFeedPage() {
                 key={post.id}
                 authorName={post.authorName}
                 authorAvatar={post.authorAvatar}
-                meta={`${formatTimestamp(post.createdAt)} · ${post.authorType === "user" ? "世界主人" : "居民动态"}`}
+                meta={`${formatTimestamp(post.createdAt)} · ${
+                  post.authorType === "user"
+                    ? t(msg`世界主人`)
+                    : t(msg`居民动态`)
+                }`}
                 headerActions={
                   <Button
                     type="button"
@@ -811,8 +836,8 @@ export function DiscoverFeedPage() {
                     onClick={() => void handleSharePost(post)}
                     aria-label={
                       nativeMobileShareSupported
-                        ? "分享这条动态"
-                        : "复制这条动态摘要"
+                        ? t(msg`分享这条动态`)
+                        : t(msg`复制这条动态摘要`)
                     }
                   >
                     {nativeMobileShareSupported ? (
@@ -826,7 +851,7 @@ export function DiscoverFeedPage() {
                   <div className="space-y-3">
                     {post.authorType === "user" ? (
                       <div className="inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
-                        居民公开可见
+                        {t(msg`居民公开可见`)}
                       </div>
                     ) : null}
                     {post.text.trim() ? <div>{post.text}</div> : null}
@@ -841,7 +866,9 @@ export function DiscoverFeedPage() {
                 }
                 summary={
                   post.likeCount > 0 || post.commentCount > 0
-                    ? `${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`
+                    ? `${t(msg`${post.likeCount} 赞`)} · ${t(
+                        msg`${post.commentCount} 评论`,
+                      )}${post.aiReacted ? t(msg` · AI 已参与回应`) : ""}`
                     : summaryText || undefined
                 }
                 actions={
@@ -852,7 +879,9 @@ export function DiscoverFeedPage() {
                       variant="secondary"
                       size="sm"
                     >
-                      {pendingLikePostId === post.id ? "处理中..." : "点赞"}
+                      {pendingLikePostId === post.id
+                        ? t(msg`处理中...`)
+                        : t(msg`点赞`)}
                     </Button>
                     <Button
                       variant="secondary"
@@ -866,9 +895,11 @@ export function DiscoverFeedPage() {
                               category: "feed",
                               title: post.authorName,
                               description: postSummaryText,
-                              meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
+                              meta: t(
+                                msg`广场动态 · ${formatTimestamp(post.createdAt)}`,
+                              ),
                               to: "/tabs/feed",
-                              badge: "广场动态",
+                              badge: t(msg`广场动态`),
                               avatarName: post.authorName,
                               avatarSrc: post.authorAvatar,
                             });
@@ -878,7 +909,7 @@ export function DiscoverFeedPage() {
                         );
                       }}
                     >
-                      {collected ? "取消收藏" : "收藏"}
+                      {collected ? t(msg`取消收藏`) : t(msg`收藏`)}
                     </Button>
                   </div>
                 }
@@ -909,7 +940,7 @@ export function DiscoverFeedPage() {
                           [post.id]: event.target.value,
                         }))
                       }
-                      placeholder="写评论..."
+                      placeholder={t(msg`写评论...`)}
                       className="min-w-0 flex-1 rounded-full py-1.5 text-[12px]"
                     />
                     <Button
@@ -922,7 +953,9 @@ export function DiscoverFeedPage() {
                       size="sm"
                       className="h-8 px-3 text-[12px]"
                     >
-                      {pendingCommentPostId === post.id ? "发送中..." : "发送"}
+                      {pendingCommentPostId === post.id
+                        ? t(msg`发送中...`)
+                        : t(msg`发送`)}
                     </Button>
                   </>
                 }
@@ -973,9 +1006,11 @@ export function DiscoverFeedPage() {
           !feedQuery.isError &&
           !visiblePosts.length ? (
             <MobileFeedStatusCard
-              badge="广场"
-              title="还没有新动态"
-              description="你先发一条居民公开可见的动态，或者等世界里的居民先开口。"
+              badge={t(msg`广场`)}
+              title={t(msg`还没有新动态`)}
+              description={t(
+                msg`你先发一条居民公开可见的动态，或者等世界里的居民先开口。`,
+              )}
               action={
                 <Button
                   variant="primary"
@@ -983,7 +1018,7 @@ export function DiscoverFeedPage() {
                   className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
                   onClick={handleEmptyStateAction}
                 >
-                  {safeReturnPath ? "返回上一页" : "发一条广场动态"}
+                  {safeReturnPath ? t(msg`返回上一页`) : t(msg`发一条广场动态`)}
                 </Button>
               }
             />

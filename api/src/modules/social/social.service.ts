@@ -18,8 +18,10 @@ import { ChatService } from '../chat/chat.service';
 import { CharactersService } from '../characters/characters.service';
 import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { WorldLanguageService } from '../config/world-language.service';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
+export const DEFAULT_FRIENDSHIP_CHARACTER_IDS = [...DEFAULT_CHARACTER_IDS];
 
 @Injectable()
 export class SocialService {
@@ -41,6 +43,7 @@ export class SocialService {
     private readonly charactersService: CharactersService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly eventBus: EventBusService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async getPendingRequests(): Promise<FriendRequestEntity[]> {
@@ -305,7 +308,7 @@ export class SocialService {
     const resolvedOwnerId =
       ownerId ?? (await this.worldOwnerService.getOwnerOrThrow()).id;
 
-    for (const characterId of DEFAULT_CHARACTER_IDS) {
+    for (const characterId of DEFAULT_FRIENDSHIP_CHARACTER_IDS) {
       const character = await this.characterRepo.findOneBy({ id: characterId });
       if (!character) {
         continue;
@@ -320,7 +323,8 @@ export class SocialService {
           this.friendshipRepo.create({
             ownerId: resolvedOwnerId,
             characterId,
-            intimacyLevel: characterId === SELF_CHARACTER_ID ? 100 : 60,
+            intimacyLevel:
+              characterId === SELF_CHARACTER_ID ? 100 : 60,
             status: 'friend',
           }),
         );
@@ -361,7 +365,10 @@ export class SocialService {
     });
     if (existing) return null;
 
-    let greeting = `Hi, I'm ${char.name}. We crossed paths at ${scene}. Want to connect?`;
+    let greeting = await this.worldLanguage.buildSceneGreetingFallback({
+      characterName: char.name,
+      scene,
+    });
     const runtimeProfile =
       (await this.charactersService.getRuntimeProfileFromCharacter(char)) ??
       char.profile;
@@ -423,7 +430,9 @@ export class SocialService {
     const preset = available[Math.floor(Math.random() * available.length)];
     const char = preset.character as CharacterEntity;
 
-    let greeting = `Hi, I'm ${char.name}. We just met in Yinjie.`;
+    let greeting = await this.worldLanguage.buildShakeGreetingFallback(
+      char.name,
+    );
     const runtimeProfile =
       (await this.charactersService.getRuntimeProfileFromCharacter(char)) ??
       char.profile;
@@ -824,11 +833,26 @@ export class SocialService {
         await this.chatService.getOrCreateConversation(characterId);
       await this.chatService.saveSystemMessage(
         conversation.id,
-        `你已添加了${characterName}，现在可以开始聊天了。`,
+        await this.buildFriendAddedSystemMessage(characterName),
       );
     }
 
     return friendship;
+  }
+
+  private async buildFriendAddedSystemMessage(characterName: string) {
+    const language = await this.worldLanguage.getLanguage();
+    switch (language) {
+      case 'en-US':
+        return `You added ${characterName}. You can start chatting now.`;
+      case 'ja-JP':
+        return `${characterName}を追加しました。これでチャットを始められます。`;
+      case 'ko-KR':
+        return `${characterName}을(를) 추가했어요. 이제 채팅을 시작할 수 있어요.`;
+      case 'zh-CN':
+      default:
+        return `你已添加了${characterName}，现在可以开始聊天了。`;
+    }
   }
 }
 

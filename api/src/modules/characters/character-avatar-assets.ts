@@ -4,8 +4,10 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   self: 'self-reflection.svg',
   bar_expert: 'bar-expert-acheng.svg',
   doctor: 'doctor-lin.svg',
+  hotel_expert: 'hotel-expert.svg',
   lawyer_jianheng: 'lawyer-jianheng.svg',
   wedding_planner: 'wedding-planner-lixu.svg',
+  wedding_dress_expert: 'wedding-dress-expert-shaning.svg',
   world_news_desk: 'world-news-desk.svg',
   steve_jobs: 'steve-jobs.svg',
   ilya_sutskever: 'ilya-sutskever.svg',
@@ -28,6 +30,23 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   xu_zhe_career_growth: 'xu-zhe-career-growth.svg',
   su_yu_english_coach: 'su-yu-english-coach.svg',
   zhou_ran_fitness_coach: 'zhou-ran-fitness-coach.svg',
+  teacher_chinese_gu_yan: 'teacher-chinese-gu-yan.svg',
+  teacher_math_lu_heng: 'teacher-math-lu-heng.svg',
+  teacher_physics_lin_qi: 'teacher-physics-lin-qi.svg',
+  teacher_chemistry_fang_wei: 'teacher-chemistry-fang-wei.svg',
+  teacher_biology_ye_qinghe: 'teacher-biology-ye-qinghe.svg',
+  teacher_history_zhou_yi: 'teacher-history-zhou-yi.svg',
+  teacher_geography_jiang_chuan: 'teacher-geography-jiang-chuan.svg',
+  teacher_civics_cheng_mingli: 'teacher-civics-cheng-mingli.svg',
+  teacher_computer_luo_xing: 'teacher-computer-luo-xing.svg',
+  teacher_study_planner_shen_zhixing: 'teacher-study-planner-shen-zhixing.svg',
+  teacher_exam_sprint_han_li: 'teacher-exam-sprint-han-li.svg',
+  teacher_mistake_review_liang_cuo: 'teacher-mistake-review-liang-cuo.svg',
+  teacher_research_writing_xu_qinglan:
+    'teacher-research-writing-xu-qinglan.svg',
+  teacher_research_librarian_tang_jian:
+    'teacher-research-librarian-tang-jian.svg',
+  teacher_science_lab_wei_zhiwei: 'teacher-science-lab-wei-zhiwei.svg',
 } as const;
 
 export type CharacterAvatarSourceKey =

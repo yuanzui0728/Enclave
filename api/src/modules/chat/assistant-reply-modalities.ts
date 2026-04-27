@@ -1,4 +1,5 @@
 import type { MessageAttachment } from './chat.types';
+import type { WorldLanguageCode } from '../config/world-language.service';
 
 export type AssistantReplyTargetMessage = {
   type:
@@ -98,6 +99,7 @@ export function buildReplyModalityPromptSections(
 export function normalizeAssistantReplyTextForModalities(
   text: string,
   plan: AssistantReplyModalitiesPlan,
+  language: WorldLanguageCode = 'zh-CN',
 ) {
   const normalized = text.trim();
   if (!plan.imagePrompt) {
@@ -109,7 +111,7 @@ export function normalizeAssistantReplyTextForModalities(
     .replace(/attachment:[^) \n]+/gi, ' ')
     .trim();
 
-  return stripped || '给你发过去了。';
+  return stripped || getLocalizedAssistantFallback(language, 'image_sent');
 }
 
 export function resolveAssistantReplyText(input: {
@@ -117,23 +119,27 @@ export function resolveAssistantReplyText(input: {
   promptText: string;
   plan: AssistantReplyModalitiesPlan;
   fallbackText?: string;
+  language?: WorldLanguageCode;
 }) {
+  const language = input.language ?? 'zh-CN';
   const rawText = input.text.trim() === '（无回复）' ? '' : input.text;
   const normalized = normalizeAssistantReplyTextForModalities(
     rawText,
     input.plan,
+    language,
   );
   if (normalized && normalized !== '（无回复）') {
     return normalized;
   }
 
   if (input.plan.imagePrompt) {
-    return '给你发过去了。';
+    return getLocalizedAssistantFallback(language, 'image_sent');
   }
 
   const promptFallback = extractPromptReplyFallback(
     input.promptText,
     input.plan,
+    language,
   );
   if (promptFallback) {
     return promptFallback;
@@ -144,12 +150,16 @@ export function resolveAssistantReplyText(input: {
     return explicitFallback;
   }
 
-  return input.plan.includeVoice ? '我在。' : '收到。';
+  return getLocalizedAssistantFallback(
+    language,
+    input.plan.includeVoice ? 'voice_ack' : 'ack',
+  );
 }
 
 function extractPromptReplyFallback(
   promptText: string,
   plan: AssistantReplyModalitiesPlan,
+  language: WorldLanguageCode,
 ) {
   const cleanedPrompt = promptText
     .replace(CHAT_REPLY_PREFIX_PATTERN, '')
@@ -171,7 +181,7 @@ function extractPromptReplyFallback(
     colonTail !== cleanedPrompt &&
     colonTail.length <= 120
   ) {
-    return ensureReplySentence(colonTail);
+    return ensureReplySentence(colonTail, language);
   }
 
   const withoutLead = cleanedPrompt
@@ -188,24 +198,60 @@ function extractPromptReplyFallback(
     withoutLead.length <= 120 &&
     !/语音|回复|回答|发图|图片|插画|配图|海报|壁纸/i.test(withoutLead)
   ) {
-    return ensureReplySentence(withoutLead);
+    return ensureReplySentence(withoutLead, language);
   }
 
   return '';
 }
 
-function ensureReplySentence(text: string) {
+function ensureReplySentence(text: string, language: WorldLanguageCode) {
   const trimmed = text.trim();
   if (!trimmed) {
     return '';
   }
 
-  return TERMINAL_PUNCTUATION_PATTERN.test(trimmed)
-    ? trimmed
-    : `${trimmed}。`;
+  if (TERMINAL_PUNCTUATION_PATTERN.test(trimmed)) {
+    return trimmed;
+  }
+
+  return language === 'ja-JP' || language === 'zh-CN'
+    ? `${trimmed}。`
+    : `${trimmed}.`;
+}
+
+function getLocalizedAssistantFallback(
+  language: WorldLanguageCode,
+  kind: 'ack' | 'voice_ack' | 'image_sent',
+) {
+  const values: Record<
+    WorldLanguageCode,
+    Record<'ack' | 'voice_ack' | 'image_sent', string>
+  > = {
+    'zh-CN': {
+      ack: '收到。',
+      voice_ack: '我在。',
+      image_sent: '给你发过去了。',
+    },
+    'en-US': {
+      ack: 'Got it.',
+      voice_ack: "I'm here.",
+      image_sent: 'Sent it over.',
+    },
+    'ja-JP': {
+      ack: '了解しました。',
+      voice_ack: 'います。',
+      image_sent: '送りました。',
+    },
+    'ko-KR': {
+      ack: '알겠어요.',
+      voice_ack: '여기 있어요.',
+      image_sent: '보냈어요.',
+    },
+  };
+  return values[language][kind];
 }
 
 export function buildAssistantSpeechInstructions(characterName: string) {
   const normalizedName = characterName.trim() || '助手';
-  return `请用自然、温和、清晰的口语表达，以 ${normalizedName} 的身份朗读，不要加入舞台说明。`;
+  return `Keep the delivery conversational and in character as ${normalizedName}. Do not add stage directions.`;
 }

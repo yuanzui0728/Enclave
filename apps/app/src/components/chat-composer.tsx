@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { useQuery } from "@tanstack/react-query";
+import { msg } from "@lingui/macro";
 import {
   ChevronDown,
   ChevronLeft,
@@ -19,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { getFavorites, type StickerAttachment } from "@yinjie/contracts";
+import { compareByLocale, useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { InlineNoticeActionButton } from "./inline-notice-action-button";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
@@ -161,11 +163,7 @@ type DesktopScreenshotNoticeState = {
   onAction?: () => void;
 };
 
-type ScreenshotShortcutHelpGroupId =
-  | "send"
-  | "view"
-  | "draw"
-  | "history";
+type ScreenshotShortcutHelpGroupId = "send" | "view" | "draw" | "history";
 
 const SCREENSHOT_ANNOTATION_PALETTE = [
   {
@@ -198,33 +196,6 @@ const SCREENSHOT_ANNOTATION_PALETTE = [
   stroke: string;
   fill: string;
 }>;
-
-const SCREENSHOT_SHORTCUT_HELP_GROUPS = [
-  {
-    id: "draw",
-    label: "绘制",
-    primary: "C / R / A / T",
-    secondary: "颜色 1-4",
-  },
-  {
-    id: "history",
-    label: "撤销与删除",
-    primary: "⌘/Ctrl + Z / Shift+Z / Y",
-    secondary: "Delete / Esc",
-  },
-  {
-    id: "view",
-    label: "视图",
-    primary: "⌘/Ctrl + 滚轮 / 双击",
-    secondary: "Space / ?",
-  },
-  {
-    id: "send",
-    label: "发送",
-    primary: "Enter 发送",
-    secondary: "原图 ⌘/Ctrl + Enter",
-  },
-] as const;
 
 const CHAT_ATTACHMENT_IMAGE_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
 const CHAT_ATTACHMENT_IMAGE_UPLOAD_SCALE_STEPS = [1, 0.92, 0.84, 0.76];
@@ -335,6 +306,7 @@ export function ChatComposer({
   onChange,
   onSubmit,
 }: ChatComposerProps) {
+  const t = useRuntimeTranslator();
   const runtimeConfig = useAppRuntimeConfig();
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const nativeDesktopRecentStickers = runtimeConfig.appPlatform === "desktop";
@@ -359,8 +331,10 @@ export function ChatComposer({
   const [desktopScreenshotTool, setDesktopScreenshotTool] = useState<
     "crop" | "rect" | "arrow" | "text"
   >("crop");
-  const [desktopScreenshotAnnotationColor, setDesktopScreenshotAnnotationColor] =
-    useState<ScreenshotAnnotationColor>("amber");
+  const [
+    desktopScreenshotAnnotationColor,
+    setDesktopScreenshotAnnotationColor,
+  ] = useState<ScreenshotAnnotationColor>("amber");
   const [desktopScreenshotAnnotations, setDesktopScreenshotAnnotations] =
     useState<ScreenshotAnnotation[]>([]);
   const [
@@ -387,14 +361,15 @@ export function ChatComposer({
     useState<ScreenshotAnnotationMoveDraft | null>(null);
   const [desktopScreenshotNotice, setDesktopScreenshotNotice] =
     useState<DesktopScreenshotNoticeState | null>(null);
-  const [desktopScreenshotShortcutHelpOpen, setDesktopScreenshotShortcutHelpOpen] =
-    useState(false);
+  const [
+    desktopScreenshotShortcutHelpOpen,
+    setDesktopScreenshotShortcutHelpOpen,
+  ] = useState(false);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [mobilePlusNotice, setMobilePlusNotice] =
     useState<MobilePlusNoticeState | null>(null);
-  const [activeStickerPackId, setActiveStickerPackId] =
-    useState("featured");
+  const [activeStickerPackId, setActiveStickerPackId] = useState("featured");
   const [recentStickers, setRecentStickers] = useState(() =>
     loadRecentStickers(),
   );
@@ -445,11 +420,11 @@ export function ChatComposer({
   const speechDisabledReason =
     showSpeechEntry && !speechSupported
       ? isDesktop
-        ? "当前浏览器不支持语音输入，请改用键盘输入。"
+        ? t(msg`当前浏览器不支持语音输入，请改用键盘输入。`)
         : runtimeConfig.appPlatform === "android" ||
             runtimeConfig.appPlatform === "ios"
-          ? "当前设备不支持语音发送，请改用键盘输入。"
-          : "当前浏览器不支持语音发送，请改用键盘输入。"
+          ? t(msg`当前设备不支持语音发送，请改用键盘输入。`)
+          : t(msg`当前浏览器不支持语音发送，请改用键盘输入。`)
       : null;
   const speechButtonDisabled =
     !speechSupported ||
@@ -497,12 +472,12 @@ export function ChatComposer({
         const leftStartsWith = left.name.toLowerCase().startsWith(query);
         const rightStartsWith = right.name.toLowerCase().startsWith(query);
         if (leftStartsWith === rightStartsWith) {
-          return left.name.localeCompare(right.name, "zh-CN");
+          return compareByLocale(left.name, right.name);
         }
         return leftStartsWith ? -1 : 1;
       })
       .slice(0, 6);
-  }, [activeMention, mentionCandidates]);
+  }, [activeMention, mentionCandidates, t]);
   const mentionPickerOpen = Boolean(filteredMentionCandidates.length);
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
@@ -1329,7 +1304,7 @@ export function ChatComposer({
       setAttachmentError(
         fileError instanceof Error
           ? fileError.message
-          : "读取图片失败，请换一张再试。",
+          : t(msg`读取图片失败，请换一张再试。`),
       );
     }
   });
@@ -1351,7 +1326,7 @@ export function ChatComposer({
       setAttachmentError(
         fileError instanceof Error
           ? fileError.message
-          : "读取图片失败，请换一张再试。",
+          : t(msg`读取图片失败，请换一张再试。`),
       );
     }
   });
@@ -1399,7 +1374,7 @@ export function ChatComposer({
       setAttachmentError(
         fileError instanceof Error
           ? fileError.message
-          : "读取文件失败，请重新选择。",
+          : t(msg`读取文件失败，请重新选择。`),
       );
     }
   });
@@ -1413,7 +1388,9 @@ export function ChatComposer({
       typeof navigator === "undefined" ||
       !navigator.mediaDevices?.getDisplayMedia
     ) {
-      setAttachmentError("当前浏览器不支持桌面截图，请改用图片或文件发送。");
+      setAttachmentError(
+        t(msg`当前浏览器不支持桌面截图，请改用图片或文件发送。`),
+      );
       return;
     }
 
@@ -1431,7 +1408,7 @@ export function ChatComposer({
       });
       const track = stream.getVideoTracks()[0];
       if (!track) {
-        throw new Error("没有拿到可用的屏幕画面。");
+        throw new Error(t(msg`没有拿到可用的屏幕画面。`));
       }
 
       const video = document.createElement("video");
@@ -1444,7 +1421,7 @@ export function ChatComposer({
       const width = video.videoWidth;
       const height = video.videoHeight;
       if (!width || !height) {
-        throw new Error("截图尺寸异常，请重试。");
+        throw new Error(t(msg`截图尺寸异常，请重试。`));
       }
 
       const canvas = document.createElement("canvas");
@@ -1452,7 +1429,7 @@ export function ChatComposer({
       canvas.height = height;
       const context = canvas.getContext("2d");
       if (!context) {
-        throw new Error("截图画布初始化失败。");
+        throw new Error(t(msg`截图画布初始化失败。`));
       }
 
       context.drawImage(video, 0, 0, width, height);
@@ -1492,7 +1469,7 @@ export function ChatComposer({
       setAttachmentError(
         captureError instanceof Error
           ? captureError.message
-          : "截图失败，请稍后再试。",
+          : t(msg`截图失败，请稍后再试。`),
       );
     } finally {
       stream?.getTracks().forEach((track) => track.stop());
@@ -2140,7 +2117,8 @@ export function ChatComposer({
         ? options.selectedAnnotationId
         : desktopScreenshotSelectedAnnotationId;
     setDesktopScreenshotSelectedAnnotationId(
-      requestedSelection && next.some((annotation) => annotation.id === requestedSelection)
+      requestedSelection &&
+        next.some((annotation) => annotation.id === requestedSelection)
         ? requestedSelection
         : null,
     );
@@ -2194,8 +2172,7 @@ export function ChatComposer({
                 y1: rectSelection.y,
                 x2: rectSelection.x + rectSelection.width,
                 y2: rectSelection.y + rectSelection.height,
-                text:
-                  current.mode === "text" ? "输入文字" : undefined,
+                text: current.mode === "text" ? t(msg`输入文字`) : undefined,
               }
             : {
                 id: createScreenshotAnnotationId(),
@@ -2266,7 +2243,7 @@ export function ChatComposer({
       setAttachmentError(
         screenshotError instanceof Error
           ? screenshotError.message
-          : "截图处理失败，请稍后再试。",
+          : t(msg`截图处理失败，请稍后再试。`),
       );
     }
   };
@@ -2281,7 +2258,7 @@ export function ChatComposer({
       !navigator.clipboard?.write ||
       typeof ClipboardItem === "undefined"
     ) {
-      setAttachmentError("当前浏览器不支持复制截图到剪贴板。");
+      setAttachmentError(t(msg`当前浏览器不支持复制截图到剪贴板。`));
       return;
     }
 
@@ -2298,14 +2275,17 @@ export function ChatComposer({
       ]);
       setAttachmentError(null);
       setDesktopScreenshotNotice({
-        message: mode === "cropped" ? "裁剪后的截图已复制。" : "截图已复制到剪贴板。",
+        message:
+          mode === "cropped"
+            ? t(msg`裁剪后的截图已复制。`)
+            : t(msg`截图已复制到剪贴板。`),
       });
     } catch (copyError) {
       setDesktopScreenshotNotice(null);
       setAttachmentError(
         copyError instanceof Error
           ? copyError.message
-          : "复制截图失败，请稍后再试。",
+          : t(msg`复制截图失败，请稍后再试。`),
       );
     }
   };
@@ -2327,8 +2307,9 @@ export function ChatComposer({
       const result = await saveLocalFile({
         blob: imagePayload.file,
         fileName: imagePayload.fileName,
-        dialogTitle: mode === "cropped" ? "保存裁剪截图" : "保存截图",
-        kindLabel: mode === "cropped" ? "裁剪截图" : "截图",
+        dialogTitle:
+          mode === "cropped" ? t(msg`保存裁剪截图`) : t(msg`保存截图`),
+        kindLabel: mode === "cropped" ? t(msg`裁剪截图`) : t(msg`截图`),
       });
 
       if (result.status === "cancelled") {
@@ -2347,28 +2328,27 @@ export function ChatComposer({
 
       setDesktopScreenshotNotice({
         message: result.message,
-        actionLabel: canRevealSavedFile ? "打开位置" : undefined,
-        onAction:
-          savedPath
-            ? () => {
-                void revealSavedFile(savedPath).then((revealed) => {
-                  setDesktopScreenshotNotice({
-                    message: revealed
-                      ? mode === "cropped"
-                        ? "已打开裁剪截图所在位置。"
-                        : "已打开截图所在位置。"
-                      : "打开所在位置失败，请稍后再试。",
-                  });
+        actionLabel: canRevealSavedFile ? t(msg`打开位置`) : undefined,
+        onAction: savedPath
+          ? () => {
+              void revealSavedFile(savedPath).then((revealed) => {
+                setDesktopScreenshotNotice({
+                  message: revealed
+                    ? mode === "cropped"
+                      ? t(msg`已打开裁剪截图所在位置。`)
+                      : t(msg`已打开截图所在位置。`)
+                    : t(msg`打开所在位置失败，请稍后再试。`),
                 });
-              }
-            : undefined,
+              });
+            }
+          : undefined,
       });
     } catch (saveError) {
       setDesktopScreenshotNotice(null);
       setAttachmentError(
         saveError instanceof Error
           ? saveError.message
-          : "截图保存失败，请稍后再试。",
+          : t(msg`截图保存失败，请稍后再试。`),
       );
     } finally {
       setAttachmentBusy(false);
@@ -2396,8 +2376,7 @@ export function ChatComposer({
 
     commitDesktopScreenshotAnnotations(
       desktopScreenshotAnnotations.filter(
-        (annotation) =>
-          annotation.id !== desktopScreenshotSelectedAnnotationId,
+        (annotation) => annotation.id !== desktopScreenshotSelectedAnnotationId,
       ),
       {
         selectedAnnotationId: null,
@@ -2572,9 +2551,8 @@ export function ChatComposer({
     setMobilePlusNotice(null);
 
     try {
-      const uploadReadyPayload = await prepareAttachmentPayloadForUpload(
-        payload,
-      );
+      const uploadReadyPayload =
+        await prepareAttachmentPayloadForUpload(payload);
       await onSendAttachment(uploadReadyPayload);
       if (!isDesktop) {
         returnMobileComposerToText();
@@ -2720,8 +2698,8 @@ export function ChatComposer({
     if (speech.status === "requesting-permission") {
       return {
         tone: "muted" as const,
-        label: "正在请求麦克风权限...",
-        secondaryActionLabel: "取消",
+        label: t(msg`正在请求麦克风权限...`),
+        secondaryActionLabel: t(msg`取消`),
         onSecondaryAction: speech.cancel,
       };
     }
@@ -2729,10 +2707,10 @@ export function ChatComposer({
     if (speech.status === "listening") {
       return {
         tone: "success" as const,
-        label: "正在听你说话，停止后会继续整理转写。",
-        primaryActionLabel: "停止",
+        label: t(msg`正在听你说话，停止后会继续整理转写。`),
+        primaryActionLabel: t(msg`停止`),
         onPrimaryAction: speech.stop,
-        secondaryActionLabel: "取消",
+        secondaryActionLabel: t(msg`取消`),
         onSecondaryAction: speech.cancel,
       };
     }
@@ -2740,8 +2718,8 @@ export function ChatComposer({
     if (speech.status === "processing") {
       return {
         tone: "muted" as const,
-        label: "正在转写语音...",
-        secondaryActionLabel: "取消",
+        label: t(msg`正在转写语音...`),
+        secondaryActionLabel: t(msg`取消`),
         onSecondaryAction: speech.cancel,
       };
     }
@@ -2749,10 +2727,10 @@ export function ChatComposer({
     if (speech.status === "ready" && speechDisplayText) {
       return {
         tone: "success" as const,
-        label: `识别完成：${speechDisplayText}`,
-        primaryActionLabel: "插入输入框",
+        label: t(msg`识别完成：${speechDisplayText}`),
+        primaryActionLabel: t(msg`插入输入框`),
         onPrimaryAction: commitSpeechInput,
-        secondaryActionLabel: "取消",
+        secondaryActionLabel: t(msg`取消`),
         onSecondaryAction: speech.cancel,
       };
     }
@@ -2771,27 +2749,31 @@ export function ChatComposer({
         tone: "danger" as const,
         label: composerError,
         actionLabel: permissionDeniedWithSettings
-          ? "去设置"
-          : errorActionLabel ?? undefined,
+          ? t(msg`去设置`)
+          : (errorActionLabel ?? undefined),
         onAction: permissionDeniedWithSettings
           ? () => {
               void openAppSettings();
             }
-          : onErrorAction ?? undefined,
+          : (onErrorAction ?? undefined),
         secondaryActionLabel: permissionDeniedWithSettings
-          ? errorActionLabel ?? undefined
+          ? (errorActionLabel ?? undefined)
           : undefined,
         onSecondaryAction: permissionDeniedWithSettings
-          ? onErrorAction ?? undefined
+          ? (onErrorAction ?? undefined)
           : undefined,
       };
     }
 
-    if (speech.mode !== "voice" && speech.status === "ready" && speechDisplayText) {
+    if (
+      speech.mode !== "voice" &&
+      speech.status === "ready" &&
+      speechDisplayText
+    ) {
       return {
         tone: "success" as const,
-        label: `识别完成：${speechDisplayText}`,
-        actionLabel: "插入",
+        label: t(msg`识别完成：${speechDisplayText}`),
+        actionLabel: t(msg`插入`),
         onAction: commitSpeechInput,
       };
     }
@@ -2810,7 +2792,7 @@ export function ChatComposer({
     if (composerPending) {
       return {
         tone: "muted" as const,
-        label: "正在发送...",
+        label: t(msg`正在发送...`),
       };
     }
 
@@ -2848,7 +2830,7 @@ export function ChatComposer({
       >
         {isDesktop && desktopDropActive ? (
           <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[14px] border border-dashed border-[#07c160]/35 bg-[rgba(247,247,247,0.96)] text-sm font-medium text-[#07a35a]">
-            松开鼠标发送图片或文件
+            {t(msg`松开鼠标发送图片或文件`)}
           </div>
         ) : null}
         {!isDesktop && attachmentDraft ? (
@@ -2929,7 +2911,9 @@ export function ChatComposer({
             onSaveOriginal={() => {
               void handleSaveDesktopScreenshot("original");
             }}
-            onDeleteSelectedAnnotation={handleDeleteSelectedScreenshotAnnotation}
+            onDeleteSelectedAnnotation={
+              handleDeleteSelectedScreenshotAnnotation
+            }
             onRedoAnnotation={handleRedoScreenshotAnnotation}
             onSelectAnnotation={handleSelectScreenshotAnnotation}
             onSelectedTextChange={handleUpdateSelectedScreenshotText}
@@ -2937,7 +2921,9 @@ export function ChatComposer({
             onSelectedTextMoveEnd={finishDesktopScreenshotAnnotationMove}
             onSelectedTextMoveStart={handleDesktopScreenshotAnnotationMoveStart}
             onSelectedTextResizeEnd={finishDesktopScreenshotAnnotationResize}
-            onSelectedTextResizeMove={handleDesktopScreenshotAnnotationResizeMove}
+            onSelectedTextResizeMove={
+              handleDesktopScreenshotAnnotationResizeMove
+            }
             onSelectedTextResizeStart={
               handleDesktopScreenshotAnnotationResizeStart
             }
@@ -3012,8 +2998,16 @@ export function ChatComposer({
                   type="button"
                   onClick={toggleDesktopEditorExpanded}
                   className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[9px] text-[color:var(--text-secondary)] transition hover:bg-[#f4f4f4] hover:text-[color:var(--text-primary)]"
-                  aria-label={desktopEditorExpanded ? "收起输入框" : "展开输入框"}
-                  title={desktopEditorExpanded ? "收起输入框" : "展开输入框"}
+                  aria-label={
+                    desktopEditorExpanded
+                      ? t(msg`收起输入框`)
+                      : t(msg`展开输入框`)
+                  }
+                  title={
+                    desktopEditorExpanded
+                      ? t(msg`收起输入框`)
+                      : t(msg`展开输入框`)
+                  }
                 >
                   {desktopEditorExpanded ? (
                     <ChevronDown size={16} />
@@ -3061,7 +3055,7 @@ export function ChatComposer({
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <DesktopToolbarGroup>
                     <DesktopToolbarButton
-                      label="表情"
+                      label={t(msg`表情`)}
                       icon={<Smile size={16} />}
                       active={stickerPanelOpen}
                       onClick={toggleStickerPanel}
@@ -3071,7 +3065,7 @@ export function ChatComposer({
                     <DesktopToolbarGroup>
                       <div ref={desktopPlusRef} className="relative">
                         <DesktopToolbarButton
-                          label="收藏"
+                          label={t(msg`收藏`)}
                           icon={<Star size={16} />}
                           active={
                             desktopPlusMenuOpen &&
@@ -3097,19 +3091,19 @@ export function ChatComposer({
                         ) : null}
                       </div>
                       <DesktopToolbarButton
-                        label="图片"
+                        label={t(msg`图片`)}
                         icon={<ImageIcon size={16} />}
                         onClick={pickAlbum}
                       />
                       <DesktopToolbarButton
-                        label="文件"
+                        label={t(msg`文件`)}
                         icon={<FileText size={16} />}
                         onClick={pickFile}
                       />
                       <DesktopToolbarButton
-                        label="截图"
+                        label={t(msg`截图`)}
                         icon={<MonitorUp size={16} />}
-                        title="截图（Ctrl/⌘ + Shift + S）"
+                        title={t(msg`截图（Ctrl/⌘ + Shift + S）`)}
                         onClick={() => {
                           void captureDesktopScreenshot();
                         }}
@@ -3120,7 +3114,9 @@ export function ChatComposer({
                     <DesktopToolbarGroup>
                       <DesktopToolbarButton
                         label={
-                          speech.status === "listening" ? "停止语音输入" : "语音输入"
+                          speech.status === "listening"
+                            ? t(msg`停止语音输入`)
+                            : t(msg`语音输入`)
                         }
                         icon={
                           speech.status === "listening" ? (
@@ -3149,17 +3145,19 @@ export function ChatComposer({
                       secondaryActionLabel={
                         desktopComposerStatus.secondaryActionLabel
                       }
-                      onSecondaryAction={desktopComposerStatus.onSecondaryAction}
+                      onSecondaryAction={
+                        desktopComposerStatus.onSecondaryAction
+                      }
                     />
                   ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-2 border-l border-black/6 pl-3">
                   <div className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-dim)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
                     {desktopEditorExpanded
-                      ? "Ctrl/Cmd + Enter 发送"
+                      ? t(msg`Ctrl/Cmd + Enter 发送`)
                       : sendMessageShortcut === "enter"
-                        ? "Enter 发送"
-                        : "Ctrl/Cmd + Enter 发送"}
+                        ? t(msg`Enter 发送`)
+                        : t(msg`Ctrl/Cmd + Enter 发送`)}
                   </div>
                   <Button
                     onClick={onSubmit}
@@ -3171,7 +3169,7 @@ export function ChatComposer({
                         : "bg-[#e8e8e8] !text-[#70757a] hover:bg-[#e8e8e8]",
                     )}
                   >
-                    发送
+                    {t(msg`发送`)}
                   </Button>
                 </div>
               </div>
@@ -3193,8 +3191,8 @@ export function ChatComposer({
                   )}
                   aria-label={
                     mobileComposerMode === "speech"
-                      ? "切换到键盘输入"
-                      : "切换到语音输入"
+                      ? t(msg`切换到键盘输入`)
+                      : t(msg`切换到语音输入`)
                   }
                 >
                   {mobileComposerMode === "speech" ? (
@@ -3231,15 +3229,15 @@ export function ChatComposer({
                       ? "border-black/12 bg-black/[0.03] text-[#8b8b8b]"
                       : "",
                   )}
-                  aria-label="按住说话，松开发送"
+                  aria-label={t(msg`按住说话，松开发送`)}
                 >
                   {mobileSpeechPressing
                     ? mobileSpeechCancelIntent
-                      ? "松开取消"
-                      : "松开发送"
+                      ? t(msg`松开取消`)
+                      : t(msg`松开发送`)
                     : speech.status === "processing"
-                      ? "正在整理..."
-                      : "按住说话"}
+                      ? t(msg`正在整理...`)
+                      : t(msg`按住说话`)}
                 </button>
               ) : (
                 <div className="flex min-w-0 flex-1 items-end rounded-[20px] border border-black/8 bg-white px-3 py-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
@@ -3277,7 +3275,9 @@ export function ChatComposer({
                     : "bg-transparent active:bg-white/90",
                 )}
                 aria-label={
-                  mobileComposerMode === "sticker" ? "切换到键盘输入" : "表情"
+                  mobileComposerMode === "sticker"
+                    ? t(msg`切换到键盘输入`)
+                    : t(msg`表情`)
                 }
               >
                 {mobileComposerMode === "sticker" ? (
@@ -3294,7 +3294,7 @@ export function ChatComposer({
                   disabled={composerPending}
                   className="flex h-9 min-w-[58px] shrink-0 items-center justify-center rounded-[10px] bg-[#07c160] px-3 text-[13px] font-medium text-white shadow-[0_2px_6px_rgba(7,193,96,0.18)] disabled:opacity-45"
                 >
-                  发送
+                  {t(msg`发送`)}
                 </button>
               ) : (
                 <button
@@ -3307,7 +3307,7 @@ export function ChatComposer({
                       ? "bg-white text-[#111827] shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
                       : "bg-transparent active:bg-white/90",
                   )}
-                  aria-label="更多功能"
+                  aria-label={t(msg`更多功能`)}
                 >
                   <Plus size={18} />
                 </button>
@@ -3383,7 +3383,7 @@ export function ChatComposer({
         {composerPending && isDesktop ? (
           <div className="mt-1 flex items-center justify-end gap-1.5 px-0.5 pr-1 text-[10px] text-[color:var(--text-muted)]">
             <SendHorizontal size={10} />
-            <span>正在发送...</span>
+            <span>{t(msg`正在发送...`)}</span>
           </div>
         ) : null}
         {onSendAttachment ? (
@@ -3461,6 +3461,7 @@ function DesktopFavoritePicker({
   onBack: () => void;
   onSelect: (item: DesktopFavoriteRecord) => void;
 }) {
+  const t = useRuntimeTranslator();
   return (
     <div className="flex max-h-[360px] min-h-[220px] flex-col">
       <div className="relative border-b border-black/6 px-4 py-3 text-center">
@@ -3468,12 +3469,12 @@ function DesktopFavoritePicker({
           type="button"
           onClick={onBack}
           className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
-          aria-label="关闭发送收藏"
+          aria-label={t(msg`关闭发送收藏`)}
         >
           <ChevronLeft size={16} />
         </button>
         <div className="text-sm font-medium text-[color:var(--text-primary)]">
-          发送收藏
+          {t(msg`发送收藏`)}
         </div>
       </div>
 
@@ -3516,7 +3517,7 @@ function DesktopFavoritePicker({
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-sm leading-6 text-[color:var(--text-muted)]">
-          还没有可发送的收藏内容，先把消息或内容加入收藏。
+          {t(msg`还没有可发送的收藏内容，先把消息或内容加入收藏。`)}
         </div>
       )}
     </div>
@@ -3557,11 +3558,7 @@ function DesktopToolbarButton({
   );
 }
 
-function DesktopToolbarGroup({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function DesktopToolbarGroup({ children }: { children: ReactNode }) {
   return (
     <div className="inline-flex items-center gap-0.5 rounded-[11px] border border-black/6 bg-white px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
       {children}
@@ -3693,10 +3690,11 @@ function DesktopAttachmentDraftBar({
   onRemoveImage?: (index: number) => void;
   onSend: () => void;
 }) {
+  const t = useRuntimeTranslator();
   return (
     <div className="mb-2.5 rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[#f8fbf8] px-3.5 py-3">
       <div className="mb-2.5 text-[11px] font-medium text-[#07a35a]">
-        待发送附件
+        {t(msg`待发送附件`)}
       </div>
       {draft.kind === "images" ? (
         <>
@@ -3716,7 +3714,7 @@ function DesktopAttachmentDraftBar({
                     type="button"
                     onClick={() => onRemoveImage(index)}
                     className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70"
-                    aria-label={`移除 ${item.fileName}`}
+                    aria-label={t(msg`移除 ${item.fileName}`)}
                   >
                     <X size={12} />
                   </button>
@@ -3725,7 +3723,7 @@ function DesktopAttachmentDraftBar({
             ))}
           </div>
           <div className="mt-2.5 text-[12px] text-[color:var(--text-muted)]">
-            已选择 {draft.items.length} 张图片
+            {t(msg`已选择 ${draft.items.length} 张图片`)}
           </div>
         </>
       ) : (
@@ -3752,7 +3750,7 @@ function DesktopAttachmentDraftBar({
           disabled={pending}
           className="h-8 rounded-[8px] px-3"
         >
-          取消
+          {t(msg`取消`)}
         </Button>
         <Button
           type="button"
@@ -3761,7 +3759,7 @@ function DesktopAttachmentDraftBar({
           disabled={pending}
           className="h-8 rounded-[8px] bg-[#07c160] px-3 text-white hover:bg-[#06ad56]"
         >
-          {pending ? "正在发送..." : "发送附件"}
+          {pending ? t(msg`正在发送...`) : t(msg`发送附件`)}
         </Button>
       </div>
     </div>
@@ -3796,7 +3794,9 @@ function DesktopScreenshotToolButton({
         <span
           className={cn(
             "ml-1 rounded-full px-1.5 py-0.5 text-[10px]",
-            active ? "bg-[#e5e7eb] text-[#374151]" : "bg-white/10 text-white/46",
+            active
+              ? "bg-[#e5e7eb] text-[#374151]"
+              : "bg-white/10 text-white/46",
           )}
         >
           {shortcut}
@@ -3901,7 +3901,9 @@ function DesktopScreenshotEditor({
   onSelectedTextMoveStart: (
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => void;
-  onSelectedTextResizeEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onSelectedTextResizeEnd: (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => void;
   onSelectedTextResizeMove: (
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => void;
@@ -3913,6 +3915,7 @@ function DesktopScreenshotEditor({
   selectedAnnotationId: string | null;
   selectedTextValue: string;
 }) {
+  const t = useRuntimeTranslator();
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const selectedTextInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutHelpRef = useRef<HTMLDivElement | null>(null);
@@ -3967,23 +3970,53 @@ function DesktopScreenshotEditor({
   const previewPanEnabled = previewZoom > 1 && previewSpacePressed;
   const previewPanVisible =
     previewZoom > 1 && Boolean(previewSpacePressed || previewPanDrag);
-  const activeAnnotationPalette = getScreenshotAnnotationPaletteEntry(
-    annotationColor,
-  );
+  const screenshotShortcutHelpGroups = [
+    {
+      id: "draw",
+      label: t(msg`绘制`),
+      primary: "C / R / A / T",
+      secondary: t(msg`颜色 1-4`),
+    },
+    {
+      id: "history",
+      label: t(msg`撤销与删除`),
+      primary: "⌘/Ctrl + Z / Shift+Z / Y",
+      secondary: "Delete / Esc",
+    },
+    {
+      id: "view",
+      label: t(msg`视图`),
+      primary: t(msg`⌘/Ctrl + 滚轮 / 双击`),
+      secondary: "Space / ?",
+    },
+    {
+      id: "send",
+      label: t(msg`发送`),
+      primary: t(msg`Enter 发送`),
+      secondary: t(msg`原图 ⌘/Ctrl + Enter`),
+    },
+  ] satisfies Array<{
+    id: ScreenshotShortcutHelpGroupId;
+    label: string;
+    primary: string;
+    secondary: string;
+  }>;
+  const activeAnnotationPalette =
+    getScreenshotAnnotationPaletteEntry(annotationColor);
   const selectedTextAnnotationActive = Boolean(
     selectedAnnotationId &&
-      annotations.some(
-        (annotation) =>
-          annotation.id === selectedAnnotationId && annotation.kind === "text",
-      ),
+    annotations.some(
+      (annotation) =>
+        annotation.id === selectedAnnotationId && annotation.kind === "text",
+    ),
   );
   const selectedTextAnnotation =
     selectedAnnotationId && selectedTextAnnotationActive
-      ? annotations.find(
+      ? (annotations.find(
           (annotation) =>
             annotation.id === selectedAnnotationId &&
             annotation.kind === "text",
-        ) ?? null
+        ) ?? null)
       : null;
   const isInteractiveTarget = (target: EventTarget | null) => {
     if (!(target instanceof HTMLElement)) {
@@ -4350,13 +4383,8 @@ function DesktopScreenshotEditor({
     updatePreviewZoom(previewZoom + step);
   };
 
-  const handlePreviewDoubleClick = (
-    event: ReactMouseEvent<HTMLDivElement>,
-  ) => {
-    if (
-      event.target instanceof HTMLElement &&
-      event.target.closest("button")
-    ) {
+  const handlePreviewDoubleClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.target instanceof HTMLElement && event.target.closest("button")) {
       return;
     }
 
@@ -4454,16 +4482,16 @@ function DesktopScreenshotEditor({
       <div className="flex h-[min(86vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border border-white/12 bg-[#1f1f1f] text-white shadow-[0_32px_80px_rgba(0,0,0,0.32)]">
         <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4">
           <div className="min-w-0">
-            <div className="text-[16px] font-medium">截图预览</div>
+            <div className="text-[16px] font-medium">{t(msg`截图预览`)}</div>
             <div className="mt-1 text-[12px] text-white/58">
-              拖拽框选裁剪范围，不框选时会按原图发送。
+              {t(msg`拖拽框选裁剪范围，不框选时会按原图发送。`)}
             </div>
           </div>
           <button
             type="button"
             onClick={onCancel}
             disabled={pending}
-            aria-label="关闭截图预览"
+            aria-label={t(msg`关闭截图预览`)}
             className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/12 bg-white/6 text-white transition hover:bg-white/10 disabled:opacity-45"
           >
             <X size={16} />
@@ -4476,19 +4504,21 @@ function DesktopScreenshotEditor({
               <span className="rounded-full bg-white/8 px-2.5 py-1">
                 {draft.width && draft.height
                   ? `${draft.width} × ${draft.height}`
-                  : "截图"}
+                  : t(msg`截图`)}
               </span>
               {cropPixelSize ? (
                 <span className="rounded-full bg-[#153726] px-2.5 py-1 text-[#8ef0b2]">
-                  裁剪后 {cropPixelSize.width} × {cropPixelSize.height}
+                  {t(
+                    msg`裁剪后 ${cropPixelSize.width} × ${cropPixelSize.height}`,
+                  )}
                 </span>
               ) : (
                 <span className="rounded-full bg-white/8 px-2.5 py-1">
-                  暂未裁剪
+                  {t(msg`暂未裁剪`)}
                 </span>
               )}
               <span className="rounded-full bg-white/8 px-2.5 py-1">
-                标注 {annotations.length} 条
+                {t(msg`标注 ${annotations.length} 条`)}
               </span>
             </div>
 
@@ -4500,51 +4530,64 @@ function DesktopScreenshotEditor({
                 )}
               >
                 <DesktopScreenshotToolButton
-                  label="裁剪"
+                  label={t(msg`裁剪`)}
                   active={tool === "crop"}
                   shortcut="C"
                   onClick={() => onToolChange("crop")}
                 />
                 <DesktopScreenshotToolButton
-                  label="矩形"
+                  label={t(msg`矩形`)}
                   active={tool === "rect"}
                   shortcut="R"
                   onClick={() => onToolChange("rect")}
                 />
                 <DesktopScreenshotToolButton
-                  label="箭头"
+                  label={t(msg`箭头`)}
                   active={tool === "arrow"}
                   shortcut="A"
                   onClick={() => onToolChange("arrow")}
                 />
                 <DesktopScreenshotToolButton
-                  label="文字"
+                  label={t(msg`文字`)}
                   active={tool === "text"}
                   shortcut="T"
                   onClick={() => onToolChange("text")}
                 />
                 {tool !== "crop" ? (
                   <div className="ml-1 flex items-center gap-2 rounded-full bg-white/6 px-2 py-1">
-                    {SCREENSHOT_ANNOTATION_PALETTE.map((palette, index) => (
-                      <button
-                        key={palette.id}
-                        type="button"
-                        onClick={() => onAnnotationColorChange(palette.id)}
-                        title={`切换为${palette.label}标注 (${index + 1})`}
-                        className={cn(
-                          "relative h-5 w-5 rounded-full border transition",
-                          palette.id === annotationColor
-                            ? "scale-110 border-white shadow-[0_0_0_2px_rgba(255,255,255,0.16)]"
-                            : "border-white/20 hover:border-white/60",
-                        )}
-                        style={{ backgroundColor: palette.stroke }}
-                        aria-label={`切换为${palette.label}标注`}
-                      >
-                        <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#111827] px-1 text-[9px] font-medium text-white/85 shadow-[0_4px_10px_rgba(0,0,0,0.28)]">
-                          {index + 1}
-                        </span>
-                      </button>
-                    ))}
+                    {SCREENSHOT_ANNOTATION_PALETTE.map((palette, index) => {
+                      const paletteLabel =
+                        palette.id === "amber"
+                          ? t(msg`琥珀`)
+                          : palette.id === "cyan"
+                            ? t(msg`青蓝`)
+                            : palette.id === "rose"
+                              ? t(msg`玫红`)
+                              : t(msg`青柠`);
+
+                      return (
+                        <button
+                          key={palette.id}
+                          type="button"
+                          onClick={() => onAnnotationColorChange(palette.id)}
+                          title={t(
+                            msg`切换为${paletteLabel}标注 (${index + 1})`,
+                          )}
+                          className={cn(
+                            "relative h-5 w-5 rounded-full border transition",
+                            palette.id === annotationColor
+                              ? "scale-110 border-white shadow-[0_0_0_2px_rgba(255,255,255,0.16)]"
+                              : "border-white/20 hover:border-white/60",
+                          )}
+                          style={{ backgroundColor: palette.stroke }}
+                          aria-label={t(msg`切换为${paletteLabel}标注`)}
+                        >
+                          <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#111827] px-1 text-[9px] font-medium text-white/85 shadow-[0_4px_10px_rgba(0,0,0,0.28)]">
+                            {index + 1}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : null}
                 {selectedTextAnnotationActive ? (
@@ -4552,8 +4595,10 @@ function DesktopScreenshotEditor({
                     ref={selectedTextInputRef}
                     type="text"
                     value={selectedTextValue}
-                    onChange={(event) => onSelectedTextChange(event.target.value)}
-                    placeholder="输入标注文字"
+                    onChange={(event) =>
+                      onSelectedTextChange(event.target.value)
+                    }
+                    placeholder={t(msg`输入标注文字`)}
                     className="ml-2 h-9 min-w-[180px] rounded-[10px] border border-white/12 bg-white/8 px-3 text-[12px] text-white outline-none placeholder:text-white/28 focus:border-white/30"
                   />
                 ) : null}
@@ -4593,7 +4638,7 @@ function DesktopScreenshotEditor({
                   disabled={pending || previewZoom === 1}
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
-                  适应
+                  {t(msg`适应`)}
                 </Button>
               </div>
               <div
@@ -4607,10 +4652,10 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={onUndoAnnotation}
                   disabled={pending || !annotations.length}
-                  title="撤销标注 (Cmd/Ctrl+Z)"
+                  title={t(msg`撤销标注 (Cmd/Ctrl+Z)`)}
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
-                  撤销标注
+                  {t(msg`撤销标注`)}
                   <span className="text-[10px] text-white/50">⌘/Ctrl+Z</span>
                 </Button>
                 <Button
@@ -4618,21 +4663,23 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={onRedoAnnotation}
                   disabled={pending || !canRedoAnnotations}
-                  title="重做标注 (Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y)"
+                  title={t(msg`重做标注 (Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y)`)}
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
-                  重做标注
-                  <span className="text-[10px] text-white/50">⌘/Ctrl+Shift+Z</span>
+                  {t(msg`重做标注`)}
+                  <span className="text-[10px] text-white/50">
+                    ⌘/Ctrl+Shift+Z
+                  </span>
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={onDeleteSelectedAnnotation}
                   disabled={pending || !selectedAnnotationId}
-                  title="删除标注 (Delete / Backspace)"
+                  title={t(msg`删除标注 (Delete / Backspace)`)}
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
-                  删除标注
+                  {t(msg`删除标注`)}
                   <span className="text-[10px] text-white/50">Del</span>
                 </Button>
                 <Button
@@ -4642,7 +4689,7 @@ function DesktopScreenshotEditor({
                   disabled={pending || !annotations.length}
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
-                  清空标注
+                  {t(msg`清空标注`)}
                 </Button>
               </div>
               <div ref={shortcutHelpRef} className="relative">
@@ -4655,12 +4702,12 @@ function DesktopScreenshotEditor({
                       ? "border-white/18 bg-white/8 text-white/88"
                       : "border-white/8 bg-transparent text-white/46 hover:border-white/14 hover:bg-white/6 hover:text-white/72",
                   )}
-                  title="查看截图快捷键 (?)"
+                  title={t(msg`查看截图快捷键 (?)`)}
                 >
                   <span className="rounded-full border border-white/12 bg-white/6 px-1.5 py-0.5 text-[10px] leading-none text-white/72">
                     ?
                   </span>
-                  <span>快捷键</span>
+                  <span>{t(msg`快捷键`)}</span>
                 </button>
                 {shortcutHelpVisible ? (
                   <div
@@ -4675,12 +4722,14 @@ function DesktopScreenshotEditor({
                       <span className="rounded-full border border-white/10 bg-white/6 px-1.5 py-0.5 leading-none text-white/62">
                         ?
                       </span>
-                      <span>按 ? 开关，点下面分组可高亮对应区域。</span>
+                      <span>
+                        {t(msg`按 ? 开关，点下面分组可高亮对应区域。`)}
+                      </span>
                     </div>
                     <div className="grid gap-1.5">
-                      {SCREENSHOT_SHORTCUT_HELP_GROUPS.map((item) => (
+                      {screenshotShortcutHelpGroups.map((item) => (
                         <button
-                          key={item.label}
+                          key={item.id}
                           type="button"
                           onClick={() => triggerShortcutDemo(item.id)}
                           className={cn(
@@ -4772,62 +4821,62 @@ function DesktopScreenshotEditor({
                           height: `${cropRect.height * 100}%`,
                         }}
                       >
-                      {cropPixelSize ? (
-                        <div className="pointer-events-none absolute -top-10 left-0 rounded-full border border-[#0a7d45] bg-[rgba(6,48,27,0.9)] px-2.5 py-1 text-[11px] font-medium text-[#98f5ba] shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
-                          {cropPixelSize.width} × {cropPixelSize.height}
-                        </div>
-                      ) : null}
-                      <button
-                        type="button"
-                        onPointerDown={onCropMoveStart}
-                        onPointerMove={onCropMove}
-                        onPointerUp={onCropMoveEnd}
-                        onPointerCancel={onCropMoveEnd}
-                        className="absolute inset-2 cursor-move rounded-[10px] border border-white/14 bg-white/0 text-transparent"
-                        aria-label="移动裁剪区域"
-                      />
-                      {(
-                        ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const
-                      ).map((handle) => (
+                        {cropPixelSize ? (
+                          <div className="pointer-events-none absolute -top-10 left-0 rounded-full border border-[#0a7d45] bg-[rgba(6,48,27,0.9)] px-2.5 py-1 text-[11px] font-medium text-[#98f5ba] shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
+                            {cropPixelSize.width} × {cropPixelSize.height}
+                          </div>
+                        ) : null}
                         <button
-                          key={handle}
                           type="button"
-                          onPointerDown={(event) =>
-                            onCropResizeStart(handle, event)
-                          }
-                          onPointerMove={onCropResizeMove}
-                          onPointerUp={onCropResizeEnd}
-                          onPointerCancel={onCropResizeEnd}
-                          className={cn(
-                            "absolute border-2 border-white bg-[#07c160] shadow-[0_6px_14px_rgba(7,193,96,0.28)]",
-                            handle === "nw"
-                              ? "-left-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
-                              : "",
-                            handle === "n"
-                              ? "left-1/2 -top-2 h-3.5 w-8 -translate-x-1/2 rounded-full cursor-ns-resize"
-                              : "",
-                            handle === "ne"
-                              ? "-right-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nesw-resize"
-                              : "",
-                            handle === "e"
-                              ? "right-[-8px] top-1/2 h-8 w-3.5 -translate-y-1/2 rounded-full cursor-ew-resize"
-                              : "",
-                            handle === "sw"
-                              ? "-bottom-2 -left-2 h-3.5 w-3.5 rounded-full cursor-nesw-resize"
-                              : "",
-                            handle === "s"
-                              ? "bottom-[-8px] left-1/2 h-3.5 w-8 -translate-x-1/2 rounded-full cursor-ns-resize"
-                              : "",
-                            handle === "se"
-                              ? "-bottom-2 -right-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
-                              : "",
-                            handle === "w"
-                              ? "left-[-8px] top-1/2 h-8 w-3.5 -translate-y-1/2 rounded-full cursor-ew-resize"
-                              : "",
-                          )}
-                          aria-label="调整裁剪区域"
+                          onPointerDown={onCropMoveStart}
+                          onPointerMove={onCropMove}
+                          onPointerUp={onCropMoveEnd}
+                          onPointerCancel={onCropMoveEnd}
+                          className="absolute inset-2 cursor-move rounded-[10px] border border-white/14 bg-white/0 text-transparent"
+                          aria-label={t(msg`移动裁剪区域`)}
                         />
-                      ))}
+                        {(
+                          ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const
+                        ).map((handle) => (
+                          <button
+                            key={handle}
+                            type="button"
+                            onPointerDown={(event) =>
+                              onCropResizeStart(handle, event)
+                            }
+                            onPointerMove={onCropResizeMove}
+                            onPointerUp={onCropResizeEnd}
+                            onPointerCancel={onCropResizeEnd}
+                            className={cn(
+                              "absolute border-2 border-white bg-[#07c160] shadow-[0_6px_14px_rgba(7,193,96,0.28)]",
+                              handle === "nw"
+                                ? "-left-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
+                                : "",
+                              handle === "n"
+                                ? "left-1/2 -top-2 h-3.5 w-8 -translate-x-1/2 rounded-full cursor-ns-resize"
+                                : "",
+                              handle === "ne"
+                                ? "-right-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nesw-resize"
+                                : "",
+                              handle === "e"
+                                ? "right-[-8px] top-1/2 h-8 w-3.5 -translate-y-1/2 rounded-full cursor-ew-resize"
+                                : "",
+                              handle === "sw"
+                                ? "-bottom-2 -left-2 h-3.5 w-3.5 rounded-full cursor-nesw-resize"
+                                : "",
+                              handle === "s"
+                                ? "bottom-[-8px] left-1/2 h-3.5 w-8 -translate-x-1/2 rounded-full cursor-ns-resize"
+                                : "",
+                              handle === "se"
+                                ? "-bottom-2 -right-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
+                                : "",
+                              handle === "w"
+                                ? "left-[-8px] top-1/2 h-8 w-3.5 -translate-y-1/2 rounded-full cursor-ew-resize"
+                                : "",
+                            )}
+                            aria-label={t(msg`调整裁剪区域`)}
+                          />
+                        ))}
                       </div>
                     ) : null}
                     {previewRect ? (
@@ -4873,7 +4922,7 @@ function DesktopScreenshotEditor({
                           onPointerUp={onSelectedTextMoveEnd}
                           onPointerCancel={onSelectedTextMoveEnd}
                           className="absolute inset-2 cursor-move rounded-[8px] border border-white/14 bg-white/0 text-transparent"
-                          aria-label="移动文字标注"
+                          aria-label={t(msg`移动文字标注`)}
                         />
                         {(["nw", "ne", "sw", "se"] as const).map((handle) => (
                           <button
@@ -4900,7 +4949,7 @@ function DesktopScreenshotEditor({
                                 ? "-bottom-2 -right-2 cursor-nwse-resize"
                                 : "",
                             )}
-                            aria-label="调整文字标注大小"
+                            aria-label={t(msg`调整文字标注大小`)}
                           />
                         ))}
                       </div>
@@ -4999,14 +5048,14 @@ function DesktopScreenshotEditor({
                       {previewArrow ? (
                         <g>
                           <line
-                          x1={previewArrow.x1}
-                          y1={previewArrow.y1}
-                          x2={previewArrow.x2}
-                          y2={previewArrow.y2}
-                          stroke={activeAnnotationPalette.stroke}
-                          strokeWidth="0.007"
-                          strokeLinecap="round"
-                        />
+                            x1={previewArrow.x1}
+                            y1={previewArrow.y1}
+                            x2={previewArrow.x2}
+                            y2={previewArrow.y2}
+                            stroke={activeAnnotationPalette.stroke}
+                            strokeWidth="0.007"
+                            strokeLinecap="round"
+                          />
                           <polygon
                             points={buildArrowHeadPoints(
                               previewArrow.x1,
@@ -5025,7 +5074,8 @@ function DesktopScreenshotEditor({
                       className="absolute inset-0 h-full w-full"
                     >
                       {annotations.map((annotation) =>
-                        annotation.kind === "rect" || annotation.kind === "text" ? (
+                        annotation.kind === "rect" ||
+                        annotation.kind === "text" ? (
                           <rect
                             key={`hit-${annotation.id}`}
                             x={Math.min(annotation.x1, annotation.x2)}
@@ -5167,13 +5217,13 @@ function DesktopScreenshotEditor({
           <div className="text-[12px] text-white/54">
             {tool === "crop"
               ? crop
-                ? "重新拖拽可修改裁剪区域。"
-                : "拖拽图片区域即可创建裁剪选区。"
+                ? t(msg`重新拖拽可修改裁剪区域。`)
+                : t(msg`拖拽图片区域即可创建裁剪选区。`)
               : tool === "rect"
-                ? "拖拽即可添加高亮矩形框。"
+                ? t(msg`拖拽即可添加高亮矩形框。`)
                 : tool === "arrow"
-                  ? "拖拽即可添加箭头标注。"
-                  : "拖拽框选文字区域，随后在工具栏输入内容。"}
+                  ? t(msg`拖拽即可添加箭头标注。`)
+                  : t(msg`拖拽框选文字区域，随后在工具栏输入内容。`)}
           </div>
 
           <div className="flex items-center gap-2">
@@ -5185,7 +5235,7 @@ function DesktopScreenshotEditor({
                 disabled={pending}
                 className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
-                还原
+                {t(msg`还原`)}
               </Button>
             ) : null}
             <Button
@@ -5196,7 +5246,7 @@ function DesktopScreenshotEditor({
               className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
             >
               <Download size={14} />
-              保存原图
+              {t(msg`保存原图`)}
             </Button>
             {crop ? (
               <Button
@@ -5207,7 +5257,7 @@ function DesktopScreenshotEditor({
                 className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
                 <Download size={14} />
-                保存裁剪图
+                {t(msg`保存裁剪图`)}
               </Button>
             ) : null}
             <Button
@@ -5217,7 +5267,7 @@ function DesktopScreenshotEditor({
               disabled={pending}
               className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
             >
-              复制原图
+              {t(msg`复制原图`)}
             </Button>
             {crop ? (
               <Button
@@ -5227,7 +5277,7 @@ function DesktopScreenshotEditor({
                 disabled={pending}
                 className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
-                复制裁剪图
+                {t(msg`复制裁剪图`)}
               </Button>
             ) : null}
             <div
@@ -5236,44 +5286,46 @@ function DesktopScreenshotEditor({
                 getShortcutDemoClass("send"),
               )}
             >
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onCancel}
-              disabled={pending}
-              title="关闭截图预览 (Esc)"
-              className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
-            >
-              取消
-              <span className="text-[10px] text-white/50">Esc</span>
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={onSendOriginal}
-              disabled={pending}
-              title="按原图发送 (Cmd/Ctrl+Enter)"
-              className="rounded-[9px] bg-[#2f855a] text-white hover:bg-[#276749]"
-            >
-              {pending ? "发送中..." : "按原图发送"}
-              {pending ? null : (
-                <span className="text-[10px] text-white/70">⌘/Ctrl+Enter</span>
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={onSendCropped}
-              disabled={pending || !crop}
-              title="裁剪后发送 (Enter)"
-              className="rounded-[9px] bg-[#07c160] text-white hover:bg-[#06ad56]"
-            >
-              <Scissors size={14} />
-              {pending ? "发送中..." : "裁剪后发送"}
-              {pending ? null : (
-                <span className="text-[10px] text-white/70">Enter</span>
-              )}
-            </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onCancel}
+                disabled={pending}
+                title={t(msg`关闭截图预览 (Esc)`)}
+                className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+              >
+                {t(msg`取消`)}
+                <span className="text-[10px] text-white/50">Esc</span>
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={onSendOriginal}
+                disabled={pending}
+                title={t(msg`按原图发送 (Cmd/Ctrl+Enter)`)}
+                className="rounded-[9px] bg-[#2f855a] text-white hover:bg-[#276749]"
+              >
+                {pending ? t(msg`发送中...`) : t(msg`按原图发送`)}
+                {pending ? null : (
+                  <span className="text-[10px] text-white/70">
+                    ⌘/Ctrl+Enter
+                  </span>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={onSendCropped}
+                disabled={pending || !crop}
+                title={t(msg`裁剪后发送 (Enter)`)}
+                className="rounded-[9px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+              >
+                <Scissors size={14} />
+                {pending ? t(msg`发送中...`) : t(msg`裁剪后发送`)}
+                {pending ? null : (
+                  <span className="text-[10px] text-white/70">Enter</span>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -5295,6 +5347,7 @@ function ReplyPreviewBar({
   modeLabel?: string;
   onClose?: () => void;
 }) {
+  const t = useRuntimeTranslator();
   const isDesktop = variant === "desktop";
   return (
     <div
@@ -5311,7 +5364,7 @@ function ReplyPreviewBar({
               isDesktop ? "text-[#07a35a]" : "text-[10px] text-[#07c160]"
             }`}
           >
-            回复 {senderName}
+            {t(msg`回复 ${senderName}`)}
           </div>
           {modeLabel ? (
             <div
@@ -5345,7 +5398,7 @@ function ReplyPreviewBar({
               ? "h-7 w-7 rounded-[8px] hover:bg-white hover:text-[color:var(--text-primary)]"
               : "h-6.5 w-6.5 active:bg-black/[0.05]"
           }`}
-          aria-label="取消回复"
+          aria-label={t(msg`取消回复`)}
         >
           <X size={14} />
         </button>
@@ -5373,10 +5426,11 @@ function DesktopMentionPicker({
     avatar?: string | null;
   }) => void;
 }) {
+  const t = useRuntimeTranslator();
   return (
     <div className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-white py-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)]">
       <div className="px-4 pb-1 pt-1 text-[11px] text-[color:var(--text-dim)]">
-        选择要提到的成员
+        {t(msg`选择要提到的成员`)}
       </div>
       <div className="space-y-0.5">
         {candidates.map((candidate, index) => (
@@ -5504,7 +5558,11 @@ function resolveNativeBridgeFileAssetSource(asset: MobileBridgeFileAsset) {
     return null;
   }
 
-  if (path.startsWith("file://") || path.startsWith("/") || path.startsWith("content://")) {
+  if (
+    path.startsWith("file://") ||
+    path.startsWith("/") ||
+    path.startsWith("content://")
+  ) {
     return Capacitor.convertFileSrc(path);
   }
 
@@ -6435,13 +6493,11 @@ async function optimizeImageAttachmentForUpload(
   payload: Extract<ChatComposerAttachmentPayload, { type: "image" }>,
 ): Promise<Extract<ChatComposerAttachmentPayload, { type: "image" }>> {
   const image = await loadImageElementFromFile(payload.file);
-  let smallestResult:
-    | {
-        file: File;
-        width: number;
-        height: number;
-      }
-    | null = null;
+  let smallestResult: {
+    file: File;
+    width: number;
+    height: number;
+  } | null = null;
 
   for (const scale of CHAT_ATTACHMENT_IMAGE_UPLOAD_SCALE_STEPS) {
     const width = Math.max(1, Math.round(image.naturalWidth * scale));
@@ -6624,7 +6680,10 @@ function findActiveMentionToken(value: string, cursor: number) {
   }
 
   let endIndex = atIndex + 1;
-  while (endIndex < value.length && isChatMentionTokenCharacter(value[endIndex])) {
+  while (
+    endIndex < value.length &&
+    isChatMentionTokenCharacter(value[endIndex])
+  ) {
     endIndex += 1;
   }
 

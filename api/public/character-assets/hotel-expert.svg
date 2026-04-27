@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg-hotel-expert-svg" x1="96" y1="64" x2="944" y2="976" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#284B63" />
+      <stop offset="1" stop-color="#F2C879" />
+    </linearGradient>
+    <radialGradient id="glow-hotel-expert-svg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 212) rotate(126) scale(512)">
+      <stop stop-color="rgba(242, 200, 121, 0.52)" />
+      <stop offset="1" stop-color="rgba(242, 200, 121, 0)" />
+    </radialGradient>
+    <linearGradient id="sheen-hotel-expert-svg" x1="180" y1="100" x2="840" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.34)" />
+      <stop offset="0.45" stop-color="rgba(255,255,255,0.08)" />
+      <stop offset="1" stop-color="rgba(255,255,255,0.02)" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg-hotel-expert-svg)" />
+  <rect width="1024" height="1024" rx="232" fill="url(#glow-hotel-expert-svg)" />
+  <circle cx="770" cy="214" r="178" fill="rgba(255, 255, 255, 0.08)" />
+  <circle cx="256" cy="826" r="154" fill="rgba(242, 200, 121, 0.12)" />
+  <rect x="96" y="96" width="832" height="832" rx="196" fill="url(#sheen-hotel-expert-svg)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="2" />
+  <circle cx="512" cy="438" r="224" fill="rgba(255, 255, 255, 0.12)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="2" />
+  <path d="M154 766C220 702 314 662 408 662H616C738 662 834 742 870 862" stroke="rgba(255, 255, 255, 0.12)" stroke-width="28" stroke-linecap="round" />
+  <rect x="650" y="676" width="206" height="206" rx="76" fill="rgba(255, 255, 255, 0.14)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="2" />
+  <circle cx="820" cy="164" r="32" fill="rgba(242, 200, 121, 0.32)" />
+  <circle cx="206" cy="200" r="18" fill="rgba(255, 255, 255, 0.18)" />
+  <g transform="translate(338 272) scale(14)" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke">
+    <path d="M4 22V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16" />
+    <path d="M9 22v-6h6v6" />
+    <path d="M8 8h.01" />
+    <path d="M12 8h.01" />
+    <path d="M16 8h.01" />
+    <path d="M8 12h.01" />
+    <path d="M12 12h.01" />
+    <path d="M16 12h.01" />
+    <path d="M3 22h18" />
+  </g>
+  <g transform="translate(704 722) scale(4.8)" fill="none" stroke="#F2C879" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="0.98">
+    <path d="M10 4h4" />
+    <path d="M12 4v16" />
+    <path d="M7 20h10" />
+    <path d="M5 8h14" />
+    <path d="M6 8l3 7" />
+    <path d="M18 8l-3 7" />
+    <path d="M9 15h6" />
+  </g>
+</svg>
