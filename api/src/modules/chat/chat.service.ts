@@ -17,6 +17,7 @@ import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { WorldLanguageService } from '../config/world-language.service';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
 import { NarrativeService } from '../narrative/narrative.service';
@@ -169,6 +170,7 @@ export class ChatService {
     private readonly cyberAvatar: CyberAvatarService,
     private readonly customStickersService: CustomStickersService,
     private readonly reminderRuntime: ReminderRuntimeService,
+    private readonly worldLanguage: WorldLanguageService,
     @Inject(forwardRef(() => ReplyArtifactJobService))
     private readonly replyArtifactJobs: ReplyArtifactJobService,
     private readonly mediaInsightJobs: MediaInsightJobService,
@@ -857,7 +859,9 @@ export class ChatService {
     };
     if (resolvedInput.attachment) {
       userMsgEntity.attachmentKind = resolvedInput.attachment.kind;
-      userMsgEntity.attachmentPayload = JSON.stringify(resolvedInput.attachment);
+      userMsgEntity.attachmentPayload = JSON.stringify(
+        resolvedInput.attachment,
+      );
     }
 
     const userMsg = await this.serializeMessage(userMsgEntity);
@@ -907,9 +911,9 @@ export class ChatService {
     };
     const isSelfConversation = Boolean(
       charEntity &&
-        (charEntity.id === SELF_CHARACTER_ID ||
-          charEntity.relationshipType === 'self' ||
-          charEntity.sourceKey?.trim() === 'self'),
+      (charEntity.id === SELF_CHARACTER_ID ||
+        charEntity.relationshipType === 'self' ||
+        charEntity.sourceKey?.trim() === 'self'),
     );
     const selfAgentResult =
       isSelfConversation && charEntity
@@ -946,6 +950,7 @@ export class ChatService {
         attachment: resolvedInput.attachment,
       },
     });
+    const language = await this.worldLanguage.getLanguage();
     const extraSystemPromptSections = [...replyModalities.promptSections];
     let selfAgentWorkspaceSections: string[] = [];
     if (
@@ -955,9 +960,11 @@ export class ChatService {
       !actionResult.handled &&
       !reminderResult.handled
     ) {
-      selfAgentWorkspaceSections = await this.selfAgent.buildChatPromptSections({
-        character: charEntity,
-      });
+      selfAgentWorkspaceSections = await this.selfAgent.buildChatPromptSections(
+        {
+          character: charEntity,
+        },
+      );
       extraSystemPromptSections.push(...selfAgentWorkspaceSections);
     }
 
@@ -966,35 +973,35 @@ export class ChatService {
       : actionResult.handled
         ? (actionResult.responseText?.trim() ?? '')
         : reminderResult.handled
-        ? (reminderResult.responseText?.trim() ?? '')
-        : (
-            await this.ai.generateReply({
-              profile,
-              conversationHistory: history,
-              userMessage: resolvedInput.promptText,
-              userMessageParts: resolvedInput.aiParts,
-              chatContext,
-              extraSystemPromptSections,
-              aiKeyOverride,
-              emptyTextFallback: '',
-              usageContext: {
-                surface: 'app',
-                scene: 'chat_reply',
-                scopeType: 'conversation',
-                scopeId: convId,
-                scopeLabel: entity.title,
-                ownerId: owner.id,
-                characterId: charId,
-                characterName: profile.name,
-                conversationId: convId,
-              },
-            })
-          ).text;
+          ? (reminderResult.responseText?.trim() ?? '')
+          : (
+              await this.ai.generateReply({
+                profile,
+                conversationHistory: history,
+                userMessage: resolvedInput.promptText,
+                userMessageParts: resolvedInput.aiParts,
+                chatContext,
+                extraSystemPromptSections,
+                aiKeyOverride,
+                emptyTextFallback: '',
+                usageContext: {
+                  surface: 'app',
+                  scene: 'chat_reply',
+                  scopeType: 'conversation',
+                  scopeId: convId,
+                  scopeLabel: entity.title,
+                  ownerId: owner.id,
+                  characterId: charId,
+                  characterName: profile.name,
+                  conversationId: convId,
+                },
+              })
+            ).text;
     const normalizedAssistantReplyText = resolveAssistantReplyText({
       text: assistantReplyText,
       promptText: resolvedInput.promptText,
       plan: replyModalities,
-      fallbackText: '收到。',
+      language,
     });
     if (
       normalizedAssistantReplyText &&
@@ -1466,7 +1473,8 @@ export class ChatService {
     text: string,
     attachment?: MessageAttachment,
   ) {
-    const generatedHistoryText = resolveGeneratedAttachmentHistoryText(attachment);
+    const generatedHistoryText =
+      resolveGeneratedAttachmentHistoryText(attachment);
     if (generatedHistoryText) {
       return generatedHistoryText;
     }
@@ -2057,7 +2065,10 @@ export class ChatService {
         return `发来一张图片，内容大致是：${generatedImagePrompt}${dimensions}${captionText}`.trim();
       }
       if (generatedImageHistoryText) {
-        return [generatedImageHistoryText, caption ? `补充说明：${caption}` : '']
+        return [
+          generatedImageHistoryText,
+          caption ? `补充说明：${caption}` : '',
+        ]
           .filter(Boolean)
           .join('，')
           .trim();

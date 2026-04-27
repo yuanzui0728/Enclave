@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { type ChatMessage } from '../ai/ai.types';
+import { WorldLanguageService } from '../config/world-language.service';
 import {
   buildReplyModalityPromptSections,
   extractRequestedImagePrompt,
@@ -18,7 +19,10 @@ import {
 export class GroupReplyOrchestratorService {
   private readonly latestTriggerMessageByGroup = new Map<string, string>();
 
-  constructor(private readonly ai: AiOrchestratorService) {}
+  constructor(
+    private readonly ai: AiOrchestratorService,
+    private readonly worldLanguage: WorldLanguageService,
+  ) {}
 
   async generateTaskReply(input: {
     actor: GroupReplyCandidate;
@@ -79,13 +83,14 @@ export class GroupReplyOrchestratorService {
         groupId,
       },
     });
+    const language = await this.worldLanguage.getLanguage();
 
     return {
       text: resolveAssistantReplyText({
         text: result.text,
         promptText: baseUserPrompt,
         plan: replyModalities,
-        fallbackText: '收到。',
+        language,
       }),
       modalities: replyModalities,
     };
@@ -109,6 +114,7 @@ export class GroupReplyOrchestratorService {
       return;
     }
 
+    const language = await this.worldLanguage.getLanguage();
     const emittedReplies: Array<{ senderName: string; text: string }> = [];
     const rollingHistory: ChatMessage[] = [...conversationHistory];
 
@@ -152,7 +158,7 @@ export class GroupReplyOrchestratorService {
           text: reply.text,
           promptText: currentUserContext.promptText,
           plan: { includeVoice: false, promptSections: [] },
-          fallbackText: '收到。',
+          language,
         });
 
         await sendReply(actor, normalizedReplyText);

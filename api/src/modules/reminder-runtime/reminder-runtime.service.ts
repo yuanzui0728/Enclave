@@ -759,6 +759,29 @@ export class ReminderRuntimeService {
     };
   }
 
+  async buildMomentCommentNudgeText(input: {
+    seedKey: string;
+    limit?: number;
+  }): Promise<string | null> {
+    const language = await this.worldLanguage.getLanguage();
+    const tasks = await this.getMomentNudgeTasks(input.limit ?? 2, language);
+    if (tasks.length === 0) {
+      return null;
+    }
+
+    const primary = tasks[0];
+    const focus = this.truncateReminderLabel(primary.title, 8);
+    const variants = this.getMomentCommentNudgeTemplates(
+      primary,
+      focus,
+      language,
+    );
+
+    return variants[
+      hashTextSeed(`${input.seedKey}:${primary.id}`) % variants.length
+    ];
+  }
+
   async completeTask(id: string) {
     const task = await this.requireOwnedTask(id);
     const now = new Date();
@@ -3093,6 +3116,99 @@ export class ReminderRuntimeService {
       },
     };
     return templates[language][slot];
+  }
+
+  private getMomentCommentNudgeTemplates(
+    task: ReminderMomentNudge,
+    focus: string,
+    language: WorldLanguageCode,
+  ) {
+    if (language === 'zh-CN') {
+      if (/英语|背单词/.test(task.title)) {
+        return ['发完这条，英语也打个卡。', '今天的英语，别断。'];
+      }
+      if (/锻炼|运动|健身/.test(task.title)) {
+        return ['这条发完，今天动一动。', '今天的运动，也别断。'];
+      }
+      if (/早睡|睡觉/.test(task.title)) {
+        return ['刷完这条就早点睡。', '今晚别又熬太晚。'];
+      }
+      if (/喝水/.test(task.title)) {
+        return ['看完这条顺手喝口水。', '先去喝口水。'];
+      }
+      if (/吃饭/.test(task.title)) {
+        return ['记得先吃饭。', '先把饭吃了。'];
+      }
+      if (/吃药/.test(task.title)) {
+        return ['这条发完，药别忘了。', '药我还替你记着。'];
+      }
+
+      return [
+        `这条发完，${focus}也别断。`,
+        `今天的${focus}，我还记着。`,
+        `顺手把${focus}也安排上。`,
+      ];
+    }
+
+    const category = task.category?.trim();
+    switch (language) {
+      case 'en-US':
+        if (category === 'health') {
+          return [
+            `After this, take care of ${focus}.`,
+            `${focus} is still on my list for you.`,
+          ];
+        }
+        if (category === 'growth') {
+          return [
+            `After this, give ${focus} a small check-in too.`,
+            `Don't let ${focus} drop today.`,
+          ];
+        }
+        return [
+          `After this, keep ${focus} moving too.`,
+          `${focus} is still worth touching today.`,
+          `Make a little room for ${focus} too.`,
+        ];
+      case 'ja-JP':
+        if (category === 'health') {
+          return [
+            `これを見たら、${focus}も忘れずに。`,
+            `${focus}、こちらでもまだ見ています。`,
+          ];
+        }
+        if (category === 'growth') {
+          return [
+            `これを見たら、${focus}も少しだけ進めよう。`,
+            `今日の${focus}、途切れさせないで。`,
+          ];
+        }
+        return [
+          `これを見たら、${focus}も止めないで。`,
+          `今日の${focus}、まだ覚えています。`,
+          `${focus}も少しだけ入れておこう。`,
+        ];
+      case 'ko-KR':
+        if (category === 'health') {
+          return [
+            `이거 보고 나면 ${focus}도 챙겨요.`,
+            `${focus}, 제가 아직 보고 있어요.`,
+          ];
+        }
+        if (category === 'growth') {
+          return [
+            `이거 보고 나면 ${focus}도 조금 해요.`,
+            `오늘 ${focus}, 끊기지 않게 해요.`,
+          ];
+        }
+        return [
+          `이거 보고 나면 ${focus}도 이어가요.`,
+          `오늘 ${focus}, 아직 기억하고 있어요.`,
+          `${focus}도 잠깐 끼워 넣어요.`,
+        ];
+      default:
+        return [`${focus}，今天先动一点，别继续往后拖。`];
+    }
   }
 
   private getWeekdayLabel(day: number, language: WorldLanguageCode) {
