@@ -6,6 +6,7 @@ import type {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
+import { AppLocaleProvider } from "@yinjie/i18n";
 import { vi } from "vitest";
 import { matchesQueueStateFilter } from "../src/lib/job-queue-state";
 import {
@@ -2041,9 +2042,11 @@ export function renderRoute(path: string, options?: RenderRouteOptions) {
   const router = createAppRouter();
 
   render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+    <AppLocaleProvider surface="cloud-console" fallback={null}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </AppLocaleProvider>,
   );
 
   return { queryClient, router };

@@ -13,27 +13,27 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. placeholder {0}: values.lastCoreApiError
-#: apps/admin/src/routes/dashboard-page.tsx:1726
+#: apps/admin/src/routes/dashboard-page.tsx:1729
 msgid " · 最近错误={0}"
 msgstr " · last error={0}"
 
 #. placeholder {0}: values.desktopLogPath
-#: apps/admin/src/routes/dashboard-page.tsx:1725
+#: apps/admin/src/routes/dashboard-page.tsx:1728
 msgid " · 日志={0}"
 msgstr " · log={0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1728
+#: apps/admin/src/routes/dashboard-page.tsx:1731
 msgid " · 端口占用中"
 msgstr " · port occupied"
 
 #. placeholder {0}: previewLogs.length
-#: apps/admin/src/routes/dashboard-page.tsx:1241
+#: apps/admin/src/routes/dashboard-page.tsx:1242
 msgid "{0} 条"
 msgstr "{0} items"
 
 #. placeholder {0}: evalOverviewQuery.data?.runCount ?? 0
 #. placeholder {1}: evalOverviewQuery.data?.traceCount ?? 0
-#: apps/admin/src/routes/dashboard-page.tsx:808
+#: apps/admin/src/routes/dashboard-page.tsx:809
 msgid "{0} 次运行 / {1} 条链路"
 msgstr "{0} runs / {1} traces"
 
@@ -41,23 +41,23 @@ msgstr "{0} runs / {1} traces"
 #. placeholder {0}: post.likeCount
 #. placeholder {1}: moment.commentCount
 #. placeholder {1}: post.commentCount
-#: apps/admin/src/routes/dashboard-page.tsx:888
-#: apps/admin/src/routes/dashboard-page.tsx:914
+#: apps/admin/src/routes/dashboard-page.tsx:889
+#: apps/admin/src/routes/dashboard-page.tsx:915
 msgid "{0} 赞 / {1} 评论"
 msgstr "{0} likes / {1} comments"
 
 #. placeholder {0}: dutyIssues.length
-#: apps/admin/src/routes/dashboard-page.tsx:584
+#: apps/admin/src/routes/dashboard-page.tsx:585
 msgid "{0} 项"
 msgstr "{0} items"
 
 #. placeholder {0}: issues.length
-#: apps/admin/src/components/root-layout.tsx:72
+#: apps/admin/src/components/root-layout.tsx:73
 msgid "{0} 项待处理"
 msgstr "{0} pending items"
 
 #. placeholder {0}: issues[0]
-#: apps/admin/src/components/root-layout.tsx:77
+#: apps/admin/src/components/root-layout.tsx:78
 msgid "{0}，其余项也需要继续检查。"
 msgstr "{0}; the remaining items also need review."
 
@@ -65,7 +65,7 @@ msgstr "{0}; the remaining items also need review."
 msgid "{blockerCount} 个阻塞项"
 msgstr "{blockerCount} blockers"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1756
+#: apps/admin/src/routes/dashboard-page.tsx:1759
 msgid "{hours} 小时 {minutes} 分钟"
 msgstr "{hours}h {minutes}m"
 
@@ -73,7 +73,7 @@ msgstr "{hours}h {minutes}m"
 msgid "{issueCount} 项待处理"
 msgstr "{issueCount} pending items"
 
-#: apps/admin/src/routes/dashboard-page.tsx:518
+#: apps/admin/src/routes/dashboard-page.tsx:519
 msgid "{ownerCount} 个"
 msgstr "{ownerCount}"
 
@@ -81,15 +81,15 @@ msgstr "{ownerCount}"
 msgid "{watchItemCount} 个关注项"
 msgstr "{watchItemCount} watch items"
 
-#: apps/admin/src/components/root-layout.tsx:352
+#: apps/admin/src/components/root-layout.tsx:356
 msgid "AI 成本与请求账本"
 msgstr "AI Cost and Request Ledger"
 
-#: apps/admin/src/components/root-layout.tsx:266
+#: apps/admin/src/components/root-layout.tsx:270
 msgid "AI 游戏中心目录与来源结构"
 msgstr "AI Game Center Catalog and Source Structure"
 
-#: apps/admin/src/routes/dashboard-page.tsx:502
+#: apps/admin/src/routes/dashboard-page.tsx:503
 msgid "Core API"
 msgstr "Core API"
 
@@ -98,19 +98,19 @@ msgid "Core API 当前不健康"
 msgstr "Core API is unhealthy"
 
 #. placeholder {0}: heartbeatFindings[1]
-#: apps/admin/src/routes/dashboard-page.tsx:1637
+#: apps/admin/src/routes/dashboard-page.tsx:1639
 msgid "heartbeat 命中了 {0} 类待处理事项。"
 msgstr "Heartbeat found {0} categories of pending items."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1710
+#: apps/admin/src/routes/dashboard-page.tsx:1713
 msgid "Linux 依赖正常"
 msgstr "Linux dependencies OK"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1743
+#: apps/admin/src/routes/dashboard-page.tsx:1746
 msgid "PATH 查找"
 msgstr "PATH lookup"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1743
+#: apps/admin/src/routes/dashboard-page.tsx:1746
 msgid "PATH 查找（内置 sidecar 缺失）"
 msgstr "PATH lookup (bundled sidecar missing)"
 
@@ -118,33 +118,33 @@ msgstr "PATH lookup (bundled sidecar missing)"
 msgid "provider-state 回调可走鉴权。"
 msgstr "provider-state callbacks can be authenticated."
 
-#: apps/admin/src/components/root-layout.tsx:295
+#: apps/admin/src/components/root-layout.tsx:299
 msgid "Self Agent"
 msgstr "Self Agent"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1746
+#: apps/admin/src/routes/dashboard-page.tsx:1749
 msgid "sidecar 已就绪"
 msgstr "Sidecar ready"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1746
+#: apps/admin/src/routes/dashboard-page.tsx:1749
 msgid "sidecar 缺失"
 msgstr "Sidecar missing"
 
-#: apps/admin/src/components/root-layout.tsx:194
-#: apps/admin/src/components/root-layout.tsx:351
+#: apps/admin/src/components/root-layout.tsx:198
+#: apps/admin/src/components/root-layout.tsx:355
 msgid "Token 用量"
 msgstr "Token Usage"
 
 #. placeholder {0}: evalOverviewQuery.data?.traceCount ?? 0
-#: apps/admin/src/routes/dashboard-page.tsx:839
+#: apps/admin/src/routes/dashboard-page.tsx:840
 msgid "Trace {0}"
 msgstr "Trace {0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1642
+#: apps/admin/src/routes/dashboard-page.tsx:1644
 msgid "WorldContext 快照已更新。"
 msgstr "WorldContext snapshot updated."
 
-#: apps/admin/src/routes/dashboard-page.tsx:630
+#: apps/admin/src/routes/dashboard-page.tsx:631
 msgid "一屏巡检"
 msgstr "One-screen check"
 
@@ -172,30 +172,30 @@ msgstr "Next, add callbackToken so provider-state callbacks can be authenticated
 msgid "下一步补外部 provider 模板和回调，把内置播放器替换成真实数字人服务。"
 msgstr "Next, add the external provider template and callback, replacing the built-in player with a real digital-human service."
 
-#: apps/admin/src/routes/dashboard-page.tsx:665
+#: apps/admin/src/routes/dashboard-page.tsx:666
 msgid "世界上下文"
 msgstr "World Context"
 
-#: apps/admin/src/routes/dashboard-page.tsx:517
-#: apps/admin/src/routes/dashboard-page.tsx:637
+#: apps/admin/src/routes/dashboard-page.tsx:518
+#: apps/admin/src/routes/dashboard-page.tsx:638
 msgid "世界主人"
 msgstr "World Owner"
 
 #: apps/admin/src/components/admin-sidebar.tsx:114
-#: apps/admin/src/components/root-layout.tsx:63
+#: apps/admin/src/components/root-layout.tsx:64
 #: apps/admin/src/routes/dashboard-page.tsx:351
 msgid "世界主人数量异常"
 msgstr "World owner count is abnormal"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1403
+#: apps/admin/src/routes/dashboard-page.tsx:1404
 msgid "世界快照"
 msgstr "World Snapshot"
 
-#: apps/admin/src/components/root-layout.tsx:342
+#: apps/admin/src/components/root-layout.tsx:346
 msgid "世界样本与会话档案"
 msgstr "World Samples and Conversation Records"
 
-#: apps/admin/src/components/root-layout.tsx:362
+#: apps/admin/src/components/root-layout.tsx:366
 msgid "世界级回复调试台"
 msgstr "World-Level Reply Debugger"
 
@@ -203,33 +203,33 @@ msgstr "World-Level Reply Debugger"
 msgid "主人"
 msgstr "Owner"
 
-#: apps/admin/src/components/root-layout.tsx:180
+#: apps/admin/src/components/root-layout.tsx:184
 msgid "主代理"
 msgstr "Self Agent"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1415
+#: apps/admin/src/routes/dashboard-page.tsx:1416
 msgid "主代理巡检调度"
 msgstr "Self-agent Heartbeat Schedule"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1429
+#: apps/admin/src/routes/dashboard-page.tsx:1430
 msgid "主动提醒调度"
 msgstr "Proactive Reminder Schedule"
 
-#: apps/admin/src/components/root-layout.tsx:174
-#: apps/admin/src/components/root-layout.tsx:285
+#: apps/admin/src/components/root-layout.tsx:178
+#: apps/admin/src/components/root-layout.tsx:289
 msgid "主动跟进"
 msgstr "Proactive Follow-up"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1090
+#: apps/admin/src/routes/dashboard-page.tsx:1091
 msgid "事件契约"
 msgstr "Event Contract"
 
 #. placeholder {0}: followupLimit[1]
-#: apps/admin/src/routes/dashboard-page.tsx:1622
+#: apps/admin/src/routes/dashboard-page.tsx:1624
 msgid "今天已经发出 {0} 条主动跟进推荐，这轮先收住。"
 msgstr "{0} proactive follow-up recommendations have already been sent today; stop this round."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1167
+#: apps/admin/src/routes/dashboard-page.tsx:1168
 msgid "令牌数"
 msgstr "Tokens"
 
@@ -237,15 +237,15 @@ msgstr "Tokens"
 msgid "优先"
 msgstr "Priority"
 
-#: apps/admin/src/routes/dashboard-page.tsx:561
+#: apps/admin/src/routes/dashboard-page.tsx:562
 msgid "优先从“待处理队列”第一项开始处理。当前首项为：{pendingIssueTitle}。"
 msgstr "Start with the first item in the pending queue. Current first item: {pendingIssueTitle}."
 
-#: apps/admin/src/routes/dashboard-page.tsx:571
+#: apps/admin/src/routes/dashboard-page.tsx:572
 msgid "优先处理当前实例最关键的阻塞项。"
 msgstr "Handle the most important blocker for this instance first."
 
-#: apps/admin/src/routes/dashboard-page.tsx:537
+#: apps/admin/src/routes/dashboard-page.tsx:538
 msgid "优先影响接下来能否继续操作"
 msgstr "Determines whether operations can continue"
 
@@ -253,36 +253,36 @@ msgstr "Determines whether operations can continue"
 msgid "优先进入设置页检查桌面托管状态和运行路径。"
 msgstr "Open settings first to check desktop hosting state and runtime paths."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1174
+#: apps/admin/src/routes/dashboard-page.tsx:1175
 msgid "低频高风险"
 msgstr "Low-frequency, high-risk"
 
-#: apps/admin/src/components/admin-sidebar.tsx:243
+#: apps/admin/src/components/admin-sidebar.tsx:245
 msgid "保存密钥"
 msgstr "Save secret"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1244
+#: apps/admin/src/routes/dashboard-page.tsx:1245
 msgid "保留最近日志入口，方便做故障留痕和快速定位，不再让日志列表挤占首页中段。"
 msgstr "Keep recent log entry points for troubleshooting without letting logs take over the middle of the dashboard."
 
-#: apps/admin/src/components/admin-sidebar.tsx:256
+#: apps/admin/src/components/admin-sidebar.tsx:258
 msgid "修改"
 msgstr "Edit"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1289
+#: apps/admin/src/routes/dashboard-page.tsx:1290
 msgid "值班总览"
 msgstr "Duty Overview"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1310
+#: apps/admin/src/routes/dashboard-page.tsx:1311
 msgid "做推理预览、导出诊断、备份恢复和日志查看。"
 msgstr "Run inference previews, export diagnostics, restore backups, and inspect logs."
 
-#: apps/admin/src/routes/dashboard-page.tsx:503
-#: apps/admin/src/routes/dashboard-page.tsx:705
+#: apps/admin/src/routes/dashboard-page.tsx:504
+#: apps/admin/src/routes/dashboard-page.tsx:706
 msgid "健康"
 msgstr "Healthy"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1720
+#: apps/admin/src/routes/dashboard-page.tsx:1723
 msgid "健康探测失败"
 msgstr "Health probe failed"
 
@@ -294,7 +294,7 @@ msgstr "Clear runtime blockers before entering operational workspaces."
 msgid "先处理阻塞项，再进入角色、内容或评测工作区。"
 msgstr "Handle blockers before entering character, content, or eval workspaces."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1176
+#: apps/admin/src/routes/dashboard-page.tsx:1177
 msgid "先导出诊断和创建备份，这两项更适合巡检和日常留档。"
 msgstr "Export diagnostics and create a backup first; both are better for routine checks and records."
 
@@ -302,23 +302,23 @@ msgstr "Export diagnostics and create a backup first; both are better for routin
 msgid "先恢复世界实例连接，再继续后台操作。"
 msgstr "Restore the world instance connection before continuing admin operations."
 
-#: apps/admin/src/components/root-layout.tsx:268
+#: apps/admin/src/components/root-layout.tsx:272
 msgid "先承接 AI 游戏中心的目录、来源、运行模式和审核状态，后续再补详情、发布与运营能力。"
 msgstr "First cover the AI Game Center catalog, source structure, runtime mode, and review status; details, publishing, and operations can be added later."
 
-#: apps/admin/src/routes/dashboard-page.tsx:935
+#: apps/admin/src/routes/dashboard-page.tsx:936
 msgid "先看最近有没有失败，再决定是手动触发 job，还是排查实时房间与客户端连接。"
 msgstr "Check recent failures first, then decide whether to run a job manually or inspect realtime rooms and clients."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1290
+#: apps/admin/src/routes/dashboard-page.tsx:1291
 msgid "先看当前结论、待处理队列和实例体征摘要。"
 msgstr "Review the current conclusion, pending queue, and instance vitals first."
 
-#: apps/admin/src/routes/dashboard-page.tsx:829
+#: apps/admin/src/routes/dashboard-page.tsx:830
 msgid "先看角色和内容有没有稳定产出，再决定是否深入到具体工作区。"
 msgstr "Check whether characters and content are producing steadily before drilling into a workspace."
 
-#: apps/admin/src/routes/dashboard-page.tsx:770
+#: apps/admin/src/routes/dashboard-page.tsx:771
 msgid "先确认模型、队列和数字人链路可用，再进入内容抽查或回复排障，避免把环境问题误判成业务问题。"
 msgstr "Confirm models, queue, and digital-human links before content checks or reply debugging so environment issues are not mistaken for business issues."
 
@@ -326,11 +326,11 @@ msgstr "Confirm models, queue, and digital-human links before content checks or 
 msgid "入口"
 msgstr "Entry"
 
-#: apps/admin/src/routes/dashboard-page.tsx:645
+#: apps/admin/src/routes/dashboard-page.tsx:646
 msgid "公开内容总数"
 msgstr "Total public content"
 
-#: apps/admin/src/routes/dashboard-page.tsx:838
+#: apps/admin/src/routes/dashboard-page.tsx:839
 msgid "公开内容样本可直接抽查"
 msgstr "Public content samples are ready for spot checks"
 
@@ -341,12 +341,12 @@ msgstr "Public content samples are ready for spot checks"
 msgid "关注"
 msgstr "Watch"
 
-#: apps/admin/src/routes/dashboard-page.tsx:541
-#: apps/admin/src/routes/dashboard-page.tsx:1276
+#: apps/admin/src/routes/dashboard-page.tsx:542
+#: apps/admin/src/routes/dashboard-page.tsx:1277
 msgid "关注项"
 msgstr "Watch Items"
 
-#: apps/admin/src/routes/dashboard-page.tsx:553
+#: apps/admin/src/routes/dashboard-page.tsx:554
 msgid "内容产出"
 msgstr "Content Output"
 
@@ -354,11 +354,11 @@ msgstr "Content Output"
 msgid "内置 iframe"
 msgstr "Built-in iframe"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1737
+#: apps/admin/src/routes/dashboard-page.tsx:1740
 msgid "内置 sidecar"
 msgstr "Bundled sidecar"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1716
+#: apps/admin/src/routes/dashboard-page.tsx:1719
 msgid "内置 sidecar 缺失"
 msgstr "Bundled sidecar missing"
 
@@ -366,11 +366,11 @@ msgstr "Bundled sidecar missing"
 msgid "内置舞台"
 msgstr "Built-in stage"
 
-#: apps/admin/src/routes/dashboard-page.tsx:456
+#: apps/admin/src/routes/dashboard-page.tsx:457
 msgid "最新世界快照暂不可用。"
 msgstr "Latest world snapshot is not available yet."
 
-#: apps/admin/src/routes/dashboard-page.tsx:837
+#: apps/admin/src/routes/dashboard-page.tsx:838
 msgid "最新动态已纳入抽查范围"
 msgstr "Latest moments are included in spot checks"
 
@@ -378,8 +378,8 @@ msgstr "Latest moments are included in spot checks"
 msgid "最近 {recentSchedulerErrorCount} 条调度记录返回 error，建议先复核 job 状态和最近执行摘要。"
 msgstr "{recentSchedulerErrorCount} recent scheduler records returned error. Review job status and recent summaries first."
 
-#: apps/admin/src/routes/dashboard-page.tsx:880
-#: apps/admin/src/routes/dashboard-page.tsx:906
+#: apps/admin/src/routes/dashboard-page.tsx:881
+#: apps/admin/src/routes/dashboard-page.tsx:907
 msgid "最近 3 条"
 msgstr "Latest 3"
 
@@ -387,29 +387,29 @@ msgstr "Latest 3"
 msgid "最近共有 {failedEvalCount} 条失败评测，建议先确认是 provider 波动还是提示链路问题。"
 msgstr "{failedEvalCount} evals failed recently. Check whether this is provider instability or a prompt-chain issue first."
 
-#: apps/admin/src/routes/dashboard-page.tsx:966
+#: apps/admin/src/routes/dashboard-page.tsx:967
 msgid "最近失败"
 msgstr "Recent Failures"
 
-#: apps/admin/src/routes/dashboard-page.tsx:948
+#: apps/admin/src/routes/dashboard-page.tsx:949
 msgid "最近存在调度失败记录，请先检查 job 状态和最近执行摘要。"
 msgstr "Recent scheduler failures exist. Check job status and recent summaries first."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1082
+#: apps/admin/src/routes/dashboard-page.tsx:1083
 msgid "最近实时事件"
 msgstr "Recent Realtime Events"
 
-#: apps/admin/src/routes/dashboard-page.tsx:788
-#: apps/admin/src/routes/dashboard-page.tsx:1121
+#: apps/admin/src/routes/dashboard-page.tsx:789
+#: apps/admin/src/routes/dashboard-page.tsx:1122
 msgid "最近成功时间"
 msgstr "Last Success"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1003
+#: apps/admin/src/routes/dashboard-page.tsx:1004
 msgid "最近执行"
 msgstr "Last Run"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1247
-#: apps/admin/src/routes/dashboard-page.tsx:1277
+#: apps/admin/src/routes/dashboard-page.tsx:1248
+#: apps/admin/src/routes/dashboard-page.tsx:1278
 msgid "最近日志"
 msgstr "Recent Logs"
 
@@ -417,50 +417,50 @@ msgstr "Recent Logs"
 msgid "最近调度存在失败记录"
 msgstr "Recent scheduler failures detected"
 
-#: apps/admin/src/routes/dashboard-page.tsx:940
+#: apps/admin/src/routes/dashboard-page.tsx:941
 msgid "最近调度存在异常，建议优先排查"
 msgstr "Recent scheduler anomalies detected; investigate first"
 
-#: apps/admin/src/routes/dashboard-page.tsx:940
+#: apps/admin/src/routes/dashboard-page.tsx:941
 msgid "最近调度稳定，可继续日常巡检"
 msgstr "Scheduler is stable; continue routine checks"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1021
+#: apps/admin/src/routes/dashboard-page.tsx:1022
 msgid "最近调度记录"
 msgstr "Recent Scheduler Runs"
 
 #. placeholder {0}: schedulerQuery.data?.recentRuns.length ?? 0
-#: apps/admin/src/routes/dashboard-page.tsx:966
+#: apps/admin/src/routes/dashboard-page.tsx:967
 msgid "最近运行 {0}"
 msgstr "Recent runs {0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:789
+#: apps/admin/src/routes/dashboard-page.tsx:790
 msgid "最近错误"
 msgstr "Last Error"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1194
+#: apps/admin/src/routes/dashboard-page.tsx:1195
 msgid "创建本地备份"
 msgstr "Create Local Backup"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1399
+#: apps/admin/src/routes/dashboard-page.tsx:1400
 msgid "到点提醒调度"
 msgstr "Due Reminder Schedule"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1450
+#: apps/admin/src/routes/dashboard-page.tsx:1451
 msgid "刷新 WorldContext 快照，供回复链路读取当前世界状态。"
 msgstr "Refresh the WorldContext snapshot for the reply pipeline."
 
 #: apps/admin/src/routes/dashboard-page.tsx:255
-#: apps/admin/src/routes/dashboard-page.tsx:758
+#: apps/admin/src/routes/dashboard-page.tsx:759
 msgid "前往评测验证"
 msgstr "Go to Evals"
 
-#: apps/admin/src/routes/dashboard-page.tsx:722
+#: apps/admin/src/routes/dashboard-page.tsx:723
 msgid "加载中"
 msgstr "Loading"
 
-#: apps/admin/src/routes/dashboard-page.tsx:518
-#: apps/admin/src/routes/dashboard-page.tsx:639
+#: apps/admin/src/routes/dashboard-page.tsx:519
+#: apps/admin/src/routes/dashboard-page.tsx:640
 msgid "单世界"
 msgstr "Single World"
 
@@ -485,7 +485,7 @@ msgstr "Native audio input diagnostics are missing the main inference API key or
 msgid "原生音频输入请求已发出，但语义探针未通过，不能算真实音频理解可用。"
 msgstr "A native-audio input request was sent, but the semantic probe did not pass, so real audio understanding cannot be considered available."
 
-#: apps/admin/src/routes/dashboard-page.tsx:603
+#: apps/admin/src/routes/dashboard-page.tsx:604
 msgid "去处理"
 msgstr "Handle"
 
@@ -499,15 +499,15 @@ msgstr "Go to Runtime Settings"
 msgid "参数无效"
 msgstr "Invalid params"
 
-#: apps/admin/src/routes/dashboard-page.tsx:710
+#: apps/admin/src/routes/dashboard-page.tsx:711
 msgid "受管地址"
 msgstr "Managed URL"
 
-#: apps/admin/src/routes/dashboard-page.tsx:728
+#: apps/admin/src/routes/dashboard-page.tsx:729
 msgid "可在调试与运维区查看"
 msgstr "Available in Debug and Operations"
 
-#: apps/admin/src/routes/dashboard-page.tsx:528
+#: apps/admin/src/routes/dashboard-page.tsx:529
 msgid "可继续"
 msgstr "Can Continue"
 
@@ -519,31 +519,31 @@ msgstr "Operations Can Continue"
 msgid "可联调"
 msgstr "Ready to test"
 
-#: apps/admin/src/routes/dashboard-page.tsx:767
+#: apps/admin/src/routes/dashboard-page.tsx:768
 msgid "可验证"
 msgstr "Ready to Verify"
 
-#: apps/admin/src/routes/dashboard-page.tsx:642
+#: apps/admin/src/routes/dashboard-page.tsx:643
 msgid "含全部单聊历史消息"
 msgstr "Includes all one-on-one chat history"
 
-#: apps/admin/src/routes/dashboard-page.tsx:965
+#: apps/admin/src/routes/dashboard-page.tsx:966
 msgid "启用任务"
 msgstr "Enabled Jobs"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1728
+#: apps/admin/src/routes/dashboard-page.tsx:1731
 msgid "命令正常"
 msgstr "Command OK"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1728
+#: apps/admin/src/routes/dashboard-page.tsx:1731
 msgid "命令缺失"
 msgstr "Command Missing"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1062
+#: apps/admin/src/routes/dashboard-page.tsx:1063
 msgid "命名空间"
 msgstr "Namespace"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1061
+#: apps/admin/src/routes/dashboard-page.tsx:1062
 msgid "命名空间与路径"
 msgstr "Namespace and Path"
 
@@ -555,70 +555,70 @@ msgstr "Reply with a natural everyday greeting. Do not explain."
 msgid "回复、评测和自动内容生成都会受到影响，运营动作缺乏可验证输出。"
 msgstr "Replies, evals, and automatic content generation are affected, leaving operations without verifiable output."
 
-#: apps/admin/src/components/root-layout.tsx:361
+#: apps/admin/src/components/root-layout.tsx:365
 msgid "回复逻辑"
 msgstr "Reply Logic"
 
-#: apps/admin/src/components/root-layout.tsx:165
+#: apps/admin/src/components/root-layout.tsx:169
 msgid "回看世界主人与角色的真实单聊样本、搜索命中和会话成本。"
 msgstr "Review real one-on-one chat samples, search hits, and session costs for the world owner and characters."
 
-#: apps/admin/src/routes/dashboard-page.tsx:797
+#: apps/admin/src/routes/dashboard-page.tsx:798
 msgid "回调鉴权"
 msgstr "Callback Auth"
 
-#: apps/admin/src/routes/dashboard-page.tsx:819
+#: apps/admin/src/routes/dashboard-page.tsx:820
 msgid "回退链路"
 msgstr "Fallback Traces"
 
-#: apps/admin/src/components/root-layout.tsx:374
+#: apps/admin/src/components/root-layout.tsx:378
 msgid "围绕动作识别、澄清、确认、连接器和执行轨迹查看真实世界动作能力。"
 msgstr "Explore real-world actions through action recognition, clarification, confirmation, connectors, and execution traces."
 
-#: apps/admin/src/components/root-layout.tsx:412
+#: apps/admin/src/components/root-layout.tsx:416
 msgid "围绕实例运行、角色运营和回复分析组织后台操作。"
 msgstr "Organize admin operations around instance runtime, character operations, and reply analysis."
 
-#: apps/admin/src/components/root-layout.tsx:364
+#: apps/admin/src/components/root-layout.tsx:368
 msgid "围绕角色、会话和全局规则排查回复链路，而不是在长页面里找模块。"
 msgstr "Troubleshoot the reply pipeline around characters, sessions, and global rules instead of hunting through a long page."
 
-#: apps/admin/src/components/root-layout.tsx:249
+#: apps/admin/src/components/root-layout.tsx:253
 msgid "在一个工作区里完成角色筛选、摘要查看和快捷跳转。"
 msgstr "Complete character filtering, summary review, and quick navigation in one workspace."
 
-#: apps/admin/src/routes/dashboard-page.tsx:862
+#: apps/admin/src/routes/dashboard-page.tsx:863
 msgid "在线"
 msgstr "Online"
 
-#: apps/admin/src/routes/dashboard-page.tsx:641
+#: apps/admin/src/routes/dashboard-page.tsx:642
 msgid "在线 {onlineCharacterCount}"
 msgstr "Online {onlineCharacterCount}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1411
+#: apps/admin/src/routes/dashboard-page.tsx:1412
 msgid "在线状态调度"
 msgstr "Online Status Schedule"
 
-#: apps/admin/src/routes/dashboard-page.tsx:547
-#: apps/admin/src/routes/dashboard-page.tsx:836
+#: apps/admin/src/routes/dashboard-page.tsx:548
+#: apps/admin/src/routes/dashboard-page.tsx:837
 msgid "在线角色"
 msgstr "Online Characters"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1650
+#: apps/admin/src/routes/dashboard-page.tsx:1652
 msgid "场景加好友命中概率门控，本轮未触发。"
 msgstr "Scene friend-request probability gate did not trigger this round."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1421
+#: apps/admin/src/routes/dashboard-page.tsx:1422
 msgid "场景加好友调度"
 msgstr "Scene Friend Request Schedule"
 
 #. placeholder {0}: statusQuery.data?.inferenceGateway.inFlightRequests ?? 0
 #. placeholder {1}: statusQuery.data?.inferenceGateway.maxConcurrency ?? 0
-#: apps/admin/src/routes/dashboard-page.tsx:786
+#: apps/admin/src/routes/dashboard-page.tsx:787
 msgid "处理中 {0} · 最大并发 {1}"
 msgstr "In flight {0} · max concurrency {1}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1470
+#: apps/admin/src/routes/dashboard-page.tsx:1471
 msgid "处理待执行的 AI 广场互动。"
 msgstr "Process pending AI feed reactions."
 
@@ -647,23 +647,23 @@ msgstr "The external digital human Provider is ready; the current template injec
 msgid "外部数字人播放器模板还没配好，当前视频页只能停留在占位链路。"
 msgstr "The external digital human player template is not configured yet, so the video page can only stay on the placeholder flow."
 
-#: apps/admin/src/components/root-layout.tsx:256
+#: apps/admin/src/components/root-layout.tsx:260
 msgid "多模型账户与角色路由"
 msgstr "Multi-Model Accounts and Character Routing"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1027
+#: apps/admin/src/routes/dashboard-page.tsx:1028
 msgid "失败"
 msgstr "Failed"
 
-#: apps/admin/src/routes/dashboard-page.tsx:818
+#: apps/admin/src/routes/dashboard-page.tsx:819
 msgid "失败运行"
 msgstr "Failed Runs"
 
-#: apps/admin/src/routes/dashboard-page.tsx:630
+#: apps/admin/src/routes/dashboard-page.tsx:631
 msgid "实例体征摘要"
 msgstr "Instance Vitals Summary"
 
-#: apps/admin/src/components/root-layout.tsx:145
+#: apps/admin/src/components/root-layout.tsx:149
 msgid "实例健康、Provider、诊断和运维动作的统一入口。"
 msgstr "Unified entry for instance health, Providers, diagnostics, and operations actions."
 
@@ -675,11 +675,11 @@ msgstr "The instance is basically usable, but some runtime surfaces still need r
 msgid "实例已基本可用，继续复核剩余关注项。"
 msgstr "The instance is basically usable; continue reviewing remaining watch items."
 
-#: apps/admin/src/components/root-layout.tsx:82
+#: apps/admin/src/components/root-layout.tsx:83
 msgid "实例已就绪"
 msgstr "Instance ready"
 
-#: apps/admin/src/routes/dashboard-page.tsx:618
+#: apps/admin/src/routes/dashboard-page.tsx:619
 msgid "实例已经满足继续运营的基础条件，可以把注意力转向评测验证、角色巡检和内容抽查。"
 msgstr "The instance meets the baseline for operations; shift attention to eval verification, character checks, and content sampling."
 
@@ -687,27 +687,27 @@ msgstr "The instance meets the baseline for operations; shift attention to eval 
 msgid "实例已进入可运营状态，可以直接开始巡检与操作。"
 msgstr "The instance is operational; checks and operations can begin."
 
-#: apps/admin/src/components/root-layout.tsx:230
+#: apps/admin/src/components/root-layout.tsx:234
 msgid "实例状态与配置"
 msgstr "Instance Status and Configuration"
 
-#: apps/admin/src/components/root-layout.tsx:43
+#: apps/admin/src/components/root-layout.tsx:44
 msgid "实例状态待确认"
 msgstr "Instance status needs confirmation"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1045
+#: apps/admin/src/routes/dashboard-page.tsx:1046
 msgid "实时连接与契约"
 msgstr "Realtime Connections and Contract"
 
-#: apps/admin/src/components/admin-sidebar.tsx:249
+#: apps/admin/src/components/admin-sidebar.tsx:251
 msgid "密钥已配置"
 msgstr "Secret configured"
 
-#: apps/admin/src/components/admin-sidebar.tsx:249
+#: apps/admin/src/components/admin-sidebar.tsx:251
 msgid "密钥未配置"
 msgstr "Secret not configured"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1185
+#: apps/admin/src/routes/dashboard-page.tsx:1186
 msgid "导出诊断包"
 msgstr "Export Diagnostics Package"
 
@@ -715,16 +715,16 @@ msgstr "Export Diagnostics Package"
 msgid "导航"
 msgstr "Navigation"
 
-#: apps/admin/src/components/root-layout.tsx:306
+#: apps/admin/src/components/root-layout.tsx:310
 msgid "小盯的任务、触发与轻提醒发圈"
 msgstr "Xiaoding Tasks, Triggers, and Light Reminder Posts"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1002
 #: apps/admin/src/routes/dashboard-page.tsx:1003
+#: apps/admin/src/routes/dashboard-page.tsx:1004
 msgid "尚未执行"
 msgstr "Not Run Yet"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1119
+#: apps/admin/src/routes/dashboard-page.tsx:1120
 msgid "尚未配置"
 msgstr "Not Configured"
 
@@ -732,29 +732,29 @@ msgstr "Not Configured"
 msgid "已同步"
 msgstr "Synced"
 
-#: apps/admin/src/routes/dashboard-page.tsx:979
+#: apps/admin/src/routes/dashboard-page.tsx:980
 msgid "已启用"
 msgstr "Enabled"
 
 #. placeholder {0}: feedReactions[1]
-#: apps/admin/src/routes/dashboard-page.tsx:1560
+#: apps/admin/src/routes/dashboard-page.tsx:1562
 msgid "已处理 {0} 条待执行广场互动。"
 msgstr "Processed {0} pending feed reactions."
 
 #: apps/admin/src/components/admin-sidebar.tsx:158
-#: apps/admin/src/routes/dashboard-page.tsx:687
+#: apps/admin/src/routes/dashboard-page.tsx:688
 msgid "已就绪"
 msgstr "Ready"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1110
+#: apps/admin/src/routes/dashboard-page.tsx:1111
 msgid "已生成预览"
 msgstr "Preview Generated"
 
-#: apps/admin/src/routes/dashboard-page.tsx:979
+#: apps/admin/src/routes/dashboard-page.tsx:980
 msgid "已禁用"
 msgstr "Disabled"
 
-#: apps/admin/src/routes/dashboard-page.tsx:643
+#: apps/admin/src/routes/dashboard-page.tsx:644
 msgid "已落库的 AI 回复条数"
 msgstr "Persisted AI replies"
 
@@ -763,57 +763,57 @@ msgid "已设置"
 msgstr "Set"
 
 #. placeholder {0}: expiredFriendRequests[1]
-#: apps/admin/src/routes/dashboard-page.tsx:1537
+#: apps/admin/src/routes/dashboard-page.tsx:1539
 msgid "已过期 {0} 条好友请求。"
 msgstr "Expired {0} friend requests."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1057
+#: apps/admin/src/routes/dashboard-page.tsx:1058
 msgid "已连接客户端"
 msgstr "Connected Clients"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:88
-#: apps/admin/src/routes/dashboard-page.tsx:508
+#: apps/admin/src/routes/dashboard-page.tsx:509
 msgid "已配置"
 msgstr "Configured"
 
-#: apps/admin/src/routes/dashboard-page.tsx:645
-#: apps/admin/src/routes/dashboard-page.tsx:838
+#: apps/admin/src/routes/dashboard-page.tsx:646
+#: apps/admin/src/routes/dashboard-page.tsx:839
 msgid "广场动态"
 msgstr "Feed Posts"
 
-#: apps/admin/src/routes/dashboard-page.tsx:906
+#: apps/admin/src/routes/dashboard-page.tsx:907
 msgid "广场动态样本"
 msgstr "Feed Samples"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1423
+#: apps/admin/src/routes/dashboard-page.tsx:1424
 msgid "广场反应调度"
 msgstr "Feed Reaction Schedule"
 
-#: apps/admin/src/routes/dashboard-page.tsx:543
+#: apps/admin/src/routes/dashboard-page.tsx:544
 msgid "建议本班内完成复核"
 msgstr "Review during this shift"
 
-#: apps/admin/src/routes/dashboard-page.tsx:639
+#: apps/admin/src/routes/dashboard-page.tsx:640
 msgid "异常"
 msgstr "Abnormal"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1644
+#: apps/admin/src/routes/dashboard-page.tsx:1646
 msgid "当前不在界闻早报、午报或晚报窗口，且未指定补发时段。"
 msgstr "Not currently in the Jiewen morning, noon, or evening bulletin window, and no backfill slot was specified."
 
-#: apps/admin/src/routes/dashboard-page.tsx:747
+#: apps/admin/src/routes/dashboard-page.tsx:748
 msgid "当前不是桌面壳环境，桌面托管诊断不可用。"
 msgstr "This is not a desktop-shell environment, so desktop hosting diagnostics are unavailable."
 
-#: apps/admin/src/routes/dashboard-page.tsx:644
+#: apps/admin/src/routes/dashboard-page.tsx:645
 msgid "当前世界动态总数"
 msgstr "Total world moments"
 
-#: apps/admin/src/routes/dashboard-page.tsx:717
+#: apps/admin/src/routes/dashboard-page.tsx:718
 msgid "当前为远程连接模式"
 msgstr "Currently in remote-connected mode"
 
-#: apps/admin/src/routes/dashboard-page.tsx:739
+#: apps/admin/src/routes/dashboard-page.tsx:740
 msgid "当前为远程连接模式，但 Core API 还未健康，优先排查设置页与实例连通性。"
 msgstr "Currently in remote-connected mode, but Core API is not healthy. Check settings and instance connectivity first."
 
@@ -825,15 +825,15 @@ msgstr "Still using the built-in digital human player mode; the player shell is 
 msgid "当前仍在内置数字人舞台模式，适合先验证会话、语音和状态链路。"
 msgstr "Still using built-in digital human stage mode; suitable for validating sessions, voice, and state flow first."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1271
+#: apps/admin/src/routes/dashboard-page.tsx:1272
 msgid "当前值班摘要"
 msgstr "Current Duty Summary"
 
-#: apps/admin/src/routes/dashboard-page.tsx:738
+#: apps/admin/src/routes/dashboard-page.tsx:739
 msgid "当前处于远程连接模式，Core API 健康，可继续做后台操作。"
 msgstr "Remote-connected mode is active and Core API is healthy. Admin operations can continue."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1281
+#: apps/admin/src/routes/dashboard-page.tsx:1282
 msgid "当前存在待处理项。"
 msgstr "There are pending items."
 
@@ -843,15 +843,15 @@ msgstr "This instance does not satisfy the single-world-owner constraint. Confir
 
 #. placeholder {0}: proactiveHour[1]
 #. placeholder {1}: proactiveHour[2]
-#: apps/admin/src/routes/dashboard-page.tsx:1586
+#: apps/admin/src/routes/dashboard-page.tsx:1588
 msgid "当前小时 {0} 不等于主动提醒小时 {1}，跳过本轮。"
 msgstr "Current hour {0} does not match proactive reminder hour {1}; skipping this round."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1132
+#: apps/admin/src/routes/dashboard-page.tsx:1133
 msgid "当前尚未配置推理服务。进入设置页可完成首轮配置并测试连通性。"
 msgstr "Inference is not configured yet. Open settings to complete initial configuration and connectivity testing."
 
-#: apps/admin/src/routes/dashboard-page.tsx:549
+#: apps/admin/src/routes/dashboard-page.tsx:550
 msgid "当前抽查到的在线角色占比"
 msgstr "Share of online characters in current samples"
 
@@ -860,15 +860,15 @@ msgstr "Share of online characters in current samples"
 msgid "当前探测版本 {0}"
 msgstr "Detected version {0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1118
+#: apps/admin/src/routes/dashboard-page.tsx:1119
 msgid "当前推理服务"
 msgstr "Current Inference Service"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1131
+#: apps/admin/src/routes/dashboard-page.tsx:1132
 msgid "当前推理服务已配置，适合直接做联通性和基础输出验证。"
 msgstr "The current inference service is configured and ready for connectivity and baseline output checks."
 
-#: apps/admin/src/routes/dashboard-page.tsx:584
+#: apps/admin/src/routes/dashboard-page.tsx:585
 msgid "当前无阻塞"
 msgstr "No Blockers"
 
@@ -877,15 +877,15 @@ msgstr "No Blockers"
 #. placeholder {2}: worldWeather ?? pendingFetchLabel
 #. placeholder {3}: worldSeason ?? unknownLabel
 #. placeholder {4}: worldHoliday ?? noneLabel
-#: apps/admin/src/routes/dashboard-page.tsx:454
+#: apps/admin/src/routes/dashboard-page.tsx:455
 msgid "当前时间 {0} · 位置 {1} · 天气 {2} · 季节 {3} · 节日 {4}"
 msgstr "Current time {0} · Location {1} · Weather {2} · Season {3} · Holiday {4}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1330
+#: apps/admin/src/routes/dashboard-page.tsx:1331
 msgid "当前有调度异常或需要手动触发 job 时，直接回到对应工作区。"
 msgstr "When scheduler anomalies exist or a job needs to be run manually, jump back to that workspace."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1217
+#: apps/admin/src/routes/dashboard-page.tsx:1218
 msgid "当前有运维任务执行中，其他维护操作暂时被锁定。"
 msgstr "An operations task is running; other maintenance actions are temporarily locked."
 
@@ -897,7 +897,7 @@ msgstr "This section is not injected."
 msgid "当前查看"
 msgstr "Current View"
 
-#: apps/admin/src/routes/dashboard-page.tsx:775
+#: apps/admin/src/routes/dashboard-page.tsx:776
 msgid "当前模型"
 msgstr "Current Model"
 
@@ -909,11 +909,11 @@ msgstr "The model catalog or heuristic detection does not declare Chat Completio
 msgid "当前模式不依赖外部播放器模板。"
 msgstr "The current mode does not depend on an external player template."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1646
+#: apps/admin/src/routes/dashboard-page.tsx:1648
 msgid "当前没有到点的提醒任务。"
 msgstr "No due reminder tasks right now."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1648
+#: apps/admin/src/routes/dashboard-page.tsx:1650
 msgid "当前没有可见角色，跳过朋友圈调度。"
 msgstr "No visible characters right now; skipping moment scheduling."
 
@@ -921,7 +921,7 @@ msgstr "No visible characters right now; skipping moment scheduling."
 msgid "当前没有扩展参数 JSON。"
 msgstr "No extension parameters JSON is configured."
 
-#: apps/admin/src/routes/dashboard-page.tsx:949
+#: apps/admin/src/routes/dashboard-page.tsx:950
 msgid "当前没有新的调度失败记录，若内容产出异常，可先手动执行关键 job 做一次验证。"
 msgstr "There are no new scheduler failures. If content output looks abnormal, manually run a key job to verify."
 
@@ -929,103 +929,103 @@ msgstr "There are no new scheduler failures. If content output looks abnormal, m
 msgid "当前没有高优先级阻塞，可以继续做内容抽查和运营操作。"
 msgstr "There are no high-priority blockers; continue content spot checks and operations."
 
-#: apps/admin/src/routes/dashboard-page.tsx:562
+#: apps/admin/src/routes/dashboard-page.tsx:563
 msgid "当前没有高优先级阻塞，建议下一步进入评测页验证最新生成链，或抽查角色与内容样本。"
 msgstr "There are no high-priority blockers. Next, verify the latest generation chain in Evals or sample characters and content."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1233
+#: apps/admin/src/routes/dashboard-page.tsx:1234
 msgid "当前系统运维操作已经接入类型化契约层，随时可以切换到真实运行时实现。"
 msgstr "System operations are wired through typed contracts and can switch to real runtime implementations when ready."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1086
+#: apps/admin/src/routes/dashboard-page.tsx:1087
 msgid "当前还没有实时事件。"
 msgstr "No realtime events yet."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1078
+#: apps/admin/src/routes/dashboard-page.tsx:1079
 msgid "当前还没有活跃的实时房间。"
 msgstr "No active realtime rooms yet."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1038
+#: apps/admin/src/routes/dashboard-page.tsx:1039
 msgid "当前还没有调度任务执行记录。"
 msgstr "No scheduler run records yet."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1281
+#: apps/admin/src/routes/dashboard-page.tsx:1282
 msgid "当前首页未发现高优先级阻塞。"
 msgstr "No high-priority blockers found on this dashboard."
 
-#: apps/admin/src/routes/dashboard-page.tsx:617
+#: apps/admin/src/routes/dashboard-page.tsx:618
 msgid "当前首页没有待处理阻塞"
 msgstr "No Pending Blockers on This Dashboard"
 
-#: apps/admin/src/routes/dashboard-page.tsx:964
+#: apps/admin/src/routes/dashboard-page.tsx:965
 msgid "待初始化"
 msgstr "Waiting for Init"
 
-#: apps/admin/src/routes/dashboard-page.tsx:528
+#: apps/admin/src/routes/dashboard-page.tsx:529
 msgid "待处理"
 msgstr "Pending"
 
-#: apps/admin/src/routes/dashboard-page.tsx:427
+#: apps/admin/src/routes/dashboard-page.tsx:428
 msgid "待处理事项"
 msgstr "Pending item"
 
-#: apps/admin/src/routes/dashboard-page.tsx:583
+#: apps/admin/src/routes/dashboard-page.tsx:584
 msgid "待处理队列"
 msgstr "Pending Queue"
 
-#: apps/admin/src/routes/dashboard-page.tsx:503
-#: apps/admin/src/routes/dashboard-page.tsx:688
-#: apps/admin/src/routes/dashboard-page.tsx:691
-#: apps/admin/src/routes/dashboard-page.tsx:705
+#: apps/admin/src/routes/dashboard-page.tsx:504
+#: apps/admin/src/routes/dashboard-page.tsx:689
+#: apps/admin/src/routes/dashboard-page.tsx:692
+#: apps/admin/src/routes/dashboard-page.tsx:706
 msgid "待恢复"
 msgstr "Needs Recovery"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1164
-#: apps/admin/src/routes/dashboard-page.tsx:1166
+#: apps/admin/src/routes/dashboard-page.tsx:1165
+#: apps/admin/src/routes/dashboard-page.tsx:1167
 msgid "待执行"
 msgstr "Pending Run"
 
-#: apps/admin/src/routes/dashboard-page.tsx:650
-#: apps/admin/src/routes/dashboard-page.tsx:657
+#: apps/admin/src/routes/dashboard-page.tsx:651
 #: apps/admin/src/routes/dashboard-page.tsx:658
-#: apps/admin/src/routes/dashboard-page.tsx:1751
+#: apps/admin/src/routes/dashboard-page.tsx:659
+#: apps/admin/src/routes/dashboard-page.tsx:1754
 msgid "待探测"
 msgstr "Pending Probe"
 
-#: apps/admin/src/routes/dashboard-page.tsx:518
-#: apps/admin/src/routes/dashboard-page.tsx:638
+#: apps/admin/src/routes/dashboard-page.tsx:519
+#: apps/admin/src/routes/dashboard-page.tsx:639
 msgid "待确认"
 msgstr "Pending Confirmation"
 
-#: apps/admin/src/routes/dashboard-page.tsx:430
+#: apps/admin/src/routes/dashboard-page.tsx:431
 msgid "待获取"
 msgstr "Pending Fetch"
 
-#: apps/admin/src/routes/dashboard-page.tsx:513
+#: apps/admin/src/routes/dashboard-page.tsx:514
 msgid "待补齐"
 msgstr "Needs Setup"
 
-#: apps/admin/src/routes/dashboard-page.tsx:661
+#: apps/admin/src/routes/dashboard-page.tsx:662
 msgid "待迁移"
 msgstr "Pending Migration"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:34
-#: apps/admin/src/routes/dashboard-page.tsx:508
-#: apps/admin/src/routes/dashboard-page.tsx:767
-#: apps/admin/src/routes/dashboard-page.tsx:776
+#: apps/admin/src/routes/dashboard-page.tsx:509
+#: apps/admin/src/routes/dashboard-page.tsx:768
+#: apps/admin/src/routes/dashboard-page.tsx:777
 msgid "待配置"
 msgstr "Pending setup"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1317
+#: apps/admin/src/routes/dashboard-page.tsx:1318
 msgid "快捷动作"
 msgstr "Quick Actions"
 
 #. placeholder {0}: schedulerJobs.length
-#: apps/admin/src/routes/dashboard-page.tsx:965
+#: apps/admin/src/routes/dashboard-page.tsx:966
 msgid "总任务 {0}"
 msgstr "Total jobs {0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:836
+#: apps/admin/src/routes/dashboard-page.tsx:837
 msgid "总角色 {totalCharacters}"
 msgstr "Total characters {totalCharacters}"
 
@@ -1035,64 +1035,64 @@ msgstr "Total characters {totalCharacters}"
 msgid "总运行 {0} 次，trace {1} 条"
 msgstr "Total runs {0}, traces {1}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1207
+#: apps/admin/src/routes/dashboard-page.tsx:1208
 msgid "恢复备份"
 msgstr "Restore Backup"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1199
+#: apps/admin/src/routes/dashboard-page.tsx:1200
 msgid "恢复备份会直接改写当前实例状态，只在确认需要回滚时执行。"
 msgstr "Restoring a backup directly rewrites current instance state. Only run this when rollback is confirmed."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1319
+#: apps/admin/src/routes/dashboard-page.tsx:1320
 msgid "恢复实例、补齐 Provider、检查数字人参数。"
 msgstr "Recover the instance, complete Provider setup, and check digital-human parameters."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1027
+#: apps/admin/src/routes/dashboard-page.tsx:1028
 msgid "成功"
 msgstr "Succeeded"
 
-#: apps/admin/src/components/root-layout.tsx:286
+#: apps/admin/src/components/root-layout.tsx:290
 msgid "我自己回捞未闭环事项"
 msgstr "Self Follow-up on Open Loops"
 
-#: apps/admin/src/components/root-layout.tsx:296
+#: apps/admin/src/components/root-layout.tsx:300
 msgid "我自己的 workspace 与 heartbeat"
 msgstr "My Workspace and Heartbeat"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1321
+#: apps/admin/src/routes/dashboard-page.tsx:1322
 msgid "打开回复逻辑"
 msgstr "Open Reply Logic"
 
-#: apps/admin/src/routes/dashboard-page.tsx:850
-#: apps/admin/src/routes/dashboard-page.tsx:1320
+#: apps/admin/src/routes/dashboard-page.tsx:851
+#: apps/admin/src/routes/dashboard-page.tsx:1321
 msgid "打开角色中心"
 msgstr "Open Character Center"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1322
+#: apps/admin/src/routes/dashboard-page.tsx:1323
 msgid "打开评测分析"
 msgstr "Open Evals Analytics"
 
 #: apps/admin/src/routes/dashboard-page.tsx:400
-#: apps/admin/src/routes/dashboard-page.tsx:621
-#: apps/admin/src/routes/dashboard-page.tsx:812
+#: apps/admin/src/routes/dashboard-page.tsx:622
+#: apps/admin/src/routes/dashboard-page.tsx:813
 msgid "打开评测页"
 msgstr "Open Evals"
 
 #: apps/admin/src/routes/dashboard-page.tsx:254
-#: apps/admin/src/routes/dashboard-page.tsx:753
-#: apps/admin/src/routes/dashboard-page.tsx:1319
+#: apps/admin/src/routes/dashboard-page.tsx:754
+#: apps/admin/src/routes/dashboard-page.tsx:1320
 msgid "打开运行设置"
 msgstr "Open Runtime Settings"
 
-#: apps/admin/src/routes/dashboard-page.tsx:987
+#: apps/admin/src/routes/dashboard-page.tsx:988
 msgid "执行中..."
 msgstr "Running..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1149
+#: apps/admin/src/routes/dashboard-page.tsx:1150
 msgid "执行推理预览"
 msgstr "Run Inference Preview"
 
-#: apps/admin/src/routes/dashboard-page.tsx:798
+#: apps/admin/src/routes/dashboard-page.tsx:799
 msgid "扩展参数"
 msgstr "Extra Params"
 
@@ -1104,123 +1104,123 @@ msgstr "The extension parameters JSON is invalid, so external digital human inst
 msgid "扩展参数 JSON 解析失败。"
 msgstr "Failed to parse the extension parameters JSON."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1462
+#: apps/admin/src/routes/dashboard-page.tsx:1463
 msgid "扫描 self-agent 的未闭环事项、到期提醒和待确认动作。"
 msgstr "Scan self-agent open loops, due reminders, and actions awaiting confirmation."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1446
+#: apps/admin/src/routes/dashboard-page.tsx:1447
 msgid "扫描到点的提醒任务，并通过提醒角色发出私聊提醒。"
 msgstr "Scan due reminder tasks and send private reminders through the reminder character."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1476
+#: apps/admin/src/routes/dashboard-page.tsx:1477
 msgid "扫描角色记忆，在合适时机主动给用户发提醒。"
 msgstr "Scan character memories and proactively remind the user at the right time."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1460
+#: apps/admin/src/routes/dashboard-page.tsx:1461
 msgid "扫描适合跟进的话题并生成追问推荐。"
 msgstr "Scan topics suitable for follow-up and generate recommendations."
 
-#: apps/admin/src/components/root-layout.tsx:187
+#: apps/admin/src/components/root-layout.tsx:191
 msgid "承接：小盯"
 msgstr "Owner: Xiaoding"
 
-#: apps/admin/src/components/root-layout.tsx:175
+#: apps/admin/src/components/root-layout.tsx:179
 msgid "承接：我自己"
 msgstr "Owner: Myself"
 
-#: apps/admin/src/components/root-layout.tsx:181
+#: apps/admin/src/components/root-layout.tsx:185
 msgid "承接：我自己主代理"
 msgstr "Owner: Myself Self Agent"
 
-#: apps/admin/src/components/root-layout.tsx:211
+#: apps/admin/src/components/root-layout.tsx:215
 msgid "承接：界闻/联动角色"
 msgstr "Owner: Jiewen / sync characters"
 
-#: apps/admin/src/components/root-layout.tsx:200
+#: apps/admin/src/components/root-layout.tsx:204
 msgid "承接：行动助理"
 msgstr "Owner: Action Assistant"
 
-#: apps/admin/src/routes/dashboard-page.tsx:960
+#: apps/admin/src/routes/dashboard-page.tsx:961
 msgid "把 job 状态、手动执行和最近记录收敛在同一块，减少来回滚动和切页成本。"
 msgstr "Keep job state, manual runs, and recent records in one place to reduce scrolling and tab switching."
 
-#: apps/admin/src/components/root-layout.tsx:298
+#: apps/admin/src/components/root-layout.tsx:302
 msgid "把“我自己”升级成主代理后，在这里查看 standing orders、workspace 文件、巡检结果和近期待处理事项。"
 msgstr "After upgrading “Myself” into the self agent, view standing orders, workspace files, heartbeat results, and recent pending items here."
 
-#: apps/admin/src/routes/dashboard-page.tsx:632
+#: apps/admin/src/routes/dashboard-page.tsx:633
 msgid "把世界状态、内容产出、消息体量和运行版本压缩成一屏摘要，避免重复扫读多块卡片。"
 msgstr "Compress world state, content output, message volume, and runtime version into a one-screen summary."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1102
+#: apps/admin/src/routes/dashboard-page.tsx:1103
 msgid "把模型调试、诊断导出、备份恢复和日志入口收敛到页面尾部。"
 msgstr "Collect model debugging, diagnostics export, backup restore, and log entry points at the bottom of the page."
 
-#: apps/admin/src/routes/dashboard-page.tsx:934
+#: apps/admin/src/routes/dashboard-page.tsx:935
 msgid "把自动运行风险和前端实时链路放在同一个排障平面。"
 msgstr "Put automated runtime risk and frontend realtime links on the same troubleshooting surface."
 
-#: apps/admin/src/routes/dashboard-page.tsx:675
+#: apps/admin/src/routes/dashboard-page.tsx:676
 msgid "把运行链路、模型接入和数字人可用性放在同一个工作区。"
 msgstr "Put runtime links, model access, and digital-human availability in one workspace."
 
-#: apps/admin/src/routes/dashboard-page.tsx:834
+#: apps/admin/src/routes/dashboard-page.tsx:835
 msgid "抽查入口"
 msgstr "Spot Check Entry"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1300
+#: apps/admin/src/routes/dashboard-page.tsx:1301
 msgid "抽查角色、朋友圈和广场动态最新样本。"
 msgstr "Spot-check latest character, moments, and feed samples."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1320
+#: apps/admin/src/routes/dashboard-page.tsx:1321
 msgid "抽查角色在线状态、画像和运行工作区。"
 msgstr "Spot-check character online state, profile, and runtime workspace."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1718
+#: apps/admin/src/routes/dashboard-page.tsx:1721
 msgid "拉起失败"
 msgstr "Spawn Failed"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1468
+#: apps/admin/src/routes/dashboard-page.tsx:1469
 msgid "按场景触发新的好友请求机会。"
 msgstr "Trigger new friend-request opportunities by scene."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1448
+#: apps/admin/src/routes/dashboard-page.tsx:1449
 msgid "按小时判断是否需要由提醒角色主动追问有没有新的待提醒事项。"
 msgstr "Check hourly whether the reminder character should ask for new items to track."
 
-#: apps/admin/src/routes/dashboard-page.tsx:587
+#: apps/admin/src/routes/dashboard-page.tsx:588
 msgid "按影响优先级排序，方便运营接班后直接进入处理动作。"
 msgstr "Sorted by impact priority so the next operator can act immediately."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1456
+#: apps/admin/src/routes/dashboard-page.tsx:1457
 msgid "按日维度刷新人物需求候选和覆盖缺口。"
 msgstr "Refresh character-need candidates and coverage gaps on a daily cadence."
 
-#: apps/admin/src/components/root-layout.tsx:334
+#: apps/admin/src/components/root-layout.tsx:338
 msgid "按模块整理基础资料、人格设定与行为约束，减少长表单迷路感。"
 msgstr "Organize profile basics, personality settings, and behavior constraints by module to reduce long-form friction."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1472
+#: apps/admin/src/routes/dashboard-page.tsx:1473
 msgid "按频率生成视频号内容，并补足基础内容池。"
 msgstr "Generate channel content by cadence and refill the base content pool."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1305
+#: apps/admin/src/routes/dashboard-page.tsx:1306
 msgid "排查 job 失败、活跃房间和实时事件。"
 msgstr "Troubleshoot job failures, active rooms, and realtime events."
 
-#: apps/admin/src/routes/dashboard-page.tsx:495
+#: apps/admin/src/routes/dashboard-page.tsx:496
 msgid "排查回复逻辑"
 msgstr "Troubleshoot Reply Logic"
 
-#: apps/admin/src/routes/dashboard-page.tsx:575
+#: apps/admin/src/routes/dashboard-page.tsx:576
 msgid "排查真实回复链路和全局规则。"
 msgstr "Inspect the real reply chain and global rules."
 
-#: apps/admin/src/routes/dashboard-page.tsx:705
+#: apps/admin/src/routes/dashboard-page.tsx:706
 msgid "探测中"
 msgstr "Probing"
 
-#: apps/admin/src/components/root-layout.tsx:231
+#: apps/admin/src/components/root-layout.tsx:235
 msgid "接入检查、推理配置、数字人设置和运维操作的统一入口。"
 msgstr "Unified entry for onboarding checks, inference configuration, digital human settings, and operations."
 
@@ -1232,7 +1232,7 @@ msgstr "API"
 msgid "推理"
 msgstr "Inference"
 
-#: apps/admin/src/routes/dashboard-page.tsx:507
+#: apps/admin/src/routes/dashboard-page.tsx:508
 msgid "推理服务"
 msgstr "Inference Service"
 
@@ -1240,7 +1240,7 @@ msgstr "Inference Service"
 msgid "推理服务尚未配置"
 msgstr "Inference Service Not Configured"
 
-#: apps/admin/src/components/root-layout.tsx:60
+#: apps/admin/src/components/root-layout.tsx:61
 msgid "推理服务待配置"
 msgstr "Inference service needs setup"
 
@@ -1248,11 +1248,11 @@ msgstr "Inference service needs setup"
 msgid "推理服务未配置"
 msgstr "Inference service not configured"
 
-#: apps/admin/src/routes/dashboard-page.tsx:784
+#: apps/admin/src/routes/dashboard-page.tsx:785
 msgid "推理队列"
 msgstr "Inference Queue"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1109
+#: apps/admin/src/routes/dashboard-page.tsx:1110
 msgid "推理预览"
 msgstr "Inference Preview"
 
@@ -1260,20 +1260,20 @@ msgstr "Inference Preview"
 msgid "推理预览已完成。"
 msgstr "Inference preview completed."
 
-#: apps/admin/src/components/root-layout.tsx:186
-#: apps/admin/src/components/root-layout.tsx:305
+#: apps/admin/src/components/root-layout.tsx:190
+#: apps/admin/src/components/root-layout.tsx:309
 msgid "提醒运行时"
 msgstr "Reminder Runtime"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1401
+#: apps/admin/src/routes/dashboard-page.tsx:1402
 msgid "提醒问询调度"
 msgstr "Reminder Check-in Schedule"
 
-#: apps/admin/src/routes/dashboard-page.tsx:796
+#: apps/admin/src/routes/dashboard-page.tsx:797
 msgid "播放器模板"
 msgstr "Player Template"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1266
+#: apps/admin/src/routes/dashboard-page.tsx:1267
 msgid "操作已完成"
 msgstr "Action Completed"
 
@@ -1282,7 +1282,7 @@ msgid "收起"
 msgstr "Collapse"
 
 #: apps/admin/src/components/admin-sidebar.tsx:135
-#: apps/admin/src/routes/dashboard-page.tsx:512
+#: apps/admin/src/routes/dashboard-page.tsx:513
 msgid "数字人"
 msgstr "Digital human"
 
@@ -1291,17 +1291,17 @@ msgstr "Digital human"
 msgid "数字人 {0}"
 msgstr "Digital human {0}"
 
-#: apps/admin/src/components/root-layout.tsx:45
+#: apps/admin/src/components/root-layout.tsx:46
 msgid "数字人、推理服务或实例连通性还未同步成功。"
 msgstr "Digital human, inference service, or instance connectivity has not synced successfully yet."
 
 #. placeholder {0}: digitalHumanSummary.statusLabel
-#: apps/admin/src/components/root-layout.tsx:66
-#: apps/admin/src/components/root-layout.tsx:84
+#: apps/admin/src/components/root-layout.tsx:67
+#: apps/admin/src/components/root-layout.tsx:85
 msgid "数字人{0}"
 msgstr "Digital human {0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:794
+#: apps/admin/src/routes/dashboard-page.tsx:795
 msgid "数字人模式"
 msgstr "Digital Human Mode"
 
@@ -1309,33 +1309,33 @@ msgstr "Digital Human Mode"
 msgid "数字人链路仍有配置缺口"
 msgstr "Digital-human Link Still Has Configuration Gaps"
 
-#: apps/admin/src/routes/dashboard-page.tsx:654
+#: apps/admin/src/routes/dashboard-page.tsx:655
 msgid "数据库"
 msgstr "Database"
 
-#: apps/admin/src/routes/dashboard-page.tsx:817
+#: apps/admin/src/routes/dashboard-page.tsx:818
 msgid "数据集"
 msgstr "Datasets"
 
-#: apps/admin/src/components/root-layout.tsx:317
+#: apps/admin/src/components/root-layout.tsx:321
 msgid "整理配方、比对发布差异，并把草稿发布到运行时。"
 msgstr "Organize recipes, compare publish diffs, and publish drafts to runtime."
 
-#: apps/admin/src/routes/dashboard-page.tsx:922
+#: apps/admin/src/routes/dashboard-page.tsx:923
 msgid "新核心接口进程启动后，广场兼容路由即可正常使用。"
 msgstr "After the new Core API process starts, feed compatibility routes will work normally."
 
-#: apps/admin/src/routes/dashboard-page.tsx:898
+#: apps/admin/src/routes/dashboard-page.tsx:899
 msgid "新核心接口进程启动后，朋友圈兼容路由即可正常使用。"
 msgstr "After the new Core API process starts, moments compatibility routes will work normally."
 
-#: apps/admin/src/routes/dashboard-page.tsx:872
+#: apps/admin/src/routes/dashboard-page.tsx:873
 msgid "新核心接口进程启动后，角色增删改查兼容路由即可正常使用。"
 msgstr "After the new Core API process starts, character compatibility routes will work normally."
 
-#: apps/admin/src/routes/dashboard-page.tsx:431
-#: apps/admin/src/routes/dashboard-page.tsx:458
-#: apps/admin/src/routes/dashboard-page.tsx:789
+#: apps/admin/src/routes/dashboard-page.tsx:432
+#: apps/admin/src/routes/dashboard-page.tsx:459
+#: apps/admin/src/routes/dashboard-page.tsx:790
 msgid "无"
 msgstr "None"
 
@@ -1343,66 +1343,66 @@ msgstr "None"
 msgid "无效"
 msgstr "Invalid"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1176
+#: apps/admin/src/routes/dashboard-page.tsx:1177
 msgid "日常维护"
 msgstr "Routine Maintenance"
 
-#: apps/admin/src/routes/dashboard-page.tsx:726
+#: apps/admin/src/routes/dashboard-page.tsx:727
 msgid "日志数量"
 msgstr "Log Count"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1240
+#: apps/admin/src/routes/dashboard-page.tsx:1241
 msgid "日志索引"
 msgstr "Log Index"
 
-#: apps/admin/src/routes/dashboard-page.tsx:643
+#: apps/admin/src/routes/dashboard-page.tsx:644
 msgid "智能回复"
 msgstr "AI Replies"
 
 #: apps/admin/src/lib/format.ts:12
-#: apps/admin/src/routes/dashboard-page.tsx:788
-#: apps/admin/src/routes/dashboard-page.tsx:1121
+#: apps/admin/src/routes/dashboard-page.tsx:789
+#: apps/admin/src/routes/dashboard-page.tsx:1122
 msgid "暂无"
 msgstr "N/A"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1241
+#: apps/admin/src/routes/dashboard-page.tsx:1242
 msgid "暂无日志"
 msgstr "No Logs"
 
-#: apps/admin/src/routes/dashboard-page.tsx:889
-#: apps/admin/src/routes/dashboard-page.tsx:915
+#: apps/admin/src/routes/dashboard-page.tsx:890
+#: apps/admin/src/routes/dashboard-page.tsx:916
 msgid "暂无正文"
 msgstr "No body yet"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1048
+#: apps/admin/src/routes/dashboard-page.tsx:1049
 msgid "暂无连接"
 msgstr "No Connections"
 
-#: apps/admin/src/routes/dashboard-page.tsx:957
+#: apps/admin/src/routes/dashboard-page.tsx:958
 msgid "有异常"
 msgstr "Has Issues"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1048
+#: apps/admin/src/routes/dashboard-page.tsx:1049
 msgid "有活跃连接"
 msgstr "Active Connections"
 
-#: apps/admin/src/routes/dashboard-page.tsx:644
+#: apps/admin/src/routes/dashboard-page.tsx:645
 msgid "朋友圈"
 msgstr "Moments"
 
-#: apps/admin/src/routes/dashboard-page.tsx:555
+#: apps/admin/src/routes/dashboard-page.tsx:556
 msgid "朋友圈 / 广场动态总数"
 msgstr "Total moments / feed posts"
 
-#: apps/admin/src/routes/dashboard-page.tsx:837
+#: apps/admin/src/routes/dashboard-page.tsx:838
 msgid "朋友圈总数"
 msgstr "Total Moments"
 
-#: apps/admin/src/routes/dashboard-page.tsx:880
+#: apps/admin/src/routes/dashboard-page.tsx:881
 msgid "朋友圈样本"
 msgstr "Moment Samples"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1419
+#: apps/admin/src/routes/dashboard-page.tsx:1420
 msgid "朋友圈调度"
 msgstr "Moment Schedule"
 
@@ -1418,12 +1418,12 @@ msgstr "Not executed"
 msgid "未生效"
 msgstr "Inactive"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1724
+#: apps/admin/src/routes/dashboard-page.tsx:1727
 msgid "未由桌面壳托管"
 msgstr "Not managed by desktop shell"
 
-#: apps/admin/src/routes/dashboard-page.tsx:428
-#: apps/admin/src/routes/dashboard-page.tsx:1721
+#: apps/admin/src/routes/dashboard-page.tsx:429
+#: apps/admin/src/routes/dashboard-page.tsx:1724
 msgid "未知"
 msgstr "Unknown"
 
@@ -1450,71 +1450,71 @@ msgstr "Unconfigured"
 msgid "未配置可用 TTS 探针，当前无法做真实的原生音频语义校验。"
 msgstr "No usable TTS probe is configured, so real native-audio semantic verification cannot be performed right now."
 
-#: apps/admin/src/routes/dashboard-page.tsx:525
+#: apps/admin/src/routes/dashboard-page.tsx:526
 msgid "本班结论"
 msgstr "Shift Conclusion"
 
-#: apps/admin/src/routes/dashboard-page.tsx:429
+#: apps/admin/src/routes/dashboard-page.tsx:430
 msgid "杭州"
 msgstr "Hangzhou"
 
-#: apps/admin/src/components/root-layout.tsx:160
+#: apps/admin/src/components/root-layout.tsx:164
 msgid "查看 AI 游戏中心目录、来源结构和当前审核状态。"
 msgstr "View AI Game Center catalog, source structure, and current review status."
 
-#: apps/admin/src/components/root-layout.tsx:195
+#: apps/admin/src/components/root-layout.tsx:199
 msgid "查看 AI 请求、Token 花费、预算预警和价格配置。"
 msgstr "View AI requests, token spend, budget alerts, and pricing configuration."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1295
+#: apps/admin/src/routes/dashboard-page.tsx:1296
 msgid "查看 Core API、模型、数字人与评测运行时。"
 msgstr "Review Core API, models, digital human, and eval runtime."
 
-#: apps/admin/src/components/root-layout.tsx:182
+#: apps/admin/src/components/root-layout.tsx:186
 msgid "查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。"
 msgstr "View self-agent workspace, heartbeat, standing orders, and recent check records."
 
-#: apps/admin/src/routes/dashboard-page.tsx:575
+#: apps/admin/src/routes/dashboard-page.tsx:576
 msgid "查看回复逻辑"
 msgstr "View Reply Logic"
 
-#: apps/admin/src/components/root-layout.tsx:189
+#: apps/admin/src/components/root-layout.tsx:193
 msgid "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。"
 msgstr "View Xiaoding's active reminders, recent triggers/completions, private chat outbound records, and light Moments reminders."
 
-#: apps/admin/src/components/root-layout.tsx:308
+#: apps/admin/src/components/root-layout.tsx:312
 msgid "查看提醒角色当前在盯哪些事项、最近有没有真正提醒出去，以及晨间 / 晚间的长期习惯提醒是否稳定落地。"
 msgstr "View what the reminder character is tracking, whether reminders were actually sent recently, and whether morning/evening long-term habit reminders are stable."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1321
+#: apps/admin/src/routes/dashboard-page.tsx:1322
 msgid "查看真实回复链路、规则和常量。"
 msgstr "View the real reply chain, rules, and constants."
 
-#: apps/admin/src/components/root-layout.tsx:206
+#: apps/admin/src/components/root-layout.tsx:210
 msgid "查看行为信号、画像状态、投影提示词与建模运行记录。"
 msgstr "View behavior signals, profile status, projection prompts, and modeling run records."
 
-#: apps/admin/src/components/root-layout.tsx:201
+#: apps/admin/src/components/root-layout.tsx:205
 msgid "查看行动助理的动作门控、连接器、规则和执行轨迹。"
 msgstr "View the action assistant's gates, connectors, rules, and execution traces."
 
-#: apps/admin/src/routes/dashboard-page.tsx:490
+#: apps/admin/src/routes/dashboard-page.tsx:491
 msgid "查看角色中心"
 msgstr "View Character Center"
 
-#: apps/admin/src/components/root-layout.tsx:150
+#: apps/admin/src/components/root-layout.tsx:154
 msgid "查看角色名册、角色工厂和运行逻辑台。"
 msgstr "View the character roster, character factory, and runtime logic console."
 
-#: apps/admin/src/components/root-layout.tsx:213
+#: apps/admin/src/components/root-layout.tsx:217
 msgid "查看角色现实新闻同步、每日 digest、scene patch 和现实发圈锚点。"
 msgstr "View characters' real-world news sync, daily digests, scene patches, and real-world Moments anchors."
 
-#: apps/admin/src/routes/dashboard-page.tsx:576
+#: apps/admin/src/routes/dashboard-page.tsx:577
 msgid "查看评测分析"
 msgstr "View Evals Analytics"
 
-#: apps/admin/src/routes/dashboard-page.tsx:608
+#: apps/admin/src/routes/dashboard-page.tsx:609
 msgid "查看详情"
 msgstr "View Details"
 
@@ -1522,7 +1522,7 @@ msgstr "View Details"
 msgid "查看运行体征"
 msgstr "View Runtime Vitals"
 
-#: apps/admin/src/components/root-layout.tsx:325
+#: apps/admin/src/components/root-layout.tsx:329
 msgid "查看这个角色现在如何运行，并在同一页面完成人工干预。"
 msgstr "View how this character is currently running and intervene manually on the same page."
 
@@ -1530,11 +1530,11 @@ msgstr "View how this character is currently running and intervene manually on t
 msgid "查看默认"
 msgstr "View Default"
 
-#: apps/admin/src/routes/dashboard-page.tsx:574
+#: apps/admin/src/routes/dashboard-page.tsx:575
 msgid "查角色状态、打开工厂或运行逻辑台。"
 msgstr "Check character state and open the factory or runtime console."
 
-#: apps/admin/src/routes/dashboard-page.tsx:701
+#: apps/admin/src/routes/dashboard-page.tsx:702
 msgid "核心接口"
 msgstr "Core API"
 
@@ -1546,7 +1546,7 @@ msgstr "Core API is still unhealthy. Check settings and operations first."
 msgid "核心接口已在线，但推理服务还未配置。下一步应完成设置。"
 msgstr "Core API is online, but inference is not configured. Complete setup next."
 
-#: apps/admin/src/components/root-layout.tsx:58
+#: apps/admin/src/components/root-layout.tsx:59
 msgid "核心接口待恢复"
 msgstr "Core API needs recovery"
 
@@ -1554,26 +1554,26 @@ msgstr "Core API needs recovery"
 msgid "核心接口还未恢复，后续角色、内容和调度数据都不适合作为稳定依据。"
 msgstr "Core API has not recovered; character, content, and scheduler data are not reliable yet."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1433
+#: apps/admin/src/routes/dashboard-page.tsx:1434
 msgid "核心记忆周更"
 msgstr "Core Memory Weekly Update"
 
 #. placeholder {0}: coreMemory[1]
 #. placeholder {1}: coreMemory[2]
 #. placeholder {2}: coreMemory[3]
-#: apps/admin/src/routes/dashboard-page.tsx:1613
+#: apps/admin/src/routes/dashboard-page.tsx:1615
 msgid "核心记忆周更：检查 {0} 个角色，更新 {1} 个，跳过 {2} 个（无足够交互数据）。"
 msgstr "Core memory weekly update: checked {0} characters, updated {1}, skipped {2} with insufficient interactions."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1474
+#: apps/admin/src/routes/dashboard-page.tsx:1475
 msgid "根据时间段刷新角色当前活动状态。"
 msgstr "Refresh character activity state by time window."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1458
+#: apps/admin/src/routes/dashboard-page.tsx:1459
 msgid "根据活跃时间窗口更新角色在线状态，并推进 AI 角色关系。"
 msgstr "Update character online state by active hours and advance AI relationships."
 
-#: apps/admin/src/routes/dashboard-page.tsx:715
+#: apps/admin/src/routes/dashboard-page.tsx:716
 msgid "桌面壳已接管"
 msgstr "Desktop shell has taken over"
 
@@ -1581,7 +1581,7 @@ msgstr "Desktop shell has taken over"
 msgid "桌面壳托管运行时未就绪"
 msgstr "Desktop-shell hosted runtime is not ready"
 
-#: apps/admin/src/routes/dashboard-page.tsx:696
+#: apps/admin/src/routes/dashboard-page.tsx:697
 msgid "桌面壳模式下这里负责确认托管状态；远程模式下这里主要看 Core API 和运行目录是否稳定。"
 msgstr "In desktop-shell mode this checks hosting state; in remote mode it focuses on Core API and runtime directory stability."
 
@@ -1589,23 +1589,23 @@ msgstr "In desktop-shell mode this checks hosting state; in remote mode it focus
 msgid "桌面运行数据目录或受管 Core API 还没有完全恢复，桌面侧运维能力暂不可靠。"
 msgstr "The desktop runtime data directory or managed Core API has not fully recovered, so desktop operations are not reliable yet."
 
-#: apps/admin/src/routes/dashboard-page.tsx:736
+#: apps/admin/src/routes/dashboard-page.tsx:737
 msgid "桌面运行时尚未完成初始化，进入设置页可集中恢复。"
 msgstr "Desktop runtime initialization is incomplete. Open settings to recover it."
 
-#: apps/admin/src/routes/dashboard-page.tsx:735
+#: apps/admin/src/routes/dashboard-page.tsx:736
 msgid "桌面运行时已就绪。恢复、推理配置和手动管理入口已经统一收敛到设置页。"
 msgstr "Desktop runtime is ready. Recovery, inference configuration, and manual management are consolidated in settings."
 
 #. placeholder {0}: moments[1]
 #. placeholder {1}: moments[2]
-#: apps/admin/src/routes/dashboard-page.tsx:1554
+#: apps/admin/src/routes/dashboard-page.tsx:1556
 msgid "检查 {0} 个可见角色，本轮生成 {1} 条朋友圈内容。"
 msgstr "Checked {0} visible characters and generated {1} moment posts this round."
 
 #. placeholder {0}: proactiveMessages[1]
 #. placeholder {1}: proactiveMessages[2]
-#: apps/admin/src/routes/dashboard-page.tsx:1595
+#: apps/admin/src/routes/dashboard-page.tsx:1597
 msgid "检查 {0} 个有记忆种子的角色，发送 {1} 条主动提醒消息。"
 msgstr "Checked {0} characters with memory seeds and sent {1} proactive reminder messages."
 
@@ -1613,41 +1613,41 @@ msgstr "Checked {0} characters with memory seeds and sent {1} proactive reminder
 #. placeholder {1}: activeStatus[2]
 #. placeholder {2}: activeStatus[3]
 #. placeholder {3}: activeStatus[4]
-#: apps/admin/src/routes/dashboard-page.tsx:1545
+#: apps/admin/src/routes/dashboard-page.tsx:1547
 msgid "检查 {0} 个角色，在线状态变更 {1} 次，人工锁定 {2} 个，角色关系更新 {3} 次。"
 msgstr "Checked {0} characters, changed online state {1} times, found {2} manually locked, and updated {3} relationships."
 
 #. placeholder {0}: characterStatus[1]
 #. placeholder {1}: characterStatus[2]
 #. placeholder {2}: characterStatus[3]
-#: apps/admin/src/routes/dashboard-page.tsx:1577
+#: apps/admin/src/routes/dashboard-page.tsx:1579
 msgid "检查 {0} 个角色，活动状态变更 {1} 次，人工锁定 {2} 个。"
 msgstr "Checked {0} characters, changed activity state {1} times, and found {2} manually locked."
 
 #. placeholder {0}: channels[1]
 #. placeholder {1}: channels[2]
-#: apps/admin/src/routes/dashboard-page.tsx:1568
+#: apps/admin/src/routes/dashboard-page.tsx:1570
 msgid "检查 {0} 个角色，生成 {1} 条视频号内容，并执行内容池补足。"
 msgstr "Checked {0} characters, generated {1} channel posts, and refilled the content pool."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1464
+#: apps/admin/src/routes/dashboard-page.tsx:1465
 msgid "检查界闻早报、午报、晚报是否需要补发。"
 msgstr "Check whether Jiewen morning, noon, and evening bulletins need backfill."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1466
+#: apps/admin/src/routes/dashboard-page.tsx:1467
 msgid "检查角色是否应发布朋友圈内容。"
 msgstr "Check whether characters should publish moments."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1163
+#: apps/admin/src/routes/dashboard-page.tsx:1164
 msgid "模型"
 msgstr "Model"
 
-#: apps/admin/src/routes/dashboard-page.tsx:766
+#: apps/admin/src/routes/dashboard-page.tsx:767
 msgid "模型、数字人与验证"
 msgstr "Models, Digital Human, and Verification"
 
-#: apps/admin/src/components/root-layout.tsx:154
-#: apps/admin/src/components/root-layout.tsx:255
+#: apps/admin/src/components/root-layout.tsx:158
+#: apps/admin/src/components/root-layout.tsx:259
 msgid "模型与路由"
 msgstr "Models and Routing"
 
@@ -1659,11 +1659,11 @@ msgstr "Model catalog is still empty"
 msgid "模型目录已有 {availableModelCount} 个候选模型"
 msgstr "Model catalog has {availableModelCount} candidate models"
 
-#: apps/admin/src/routes/dashboard-page.tsx:780
+#: apps/admin/src/routes/dashboard-page.tsx:781
 msgid "模型目录数：{availableModelCount}"
 msgstr "Model catalog count: {availableModelCount}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:964
+#: apps/admin/src/routes/dashboard-page.tsx:965
 msgid "模式"
 msgstr "Mode"
 
@@ -1671,43 +1671,43 @@ msgstr "Mode"
 msgid "模拟"
 msgstr "Mock"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1194
+#: apps/admin/src/routes/dashboard-page.tsx:1195
 msgid "正在创建备份..."
 msgstr "Creating backup..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1127
+#: apps/admin/src/routes/dashboard-page.tsx:1128
 msgid "正在加载已保存的推理服务配置..."
 msgstr "Loading saved inference service configuration..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1252
+#: apps/admin/src/routes/dashboard-page.tsx:1253
 msgid "正在加载本地运行时日志..."
 msgstr "Loading local runtime logs..."
 
-#: apps/admin/src/components/root-layout.tsx:53
+#: apps/admin/src/components/root-layout.tsx:54
 msgid "正在同步远程 API、推理网关和世界表面状态。"
 msgstr "Syncing remote API, inference gateway, and world surface status."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1185
+#: apps/admin/src/routes/dashboard-page.tsx:1186
 msgid "正在导出诊断包..."
 msgstr "Exporting diagnostics package..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1207
+#: apps/admin/src/routes/dashboard-page.tsx:1208
 msgid "正在恢复备份..."
 msgstr "Restoring backup..."
 
-#: apps/admin/src/components/root-layout.tsx:51
+#: apps/admin/src/components/root-layout.tsx:52
 msgid "正在读取实例状态"
 msgstr "Reading instance status"
 
-#: apps/admin/src/routes/dashboard-page.tsx:728
+#: apps/admin/src/routes/dashboard-page.tsx:729
 msgid "正在读取本地日志索引"
 msgstr "Reading local log index"
 
-#: apps/admin/src/routes/dashboard-page.tsx:746
+#: apps/admin/src/routes/dashboard-page.tsx:747
 msgid "正在读取桌面运行时诊断..."
 msgstr "Reading desktop runtime diagnostics..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:513
+#: apps/admin/src/routes/dashboard-page.tsx:514
 msgid "正常"
 msgstr "Normal"
 
@@ -1715,106 +1715,106 @@ msgstr "Normal"
 msgid "段落导航"
 msgstr "Section Navigation"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1507
+#: apps/admin/src/routes/dashboard-page.tsx:1508
 msgid "每 10 分钟"
 msgstr "Every 10 minutes"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1509
+#: apps/admin/src/routes/dashboard-page.tsx:1510
 msgid "每 15 分钟"
 msgstr "Every 15 minutes"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1515
+#: apps/admin/src/routes/dashboard-page.tsx:1516
 msgid "每 2 小时"
 msgstr "Every 2 hours"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1513
+#: apps/admin/src/routes/dashboard-page.tsx:1514
 msgid "每 20 分钟"
 msgstr "Every 20 minutes"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1499
+#: apps/admin/src/routes/dashboard-page.tsx:1500
 msgid "每 30 分钟"
 msgstr "Every 30 minutes"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1494
+#: apps/admin/src/routes/dashboard-page.tsx:1495
 msgid "每 5 分钟"
 msgstr "Every 5 minutes"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1521
+#: apps/admin/src/routes/dashboard-page.tsx:1522
 msgid "每周一 04:00"
 msgstr "Every Monday 04:00"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1480
+#: apps/admin/src/routes/dashboard-page.tsx:1481
 msgid "每周从近30天全量交互数据中自动提取并更新核心记忆。"
 msgstr "Weekly, extract and update core memory from the last 30 days of interactions."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1496
+#: apps/admin/src/routes/dashboard-page.tsx:1497
 msgid "每小时整点"
 msgstr "Hourly on the hour"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1519
+#: apps/admin/src/routes/dashboard-page.tsx:1520
 msgid "每日 03:00"
 msgstr "Daily 03:00"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1511
+#: apps/admin/src/routes/dashboard-page.tsx:1512
 msgid "每日 10:00 / 14:00 / 19:00"
 msgstr "Daily 10:00 / 14:00 / 19:00"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1517
+#: apps/admin/src/routes/dashboard-page.tsx:1518
 msgid "每日 20:00"
 msgstr "Daily 20:00"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1501
+#: apps/admin/src/routes/dashboard-page.tsx:1502
 msgid "每日 23:59"
 msgstr "Daily 23:59"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1478
+#: apps/admin/src/routes/dashboard-page.tsx:1479
 msgid "每日从近7天互动记录中自动提取并更新近期摘要。"
 msgstr "Daily, extract and update recent summaries from the last 7 days of interactions."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1427
+#: apps/admin/src/routes/dashboard-page.tsx:1428
 msgid "活动状态调度"
 msgstr "Activity Status Schedule"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1058
+#: apps/admin/src/routes/dashboard-page.tsx:1059
 msgid "活跃房间"
 msgstr "Active Rooms"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1278
+#: apps/admin/src/routes/dashboard-page.tsx:1279
 msgid "活跃调度任务"
 msgstr "Active Scheduler Jobs"
 
-#: apps/admin/src/routes/dashboard-page.tsx:642
+#: apps/admin/src/routes/dashboard-page.tsx:643
 msgid "消息总数"
 msgstr "Total Messages"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1452
+#: apps/admin/src/routes/dashboard-page.tsx:1453
 msgid "清理当天过期的待处理好友请求。"
 msgstr "Clean up pending friend requests that expire today."
 
-#: apps/admin/src/components/root-layout.tsx:159
-#: apps/admin/src/components/root-layout.tsx:265
+#: apps/admin/src/components/root-layout.tsx:163
+#: apps/admin/src/components/root-layout.tsx:269
 msgid "游戏目录"
 msgstr "Game Catalog"
 
-#: apps/admin/src/routes/dashboard-page.tsx:650
+#: apps/admin/src/routes/dashboard-page.tsx:651
 msgid "版本"
 msgstr "Version"
 
-#: apps/admin/src/routes/dashboard-page.tsx:794
+#: apps/admin/src/routes/dashboard-page.tsx:795
 msgid "状态"
 msgstr "Status"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1740
+#: apps/admin/src/routes/dashboard-page.tsx:1743
 msgid "环境变量覆盖"
 msgstr "Environment override"
 
 #. placeholder {0}: needDiscoveryCandidates[1]
-#: apps/admin/src/routes/dashboard-page.tsx:1631
+#: apps/admin/src/routes/dashboard-page.tsx:1633
 msgid "现在还有 {0} 个候选没处理，这轮先不继续生新角色。"
 msgstr "There are still {0} candidates pending; skip generating new characters this round."
 
-#: apps/admin/src/components/root-layout.tsx:210
-#: apps/admin/src/components/root-layout.tsx:391
+#: apps/admin/src/components/root-layout.tsx:214
+#: apps/admin/src/components/root-layout.tsx:395
 msgid "现实联动"
 msgstr "Real-World Sync"
 
@@ -1822,54 +1822,54 @@ msgstr "Real-World Sync"
 msgid "生效中"
 msgstr "Active"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1159
+#: apps/admin/src/routes/dashboard-page.tsx:1160
 msgid "用当前生效的推理服务配置运行一条预览提示词。"
 msgstr "Run one preview prompt with the currently active inference service configuration."
 
-#: apps/admin/src/components/root-layout.tsx:382
+#: apps/admin/src/components/root-layout.tsx:386
 msgid "用户行为建模与 Prompt 投影"
 msgstr "User Behavior Modeling and Prompt Projection"
 
 #. placeholder {0}: values.managedChildPid ? ` pid=${values.managedChildPid}` : ""
-#: apps/admin/src/routes/dashboard-page.tsx:1723
+#: apps/admin/src/routes/dashboard-page.tsx:1726
 msgid "由桌面壳托管{0}"
 msgstr "Managed by desktop shell{0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1417
+#: apps/admin/src/routes/dashboard-page.tsx:1418
 msgid "界闻简报调度"
 msgstr "Jiewen Bulletin Schedule"
 
-#: apps/admin/src/components/root-layout.tsx:199
-#: apps/admin/src/components/root-layout.tsx:371
+#: apps/admin/src/components/root-layout.tsx:203
+#: apps/admin/src/components/root-layout.tsx:375
 msgid "真实世界动作"
 msgstr "Real-World Actions"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1454
+#: apps/admin/src/routes/dashboard-page.tsx:1455
 msgid "短周期扫描新的人物需求，并生成候选角色。"
 msgstr "Short-cycle scan for new character needs and generate candidates."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1425
+#: apps/admin/src/routes/dashboard-page.tsx:1426
 msgid "视频号调度"
 msgstr "Channels Schedule"
 
-#: apps/admin/src/routes/dashboard-page.tsx:702
-#: apps/admin/src/routes/dashboard-page.tsx:862
+#: apps/admin/src/routes/dashboard-page.tsx:703
+#: apps/admin/src/routes/dashboard-page.tsx:863
 msgid "离线"
 msgstr "Offline"
 
-#: apps/admin/src/routes/dashboard-page.tsx:957
+#: apps/admin/src/routes/dashboard-page.tsx:958
 msgid "稳定"
 msgstr "Stable"
 
-#: apps/admin/src/routes/dashboard-page.tsx:987
+#: apps/admin/src/routes/dashboard-page.tsx:988
 msgid "立即执行"
 msgstr "Run Now"
 
-#: apps/admin/src/components/admin-sidebar.tsx:256
+#: apps/admin/src/components/admin-sidebar.tsx:258
 msgid "立即配置"
 msgstr "Configure now"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1714
+#: apps/admin/src/routes/dashboard-page.tsx:1717
 msgid "端口已占用"
 msgstr "Port Occupied"
 
@@ -1881,11 +1881,11 @@ msgstr "Waiting for health probe"
 msgid "等待加载"
 msgstr "Waiting to load"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1255
+#: apps/admin/src/routes/dashboard-page.tsx:1256
 msgid "等待本地运行时日志..."
 msgstr "Waiting for local runtime logs..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:716
+#: apps/admin/src/routes/dashboard-page.tsx:717
 msgid "等待桌面壳确认"
 msgstr "Waiting for desktop shell confirmation"
 
@@ -1893,27 +1893,27 @@ msgstr "Waiting for desktop shell confirmation"
 msgid "等待系统状态返回数字人 provider 配置。"
 msgstr "Waiting for system status to return digital human provider configuration."
 
-#: apps/admin/src/routes/dashboard-page.tsx:723
+#: apps/admin/src/routes/dashboard-page.tsx:724
 msgid "等待诊断"
 msgstr "Waiting for diagnostics"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1018
+#: apps/admin/src/routes/dashboard-page.tsx:1019
 msgid "等待调度器对齐数据..."
 msgstr "Waiting for scheduler data..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1110
+#: apps/admin/src/routes/dashboard-page.tsx:1111
 msgid "等待预览"
 msgstr "Waiting for Preview"
 
-#: apps/admin/src/components/root-layout.tsx:155
+#: apps/admin/src/components/root-layout.tsx:159
 msgid "管理 Provider 账户、模型目录、默认路由和模型角色批量安装。"
 msgstr "Manage Provider accounts, model catalog, default routing, and batch installation of model persona characters."
 
-#: apps/admin/src/components/root-layout.tsx:410
+#: apps/admin/src/components/root-layout.tsx:414
 msgid "管理后台"
 msgstr "Admin Console"
 
-#: apps/admin/src/components/admin-sidebar.tsx:228
+#: apps/admin/src/components/admin-sidebar.tsx:230
 msgid "管理密钥"
 msgstr "Admin secret"
 
@@ -1925,11 +1925,11 @@ msgstr "The system is operational. Next, open Evals to verify the current genera
 msgid "系统状态已检测到外部播放器模板。"
 msgstr "System status detected an external player template."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1166
+#: apps/admin/src/routes/dashboard-page.tsx:1167
 msgid "结束原因"
 msgstr "Finish Reason"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1154
+#: apps/admin/src/routes/dashboard-page.tsx:1155
 msgid "结果"
 msgstr "Result"
 
@@ -1938,7 +1938,7 @@ msgid "缺回调"
 msgstr "Missing callback"
 
 #. placeholder {0}: values.linuxMissingPackages.join(", ")
-#: apps/admin/src/routes/dashboard-page.tsx:1709
+#: apps/admin/src/routes/dashboard-page.tsx:1712
 msgid "缺失依赖={0}"
 msgstr "missing dependencies={0}"
 
@@ -1947,16 +1947,16 @@ msgid "缺模板"
 msgstr "Missing template"
 
 #. placeholder {0}: statusQuery.data.inferenceGateway.activeProvider
-#: apps/admin/src/routes/dashboard-page.tsx:779
+#: apps/admin/src/routes/dashboard-page.tsx:780
 msgid "网关：{0}"
 msgstr "Gateway: {0}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1002
+#: apps/admin/src/routes/dashboard-page.tsx:1003
 msgid "耗时"
 msgstr "Duration"
 
-#: apps/admin/src/components/root-layout.tsx:164
-#: apps/admin/src/components/root-layout.tsx:341
+#: apps/admin/src/components/root-layout.tsx:168
+#: apps/admin/src/components/root-layout.tsx:345
 msgid "聊天记录"
 msgstr "Chat Records"
 
@@ -1964,11 +1964,11 @@ msgstr "Chat Records"
 msgid "草稿未保存"
 msgstr "Draft Unsaved"
 
-#: apps/admin/src/components/root-layout.tsx:372
+#: apps/admin/src/components/root-layout.tsx:376
 msgid "行动助理动作运行时"
 msgstr "Action Assistant Runtime"
 
-#: apps/admin/src/components/root-layout.tsx:240
+#: apps/admin/src/components/root-layout.tsx:244
 msgid "补齐推理 Provider、实例连通性和运行前置条件，确保后台操作与真实生成链路可用。"
 msgstr "Complete inference Provider, instance connectivity, and runtime prerequisites so admin operations and real generation are available."
 
@@ -1980,73 +1980,73 @@ msgstr "Complete Inference Setup"
 msgid "补齐模型、接口和 API Key，否则无法跑真实生成。"
 msgstr "Complete model, endpoint, and API Key setup, otherwise real generation cannot run."
 
-#: apps/admin/src/routes/dashboard-page.tsx:834
+#: apps/admin/src/routes/dashboard-page.tsx:835
 msgid "角色与内容摘要"
 msgstr "Character and Content Summary"
 
-#: apps/admin/src/components/root-layout.tsx:149
-#: apps/admin/src/components/root-layout.tsx:247
+#: apps/admin/src/components/root-layout.tsx:153
+#: apps/admin/src/components/root-layout.tsx:251
 msgid "角色中心"
 msgstr "Character Center"
 
-#: apps/admin/src/components/root-layout.tsx:316
+#: apps/admin/src/components/root-layout.tsx:320
 msgid "角色制造与发布"
 msgstr "Character Factory and Publishing"
 
-#: apps/admin/src/components/root-layout.tsx:248
+#: apps/admin/src/components/root-layout.tsx:252
 msgid "角色名册与工作入口"
 msgstr "Character Roster and Work Entry"
 
-#: apps/admin/src/components/root-layout.tsx:315
+#: apps/admin/src/components/root-layout.tsx:319
 msgid "角色工厂"
 msgstr "Character Factory"
 
-#: apps/admin/src/components/root-layout.tsx:324
+#: apps/admin/src/components/root-layout.tsx:328
 msgid "角色当前状态与可观测性"
 msgstr "Character Current State and Observability"
 
-#: apps/admin/src/routes/dashboard-page.tsx:641
+#: apps/admin/src/routes/dashboard-page.tsx:642
 msgid "角色总数"
 msgstr "Total Characters"
 
-#: apps/admin/src/routes/dashboard-page.tsx:846
+#: apps/admin/src/routes/dashboard-page.tsx:847
 msgid "角色抽查"
 msgstr "Character Spot Check"
 
-#: apps/admin/src/components/root-layout.tsx:392
+#: apps/admin/src/components/root-layout.tsx:396
 msgid "角色现实世界同步与日更"
 msgstr "Character Real-World Sync and Daily Updates"
 
-#: apps/admin/src/components/root-layout.tsx:331
+#: apps/admin/src/components/root-layout.tsx:335
 msgid "角色编辑"
 msgstr "Character Editing"
 
-#: apps/admin/src/components/root-layout.tsx:276
+#: apps/admin/src/components/root-layout.tsx:280
 msgid "角色缺口识别与自动加友"
 msgstr "Character Gap Detection and Auto Friend-Adding"
 
-#: apps/admin/src/components/root-layout.tsx:332
+#: apps/admin/src/components/root-layout.tsx:336
 msgid "角色资料编辑"
 msgstr "Character Profile Editing"
 
-#: apps/admin/src/components/root-layout.tsx:323
+#: apps/admin/src/components/root-layout.tsx:327
 msgid "角色运行逻辑台"
 msgstr "Character Runtime Logic Desk"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1072
+#: apps/admin/src/routes/dashboard-page.tsx:1073
 msgid "订阅数"
 msgstr "Subscribers"
 
-#: apps/admin/src/components/root-layout.tsx:218
-#: apps/admin/src/components/root-layout.tsx:401
+#: apps/admin/src/components/root-layout.tsx:222
+#: apps/admin/src/components/root-layout.tsx:405
 msgid "评测分析"
 msgstr "Evals Analytics"
 
-#: apps/admin/src/routes/dashboard-page.tsx:839
+#: apps/admin/src/routes/dashboard-page.tsx:840
 msgid "评测运行"
 msgstr "Eval Runs"
 
-#: apps/admin/src/components/root-layout.tsx:402
+#: apps/admin/src/components/root-layout.tsx:406
 msgid "评测运行与 Trace 工作台"
 msgstr "Eval Runs and Trace Workbench"
 
@@ -2054,16 +2054,16 @@ msgstr "Eval Runs and Trace Workbench"
 msgid "评测运行中存在失败样本"
 msgstr "Eval Runs Have Failed Samples"
 
-#: apps/admin/src/routes/dashboard-page.tsx:805
+#: apps/admin/src/routes/dashboard-page.tsx:806
 msgid "评测运行时"
 msgstr "Evals Runtime"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1241
+#: apps/admin/src/routes/dashboard-page.tsx:1242
 msgid "读取中"
 msgstr "Reading"
 
-#: apps/admin/src/routes/dashboard-page.tsx:933
-#: apps/admin/src/routes/dashboard-page.tsx:1304
+#: apps/admin/src/routes/dashboard-page.tsx:934
+#: apps/admin/src/routes/dashboard-page.tsx:1305
 msgid "调度与实时"
 msgstr "Scheduler and Realtime"
 
@@ -2071,16 +2071,16 @@ msgstr "Scheduler and Realtime"
 msgid "调度任务已执行完成。"
 msgstr "Scheduler job completed."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1012
+#: apps/admin/src/routes/dashboard-page.tsx:1013
 msgid "调度任务执行失败。"
 msgstr "Scheduler job failed."
 
-#: apps/admin/src/routes/dashboard-page.tsx:956
+#: apps/admin/src/routes/dashboard-page.tsx:957
 msgid "调度工作台"
 msgstr "Scheduler Workbench"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1101
-#: apps/admin/src/routes/dashboard-page.tsx:1309
+#: apps/admin/src/routes/dashboard-page.tsx:1102
+#: apps/admin/src/routes/dashboard-page.tsx:1310
 msgid "调试与运维"
 msgstr "Debug and Operations"
 
@@ -2088,93 +2088,93 @@ msgstr "Debug and Operations"
 msgid "谨慎操作"
 msgstr "Use Carefully"
 
-#: apps/admin/src/components/root-layout.tsx:205
-#: apps/admin/src/components/root-layout.tsx:381
+#: apps/admin/src/components/root-layout.tsx:209
+#: apps/admin/src/components/root-layout.tsx:385
 msgid "赛博分身"
 msgstr "Cyber Avatar"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1062
+#: apps/admin/src/routes/dashboard-page.tsx:1063
 msgid "路径"
 msgstr "Path"
 
 #: apps/admin/src/routes/dashboard-page.tsx:387
-#: apps/admin/src/routes/dashboard-page.tsx:1328
+#: apps/admin/src/routes/dashboard-page.tsx:1329
 msgid "跳到调度排查"
 msgstr "Jump to Scheduler Troubleshooting"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1141
+#: apps/admin/src/routes/dashboard-page.tsx:1142
 msgid "输入内容"
 msgstr "Input"
 
-#: apps/admin/src/components/admin-sidebar.tsx:233
+#: apps/admin/src/components/admin-sidebar.tsx:235
 msgid "输入后台密钥"
 msgstr "Enter admin secret"
 
-#: apps/admin/src/routes/dashboard-page.tsx:661
+#: apps/admin/src/routes/dashboard-page.tsx:662
 msgid "迁移模块"
 msgstr "Migrated Modules"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1405
+#: apps/admin/src/routes/dashboard-page.tsx:1406
 msgid "过期好友请求"
 msgstr "Expire Friend Requests"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1216
+#: apps/admin/src/routes/dashboard-page.tsx:1217
 msgid "运维任务执行中"
 msgstr "Operations Task Running"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1174
+#: apps/admin/src/routes/dashboard-page.tsx:1175
 msgid "运维操作"
 msgstr "Operations Actions"
 
-#: apps/admin/src/routes/dashboard-page.tsx:828
-#: apps/admin/src/routes/dashboard-page.tsx:1299
+#: apps/admin/src/routes/dashboard-page.tsx:829
+#: apps/admin/src/routes/dashboard-page.tsx:1300
 msgid "运营信号"
 msgstr "Operational Signals"
 
-#: apps/admin/src/routes/dashboard-page.tsx:476
+#: apps/admin/src/routes/dashboard-page.tsx:477
 msgid "运营值班首页"
 msgstr "Operations Duty Home"
 
-#: apps/admin/src/routes/dashboard-page.tsx:676
+#: apps/admin/src/routes/dashboard-page.tsx:677
 msgid "运营先确认实例连通和模型可用，再决定是否继续做内容抽查、角色观察或回复排障。"
 msgstr "Confirm instance connectivity and model availability before content checks, character observation, or reply debugging."
 
 #: apps/admin/src/components/admin-topbar.tsx:48
-#: apps/admin/src/components/root-layout.tsx:411
+#: apps/admin/src/components/root-layout.tsx:415
 msgid "运营工作台"
 msgstr "Operations Workbench"
 
 #: apps/admin/src/components/admin-sidebar.tsx:149
-#: apps/admin/src/components/root-layout.tsx:229
+#: apps/admin/src/components/root-layout.tsx:233
 msgid "运营控制台"
 msgstr "Operations Console"
 
-#: apps/admin/src/routes/dashboard-page.tsx:650
+#: apps/admin/src/routes/dashboard-page.tsx:651
 msgid "运行"
 msgstr "Uptime"
 
-#: apps/admin/src/routes/dashboard-page.tsx:979
+#: apps/admin/src/routes/dashboard-page.tsx:980
 msgid "运行中"
 msgstr "Running"
 
-#: apps/admin/src/routes/dashboard-page.tsx:674
-#: apps/admin/src/routes/dashboard-page.tsx:1294
+#: apps/admin/src/routes/dashboard-page.tsx:675
+#: apps/admin/src/routes/dashboard-page.tsx:1295
 msgid "运行体征"
 msgstr "Runtime Vitals"
 
-#: apps/admin/src/components/root-layout.tsx:144
+#: apps/admin/src/components/root-layout.tsx:148
 msgid "运行总览"
 msgstr "Runtime Overview"
 
-#: apps/admin/src/routes/dashboard-page.tsx:721
+#: apps/admin/src/routes/dashboard-page.tsx:722
 msgid "运行数据"
 msgstr "Runtime Data"
 
-#: apps/admin/src/routes/dashboard-page.tsx:682
+#: apps/admin/src/routes/dashboard-page.tsx:683
 msgid "运行时与 Core API"
 msgstr "Runtime and Core API"
 
-#: apps/admin/src/components/root-layout.tsx:238
+#: apps/admin/src/components/root-layout.tsx:242
 msgid "运行时与 Provider 初始化"
 msgstr "Runtime and Provider Initialization"
 
@@ -2182,61 +2182,61 @@ msgstr "Runtime and Provider Initialization"
 msgid "运行时尚未完全恢复。先进入设置页确认远程 API、运行数据目录和桌面托管状态。"
 msgstr "Runtime has not fully recovered. Open settings first to confirm remote API, runtime data directory, and desktop hosting state."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1001
+#: apps/admin/src/routes/dashboard-page.tsx:1002
 msgid "运行次数"
 msgstr "Run Count"
 
-#: apps/admin/src/components/root-layout.tsx:237
+#: apps/admin/src/components/root-layout.tsx:241
 msgid "运行设置"
 msgstr "Runtime Settings"
 
-#: apps/admin/src/routes/dashboard-page.tsx:742
+#: apps/admin/src/routes/dashboard-page.tsx:743
 msgid "运行诊断"
 msgstr "Runtime Diagnostics"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1431
+#: apps/admin/src/routes/dashboard-page.tsx:1432
 msgid "近期摘要日更"
 msgstr "Recent Summary Daily Update"
 
 #. placeholder {0}: recentMemory[1]
 #. placeholder {1}: recentMemory[2]
 #. placeholder {2}: recentMemory[3]
-#: apps/admin/src/routes/dashboard-page.tsx:1604
+#: apps/admin/src/routes/dashboard-page.tsx:1606
 msgid "近期摘要日更：检查 {0} 个角色，更新 {1} 个，跳过 {2} 个（无近期消息）。"
 msgstr "Recent summary daily update: checked {0} characters, updated {1}, skipped {2} with no recent messages."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1652
+#: apps/admin/src/routes/dashboard-page.tsx:1654
 msgid "近期无互动记录，跳过记忆更新。"
 msgstr "No recent interactions; skipping memory update."
 
-#: apps/admin/src/routes/dashboard-page.tsx:830
+#: apps/admin/src/routes/dashboard-page.tsx:831
 msgid "这一块服务抽查而不是全面管理，所以只保留关键摘要和最新样本，减少视觉噪音。"
 msgstr "This section supports spot checks rather than full management, so it keeps only key summaries and latest samples."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1103
+#: apps/admin/src/routes/dashboard-page.tsx:1104
 msgid "这些动作频率低于日常巡检，但必须保留清晰风险提示和执行反馈，方便值班人员临时处理。"
 msgstr "These actions are less frequent than routine checks, but clear risk prompts and feedback are kept for operators."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1053
+#: apps/admin/src/routes/dashboard-page.tsx:1054
 msgid "这里主要服务“为什么前端没同步到最新消息或状态”的排查，而不是日常高频操作。"
 msgstr "This mainly answers why the frontend did not sync the latest messages or state, rather than serving daily operations."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1113
+#: apps/admin/src/routes/dashboard-page.tsx:1114
 msgid "这里只是直连当前 provider 的原始调试入口，不走角色运行时，也不是角色 system prompt 的编辑入口。"
 msgstr "This is a raw debugging entry directly against the current provider. It does not use character runtime or edit character system prompts."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1319
 #: apps/admin/src/routes/dashboard-page.tsx:1320
 #: apps/admin/src/routes/dashboard-page.tsx:1321
 #: apps/admin/src/routes/dashboard-page.tsx:1322
+#: apps/admin/src/routes/dashboard-page.tsx:1323
 msgid "进入"
 msgstr "Enter"
 
-#: apps/admin/src/routes/dashboard-page.tsx:576
+#: apps/admin/src/routes/dashboard-page.tsx:577
 msgid "进入 runs、compare 和 trace 工作区。"
 msgstr "Open the runs, compare, and trace workspaces."
 
-#: apps/admin/src/routes/dashboard-page.tsx:574
+#: apps/admin/src/routes/dashboard-page.tsx:575
 msgid "进入角色中心"
 msgstr "Enter Character Center"
 
@@ -2252,48 +2252,48 @@ msgstr "Open the scheduler section to view recent failure details."
 msgid "远程 API 离线"
 msgstr "Remote API offline"
 
-#: apps/admin/src/routes/dashboard-page.tsx:722
+#: apps/admin/src/routes/dashboard-page.tsx:723
 msgid "远程实例"
 msgstr "Remote Instance"
 
-#: apps/admin/src/routes/dashboard-page.tsx:690
+#: apps/admin/src/routes/dashboard-page.tsx:691
 msgid "远程模式"
 msgstr "Remote Mode"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1413
+#: apps/admin/src/routes/dashboard-page.tsx:1414
 msgid "追问推荐调度"
 msgstr "Follow-up Recommendation Schedule"
 
-#: apps/admin/src/components/root-layout.tsx:288
+#: apps/admin/src/components/root-layout.tsx:292
 msgid "配置 open loop 提取、推荐候选打分、我自己主动消息文案，并查看推荐后的打开、加好友和开聊动作。"
 msgstr "Configure open loop extraction, recommendation candidate scoring, self proactive message copy, and review the open, friend-add, and chat-start actions after recommendations."
 
-#: apps/admin/src/components/root-layout.tsx:176
+#: apps/admin/src/components/root-layout.tsx:180
 msgid "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。"
 msgstr "Configure rules, Prompt, and the recommendation flow for self to recover unresolved open loops."
 
-#: apps/admin/src/components/root-layout.tsx:278
+#: apps/admin/src/components/root-layout.tsx:282
 msgid "配置短周期和每日节奏的提示词、频率、角色生成策略，并查看运行记录与候选结果。"
 msgstr "Configure short-cycle and daily cadence prompts, frequency, and character generation strategy, then view run records and candidates."
 
-#: apps/admin/src/components/root-layout.tsx:170
+#: apps/admin/src/components/root-layout.tsx:174
 msgid "配置短期/长期角色生成策略，并查看候选与运行记录。"
 msgstr "Configure short-term/long-term character generation strategy, and view candidates and run records."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1122
+#: apps/admin/src/routes/dashboard-page.tsx:1123
 msgid "错误：{inferenceGatewayLastError}"
 msgstr "Error: {inferenceGatewayLastError}"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1122
+#: apps/admin/src/routes/dashboard-page.tsx:1123
 msgid "队列深度"
 msgstr "Queue Depth"
 
-#: apps/admin/src/routes/dashboard-page.tsx:535
-#: apps/admin/src/routes/dashboard-page.tsx:1275
+#: apps/admin/src/routes/dashboard-page.tsx:536
+#: apps/admin/src/routes/dashboard-page.tsx:1276
 msgid "阻塞项"
 msgstr "Blockers"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1137
+#: apps/admin/src/routes/dashboard-page.tsx:1138
 msgid "附加 System Prompt（调试用，可留空）"
 msgstr "Additional System Prompt (optional for debugging)"
 
@@ -2301,60 +2301,60 @@ msgstr "Additional System Prompt (optional for debugging)"
 msgid "隐界"
 msgstr "Yinjie"
 
-#: apps/admin/src/components/root-layout.tsx:404
+#: apps/admin/src/components/root-layout.tsx:408
 msgid "集中查看 runs、compare 和 trace，逐步收口成更清晰的多视图结构。"
 msgstr "Centralize runs, compare, and trace views, then gradually consolidate them into clearer multi-view layouts."
 
-#: apps/admin/src/components/root-layout.tsx:219
+#: apps/admin/src/components/root-layout.tsx:223
 msgid "集中查看 runs、compare 和 trace。"
 msgstr "Centralized view of runs, compare, and trace."
 
-#: apps/admin/src/components/root-layout.tsx:354
+#: apps/admin/src/components/root-layout.tsx:358
 msgid "集中查看 Token 消耗、时间趋势、角色分布、预算预警和价格配置。"
 msgstr "Centralized view of token consumption, time trends, character distribution, budget alerts, and pricing configuration."
 
-#: apps/admin/src/components/root-layout.tsx:344
+#: apps/admin/src/components/root-layout.tsx:348
 msgid "集中查看世界主人与各角色的真实单聊历史、搜索命中上下文和会话级 Token 成本。"
 msgstr "Centralized view of real one-on-one histories, search-hit context, and session-level token costs for the world owner and characters."
 
-#: apps/admin/src/components/root-layout.tsx:394
+#: apps/admin/src/components/root-layout.tsx:398
 msgid "集中查看每日外部信号、摘要 digest、scene patch 和现实发圈锚点。"
 msgstr "Centralized view of daily external signals, digest summaries, scene patches, and real-world Moments anchors."
 
-#: apps/admin/src/components/root-layout.tsx:384
+#: apps/admin/src/components/root-layout.tsx:388
 msgid "集中查看赛博分身如何从行为信号收敛成画像，再投影成后续世界内外可消费的提示词。"
 msgstr "Centralized view of how the cyber avatar converges behavior signals into a profile, then projects them into prompts consumable inside and outside the world."
 
-#: apps/admin/src/components/root-layout.tsx:258
+#: apps/admin/src/components/root-layout.tsx:262
 msgid "集中管理多个 Provider 账户、模型目录、默认模型路由，以及批量安装模型人格角色。"
 msgstr "Centralized management of multiple Provider accounts, model catalogs, default model routing, and batch installation of model persona characters."
 
-#: apps/admin/src/components/root-layout.tsx:169
-#: apps/admin/src/components/root-layout.tsx:275
+#: apps/admin/src/components/root-layout.tsx:173
+#: apps/admin/src/components/root-layout.tsx:279
 msgid "需求发现"
 msgstr "Need Discovery"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1409
+#: apps/admin/src/routes/dashboard-page.tsx:1410
 msgid "需求发现日更"
 msgstr "Need Discovery Daily Update"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1407
+#: apps/admin/src/routes/dashboard-page.tsx:1408
 msgid "需求发现短周期"
 msgstr "Need Discovery Short Cycle"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1286
+#: apps/admin/src/routes/dashboard-page.tsx:1287
 msgid "页面导航"
 msgstr "Page Navigation"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1149
+#: apps/admin/src/routes/dashboard-page.tsx:1150
 msgid "预览执行中..."
 msgstr "Running preview..."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1156
+#: apps/admin/src/routes/dashboard-page.tsx:1157
 msgid "预览未返回任何输出。"
 msgstr "Preview returned no output."
 
-#: apps/admin/src/routes/dashboard-page.tsx:1322
+#: apps/admin/src/routes/dashboard-page.tsx:1323
 msgid "验证生成链路质量，定位失败样本。"
 msgstr "Verify generation chain quality and locate failed samples."
 
@@ -2364,6 +2364,6 @@ msgstr "Verify generation chain quality and locate failed samples."
 msgid "高优先级"
 msgstr "High Priority"
 
-#: apps/admin/src/routes/dashboard-page.tsx:1199
+#: apps/admin/src/routes/dashboard-page.tsx:1200
 msgid "高风险恢复"
 msgstr "High-risk Restore"

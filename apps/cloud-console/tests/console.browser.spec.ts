@@ -442,6 +442,13 @@ test.describe("cloud-console browser smoke", () => {
     );
     expect(worldsResponse.status).toBe(200);
     expect(worldsResponse.body.length).toBe(1);
+    const worldId = worldsResponse.body[0].id as string;
+    await updateWorldStatus({
+      baseUrl: stack.cloudApi.baseUrl,
+      adminSecret: stack.cloudApi.adminSecret,
+      worldId,
+      status: "failed",
+    });
 
     await page.goto(`${stack.consoleServer.baseUrl}/worlds`);
     await expect(page.getByText("Managed worlds")).toBeVisible();
@@ -458,10 +465,10 @@ test.describe("cloud-console browser smoke", () => {
       "https://browser-world.example.com/admin",
     );
 
-    await page.getByRole("button", { name: "Suspend" }).click();
-    await expect(page.getByText(`Suspend ${worldName}?`)).toBeVisible();
+    await page.getByRole("button", { name: `Retry ${worldName}` }).click();
+    await expect(page.getByText(`Retry recovery for ${worldName}?`)).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByText(`Suspend ${worldName}?`)).toBeHidden();
+    await expect(page.getByText(`Retry recovery for ${worldName}?`)).toBeHidden();
 
     await page.getByRole("link", { name: "Jobs" }).click();
     await expect.poll(() => new URL(page.url()).pathname).toBe("/jobs");
@@ -624,16 +631,16 @@ test.describe("cloud-console browser smoke", () => {
     await expect(page.getByText(/^Lifecycle jobs$/)).toBeVisible();
     await expect(page.getByText(worldName).first()).toBeVisible();
     await expect(
-      page.getByRole("button", { name: `Retry ${worldName}` }),
+      page.getByRole("button", { name: `Retry ${worldName}` }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: `Reconcile ${worldName}` }),
+      page.getByRole("button", { name: `Reconcile ${worldName}` }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: `Resume ${worldName}` }),
+      page.getByRole("button", { name: `Resume ${worldName}` }).first(),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: `Retry ${worldName}` }).click();
+    await page.getByRole("button", { name: `Retry ${worldName}` }).first().click();
     await expect(
       page.getByText(`Retry recovery for ${worldName}?`),
     ).toBeVisible();

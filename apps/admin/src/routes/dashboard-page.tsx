@@ -1525,6 +1525,7 @@ function translateSchedulerRunHint(
   }
 }
 
+// i18n-ignore-start: runtime Chinese scheduler/world-context summaries are parsed into translated messages below.
 function translateSchedulerSummary(
   summary: string | undefined,
   t: DashboardTranslator,
@@ -1690,6 +1691,7 @@ function translateWorldContextValue(value: string | undefined, locale: string) {
 
   return replacements[value] ?? value.replace(/^多云\\s*/, "Cloudy ");
 }
+// i18n-ignore-end
 
 function formatDesktopDiagnostics(values: {
   platform: string;

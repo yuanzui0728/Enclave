@@ -18,6 +18,8 @@ const FILE_IGNORE_PATTERNS = [
   /(^|\/)dist\//,
   /(^|\/)build\//,
   /(^|\/)\.turbo\//,
+  // Runtime translation dictionaries intentionally contain source and target copy.
+  /(^|\/)apps\/admin\/src\/lib\/admin-ui-translation\.ts$/,
   /(^|\/)packages\/i18n\/catalogs\//,
 ];
 
@@ -166,6 +168,8 @@ Options:
 Ignore comments:
   // i18n-ignore-line: reason
   // i18n-ignore-next-line: reason
+  // i18n-ignore-start: reason
+  // i18n-ignore-end
 `);
 }
 
@@ -417,10 +421,25 @@ function scanFile(filePath, scope, includeIssues) {
     totalIssues: 0,
   };
   const issues = [];
+  let ignoreBlock = false;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
     const previousLine = index > 0 ? (lines[index - 1] ?? "") : "";
+
+    if (line.includes("i18n-ignore-start")) {
+      ignoreBlock = true;
+      continue;
+    }
+
+    if (line.includes("i18n-ignore-end")) {
+      ignoreBlock = false;
+      continue;
+    }
+
+    if (ignoreBlock) {
+      continue;
+    }
 
     for (const issue of collectLineIssues(
       filePath,
@@ -519,6 +538,7 @@ function scanChangedLines(options) {
   let currentFile = null;
   let currentLineNumber = 0;
   let previousAddedLine = "";
+  let ignoreBlock = false;
   let scope = null;
 
   for (const line of lines) {
@@ -526,6 +546,7 @@ function scanChangedLines(options) {
       currentFile = normalizePath(line.slice("+++ b/".length));
       currentLineNumber = 0;
       previousAddedLine = "";
+      ignoreBlock = false;
       scope = shouldIgnoreFile(currentFile)
         ? null
         : resolveScope(currentFile, options.scopes);
@@ -536,6 +557,7 @@ function scanChangedLines(options) {
       currentFile = null;
       currentLineNumber = 0;
       previousAddedLine = "";
+      ignoreBlock = false;
       scope = null;
       continue;
     }
@@ -553,6 +575,23 @@ function scanChangedLines(options) {
 
     if (line.startsWith("+") && !line.startsWith("+++")) {
       const addedLine = line.slice(1);
+      if (addedLine.includes("i18n-ignore-start")) {
+        ignoreBlock = true;
+        previousAddedLine = addedLine;
+        currentLineNumber += 1;
+        continue;
+      }
+      if (addedLine.includes("i18n-ignore-end")) {
+        ignoreBlock = false;
+        previousAddedLine = addedLine;
+        currentLineNumber += 1;
+        continue;
+      }
+      if (ignoreBlock) {
+        previousAddedLine = addedLine;
+        currentLineNumber += 1;
+        continue;
+      }
       issues.push(
         ...collectLineIssues(
           currentFile,
@@ -568,7 +607,13 @@ function scanChangedLines(options) {
     }
 
     if (line.startsWith(" ")) {
-      previousAddedLine = line.slice(1);
+      const contextLine = line.slice(1);
+      if (contextLine.includes("i18n-ignore-start")) {
+        ignoreBlock = true;
+      } else if (contextLine.includes("i18n-ignore-end")) {
+        ignoreBlock = false;
+      }
+      previousAddedLine = contextLine;
       currentLineNumber += 1;
     }
   }

@@ -16,10 +16,6 @@ msgstr ""
 msgid "云端模式"
 msgstr "クラウドモード"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:28
-msgid "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
-msgstr "切り替えると現在のクライアントに保存され、対応済みの画面文言と書式設定にすぐ反映されます。"
-
 #: packages/i18n/src/runtime/formatters.ts:61
 msgid "刚刚"
 msgstr "たった今"
@@ -48,7 +44,7 @@ msgstr "昨日"
 msgid "本地兼容"
 msgstr "ローカル互換"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:58
+#: packages/i18n/src/runtime/language-switcher.tsx:59
 msgid "界面语言"
 msgstr "表示言語"
 
@@ -67,3 +63,7 @@ msgstr "文字起こしモデル"
 #: packages/ui/src/components/setup-step-list.tsx:44
 msgid "通过"
 msgstr "通過"
+
+#: packages/i18n/src/runtime/language-switcher.tsx:28
+msgid "默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。"
+msgstr "デフォルトでは簡体字中国語を使用します。切り替えは現在のページセッションだけに影響し、対応済みの画面文言と書式設定にすぐ反映されます。"
