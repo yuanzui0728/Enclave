@@ -2477,7 +2477,7 @@ describe("cloud-console interactions", () => {
       adminAccessToken: "expired-admin-access-token",
       adminAccessTokenExpiresAt: "2026-04-19T00:00:00.000Z",
       adminRefreshToken: "test-admin-refresh-token",
-      adminRefreshTokenExpiresAt: "2026-04-27T01:00:00.000Z",
+      adminRefreshTokenExpiresAt: "2026-04-28T01:00:00.000Z",
     });
 
     expect(await screen.findByText("Fleet Dashboard")).toBeTruthy();

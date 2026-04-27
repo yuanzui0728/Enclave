@@ -45,6 +45,44 @@ describe("cloud-console router smoke", () => {
     ).toBe("/waiting-sync");
   });
 
+  it("renders the cloud console default locale in Simplified Chinese", async () => {
+    renderRoute("/", { locale: null });
+
+    expect(await screen.findByText("舰队仪表盘")).toBeTruthy();
+    expect(await screen.findByText("关注队列")).toBeTruthy();
+    expect(await screen.findByText("就绪世界")).toBeTruthy();
+    expect(
+      (await screen.findByRole("link", { name: "申请" })).getAttribute("href"),
+    ).toBe("/requests");
+  });
+
+  it("switches cloud console copy across English, Japanese, and Korean", async () => {
+    renderRoute("/", { locale: "zh-CN" });
+
+    expect(await screen.findByText("舰队仪表盘")).toBeTruthy();
+
+    const languageSelect = await screen.findByLabelText("界面语言");
+
+    fireEvent.change(languageSelect, { target: { value: "en-US" } });
+    expect(await screen.findByText("Fleet Dashboard")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Requests" })).toBeTruthy();
+
+    fireEvent.change(languageSelect, { target: { value: "ja-JP" } });
+    expect(await screen.findByText("フリートダッシュボード")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "申請" })).toBeTruthy();
+
+    fireEvent.change(languageSelect, { target: { value: "ko-KR" } });
+    expect(await screen.findByText("플릿 대시보드")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "요청" })).toBeTruthy();
+  });
+
+  it("uses the persisted cloud console locale preference", async () => {
+    renderRoute("/", { locale: "ko-KR" });
+
+    expect(await screen.findByText("플릿 대시보드")).toBeTruthy();
+    expect(await screen.findByText("관심 큐")).toBeTruthy();
+  });
+
   it("navigates through compact request and world nav links", async () => {
     renderRoute("/");
 

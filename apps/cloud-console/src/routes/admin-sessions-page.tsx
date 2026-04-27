@@ -11,6 +11,7 @@ import type {
   CloudAdminSessionStatus,
   CloudAdminSessionSummary,
 } from "@yinjie/contracts";
+import { formatDateTime as formatLocaleDateTime } from "@yinjie/i18n";
 import {
   AdminSessionActionButton,
   AdminSessionBrandBadge,
@@ -79,7 +80,10 @@ function formatDateTime(value?: string | null) {
     return "Not available";
   }
 
-  return new Date(value).toLocaleString();
+  return formatLocaleDateTime(new Date(value), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function formatDate(value?: string | null) {
@@ -92,12 +96,12 @@ function formatDate(value?: string | null) {
     return "Not available";
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return formatLocaleDateTime(new Date(parsed), {
     year: "numeric",
     month: "short",
     day: "numeric",
     timeZone: "UTC",
-  }).format(new Date(parsed));
+  });
 }
 
 function formatDateRange(startValue?: string | null, endValue?: string | null) {

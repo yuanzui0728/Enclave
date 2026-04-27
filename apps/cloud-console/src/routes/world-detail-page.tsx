@@ -8,6 +8,7 @@ import type {
   CloudWorldLifecycleStatus,
   WorldLifecycleJobStatus,
 } from "@yinjie/contracts";
+import { formatDateTime as formatLocaleDateTime } from "@yinjie/i18n";
 import { ErrorBlock } from "@yinjie/ui";
 import {
   CloudAdminErrorBlock,
@@ -65,7 +66,10 @@ function formatDateTime(value?: string | null) {
     return "Not available";
   }
 
-  return new Date(value).toLocaleString();
+  return formatLocaleDateTime(new Date(value), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function formatLeaseOwner(value?: string | null) {

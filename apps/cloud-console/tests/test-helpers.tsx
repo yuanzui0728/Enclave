@@ -23,11 +23,12 @@ const ADMIN_ACCESS_TOKEN_EXPIRES_AT_KEY =
 const ADMIN_REFRESH_TOKEN_KEY = "yinjie_cloud_admin_refresh_token";
 const ADMIN_REFRESH_TOKEN_EXPIRES_AT_KEY =
   "yinjie_cloud_admin_refresh_token_expires_at";
+const CLOUD_CONSOLE_LOCALE_KEY = "yinjie-i18n-locale:cloud-console";
 const TEST_SECRET = "test-secret";
 const TEST_ADMIN_ACCESS_TOKEN = "test-admin-access-token";
 const TEST_ADMIN_ACCESS_TOKEN_EXPIRES_AT = "2026-04-20T01:00:00.000Z";
 const TEST_ADMIN_REFRESH_TOKEN = "test-admin-refresh-token";
-const TEST_ADMIN_REFRESH_TOKEN_EXPIRES_AT = "2026-04-27T01:00:00.000Z";
+const TEST_ADMIN_REFRESH_TOKEN_EXPIRES_AT = "2026-04-28T01:00:00.000Z";
 
 export const mockRequest = {
   id: "request-1",
@@ -377,6 +378,7 @@ type RenderRouteOptions = {
   adminAccessTokenExpiresAt?: string;
   adminRefreshToken?: string;
   adminRefreshTokenExpiresAt?: string;
+  locale?: string | null;
 };
 
 type CloudAdminMockOverrides = {
@@ -2000,6 +2002,14 @@ export function installCloudAdminApiMock(
 
 export function renderRoute(path: string, options?: RenderRouteOptions) {
   window.history.replaceState({}, "", path);
+  if (options?.locale === null) {
+    window.localStorage.removeItem(CLOUD_CONSOLE_LOCALE_KEY);
+  } else {
+    window.localStorage.setItem(
+      CLOUD_CONSOLE_LOCALE_KEY,
+      options?.locale ?? "en-US",
+    );
+  }
   window.localStorage.setItem(
     ADMIN_SECRET_KEY,
     options?.adminSecret ?? TEST_SECRET,

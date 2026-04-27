@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import type { CloudWaitingSessionSyncTaskSummary } from "@yinjie/contracts";
+import { formatDateTime as formatLocaleDateTime } from "@yinjie/i18n";
 import {
   CloudAdminErrorBlock,
   showCloudAdminErrorNotice,
@@ -130,7 +131,10 @@ function formatDateTime(value?: string | null) {
     return "Not available";
   }
 
-  return new Date(value).toLocaleString();
+  return formatLocaleDateTime(new Date(value), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function formatTaskType(taskType: CloudWaitingSessionSyncTaskSummary["taskType"]) {
