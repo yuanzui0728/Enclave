@@ -18,6 +18,7 @@ import {
   resolveInitialLocale,
   resolveSupportedLocale,
   persistPreferredLocale,
+  readQueryLocale,
   syncDocumentLocale,
 } from "../locales";
 import { appI18n, setActiveLocale } from "./i18n-instance";
@@ -53,7 +54,14 @@ export function AppLocaleProvider({
   fallback = null,
   surface,
 }: AppLocaleProviderProps) {
-  const initialLocale = useMemo(() => resolveInitialLocale(surface), [surface]);
+  const initialLocale = useMemo(() => {
+    const queryLocale = readQueryLocale();
+    const resolvedLocale = resolveInitialLocale(surface);
+    if (queryLocale) {
+      persistPreferredLocale(surface, queryLocale);
+    }
+    return resolvedLocale;
+  }, [surface]);
   const [requestedLocale, setRequestedLocale] =
     useState<SupportedLocale>(initialLocale);
   const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);

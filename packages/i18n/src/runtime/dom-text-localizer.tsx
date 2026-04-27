@@ -202,8 +202,15 @@ function translateKnownPattern(
   locale: SupportedLocale,
   dictionary: ReadonlyMap<string, string>,
 ) {
-  const translatePatternTarget = (target: string) =>
-    dictionary.get(target.trim()) ?? target;
+  const translatePatternTarget = (target: string) => {
+    const trimmedTarget = target.trim();
+    if (trimmedTarget.startsWith("#")) {
+      const translatedTag = dictionary.get(trimmedTarget.slice(1));
+      return translatedTag ? `#${translatedTag}` : target;
+    }
+
+    return dictionary.get(trimmedTarget) ?? target;
+  };
 
   const popularPlayersMatch = sourceValue.match(/^(\d+(?:\.\d+)?) 万人在玩$/);
   if (popularPlayersMatch) {
@@ -290,6 +297,87 @@ function translateKnownPattern(
     const label = translatePatternTarget(labeledDateMatch[1] ?? "");
     const dateLabel = labeledDateMatch[2] ?? "";
     return `${label} · ${dateLabel}`;
+  }
+
+  const channelGeneratedTextMatch = sourceValue.match(
+    /^(今天的视频号片段|这一帧想留给你看|刚刚捕捉到的世界画面)：(.+) 刚刚发来一段 AI 生成的短片，适合停下来刷 10 秒。$/,
+  );
+  if (channelGeneratedTextMatch) {
+    const opener = translatePatternTarget(channelGeneratedTextMatch[1] ?? "");
+    const authorName = translatePatternTarget(channelGeneratedTextMatch[2] ?? "");
+    if (locale === "ja-JP") {
+      return `${opener}: ${authorName} からAI生成の短編が届きました。10秒だけ立ち止まって見るのに向いています。`;
+    }
+    if (locale === "ko-KR") {
+      return `${opener}: ${authorName}이(가) 방금 AI 생성 짧은 영상을 보냈습니다. 10초만 멈춰 보기 좋습니다.`;
+    }
+    return `${opener}: ${authorName} just sent an AI-generated short, worth pausing for 10 seconds.`;
+  }
+
+  const characterAddedMatch = sourceValue.match(
+    /^你已添加了(.+)，现在可以开始聊天了。$/,
+  );
+  if (characterAddedMatch) {
+    const target = translatePatternTarget(characterAddedMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} を追加しました。チャットを開始できます。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}을(를) 추가했습니다. 이제 채팅을 시작할 수 있습니다.`;
+    }
+    return `${target} has been added. You can start chatting now.`;
+  }
+
+  const nicknameMatch = sourceValue.match(/^昵称：(.+?)(?: · (.+))?$/);
+  if (nicknameMatch) {
+    const target = translatePatternTarget(nicknameMatch[1] ?? "");
+    const suffix = nicknameMatch[2]
+      ? ` · ${translatePatternTarget(nicknameMatch[2] ?? "")}`
+      : "";
+    if (locale === "ja-JP") {
+      return `ニックネーム: ${target}${suffix}`;
+    }
+    if (locale === "ko-KR") {
+      return `닉네임: ${target}${suffix}`;
+    }
+    return `Nickname: ${target}${suffix}`;
+  }
+
+  const profileAriaMatch = sourceValue.match(/^查看(.+)资料$/);
+  if (profileAriaMatch) {
+    const target = translatePatternTarget(profileAriaMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target}のプロフィールを見る`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 프로필 보기`;
+    }
+    return `View ${target} profile`;
+  }
+
+  const contactCardAriaMatch = sourceValue.match(/^查看名片 (.+)$/);
+  if (contactCardAriaMatch) {
+    const target = translatePatternTarget(contactCardAriaMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target}の連絡先カードを見る`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 연락처 카드 보기`;
+    }
+    return `View ${target} contact card`;
+  }
+
+  const lastInviteMatch = sourceValue.match(/^上次邀约 (.+?) · (.+)$/);
+  if (lastInviteMatch) {
+    const invitedAt = lastInviteMatch[1] ?? "";
+    const updatedAt = lastInviteMatch[2] ?? "";
+    if (locale === "ja-JP") {
+      return `前回の招待 ${invitedAt} · ${updatedAt}`;
+    }
+    if (locale === "ko-KR") {
+      return `마지막 초대 ${invitedAt} · ${updatedAt}`;
+    }
+    return `Last invite ${invitedAt} · ${updatedAt}`;
   }
 
   const viewCharacterMomentsMatch = sourceValue.match(/^查看 (.+) 的朋友圈$/);
@@ -394,6 +482,55 @@ function translateKnownPattern(
       return `첨부파일 ${count}개`;
     }
     return `${count} attachments`;
+  }
+
+  if (sourceValue === "项附件") {
+    if (locale === "ja-JP") {
+      return "件の添付";
+    }
+    if (locale === "ko-KR") {
+      return "개 첨부파일";
+    }
+    return "attachments";
+  }
+
+  const imageMetaMatch = sourceValue.match(/^图片 · (.+)$/);
+  if (imageMetaMatch) {
+    const meta = imageMetaMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `画像 · ${meta}`;
+    }
+    if (locale === "ko-KR") {
+      return `이미지 · ${meta}`;
+    }
+    return `Image · ${meta}`;
+  }
+
+  const fileMetaMatch = sourceValue.match(/^文件 · (.+)$/);
+  if (fileMetaMatch) {
+    const meta = fileMetaMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `ファイル · ${meta}`;
+    }
+    if (locale === "ko-KR") {
+      return `파일 · ${meta}`;
+    }
+    return `File · ${meta}`;
+  }
+
+  const senderAttachmentPreviewMatch = sourceValue.match(
+    /^(.+?)：\[(图片|文件|文档|语音|名片|位置|笔记|表情)\](.*)$/,
+  );
+  if (senderAttachmentPreviewMatch) {
+    const sender = translatePatternTarget(
+      senderAttachmentPreviewMatch[1] ?? "",
+    );
+    const attachmentLabel = translateAttachmentLabel(
+      senderAttachmentPreviewMatch[2] ?? "",
+      locale,
+    );
+    const suffix = senderAttachmentPreviewMatch[3] ?? "";
+    return `${sender}: [${attachmentLabel}]${suffix}`;
   }
 
   const messageCountMatch = sourceValue.match(/^(\d+) 条$/);
@@ -580,6 +717,75 @@ function translateKnownPattern(
   }
 
   return null;
+}
+
+function translateAttachmentLabel(label: string, locale: SupportedLocale) {
+  if (locale === "ja-JP") {
+    switch (label) {
+      case "图片":
+        return "画像";
+      case "文件":
+        return "ファイル";
+      case "文档":
+        return "ドキュメント";
+      case "语音":
+        return "音声";
+      case "名片":
+        return "連絡先";
+      case "位置":
+        return "位置";
+      case "笔记":
+        return "ノート";
+      case "表情":
+        return "スタンプ";
+      default:
+        return label;
+    }
+  }
+
+  if (locale === "ko-KR") {
+    switch (label) {
+      case "图片":
+        return "이미지";
+      case "文件":
+        return "파일";
+      case "文档":
+        return "문서";
+      case "语音":
+        return "음성";
+      case "名片":
+        return "연락처";
+      case "位置":
+        return "위치";
+      case "笔记":
+        return "노트";
+      case "表情":
+        return "스티커";
+      default:
+        return label;
+    }
+  }
+
+  switch (label) {
+    case "图片":
+      return "Image";
+    case "文件":
+      return "File";
+    case "文档":
+      return "Document";
+    case "语音":
+      return "Voice";
+    case "名片":
+      return "Contact";
+    case "位置":
+      return "Location";
+    case "笔记":
+      return "Note";
+    case "表情":
+      return "Sticker";
+    default:
+      return label;
+  }
 }
 
 function formatPatternNumber(value: number) {

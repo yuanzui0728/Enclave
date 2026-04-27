@@ -502,9 +502,21 @@ msgstr "Last 30 days"
 msgid "7天内"
 msgstr "Last 7 days"
 
+#: apps/app/src/i18n/static-dom-seed.ts:659
+msgid "AI 合成的玻璃温室散步片段，镜头从花墙缓慢推到中央光井。"
+msgstr "An AI-composed glasshouse walk, with the camera slowly moving from the flower wall to the central light well."
+
 #: apps/app/src/i18n/static-dom-seed.ts:24
 msgid "AI 在场"
 msgstr "AI present"
+
+#: apps/app/src/i18n/static-dom-seed.ts:657
+msgid "AI 夜航日志：雾港上空的低空巡游短片，第一视角穿过霓虹塔群。"
+msgstr "AI night-flight log: a low-altitude patrol short over Fog Harbor, flying first-person through neon towers."
+
+#: apps/app/src/i18n/static-dom-seed.ts:658
+msgid "AI 居民拍到的晨光海岸，海风、长桥和低饱和城市天际线被压进 20 秒短片里。"
+msgstr "An AI resident captured Morning Coast, compressing sea breeze, a long bridge, and a muted skyline into a 20-second short."
 
 #: apps/app/src/routes/chat-details-page.tsx:992
 msgid "AI 数字人"
@@ -526,6 +538,14 @@ msgstr "AI settings are temporarily unavailable"
 #: apps/app/src/routes/chat-details-page.tsx:991
 msgid "AI 语音"
 msgstr "AI voice"
+
+#: apps/app/src/i18n/static-dom-seed.ts:656
+msgid "AI世界"
+msgstr "AI World"
+
+#: apps/app/src/i18n/static-dom-seed.ts:712
+msgid "AI工程导师映射"
+msgstr "AI engineering mentor mapping"
 
 #. placeholder {0}: status.coreApi.healthy ? t(msg`在线`) : t(msg`异常`)
 #: apps/app/src/routes/desktop-feedback-page.tsx:260
@@ -617,6 +637,18 @@ msgstr "PgUp previous group"
 msgid "Ta 的朋友圈"
 msgstr "Their Moments"
 
+#: apps/app/src/i18n/static-dom-seed.ts:705
+msgid "X/Twitter运营全栈导师"
+msgstr "X/Twitter full-stack growth mentor"
+
+#: apps/app/src/i18n/static-dom-seed.ts:706
+msgid "一个人就能陪你把训练和恢复做下去的健身教练型助手"
+msgstr "A coach-style assistant for training and recovery"
+
+#: apps/app/src/i18n/static-dom-seed.ts:701
+msgid "一个人就能陪你长期学英语的老师型搭子"
+msgstr "A teacher-style companion for long-term English learning"
+
 #: apps/app/src/i18n/static-dom-seed.ts:309
 msgid "一句话、一张图，也能先留住。"
 msgstr "Even one sentence or one image can be saved first."
@@ -679,6 +711,10 @@ msgstr "Stop receiving interactions from this character"
 msgid "不再接收该角色后续互动"
 msgstr "Stop receiving future interactions from this character"
 
+#: apps/app/src/i18n/static-dom-seed.ts:731
+msgid "不再接收这个联系人的互动"
+msgstr "Stop receiving interactions from this contact"
+
 #: apps/app/src/routes/chat-details-page.tsx:693
 msgid "不删除现有聊天记录"
 msgstr "Keep existing chat history"
@@ -725,6 +761,10 @@ msgstr "Dedicated API Key cleared."
 #: apps/app/src/routes/profile-settings-page.tsx:462
 msgid "专属 Key"
 msgstr "Dedicated key"
+
+#: apps/app/src/i18n/static-dom-seed.ts:702
+msgid "专门替你记事、盯时间、到点提醒的人"
+msgstr "Keeps notes, watches time, and reminds you on schedule"
 
 #: apps/app/src/i18n/static-dom-seed.ts:178
 msgid "世界"
@@ -885,6 +925,10 @@ msgstr "The main recommendation is group chat spread, which currently has a larg
 msgid "举报会进入当前实例的安全记录，用于后续审核、留档和必要处理；如果内容涉及持续性风险，系统可能同步做限制动作。"
 msgstr "Reports enter this instance's safety records for review, retention, and necessary handling; ongoing risk may also trigger restrictions."
 
+#: apps/app/src/i18n/static-dom-seed.ts:664
+msgid "乔布斯"
+msgstr "Steve Jobs"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1157
 msgid "也可以先去清理不常用表情，再回来继续搜。"
 msgstr "You can also clean up less-used stickers first, then come back to search."
@@ -957,6 +1001,10 @@ msgstr "Today"
 #: apps/app/src/i18n/static-dom-seed.ts:467
 msgid "今天 20:00 开始"
 msgstr "Starts today at 20:00"
+
+#: apps/app/src/i18n/static-dom-seed.ts:639
+msgid "今天的视频号片段"
+msgstr "Today's Channels clip"
 
 #: apps/app/src/i18n/static-dom-seed.ts:255
 msgid "今日安排"
@@ -1430,6 +1478,10 @@ msgstr "Handle the top recommendation first"
 msgid "先处理新的朋友，或者去浏览世界角色。"
 msgstr "Handle New Friends first, or browse world characters."
 
+#: apps/app/src/i18n/static-dom-seed.ts:697
+msgid "先帮你判断现在该怎么处理身体不适的人"
+msgstr "Helps you decide what to do about physical discomfort first"
+
 #: apps/app/src/i18n/static-dom-seed.ts:585
 msgid "先把直播标题、主题、封面钩子和桌面策略准备好，后面接真推流时这层不用再推倒。"
 msgstr "Prepare the live title, topic, cover hook, and desktop strategy first, so real streaming can plug in later without rebuilding this layer."
@@ -1471,6 +1523,10 @@ msgstr "Wait for return first"
 msgid "先等系统注入 AI 演示内容，或者后续接入真实生成视频后再回来查看。"
 msgstr "Wait for the system to add AI demo content, or return after generated videos are connected."
 
+#: apps/app/src/i18n/static-dom-seed.ts:724
+msgid "先继续聊天"
+msgstr "Keep chatting for now"
+
 #: apps/app/src/routes/group-qr-page.tsx:1730
 msgid "先走主推荐，不走第一条就切备选，冷却目标等恢复后再补。"
 msgstr "Start with the top recommendation. If you skip the first option, switch to the backup. Cooldown targets can wait until they recover."
@@ -1504,6 +1560,10 @@ msgstr "Select contacts first, then start a new group chat."
 #: apps/app/src/routes/chat-list-page.tsx:1417
 msgid "免打扰"
 msgstr "Mute"
+
+#: apps/app/src/i18n/static-dom-seed.ts:698
+msgid "全球内容增长操盘手映射"
+msgstr "Global content growth strategist mapping"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:120
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2060
@@ -1584,6 +1644,14 @@ msgstr "Official Account Article"
 #: apps/app/src/routes/desktop-mobile-page.tsx:1315
 msgid "公众号阅读在手机上更顺手，这里直接复制最近文章或账号主页。"
 msgstr "Official account reading works better on mobile. Copy the latest article or account home directly from here."
+
+#: apps/app/src/i18n/static-dom-seed.ts:711
+msgid "公众强者映射"
+msgstr "Public power-player mapping"
+
+#: apps/app/src/i18n/static-dom-seed.ts:715
+msgid "公共知识分子映射"
+msgstr "Public intellectual mapping"
 
 #: apps/app/src/routes/discover-page.tsx:71
 msgid "公园"
@@ -1736,6 +1804,10 @@ msgstr "Content and services"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:685
 msgid "内容入口"
 msgstr "Content entry points"
+
+#: apps/app/src/i18n/static-dom-seed.ts:643
+msgid "内容卡片"
+msgstr "Content card"
 
 #: apps/app/src/i18n/static-dom-seed.ts:520
 #: apps/app/src/routes/desktop-feedback-page.tsx:74
@@ -2036,6 +2108,10 @@ msgstr "No recent stickers yet."
 msgid "最适合精确查找"
 msgstr "Best for exact lookup"
 
+#: apps/app/src/i18n/static-dom-seed.ts:637
+msgid "写下你对这条视频号内容的评论..."
+msgstr "Write your comment on this Channels post..."
+
 #: apps/app/src/routes/discover-feed-page.tsx:669
 #: apps/app/src/routes/discover-page.tsx:605
 msgid "写点想让世界居民都能看到的内容..."
@@ -2162,6 +2238,10 @@ msgstr "Switch to {paletteLabel} annotation"
 msgid "切换为{paletteLabel}标注 ({0})"
 msgstr "Switch to {paletteLabel} annotation ({0})"
 
+#: apps/app/src/i18n/static-dom-seed.ts:733
+msgid "切换为完整日期显示"
+msgstr "Switch to full date display"
+
 #: apps/app/src/components/chat-composer.tsx:3195
 msgid "切换到语音输入"
 msgstr "Switch to voice input"
@@ -2187,6 +2267,10 @@ msgstr "Change the display language shared by the desktop, web, Android, and iOS
 msgid "刚刚和你打了招呼。"
 msgstr "just greeted you."
 
+#: apps/app/src/i18n/static-dom-seed.ts:641
+msgid "刚刚捕捉到的世界画面"
+msgstr "A world scene just captured"
+
 #: apps/app/src/i18n/static-dom-seed.ts:367
 msgid "刚打完一局晋级赛，正在拉人补位。"
 msgstr "Just finished a ranked match and is filling the squad."
@@ -2202,6 +2286,10 @@ msgstr "Just resent, wait for the next return"
 #: apps/app/src/routes/group-qr-page.tsx:2705
 msgid "刚补发过，先等回流。"
 msgstr "Just resent, wait for the return."
+
+#: apps/app/src/i18n/static-dom-seed.ts:700
+msgid "创业与写作导师映射"
+msgstr "Startup and writing mentor mapping"
 
 #. placeholder {0}: nextManageSticker.label ?? nextManageSticker.stickerId
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1113
@@ -2385,6 +2473,10 @@ msgstr "Post summary copied."
 msgid "匹配方式"
 msgstr "Matching method"
 
+#: apps/app/src/i18n/static-dom-seed.ts:714
+msgid "升学与职业选择顾问映射"
+msgstr "Education and career-choice advisor mapping"
+
 #: apps/app/src/routes/profile-settings-page.tsx:44
 #: apps/app/src/routes/profile-settings-page.tsx:662
 msgid "协议与规范"
@@ -2420,9 +2512,21 @@ msgstr "Dangerous actions"
 msgid "即玩中"
 msgstr "Playable now"
 
+#: apps/app/src/i18n/static-dom-seed.ts:707
+msgid "历史产品领袖映射"
+msgstr "Historic product leader mapping"
+
 #: apps/app/src/i18n/static-dom-seed.ts:497
 msgid "历史已全部加载"
 msgstr "All history loaded"
+
+#: apps/app/src/i18n/static-dom-seed.ts:713
+msgid "历史投资思想家映射"
+msgstr "Historic investing thinker mapping"
+
+#: apps/app/src/i18n/static-dom-seed.ts:717
+msgid "历史物理学家映射"
+msgstr "Historic physicist mapping"
 
 #: apps/app/src/components/chat-composer.tsx:3996
 msgid "原图 ⌘/Ctrl + Enter"
@@ -2892,6 +2996,10 @@ msgstr "Weekend crew group"
 msgid "周末派对活动带来新一轮曝光。"
 msgstr "Weekend party events bring another wave of exposure."
 
+#: apps/app/src/i18n/static-dom-seed.ts:683
+msgid "周燃"
+msgstr "Zhou Ran"
+
 #. placeholder {0}: diagnostics.coreApiCommandSource
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:224
 msgid "命令来源：{0}"
@@ -2989,9 +3097,17 @@ msgstr "Up to 9 images are supported. Videos currently support 1 item under 5 mi
 msgid "图片选择失败，请稍后重试。"
 msgstr "Image selection failed. Try again later."
 
+#: apps/app/src/i18n/static-dom-seed.ts:725
+msgid "在吧台边，先帮你把今晚这杯点明白。"
+msgstr "At the bar, helping you pick the right drink for tonight."
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:173
 msgid "在手机端继续查看联系人、星标朋友和公众号入口。"
 msgstr "Continue viewing contacts, starred friends, and official account entries on mobile."
+
+#: apps/app/src/i18n/static-dom-seed.ts:727
+msgid "在替你记着那些容易被忙乱吞掉的事。"
+msgstr "Keeping track of the things that busy days tend to swallow."
 
 #: apps/app/src/routes/profile-settings-page.tsx:720
 msgid "在桌面工作区里管理世界主人的资料与签名。"
@@ -3000,6 +3116,14 @@ msgstr "Manage the world owner profile and signature in the desktop workspace."
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:104
 msgid "在独立窗口打开"
 msgstr "Open in separate window"
+
+#: apps/app/src/i18n/static-dom-seed.ts:726
+msgid "在看门诊，也先帮你把轻重缓急分清。"
+msgstr "On clinic duty, helping you sort urgency and priorities first."
+
+#: apps/app/src/i18n/static-dom-seed.ts:728
+msgid "在等你把想办的那件事直接丢过来。"
+msgstr "Waiting for you to send over the thing you want handled."
 
 #: apps/app/src/i18n/static-dom-seed.ts:369
 msgid "在约人打双人同屏，已经连胜 6 场。"
@@ -3040,9 +3164,17 @@ msgstr "Scene encounter"
 msgid "场景相遇已写入好友申请列表。"
 msgstr "Scene encounter was added to friend requests."
 
+#: apps/app/src/i18n/static-dom-seed.ts:651
+msgid "城市"
+msgstr "City"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:631
 msgid "基础资料"
 msgstr "Basic info"
+
+#: apps/app/src/i18n/static-dom-seed.ts:666
+msgid "塔勒布"
+msgstr "Taleb"
 
 #: apps/app/src/routes/discover-feed-page.tsx:883
 #: apps/app/src/routes/discover-page.tsx:764
@@ -3190,6 +3322,10 @@ msgstr "Night Market Partners doubles weekend traffic"
 msgid "夜市摊位升到 5 级，刚开了新的甜品档。"
 msgstr "Night market stall reached level 5 and opened a new dessert booth."
 
+#: apps/app/src/i18n/static-dom-seed.ts:654
+msgid "夜景"
+msgstr "Night view"
+
 #: apps/app/src/i18n/static-dom-seed.ts:215
 msgid "天空竞速"
 msgstr "Sky Sprint"
@@ -3264,9 +3400,17 @@ msgstr "Caption failed"
 msgid "字幕补跑中"
 msgstr "Caption backfill in progress"
 
+#: apps/app/src/i18n/static-dom-seed.ts:710
+msgid "字节创始人镜像"
+msgstr "ByteDance founder mirror"
+
 #: apps/app/src/i18n/static-dom-seed.ts:176
 msgid "安排与提醒"
 msgstr "Plans and reminders"
+
+#: apps/app/src/i18n/static-dom-seed.ts:685
+msgid "安澜"
+msgstr "Anlan"
 
 #: apps/app/src/features/chat/chat-reminder-entries.ts:174
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:907
@@ -3371,6 +3515,10 @@ msgstr "Will remind at {label}"
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:73
 msgid "将按顺序逐张发送图片。"
 msgstr "Images will be sent one by one in order."
+
+#: apps/app/src/i18n/static-dom-seed.ts:671
+msgid "小盯"
+msgstr "Xiaoding"
 
 #: apps/app/src/features/shell/desktop-nav-matching.ts:110
 #: apps/app/src/i18n/static-dom-seed.ts:66
@@ -3881,6 +4029,18 @@ msgstr "Bring the group link and invitation code and send them to the other part
 msgid "带入直播准备"
 msgstr "Use for live prep"
 
+#: apps/app/src/i18n/static-dom-seed.ts:694
+msgid "帮你把婚礼落地的人"
+msgstr "Helps turn wedding plans into execution"
+
+#: apps/app/src/i18n/static-dom-seed.ts:691
+msgid "帮你把证据和边界理清的人"
+msgstr "Helps you sort evidence and boundaries"
+
+#: apps/app/src/i18n/static-dom-seed.ts:693
+msgid "帮你盯新闻的人"
+msgstr "Keeps an eye on news for you"
+
 #: apps/app/src/i18n/static-dom-seed.ts:104
 msgid "常玩"
 msgstr "Frequent"
@@ -4008,6 +4168,14 @@ msgstr "Open"
 #: apps/app/src/routes/desktop-feedback-page.tsx:434
 msgid "异常"
 msgstr "Error"
+
+#: apps/app/src/i18n/static-dom-seed.ts:663
+msgid "张一鸣"
+msgstr "Zhang Yiming"
+
+#: apps/app/src/i18n/static-dom-seed.ts:662
+msgid "张雪峰"
+msgstr "Zhang Xuefeng"
 
 #: apps/app/src/routes/chat-details-page.tsx:978
 msgid "强提醒"
@@ -4537,6 +4705,10 @@ msgstr "Performance issue"
 msgid "总耗时 {0}"
 msgstr "Total {0}"
 
+#: apps/app/src/i18n/static-dom-seed.ts:692
+msgid "恋爱与亲密关系顾问"
+msgstr "Dating and intimacy advisor"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:745
 msgid "恢复后回到：{pausedManageFocusLabel}"
 msgstr "Resume to: {pausedManageFocusLabel}"
@@ -4559,6 +4731,10 @@ msgstr "Feedback"
 #: apps/app/src/routes/desktop-feedback-page.tsx:284
 msgid "意见反馈当前仅提供桌面布局"
 msgstr "Feedback is currently available only in desktop layout"
+
+#: apps/app/src/i18n/static-dom-seed.ts:690
+msgid "懂酒吧和鸡尾酒的人"
+msgstr "Bar and cocktail expert"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:506
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:697
@@ -4627,6 +4803,10 @@ msgstr "My Mini Programs"
 #: apps/app/src/i18n/static-dom-seed.ts:567
 msgid "我的隐界名片"
 msgstr "My Yinjie card"
+
+#: apps/app/src/i18n/static-dom-seed.ts:672
+msgid "我自己"
+msgstr "Myself"
 
 #: apps/app/src/components/chat-composer.tsx:2312
 #: apps/app/src/components/chat-composer.tsx:3104
@@ -5172,6 +5352,10 @@ msgstr "Recommendation slot"
 #: apps/app/src/routes/chat-details-page.tsx:917
 msgid "推荐给朋友"
 msgstr "Recommend to a friend"
+
+#: apps/app/src/i18n/static-dom-seed.ts:720
+msgid "推荐联系人"
+msgstr "Recommended contact"
 
 #: apps/app/src/i18n/static-dom-seed.ts:358
 msgid "推荐队列"
@@ -5761,6 +5945,10 @@ msgstr "Display name"
 msgid "显示群成员昵称"
 msgstr "Show group member nicknames"
 
+#: apps/app/src/i18n/static-dom-seed.ts:646
+msgid "晨光海岸"
+msgstr "Morning Coast"
+
 #: apps/app/src/routes/group-qr-page.tsx:2910
 #: apps/app/src/routes/group-qr-page.tsx:2945
 msgid "暂不建议"
@@ -5912,6 +6100,10 @@ msgstr "Better as a desktop organizing workspace, and as a light recent-review e
 #: apps/app/src/i18n/static-dom-seed.ts:113
 msgid "更适合长期养成和资源经营。"
 msgstr "Better for long-term progression and resource management."
+
+#: apps/app/src/i18n/static-dom-seed.ts:703
+msgid "替你把真实世界动作往前推进的人"
+msgstr "Moves real-world actions forward for you"
 
 #: apps/app/src/routes/chat-list-page.tsx:1316
 msgid "有未读消息"
@@ -6260,6 +6452,22 @@ msgstr "Release to cancel"
 msgid "松开鼠标发送图片或文件"
 msgstr "Release to send images or files"
 
+#: apps/app/src/i18n/static-dom-seed.ts:673
+msgid "林医生"
+msgstr "Dr. Lin"
+
+#: apps/app/src/i18n/static-dom-seed.ts:678
+msgid "林晨"
+msgstr "Lin Chen"
+
+#: apps/app/src/i18n/static-dom-seed.ts:688
+msgid "林树"
+msgstr "Lin Shu"
+
+#: apps/app/src/i18n/static-dom-seed.ts:684
+msgid "林眠"
+msgstr "Lin Mian"
+
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:380
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1542
 #: apps/app/src/routes/chat-details-page.tsx:950
@@ -6270,6 +6478,10 @@ msgstr "Search chat history"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:754
 msgid "查找记录"
 msgstr "Search history"
+
+#: apps/app/src/i18n/static-dom-seed.ts:667
+msgid "查理·芒格"
+msgstr "Charlie Munger"
 
 #: apps/app/src/routes/profile-page.tsx:95
 msgid "查看与编辑个人资料"
@@ -6327,6 +6539,14 @@ msgstr "View all group chats"
 msgid "查看公众号"
 msgstr "View Official Accounts"
 
+#: apps/app/src/i18n/static-dom-seed.ts:722
+msgid "查看公众号主页"
+msgstr "View official account profile"
+
+#: apps/app/src/i18n/static-dom-seed.ts:723
+msgid "查看公众号主页、订阅号和服务号消息"
+msgstr "View official account profile, subscription messages, and service messages"
+
 #: apps/app/src/routes/character-detail-page.tsx:283
 #: apps/app/src/routes/contacts-page.tsx:1112
 msgid "查看好友申请"
@@ -6359,6 +6579,14 @@ msgstr "View file messages"
 #: apps/app/src/routes/contacts-page.tsx:1279
 msgid "查看新的朋友"
 msgstr "View New Friends"
+
+#: apps/app/src/i18n/static-dom-seed.ts:636
+msgid "查看星标朋友"
+msgstr "View starred friends"
+
+#: apps/app/src/i18n/static-dom-seed.ts:718
+msgid "查看更多消息"
+msgstr "View more messages"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:656
 msgid "查看更多群成员"
@@ -6972,6 +7200,10 @@ msgstr "Browse characters"
 msgid "浏览频道"
 msgstr "Browse channels"
 
+#: apps/app/src/i18n/static-dom-seed.ts:649
+msgid "海岸"
+msgstr "Coast"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1408
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1411
 msgid "消"
@@ -7070,6 +7302,10 @@ msgstr "Add group members"
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1002
 msgid "添加表情"
 msgstr "Add sticker"
+
+#: apps/app/src/i18n/static-dom-seed.ts:650
+msgid "清晨"
+msgstr "Morning"
 
 #: apps/app/src/features/chat/chat-reminder-entries.ts:292
 msgid "清理已通知"
@@ -7183,6 +7419,10 @@ msgstr "Clearing..."
 msgid "清除指定日期"
 msgstr "Clear selected date"
 
+#: apps/app/src/i18n/static-dom-seed.ts:652
+msgid "温室"
+msgstr "Greenhouse"
+
 #: apps/app/src/features/shell/desktop-nav-matching.ts:104
 #: apps/app/src/i18n/static-dom-seed.ts:74
 #: apps/app/src/routes/desktop-mobile-page.tsx:139
@@ -7198,6 +7438,10 @@ msgstr "Game Center"
 #: apps/app/src/routes/desktop-mobile-page.tsx:140
 msgid "游戏中心、组局邀约和继续游玩入口。"
 msgstr "Game center, party invites, and continue-playing entry points."
+
+#: apps/app/src/i18n/static-dom-seed.ts:653
+msgid "漫游"
+msgstr "Walk"
 
 #: apps/app/src/i18n/static-dom-seed.ts:206
 msgid "灵感"
@@ -7248,6 +7492,14 @@ msgstr "Hot ranking"
 msgid "熟人评论"
 msgstr "Acquaintance comments"
 
+#: apps/app/src/i18n/static-dom-seed.ts:716
+msgid "特别爱刷朋友圈、很会接梗的朋友"
+msgstr "A friend who loves browsing Moments and catches references fast"
+
+#: apps/app/src/i18n/static-dom-seed.ts:660
+msgid "特朗普"
+msgstr "Trump"
+
 #: apps/app/src/i18n/static-dom-seed.ts:121
 msgid "状态"
 msgstr "Status"
@@ -7297,6 +7549,10 @@ msgstr "Resend now"
 msgid "现在追也不会立刻改善结构。"
 msgstr "Chasing now will not immediately improve the structure."
 
+#: apps/app/src/i18n/static-dom-seed.ts:647
+msgid "玻璃温室漫游"
+msgstr "Glasshouse Walk"
+
 #: apps/app/src/components/chat-composer.tsx:4561
 msgid "琥珀"
 msgstr "Amber"
@@ -7330,9 +7586,17 @@ msgstr "Separate multiple tags with commas, for example: coworker, illustration,
 msgid "申请摄像头权限中"
 msgstr "Requesting camera permission"
 
+#: apps/app/src/i18n/static-dom-seed.ts:670
+msgid "界闻"
+msgstr "Jiewen"
+
 #: apps/app/src/routes/profile-settings-page.tsx:603
 msgid "界面语言"
 msgstr "Interface Language"
+
+#: apps/app/src/i18n/static-dom-seed.ts:689
+msgid "白石"
+msgstr "Baishi"
 
 #: apps/app/src/i18n/static-dom-seed.ts:602
 msgid "直接从现有视频号内容流里拿直播参考，不和主频道内容割裂。"
@@ -7439,6 +7703,18 @@ msgstr "OK"
 msgid "矩形"
 msgstr "Rectangle"
 
+#: apps/app/src/i18n/static-dom-seed.ts:642
+msgid "短片"
+msgstr "Short"
+
+#: apps/app/src/i18n/static-dom-seed.ts:645
+msgid "短片更新"
+msgstr "Short update"
+
+#: apps/app/src/i18n/static-dom-seed.ts:709
+msgid "硅谷创业者映射"
+msgstr "Silicon Valley founder mapping"
+
 #: apps/app/src/i18n/static-dom-seed.ts:424
 msgid "确定"
 msgstr "Confirm"
@@ -7475,9 +7751,17 @@ msgstr "Clear this chat history? This only affects the current conversation view
 msgid "碎片时间也能打开继续玩的内容。"
 msgstr "Content you can resume even in short breaks."
 
+#: apps/app/src/i18n/static-dom-seed.ts:676
+msgid "礼序"
+msgstr "Lixu"
+
 #: apps/app/src/i18n/static-dom-seed.ts:148
 msgid "社交"
 msgstr "Social"
+
+#: apps/app/src/i18n/static-dom-seed.ts:729
+msgid "社交与内容"
+msgstr "Social and Content"
 
 #: apps/app/src/routes/discover-page.tsx:881
 msgid "社交与动态"
@@ -7528,6 +7812,10 @@ msgstr "Channels is temporarily unavailable"
 #: apps/app/src/features/shell/desktop-nav-config.ts:88
 msgid "视频号直播伴侣"
 msgstr "Channel Live Companion"
+
+#: apps/app/src/i18n/static-dom-seed.ts:644
+msgid "视频号短片"
+msgstr "Channels short"
 
 #: apps/app/src/i18n/static-dom-seed.ts:60
 msgid "视频号还没有内容"
@@ -7769,6 +8057,18 @@ msgstr "Filter scope"
 msgid "签名"
 msgstr "Signature"
 
+#: apps/app/src/i18n/static-dom-seed.ts:680
+msgid "简宁"
+msgstr "Jianning"
+
+#: apps/app/src/i18n/static-dom-seed.ts:674
+msgid "简衡"
+msgstr "Jianheng"
+
+#: apps/app/src/i18n/static-dom-seed.ts:675
+msgid "简衡律师"
+msgstr "Lawyer Jianheng"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:908
 msgid "管理"
 msgstr "Manage"
@@ -7864,6 +8164,10 @@ msgstr "System sharing is unavailable for now. The contact summary has been copi
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:284
 msgid "纯文本笔记"
 msgstr "Text-only note"
+
+#: apps/app/src/i18n/static-dom-seed.ts:681
+msgid "纳瓦尔"
+msgstr "Naval"
 
 #: apps/app/src/i18n/static-dom-seed.ts:229
 msgid "组局"
@@ -7961,6 +8265,10 @@ msgstr "Resume manage"
 #: apps/app/src/routes/discover-feed-page.tsx:252
 msgid "继续编辑"
 msgstr "Continue editing"
+
+#: apps/app/src/i18n/static-dom-seed.ts:719
+msgid "继续聊"
+msgstr "Continue chat"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1376
 msgid "继续阅读这篇公众号文章。"
@@ -8226,6 +8534,10 @@ msgstr "The group link has been copied."
 msgid "聊天"
 msgstr "Chat"
 
+#: apps/app/src/i18n/static-dom-seed.ts:730
+msgid "聊天与提醒"
+msgstr "Chats and Reminders"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:752
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:112
 #: apps/app/src/routes/chat-details-page.tsx:737
@@ -8369,6 +8681,14 @@ msgstr "Aggregates messages, notes, and saved content."
 msgid "能力建议"
 msgstr "Capability suggestion"
 
+#: apps/app/src/i18n/static-dom-seed.ts:695
+msgid "能随时倾听、疏导压力和睡眠困扰的朋友型睡眠医生"
+msgstr "A friend-like sleep doctor who listens and helps with stress and sleep issues"
+
+#: apps/app/src/i18n/static-dom-seed.ts:696
+msgid "能随时倾听和接住你情绪的睡眠医生朋友"
+msgstr "A sleep-doctor friend who listens and holds your emotions"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:572
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:3408
 msgid "自"
@@ -8413,6 +8733,10 @@ msgstr "Custom stickers are cleared. You can add new images or GIFs now."
 msgid "自定义表情库"
 msgstr "Custom sticker library"
 
+#: apps/app/src/i18n/static-dom-seed.ts:682
+msgid "苏语"
+msgstr "Suyu"
+
 #: apps/app/src/routes/discover-page.tsx:587
 #: apps/app/src/routes/discover-page.tsx:707
 msgid "范围"
@@ -8421,6 +8745,10 @@ msgstr "Scope"
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:566
 msgid "荐"
 msgstr "F"
+
+#: apps/app/src/i18n/static-dom-seed.ts:677
+msgid "行动助理"
+msgstr "Action Assistant"
 
 #: apps/app/src/components/chat-composer.tsx:3058
 #: apps/app/src/components/chat-composer.tsx:3280
@@ -8494,6 +8822,10 @@ msgstr "Character not found"
 msgid "角色名"
 msgstr "Character name"
 
+#: apps/app/src/i18n/static-dom-seed.ts:721
+msgid "角色名片"
+msgstr "Character card"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2063
 msgid "角色成员"
 msgstr "Character members"
@@ -8510,6 +8842,10 @@ msgstr "Character posting frequency is falling, but longer content and return vi
 msgid "角色简介"
 msgstr "Character bio"
 
+#: apps/app/src/i18n/static-dom-seed.ts:687
+msgid "言初"
+msgstr "Yanchu"
+
 #: apps/app/src/i18n/static-dom-seed.ts:412
 msgid "订阅号"
 msgstr "Subscription account"
@@ -8521,6 +8857,10 @@ msgstr "Subscription and service account entries did not refresh."
 #: apps/app/src/routes/desktop-mobile-page.tsx:596
 msgid "订阅号消息"
 msgstr "Subscription Messages"
+
+#: apps/app/src/i18n/static-dom-seed.ts:679
+msgid "许哲"
+msgstr "Xu Zhe"
 
 #: apps/app/src/routes/character-detail-page.tsx:314
 msgid "设为星标朋友"
@@ -8796,10 +9136,18 @@ msgstr "Adjust send shortcuts for desktop and web keyboard chat input."
 msgid "调整裁剪区域"
 msgstr "Resize crop area"
 
+#: apps/app/src/i18n/static-dom-seed.ts:699
+msgid "财富与自由思维导师映射"
+msgstr "Wealth and freedom mindset mentor mapping"
+
 #. placeholder {0}: resolveLiveQualityLabel(liveDraft.quality)
 #: apps/app/src/routes/desktop-mobile-page.tsx:1610
 msgid "质量 {0}"
 msgstr "Quality {0}"
+
+#: apps/app/src/i18n/static-dom-seed.ts:665
+msgid "费曼"
+msgstr "Feynman"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:624
 #: apps/app/src/routes/character-detail-page.tsx:286
@@ -8846,6 +9194,10 @@ msgstr "timed out and active"
 #: apps/app/src/routes/desktop-mobile-page.tsx:2244
 msgid "超清"
 msgstr "Ultra HD"
+
+#: apps/app/src/i18n/static-dom-seed.ts:708
+msgid "超级智能研究导师"
+msgstr "Superintelligence research mentor"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:673
 msgid "身份"
@@ -8934,6 +9286,10 @@ msgstr "Enter a Yinjie ID, character name, or profile keyword"
 #: apps/app/src/i18n/static-dom-seed.ts:423
 msgid "边界"
 msgstr "Boundaries"
+
+#: apps/app/src/i18n/static-dom-seed.ts:655
+msgid "巡游"
+msgstr "Patrol"
 
 #: apps/app/src/i18n/static-dom-seed.ts:542
 #: apps/app/src/routes/desktop-feedback-page.tsx:406
@@ -9200,6 +9556,10 @@ msgstr "This moment"
 #: apps/app/src/i18n/static-dom-seed.ts:440
 msgid "这一刻的想法..."
 msgstr "Thoughts for this moment..."
+
+#: apps/app/src/i18n/static-dom-seed.ts:640
+msgid "这一帧想留给你看"
+msgstr "A frame worth showing you"
 
 #: apps/app/src/routes/group-qr-page.tsx:1660
 msgid "这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。"
@@ -9540,6 +9900,10 @@ msgstr "Contacts are still empty"
 msgid "通讯录里还没有可选成员"
 msgstr "There are no selectable contacts yet"
 
+#: apps/app/src/i18n/static-dom-seed.ts:732
+msgid "通话"
+msgstr "Call"
+
 #: apps/app/src/i18n/static-dom-seed.ts:560
 msgid "通过隐界号、角色名或资料关键词查找世界角色"
 msgstr "Find world characters by Yinjie ID, character name, or profile keyword"
@@ -9696,6 +10060,10 @@ msgstr "Long time without return"
 msgid "长时间未回流，先补这条。"
 msgstr "This one has waited a long time for a return. Resend it first."
 
+#: apps/app/src/i18n/static-dom-seed.ts:704
+msgid "长期职业成长与产品路径的导师型朋友"
+msgstr "Mentor-like friend for career growth and product direction"
+
 #: apps/app/src/i18n/static-dom-seed.ts:513
 #: apps/app/src/routes/desktop-feedback-page.tsx:519
 msgid "问题分类"
@@ -9715,6 +10083,14 @@ msgstr "Issue description: {0}"
 msgid "阅读整理"
 msgstr "Reading organizer"
 
+#: apps/app/src/i18n/static-dom-seed.ts:668
+msgid "阿澄"
+msgstr "Acheng"
+
+#: apps/app/src/i18n/static-dom-seed.ts:669
+msgid "阿巡"
+msgstr "Axun"
+
 #: apps/app/src/i18n/static-dom-seed.ts:532
 #: apps/app/src/routes/desktop-feedback-page.tsx:660
 msgid "附带实例诊断摘要"
@@ -9723,6 +10099,10 @@ msgstr "Attach instance diagnostic summary"
 #: apps/app/src/routes/discover-page.tsx:270
 msgid "附近暂时没有新的相遇。"
 msgstr "No new encounters nearby for now."
+
+#: apps/app/src/i18n/static-dom-seed.ts:686
+msgid "陆回"
+msgstr "Luhui"
 
 #: apps/app/src/i18n/static-dom-seed.ts:288
 msgid "限时 3 天"
@@ -9828,6 +10208,10 @@ msgstr "Randomly meet new world residents"
 msgid "集中承接报名、申请、生活服务和状态查询，移动端适合随手办，桌面端适合查全量记录。"
 msgstr "Centralizes signup, applications, life services, and status lookup; mobile is quick, desktop is better for full records."
 
+#: apps/app/src/i18n/static-dom-seed.ts:648
+msgid "雾港夜巡"
+msgstr "Fog Harbor Night Patrol"
+
 #: apps/app/src/components/chat-composer.tsx:4566
 msgid "青柠"
 msgstr "Lime"
@@ -9848,6 +10232,10 @@ msgstr "Audio/video call"
 #: apps/app/src/i18n/static-dom-seed.ts:321
 msgid "项"
 msgstr "items"
+
+#: apps/app/src/i18n/static-dom-seed.ts:638
+msgid "项附件"
+msgstr "attachments"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:228
 msgid "预览中"
@@ -9894,6 +10282,10 @@ msgstr "First-version note"
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:2799
 msgid "首项所在分组"
 msgstr "Group with top item"
+
+#: apps/app/src/i18n/static-dom-seed.ts:661
+msgid "马斯克"
+msgstr "Musk"
 
 #: apps/app/src/i18n/static-dom-seed.ts:528
 #: apps/app/src/routes/desktop-feedback-page.tsx:92
