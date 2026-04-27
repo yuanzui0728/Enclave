@@ -704,6 +704,10 @@ msgstr "三种适合长期保存的世界资料"
 msgid "上一张"
 msgstr "上一张"
 
+#: apps/app/src/i18n/static-dom-seed.ts:928
+msgid "上一张图片"
+msgstr "上一张图片"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:284
 msgid "上传表情失败，请稍后再试。"
 msgstr "上传表情失败，请稍后再试。"
@@ -735,6 +739,10 @@ msgstr "上滑取消，松开后只会转成文字，不会直接发送。"
 #: apps/app/src/i18n/static-dom-seed.ts:869
 msgid "下一张"
 msgstr "下一张"
+
+#: apps/app/src/i18n/static-dom-seed.ts:929
+msgid "下一张图片"
+msgstr "下一张图片"
 
 #: apps/app/src/routes/character-detail-page.tsx:317
 msgid "不再接收对方互动"
@@ -970,6 +978,10 @@ msgstr "世界角色搜索结果"
 #: apps/app/src/routes/discover-page.tsx:458
 msgid "世界角色日常"
 msgstr "世界角色日常"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1083
+msgid "世界角色暂时不可用"
+msgstr "世界角色暂时不可用"
 
 #: apps/app/src/routes/contacts-page.tsx:1433
 msgid "世界角色目录"
@@ -1297,6 +1309,10 @@ msgstr "会话不存在"
 msgid "会话列表"
 msgstr "会话列表"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1066
+msgid "会话命中"
+msgstr "会话命中"
+
 #: apps/app/src/i18n/static-dom-seed.ts:490
 msgid "会话类型"
 msgstr "会话类型"
@@ -1423,6 +1439,14 @@ msgstr "保存反馈包"
 #: apps/app/src/i18n/static-dom-seed.ts:761
 msgid "保存后，当前聊天页会立即切到这张背景。"
 msgstr "保存后，当前聊天页会立即切到这张背景。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:923
+msgid "保存图片"
+msgstr "保存图片"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1068
+msgid "保存失败，请稍后再试。"
+msgstr "保存失败，请稍后再试。"
 
 #: apps/app/src/routes/group-qr-page.tsx:1375
 msgid "保存当前邀请卡 SVG，后续可继续转发。"
@@ -1585,6 +1609,10 @@ msgstr "先去联系人资料里把常联系的好友设为星标朋友。"
 msgid "先去通讯录建立一些关系，再回来把他们拉进群。"
 msgstr "先去通讯录建立一些关系，再回来把他们拉进群。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1035
+msgid "先去通讯录里建立一些关系，再回来创建群聊。"
+msgstr "先去通讯录里建立一些关系，再回来创建群聊。"
+
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:79
 msgid "先回到群聊继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
 msgstr "先回到群聊继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
@@ -1717,6 +1745,10 @@ msgstr "先选择联系人，再开始一个新的群聊。"
 msgid "免打扰"
 msgstr "免打扰"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1004
+msgid "全员加入"
+msgstr "全员加入"
+
 #: apps/app/src/i18n/static-dom-seed.ts:698
 msgid "全球内容增长操盘手映射"
 msgstr "全球内容增长操盘手映射"
@@ -1798,6 +1830,18 @@ msgstr "公众号主页"
 msgid "公众号主页和文章阅读入口。"
 msgstr "公众号主页和文章阅读入口。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1012
+msgid "公众号主页暂时不可用"
+msgstr "公众号主页暂时不可用"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1016
+msgid "公众号内容暂时不可用"
+msgstr "公众号内容暂时不可用"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1014
+msgid "公众号列表暂时不可用"
+msgstr "公众号列表暂时不可用"
+
 #: apps/app/src/i18n/static-dom-seed.ts:803
 msgid "公众号摘要已复制。"
 msgstr "公众号摘要已复制。"
@@ -1805,6 +1849,14 @@ msgstr "公众号摘要已复制。"
 #: apps/app/src/routes/desktop-mobile-page.tsx:592
 msgid "公众号文章"
 msgstr "公众号文章"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1017
+msgid "公众号消息操作失败。"
+msgstr "公众号消息操作失败。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1015
+msgid "公众号目录暂时不可用"
+msgstr "公众号目录暂时不可用"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1315
 msgid "公众号阅读在手机上更顺手，这里直接复制最近文章或账号主页。"
@@ -1855,6 +1907,10 @@ msgstr "关注公众号"
 msgid "关注后可从消息页查看这类内容。"
 msgstr "关注后可从消息页查看这类内容。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1019
+msgid "关注服务号后，通知和文章卡片会出现在这里。"
+msgstr "关注服务号后，通知和文章卡片会出现在这里。"
+
 #: apps/app/src/routes/character-detail-page.tsx:313
 msgid "关系管理"
 msgstr "关系管理"
@@ -1902,6 +1958,10 @@ msgstr "关闭了群公告通知。"
 msgid "关闭会话菜单"
 msgstr "关闭会话菜单"
 
+#: apps/app/src/i18n/static-dom-seed.ts:931
+msgid "关闭位置查看器"
+msgstr "关闭位置查看器"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:81
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:100
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:119
@@ -1919,6 +1979,10 @@ msgstr "关闭发送收藏"
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:85
 msgid "关闭发送笔记弹层"
 msgstr "关闭发送笔记弹层"
+
+#: apps/app/src/i18n/static-dom-seed.ts:927
+msgid "关闭图片查看器"
+msgstr "关闭图片查看器"
 
 #: apps/app/src/i18n/static-dom-seed.ts:866
 msgid "关闭图片预览"
@@ -1946,9 +2010,25 @@ msgstr "关闭截图预览 (Esc)"
 msgid "关闭操作菜单"
 msgstr "关闭操作菜单"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1028
+msgid "关闭服务号菜单"
+msgstr "关闭服务号菜单"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1075
+msgid "关闭未保存提示"
+msgstr "关闭未保存提示"
+
 #: apps/app/src/i18n/static-dom-seed.ts:737
 msgid "关闭浮层"
 msgstr "关闭浮层"
+
+#: apps/app/src/i18n/static-dom-seed.ts:940
+msgid "关闭消息操作菜单"
+msgstr "关闭消息操作菜单"
+
+#: apps/app/src/i18n/static-dom-seed.ts:939
+msgid "关闭消息菜单"
+msgstr "关闭消息菜单"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:101
 msgid "关闭添加群成员弹层"
@@ -1962,6 +2042,18 @@ msgstr "关闭视频预览"
 msgid "关闭移除群成员弹层"
 msgstr "关闭移除群成员弹层"
 
+#: apps/app/src/i18n/static-dom-seed.ts:930
+msgid "关闭窗口"
+msgstr "关闭窗口"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1074
+msgid "关闭笔记窗口"
+msgstr "关闭笔记窗口"
+
+#: apps/app/src/i18n/static-dom-seed.ts:933
+msgid "关闭笔记预览"
+msgstr "关闭笔记预览"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2215
 msgid "关闭群成员列表"
 msgstr "关闭群成员列表"
@@ -1969,6 +2061,14 @@ msgstr "关闭群成员列表"
 #: apps/app/src/i18n/static-dom-seed.ts:738
 msgid "关闭语音输入面板"
 msgstr "关闭语音输入面板"
+
+#: apps/app/src/i18n/static-dom-seed.ts:942
+msgid "关闭转发消息弹层"
+msgstr "关闭转发消息弹层"
+
+#: apps/app/src/i18n/static-dom-seed.ts:941
+msgid "关闭部分引用面板"
+msgstr "关闭部分引用面板"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:154
 msgid "其他"
@@ -2097,6 +2197,10 @@ msgstr "最近{categoryLabel} · {count} 条"
 #: apps/app/src/i18n/static-dom-seed.ts:898
 msgid "最近一次打开的小程序面板"
 msgstr "最近一次打开的小程序面板"
+
+#: apps/app/src/i18n/static-dom-seed.ts:992
+msgid "最近一轮"
+msgstr "最近一轮"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1384
 msgid "最近一轮："
@@ -2537,6 +2641,10 @@ msgstr "删除后，这段聊天会从消息列表中移除；有新消息时会
 msgid "删除后会从通讯录移除这个联系人。"
 msgstr "删除后会从通讯录移除这个联系人。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:948
+msgid "删除失败，请稍后再试。"
+msgstr "删除失败，请稍后再试。"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:518
 #: apps/app/src/routes/group-chat-details-page.tsx:523
 #: apps/app/src/routes/group-chat-details-page.tsx:868
@@ -2693,6 +2801,10 @@ msgstr "加载慢、卡顿、输入延迟、工作区切换不稳。"
 msgid "加载窗口"
 msgstr "加载窗口"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1052
+msgid "动态"
+msgstr "动态"
+
 #: apps/app/src/routes/discover-feed-page.tsx:477
 msgid "动态摘要已复制。"
 msgstr "动态摘要已复制。"
@@ -2713,6 +2825,10 @@ msgstr "协议与规范"
 #: apps/app/src/routes/desktop-mobile-page.tsx:2235
 msgid "单人控台"
 msgstr "单人控台"
+
+#: apps/app/src/i18n/static-dom-seed.ts:982
+msgid "单独设置"
+msgstr "单独设置"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:401
 #: apps/app/src/lib/conversation-route.ts:28
@@ -2970,6 +3086,14 @@ msgstr "发表"
 msgid "发表朋友圈"
 msgstr "发表朋友圈"
 
+#: apps/app/src/i18n/static-dom-seed.ts:990
+msgid "发起时间"
+msgstr "发起时间"
+
+#: apps/app/src/i18n/static-dom-seed.ts:991
+msgid "发起端"
+msgstr "发起端"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:786
 #: apps/app/src/routes/chat-details-page.tsx:671
 #: apps/app/src/routes/chat-list-page.tsx:105
@@ -3039,6 +3163,10 @@ msgstr "发送后会在目标会话里显示成一张可打开的笔记卡片。
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:111
 msgid "发送图片"
 msgstr "发送图片"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1072
+msgid "发送失败，请稍后再试。"
+msgstr "发送失败，请稍后再试。"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:856
 msgid "发送好友申请"
@@ -3122,6 +3250,10 @@ msgstr "取消置顶"
 msgid "可以先添加成员，或者切换筛选查看特定角色。"
 msgstr "可以先添加成员，或者切换筛选查看特定角色。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1022
+msgid "可以先重试读取，或返回上一页稍后再试。"
+msgstr "可以先重试读取，或返回上一页稍后再试。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:852
 msgid "可以关闭后重试，或直接切回键盘输入。"
 msgstr "可以关闭后重试，或直接切回键盘输入。"
@@ -3149,6 +3281,10 @@ msgstr "可留空保存"
 #: apps/app/src/routes/group-qr-page.tsx:1790
 msgid "可立即补发"
 msgstr "可立即补发"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1098
+msgid "可能是新窗口参数被清掉了。回到消息页后重新打开一次即可。"
+msgstr "可能是新窗口参数被清掉了。回到消息页后重新打开一次即可。"
 
 #: apps/app/src/routes/discover-page.tsx:704
 msgid "可见动态"
@@ -3266,6 +3402,10 @@ msgstr "和对方创建新群"
 msgid "咖啡馆"
 msgstr "咖啡馆"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1100
+msgid "回到主窗口"
+msgstr "回到主窗口"
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:1814
 #: apps/app/src/routes/desktop-mobile-page.tsx:1857
 #: apps/app/src/routes/group-qr-page.tsx:1262
@@ -3283,6 +3423,10 @@ msgstr "回到底部"
 msgid "回到手机端消息列表，继续处理最近会话。"
 msgstr "回到手机端消息列表，继续处理最近会话。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1101
+msgid "回到来源"
+msgstr "回到来源"
+
 #: apps/app/src/routes/group-qr-page.tsx:2411
 msgid "回到来源会话"
 msgstr "回到来源会话"
@@ -3294,6 +3438,10 @@ msgstr "回到紧凑预览状态"
 #: apps/app/src/i18n/static-dom-seed.ts:16
 msgid "回到顶部"
 msgstr "回到顶部"
+
+#: apps/app/src/i18n/static-dom-seed.ts:935
+msgid "回复"
+msgstr "回复"
 
 #. placeholder {0}: speechStatus.activeProvider ?? unconfiguredLabel
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:248
@@ -3353,6 +3501,10 @@ msgstr "图片最多 9 张，视频当前支持 1 条且不超过 5 分钟，暂
 #: apps/app/src/routes/discover-page.tsx:402
 msgid "图片选择失败，请稍后重试。"
 msgstr "图片选择失败，请稍后重试。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:955
+msgid "图片预览打开失败，已改为当前页预览。"
+msgstr "图片预览打开失败，已改为当前页预览。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:725
 msgid "在吧台边，先帮你把今晚这杯点明白。"
@@ -3443,6 +3595,10 @@ msgstr "处理中..."
 msgid "处理完 {0} 后，这轮可立即补发会话会先减少一条，刚处理的目标会进入短暂冷却等待回流。"
 msgstr "处理完 {0} 后，这轮可立即补发会话会先减少一条，刚处理的目标会进入短暂冷却等待回流。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1060
+msgid "处理未读队列"
+msgstr "处理未读队列"
+
 #: apps/app/src/routes/group-qr-page.tsx:1700
 msgid "处理顺序"
 msgstr "处理顺序"
@@ -3456,9 +3612,17 @@ msgstr "备注"
 msgid "备注名会优先显示在聊天信息和通讯录里。"
 msgstr "备注名会优先显示在聊天信息和通讯录里。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:937
+msgid "复制"
+msgstr "复制"
+
 #: apps/app/src/i18n/static-dom-seed.ts:77
 msgid "复制入口"
 msgstr "复制入口"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1048
+msgid "复制入口链接失败，请稍后重试。"
+msgstr "复制入口链接失败，请稍后重试。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:801
 msgid "复制公众号摘要"
@@ -3495,9 +3659,17 @@ msgstr "复制反馈包"
 msgid "复制反馈包失败，请稍后重试。"
 msgstr "复制反馈包失败，请稍后重试。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:938
+msgid "复制发送者"
+msgstr "复制发送者"
+
 #: apps/app/src/routes/character-detail-page.tsx:778
 msgid "复制名片失败，请稍后重试。"
 msgstr "复制名片失败，请稍后重试。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:951
+msgid "复制失败，请稍后再试。"
+msgstr "复制失败，请稍后再试。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:2440
 #: apps/app/src/routes/group-qr-page.tsx:813
@@ -3538,6 +3710,10 @@ msgstr "复制文档摘要失败，请稍后重试。"
 #: apps/app/src/i18n/static-dom-seed.ts:468
 msgid "复制游戏入口"
 msgstr "复制游戏入口"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1050
+msgid "复制组局链接失败，请稍后重试。"
+msgstr "复制组局链接失败，请稍后重试。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:773
 msgid "复制群公告"
@@ -3588,6 +3764,10 @@ msgstr "复现步骤"
 #: apps/app/src/routes/desktop-feedback-page.tsx:763
 msgid "复现步骤：{0}"
 msgstr "复现步骤：{0}"
+
+#: apps/app/src/i18n/static-dom-seed.ts:936
+msgid "多选"
+msgstr "多选"
 
 #: apps/app/src/i18n/static-dom-seed.ts:213
 msgid "夜市合伙人"
@@ -3729,13 +3909,25 @@ msgstr "完成提醒失败，请稍后再试。"
 msgid "完成清理"
 msgstr "完成清理"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1061
+msgid "定位最近会话"
+msgstr "定位最近会话"
+
 #: apps/app/src/i18n/static-dom-seed.ts:486
 msgid "定位到原消息"
 msgstr "定位到原消息"
 
+#: apps/app/src/i18n/static-dom-seed.ts:926
+msgid "定位到聊天位置"
+msgstr "定位到聊天位置"
+
 #: apps/app/src/i18n/static-dom-seed.ts:354
 msgid "定位参考内容"
 msgstr "定位参考内容"
+
+#: apps/app/src/i18n/static-dom-seed.ts:932
+msgid "定位消息"
+msgstr "定位消息"
 
 #: apps/app/src/i18n/static-dom-seed.ts:538
 #: apps/app/src/routes/desktop-feedback-page.tsx:387
@@ -3922,6 +4114,10 @@ msgstr "左侧保留本地草稿和已保存记录，便于继续追问题。"
 msgid "已于 {0} 通知"
 msgstr "已于 {0} 通知"
 
+#: apps/app/src/i18n/static-dom-seed.ts:961
+msgid "已从当前设备删除这条消息。"
+msgstr "已从当前设备删除这条消息。"
+
 #: apps/app/src/routes/contacts-page.tsx:758
 msgid "已从通讯录删除联系人。"
 msgstr "已从通讯录删除联系人。"
@@ -4000,6 +4196,10 @@ msgstr "已关闭群消息免打扰。"
 msgid "已删除 {0} 张，现在还能再加 {1} 张。"
 msgstr "已删除 {0} 张，现在还能再加 {1} 张。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:947
+msgid "已删除这条消息。"
+msgstr "已删除这条消息。"
+
 #: apps/app/src/features/chat/chat-reminder-entries.ts:166
 #: apps/app/src/features/chat/chat-reminder-entries.ts:355
 msgid "已到时间"
@@ -4038,6 +4238,10 @@ msgstr "已加入黑名单。"
 msgid "已加载"
 msgstr "已加载"
 
+#: apps/app/src/i18n/static-dom-seed.ts:957
+msgid "已取消收藏消息。"
+msgstr "已取消收藏消息。"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:324
 #: apps/app/src/routes/character-detail-page.tsx:556
 #: apps/app/src/routes/contacts-page.tsx:696
@@ -4047,6 +4251,10 @@ msgstr "已取消星标朋友。"
 #: apps/app/src/features/chat/chat-reminder-entries.ts:181
 msgid "已取消消息提醒。"
 msgstr "已取消消息提醒。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:964
+msgid "已取消这条消息的提醒。"
+msgstr "已取消这条消息的提醒。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:276
 msgid "已同步"
@@ -4059,6 +4267,10 @@ msgstr "已同步今天下午的聊天安排"
 #: apps/app/src/i18n/static-dom-seed.ts:131
 msgid "已固定"
 msgstr "已固定"
+
+#: apps/app/src/i18n/static-dom-seed.ts:970
+msgid "已在独立窗口打开图片。"
+msgstr "已在独立窗口打开图片。"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:291
 msgid "已在群里的成员不会重复出现。"
@@ -4080,6 +4292,10 @@ msgstr "已完成消息提醒。"
 #: apps/app/src/routes/group-chat-details-page.tsx:675
 msgid "已展开全部 {totalMemberCount} 位群成员。"
 msgstr "已展开全部 {totalMemberCount} 位群成员。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:966
+msgid "已带入所选文字。"
+msgstr "已带入所选文字。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:90
 msgid "已建立会话承接"
@@ -4132,6 +4348,10 @@ msgstr "已打开"
 msgid "已打开反馈包所在位置。"
 msgstr "已打开反馈包所在位置。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:972
+msgid "已打开图片打印视图。"
+msgstr "已打开图片打印视图。"
+
 #: apps/app/src/components/chat-composer.tsx:2339
 msgid "已打开截图所在位置。"
 msgstr "已打开截图所在位置。"
@@ -4169,6 +4389,10 @@ msgstr "已把群邀请发到 {0}。"
 #: apps/app/src/routes/chat-details-page.tsx:602
 msgid "已提交投诉。"
 msgstr "已提交投诉。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:945
+msgid "已撤回这条消息。"
+msgstr "已撤回这条消息。"
 
 #: apps/app/src/routes/chat-list-page.tsx:537
 msgid "已撤销删除。"
@@ -4210,6 +4434,10 @@ msgstr "已添加 {0} 位群成员。"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1180
 msgid "已添加 1 位群成员。"
 msgstr "已添加 1 位群成员。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:949
+msgid "已添加到自定义表情。"
+msgstr "已添加到自定义表情。"
 
 #: apps/app/src/routes/character-detail-page.tsx:529
 #: apps/app/src/routes/chat-details-page.tsx:523
@@ -4361,6 +4589,10 @@ msgstr "已配置"
 #: apps/app/src/routes/profile-settings-page.tsx:798
 msgid "已配置专属 API Key"
 msgstr "已配置专属 API Key"
+
+#: apps/app/src/i18n/static-dom-seed.ts:962
+msgid "已重新尝试发送。"
+msgstr "已重新尝试发送。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:283
 msgid "已预约"
@@ -4568,6 +4800,14 @@ msgstr "当前："
 msgid "当前上下文"
 msgstr "当前上下文"
 
+#: apps/app/src/i18n/static-dom-seed.ts:995
+msgid "当前不能发起群通话"
+msgstr "当前不能发起群通话"
+
+#: apps/app/src/i18n/static-dom-seed.ts:994
+msgid "当前不能发起通话"
+msgstr "当前不能发起通话"
+
 #: apps/app/src/routes/profile-settings-page.tsx:787
 msgid "当前世界主人"
 msgstr "当前世界主人"
@@ -4608,6 +4848,18 @@ msgstr "当前仍是满库"
 #: apps/app/src/i18n/static-dom-seed.ts:498
 msgid "当前会话"
 msgstr "当前会话"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1086
+msgid "当前会话暂时不可用，请回到消息列表再试一次。"
+msgstr "当前会话暂时不可用，请回到消息列表再试一次。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1087
+msgid "当前会话的聊天记录已经全部加载。"
+msgstr "当前会话的聊天记录已经全部加载。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1088
+msgid "当前会话还没有可管理的记录"
+msgstr "当前会话还没有可管理的记录"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:577
 msgid "当前会话还没有聊天记录"
@@ -4727,6 +4979,10 @@ msgstr "当前可搜索范围"
 #: apps/app/src/routes/group-qr-page.tsx:1238
 msgid "当前回流来源"
 msgstr "当前回流来源"
+
+#: apps/app/src/i18n/static-dom-seed.ts:988
+msgid "当前在线"
+msgstr "当前在线"
 
 #: apps/app/src/i18n/static-dom-seed.ts:508
 #: apps/app/src/routes/desktop-feedback-page.tsx:322
@@ -4865,6 +5121,10 @@ msgstr "当前浏览器不支持语音发送。"
 msgid "当前浏览器不支持语音输入，请改用键盘输入。"
 msgstr "当前浏览器不支持语音输入，请改用键盘输入。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:965
+msgid "当前消息暂不支持部分引用。"
+msgstr "当前消息暂不支持部分引用。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:163
 #: apps/app/src/i18n/static-dom-seed.ts:900
 #: apps/app/src/routes/character-detail-page.tsx:306
@@ -4873,6 +5133,10 @@ msgstr "当前浏览器不支持语音输入，请改用键盘输入。"
 msgid "当前状态"
 msgstr "当前状态"
 
+#: apps/app/src/i18n/static-dom-seed.ts:950
+msgid "当前环境不支持剪贴板复制。"
+msgstr "当前环境不支持剪贴板复制。"
+
 #: apps/app/src/features/chat/use-speech-input.ts:605
 msgid "当前环境不支持语音输入，请改用键盘输入。"
 msgstr "当前环境不支持语音输入，请改用键盘输入。"
@@ -4880,6 +5144,10 @@ msgstr "当前环境不支持语音输入，请改用键盘输入。"
 #: apps/app/src/routes/group-qr-page.tsx:803
 msgid "当前环境暂不支持复制。"
 msgstr "当前环境暂不支持复制。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1047
+msgid "当前环境暂不支持复制入口链接。"
+msgstr "当前环境暂不支持复制入口链接。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:802
 msgid "当前环境暂不支持复制公众号摘要。"
@@ -4913,6 +5181,10 @@ msgstr "当前环境暂不支持复制手机接力链接。"
 msgid "当前环境暂不支持复制文档摘要。"
 msgstr "当前环境暂不支持复制文档摘要。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1049
+msgid "当前环境暂不支持复制组局链接。"
+msgstr "当前环境暂不支持复制组局链接。"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:411
 msgid "当前环境暂不支持复制群聊摘要。"
 msgstr "当前环境暂不支持复制群聊摘要。"
@@ -4933,6 +5205,18 @@ msgstr "当前环境暂不支持复制联系人摘要。"
 msgid "当前直播准备"
 msgstr "当前直播准备"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1002
+msgid "当前视频通话仍使用内置数字人播放器模式，暂未切到真实外部数字人 Provider。"
+msgstr "当前视频通话仍使用内置数字人播放器模式，暂未切到真实外部数字人 Provider。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1001
+msgid "当前视频通话仍使用内置数字人模拟模式，画面会先以内置数字人舞台承载。"
+msgstr "当前视频通话仍使用内置数字人模拟模式，画面会先以内置数字人舞台承载。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1095
+msgid "当前筛选下没有附件"
+msgstr "当前筛选下没有附件"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1116
 msgid "当前筛选结果"
 msgstr "当前筛选结果"
@@ -4948,9 +5232,21 @@ msgstr "当前结果"
 msgid "当前群聊"
 msgstr "当前群聊"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1000
+msgid "当前群聊不存在，暂时无法发起群通话。"
+msgstr "当前群聊不存在，暂时无法发起群通话。"
+
 #: apps/app/src/routes/group-chat-details-page.tsx:671
 msgid "当前群聊共有 {totalMemberCount} 位成员。"
 msgstr "当前群聊共有 {totalMemberCount} 位成员。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:979
+msgid "当前群聊已恢复跟随默认背景。"
+msgstr "当前群聊已恢复跟随默认背景。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:981
+msgid "当前群聊背景已切到新预览，保存后生效。"
+msgstr "当前群聊背景已切到新预览，保存后生效。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1746
 msgid "当前群邀请"
@@ -4966,9 +5262,21 @@ msgstr "当前聊天"
 msgid "当前聊天 · {0}"
 msgstr "当前聊天 · {0}"
 
+#: apps/app/src/i18n/static-dom-seed.ts:978
+msgid "当前聊天已恢复跟随默认背景。"
+msgstr "当前聊天已恢复跟随默认背景。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:999
+msgid "当前聊天暂时不可用。"
+msgstr "当前聊天暂时不可用。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:758
 msgid "当前聊天正在预览默认背景"
 msgstr "当前聊天正在预览默认背景"
+
+#: apps/app/src/i18n/static-dom-seed.ts:980
+msgid "当前聊天背景已切到新预览，保存后生效。"
+msgstr "当前聊天背景已切到新预览，保存后生效。"
 
 #. placeholder {0}: indexedMessages.length
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:401
@@ -4995,6 +5303,14 @@ msgstr "当前设备不支持语音发送。"
 msgid "当前设备无法采集麦克风音频。"
 msgstr "当前设备无法采集麦克风音频。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1093
+msgid "当前设备暂时无法打开文件选择器，请稍后再试。"
+msgstr "当前设备暂时无法打开文件选择器，请稍后再试。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1091
+msgid "当前设备暂时无法打开相机，请先改用相册选图。"
+msgstr "当前设备暂时无法打开相机，请先改用相册选图。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:876
 #: apps/app/src/routes/character-detail-page.tsx:753
 #: apps/app/src/routes/chat-details-page.tsx:385
@@ -5005,6 +5321,10 @@ msgstr "当前设备无法采集麦克风音频。"
 #: apps/app/src/routes/group-qr-page.tsx:1010
 msgid "当前设备暂时无法打开系统分享，请稍后重试。"
 msgstr "当前设备暂时无法打开系统分享，请稍后重试。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1090
+msgid "当前设备未直接预览，已打开系统面板，可继续在其他应用中打开。"
+msgstr "当前设备未直接预览，已打开系统面板，可继续在其他应用中打开。"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:177
 msgid "当前设备还没有配置远程世界地址，请先回到 setup 连接你的实例。"
@@ -5017,6 +5337,10 @@ msgstr "当前语音链路："
 #: apps/app/src/i18n/static-dom-seed.ts:25
 msgid "当前说明"
 msgstr "当前说明"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1039
+msgid "当前还没有可分享的群公告。"
+msgstr "当前还没有可分享的群公告。"
 
 #: apps/app/src/routes/group-qr-page.tsx:1388
 msgid "当前邀请卡会承载群聊链接和邀请码。 在同一世界实例内打开链接，可直接回到这个群聊。"
@@ -5192,6 +5516,10 @@ msgstr "成员 · {senderFilterDisplayLabel}"
 msgid "成员与资料"
 msgstr "成员与资料"
 
+#: apps/app/src/i18n/static-dom-seed.ts:998
+msgid "成员信息暂时不可用"
+msgstr "成员信息暂时不可用"
+
 #: apps/app/src/i18n/static-dom-seed.ts:813
 msgid "成员席位"
 msgstr "成员席位"
@@ -5315,6 +5643,10 @@ msgstr "手机接力当前仅提供桌面布局"
 msgid "手机接力面板目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续处理会话。"
 msgstr "手机接力面板目前只在 Web 桌面布局和桌面壳内启用，移动布局先回到消息页继续处理会话。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:924
+msgid "打印图片"
+msgstr "打印图片"
+
 #: apps/app/src/i18n/static-dom-seed.ts:258
 msgid "打开"
 msgstr "打开"
@@ -5387,6 +5719,10 @@ msgstr "打开所在位置失败，请稍后再试。"
 msgid "打开搜一搜"
 msgstr "打开搜一搜"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1094
+msgid "打开文件失败，请稍后再试。"
+msgstr "打开文件失败，请稍后再试。"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:857
 msgid "打开文件选择，添加第一张自定义表情图片或 GIF。"
 msgstr "打开文件选择，添加第一张自定义表情图片或 GIF。"
@@ -5402,6 +5738,10 @@ msgstr "打开文件选择，继续添加自定义表情图片或 GIF。"
 #: apps/app/src/i18n/static-dom-seed.ts:918
 msgid "打开服务号消息"
 msgstr "打开服务号消息"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1027
+msgid "打开服务号菜单"
+msgstr "打开服务号菜单"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:51
 msgid "打开桌面群聊信息..."
@@ -5419,9 +5759,17 @@ msgstr "打开桌面聊天信息..."
 msgid "打开桌面聊天记录..."
 msgstr "打开桌面聊天记录..."
 
+#: apps/app/src/i18n/static-dom-seed.ts:959
+msgid "打开添加朋友页失败，请稍后重试。"
+msgstr "打开添加朋友页失败，请稍后重试。"
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:1589
 msgid "打开直播伴侣"
 msgstr "打开直播伴侣"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1092
+msgid "打开相机失败，请稍后再试。"
+msgstr "打开相机失败，请稍后再试。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:603
 msgid "打开视频号"
@@ -5431,10 +5779,22 @@ msgstr "打开视频号"
 msgid "打开视频预览"
 msgstr "打开视频预览"
 
+#: apps/app/src/i18n/static-dom-seed.ts:960
+msgid "打开笔记失败，请稍后重试。"
+msgstr "打开笔记失败，请稍后重试。"
+
 #: apps/app/src/routes/character-detail-page.tsx:301
 #: apps/app/src/routes/chat-details-page.tsx:920
 msgid "打开系统分享面板"
 msgstr "打开系统分享面板"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1065
+msgid "打开结果"
+msgstr "打开结果"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1038
+msgid "打开群公告页"
+msgstr "打开群公告页"
 
 #: apps/app/src/lib/conversation-preview.ts:90
 msgid "打开群聊查看最近消息。"
@@ -5456,6 +5816,14 @@ msgstr "打开设置"
 #: apps/app/src/i18n/static-dom-seed.ts:464
 msgid "打开评论"
 msgstr "打开评论"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1042
+msgid "打开过的小程序会先沉淀到这里。"
+msgstr "打开过的小程序会先沉淀到这里。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1041
+msgid "打开过的小程序会沉淀在这里，形成和微信类似的最近入口。"
+msgstr "打开过的小程序会沉淀在这里，形成和微信类似的最近入口。"
 
 #. placeholder {0}: getConversationThreadLabel(conversation)
 #: apps/app/src/lib/conversation-preview.ts:92
@@ -5482,6 +5850,14 @@ msgstr "扫一扫"
 #: apps/app/src/i18n/static-dom-seed.ts:569
 msgid "扫一扫上面的二维码图案，加我为朋友"
 msgstr "扫一扫上面的二维码图案，加我为朋友"
+
+#: apps/app/src/i18n/static-dom-seed.ts:968
+msgid "批量删除失败，请稍后再试。"
+msgstr "批量删除失败，请稍后再试。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:969
+msgid "批量撤回失败，请稍后再试。"
+msgstr "批量撤回失败，请稍后再试。"
 
 #. placeholder {0}: groupQuery.data?.name ?? fallbackCurrentGroupLabel
 #: apps/app/src/routes/group-qr-page.tsx:893
@@ -5748,6 +6124,10 @@ msgstr "按日期查找"
 msgid "按条件查找"
 msgstr "按条件查找"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1053
+msgid "按来源整理"
+msgstr "按来源整理"
+
 #: apps/app/src/routes/contacts-page.tsx:1228
 msgid "按标签整理联系人"
 msgstr "按标签整理联系人"
@@ -5764,6 +6144,14 @@ msgstr "换一个地点，换一种相遇方式"
 msgid "换一批"
 msgstr "换一批"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1045
+msgid "换个关键词，或者切回“全部”分类继续浏览。"
+msgstr "换个关键词，或者切回“全部”分类继续浏览。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1046
+msgid "换个关键词，或者切回全部分类继续浏览。"
+msgstr "换个关键词，或者切回全部分类继续浏览。"
+
 #: apps/app/src/routes/chat-message-search-page.tsx:117
 #: apps/app/src/routes/group-message-search-page.tsx:108
 msgid "换个关键词试试，或者切到图片、文件、链接分类继续找。"
@@ -5776,6 +6164,10 @@ msgstr "换个关键词试试，或者展开世界角色目录继续找人。"
 #: apps/app/src/routes/contacts-page.tsx:1951
 msgid "换个关键词试试，或者继续搜索世界角色。"
 msgstr "换个关键词试试，或者继续搜索世界角色。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1036
+msgid "换个名字、备注名或关系关键词试试。"
+msgstr "换个名字、备注名或关系关键词试试。"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:699
 msgid "换个成员试试，或者切回全部成员继续浏览。"
@@ -6089,6 +6481,10 @@ msgstr "摆摊"
 msgid "摇一摇"
 msgstr "摇一摇"
 
+#: apps/app/src/i18n/static-dom-seed.ts:946
+msgid "撤回失败，请稍后再试。"
+msgstr "撤回失败，请稍后再试。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:909
 #: apps/app/src/routes/chat-list-page.tsx:690
 msgid "撤销"
@@ -6301,6 +6697,10 @@ msgstr "文件工具"
 msgid "文件快传"
 msgstr "文件快传"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1089
+msgid "文件打开失败，请稍后再试。"
+msgstr "文件打开失败，请稍后再试。"
+
 #: apps/app/src/components/chat-composer.tsx:4551
 msgid "文字"
 msgstr "文字"
@@ -6319,6 +6719,10 @@ msgstr "文案、频道定义、桌面与微信对齐口径存在偏差。"
 #: apps/app/src/i18n/static-dom-seed.ts:890
 msgid "文档摘要已复制。"
 msgstr "文档摘要已复制。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1006
+msgid "文章暂时不可用"
+msgstr "文章暂时不可用"
 
 #: apps/app/src/routes/group-qr-page.tsx:2568
 msgid "新会话"
@@ -6339,6 +6743,14 @@ msgstr "新的名称会同步显示在聊天页和群成员列表里。"
 #: apps/app/src/routes/contacts-page.tsx:1108
 msgid "新的朋友"
 msgstr "新的朋友"
+
+#: apps/app/src/i18n/static-dom-seed.ts:925
+msgid "新窗口打开"
+msgstr "新窗口打开"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1003
+msgid "无人加入"
+msgstr "无人加入"
 
 #: apps/app/src/features/chat/use-speech-input.ts:765
 msgid "无法启动录音，请检查应用麦克风权限。"
@@ -6516,6 +6928,10 @@ msgstr "暂时无法进入隐界"
 msgid "暂时没有共同群聊"
 msgstr "暂时没有共同群聊"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1030
+msgid "暂时没有新的好友请求"
+msgstr "暂时没有新的好友请求"
+
 #: apps/app/src/routes/character-detail-page.tsx:311
 msgid "暂时没有更多介绍。"
 msgstr "暂时没有更多介绍。"
@@ -6665,6 +7081,10 @@ msgstr "朋友圈"
 msgid "朋友圈、相遇、视频号和小程序都从这里继续打开。"
 msgstr "朋友圈、相遇、视频号和小程序都从这里继续打开。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1078
+msgid "朋友圈互动已更新。"
+msgstr "朋友圈互动已更新。"
+
 #: apps/app/src/routes/discover-page.tsx:443
 msgid "朋友圈和广场动态共用同一套发现入口，但可见范围完全不同，桌面端先把这层分界讲清楚。"
 msgstr "朋友圈和广场动态共用同一套发现入口，但可见范围完全不同，桌面端先把这层分界讲清楚。"
@@ -6676,6 +7096,10 @@ msgstr "朋友圈图片"
 #: apps/app/src/i18n/static-dom-seed.ts:865
 msgid "朋友圈图片预览"
 msgstr "朋友圈图片预览"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1079
+msgid "朋友圈已发布。"
+msgstr "朋友圈已发布。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:38
 msgid "朋友圈暂时不可用"
@@ -6729,6 +7153,10 @@ msgstr "服务号文章"
 #: apps/app/src/routes/desktop-mobile-page.tsx:594
 msgid "服务号消息"
 msgstr "服务号消息"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1010
+msgid "服务号消息暂时不可用"
+msgstr "服务号消息暂时不可用"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:178
 #: apps/app/src/i18n/static-dom-seed.ts:9
@@ -6924,6 +7352,10 @@ msgstr "本轮批次"
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:640
 msgid "本轮摘要"
 msgstr "本轮摘要"
+
+#: apps/app/src/i18n/static-dom-seed.ts:993
+msgid "本轮时长"
+msgstr "本轮时长"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1753
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:920
@@ -7125,6 +7557,14 @@ msgstr "查看公众号主页"
 msgid "查看公众号主页、订阅号和服务号消息"
 msgstr "查看公众号主页、订阅号和服务号消息"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1029
+msgid "查看公众号资料"
+msgstr "查看公众号资料"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1056
+msgid "查看办理中事项"
+msgstr "查看办理中事项"
+
 #: apps/app/src/routes/character-detail-page.tsx:283
 #: apps/app/src/routes/contacts-page.tsx:1112
 msgid "查看好友申请"
@@ -7154,6 +7594,10 @@ msgstr "查看当前世界相关的协议和社区规范。"
 msgid "查看截图快捷键 (?)"
 msgstr "查看截图快捷键 (?)"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1057
+msgid "查看报名情况"
+msgstr "查看报名情况"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:641
 msgid "查看文件消息"
 msgstr "查看文件消息"
@@ -7178,6 +7622,10 @@ msgstr "查看更多群成员"
 msgid "查看更多聊天记录"
 msgstr "查看更多聊天记录"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1059
+msgid "查看未确认成员"
+msgstr "查看未确认成员"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1548
 msgid "查看本群附件"
 msgstr "查看本群附件"
@@ -7185,6 +7633,10 @@ msgstr "查看本群附件"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:760
 msgid "查看本聊天附件"
 msgstr "查看本聊天附件"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1058
+msgid "查看热点区域"
+msgstr "查看热点区域"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:1020
 msgid "查看群二维码"
@@ -7255,6 +7707,18 @@ msgstr "标注 {0} 条"
 #: apps/app/src/routes/contacts-page.tsx:1224
 msgid "标签"
 msgstr "标签"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1085
+msgid "标签页在桌面布局里并入了通讯录工作区，这里会自动带你打开标签视图。"
+msgstr "标签页在桌面布局里并入了通讯录工作区，这里会自动带你打开标签视图。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1084
+msgid "标签页暂时不可用"
+msgstr "标签页暂时不可用"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1054
+msgid "标记直播高光"
+msgstr "标记直播高光"
 
 #: apps/app/src/i18n/static-dom-seed.ts:524
 #: apps/app/src/routes/desktop-feedback-page.tsx:566
@@ -7473,6 +7937,10 @@ msgstr "正在打开..."
 msgid "正在打开会话..."
 msgstr "正在打开会话..."
 
+#: apps/app/src/i18n/static-dom-seed.ts:1020
+msgid "正在打开桌面公众号文章"
+msgstr "正在打开桌面公众号文章"
+
 #: apps/app/src/routes/discover-feed-page.tsx:510
 msgid "正在打开桌面发现"
 msgstr "正在打开桌面发现"
@@ -7605,6 +8073,10 @@ msgstr "正在请求麦克风权限..."
 msgid "正在读取会话..."
 msgstr "正在读取会话..."
 
+#: apps/app/src/i18n/static-dom-seed.ts:1013
+msgid "正在读取公众号"
+msgstr "正在读取公众号"
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:1332
 msgid "正在读取公众号..."
 msgstr "正在读取公众号..."
@@ -7618,6 +8090,10 @@ msgstr "正在读取最近会话"
 msgid "正在读取最近会话..."
 msgstr "正在读取最近会话..."
 
+#: apps/app/src/i18n/static-dom-seed.ts:1032
+msgid "正在读取好友请求..."
+msgstr "正在读取好友请求..."
+
 #: apps/app/src/routes/desktop-feedback-page.tsx:426
 msgid "正在读取实例状态..."
 msgstr "正在读取实例状态..."
@@ -7626,6 +8102,10 @@ msgstr "正在读取实例状态..."
 msgid "正在读取广场动态..."
 msgstr "正在读取广场动态..."
 
+#: apps/app/src/i18n/static-dom-seed.ts:1007
+msgid "正在读取文章"
+msgstr "正在读取文章"
+
 #: apps/app/src/routes/character-detail-page.tsx:254
 msgid "正在读取朋友资料"
 msgstr "正在读取朋友资料"
@@ -7633,6 +8113,10 @@ msgstr "正在读取朋友资料"
 #: apps/app/src/routes/character-detail-page.tsx:253
 msgid "正在读取朋友资料..."
 msgstr "正在读取朋友资料..."
+
+#: apps/app/src/i18n/static-dom-seed.ts:1011
+msgid "正在读取服务号消息"
+msgstr "正在读取服务号消息"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:547
 msgid "正在读取群成员"
@@ -7665,6 +8149,14 @@ msgstr "正在读取聊天记录..."
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:139
 msgid "正在读取联系人..."
 msgstr "正在读取联系人..."
+
+#: apps/app/src/i18n/static-dom-seed.ts:1080
+msgid "正在读取角色朋友圈..."
+msgstr "正在读取角色朋友圈..."
+
+#: apps/app/src/i18n/static-dom-seed.ts:1009
+msgid "正在读取订阅号消息"
+msgstr "正在读取订阅号消息"
 
 #: apps/app/src/components/chat-composer.tsx:2721
 #: apps/app/src/i18n/static-dom-seed.ts:839
@@ -7709,6 +8201,10 @@ msgstr "每天整理这个世界里最值得你停下来读一会儿的公共叙
 msgid "每次摇一摇都会先生成一个新的相遇结果；当前页面会直接保留这次结果，并把对方加入你的通讯录。"
 msgstr "每次摇一摇都会先生成一个新的相遇结果；当前页面会直接保留这次结果，并把对方加入你的通讯录。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:944
+msgid "汇总为一条聊天记录摘要"
+msgstr "汇总为一条聊天记录摘要"
+
 #. placeholder {0}: searchMessageTypeFilters.find( (item) => item.id === messageTypeFilter, )?.label ?? unknownSenderLabel
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:724
 msgid "没有匹配的{0}"
@@ -7717,6 +8213,10 @@ msgstr "没有匹配的{0}"
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:161
 msgid "没有匹配的最近会话。"
 msgstr "没有匹配的最近会话。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1040
+msgid "没有匹配的小程序"
+msgstr "没有匹配的小程序"
 
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:127
 msgid "没有匹配的群成员。"
@@ -7832,6 +8332,18 @@ msgstr "浏览世界角色"
 msgid "浏览器语音识别网络异常，已可改用录音转写。"
 msgstr "浏览器语音识别网络异常，已可改用录音转写。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:973
+msgid "浏览器阻止了打印窗口，请检查弹窗权限。"
+msgstr "浏览器阻止了打印窗口，请检查弹窗权限。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:956
+msgid "浏览器阻止了新窗口，已改为当前页预览。"
+msgstr "浏览器阻止了新窗口，已改为当前页预览。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:971
+msgid "浏览器阻止了新窗口，请检查弹窗权限。"
+msgstr "浏览器阻止了新窗口，请检查弹窗权限。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:303
 msgid "浏览目录"
 msgstr "浏览目录"
@@ -7882,6 +8394,10 @@ msgstr "消息免打扰"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1521
 msgid "消息内容"
 msgstr "消息内容"
+
+#: apps/app/src/i18n/static-dom-seed.ts:958
+msgid "消息已加入收藏。"
+msgstr "消息已加入收藏。"
 
 #: apps/app/src/routes/chat-list-page.tsx:776
 msgid "消息提醒"
@@ -8119,6 +8635,10 @@ msgstr "点击右上角“新建笔记”，把第一条收藏笔记写下来。
 msgid "点击后写入最近使用和打开态"
 msgstr "点击后写入最近使用和打开态"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1043
+msgid "点击推荐区的“加入我的小程序”，这里就会形成固定常用入口。"
+msgstr "点击推荐区的“加入我的小程序”，这里就会形成固定常用入口。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:487
 msgid "点击预览"
 msgstr "点击预览"
@@ -8326,6 +8846,10 @@ msgstr "直播剪贴板"
 #: apps/app/src/i18n/static-dom-seed.ts:266
 msgid "直播协同"
 msgstr "直播协同"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1051
+msgid "直播回放"
+msgstr "直播回放"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1577
 msgid "直播接力"
@@ -8617,6 +9141,10 @@ msgstr "稍等一下，正在准备最近常读和最新推送。"
 msgid "稍等一下，正在同步最近会话和消息入口。"
 msgstr "稍等一下，正在同步最近会话和消息入口。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1025
+msgid "稍等一下，正在同步最近的订阅推送。"
+msgstr "稍等一下，正在同步最近的订阅推送。"
+
 #: apps/app/src/routes/discover-feed-page.tsx:780
 msgid "稍等一下，正在同步居民公开动态和互动状态。"
 msgstr "稍等一下，正在同步居民公开动态和互动状态。"
@@ -8624,6 +9152,10 @@ msgstr "稍等一下，正在同步居民公开动态和互动状态。"
 #: apps/app/src/routes/profile-settings-page.tsx:397
 msgid "稍等一下，正在同步当前世界主人的专属配置。"
 msgstr "稍等一下，正在同步当前世界主人的专属配置。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1023
+msgid "稍等一下，正在同步正文内容。"
+msgstr "稍等一下，正在同步正文内容。"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:580
 msgid "稍等一下，正在同步群成员、群资料和消息设置。"
@@ -8640,6 +9172,10 @@ msgstr "稍等一下，正在同步聊天资料和设置。"
 #: apps/app/src/routes/contacts-page.tsx:1933
 msgid "稍等一下，正在同步联系人、群聊和服务入口。"
 msgstr "稍等一下，正在同步联系人、群聊和服务入口。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1024
+msgid "稍等一下，正在同步账号资料和最近文章。"
+msgstr "稍等一下，正在同步账号资料和最近文章。"
 
 #: apps/app/src/routes/character-detail-page.tsx:256
 msgid "稍等一下，正在同步这个联系人的资料和关系状态。"
@@ -8706,9 +9242,17 @@ msgstr "端口占用：{portOccupiedLabel}"
 msgid "笔记"
 msgstr "笔记"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1067
+msgid "笔记已保存到收藏。"
+msgstr "笔记已保存到收藏。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:750
 msgid "笔记摘要"
 msgstr "笔记摘要"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1069
+msgid "笔记还没有保存成功，请稍后再试。"
+msgstr "笔记还没有保存成功，请稍后再试。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:825
 msgid "笔记预览"
@@ -8730,6 +9274,14 @@ msgstr "等公众号有推送后，这里会直接出现可接力到手机的阅
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:658
 msgid "等待下一轮"
 msgstr "等待下一轮"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1031
+msgid "等待世界里的相遇事件触发新的申请。"
+msgstr "等待世界里的相遇事件触发新的申请。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:989
+msgid "等待加入"
+msgstr "等待加入"
 
 #: apps/app/src/routes/group-qr-page.tsx:1468
 msgid "等待回流"
@@ -8823,6 +9375,10 @@ msgstr "类型"
 msgid "类型 · {0}"
 msgstr "类型 · {0}"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1076
+msgid "粗体"
+msgstr "粗体"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:565
 msgid "精选"
 msgstr "精选"
@@ -8847,6 +9403,10 @@ msgstr "系统分享"
 msgid "系统分享失败，请稍后重试。"
 msgstr "系统分享失败，请稍后重试。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:952
+msgid "系统分享暂时不可用，已复制位置内容。"
+msgstr "系统分享暂时不可用，已复制位置内容。"
+
 #: apps/app/src/i18n/static-dom-seed.ts:804
 msgid "系统分享暂时不可用，已复制公众号摘要。"
 msgstr "系统分享暂时不可用，已复制公众号摘要。"
@@ -8855,6 +9415,7 @@ msgstr "系统分享暂时不可用，已复制公众号摘要。"
 msgid "系统分享暂时不可用，已复制动态摘要。"
 msgstr "系统分享暂时不可用，已复制动态摘要。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:953
 #: apps/app/src/routes/character-detail-page.tsx:770
 msgid "系统分享暂时不可用，已复制名片摘要。"
 msgstr "系统分享暂时不可用，已复制名片摘要。"
@@ -8866,6 +9427,10 @@ msgstr "系统分享暂时不可用，已复制工具摘要。"
 #: apps/app/src/i18n/static-dom-seed.ts:889
 msgid "系统分享暂时不可用，已复制文档摘要。"
 msgstr "系统分享暂时不可用，已复制文档摘要。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:954
+msgid "系统分享暂时不可用，已复制笔记摘要。"
+msgstr "系统分享暂时不可用，已复制笔记摘要。"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:435
 msgid "系统分享暂时不可用，已复制群聊摘要。"
@@ -9185,6 +9750,10 @@ msgstr "群聊扩散优先"
 msgid "群聊摘要已复制。"
 msgstr "群聊摘要已复制。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:985
+msgid "群聊背景暂时不可用"
+msgstr "群聊背景暂时不可用"
+
 #: apps/app/src/routes/group-qr-page.tsx:2715
 msgid "群聊触达更广，可以放扩散位。"
 msgstr "群聊触达更广，可以放扩散位。"
@@ -9229,6 +9798,10 @@ msgstr "群语音"
 #: apps/app/src/features/chat/chat-call-fallback-notice.tsx:44
 msgid "群语音通话暂未开放"
 msgstr "群语音通话暂未开放"
+
+#: apps/app/src/i18n/static-dom-seed.ts:997
+msgid "群通话暂时不可用"
+msgstr "群通话暂时不可用"
 
 #: apps/app/src/routes/group-qr-page.tsx:2387
 msgid "群邀请"
@@ -9345,6 +9918,10 @@ msgstr "聊天管理"
 msgid "聊天背景"
 msgstr "聊天背景"
 
+#: apps/app/src/i18n/static-dom-seed.ts:984
+msgid "聊天背景暂时不可用"
+msgstr "聊天背景暂时不可用"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:87
 #: apps/app/src/features/shell/desktop-nav-config.ts:103
 #: apps/app/src/i18n/static-dom-seed.ts:63
@@ -9388,6 +9965,10 @@ msgstr "聊天里的图片 / GIF 也能添加为表情"
 msgid "联系人"
 msgstr "联系人"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1033
+msgid "联系人列表暂时不可用"
+msgstr "联系人列表暂时不可用"
+
 #: apps/app/src/routes/contacts-page.tsx:1247
 msgid "联系人列表暂时没有刷新成功。"
 msgstr "联系人列表暂时没有刷新成功。"
@@ -9416,6 +9997,10 @@ msgstr "聚会"
 #: apps/app/src/i18n/static-dom-seed.ts:327
 msgid "聚合消息、笔记和内容收藏。"
 msgstr "聚合消息、笔记和内容收藏。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:974
+msgid "背景图已上传，记得保存当前设置。"
+msgstr "背景图已上传，记得保存当前设置。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:522
 #: apps/app/src/routes/desktop-feedback-page.tsx:80
@@ -9490,6 +10075,10 @@ msgstr "荐"
 #: apps/app/src/i18n/static-dom-seed.ts:677
 msgid "行动助理"
 msgstr "行动助理"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1055
+msgid "补图片备注"
+msgstr "补图片备注"
 
 #: apps/app/src/components/chat-composer.tsx:3058
 #: apps/app/src/components/chat-composer.tsx:3280
@@ -9583,6 +10172,10 @@ msgstr "角色的表达频率正在下降，但长内容和回访率明显变高
 msgid "角色简介"
 msgstr "角色简介"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1082
+msgid "角色资料不存在，暂时无法打开朋友圈。"
+msgstr "角色资料不存在，暂时无法打开朋友圈。"
+
 #: apps/app/src/routes/welcome-page.tsx:194
 msgid "解析中..."
 msgstr "解析中..."
@@ -9612,6 +10205,14 @@ msgstr "订阅号与服务号入口暂时没有刷新成功。"
 #: apps/app/src/routes/desktop-mobile-page.tsx:596
 msgid "订阅号消息"
 msgstr "订阅号消息"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1026
+msgid "订阅号消息同步后，会在这里直接进入阅读。"
+msgstr "订阅号消息同步后，会在这里直接进入阅读。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1008
+msgid "订阅号消息暂时不可用"
+msgstr "订阅号消息暂时不可用"
 
 #: apps/app/src/i18n/static-dom-seed.ts:807
 msgid "订阅推送"
@@ -9650,6 +10251,10 @@ msgstr "设置备注和标签"
 #: apps/app/src/routes/chat-details-page.tsx:1021
 msgid "设置当前聊天背景"
 msgstr "设置当前聊天背景"
+
+#: apps/app/src/i18n/static-dom-seed.ts:967
+msgid "设置提醒失败，请稍后再试。"
+msgstr "设置提醒失败，请稍后再试。"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:484
 msgid "设置标签"
@@ -9951,6 +10556,10 @@ msgstr "读取群成员失败"
 msgid "读取配置..."
 msgstr "读取配置..."
 
+#: apps/app/src/i18n/static-dom-seed.ts:1062
+msgid "读文章"
+msgstr "读文章"
+
 #: apps/app/src/i18n/static-dom-seed.ts:436
 msgid "谁可以看"
 msgstr "谁可以看"
@@ -10034,6 +10643,10 @@ msgstr "超清"
 msgid "超级智能研究导师"
 msgstr "超级智能研究导师"
 
+#: apps/app/src/i18n/static-dom-seed.ts:983
+msgid "跟随默认"
+msgstr "跟随默认"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:673
 msgid "身份"
 msgstr "身份"
@@ -10053,6 +10666,10 @@ msgstr "转写 {0}"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:256
 msgid "转写未配置"
 msgstr "转写未配置"
+
+#: apps/app/src/i18n/static-dom-seed.ts:934
+msgid "转发"
+msgstr "转发"
 
 #: apps/app/src/i18n/static-dom-seed.ts:374
 msgid "轻布置 + 轻剧情的休闲经营玩法，视觉柔和，适合放在移动端推荐流和近期回访位。"
@@ -10185,6 +10802,10 @@ msgstr "返回上一页"
 msgid "返回公众号列表"
 msgstr "返回公众号列表"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1073
+msgid "返回收藏"
+msgstr "返回收藏"
+
 #: apps/app/src/i18n/static-dom-seed.ts:439
 msgid "返回朋友圈"
 msgstr "返回朋友圈"
@@ -10209,6 +10830,10 @@ msgstr "返回筛选"
 msgid "返回筛选页试试其他分类，或者直接搜索关键词。"
 msgstr "返回筛选页试试其他分类，或者直接搜索关键词。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:987
+msgid "返回群聊"
+msgstr "返回群聊"
+
 #: apps/app/src/routes/group-qr-page.tsx:726
 #: apps/app/src/routes/group-qr-page.tsx:1122
 #: apps/app/src/routes/group-qr-page.tsx:1156
@@ -10224,6 +10849,10 @@ msgstr "返回群聊发语音"
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:93
 msgid "返回群聊拍摄"
 msgstr "返回群聊拍摄"
+
+#: apps/app/src/i18n/static-dom-seed.ts:986
+msgid "返回聊天"
+msgstr "返回聊天"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-side-panel.tsx:67
 msgid "返回聊天信息"
@@ -10266,6 +10895,10 @@ msgstr "还在冷却，先等回流再看 {0}。"
 #: apps/app/src/routes/group-qr-page.tsx:2838
 msgid "还在活跃窗口里，适合现在补。"
 msgstr "还在活跃窗口里，适合现在补。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1081
+msgid "还很安静"
+msgstr "还很安静"
 
 #. placeholder {0}: worldCharacterDirectoryItems.length
 #: apps/app/src/routes/contacts-page.tsx:1185
@@ -10311,6 +10944,10 @@ msgstr "还没有最近小程序"
 msgid "还没有最近文章"
 msgstr "还没有最近文章"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1044
+msgid "还没有加入我的小程序"
+msgstr "还没有加入我的小程序"
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:650
 msgid "还没有发送记录"
 msgstr "还没有发送记录"
@@ -10326,6 +10963,18 @@ msgstr "还没有可发送的收藏内容，先把消息或内容加入收藏。
 #: apps/app/src/routes/group-qr-page.tsx:2114
 msgid "还没有可投递的最近会话。"
 msgstr "还没有可投递的最近会话。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1034
+msgid "还没有可拉进群的人"
+msgstr "还没有可拉进群的人"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1097
+msgid "还没有可聚合的会话"
+msgstr "还没有可聚合的会话"
+
+#: apps/app/src/i18n/static-dom-seed.ts:943
+msgid "还没有可转发的最近会话"
+msgstr "还没有可转发的最近会话"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1493
 msgid "还没有当前小程序"
@@ -10367,6 +11016,10 @@ msgstr "还没有新消息"
 msgid "还没有星标朋友"
 msgstr "还没有星标朋友"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1018
+msgid "还没有服务消息"
+msgstr "还没有服务消息"
+
 #: apps/app/src/i18n/static-dom-seed.ts:351
 msgid "还没有直播准备稿"
 msgstr "还没有直播准备稿"
@@ -10382,6 +11035,10 @@ msgstr "还没有直播记录。先准备一场直播并切到“直播中”，
 #: apps/app/src/routes/desktop-mobile-page.tsx:1925
 msgid "还没有群聊邀请接力"
 msgstr "还没有群聊邀请接力"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1096
+msgid "还没有聊天文件"
+msgstr "还没有聊天文件"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1136
 msgid "还没有自定义表情，可上传图片 / GIF，也能把聊天里的图片、动图添加到表情。"
@@ -10442,6 +11099,10 @@ msgstr "这个时间范围内没有聊天记录"
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:120
 msgid "这个群目前没有可移除的角色成员。"
 msgstr "这个群目前没有可移除的角色成员。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1037
+msgid "这个群聊暂时不可用，可以先重试读取，或返回上一页后再试。"
+msgstr "这个群聊暂时不可用，可以先重试读取，或返回上一页后再试。"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:638
 msgid "这个群聊暂时不可用，可以先重试读取，或返回消息列表后再试。"
@@ -10536,6 +11197,10 @@ msgstr "这次是从聊天线程直接回到群邀请页，可继续转发或回
 msgid "这段录音太长了，请缩短单次语音输入时长。"
 msgstr "这段录音太长了，请缩短单次语音输入时长。"
 
+#: apps/app/src/i18n/static-dom-seed.ts:1099
+msgid "这段聊天已经不存在"
+msgstr "这段聊天已经不存在"
+
 #: apps/app/src/routes/chat-details-page.tsx:874
 msgid "这段聊天暂时不可用，可以先重试读取，或返回消息列表后再试。"
 msgstr "这段聊天暂时不可用，可以先重试读取，或返回消息列表后再试。"
@@ -10547,6 +11212,10 @@ msgstr "这段语音没有识别出有效文字，请再试一次。"
 #: apps/app/src/i18n/static-dom-seed.ts:760
 msgid "这版预览先按聊天页真实气泡层级来做。"
 msgstr "这版预览先按聊天页真实气泡层级来做。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1021
+msgid "这篇文章暂时不可用"
+msgstr "这篇文章暂时不可用"
 
 #: apps/app/src/i18n/static-dom-seed.ts:15
 msgid "这里不只看朋友，世界主人和居民的公开发言都会进入这条流。"
@@ -10592,6 +11261,10 @@ msgstr "这里的名称和签名会用于移动端资料页和世界主人展示
 #: apps/app/src/routes/welcome-page.tsx:893
 msgid "进入世界"
 msgstr "进入世界"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1063
+msgid "进入会话"
+msgstr "进入会话"
 
 #: apps/app/src/i18n/static-dom-seed.ts:330
 msgid "进入公众号结果"
@@ -10640,6 +11313,10 @@ msgstr "进入联系人结果"
 #: apps/app/src/routes/character-detail-page.tsx:910
 msgid "进入语音通话"
 msgstr "进入语音通话"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1064
+msgid "进入账号"
+msgstr "进入账号"
 
 #: apps/app/src/i18n/static-dom-seed.ts:618
 msgid "远程模式下，相关数据会发送到世界实例的 Core API 与推理网关；自托管或特定部署模式下，数据会保存在对应实例的运行目录与数据库里。"
@@ -10793,6 +11470,10 @@ msgstr "通讯录里还没有可选成员"
 msgid "通话"
 msgstr "通话"
 
+#: apps/app/src/i18n/static-dom-seed.ts:996
+msgid "通话暂时不可用"
+msgstr "通话暂时不可用"
+
 #: apps/app/src/routes/welcome-page.tsx:919
 msgid "通过手机号登录。新用户会获得一个全新的世界，老用户会唤醒自己已有的世界。"
 msgstr "通过手机号登录。新用户会获得一个全新的世界，老用户会唤醒自己已有的世界。"
@@ -10826,6 +11507,10 @@ msgstr "邀请你加入「{groupDisplayName}」"
 #: apps/app/src/routes/group-qr-page.tsx:295
 msgid "邀请码：{inviteCode}"
 msgstr "邀请码：{inviteCode}"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1005
+msgid "部分加入"
+msgstr "部分加入"
 
 #: apps/app/src/routes/profile-settings-page.tsx:795
 msgid "配置状态"
@@ -10889,6 +11574,10 @@ msgstr "重试分享"
 #: apps/app/src/routes/welcome-page.tsx:1006
 msgid "重试发送"
 msgstr "重试发送"
+
+#: apps/app/src/i18n/static-dom-seed.ts:963
+msgid "重试发送失败，请稍后再试。"
+msgstr "重试发送失败，请稍后再试。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:793
 msgid "重试取消关注"
@@ -11014,6 +11703,18 @@ msgstr "阿澄"
 #: apps/app/src/i18n/static-dom-seed.ts:669
 msgid "阿巡"
 msgstr "阿巡"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1077
+msgid "附件"
+msgstr "附件"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1070
+msgid "附件上传失败，请稍后再试。"
+msgstr "附件上传失败，请稍后再试。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:1071
+msgid "附件已插入到笔记。"
+msgstr "附件已插入到笔记。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:532
 #: apps/app/src/routes/desktop-feedback-page.tsx:660
@@ -11290,3 +11991,15 @@ msgstr "默认背景和好友专属背景"
 #: apps/app/src/i18n/static-dom-seed.ts:762
 msgid "默认背景图"
 msgstr "默认背景图"
+
+#: apps/app/src/i18n/static-dom-seed.ts:975
+msgid "默认背景图已保存。"
+msgstr "默认背景图已保存。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:977
+msgid "默认背景图已切到新预览，保存后生效。"
+msgstr "默认背景图已切到新预览，保存后生效。"
+
+#: apps/app/src/i18n/static-dom-seed.ts:976
+msgid "默认背景图已恢复系统背景。"
+msgstr "默认背景图已恢复系统背景。"

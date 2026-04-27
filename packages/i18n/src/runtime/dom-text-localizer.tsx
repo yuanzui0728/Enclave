@@ -328,6 +328,303 @@ function translateKnownPattern(
     return `${count} recent push${count === "1" ? "" : "es"}`;
   }
 
+  const saveFailureMatch = sourceValue.match(/^(.+)保存失败，请稍后再试。$/);
+  if (saveFailureMatch) {
+    const target = translatePatternTarget(saveFailureMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target}の保存に失敗しました。後でもう一度お試しください。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 저장에 실패했습니다. 잠시 후 다시 시도하세요.`;
+    }
+    return `Failed to save ${target}. Try again later.`;
+  }
+
+  const kindSharedPanelMatch = sourceValue.match(
+    /^(.+)已打开系统分享面板，可继续保存到文件或转发给其他应用。$/,
+  );
+  if (kindSharedPanelMatch) {
+    const target = translatePatternTarget(kindSharedPanelMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target}のシステム共有パネルを開きました。ファイル保存や他のアプリへの転送を続けられます。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 시스템 공유 패널을 열었습니다. 파일로 저장하거나 다른 앱으로 전달할 수 있습니다.`;
+    }
+    return `${target} system share panel opened. You can save to a file or share to another app.`;
+  }
+
+  const downloadStartedMatch = sourceValue.match(/^(.+)开始下载。$/);
+  if (downloadStartedMatch) {
+    const target = translatePatternTarget(downloadStartedMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target}のダウンロードを開始しました。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 다운로드를 시작했습니다.`;
+    }
+    return `${target} download started.`;
+  }
+
+  const contactCardTitleMatch = sourceValue.match(/^(.+) 的隐界名片$/);
+  if (contactCardTitleMatch) {
+    const target = translatePatternTarget(contactCardTitleMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} の隠界連絡先カード`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 Yinjie 연락처 카드`;
+    }
+    return `${target}'s Yinjie contact card`;
+  }
+
+  const chatHistoryClearedMatch = sourceValue.match(
+    /^(.+) 的聊天记录已清空。$/,
+  );
+  if (chatHistoryClearedMatch) {
+    const target = translatePatternTarget(chatHistoryClearedMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} のチャット履歴を消去しました。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 채팅 기록을 비웠습니다.`;
+    }
+    return `${target}'s chat history has been cleared.`;
+  }
+
+  const groupAnnouncementTitleMatch = sourceValue.match(/^(.+) 群公告$/);
+  if (groupAnnouncementTitleMatch) {
+    const target = translatePatternTarget(groupAnnouncementTitleMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} グループのお知らせ`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 그룹 공지`;
+    }
+    return `${target} group announcement`;
+  }
+
+  const copiedToPhoneMatch = sourceValue.match(/^(.+) 已复制，可发到手机继续。$/);
+  if (copiedToPhoneMatch) {
+    const target = translatePatternTarget(copiedToPhoneMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} をコピーしました。スマホに送って続けられます。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}이(가) 복사되었습니다. 휴대폰으로 보내 계속할 수 있습니다.`;
+    }
+    return `${target} copied. You can send it to your phone to continue.`;
+  }
+
+  const removedFavoriteMatch = sourceValue.match(/^(.+) 已从收藏中移除。$/);
+  if (removedFavoriteMatch) {
+    const target = translatePatternTarget(removedFavoriteMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} をお気に入りから削除しました。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}이(가) 즐겨찾기에서 제거되었습니다.`;
+    }
+    return `${target} removed from Favorites.`;
+  }
+
+  const characterAddedToContactsMatch = sourceValue.match(
+    /^(.+) 已加入通讯录：(.+)$/,
+  );
+  if (characterAddedToContactsMatch) {
+    const target = translatePatternTarget(characterAddedToContactsMatch[1] ?? "");
+    const greeting = characterAddedToContactsMatch[2] ?? "";
+    if (locale === "ja-JP") {
+      return `${target} を連絡先に追加しました: ${greeting}`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}이(가) 연락처에 추가되었습니다: ${greeting}`;
+    }
+    return `${target} added to Contacts: ${greeting}`;
+  }
+
+  const sceneNoEncounterMatch = sourceValue.match(/^(.+) 里暂时没有新的相遇。$/);
+  if (sceneNoEncounterMatch) {
+    const target = translatePatternTarget(sceneNoEncounterMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} には今のところ新しい出会いがありません。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}에는 아직 새로운 만남이 없습니다.`;
+    }
+    return `No new encounters in ${target} for now.`;
+  }
+
+  const reminderDelayedMatch = sourceValue.match(/^(.+) 已往后顺 30 分钟。$/);
+  if (reminderDelayedMatch) {
+    const target = translatePatternTarget(reminderDelayedMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} を30分後に延期しました。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}을(를) 30분 뒤로 미뤘습니다.`;
+    }
+    return `${target} moved 30 minutes later.`;
+  }
+
+  const reminderTomorrowMatch = sourceValue.match(/^(.+) 已顺到明天。$/);
+  if (reminderTomorrowMatch) {
+    const target = translatePatternTarget(reminderTomorrowMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} を明日に延期しました。`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}을(를) 내일로 미뤘습니다.`;
+    }
+    return `${target} moved to tomorrow.`;
+  }
+
+  const ownerMomentsTitleMatch = sourceValue.match(/^(.+) 的朋友圈$/);
+  if (ownerMomentsTitleMatch) {
+    const target = translatePatternTarget(ownerMomentsTitleMatch[1] ?? "");
+    if (target === "Ta") {
+      return dictionary.get(sourceValue) ?? "Their Moments";
+    }
+    if (locale === "ja-JP") {
+      return `${target} のモーメンツ`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 모멘트`;
+    }
+    return `${target}'s Moments`;
+  }
+
+  const channelPostTitleMatch = sourceValue.match(/^(.+) 的视频号动态$/);
+  if (channelPostTitleMatch) {
+    const target = translatePatternTarget(channelPostTitleMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} の動画チャンネル投稿`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 채널 게시물`;
+    }
+    return `${target}'s channel post`;
+  }
+
+  const officialAccountTitleMatch = sourceValue.match(/^(.+) 公众号$/);
+  if (officialAccountTitleMatch) {
+    const target = translatePatternTarget(officialAccountTitleMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} 公式アカウント`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 공식 계정`;
+    }
+    return `${target} official account`;
+  }
+
+  const gameInviteMatch = sourceValue.match(/^(.+?) 的组局邀约$/);
+  if (gameInviteMatch) {
+    const target = translatePatternTarget(gameInviteMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} からのプレイ招待`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 게임 초대`;
+    }
+    return `${target}'s game invite`;
+  }
+
+  const gameInviteShortMatch = sourceValue.match(/^(.+?) 组局邀约$/);
+  if (gameInviteShortMatch) {
+    const target = translatePatternTarget(gameInviteShortMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} プレイ招待`;
+    }
+    if (locale === "ko-KR") {
+      return `${target} 게임 초대`;
+    }
+    return `${target} game invite`;
+  }
+
+  const noteSentMatch = sourceValue.match(/^笔记已发送到 (.+)。$/);
+  if (noteSentMatch) {
+    const target = translatePatternTarget(noteSentMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `ノートを ${target} に送信しました。`;
+    }
+    if (locale === "ko-KR") {
+      return `노트를 ${target}에 보냈습니다.`;
+    }
+    return `Note sent to ${target}.`;
+  }
+
+  const viewCallRecordMatch = sourceValue.match(
+    /^查看 (.+) 的(单聊|群)通话记录$/,
+  );
+  if (viewCallRecordMatch) {
+    const target = translatePatternTarget(viewCallRecordMatch[1] ?? "");
+    const isGroup = viewCallRecordMatch[2] === "群";
+    if (locale === "ja-JP") {
+      return `${target} の${isGroup ? "グループ" : "1対1"}通話履歴を見る`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 ${isGroup ? "그룹" : "1:1"} 통화 기록 보기`;
+    }
+    return `View ${target}'s ${isGroup ? "group" : "direct"} call record`;
+  }
+
+  const viewCallStatusMatch = sourceValue.match(
+    /^查看 (.+) 的(单聊|群)通话状态$/,
+  );
+  if (viewCallStatusMatch) {
+    const target = translatePatternTarget(viewCallStatusMatch[1] ?? "");
+    const isGroup = viewCallStatusMatch[2] === "群";
+    if (locale === "ja-JP") {
+      return `${target} の${isGroup ? "グループ" : "1対1"}通話状態を見る`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 ${isGroup ? "그룹" : "1:1"} 통화 상태 보기`;
+    }
+    return `View ${target}'s ${isGroup ? "group" : "direct"} call status`;
+  }
+
+  const returnCallWorkspaceMatch = sourceValue.match(
+    /^回到 (.+) 的(单聊|群)通话工作台$/,
+  );
+  if (returnCallWorkspaceMatch) {
+    const target = translatePatternTarget(returnCallWorkspaceMatch[1] ?? "");
+    const isGroup = returnCallWorkspaceMatch[2] === "群";
+    if (locale === "ja-JP") {
+      return `${target} の${isGroup ? "グループ" : "1対1"}通話ワークスペースへ戻る`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 ${isGroup ? "그룹" : "1:1"} 통화 작업대로 돌아가기`;
+    }
+    return `Return to ${target}'s ${isGroup ? "group" : "direct"} call workspace`;
+  }
+
+  const relayResultMatch = sourceValue.match(/^查看(.+)的群接龙结果$/);
+  if (relayResultMatch) {
+    const target = translatePatternTarget(relayResultMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} のグループリレー結果を見る`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 그룹 릴레이 결과 보기`;
+    }
+    return `View ${target}'s group relay result`;
+  }
+
+  const continueRelayResultMatch = sourceValue.match(
+    /^继续接龙(.+)的群接龙结果$/,
+  );
+  if (continueRelayResultMatch) {
+    const target = translatePatternTarget(continueRelayResultMatch[1] ?? "");
+    if (locale === "ja-JP") {
+      return `${target} のグループリレー結果を続ける`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 그룹 릴레이 결과 계속하기`;
+    }
+    return `Continue ${target}'s group relay result`;
+  }
+
   const sourceLabelMatch = sourceValue.match(/^来自 (.+)$/);
   if (sourceLabelMatch) {
     const source = sourceLabelMatch[1] ?? "";
