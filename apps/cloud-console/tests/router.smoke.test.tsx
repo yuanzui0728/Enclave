@@ -56,6 +56,14 @@ describe("cloud-console router smoke", () => {
     ).toBe("/requests");
   });
 
+  it("pauses cloud queries until the admin secret is saved", async () => {
+    renderRoute("/", { adminSecret: "", locale: null });
+
+    expect(await screen.findByText("需要管理密钥")).toBeTruthy();
+    expect(screen.queryByText("舰队仪表盘")).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("switches cloud console copy across English, Japanese, and Korean", async () => {
     renderRoute("/", { locale: "zh-CN" });
 

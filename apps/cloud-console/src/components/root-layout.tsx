@@ -29,6 +29,7 @@ function RootLayoutContent() {
   const [secret, setSecret] = useState(getCloudAdminSecret);
   const [editingSecret, setEditingSecret] = useState(!getCloudAdminSecret());
   const [draft, setDraft] = useState(getCloudAdminSecret);
+  const hasSecret = Boolean(secret.trim());
 
   async function saveSecret() {
     const nextSecret = draft.trim();
@@ -38,7 +39,7 @@ function RootLayoutContent() {
     }
     setCloudAdminSecret(nextSecret);
     setSecret(nextSecret);
-    setEditingSecret(false);
+    setEditingSecret(!nextSecret);
     showNotice(
       nextSecret
         ? "Admin secret saved locally. Short-lived admin tokens will refresh automatically."
@@ -183,7 +184,19 @@ function RootLayoutContent() {
           </div>
         ) : null}
 
-        <Outlet />
+        {hasSecret ? (
+          <Outlet />
+        ) : (
+          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
+            <InlineNotice tone="warning">
+              <div className="font-semibold">Admin access required</div>
+              <div className="mt-2 text-sm leading-6">
+                Enter CLOUD_ADMIN_SECRET to unlock the console. Cloud requests
+                are paused until a secret is saved locally.
+              </div>
+            </InlineNotice>
+          </section>
+        )}
       </div>
     </div>
   );

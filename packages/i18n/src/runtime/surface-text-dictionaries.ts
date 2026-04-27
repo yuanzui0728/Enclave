@@ -9,6 +9,13 @@ const cloudConsoleText: LocaleDictionary = {
     "Manage phone-based world provisioning, wake old worlds, inspect lifecycle jobs, and track instance health from one place.":
       "集中管理基于手机号的建世界申请、唤醒旧世界、检查生命周期任务，并追踪实例健康状态。",
     "Enter CLOUD_ADMIN_SECRET": "输入 CLOUD_ADMIN_SECRET",
+    "Admin access required": "需要管理密钥",
+    "Enter CLOUD_ADMIN_SECRET to unlock the console. Cloud requests are paused until a secret is saved locally.":
+      "请输入 CLOUD_ADMIN_SECRET 以解锁控制台。保存到本地之前，云平台请求会暂停。",
+    "CLOUD_ADMIN_SECRET is required.": "请先输入 CLOUD_ADMIN_SECRET。",
+    "CLOUD_ADMIN_SECRET is invalid.": "CLOUD_ADMIN_SECRET 无效。",
+    "Cloud admin session is invalid or expired.":
+      "云平台管理会话无效或已过期。",
     "Admin secret saved locally. Short-lived admin tokens will refresh automatically.":
       "管理密钥已保存在本地，短期管理令牌会自动刷新。",
     "Admin secret cleared.": "管理密钥已清除。",
@@ -282,6 +289,15 @@ const cloudConsoleText: LocaleDictionary = {
     "Manage phone-based world provisioning, wake old worlds, inspect lifecycle jobs, and track instance health from one place.":
       "電話番号ベースの世界作成、古い世界の起動、ライフサイクルジョブの確認、インスタンス健全性の追跡を一か所で管理します。",
     "Enter CLOUD_ADMIN_SECRET": "CLOUD_ADMIN_SECRET を入力",
+    "Admin access required": "管理シークレットが必要です",
+    "Enter CLOUD_ADMIN_SECRET to unlock the console. Cloud requests are paused until a secret is saved locally.":
+      "コンソールを解除するには CLOUD_ADMIN_SECRET を入力してください。ローカルに保存されるまでクラウドリクエストは停止されます。",
+    "CLOUD_ADMIN_SECRET is required.":
+      "CLOUD_ADMIN_SECRET を入力してください。",
+    "CLOUD_ADMIN_SECRET is invalid.":
+      "CLOUD_ADMIN_SECRET が無効です。",
+    "Cloud admin session is invalid or expired.":
+      "クラウド管理セッションが無効、または期限切れです。",
     "Admin secret saved locally. Short-lived admin tokens will refresh automatically.":
       "管理シークレットをローカルに保存しました。短命の管理トークンは自動更新されます。",
     "Admin secret cleared.": "管理シークレットをクリアしました。",
@@ -555,6 +571,15 @@ const cloudConsoleText: LocaleDictionary = {
     "Manage phone-based world provisioning, wake old worlds, inspect lifecycle jobs, and track instance health from one place.":
       "전화번호 기반 월드 생성, 기존 월드 깨우기, 라이프사이클 작업 점검, 인스턴스 상태 추적을 한곳에서 관리합니다.",
     "Enter CLOUD_ADMIN_SECRET": "CLOUD_ADMIN_SECRET 입력",
+    "Admin access required": "관리 시크릿 필요",
+    "Enter CLOUD_ADMIN_SECRET to unlock the console. Cloud requests are paused until a secret is saved locally.":
+      "콘솔을 열려면 CLOUD_ADMIN_SECRET을 입력하세요. 로컬에 저장될 때까지 클라우드 요청은 일시 중지됩니다.",
+    "CLOUD_ADMIN_SECRET is required.":
+      "CLOUD_ADMIN_SECRET을 먼저 입력하세요.",
+    "CLOUD_ADMIN_SECRET is invalid.":
+      "CLOUD_ADMIN_SECRET이 올바르지 않습니다.",
+    "Cloud admin session is invalid or expired.":
+      "클라우드 관리 세션이 유효하지 않거나 만료되었습니다.",
     "Admin secret saved locally. Short-lived admin tokens will refresh automatically.":
       "관리 시크릿이 로컬에 저장되었습니다. 단기 관리 토큰은 자동으로 갱신됩니다.",
     "Admin secret cleared.": "관리 시크릿이 삭제되었습니다.",
