@@ -6,6 +6,8 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronRight } from "lucide-react";
+import { msg } from "@lingui/macro";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { cn } from "@yinjie/ui";
 
 type ChatReminderFadeTextProps = {
@@ -103,7 +105,10 @@ export function ChatReminderCountText({
   count,
   className,
 }: ChatReminderCountTextProps) {
-  return <ChatReminderFadeText text={`${count} 条`} className={className} />;
+  const t = useRuntimeTranslator();
+  return (
+    <ChatReminderFadeText text={t(msg`${count} 条`)} className={className} />
+  );
 }
 
 export function ChatReminderCollapseIcon({
@@ -127,9 +132,10 @@ export function ChatReminderCollapseLabel({
   collapsed,
   className,
 }: ChatReminderCollapseLabelProps) {
+  const t = useRuntimeTranslator();
   return (
     <ChatReminderFadeText
-      text={collapsed ? "展开" : "收起"}
+      text={collapsed ? t(msg`展开`) : t(msg`收起`)}
       className={cn("min-w-[2em] justify-end opacity-70", className)}
     />
   );

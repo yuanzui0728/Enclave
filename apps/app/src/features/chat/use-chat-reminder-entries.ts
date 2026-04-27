@@ -3,6 +3,7 @@ import type {
   ConversationListItem,
   MessageReminderRecord,
 } from "@yinjie/contracts";
+import { useAppLocale } from "@yinjie/i18n";
 import {
   buildChatReminderEntries,
   countChatReminderStatuses,
@@ -24,15 +25,16 @@ export function useChatReminderEntries({
   conversations,
   keyword = "",
 }: UseChatReminderEntriesOptions) {
+  const { activationVersion, locale } = useAppLocale();
   const nowTimestamp = useChatReminderNowTimestamp(reminders.length);
 
   const reminderEntries = useMemo(
     () => buildChatReminderEntries(reminders, conversations, nowTimestamp),
-    [conversations, nowTimestamp, reminders],
+    [activationVersion, conversations, locale, nowTimestamp, reminders],
   );
   const filteredReminderEntries = useMemo(
     () => filterChatReminderEntries(reminderEntries, keyword),
-    [keyword, reminderEntries],
+    [activationVersion, keyword, locale, reminderEntries],
   );
   const dueReminderEntries = useMemo(
     () =>
@@ -47,11 +49,11 @@ export function useChatReminderEntries({
   );
   const filteredReminderGroups = useMemo(
     () => groupChatReminderEntries(filteredReminderEntries),
-    [filteredReminderEntries],
+    [activationVersion, filteredReminderEntries, locale],
   );
   const filteredReminderSummary = useMemo(
     () => formatChatReminderSummary(filteredReminderStatusCounts),
-    [filteredReminderStatusCounts],
+    [activationVersion, filteredReminderStatusCounts, locale],
   );
 
   return {

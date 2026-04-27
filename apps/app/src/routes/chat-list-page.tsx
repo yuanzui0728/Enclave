@@ -8,6 +8,7 @@ import {
   type ReactNode,
   type TouchEvent as ReactTouchEvent,
 } from "react";
+import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -38,6 +39,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
+import { useRuntimeTranslator } from "@yinjie/i18n";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 
 import { AvatarChip } from "../components/avatar-chip";
@@ -88,39 +90,41 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type QuickActionItem = {
   key: string;
-  label: string;
+  label: ChatListMessage;
   icon: typeof Users;
   to?: "/group/new" | "/friend-requests";
   disabled?: boolean;
-  disabledLabel?: string;
+  disabledLabel?: ChatListMessage;
 };
+
+type ChatListMessage = ReturnType<typeof msg>;
 
 const quickActionItems: QuickActionItem[] = [
   {
     key: "create-group",
-    label: "发起群聊",
+    label: msg`发起群聊`,
     icon: Users,
     to: "/group/new",
   },
   {
     key: "add-friend",
-    label: "添加朋友",
+    label: msg`添加朋友`,
     icon: UserPlus,
     to: "/friend-requests",
   },
   {
     key: "scan",
-    label: "扫一扫",
+    label: msg`扫一扫`,
     icon: QrCode,
     disabled: true,
-    disabledLabel: "暂未开放",
+    disabledLabel: msg`暂未开放`,
   },
   {
     key: "pay",
-    label: "收付款",
+    label: msg`收付款`,
     icon: WalletCards,
     disabled: true,
-    disabledLabel: "暂未开放",
+    disabledLabel: msg`暂未开放`,
   },
 ];
 
@@ -141,6 +145,7 @@ const DesktopChatWorkspace = lazy(async () => {
 });
 
 export function ChatListPage() {
+  const t = useRuntimeTranslator();
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
   const pathname = useRouterState({
@@ -167,9 +172,9 @@ export function ChatListPage() {
       <Suspense
         fallback={
           <RouteRedirectState
-            title="正在打开桌面消息"
-            description="正在载入桌面消息工作区，马上显示最近会话。"
-            loadingLabel="载入桌面消息工作区..."
+            title={t(msg`正在打开桌面消息`)}
+            description={t(msg`正在载入桌面消息工作区，马上显示最近会话。`)}
+            loadingLabel={t(msg`载入桌面消息工作区...`)}
           />
         }
       >
@@ -182,6 +187,7 @@ export function ChatListPage() {
 }
 
 function MobileChatListPage() {
+  const t = useRuntimeTranslator();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({
@@ -297,7 +303,9 @@ function MobileChatListPage() {
         ? setGroupPinned(conversationId, { pinned }, baseUrl)
         : setConversationPinned(conversationId, { pinned }, baseUrl),
     onSuccess: async (_, variables) => {
-      setNotice(variables.pinned ? "聊天已置顶。" : "聊天已取消置顶。");
+      setNotice(
+        variables.pinned ? t(msg`聊天已置顶。`) : t(msg`聊天已取消置顶。`),
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -322,7 +330,11 @@ function MobileChatListPage() {
         ? updateGroupPreferences(conversationId, { isMuted: muted }, baseUrl)
         : setConversationMuted(conversationId, { muted }, baseUrl),
     onSuccess: async (_, variables) => {
-      setNotice(variables.muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+      setNotice(
+        variables.muted
+          ? t(msg`已开启消息免打扰。`)
+          : t(msg`已关闭消息免打扰。`),
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -352,7 +364,9 @@ function MobileChatListPage() {
           : markConversationUnread(conversationId, baseUrl),
     onSuccess: async (_, variables) => {
       setNotice(
-        variables.action === "read" ? "已标记为已读。" : "已标记为未读。",
+        variables.action === "read"
+          ? t(msg`已标记为已读。`)
+          : t(msg`已标记为未读。`),
       );
       await Promise.all([
         queryClient.invalidateQueries({
@@ -377,11 +391,13 @@ function MobileChatListPage() {
       }
 
       if (showSuccessNotice) {
-        setNotice("聊天已从列表移除。");
+        setNotice(t(msg`聊天已从列表移除。`));
       }
     } catch (error) {
       setNotice(
-        error instanceof Error ? error.message : "聊天移除失败，请稍后再试。",
+        error instanceof Error
+          ? error.message
+          : t(msg`聊天移除失败，请稍后再试。`),
       );
     } finally {
       await queryClient.invalidateQueries({
@@ -518,7 +534,7 @@ function MobileChatListPage() {
     clearPendingHideTimer();
     pendingHideRef.current = null;
     setPendingHideConversation(null);
-    setNotice("已撤销删除。");
+    setNotice(t(msg`已撤销删除。`));
   }
 
   async function handleClearReminderGroup(
@@ -546,14 +562,14 @@ function MobileChatListPage() {
       {isQuickMenuOpen ? (
         <button
           type="button"
-          aria-label="关闭快捷菜单"
+          aria-label={t(msg`关闭快捷菜单`)}
           onClick={() => setIsQuickMenuOpen(false)}
           className="fixed inset-0 z-30 bg-black/[0.03]"
         />
       ) : null}
 
       <TabPageTopBar
-        title="消息"
+        title={t(msg`消息`)}
         className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
@@ -565,7 +581,7 @@ function MobileChatListPage() {
               size="icon"
               onClick={() => setIsQuickMenuOpen((current) => !current)}
               className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
-              aria-label="打开快捷菜单"
+              aria-label={t(msg`打开快捷菜单`)}
             >
               <Plus size={15} strokeWidth={2.4} />
             </Button>
@@ -587,7 +603,7 @@ function MobileChatListPage() {
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
                           <Icon size={14} />
                         </div>
-                        <span>{item.label}</span>
+                        <span>{t(item.label)}</span>
                       </button>
                     );
                   }
@@ -613,10 +629,10 @@ function MobileChatListPage() {
                         <Icon size={14} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div>{item.label}</div>
+                        <div>{t(item.label)}</div>
                         {item.disabledLabel ? (
                           <div className="mt-0.5 text-[10px] text-white/62">
-                            {item.disabledLabel}
+                            {t(item.disabledLabel)}
                           </div>
                         ) : null}
                       </div>
@@ -641,14 +657,14 @@ function MobileChatListPage() {
             });
           }}
           className="relative block w-full text-left"
-          aria-label="打开搜一搜"
+          aria-label={t(msg`打开搜一搜`)}
         >
           <Search
             aria-hidden="true"
             className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[color:var(--text-dim)]"
           />
           <div className="h-7.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[12px] leading-[30px] text-[color:var(--text-dim)] transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]">
-            搜索
+            {t(msg`搜索`)}
           </div>
         </button>
       </TabPageTopBar>
@@ -662,14 +678,16 @@ function MobileChatListPage() {
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1 truncate">
-                  {pendingHideConversation.title} 已从列表移除，5 秒内可撤销。
+                  {t(
+                    msg`${pendingHideConversation.title} 已从列表移除，5 秒内可撤销。`,
+                  )}
                 </span>
                 <button
                   type="button"
                   onClick={handleUndoHideConversation}
                   className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#07c160]"
                 >
-                  撤销
+                  {t(msg`撤销`)}
                 </button>
               </div>
             </InlineNotice>
@@ -692,7 +710,7 @@ function MobileChatListPage() {
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
-                  订阅号与服务号入口暂时没有刷新成功。
+                  {t(msg`订阅号与服务号入口暂时没有刷新成功。`)}
                 </span>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <button
@@ -700,7 +718,7 @@ function MobileChatListPage() {
                     onClick={openOfficialAccountsList}
                     className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
-                    查看公众号
+                    {t(msg`查看公众号`)}
                   </button>
                   <button
                     type="button"
@@ -709,7 +727,7 @@ function MobileChatListPage() {
                     }}
                     className="rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                   >
-                    重试读取
+                    {t(msg`重试读取`)}
                   </button>
                 </div>
               </div>
@@ -719,9 +737,9 @@ function MobileChatListPage() {
         {conversationsQuery.isLoading ? (
           <div className="px-3 pt-2">
             <MobileChatListStatusCard
-              badge="读取中"
-              title="正在刷新消息列表"
-              description="稍等一下，正在同步最近会话和消息入口。"
+              badge={t(msg`读取中`)}
+              title={t(msg`正在刷新消息列表`)}
+              description={t(msg`稍等一下，正在同步最近会话和消息入口。`)}
               tone="loading"
             />
           </div>
@@ -729,8 +747,8 @@ function MobileChatListPage() {
         {hasConversationLoadError ? (
           <div className="px-3 pt-2">
             <MobileChatListStatusCard
-              badge="读取失败"
-              title="消息页暂时不可用"
+              badge={t(msg`读取失败`)}
+              title={t(msg`消息页暂时不可用`)}
               description={conversationsQuery.error.message}
               tone="danger"
               action={
@@ -744,7 +762,7 @@ function MobileChatListPage() {
                   }}
                   className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                 >
-                  重试读取
+                  {t(msg`重试读取`)}
                 </Button>
               }
             />
@@ -755,7 +773,7 @@ function MobileChatListPage() {
             <div className="flex items-center justify-between px-4 py-1.25">
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#111827]">
                 <BellRing size={13} className="text-[#07c160]" />
-                <span>消息提醒</span>
+                <span>{t(msg`消息提醒`)}</span>
               </div>
               <div className="text-[8px] text-[#8f9992]">
                 <ChatReminderSummaryText
@@ -822,7 +840,9 @@ function MobileChatListPage() {
                               }
                               className="px-2 py-0.5 text-[8px] text-[#8f9992]"
                               aria-label={
-                                collapsed ? "展开已通知提醒" : "收起已通知提醒"
+                                collapsed
+                                  ? t(msg`展开已通知提醒`)
+                                  : t(msg`收起已通知提醒`)
                               }
                               aria-expanded={!collapsed}
                               collapsed={collapsed}
@@ -1043,9 +1063,11 @@ function MobileChatListPage() {
           ) : (
             <div className="px-3 pt-2">
               <MobileChatListStatusCard
-                badge="消息"
-                title="还没有新消息"
-                description="等角色、群聊或服务号开始发消息后，这里会显示最近会话。"
+                badge={t(msg`消息`)}
+                title={t(msg`还没有新消息`)}
+                description={t(
+                  msg`等角色、群聊或服务号开始发消息后，这里会显示最近会话。`,
+                )}
                 action={
                   <Button
                     type="button"
@@ -1055,7 +1077,7 @@ function MobileChatListPage() {
                     }}
                     className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                   >
-                    去通讯录看看
+                    {t(msg`去通讯录看看`)}
                   </Button>
                 }
               />
@@ -1142,6 +1164,7 @@ function ConversationListItemLink({
   onHide: () => void;
   className?: string;
 }) {
+  const t = useRuntimeTranslator();
   const gestureRef = useRef<{
     startX: number;
     startY: number;
@@ -1151,7 +1174,8 @@ function ConversationListItemLink({
   const showReadAction =
     conversation.unreadCount > 0 || canConversationBeMarkedUnread(conversation);
   const swipeActionWidth = (showReadAction ? 4 : 3) * SWIPE_ACTION_BUTTON_WIDTH;
-  const readActionLabel = conversation.unreadCount > 0 ? "标已读" : "标未读";
+  const readActionLabel =
+    conversation.unreadCount > 0 ? t(msg`标已读`) : t(msg`标未读`);
   const muteActionClassName = conversation.isMuted
     ? "bg-[#07c160]"
     : "bg-[#9aa0a6]";
@@ -1169,7 +1193,7 @@ function ConversationListItemLink({
     conversation,
     localMessageActionState,
     {
-      emptyText: "从这里开始第一句问候",
+      emptyText: t(msg`从这里开始第一句问候`),
     },
   );
 
@@ -1250,9 +1274,7 @@ function ConversationListItemLink({
     <div
       className={cn(
         "flex items-center gap-2.5 px-4 py-2.5",
-        isPinned
-          ? "bg-[#f5f5f5]"
-          : "bg-[color:var(--bg-canvas-elevated)]",
+        isPinned ? "bg-[#f5f5f5]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
       <AvatarChip
@@ -1284,14 +1306,14 @@ function ConversationListItemLink({
                 <BellOff
                   size={11}
                   className="text-[color:var(--text-dim)]"
-                  aria-label="消息免打扰"
+                  aria-label={t(msg`消息免打扰`)}
                 />
               ) : null}
               {hasUnreadMessages ? (
                 showMutedUnreadDot ? (
                   <div
                     className="h-2 w-2 rounded-full bg-[#b8b8b8]"
-                    aria-label="有未读消息"
+                    aria-label={t(msg`有未读消息`)}
                   />
                 ) : (
                   <div
@@ -1309,7 +1331,7 @@ function ConversationListItemLink({
                 <Pin
                   size={10}
                   className="text-[color:var(--text-dim)]"
-                  aria-label="置顶聊天"
+                  aria-label={t(msg`置顶聊天`)}
                 />
               ) : null}
             </div>
@@ -1376,7 +1398,9 @@ function ConversationListItemLink({
         >
           <div className="flex flex-col items-center gap-0.5 text-[9px]">
             <Pin size={13} />
-            <span>{conversation.isPinned ? "取消置顶" : "置顶"}</span>
+            <span>
+              {conversation.isPinned ? t(msg`取消置顶`) : t(msg`置顶`)}
+            </span>
           </div>
         </button>
         <button
@@ -1389,7 +1413,9 @@ function ConversationListItemLink({
         >
           <div className="flex flex-col items-center gap-0.5 text-[9px]">
             <BellOff size={13} />
-            <span>{conversation.isMuted ? "取消免打扰" : "免打扰"}</span>
+            <span>
+              {conversation.isMuted ? t(msg`取消免打扰`) : t(msg`免打扰`)}
+            </span>
           </div>
         </button>
         {showReadAction ? (
@@ -1415,7 +1441,7 @@ function ConversationListItemLink({
         >
           <div className="flex flex-col items-center gap-0.5 text-[9px]">
             <Trash2 size={13} />
-            <span>删除</span>
+            <span>{t(msg`删除`)}</span>
           </div>
         </button>
       </div>
