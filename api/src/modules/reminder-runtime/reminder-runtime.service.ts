@@ -14,6 +14,10 @@ import {
 } from '../characters/reminder-character';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { WorldService } from '../world/world.service';
+import {
+  WorldLanguageService,
+  type WorldLanguageCode,
+} from '../config/world-language.service';
 import { ReminderTaskEntity } from './reminder-task.entity';
 import { ReminderRuntimeRulesService } from './reminder-runtime-rules.service';
 import { normalizeReminderRuntimeRules } from './reminder-runtime.types';
@@ -436,6 +440,7 @@ export class ReminderRuntimeService {
     private readonly worldService: WorldService,
     private readonly rulesService: ReminderRuntimeRulesService,
     private readonly ai: AiOrchestratorService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   getReminderCharacterIdentity() {
@@ -460,12 +465,10 @@ export class ReminderRuntimeService {
     return this.rulesService.setRules(patch);
   }
 
-  async previewMessage(
-    input: {
-      message: string;
-      rules?: Partial<ReminderRuntimeRulesValue> | null;
-    },
-  ): Promise<ReminderRuntimePreviewResultValue> {
+  async previewMessage(input: {
+    message: string;
+    rules?: Partial<ReminderRuntimeRulesValue> | null;
+  }): Promise<ReminderRuntimePreviewResultValue> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const rules =
       input.rules != null
@@ -490,7 +493,9 @@ export class ReminderRuntimeService {
     );
   }
 
-  async getTasks(query?: ReminderTaskQuery): Promise<ReminderTaskRecordValue[]> {
+  async getTasks(
+    query?: ReminderTaskQuery,
+  ): Promise<ReminderTaskRecordValue[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const rows = await this.taskRepo.find({
       where: {
@@ -526,8 +531,12 @@ export class ReminderRuntimeService {
       .map((item) => this.serializeTask(item));
   }
 
-  async getMomentNudgeTasks(limit = 3): Promise<ReminderMomentNudge[]> {
+  async getMomentNudgeTasks(
+    limit = 3,
+    language?: WorldLanguageCode,
+  ): Promise<ReminderMomentNudge[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const activeLanguage = language ?? (await this.worldLanguage.getLanguage());
     const rows = await this.taskRepo.find({
       where: {
         ownerId: owner.id,
@@ -551,7 +560,7 @@ export class ReminderRuntimeService {
       category: task.category,
       kind: task.kind as ReminderTaskKind,
       priority: task.priority as ReminderTaskPriority,
-      scheduleText: this.describeSchedule(task),
+      scheduleText: this.describeSchedule(task, activeLanguage),
       completionCount: task.completionCount ?? 0,
     }));
   }
@@ -663,23 +672,31 @@ export class ReminderRuntimeService {
             return false;
           }
           const timestamp = item.nextTriggerAt.getTime();
-          return timestamp >= now.getTime() && timestamp <= dueSoonCutoff.getTime();
+          return (
+            timestamp >= now.getTime() && timestamp <= dueSoonCutoff.getTime()
+          );
         }).length,
         overdueTaskCount: activeRows.filter(
           (item) =>
             item.nextTriggerAt instanceof Date &&
             item.nextTriggerAt.getTime() < now.getTime(),
         ).length,
-        habitTaskCount: activeRows.filter((item) => item.kind === 'habit').length,
-        hardTaskCount: activeRows.filter((item) => item.priority === 'hard').length,
+        habitTaskCount: activeRows.filter((item) => item.kind === 'habit')
+          .length,
+        hardTaskCount: activeRows.filter((item) => item.priority === 'hard')
+          .length,
         deliveredTodayCount,
         completedTodayCount,
         momentCountToday,
       },
       activeTasks,
       upcomingTasks,
-      recentDeliveredTasks: recentDeliveredRows.map((item) => this.serializeTask(item)),
-      recentCompletedTasks: recentCompletedRows.map((item) => this.serializeTask(item)),
+      recentDeliveredTasks: recentDeliveredRows.map((item) =>
+        this.serializeTask(item),
+      ),
+      recentCompletedTasks: recentCompletedRows.map((item) =>
+        this.serializeTask(item),
+      ),
       recentMessages: recentMessages.map((item) => ({
         id: item.id,
         conversationId: item.conversationId,
@@ -698,8 +715,9 @@ export class ReminderRuntimeService {
   }): Promise<{ text: string; tasks: ReminderMomentNudge[] } | null> {
     const now = input?.now ?? new Date();
     const slot = input?.slot ?? 'general';
+    const language = await this.worldLanguage.getLanguage();
     const rules = await this.rulesService.getRules();
-    const tasks = await this.getMomentNudgeTasks(input?.limit ?? 3);
+    const tasks = await this.getMomentNudgeTasks(input?.limit ?? 3, language);
     if (tasks.length === 0) {
       return null;
     }
@@ -707,15 +725,18 @@ export class ReminderRuntimeService {
     const primary = tasks[0];
     const focus = this.truncateReminderLabel(primary.title, 14);
     const companionLine =
-      this.buildReminderCompanionLine(tasks, slot) ||
-      `${focus}，今天先动一点，别继续往后拖。`;
-    const templateSource =
-      slot === 'morning'
-        ? rules.promptTemplates.momentNudgeMorningTemplates
-        : slot === 'evening'
-          ? rules.promptTemplates.momentNudgeEveningTemplates
-          : rules.promptTemplates.momentNudgeGeneralTemplates;
-    const variants = splitTemplateVariants(templateSource);
+      this.buildReminderCompanionLine(tasks, slot, language) ||
+      this.buildSingleReminderCompanionLine(focus, language);
+    const variants =
+      language === 'zh-CN'
+        ? splitTemplateVariants(
+            slot === 'morning'
+              ? rules.promptTemplates.momentNudgeMorningTemplates
+              : slot === 'evening'
+                ? rules.promptTemplates.momentNudgeEveningTemplates
+                : rules.promptTemplates.momentNudgeGeneralTemplates,
+          )
+        : this.getLocalizedMomentNudgeTemplates(language, slot);
     const selectedTemplate =
       variants[
         hashTextSeed(
@@ -944,7 +965,10 @@ export class ReminderRuntimeService {
         if (!parsedIntent.handled) {
           return { handled: false };
         }
-        if ('needsClarification' in parsedIntent && parsedIntent.needsClarification) {
+        if (
+          'needsClarification' in parsedIntent &&
+          parsedIntent.needsClarification
+        ) {
           return {
             handled: true,
             responseText: parsedIntent.responseText,
@@ -1011,9 +1035,12 @@ export class ReminderRuntimeService {
   private async evaluateConversationTurnWithoutClarification(
     input: ReminderConversationEvaluationInput,
   ): Promise<ReminderConversationEvaluation> {
-    const rulesEvaluation = await this.evaluateConversationTurnFromRules(input, {
-      source: 'rules',
-    });
+    const rulesEvaluation = await this.evaluateConversationTurnFromRules(
+      input,
+      {
+        source: 'rules',
+      },
+    );
     if (
       rulesEvaluation.handled ||
       input.rules.parserRules.parserMode === 'rules_only' ||
@@ -1173,10 +1200,13 @@ export class ReminderRuntimeService {
       action: 'update',
       source: 'rules',
       reason: '已结合上一条提醒上下文，解析为修改当前提醒时间。',
-      responseText: renderTemplate(input.rules.textTemplates.taskUpdateSuccess, {
-        title: referencedTask.title,
-        scheduleText: this.describeIntentSchedule(parsedIntent, input.now),
-      }),
+      responseText: renderTemplate(
+        input.rules.textTemplates.taskUpdateSuccess,
+        {
+          title: referencedTask.title,
+          scheduleText: this.describeIntentSchedule(parsedIntent, input.now),
+        },
+      ),
       referencedTask,
       parsedIntent,
       debug: {
@@ -1241,7 +1271,10 @@ export class ReminderRuntimeService {
       rules.parserRules.listIntentPatterns,
     );
     if (listPatterns.length > 0) {
-      const tasks = await this.listActiveTasksForConversation(ownerId, conversationId);
+      const tasks = await this.listActiveTasksForConversation(
+        ownerId,
+        conversationId,
+      );
       return {
         handled: true,
         action: 'list',
@@ -1390,7 +1423,8 @@ export class ReminderRuntimeService {
       );
       if (
         !parsedIntent.handled ||
-        ('needsClarification' in parsedIntent && parsedIntent.needsClarification)
+        ('needsClarification' in parsedIntent &&
+          parsedIntent.needsClarification)
       ) {
         return {
           handled: true,
@@ -1490,13 +1524,10 @@ export class ReminderRuntimeService {
             ? renderTemplate(rules.textTemplates.taskCompleteOneTimeSuccess, {
                 title: referencedTask.title,
               })
-            : renderTemplate(
-                rules.textTemplates.taskCompleteRecurringSuccess,
-                {
-                  title: referencedTask.title,
-                  scheduleText: this.describeSchedule(referencedTask),
-                },
-              );
+            : renderTemplate(rules.textTemplates.taskCompleteRecurringSuccess, {
+                title: referencedTask.title,
+                scheduleText: this.describeSchedule(referencedTask),
+              });
       }
 
       return {
@@ -1793,7 +1824,7 @@ export class ReminderRuntimeService {
           ? this.serializePreviewParsedTask(createResolvedIntent)
           : evaluation.action === 'update' && evaluation.parsedIntent
             ? this.serializePreviewParsedTask(evaluation.parsedIntent)
-          : null,
+            : null,
       referencedTask:
         evaluation.action === 'cancel' ||
         evaluation.action === 'complete' ||
@@ -1846,7 +1877,9 @@ export class ReminderRuntimeService {
     await this.taskRepo.save(task);
   }
 
-  async collectCheckinDispatches(now = new Date()): Promise<ReminderDispatch[]> {
+  async collectCheckinDispatches(
+    now = new Date(),
+  ): Promise<ReminderDispatch[]> {
     const rules = await this.rulesService.getRules();
     if (!rules.checkinHours.includes(now.getHours())) {
       return [];
@@ -1864,9 +1897,11 @@ export class ReminderRuntimeService {
     });
 
     if (lastReminderMessage) {
-      const minIntervalMs =
-        rules.checkinMinIntervalHours * 60 * 60 * 1000;
-      if (now.getTime() - lastReminderMessage.createdAt.getTime() < minIntervalMs) {
+      const minIntervalMs = rules.checkinMinIntervalHours * 60 * 60 * 1000;
+      if (
+        now.getTime() - lastReminderMessage.createdAt.getTime() <
+        minIntervalMs
+      ) {
         return [];
       }
     }
@@ -1923,7 +1958,8 @@ export class ReminderRuntimeService {
 
     const scoped = rows.filter(
       (item) =>
-        !item.sourceConversationId || item.sourceConversationId === conversationId,
+        !item.sourceConversationId ||
+        item.sourceConversationId === conversationId,
     );
     return scoped.length > 0 ? scoped : rows;
   }
@@ -1952,7 +1988,10 @@ export class ReminderRuntimeService {
     conversationId: string,
     text: string,
   ) {
-    const tasks = await this.listActiveTasksForConversation(ownerId, conversationId);
+    const tasks = await this.listActiveTasksForConversation(
+      ownerId,
+      conversationId,
+    );
     if (tasks.length === 0) {
       return null;
     }
@@ -2073,7 +2112,9 @@ export class ReminderRuntimeService {
   }
 
   private findMatchedKeywords(text: string, keywords: string[]) {
-    return keywords.filter((keyword) => keyword.trim() && text.includes(keyword));
+    return keywords.filter(
+      (keyword) => keyword.trim() && text.includes(keyword),
+    );
   }
 
   private isPlainAffirmation(text: string) {
@@ -2084,10 +2125,8 @@ export class ReminderRuntimeService {
 
   private hasRecurrenceCue(text: string, rules: ReminderRuntimeRulesValue) {
     return (
-      this.findMatchedKeywords(
-        text,
-        rules.parserRules.dailyRecurrenceKeywords,
-      ).length > 0 || this.extractWeeklyRule(text, rules) != null
+      this.findMatchedKeywords(text, rules.parserRules.dailyRecurrenceKeywords)
+        .length > 0 || this.extractWeeklyRule(text, rules) != null
     );
   }
 
@@ -2096,12 +2135,12 @@ export class ReminderRuntimeService {
     return (
       this.extractClock(text, rules) != null ||
       this.extractWeeklyRule(text, rules) != null ||
-      this.findMatchedKeywords(
+      this.findMatchedKeywords(text, rules.parserRules.dailyRecurrenceKeywords)
+        .length > 0 ||
+      this.resolveRelativeDayOffset(
         text,
-        rules.parserRules.dailyRecurrenceKeywords,
-      ).length > 0 ||
-      this.resolveRelativeDayOffset(text, matchedPeriod?.matchedPatterns ?? []) !=
-        null
+        matchedPeriod?.matchedPatterns ?? [],
+      ) != null
     );
   }
 
@@ -2213,7 +2252,13 @@ export class ReminderRuntimeService {
         ? this.buildTaskClockText(input.task)
         : '';
 
-    return [recurrencePrefix, scheduleText, clockText, '提醒我', input.task.title]
+    return [
+      recurrencePrefix,
+      scheduleText,
+      clockText,
+      '提醒我',
+      input.task.title,
+    ]
       .filter((item) => item.trim().length > 0)
       .join(' ');
   }
@@ -2288,7 +2333,10 @@ export class ReminderRuntimeService {
     const weeklyRule = this.extractWeeklyRule(text, rules);
     const matchedWeeklyKeywords = weeklyRule
       ? [weeklyRule.matchedKeyword]
-      : this.findMatchedKeywords(text, rules.parserRules.weeklyRecurrenceKeywords);
+      : this.findMatchedKeywords(
+          text,
+          rules.parserRules.weeklyRecurrenceKeywords,
+        );
     const matchedHabitIntentKeywords = this.findMatchedKeywords(
       text,
       rules.parserRules.habitIntentKeywords,
@@ -2354,7 +2402,8 @@ export class ReminderRuntimeService {
     const kind =
       matchedDailyKeywords.length > 0 || weeklyRule
         ? 'recurring'
-        : matchedHabitIntentKeywords.length > 0 || matchedHabitKeywords.length > 0
+        : matchedHabitIntentKeywords.length > 0 ||
+            matchedHabitKeywords.length > 0
           ? 'habit'
           : 'one_time';
     const priority = matchedHardKeywords.length > 0 ? 'hard' : 'soft';
@@ -2529,10 +2578,7 @@ export class ReminderRuntimeService {
     };
   }
 
-  private extractReminderTitle(
-    text: string,
-    rules: ReminderRuntimeRulesValue,
-  ) {
+  private extractReminderTitle(text: string, rules: ReminderRuntimeRulesValue) {
     const matchedCreateKeyword = rules.parserRules.createIntentKeywords
       .map((keyword) => ({
         keyword,
@@ -2558,7 +2604,9 @@ export class ReminderRuntimeService {
         '今天',
         '明天',
         '后天',
-        ...this.getPeriodRuleEntries(rules).flatMap(([, rule]) => rule.patterns),
+        ...this.getPeriodRuleEntries(rules).flatMap(
+          ([, rule]) => rule.patterns,
+        ),
       ]),
     );
     if (periodTokens.length > 0) {
@@ -2607,10 +2655,10 @@ export class ReminderRuntimeService {
 
     title = title.replace(
       new RegExp(
-        "^((\\d{1,2}|[\\u96f6\\u3007\\u4e00\\u4e8c\\u4e24\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341]{1,3})(\\u70b9|:|\\uff1a)(\\u534a|\\u4e00\\u523b|\\u4e09\\u523b|(\\d{1,2}|[\\u96f6\\u3007\\u4e00\\u4e8c\\u4e24\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341]{1,3}))?\\u5206?)\\s*",
-        "u",
+        '^((\\d{1,2}|[\\u96f6\\u3007\\u4e00\\u4e8c\\u4e24\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341]{1,3})(\\u70b9|:|\\uff1a)(\\u534a|\\u4e00\\u523b|\\u4e09\\u523b|(\\d{1,2}|[\\u96f6\\u3007\\u4e00\\u4e8c\\u4e24\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341]{1,3}))?\\u5206?)\\s*',
+        'u',
       ),
-      "",
+      '',
     );
 
     title = stripReminderCommand(title);
@@ -2705,7 +2753,9 @@ export class ReminderRuntimeService {
       matchedKeyword:
         rules.parserRules.weeklyRecurrenceKeywords.find((keyword) =>
           text.includes(keyword),
-        ) ?? rules.parserRules.weeklyRecurrenceKeywords[0] ?? '',
+        ) ??
+        rules.parserRules.weeklyRecurrenceKeywords[0] ??
+        '',
       label:
         match[1] === '天' || match[1] === '日' || match[1] === '七'
           ? '日'
@@ -2808,7 +2858,7 @@ export class ReminderRuntimeService {
       return this.resolveNextWeeklyDate(now, rule.weekdays[0], clock);
     }
 
-    const cadenceDays = rule.unit === 'habit' ? rule.cadenceDays ?? 1 : 1;
+    const cadenceDays = rule.unit === 'habit' ? (rule.cadenceDays ?? 1) : 1;
     const target = new Date(now);
     target.setHours(clock.hour, clock.minute, 0, 0);
     if (target.getTime() <= now.getTime()) {
@@ -2845,26 +2895,89 @@ export class ReminderRuntimeService {
     return next ? formatDateTimeLabel(next, now) : '已更新';
   }
 
-  private describeSchedule(task: ReminderTaskEntity) {
+  private describeSchedule(
+    task: ReminderTaskEntity,
+    language: WorldLanguageCode = 'zh-CN',
+  ) {
     if (task.recurrenceRule?.unit === 'daily') {
-      return `每天 ${formatTime(task.recurrenceRule.hour, task.recurrenceRule.minute)}`;
+      const time = formatTime(
+        task.recurrenceRule.hour,
+        task.recurrenceRule.minute,
+      );
+      switch (language) {
+        case 'en-US':
+          return `every day at ${time}`;
+        case 'ja-JP':
+          return `毎日 ${time}`;
+        case 'ko-KR':
+          return `매일 ${time}`;
+        case 'zh-CN':
+        default:
+          return `每天 ${time}`;
+      }
     }
     if (
       task.recurrenceRule?.unit === 'weekly' &&
       task.recurrenceRule.weekdays?.length
     ) {
-      const labels = ['日', '一', '二', '三', '四', '五', '六'];
-      return `每周${labels[task.recurrenceRule.weekdays[0]]} ${formatTime(
+      const weekday = task.recurrenceRule.weekdays[0] ?? 0;
+      const time = formatTime(
         task.recurrenceRule.hour,
         task.recurrenceRule.minute,
-      )}`;
+      );
+      switch (language) {
+        case 'en-US':
+          return `every ${this.getWeekdayLabel(weekday, language)} at ${time}`;
+        case 'ja-JP':
+          return `毎週${this.getWeekdayLabel(weekday, language)} ${time}`;
+        case 'ko-KR':
+          return `매주 ${this.getWeekdayLabel(weekday, language)} ${time}`;
+        case 'zh-CN':
+        default:
+          return `每周${this.getWeekdayLabel(weekday, language)} ${time}`;
+      }
     }
     if (task.recurrenceRule?.unit === 'habit') {
-      return `每天 ${formatTime(task.recurrenceRule.hour, task.recurrenceRule.minute)} 轻提醒`;
+      const time = formatTime(
+        task.recurrenceRule.hour,
+        task.recurrenceRule.minute,
+      );
+      switch (language) {
+        case 'en-US':
+          return `gentle reminder every day at ${time}`;
+        case 'ja-JP':
+          return `毎日 ${time} の軽いリマインド`;
+        case 'ko-KR':
+          return `매일 ${time} 가벼운 알림`;
+        case 'zh-CN':
+        default:
+          return `每天 ${time} 轻提醒`;
+      }
     }
 
     const next = task.nextTriggerAt ?? task.dueAt;
-    return next ? formatDateTimeLabel(next, new Date()) : '已触发，等你处理';
+    if (next) {
+      return language === 'zh-CN'
+        ? formatDateTimeLabel(next, new Date())
+        : new Intl.DateTimeFormat(language, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          }).format(next);
+    }
+    switch (language) {
+      case 'en-US':
+        return 'already triggered, waiting for you';
+      case 'ja-JP':
+        return 'すでに通知済み、対応待ち';
+      case 'ko-KR':
+        return '이미 알림됨, 처리 대기 중';
+      case 'zh-CN':
+      default:
+        return '已触发，等你处理';
+    }
   }
 
   private isLongHorizonNudgeTask(task: ReminderTaskEntity) {
@@ -2879,6 +2992,7 @@ export class ReminderRuntimeService {
   private buildReminderCompanionLine(
     tasks: ReminderMomentNudge[],
     slot: ReminderMomentSlot,
+    language: WorldLanguageCode = 'zh-CN',
   ) {
     if (tasks.length <= 1) {
       return '';
@@ -2887,16 +3001,129 @@ export class ReminderRuntimeService {
     const labels = tasks
       .slice(0, 3)
       .map((item) => this.truncateReminderLabel(item.title, 8));
+    switch (language) {
+      case 'en-US':
+        return slot === 'morning'
+          ? `I'm keeping an eye on these today: ${labels.join(', ')}. Don't let the day bury them.`
+          : `I'm still watching these today: ${labels.join(', ')}. Long-running things do not need to drift into tomorrow again.`;
+      case 'ja-JP':
+        return slot === 'morning'
+          ? `今日はまず${labels.join('、')}を見ています。忙しさで全部流さないで。`
+          : `今日は引き続き${labels.join('、')}を見ています。長く残っていることをまた明日に回さないで。`;
+      case 'ko-KR':
+        return slot === 'morning'
+          ? `오늘은 먼저 ${labels.join(', ')}을(를) 보고 있을게요. 바쁘다고 전부 놓치지 마세요.`
+          : `오늘도 ${labels.join(', ')}을(를) 계속 보고 있을게요. 오래 남은 일들을 또 내일로 미루지 마세요.`;
+      case 'zh-CN':
+      default:
+        break;
+    }
     if (slot === 'morning') {
       return `我这边今天先盯着：${labels.join('、')}。别一忙起来就全忘了。`;
     }
     return `我这边今天继续盯着：${labels.join('、')}。长期的事，别又一起拖到明天。`;
   }
 
+  private buildSingleReminderCompanionLine(
+    focus: string,
+    language: WorldLanguageCode,
+  ) {
+    switch (language) {
+      case 'en-US':
+        return `${focus} is still on the list. Start with one small move today instead of pushing it back again.`;
+      case 'ja-JP':
+        return `${focus}、今日は少しだけでも動かして。これ以上先送りにしないで。`;
+      case 'ko-KR':
+        return `${focus}, 오늘은 조금이라도 시작해요. 더 미루지 마세요.`;
+      case 'zh-CN':
+      default:
+        return `${focus}，今天先动一点，别继续往后拖。`;
+    }
+  }
+
+  private getLocalizedMomentNudgeTemplates(
+    language: Exclude<WorldLanguageCode, 'zh-CN'>,
+    slot: ReminderMomentSlot,
+  ) {
+    const templates: Record<
+      Exclude<WorldLanguageCode, 'zh-CN'>,
+      Record<ReminderMomentSlot, string[]>
+    > = {
+      'en-US': {
+        morning: [
+          '{{companionLine}}',
+          '{{focus}} is the thing to touch first this morning. A small start counts.',
+        ],
+        evening: [
+          '{{companionLine}}',
+          '{{focus}} can still move a little tonight. Close one small loop before the day ends.',
+        ],
+        general: [
+          '{{companionLine}}',
+          '{{focus}} is still waiting. One small step is better than carrying it untouched.',
+        ],
+      },
+      'ja-JP': {
+        morning: [
+          '{{companionLine}}',
+          '今朝はまず{{focus}}に少し触れて。小さく始めるだけでもいい。',
+        ],
+        evening: [
+          '{{companionLine}}',
+          '今夜のうちに{{focus}}を少しだけ進めて。小さく閉じられるところまででいい。',
+        ],
+        general: [
+          '{{companionLine}}',
+          '{{focus}}がまだ待っています。手つかずで抱えるより、少し動かしておこう。',
+        ],
+      },
+      'ko-KR': {
+        morning: [
+          '{{companionLine}}',
+          '오늘 아침엔 {{focus}}부터 조금 건드려 봐요. 작게 시작해도 충분해요.',
+        ],
+        evening: [
+          '{{companionLine}}',
+          '오늘이 끝나기 전에 {{focus}}를 조금만 더 움직여 봐요.',
+        ],
+        general: [
+          '{{companionLine}}',
+          '{{focus}}가 아직 기다리고 있어요. 그대로 안고 가기보다 한 걸음만 옮겨요.',
+        ],
+      },
+    };
+    return templates[language][slot];
+  }
+
+  private getWeekdayLabel(day: number, language: WorldLanguageCode) {
+    const normalizedDay = Math.max(0, Math.min(6, Math.trunc(day)));
+    const labels: Record<WorldLanguageCode, string[]> = {
+      'zh-CN': ['日', '一', '二', '三', '四', '五', '六'],
+      'en-US': [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ],
+      'ja-JP': ['日曜', '月曜', '火曜', '水曜', '木曜', '金曜', '土曜'],
+      'ko-KR': [
+        '일요일',
+        '월요일',
+        '화요일',
+        '수요일',
+        '목요일',
+        '금요일',
+        '토요일',
+      ],
+    };
+    return labels[language][normalizedDay] ?? labels['zh-CN'][normalizedDay];
+  }
+
   private truncateReminderLabel(value: string, maxLength: number) {
-    const normalized = value
-      .replace(/[，。、“”‘’：:！!？?；;,.]/g, '')
-      .trim();
+    const normalized = value.replace(/[，。、“”‘’：:！!？?；;,.]/g, '').trim();
     if (normalized.length <= maxLength) {
       return normalized;
     }
