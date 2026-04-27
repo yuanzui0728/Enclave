@@ -274,6 +274,60 @@ function translateKnownPattern(
     return `${count} new message${count === "1" ? "" : "s"} below`;
   }
 
+  const scrollNewMessageAriaMatch = sourceValue.match(
+    /^查看 (\d+|99\+) 条新消息$/,
+  );
+  if (scrollNewMessageAriaMatch) {
+    const count = scrollNewMessageAriaMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `${count}件の新着メッセージを見る`;
+    }
+    if (locale === "ko-KR") {
+      return `새 메시지 ${count}개 보기`;
+    }
+    return `View ${count} new message${count === "1" ? "" : "s"}`;
+  }
+
+  const scrollNewMessageLabelMatch = sourceValue.match(/^(\d+|99\+) 条新消息$/);
+  if (scrollNewMessageLabelMatch) {
+    const count = scrollNewMessageLabelMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `新着 ${count}件`;
+    }
+    if (locale === "ko-KR") {
+      return `새 메시지 ${count}개`;
+    }
+    return `${count} new`;
+  }
+
+  const officialAccountSubtitleMatch = sourceValue.match(
+    /^(服务号|订阅号) · @(.+?)(?: · 已认证)?$/,
+  );
+  if (officialAccountSubtitleMatch) {
+    const accountType = translatePatternTarget(
+      officialAccountSubtitleMatch[1] ?? "",
+    );
+    const handle = officialAccountSubtitleMatch[2] ?? "";
+    const verified = sourceValue.includes(" · 已认证")
+      ? ` · ${translatePatternTarget("已认证")}`
+      : "";
+    return `${accountType} · @${handle}${verified}`;
+  }
+
+  const recentOfficialArticleCountMatch = sourceValue.match(
+    /^(\d+) 篇最近推送$/,
+  );
+  if (recentOfficialArticleCountMatch) {
+    const count = recentOfficialArticleCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `最近の配信 ${count}件`;
+    }
+    if (locale === "ko-KR") {
+      return `최근 발행 ${count}편`;
+    }
+    return `${count} recent push${count === "1" ? "" : "es"}`;
+  }
+
   const sourceLabelMatch = sourceValue.match(/^来自 (.+)$/);
   if (sourceLabelMatch) {
     const source = sourceLabelMatch[1] ?? "";
