@@ -29,7 +29,7 @@
 
 ## 主 App 结构（`apps/app/src/`）
 
-`routes/` · `features/desktop/` · `features/mobile/` · `features/moments/` · `features/games/` · `features/shell/` · `runtime/` · `lib/` · `components/` · `store/`
+`routes/` · `features/desktop/` · `features/mobile/` · `features/moments/` · `features/games/` · `features/shell/` · `runtime/` · `i18n/` · `lib/` · `components/` · `store/`
 
 ## 官网结构（`apps/site/src/`）
 

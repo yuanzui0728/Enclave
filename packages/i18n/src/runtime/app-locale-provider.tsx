@@ -23,8 +23,10 @@ import {
 import { appI18n, setActiveLocale } from "./i18n-instance";
 import {
   loadMessagesForSurface,
+  loadTextDictionaryForSurface,
   prefetchMessagesForSurface,
 } from "./catalog-loaders";
+import { DomTextLocalizer } from "./dom-text-localizer";
 
 type AppLocaleContextValue = {
   activationVersion: number;
@@ -58,6 +60,9 @@ export function AppLocaleProvider({
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [activationVersion, setActivationVersion] = useState(0);
+  const [textDictionary, setTextDictionary] = useState<
+    ReadonlyMap<string, string>
+  >(() => new Map());
   const hasActivatedLocaleRef = useRef(false);
 
   const setLocale = useCallback(
@@ -84,7 +89,10 @@ export function AppLocaleProvider({
       setError(null);
 
       try {
-        const messages = await loadMessagesForSurface(surface, requestedLocale);
+        const [messages, nextTextDictionary] = await Promise.all([
+          loadMessagesForSurface(surface, requestedLocale),
+          loadTextDictionaryForSurface(surface, requestedLocale),
+        ]);
         if (cancelled) {
           return;
         }
@@ -94,6 +102,7 @@ export function AppLocaleProvider({
         setActiveLocale(requestedLocale);
         syncDocumentLocale(requestedLocale);
         setLocaleState(requestedLocale);
+        setTextDictionary(nextTextDictionary);
         hasActivatedLocaleRef.current = true;
         setIsReady(true);
         setActivationVersion((currentVersion) => currentVersion + 1);
@@ -113,6 +122,7 @@ export function AppLocaleProvider({
         syncDocumentLocale(DEFAULT_LOCALE);
         setActiveLocale(DEFAULT_LOCALE);
         setLocaleState(DEFAULT_LOCALE);
+        setTextDictionary(new Map());
         hasActivatedLocaleRef.current = true;
         setError(nextError);
         setIsReady(true);
@@ -135,7 +145,9 @@ export function AppLocaleProvider({
     const timeoutId = window.setTimeout(() => {
       prefetchMessagesForSurface(
         surface,
-        SUPPORTED_LOCALES.filter((availableLocale) => availableLocale !== locale),
+        SUPPORTED_LOCALES.filter(
+          (availableLocale) => availableLocale !== locale,
+        ),
       );
     }, 200);
 
@@ -170,7 +182,18 @@ export function AppLocaleProvider({
   return (
     <AppLocaleContext.Provider value={contextValue}>
       <I18nProvider i18n={appI18n}>
-        {isReady ? children : fallback}
+        {isReady ? (
+          <>
+            <DomTextLocalizer
+              dictionary={textDictionary}
+              locale={locale}
+              version={activationVersion}
+            />
+            {children}
+          </>
+        ) : (
+          fallback
+        )}
       </I18nProvider>
     </AppLocaleContext.Provider>
   );

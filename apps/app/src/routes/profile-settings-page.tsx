@@ -35,13 +35,14 @@ type SettingsTab = "profile" | "chat" | "ai" | "language" | "legal";
 type LegalTab = "privacy" | "terms" | "community";
 type ProfileSettingsMessage = ReturnType<typeof msg>;
 
-const settingsTabs: Array<{ id: SettingsTab; label: ProfileSettingsMessage }> = [
-  { id: "profile", label: msg`个人资料` },
-  { id: "chat", label: msg`聊天` },
-  { id: "ai", label: msg`AI 设置` },
-  { id: "language", label: msg`语言` },
-  { id: "legal", label: msg`协议与规范` },
-];
+const settingsTabs: Array<{ id: SettingsTab; label: ProfileSettingsMessage }> =
+  [
+    { id: "profile", label: msg`个人资料` },
+    { id: "chat", label: msg`聊天` },
+    { id: "ai", label: msg`AI 设置` },
+    { id: "language", label: msg`语言` },
+    { id: "legal", label: msg`协议与规范` },
+  ];
 
 const legalTabs: Array<{ id: LegalTab; label: ProfileSettingsMessage }> = [
   { id: "privacy", label: msg`隐私政策` },
@@ -51,18 +52,18 @@ const legalTabs: Array<{ id: LegalTab; label: ProfileSettingsMessage }> = [
 
 const chatSendShortcutOptions: Array<{
   id: ChatSendShortcut;
-  label: string;
-  description: string;
+  label: ProfileSettingsMessage;
+  description: ProfileSettingsMessage;
 }> = [
   {
     id: "enter",
-    label: "Enter 发送消息",
-    description: "按回车直接发送，保持当前更顺手的输入节奏。",
+    label: msg`Enter 发送消息`,
+    description: msg`按回车直接发送，保持当前更顺手的输入节奏。`,
   },
   {
     id: "mod_enter",
-    label: "Ctrl/Cmd + Enter 发送消息",
-    description: "发送前多一道组合键确认，更接近微信桌面版可切换方式。",
+    label: msg`Ctrl/Cmd + Enter 发送消息`,
+    description: msg`发送前多一道组合键确认，更接近微信桌面版可切换方式。`,
   },
 ];
 
@@ -167,9 +168,11 @@ export function ProfileSettingsPage() {
   const desktopPathMismatch = desktopMode && pathname !== desktopSettingsPath;
   const backTo = desktopMode ? "/tabs/chat" : "/tabs/profile";
   const desktopBackTo = desktopSettingsRoute ? "/tabs/chat" : "/tabs/profile";
-  const desktopBackLabel = desktopSettingsRoute ? "返回消息" : "返回资料";
+  const desktopBackLabel = desktopSettingsRoute
+    ? t(msg`返回消息`)
+    : t(msg`返回资料`);
   const mobileBackLabel =
-    backTo === "/tabs/profile" ? "返回资料页" : "返回消息";
+    backTo === "/tabs/profile" ? t(msg`返回资料页`) : t(msg`返回消息`);
 
   useEffect(() => {
     if (!desktopPathMismatch) {
@@ -217,28 +220,28 @@ export function ProfileSettingsPage() {
       {activeTab === "profile" ? (
         <MobileSettingsSection
           desktop={desktopMode}
-          title={desktopMode ? "个人资料" : undefined}
+          title={desktopMode ? t(msg`个人资料`) : undefined}
           description={
             desktopMode
-              ? "这里的名称和签名会用于移动端资料页和世界主人展示。"
+              ? t(msg`这里的名称和签名会用于移动端资料页和世界主人展示。`)
               : undefined
           }
         >
           <div className="space-y-3">
-            <MobileFieldGroup label="显示名称">
+            <MobileFieldGroup label={t(msg`显示名称`)}>
               <TextField
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value)}
-                placeholder="输入显示名称"
+                placeholder={t(msg`输入显示名称`)}
                 className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
               />
             </MobileFieldGroup>
-            <MobileFieldGroup label="签名">
+            <MobileFieldGroup label={t(msg`签名`)}>
               <TextAreaField
                 value={draftSignature}
                 onChange={(event) => setDraftSignature(event.target.value)}
                 className="min-h-[5.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
-                placeholder="介绍一下你自己，或者写一句当前状态"
+                placeholder={t(msg`介绍一下你自己，或者写一句当前状态`)}
               />
             </MobileFieldGroup>
           </div>
@@ -255,7 +258,9 @@ export function ProfileSettingsPage() {
                   : "bg-[#07c160] hover:bg-[#06ad56]",
               )}
             >
-              {saveProfileMutation.isPending ? "保存中..." : "保存资料"}
+              {saveProfileMutation.isPending
+                ? t(msg`保存中...`)
+                : t(msg`保存资料`)}
             </Button>
           </div>
           {saveProfileMutation.isError &&
@@ -281,10 +286,10 @@ export function ProfileSettingsPage() {
           ) : null}
           {saveProfileMutation.isSuccess ? (
             desktopMode ? (
-              <InlineNotice tone="success">资料已更新。</InlineNotice>
+              <InlineNotice tone="success">{t(msg`资料已更新。`)}</InlineNotice>
             ) : (
               <MobileSettingsInlineNotice tone="success">
-                资料已更新。
+                {t(msg`资料已更新。`)}
               </MobileSettingsInlineNotice>
             )
           ) : null}
@@ -294,11 +299,11 @@ export function ProfileSettingsPage() {
       {activeTab === "chat" ? (
         <MobileSettingsSection
           desktop={desktopMode}
-          title={desktopMode ? "聊天设置" : undefined}
+          title={desktopMode ? t(msg`聊天设置`) : undefined}
           description={
             desktopMode
-              ? "调整桌面和 Web 键盘聊天输入时的发送快捷键。"
-              : "设置键盘聊天输入时的发送快捷键"
+              ? t(msg`调整桌面和 Web 键盘聊天输入时的发送快捷键。`)
+              : t(msg`设置键盘聊天输入时的发送快捷键`)
           }
         >
           <div
@@ -329,10 +334,10 @@ export function ProfileSettingsPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
-                      {option.label}
+                      {t(option.label)}
                     </div>
                     <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
-                      {option.description}
+                      {t(option.description)}
                     </div>
                   </div>
                   <span
@@ -353,13 +358,15 @@ export function ProfileSettingsPage() {
 
           {desktopMode ? (
             <InlineNotice tone="muted">
-              当前仅影响桌面和 Web
-              的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
+              {t(
+                msg`当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。`,
+              )}
             </InlineNotice>
           ) : (
             <MobileSettingsInlineNotice tone="muted">
-              当前仅影响桌面和 Web
-              的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
+              {t(
+                msg`当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。`,
+              )}
             </MobileSettingsInlineNotice>
           )}
         </MobileSettingsSection>
@@ -368,21 +375,26 @@ export function ProfileSettingsPage() {
       {activeTab === "ai" ? (
         <MobileSettingsSection
           desktop={desktopMode}
-          title={desktopMode ? "AI 设置" : undefined}
+          title={desktopMode ? t(msg`AI 设置`) : undefined}
           description={
             desktopMode
-              ? "你可以为当前世界主人单独配置专属 API Key 和兼容 Base URL。"
-              : "专属 API Key 与兼容 Base URL"
+              ? t(
+                  msg`你可以为当前世界主人单独配置专属 API Key 和兼容 Base URL。`,
+                )
+              : t(msg`专属 API Key 与兼容 Base URL`)
           }
         >
           {ownerQuery.isLoading ? (
             desktopMode ? (
-              <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." />
+              <LoadingBlock
+                className="px-0 py-0 text-left"
+                label={t(msg`读取配置...`)}
+              />
             ) : (
               <MobileSettingsStatusCard
-                badge="读取中"
-                title="正在加载 AI 配置"
-                description="稍等一下，正在同步当前世界主人的专属配置。"
+                badge={t(msg`读取中`)}
+                title={t(msg`正在加载 AI 配置`)}
+                description={t(msg`稍等一下，正在同步当前世界主人的专属配置。`)}
                 tone="loading"
               />
             )
@@ -392,8 +404,8 @@ export function ProfileSettingsPage() {
               <ErrorBlock message={ownerQuery.error.message} />
             ) : (
               <MobileSettingsStatusCard
-                badge="读取失败"
-                title="AI 设置暂时不可用"
+                badge={t(msg`读取失败`)}
+                title={t(msg`AI 设置暂时不可用`)}
                 description={ownerQuery.error.message}
                 tone="danger"
                 action={
@@ -404,7 +416,7 @@ export function ProfileSettingsPage() {
                       className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                       onClick={handleRetryOwnerLoad}
                     >
-                      重试读取
+                      {t(msg`重试读取`)}
                     </Button>
                     <Button
                       variant="secondary"
@@ -425,14 +437,18 @@ export function ProfileSettingsPage() {
                 tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}
               >
                 {ownerQuery.data.hasCustomApiKey
-                  ? `当前使用专属 API Key${ownerQuery.data.customApiBase ? `，Base URL：${ownerQuery.data.customApiBase}` : ""}。`
-                  : "当前使用实例级 Provider。"}
+                  ? ownerQuery.data.customApiBase
+                    ? t(
+                        msg`当前使用专属 API Key，Base URL：${ownerQuery.data.customApiBase}。`,
+                      )
+                    : t(msg`当前使用专属 API Key。`)
+                  : t(msg`当前使用实例级 Provider。`)}
               </InlineNotice>
             ) : (
               <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[#f7f7f7] px-3.5 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
-                    当前状态
+                    {t(msg`当前状态`)}
                   </div>
                   <div
                     className={cn(
@@ -442,18 +458,20 @@ export function ProfileSettingsPage() {
                         : "bg-white text-[color:var(--text-muted)]",
                     )}
                   >
-                    {ownerQuery.data.hasCustomApiKey ? "专属 Key" : "实例级"}
+                    {ownerQuery.data.hasCustomApiKey
+                      ? t(msg`专属 Key`)
+                      : t(msg`实例级`)}
                   </div>
                 </div>
                 <div className="mt-2 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                   {ownerQuery.data.hasCustomApiKey
-                    ? "当前世界主人已启用专属 API Key。"
-                    : "当前仍使用实例级 Provider 配置。"}
+                    ? t(msg`当前世界主人已启用专属 API Key。`)
+                    : t(msg`当前仍使用实例级 Provider 配置。`)}
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[color:var(--text-muted)]">
                   <span>Base URL</span>
                   <span className="truncate text-right text-[color:var(--text-secondary)]">
-                    {ownerQuery.data.customApiBase || "默认地址"}
+                    {ownerQuery.data.customApiBase || t(msg`默认地址`)}
                   </span>
                 </div>
               </div>
@@ -461,24 +479,24 @@ export function ProfileSettingsPage() {
           ) : null}
 
           <div className="space-y-2.5 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3.5 py-3">
-            <MobileFieldGroup label="专属 API Key">
+            <MobileFieldGroup label={t(msg`专属 API Key`)}>
               <TextField
                 type="password"
                 value={apiKeyDraft}
                 onChange={(event) => setApiKeyDraft(event.target.value)}
                 placeholder={
                   ownerQuery.data?.hasCustomApiKey
-                    ? "已保存专属 API Key，输入新的值可替换"
-                    : "输入你的专属 API Key"
+                    ? t(msg`已保存专属 API Key，输入新的值可替换`)
+                    : t(msg`输入你的专属 API Key`)
                 }
                 className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
               />
             </MobileFieldGroup>
-            <MobileFieldGroup label="兼容 Base URL">
+            <MobileFieldGroup label={t(msg`兼容 Base URL`)}>
               <TextField
                 value={apiBaseDraft}
                 onChange={(event) => setApiBaseDraft(event.target.value)}
-                placeholder="可选，例如 https://api.openai.com/v1"
+                placeholder={t(msg`可选，例如 https://api.openai.com/v1`)}
                 className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
               />
             </MobileFieldGroup>
@@ -496,7 +514,9 @@ export function ProfileSettingsPage() {
                   : "bg-[#07c160] hover:bg-[#06ad56]",
               )}
             >
-              {saveApiKeyMutation.isPending ? "保存中..." : "保存专属 API Key"}
+              {saveApiKeyMutation.isPending
+                ? t(msg`保存中...`)
+                : t(msg`保存专属 API Key`)}
             </Button>
             <Button
               onClick={() => clearApiKeyMutation.mutate()}
@@ -504,7 +524,9 @@ export function ProfileSettingsPage() {
               variant="secondary"
               className="h-9 w-full rounded-[10px] border-[color:var(--border-faint)] bg-white text-[12px] shadow-none hover:bg-[#f5f7f7]"
             >
-              {clearApiKeyMutation.isPending ? "清除中..." : "清除专属 API Key"}
+              {clearApiKeyMutation.isPending
+                ? t(msg`清除中...`)
+                : t(msg`清除专属 API Key`)}
             </Button>
           </div>
 
@@ -552,19 +574,23 @@ export function ProfileSettingsPage() {
           ) : null}
           {saveApiKeyMutation.isSuccess ? (
             desktopMode ? (
-              <InlineNotice tone="success">专属 API Key 已保存。</InlineNotice>
+              <InlineNotice tone="success">
+                {t(msg`专属 API Key 已保存。`)}
+              </InlineNotice>
             ) : (
               <MobileSettingsInlineNotice tone="success">
-                专属 API Key 已保存。
+                {t(msg`专属 API Key 已保存。`)}
               </MobileSettingsInlineNotice>
             )
           ) : null}
           {clearApiKeyMutation.isSuccess ? (
             desktopMode ? (
-              <InlineNotice tone="success">专属 API Key 已清除。</InlineNotice>
+              <InlineNotice tone="success">
+                {t(msg`专属 API Key 已清除。`)}
+              </InlineNotice>
             ) : (
               <MobileSettingsInlineNotice tone="success">
-                专属 API Key 已清除。
+                {t(msg`专属 API Key 已清除。`)}
               </MobileSettingsInlineNotice>
             )
           ) : null}
@@ -604,7 +630,7 @@ export function ProfileSettingsPage() {
           {desktopMode ? null : (
             <section className="mt-1 divide-y divide-[color:var(--border-faint)] border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               <MobileLinkRow
-                label="隐私政策"
+                label={t(msg`隐私政策`)}
                 onClick={() =>
                   void navigate({
                     to: "/legal/privacy",
@@ -612,7 +638,7 @@ export function ProfileSettingsPage() {
                 }
               />
               <MobileLinkRow
-                label="服务条款"
+                label={t(msg`服务条款`)}
                 onClick={() =>
                   void navigate({
                     to: "/legal/terms",
@@ -620,7 +646,7 @@ export function ProfileSettingsPage() {
                 }
               />
               <MobileLinkRow
-                label="社区规范"
+                label={t(msg`社区规范`)}
                 onClick={() =>
                   void navigate({
                     to: "/legal/community",
@@ -688,9 +714,7 @@ export function ProfileSettingsPage() {
   if (desktopMode) {
     return (
       <DesktopUtilityShell
-        title={
-          desktopSettingsRoute ? t(msg`设置`) : t(msg`资料与设置`)
-        }
+        title={desktopSettingsRoute ? t(msg`设置`) : t(msg`资料与设置`)}
         subtitle={
           activeTab === "profile"
             ? t(msg`在桌面工作区里管理世界主人的资料与签名。`)
@@ -750,44 +774,44 @@ export function ProfileSettingsPage() {
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                当前状态
+                {t(msg`当前状态`)}
               </div>
               <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                右侧显示世界主人信息和当前配置摘要。
+                {t(msg`右侧显示世界主人信息和当前配置摘要。`)}
               </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-auto p-5">
               <div className="space-y-3">
                 <DesktopStatCard
-                  label="当前世界主人"
-                  value={username ?? "世界主人"}
+                  label={t(msg`当前世界主人`)}
+                  value={username ?? t(msg`世界主人`)}
                 />
                 <DesktopStatCard
-                  label="签名"
-                  value={signature?.trim() || "暂无签名"}
+                  label={t(msg`签名`)}
+                  value={signature?.trim() || t(msg`暂无签名`)}
                 />
                 <DesktopStatCard
-                  label="配置状态"
+                  label={t(msg`配置状态`)}
                   value={
                     ownerQuery.data?.hasCustomApiKey
-                      ? "已配置专属 API Key"
-                      : "使用实例级 Provider"
+                      ? t(msg`已配置专属 API Key`)
+                      : t(msg`使用实例级 Provider`)
                   }
                 />
                 <DesktopStatCard
-                  label="发送快捷键"
+                  label={t(msg`发送快捷键`)}
                   value={formatChatSendShortcutLabel(sendMessageShortcut)}
                 />
                 {activeTab === "legal" ? (
                   <DesktopStatCard
-                    label="当前文档"
+                    label={t(msg`当前文档`)}
                     value={
                       activeLegalTab === "privacy"
-                        ? "隐私政策"
+                        ? t(msg`隐私政策`)
                         : activeLegalTab === "terms"
-                          ? "用户协议"
-                          : "社区规范"
+                          ? t(msg`用户协议`)
+                          : t(msg`社区规范`)
                     }
                   />
                 ) : null}
@@ -804,7 +828,7 @@ export function ProfileSettingsPage() {
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
-        title="设置"
+        title={t(msg`设置`)}
         titleAlign="center"
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={

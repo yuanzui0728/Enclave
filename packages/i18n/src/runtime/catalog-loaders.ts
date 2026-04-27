@@ -5,10 +5,7 @@ type CatalogModule = {
   messages: Messages;
 };
 
-type CatalogLoaderMap = Record<
-  SupportedLocale,
-  () => Promise<CatalogModule>
->;
+type CatalogLoaderMap = Record<SupportedLocale, () => Promise<CatalogModule>>;
 
 const sharedCatalogLoaders: CatalogLoaderMap = {
   "zh-CN": () => import("../../catalogs/shared/zh-CN.po"),
@@ -53,6 +50,10 @@ const surfaceCatalogLoaders: Record<I18nAppSurface, CatalogLoaderMap> = {
 };
 
 const messageCache = new Map<string, Promise<Messages>>();
+const textDictionaryCache = new Map<
+  string,
+  Promise<ReadonlyMap<string, string>>
+>();
 
 const CJK_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
 const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
@@ -99,13 +100,47 @@ export async function loadMessagesForSurface(
       : Promise.all([
           sharedCatalogLoaders[locale](),
           surfaceCatalogLoaders[surface][locale](),
-        ]).then(([sharedCatalog, surfaceCatalog]) => ({
-          ...sharedCatalog.messages,
-          ...surfaceCatalog.messages,
-        }) satisfies Messages);
+        ]).then(
+          ([sharedCatalog, surfaceCatalog]) =>
+            ({
+              ...sharedCatalog.messages,
+              ...surfaceCatalog.messages,
+            }) satisfies Messages,
+        );
 
   messageCache.set(cacheKey, messagesPromise);
   return messagesPromise;
+}
+
+export async function loadTextDictionaryForSurface(
+  surface: I18nAppSurface,
+  locale: SupportedLocale,
+) {
+  const cacheKey = `${surface}:${locale}`;
+  const cachedDictionary = textDictionaryCache.get(cacheKey);
+  if (cachedDictionary) {
+    return cachedDictionary;
+  }
+
+  const dictionaryPromise =
+    locale === "zh-CN"
+      ? Promise.resolve(new Map<string, string>())
+      : Promise.all([
+          sharedCatalogLoaders["zh-CN"](),
+          surfaceCatalogLoaders[surface]["zh-CN"](),
+          loadMessagesForSurface(surface, locale),
+        ]).then(([sourceSharedCatalog, sourceSurfaceCatalog, targetMessages]) =>
+          createTextDictionary(
+            {
+              ...sourceSharedCatalog.messages,
+              ...sourceSurfaceCatalog.messages,
+            },
+            targetMessages,
+          ),
+        );
+
+  textDictionaryCache.set(cacheKey, dictionaryPromise);
+  return dictionaryPromise;
 }
 
 export function prefetchMessagesForSurface(
@@ -128,7 +163,7 @@ function mergeMessagesWithLocaleFallback(
 
   for (const [key, value] of Object.entries(primaryMessages)) {
     mergedMessages[key] = isLikelyMissingLocaleMessage(value, locale)
-      ? fallbackMessages[key] ?? value
+      ? (fallbackMessages[key] ?? value)
       : value;
   }
 
@@ -160,4 +195,43 @@ function isLikelyMissingLocaleMessage(
   }
 
   return false;
+}
+
+function createTextDictionary(
+  sourceMessages: Messages,
+  targetMessages: Messages,
+) {
+  const dictionary = new Map<string, string>();
+
+  for (const [key, sourceValue] of Object.entries(sourceMessages)) {
+    const sourceText = getSimpleMessageText(sourceValue);
+    if (!sourceText || !CJK_PATTERN.test(sourceText)) {
+      continue;
+    }
+
+    const targetText = getSimpleMessageText(targetMessages[key]);
+    if (!targetText || targetText === sourceText) {
+      continue;
+    }
+
+    dictionary.set(sourceText, targetText);
+  }
+
+  return dictionary;
+}
+
+function getSimpleMessageText(value: Messages[string] | undefined) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (
+    Array.isArray(value) &&
+    value.length === 1 &&
+    typeof value[0] === "string"
+  ) {
+    return value[0];
+  }
+
+  return null;
 }
