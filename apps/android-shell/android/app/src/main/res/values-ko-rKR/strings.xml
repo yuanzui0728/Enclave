@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yinjie</string>
+    <string name="title_activity_main">Yinjie</string>
+    <string name="package_name">com.yinjie.mobile</string>
+    <string name="custom_url_scheme">com.yinjie.mobile</string>
+    <string name="native_share_title">공유</string>
+    <string name="native_open_file_title">열기</string>
+    <string name="notification_channel_name">Yinjie 메시지</string>
+    <string name="notification_channel_description">Yinjie의 새 메시지 및 알림</string>
+    <string name="notification_default_title">Yinjie</string>
+    <string name="notification_default_body">새 메시지가 있습니다.</string>
+</resources>

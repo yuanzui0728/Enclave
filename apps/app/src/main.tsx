@@ -8,6 +8,11 @@ import "./index.css";
 import { BootstrapScreen } from "./components/bootstrap-screen";
 import { queryClient } from "./lib/query-client";
 import { configureContractsRuntime } from "./lib/runtime-config";
+import {
+  readNativeLocalePreference,
+  syncNativeLocalePreference,
+} from "./runtime/native-locale";
+import { NativeLocaleSync } from "./runtime/native-locale-sync";
 import { router } from "./router";
 import { hydrateNativeRuntimeConfig } from "./runtime/runtime-config-store";
 
@@ -64,7 +69,8 @@ function installStaleAssetRecovery() {
 installStaleAssetRecovery();
 
 async function bootstrap() {
-  const runtimeConfig = await hydrateNativeRuntimeConfig();
+  await hydrateNativeRuntimeConfig();
+  const nativeLocalePreference = await readNativeLocalePreference();
   configureContractsRuntime();
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -72,8 +78,10 @@ async function bootstrap() {
       <AppLocaleProvider
         surface="app"
         fallback={<BootstrapScreen />}
-        preferredLocales={runtimeConfig.preferredLocales}
+        initialLocale={nativeLocalePreference?.locale ?? null}
+        onLocaleChange={syncNativeLocalePreference}
       >
+        <NativeLocaleSync />
         <QueryClientProvider client={queryClient}>
           <Suspense fallback={<BootstrapScreen />}>
             <RouterProvider router={router} />

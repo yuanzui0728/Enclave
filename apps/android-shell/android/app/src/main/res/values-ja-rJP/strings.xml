@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yinjie</string>
+    <string name="title_activity_main">Yinjie</string>
+    <string name="package_name">com.yinjie.mobile</string>
+    <string name="custom_url_scheme">com.yinjie.mobile</string>
+    <string name="native_share_title">共有</string>
+    <string name="native_open_file_title">開く</string>
+    <string name="notification_channel_name">Yinjie メッセージ</string>
+    <string name="notification_channel_description">Yinjie の新着メッセージとリマインダー</string>
+    <string name="notification_default_title">Yinjie</string>
+    <string name="notification_default_body">新しいメッセージがあります。</string>
+</resources>

@@ -1,9 +1,4 @@
-export const SUPPORTED_LOCALES = [
-  "zh-CN",
-  "en-US",
-  "ja-JP",
-  "ko-KR",
-] as const;
+export const SUPPORTED_LOCALES = ["zh-CN", "en-US", "ja-JP", "ko-KR"] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export type I18nAppSurface = "app" | "admin" | "cloud-console" | "site";
@@ -170,9 +165,11 @@ export function resolvePreferredLocale(
 export function resolveInitialLocale(
   surface: I18nAppSurface,
   preferredLocales?: readonly string[] | null,
+  initialLocale?: string | null,
 ) {
   return (
     readQueryLocale() ??
+    resolveSupportedLocale(initialLocale) ??
     readPersistedLocale(surface) ??
     resolvePreferredLocale(preferredLocales) ??
     DEFAULT_LOCALE

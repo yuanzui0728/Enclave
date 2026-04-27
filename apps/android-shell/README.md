@@ -68,13 +68,14 @@ Recommended local release flow:
 
 ## Web-to-Shell Contract
 
-The mobile web layer now expects two Android-side contracts:
+The mobile web layer now expects three Android-side contracts:
 
 1. Runtime config injection
    - Provide `apiBaseUrl`
    - Provide `socketBaseUrl`
    - Provide `environment`
    - Provide app metadata such as `applicationId`, `versionName`, and `versionCode`
+   - Provide `preferredLocales` when native Android has an app or system locale matching the supported app languages
    - The bundled fallback file is injected at `apps/app/dist/runtime-config.json` after each shell web build
    - Native Android runtime now prefers bundled `assets/public/runtime-config.json`; manifest meta-data stays as fallback only
 
@@ -104,6 +105,13 @@ Current Android-side implementation status:
   - creates a basic notification channel and shows fallback notifications for incoming FCM messages
   - forwards push tap targets through `Intent extras` so the web layer can resume into chat list, direct chat, or group chat
 
+3. Locale bridge
+   - `YinjieRuntime.getLocale()` returns the active supported locale and whether it came from Android app language, system language, or default fallback
+   - `YinjieRuntime.setLocale({ locale })` applies the App language chosen in the shared Web UI back to Android
+   - First launch follows Android system language when it is Simplified Chinese, English, Japanese, or Korean; unsupported system languages fall back to Simplified Chinese
+   - Android 13+ exposes the same language set through the system App Language settings via `res/xml/locales_config.xml`
+   - Native Android strings cover launcher/activity labels, share/open chooser fallback titles, notification channel text, and fallback push notification text
+
 Expected `YinjieMobileBridge` methods:
 
 - `openExternalUrl({ url })`
@@ -120,6 +128,11 @@ Expected `YinjieMobileBridge` methods:
 - `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
 - `getPendingLaunchTarget()`
 - `clearPendingLaunchTarget()`
+
+Expected `YinjieRuntime` locale methods:
+
+- `getLocale()`
+- `setLocale({ locale: "zh-CN" | "en-US" | "ja-JP" | "ko-KR" })`
 
 The web layer will gracefully fall back when the bridge is not wired yet, but Android release builds should eventually connect these methods to platform-native implementations.
 

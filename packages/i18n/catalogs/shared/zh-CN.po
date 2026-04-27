@@ -52,6 +52,10 @@ msgstr "正在切换语言..."
 msgid "界面语言"
 msgstr "界面语言"
 
+#: packages/i18n/src/runtime/language-switcher.tsx:29
+msgid "语言偏好会保存在当前设备，并立即应用到已接入的界面文案和格式化规则。"
+msgstr "语言偏好会保存在当前设备，并立即应用到已接入的界面文案和格式化规则。"
+
 #: packages/ui/src/components/provider-setup-form.tsx:237
 msgid "转写 API 密钥"
 msgstr "转写 API 密钥"
@@ -67,7 +71,3 @@ msgstr "转写模型"
 #: packages/ui/src/components/setup-step-list.tsx:44
 msgid "通过"
 msgstr "通过"
-
-#: packages/i18n/src/runtime/language-switcher.tsx:29
-msgid "语言偏好会保存在当前设备；切换后会立即应用到已接入的界面文案和格式化规则。"
-msgstr "语言偏好会保存在当前设备；切换后会立即应用到已接入的界面文案和格式化规则。"

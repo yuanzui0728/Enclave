@@ -4,4 +4,10 @@
     <string name="title_activity_main">Yinjie</string>
     <string name="package_name">com.yinjie.mobile</string>
     <string name="custom_url_scheme">com.yinjie.mobile</string>
+    <string name="native_share_title">分享</string>
+    <string name="native_open_file_title">打开</string>
+    <string name="notification_channel_name">隐界消息</string>
+    <string name="notification_channel_description">隐界的新消息与提醒</string>
+    <string name="notification_default_title">隐界</string>
+    <string name="notification_default_body">你有一条新的消息。</string>
 </resources>

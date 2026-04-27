@@ -52,6 +52,10 @@ msgstr "언어를 전환하는 중..."
 msgid "界面语言"
 msgstr "인터페이스 언어"
 
+#: packages/i18n/src/runtime/language-switcher.tsx:29
+msgid "语言偏好会保存在当前设备，并立即应用到已接入的界面文案和格式化规则。"
+msgstr "언어 환경설정은 이 기기에 저장되며, 연결된 화면 문구와 서식 규칙에 즉시 적용됩니다."
+
 #: packages/ui/src/components/provider-setup-form.tsx:237
 msgid "转写 API 密钥"
 msgstr "전사 API 키"
@@ -67,7 +71,3 @@ msgstr "전사 모델"
 #: packages/ui/src/components/setup-step-list.tsx:44
 msgid "通过"
 msgstr "통과"
-
-#: packages/i18n/src/runtime/language-switcher.tsx:29
-msgid "语言偏好会保存在当前设备；切换后会立即应用到已接入的界面文案和格式化规则。"
-msgstr "언어 기본 설정은 이 기기에 저장됩니다. 전환하면 연결된 화면 문구와 형식 규칙에 즉시 적용됩니다."

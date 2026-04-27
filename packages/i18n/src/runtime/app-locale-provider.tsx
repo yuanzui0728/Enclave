@@ -39,11 +39,14 @@ type AppLocaleContextValue = {
   requestedLocale: SupportedLocale;
   setLocale: (locale: string) => void;
   surface: I18nAppSurface;
+  syncLocaleFromExternal: (locale: string) => void;
 };
 
 type AppLocaleProviderProps = {
   children: ReactNode;
   fallback?: ReactNode;
+  initialLocale?: string | null;
+  onLocaleChange?: (locale: SupportedLocale) => unknown | Promise<unknown>;
   preferredLocales?: readonly string[];
   surface: I18nAppSurface;
 };
@@ -53,17 +56,23 @@ const AppLocaleContext = createContext<AppLocaleContextValue | null>(null);
 export function AppLocaleProvider({
   children,
   fallback = null,
+  initialLocale: preferredInitialLocale = null,
+  onLocaleChange,
   preferredLocales,
   surface,
 }: AppLocaleProviderProps) {
   const initialLocale = useMemo(() => {
     const queryLocale = readQueryLocale();
-    const resolvedLocale = resolveInitialLocale(surface, preferredLocales);
+    const resolvedLocale = resolveInitialLocale(
+      surface,
+      preferredLocales,
+      preferredInitialLocale,
+    );
     if (queryLocale) {
       persistPreferredLocale(surface, queryLocale);
     }
     return resolvedLocale;
-  }, [preferredLocales, surface]);
+  }, [preferredInitialLocale, preferredLocales, surface]);
   const [requestedLocale, setRequestedLocale] =
     useState<SupportedLocale>(initialLocale);
   const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
@@ -75,18 +84,44 @@ export function AppLocaleProvider({
   >(() => new Map());
   const hasActivatedLocaleRef = useRef(false);
 
-  const setLocale = useCallback(
-    (nextLocale: string) => {
+  const applyLocale = useCallback(
+    (nextLocale: string, options: { notifyNative: boolean }) => {
       const resolvedLocale =
         resolveSupportedLocale(nextLocale) ?? DEFAULT_LOCALE;
       persistPreferredLocale(surface, resolvedLocale);
+      if (requestedLocale === resolvedLocale) {
+        return;
+      }
+
+      if (options.notifyNative && onLocaleChange) {
+        try {
+          void Promise.resolve(onLocaleChange(resolvedLocale)).catch(() => {
+            // Native locale sync is best-effort; the web preference remains active.
+          });
+        } catch {
+          // Native locale sync is best-effort; the web preference remains active.
+        }
+      }
+
       startTransition(() => {
-        setRequestedLocale((currentLocale) =>
-          currentLocale === resolvedLocale ? currentLocale : resolvedLocale,
-        );
+        setRequestedLocale(resolvedLocale);
       });
     },
-    [surface],
+    [onLocaleChange, requestedLocale, surface],
+  );
+
+  const setLocale = useCallback(
+    (nextLocale: string) => {
+      applyLocale(nextLocale, { notifyNative: true });
+    },
+    [applyLocale],
+  );
+
+  const syncLocaleFromExternal = useCallback(
+    (nextLocale: string) => {
+      applyLocale(nextLocale, { notifyNative: false });
+    },
+    [applyLocale],
   );
 
   useEffect(() => {
@@ -175,6 +210,7 @@ export function AppLocaleProvider({
       requestedLocale,
       setLocale,
       surface,
+      syncLocaleFromExternal,
     }),
     // activationVersion forces consumers that call imperative translation
     // helpers during render to recompute after Lingui finishes activating.
@@ -186,6 +222,7 @@ export function AppLocaleProvider({
       requestedLocale,
       setLocale,
       surface,
+      syncLocaleFromExternal,
     ],
   );
 
