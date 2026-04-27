@@ -7,6 +7,7 @@ import {
 import {
   getBuiltInCharacterPreset,
   listBuiltInCharacterPresets,
+  shouldAutoSeedBuiltInCharacterPreset,
 } from './built-in-character-presets';
 import {
   INTELLIGENCE_COUNCIL_CHARACTER_DEFINITIONS,
@@ -245,6 +246,63 @@ describe('celebrity character presets', () => {
     expect(chemistryPreset?.character.profile?.coreLogic).toContain('危险实验');
     expect(civicsPreset?.character.profile?.coreLogic).toContain('煽动性输出');
     expect(computerPreset?.character.profile?.coreLogic).toContain('恶意代码');
+  });
+
+  it('includes optional study support teacher presets without auto seeding', () => {
+    const supportTeacherPresetKeys = [
+      'teacher_study_planner_shen_zhixing',
+      'teacher_exam_sprint_han_li',
+      'teacher_mistake_review_liang_cuo',
+      'teacher_research_writing_xu_qinglan',
+      'teacher_research_librarian_tang_jian',
+      'teacher_science_lab_wei_zhiwei',
+    ];
+    const supportTeachers = supportTeacherPresetKeys.map((presetKey) =>
+      getBuiltInCharacterPreset(presetKey),
+    );
+
+    expect(supportTeachers).toHaveLength(6);
+    for (const preset of supportTeachers) {
+      expect(preset).toBeDefined();
+      expect(preset).toMatchObject({
+        groupKey: 'academic_teachers',
+        autoSeed: false,
+        character: {
+          sourceType: 'preset_catalog',
+          deletionPolicy: 'archive_allowed',
+          relationshipType: 'mentor',
+          momentsFrequency: 0,
+          feedFrequency: 0,
+        },
+      });
+      expect(shouldAutoSeedBuiltInCharacterPreset(preset!)).toBe(false);
+    }
+
+    const autoSeedPresetKeys = listBuiltInCharacterPresets()
+      .filter(shouldAutoSeedBuiltInCharacterPreset)
+      .map((preset) => preset.presetKey);
+
+    for (const presetKey of supportTeacherPresetKeys) {
+      expect(autoSeedPresetKeys).not.toContain(presetKey);
+    }
+
+    const researchWritingPreset = getBuiltInCharacterPreset(
+      'teacher_research_writing_xu_qinglan',
+    );
+    const librarianPreset = getBuiltInCharacterPreset(
+      'teacher_research_librarian_tang_jian',
+    );
+    const scienceLabPreset = getBuiltInCharacterPreset(
+      'teacher_science_lab_wei_zhiwei',
+    );
+
+    expect(researchWritingPreset?.character.profile?.coreLogic).toContain(
+      '不代写',
+    );
+    expect(librarianPreset?.character.profile?.coreLogic).toContain(
+      '来源可信度',
+    );
+    expect(scienceLabPreset?.character.profile?.coreLogic).toContain('安全');
   });
 
   it('includes the full intelligence council preset pool', () => {

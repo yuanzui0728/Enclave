@@ -7,7 +7,10 @@ import {
 } from '../modules/characters/character-bios';
 import { buildDefaultCharacters } from '../modules/characters/default-characters';
 import { HOTEL_EXPERT_CHARACTER_ID } from '../modules/characters/hotel-expert-character';
-import { listBuiltInCharacterPresets } from '../modules/characters/built-in-character-presets';
+import {
+  listBuiltInCharacterPresets,
+  shouldAutoSeedBuiltInCharacterPreset,
+} from '../modules/characters/built-in-character-presets';
 import { SystemConfigEntity } from '../modules/config/config.entity';
 import { FriendshipEntity } from '../modules/social/friendship.entity';
 
@@ -35,8 +38,10 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     `✓ Reconciled ${SEED_CHARACTERS.length} built-in characters without touching custom characters`,
   );
 
-  // 自动确保所有内置目录角色存在
-  const presets = listBuiltInCharacterPresets();
+  // 自动确保允许初始化的内置目录角色存在；可选目录角色保留给手动安装/懒安装。
+  const presets = listBuiltInCharacterPresets().filter(
+    shouldAutoSeedBuiltInCharacterPreset,
+  );
   const repo = dataSource.getRepository(CharacterEntity);
   let seeded = 0;
   let refreshedBios = 0;

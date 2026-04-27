@@ -298,6 +298,7 @@ export interface Character {
 export interface CharacterPresetSummary {
   presetKey: string;
   groupKey: CharacterPresetGroupKey;
+  autoSeed?: boolean;
   groupLabel: string;
   groupDescription: string;
   groupOrder: number;

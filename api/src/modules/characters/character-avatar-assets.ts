@@ -39,6 +39,14 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   teacher_geography_jiang_chuan: 'teacher-geography-jiang-chuan.svg',
   teacher_civics_cheng_mingli: 'teacher-civics-cheng-mingli.svg',
   teacher_computer_luo_xing: 'teacher-computer-luo-xing.svg',
+  teacher_study_planner_shen_zhixing: 'teacher-study-planner-shen-zhixing.svg',
+  teacher_exam_sprint_han_li: 'teacher-exam-sprint-han-li.svg',
+  teacher_mistake_review_liang_cuo: 'teacher-mistake-review-liang-cuo.svg',
+  teacher_research_writing_xu_qinglan:
+    'teacher-research-writing-xu-qinglan.svg',
+  teacher_research_librarian_tang_jian:
+    'teacher-research-librarian-tang-jian.svg',
+  teacher_science_lab_wei_zhiwei: 'teacher-science-lab-wei-zhiwei.svg',
 } as const;
 
 export type CharacterAvatarSourceKey =

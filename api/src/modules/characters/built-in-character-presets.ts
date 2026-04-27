@@ -17,6 +17,12 @@ export function listBuiltInCharacterPresets() {
   return BUILT_IN_CHARACTER_PRESETS;
 }
 
+export function shouldAutoSeedBuiltInCharacterPreset(
+  preset: Pick<CelebrityCharacterPreset, 'autoSeed'>,
+) {
+  return preset.autoSeed !== false;
+}
+
 export function getBuiltInCharacterPreset(presetKey: string) {
   return BUILT_IN_CHARACTER_PRESETS.find(
     (preset) => preset.presetKey === presetKey,

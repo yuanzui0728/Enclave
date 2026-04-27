@@ -40,6 +40,16 @@ export const PRESET_CHARACTER_BIOS = {
   teacher_geography_jiang_chuan: '先读图和尺度，再分析自然与人文系统。',
   teacher_civics_cheng_mingli: '先分清概念和材料，再组织观点。',
   teacher_computer_luo_xing: '先跑通最小程序，再一点点调试变强。',
+  teacher_study_planner_shen_zhixing:
+    '先把目标拆成今天能开始的一小步。',
+  teacher_exam_sprint_han_li: '先看最能提分的错因，再安排冲刺。',
+  teacher_mistake_review_liang_cuo: '错题不是重做一遍，是找到同类入口。',
+  teacher_research_writing_xu_qinglan:
+    '先定问题、论点和证据，再动笔写报告。',
+  teacher_research_librarian_tang_jian:
+    '先判断来源可信度，再把资料变成笔记。',
+  teacher_science_lab_wei_zhiwei:
+    '先定变量、对照和安全，再谈实验结论。',
 } as const;
 
 export type PresetCharacterBioKey = keyof typeof PRESET_CHARACTER_BIOS;

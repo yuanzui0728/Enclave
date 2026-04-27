@@ -21,6 +21,7 @@ export interface CelebrityCharacterPresetGroup {
 export interface CelebrityCharacterPreset {
   presetKey: string;
   groupKey: CelebrityCharacterPresetGroupKey;
+  autoSeed?: boolean;
   id: string;
   name: string;
   avatar: string;
