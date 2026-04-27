@@ -25,7 +25,7 @@ public class YinjieRuntimePlugin: CAPPlugin, CAPBridgedPlugin {
             nonEmptyString(info["YinjieEnvironment"] as? String) ??
             "production"
         let publicAppName =
-            nonEmptyString(info["YinjiePublicAppName"] as? String) ??
+            nonEmptyString(Bundle.main.object(forInfoDictionaryKey: "YinjiePublicAppName") as? String) ??
             nonEmptyString(bundledConfig["publicAppName"] as? String) ??
             (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ??
             (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ??
