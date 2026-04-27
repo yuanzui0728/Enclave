@@ -18,6 +18,7 @@ import { ChatService } from '../chat/chat.service';
 import { CharactersService } from '../characters/characters.service';
 import { AppEvents, EventBusService } from '../events/event-bus.service';
 import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
+import { WorldLanguageService } from '../config/world-language.service';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
 
@@ -41,6 +42,7 @@ export class SocialService {
     private readonly charactersService: CharactersService,
     private readonly cyberAvatar: CyberAvatarService,
     private readonly eventBus: EventBusService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async getPendingRequests(): Promise<FriendRequestEntity[]> {
@@ -361,7 +363,10 @@ export class SocialService {
     });
     if (existing) return null;
 
-    let greeting = `Hi, I'm ${char.name}. We crossed paths at ${scene}. Want to connect?`;
+    let greeting = await this.worldLanguage.buildSceneGreetingFallback({
+      characterName: char.name,
+      scene,
+    });
     const runtimeProfile =
       (await this.charactersService.getRuntimeProfileFromCharacter(char)) ??
       char.profile;
@@ -423,7 +428,9 @@ export class SocialService {
     const preset = available[Math.floor(Math.random() * available.length)];
     const char = preset.character as CharacterEntity;
 
-    let greeting = `Hi, I'm ${char.name}. We just met in Yinjie.`;
+    let greeting = await this.worldLanguage.buildShakeGreetingFallback(
+      char.name,
+    );
     const runtimeProfile =
       (await this.charactersService.getRuntimeProfileFromCharacter(char)) ??
       char.profile;

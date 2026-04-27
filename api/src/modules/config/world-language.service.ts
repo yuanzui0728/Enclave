@@ -155,6 +155,55 @@ export class WorldLanguageService {
     return parts.join('\n');
   }
 
+  async buildSceneGreetingFallback(input: {
+    characterName: string;
+    scene: string;
+  }): Promise<string> {
+    const language = await this.getLanguage();
+    switch (language) {
+      case 'en-US':
+        return `Hi, I'm ${input.characterName}. We crossed paths at ${input.scene}. Want to connect?`;
+      case 'ja-JP':
+        return `こんにちは、${input.characterName}です。${input.scene}で見かけて、少し話してみたくなりました。`;
+      case 'ko-KR':
+        return `안녕하세요, 저는 ${input.characterName}입니다. ${input.scene}에서 스쳐 지나가다 인사하고 싶었어요.`;
+      case 'zh-CN':
+      default:
+        return `你好，我是${input.characterName}。刚刚在${input.scene}遇到你，想先认识一下。`;
+    }
+  }
+
+  async buildShakeGreetingFallback(characterName: string): Promise<string> {
+    const language = await this.getLanguage();
+    switch (language) {
+      case 'en-US':
+        return `Hi, I'm ${characterName}. We just met in Yinjie.`;
+      case 'ja-JP':
+        return `こんにちは、${characterName}です。隠界で偶然会いましたね。`;
+      case 'ko-KR':
+        return `안녕하세요, 저는 ${characterName}입니다. 방금 은계에서 우연히 만났네요.`;
+      case 'zh-CN':
+      default:
+        return `你好，我是${characterName}。刚刚在隐界随机遇到你。`;
+    }
+  }
+
+  async buildChannelFallbackText(authorName: string): Promise<string> {
+    const language = await this.getLanguage();
+    const opener = this.pickChannelFallbackOpener(language);
+    switch (language) {
+      case 'en-US':
+        return `${opener}: ${authorName} just sent over an AI-generated short clip, worth pausing for 10 seconds.`;
+      case 'ja-JP':
+        return `${opener}：${authorName}から、10秒だけ立ち止まって見たくなるAI生成の短い映像が届きました。`;
+      case 'ko-KR':
+        return `${opener}: ${authorName}이(가) 잠깐 멈춰 10초만 봐도 좋은 AI 생성 짧은 영상을 보냈어요.`;
+      case 'zh-CN':
+      default:
+        return `${opener}：${authorName} 刚刚发来一段 AI 生成的短片，适合停下来刷 10 秒。`;
+    }
+  }
+
   getIntlLocale(language: WorldLanguageCode) {
     return language;
   }
@@ -243,11 +292,43 @@ export class WorldLanguageService {
         return `说话人是${characterName}。`;
     }
   }
+
+  private pickChannelFallbackOpener(language: WorldLanguageCode) {
+    const openers = CHANNEL_FALLBACK_OPENERS[language];
+    return openers[Math.floor(Math.random() * openers.length)] ?? openers[0];
+  }
 }
 
 type WeatherLabel = {
   day: Record<WorldLanguageCode, string>;
   night?: Record<WorldLanguageCode, string>;
+};
+
+const CHANNEL_FALLBACK_OPENERS: Record<WorldLanguageCode, string[]> = {
+  'zh-CN': [
+    'AI 镜头记录',
+    '今天的视频号片段',
+    '刚刚捕捉到的世界画面',
+    '这一帧想留给你看',
+  ],
+  'en-US': [
+    'AI lens log',
+    "Today's channel clip",
+    'A world moment just captured',
+    'A frame worth saving for you',
+  ],
+  'ja-JP': [
+    'AIレンズの記録',
+    '今日のチャンネル短編',
+    'いま捉えた世界の一場面',
+    'あなたに残したい一コマ',
+  ],
+  'ko-KR': [
+    'AI 렌즈 기록',
+    '오늘의 채널 클립',
+    '방금 포착한 세계의 장면',
+    '당신에게 남기고 싶은 한 프레임',
+  ],
 };
 
 const WEATHER_LABELS: Record<number, WeatherLabel> = {

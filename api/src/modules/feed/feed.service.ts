@@ -23,6 +23,7 @@ import type {
   MomentVideoAsset,
 } from '../moments/moment-media.types';
 import { MomentPostEntity } from '../moments/moment-post.entity';
+import { WorldLanguageService } from '../config/world-language.service';
 
 type FeedSurface = 'feed' | 'channels';
 type FeedChannelHomeSection = 'recommended' | 'friends' | 'following' | 'live';
@@ -108,13 +109,6 @@ const CHANNEL_DEMO_POSTS: Array<{
   },
 ];
 
-const CHANNEL_FALLBACK_OPENERS = [
-  'AI 镜头记录',
-  '今天的视频号片段',
-  '刚刚捕捉到的世界画面',
-  '这一帧想留给你看',
-];
-
 const MAX_FEED_IMAGE_COUNT = 9;
 const MAX_FEED_VIDEO_DURATION_MS = 5 * 60 * 1000;
 
@@ -136,6 +130,7 @@ export class FeedService implements OnModuleInit {
     private readonly worldOwnerService: WorldOwnerService,
     private readonly socialService: SocialService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async onModuleInit() {
@@ -220,7 +215,11 @@ export class FeedService implements OnModuleInit {
         avatarContext,
       ),
       this.buildOwnerStateMap(pagedPosts, owner.id),
-      this.buildChannelAuthorSummaries(allVisiblePosts, owner.id, avatarContext),
+      this.buildChannelAuthorSummaries(
+        allVisiblePosts,
+        owner.id,
+        avatarContext,
+      ),
       this.buildLiveEntries(allVisiblePosts, avatarContext),
       this.buildChannelSectionCounts(allVisiblePosts, owner.id),
     ]);
@@ -848,7 +847,9 @@ export class FeedService implements OnModuleInit {
 
     const profile = await this.characters.getProfile(selectedCharacter.id);
     const media = this.pickChannelMedia(selectedCharacter.id);
-    const fallbackText = this.buildFallbackChannelText(selectedCharacter.name);
+    const fallbackText = await this.worldLanguage.buildChannelFallbackText(
+      selectedCharacter.name,
+    );
 
     if (!profile || options?.skipAi) {
       return this.createPost({
@@ -1851,10 +1852,7 @@ export class FeedService implements OnModuleInit {
         visibleCharacters.map((character) => character.id),
       ),
       characterAvatarById: new Map(
-        visibleCharacters.map((character) => [
-          character.id,
-          character.avatar,
-        ]),
+        visibleCharacters.map((character) => [character.id, character.avatar]),
       ),
     };
   }
@@ -1866,7 +1864,9 @@ export class FeedService implements OnModuleInit {
     avatarContext: FeedAvatarContext,
   ) {
     if (authorType === 'character' && authorId) {
-      return avatarContext.characterAvatarById.get(authorId) ?? currentAvatar ?? '';
+      return (
+        avatarContext.characterAvatarById.get(authorId) ?? currentAvatar ?? ''
+      );
     }
 
     if (
@@ -1908,17 +1908,20 @@ export class FeedService implements OnModuleInit {
       return currentAvatar ?? '';
     };
 
-    const pendingPostUpdates = posts.reduce<FeedPostEntity[]>((updates, post) => {
-      const nextAvatar = resolveAvatar(
-        post.authorType,
-        post.authorId,
-        post.authorAvatar,
-      );
-      if (nextAvatar && nextAvatar !== post.authorAvatar) {
-        updates.push({ ...post, authorAvatar: nextAvatar });
-      }
-      return updates;
-    }, []);
+    const pendingPostUpdates = posts.reduce<FeedPostEntity[]>(
+      (updates, post) => {
+        const nextAvatar = resolveAvatar(
+          post.authorType,
+          post.authorId,
+          post.authorAvatar,
+        );
+        if (nextAvatar && nextAvatar !== post.authorAvatar) {
+          updates.push({ ...post, authorAvatar: nextAvatar });
+        }
+        return updates;
+      },
+      [],
+    );
     const pendingCommentUpdates = comments.reduce<FeedCommentEntity[]>(
       (updates, comment) => {
         const nextAvatar = resolveAvatar(
@@ -1935,7 +1938,9 @@ export class FeedService implements OnModuleInit {
     );
 
     await Promise.all([
-      pendingPostUpdates.length > 0 ? this.postRepo.save(pendingPostUpdates) : null,
+      pendingPostUpdates.length > 0
+        ? this.postRepo.save(pendingPostUpdates)
+        : null,
       pendingCommentUpdates.length > 0
         ? this.commentRepo.save(pendingCommentUpdates)
         : null,
@@ -2021,14 +2026,6 @@ export class FeedService implements OnModuleInit {
     await this.postRepo.update(postId, {
       [key]: currentValue > 0 ? currentValue - 1 : 0,
     });
-  }
-
-  private buildFallbackChannelText(authorName: string) {
-    const opener =
-      CHANNEL_FALLBACK_OPENERS[
-        Math.floor(Math.random() * CHANNEL_FALLBACK_OPENERS.length)
-      ] ?? CHANNEL_FALLBACK_OPENERS[0];
-    return `${opener}：${authorName} 刚刚发来一段 AI 生成的短片，适合停下来刷 10 秒。`;
   }
 
   private pickChannelMedia(seed: string) {
