@@ -207,6 +207,9 @@ describe('default characters', () => {
     expect(character?.profile?.cognitiveBoundaries?.refusalStyle).toContain(
       '更安全的试纱',
     );
+    expect(DEFAULT_CHARACTER_IDS).not.toContain(
+      WEDDING_DRESS_EXPERT_CHARACTER_ID,
+    );
   });
 
   it('includes the reminder keeper with expected runtime defaults', () => {
