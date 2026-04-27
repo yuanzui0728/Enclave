@@ -27,6 +27,7 @@ import type {
   CloudWorldRequestRecord,
   CloudWorldRequestStatus,
   CloudWorldSummary,
+  CloudApiErrorResponse,
   IssueCloudAdminAccessTokenResponse,
   ReplayFailedCloudWaitingSessionSyncTasksResponse,
   ReplayFilteredFailedCloudWaitingSessionSyncTasksRequest,
@@ -40,6 +41,12 @@ import type {
   RevokeCloudAdminSessionsByIdResponse,
   WorldLifecycleJobSummary,
 } from "@yinjie/contracts";
+import {
+  formatCloudConsoleApiStatusError,
+  formatCloudConsoleUnableToReachApiMessage,
+  getCurrentCloudConsoleLocale,
+  translateCloudConsoleTextForActiveLocale,
+} from "./cloud-console-i18n";
 
 const ADMIN_SECRET_KEY = "yinjie_cloud_admin_secret";
 const ADMIN_ACCESS_TOKEN_KEY = "yinjie_cloud_admin_access_token";
@@ -57,16 +64,34 @@ export type CloudAdminApiResponseWithMeta<T> = {
 
 export class CloudAdminApiError extends Error {
   readonly requestId: string | null;
+  readonly errorCode: string | null;
+  readonly statusCode: number | null;
+  readonly params: CloudApiErrorResponse["params"] | null;
 
-  constructor(message: string, requestId: string | null = null) {
+  constructor(
+    message: string,
+    requestId: string | null = null,
+    options: {
+      errorCode?: string | null;
+      statusCode?: number | null;
+      params?: CloudApiErrorResponse["params"] | null;
+    } = {},
+  ) {
     super(message);
     this.name = "CloudAdminApiError";
     this.requestId = requestId;
+    this.errorCode = options.errorCode ?? null;
+    this.statusCode = options.statusCode ?? null;
+    this.params = options.params ?? null;
   }
 }
 
 export function getCloudAdminApiErrorRequestId(error: unknown) {
   return error instanceof CloudAdminApiError ? error.requestId : null;
+}
+
+export function getCloudAdminApiErrorCode(error: unknown) {
+  return error instanceof CloudAdminApiError ? error.errorCode : null;
 }
 
 let inFlightAdminTokenPromise:
@@ -100,6 +125,123 @@ function resolveCloudAdminApiBase() {
   }
 
   return "http://localhost:3001";
+}
+
+function createCloudAdminLocaleHeaders() {
+  const locale = getCurrentCloudConsoleLocale();
+  return {
+    "Accept-Language": locale,
+    "X-Yinjie-Locale": locale,
+  };
+}
+
+function mergeHeaders(...headerSets: (HeadersInit | undefined)[]) {
+  const headers = new Headers();
+
+  for (const headerSet of headerSets) {
+    if (!headerSet) {
+      continue;
+    }
+
+    new Headers(headerSet).forEach((value, key) => {
+      headers.set(key, value);
+    });
+  }
+
+  return headers;
+}
+
+function getNetworkErrorDetail(error: unknown) {
+  return error instanceof Error && error.message.trim()
+    ? error.message.trim()
+    : translateCloudConsoleTextForActiveLocale("Network request failed.");
+}
+
+function createNetworkError(apiBase: string, error: unknown) {
+  return new CloudAdminApiError(
+    formatCloudConsoleUnableToReachApiMessage({
+      apiBase,
+      detail: getNetworkErrorDetail(error),
+      locale: getCurrentCloudConsoleLocale(),
+    }),
+    null,
+    {
+      errorCode: "CLOUD_ADMIN_API_UNREACHABLE",
+    },
+  );
+}
+
+type CloudAdminApiErrorPayload = Partial<CloudApiErrorResponse> & {
+  error?: string;
+  message?: string | string[];
+};
+
+function parseCloudAdminApiErrorPayload(rawBody: string) {
+  if (!rawBody.trim()) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawBody) as CloudAdminApiErrorPayload;
+    if (parsed && typeof parsed === "object") {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function normalizeCloudAdminApiPayloadMessage(
+  payload: CloudAdminApiErrorPayload | null,
+) {
+  if (!payload) {
+    return "";
+  }
+
+  if (Array.isArray(payload.message)) {
+    return payload.message.filter(Boolean).join(" ");
+  }
+
+  return typeof payload.message === "string" ? payload.message.trim() : "";
+}
+
+function createCloudAdminApiErrorFromResponse({
+  fallbackMessage,
+  rawBody,
+  requestId,
+  statusCode,
+}: {
+  fallbackMessage?: string;
+  rawBody: string;
+  requestId: string | null;
+  statusCode: number;
+}) {
+  const payload = parseCloudAdminApiErrorPayload(rawBody);
+  const payloadMessage = normalizeCloudAdminApiPayloadMessage(payload);
+  const rawMessage = rawBody.trim();
+  const message =
+    payloadMessage ||
+    (payload?.errorCode
+      ? translateCloudConsoleTextForActiveLocale(payload.errorCode)
+      : "") ||
+    (rawMessage
+      ? translateCloudConsoleTextForActiveLocale(rawMessage)
+      : fallbackMessage) ||
+    formatCloudConsoleApiStatusError(
+      statusCode,
+      getCurrentCloudConsoleLocale(),
+    );
+
+  return new CloudAdminApiError(message, requestId, {
+    errorCode:
+      typeof payload?.errorCode === "string" && payload.errorCode.trim()
+        ? payload.errorCode.trim()
+        : null,
+    params: payload?.params ?? null,
+    statusCode,
+  });
 }
 
 function buildQueryString(
@@ -204,7 +346,13 @@ async function issueCloudAdminAccessToken(
 ): Promise<IssueCloudAdminAccessTokenResponse> {
   const normalizedSecret = secret.trim();
   if (!normalizedSecret) {
-    throw new Error("CLOUD_ADMIN_SECRET is required.");
+    throw new CloudAdminApiError(
+      translateCloudConsoleTextForActiveLocale("CLOUD_ADMIN_SECRET is required."),
+      null,
+      {
+        errorCode: "CLOUD_ADMIN_SECRET_REQUIRED",
+      },
+    );
   }
 
   const apiBase = resolveCloudAdminApiBase();
@@ -213,29 +361,45 @@ async function issueCloudAdminAccessToken(
   try {
     response = await fetch(`${apiBase}/admin/cloud/auth/token`, {
       method: "POST",
-      headers: {
+      headers: mergeHeaders(createCloudAdminLocaleHeaders(), {
         "X-Admin-Secret": normalizedSecret,
-      },
+      }),
     });
   } catch (error) {
-    throw new Error(
-      `Unable to reach the cloud admin API at ${apiBase}. ${
-        error instanceof Error ? error.message : "Network request failed."
-      }`,
-    );
+    throw createNetworkError(apiBase, error);
   }
 
   if (response.status === 401) {
-    throw new Error("CLOUD_ADMIN_SECRET is invalid.");
+    throw new CloudAdminApiError(
+      translateCloudConsoleTextForActiveLocale("CLOUD_ADMIN_SECRET is invalid."),
+      getResponseRequestId(response),
+      {
+        errorCode: "CLOUD_ADMIN_SECRET_INVALID",
+        statusCode: 401,
+      },
+    );
   }
 
   const rawBody = await response.text();
   if (!response.ok) {
-    throw new Error(rawBody || `Cloud admin API error ${response.status}`);
+    throw createCloudAdminApiErrorFromResponse({
+      rawBody,
+      requestId: getResponseRequestId(response),
+      statusCode: response.status,
+    });
   }
 
   if (!rawBody) {
-    throw new Error("Cloud admin token exchange returned an empty response.");
+    throw new CloudAdminApiError(
+      translateCloudConsoleTextForActiveLocale(
+        "Cloud admin token exchange returned an empty response.",
+      ),
+      getResponseRequestId(response),
+      {
+        errorCode: "CLOUD_ADMIN_EMPTY_TOKEN_RESPONSE",
+        statusCode: response.status,
+      },
+    );
   }
 
   return JSON.parse(rawBody) as IssueCloudAdminAccessTokenResponse;
@@ -250,32 +414,50 @@ async function refreshCloudAdminAccessToken(
   try {
     response = await fetch(`${apiBase}/admin/cloud/auth/refresh`, {
       method: "POST",
-      headers: {
+      headers: mergeHeaders(createCloudAdminLocaleHeaders(), {
         "Content-Type": "application/json",
-      },
+      }),
       body: JSON.stringify({
         refreshToken,
       }),
     });
   } catch (error) {
-    throw new Error(
-      `Unable to reach the cloud admin API at ${apiBase}. ${
-        error instanceof Error ? error.message : "Network request failed."
-      }`,
-    );
+    throw createNetworkError(apiBase, error);
   }
 
   if (response.status === 401) {
-    throw new Error("Cloud admin session is invalid or expired.");
+    throw new CloudAdminApiError(
+      translateCloudConsoleTextForActiveLocale(
+        "Cloud admin session is invalid or expired.",
+      ),
+      getResponseRequestId(response),
+      {
+        errorCode: "CLOUD_ADMIN_SESSION_INVALID",
+        statusCode: 401,
+      },
+    );
   }
 
   const rawBody = await response.text();
   if (!response.ok) {
-    throw new Error(rawBody || `Cloud admin API error ${response.status}`);
+    throw createCloudAdminApiErrorFromResponse({
+      rawBody,
+      requestId: getResponseRequestId(response),
+      statusCode: response.status,
+    });
   }
 
   if (!rawBody) {
-    throw new Error("Cloud admin refresh returned an empty response.");
+    throw new CloudAdminApiError(
+      translateCloudConsoleTextForActiveLocale(
+        "Cloud admin refresh returned an empty response.",
+      ),
+      getResponseRequestId(response),
+      {
+        errorCode: "CLOUD_ADMIN_EMPTY_REFRESH_RESPONSE",
+        statusCode: response.status,
+      },
+    );
   }
 
   return JSON.parse(rawBody) as IssueCloudAdminAccessTokenResponse;
@@ -287,9 +469,9 @@ async function revokeCloudAdminSession(refreshToken: string) {
   try {
     await fetch(`${apiBase}/admin/cloud/auth/logout`, {
       method: "POST",
-      headers: {
+      headers: mergeHeaders(createCloudAdminLocaleHeaders(), {
         "Content-Type": "application/json",
-      },
+      }),
       body: JSON.stringify({
         refreshToken,
       }),
@@ -349,7 +531,13 @@ async function ensureCloudAdminAccessToken(forceRefresh = false) {
   }
 
   if (!secret) {
-    throw new Error("CLOUD_ADMIN_SECRET is required.");
+    throw new CloudAdminApiError(
+      translateCloudConsoleTextForActiveLocale("CLOUD_ADMIN_SECRET is required."),
+      null,
+      {
+        errorCode: "CLOUD_ADMIN_SECRET_REQUIRED",
+      },
+    );
   }
 
   inFlightAdminTokenPromise = issueCloudAdminAccessToken(secret);
@@ -374,18 +562,17 @@ async function sendAdminRequest(
   try {
     return await fetch(`${apiBase}/admin/cloud${path}`, {
       ...requestInit,
-      headers: {
+      headers: mergeHeaders(
+        createCloudAdminLocaleHeaders(),
+        {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
-        ...optionHeaders,
-      },
+        },
+        optionHeaders,
+      ),
     });
   } catch (error) {
-    throw new Error(
-      `Unable to reach the cloud admin API at ${apiBase}. ${
-        error instanceof Error ? error.message : "Network request failed."
-      }`,
-    );
+    throw createNetworkError(apiBase, error);
   }
 }
 
@@ -415,18 +602,25 @@ async function adminFetchWithMeta<T>(
 
   if (response.status === 401) {
     throw new CloudAdminApiError(
-      "Cloud admin session is invalid or expired.",
+      translateCloudConsoleTextForActiveLocale(
+        "Cloud admin session is invalid or expired.",
+      ),
       getResponseRequestId(response),
+      {
+        errorCode: "CLOUD_ADMIN_SESSION_INVALID",
+        statusCode: 401,
+      },
     );
   }
 
   const requestId = getResponseRequestId(response);
   const rawBody = await response.text();
   if (!response.ok) {
-    throw new CloudAdminApiError(
-      rawBody || `Cloud admin API error ${response.status}`,
+    throw createCloudAdminApiErrorFromResponse({
+      rawBody,
       requestId,
-    );
+      statusCode: response.status,
+    });
   }
 
   return {

@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import type { CloudWaitingSessionSyncTaskSummary } from "@yinjie/contracts";
-import { formatDateTime as formatLocaleDateTime } from "@yinjie/i18n";
+import {
+  formatDateTime as formatLocaleDateTime,
+  useAppLocale,
+} from "@yinjie/i18n";
 import {
   CloudAdminErrorBlock,
   showCloudAdminErrorNotice,
@@ -57,6 +60,7 @@ import {
   buildWaitingSessionSyncTasksCsv,
 } from "../lib/waiting-session-sync-helpers";
 import { copyTextToClipboard } from "../lib/clipboard";
+import { translateCloudConsoleText } from "../lib/cloud-console-i18n";
 import {
   showRequestScopedNotice,
   showRequestScopedNoticeAndInvalidate,
@@ -304,6 +308,7 @@ export function WaitingSessionSyncPage() {
   const navigate = useNavigate({ from: "/waiting-sync" });
   const queryClient = useQueryClient();
   const { showNotice } = useConsoleNotice();
+  const { locale } = useAppLocale();
   const filters = useSearch({ from: "/waiting-sync" });
   const [clearConfirmState, setClearConfirmState] =
     useState<ClearConfirmState>(null);
@@ -334,10 +339,13 @@ export function WaitingSessionSyncPage() {
 
   function getWaitingSessionSyncErrorMessage(error: unknown) {
     if (error instanceof Error && error.message.trim()) {
-      return error.message.trim();
+      return translateCloudConsoleText(error.message.trim(), locale);
     }
 
-    return "Waiting sync task action failed.";
+    return translateCloudConsoleText(
+      "Waiting sync task action failed.",
+      locale,
+    );
   }
 
   function updateFilters(next: Partial<WaitingSessionSyncRouteSearch>) {
@@ -408,7 +416,7 @@ export function WaitingSessionSyncPage() {
     mutationFn: (task: CloudWaitingSessionSyncTaskSummary) =>
       cloudAdminApi.replayFailedWaitingSessionSyncTasksWithMeta([task.id]),
     onSuccess: (response, task) => {
-      const notice = createWaitingSessionSyncReplayTaskNotice(response);
+      const notice = createWaitingSessionSyncReplayTaskNotice(response, locale);
       recordTaskOperationReceipt("task-replay", task, notice);
       showWaitingSessionSyncMutationNotice(notice);
     },
@@ -426,7 +434,7 @@ export function WaitingSessionSyncPage() {
     mutationFn: (task: CloudWaitingSessionSyncTaskSummary) =>
       cloudAdminApi.clearFailedWaitingSessionSyncTasksWithMeta([task.id]),
     onSuccess: (response, task) => {
-      const notice = createWaitingSessionSyncClearTaskNotice(response);
+      const notice = createWaitingSessionSyncClearTaskNotice(response, locale);
       recordTaskOperationReceipt("task-clear", task, notice);
       showWaitingSessionSyncMutationNotice(notice);
       setClearConfirmState(null);
@@ -449,7 +457,7 @@ export function WaitingSessionSyncPage() {
       }),
     onSuccess: (response) => {
       showWaitingSessionSyncMutationNotice(
-        createWaitingSessionSyncFilteredReplayNotice(response),
+        createWaitingSessionSyncFilteredReplayNotice(response, locale),
       );
     },
     onError: (error) => {
@@ -465,7 +473,7 @@ export function WaitingSessionSyncPage() {
       }),
     onSuccess: (response) => {
       showWaitingSessionSyncMutationNotice(
-        createWaitingSessionSyncFilteredClearNotice(response),
+        createWaitingSessionSyncFilteredClearNotice(response, locale),
       );
       setClearConfirmState(null);
     },
@@ -567,9 +575,10 @@ export function WaitingSessionSyncPage() {
             reviewedContextGroup,
             filters,
             tasks,
+            locale,
           )
         : null,
-    [filters, reviewedContextGroup, tasks],
+    [filters, locale, reviewedContextGroup, tasks],
   );
   const reviewSectionContext =
     reviewedContextGroup?.context ??
@@ -584,6 +593,7 @@ export function WaitingSessionSyncPage() {
   const filteredBatchActionsEnabled = status === "all" || status === "failed";
   const batchActionSummary = describeWaitingSessionSyncBatchActionSummary({
     actionsEnabled: filteredBatchActionsEnabled,
+    locale,
     taskTypeLabel: taskType === "all" ? "All" : formatTaskType(taskType),
     query,
   });
@@ -624,6 +634,7 @@ export function WaitingSessionSyncPage() {
         filters,
         query: group.context,
         extension: "json",
+        locale,
       }),
       createWaitingSessionSyncContextSnapshotPayload({
         generatedAt: new Date().toISOString(),
@@ -638,6 +649,7 @@ export function WaitingSessionSyncPage() {
       createWaitingSessionSyncSnapshotNotice({
         mode: "context",
         downloaded,
+        locale,
         taskCount: contextTasks.length,
       }),
     );
@@ -651,8 +663,9 @@ export function WaitingSessionSyncPage() {
         filters,
         query: group.context,
         extension: "csv",
+        locale,
       }),
-      buildWaitingSessionSyncTasksCsv(contextTasks),
+      buildWaitingSessionSyncTasksCsv(contextTasks, locale),
       "text/csv;charset=utf-8",
     );
 
@@ -662,6 +675,7 @@ export function WaitingSessionSyncPage() {
         format: "csv",
         downloaded,
         taskCount: contextTasks.length,
+        locale,
       }),
     );
   }
@@ -672,6 +686,7 @@ export function WaitingSessionSyncPage() {
         mode: "filtered",
         filters,
         extension: "json",
+        locale,
       }),
       createWaitingSessionSyncFilteredSnapshotPayload({
         generatedAt: new Date().toISOString(),
@@ -693,6 +708,7 @@ export function WaitingSessionSyncPage() {
         mode: "filtered",
         downloaded,
         taskCount: tasks.length,
+        locale,
       }),
     );
   }
@@ -703,8 +719,9 @@ export function WaitingSessionSyncPage() {
         mode: "filtered",
         filters,
         extension: "csv",
+        locale,
       }),
-      buildWaitingSessionSyncTasksCsv(tasks),
+      buildWaitingSessionSyncTasksCsv(tasks, locale),
       "text/csv;charset=utf-8",
     );
 
@@ -714,6 +731,7 @@ export function WaitingSessionSyncPage() {
         format: "csv",
         downloaded,
         taskCount: tasks.length,
+        locale,
       }),
     );
   }
@@ -724,8 +742,14 @@ export function WaitingSessionSyncPage() {
         mode: "context-groups",
         filters,
         extension: "csv",
+        locale,
       }),
-      buildWaitingSessionSyncContextGroupsCsv(contextGroups, filters, tasks),
+      buildWaitingSessionSyncContextGroupsCsv(
+        contextGroups,
+        filters,
+        tasks,
+        locale,
+      ),
       "text/csv;charset=utf-8",
     );
 
@@ -733,6 +757,7 @@ export function WaitingSessionSyncPage() {
       createWaitingSessionSyncContextGroupsCsvNotice({
         downloaded,
         groupCount: contextGroups.length,
+        locale,
       }),
     );
   }
@@ -743,6 +768,7 @@ export function WaitingSessionSyncPage() {
         mode: "context-groups",
         filters,
         extension: "json",
+        locale,
       }),
       createWaitingSessionSyncContextGroupsSnapshotPayload({
         generatedAt: new Date().toISOString(),
@@ -755,6 +781,7 @@ export function WaitingSessionSyncPage() {
           totalPages: tasksQuery.data?.totalPages ?? 1,
         },
         contextGroups,
+        locale,
         tasks,
       }),
     );
@@ -763,6 +790,7 @@ export function WaitingSessionSyncPage() {
       createWaitingSessionSyncContextGroupsSnapshotNotice({
         downloaded,
         groupCount: contextGroups.length,
+        locale,
       }),
     );
   }
@@ -777,6 +805,7 @@ export function WaitingSessionSyncPage() {
         mode: "focus",
         filters,
         extension: "json",
+        locale,
       }),
       createWaitingSessionSyncFocusSnapshotPayload({
         generatedAt: new Date().toISOString(),
@@ -791,6 +820,7 @@ export function WaitingSessionSyncPage() {
         mode: "focus",
         downloaded,
         taskCount: focusSnapshot.matchingTasks.length,
+        locale,
       }),
     );
   }
@@ -805,8 +835,9 @@ export function WaitingSessionSyncPage() {
         mode: "focus",
         filters,
         extension: "csv",
+        locale,
       }),
-      buildWaitingSessionSyncTasksCsv(focusSnapshot.matchingTasks),
+      buildWaitingSessionSyncTasksCsv(focusSnapshot.matchingTasks, locale),
       "text/csv;charset=utf-8",
     );
 
@@ -816,6 +847,7 @@ export function WaitingSessionSyncPage() {
         format: "csv",
         downloaded,
         taskCount: focusSnapshot.matchingTasks.length,
+        locale,
       }),
     );
   }
@@ -828,6 +860,7 @@ export function WaitingSessionSyncPage() {
     const copied = await copyTextToClipboard(
       buildWaitingSessionSyncContextReviewCopy({
         artifact: reviewedContextArtifact,
+        locale,
         reviewPath: currentPermalink,
         summary: reviewedContextSummary,
       }),
@@ -836,6 +869,7 @@ export function WaitingSessionSyncPage() {
     showWaitingSessionSyncNotice(
       createWaitingSessionSyncCopyNotice({
         copied,
+        locale,
         subject: "review-context",
       }),
     );
@@ -851,6 +885,7 @@ export function WaitingSessionSyncPage() {
     showWaitingSessionSyncNotice(
       createWaitingSessionSyncCopyNotice({
         copied,
+        locale,
         subject: "permalink",
       }),
     );
@@ -860,6 +895,7 @@ export function WaitingSessionSyncPage() {
     const copied = await copyTextToClipboard(
       buildWaitingSessionSyncTaskReviewCopy({
         reviewPath: buildReviewedTaskPermalink(task),
+        locale,
         task,
       }),
     );
@@ -867,6 +903,7 @@ export function WaitingSessionSyncPage() {
     showWaitingSessionSyncNotice(
       createWaitingSessionSyncCopyNotice({
         copied,
+        locale,
         subject: "task-context",
       }),
     );
@@ -1018,6 +1055,7 @@ export function WaitingSessionSyncPage() {
           <div className="mt-4 text-xs leading-6 text-[color:var(--text-muted)]">
             {describeWaitingSessionSyncFocusGuardCopy({
               query: normalizedQuery,
+              locale,
               matchingTaskCount: focusSnapshot?.matchingTasks.length,
             })}
           </div>

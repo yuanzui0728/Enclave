@@ -1,6 +1,8 @@
 import type { ConsoleNoticeTone } from "../components/console-notice";
+import { selectCloudConsoleText } from "./cloud-console-i18n";
 import { createRequestScopedNotice, type RequestScopedNotice } from "./request-scoped-notice";
 
+// i18n-ignore-start: Admin session operation notices are localized through explicit locale branches.
 const CURRENT_SESSION_REISSUE_NOTICE =
   "The current console session was included, so the next admin request will re-issue a short-lived token.";
 
@@ -12,6 +14,7 @@ type SessionRevokeNoticeOptions = {
   zeroMessage: string;
   successMessage: (revokedCount: number) => string;
   skippedMessage: (skippedCount: number) => string;
+  locale?: string | null;
 };
 
 type RiskGroupRevokeNoticeOptions = {
@@ -21,6 +24,7 @@ type RiskGroupRevokeNoticeOptions = {
   revokedSessionCount: number;
   skippedSessionCount: number;
   revokedCurrentSession: boolean;
+  locale?: string | null;
 };
 
 export type AdminSessionSourceRiskGuardAction =
@@ -69,6 +73,7 @@ type HighlightedSessionOperationReceiptOutcome = {
 };
 
 export function createSessionRevokeNotice({
+  locale,
   requestId,
   revokedCount,
   skippedCount,
@@ -86,7 +91,17 @@ export function createSessionRevokeNotice({
     messageParts.push(skippedMessage(skippedCount));
   }
   if (revokedCurrentSession) {
-    messageParts.push(CURRENT_SESSION_REISSUE_NOTICE);
+    messageParts.push(
+      selectCloudConsoleText(locale, {
+        "en-US": CURRENT_SESSION_REISSUE_NOTICE,
+        "zh-CN":
+          "当前控制台会话也在范围内，因此下次管理请求会重新签发短期令牌。",
+        "ja-JP":
+          "現在のコンソールセッションも含まれていたため、次回の管理リクエストで短期トークンを再発行します。",
+        "ko-KR":
+          "현재 콘솔 세션이 포함되어 다음 관리자 요청에서 단기 토큰을 다시 발급합니다.",
+      }),
+    );
   }
 
   return createRequestScopedNotice(
@@ -97,6 +112,7 @@ export function createSessionRevokeNotice({
 }
 
 export function createRiskGroupRevokeNotice({
+  locale,
   matchedGroupCount,
   requestId,
   revokedCurrentSession,
@@ -107,8 +123,21 @@ export function createRiskGroupRevokeNotice({
   if (revokedSessionCount === 0) {
     return createRequestScopedNotice(
       matchedGroupCount === 0
-        ? "No source groups matched the selected risk filter."
-        : "No active admin sessions were revoked in the matching risk groups.",
+        ? selectCloudConsoleText(locale, {
+            "en-US": "No source groups matched the selected risk filter.",
+            "zh-CN": "没有来源分组匹配所选风险筛选条件。",
+            "ja-JP": "選択したリスクフィルターに一致するソースグループはありません。",
+            "ko-KR": "선택한 위험 필터와 일치하는 소스 그룹이 없습니다.",
+          })
+        : selectCloudConsoleText(locale, {
+            "en-US":
+              "No active admin sessions were revoked in the matching risk groups.",
+            "zh-CN": "匹配的风险分组中没有活跃管理会话被吊销。",
+            "ja-JP":
+              "一致したリスクグループ内で取り消されたアクティブ管理セッションはありません。",
+            "ko-KR":
+              "일치하는 위험 그룹에서 취소된 활성 관리자 세션이 없습니다.",
+          }),
       "warning",
       requestId,
     );
@@ -119,52 +148,116 @@ export function createRiskGroupRevokeNotice({
     revokedCount: revokedSessionCount,
     skippedCount: skippedSessionCount,
     revokedCurrentSession,
-    zeroMessage: "No active admin sessions were revoked in the matching risk groups.",
+    zeroMessage: selectCloudConsoleText(locale, {
+      "en-US": "No active admin sessions were revoked in the matching risk groups.",
+      "zh-CN": "匹配的风险分组中没有活跃管理会话被吊销。",
+      "ja-JP":
+        "一致したリスクグループ内で取り消されたアクティブ管理セッションはありません。",
+      "ko-KR": "일치하는 위험 그룹에서 취소된 활성 관리자 세션이 없습니다.",
+    }),
     successMessage: (revokedCount) =>
-      `Revoked ${revokedCount} active session(s) across ${revokedGroupCount} risk group(s).`,
+      selectCloudConsoleText(locale, {
+        "en-US": `Revoked ${revokedCount} active session(s) across ${revokedGroupCount} risk group(s).`,
+        "zh-CN": `已吊销 ${revokedGroupCount} 个风险分组中的 ${revokedCount} 个活跃会话。`,
+        "ja-JP": `${revokedGroupCount} 件のリスクグループで ${revokedCount} 件のアクティブセッションを取り消しました。`,
+        "ko-KR": `${revokedGroupCount}개 위험 그룹에서 활성 세션 ${revokedCount}개를 취소했습니다.`,
+      }),
     skippedMessage: (skippedCount) =>
-      `${skippedCount} session(s) were already unavailable.`,
+      selectCloudConsoleText(locale, {
+        "en-US": `${skippedCount} session(s) were already unavailable.`,
+        "zh-CN": `${skippedCount} 个会话已不可用。`,
+        "ja-JP": `${skippedCount} 件のセッションはすでに利用できませんでした。`,
+        "ko-KR": `${skippedCount}개 세션은 이미 사용할 수 없었습니다.`,
+      }),
+    locale,
   });
 }
 
 export function getAdminSessionSourceRiskGuardMessage(
   action: AdminSessionSourceRiskGuardAction,
+  locale?: string | null,
 ) {
   switch (action) {
     case "snapshot":
-      return "Select a source risk filter before exporting a snapshot.";
+      return selectCloudConsoleText(locale, {
+        "en-US": "Select a source risk filter before exporting a snapshot.",
+        "zh-CN": "导出快照前请先选择来源风险筛选条件。",
+        "ja-JP": "スナップショットをエクスポートする前にソースリスクフィルターを選択してください。",
+        "ko-KR": "스냅샷을 내보내기 전에 소스 위험 필터를 선택하세요.",
+      });
     case "groups-csv":
-      return "Select a source risk filter before exporting CSV.";
+      return selectCloudConsoleText(locale, {
+        "en-US": "Select a source risk filter before exporting CSV.",
+        "zh-CN": "导出 CSV 前请先选择来源风险筛选条件。",
+        "ja-JP": "CSV をエクスポートする前にソースリスクフィルターを選択してください。",
+        "ko-KR": "CSV를 내보내기 전에 소스 위험 필터를 선택하세요.",
+      });
     case "sessions-csv":
-      return "Select a source risk filter before exporting session CSV.";
+      return selectCloudConsoleText(locale, {
+        "en-US": "Select a source risk filter before exporting session CSV.",
+        "zh-CN": "导出会话 CSV 前请先选择来源风险筛选条件。",
+        "ja-JP": "セッション CSV をエクスポートする前にソースリスクフィルターを選択してください。",
+        "ko-KR": "세션 CSV를 내보내기 전에 소스 위험 필터를 선택하세요.",
+      });
     case "revoke":
     default:
-      return "Select a source risk filter before revoking groups.";
+      return selectCloudConsoleText(locale, {
+        "en-US": "Select a source risk filter before revoking groups.",
+        "zh-CN": "吊销分组前请先选择来源风险筛选条件。",
+        "ja-JP": "グループを取り消す前にソースリスクフィルターを選択してください。",
+        "ko-KR": "그룹을 취소하기 전에 소스 위험 필터를 선택하세요.",
+      });
   }
 }
 
-export function getAdminSessionSourceRiskSelectionPrompt() {
-  return "Select a source risk filter to batch-revoke risky groups.";
+export function getAdminSessionSourceRiskSelectionPrompt(locale?: string | null) {
+  return selectCloudConsoleText(locale, {
+    "en-US": "Select a source risk filter to batch-revoke risky groups.",
+    "zh-CN": "选择来源风险筛选条件后，可批量吊销风险分组。",
+    "ja-JP": "リスクグループを一括取り消しするには、ソースリスクフィルターを選択してください。",
+    "ko-KR": "위험 그룹을 일괄 취소하려면 소스 위험 필터를 선택하세요.",
+  });
 }
 
-export function createAdminSessionRiskTimelineNotReadyNotice() {
+export function createAdminSessionRiskTimelineNotReadyNotice(locale?: string | null) {
   return createRequestScopedNotice(
-    "Risk timeline data is not ready for export yet.",
+    selectCloudConsoleText(locale, {
+      "en-US": "Risk timeline data is not ready for export yet.",
+      "zh-CN": "风险时间线数据尚未准备好，暂时无法导出。",
+      "ja-JP": "リスクタイムラインデータはまだエクスポートできません。",
+      "ko-KR": "위험 타임라인 데이터를 아직 내보낼 수 없습니다.",
+    }),
     "warning",
   );
 }
 
 export function formatHighlightedOperationReceiptLabel(
   kind: HighlightedSessionOperationReceiptKind,
+  locale?: string | null,
 ) {
   switch (kind) {
     case "focused-source-snapshot":
-      return "Focused source snapshot";
+      return selectCloudConsoleText(locale, {
+        "en-US": "Focused source snapshot",
+        "zh-CN": "聚焦来源快照",
+        "ja-JP": "フォーカス元スナップショット",
+        "ko-KR": "포커스 소스 스냅샷",
+      });
     case "focused-source-revoke":
-      return "Focused source revoke";
+      return selectCloudConsoleText(locale, {
+        "en-US": "Focused source revoke",
+        "zh-CN": "聚焦来源吊销",
+        "ja-JP": "フォーカス元取り消し",
+        "ko-KR": "포커스 소스 취소",
+      });
     case "session-revoke":
     default:
-      return "Session revoke";
+      return selectCloudConsoleText(locale, {
+        "en-US": "Session revoke",
+        "zh-CN": "会话吊销",
+        "ja-JP": "セッション取り消し",
+        "ko-KR": "세션 취소",
+      });
   }
 }
 
@@ -254,3 +347,4 @@ export function prependHighlightedOperationReceipt(
     ...previous,
   ].slice(0, limit);
 }
+// i18n-ignore-end

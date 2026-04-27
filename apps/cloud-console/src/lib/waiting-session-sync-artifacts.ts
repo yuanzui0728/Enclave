@@ -9,6 +9,10 @@ import {
   type WaitingSessionSyncRouteSearch,
 } from "./waiting-session-sync-route-search";
 import { buildWorldsPermalink, buildWorldsRouteSearch } from "./world-route-search";
+import {
+  translateCloudConsoleCsvRow,
+  translateCloudConsoleText,
+} from "./cloud-console-i18n";
 
 type WaitingSessionSyncContextGroupLike = {
   context: string;
@@ -65,16 +69,33 @@ export type WaitingSessionSyncFocusSnapshotInput<TContextGroup, TTargetFocus> = 
 
 function formatWaitingSessionSyncTaskType(
   taskType: CloudWaitingSessionSyncTaskSummary["taskType"],
+  locale?: string | null,
 ) {
   switch (taskType) {
     case "refresh_world":
-      return "Refresh world";
+      return translateCloudConsoleText("Refresh world", locale);
     case "refresh_phone":
-      return "Refresh phone";
+      return translateCloudConsoleText("Refresh phone", locale);
     case "invalidate_phone":
-      return "Invalidate phone";
+      return translateCloudConsoleText("Invalidate phone", locale);
     default:
       return taskType;
+  }
+}
+
+function formatWaitingSessionSyncTaskStatus(
+  status: CloudWaitingSessionSyncTaskSummary["status"],
+  locale?: string | null,
+) {
+  switch (status) {
+    case "failed":
+      return translateCloudConsoleText("Failed", locale);
+    case "pending":
+      return translateCloudConsoleText("Pending", locale);
+    case "running":
+      return translateCloudConsoleText("Running", locale);
+    default:
+      return status;
   }
 }
 
@@ -178,13 +199,14 @@ export function serializeWaitingSessionSyncContextGroupArtifact(
   group: WaitingSessionSyncContextGroupLike,
   filters: WaitingSessionSyncRouteSearch,
   tasks: readonly CloudWaitingSessionSyncTaskSummary[],
+  locale?: string | null,
 ): WaitingSessionSyncContextGroupArtifact {
   const matchingTasks = tasks.filter((task) => task.context === group.context);
 
   return {
     ...group,
     taskTypeLabels: group.taskTypes.map((taskType) =>
-      formatWaitingSessionSyncTaskType(taskType),
+      formatWaitingSessionSyncTaskType(taskType, locale),
     ),
     focusPath: buildWaitingSessionSyncFocusPath(filters, group.context),
     worldDetailPath: group.refreshWorldTarget
@@ -202,11 +224,17 @@ export function buildWaitingSessionSyncContextGroupsCsv(
   groups: readonly WaitingSessionSyncContextGroupLike[],
   filters: WaitingSessionSyncRouteSearch,
   tasks: readonly CloudWaitingSessionSyncTaskSummary[],
+  locale?: string | null,
 ) {
   const serializedGroups = groups.map((group) =>
-    serializeWaitingSessionSyncContextGroupArtifact(group, filters, tasks),
+    serializeWaitingSessionSyncContextGroupArtifact(
+      group,
+      filters,
+      tasks,
+      locale,
+    ),
   );
-  const headers = [
+  const headers = translateCloudConsoleCsvRow([
     "context",
     "total",
     "failed",
@@ -220,7 +248,7 @@ export function buildWaitingSessionSyncContextGroupsCsv(
     "taskIds",
     "taskKeys",
     "targetValues",
-  ];
+  ], locale);
   const rows = serializedGroups.map((group) => [
     group.context,
     String(group.total),
@@ -244,8 +272,9 @@ export function buildWaitingSessionSyncContextGroupsCsv(
 
 export function buildWaitingSessionSyncTasksCsv(
   tasks: readonly CloudWaitingSessionSyncTaskSummary[],
+  locale?: string | null,
 ) {
-  const headers = [
+  const headers = translateCloudConsoleCsvRow([
     "id",
     "taskKey",
     "taskType",
@@ -262,14 +291,14 @@ export function buildWaitingSessionSyncTasksCsv(
     "requestsPath",
     "worldsPath",
     "worldDetailPath",
-  ];
+  ], locale);
   const rows = tasks.map((task) => {
     const lookup = buildWaitingSessionSyncSnapshotLookup(task);
     return [
       task.id,
       task.taskKey,
-      task.taskType,
-      task.status,
+      formatWaitingSessionSyncTaskType(task.taskType, locale),
+      formatWaitingSessionSyncTaskStatus(task.status, locale),
       String(task.attempt),
       String(task.maxAttempts),
       task.targetValue,
@@ -354,6 +383,7 @@ export function createWaitingSessionSyncContextGroupsSnapshotPayload({
   visibleSummary,
   pagination,
   contextGroups,
+  locale,
   tasks,
 }: {
   generatedAt: string;
@@ -362,6 +392,7 @@ export function createWaitingSessionSyncContextGroupsSnapshotPayload({
   pagination: WaitingSessionSyncArtifactPagination;
   contextGroups: readonly WaitingSessionSyncContextGroupLike[];
   tasks: readonly CloudWaitingSessionSyncTaskSummary[];
+  locale?: string | null;
 }) {
   return {
     generatedAt,
@@ -372,7 +403,12 @@ export function createWaitingSessionSyncContextGroupsSnapshotPayload({
     pagination,
     groupCount: contextGroups.length,
     contextGroups: contextGroups.map((group) =>
-      serializeWaitingSessionSyncContextGroupArtifact(group, filters, tasks),
+      serializeWaitingSessionSyncContextGroupArtifact(
+        group,
+        filters,
+        tasks,
+        locale,
+      ),
     ),
   };
 }
