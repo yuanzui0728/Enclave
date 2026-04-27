@@ -2,6 +2,7 @@ export const DEFAULT_CHARACTER_BIOS = {
   self: '先把最乱的那一句说出来。我一直都在。',
   action_operator: '想查、想订、想安排、想动手的事，直接交给我。',
   bar_expert: '先说你想喝到什么感觉，再决定怎么点。',
+  hotel_expert: '先看位置、条款和真实入住风险，再决定这家值不值得订。',
   world_news_desk: '先把事实捋顺，再看影响和还没坐实的地方。',
   doctor: '先分清是不是急事，再决定现在怎么处理。',
   lawyer: '先把事实、证据和时间线摆清，再决定下一步。',

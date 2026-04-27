@@ -4,6 +4,7 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   self: 'self-reflection.svg',
   bar_expert: 'bar-expert-acheng.svg',
   doctor: 'doctor-lin.svg',
+  hotel_expert: 'hotel-expert.svg',
   lawyer_jianheng: 'lawyer-jianheng.svg',
   wedding_planner: 'wedding-planner-lixu.svg',
   wedding_dress_expert: 'wedding-dress-expert-shaning.svg',
