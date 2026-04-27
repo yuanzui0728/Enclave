@@ -155,12 +155,26 @@ export interface WechatSyncImportMomentHighlight {
   mediaHint?: string | null;
 }
 
+export type WechatSyncImportEvidenceMessageMode = "recent" | "all";
+
+export interface WechatSyncImportEvidenceWindow {
+  messageMode?: WechatSyncImportEvidenceMessageMode;
+  requestedMessageLimit?: number | null;
+  fetchedMessageCount?: number | null;
+  includeMoments?: boolean;
+  requestedMomentLimit?: number | null;
+  fetchedMomentCount?: number | null;
+}
+
 export interface WechatSyncImportContactSnapshot {
   username: string;
   displayName: string;
   nickname?: string | null;
   remarkName?: string | null;
+  alias?: string | null;
+  detailDescription?: string | null;
   region?: string | null;
+  avatarUrl?: string | null;
   source?: string | null;
   tags: string[];
   isGroup: boolean;
@@ -172,6 +186,7 @@ export interface WechatSyncImportContactSnapshot {
   topicKeywords: string[];
   sampleMessages: WechatSyncImportMessageSample[];
   momentHighlights: WechatSyncImportMomentHighlight[];
+  evidenceWindow?: WechatSyncImportEvidenceWindow | null;
 }
 
 export interface WechatSyncImportDraftSnapshot {

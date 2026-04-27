@@ -7,6 +7,8 @@ export type WechatSyncMessageDirectionValue =
   | 'system'
   | 'unknown';
 
+export type WechatSyncEvidenceMessageModeValue = 'recent' | 'all';
+
 export interface WechatSyncMessageSampleValue {
   timestamp: string;
   text: string;
@@ -22,12 +24,24 @@ export interface WechatSyncMomentHighlightValue {
   mediaHint?: string | null;
 }
 
+export interface WechatSyncEvidenceWindowValue {
+  messageMode?: WechatSyncEvidenceMessageModeValue;
+  requestedMessageLimit?: number | null;
+  fetchedMessageCount?: number | null;
+  includeMoments?: boolean;
+  requestedMomentLimit?: number | null;
+  fetchedMomentCount?: number | null;
+}
+
 export interface WechatSyncContactBundleValue {
   username: string;
   displayName: string;
   nickname?: string | null;
   remarkName?: string | null;
+  alias?: string | null;
+  detailDescription?: string | null;
   region?: string | null;
+  avatarUrl?: string | null;
   source?: string | null;
   tags: string[];
   isGroup: boolean;
@@ -39,6 +53,7 @@ export interface WechatSyncContactBundleValue {
   topicKeywords: string[];
   sampleMessages: WechatSyncMessageSampleValue[];
   momentHighlights: WechatSyncMomentHighlightValue[];
+  evidenceWindow?: WechatSyncEvidenceWindowValue | null;
 }
 
 export interface WechatSyncPreviewRequestValue {

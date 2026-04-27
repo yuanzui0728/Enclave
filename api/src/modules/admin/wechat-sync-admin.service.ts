@@ -51,8 +51,16 @@ type PreviewContactResult = {
 
 const WECHAT_SYNC_PREVIEW_CONCURRENCY = 1;
 const WECHAT_SYNC_AI_PREVIEW_TIMEOUT_MS = 120_000;
-const WECHAT_SYNC_PREVIEW_MAX_SAMPLE_MESSAGES = 60;
-const WECHAT_SYNC_PREVIEW_MAX_MOMENT_HIGHLIGHTS = 20;
+const WECHAT_SYNC_ACCEPT_MAX_SAMPLE_MESSAGES = 50_000;
+const WECHAT_SYNC_ACCEPT_MAX_MOMENT_HIGHLIGHTS = 200;
+const WECHAT_SYNC_PROMPT_MAX_SAMPLE_MESSAGES = 120;
+const WECHAT_SYNC_PROMPT_MAX_MOMENT_HIGHLIGHTS = 24;
+const WECHAT_SYNC_PREVIEW_RESPONSE_MAX_SAMPLE_MESSAGES = 120;
+const WECHAT_SYNC_PREVIEW_RESPONSE_MAX_MOMENT_HIGHLIGHTS = 24;
+const WECHAT_SYNC_PREVIEW_MAX_SAMPLE_MESSAGES =
+  WECHAT_SYNC_PROMPT_MAX_SAMPLE_MESSAGES;
+const WECHAT_SYNC_PREVIEW_MAX_MOMENT_HIGHLIGHTS =
+  WECHAT_SYNC_PROMPT_MAX_MOMENT_HIGHLIGHTS;
 const WECHAT_SYNC_MIN_MESSAGES_FOR_AI_PREVIEW = 12;
 const WECHAT_SYNC_MIN_SAMPLES_FOR_AI_PREVIEW = 3;
 const WECHAT_SYNC_SYSTEM_PROMPT_CONFIG_KEY =
@@ -532,6 +540,7 @@ export class WechatSyncAdminService {
     contact: WechatSyncContactBundleValue,
     promptConfig: WechatSyncAnalysisPromptConfig,
   ): Promise<WechatSyncPreviewItemValue> {
+    const previewContact = buildPreviewResponseContact(contact);
     const warnings = buildPreviewWarnings(contact);
     const confidence = resolvePreviewConfidence(contact);
     let draftCharacter: Partial<CharacterEntity>;
@@ -540,7 +549,7 @@ export class WechatSyncAdminService {
       warnings.push('当前缺少足够的聊天或资料证据，已回退到保守的基础草稿。');
       draftCharacter = this.normalizeCharacterDraft({}, contact);
       return {
-        contact,
+        contact: previewContact,
         draftCharacter,
         warnings,
         confidence,
@@ -575,7 +584,7 @@ export class WechatSyncAdminService {
     }
 
     return {
-      contact,
+      contact: previewContact,
       draftCharacter,
       warnings,
       confidence,
@@ -642,6 +651,7 @@ export class WechatSyncAdminService {
       name,
       avatar:
         normalizeText(isRecord(raw) ? raw.avatar : undefined) ||
+        contact.avatarUrl?.trim() ||
         name.slice(0, 1),
       relationship,
       relationshipType: 'friend',
@@ -843,12 +853,23 @@ export class WechatSyncAdminService {
   ) {
     const topicHint = contact.topicKeywords.length
       ? contact.topicKeywords.join('、')
-      : '无明确高频话题标签';
+      : '无明确高频话题';
     const tagHint = contact.tags.length ? contact.tags.join('、') : '无';
     const summaryHint = contact.chatSummary?.trim() || '暂无聊天摘要';
-    const momentHint = contact.momentHighlights.length
-      ? contact.momentHighlights
-          .slice(0, WECHAT_SYNC_PREVIEW_MAX_MOMENT_HIGHLIGHTS)
+    const aliasHint = contact.alias?.trim() || '无';
+    const detailDescriptionHint = contact.detailDescription?.trim() || '无';
+    const avatarHint = contact.avatarUrl?.trim() || '无';
+    const evidenceWindowHint = buildConversationEvidenceDigest(contact);
+    const momentSamples = selectRepresentativeMomentHighlights(
+      contact.momentHighlights,
+      WECHAT_SYNC_PROMPT_MAX_MOMENT_HIGHLIGHTS,
+    );
+    const messageSamples = selectRepresentativeMessageSamples(
+      contact.sampleMessages,
+      WECHAT_SYNC_PROMPT_MAX_SAMPLE_MESSAGES,
+    );
+    const momentHint = momentSamples.length
+      ? momentSamples
           .map((item, index) => {
             const location = item.location?.trim()
               ? ` / 位置：${item.location.trim()}`
@@ -856,12 +877,14 @@ export class WechatSyncAdminService {
             const postedAt = item.postedAt?.trim()
               ? ` / 时间：${item.postedAt.trim()}`
               : '';
-            return `${index + 1}. ${item.text.trim()}${location}${postedAt}`;
+            const mediaHint = item.mediaHint?.trim()
+              ? ` / 媒体：${item.mediaHint.trim()}`
+              : '';
+            return `${index + 1}. ${item.text.trim()}${location}${postedAt}${mediaHint}`;
           })
           .join('\n')
       : '暂无朋友圈或近况线索';
-    const samples = contact.sampleMessages
-      .slice(0, WECHAT_SYNC_PREVIEW_MAX_SAMPLE_MESSAGES)
+    const samples = messageSamples
       .map((item, index) => {
         const sender = item.sender?.trim() || '未知发送者';
         const direction = item.direction?.trim() || 'unknown';
@@ -873,10 +896,13 @@ export class WechatSyncAdminService {
     return [
       '联系人资料总览：',
       `- 微信 username：${contact.username}`,
-      `- 微信显示名：${contact.displayName}`,
-      `- 微信备注：${contact.remarkName?.trim() || '无'}`,
-      `- 微信昵称：${contact.nickname?.trim() || '无'}`,
+      `- 显示名：${contact.displayName}`,
+      `- 备注名：${contact.remarkName?.trim() || '无'}`,
+      `- 昵称：${contact.nickname?.trim() || '无'}`,
+      `- 微信号 / alias：${aliasHint}`,
+      `- 个性签名 / 简介：${detailDescriptionHint}`,
       `- 地区：${contact.region?.trim() || '无'}`,
+      `- 头像 URL：${avatarHint}`,
       `- 来源：${contact.source?.trim() || '未知'}`,
       `- 标签：${tagHint}`,
       `- 是否群聊：${contact.isGroup ? '是' : '否'}`,
@@ -886,6 +912,7 @@ export class WechatSyncAdminService {
       `- 用户发送：${contact.ownerMessageCount}`,
       `- 对方发送：${contact.contactMessageCount}`,
       `- 最近消息时间：${contact.latestMessageAt?.trim() || '未知'}`,
+      `- 证据窗口：${evidenceWindowHint}`,
       '',
       '高频话题与摘要：',
       `- 高频关键词：${topicHint}`,
@@ -894,7 +921,7 @@ export class WechatSyncAdminService {
       '朋友圈 / 近况线索：',
       momentHint,
       '',
-      '聊天样本（尽量基于这些真实表达判断人物）：',
+      '聊天样本（已按时间跨度抽取代表样本）：',
       samples || '暂无聊天样本',
     ].join('\n');
   }
@@ -903,13 +930,24 @@ export class WechatSyncAdminService {
     template: string,
     contact: WechatSyncContactBundleValue,
   ) {
+    const messageSamples = selectRepresentativeMessageSamples(
+      contact.sampleMessages,
+      WECHAT_SYNC_PROMPT_MAX_SAMPLE_MESSAGES,
+    );
+    const momentSamples = selectRepresentativeMomentHighlights(
+      contact.momentHighlights,
+      WECHAT_SYNC_PROMPT_MAX_MOMENT_HIGHLIGHTS,
+    );
     const replacements: Record<string, string> = {
       contact_context: this.buildWechatSyncAnalysisPromptContext(contact),
       username: contact.username,
       display_name: contact.displayName,
       remark_name: contact.remarkName?.trim() || '无',
       nickname: contact.nickname?.trim() || '无',
+      alias: contact.alias?.trim() || '无',
+      detail_description: contact.detailDescription?.trim() || '无',
       region: contact.region?.trim() || '无',
+      avatar_url: contact.avatarUrl?.trim() || '无',
       source: contact.source?.trim() || '未知',
       tags: contact.tags.length ? contact.tags.join('、') : '无',
       message_count: String(contact.messageCount),
@@ -920,9 +958,10 @@ export class WechatSyncAdminService {
       topic_keywords: contact.topicKeywords.length
         ? contact.topicKeywords.join('、')
         : '无明确高频关键词',
+      evidence_window: buildConversationEvidenceDigest(contact),
       sample_messages:
-        contact.sampleMessages.length > 0
-          ? contact.sampleMessages
+        messageSamples.length > 0
+          ? messageSamples
               .map((item, index) => {
                 const sender = item.sender?.trim() || '未知发送者';
                 const direction = item.direction?.trim() || 'unknown';
@@ -932,8 +971,8 @@ export class WechatSyncAdminService {
               .join('\n')
           : '暂无聊天样本',
       moment_highlights:
-        contact.momentHighlights.length > 0
-          ? contact.momentHighlights
+        momentSamples.length > 0
+          ? momentSamples
               .map((item, index) => {
                 const location = item.location?.trim()
                   ? ` / 位置：${item.location.trim()}`
@@ -941,7 +980,10 @@ export class WechatSyncAdminService {
                 const postedAt = item.postedAt?.trim()
                   ? ` / 时间：${item.postedAt.trim()}`
                   : '';
-                return `${index + 1}. ${item.text.trim()}${location}${postedAt}`;
+                const mediaHint = item.mediaHint?.trim()
+                  ? ` / 媒体：${item.mediaHint.trim()}`
+                  : '';
+                return `${index + 1}. ${item.text.trim()}${location}${postedAt}${mediaHint}`;
               })
               .join('\n')
           : '暂无朋友圈或近况线索',
@@ -999,6 +1041,166 @@ export class WechatSyncAdminService {
   }
 }
 
+function buildPreviewResponseContact(contact: WechatSyncContactBundleValue) {
+  return {
+    username: contact.username,
+    displayName: contact.displayName,
+    nickname: contact.nickname ?? null,
+    remarkName: contact.remarkName ?? null,
+    alias: contact.alias ?? null,
+    detailDescription: contact.detailDescription ?? null,
+    region: contact.region ?? null,
+    avatarUrl: contact.avatarUrl ?? null,
+    source: contact.source ?? null,
+    tags: [...contact.tags],
+    isGroup: contact.isGroup,
+    messageCount: contact.messageCount,
+    ownerMessageCount: contact.ownerMessageCount,
+    contactMessageCount: contact.contactMessageCount,
+    latestMessageAt: contact.latestMessageAt ?? null,
+    chatSummary: contact.chatSummary ?? null,
+    topicKeywords: [...contact.topicKeywords],
+    sampleMessages: selectRepresentativeMessageSamples(
+      contact.sampleMessages,
+      WECHAT_SYNC_PREVIEW_RESPONSE_MAX_SAMPLE_MESSAGES,
+    ).map((item) => ({
+      timestamp: item.timestamp,
+      text: item.text,
+      sender: item.sender ?? null,
+      typeLabel: item.typeLabel ?? null,
+      direction: item.direction ?? 'unknown',
+    })),
+    momentHighlights: selectRepresentativeMomentHighlights(
+      contact.momentHighlights,
+      WECHAT_SYNC_PREVIEW_RESPONSE_MAX_MOMENT_HIGHLIGHTS,
+    ).map((item) => ({
+      postedAt: item.postedAt ?? null,
+      text: item.text,
+      location: item.location ?? null,
+      mediaHint: item.mediaHint ?? null,
+    })),
+    evidenceWindow: cloneEvidenceWindow(contact.evidenceWindow),
+  } satisfies WechatSyncContactBundleValue;
+}
+
+function selectRepresentativeMessageSamples(
+  samples: WechatSyncContactBundleValue['sampleMessages'],
+  maxCount: number,
+) {
+  return selectRepresentativeItems(samples, maxCount).map((item) => ({
+    timestamp: item.timestamp,
+    text: item.text,
+    sender: item.sender ?? null,
+    typeLabel: item.typeLabel ?? null,
+    direction: item.direction ?? 'unknown',
+  }));
+}
+
+function selectRepresentativeMomentHighlights(
+  highlights: WechatSyncContactBundleValue['momentHighlights'],
+  maxCount: number,
+) {
+  return selectRepresentativeItems(highlights, maxCount).map((item) => ({
+    postedAt: item.postedAt ?? null,
+    text: item.text,
+    location: item.location ?? null,
+    mediaHint: item.mediaHint ?? null,
+  }));
+}
+
+function selectRepresentativeItems<T>(items: T[], maxCount: number) {
+  if (maxCount <= 0 || items.length === 0) {
+    return [] as T[];
+  }
+  if (items.length <= maxCount) {
+    return items.map((item) => ({ ...item })) as T[];
+  }
+
+  const indices = selectRepresentativeIndices(items.length, maxCount);
+  return indices.map((index) => ({ ...items[index]! })) as T[];
+}
+
+function selectRepresentativeIndices(total: number, maxCount: number) {
+  if (total <= maxCount) {
+    return Array.from({ length: total }, (_, index) => index);
+  }
+
+  const lastIndex = total - 1;
+  const step = lastIndex / Math.max(1, maxCount - 1);
+  const indices = new Set<number>();
+
+  for (let index = 0; index < maxCount; index += 1) {
+    indices.add(Math.round(index * step));
+  }
+
+  indices.add(0);
+  indices.add(lastIndex);
+
+  return [...indices].sort((left, right) => left - right).slice(0, maxCount);
+}
+
+function buildConversationEvidenceDigest(contact: WechatSyncContactBundleValue) {
+  const evidenceWindow = contact.evidenceWindow ?? null;
+  const messageMode = evidenceWindow?.messageMode ?? 'recent';
+  const requestedMessageLimit = evidenceWindow?.requestedMessageLimit ?? null;
+  const fetchedMessageCount =
+    evidenceWindow?.fetchedMessageCount ?? contact.sampleMessages.length;
+  const includeMoments = evidenceWindow?.includeMoments !== false;
+  const fetchedMomentCount =
+    evidenceWindow?.fetchedMomentCount ?? contact.momentHighlights.length;
+  const requestedMomentLimit = evidenceWindow?.requestedMomentLimit ?? null;
+  const effectiveMessageLimit =
+    requestedMessageLimit ?? fetchedMessageCount ?? 0;
+
+  const messageScope =
+    messageMode === 'all'
+      ? '消息：全部历史'
+      : `消息：最近 ${effectiveMessageLimit} 条`;
+  const messageFetched = `实际抓取 ${fetchedMessageCount ?? 0} 条`;
+  const momentScope = includeMoments
+    ? `朋友圈：开启${
+        requestedMomentLimit ? `（请求 ${requestedMomentLimit} 条）` : ''
+      }，实际抓取 ${fetchedMomentCount ?? 0} 条`
+    : '朋友圈：未纳入';
+
+  return `${messageScope}，${messageFetched}；${momentScope}`;
+}
+
+function cloneEvidenceWindow(
+  value?: WechatSyncContactBundleValue['evidenceWindow'],
+) {
+  if (!value) {
+    return null;
+  }
+
+  return {
+    messageMode: value.messageMode ?? 'recent',
+    requestedMessageLimit: value.requestedMessageLimit ?? null,
+    fetchedMessageCount: value.fetchedMessageCount ?? null,
+    includeMoments: value.includeMoments !== false,
+    requestedMomentLimit: value.requestedMomentLimit ?? null,
+    fetchedMomentCount: value.fetchedMomentCount ?? null,
+  } satisfies NonNullable<WechatSyncContactBundleValue['evidenceWindow']>;
+}
+
+function normalizeEvidenceWindow(
+  value?: Partial<WechatSyncContactBundleValue['evidenceWindow']> | null,
+) {
+  if (!value) {
+    return null;
+  }
+
+  const messageMode = value.messageMode === 'all' ? 'all' : 'recent';
+  return {
+    messageMode,
+    requestedMessageLimit: normalizeNullableNumber(value.requestedMessageLimit),
+    fetchedMessageCount: normalizeNullableNumber(value.fetchedMessageCount),
+    includeMoments: value.includeMoments !== false,
+    requestedMomentLimit: normalizeNullableNumber(value.requestedMomentLimit),
+    fetchedMomentCount: normalizeNullableNumber(value.fetchedMomentCount),
+  } satisfies NonNullable<WechatSyncContactBundleValue['evidenceWindow']>;
+}
+
 function normalizeContactBundles(
   input: WechatSyncContactBundleValue[] | null | undefined,
 ) {
@@ -1020,6 +1222,50 @@ function normalizeContactBundles(
 function normalizeContactBundle(
   input?: Partial<WechatSyncContactBundleValue> | null,
 ): WechatSyncContactBundleValue {
+  return {
+    username: normalizeText(input?.username) || '',
+    displayName:
+      normalizeText(input?.displayName) ||
+      normalizeText(input?.remarkName) ||
+      normalizeText(input?.nickname) ||
+      '未命名联系人',
+    nickname: normalizeNullableText(input?.nickname),
+    remarkName: normalizeNullableText(input?.remarkName),
+    alias: normalizeNullableText(input?.alias),
+    detailDescription: normalizeNullableText(input?.detailDescription),
+    region: normalizeNullableText(input?.region),
+    avatarUrl: normalizeNullableText(input?.avatarUrl),
+    source: normalizeNullableText(input?.source),
+    tags: normalizeStringList(input?.tags),
+    isGroup: input?.isGroup === true,
+    messageCount: normalizeNumber(input?.messageCount, 0),
+    ownerMessageCount: normalizeNumber(input?.ownerMessageCount, 0),
+    contactMessageCount: normalizeNumber(input?.contactMessageCount, 0),
+    latestMessageAt: normalizeNullableText(input?.latestMessageAt),
+    chatSummary: normalizeNullableText(input?.chatSummary),
+    topicKeywords: normalizeStringList(input?.topicKeywords),
+    sampleMessages: (input?.sampleMessages ?? [])
+      .map((item) => ({
+        timestamp: normalizeText(item?.timestamp) || '',
+        text: normalizeText(item?.text) || '',
+        sender: normalizeNullableText(item?.sender),
+        typeLabel: normalizeNullableText(item?.typeLabel),
+        direction: normalizeMessageDirection(item?.direction),
+      }))
+      .filter((item) => item.text.length > 0)
+      .slice(0, WECHAT_SYNC_ACCEPT_MAX_SAMPLE_MESSAGES),
+    momentHighlights: (input?.momentHighlights ?? [])
+      .map((item) => ({
+        postedAt: normalizeNullableText(item?.postedAt),
+        text: normalizeText(item?.text) || '',
+        location: normalizeNullableText(item?.location),
+        mediaHint: normalizeNullableText(item?.mediaHint),
+      }))
+      .filter((item) => item.text.length > 0)
+      .slice(0, WECHAT_SYNC_ACCEPT_MAX_MOMENT_HIGHLIGHTS),
+    evidenceWindow: normalizeEvidenceWindow(input?.evidenceWindow),
+  };
+
   return {
     username: normalizeText(input?.username) || '',
     displayName:
@@ -1199,6 +1445,10 @@ function formatImportedPlatformLabel(
 
 function hasWechatSyncAnalysisEvidence(contact: WechatSyncContactBundleValue) {
   return Boolean(
+    contact.alias?.trim() ||
+    contact.detailDescription?.trim() ||
+    contact.region?.trim() ||
+    contact.avatarUrl?.trim() ||
     contact.chatSummary?.trim() ||
     contact.sampleMessages.some((item) => item.text.trim().length > 0) ||
     contact.topicKeywords.length > 0 ||
@@ -1218,6 +1468,11 @@ function inferExpertDomains(contact: WechatSyncContactBundleValue) {
 }
 
 function buildFallbackBio(contact: WechatSyncContactBundleValue, name: string) {
+  const detailDescription = contact.detailDescription?.trim();
+  if (detailDescription) {
+    return detailDescription.slice(0, 160);
+  }
+
   const summary = contact.chatSummary?.trim();
   if (summary) {
     return summary.slice(0, 160);
@@ -1236,6 +1491,11 @@ function buildFallbackMemorySummary(
   contact: WechatSyncContactBundleValue,
   name: string,
 ) {
+  const detailDescription = contact.detailDescription?.trim();
+  if (contact.chatSummary?.trim() && detailDescription) {
+    return `${contact.chatSummary.trim()} ${detailDescription}`.slice(0, 220);
+  }
+
   if (contact.chatSummary?.trim()) {
     return contact.chatSummary.trim();
   }
@@ -1250,8 +1510,7 @@ function buildFallbackCoreMemory(
   contact: WechatSyncContactBundleValue,
   name: string,
 ) {
-  const snippets = contact.sampleMessages
-    .slice(0, 3)
+  const snippets = selectRepresentativeMessageSamples(contact.sampleMessages, 3)
     .map((item) => item.text.trim())
     .filter(Boolean);
 
@@ -1284,8 +1543,7 @@ function buildFallbackChatPrompt(
   contact: WechatSyncContactBundleValue,
   name: string,
 ) {
-  const examples = contact.sampleMessages
-    .slice(0, 4)
+  const examples = selectRepresentativeMessageSamples(contact.sampleMessages, 4)
     .map((item) => item.text.trim())
     .filter(Boolean)
     .join('；');
@@ -1596,6 +1854,41 @@ function dedupeSnapshotHistory(
 }
 
 function cloneWechatContactSnapshot(contact: WechatSyncContactBundleValue) {
+  const compact = buildPreviewResponseContact(contact);
+  return {
+    username: compact.username,
+    displayName: compact.displayName,
+    nickname: compact.nickname ?? null,
+    remarkName: compact.remarkName ?? null,
+    alias: compact.alias ?? null,
+    detailDescription: compact.detailDescription ?? null,
+    region: compact.region ?? null,
+    avatarUrl: compact.avatarUrl ?? null,
+    source: compact.source ?? null,
+    tags: [...compact.tags],
+    isGroup: compact.isGroup,
+    messageCount: compact.messageCount,
+    ownerMessageCount: compact.ownerMessageCount,
+    contactMessageCount: compact.contactMessageCount,
+    latestMessageAt: compact.latestMessageAt ?? null,
+    chatSummary: compact.chatSummary ?? null,
+    topicKeywords: [...compact.topicKeywords],
+    sampleMessages: compact.sampleMessages.map((item) => ({
+      timestamp: item.timestamp,
+      text: item.text,
+      sender: item.sender ?? null,
+      typeLabel: item.typeLabel ?? null,
+      direction: item.direction ?? 'unknown',
+    })),
+    momentHighlights: compact.momentHighlights.map((item) => ({
+      postedAt: item.postedAt ?? null,
+      text: item.text,
+      location: item.location ?? null,
+      mediaHint: item.mediaHint ?? null,
+    })),
+    evidenceWindow: cloneEvidenceWindow(compact.evidenceWindow),
+  };
+
   return {
     username: contact.username,
     displayName: contact.displayName,
@@ -1718,4 +2011,18 @@ function normalizeNumber(value: unknown, fallback: number) {
         ? Number(value)
         : NaN;
   return Number.isFinite(normalized) ? normalized : fallback;
+}
+
+function normalizeNullableNumber(value: unknown) {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const normalized =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : NaN;
+  return Number.isFinite(normalized) ? normalized : null;
 }

@@ -33,6 +33,7 @@ import {
   AdminEmptyState,
   AdminMiniPanel,
   AdminPageHero,
+  AdminSelectField,
   AdminSectionHeader,
   AdminSelectableCard,
   AdminTextArea,
@@ -50,6 +51,9 @@ import {
   patchWechatConnectorConfig,
   saveWechatConnectorSettings,
   scanWechatConnector,
+  type WechatConnectorBundleMessageMode,
+  type WechatConnectorContactBundleOptions,
+  type WechatConnectorContactSummary,
   startWechatConnectorUpstreamService,
   type WechatConnectorProviderKey,
   type WechatConnectorSettings,
@@ -224,6 +228,18 @@ type WechatSyncAnalysisPromptDraft = {
   userPromptTemplate: string;
 };
 
+type WechatSyncContactEvidenceOverride = {
+  messageMode: WechatConnectorBundleMessageMode;
+  messageLimit: number;
+  includeMoments: boolean;
+  momentLimit: number;
+};
+
+const WEFLOW_MESSAGE_LIMIT_MIN = 1;
+const WEFLOW_MESSAGE_LIMIT_MAX = 5000;
+const WEFLOW_MOMENT_LIMIT_MIN = 0;
+const WEFLOW_MOMENT_LIMIT_MAX = 200;
+
 function createEmptyWechatSyncImportResult(): WechatSyncImportResponse {
   return {
     importedCount: 0,
@@ -380,6 +396,9 @@ export function WechatSyncPage() {
     WechatSyncAnnotationTemplate[]
   >(() => readWechatSyncAnnotationTemplates());
   const [selectedUsernames, setSelectedUsernames] = useState<string[]>([]);
+  const [contactEvidenceOverrides, setContactEvidenceOverrides] = useState<
+    Record<string, WechatSyncContactEvidenceOverride>
+  >({});
   const [selectedPreviewUsernames, setSelectedPreviewUsernames] = useState<
     string[]
   >([]);
@@ -461,6 +480,10 @@ export function WechatSyncPage() {
   useEffect(() => {
     persistWechatSyncAnnotationTemplates(annotationTemplates);
   }, [annotationTemplates]);
+
+  useEffect(() => {
+    saveWechatConnectorSettings(connectorSettings);
+  }, [connectorSettings]);
 
   const connectorHealthQuery = useQuery({
     queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
@@ -565,9 +588,32 @@ export function WechatSyncPage() {
   const wechatDecryptUpstreamService =
     upstreamServicesByKey.get("wechat-decrypt");
   const weflowUpstreamService = upstreamServicesByKey.get("weflow");
+  const weflowGlobalMessageMode =
+    connectorSettings.weflowMessageMode ?? "recent";
+  const weflowGlobalMessageLimit = normalizeWeFlowMessageLimit(
+    connectorSettings.weflowMessageLimit,
+  );
+  const weflowGlobalIncludeMoments =
+    connectorSettings.weflowIncludeMoments !== false;
+  const weflowGlobalMomentLimit = normalizeWeFlowMomentLimit(
+    connectorSettings.weflowMomentLimit,
+  );
+  const weflowEvidenceConfigVisible = connectorProviderKey === "weflow-http";
+  const contactsByUsername = useMemo(
+    () =>
+      new Map((contactsQuery.data ?? []).map((contact) => [contact.username, contact])),
+    [contactsQuery.data],
+  );
   const selectedSet = useMemo(
     () => new Set(selectedUsernames),
     [selectedUsernames],
+  );
+  const selectedConnectorContacts = useMemo(
+    () =>
+      selectedUsernames
+        .map((username) => contactsByUsername.get(username))
+        .filter(Boolean) as WechatConnectorContactSummary[],
+    [contactsByUsername, selectedUsernames],
   );
   const selectedPreviewSet = useMemo(
     () => new Set(selectedPreviewUsernames),
@@ -805,6 +851,90 @@ export function WechatSyncPage() {
     };
   }
 
+  function buildGlobalEvidenceOptions(): WechatConnectorContactBundleOptions {
+    return {
+      messageMode: weflowGlobalMessageMode,
+      messageLimit:
+        weflowGlobalMessageMode === "all" ? null : weflowGlobalMessageLimit,
+      includeMoments: weflowGlobalIncludeMoments,
+      momentLimit: weflowGlobalIncludeMoments ? weflowGlobalMomentLimit : 0,
+    };
+  }
+
+  function buildContactEvidenceOverrideOptions(
+    override: WechatSyncContactEvidenceOverride,
+  ): WechatConnectorContactBundleOptions {
+    return {
+      messageMode: override.messageMode,
+      messageLimit: override.messageMode === "all" ? null : override.messageLimit,
+      includeMoments: override.includeMoments,
+      momentLimit: override.includeMoments ? override.momentLimit : 0,
+    };
+  }
+
+  function buildConnectorContactBundleRequest(
+    usernames: string[],
+  ) {
+    const request = {
+      usernames,
+      defaultOptions: buildGlobalEvidenceOptions(),
+      contactOverrides: Object.fromEntries(
+        usernames
+          .map((username) => [username, contactEvidenceOverrides[username]] as const)
+          .filter(([, override]) => Boolean(override))
+          .map(([username, override]) => [
+            username,
+            buildContactEvidenceOverrideOptions(override!),
+          ]),
+      ),
+    };
+
+    if (!request.usernames.length) {
+      return request;
+    }
+
+    return request;
+  }
+
+  function patchContactEvidenceOverride(
+    username: string,
+    updater: (
+      current: WechatSyncContactEvidenceOverride,
+    ) => WechatSyncContactEvidenceOverride,
+  ) {
+    setContactEvidenceOverrides((current) => {
+      const nextValue = updater(
+        current[username] ?? {
+          messageMode: weflowGlobalMessageMode,
+          messageLimit: weflowGlobalMessageLimit,
+          includeMoments: weflowGlobalIncludeMoments,
+          momentLimit: weflowGlobalMomentLimit,
+        },
+      );
+      return {
+        ...current,
+        [username]: {
+          ...nextValue,
+          messageLimit: normalizeWeFlowMessageLimit(nextValue.messageLimit),
+          momentLimit: normalizeWeFlowMomentLimit(nextValue.momentLimit),
+        },
+      };
+    });
+  }
+
+  function resetSelectedContactEvidenceOverrides() {
+    if (!selectedUsernames.length) {
+      return;
+    }
+    setContactEvidenceOverrides((current) => {
+      const next = { ...current };
+      for (const username of selectedUsernames) {
+        delete next[username];
+      }
+      return next;
+    });
+  }
+
   function startLocalUpstreamService(key: WechatConnectorUpstreamServiceKey) {
     setConnectorProbeRequested(true);
     upstreamServiceStartMutation.mutate(key);
@@ -922,7 +1052,7 @@ export function WechatSyncPage() {
           ? contacts
           : await loadSelectedConnectorContacts(
               connectorSettings.baseUrl,
-              selectedUsernames,
+              buildConnectorContactBundleRequest(selectedUsernames),
             );
       saveWechatConnectorSettings(connectorSettings);
       return adminApi.previewWechatSync({ contacts: selectedContacts });
@@ -2347,6 +2477,66 @@ export function WechatSyncPage() {
                   />
                 </div>
               </AdminMiniPanel>
+              {weflowEvidenceConfigVisible ? (
+                <AdminMiniPanel title="WeFlow 分析窗口">
+                  <div className="space-y-3">
+                    <AdminSelectField
+                      label="默认消息范围"
+                      value={weflowGlobalMessageMode}
+                      onChange={(value) =>
+                        setConnectorSettings((current) => ({
+                          ...current,
+                          weflowMessageMode:
+                            value === "all" ? "all" : "recent",
+                        }))
+                      }
+                      options={[
+                        { value: "recent", label: "最近 N 条" },
+                        { value: "all", label: "全部历史" },
+                      ]}
+                    />
+                    {weflowGlobalMessageMode === "recent" ? (
+                      <AdminTextField
+                        label="默认消息条数"
+                        value={String(weflowGlobalMessageLimit)}
+                        onChange={(value) =>
+                          setConnectorSettings((current) => ({
+                            ...current,
+                            weflowMessageLimit: normalizeWeFlowMessageLimit(value),
+                          }))
+                        }
+                        placeholder="5000"
+                      />
+                    ) : null}
+                    <AdminToggle
+                      label="默认纳入朋友圈 / 近况"
+                      checked={weflowGlobalIncludeMoments}
+                      onChange={(checked) =>
+                        setConnectorSettings((current) => ({
+                          ...current,
+                          weflowIncludeMoments: checked,
+                        }))
+                      }
+                    />
+                    {weflowGlobalIncludeMoments ? (
+                      <AdminTextField
+                        label="默认朋友圈条数"
+                        value={String(weflowGlobalMomentLimit)}
+                        onChange={(value) =>
+                          setConnectorSettings((current) => ({
+                            ...current,
+                            weflowMomentLimit: normalizeWeFlowMomentLimit(value),
+                          }))
+                        }
+                        placeholder="20"
+                      />
+                    ) : null}
+                    <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                      默认最近消息可配到 5000 条，也可以切到“全部历史”。这套策略会先作用于全部联系人，再允许你在步骤 2 对单个联系人覆盖。
+                    </div>
+                  </div>
+                </AdminMiniPanel>
+              ) : null}
             </div>
           ) : null}
         </Card>
@@ -2643,6 +2833,113 @@ export function WechatSyncPage() {
               title="已加入本轮预览范围"
               description={`当前已选 ${selectedCount} 个联系人。点击“生成预览”后，页面会进入角色草稿校验区。`}
             />
+          ) : null}
+          {weflowEvidenceConfigVisible && selectedConnectorContacts.length ? (
+            <Card className="mt-4 bg-[color:var(--surface-card)]">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <div className="text-base font-semibold text-[color:var(--text-primary)]">
+                    单个联系人分析覆盖
+                  </div>
+                  <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+                    默认会继承步骤 1 的全局窗口。你可以只对当前选中的联系人单独切到“全部历史”，或者给某个人单独放大朋友圈样本。
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={resetSelectedContactEvidenceOverrides}
+                    disabled={!selectedUsernames.length}
+                  >
+                    选中联系人恢复全局
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                {selectedConnectorContacts.map((contact) => {
+                  const override = contactEvidenceOverrides[contact.username];
+                  const effective = override ?? {
+                    messageMode: weflowGlobalMessageMode,
+                    messageLimit: weflowGlobalMessageLimit,
+                    includeMoments: weflowGlobalIncludeMoments,
+                    momentLimit: weflowGlobalMomentLimit,
+                  };
+
+                  return (
+                    <AdminMiniPanel
+                      key={contact.username}
+                      title={contact.displayName}
+                    >
+                      <div className="space-y-3">
+                        <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                          {contact.remarkName || contact.username}
+                        </div>
+                        <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                          当前会话量 {contact.messageCount} 条
+                          {contact.region ? ` · ${contact.region}` : ""}
+                        </div>
+                        <AdminSelectField
+                          label="消息范围"
+                          value={effective.messageMode}
+                          onChange={(value) =>
+                            patchContactEvidenceOverride(contact.username, (current) => ({
+                              ...current,
+                              messageMode: value === "all" ? "all" : "recent",
+                            }))
+                          }
+                          options={[
+                            { value: "recent", label: "最近 N 条" },
+                            { value: "all", label: "全部历史" },
+                          ]}
+                        />
+                        {effective.messageMode === "recent" ? (
+                          <AdminTextField
+                            label="消息条数"
+                            value={String(effective.messageLimit)}
+                            onChange={(value) =>
+                              patchContactEvidenceOverride(contact.username, (current) => ({
+                                ...current,
+                                messageLimit: normalizeWeFlowMessageLimit(value),
+                              }))
+                            }
+                            placeholder="5000"
+                          />
+                        ) : null}
+                        <AdminToggle
+                          label="纳入朋友圈 / 近况"
+                          checked={effective.includeMoments}
+                          onChange={(checked) =>
+                            patchContactEvidenceOverride(contact.username, (current) => ({
+                              ...current,
+                              includeMoments: checked,
+                            }))
+                          }
+                        />
+                        {effective.includeMoments ? (
+                          <AdminTextField
+                            label="朋友圈条数"
+                            value={String(effective.momentLimit)}
+                            onChange={(value) =>
+                              patchContactEvidenceOverride(contact.username, (current) => ({
+                                ...current,
+                                momentLimit: normalizeWeFlowMomentLimit(value),
+                              }))
+                            }
+                            placeholder="20"
+                          />
+                        ) : null}
+                        <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                          {override
+                            ? "当前联系人已使用单独覆盖。"
+                            : "当前联系人继承全局默认策略。"}
+                        </div>
+                      </div>
+                    </AdminMiniPanel>
+                  );
+                })}
+              </div>
+            </Card>
           ) : null}
 
           <div className="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
@@ -6572,12 +6869,12 @@ function formatUpstreamServiceStatus(
 
 async function loadSelectedConnectorContacts(
   baseUrl: string,
-  usernames: string[],
+  request: Parameters<typeof buildWechatConnectorContactBundles>[1],
 ) {
-  if (!usernames.length) {
+  if (!request.usernames?.length) {
     throw new Error("请先至少选择一个联系人。");
   }
-  return buildWechatConnectorContactBundles(baseUrl, usernames);
+  return buildWechatConnectorContactBundles(baseUrl, request);
 }
 
 function parseWechatSyncContactBundles(
@@ -6620,7 +6917,14 @@ function parseWechatSyncContactBundles(
       displayName,
       nickname: readNullableString(entry.nickname),
       remarkName: readNullableString(entry.remarkName),
+      alias: readNullableString(entry.alias),
+      detailDescription:
+        readNullableString(entry.detailDescription) ??
+        readNullableString(entry.signature),
       region: readNullableString(entry.region),
+      avatarUrl:
+        readNullableString(entry.avatarUrl) ??
+        readNullableString(entry.avatar),
       source: readNullableString(entry.source),
       tags: readStringArray(entry.tags),
       isGroup: entry.isGroup === true,
@@ -6632,6 +6936,7 @@ function parseWechatSyncContactBundles(
       topicKeywords: readStringArray(entry.topicKeywords),
       sampleMessages: readMessageSamples(entry.sampleMessages),
       momentHighlights: readMomentHighlights(entry.momentHighlights),
+      evidenceWindow: readEvidenceWindow(entry.evidenceWindow),
     } satisfies WechatSyncContactBundle;
   });
 
@@ -6695,6 +7000,24 @@ function readMomentHighlights(
     .filter((entry): entry is NonNullable<typeof entry> => entry != null);
 }
 
+function readEvidenceWindow(
+  value: unknown,
+): WechatSyncContactBundle["evidenceWindow"] {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return {
+    messageMode: value.messageMode === "all" ? "all" : "recent",
+    requestedMessageLimit: readNullableNumber(value.requestedMessageLimit),
+    fetchedMessageCount: readNullableNumber(value.fetchedMessageCount),
+    includeMoments:
+      typeof value.includeMoments === "boolean" ? value.includeMoments : true,
+    requestedMomentLimit: readNullableNumber(value.requestedMomentLimit),
+    fetchedMomentCount: readNullableNumber(value.fetchedMomentCount),
+  };
+}
+
 function normalizeMessageDirection(
   value: unknown,
 ): WechatSyncContactBundle["sampleMessages"][number]["direction"] {
@@ -6739,6 +7062,30 @@ function readNumber(value: unknown) {
     return Number.isFinite(parsed) ? parsed : 0;
   }
   return 0;
+}
+
+function readNullableNumber(value: unknown) {
+  if (value == null || value === "") {
+    return null;
+  }
+  const parsed = readNumber(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeWeFlowMessageLimit(value: unknown) {
+  const parsed = readNumber(value);
+  return Math.min(
+    WEFLOW_MESSAGE_LIMIT_MAX,
+    Math.max(WEFLOW_MESSAGE_LIMIT_MIN, parsed || 5000),
+  );
+}
+
+function normalizeWeFlowMomentLimit(value: unknown) {
+  const parsed = readNumber(value);
+  return Math.min(
+    WEFLOW_MOMENT_LIMIT_MAX,
+    Math.max(WEFLOW_MOMENT_LIMIT_MIN, parsed || 20),
+  );
 }
 
 function patchDraftIdentity(
@@ -6913,7 +7260,10 @@ function buildRollbackGuideContactBundle(
     displayName,
     nickname: item.character.name,
     remarkName: item.remarkName || item.character.name,
+    alias: null,
+    detailDescription: null,
     region: item.region || null,
+    avatarUrl: null,
     source: "wechat_rollback_template",
     tags: item.tags,
     isGroup: false,
@@ -6925,6 +7275,7 @@ function buildRollbackGuideContactBundle(
     topicKeywords: item.character.expertDomains.slice(0, 8),
     sampleMessages: [],
     momentHighlights: [],
+    evidenceWindow: null,
   };
 }
 
@@ -8363,7 +8714,10 @@ function buildContactBundleFromImportSnapshot(
     displayName: snapshot.contact.displayName,
     nickname: snapshot.contact.nickname ?? null,
     remarkName: snapshot.contact.remarkName ?? null,
+    alias: snapshot.contact.alias ?? null,
+    detailDescription: snapshot.contact.detailDescription ?? null,
     region: snapshot.contact.region ?? null,
+    avatarUrl: snapshot.contact.avatarUrl ?? null,
     source: snapshot.contact.source ?? null,
     tags: [...snapshot.contact.tags],
     isGroup: snapshot.contact.isGroup,
@@ -8386,6 +8740,9 @@ function buildContactBundleFromImportSnapshot(
       location: item.location ?? null,
       mediaHint: item.mediaHint ?? null,
     })),
+    evidenceWindow: snapshot.contact.evidenceWindow
+      ? { ...snapshot.contact.evidenceWindow }
+      : null,
   };
 }
 

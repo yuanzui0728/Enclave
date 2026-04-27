@@ -193,14 +193,18 @@ export class ConnectorRuntime {
       this.config.weflowBaseUrl ?? "",
       this.config.weflowAccessToken ?? "",
       baseBundles,
+      request,
     );
 
     for (const bundle of enrichedBundles) {
-      this.contacts.set(bundle.username, bundle);
+      this.contacts.set(bundle.username, compactContactBundleForCache(bundle));
     }
 
+    const enrichedByUsername = new Map(
+      enrichedBundles.map((bundle) => [bundle.username, bundle] as const),
+    );
     return usernames
-      .map((username) => this.contacts.get(username))
+      .map((username) => enrichedByUsername.get(username))
       .filter((contact): contact is WechatSyncContactBundle => Boolean(contact));
   }
 
@@ -273,6 +277,14 @@ export class ConnectorRuntime {
 
     return new Date(Math.max(...timestamps)).toISOString();
   }
+}
+
+function compactContactBundleForCache(bundle: WechatSyncContactBundle) {
+  return {
+    ...bundle,
+    sampleMessages: bundle.sampleMessages.slice(-24),
+    momentHighlights: bundle.momentHighlights.slice(-8),
+  } satisfies WechatSyncContactBundle;
 }
 
 function normalizeText(value: string | null | undefined) {

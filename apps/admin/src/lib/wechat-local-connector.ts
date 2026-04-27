@@ -5,6 +5,25 @@ const WECHAT_CONNECTOR_STORAGE_KEY = "yinjie_wechat_connector_settings";
 
 export interface WechatConnectorSettings {
   baseUrl: string;
+  weflowMessageMode?: WechatConnectorBundleMessageMode;
+  weflowMessageLimit?: number;
+  weflowIncludeMoments?: boolean;
+  weflowMomentLimit?: number;
+}
+
+export type WechatConnectorBundleMessageMode = "recent" | "all";
+
+export interface WechatConnectorContactBundleOptions {
+  messageMode?: WechatConnectorBundleMessageMode;
+  messageLimit?: number | null;
+  includeMoments?: boolean;
+  momentLimit?: number | null;
+}
+
+export interface WechatConnectorContactBundleRequest {
+  usernames?: string[];
+  defaultOptions?: WechatConnectorContactBundleOptions;
+  contactOverrides?: Record<string, WechatConnectorContactBundleOptions>;
 }
 
 export type WechatConnectorProviderKey =
@@ -59,6 +78,8 @@ export interface WechatConnectorContactSummary {
   displayName: string;
   nickname?: string | null;
   remarkName?: string | null;
+  region?: string | null;
+  avatarUrl?: string | null;
   tags: string[];
   isGroup: boolean;
   messageCount: number;
@@ -134,10 +155,18 @@ export function loadWechatConnectorSettings(): WechatConnectorSettings {
     const parsed = JSON.parse(raw) as Partial<WechatConnectorSettings>;
     return {
       baseUrl: normalizeBaseUrl(parsed.baseUrl) || DEFAULT_WECHAT_CONNECTOR_BASE_URL,
+      weflowMessageMode: normalizeMessageMode(parsed.weflowMessageMode) ?? "recent",
+      weflowMessageLimit: normalizePositiveInteger(parsed.weflowMessageLimit, 5000),
+      weflowIncludeMoments: parsed.weflowIncludeMoments !== false,
+      weflowMomentLimit: normalizePositiveInteger(parsed.weflowMomentLimit, 20),
     };
   } catch {
     return {
       baseUrl: DEFAULT_WECHAT_CONNECTOR_BASE_URL,
+      weflowMessageMode: "recent",
+      weflowMessageLimit: 5000,
+      weflowIncludeMoments: true,
+      weflowMomentLimit: 20,
     };
   }
 }
@@ -147,6 +176,11 @@ export function saveWechatConnectorSettings(settings: WechatConnectorSettings) {
     WECHAT_CONNECTOR_STORAGE_KEY,
     JSON.stringify({
       baseUrl: normalizeBaseUrl(settings.baseUrl) || DEFAULT_WECHAT_CONNECTOR_BASE_URL,
+      weflowMessageMode:
+        normalizeMessageMode(settings.weflowMessageMode) ?? "recent",
+      weflowMessageLimit: normalizePositiveInteger(settings.weflowMessageLimit, 5000),
+      weflowIncludeMoments: settings.weflowIncludeMoments !== false,
+      weflowMomentLimit: normalizePositiveInteger(settings.weflowMomentLimit, 20),
     }),
   );
 }
@@ -280,11 +314,11 @@ export function listWechatConnectorContacts(
 
 export function buildWechatConnectorContactBundles(
   baseUrl: string,
-  usernames: string[],
+  request: WechatConnectorContactBundleRequest,
 ) {
   return connectorFetch<WechatSyncContactBundle[]>(baseUrl, "/api/contact-bundles", {
     method: "POST",
-    body: JSON.stringify({ usernames }),
+    body: JSON.stringify(request),
   });
 }
 
@@ -319,4 +353,23 @@ export function openWechatConnectorUpstreamService(
       method: "POST",
     },
   );
+}
+
+function normalizeMessageMode(
+  value?: string | null,
+): WechatConnectorBundleMessageMode | null {
+  return value === "all" ? "all" : value === "recent" ? "recent" : null;
+}
+
+function normalizePositiveInteger(value: unknown, fallback: number) {
+  const normalized =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(normalized)) {
+    return fallback;
+  }
+  return Math.max(1, Math.trunc(normalized));
 }

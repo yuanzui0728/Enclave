@@ -1,7 +1,12 @@
 import type {
+  ConnectorContactBundleOptions,
+  ConnectorContactBundleRequest,
+  ConnectorContactBundleMessageMode,
   WechatSyncContactBundle,
+  WechatSyncEvidenceWindow,
   WechatSyncMessageDirection,
   WechatSyncMessageSample,
+  WechatSyncMomentHighlight,
 } from "./contracts.js";
 
 interface WeFlowContactItem {
@@ -10,6 +15,10 @@ interface WeFlowContactItem {
   remark?: string;
   nickname?: string;
   alias?: string;
+  labels?: unknown;
+  detailDescription?: string;
+  region?: string;
+  avatarUrl?: string;
   type?: string;
 }
 
@@ -44,6 +53,18 @@ interface WeFlowMessageItem {
   messageType?: string;
 }
 
+interface WeFlowMomentItem {
+  username?: string;
+  nickname?: string;
+  createTime?: number | string;
+  timestamp?: number | string;
+  contentDesc?: string;
+  content?: string;
+  desc?: string;
+  media?: unknown;
+  location?: unknown;
+}
+
 interface WeFlowScanResult {
   contacts: WechatSyncContactBundle[];
   sourceSummary: string;
@@ -55,6 +76,11 @@ interface NormalizedWeFlowContact {
   displayName: string;
   nickname: string | null;
   remarkName: string | null;
+  alias: string | null;
+  detailDescription: string | null;
+  region: string | null;
+  avatarUrl: string | null;
+  tags: string[];
   isGroup: boolean;
 }
 
@@ -66,9 +92,27 @@ interface NormalizedWeFlowSession {
   latestMessageAt: string | null;
 }
 
-const FETCH_TIMEOUT_MS = 5_000;
+interface MessageCorpusResult {
+  messages: WechatSyncMessageSample[];
+  hasMore: boolean;
+}
+
+interface NormalizedBundleOptions {
+  messageMode: ConnectorContactBundleMessageMode;
+  messageLimit: number | null;
+  includeMoments: boolean;
+  momentLimit: number;
+}
+
+const FETCH_TIMEOUT_MS = 12_000;
 const ERROR_BODY_PREVIEW_LENGTH = 240;
-const ENRICH_BATCH_SIZE = 4;
+const ENRICH_BATCH_SIZE = 2;
+const DEFAULT_MESSAGE_LIMIT = 5_000;
+const MAX_RECENT_MESSAGE_LIMIT = 5_000;
+const MESSAGE_PAGE_SIZE = 1_000;
+const DEFAULT_MOMENT_LIMIT = 20;
+const MAX_MOMENT_LIMIT = 200;
+const KEYWORD_LIMIT = 12;
 
 export class WeFlowHttpProvider {
   async scan(baseUrl: string, accessToken: string): Promise<WeFlowScanResult> {
@@ -103,7 +147,7 @@ export class WeFlowHttpProvider {
       contacts,
       sourceSummary: `weflow-http:${normalizedBaseUrl}`,
       message: contacts.length
-        ? `已从 WeFlow 读取 ${contacts.length} 个联系人/会话摘要。`
+        ? `已从 WeFlow 读取 ${contacts.length} 个联系人 / 会话摘要。`
         : "已连接 WeFlow，但当前没有返回可用联系人或会话。",
     };
   }
@@ -112,6 +156,7 @@ export class WeFlowHttpProvider {
     baseUrl: string,
     accessToken: string,
     contacts: WechatSyncContactBundle[],
+    request?: ConnectorContactBundleRequest,
   ): Promise<WechatSyncContactBundle[]> {
     const normalizedBaseUrl = normalizeBaseUrl(baseUrl, "weflowBaseUrl");
     const normalizedAccessToken = normalizeAccessToken(accessToken);
@@ -121,7 +166,12 @@ export class WeFlowHttpProvider {
       const batch = contacts.slice(index, index + ENRICH_BATCH_SIZE);
       const batchResults = await Promise.all(
         batch.map((bundle) =>
-          enrichBundle(normalizedBaseUrl, normalizedAccessToken, bundle),
+          enrichBundle(
+            normalizedBaseUrl,
+            normalizedAccessToken,
+            bundle,
+            resolveBundleOptions(request, bundle.username),
+          ),
         ),
       );
       enriched.push(...batchResults);
@@ -135,24 +185,16 @@ async function enrichBundle(
   baseUrl: string,
   accessToken: string,
   bundle: WechatSyncContactBundle,
+  options: NormalizedBundleOptions,
 ) {
-  const payload = await fetchJson<unknown>(
-    baseUrl,
-    accessToken,
-    `/api/v1/messages?talker=${encodeURIComponent(bundle.username)}&limit=40`,
-  );
-  const sampleMessages = extractMessages(payload, bundle.isGroup);
-  if (!sampleMessages.length) {
-    return {
-      ...bundle,
-      chatSummary:
-        bundle.chatSummary ??
-        (bundle.messageCount > 0
-          ? `WeFlow 已同步 ${bundle.messageCount} 条会话摘要，但该会话暂时没有可读消息样本。`
-          : "WeFlow 已同步联系人资料，当前会话暂无消息。"),
-    };
-  }
+  const [messageCorpus, momentHighlights] = await Promise.all([
+    fetchMessageCorpus(baseUrl, accessToken, bundle, options),
+    options.includeMoments && !bundle.isGroup
+      ? fetchMomentHighlights(baseUrl, accessToken, bundle.username, options.momentLimit)
+      : Promise.resolve([] as WechatSyncMomentHighlight[]),
+  ]);
 
+  const sampleMessages = messageCorpus.messages;
   const ownerMessageCount = sampleMessages.filter(
     (sample) => sample.direction === "owner",
   ).length;
@@ -162,19 +204,126 @@ async function enrichBundle(
   ).length;
   const latestMessageAt =
     inferLatestMessageAt(sampleMessages) ?? bundle.latestMessageAt ?? null;
+  const topicKeywords = inferKeywords([
+    ...sampleMessages.map((sample) => sample.text),
+    ...momentHighlights.map((item) => item.text),
+    ...bundle.tags,
+    bundle.detailDescription ?? "",
+  ]);
+  const evidenceWindow: WechatSyncEvidenceWindow = {
+    messageMode: options.messageMode,
+    requestedMessageLimit: options.messageLimit,
+    fetchedMessageCount: sampleMessages.length,
+    includeMoments: options.includeMoments,
+    requestedMomentLimit: options.includeMoments ? options.momentLimit : 0,
+    fetchedMomentCount: momentHighlights.length,
+  };
+
+  if (!sampleMessages.length && !momentHighlights.length) {
+    return {
+      ...bundle,
+      chatSummary:
+        bundle.chatSummary ??
+        (bundle.messageCount > 0
+          ? `WeFlow 已同步 ${bundle.messageCount} 条会话摘要，但本轮没有读到可分析的聊天样本。`
+          : "WeFlow 已同步联系人资料，当前会话暂无消息。"),
+      evidenceWindow,
+    };
+  }
+
+  const totalMessageCount = Math.max(bundle.messageCount, sampleMessages.length);
 
   return {
     ...bundle,
+    messageCount: totalMessageCount,
     ownerMessageCount: Math.max(bundle.ownerMessageCount, ownerMessageCount),
-    contactMessageCount: Math.max(
-      bundle.contactMessageCount,
-      contactMessageCount,
-    ),
+    contactMessageCount: Math.max(bundle.contactMessageCount, contactMessageCount),
     latestMessageAt,
-    chatSummary: buildChatSummary(bundle.messageCount, sampleMessages),
-    topicKeywords: inferKeywords(sampleMessages.map((sample) => sample.text)),
+    chatSummary: buildChatSummary(
+      totalMessageCount,
+      sampleMessages,
+      momentHighlights,
+      evidenceWindow,
+    ),
+    topicKeywords,
     sampleMessages,
+    momentHighlights,
+    evidenceWindow,
   };
+}
+
+async function fetchMessageCorpus(
+  baseUrl: string,
+  accessToken: string,
+  bundle: WechatSyncContactBundle,
+  options: NormalizedBundleOptions,
+): Promise<MessageCorpusResult> {
+  const limit =
+    options.messageMode === "all"
+      ? Number.POSITIVE_INFINITY
+      : options.messageLimit ?? DEFAULT_MESSAGE_LIMIT;
+  const collected: WechatSyncMessageSample[] = [];
+  let offset = 0;
+  let hasMore = false;
+
+  while (collected.length < limit) {
+    const remaining = Number.isFinite(limit)
+      ? Math.max(1, Math.min(MESSAGE_PAGE_SIZE, limit - collected.length))
+      : MESSAGE_PAGE_SIZE;
+    const payload = await fetchJson<unknown>(
+      baseUrl,
+      accessToken,
+      `/api/v1/messages?talker=${encodeURIComponent(bundle.username)}&limit=${remaining}&offset=${offset}`,
+    );
+    const pageMessages = extractMessages(payload, bundle.isGroup);
+    if (!pageMessages.length) {
+      hasMore = false;
+      break;
+    }
+
+    collected.push(...pageMessages);
+    hasMore = extractHasMore(payload);
+    offset += pageMessages.length;
+
+    if (pageMessages.length < remaining) {
+      hasMore = false;
+      break;
+    }
+    if (!hasMore && Number.isFinite(limit) && collected.length >= limit) {
+      break;
+    }
+    if (!hasMore && !Number.isFinite(limit)) {
+      break;
+    }
+  }
+
+  const normalizedMessages = dedupeMessageSamples(collected);
+  return {
+    messages:
+      options.messageMode === "all"
+        ? normalizedMessages
+        : normalizedMessages.slice(
+            -Math.max(1, options.messageLimit ?? DEFAULT_MESSAGE_LIMIT),
+          ),
+    hasMore:
+      options.messageMode === "all"
+        ? false
+        : hasMore || normalizedMessages.length >= (options.messageLimit ?? DEFAULT_MESSAGE_LIMIT),
+  };
+}
+
+async function fetchMomentHighlights(
+  baseUrl: string,
+  accessToken: string,
+  username: string,
+  limit: number,
+) {
+  const payload = await fetchJson<unknown>(
+    baseUrl,
+    accessToken,
+    `/api/v1/sns/timeline?usernames=${encodeURIComponent(username)}&limit=${limit}&media=1&replace=1`,
+  );
+  return extractMomentHighlights(payload);
 }
 
 async function fetchJson<T>(
@@ -210,7 +359,7 @@ async function fetchJson<T>(
     return JSON.parse(rawBody) as T;
   } catch (error) {
     throw new Error(
-      `WeFlow HTTP 响应不是合法 JSON：${url}${formatBodyPreview(rawBody)}${formatCause(error)}`,
+      `WeFlow HTTP 返回了非 JSON 响应：${url}${formatBodyPreview(rawBody)}${formatCause(error)}`,
     );
   }
 }
@@ -272,9 +421,12 @@ function buildBundles(
         displayName,
         nickname: contact?.nickname ?? null,
         remarkName: contact?.remarkName ?? null,
-        region: null,
+        alias: contact?.alias ?? null,
+        detailDescription: contact?.detailDescription ?? null,
+        region: contact?.region ?? null,
+        avatarUrl: contact?.avatarUrl ?? null,
         source: "weflow-http",
-        tags: [],
+        tags: contact?.tags ?? [],
         isGroup,
         messageCount,
         ownerMessageCount: 0,
@@ -282,11 +434,12 @@ function buildBundles(
         latestMessageAt,
         chatSummary:
           messageCount > 0
-            ? `已从 WeFlow 同步 ${messageCount} 条会话摘要，生成预览时会按需读取最近消息。`
-            : "已从 WeFlow 同步联系人资料，生成预览时会按需读取最近消息。",
+            ? `已从 WeFlow 同步 ${messageCount} 条会话摘要，生成预览时会按需拉取更长聊天历史。`
+            : "已从 WeFlow 同步联系人资料，生成预览时会按需读取聊天与朋友圈线索。",
         topicKeywords: [],
         sampleMessages: [],
         momentHighlights: [],
+        evidenceWindow: null,
       } satisfies WechatSyncContactBundle;
     })
     .sort((left, right) => {
@@ -313,11 +466,12 @@ function extractContacts(value: unknown): NormalizedWeFlowContact[] {
 
       const remarkName = normalizeText(contact.remark);
       const nickname = normalizeText(contact.nickname);
+      const alias = normalizeText(contact.alias);
       const displayName =
         normalizeText(contact.displayName) ??
         remarkName ??
         nickname ??
-        normalizeText(contact.alias) ??
+        alias ??
         username;
 
       return {
@@ -325,6 +479,11 @@ function extractContacts(value: unknown): NormalizedWeFlowContact[] {
         displayName,
         nickname,
         remarkName,
+        alias,
+        detailDescription: normalizeText(contact.detailDescription),
+        region: normalizeText(contact.region),
+        avatarUrl: normalizeText(contact.avatarUrl),
+        tags: normalizeStringList(contact.labels),
         isGroup: inferIsGroup(contact.type, username),
       } satisfies NormalizedWeFlowContact;
     })
@@ -377,19 +536,12 @@ function extractMessages(
   value: unknown,
   isGroup: boolean,
 ): WechatSyncMessageSample[] {
-  return extractArray(value, ["messages", "items", "data"])
-    .filter(isRecord)
-    .map((item) => normalizeMessageSample(item as WeFlowMessageItem, isGroup))
-    .filter((item): item is WechatSyncMessageSample => Boolean(item))
-    .sort((left, right) => {
-      const leftTime = Date.parse(left.timestamp);
-      const rightTime = Date.parse(right.timestamp);
-      if (Number.isFinite(leftTime) && Number.isFinite(rightTime)) {
-        return leftTime - rightTime;
-      }
-      return 0;
-    })
-    .slice(-40);
+  return dedupeMessageSamples(
+    extractArray(value, ["messages", "items", "data"])
+      .filter(isRecord)
+      .map((item) => normalizeMessageSample(item as WeFlowMessageItem, isGroup))
+      .filter((item): item is WechatSyncMessageSample => Boolean(item)),
+  );
 }
 
 function normalizeMessageSample(
@@ -426,6 +578,39 @@ function normalizeMessageSample(
   };
 }
 
+function extractMomentHighlights(value: unknown): WechatSyncMomentHighlight[] {
+  return dedupeMomentHighlights(
+    extractArray(value, ["timeline", "posts", "items", "data"])
+      .filter(isRecord)
+      .map((item) => normalizeMomentHighlight(item as WeFlowMomentItem))
+      .filter((item): item is WechatSyncMomentHighlight => Boolean(item)),
+  );
+}
+
+function normalizeMomentHighlight(
+  post: WeFlowMomentItem,
+): WechatSyncMomentHighlight | null {
+  const mediaHint = describeMomentMedia(post.media);
+  const text =
+    normalizeText(post.contentDesc) ??
+    normalizeText(post.content) ??
+    normalizeText(post.desc) ??
+    (mediaHint ? `发了一条${mediaHint}` : null);
+  if (!text) {
+    return null;
+  }
+
+  return {
+    postedAt:
+      normalizeTimestamp(post.createTime) ??
+      normalizeTimestamp(post.timestamp) ??
+      null,
+    text,
+    location: formatMomentLocation(post.location),
+    mediaHint,
+  };
+}
+
 function extractMessageText(value: unknown): string | null {
   if (typeof value === "string") {
     return normalizeText(value);
@@ -435,7 +620,14 @@ function extractMessageText(value: unknown): string | null {
     return null;
   }
 
-  for (const key of ["text", "content", "displayText", "title", "desc", "description"]) {
+  for (const key of [
+    "text",
+    "content",
+    "displayText",
+    "title",
+    "desc",
+    "description",
+  ]) {
     const candidate = normalizeText(value[key]);
     if (candidate) {
       return candidate;
@@ -472,15 +664,38 @@ function inferDirection(
 function buildChatSummary(
   totalMessageCount: number,
   sampleMessages: WechatSyncMessageSample[],
+  momentHighlights: WechatSyncMomentHighlight[],
+  evidenceWindow: WechatSyncEvidenceWindow | null,
 ) {
-  const latest = sampleMessages.at(-1)?.text;
-  if (!latest) {
-    return totalMessageCount > 0
-      ? `已从 WeFlow 同步 ${totalMessageCount} 条会话摘要。`
-      : null;
+  const scope = describeMessageScope(evidenceWindow, sampleMessages.length);
+  const pieces = [`已分析 ${scope}`];
+  const firstMessageAt = sampleMessages[0]?.timestamp ?? null;
+  const latestMessageAt = sampleMessages.at(-1)?.timestamp ?? null;
+  if (firstMessageAt && latestMessageAt) {
+    pieces.push(
+      `时间跨度 ${formatShortTimestamp(firstMessageAt)} 至 ${formatShortTimestamp(latestMessageAt)}`,
+    );
+  } else if (totalMessageCount > 0) {
+    pieces.push(`累计消息量至少 ${totalMessageCount} 条`);
   }
 
-  return `最近 ${Math.max(totalMessageCount, sampleMessages.length)} 条消息里，最近一条是：${latest.slice(0, 80)}`;
+  const keywords = inferKeywords([
+    ...sampleMessages.map((sample) => sample.text),
+    ...momentHighlights.map((item) => item.text),
+  ]).slice(0, 5);
+  if (keywords.length) {
+    pieces.push(`高频话题：${keywords.join("、")}`);
+  }
+
+  const latest = sampleMessages.at(-1)?.text?.trim();
+  if (latest) {
+    pieces.push(`最近一条：${latest.slice(0, 80)}`);
+  }
+  if (momentHighlights.length > 0) {
+    pieces.push(`朋友圈 / 近况线索 ${momentHighlights.length} 条`);
+  }
+
+  return pieces.join("；");
 }
 
 function inferKeywords(values: string[]) {
@@ -495,7 +710,7 @@ function inferKeywords(values: string[]) {
 
   return [...counts.entries()]
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .slice(0, 8)
+    .slice(0, KEYWORD_LIMIT)
     .map(([token]) => token);
 }
 
@@ -544,6 +759,209 @@ function pickLatestTimestamp(
   return Date.parse(left) >= Date.parse(right) ? left : right;
 }
 
+function resolveBundleOptions(
+  request: ConnectorContactBundleRequest | undefined,
+  username: string,
+): NormalizedBundleOptions {
+  const defaultOptions = normalizeBundleOptions(request?.defaultOptions);
+  const override = normalizeBundleOptions(
+    request?.contactOverrides?.[username],
+    defaultOptions,
+  );
+  return override;
+}
+
+function normalizeBundleOptions(
+  value?: ConnectorContactBundleOptions,
+  base?: NormalizedBundleOptions,
+): NormalizedBundleOptions {
+  const messageMode =
+    normalizeMessageMode(value?.messageMode) ??
+    base?.messageMode ??
+    "recent";
+  const messageLimit =
+    messageMode === "all"
+      ? null
+      : clampPositiveInteger(
+          value?.messageLimit,
+          1,
+          MAX_RECENT_MESSAGE_LIMIT,
+          base?.messageLimit ?? DEFAULT_MESSAGE_LIMIT,
+        );
+  return {
+    messageMode,
+    messageLimit,
+    includeMoments: value?.includeMoments ?? base?.includeMoments ?? true,
+    momentLimit: clampPositiveInteger(
+      value?.momentLimit,
+      1,
+      MAX_MOMENT_LIMIT,
+      base?.momentLimit ?? DEFAULT_MOMENT_LIMIT,
+    ),
+  };
+}
+
+function normalizeMessageMode(value: unknown) {
+  return value === "all" ? "all" : value === "recent" ? "recent" : null;
+}
+
+function clampPositiveInteger(
+  value: unknown,
+  min: number,
+  max: number,
+  fallback: number,
+) {
+  const normalized =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(normalized)) {
+    return fallback;
+  }
+  return Math.max(min, Math.min(max, Math.trunc(normalized)));
+}
+
+function dedupeMessageSamples(samples: WechatSyncMessageSample[]) {
+  const seen = new Set<string>();
+  const merged: WechatSyncMessageSample[] = [];
+
+  for (const sample of samples) {
+    const key = [
+      sample.timestamp,
+      sample.sender ?? "",
+      sample.typeLabel ?? "",
+      sample.direction ?? "",
+      sample.text,
+    ].join("|");
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push({ ...sample });
+  }
+
+  return merged.sort((left, right) => {
+    const leftTime = Date.parse(left.timestamp);
+    const rightTime = Date.parse(right.timestamp);
+    if (Number.isFinite(leftTime) && Number.isFinite(rightTime)) {
+      return leftTime - rightTime;
+    }
+    return left.timestamp.localeCompare(right.timestamp);
+  });
+}
+
+function dedupeMomentHighlights(items: WechatSyncMomentHighlight[]) {
+  const seen = new Set<string>();
+  const merged: WechatSyncMomentHighlight[] = [];
+
+  for (const item of items) {
+    const key = [item.postedAt ?? "", item.location ?? "", item.text].join("|");
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push({ ...item });
+  }
+
+  return merged.sort((left, right) => {
+    const leftTime = Date.parse(left.postedAt ?? "");
+    const rightTime = Date.parse(right.postedAt ?? "");
+    return (Number.isFinite(leftTime) ? leftTime : 0) - (Number.isFinite(rightTime) ? rightTime : 0);
+  });
+}
+
+function describeMomentMedia(value: unknown) {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+
+  const kinds = new Set<string>();
+  for (const entry of value) {
+    if (!isRecord(entry)) {
+      continue;
+    }
+    const type = normalizeText(entry.type) ?? normalizeText(entry.mediaType);
+    if (type) {
+      kinds.add(type.toLowerCase());
+    }
+  }
+
+  if (!kinds.size) {
+    return `${value.length} 个媒体内容`;
+  }
+  if (kinds.has("video")) {
+    return value.length > 1 ? `${value.length} 个视频 / 图片媒体` : "视频朋友圈";
+  }
+  if (kinds.has("livephoto")) {
+    return value.length > 1 ? `${value.length} 张实况照片 / 图片` : "实况照片";
+  }
+  if (kinds.has("image")) {
+    return value.length > 1 ? `${value.length} 张图片` : "图片朋友圈";
+  }
+
+  return `${value.length} 个媒体内容`;
+}
+
+function formatMomentLocation(value: unknown) {
+  if (typeof value === "string") {
+    return normalizeText(value);
+  }
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const parts = [
+    normalizeText(value.country),
+    normalizeText(value.province),
+    normalizeText(value.city),
+    normalizeText(value.poiName),
+    normalizeText(value.poiAddress),
+  ].filter((item): item is string => Boolean(item));
+
+  return parts.length ? [...new Set(parts)].join(" / ") : null;
+}
+
+function extractHasMore(value: unknown) {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const direct = value.hasMore;
+  if (typeof direct === "boolean") {
+    return direct;
+  }
+  if (isRecord(value.pagination) && typeof value.pagination.hasMore === "boolean") {
+    return value.pagination.hasMore;
+  }
+  if (isRecord(value.sync) && typeof value.sync.hasMore === "boolean") {
+    return value.sync.hasMore;
+  }
+
+  return false;
+}
+
+function describeMessageScope(
+  evidenceWindow: WechatSyncEvidenceWindow | null,
+  fallbackCount: number,
+) {
+  const fetchedCount = evidenceWindow?.fetchedMessageCount ?? fallbackCount;
+  if (evidenceWindow?.messageMode === "all") {
+    return `全部消息（本次共读取 ${fetchedCount} 条）`;
+  }
+  const requestedLimit = evidenceWindow?.requestedMessageLimit ?? fetchedCount;
+  return `最近 ${requestedLimit} 条消息（本次实际读取 ${fetchedCount} 条）`;
+}
+
+function formatShortTimestamp(value: string) {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) {
+    return value;
+  }
+  return new Date(parsed).toISOString().slice(0, 10);
+}
+
 function normalizeBaseUrl(value: string, label: string) {
   const normalized = value.trim().replace(/\/+$/, "");
   if (!normalized) {
@@ -561,7 +979,7 @@ function normalizeBaseUrl(value: string, label: string) {
     url.protocol !== "http:" ||
     (url.hostname !== "127.0.0.1" && url.hostname !== "localhost")
   ) {
-    throw new Error(`${label} 只允许 http://127.0.0.1 或 http://localhost。`);
+    throw new Error(`${label} 只允许使用 http://127.0.0.1 或 http://localhost。`);
   }
 
   return url.toString().replace(/\/+$/, "");
@@ -607,6 +1025,25 @@ function normalizeCount(value: number | string | undefined) {
     }
   }
   return 0;
+}
+
+function normalizeStringList(value: unknown) {
+  if (Array.isArray(value)) {
+    return [
+      ...new Set(value.map((item) => normalizeText(item)).filter((item): item is string => Boolean(item))),
+    ];
+  }
+  if (typeof value === "string") {
+    return [
+      ...new Set(
+        value
+          .split(/[;,，、\n]/u)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+  return [];
 }
 
 function inferIsGroup(type: string | undefined, username: string) {
@@ -662,7 +1099,7 @@ function formatResponseFailure(
   rawBody: string,
 ) {
   if (response.status === 401 || response.status === 403) {
-    return `无法读取 WeFlow API：${url}，Access Token 无效、缺失或未开启接口访问权限。`;
+    return `无法读取 WeFlow API：${url}，Access Token 无效、缺失或尚未开启接口访问权限。`;
   }
 
   return `WeFlow HTTP 请求失败：${response.status} ${response.statusText} ${url}${formatBodyPreview(rawBody)}`;

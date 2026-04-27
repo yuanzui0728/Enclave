@@ -101,6 +101,8 @@ export function toContactSummary(
   displayName: string;
   nickname?: string | null;
   remarkName?: string | null;
+  region?: string | null;
+  avatarUrl?: string | null;
   tags: string[];
   isGroup: boolean;
   messageCount: number;
@@ -114,6 +116,8 @@ export function toContactSummary(
     displayName: bundle.displayName,
     nickname: bundle.nickname,
     remarkName: bundle.remarkName,
+    region: bundle.region ?? null,
+    avatarUrl: bundle.avatarUrl ?? null,
     tags: bundle.tags,
     isGroup: bundle.isGroup,
     messageCount: bundle.messageCount,

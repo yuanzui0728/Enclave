@@ -16,6 +16,8 @@ export type ContactImportMessageDirection =
   | "system"
   | "unknown";
 
+export type ContactImportEvidenceMessageMode = "recent" | "all";
+
 export interface ContactImportMessageSample {
   timestamp: string;
   text: string;
@@ -31,6 +33,15 @@ export interface ContactImportMomentHighlight {
   mediaHint?: string | null;
 }
 
+export interface ContactImportEvidenceWindow {
+  messageMode?: ContactImportEvidenceMessageMode;
+  requestedMessageLimit?: number | null;
+  fetchedMessageCount?: number | null;
+  includeMoments?: boolean;
+  requestedMomentLimit?: number | null;
+  fetchedMomentCount?: number | null;
+}
+
 /**
  * Platform-agnostic contact import payload.
  * This is the long-term canonical shape that future QQ / Telegram / Discord
@@ -42,7 +53,10 @@ export interface ContactImportBundle {
   displayName: string;
   nickname?: string | null;
   remarkName?: string | null;
+  alias?: string | null;
+  detailDescription?: string | null;
   region?: string | null;
+  avatarUrl?: string | null;
   source?: string | null;
   tags: string[];
   isGroup: boolean;
@@ -54,6 +68,7 @@ export interface ContactImportBundle {
   topicKeywords: string[];
   sampleMessages: ContactImportMessageSample[];
   momentHighlights: ContactImportMomentHighlight[];
+  evidenceWindow?: ContactImportEvidenceWindow | null;
 }
 
 export type ContactImportPlatformPhase =

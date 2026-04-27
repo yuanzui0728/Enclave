@@ -90,6 +90,9 @@ const KNOWN_PLATFORMS = new Set<ContactImportPlatformKey>([
   "unknown",
 ]);
 
+const CONTACT_IMPORT_MAX_SAMPLE_MESSAGES = 50_000;
+const CONTACT_IMPORT_MAX_MOMENT_HIGHLIGHTS = 200;
+
 export function parseWechatSyncContactBundlesFromText(
   raw: string,
 ): ParsedWechatSyncContactBundleResult {
@@ -212,9 +215,24 @@ export function mergeWechatSyncContactBundles(
         bundle.remarkName ?? null,
         bundle.username,
       ),
+      alias: pickNullableLabel(
+        current.alias ?? null,
+        bundle.alias ?? null,
+        bundle.username,
+      ),
+      detailDescription: pickNullableLabel(
+        current.detailDescription ?? null,
+        bundle.detailDescription ?? null,
+        bundle.username,
+      ),
       region: pickNullableLabel(
         current.region ?? null,
         bundle.region ?? null,
+        bundle.username,
+      ),
+      avatarUrl: pickNullableLabel(
+        current.avatarUrl ?? null,
+        bundle.avatarUrl ?? null,
         bundle.username,
       ),
       source: pickPreferredSource(current.source ?? null, bundle.source ?? null),
@@ -237,6 +255,10 @@ export function mergeWechatSyncContactBundles(
       ).slice(0, 8),
       sampleMessages,
       momentHighlights,
+      evidenceWindow:
+        bundle.evidenceWindow ??
+        current.evidenceWindow ??
+        null,
     });
   }
 
@@ -404,20 +426,25 @@ function parseChatLabExport(value: unknown): WechatSyncContactBundle {
     (item) =>
       item.direction === "contact" || item.direction === "group_member",
   ).length;
-  const sampleMessages = messages.slice(-40).map((item) => ({
+  const sampleMessages = messages
+    .slice(-CONTACT_IMPORT_MAX_SAMPLE_MESSAGES)
+    .map((item) => ({
     timestamp: item.timestamp,
     text: item.text,
     sender: item.senderLabel,
     typeLabel: item.typeLabel,
     direction: item.direction,
-  }));
+    }));
 
   return {
     username: identity.username,
     displayName: identity.displayName,
     nickname: identity.nickname,
     remarkName: identity.remarkName,
+    alias: null,
+    detailDescription: null,
     region: null,
+    avatarUrl: null,
     source: `chatlab:${platform}`,
     tags: [],
     isGroup,
@@ -429,6 +456,14 @@ function parseChatLabExport(value: unknown): WechatSyncContactBundle {
     topicKeywords: inferKeywords(messages.map((item) => item.text)),
     sampleMessages,
     momentHighlights: [],
+    evidenceWindow: {
+      messageMode: "recent",
+      requestedMessageLimit: sampleMessages.length,
+      fetchedMessageCount: sampleMessages.length,
+      includeMoments: false,
+      requestedMomentLimit: 0,
+      fetchedMomentCount: 0,
+    },
   };
 }
 
@@ -494,7 +529,14 @@ function normalizeBundleEntry(
     displayName,
     nickname,
     remarkName,
+    alias: readText(value.alias) ?? readText(value.wechatNumber) ?? null,
+    detailDescription:
+      readText(value.detailDescription) ??
+      readText(value.signature) ??
+      readText(value.bio) ??
+      null,
     region: readText(value.region) ?? null,
+    avatarUrl: readText(value.avatarUrl) ?? readText(value.avatar) ?? null,
     source:
       readText(value.source) ??
       (platformId ? `contact-import:${platform}` : "manual-json"),
@@ -515,6 +557,7 @@ function normalizeBundleEntry(
         : inferKeywords(sampleMessages.map((item) => item.text)),
     sampleMessages,
     momentHighlights: normalizeMomentHighlights(value.momentHighlights),
+    evidenceWindow: normalizeEvidenceWindow(value.evidenceWindow),
   };
 }
 
@@ -699,7 +742,7 @@ function normalizeMessageSamples(value: unknown): WechatSyncMessageSample[] {
 
   return normalized
     .sort((left, right) => Date.parse(left.timestamp) - Date.parse(right.timestamp))
-    .slice(-40);
+    .slice(-CONTACT_IMPORT_MAX_SAMPLE_MESSAGES);
 }
 
 function normalizeMomentHighlights(value: unknown): WechatSyncMomentHighlight[] {
@@ -730,7 +773,23 @@ function normalizeMomentHighlights(value: unknown): WechatSyncMomentHighlight[] 
     });
   }
 
-  return normalized.slice(-20);
+  return normalized.slice(-CONTACT_IMPORT_MAX_MOMENT_HIGHLIGHTS);
+}
+
+function normalizeEvidenceWindow(value: unknown) {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const messageMode = value.messageMode === "all" ? "all" : "recent";
+  return {
+    messageMode,
+    requestedMessageLimit: normalizeCount(value.requestedMessageLimit) ?? null,
+    fetchedMessageCount: normalizeCount(value.fetchedMessageCount) ?? null,
+    includeMoments: normalizeBoolean(value.includeMoments) ?? true,
+    requestedMomentLimit: normalizeCount(value.requestedMomentLimit) ?? null,
+    fetchedMomentCount: normalizeCount(value.fetchedMomentCount) ?? null,
+  } satisfies NonNullable<WechatSyncContactBundle["evidenceWindow"]>;
 }
 
 function normalizeDirection(
@@ -873,6 +932,9 @@ function cloneBundle(bundle: WechatSyncContactBundle): WechatSyncContactBundle {
     topicKeywords: [...bundle.topicKeywords],
     sampleMessages: bundle.sampleMessages.map((item) => ({ ...item })),
     momentHighlights: bundle.momentHighlights.map((item) => ({ ...item })),
+    evidenceWindow: bundle.evidenceWindow
+      ? { ...bundle.evidenceWindow }
+      : null,
   };
 }
 
@@ -899,7 +961,7 @@ function mergeMessageSamples(
 
   return merged
     .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
-    .slice(-40);
+    .slice(-CONTACT_IMPORT_MAX_SAMPLE_MESSAGES);
 }
 
 function mergeMomentHighlights(
@@ -920,7 +982,7 @@ function mergeMomentHighlights(
 
   return merged
     .sort((a, b) => Date.parse(a.postedAt ?? "") - Date.parse(b.postedAt ?? ""))
-    .slice(-20);
+    .slice(-CONTACT_IMPORT_MAX_MOMENT_HIGHLIGHTS);
 }
 
 function mergeStringLists(left: string[], right: string[]) {
