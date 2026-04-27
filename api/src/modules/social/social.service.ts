@@ -12,7 +12,6 @@ import {
   DEFAULT_CHARACTER_IDS,
   SELF_CHARACTER_ID,
 } from '../characters/default-characters';
-import { INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS } from '../characters/intelligence-council-character-presets';
 import { listBuiltInCharacterPresets } from '../characters/built-in-character-presets';
 import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 import { ChatService } from '../chat/chat.service';
@@ -22,10 +21,7 @@ import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { WorldLanguageService } from '../config/world-language.service';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
-const DEFAULT_FRIENDSHIP_CHARACTER_IDS = [
-  ...DEFAULT_CHARACTER_IDS,
-  ...INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS,
-];
+export const DEFAULT_FRIENDSHIP_CHARACTER_IDS = [...DEFAULT_CHARACTER_IDS];
 
 @Injectable()
 export class SocialService {
@@ -328,11 +324,7 @@ export class SocialService {
             ownerId: resolvedOwnerId,
             characterId,
             intimacyLevel:
-              characterId === SELF_CHARACTER_ID
-                ? 100
-                : INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS.includes(characterId)
-                  ? 20
-                  : 60,
+              characterId === SELF_CHARACTER_ID ? 100 : 60,
             status: 'friend',
           }),
         );
@@ -841,11 +833,26 @@ export class SocialService {
         await this.chatService.getOrCreateConversation(characterId);
       await this.chatService.saveSystemMessage(
         conversation.id,
-        `你已添加了${characterName}，现在可以开始聊天了。`,
+        await this.buildFriendAddedSystemMessage(characterName),
       );
     }
 
     return friendship;
+  }
+
+  private async buildFriendAddedSystemMessage(characterName: string) {
+    const language = await this.worldLanguage.getLanguage();
+    switch (language) {
+      case 'en-US':
+        return `You added ${characterName}. You can start chatting now.`;
+      case 'ja-JP':
+        return `${characterName}を追加しました。これでチャットを始められます。`;
+      case 'ko-KR':
+        return `${characterName}을(를) 추가했어요. 이제 채팅을 시작할 수 있어요.`;
+      case 'zh-CN':
+      default:
+        return `你已添加了${characterName}，现在可以开始聊天了。`;
+    }
   }
 }
 
