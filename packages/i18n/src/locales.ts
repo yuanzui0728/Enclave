@@ -169,8 +169,8 @@ export function resolveInitialLocale(
 ) {
   return (
     readQueryLocale() ??
-    resolveSupportedLocale(initialLocale) ??
     readPersistedLocale(surface) ??
+    resolveSupportedLocale(initialLocale) ??
     resolvePreferredLocale(preferredLocales) ??
     DEFAULT_LOCALE
   );

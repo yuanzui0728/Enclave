@@ -24,6 +24,27 @@ const MAIN_WINDOW_LABEL: &str = "main";
 const TRAY_ICON_ID: &str = "main-tray";
 const TRAY_MENU_SHOW_ID: &str = "tray-show";
 const TRAY_MENU_QUIT_ID: &str = "tray-quit";
+const DEFAULT_DESKTOP_LOCALE: &str = "zh-CN";
+
+#[derive(Clone, Copy)]
+enum DesktopTextKey {
+    AppTitle,
+    TrayShow,
+    TrayQuit,
+    SaveAttachment,
+    SaveCancelled,
+    LocaleSaved,
+    RemoteUnconfigured,
+    RemoteResponded,
+    RemoteUnreachable,
+    RemoteOnlySummary,
+    RemoteCanReach,
+    RemoteCannotReach,
+    RemoteDidNotRespond,
+    RemoteStartNoop,
+    RemoteStopNoop,
+    RemoteRestartNoop,
+}
 
 struct DesktopWindowState {
     allow_exit: AtomicBool,
@@ -60,6 +81,20 @@ struct DesktopCoreApiStatus {
 struct DesktopOperationResult {
     success: bool,
     message: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DesktopLocaleResult {
+    locale: String,
+    system_locale: Option<String>,
+    source: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DesktopSetLocaleInput {
+    locale: String,
 }
 
 #[derive(Deserialize)]
@@ -130,6 +165,308 @@ struct RuntimePaths {
     logs_dir: PathBuf,
 }
 
+struct ResolvedDesktopLocale {
+    locale: &'static str,
+    system_locale: Option<String>,
+    source: &'static str,
+}
+
+fn resolve_supported_locale(value: &str) -> Option<&'static str> {
+    let normalized = value
+        .trim()
+        .replace('_', "-")
+        .to_lowercase()
+        .split(['.', '@'])
+        .next()
+        .unwrap_or_default()
+        .to_string();
+
+    match normalized.as_str() {
+        "zh" | "zh-cn" | "zh-hans" | "zh-hans-cn" => Some("zh-CN"),
+        "en" | "en-us" => Some("en-US"),
+        "ja" | "ja-jp" => Some("ja-JP"),
+        "ko" | "ko-kr" => Some("ko-KR"),
+        value if value.starts_with("zh-") => Some("zh-CN"),
+        value if value.starts_with("en-") => Some("en-US"),
+        value if value.starts_with("ja-") => Some("ja-JP"),
+        value if value.starts_with("ko-") => Some("ko-KR"),
+        _ => None,
+    }
+}
+
+fn resolve_desktop_locale(app: &tauri::AppHandle) -> ResolvedDesktopLocale {
+    let system_locale = sys_locale::get_locale();
+
+    if let Some(locale) = read_desktop_locale(app) {
+        return ResolvedDesktopLocale {
+            locale,
+            system_locale,
+            source: "storage",
+        };
+    }
+
+    if let Some(locale) = system_locale
+        .as_deref()
+        .and_then(resolve_supported_locale)
+    {
+        return ResolvedDesktopLocale {
+            locale,
+            system_locale,
+            source: "system",
+        };
+    }
+
+    ResolvedDesktopLocale {
+        locale: DEFAULT_DESKTOP_LOCALE,
+        system_locale,
+        source: "default",
+    }
+}
+
+fn read_desktop_locale(app: &tauri::AppHandle) -> Option<&'static str> {
+    let target_file_path = resolve_runtime_paths(app)
+        .ok()?
+        .runtime_data_dir
+        .join("desktop-locale.json");
+    let contents = std::fs::read_to_string(target_file_path).ok()?;
+    let parsed = serde_json::from_str::<serde_json::Value>(&contents).ok()?;
+    parsed
+        .get("locale")
+        .and_then(serde_json::Value::as_str)
+        .and_then(resolve_supported_locale)
+}
+
+fn write_desktop_locale(app: &tauri::AppHandle, locale: &str) -> Result<(), String> {
+    let target_file_path = resolve_runtime_paths(app)?
+        .runtime_data_dir
+        .join("desktop-locale.json");
+    ensure_parent_dir_exists(&target_file_path)?;
+    let contents = serde_json::json!({ "locale": locale }).to_string();
+    std::fs::write(target_file_path, contents).map_err(|error| error.to_string())
+}
+
+fn apply_desktop_locale(app: &tauri::AppHandle, locale: &str) -> Result<(), String> {
+    let locale = resolve_supported_locale(locale).unwrap_or(DEFAULT_DESKTOP_LOCALE);
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        window
+            .set_title(desktop_text(locale, DesktopTextKey::AppTitle))
+            .map_err(|error| error.to_string())?;
+    }
+
+    if let Some(tray) = app.tray_by_id(TRAY_ICON_ID) {
+        let tray_menu = MenuBuilder::new(app)
+            .text(
+                TRAY_MENU_SHOW_ID,
+                desktop_text(locale, DesktopTextKey::TrayShow),
+            )
+            .separator()
+            .text(
+                TRAY_MENU_QUIT_ID,
+                desktop_text(locale, DesktopTextKey::TrayQuit),
+            )
+            .build()
+            .map_err(|error| error.to_string())?;
+        tray.set_menu(Some(tray_menu))
+            .map_err(|error| error.to_string())?;
+        tray.set_tooltip(Some(desktop_text(locale, DesktopTextKey::AppTitle)))
+            .map_err(|error| error.to_string())?;
+    }
+
+    Ok(())
+}
+
+fn desktop_text(locale: &str, key: DesktopTextKey) -> &'static str {
+    let locale = resolve_supported_locale(locale).unwrap_or(DEFAULT_DESKTOP_LOCALE);
+
+    match (locale, key) {
+        ("en-US", DesktopTextKey::AppTitle) => "Yinjie",
+        ("ja-JP", DesktopTextKey::AppTitle) => "Yinjie",
+        ("ko-KR", DesktopTextKey::AppTitle) => "Yinjie",
+        (_, DesktopTextKey::AppTitle) => "隐界",
+
+        ("en-US", DesktopTextKey::TrayShow) => "Open Yinjie",
+        ("ja-JP", DesktopTextKey::TrayShow) => "Yinjieを開く",
+        ("ko-KR", DesktopTextKey::TrayShow) => "Yinjie 열기",
+        (_, DesktopTextKey::TrayShow) => "打开隐界",
+
+        ("en-US", DesktopTextKey::TrayQuit) => "Quit",
+        ("ja-JP", DesktopTextKey::TrayQuit) => "終了",
+        ("ko-KR", DesktopTextKey::TrayQuit) => "종료",
+        (_, DesktopTextKey::TrayQuit) => "退出",
+
+        ("en-US", DesktopTextKey::SaveAttachment) => "Save Attachment",
+        ("ja-JP", DesktopTextKey::SaveAttachment) => "添付ファイルを保存",
+        ("ko-KR", DesktopTextKey::SaveAttachment) => "첨부 파일 저장",
+        (_, DesktopTextKey::SaveAttachment) => "保存附件",
+
+        ("en-US", DesktopTextKey::SaveCancelled) => "Save cancelled.",
+        ("ja-JP", DesktopTextKey::SaveCancelled) => "保存をキャンセルしました。",
+        ("ko-KR", DesktopTextKey::SaveCancelled) => "저장을 취소했습니다.",
+        (_, DesktopTextKey::SaveCancelled) => "已取消保存。",
+
+        ("en-US", DesktopTextKey::LocaleSaved) => "Desktop language updated.",
+        ("ja-JP", DesktopTextKey::LocaleSaved) => "デスクトップの言語を更新しました。",
+        ("ko-KR", DesktopTextKey::LocaleSaved) => "데스크톱 언어가 업데이트되었습니다.",
+        (_, DesktopTextKey::LocaleSaved) => "桌面语言已更新。",
+
+        ("en-US", DesktopTextKey::RemoteUnconfigured) => {
+            "Desktop shell is remote-only. Configure the server address inside the app."
+        }
+        ("ja-JP", DesktopTextKey::RemoteUnconfigured) => {
+            "デスクトップシェルはリモート専用です。アプリ内でサーバーアドレスを設定してください。"
+        }
+        ("ko-KR", DesktopTextKey::RemoteUnconfigured) => {
+            "데스크톱 셸은 원격 전용입니다. 앱 안에서 서버 주소를 설정하세요."
+        }
+        (_, DesktopTextKey::RemoteUnconfigured) => {
+            "桌面壳仅连接远程世界，请在应用内配置服务器地址。"
+        }
+
+        ("en-US", DesktopTextKey::RemoteOnlySummary) => {
+            "Desktop shell no longer starts a local Core API. Use the in-app remote setup flow."
+        }
+        ("ja-JP", DesktopTextKey::RemoteOnlySummary) => {
+            "デスクトップシェルはローカル Core API を起動しません。アプリ内のリモート設定フローを使用してください。"
+        }
+        ("ko-KR", DesktopTextKey::RemoteOnlySummary) => {
+            "데스크톱 셸은 더 이상 로컬 Core API를 시작하지 않습니다. 앱 안의 원격 설정 흐름을 사용하세요."
+        }
+        (_, DesktopTextKey::RemoteOnlySummary) => {
+            "桌面壳不再启动本地 Core API，请使用应用内远程设置流程。"
+        }
+
+        ("en-US", DesktopTextKey::RemoteStartNoop) => {
+            "Desktop shell no longer starts a local Core API. Configure a remote server in Setup."
+        }
+        ("ja-JP", DesktopTextKey::RemoteStartNoop) => {
+            "デスクトップシェルはローカル Core API を起動しません。Setup でリモートサーバーを設定してください。"
+        }
+        ("ko-KR", DesktopTextKey::RemoteStartNoop) => {
+            "데스크톱 셸은 더 이상 로컬 Core API를 시작하지 않습니다. Setup에서 원격 서버를 설정하세요."
+        }
+        (_, DesktopTextKey::RemoteStartNoop) => {
+            "桌面壳不再启动本地 Core API，请在 Setup 中配置远程服务器。"
+        }
+
+        ("en-US", DesktopTextKey::RemoteStopNoop) => {
+            "Desktop shell no longer manages a local Core API process."
+        }
+        ("ja-JP", DesktopTextKey::RemoteStopNoop) => {
+            "デスクトップシェルはローカル Core API プロセスを管理しません。"
+        }
+        ("ko-KR", DesktopTextKey::RemoteStopNoop) => {
+            "데스크톱 셸은 더 이상 로컬 Core API 프로세스를 관리하지 않습니다."
+        }
+        (_, DesktopTextKey::RemoteStopNoop) => {
+            "桌面壳不再管理本地 Core API 进程。"
+        }
+
+        ("en-US", DesktopTextKey::RemoteRestartNoop) => {
+            "Desktop shell no longer restarts a local Core API. Re-check the remote server instead."
+        }
+        ("ja-JP", DesktopTextKey::RemoteRestartNoop) => {
+            "デスクトップシェルはローカル Core API を再起動しません。代わりにリモートサーバーを再確認してください。"
+        }
+        ("ko-KR", DesktopTextKey::RemoteRestartNoop) => {
+            "데스크톱 셸은 더 이상 로컬 Core API를 재시작하지 않습니다. 원격 서버를 다시 확인하세요."
+        }
+        (_, DesktopTextKey::RemoteRestartNoop) => {
+            "桌面壳不再重启本地 Core API，请改为重新检查远程服务器。"
+        }
+
+        (_, DesktopTextKey::RemoteResponded)
+        | (_, DesktopTextKey::RemoteUnreachable)
+        | (_, DesktopTextKey::RemoteCanReach)
+        | (_, DesktopTextKey::RemoteCannotReach)
+        | (_, DesktopTextKey::RemoteDidNotRespond) => "",
+    }
+}
+
+fn desktop_format_url(locale: &str, key: DesktopTextKey, url: &str) -> String {
+    let locale = resolve_supported_locale(locale).unwrap_or(DEFAULT_DESKTOP_LOCALE);
+
+    match (locale, key) {
+        ("en-US", DesktopTextKey::RemoteResponded) => {
+            format!("Remote Core API responded at {url}")
+        }
+        ("ja-JP", DesktopTextKey::RemoteResponded) => {
+            format!("リモート Core API が {url} で応答しました")
+        }
+        ("ko-KR", DesktopTextKey::RemoteResponded) => {
+            format!("원격 Core API가 {url}에서 응답했습니다")
+        }
+        (_, DesktopTextKey::RemoteResponded) => {
+            format!("远程 Core API 已在 {url} 响应")
+        }
+
+        ("en-US", DesktopTextKey::RemoteUnreachable) => {
+            format!("Remote Core API is configured but not reachable at {url}")
+        }
+        ("ja-JP", DesktopTextKey::RemoteUnreachable) => {
+            format!("リモート Core API は設定済みですが {url} に接続できません")
+        }
+        ("ko-KR", DesktopTextKey::RemoteUnreachable) => {
+            format!("원격 Core API가 설정되어 있지만 {url}에 연결할 수 없습니다")
+        }
+        (_, DesktopTextKey::RemoteUnreachable) => {
+            format!("远程 Core API 已配置，但无法访问 {url}")
+        }
+
+        ("en-US", DesktopTextKey::RemoteCanReach) => {
+            format!("Desktop shell is configured for remote mode and can reach {url}")
+        }
+        ("ja-JP", DesktopTextKey::RemoteCanReach) => {
+            format!("デスクトップシェルはリモートモードで設定済みで、{url} に接続できます")
+        }
+        ("ko-KR", DesktopTextKey::RemoteCanReach) => {
+            format!("데스크톱 셸이 원격 모드로 설정되어 있으며 {url}에 연결할 수 있습니다")
+        }
+        (_, DesktopTextKey::RemoteCanReach) => {
+            format!("桌面壳已配置为远程模式，并可访问 {url}")
+        }
+
+        ("en-US", DesktopTextKey::RemoteCannotReach) => {
+            format!("Desktop shell is configured for remote mode but cannot reach {url}")
+        }
+        ("ja-JP", DesktopTextKey::RemoteCannotReach) => {
+            format!("デスクトップシェルはリモートモードで設定済みですが、{url} に接続できません")
+        }
+        ("ko-KR", DesktopTextKey::RemoteCannotReach) => {
+            format!("데스크톱 셸이 원격 모드로 설정되어 있지만 {url}에 연결할 수 없습니다")
+        }
+        (_, DesktopTextKey::RemoteCannotReach) => {
+            format!("桌面壳已配置为远程模式，但无法访问 {url}")
+        }
+
+        ("en-US", DesktopTextKey::RemoteDidNotRespond) => {
+            format!("Remote Core API did not respond at {url}")
+        }
+        ("ja-JP", DesktopTextKey::RemoteDidNotRespond) => {
+            format!("リモート Core API は {url} で応答しませんでした")
+        }
+        ("ko-KR", DesktopTextKey::RemoteDidNotRespond) => {
+            format!("원격 Core API가 {url}에서 응답하지 않았습니다")
+        }
+        (_, DesktopTextKey::RemoteDidNotRespond) => {
+            format!("远程 Core API 未在 {url} 响应")
+        }
+
+        _ => desktop_text(locale, key).to_string(),
+    }
+}
+
+fn desktop_saved_file_message(locale: &str, target_file_path: &PathBuf) -> String {
+    let path = target_file_path.display();
+    let locale = resolve_supported_locale(locale).unwrap_or(DEFAULT_DESKTOP_LOCALE);
+
+    match locale {
+        "en-US" => format!("Saved to {path}"),
+        "ja-JP" => format!("{path} に保存しました。"),
+        "ko-KR" => format!("{path}에 저장했습니다."),
+        _ => format!("已保存到 {path}"),
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -139,7 +476,13 @@ fn main() {
         })
         .on_window_event(handle_window_event)
         .setup(|app| {
+            let desktop_locale = resolve_desktop_locale(&app.handle());
             if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_title(desktop_text(
+                    desktop_locale.locale,
+                    DesktopTextKey::AppTitle,
+                ));
+
                 #[cfg(target_os = "windows")]
                 {
                     let _ = apply_acrylic(&window, Some((18, 22, 30, 160)));
@@ -151,7 +494,7 @@ fn main() {
                 }
             }
 
-            setup_system_tray(app)?;
+            setup_system_tray(app, desktop_locale.locale)?;
 
             Ok(())
         })
@@ -168,6 +511,8 @@ fn main() {
             desktop_save_binary_file,
             desktop_read_feedback_store,
             desktop_write_feedback_store,
+            desktop_get_locale,
+            desktop_set_locale,
             desktop_read_chat_image_viewer_sessions_store,
             desktop_write_chat_image_viewer_sessions_store,
             desktop_read_chat_message_actions_store,
@@ -206,16 +551,25 @@ fn main() {
         .expect("error while running yinjie desktop");
 }
 
-fn setup_system_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_system_tray(
+    app: &mut tauri::App,
+    locale: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let tray_menu = MenuBuilder::new(app)
-        .text(TRAY_MENU_SHOW_ID, "打开隐界")
+        .text(
+            TRAY_MENU_SHOW_ID,
+            desktop_text(locale, DesktopTextKey::TrayShow),
+        )
         .separator()
-        .text(TRAY_MENU_QUIT_ID, "退出")
+        .text(
+            TRAY_MENU_QUIT_ID,
+            desktop_text(locale, DesktopTextKey::TrayQuit),
+        )
         .build()?;
     let mut tray_builder = TrayIconBuilder::with_id(TRAY_ICON_ID)
         .menu(&tray_menu)
         .show_menu_on_left_click(false)
-        .tooltip("隐界");
+        .tooltip(desktop_text(locale, DesktopTextKey::AppTitle));
 
     if let Some(icon) = app.default_window_icon().cloned() {
         tray_builder = tray_builder.icon(icon);
@@ -311,6 +665,7 @@ fn desktop_runtime_context(app: tauri::AppHandle) -> Result<DesktopRuntimeContex
 #[tauri::command]
 fn desktop_core_api_status(app: tauri::AppHandle) -> Result<DesktopCoreApiStatus, String> {
     let paths = resolve_runtime_paths(&app)?;
+    let locale = resolve_desktop_locale(&app).locale;
     let configured_base_url = configured_remote_base_url();
     let reachable = probe_remote_health(&configured_base_url);
 
@@ -322,11 +677,11 @@ fn desktop_core_api_status(app: tauri::AppHandle) -> Result<DesktopCoreApiStatus
         pid: None,
         database_path: paths.database_path.display().to_string(),
         message: if configured_base_url.is_empty() {
-            "Desktop shell is remote-only. Configure the server address inside the app.".to_string()
+            desktop_text(locale, DesktopTextKey::RemoteUnconfigured).to_string()
         } else if reachable {
-            format!("Remote Core API responded at {configured_base_url}")
+            desktop_format_url(locale, DesktopTextKey::RemoteResponded, &configured_base_url)
         } else {
-            format!("Remote Core API is configured but not reachable at {configured_base_url}")
+            desktop_format_url(locale, DesktopTextKey::RemoteUnreachable, &configured_base_url)
         },
         command: String::new(),
         command_source: "remote".to_string(),
@@ -337,6 +692,7 @@ fn desktop_core_api_status(app: tauri::AppHandle) -> Result<DesktopCoreApiStatus
 #[tauri::command]
 fn desktop_runtime_diagnostics(app: tauri::AppHandle) -> Result<DesktopRuntimeDiagnostics, String> {
     let paths = resolve_runtime_paths(&app)?;
+    let locale = resolve_desktop_locale(&app).locale;
     let configured_base_url = configured_remote_base_url();
     let reachable = probe_remote_health(&configured_base_url);
     let diagnostics_status = if configured_base_url.is_empty() {
@@ -363,54 +719,88 @@ fn desktop_runtime_diagnostics(app: tauri::AppHandle) -> Result<DesktopRuntimeDi
         last_core_api_error: None,
         linux_missing_packages: Vec::new(),
         summary: if configured_base_url.is_empty() {
-            "Desktop shell no longer starts a local Core API. Use the in-app remote setup flow.".to_string()
+            desktop_text(locale, DesktopTextKey::RemoteOnlySummary).to_string()
         } else if reachable {
-            format!("Desktop shell is configured for remote mode and can reach {configured_base_url}")
+            desktop_format_url(locale, DesktopTextKey::RemoteCanReach, &configured_base_url)
         } else {
-            format!("Desktop shell is configured for remote mode but cannot reach {configured_base_url}")
+            desktop_format_url(locale, DesktopTextKey::RemoteCannotReach, &configured_base_url)
         },
     })
 }
 
 #[tauri::command]
-fn probe_core_api_health() -> DesktopOperationResult {
+fn probe_core_api_health(app: tauri::AppHandle) -> DesktopOperationResult {
+    let locale = resolve_desktop_locale(&app).locale;
     let configured_base_url = configured_remote_base_url();
     let reachable = probe_remote_health(&configured_base_url);
 
     DesktopOperationResult {
         success: reachable,
         message: if configured_base_url.is_empty() {
-            "Desktop shell is remote-only. Configure the server address inside the app.".to_string()
+            desktop_text(locale, DesktopTextKey::RemoteUnconfigured).to_string()
         } else if reachable {
-            format!("Remote Core API responded at {configured_base_url}")
+            desktop_format_url(locale, DesktopTextKey::RemoteResponded, &configured_base_url)
         } else {
-            format!("Remote Core API did not respond at {configured_base_url}")
+            desktop_format_url(locale, DesktopTextKey::RemoteDidNotRespond, &configured_base_url)
         },
     }
 }
 
 #[tauri::command]
-fn start_core_api() -> DesktopOperationResult {
+fn start_core_api(app: tauri::AppHandle) -> DesktopOperationResult {
+    let locale = resolve_desktop_locale(&app).locale;
+
     DesktopOperationResult {
         success: true,
-        message: "Desktop shell no longer starts a local Core API. Configure a remote server in Setup.".to_string(),
+        message: desktop_text(locale, DesktopTextKey::RemoteStartNoop).to_string(),
     }
 }
 
 #[tauri::command]
-fn stop_core_api() -> DesktopOperationResult {
+fn stop_core_api(app: tauri::AppHandle) -> DesktopOperationResult {
+    let locale = resolve_desktop_locale(&app).locale;
+
     DesktopOperationResult {
         success: true,
-        message: "Desktop shell no longer manages a local Core API process.".to_string(),
+        message: desktop_text(locale, DesktopTextKey::RemoteStopNoop).to_string(),
     }
 }
 
 #[tauri::command]
-fn restart_core_api() -> DesktopOperationResult {
+fn restart_core_api(app: tauri::AppHandle) -> DesktopOperationResult {
+    let locale = resolve_desktop_locale(&app).locale;
+
     DesktopOperationResult {
         success: true,
-        message: "Desktop shell no longer restarts a local Core API. Re-check the remote server instead.".to_string(),
+        message: desktop_text(locale, DesktopTextKey::RemoteRestartNoop).to_string(),
     }
+}
+
+#[tauri::command]
+fn desktop_get_locale(app: tauri::AppHandle) -> DesktopLocaleResult {
+    let locale = resolve_desktop_locale(&app);
+
+    DesktopLocaleResult {
+        locale: locale.locale.to_string(),
+        system_locale: locale.system_locale,
+        source: locale.source.to_string(),
+    }
+}
+
+#[tauri::command]
+fn desktop_set_locale(
+    app: tauri::AppHandle,
+    input: DesktopSetLocaleInput,
+) -> Result<DesktopOperationResult, String> {
+    let locale = resolve_supported_locale(&input.locale)
+        .ok_or_else(|| "Unsupported desktop locale.".to_string())?;
+    write_desktop_locale(&app, locale)?;
+    apply_desktop_locale(&app, locale)?;
+
+    Ok(DesktopOperationResult {
+        success: true,
+        message: desktop_text(locale, DesktopTextKey::LocaleSaved).to_string(),
+    })
 }
 
 #[tauri::command]
@@ -439,6 +829,7 @@ async fn desktop_save_remote_file(
     input: DesktopSaveRemoteFileInput,
 ) -> Result<DesktopFileSaveResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
+        let locale = resolve_desktop_locale(&app).locale;
         let url = input.url.trim().to_string();
         if url.is_empty() {
             return Err("Missing file URL.".to_string());
@@ -447,7 +838,7 @@ async fn desktop_save_remote_file(
         let Some(target_file_path) =
             prompt_save_file_path(&app, &input.file_name, input.dialog_title.as_deref())?
         else {
-            return Ok(cancelled_file_save_result());
+            return Ok(cancelled_file_save_result(locale));
         };
         ensure_parent_dir_exists(&target_file_path)?;
 
@@ -466,7 +857,7 @@ async fn desktop_save_remote_file(
             .map_err(|error| error.to_string())?;
         output.flush().map_err(|error| error.to_string())?;
 
-        Ok(saved_file_result(&target_file_path))
+        Ok(saved_file_result(locale, &target_file_path))
     })
     .await
     .map_err(|error| error.to_string())?
@@ -478,14 +869,15 @@ async fn desktop_save_text_file(
     input: DesktopSaveTextFileInput,
 ) -> Result<DesktopFileSaveResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
+        let locale = resolve_desktop_locale(&app).locale;
         let Some(target_file_path) =
             prompt_save_file_path(&app, &input.file_name, input.dialog_title.as_deref())?
         else {
-            return Ok(cancelled_file_save_result());
+            return Ok(cancelled_file_save_result(locale));
         };
         ensure_parent_dir_exists(&target_file_path)?;
         std::fs::write(&target_file_path, input.contents).map_err(|error| error.to_string())?;
-        Ok(saved_file_result(&target_file_path))
+        Ok(saved_file_result(locale, &target_file_path))
     })
     .await
     .map_err(|error| error.to_string())?
@@ -497,14 +889,15 @@ async fn desktop_save_binary_file(
     input: DesktopSaveBinaryFileInput,
 ) -> Result<DesktopFileSaveResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
+        let locale = resolve_desktop_locale(&app).locale;
         let Some(target_file_path) =
             prompt_save_file_path(&app, &input.file_name, input.dialog_title.as_deref())?
         else {
-            return Ok(cancelled_file_save_result());
+            return Ok(cancelled_file_save_result(locale));
         };
         ensure_parent_dir_exists(&target_file_path)?;
         std::fs::write(&target_file_path, input.bytes).map_err(|error| error.to_string())?;
-        Ok(saved_file_result(&target_file_path))
+        Ok(saved_file_result(locale, &target_file_path))
     })
     .await
     .map_err(|error| error.to_string())?
@@ -1429,11 +1822,12 @@ fn prompt_save_file_path(
     file_name: &str,
     dialog_title: Option<&str>,
 ) -> Result<Option<PathBuf>, String> {
+    let locale = resolve_desktop_locale(app).locale;
     let normalized_file_name = sanitize_download_file_name(file_name);
     let normalized_dialog_title = dialog_title
         .map(str::trim)
         .filter(|value| !value.is_empty())
-        .unwrap_or("保存附件");
+        .unwrap_or_else(|| desktop_text(locale, DesktopTextKey::SaveAttachment));
     let Some(target_file_path) = app
         .dialog()
         .file()
@@ -1458,21 +1852,21 @@ fn ensure_parent_dir_exists(target_file_path: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-fn cancelled_file_save_result() -> DesktopFileSaveResult {
+fn cancelled_file_save_result(locale: &str) -> DesktopFileSaveResult {
     DesktopFileSaveResult {
         success: false,
         cancelled: true,
         saved_path: None,
-        message: "已取消保存。".to_string(),
+        message: desktop_text(locale, DesktopTextKey::SaveCancelled).to_string(),
     }
 }
 
-fn saved_file_result(target_file_path: &PathBuf) -> DesktopFileSaveResult {
+fn saved_file_result(locale: &str, target_file_path: &PathBuf) -> DesktopFileSaveResult {
     DesktopFileSaveResult {
         success: true,
         cancelled: false,
         saved_path: Some(target_file_path.display().to_string()),
-        message: format!("已保存到 {}", target_file_path.display()),
+        message: desktop_saved_file_message(locale, target_file_path),
     }
 }
 

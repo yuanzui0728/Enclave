@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useAppLocale } from "@yinjie/i18n";
-import { readNativeLocalePreference } from "./native-locale";
+import {
+  readNativeLocalePreference,
+  syncDesktopLocalePreference,
+} from "./native-locale";
 
 export function NativeLocaleSync() {
   const { locale, syncLocaleFromExternal } = useAppLocale();
@@ -8,6 +11,10 @@ export function NativeLocaleSync() {
 
   useEffect(() => {
     localeRef.current = locale;
+  }, [locale]);
+
+  useEffect(() => {
+    void syncDesktopLocalePreference(locale);
   }, [locale]);
 
   useEffect(() => {

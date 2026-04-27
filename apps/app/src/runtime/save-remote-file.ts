@@ -3,6 +3,14 @@ import {
   isNativeMobileBridgeAvailable,
   shareFileWithNativeShell,
 } from "./mobile-bridge";
+import {
+  formatFileDownloadStartedMessage,
+  formatFileSaveFailedMessage,
+  formatFileSharePanelMessage,
+  getFileSaveCancelledMessage,
+  resolveRemoteFileKindLabel,
+  translateKnownFileDialogTitle,
+} from "./file-runtime-i18n";
 
 export type SaveRemoteFileInput = {
   url: string;
@@ -24,10 +32,6 @@ type DesktopRemoteFileSavePayload = {
   message: string;
 };
 
-function fallbackDownloadLabel(kind: SaveRemoteFileInput["kind"]) {
-  return kind === "image" ? "图片" : "文件";
-}
-
 function normalizeDownloadFileName(
   fileName: string,
   kind: SaveRemoteFileInput["kind"],
@@ -41,10 +45,12 @@ function normalizeDownloadFileName(
 }
 
 function saveRemoteFileWithBrowser(input: SaveRemoteFileInput): SaveRemoteFileResult {
+  const kindLabel = resolveRemoteFileKindLabel(input.kind);
+
   if (typeof document === "undefined") {
     return {
       status: "failed",
-      message: `${fallbackDownloadLabel(input.kind)}保存失败，请稍后再试。`,
+      message: formatFileSaveFailedMessage(kindLabel),
     };
   }
 
@@ -58,14 +64,14 @@ function saveRemoteFileWithBrowser(input: SaveRemoteFileInput): SaveRemoteFileRe
 
   return {
     status: "started",
-    message: `${fallbackDownloadLabel(input.kind)}开始下载。`,
+    message: formatFileDownloadStartedMessage(kindLabel),
   };
 }
 
 async function saveRemoteFileWithNativeShell(
   input: SaveRemoteFileInput,
 ): Promise<SaveRemoteFileResult> {
-  const kindLabel = fallbackDownloadLabel(input.kind);
+  const kindLabel = resolveRemoteFileKindLabel(input.kind);
 
   try {
     const response = await fetch(input.url, {
@@ -80,7 +86,7 @@ async function saveRemoteFileWithNativeShell(
       blob,
       fileName: normalizeDownloadFileName(input.fileName, input.kind),
       mimeType: blob.type || undefined,
-      title: input.dialogTitle,
+      title: translateKnownFileDialogTitle(input.dialogTitle),
     });
 
     if (!result.shared) {
@@ -89,12 +95,12 @@ async function saveRemoteFileWithNativeShell(
 
     return {
       status: "started",
-      message: `${kindLabel}已打开系统分享面板，可继续保存到文件或转发给其他应用。`,
+      message: formatFileSharePanelMessage(kindLabel),
     };
   } catch {
     return {
       status: "failed",
-      message: `${kindLabel}保存失败，请稍后再试。`,
+      message: formatFileSaveFailedMessage(kindLabel),
     };
   }
 }
@@ -104,9 +110,11 @@ export async function saveRemoteFile(
 ): Promise<SaveRemoteFileResult> {
   const normalizedUrl = input.url.trim();
   if (!normalizedUrl) {
+    const kindLabel = resolveRemoteFileKindLabel(input.kind);
+
     return {
       status: "failed",
-      message: `${fallbackDownloadLabel(input.kind)}保存失败，请稍后再试。`,
+      message: formatFileSaveFailedMessage(kindLabel),
     };
   }
 
@@ -135,7 +143,7 @@ export async function saveRemoteFile(
         input: {
           url: normalizedUrl,
           fileName,
-          dialogTitle: input.dialogTitle?.trim() || undefined,
+          dialogTitle: translateKnownFileDialogTitle(input.dialogTitle),
         },
       },
     );
@@ -151,14 +159,15 @@ export async function saveRemoteFile(
     if (result.cancelled) {
       return {
         status: "cancelled",
-        message: result.message || "已取消保存。",
+        message: result.message || getFileSaveCancelledMessage(),
       };
     }
 
+    const kindLabel = resolveRemoteFileKindLabel(input.kind);
+
     return {
       status: "failed",
-      message:
-        result.message || `${fallbackDownloadLabel(input.kind)}保存失败，请稍后再试。`,
+      message: result.message || formatFileSaveFailedMessage(kindLabel),
     };
   } catch {
     return saveRemoteFileWithBrowser({

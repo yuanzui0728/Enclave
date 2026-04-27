@@ -9,6 +9,7 @@ import { BootstrapScreen } from "./components/bootstrap-screen";
 import { queryClient } from "./lib/query-client";
 import { configureContractsRuntime } from "./lib/runtime-config";
 import {
+  readDesktopLocalePreference,
   readNativeLocalePreference,
   syncNativeLocalePreference,
 } from "./runtime/native-locale";
@@ -69,9 +70,15 @@ function installStaleAssetRecovery() {
 installStaleAssetRecovery();
 
 async function bootstrap() {
-  await hydrateNativeRuntimeConfig();
-  const nativeLocalePreference = await readNativeLocalePreference();
+  const runtimeConfig = await hydrateNativeRuntimeConfig();
+  const nativeLocalePreference =
+    (await readNativeLocalePreference()) ??
+    (await readDesktopLocalePreference());
   configureContractsRuntime();
+  const preferredLocales = [
+    ...(nativeLocalePreference?.preferredLocales ?? []),
+    ...(runtimeConfig.preferredLocales ?? []),
+  ];
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
@@ -80,6 +87,7 @@ async function bootstrap() {
         fallback={<BootstrapScreen />}
         initialLocale={nativeLocalePreference?.locale ?? null}
         onLocaleChange={syncNativeLocalePreference}
+        preferredLocales={preferredLocales}
       >
         <NativeLocaleSync />
         <QueryClientProvider client={queryClient}>
