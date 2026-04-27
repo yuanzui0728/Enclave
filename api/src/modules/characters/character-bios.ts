@@ -8,6 +8,8 @@ export const DEFAULT_CHARACTER_BIOS = {
   reminder_keeper: '怕忘的事直接丢给我。我替你盯着，到点叫你。',
   wedding_planner:
     '先定预算、人数和档期，再把流程、供应商和备选方案一项项落地。',
+  wedding_dress_expert:
+    '先看场地、身形体感和预算，再定廓形、面料、试纱与改衣。',
 } as const;
 
 export const PRESET_CHARACTER_BIOS = {

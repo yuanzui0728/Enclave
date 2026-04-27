@@ -19,6 +19,10 @@ import {
   WEDDING_PLANNER_CHARACTER_ID,
 } from './wedding-planner-character';
 import {
+  buildWeddingDressExpertCharacter,
+  WEDDING_DRESS_EXPERT_CHARACTER_ID,
+} from './wedding-dress-expert-character';
+import {
   buildWorldNewsDeskCharacter,
   WORLD_NEWS_DESK_CHARACTER_ID,
 } from './world-news-desk-character';
@@ -33,6 +37,7 @@ export const DEFAULT_CHARACTER_IDS = [
   LAWYER_CHARACTER_ID,
   REMINDER_CHARACTER_ID,
   WEDDING_PLANNER_CHARACTER_ID,
+  WEDDING_DRESS_EXPERT_CHARACTER_ID,
   WORLD_NEWS_DESK_CHARACTER_ID,
 ] as const;
 
@@ -236,6 +241,7 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
     buildLawyerCharacter(),
     buildReminderCharacter(),
     buildWeddingPlannerCharacter(),
+    buildWeddingDressExpertCharacter(),
     buildWorldNewsDeskCharacter(),
   ];
 }

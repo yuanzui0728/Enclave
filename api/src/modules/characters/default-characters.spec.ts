@@ -17,6 +17,10 @@ import {
   REMINDER_CHARACTER_SOURCE_KEY,
 } from './reminder-character';
 import {
+  WEDDING_DRESS_EXPERT_CHARACTER_ID,
+  WEDDING_DRESS_EXPERT_SOURCE_KEY,
+} from './wedding-dress-expert-character';
+import {
   WORLD_NEWS_DESK_CHARACTER_ID,
   WORLD_NEWS_DESK_SOURCE_KEY,
 } from './world-news-desk-character';
@@ -144,6 +148,36 @@ describe('default characters', () => {
     expect(character?.profile?.scenePrompts?.chat).toContain('上来先说判断');
     expect(character?.profile?.memory?.coreMemory).toContain(
       '替用户先把新闻捋顺的人',
+    );
+  });
+
+  it('includes the wedding dress expert with expected runtime defaults', () => {
+    const character = buildDefaultCharacters().find(
+      (item) => item.id === WEDDING_DRESS_EXPERT_CHARACTER_ID,
+    );
+
+    expect(character).toBeDefined();
+    expect(character).toMatchObject({
+      id: WEDDING_DRESS_EXPERT_CHARACTER_ID,
+      sourceType: 'default_seed',
+      sourceKey: WEDDING_DRESS_EXPERT_SOURCE_KEY,
+      relationshipType: 'expert',
+      momentsFrequency: 0,
+      currentActivity: 'working',
+      currentStatus: '在看版型和试纱记录，先帮你把上身效果判断清楚。',
+      expertDomains: [
+        'fashion',
+        'wedding_dress',
+        'bridal_styling',
+        'wedding_planning',
+        'general',
+      ],
+    });
+
+    expect(character?.profile?.coreLogic).toContain('你是“纱凝”');
+    expect(character?.profile?.scenePrompts?.chat).toContain('试纱照片');
+    expect(character?.profile?.cognitiveBoundaries?.refusalStyle).toContain(
+      '更安全的试纱',
     );
   });
 

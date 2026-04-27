@@ -6,6 +6,7 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   doctor: 'doctor-lin.svg',
   lawyer_jianheng: 'lawyer-jianheng.svg',
   wedding_planner: 'wedding-planner-lixu.svg',
+  wedding_dress_expert: 'wedding-dress-expert-shaning.svg',
   world_news_desk: 'world-news-desk.svg',
   steve_jobs: 'steve-jobs.svg',
   ilya_sutskever: 'ilya-sutskever.svg',
