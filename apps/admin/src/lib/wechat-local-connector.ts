@@ -155,18 +155,10 @@ export function loadWechatConnectorSettings(): WechatConnectorSettings {
     const parsed = JSON.parse(raw) as Partial<WechatConnectorSettings>;
     return {
       baseUrl: normalizeBaseUrl(parsed.baseUrl) || DEFAULT_WECHAT_CONNECTOR_BASE_URL,
-      weflowMessageMode: normalizeMessageMode(parsed.weflowMessageMode) ?? "recent",
-      weflowMessageLimit: normalizePositiveInteger(parsed.weflowMessageLimit, 5000),
-      weflowIncludeMoments: parsed.weflowIncludeMoments !== false,
-      weflowMomentLimit: normalizePositiveInteger(parsed.weflowMomentLimit, 20),
     };
   } catch {
     return {
       baseUrl: DEFAULT_WECHAT_CONNECTOR_BASE_URL,
-      weflowMessageMode: "recent",
-      weflowMessageLimit: 5000,
-      weflowIncludeMoments: true,
-      weflowMomentLimit: 20,
     };
   }
 }
@@ -176,11 +168,6 @@ export function saveWechatConnectorSettings(settings: WechatConnectorSettings) {
     WECHAT_CONNECTOR_STORAGE_KEY,
     JSON.stringify({
       baseUrl: normalizeBaseUrl(settings.baseUrl) || DEFAULT_WECHAT_CONNECTOR_BASE_URL,
-      weflowMessageMode:
-        normalizeMessageMode(settings.weflowMessageMode) ?? "recent",
-      weflowMessageLimit: normalizePositiveInteger(settings.weflowMessageLimit, 5000),
-      weflowIncludeMoments: settings.weflowIncludeMoments !== false,
-      weflowMomentLimit: normalizePositiveInteger(settings.weflowMomentLimit, 20),
     }),
   );
 }

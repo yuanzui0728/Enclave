@@ -61,6 +61,14 @@ const WECHAT_SYNC_PREVIEW_MAX_SAMPLE_MESSAGES =
   WECHAT_SYNC_PROMPT_MAX_SAMPLE_MESSAGES;
 const WECHAT_SYNC_PREVIEW_MAX_MOMENT_HIGHLIGHTS =
   WECHAT_SYNC_PROMPT_MAX_MOMENT_HIGHLIGHTS;
+const WECHAT_SYNC_PROMPT_MESSAGE_CHAR_BUDGET = 28_000;
+const WECHAT_SYNC_PROMPT_MOMENT_CHAR_BUDGET = 6_000;
+const WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_TARGET_SIZE = 160;
+const WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_CHAR_BUDGET = 5_400;
+const WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_MAX_COUNT = 48;
+const WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_QUOTE_COUNT = 4;
+const WECHAT_SYNC_PROMPT_MESSAGE_QUOTE_MAX_LENGTH = 180;
+const WECHAT_SYNC_PROMPT_MOMENT_SUMMARY_MAX_COUNT = 40;
 const WECHAT_SYNC_MIN_MESSAGES_FOR_AI_PREVIEW = 12;
 const WECHAT_SYNC_MIN_SAMPLES_FOR_AI_PREVIEW = 3;
 const WECHAT_SYNC_SYSTEM_PROMPT_CONFIG_KEY =
@@ -851,6 +859,7 @@ export class WechatSyncAdminService {
   private buildWechatSyncAnalysisPromptContext(
     contact: WechatSyncContactBundleValue,
   ) {
+    const evidencePayload = buildWechatSyncPromptEvidencePayload(contact);
     const topicHint = contact.topicKeywords.length
       ? contact.topicKeywords.join('、')
       : '无明确高频话题';
@@ -859,41 +868,10 @@ export class WechatSyncAdminService {
     const aliasHint = contact.alias?.trim() || '无';
     const detailDescriptionHint = contact.detailDescription?.trim() || '无';
     const avatarHint = contact.avatarUrl?.trim() || '无';
-    const evidenceWindowHint = buildConversationEvidenceDigest(contact);
-    const momentSamples = selectRepresentativeMomentHighlights(
-      contact.momentHighlights,
-      WECHAT_SYNC_PROMPT_MAX_MOMENT_HIGHLIGHTS,
-    );
-    const messageSamples = selectRepresentativeMessageSamples(
-      contact.sampleMessages,
-      WECHAT_SYNC_PROMPT_MAX_SAMPLE_MESSAGES,
-    );
-    const momentHint = momentSamples.length
-      ? momentSamples
-          .map((item, index) => {
-            const location = item.location?.trim()
-              ? ` / 位置：${item.location.trim()}`
-              : '';
-            const postedAt = item.postedAt?.trim()
-              ? ` / 时间：${item.postedAt.trim()}`
-              : '';
-            const mediaHint = item.mediaHint?.trim()
-              ? ` / 媒体：${item.mediaHint.trim()}`
-              : '';
-            return `${index + 1}. ${item.text.trim()}${location}${postedAt}${mediaHint}`;
-          })
-          .join('\n')
-      : '暂无朋友圈或近况线索';
-    const samples = messageSamples
-      .map((item, index) => {
-        const sender = item.sender?.trim() || '未知发送者';
-        const direction = item.direction?.trim() || 'unknown';
-        const typeLabel = item.typeLabel?.trim() || '文本';
-        return `${index + 1}. [${item.timestamp}] [${direction}] [${typeLabel}] ${sender}: ${item.text}`;
-      })
-      .join('\n');
+    const evidenceWindowHint = evidencePayload.evidenceWindowHint;
 
     return [
+      '证据优先级提示：微信标签、地区、头像、朋友圈/近况与聊天原文都属于一级证据；若它们互相冲突，请保留冲突感，不要擅自抹平。',
       '联系人资料总览：',
       `- 微信 username：${contact.username}`,
       `- 显示名：${contact.displayName}`,
@@ -919,10 +897,10 @@ export class WechatSyncAdminService {
       `- 聊天摘要：${summaryHint}`,
       '',
       '朋友圈 / 近况线索：',
-      momentHint,
+      evidencePayload.momentEvidence,
       '',
-      '聊天样本（已按时间跨度抽取代表样本）：',
-      samples || '暂无聊天样本',
+      evidencePayload.messageEvidenceTitle,
+      evidencePayload.messageEvidence,
     ].join('\n');
   }
 
@@ -930,14 +908,7 @@ export class WechatSyncAdminService {
     template: string,
     contact: WechatSyncContactBundleValue,
   ) {
-    const messageSamples = selectRepresentativeMessageSamples(
-      contact.sampleMessages,
-      WECHAT_SYNC_PROMPT_MAX_SAMPLE_MESSAGES,
-    );
-    const momentSamples = selectRepresentativeMomentHighlights(
-      contact.momentHighlights,
-      WECHAT_SYNC_PROMPT_MAX_MOMENT_HIGHLIGHTS,
-    );
+    const evidencePayload = buildWechatSyncPromptEvidencePayload(contact);
     const replacements: Record<string, string> = {
       contact_context: this.buildWechatSyncAnalysisPromptContext(contact),
       username: contact.username,
@@ -958,41 +929,19 @@ export class WechatSyncAdminService {
       topic_keywords: contact.topicKeywords.length
         ? contact.topicKeywords.join('、')
         : '无明确高频关键词',
-      evidence_window: buildConversationEvidenceDigest(contact),
-      sample_messages:
-        messageSamples.length > 0
-          ? messageSamples
-              .map((item, index) => {
-                const sender = item.sender?.trim() || '未知发送者';
-                const direction = item.direction?.trim() || 'unknown';
-                const typeLabel = item.typeLabel?.trim() || '文本';
-                return `${index + 1}. [${item.timestamp}] [${direction}] [${typeLabel}] ${sender}: ${item.text}`;
-              })
-              .join('\n')
-          : '暂无聊天样本',
-      moment_highlights:
-        momentSamples.length > 0
-          ? momentSamples
-              .map((item, index) => {
-                const location = item.location?.trim()
-                  ? ` / 位置：${item.location.trim()}`
-                  : '';
-                const postedAt = item.postedAt?.trim()
-                  ? ` / 时间：${item.postedAt.trim()}`
-                  : '';
-                const mediaHint = item.mediaHint?.trim()
-                  ? ` / 媒体：${item.mediaHint.trim()}`
-                  : '';
-                return `${index + 1}. ${item.text.trim()}${location}${postedAt}${mediaHint}`;
-              })
-              .join('\n')
-          : '暂无朋友圈或近况线索',
+      evidence_window: evidencePayload.evidenceWindowHint,
+      sample_messages: evidencePayload.messageEvidence,
+      moment_highlights: evidencePayload.momentEvidence,
     };
 
-    return template.replace(
-      /\{\{\s*([a-z_]+)\s*\}\}/g,
-      (_, key: string) => replacements[key] ?? '',
-    );
+    return [
+      '额外硬要求：微信标签、地区、头像、朋友圈/近况与聊天原文都视为一级证据；宁可保留模糊、矛盾和边界感，也不要为了“更好聊”而把真人磨平成模板角色。',
+      '',
+      template.replace(
+        /\{\{\s*([a-z_]+)\s*\}\}/g,
+        (_, key: string) => replacements[key] ?? '',
+      ),
+    ].join('\n');
   }
 
   private async hasCharacterMoments(characterId: string) {
@@ -1137,6 +1086,290 @@ function selectRepresentativeIndices(total: number, maxCount: number) {
   indices.add(lastIndex);
 
   return [...indices].sort((left, right) => left - right).slice(0, maxCount);
+}
+
+function buildWechatSyncPromptEvidencePayload(
+  contact: WechatSyncContactBundleValue,
+) {
+  const evidenceWindowHint = buildConversationEvidenceDigest(contact);
+  const rawMessageEvidence = formatWechatSyncRawMessageEvidence(
+    contact.sampleMessages,
+  );
+  const rawMomentEvidence = formatWechatSyncRawMomentEvidence(
+    contact.momentHighlights,
+  );
+  const useChunkedMessages =
+    rawMessageEvidence.length > WECHAT_SYNC_PROMPT_MESSAGE_CHAR_BUDGET;
+  const useSummarizedMoments =
+    rawMomentEvidence.length > WECHAT_SYNC_PROMPT_MOMENT_CHAR_BUDGET;
+
+  return {
+    evidenceWindowHint,
+    messageEvidenceTitle: useChunkedMessages
+      ? '聊天长历史证据包（已按时间窗口分块，所有块都参与角色生成）：'
+      : '聊天原始证据（已直接纳入角色生成）：',
+    messageEvidence: useChunkedMessages
+      ? buildWechatSyncChunkedMessageEvidence(contact.sampleMessages)
+      : rawMessageEvidence || '暂无聊天样本',
+    momentEvidence: useSummarizedMoments
+      ? buildWechatSyncSummarizedMomentEvidence(contact.momentHighlights)
+      : rawMomentEvidence || '暂无朋友圈或近况线索',
+  };
+}
+
+function formatWechatSyncRawMessageEvidence(
+  samples: WechatSyncContactBundleValue['sampleMessages'],
+) {
+  return samples
+    .map((item, index) => {
+      const sender = item.sender?.trim() || '未知发送者';
+      const direction = item.direction?.trim() || 'unknown';
+      const typeLabel = item.typeLabel?.trim() || '文本';
+      return `${index + 1}. [${item.timestamp}] [${direction}] [${typeLabel}] ${sender}: ${normalizeWechatSyncPromptText(item.text)}`;
+    })
+    .join('\n');
+}
+
+function formatWechatSyncRawMomentEvidence(
+  highlights: WechatSyncContactBundleValue['momentHighlights'],
+) {
+  return highlights
+    .map((item, index) => {
+      const location = item.location?.trim()
+        ? ` / 位置：${item.location.trim()}`
+        : '';
+      const postedAt = item.postedAt?.trim()
+        ? ` / 时间：${item.postedAt.trim()}`
+        : '';
+      const mediaHint = item.mediaHint?.trim()
+        ? ` / 媒体：${item.mediaHint.trim()}`
+        : '';
+      return `${index + 1}. ${normalizeWechatSyncPromptText(item.text)}${location}${postedAt}${mediaHint}`;
+    })
+    .join('\n');
+}
+
+function buildWechatSyncChunkedMessageEvidence(
+  samples: WechatSyncContactBundleValue['sampleMessages'],
+) {
+  if (!samples.length) {
+    return '暂无聊天样本';
+  }
+
+  const chunks = chunkWechatSyncMessageSamples(samples);
+  const totalMessages = samples.length;
+
+  return [
+    `当前共纳入 ${totalMessages} 条聊天原文，超过单次直塞预算，因此改为时间顺序分块整理；下面每个块都代表了一段真实聊天窗口。`,
+    ...chunks.map((chunk, index) =>
+      formatWechatSyncEvidenceChunk(chunk, index + 1, chunks.length),
+    ),
+  ].join('\n\n');
+}
+
+function chunkWechatSyncMessageSamples(
+  samples: WechatSyncContactBundleValue['sampleMessages'],
+) {
+  const targetSize = Math.max(
+    WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_TARGET_SIZE,
+    Math.ceil(samples.length / WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_MAX_COUNT),
+  );
+  const chunks: Array<WechatSyncContactBundleValue['sampleMessages']> = [];
+  let currentChunk: WechatSyncContactBundleValue['sampleMessages'] = [];
+  let currentChars = 0;
+
+  for (const sample of samples) {
+    const sampleChars =
+      sample.text.length + (sample.sender?.length ?? 0) + sample.timestamp.length;
+    const shouldStartNextChunk =
+      currentChunk.length > 0 &&
+      (currentChunk.length >= targetSize ||
+        currentChars + sampleChars > WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_CHAR_BUDGET);
+
+    if (shouldStartNextChunk) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentChars = 0;
+    }
+
+    currentChunk.push(sample);
+    currentChars += sampleChars;
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  if (chunks.length <= WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_MAX_COUNT) {
+    return chunks;
+  }
+
+  const mergeStride = Math.ceil(
+    chunks.length / WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_MAX_COUNT,
+  );
+  const mergedChunks: Array<WechatSyncContactBundleValue['sampleMessages']> = [];
+  for (let index = 0; index < chunks.length; index += mergeStride) {
+    mergedChunks.push(
+      chunks.slice(index, index + mergeStride).reduce((accumulator, item) => {
+        accumulator.push(...item);
+        return accumulator;
+      }, [] as WechatSyncContactBundleValue['sampleMessages']),
+    );
+  }
+
+  return mergedChunks;
+}
+
+function formatWechatSyncEvidenceChunk(
+  chunk: WechatSyncContactBundleValue['sampleMessages'],
+  index: number,
+  totalChunks: number,
+) {
+  const ownerCount = chunk.filter((item) => item.direction === 'owner').length;
+  const contactCount = chunk.filter(
+    (item) =>
+      item.direction === 'contact' || item.direction === 'group_member',
+  ).length;
+  const systemCount = chunk.length - ownerCount - contactCount;
+  const quotes = selectRepresentativeMessageSamples(
+    chunk,
+    Math.min(WECHAT_SYNC_PROMPT_MESSAGE_CHUNK_QUOTE_COUNT, chunk.length),
+  )
+    .map((item) => {
+      const sender = item.sender?.trim() || '未知发送者';
+      return `[${item.timestamp}] ${sender}: ${sanitizeWechatSyncPromptText(
+        item.text,
+        WECHAT_SYNC_PROMPT_MESSAGE_QUOTE_MAX_LENGTH,
+      )}`;
+    })
+    .join('；');
+  const keywords = inferWechatSyncEvidenceKeywords(
+    chunk.map((item) => item.text),
+    6,
+  );
+  const firstTimestamp = chunk[0]?.timestamp ?? '未知';
+  const lastTimestamp = chunk[chunk.length - 1]?.timestamp ?? '未知';
+
+  return [
+    `## 聊天块 ${index}/${totalChunks}`,
+    `- 覆盖时间：${firstTimestamp} -> ${lastTimestamp}`,
+    `- 消息构成：共 ${chunk.length} 条，用户 ${ownerCount} 条，对方 ${contactCount} 条，系统/其他 ${systemCount} 条`,
+    `- 互动风格：${buildWechatSyncChunkInteractionSummary(chunk, ownerCount, contactCount)}`,
+    `- 高频线索：${keywords.length ? keywords.join('、') : '暂无稳定高频词'}`,
+    `- 代表原话：${quotes || '暂无可用原话'}`,
+  ].join('\n');
+}
+
+function buildWechatSyncChunkInteractionSummary(
+  chunk: WechatSyncContactBundleValue['sampleMessages'],
+  ownerCount: number,
+  contactCount: number,
+) {
+  const avgTextLength = Math.round(
+    chunk.reduce((sum, item) => sum + item.text.trim().length, 0) /
+      Math.max(chunk.length, 1),
+  );
+  const questionCount = chunk.filter((item) =>
+    /[?？]/.test(item.text),
+  ).length;
+  const exclamationCount = chunk.filter((item) =>
+    /[!！]/.test(item.text),
+  ).length;
+  const styleParts: string[] = [];
+
+  if (contactCount >= ownerCount * 1.4 && contactCount > 0) {
+    styleParts.push('对方发言偏主动');
+  } else if (ownerCount >= contactCount * 1.4 && ownerCount > 0) {
+    styleParts.push('用户发言偏主动');
+  } else {
+    styleParts.push('双方互动相对均衡');
+  }
+
+  if (avgTextLength <= 18) {
+    styleParts.push('表达偏短句');
+  } else if (avgTextLength >= 45) {
+    styleParts.push('表达偏长句');
+  } else {
+    styleParts.push('表达长度中等');
+  }
+
+  if (questionCount >= Math.max(2, Math.round(chunk.length * 0.25))) {
+    styleParts.push('问句较多');
+  }
+  if (exclamationCount >= Math.max(2, Math.round(chunk.length * 0.2))) {
+    styleParts.push('情绪符号较明显');
+  }
+
+  return styleParts.join('，');
+}
+
+function buildWechatSyncSummarizedMomentEvidence(
+  highlights: WechatSyncContactBundleValue['momentHighlights'],
+) {
+  if (!highlights.length) {
+    return '暂无朋友圈或近况线索';
+  }
+
+  const selectedHighlights = selectRepresentativeMomentHighlights(
+    highlights,
+    Math.min(WECHAT_SYNC_PROMPT_MOMENT_SUMMARY_MAX_COUNT, highlights.length),
+  );
+  const lines = selectedHighlights.map((item, index) => {
+    const location = item.location?.trim() ? ` / 位置：${item.location.trim()}` : '';
+    const postedAt = item.postedAt?.trim() ? ` / 时间：${item.postedAt.trim()}` : '';
+    const mediaHint = item.mediaHint?.trim() ? ` / 媒体：${item.mediaHint.trim()}` : '';
+    return `${index + 1}. ${sanitizeWechatSyncPromptText(
+      item.text,
+      WECHAT_SYNC_PROMPT_MESSAGE_QUOTE_MAX_LENGTH,
+    )}${location}${postedAt}${mediaHint}`;
+  });
+
+  return [
+    `当前共纳入 ${highlights.length} 条朋友圈/近况线索；为控制上下文长度，这里保留代表性条目，但最终角色生成必须把这些线索视为一级证据。`,
+    ...lines,
+  ].join('\n');
+}
+
+function inferWechatSyncEvidenceKeywords(texts: string[], limit: number) {
+  const normalizedTexts = texts
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+  const seen = new Map<string, number>();
+
+  for (const text of normalizedTexts) {
+    const candidates = text.match(
+      /[\u4e00-\u9fa5A-Za-z0-9][\u4e00-\u9fa5A-Za-z0-9\-]{1,15}/g,
+    );
+    for (const candidate of candidates ?? []) {
+      const normalized = candidate.trim().toLowerCase();
+      if (
+        normalized.length < 2 ||
+        /^(哈哈|好的|收到|就是|然后|这个|那个|我们|你们|他们)$/.test(
+          normalized,
+        )
+      ) {
+        continue;
+      }
+      seen.set(normalized, (seen.get(normalized) ?? 0) + 1);
+    }
+  }
+
+  return [...seen.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, limit)
+    .map(([keyword]) => keyword);
+}
+
+function normalizeWechatSyncPromptText(text: string) {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function sanitizeWechatSyncPromptText(text: string, maxLength: number) {
+  const normalized = normalizeWechatSyncPromptText(text);
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+  return `${normalized.slice(0, maxLength - 1)}…`;
 }
 
 function buildConversationEvidenceDigest(contact: WechatSyncContactBundleValue) {

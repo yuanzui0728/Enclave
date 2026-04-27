@@ -405,6 +405,9 @@ export function WechatSyncPage() {
   const [batchRelationshipInput, setBatchRelationshipInput] = useState("");
   const [batchDomainInput, setBatchDomainInput] = useState("");
   const [previewItems, setPreviewItems] = useState<WechatSyncPreviewItem[]>([]);
+  const [rawEvidenceByUsername, setRawEvidenceByUsername] = useState<
+    Record<string, WechatSyncContactBundle>
+  >({});
   const [importProgress, setImportProgress] =
     useState<WechatSyncImportProgressState | null>(null);
   const [wechatSyncAnalysisPromptDraft, setWechatSyncAnalysisPromptDraft] =
@@ -1034,6 +1037,7 @@ export function WechatSyncPage() {
       setPreviewItems([]);
       setSelectedPreviewUsernames([]);
       setSelectedUsernames([]);
+      setRawEvidenceByUsername({});
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["wechat-connector-health", connectorSettings.baseUrl],
@@ -1055,17 +1059,22 @@ export function WechatSyncPage() {
               buildConnectorContactBundleRequest(selectedUsernames),
             );
       saveWechatConnectorSettings(connectorSettings);
-      return adminApi.previewWechatSync({ contacts: selectedContacts });
+      return {
+        rawContacts: selectedContacts,
+        response: await adminApi.previewWechatSync({ contacts: selectedContacts }),
+      };
     },
     onMutate: () => {
       resetImportFeedback();
       setPreviewItems([]);
       setSelectedPreviewUsernames([]);
+      setRawEvidenceByUsername({});
     },
-    onSuccess: (result) => {
-      setPreviewItems(result.items);
+    onSuccess: ({ rawContacts, response }) => {
+      setRawEvidenceByUsername(createWechatSyncContactMap(rawContacts));
+      setPreviewItems(response.items);
       setSelectedPreviewUsernames(
-        result.items.map((item) => item.contact.username),
+        response.items.map((item) => item.contact.username),
       );
     },
   });
@@ -1085,7 +1094,7 @@ export function WechatSyncPage() {
       const startedAt = Date.now();
       const aggregatedResult = createEmptyWechatSyncImportResult();
       const itemsToImport = targetPreviewItems.map((item) => ({
-        contact: item.contact,
+        contact: rawEvidenceByUsername[item.contact.username] ?? item.contact,
         draftCharacter: item.draftCharacter,
         autoAddFriend,
         seedMoments,
@@ -1223,6 +1232,7 @@ export function WechatSyncPage() {
     resetImportFeedback();
     setPreviewItems([]);
     setSelectedPreviewUsernames([]);
+    setRawEvidenceByUsername({});
   }
 
   const workflowSteps = useMemo(() => {
@@ -1361,7 +1371,7 @@ export function WechatSyncPage() {
       adminApi.importWechatSync({
         items: [
           {
-            contact: item.contact,
+            contact: rawEvidenceByUsername[item.contact.username] ?? item.contact,
             draftCharacter: item.draftCharacter,
             autoAddFriend,
             seedMoments,
@@ -1496,6 +1506,11 @@ export function WechatSyncPage() {
     setPreviewItems((current) =>
       current.filter((item) => item.contact.username !== username),
     );
+    setRawEvidenceByUsername((current) => {
+      const next = { ...current };
+      delete next[username];
+      return next;
+    });
     setSelectedUsernames((current) =>
       current.filter((item) => item !== username),
     );
@@ -1813,6 +1828,7 @@ export function WechatSyncPage() {
     item: WechatSyncHistoryItem,
   ) {
     const restoredItem = buildPreviewItemFromImportSnapshot(snapshot);
+    const restoredContact = buildContactBundleFromImportSnapshot(snapshot);
     resetImportFeedback();
     reimportMutation.reset();
     restoreSnapshotMutation.reset();
@@ -1820,10 +1836,11 @@ export function WechatSyncPage() {
     setManualBundleError(null);
     setManualBundleFileName(null);
     setManualBundleJson(
-      JSON.stringify([buildContactBundleFromImportSnapshot(snapshot)], null, 2),
+      JSON.stringify([restoredContact], null, 2),
     );
     focusSnapshotVersionCard(item, snapshot);
     setPreviewItems([restoredItem]);
+    setRawEvidenceByUsername(createWechatSyncContactMap([restoredContact]));
     setSelectedUsernames([restoredItem.contact.username]);
     setSelectedPreviewUsernames([restoredItem.contact.username]);
   }
@@ -3195,6 +3212,9 @@ export function WechatSyncPage() {
               <PreviewCharacterCard
                 key={item.contact.username}
                 item={item}
+                evidenceContact={
+                  rawEvidenceByUsername[item.contact.username] ?? item.contact
+                }
                 selected={selectedPreviewSet.has(item.contact.username)}
                 validationIssues={
                   previewValidation.get(item.contact.username) ?? []
@@ -6508,6 +6528,7 @@ function ImportSnapshotVersionList({
 
 function PreviewCharacterCard({
   item,
+  evidenceContact,
   selected,
   validationIssues,
   onRemove,
@@ -6519,6 +6540,7 @@ function PreviewCharacterCard({
   onMemorySummaryChange,
 }: {
   item: WechatSyncPreviewItem;
+  evidenceContact: WechatSyncContactBundle;
   selected: boolean;
   validationIssues: string[];
   onRemove: () => void;
@@ -6539,6 +6561,17 @@ function PreviewCharacterCard({
   const domains = (
     draft.expertDomains?.length ? draft.expertDomains : ["general"]
   ).join("、");
+  const previewSamples = item.contact.sampleMessages.slice(0, 4);
+  const expandedSamples = evidenceContact.sampleMessages.slice(0, 80);
+  const expandedMoments = evidenceContact.momentHighlights.slice(0, 24);
+  const hasExpandedEvidence =
+    evidenceContact.sampleMessages.length > item.contact.sampleMessages.length ||
+    evidenceContact.momentHighlights.length > item.contact.momentHighlights.length;
+  const evidenceWindowLabel = formatWechatSyncEvidenceWindow(
+    evidenceContact.evidenceWindow,
+    evidenceContact.sampleMessages.length,
+    evidenceContact.momentHighlights.length,
+  );
 
   return (
     <Card className="bg-[color:var(--surface-card)]">
@@ -6619,36 +6652,39 @@ function PreviewCharacterCard({
               <div>用户名：{item.contact.username}</div>
               <div>
                 备注 / 昵称：
-                {item.contact.remarkName || item.contact.nickname || "暂无"}
+                {evidenceContact.remarkName ||
+                  evidenceContact.nickname ||
+                  "暂无"}
               </div>
-              <div>地区：{item.contact.region || "暂无"}</div>
-              <div>消息数：{item.contact.messageCount}</div>
+              <div>地区：{evidenceContact.region || "暂无"}</div>
+              <div>消息数：{evidenceContact.messageCount}</div>
               <div>
-                最近聊天：{formatDateTime(item.contact.latestMessageAt)}
+                最近聊天：{formatDateTime(evidenceContact.latestMessageAt)}
               </div>
               <div>
                 标签：
-                {item.contact.tags.length
-                  ? item.contact.tags.join("、")
+                {evidenceContact.tags.length
+                  ? evidenceContact.tags.join("、")
                   : "暂无"}
               </div>
               <div>
                 关键词：
-                {item.contact.topicKeywords.length
-                  ? item.contact.topicKeywords.join("、")
+                {evidenceContact.topicKeywords.length
+                  ? evidenceContact.topicKeywords.join("、")
                   : "暂无"}
               </div>
+              <div>证据窗口：{evidenceWindowLabel}</div>
             </div>
           </AdminMiniPanel>
           <AdminMiniPanel title="聊天摘要">
             <div className="text-sm leading-6 text-[color:var(--text-secondary)]">
-              {item.contact.chatSummary || "当前没有附带聊天摘要。"}
+              {evidenceContact.chatSummary || "当前没有附带聊天摘要。"}
             </div>
           </AdminMiniPanel>
           <AdminMiniPanel title="聊天样本">
             <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
-              {item.contact.sampleMessages.length ? (
-                item.contact.sampleMessages.slice(0, 4).map((message) => (
+              {previewSamples.length ? (
+                previewSamples.map((message) => (
                   <div
                     key={`${message.timestamp}-${message.text}`}
                     className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2"
@@ -6665,6 +6701,62 @@ function PreviewCharacterCard({
               )}
             </div>
           </AdminMiniPanel>
+          {(hasExpandedEvidence ||
+            evidenceContact.momentHighlights.length > 0) && (
+            <AdminMiniPanel title="当前会话长证据">
+              <details className="text-sm text-[color:var(--text-secondary)]">
+                <summary className="cursor-pointer select-none leading-6">
+                  展开当前会话原始证据摘要
+                  {`（消息 ${evidenceContact.sampleMessages.length} 条，近况 ${evidenceContact.momentHighlights.length} 条）`}
+                </summary>
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                    这里默认展示当前会话缓存中的前 {expandedSamples.length}
+                    条聊天和前 {expandedMoments.length}
+                    条近况，便于人工复核；本轮角色生成与导入会使用全部缓存证据，而不是只用这部分展示片段。
+                  </div>
+                  {expandedSamples.length ? (
+                    <div className="space-y-2">
+                      {expandedSamples.map((message) => (
+                        <div
+                          key={`raw-${message.timestamp}-${message.text}`}
+                          className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2"
+                        >
+                          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                            {message.sender || formatDirection(message.direction)} ·{" "}
+                            {message.timestamp}
+                          </div>
+                          <div className="mt-1 leading-6">{message.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div>当前没有可展开的聊天原文。</div>
+                  )}
+                  {expandedMoments.length ? (
+                    <div className="space-y-2">
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                        朋友圈 / 近况
+                      </div>
+                      {expandedMoments.map((moment) => (
+                        <div
+                          key={`moment-${moment.postedAt}-${moment.text}`}
+                          className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2"
+                        >
+                          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                            {formatDateTime(moment.postedAt)}
+                            {moment.location ? ` · ${moment.location}` : ""}
+                            {moment.mediaHint ? ` · ${moment.mediaHint}` : ""}
+                          </div>
+                          <div className="mt-1 leading-6">{moment.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </details>
+            </AdminMiniPanel>
+          )}
         </div>
       </div>
 
@@ -7016,6 +7108,35 @@ function readEvidenceWindow(
     requestedMomentLimit: readNullableNumber(value.requestedMomentLimit),
     fetchedMomentCount: readNullableNumber(value.fetchedMomentCount),
   };
+}
+
+function createWechatSyncContactMap(contacts: WechatSyncContactBundle[]) {
+  return Object.fromEntries(
+    contacts.map((contact) => [contact.username, contact]),
+  ) as Record<string, WechatSyncContactBundle>;
+}
+
+function formatWechatSyncEvidenceWindow(
+  value: WechatSyncContactBundle["evidenceWindow"],
+  fallbackMessageCount: number,
+  fallbackMomentCount: number,
+) {
+  const messageMode = value?.messageMode === "all" ? "all" : "recent";
+  const requestedMessageLimit = value?.requestedMessageLimit;
+  const fetchedMessageCount = value?.fetchedMessageCount ?? fallbackMessageCount;
+  const includeMoments = value?.includeMoments ?? true;
+  const requestedMomentLimit = value?.requestedMomentLimit;
+  const fetchedMomentCount = value?.fetchedMomentCount ?? fallbackMomentCount;
+
+  const messageSummary =
+    messageMode === "all"
+      ? `消息全部历史（实际 ${fetchedMessageCount} 条）`
+      : `消息最近 ${requestedMessageLimit ?? fetchedMessageCount} 条（实际 ${fetchedMessageCount} 条）`;
+  const momentSummary = includeMoments
+    ? `近况最近 ${requestedMomentLimit ?? fetchedMomentCount} 条（实际 ${fetchedMomentCount} 条）`
+    : "近况未纳入";
+
+  return `${messageSummary}；${momentSummary}`;
 }
 
 function normalizeMessageDirection(
