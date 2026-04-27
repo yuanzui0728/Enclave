@@ -56,6 +56,8 @@ const ADMIN_REFRESH_TOKEN_KEY = "yinjie_cloud_admin_refresh_token";
 const ADMIN_REFRESH_TOKEN_EXPIRES_AT_KEY =
   "yinjie_cloud_admin_refresh_token_expires_at";
 const ADMIN_ACCESS_TOKEN_REFRESH_SKEW_MS = 30_000;
+export const CLOUD_ADMIN_SECRET_INVALID_EVENT =
+  "yinjie-cloud-admin-secret-invalid";
 
 export type CloudAdminApiResponseWithMeta<T> = {
   data: T;
@@ -98,6 +100,10 @@ let inFlightAdminTokenPromise:
   | Promise<IssueCloudAdminAccessTokenResponse>
   | null = null;
 
+type CloudAdminSecretInvalidEventDetail = {
+  requestId: string | null;
+};
+
 function getStorage() {
   if (typeof window === "undefined") {
     return null;
@@ -108,6 +114,45 @@ function getStorage() {
   } catch {
     return null;
   }
+}
+
+export function addCloudAdminSecretInvalidListener(
+  listener: (detail: CloudAdminSecretInvalidEventDetail) => void,
+) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  const eventListener = (event: Event) => {
+    listener(
+      event instanceof CustomEvent &&
+        event.detail &&
+        typeof event.detail === "object"
+        ? (event.detail as CloudAdminSecretInvalidEventDetail)
+        : { requestId: null },
+    );
+  };
+
+  window.addEventListener(CLOUD_ADMIN_SECRET_INVALID_EVENT, eventListener);
+  return () =>
+    window.removeEventListener(CLOUD_ADMIN_SECRET_INVALID_EVENT, eventListener);
+}
+
+function notifyCloudAdminSecretInvalid(requestId: string | null) {
+  setCloudAdminSecret("");
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent<CloudAdminSecretInvalidEventDetail>(
+      CLOUD_ADMIN_SECRET_INVALID_EVENT,
+      {
+        detail: { requestId },
+      },
+    ),
+  );
 }
 
 type CloudAdminRuntimeLocation = {
@@ -420,9 +465,11 @@ async function issueCloudAdminAccessToken(
   }
 
   if (response.status === 401) {
+    const requestId = getResponseRequestId(response);
+    notifyCloudAdminSecretInvalid(requestId);
     throw new CloudAdminApiError(
       translateCloudConsoleTextForActiveLocale("CLOUD_ADMIN_SECRET is invalid."),
-      getResponseRequestId(response),
+      requestId,
       {
         errorCode: "CLOUD_ADMIN_SECRET_INVALID",
         statusCode: 401,

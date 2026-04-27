@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { installCloudAdminApiMock, renderRoute } from "./test-helpers";
 import { resolveCloudAdminApiBaseFromLocation } from "../src/lib/cloud-admin-api";
 
@@ -63,6 +63,22 @@ describe("cloud-console router smoke", () => {
     expect(await screen.findByText("需要管理密钥")).toBeTruthy();
     expect(screen.queryByText("舰队仪表盘")).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("clears an invalid admin secret and returns to the access setup state", async () => {
+    const { requests } = installCloudAdminApiMock();
+
+    renderRoute("/", { adminSecret: "wrong-secret", locale: null });
+
+    expect(await screen.findByText("CLOUD_ADMIN_SECRET 无效。")).toBeTruthy();
+    await waitFor(() => {
+      expect(window.localStorage.getItem("yinjie_cloud_admin_secret")).toBeNull();
+    });
+    expect(await screen.findByText("需要管理密钥")).toBeTruthy();
+    expect(screen.getAllByText("CLOUD_ADMIN_SECRET 无效。")).toHaveLength(1);
+    expect(
+      requests.filter((entry) => entry.url === "POST /admin/cloud/auth/token"),
+    ).toHaveLength(1);
   });
 
   it("uses the cloud API port for local Vite origins without an explicit API base", () => {

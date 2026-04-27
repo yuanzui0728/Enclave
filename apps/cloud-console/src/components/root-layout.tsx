@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LanguageSwitcher } from "@yinjie/i18n";
@@ -9,10 +9,12 @@ import { SessionsPermalinkLink } from "./sessions-permalink-link";
 import { WaitingSyncPermalinkLink } from "./waiting-sync-permalink-link";
 import { WorldsPermalinkLink } from "./worlds-permalink-link";
 import {
+  addCloudAdminSecretInvalidListener,
   getCloudAdminSecret,
   revokeStoredCloudAdminSession,
   setCloudAdminSecret,
 } from "../lib/cloud-admin-api";
+import { translateCloudConsoleTextForActiveLocale } from "../lib/cloud-console-i18n";
 import { ConsoleNoticeProvider, useConsoleNotice } from "./console-notice";
 
 const NAV_LINK =
@@ -137,6 +139,25 @@ function RootLayoutContent() {
   const [draft, setDraft] = useState(getCloudAdminSecret);
   const hasSecret = Boolean(secret.trim());
   const routeMeta = getRouteMeta(pathname);
+
+  useEffect(
+    () =>
+      addCloudAdminSecretInvalidListener(({ requestId }) => {
+        setSecret("");
+        setDraft("");
+        setEditingSecret(true);
+        void queryClient.cancelQueries({ queryKey: ["cloud-console"] });
+        queryClient.removeQueries({ queryKey: ["cloud-console"] });
+        showNotice(
+          translateCloudConsoleTextForActiveLocale(
+            "CLOUD_ADMIN_SECRET is invalid.",
+          ),
+          "danger",
+          { requestId },
+        );
+      }),
+    [queryClient, showNotice],
+  );
 
   async function saveSecret() {
     const nextSecret = draft.trim();
