@@ -52,17 +52,112 @@ const surfaceCatalogLoaders: Record<I18nAppSurface, CatalogLoaderMap> = {
   site: siteCatalogLoaders,
 };
 
+const messageCache = new Map<string, Promise<Messages>>();
+
+const CJK_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
+const KOREAN_HANGUL_PATTERN = /[\uac00-\ud7af]/;
+const SIMPLIFIED_CHINESE_MARKER_PATTERN =
+  /[个条项进运这为时对队关务续联调实测门复义状数读写优级险备错页启线]/;
+
 export async function loadMessagesForSurface(
   surface: I18nAppSurface,
   locale: SupportedLocale,
 ) {
-  const [sharedCatalog, surfaceCatalog] = await Promise.all([
-    sharedCatalogLoaders[locale](),
-    surfaceCatalogLoaders[surface][locale](),
-  ]);
+  const cacheKey = `${surface}:${locale}`;
+  const cachedMessages = messageCache.get(cacheKey);
+  if (cachedMessages) {
+    return cachedMessages;
+  }
 
-  return {
-    ...sharedCatalog.messages,
-    ...surfaceCatalog.messages,
-  } satisfies Messages;
+  const messagesPromise =
+    locale === "ja-JP" || locale === "ko-KR"
+      ? Promise.all([
+          sharedCatalogLoaders["en-US"](),
+          surfaceCatalogLoaders[surface]["en-US"](),
+          sharedCatalogLoaders[locale](),
+          surfaceCatalogLoaders[surface][locale](),
+        ]).then(
+          ([
+            fallbackSharedCatalog,
+            fallbackSurfaceCatalog,
+            sharedCatalog,
+            surfaceCatalog,
+          ]) =>
+            mergeMessagesWithLocaleFallback(
+              {
+                ...sharedCatalog.messages,
+                ...surfaceCatalog.messages,
+              },
+              {
+                ...fallbackSharedCatalog.messages,
+                ...fallbackSurfaceCatalog.messages,
+              },
+              locale,
+            ),
+        )
+      : Promise.all([
+          sharedCatalogLoaders[locale](),
+          surfaceCatalogLoaders[surface][locale](),
+        ]).then(([sharedCatalog, surfaceCatalog]) => ({
+          ...sharedCatalog.messages,
+          ...surfaceCatalog.messages,
+        }) satisfies Messages);
+
+  messageCache.set(cacheKey, messagesPromise);
+  return messagesPromise;
+}
+
+export function prefetchMessagesForSurface(
+  surface: I18nAppSurface,
+  locales: readonly SupportedLocale[],
+) {
+  locales.forEach((locale) => {
+    void loadMessagesForSurface(surface, locale).catch(() => {
+      messageCache.delete(`${surface}:${locale}`);
+    });
+  });
+}
+
+function mergeMessagesWithLocaleFallback(
+  primaryMessages: Messages,
+  fallbackMessages: Messages,
+  locale: SupportedLocale,
+) {
+  const mergedMessages: Messages = { ...fallbackMessages };
+
+  for (const [key, value] of Object.entries(primaryMessages)) {
+    mergedMessages[key] = isLikelyMissingLocaleMessage(value, locale)
+      ? fallbackMessages[key] ?? value
+      : value;
+  }
+
+  return mergedMessages;
+}
+
+function isLikelyMissingLocaleMessage(
+  value: Messages[string],
+  locale: SupportedLocale,
+) {
+  if (typeof value !== "string" && !Array.isArray(value)) {
+    return false;
+  }
+
+  const serializedValue = Array.isArray(value) ? value.join("") : value;
+  if (!CJK_PATTERN.test(serializedValue)) {
+    return false;
+  }
+
+  if (locale === "ja-JP") {
+    return (
+      !JAPANESE_KANA_PATTERN.test(serializedValue) &&
+      SIMPLIFIED_CHINESE_MARKER_PATTERN.test(serializedValue)
+    );
+  }
+
+  if (locale === "ko-KR") {
+    return !KOREAN_HANGUL_PATTERN.test(serializedValue);
+  }
+
+  return false;
 }

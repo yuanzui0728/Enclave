@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { translateRuntimeMessage, useAppLocale } from "@yinjie/i18n";
+import { AdminAutoTranslationBoundary } from "./admin-auto-translation-boundary";
 import { AdminShell } from "./admin-shell";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
@@ -15,7 +16,7 @@ import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summar
 export function RootLayout() {
   const queryClient = useQueryClient();
   const location = useLocation();
-  const { locale } = useAppLocale();
+  const { activationVersion, locale } = useAppLocale();
   const t = translateRuntimeMessage;
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const [secret, setSecret] = useState(getAdminSecret);
@@ -30,12 +31,12 @@ export function RootLayout() {
 
   const routeMeta = useMemo(
     () => resolveRouteMeta(location.pathname),
-    [locale, location.pathname],
+    [activationVersion, locale, location.pathname],
   );
-  const navItems = useMemo(() => resolveNavItems(), [locale]);
+  const navItems = useMemo(() => resolveNavItems(), [activationVersion, locale]);
   const digitalHumanSummary = useMemo(
     () => buildDigitalHumanAdminSummary(statusQuery.data?.digitalHumanGateway),
-    [locale, statusQuery.data?.digitalHumanGateway],
+    [activationVersion, locale, statusQuery.data?.digitalHumanGateway],
   );
   const shellStatus = useMemo(() => {
     if (statusQuery.isError) {
@@ -86,6 +87,7 @@ export function RootLayout() {
   }, [
     digitalHumanSummary.ready,
     digitalHumanSummary.statusLabel,
+    activationVersion,
     locale,
     statusQuery.data,
     statusQuery.isError,
@@ -101,36 +103,38 @@ export function RootLayout() {
   return (
     <>
       <DesktopRuntimeGuard />
-      <AdminShell
-        sidebar={
-          <AdminSidebar
-            secret={secret}
-            editingSecret={editingSecret}
-            draft={draft}
-            onDraftChange={setDraft}
-            onSaveSecret={saveSecret}
-            onEditSecret={() => setEditingSecret(true)}
-            coreApiHealthy={Boolean(statusQuery.data?.coreApi.healthy)}
-            providerReady={Boolean(
-              statusQuery.data?.inferenceGateway.activeProvider,
-            )}
-            digitalHumanSummary={digitalHumanSummary}
-            ownerCount={statusQuery.data?.worldSurface.ownerCount ?? null}
-            navLinks={navItems}
-          />
-        }
-        topbar={
-          <AdminTopbar
-            eyebrow={routeMeta.eyebrow}
-            title={routeMeta.title}
-            statusLabel={shellStatus.label}
-            statusTone={shellStatus.tone}
-            statusDetailLabel={shellStatus.detailLabel}
-          />
-        }
-      >
-        <Outlet />
-      </AdminShell>
+      <AdminAutoTranslationBoundary>
+        <AdminShell
+          sidebar={
+            <AdminSidebar
+              secret={secret}
+              editingSecret={editingSecret}
+              draft={draft}
+              onDraftChange={setDraft}
+              onSaveSecret={saveSecret}
+              onEditSecret={() => setEditingSecret(true)}
+              coreApiHealthy={Boolean(statusQuery.data?.coreApi.healthy)}
+              providerReady={Boolean(
+                statusQuery.data?.inferenceGateway.activeProvider,
+              )}
+              digitalHumanSummary={digitalHumanSummary}
+              ownerCount={statusQuery.data?.worldSurface.ownerCount ?? null}
+              navLinks={navItems}
+            />
+          }
+          topbar={
+            <AdminTopbar
+              eyebrow={routeMeta.eyebrow}
+              title={routeMeta.title}
+              statusLabel={shellStatus.label}
+              statusTone={shellStatus.tone}
+              statusDetailLabel={shellStatus.detailLabel}
+            />
+          }
+        >
+          <Outlet />
+        </AdminShell>
+      </AdminAutoTranslationBoundary>
     </>
   );
 }
@@ -177,9 +181,9 @@ function resolveNavItems() {
     },
     {
       to: "/self-agent",
-      label: "主代理",
-      roleBadge: "承接：我自己主代理",
-      hint: "查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。",
+      label: t(msg`主代理`),
+      roleBadge: t(msg`承接：我自己主代理`),
+      hint: t(msg`查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。`),
     },
     {
       to: "/reminder-runtime",
@@ -292,10 +296,11 @@ function resolveRouteMeta(pathname: string) {
 
   if (pathname === "/self-agent") {
     return {
-      eyebrow: "Self Agent",
-      title: "我自己的 workspace 与 heartbeat",
-      description:
-        "把“我自己”升级成主代理后，在这里查看 standing orders、workspace 文件、巡检结果和近期待处理事项。",
+      eyebrow: t(msg`Self Agent`),
+      title: t(msg`我自己的 workspace 与 heartbeat`),
+      description: t(
+        msg`把“我自己”升级成主代理后，在这里查看 standing orders、workspace 文件、巡检结果和近期待处理事项。`,
+      ),
     };
   }
 

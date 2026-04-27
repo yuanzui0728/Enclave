@@ -16,10 +16,6 @@ msgstr ""
 msgid "云端模式"
 msgstr "클라우드 모드"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:28
-msgid "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
-msgstr "변경하면 현재 클라이언트에 저장되며, 연결된 화면 문구와 형식 규칙에 즉시 적용됩니다."
-
 #: packages/i18n/src/runtime/formatters.ts:61
 msgid "刚刚"
 msgstr "방금"
@@ -48,7 +44,7 @@ msgstr "어제"
 msgid "本地兼容"
 msgstr "로컬 호환"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:58
+#: packages/i18n/src/runtime/language-switcher.tsx:59
 msgid "界面语言"
 msgstr "인터페이스 언어"
 
@@ -67,3 +63,7 @@ msgstr "전사 모델"
 #: packages/ui/src/components/setup-step-list.tsx:44
 msgid "通过"
 msgstr "통과"
+
+#: packages/i18n/src/runtime/language-switcher.tsx:28
+msgid "默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。"
+msgstr "기본값은 간체 중국어입니다. 전환하면 현재 페이지 세션에만 적용되며, 연결된 화면 문구와 형식 규칙에 즉시 반영됩니다."

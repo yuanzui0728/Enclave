@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from "react";
+import { msg } from "@lingui/macro";
 import { Link } from "@tanstack/react-router";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
   Card,
   MetricCard,
@@ -57,7 +59,7 @@ export function AdminContextBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border border-[color:var(--border-subtle)] bg-white/80 px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
+        "inline-flex max-w-full min-w-0 items-center justify-center break-words rounded-full border border-[color:var(--border-subtle)] bg-white/80 px-2.5 py-1 text-center text-[11px] font-medium leading-4 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
         className,
       )}
     >
@@ -110,15 +112,17 @@ export function AdminPageHero({
 }
 
 export function AdminSectionNav({
-  title = "段落导航",
+  title,
   items,
 }: {
   title?: ReactNode;
   items: AdminSectionNavItem[];
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <Card className="bg-[color:var(--surface-console)]">
-      <SectionHeading>{title}</SectionHeading>
+      <SectionHeading>{title ?? t(msg`段落导航`)}</SectionHeading>
       <div className="mt-4 grid gap-2">
         {items.map((item, index) => (
           <button
@@ -489,7 +493,7 @@ export function AdminActionGroup({
 }
 
 export function AdminDangerZone({
-  title = "谨慎操作",
+  title,
   description,
   children,
   className,
@@ -499,6 +503,8 @@ export function AdminDangerZone({
   children: ReactNode;
   className?: string;
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <div
       className={cn(
@@ -506,7 +512,7 @@ export function AdminDangerZone({
         className,
       )}
     >
-      <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title}</div>
+      <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title ?? t(msg`谨慎操作`)}</div>
       <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
       <div className="mt-4">{children}</div>
     </div>
@@ -547,9 +553,9 @@ export function AdminActionFeedback({
 export function AdminDraftStatusPill({
   ready,
   dirty,
-  loadingLabel = "等待加载",
-  dirtyLabel = "草稿未保存",
-  syncedLabel = "已同步",
+  loadingLabel,
+  dirtyLabel,
+  syncedLabel,
 }: {
   ready: boolean;
   dirty: boolean;
@@ -557,9 +563,15 @@ export function AdminDraftStatusPill({
   dirtyLabel?: ReactNode;
   syncedLabel?: ReactNode;
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <StatusPill tone={!ready ? "muted" : dirty ? "warning" : "healthy"}>
-      {!ready ? loadingLabel : dirty ? dirtyLabel : syncedLabel}
+      {!ready
+        ? loadingLabel ?? t(msg`等待加载`)
+        : dirty
+          ? dirtyLabel ?? t(msg`草稿未保存`)
+          : syncedLabel ?? t(msg`已同步`)}
     </StatusPill>
   );
 }
@@ -627,6 +639,8 @@ export function AdminJumpCard({
   emphasis?: "primary" | "secondary";
   disabled?: boolean;
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <Link to={to} disabled={disabled} className={disabled ? "pointer-events-none opacity-50" : "block"}>
       <div className="h-full rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
@@ -636,7 +650,7 @@ export function AdminJumpCard({
             <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{detail}</div>
           </div>
           <StatusPill tone={emphasis === "primary" ? "healthy" : "muted"}>
-            {emphasis === "primary" ? "优先" : "入口"}
+            {emphasis === "primary" ? t(msg`优先`) : t(msg`入口`)}
           </StatusPill>
         </div>
       </div>
@@ -650,7 +664,7 @@ export function AdminSelectableCard({
   subtitle,
   meta,
   badge,
-  activeLabel = "当前查看",
+  activeLabel,
   onClick,
   className,
 }: {
@@ -663,6 +677,8 @@ export function AdminSelectableCard({
   onClick: () => void;
   className?: string;
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <button
       type="button"
@@ -683,7 +699,7 @@ export function AdminSelectableCard({
           {meta ? <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">{meta}</div> : null}
           {active ? (
             <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--brand-primary)]">
-              {activeLabel}
+              {activeLabel ?? t(msg`当前查看`)}
             </div>
           ) : null}
         </div>
@@ -870,6 +886,8 @@ export function AdminPromptSectionList({
   }>;
   className?: string;
 }) {
+  const t = translateRuntimeMessage;
+
   return (
     <div className={className}>
       <div className="space-y-3">
@@ -881,12 +899,12 @@ export function AdminPromptSectionList({
             <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">{section.label}</div>
               <StatusPill tone={section.active ? "healthy" : "muted"}>
-                {section.active ? "生效中" : "未生效"}
+                {section.active ? t(msg`生效中`) : t(msg`未生效`)}
               </StatusPill>
             </div>
             <AdminCodeBlock
               className="rounded-none border-0 bg-transparent p-4"
-              value={section.content || "当前未注入该分段。"}
+              value={section.content || t(msg`当前未注入该分段。`)}
             />
           </div>
         ))}
@@ -957,6 +975,8 @@ export function AdminTextArea({
   textareaClassName?: string;
 }) {
   const [showDefault, setShowDefault] = useState(false);
+  const t = translateRuntimeMessage;
+
   return (
     <div className={className ?? "block"}>
       <label>
@@ -970,7 +990,7 @@ export function AdminTextArea({
               onClick={(e) => { e.preventDefault(); setShowDefault((v) => !v); }}
               className="shrink-0 rounded-md px-2 py-0.5 text-[11px] text-[color:var(--text-muted)] ring-1 ring-[color:var(--border-faint)] transition hover:bg-[color:var(--surface-secondary)] hover:text-[color:var(--text-secondary)]"
             >
-              {showDefault ? "收起" : "查看默认"}
+              {showDefault ? t(msg`收起`) : t(msg`查看默认`)}
             </button>
           ) : null}
         </div>

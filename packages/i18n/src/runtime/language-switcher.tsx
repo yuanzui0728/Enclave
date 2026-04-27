@@ -21,12 +21,12 @@ export function LanguageSwitcher({
   variant = "panel",
 }: LanguageSwitcherProps) {
   const selectId = useId();
-  const { availableLocales, locale, setLocale } = useAppLocale();
+  const { availableLocales, requestedLocale, setLocale } = useAppLocale();
   const compact = variant === "compact";
   const resolvedDescription =
     description === undefined ? (
       <Trans>
-        切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。
+        默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。
       </Trans>
     ) : (
       description
@@ -34,9 +34,10 @@ export function LanguageSwitcher({
 
   return (
     <div
+      data-i18n-skip="true"
       className={cx(
         compact
-          ? "inline-flex items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-primary)] px-2.5 py-1"
+          ? "inline-flex max-w-full flex-wrap items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-primary)] px-2.5 py-1"
           : "rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3.5 py-3 shadow-none",
         className,
       )}
@@ -51,7 +52,7 @@ export function LanguageSwitcher({
         <span
           className={cx(
             compact
-              ? "whitespace-nowrap text-[color:var(--text-muted)]"
+              ? "text-[color:var(--text-muted)]"
               : "text-[13px] font-medium text-[color:var(--text-primary)]",
           )}
         >
@@ -59,12 +60,12 @@ export function LanguageSwitcher({
         </span>
         <select
           id={selectId}
-          value={locale}
+          value={requestedLocale}
           onChange={(event) => setLocale(event.currentTarget.value)}
           className={cx(
             "rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]",
             compact
-              ? "px-2 py-1 text-xs"
+              ? "max-w-full px-2 py-1 text-xs"
               : "min-w-[8.5rem] px-3 py-2 text-[12px]",
           )}
         >

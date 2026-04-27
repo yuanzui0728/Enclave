@@ -4,8 +4,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
+  startTransition,
 } from "react";
 import { I18nProvider } from "@lingui/react";
 import {
@@ -13,19 +15,23 @@ import {
   SUPPORTED_LOCALES,
   type I18nAppSurface,
   type SupportedLocale,
-  persistPreferredLocale,
   resolveInitialLocale,
   resolveSupportedLocale,
   syncDocumentLocale,
 } from "../locales";
 import { appI18n, setActiveLocale } from "./i18n-instance";
-import { loadMessagesForSurface } from "./catalog-loaders";
+import {
+  loadMessagesForSurface,
+  prefetchMessagesForSurface,
+} from "./catalog-loaders";
 
 type AppLocaleContextValue = {
+  activationVersion: number;
   availableLocales: readonly SupportedLocale[];
   error: Error | null;
   isReady: boolean;
   locale: SupportedLocale;
+  requestedLocale: SupportedLocale;
   setLocale: (locale: string) => void;
   surface: I18nAppSurface;
 };
@@ -43,20 +49,24 @@ export function AppLocaleProvider({
   fallback = null,
   surface,
 }: AppLocaleProviderProps) {
-  const [locale, setLocaleState] = useState<SupportedLocale>(() =>
-    resolveInitialLocale(surface),
-  );
+  const initialLocale = useMemo(() => resolveInitialLocale(surface), [surface]);
+  const [requestedLocale, setRequestedLocale] =
+    useState<SupportedLocale>(initialLocale);
+  const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [activationVersion, setActivationVersion] = useState(0);
+  const hasActivatedLocaleRef = useRef(false);
 
   const setLocale = useCallback(
     (nextLocale: string) => {
       const resolvedLocale =
         resolveSupportedLocale(nextLocale) ?? DEFAULT_LOCALE;
-      persistPreferredLocale(surface, resolvedLocale);
-      setLocaleState((currentLocale) =>
-        currentLocale === resolvedLocale ? currentLocale : resolvedLocale,
-      );
+      startTransition(() => {
+        setRequestedLocale((currentLocale) =>
+          currentLocale === resolvedLocale ? currentLocale : resolvedLocale,
+        );
+      });
     },
     [surface],
   );
@@ -65,20 +75,25 @@ export function AppLocaleProvider({
     let cancelled = false;
 
     async function activateLocale() {
-      setIsReady(false);
+      if (!hasActivatedLocaleRef.current) {
+        setIsReady(false);
+      }
       setError(null);
 
       try {
-        const messages = await loadMessagesForSurface(surface, locale);
+        const messages = await loadMessagesForSurface(surface, requestedLocale);
         if (cancelled) {
           return;
         }
 
-        appI18n.load(locale, messages);
-        appI18n.activate(locale);
-        setActiveLocale(locale);
-        syncDocumentLocale(locale);
+        appI18n.load(requestedLocale, messages);
+        appI18n.activate(requestedLocale);
+        setActiveLocale(requestedLocale);
+        syncDocumentLocale(requestedLocale);
+        setLocaleState(requestedLocale);
+        hasActivatedLocaleRef.current = true;
         setIsReady(true);
+        setActivationVersion((currentVersion) => currentVersion + 1);
       } catch (cause) {
         if (cancelled) {
           return;
@@ -87,16 +102,18 @@ export function AppLocaleProvider({
         const nextError =
           cause instanceof Error ? cause : new Error(String(cause));
 
-        if (locale !== DEFAULT_LOCALE) {
-          persistPreferredLocale(surface, DEFAULT_LOCALE);
-          setLocaleState(DEFAULT_LOCALE);
+        if (requestedLocale !== DEFAULT_LOCALE) {
+          startTransition(() => setRequestedLocale(DEFAULT_LOCALE));
           return;
         }
 
         syncDocumentLocale(DEFAULT_LOCALE);
         setActiveLocale(DEFAULT_LOCALE);
+        setLocaleState(DEFAULT_LOCALE);
+        hasActivatedLocaleRef.current = true;
         setError(nextError);
         setIsReady(true);
+        setActivationVersion((currentVersion) => currentVersion + 1);
       }
     }
 
@@ -105,18 +122,45 @@ export function AppLocaleProvider({
     return () => {
       cancelled = true;
     };
-  }, [locale, surface]);
+  }, [requestedLocale, surface]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      prefetchMessagesForSurface(
+        surface,
+        SUPPORTED_LOCALES.filter((availableLocale) => availableLocale !== locale),
+      );
+    }, 200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isReady, locale, surface]);
 
   const contextValue = useMemo<AppLocaleContextValue>(
     () => ({
+      activationVersion,
       availableLocales: SUPPORTED_LOCALES,
       error,
       isReady,
       locale,
+      requestedLocale,
       setLocale,
       surface,
     }),
-    [error, isReady, locale, setLocale, surface],
+    // activationVersion forces consumers that call imperative translation
+    // helpers during render to recompute after Lingui finishes activating.
+    [
+      activationVersion,
+      error,
+      isReady,
+      locale,
+      requestedLocale,
+      setLocale,
+      surface,
+    ],
   );
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   compareEvalRuns,
@@ -459,6 +459,15 @@ export function EvalsPage() {
   const activePairwiseRunId = runPairwiseMutation.isPending ? runPairwiseMutation.variables : null;
   const activePresetRunId = runExperimentPresetMutation.isPending ? runExperimentPresetMutation.variables : null;
   const activeReportDecisionId = updateReportDecisionMutation.isPending ? updateReportDecisionMutation.variables?.id : null;
+  const runDatasetMutationRef = useRef(runDatasetMutation);
+  const runPairwiseMutationRef = useRef(runPairwiseMutation);
+  const runExperimentPresetMutationRef = useRef(runExperimentPresetMutation);
+  const updateReportDecisionMutationRef = useRef(updateReportDecisionMutation);
+
+  runDatasetMutationRef.current = runDatasetMutation;
+  runPairwiseMutationRef.current = runPairwiseMutation;
+  runExperimentPresetMutationRef.current = runExperimentPresetMutation;
+  updateReportDecisionMutationRef.current = updateReportDecisionMutation;
 
   useEffect(() => {
     if (!successNotice) {
@@ -469,17 +478,13 @@ export function EvalsPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
-  const resetEvalMutations = useEffectEvent(() => {
-    setSuccessNotice("");
-    runDatasetMutation.reset();
-    runPairwiseMutation.reset();
-    runExperimentPresetMutation.reset();
-    updateReportDecisionMutation.reset();
-  });
-
   useEffect(() => {
-    resetEvalMutations();
-  }, [baseUrl, resetEvalMutations]);
+    setSuccessNotice("");
+    runDatasetMutationRef.current.reset();
+    runPairwiseMutationRef.current.reset();
+    runExperimentPresetMutationRef.current.reset();
+    updateReportDecisionMutationRef.current.reset();
+  }, [baseUrl]);
 
   const selectedRunTraceIds = new Set(
     (runDetailQuery.data?.caseResults ?? []).flatMap((caseResult) => collectCaseTraceIds(caseResult)),

@@ -16,10 +16,6 @@ msgstr ""
 msgid "云端模式"
 msgstr "Cloud mode"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:28
-msgid "切换后会保存在当前端，并立即应用到已接入的界面文案和格式化规则。"
-msgstr "After switching, it is saved for the current client and applies immediately to connected interface copy and formatting rules."
-
 #: packages/i18n/src/runtime/formatters.ts:61
 msgid "刚刚"
 msgstr "Just now"
@@ -48,7 +44,7 @@ msgstr "Yesterday"
 msgid "本地兼容"
 msgstr "Local compatible"
 
-#: packages/i18n/src/runtime/language-switcher.tsx:58
+#: packages/i18n/src/runtime/language-switcher.tsx:59
 msgid "界面语言"
 msgstr "Interface language"
 
@@ -67,3 +63,7 @@ msgstr "Transcription model"
 #: packages/ui/src/components/setup-step-list.tsx:44
 msgid "通过"
 msgstr "Passed"
+
+#: packages/i18n/src/runtime/language-switcher.tsx:28
+msgid "默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。"
+msgstr "Simplified Chinese is used by default; switching only affects the current page session and immediately applies to connected interface copy and formatting rules."

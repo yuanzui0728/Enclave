@@ -16,7 +16,7 @@ export class SystemConfigService {
   }
 
   async setConfig(key: string, value: string): Promise<void> {
-    await this.repo.save({ key, value });
+    await this.repo.upsert({ key, value }, ['key']);
   }
 
   async getAiModel(): Promise<string> {
