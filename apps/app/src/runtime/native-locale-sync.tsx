@@ -5,17 +5,32 @@ import {
   syncDesktopLocalePreference,
 } from "./native-locale";
 
-export function NativeLocaleSync() {
+type NativeLocaleSyncProps = {
+  syncDesktopLocaleOnMount?: boolean;
+};
+
+export function NativeLocaleSync({
+  syncDesktopLocaleOnMount = false,
+}: NativeLocaleSyncProps) {
   const { locale, syncLocaleFromExternal } = useAppLocale();
   const localeRef = useRef(locale);
+  const hasSyncedDesktopLocaleOnMountRef = useRef(false);
 
   useEffect(() => {
     localeRef.current = locale;
   }, [locale]);
 
   useEffect(() => {
+    if (
+      hasSyncedDesktopLocaleOnMountRef.current ||
+      !syncDesktopLocaleOnMount
+    ) {
+      return;
+    }
+
+    hasSyncedDesktopLocaleOnMountRef.current = true;
     void syncDesktopLocalePreference(locale);
-  }, [locale]);
+  }, [locale, syncDesktopLocaleOnMount]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") {
