@@ -250,6 +250,42 @@ function translateKnownPattern(
     return `${count} entries`;
   }
 
+  const groupMemberCountMatch = sourceValue.match(/^(\d+) 人群聊$/);
+  if (groupMemberCountMatch) {
+    const count = groupMemberCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `${count}人のグループチャット`;
+    }
+    if (locale === "ko-KR") {
+      return `${count}명 그룹 채팅`;
+    }
+    return `${count}-person group chat`;
+  }
+
+  const newMessageDividerMatch = sourceValue.match(/^以下是 (\d+) 条新消息$/);
+  if (newMessageDividerMatch) {
+    const count = newMessageDividerMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `以下 ${count}件の新着メッセージ`;
+    }
+    if (locale === "ko-KR") {
+      return `아래에 새 메시지 ${count}개`;
+    }
+    return `${count} new message${count === "1" ? "" : "s"} below`;
+  }
+
+  const sourceLabelMatch = sourceValue.match(/^来自 (.+)$/);
+  if (sourceLabelMatch) {
+    const source = sourceLabelMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `ソース: ${source}`;
+    }
+    if (locale === "ko-KR") {
+      return `출처: ${source}`;
+    }
+    return `From ${source}`;
+  }
+
   const postCommentCountMatch = sourceValue.match(
     /^(\d+) 条动态 · (\d+) 条评论$/,
   );
@@ -276,6 +312,18 @@ function translateKnownPattern(
       return `좋아요 ${likeCount}개 · 댓글 ${commentCount}개`;
     }
     return `${likeCount} likes · ${commentCount} comments`;
+  }
+
+  const readCountMatch = sourceValue.match(/^(\d+) 阅读$/);
+  if (readCountMatch) {
+    const count = readCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `${count}回読まれました`;
+    }
+    if (locale === "ko-KR") {
+      return `조회 ${count}회`;
+    }
+    return `${count} reads`;
   }
 
   const playMetaMatch = sourceValue.match(/^(\d+) 播放 · (\d+) 秒 · (.+)$/);
@@ -365,6 +413,18 @@ function translateKnownPattern(
       return `${target} 연락처 카드 보기`;
     }
     return `View ${target} contact card`;
+  }
+
+  const viewImageAriaMatch = sourceValue.match(/^查看图片 (.+)$/);
+  if (viewImageAriaMatch) {
+    const fileName = viewImageAriaMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `画像 ${fileName} を表示`;
+    }
+    if (locale === "ko-KR") {
+      return `이미지 ${fileName} 보기`;
+    }
+    return `View image ${fileName}`;
   }
 
   const lastInviteMatch = sourceValue.match(/^上次邀约 (.+?) · (.+)$/);
@@ -484,6 +544,32 @@ function translateKnownPattern(
     return `${count} attachments`;
   }
 
+  const selectedImageCountMatch = sourceValue.match(/^已选择 (\d+) 张图片$/);
+  if (selectedImageCountMatch) {
+    const count = selectedImageCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `${count}枚の画像を選択済み`;
+    }
+    if (locale === "ko-KR") {
+      return `이미지 ${count}장 선택됨`;
+    }
+    return `${count} images selected`;
+  }
+
+  const remainingImageCountMatch = sourceValue.match(
+    /^，还可以继续添加 (\d+) 张。$/,
+  );
+  if (remainingImageCountMatch) {
+    const count = remainingImageCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `。さらに ${count}枚追加できます。`;
+    }
+    if (locale === "ko-KR") {
+      return `. ${count}장을 더 추가할 수 있습니다.`;
+    }
+    return `. You can add ${count} more.`;
+  }
+
   if (sourceValue === "项附件") {
     if (locale === "ja-JP") {
       return "件の添付";
@@ -516,6 +602,18 @@ function translateKnownPattern(
       return `파일 · ${meta}`;
     }
     return `File · ${meta}`;
+  }
+
+  const durationLabelMatch = sourceValue.match(/^时长 (.+)$/);
+  if (durationLabelMatch) {
+    const duration = durationLabelMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `長さ ${duration}`;
+    }
+    if (locale === "ko-KR") {
+      return `길이 ${duration}`;
+    }
+    return `Duration ${duration}`;
   }
 
   const senderAttachmentPreviewMatch = sourceValue.match(
