@@ -6,7 +6,13 @@ import {
   isLegacyPresetCharacterBio,
 } from '../modules/characters/character-bios';
 import { buildDefaultCharacters } from '../modules/characters/default-characters';
+import { HOTEL_EXPERT_CHARACTER_ID } from '../modules/characters/hotel-expert-character';
 import { listBuiltInCharacterPresets } from '../modules/characters/built-in-character-presets';
+import { SystemConfigEntity } from '../modules/config/config.entity';
+import { FriendshipEntity } from '../modules/social/friendship.entity';
+
+const HOTEL_EXPERT_DEFAULT_FRIENDSHIP_RETIREMENT_KEY =
+  'hotel_expert_default_friendship_retired_at';
 
 const SEED_CHARACTERS = buildDefaultCharacters().map((character) => ({
   ...character,
@@ -120,5 +126,59 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
   }
   if (refreshedMetadata > 0) {
     console.log(`✓ Canonicalized ${refreshedMetadata} built-in preset records`);
+  }
+
+  await retireHotelExpertDefaultFriendship(dataSource);
+}
+
+async function retireHotelExpertDefaultFriendship(dataSource: DataSource) {
+  const configRepo = dataSource.getRepository(SystemConfigEntity);
+  const alreadyRetired = await configRepo.findOneBy({
+    key: HOTEL_EXPERT_DEFAULT_FRIENDSHIP_RETIREMENT_KEY,
+  });
+  if (alreadyRetired) {
+    return;
+  }
+
+  const friendshipRepo = dataSource.getRepository(FriendshipEntity);
+  const result = await friendshipRepo
+    .createQueryBuilder()
+    .update(FriendshipEntity)
+    .set({
+      status: 'removed',
+      isStarred: false,
+      starredAt: null,
+    })
+    .where('characterId = :characterId', {
+      characterId: HOTEL_EXPERT_CHARACTER_ID,
+    })
+    .andWhere('status = :status', { status: 'friend' })
+    .andWhere('intimacyLevel = :intimacyLevel', { intimacyLevel: 60 })
+    .andWhere('isStarred = :isStarred', { isStarred: false })
+    .andWhere('starredAt IS NULL')
+    .andWhere('(remarkName IS NULL OR TRIM(remarkName) = :emptyText)', {
+      emptyText: '',
+    })
+    .andWhere('(region IS NULL OR TRIM(region) = :emptyText)', {
+      emptyText: '',
+    })
+    .andWhere('(source IS NULL OR TRIM(source) = :emptyText)', {
+      emptyText: '',
+    })
+    .andWhere('(tags IS NULL OR tags = :emptyTags)', { emptyTags: '[]' })
+    .andWhere('lastInteractedAt IS NULL')
+    .execute();
+
+  await configRepo.save(
+    configRepo.create({
+      key: HOTEL_EXPERT_DEFAULT_FRIENDSHIP_RETIREMENT_KEY,
+      value: new Date().toISOString(),
+    }),
+  );
+
+  if (result.affected && result.affected > 0) {
+    console.log(
+      `✓ Retired ${result.affected} auto-created hotel expert friendship records`,
+    );
   }
 }
