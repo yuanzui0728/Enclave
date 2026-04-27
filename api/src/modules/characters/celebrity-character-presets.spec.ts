@@ -8,6 +8,12 @@ import {
   getBuiltInCharacterPreset,
   listBuiltInCharacterPresets,
 } from './built-in-character-presets';
+import {
+  INTELLIGENCE_COUNCIL_CHARACTER_DEFINITIONS,
+  INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS,
+  INTELLIGENCE_COUNCIL_CORE_PRESET_KEYS,
+  INTELLIGENCE_COUNCIL_CHARACTER_PRESETS,
+} from './intelligence-council-character-presets';
 
 describe('celebrity character presets', () => {
   it('keeps preset ids unique', () => {
@@ -38,12 +44,12 @@ describe('celebrity character presets', () => {
   });
 
   it('exposes the health and wellness preset group', () => {
-    expect(getCelebrityCharacterPresetGroup('health_and_wellness')).toMatchObject(
-      {
-        key: 'health_and_wellness',
-        label: '健康与训练',
-      },
-    );
+    expect(
+      getCelebrityCharacterPresetGroup('health_and_wellness'),
+    ).toMatchObject({
+      key: 'health_and_wellness',
+      label: '健康与训练',
+    });
   });
 
   it('exposes the academic teachers preset group', () => {
@@ -176,9 +182,9 @@ describe('celebrity character presets', () => {
     expect(zhouRanPreset?.character.profile?.scenePrompts?.chat).toContain(
       '默认先给今天或这周能做的版本',
     );
-    expect(
-      zhouRanPreset?.character.profile?.scenePrompts?.proactive,
-    ).toContain('优先降低执行门槛');
+    expect(zhouRanPreset?.character.profile?.scenePrompts?.proactive).toContain(
+      '优先降低执行门槛',
+    );
     expect(
       zhouRanPreset?.character.profile?.cognitiveBoundaries?.knowledgeLimits,
     ).toContain('胸痛');
@@ -236,10 +242,48 @@ describe('celebrity character presets', () => {
     );
 
     expect(mathPreset?.character.profile?.coreLogic).toContain('先拆条件');
-    expect(chemistryPreset?.character.profile?.coreLogic).toContain(
-      '危险实验',
-    );
+    expect(chemistryPreset?.character.profile?.coreLogic).toContain('危险实验');
     expect(civicsPreset?.character.profile?.coreLogic).toContain('煽动性输出');
     expect(computerPreset?.character.profile?.coreLogic).toContain('恶意代码');
+  });
+
+  it('includes the full intelligence council preset pool', () => {
+    expect(INTELLIGENCE_COUNCIL_CHARACTER_PRESETS).toHaveLength(24);
+    expect(INTELLIGENCE_COUNCIL_CORE_PRESET_KEYS).toHaveLength(8);
+    expect(INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS).toHaveLength(8);
+
+    for (const definition of INTELLIGENCE_COUNCIL_CHARACTER_DEFINITIONS) {
+      const preset = getBuiltInCharacterPreset(definition.presetKey);
+
+      expect(preset).toBeDefined();
+      expect(preset).toMatchObject({
+        id: definition.id,
+        name: definition.name,
+        groupKey: definition.groupKey,
+        character: {
+          sourceType: 'preset_catalog',
+          sourceKey: definition.presetKey,
+          deletionPolicy: 'archive_allowed',
+          momentsFrequency: 0,
+        },
+      });
+      expect(preset?.character.profile?.coreLogic).toContain('隐界个人智囊团');
+      expect(preset?.character.profile?.scenePrompts?.moments_post).toContain(
+        '不写天气',
+      );
+    }
+
+    const shenJu = getBuiltInCharacterPreset(
+      'council_decision_architect_shen_ju',
+    );
+    const baiTa = getBuiltInCharacterPreset('council_red_team_bai_ta');
+    const suHeng = getBuiltInCharacterPreset(
+      'council_finance_quartermaster_su_heng',
+    );
+
+    expect(shenJu?.character.profile?.coreLogic).toContain('退出条件');
+    expect(baiTa?.character.profile?.coreLogic).toContain('反方审查官');
+    expect(suHeng?.character.profile?.coreLogic).toContain('不承诺收益');
+    expect(INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS).toContain(shenJu?.id);
   });
 });

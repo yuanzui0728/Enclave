@@ -12,6 +12,7 @@ import {
   DEFAULT_CHARACTER_IDS,
   SELF_CHARACTER_ID,
 } from '../characters/default-characters';
+import { INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS } from '../characters/intelligence-council-character-presets';
 import { listBuiltInCharacterPresets } from '../characters/built-in-character-presets';
 import { listCelebrityCharacterPresets } from '../characters/celebrity-character-presets';
 import { ChatService } from '../chat/chat.service';
@@ -21,6 +22,10 @@ import { CyberAvatarService } from '../cyber-avatar/cyber-avatar.service';
 import { WorldLanguageService } from '../config/world-language.service';
 
 const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
+const DEFAULT_FRIENDSHIP_CHARACTER_IDS = [
+  ...DEFAULT_CHARACTER_IDS,
+  ...INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS,
+];
 
 @Injectable()
 export class SocialService {
@@ -307,7 +312,7 @@ export class SocialService {
     const resolvedOwnerId =
       ownerId ?? (await this.worldOwnerService.getOwnerOrThrow()).id;
 
-    for (const characterId of DEFAULT_CHARACTER_IDS) {
+    for (const characterId of DEFAULT_FRIENDSHIP_CHARACTER_IDS) {
       const character = await this.characterRepo.findOneBy({ id: characterId });
       if (!character) {
         continue;
@@ -322,7 +327,12 @@ export class SocialService {
           this.friendshipRepo.create({
             ownerId: resolvedOwnerId,
             characterId,
-            intimacyLevel: characterId === SELF_CHARACTER_ID ? 100 : 60,
+            intimacyLevel:
+              characterId === SELF_CHARACTER_ID
+                ? 100
+                : INTELLIGENCE_COUNCIL_CORE_CHARACTER_IDS.includes(characterId)
+                  ? 20
+                  : 60,
             status: 'friend',
           }),
         );
