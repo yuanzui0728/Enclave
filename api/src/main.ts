@@ -22,7 +22,11 @@ function resolveCorsOrigins() {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false,
+  });
+  app.use(express.json({ limit: '25mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
   app.getHttpAdapter().getInstance().set('trust proxy', true);
   app.enableCors({ origin: resolveCorsOrigins(), credentials: true });
   app.setGlobalPrefix('api', { exclude: ['health'] });

@@ -239,6 +239,8 @@ const WEFLOW_MESSAGE_LIMIT_MIN = 1;
 const WEFLOW_MESSAGE_LIMIT_MAX = 5000;
 const WEFLOW_MOMENT_LIMIT_MIN = 0;
 const WEFLOW_MOMENT_LIMIT_MAX = 200;
+const WECHAT_SYNC_PREVIEW_BATCH_MAX_CONTACTS = 3;
+const WECHAT_SYNC_PREVIEW_BATCH_MAX_BYTES = 1_500_000;
 
 function createEmptyWechatSyncImportResult(): WechatSyncImportResponse {
   return {
@@ -1061,7 +1063,7 @@ export function WechatSyncPage() {
       saveWechatConnectorSettings(connectorSettings);
       return {
         rawContacts: selectedContacts,
-        response: await adminApi.previewWechatSync({ contacts: selectedContacts }),
+        response: await previewWechatSyncInBatches(selectedContacts),
       };
     },
     onMutate: () => {
@@ -6967,6 +6969,53 @@ async function loadSelectedConnectorContacts(
     throw new Error("请先至少选择一个联系人。");
   }
   return buildWechatConnectorContactBundles(baseUrl, request);
+}
+
+async function previewWechatSyncInBatches(contacts: WechatSyncContactBundle[]) {
+  const batches = chunkWechatSyncPreviewContacts(contacts);
+  const items: WechatSyncPreviewItem[] = [];
+
+  for (const batch of batches) {
+    const response = await adminApi.previewWechatSync({ contacts: batch });
+    items.push(...response.items);
+  }
+
+  return { items };
+}
+
+function chunkWechatSyncPreviewContacts(contacts: WechatSyncContactBundle[]) {
+  const batches: WechatSyncContactBundle[][] = [];
+  let currentBatch: WechatSyncContactBundle[] = [];
+
+  for (const contact of contacts) {
+    const nextBatch = [...currentBatch, contact];
+    const exceedsCount =
+      currentBatch.length >= WECHAT_SYNC_PREVIEW_BATCH_MAX_CONTACTS;
+    const exceedsBytes =
+      estimateWechatSyncPreviewBatchBytes(nextBatch) >
+      WECHAT_SYNC_PREVIEW_BATCH_MAX_BYTES;
+
+    if (currentBatch.length > 0 && (exceedsCount || exceedsBytes)) {
+      batches.push(currentBatch);
+      currentBatch = [contact];
+      continue;
+    }
+
+    currentBatch = nextBatch;
+  }
+
+  if (currentBatch.length > 0) {
+    batches.push(currentBatch);
+  }
+
+  return batches;
+}
+
+function estimateWechatSyncPreviewBatchBytes(
+  contacts: WechatSyncContactBundle[],
+) {
+  const serialized = JSON.stringify({ contacts });
+  return new TextEncoder().encode(serialized).length;
 }
 
 function parseWechatSyncContactBundles(
