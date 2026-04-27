@@ -1,4 +1,6 @@
+import { msg } from "@lingui/macro";
 import { getSystemStatus, resolveCoreApiBaseUrl } from "@yinjie/contracts";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 
 type WorldEndpointProbe = {
   body: string;
@@ -36,7 +38,10 @@ export async function assertWorldReachable(baseUrl: string) {
   try {
     const status = await getSystemStatus(baseUrl);
     if (!status.coreApi.healthy) {
-      throw new Error(status.coreApi.message?.trim() || "当前世界实例暂时不可用，请稍后再试。");
+      throw new Error(
+        status.coreApi.message?.trim() ||
+          translateRuntimeMessage(msg`当前世界实例暂时不可用，请稍后再试。`),
+      );
     }
 
     return status;
@@ -50,13 +55,17 @@ export async function assertWorldReachable(baseUrl: string) {
 
     if (worldEntryHealthy && healthProbe?.status === 502) {
       throw new Error(
-        "世界入口页面可访问，但 Core API 当前不可用（/health 返回 502 Bad Gateway）。请确认后端服务已启动，并检查反向代理是否仍将 /api 和 /health 转发到 api:3000。",
+        translateRuntimeMessage(
+          msg`世界入口页面可访问，但 Core API 当前不可用（/health 返回 502 Bad Gateway）。请确认后端服务已启动，并检查反向代理是否仍将 /api 和 /health 转发到 api:3000。`,
+        ),
       );
     }
 
     if (worldEntryHealthy && healthProbe && healthProbe.status >= 500) {
       throw new Error(
-        `世界入口页面可访问，但 Core API 当前不可用（/health 返回 ${healthProbe.status}）。请确认后端服务已启动，并检查反向代理的 API 转发配置。`,
+        translateRuntimeMessage(
+          msg`世界入口页面可访问，但 Core API 当前不可用（/health 返回 ${healthProbe.status}）。请确认后端服务已启动，并检查反向代理的 API 转发配置。`,
+        ),
       );
     }
 

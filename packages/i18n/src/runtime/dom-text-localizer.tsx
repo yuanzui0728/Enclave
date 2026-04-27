@@ -382,7 +382,7 @@ function translateKnownPattern(
 
   const viewCharacterMomentsMatch = sourceValue.match(/^查看 (.+) 的朋友圈$/);
   if (viewCharacterMomentsMatch) {
-    const target = viewCharacterMomentsMatch[1] ?? "";
+    const target = translatePatternTarget(viewCharacterMomentsMatch[1] ?? "");
     if (locale === "ja-JP") {
       return `${target} のモーメンツを見る`;
     }
@@ -394,7 +394,7 @@ function translateKnownPattern(
 
   const characterMomentsMatch = sourceValue.match(/^(.+) 的朋友圈$/);
   if (characterMomentsMatch) {
-    const target = characterMomentsMatch[1] ?? "";
+    const target = translatePatternTarget(characterMomentsMatch[1] ?? "");
     if (target === "Ta") {
       return dictionary.get(sourceValue) ?? "Their Moments";
     }

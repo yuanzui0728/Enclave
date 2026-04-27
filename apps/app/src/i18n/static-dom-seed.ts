@@ -731,4 +731,12 @@ export const staticDomFallbackMessages = [
   msg`不再接收这个联系人的互动`,
   msg`通话`,
   msg`切换为完整日期显示`,
+  msg`开始语音输入`,
+  msg`结束语音输入`,
+  msg`输入消息`,
+  msg`关闭浮层`,
+  msg`关闭语音输入面板`,
+  msg`语音发送暂时不可用`,
+  msg`语音输入暂时不可用`,
+  msg`语音输入已完成。`,
 ] as const;

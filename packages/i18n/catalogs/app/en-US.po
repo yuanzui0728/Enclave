@@ -423,6 +423,11 @@ msgstr "{totalMemberCount}-member group chat"
 msgid "{totalSeconds} 秒"
 msgstr "{totalSeconds} sec"
 
+#. placeholder {0}: session.estimatedWaitSeconds
+#: apps/app/src/routes/welcome-page.tsx:176
+msgid "{translatedDisplayStatus} 预计等待：{0} 秒。"
+msgstr "{translatedDisplayStatus} Estimated wait: {0} seconds."
+
 #: apps/app/src/routes/discover-page.tsx:306
 msgid "{translatedSceneLabel} 里暂时没有新的相遇。"
 msgstr "No new encounters in {translatedSceneLabel} for now."
@@ -767,6 +772,7 @@ msgid "专门替你记事、盯时间、到点提醒的人"
 msgstr "Keeps notes, watches time, and reminds you on schedule"
 
 #: apps/app/src/i18n/static-dom-seed.ts:178
+#: apps/app/src/routes/welcome-page.tsx:956
 msgid "世界"
 msgstr "World"
 
@@ -800,6 +806,20 @@ msgstr "The world owner will not appear in the removal list."
 msgid "世界人"
 msgstr "World person"
 
+#: apps/app/src/routes/welcome-page.tsx:1052
+#: apps/app/src/routes/welcome-page.tsx:1069
+msgid "世界入口"
+msgstr "World Entry"
+
+#. placeholder {0}: healthProbe.status
+#: apps/app/src/lib/world-entry.ts:67
+msgid "世界入口页面可访问，但 Core API 当前不可用（/health 返回 {0}）。请确认后端服务已启动，并检查反向代理的 API 转发配置。"
+msgstr "The world entry page is reachable, but Core API is unavailable right now (/health returned {0}). Make sure the backend service is running and check the reverse proxy API forwarding configuration."
+
+#: apps/app/src/lib/world-entry.ts:59
+msgid "世界入口页面可访问，但 Core API 当前不可用（/health 返回 502 Bad Gateway）。请确认后端服务已启动，并检查反向代理是否仍将 /api 和 /health 转发到 api:3000。"
+msgstr "The world entry page is reachable, but Core API is unavailable right now (/health returned 502 Bad Gateway). Make sure the backend service is running and check whether the reverse proxy is still forwarding /api and /health to api:3000."
+
 #: apps/app/src/i18n/static-dom-seed.ts:14
 msgid "世界公开流"
 msgstr "World public feed"
@@ -807,6 +827,10 @@ msgstr "World public feed"
 #: apps/app/src/routes/character-detail-page.tsx:297
 msgid "世界内自然认识"
 msgstr "Met naturally in the world"
+
+#: apps/app/src/routes/welcome-page.tsx:45
+msgid "世界启动失败。"
+msgstr "World startup failed."
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1204
 msgid "世界在线"
@@ -816,6 +840,10 @@ msgstr "World online"
 msgid "世界地图"
 msgstr "World Map"
 
+#: apps/app/src/routes/welcome-page.tsx:959
+msgid "世界地址已连通，正在进入应用前同步世界主人资料。"
+msgstr "The world address is reachable. Syncing world owner profile before entering the app."
+
 #: apps/app/src/i18n/static-dom-seed.ts:579
 msgid "世界实例在线"
 msgstr "World instance online"
@@ -824,6 +852,38 @@ msgstr "World instance online"
 #: apps/app/src/routes/discover-page.tsx:471
 msgid "世界居民公开可见"
 msgstr "Visible to world residents"
+
+#: apps/app/src/routes/welcome-page.tsx:418
+msgid "世界已就绪，但暂时还无法访问。"
+msgstr "The world is ready, but it cannot be reached yet."
+
+#: apps/app/src/routes/welcome-page.tsx:165
+msgid "世界已就绪，正在连接..."
+msgstr "World is ready. Connecting..."
+
+#: apps/app/src/routes/welcome-page.tsx:43
+msgid "世界已就绪。"
+msgstr "World is ready."
+
+#: apps/app/src/routes/welcome-page.tsx:42
+msgid "世界已经启动完成，但暂时还没有可用的 API 地址。"
+msgstr "The world has finished starting, but no API address is available yet."
+
+#: apps/app/src/routes/welcome-page.tsx:47
+msgid "世界已被停用。"
+msgstr "The world has been disabled."
+
+#: apps/app/src/routes/welcome-page.tsx:384
+msgid "世界已解析完成，但没有可用的 API 地址。"
+msgstr "The world resolved successfully, but no API address is available."
+
+#: apps/app/src/routes/welcome-page.tsx:152
+msgid "世界当前不可用。"
+msgstr "This world is currently unavailable."
+
+#: apps/app/src/routes/welcome-page.tsx:46
+msgid "世界暂时无法启动。"
+msgstr "The world cannot be started right now."
 
 #: apps/app/src/i18n/static-dom-seed.ts:414
 msgid "世界服务台"
@@ -837,9 +897,21 @@ msgstr "World Archive"
 msgid "世界模式"
 msgstr "World mode"
 
+#: apps/app/src/routes/welcome-page.tsx:51
+msgid "世界正在删除，无法恢复。"
+msgstr "The world is being deleted and cannot be resumed."
+
+#: apps/app/src/routes/welcome-page.tsx:49
+msgid "世界正在删除中。"
+msgstr "The world is being deleted."
+
 #: apps/app/src/i18n/static-dom-seed.ts:253
 msgid "世界相册"
 msgstr "World Album"
+
+#: apps/app/src/routes/welcome-page.tsx:40
+msgid "世界缺少可用的 API 地址。"
+msgstr "The world is missing an available API address."
 
 #: apps/app/src/routes/character-detail-page.tsx:249
 #: apps/app/src/routes/chat-details-page.tsx:297
@@ -901,6 +973,10 @@ msgstr "Signature"
 msgid "中"
 msgstr "Medium"
 
+#: apps/app/src/routes/welcome-page.tsx:831
+msgid "为世界主人命名"
+msgstr "Name the World Owner"
+
 #: apps/app/src/i18n/static-dom-seed.ts:102
 msgid "为你推荐"
 msgstr "Recommended for you"
@@ -908,6 +984,10 @@ msgstr "Recommended for you"
 #: apps/app/src/i18n/static-dom-seed.ts:595
 msgid "为后续回放与直播精彩片段整理预留标记位。"
 msgstr "Reserve markers for later replay and highlight clipping."
+
+#: apps/app/src/routes/welcome-page.tsx:846
+msgid "为这个世界设置主人的名字"
+msgstr "Set a name for this world's owner"
 
 #: apps/app/src/routes/group-qr-page.tsx:2742
 msgid "主推荐对应的会话更新近，还在更活跃的窗口里，所以优先级更高。"
@@ -960,6 +1040,16 @@ msgstr "You can add images or GIFs now, or go back to delete mode first and clea
 #: apps/app/src/i18n/static-dom-seed.ts:212
 msgid "云上农场"
 msgstr "Cloud Farm"
+
+#: apps/app/src/routes/welcome-page.tsx:731
+#: apps/app/src/routes/welcome-page.tsx:915
+msgid "云世界"
+msgstr "Cloud World"
+
+#: apps/app/src/routes/welcome-page.tsx:53
+#: apps/app/src/routes/welcome-page.tsx:356
+msgid "云世界访问会话缺失。"
+msgstr "Cloud world access session is missing."
 
 #: apps/app/src/i18n/static-dom-seed.ts:137
 msgid "互访"
@@ -1249,9 +1339,14 @@ msgstr "Save"
 msgid "保存专属 API Key"
 msgstr "Save dedicated API Key"
 
+#: apps/app/src/routes/welcome-page.tsx:640
+msgid "保存世界主人资料失败。"
+msgstr "Failed to save world owner profile."
+
 #: apps/app/src/routes/character-detail-page.tsx:293
 #: apps/app/src/routes/profile-settings-page.tsx:262
 #: apps/app/src/routes/profile-settings-page.tsx:518
+#: apps/app/src/routes/welcome-page.tsx:893
 msgid "保存中..."
 msgstr "Saving..."
 
@@ -1768,6 +1863,10 @@ msgstr "Close screenshot preview (Esc)"
 msgid "关闭操作菜单"
 msgstr "Close action menu"
 
+#: apps/app/src/i18n/static-dom-seed.ts:737
+msgid "关闭浮层"
+msgstr "Close overlay"
+
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:101
 msgid "关闭添加群成员弹层"
 msgstr "Close add members dialog"
@@ -1779,6 +1878,10 @@ msgstr "Close remove members dialog"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2215
 msgid "关闭群成员列表"
 msgstr "Close group member list"
+
+#: apps/app/src/i18n/static-dom-seed.ts:738
+msgid "关闭语音输入面板"
+msgstr "Close voice input panel"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:154
 msgid "其他"
@@ -2760,6 +2863,7 @@ msgstr "Sending"
 #: apps/app/src/routes/character-detail-page.tsx:284
 #: apps/app/src/routes/discover-feed-page.tsx:957
 #: apps/app/src/routes/discover-page.tsx:808
+#: apps/app/src/routes/welcome-page.tsx:717
 msgid "发送中..."
 msgstr "Sending..."
 
@@ -2826,6 +2930,10 @@ msgstr "Send note"
 #: apps/app/src/components/chat-composer.tsx:3762
 msgid "发送附件"
 msgstr "Send attachment"
+
+#: apps/app/src/routes/welcome-page.tsx:718
+msgid "发送验证码"
+msgstr "Send code"
 
 #: apps/app/src/components/chat-composer.tsx:2702
 #: apps/app/src/components/chat-composer.tsx:2713
@@ -3938,6 +4046,12 @@ msgstr "{0} slots freed, you can add now"
 msgid "已腾出 {customUploadResumedSlots} 个空位，可直接添加"
 msgstr "{customUploadResumedSlots} slots freed, you can add now"
 
+#. placeholder {0}: currentCloudSession.resolvedApiBaseUrl
+#: apps/app/src/routes/welcome-page.tsx:756
+#: apps/app/src/routes/welcome-page.tsx:762
+msgid "已解析到世界地址：{0}"
+msgstr "Resolved world address: {0}"
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:324
 #: apps/app/src/routes/character-detail-page.tsx:556
 #: apps/app/src/routes/contacts-page.tsx:696
@@ -3958,6 +4072,14 @@ msgstr "Filtered"
 #: apps/app/src/routes/desktop-mobile-page.tsx:1212
 msgid "已连接"
 msgstr "Connected"
+
+#: apps/app/src/routes/welcome-page.tsx:410
+msgid "已连接到云世界。"
+msgstr "Connected to cloud world."
+
+#: apps/app/src/routes/welcome-page.tsx:526
+msgid "已连接到本地世界。"
+msgstr "Connected to local world."
 
 #. placeholder {0}: imagePreviews.length
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:68
@@ -4137,6 +4259,10 @@ msgstr "Start this live"
 msgid "开始游戏"
 msgstr "Start game"
 
+#: apps/app/src/i18n/static-dom-seed.ts:734
+msgid "开始语音输入"
+msgstr "Start voice input"
+
 #: apps/app/src/i18n/static-dom-seed.ts:93
 msgid "开局次数"
 msgstr "Launches"
@@ -4210,6 +4336,10 @@ msgstr "Current world owner"
 #: apps/app/src/routes/profile-settings-page.tsx:468
 msgid "当前世界主人已启用专属 API Key。"
 msgstr "The current world owner has enabled a dedicated API Key."
+
+#: apps/app/src/lib/world-entry.ts:43
+msgid "当前世界实例暂时不可用，请稍后再试。"
+msgstr "Current world instance is temporarily unavailable. Please try again later."
 
 #: apps/app/src/routes/group-qr-page.tsx:585
 msgid "当前主推荐本身就在冷却中，结构不会立刻变化，先等它恢复优先位。"
@@ -4389,6 +4519,10 @@ msgstr "Now playing:"
 #: apps/app/src/routes/profile-settings-page.tsx:808
 msgid "当前文档"
 msgstr "Current document"
+
+#: apps/app/src/lib/request-error.ts:28
+msgid "当前无法连接到隐界实例，请先检查世界地址和网络连接。"
+msgstr "Cannot connect to the Yinjie instance right now. Check the world address and network connection first."
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1065
 msgid "当前来源"
@@ -4608,6 +4742,10 @@ msgstr "Current note"
 msgid "当前邀请卡会承载群聊链接和邀请码。 在同一世界实例内打开链接，可直接回到这个群聊。"
 msgstr "The current invitation card will carry the group chat link and invitation code. Open the link within the same world instance to return directly to the group chat."
 
+#: apps/app/src/lib/request-error.ts:34
+msgid "当前隐界实例暂时不可用，请确认世界服务已经启动后重试。"
+msgstr "Current Yinjie instance is temporarily unavailable. Make sure the world service is running and try again."
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:2776
 msgid "当前高亮"
 msgstr "Current highlight"
@@ -4778,6 +4916,10 @@ msgstr "What we store"
 msgid "我们正在为你整理入口，稍等片刻后再试一次就好。"
 msgstr "We are preparing the entry point. Wait a moment and try again."
 
+#: apps/app/src/routes/welcome-page.tsx:734
+msgid "我们正在判断是为这个手机号创建新世界，还是唤醒它已拥有的世界。"
+msgstr "We are checking whether to create a new world for this phone number or wake the world it already owns."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1612
 #: apps/app/src/routes/group-chat-details-page.tsx:812
 msgid "我在本群的昵称"
@@ -4854,6 +4996,10 @@ msgstr "Phone"
 #: apps/app/src/routes/desktop-mobile-page.tsx:1133
 msgid "手机入口"
 msgstr "Mobile Entry Points"
+
+#: apps/app/src/routes/welcome-page.tsx:678
+msgid "手机号"
+msgstr "Phone number"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:884
 #: apps/app/src/routes/desktop-mobile-page.tsx:896
@@ -5835,6 +5981,14 @@ msgstr "Couldn't start recording. Check the app's microphone permission."
 msgid "无法启动录音，请检查浏览器麦克风权限。"
 msgstr "Couldn't start recording. Check the browser's microphone permission."
 
+#: apps/app/src/routes/welcome-page.tsx:331
+msgid "无法连接到所选世界。"
+msgstr "Unable to connect to the selected world."
+
+#: apps/app/src/routes/welcome-page.tsx:529
+msgid "无法连接到本地世界。"
+msgstr "Unable to connect to the local world."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:607
 msgid "日期"
 msgstr "Date"
@@ -6297,6 +6451,14 @@ msgstr "Flowerbed co-op opens this week"
 msgid "本周效率专题"
 msgstr "This week's productivity feature"
 
+#: apps/app/src/routes/welcome-page.tsx:934
+msgid "本地世界"
+msgstr "Local World"
+
+#: apps/app/src/routes/welcome-page.tsx:790
+msgid "本地世界地址"
+msgstr "Local world address"
+
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:237
 msgid "本地摄像头已关闭"
 msgstr "Local camera is off"
@@ -6742,6 +6904,14 @@ msgstr "Desktop groups profile, AI configuration, and policy viewing into one wo
 msgid "桌面端收成微信式内容浏览结构，主区域看视频，右侧接住作者、评论和推荐队列。"
 msgstr "Desktop uses a WeChat-like content browsing layout: video in the main area, author, comments, and queue on the right."
 
+#: apps/app/src/routes/welcome-page.tsx:806
+msgid "检测到你输入的是 /api 路径，已自动换算为对应的世界入口地址：{normalizedLocalApiBaseUrl}"
+msgstr "Detected an /api path and converted it to the corresponding world entry address: {normalizedLocalApiBaseUrl}"
+
+#: apps/app/src/routes/welcome-page.tsx:809
+msgid "检测到你输入的是本机应用地址，已自动换算为对应的 Core API 地址：{normalizedLocalApiBaseUrl}"
+msgstr "Detected a local app address and converted it to the corresponding Core API address: {normalizedLocalApiBaseUrl}"
+
 #: apps/app/src/i18n/static-dom-seed.ts:139
 msgid "榜单"
 msgstr "Leaderboard"
@@ -6786,6 +6956,14 @@ msgstr "Switching to the chat details sidebar in the desktop chat workspace."
 msgid "正在切换到桌面聊天工作区中的聊天记录搜索侧栏。"
 msgstr "Switching to the chat history search sidebar in the desktop chat workspace."
 
+#: apps/app/src/routes/welcome-page.tsx:208
+msgid "正在创建世界..."
+msgstr "Creating world..."
+
+#: apps/app/src/routes/welcome-page.tsx:52
+msgid "正在创建全新的世界。"
+msgstr "Creating a brand-new world."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:526
 #: apps/app/src/routes/character-detail-page.tsx:319
 msgid "正在删除..."
@@ -6820,6 +6998,14 @@ msgstr "Loading AI settings"
 msgid "正在加载..."
 msgstr "Loading..."
 
+#: apps/app/src/routes/welcome-page.tsx:957
+msgid "正在加载世界主人"
+msgstr "Loading world owner"
+
+#: apps/app/src/routes/welcome-page.tsx:952
+msgid "正在加载世界主人..."
+msgstr "Loading world owner..."
+
 #: apps/app/src/routes/discover-feed-page.tsx:674
 #: apps/app/src/routes/discover-page.tsx:662
 msgid "正在发布..."
@@ -6834,6 +7020,14 @@ msgstr "Sending..."
 #: apps/app/src/components/chat-composer.tsx:2710
 msgid "正在听你说话，停止后会继续整理转写。"
 msgstr "Listening. Stop and transcription will continue."
+
+#: apps/app/src/routes/welcome-page.tsx:207
+msgid "正在唤醒世界..."
+msgstr "Waking world..."
+
+#: apps/app/src/routes/welcome-page.tsx:44
+msgid "正在唤醒已有世界。"
+msgstr "Waking existing world."
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:183
 msgid "正在唤醒隐界..."
@@ -6957,6 +7151,14 @@ msgstr "Generating group invitation card..."
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:236
 msgid "正在移除..."
 msgstr "Removing..."
+
+#: apps/app/src/routes/welcome-page.tsx:732
+msgid "正在解析你的世界"
+msgstr "Resolving your world"
+
+#: apps/app/src/routes/welcome-page.tsx:727
+msgid "正在解析你的云世界..."
+msgstr "Resolving your cloud world..."
 
 #: apps/app/src/components/chat-composer.tsx:2701
 msgid "正在请求麦克风权限..."
@@ -8197,6 +8399,10 @@ msgstr "Exit delete mode and return to custom stickers."
 msgid "结束直播"
 msgstr "End live"
 
+#: apps/app/src/i18n/static-dom-seed.ts:735
+msgid "结束语音输入"
+msgstr "End voice input"
+
 #: apps/app/src/i18n/static-dom-seed.ts:447
 msgid "结果处理"
 msgstr "Result handling"
@@ -8842,6 +9048,19 @@ msgstr "Character posting frequency is falling, but longer content and return vi
 msgid "角色简介"
 msgstr "Character bio"
 
+#: apps/app/src/routes/welcome-page.tsx:194
+msgid "解析中..."
+msgstr "Resolving..."
+
+#: apps/app/src/routes/welcome-page.tsx:608
+msgid "解析云世界访问失败。"
+msgstr "Failed to resolve cloud world access."
+
+#: apps/app/src/routes/welcome-page.tsx:198
+#: apps/app/src/routes/welcome-page.tsx:211
+msgid "解析我的世界"
+msgstr "Resolve my world"
+
 #: apps/app/src/i18n/static-dom-seed.ts:687
 msgid "言初"
 msgstr "Yanchu"
@@ -8958,6 +9177,10 @@ msgstr "Try another keyword, or go back to filters and switch to another categor
 msgid "试试换个筛选条件，或者稍后再来查看。"
 msgstr "Try another filter, or check again later."
 
+#: apps/app/src/routes/welcome-page.tsx:48
+msgid "该世界当前已被运维停用。"
+msgstr "This world is currently disabled by operations."
+
 #: apps/app/src/routes/group-chat-details-page.tsx:498
 msgid "该群聊会先从消息列表中隐藏，收到新消息后会再次出现。"
 msgstr "This group chat will be hidden from the message list for now and will reappear when new messages arrive."
@@ -9007,6 +9230,10 @@ msgstr "Voice"
 msgid "语音 {0}"
 msgstr "Voice {0}"
 
+#: apps/app/src/i18n/static-dom-seed.ts:739
+msgid "语音发送暂时不可用"
+msgstr "Voice sending is temporarily unavailable"
+
 #: apps/app/src/features/chat/use-speech-input.ts:712
 msgid "语音时长"
 msgstr "Voice length"
@@ -9026,6 +9253,14 @@ msgstr "Speech transcription failed. Please try again later."
 #: apps/app/src/components/chat-composer.tsx:3119
 msgid "语音输入"
 msgstr "Voice input"
+
+#: apps/app/src/i18n/static-dom-seed.ts:741
+msgid "语音输入已完成。"
+msgstr "Voice input is complete."
+
+#: apps/app/src/i18n/static-dom-seed.ts:740
+msgid "语音输入暂时不可用"
+msgstr "Voice input is temporarily unavailable"
 
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:51
 #: apps/app/src/routes/character-detail-page.tsx:281
@@ -9055,9 +9290,25 @@ msgstr "Please add an issue description first."
 msgid "请先输入评论内容。"
 msgstr "Enter a comment first."
 
+#: apps/app/src/routes/welcome-page.tsx:622
+msgid "请先连接世界，再设置世界主人名称。"
+msgstr "Connect to a world first, then set the World Owner name."
+
+#: apps/app/src/routes/welcome-page.tsx:161
+msgid "请先验证手机号，以解析你的云世界。"
+msgstr "Verify your phone number first to resolve your cloud world."
+
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:230
 msgid "请求中"
 msgstr "Requesting"
+
+#: apps/app/src/lib/request-error.ts:18
+msgid "请求失败，请稍后重试。"
+msgstr "Request failed. Please try again later."
+
+#: apps/app/src/lib/request-error.ts:23
+msgid "请求已中断，请稍后重试。"
+msgstr "Request was interrupted. Please try again later."
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:211
 #: apps/app/src/i18n/static-dom-seed.ts:7
@@ -9068,6 +9319,22 @@ msgstr "Please wait"
 msgid "请稍候..."
 msgstr "Please wait..."
 
+#: apps/app/src/routes/welcome-page.tsx:617
+msgid "请输入世界主人的名字。"
+msgstr "Enter the World Owner's name."
+
+#: apps/app/src/routes/welcome-page.tsx:690
+msgid "请输入手机号"
+msgstr "Enter phone number"
+
+#: apps/app/src/routes/welcome-page.tsx:537
+msgid "请输入手机号。"
+msgstr "Enter phone number."
+
+#: apps/app/src/routes/welcome-page.tsx:491
+msgid "请输入本地世界 API 地址。"
+msgstr "Enter the local world API address."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1419
 msgid "请输入群昵称"
 msgstr "Enter a group nickname"
@@ -9075,6 +9342,14 @@ msgstr "Enter a group nickname"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1391
 msgid "请输入群聊名称"
 msgstr "Enter a group name"
+
+#: apps/app/src/routes/welcome-page.tsx:706
+msgid "请输入验证码"
+msgstr "Enter verification code"
+
+#: apps/app/src/routes/welcome-page.tsx:542
+msgid "请输入验证码。"
+msgstr "Enter verification code."
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:531
 #: apps/app/src/routes/character-detail-page.tsx:274
@@ -9247,6 +9522,10 @@ msgstr "Loading desktop Contacts..."
 msgid "辅助查看当前加载窗口与提醒数量。"
 msgstr "Helps inspect the current loaded window and reminder count."
 
+#: apps/app/src/routes/welcome-page.tsx:938
+msgid "输入世界入口地址并直接连接。若你拿到的是 /api 地址，也可以直接粘贴。"
+msgstr "Enter the world entry address and connect directly. If you have an /api address, you can paste it as is."
+
 #: apps/app/src/routes/profile-settings-page.tsx:490
 msgid "输入你的专属 API Key"
 msgstr "Enter your dedicated API Key"
@@ -9270,6 +9549,10 @@ msgstr "Enter a fuller Yinjie ID to find the target faster, or search by charact
 #: apps/app/src/components/chat-composer.tsx:4601
 msgid "输入标注文字"
 msgstr "Enter annotation text"
+
+#: apps/app/src/i18n/static-dom-seed.ts:736
+msgid "输入消息"
+msgstr "Type a message"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1403
 msgid "输入群公告"
@@ -9308,12 +9591,17 @@ msgstr "R"
 
 #: apps/app/src/features/chat-details/chat-details-shell.tsx:45
 #: apps/app/src/routes/character-detail-page.tsx:271
+#: apps/app/src/routes/welcome-page.tsx:884
 msgid "返回"
 msgstr "Back"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:848
 msgid "返回上一层"
 msgstr "Back"
+
+#: apps/app/src/routes/welcome-page.tsx:866
+msgid "返回上一步"
+msgstr "Back to previous step"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:563
 #: apps/app/src/routes/character-detail-page.tsx:272
@@ -9723,6 +10011,10 @@ msgstr "This holds the full desktop mini program catalog."
 msgid "这里的名称和签名会用于移动端资料页和世界主人展示。"
 msgstr "This name and signature are used on the mobile profile page and world owner display."
 
+#: apps/app/src/routes/welcome-page.tsx:893
+msgid "进入世界"
+msgstr "Enter world"
+
 #: apps/app/src/i18n/static-dom-seed.ts:330
 msgid "进入公众号结果"
 msgstr "Open official account results"
@@ -9775,9 +10067,24 @@ msgstr "Enter voice call"
 msgid "远程模式下，相关数据会发送到世界实例的 Core API 与推理网关；自托管或特定部署模式下，数据会保存在对应实例的运行目录与数据库里。"
 msgstr "In remote mode, related data is sent to the world instance Core API and inference gateway. In self-hosted or specific deployments, it is stored in that instance's runtime directory and database."
 
+#: apps/app/src/routes/welcome-page.tsx:190
+#: apps/app/src/routes/welcome-page.tsx:202
+#: apps/app/src/routes/welcome-page.tsx:821
+msgid "连接中..."
+msgstr "Connecting..."
+
+#: apps/app/src/routes/welcome-page.tsx:1055
+#: apps/app/src/routes/welcome-page.tsx:1072
+msgid "连接你的世界"
+msgstr "Connect your world"
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:1205
 msgid "连接异常"
 msgstr "Connection Issue"
+
+#: apps/app/src/routes/welcome-page.tsx:821
+msgid "连接本地世界"
+msgstr "Connect local world"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:923
 msgid "连接状态"
@@ -9904,6 +10211,10 @@ msgstr "There are no selectable contacts yet"
 msgid "通话"
 msgstr "Call"
 
+#: apps/app/src/routes/welcome-page.tsx:919
+msgid "通过手机号登录。新用户会获得一个全新的世界，老用户会唤醒自己已有的世界。"
+msgstr "Sign in with your phone number. New users get a brand-new world, while returning users wake their existing world."
+
 #: apps/app/src/i18n/static-dom-seed.ts:560
 msgid "通过隐界号、角色名或资料关键词查找世界角色"
 msgstr "Find world characters by Yinjie ID, character name, or profile keyword"
@@ -9950,6 +10261,15 @@ msgstr "Redo annotation (Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y)"
 msgid "重新拖拽可修改裁剪区域。"
 msgstr "Drag again to adjust the crop area."
 
+#: apps/app/src/routes/welcome-page.tsx:984
+#: apps/app/src/routes/welcome-page.tsx:1030
+msgid "重新解析"
+msgstr "Resolve again"
+
+#: apps/app/src/routes/welcome-page.tsx:984
+msgid "重新连接"
+msgstr "Reconnect"
+
 #: apps/app/src/i18n/static-dom-seed.ts:296
 msgid "重点放进我的小程序"
 msgstr "Prioritize in My Mini Programs"
@@ -9978,6 +10298,10 @@ msgstr "Try saving the invitation card again"
 #: apps/app/src/routes/group-qr-page.tsx:1006
 msgid "重试分享"
 msgstr "Retry sharing"
+
+#: apps/app/src/routes/welcome-page.tsx:1006
+msgid "重试发送"
+msgstr "Retry sending"
 
 #: apps/app/src/routes/contacts-page.tsx:1320
 msgid "重试取消星标"
@@ -10286,6 +10610,14 @@ msgstr "Group with top item"
 #: apps/app/src/i18n/static-dom-seed.ts:661
 msgid "马斯克"
 msgstr "Musk"
+
+#: apps/app/src/routes/welcome-page.tsx:696
+msgid "验证码"
+msgstr "Verification code"
+
+#: apps/app/src/routes/welcome-page.tsx:468
+msgid "验证码已发送。"
+msgstr "Verification code sent."
 
 #: apps/app/src/i18n/static-dom-seed.ts:528
 #: apps/app/src/routes/desktop-feedback-page.tsx:92
