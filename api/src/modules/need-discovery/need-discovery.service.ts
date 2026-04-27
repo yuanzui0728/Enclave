@@ -31,6 +31,10 @@ import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FriendshipEntity } from '../social/friendship.entity';
 import { SocialService } from '../social/social.service';
+import {
+  WorldLanguageService,
+  type WorldLanguageCode,
+} from '../config/world-language.service';
 import { NeedDiscoveryCandidateEntity } from './need-discovery-candidate.entity';
 import { NeedDiscoveryConfigService } from './need-discovery-config.service';
 import { NeedDiscoveryRunEntity } from './need-discovery-run.entity';
@@ -101,6 +105,7 @@ export class NeedDiscoveryService {
     private readonly favoritesService: FavoritesService,
     private readonly searchActivityService: SearchActivityService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async getOverview(): Promise<NeedDiscoveryOverview> {
@@ -344,7 +349,10 @@ export class NeedDiscoveryService {
           const expiresAt = addDays(now, config.shared.expiryDays);
           const request = await this.socialService.sendFriendRequest(
             character.id,
-            generatedDraft.greeting || buildDefaultGreeting(character.name),
+            generatedDraft.greeting ||
+              (await this.worldLanguage.buildGenericGreetingFallback(
+                character.name,
+              )),
             {
               initiator: 'character',
               triggerScene: `need_discovery_${input.cadenceType}`,
@@ -935,7 +943,11 @@ export class NeedDiscoveryService {
         scopeLabel: `${cadenceType}:${need.needCategory}`,
       },
     });
-    return normalizeGeneratedCharacterDraft(raw, need);
+    return normalizeGeneratedCharacterDraft(
+      raw,
+      need,
+      await this.worldLanguage.getLanguage(),
+    );
   }
 
   private async createNeedGeneratedCharacter(
@@ -1351,6 +1363,7 @@ function normalizeNeedDraft(
 function normalizeGeneratedCharacterDraft(
   raw: Record<string, unknown>,
   need: NeedDiscoveryNeedDraft,
+  language: WorldLanguageCode = 'zh-CN',
 ): NeedDiscoveryGeneratedCharacterDraft {
   const relationshipType = normalizeRelationshipType(raw.relationshipType);
   const expertDomains = normalizeStringList(raw.expertDomains);
@@ -1359,26 +1372,22 @@ function normalizeGeneratedCharacterDraft(
     normalizeText(raw.occupation) ||
     normalizeText(raw.relationship) ||
     `${need.relationshipLabel}`;
+  const fallback = buildGeneratedNeedFallbacks({
+    language,
+    inferredName,
+    need,
+    expertDomains,
+  });
   return {
-    name: inferredName.slice(0, 24) || `新角色 ${need.needCategory}`,
+    name: inferredName.slice(0, 24) || fallback.name,
     avatar: normalizeAvatar(raw.avatar),
-    relationship:
-      normalizeText(raw.relationship) || need.relationshipLabel || '新朋友',
+    relationship: normalizeText(raw.relationship) || fallback.relationship,
     relationshipType,
-    bio:
-      normalizeText(raw.bio) ||
-      `${inferredName} 会以 ${need.relationshipLabel} 的方式和用户建立联系。`,
-    occupation: normalizeText(raw.occupation) || need.relationshipLabel,
-    background:
-      normalizeText(raw.background) ||
-      `${inferredName} 长期围绕 ${
-        expertDomains.join('、') || need.needCategory
-      } 提供帮助。`,
-    motivation:
-      normalizeText(raw.motivation) || '希望在恰当的时候给用户稳定的支持。',
-    worldview:
-      normalizeText(raw.worldview) ||
-      '先理解真实处境，再给出克制而有效的帮助。',
+    bio: normalizeText(raw.bio) || fallback.bio,
+    occupation: normalizeText(raw.occupation) || fallback.occupation,
+    background: normalizeText(raw.background) || fallback.background,
+    motivation: normalizeText(raw.motivation) || fallback.motivation,
+    worldview: normalizeText(raw.worldview) || fallback.worldview,
     expertDomains: expertDomains.length ? expertDomains : need.expertDomains,
     speechPatterns: normalizeStringList(raw.speechPatterns),
     catchphrases: normalizeStringList(raw.catchphrases),
@@ -1386,15 +1395,9 @@ function normalizeGeneratedCharacterDraft(
     emotionalTone: normalizeTone(raw.emotionalTone),
     responseLength: normalizeResponseLength(raw.responseLength),
     emojiUsage: normalizeEmojiUsage(raw.emojiUsage),
-    memorySummary:
-      normalizeText(raw.memorySummary) ||
-      `${inferredName} 对用户当前的 ${need.needCategory} 需求保持敏感。`,
-    basePrompt:
-      normalizeText(raw.basePrompt) ||
-      `你是${inferredName}，以${need.relationshipLabel}的身份和用户交流。回答务实、具体、克制，不要把自己说成工具或系统。`,
-    greeting:
-      normalizeText(raw.greeting) ||
-      `你好，我是${inferredName}。想和你认识一下。`,
+    memorySummary: normalizeText(raw.memorySummary) || fallback.memorySummary,
+    basePrompt: normalizeText(raw.basePrompt) || fallback.basePrompt,
+    greeting: normalizeText(raw.greeting) || fallback.greeting,
   };
 }
 
@@ -1595,8 +1598,76 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
-function buildDefaultGreeting(name: string) {
-  return `你好，我是${name}。最近想认识你一下。`;
+function buildGeneratedNeedFallbacks(input: {
+  language: WorldLanguageCode;
+  inferredName: string;
+  need: NeedDiscoveryNeedDraft;
+  expertDomains: string[];
+}) {
+  const domains =
+    input.expertDomains.join('、') ||
+    input.need.expertDomains.join('、') ||
+    input.need.needCategory;
+  const relationship = input.need.relationshipLabel || '新朋友';
+  switch (input.language) {
+    case 'en-US':
+      return {
+        name: `New ${input.need.needCategory} contact`,
+        relationship: relationship || 'new friend',
+        occupation: relationship,
+        bio: `${input.inferredName} connects with the owner as ${relationship}.`,
+        background: `${input.inferredName} has long worked around ${domains}.`,
+        motivation:
+          'To offer steady, well-timed support when it is genuinely useful.',
+        worldview:
+          'Understand the real situation first, then respond with restraint and usefulness.',
+        memorySummary: `${input.inferredName} stays sensitive to the owner's current ${input.need.needCategory} needs.`,
+        basePrompt: `You are ${input.inferredName}, speaking with the owner as ${relationship}. Be practical, specific, and restrained. Do not describe yourself as a tool or system.`,
+        greeting: `Hi, I'm ${input.inferredName}. I'd like to get to know you.`,
+      };
+    case 'ja-JP':
+      return {
+        name: `${input.need.needCategory}の新しい相手`,
+        relationship: relationship || '新しい友人',
+        occupation: relationship,
+        bio: `${input.inferredName}は${relationship}としてユーザーと関わります。`,
+        background: `${input.inferredName}は長く${domains}に関わってきました。`,
+        motivation:
+          '必要なタイミングで、落ち着いた支えを届けることを大切にしています。',
+        worldview: 'まず状況を理解し、そのうえで控えめで役に立つ返答をします。',
+        memorySummary: `${input.inferredName}はユーザーの現在の${input.need.needCategory}ニーズに敏感です。`,
+        basePrompt: `あなたは${input.inferredName}です。${relationship}としてユーザーと話します。実用的で具体的、控えめに答え、自分をツールやシステムとは言わないでください。`,
+        greeting: `こんにちは、${input.inferredName}です。少しお話ししてみたくなりました。`,
+      };
+    case 'ko-KR':
+      return {
+        name: `${input.need.needCategory} 새 인연`,
+        relationship: relationship || '새 친구',
+        occupation: relationship,
+        bio: `${input.inferredName}은(는) ${relationship}로서 사용자와 연결됩니다.`,
+        background: `${input.inferredName}은(는) 오랫동안 ${domains}을(를) 중심으로 활동해 왔습니다.`,
+        motivation:
+          '적절한 순간에 안정적이고 분별 있는 도움을 주고 싶어 합니다.',
+        worldview: '먼저 실제 상황을 이해한 뒤, 절제되고 유용하게 응답합니다.',
+        memorySummary: `${input.inferredName}은(는) 사용자의 현재 ${input.need.needCategory} 필요에 민감합니다.`,
+        basePrompt: `당신은 ${input.inferredName}입니다. ${relationship}로서 사용자와 대화합니다. 실용적이고 구체적이며 절제되게 답하고, 자신을 도구나 시스템이라고 말하지 마세요.`,
+        greeting: `안녕하세요, 저는 ${input.inferredName}입니다. 먼저 조금 이야기해 보고 싶어요.`,
+      };
+    case 'zh-CN':
+    default:
+      return {
+        name: `新角色 ${input.need.needCategory}`,
+        relationship,
+        occupation: relationship,
+        bio: `${input.inferredName} 会以 ${relationship} 的方式和用户建立联系。`,
+        background: `${input.inferredName} 长期围绕 ${domains} 提供帮助。`,
+        motivation: '希望在恰当的时候给用户稳定的支持。',
+        worldview: '先理解真实处境，再给出克制而有效的帮助。',
+        memorySummary: `${input.inferredName} 对用户当前的 ${input.need.needCategory} 需求保持敏感。`,
+        basePrompt: `你是${input.inferredName}，以${relationship}的身份和用户交流。回答务实、具体、克制，不要把自己说成工具或系统。`,
+        greeting: `你好，我是${input.inferredName}。想和你认识一下。`,
+      };
+  }
 }
 
 function computeDomainOverlapRatio(left: string[], right: string[]) {

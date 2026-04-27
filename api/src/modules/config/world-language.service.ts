@@ -188,6 +188,21 @@ export class WorldLanguageService {
     }
   }
 
+  async buildGenericGreetingFallback(characterName: string): Promise<string> {
+    const language = await this.getLanguage();
+    switch (language) {
+      case 'en-US':
+        return `Hi, I'm ${characterName}. I'd like to get to know you.`;
+      case 'ja-JP':
+        return `こんにちは、${characterName}です。少しお話ししてみたくなりました。`;
+      case 'ko-KR':
+        return `안녕하세요, 저는 ${characterName}입니다. 먼저 조금 이야기해 보고 싶어요.`;
+      case 'zh-CN':
+      default:
+        return `你好，我是${characterName}。想和你认识一下。`;
+    }
+  }
+
   async buildChannelFallbackText(authorName: string): Promise<string> {
     const language = await this.getLanguage();
     const opener = this.pickChannelFallbackOpener(language);
