@@ -200,12 +200,10 @@ function ensureReplySentence(text: string) {
     return '';
   }
 
-  return TERMINAL_PUNCTUATION_PATTERN.test(trimmed)
-    ? trimmed
-    : `${trimmed}。`;
+  return TERMINAL_PUNCTUATION_PATTERN.test(trimmed) ? trimmed : `${trimmed}。`;
 }
 
 export function buildAssistantSpeechInstructions(characterName: string) {
   const normalizedName = characterName.trim() || '助手';
-  return `请用自然、温和、清晰的口语表达，以 ${normalizedName} 的身份朗读，不要加入舞台说明。`;
+  return `Keep the delivery conversational and in character as ${normalizedName}. Do not add stage directions.`;
 }

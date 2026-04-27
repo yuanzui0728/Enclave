@@ -341,6 +341,11 @@
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量
 - `action-runtime-page.tsx`：真实世界动作运行时控制台，围绕 self 角色查看动作门控、提示模板、连接器配置、自检结果、动作重试与执行轨迹
 
+## 管理后台世界运行配置路由
+
+- `GET /api/admin/world-language`
+- `PATCH /api/admin/world-language`
+
 ## 管理后台回复逻辑路由
 
 - `GET /api/admin/reply-logic/overview`

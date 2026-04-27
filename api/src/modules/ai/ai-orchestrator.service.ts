@@ -30,6 +30,10 @@ import { validateGeneratedSceneOutput } from './moment-output-validator';
 import { MomentGenerationContextService } from './moment-generation-context.service';
 import { buildNativeAudioModelCandidates } from './native-audio-routing';
 import { WorldService } from '../world/world.service';
+import {
+  WorldLanguageService,
+  type WorldLanguageCode,
+} from '../config/world-language.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { resolveReadableChatAttachmentPath } from '../chat/chat-attachment-storage';
@@ -199,6 +203,7 @@ export class AiOrchestratorService {
     private readonly promptBuilder: PromptBuilderService,
     private readonly inferenceService: InferenceService,
     private readonly worldService: WorldService,
+    private readonly worldLanguage: WorldLanguageService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly usageLedger: AiUsageLedgerService,
     private readonly momentGenerationContext: MomentGenerationContextService,
@@ -1518,33 +1523,32 @@ export class AiOrchestratorService {
       (part): part is Extract<AiMessagePart, { type: 'audio' }> =>
         part.type === 'audio',
     );
-    const resolvedParts: Array<NativeAudioInputPart | null> =
-      await Promise.all(
-        audioParts.map(async (part) => {
-          const loadedAsset = part.audioUrl.startsWith('data:')
-            ? this.loadAssetFromDataUrl(part.audioUrl)
-            : await this.loadAssetFromUrl(part.audioUrl, MAX_INLINE_AUDIO_BYTES);
-          if (
-            !loadedAsset?.buffer.length ||
-            loadedAsset.buffer.byteLength > MAX_INLINE_AUDIO_BYTES
-          ) {
-            return null;
-          }
+    const resolvedParts: Array<NativeAudioInputPart | null> = await Promise.all(
+      audioParts.map(async (part) => {
+        const loadedAsset = part.audioUrl.startsWith('data:')
+          ? this.loadAssetFromDataUrl(part.audioUrl)
+          : await this.loadAssetFromUrl(part.audioUrl, MAX_INLINE_AUDIO_BYTES);
+        if (
+          !loadedAsset?.buffer.length ||
+          loadedAsset.buffer.byteLength > MAX_INLINE_AUDIO_BYTES
+        ) {
+          return null;
+        }
 
-          const format = this.inferNativeAudioInputFormat(part, loadedAsset);
-          if (!format) {
-            return null;
-          }
+        const format = this.inferNativeAudioInputFormat(part, loadedAsset);
+        if (!format) {
+          return null;
+        }
 
-          return {
-            type: 'input_audio',
-            input_audio: {
-              data: loadedAsset.buffer.toString('base64'),
-              format,
-            },
-          };
-        }),
-      );
+        return {
+          type: 'input_audio',
+          input_audio: {
+            data: loadedAsset.buffer.toString('base64'),
+            format,
+          },
+        };
+      }),
+    );
 
     return resolvedParts.filter((part): part is NativeAudioInputPart =>
       Boolean(part),
@@ -1565,10 +1569,7 @@ export class AiOrchestratorService {
     const audioParts = allowAudioInput
       ? await this.collectUsableAudioParts(message.parts)
       : [];
-    if (
-      message.role !== 'user' ||
-      (!imageParts.length && !audioParts.length)
-    ) {
+    if (message.role !== 'user' || (!imageParts.length && !audioParts.length)) {
       return {
         role: message.role,
         content: textContent,
@@ -1765,11 +1766,42 @@ export class AiOrchestratorService {
 
   private buildUnavailableReply(
     profile: PersonalityProfile,
+    language: WorldLanguageCode,
   ): GenerateReplyResult {
+    const textByLanguage: Record<WorldLanguageCode, string> = {
+      'zh-CN': `${profile.name}看到了你的消息，但这个世界还没有配置可用的 AI Key。先去“我 > 设置”里补上 API Key，我就能继续回复你。`,
+      'en-US': `${profile.name} saw your message, but this world does not have a usable AI key configured yet. Add an API key in "Me > Settings" and I can keep replying.`,
+      'ja-JP': `${profile.name}はあなたのメッセージを見ましたが、この世界にはまだ利用できる AI Key が設定されていません。「自分 > 設定」で API Key を追加すると、返信を続けられます。`,
+      'ko-KR': `${profile.name}이(가) 메시지를 확인했지만, 이 세계에는 아직 사용할 수 있는 AI Key가 설정되어 있지 않습니다. "나 > 설정"에서 API Key를 추가하면 계속 답장할 수 있습니다.`,
+    };
     return {
-      text: `${profile.name}看到了你的消息，但这个世界还没有配置可用的 AI Key。先去“我 > 设置”里补上 API Key，我就能继续回复你。`,
+      text: textByLanguage[language],
       tokensUsed: 0,
     };
+  }
+
+  private resolveReplyEmptyFallback(
+    value: string | undefined,
+    language: WorldLanguageCode,
+  ) {
+    const normalized = value?.trim();
+    if (
+      normalized &&
+      (language === 'zh-CN' ||
+        !['收到。', '收到', '我在。', '给你发过去了。', '（无回复）'].includes(
+          normalized,
+        ))
+    ) {
+      return normalized;
+    }
+
+    const fallbackByLanguage: Record<WorldLanguageCode, string> = {
+      'zh-CN': normalized || '收到。',
+      'en-US': 'Got it.',
+      'ja-JP': '了解です。',
+      'ko-KR': '알겠어요.',
+    };
+    return fallbackByLanguage[language];
   }
 
   async inspectReplyPreparation(options: GenerateReplyOptions): Promise<{
@@ -1948,7 +1980,10 @@ export class AiOrchestratorService {
       ].join('\n\n');
     }
 
-    return systemPrompt;
+    return [
+      systemPrompt,
+      await this.worldLanguage.buildPromptLanguageSection(),
+    ].join('\n\n');
   }
 
   /** usageContext.scene → SceneKey 映射，用于场景化提示词路由 */
@@ -1983,13 +2018,14 @@ export class AiOrchestratorService {
       emptyTextFallback,
     } = options;
     const usageContext = this.resolveReplyUsageContext(profile, options);
+    const language = await this.worldLanguage.getLanguage();
     const runtimeProvider = await this.resolveRuntimeProvider({
       override: aiKeyOverride,
       characterId: profile.characterId,
     });
     const ownerKeyApplied = runtimeProvider.appliedOwnerKeyOverride === true;
     if (!runtimeProvider.apiKey) {
-      return this.buildUnavailableReply(profile);
+      return this.buildUnavailableReply(profile, language);
     }
 
     const systemPrompt = await this.buildSystemPrompt(
@@ -2018,7 +2054,10 @@ export class AiOrchestratorService {
       conversationHistory: sanitizedHistory,
       currentUserMessage,
       isGroupChat,
-      emptyTextFallback,
+      emptyTextFallback: this.resolveReplyEmptyFallback(
+        emptyTextFallback,
+        language,
+      ),
     };
     const billingSource: AiUsageBillingSource = ownerKeyApplied
       ? 'owner_custom'
@@ -2347,9 +2386,9 @@ export class AiOrchestratorService {
       temperature?: number;
     },
   ): Promise<Record<string, unknown>> {
-    const prompt =
+    const prompt = await this.worldLanguage.prependTaskLanguageInstruction(
       options?.userPrompt?.trim() ||
-      `你是隐界的角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
+        `你是隐界的角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
 
 要求：
 1. 角色要像用户现实里真会认识的人，不要像万能助手、客服、课程讲师或系统提示词外壳。
@@ -2359,7 +2398,7 @@ export class AiOrchestratorService {
 
 描述：${description}
 
-输出格式（全部字段用中文填写，avatar 用一个合适的 emoji）：
+输出格式（固定字段名保持英文；所有可读文本字段使用目标世界语言填写，avatar 用一个合适的 emoji）：
 {
   "name": "角色姓名",
   "avatar": "😊",
@@ -2379,7 +2418,8 @@ export class AiOrchestratorService {
   "emojiUsage": "none|occasional|frequent",
   "memorySummary": "这个人给用户的熟悉感和关系分寸（一句话）",
   "basePrompt": "这个人自己的说话方式和边界（2-4句话，不要写成助理说明书，不要出现括号动作）"
-}`;
+}`,
+    );
 
     const usageContext: AiUsageContext = {
       surface: 'admin',
@@ -2447,6 +2487,9 @@ export class AiOrchestratorService {
     fallback?: Record<string, unknown>;
   }): Promise<Record<string, unknown>> {
     try {
+      const prompt = await this.worldLanguage.prependTaskLanguageInstruction(
+        options.prompt,
+      );
       const response = await this.requestChatTaskWithFallback({
         usageContext: options.usageContext,
         characterId: options.usageContext.characterId,
@@ -2454,7 +2497,7 @@ export class AiOrchestratorService {
         request: (client, provider) =>
           client.chat.completions.create({
             model: provider.model,
-            messages: [{ role: 'user', content: options.prompt }],
+            messages: [{ role: 'user', content: prompt }],
             max_tokens: options.maxTokens ?? 1200,
             temperature: options.temperature ?? 0.3,
             response_format: { type: 'json_object' },
@@ -2482,6 +2525,9 @@ export class AiOrchestratorService {
     fallback?: string;
   }): Promise<string> {
     try {
+      const prompt = await this.worldLanguage.prependTaskLanguageInstruction(
+        options.prompt,
+      );
       const response = await this.requestChatTaskWithFallback({
         usageContext: options.usageContext,
         characterId: options.usageContext.characterId,
@@ -2489,7 +2535,7 @@ export class AiOrchestratorService {
         request: (client, provider) =>
           client.chat.completions.create({
             model: provider.model,
-            messages: [{ role: 'user', content: options.prompt }],
+            messages: [{ role: 'user', content: prompt }],
             max_tokens: options.maxTokens ?? 800,
             temperature: options.temperature ?? 0.4,
           }),
@@ -2914,6 +2960,10 @@ export class AiOrchestratorService {
       }
 
       attemptedProvider = true;
+      const [transcriptionLanguage, transcriptionPrompt] = await Promise.all([
+        this.worldLanguage.getTranscriptionLanguageCode(),
+        this.worldLanguage.getTranscriptionPrompt(),
+      ]);
       const client = new OpenAI({
         apiKey: provider.transcriptionApiKey,
         baseURL: provider.transcriptionEndpoint,
@@ -2932,9 +2982,8 @@ export class AiOrchestratorService {
                 },
               ),
               model: provider.transcriptionModel,
-              language: 'zh',
-              prompt:
-                '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
+              language: transcriptionLanguage,
+              prompt: transcriptionPrompt,
             }),
         );
         const text = response.text.trim();
@@ -3035,6 +3084,9 @@ export class AiOrchestratorService {
         endpoint: provider.ttsEndpoint,
         apiKey: provider.ttsApiKey,
       });
+      const instructions = await this.worldLanguage.buildSpeechInstructions({
+        existingInstructions: options.instructions,
+      });
 
       try {
         const response = await this.retrySpeechRequest('speech synthesis', () =>
@@ -3043,7 +3095,7 @@ export class AiOrchestratorService {
             voice,
             input: text,
             response_format: 'mp3',
-            instructions: options.instructions?.trim() || undefined,
+            instructions,
           }),
         );
         const arrayBuffer = await response.arrayBuffer();

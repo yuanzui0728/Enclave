@@ -26,6 +26,7 @@ import { SchedulerService } from '../scheduler/scheduler.service';
 import { FollowupRuntimeService } from '../followup-runtime/followup-runtime.service';
 import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { SelfAgentService } from '../self-agent/self-agent.service';
+import { WorldLanguageService } from '../config/world-language.service';
 import type { RealWorldSyncRulesValue } from '../real-world-sync/real-world-sync.types';
 import type { NeedDiscoveryConfig } from '../need-discovery/need-discovery.types';
 import type { FollowupRuntimeRulesValue } from '../followup-runtime/followup-runtime.types';
@@ -66,6 +67,7 @@ export class AdminController {
     private readonly followupRuntimeService: FollowupRuntimeService,
     private readonly reminderRuntimeService: ReminderRuntimeService,
     private readonly selfAgentService: SelfAgentService,
+    private readonly worldLanguageService: WorldLanguageService,
   ) {}
 
   @Get('stats')
@@ -86,6 +88,16 @@ export class AdminController {
   @Patch('config')
   setConfig(@Body() body: { key: string; value: string }) {
     return this.adminService.setConfig(body.key, body.value);
+  }
+
+  @Get('world-language')
+  getWorldLanguage() {
+    return this.worldLanguageService.getConfig();
+  }
+
+  @Patch('world-language')
+  setWorldLanguage(@Body() body: { language?: string | null }) {
+    return this.worldLanguageService.setLanguage(body.language);
   }
 
   @Get('characters')

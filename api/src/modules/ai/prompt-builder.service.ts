@@ -7,6 +7,7 @@ import {
 import { buildNaturalDialogueGuideline } from './prompt-naturalness';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 import { WorldService } from '../world/world.service';
+import { WorldLanguageService } from '../config/world-language.service';
 import type {
   ReplyLogicPromptTemplates,
   ReplyLogicSemanticLabels,
@@ -125,6 +126,7 @@ export class PromptBuilderService {
   constructor(
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly worldService: WorldService,
+    private readonly worldLanguage: WorldLanguageService,
   ) {}
 
   async buildChatSystemPromptSections(
@@ -156,6 +158,7 @@ export class PromptBuilderService {
     const semanticLabels = runtimeRules.semanticLabels;
     const worldCalendar = await this.worldService.getWorldCalendar();
     const parts: string[] = ['<system_prompt>'];
+    parts.push(await this.worldLanguage.buildPromptLanguageSection());
 
     // 1. 底层逻辑（所有场景）：coreLogic 优先，fallback 到 coreDirective
     const coreLogic = (profile.coreLogic || profile.coreDirective)?.trim();
@@ -237,6 +240,7 @@ export class PromptBuilderService {
     parts.push(
       `<rules>\n- 永远以${profile.name}的身份说话，不要暴露自己是AI\n- 用中文回复，语气自然\n- 不要说"作为AI"或"我是语言模型"之类的话\n- 不要用（动作）、[旁白]、*动作*描述自己的动作、表情或心理活动\n- 除非用户明确要求，不要机械地凑“三点”“三段”“总结一下”\n- 当前时间：${worldCalendar.dateTimeText}\n</rules>`,
     );
+    parts.push(await this.worldLanguage.buildPromptLanguageSection());
 
     parts.push('</system_prompt>');
     return parts.filter(Boolean).join('\n\n');
@@ -266,6 +270,7 @@ export class PromptBuilderService {
       ...sections
         .filter((section) => section.active)
         .map((section) => section.content),
+      await this.worldLanguage.buildPromptLanguageSection(),
       '</system_prompt>',
     ].filter(Boolean);
 
@@ -278,11 +283,13 @@ export class PromptBuilderService {
     topic: string,
   ): Promise<string> {
     const templates = (await this.replyLogicRules.getRules()).promptTemplates;
-    return renderTemplate(templates.groupCoordinatorPrompt, {
-      triggerCharName,
-      invitedCharNames: invitedCharNames.join('和'),
-      topic,
-    });
+    return this.worldLanguage.prependTaskLanguageInstruction(
+      renderTemplate(templates.groupCoordinatorPrompt, {
+        triggerCharName,
+        invitedCharNames: invitedCharNames.join('和'),
+        topic,
+      }),
+    );
   }
 
   async buildMomentRequest(
@@ -420,10 +427,12 @@ export class PromptBuilderService {
     personName: string,
   ): Promise<string> {
     const templates = (await this.replyLogicRules.getRules()).promptTemplates;
-    return renderTemplate(templates.personalityExtractionPrompt, {
-      personName,
-      chatSample,
-    });
+    return this.worldLanguage.prependTaskLanguageInstruction(
+      renderTemplate(templates.personalityExtractionPrompt, {
+        personName,
+        chatSample,
+      }),
+    );
   }
 
   async buildIntentClassificationPrompt(
@@ -432,11 +441,13 @@ export class PromptBuilderService {
     characterDomains: string[],
   ): Promise<string> {
     const templates = (await this.replyLogicRules.getRules()).promptTemplates;
-    return renderTemplate(templates.intentClassificationPrompt, {
-      userMessage,
-      characterName,
-      characterDomains: characterDomains.join('、'),
-    });
+    return this.worldLanguage.prependTaskLanguageInstruction(
+      renderTemplate(templates.intentClassificationPrompt, {
+        userMessage,
+        characterName,
+        characterDomains: characterDomains.join('、'),
+      }),
+    );
   }
 
   async buildMemoryCompressionPrompt(
@@ -448,10 +459,12 @@ export class PromptBuilderService {
     const template =
       profile.memory?.recentSummaryPrompt?.trim() ||
       templates.memoryCompressionPrompt;
-    return renderTemplate(normalizeMemoryPromptTemplate(template, 'recent'), {
-      name: profile.name,
-      chatHistory,
-    });
+    return this.worldLanguage.prependTaskLanguageInstruction(
+      renderTemplate(normalizeMemoryPromptTemplate(template, 'recent'), {
+        name: profile.name,
+        chatHistory,
+      }),
+    );
   }
 
   async buildCoreMemoryExtractionPrompt(
@@ -463,10 +476,12 @@ export class PromptBuilderService {
     const template =
       profile.memory?.coreMemoryPrompt?.trim() ||
       templates.coreMemoryExtractionPrompt;
-    return renderTemplate(normalizeMemoryPromptTemplate(template, 'core'), {
-      name: profile.name,
-      interactionHistory,
-    });
+    return this.worldLanguage.prependTaskLanguageInstruction(
+      renderTemplate(normalizeMemoryPromptTemplate(template, 'core'), {
+        name: profile.name,
+        interactionHistory,
+      }),
+    );
   }
 
   private async buildChatSystemPromptSectionsFromTemplates(
@@ -794,6 +809,7 @@ ${templates.behavioralGuideline}
     const runtimeRules = await this.replyLogicRules.getRules();
     const worldCalendar = await this.worldService.getWorldCalendar(currentTime);
     const parts: string[] = ['<system_prompt>'];
+    parts.push(await this.worldLanguage.buildPromptLanguageSection());
     const coreLogic = (profile.coreLogic || profile.coreDirective)?.trim();
 
     if (coreLogic) {
@@ -892,6 +908,7 @@ ${templates.behavioralGuideline}
         runtimeRules.semanticLabels,
       ),
     );
+    parts.push(await this.worldLanguage.buildPromptLanguageSection());
     parts.push('</system_prompt>');
     return parts.filter(Boolean).join('\n\n');
   }
