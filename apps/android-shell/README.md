@@ -75,7 +75,6 @@ The mobile web layer now expects three Android-side contracts:
    - Provide `socketBaseUrl`
    - Provide `environment`
    - Provide app metadata such as `applicationId`, `versionName`, and `versionCode`
-   - Provide `preferredLocales` when native Android has an app or system locale matching the supported app languages
    - The bundled fallback file is injected at `apps/app/dist/runtime-config.json` after each shell web build
    - Native Android runtime now prefers bundled `assets/public/runtime-config.json`; manifest meta-data stays as fallback only
 

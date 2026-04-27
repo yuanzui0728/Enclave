@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.os.LocaleListCompat;
 
-import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -84,12 +83,6 @@ public class YinjieRuntimePlugin extends Plugin {
             if (result.has("apiBaseUrl")) {
                 result.put("worldAccessMode", "local");
                 result.put("configStatus", "configured");
-            }
-
-            JSObject localePayload = readLocalePayload();
-            String preferredLocale = localePayload.optString("locale", null);
-            if (preferredLocale != null && !preferredLocale.trim().isEmpty()) {
-                result.put("preferredLocales", new JSArray().put(preferredLocale));
             }
 
             call.resolve(result);
