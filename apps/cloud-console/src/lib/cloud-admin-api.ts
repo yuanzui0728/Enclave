@@ -110,21 +110,71 @@ function getStorage() {
   }
 }
 
-function resolveCloudAdminApiBase() {
-  const configuredBase = import.meta.env.VITE_CLOUD_API_BASE?.trim();
-  if (configuredBase) {
-    return configuredBase.replace(/\/+$/, "");
+type CloudAdminRuntimeLocation = {
+  hostname: string;
+  origin: string;
+  port: string;
+  protocol: string;
+};
+
+function isLocalHostname(hostname: string) {
+  const normalizedHostname = hostname.toLowerCase();
+  return (
+    normalizedHostname === "localhost" ||
+    normalizedHostname === "127.0.0.1" ||
+    normalizedHostname === "::1" ||
+    normalizedHostname === "[::1]"
+  );
+}
+
+function isLocalVitePort(port: string) {
+  if (!/^\d+$/.test(port)) {
+    return false;
+  }
+
+  const portNumber = Number(port);
+  return (
+    (portNumber >= 5173 && portNumber <= 5199) ||
+    (portNumber >= 4173 && portNumber <= 4199)
+  );
+}
+
+export function resolveCloudAdminApiBaseFromLocation({
+  configuredBase,
+  location,
+}: {
+  configuredBase?: string | null;
+  location?: CloudAdminRuntimeLocation | null;
+}) {
+  const normalizedConfiguredBase = configuredBase?.trim();
+  if (normalizedConfiguredBase) {
+    return normalizedConfiguredBase.replace(/\/+$/, "");
   }
 
   if (
-    typeof window !== "undefined" &&
-    (window.location.protocol === "http:" ||
-      window.location.protocol === "https:")
+    location &&
+    (location.protocol === "http:" || location.protocol === "https:") &&
+    isLocalHostname(location.hostname) &&
+    isLocalVitePort(location.port)
   ) {
-    return window.location.origin;
+    return "http://127.0.0.1:3001";
   }
 
-  return "http://localhost:3001";
+  if (
+    location &&
+    (location.protocol === "http:" || location.protocol === "https:")
+  ) {
+    return location.origin;
+  }
+
+  return "http://127.0.0.1:3001";
+}
+
+function resolveCloudAdminApiBase() {
+  return resolveCloudAdminApiBaseFromLocation({
+    configuredBase: import.meta.env.VITE_CLOUD_API_BASE,
+    location: typeof window !== "undefined" ? window.location : null,
+  });
 }
 
 function createCloudAdminLocaleHeaders() {

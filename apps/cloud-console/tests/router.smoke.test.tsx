@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { installCloudAdminApiMock, renderRoute } from "./test-helpers";
+import { resolveCloudAdminApiBaseFromLocation } from "../src/lib/cloud-admin-api";
 
 describe("cloud-console router smoke", () => {
   beforeEach(() => {
@@ -62,6 +63,44 @@ describe("cloud-console router smoke", () => {
     expect(await screen.findByText("需要管理密钥")).toBeTruthy();
     expect(screen.queryByText("舰队仪表盘")).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("uses the cloud API port for local Vite origins without an explicit API base", () => {
+    expect(
+      resolveCloudAdminApiBaseFromLocation({
+        configuredBase: "",
+        location: {
+          hostname: "127.0.0.1",
+          origin: "http://127.0.0.1:5184",
+          port: "5184",
+          protocol: "http:",
+        },
+      }),
+    ).toBe("http://127.0.0.1:3001");
+
+    expect(
+      resolveCloudAdminApiBaseFromLocation({
+        configuredBase: " https://cloud-api.example.com/ ",
+        location: {
+          hostname: "127.0.0.1",
+          origin: "http://127.0.0.1:5184",
+          port: "5184",
+          protocol: "http:",
+        },
+      }),
+    ).toBe("https://cloud-api.example.com");
+
+    expect(
+      resolveCloudAdminApiBaseFromLocation({
+        configuredBase: "",
+        location: {
+          hostname: "console.example.com",
+          origin: "https://console.example.com",
+          port: "",
+          protocol: "https:",
+        },
+      }),
+    ).toBe("https://console.example.com");
   });
 
   it("switches cloud console copy across English, Japanese, and Korean", async () => {
