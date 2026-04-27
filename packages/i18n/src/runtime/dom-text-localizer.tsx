@@ -245,8 +245,9 @@ function translateKnownPattern(
     const label = englishColonLabelMatch[1] ?? "";
     const value = englishColonLabelMatch[2] ?? "";
     const translatedLabel = translatePatternTarget(label);
-    if (translatedLabel !== label) {
-      return `${translatedLabel}: ${value}`;
+    const translatedValue = translatePatternTarget(value);
+    if (translatedLabel !== label || translatedValue !== value) {
+      return `${translatedLabel}: ${translatedValue}`;
     }
   }
 
@@ -263,12 +264,40 @@ function translateKnownPattern(
   }
 
   const englishCountLabelMatch = sourceValue.match(
-    /^(\d+(?:\.\d+)?)\s+(active|total|current|expired|revoked|failed|pending|running|worlds|requests|jobs|sessions|tasks|groups|receipts|receipt\(s\)|session\(s\)|job\(s\)|world\(s\)|task\(s\)|group\(s\)|point\(s\)|match\(es\)|matched session\(s\))$/,
+    /^(\d+(?:\.\d+)?)\s+(active|active providers|total|current|expired|revoked|failed|pending|running|worlds|requests|jobs|sessions|tasks|groups|receipts|receipt\(s\)|session\(s\)|job\(s\)|world\(s\)|task\(s\)|group\(s\)|point\(s\)|match\(es\)|matched session\(s\))$/,
   );
   if (englishCountLabelMatch && locale !== "en-US") {
     const count = englishCountLabelMatch[1] ?? "0";
     const label = englishCountLabelMatch[2] ?? "";
     return translateEnglishCountLabel(count, label, locale);
+  }
+
+  const englishShowingJobsMatch = sourceValue.match(
+    /^Showing (.+?) of (.+?) jobs\.$/,
+  );
+  if (englishShowingJobsMatch && locale !== "en-US") {
+    const range = englishShowingJobsMatch[1] ?? "0";
+    const total = englishShowingJobsMatch[2] ?? "0";
+    if (locale === "ja-JP") {
+      return `${total} 件のジョブのうち ${range} を表示しています。`;
+    }
+    if (locale === "ko-KR") {
+      return `작업 ${total}개 중 ${range}개를 표시합니다.`;
+    }
+    return `显示 ${range} / ${total} 个任务。`;
+  }
+
+  const englishPageOfMatch = sourceValue.match(/^Page (\d+) of (\d+)$/);
+  if (englishPageOfMatch && locale !== "en-US") {
+    const page = englishPageOfMatch[1] ?? "1";
+    const total = englishPageOfMatch[2] ?? "1";
+    if (locale === "ja-JP") {
+      return `${page} / ${total} ページ`;
+    }
+    if (locale === "ko-KR") {
+      return `${page} / ${total} 페이지`;
+    }
+    return `第 ${page} 页 / 共 ${total} 页`;
   }
 
   const englishShowingLatestMatch = sourceValue.match(
@@ -1321,6 +1350,7 @@ function translateEnglishCountLabel(
   if (locale === "ja-JP") {
     const labels: Record<string, string> = {
       active: "アクティブ",
+      "active providers": "アクティブプロバイダー",
       total: "合計",
       current: "現在",
       expired: "期限切れ",
@@ -1345,6 +1375,7 @@ function translateEnglishCountLabel(
   if (locale === "ko-KR") {
     const labels: Record<string, string> = {
       active: "활성",
+      "active providers": "활성 공급자",
       total: "전체",
       current: "현재",
       expired: "만료",
@@ -1368,6 +1399,7 @@ function translateEnglishCountLabel(
 
   const labels: Record<string, string> = {
     active: "个活跃",
+    "active providers": "个活跃供应方",
     total: "个总计",
     current: "个当前",
     expired: "个过期",
