@@ -22,6 +22,37 @@ const cloudConsoleText: LocaleDictionary = {
     "Admin secret saved locally. Console uses short-lived admin tokens.":
       "管理密钥已保存在本地，控制台将使用短期管理令牌。",
     "Admin secret is missing.": "缺少管理密钥。",
+    "Admin secret configured": "管理密钥已配置",
+    "Admin secret missing": "管理密钥未配置",
+    "Cloud access": "云平台访问",
+    "Cloud operations": "云平台运维",
+    Navigation: "导航",
+    Setup: "设置",
+    "Request detail": "申请详情",
+    "Availability and drift": "可用性与漂移",
+    "Applications and handoffs": "申请与交接",
+    "Instances and health": "实例与健康",
+    "Queue and leases": "队列与租约",
+    "Access audit": "访问审计",
+    "Durable tasks": "持久化任务",
+    "World request detail": "世界申请详情",
+    "Review one phone-based world application and its delivery state.":
+      "复核单个手机号建世界申请及其交付状态。",
+    "Review application status, projected world state, and manual delivery handoffs.":
+      "复核申请状态、预计世界状态和人工交付交接。",
+    "World detail": "世界详情",
+    "Inspect instance placement, runtime status, bootstrap material, and lifecycle jobs.":
+      "检查实例部署、运行状态、启动材料和生命周期任务。",
+    "Track provider placement, power state, heartbeat freshness, and operator attention.":
+      "追踪供应方部署、电源状态、心跳新鲜度和运维关注项。",
+    "Session audit": "会话审计",
+    "Review admin access, risk groups, revocation paths, and source activity.":
+      "复核管理访问、风险分组、吊销路径和来源活动。",
+    "Durable recovery": "持久化恢复",
+    "Replay exhausted compensation tasks and clear stale failures from one queue.":
+      "在一个队列中重放耗尽重试的补偿任务并清除陈旧失败。",
+    "Monitor world availability, lifecycle jobs, request flow, and cloud runtime drift.":
+      "监控世界可用性、生命周期任务、申请流转和云运行时漂移。",
     "Request id": "请求 ID",
 
     Dashboard: "仪表盘",
@@ -304,6 +335,37 @@ const cloudConsoleText: LocaleDictionary = {
     "Admin secret saved locally. Console uses short-lived admin tokens.":
       "管理シークレットはローカルに保存済みです。コンソールは短命の管理トークンを使用します。",
     "Admin secret is missing.": "管理シークレットがありません。",
+    "Admin secret configured": "管理シークレット設定済み",
+    "Admin secret missing": "管理シークレット未設定",
+    "Cloud access": "クラウドアクセス",
+    "Cloud operations": "クラウド運用",
+    Navigation: "ナビゲーション",
+    Setup: "設定",
+    "Request detail": "申請詳細",
+    "Availability and drift": "可用性とドリフト",
+    "Applications and handoffs": "申請と引き継ぎ",
+    "Instances and health": "インスタンスと健全性",
+    "Queue and leases": "キューとリース",
+    "Access audit": "アクセス監査",
+    "Durable tasks": "永続タスク",
+    "World request detail": "世界申請詳細",
+    "Review one phone-based world application and its delivery state.":
+      "電話番号ベースの世界申請と配信状態を確認します。",
+    "Review application status, projected world state, and manual delivery handoffs.":
+      "申請状態、予測世界状態、手動配信の引き継ぎを確認します。",
+    "World detail": "世界詳細",
+    "Inspect instance placement, runtime status, bootstrap material, and lifecycle jobs.":
+      "インスタンス配置、ランタイム状態、ブートストラップ資料、ライフサイクルジョブを確認します。",
+    "Track provider placement, power state, heartbeat freshness, and operator attention.":
+      "プロバイダー配置、電源状態、ハートビート鮮度、運用注意項目を追跡します。",
+    "Session audit": "セッション監査",
+    "Review admin access, risk groups, revocation paths, and source activity.":
+      "管理アクセス、リスクグループ、失効経路、ソース活動を確認します。",
+    "Durable recovery": "永続リカバリー",
+    "Replay exhausted compensation tasks and clear stale failures from one queue.":
+      "1 つのキューから再試行上限に達した補償タスクを再実行し、古い失敗をクリアします。",
+    "Monitor world availability, lifecycle jobs, request flow, and cloud runtime drift.":
+      "世界の可用性、ライフサイクルジョブ、申請フロー、クラウドランタイムのドリフトを監視します。",
     "Request id": "リクエスト ID",
 
     Dashboard: "ダッシュボード",
@@ -586,6 +648,37 @@ const cloudConsoleText: LocaleDictionary = {
     "Admin secret saved locally. Console uses short-lived admin tokens.":
       "관리 시크릿이 로컬에 저장되어 있습니다. 콘솔은 단기 관리 토큰을 사용합니다.",
     "Admin secret is missing.": "관리 시크릿이 없습니다.",
+    "Admin secret configured": "관리 시크릿 설정됨",
+    "Admin secret missing": "관리 시크릿 없음",
+    "Cloud access": "클라우드 접근",
+    "Cloud operations": "클라우드 운영",
+    Navigation: "탐색",
+    Setup: "설정",
+    "Request detail": "요청 상세",
+    "Availability and drift": "가용성과 드리프트",
+    "Applications and handoffs": "요청과 인계",
+    "Instances and health": "인스턴스와 상태",
+    "Queue and leases": "큐와 리스",
+    "Access audit": "접근 감사",
+    "Durable tasks": "지속 작업",
+    "World request detail": "월드 요청 상세",
+    "Review one phone-based world application and its delivery state.":
+      "전화번호 기반 월드 요청 하나와 전달 상태를 검토합니다.",
+    "Review application status, projected world state, and manual delivery handoffs.":
+      "요청 상태, 예상 월드 상태, 수동 전달 인계를 검토합니다.",
+    "World detail": "월드 상세",
+    "Inspect instance placement, runtime status, bootstrap material, and lifecycle jobs.":
+      "인스턴스 배치, 런타임 상태, 부트스트랩 자료, 라이프사이클 작업을 점검합니다.",
+    "Track provider placement, power state, heartbeat freshness, and operator attention.":
+      "공급자 배치, 전원 상태, 하트비트 최신성, 운영자 관심 항목을 추적합니다.",
+    "Session audit": "세션 감사",
+    "Review admin access, risk groups, revocation paths, and source activity.":
+      "관리 접근, 위험 그룹, 해지 경로, 소스 활동을 검토합니다.",
+    "Durable recovery": "지속 복구",
+    "Replay exhausted compensation tasks and clear stale failures from one queue.":
+      "하나의 큐에서 재시도 한도에 도달한 보상 작업을 재실행하고 오래된 실패를 정리합니다.",
+    "Monitor world availability, lifecycle jobs, request flow, and cloud runtime drift.":
+      "월드 가용성, 라이프사이클 작업, 요청 흐름, 클라우드 런타임 드리프트를 모니터링합니다.",
     "Request id": "요청 ID",
 
     Dashboard: "대시보드",
