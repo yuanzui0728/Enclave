@@ -5,6 +5,14 @@ const SKIP_ELEMENT_SELECTOR = [
   "script",
   "style",
   "noscript",
+  "[contenteditable='true']",
+  "[data-i18n-skip='true']",
+].join(",");
+
+const SKIP_TEXT_ELEMENT_SELECTOR = [
+  "script",
+  "style",
+  "noscript",
   "textarea",
   "input",
   "select",
@@ -65,8 +73,11 @@ export function DomTextLocalizer({
     const shouldSkipElement = (element: Element | null) =>
       !element || Boolean(element.closest(SKIP_ELEMENT_SELECTOR));
 
+    const shouldSkipTextElement = (element: Element | null) =>
+      !element || Boolean(element.closest(SKIP_TEXT_ELEMENT_SELECTOR));
+
     const localizeTextNode = (node: Text) => {
-      if (shouldSkipElement(node.parentElement)) {
+      if (shouldSkipTextElement(node.parentElement)) {
         return;
       }
 
@@ -279,6 +290,182 @@ function translateKnownPattern(
     const label = translatePatternTarget(labeledDateMatch[1] ?? "");
     const dateLabel = labeledDateMatch[2] ?? "";
     return `${label} · ${dateLabel}`;
+  }
+
+  const viewCharacterMomentsMatch = sourceValue.match(/^查看 (.+) 的朋友圈$/);
+  if (viewCharacterMomentsMatch) {
+    const target = viewCharacterMomentsMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `${target} のモーメンツを見る`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 모멘트 보기`;
+    }
+    return `View ${target}'s Moments`;
+  }
+
+  const characterMomentsMatch = sourceValue.match(/^(.+) 的朋友圈$/);
+  if (characterMomentsMatch) {
+    const target = characterMomentsMatch[1] ?? "";
+    if (target === "Ta") {
+      return dictionary.get(sourceValue) ?? "Their Moments";
+    }
+    if (locale === "ja-JP") {
+      return `${target} のモーメンツ`;
+    }
+    if (locale === "ko-KR") {
+      return `${target}의 모멘트`;
+    }
+    return `${target}'s Moments`;
+  }
+
+  const jumpToInitialMatch = sourceValue.match(/^跳转到 ([A-Z])$/);
+  if (jumpToInitialMatch) {
+    const initial = jumpToInitialMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `${initial} にジャンプ`;
+    }
+    if (locale === "ko-KR") {
+      return `${initial}(으)로 이동`;
+    }
+    return `Jump to ${initial}`;
+  }
+
+  const loadedMessagesMatch = sourceValue.match(/^(.+) · 已加载 (\d+) 条$/);
+  if (loadedMessagesMatch) {
+    const label = loadedMessagesMatch[1] ?? "";
+    const count = loadedMessagesMatch[2] ?? "0";
+    if (locale === "ja-JP") {
+      return `${label} · ${count}件読み込み済み`;
+    }
+    if (locale === "ko-KR") {
+      return `${label} · ${count}개 로드됨`;
+    }
+    return `${label} · ${count} loaded`;
+  }
+
+  const localFeedbackCountMatch = sourceValue.match(
+    /^(\d+) 条本地反馈记录，(\d+) 条高优先级$/,
+  );
+  if (localFeedbackCountMatch) {
+    const feedbackCount = localFeedbackCountMatch[1] ?? "0";
+    const highPriorityCount = localFeedbackCountMatch[2] ?? "0";
+    if (locale === "ja-JP") {
+      return `ローカルフィードバック ${feedbackCount}件、高優先度 ${highPriorityCount}件`;
+    }
+    if (locale === "ko-KR") {
+      return `로컬 피드백 ${feedbackCount}개, 높은 우선순위 ${highPriorityCount}개`;
+    }
+    return `${feedbackCount} local feedback records, ${highPriorityCount} high priority`;
+  }
+
+  const passedChecklistMatch = sourceValue.match(/^(\d+) \/ (\d+) 项通过$/);
+  if (passedChecklistMatch) {
+    const passed = passedChecklistMatch[1] ?? "0";
+    const total = passedChecklistMatch[2] ?? "0";
+    if (locale === "ja-JP") {
+      return `${passed} / ${total}項目合格`;
+    }
+    if (locale === "ko-KR") {
+      return `${passed} / ${total}개 항목 통과`;
+    }
+    return `${passed} / ${total} passed`;
+  }
+
+  const itemCountMatch = sourceValue.match(/^(\d+) 项$/);
+  if (itemCountMatch) {
+    const count = itemCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `${count}件`;
+    }
+    if (locale === "ko-KR") {
+      return `${count}개 항목`;
+    }
+    return `${count} items`;
+  }
+
+  const attachmentCountMatch = sourceValue.match(/^(\d+) 项附件$/);
+  if (attachmentCountMatch) {
+    const count = attachmentCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `添付 ${count}件`;
+    }
+    if (locale === "ko-KR") {
+      return `첨부파일 ${count}개`;
+    }
+    return `${count} attachments`;
+  }
+
+  const messageCountMatch = sourceValue.match(/^(\d+) 条$/);
+  if (messageCountMatch) {
+    const count = messageCountMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `${count}件`;
+    }
+    if (locale === "ko-KR") {
+      return `${count}개`;
+    }
+    return `${count}`;
+  }
+
+  const recentMessagesWindowMatch = sourceValue.match(/^最近 (\d+) 条$/);
+  if (recentMessagesWindowMatch) {
+    const count = recentMessagesWindowMatch[1] ?? "0";
+    if (locale === "ja-JP") {
+      return `直近 ${count}件`;
+    }
+    if (locale === "ko-KR") {
+      return `최근 ${count}개`;
+    }
+    return `Latest ${count}`;
+  }
+
+  const modelPersonaMatch = sourceValue.match(/^(.+) 模型角色$/);
+  if (modelPersonaMatch) {
+    const provider = modelPersonaMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `${provider} モデル人格`;
+    }
+    if (locale === "ko-KR") {
+      return `${provider} 모델 페르소나`;
+    }
+    return `${provider} model persona`;
+  }
+
+  const bracketedCardMatch = sourceValue.match(/^\[名片\] (.+)$/);
+  if (bracketedCardMatch) {
+    const target = bracketedCardMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `[連絡先カード] ${target}`;
+    }
+    if (locale === "ko-KR") {
+      return `[연락처 카드] ${target}`;
+    }
+    return `[Contact card] ${target}`;
+  }
+
+  const bracketedImageMatch = sourceValue.match(/^\[图片\](.*)$/);
+  if (bracketedImageMatch) {
+    const suffix = bracketedImageMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `[画像]${suffix}`;
+    }
+    if (locale === "ko-KR") {
+      return `[이미지]${suffix}`;
+    }
+    return `[Image]${suffix}`;
+  }
+
+  const bracketedVoiceMatch = sourceValue.match(/^\[语音\](.*)$/);
+  if (bracketedVoiceMatch) {
+    const suffix = bracketedVoiceMatch[1] ?? "";
+    if (locale === "ja-JP") {
+      return `[音声]${suffix}`;
+    }
+    if (locale === "ko-KR") {
+      return `[음성]${suffix}`;
+    }
+    return `[Voice]${suffix}`;
   }
 
   const likeCountMatch = sourceValue.match(/^(\d+) 赞$/);
