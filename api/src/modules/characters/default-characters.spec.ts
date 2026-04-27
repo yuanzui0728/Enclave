@@ -154,6 +154,7 @@ describe('default characters', () => {
     expect(character?.profile?.memory?.coreMemory).toContain(
       '长期记住用户',
     );
+    expect(DEFAULT_CHARACTER_IDS).not.toContain(HOTEL_EXPERT_CHARACTER_ID);
   });
 
   it('includes the world news desk with expected runtime defaults', () => {

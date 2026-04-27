@@ -9,10 +9,7 @@ import {
 } from './bar-expert-character';
 import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 import { buildDoctorCharacter, DOCTOR_CHARACTER_ID } from './doctor-character';
-import {
-  buildHotelExpertCharacter,
-  HOTEL_EXPERT_CHARACTER_ID,
-} from './hotel-expert-character';
+import { buildHotelExpertCharacter } from './hotel-expert-character';
 import { buildLawyerCharacter, LAWYER_CHARACTER_ID } from './lawyer-character';
 import {
   buildReminderCharacter,
@@ -38,7 +35,6 @@ export const DEFAULT_CHARACTER_IDS = [
   ACTION_OPERATOR_CHARACTER_ID,
   BAR_EXPERT_CHARACTER_ID,
   DOCTOR_CHARACTER_ID,
-  HOTEL_EXPERT_CHARACTER_ID,
   LAWYER_CHARACTER_ID,
   REMINDER_CHARACTER_ID,
   WEDDING_PLANNER_CHARACTER_ID,
