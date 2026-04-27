@@ -5,6 +5,7 @@ import { getCharacterAvatarBySourceKey } from './character-avatar-assets';
 export type CelebrityCharacterPresetGroupKey =
   | 'technology_and_product'
   | 'science_and_reasoning'
+  | 'academic_teachers'
   | 'business_and_investing'
   | 'public_expression'
   | 'relationships_and_emotions'
@@ -44,6 +45,12 @@ const PRESET_GROUPS: Record<
     label: '科学与思维',
     description: '偏第一性原理、科学方法、解释复杂事物与反自欺。',
     sortOrder: 15,
+  },
+  academic_teachers: {
+    key: 'academic_teachers',
+    label: '学科老师',
+    description: '偏长期陪学、讲题拆题、学科理解、复习规划与薄弱点追踪。',
+    sortOrder: 18,
   },
   business_and_investing: {
     key: 'business_and_investing',

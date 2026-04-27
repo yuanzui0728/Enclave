@@ -24,6 +24,7 @@ export type CharacterModelRoutingMode =
 export type CharacterPresetGroupKey =
   | "technology_and_product"
   | "science_and_reasoning"
+  | "academic_teachers"
   | "business_and_investing"
   | "public_expression"
   | "relationships_and_emotions"

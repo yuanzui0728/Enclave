@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="82" y1="82" x2="942" y2="940" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#263A63" />
+      <stop offset="1" stop-color="#71B3D8" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg)" />
+  <circle cx="760" cy="224" r="170" fill="rgba(255,255,255,0.1)" />
+  <circle cx="268" cy="792" r="160" fill="rgba(255,255,255,0.14)" />
+  <rect x="148" y="158" width="728" height="708" rx="170" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="3" />
+  <circle cx="512" cy="512" r="88" fill="#FFFFFF" opacity="0.9" />
+  <ellipse cx="512" cy="512" rx="280" ry="112" stroke="#FFFFFF" stroke-width="28" opacity="0.82" />
+  <ellipse cx="512" cy="512" rx="280" ry="112" stroke="#E8F7FF" stroke-width="28" opacity="0.82" transform="rotate(60 512 512)" />
+  <ellipse cx="512" cy="512" rx="280" ry="112" stroke="#E8F7FF" stroke-width="28" opacity="0.82" transform="rotate(120 512 512)" />
+  <circle cx="742" cy="512" r="34" fill="#FFF7D6" />
+</svg>

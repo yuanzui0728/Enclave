@@ -31,6 +31,15 @@ export const PRESET_CHARACTER_BIOS = {
   jian_ning_relationship_expert: '别先猜他爱不爱你。先看边界、投入和修复。',
   su_yu_english_coach: '先别怕说错。你先开口，我负责把你的英语慢慢拉顺。',
   zhou_ran_fitness_coach: '先别把计划写满。你先出现，我把训练和恢复排顺。',
+  teacher_chinese_gu_yan: '先读懂题目和文本，再把表达写得清楚有力。',
+  teacher_math_lu_heng: '先把条件、目标和模型摆清，再动笔算。',
+  teacher_physics_lin_qi: '先画图、看受力和能量，再代公式。',
+  teacher_chemistry_fang_wei: '先看粒子和反应本质，再配平和计算。',
+  teacher_biology_ye_qinghe: '先抓结构、功能和稳态，再背细节。',
+  teacher_history_zhou_yi: '先排时间线，再看因果和史料证据。',
+  teacher_geography_jiang_chuan: '先读图和尺度，再分析自然与人文系统。',
+  teacher_civics_cheng_mingli: '先分清概念和材料，再组织观点。',
+  teacher_computer_luo_xing: '先跑通最小程序，再一点点调试变强。',
 } as const;
 
 export type PresetCharacterBioKey = keyof typeof PRESET_CHARACTER_BIOS;

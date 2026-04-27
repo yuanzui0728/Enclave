@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="96" y1="64" x2="928" y2="960" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6F3A55" />
+      <stop offset="1" stop-color="#D7B46A" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg)" />
+  <circle cx="762" cy="218" r="168" fill="rgba(255,255,255,0.12)" />
+  <circle cx="276" cy="806" r="176" fill="rgba(255,247,226,0.18)" />
+  <rect x="146" y="172" width="732" height="680" rx="168" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.18)" stroke-width="3" />
+  <path d="M320 330h384M320 450h330M320 570h384M320 690h268" stroke="#FFF7E2" stroke-width="38" stroke-linecap="round" />
+  <path d="M238 334c34 24 56 60 66 108M240 574c42 28 70 72 82 130" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" opacity="0.72" />
+  <text x="512" y="548" text-anchor="middle" dominant-baseline="middle" font-family="serif" font-size="228" font-weight="700" fill="#FFFFFF" opacity="0.9">文</text>
+</svg>

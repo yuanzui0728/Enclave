@@ -19,6 +19,15 @@ describe('celebrity character presets', () => {
     expect(new Set(presetKeys).size).toBe(presetKeys.length);
   });
 
+  it('keeps built-in preset ids unique', () => {
+    const presets = listBuiltInCharacterPresets();
+    const ids = presets.map((preset) => preset.id);
+    const presetKeys = presets.map((preset) => preset.presetKey);
+
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(presetKeys).size).toBe(presetKeys.length);
+  });
+
   it('exposes the relationships and emotions preset group', () => {
     expect(
       getCelebrityCharacterPresetGroup('relationships_and_emotions'),
@@ -33,6 +42,15 @@ describe('celebrity character presets', () => {
       {
         key: 'health_and_wellness',
         label: '健康与训练',
+      },
+    );
+  });
+
+  it('exposes the academic teachers preset group', () => {
+    expect(getCelebrityCharacterPresetGroup('academic_teachers')).toMatchObject(
+      {
+        key: 'academic_teachers',
+        label: '学科老师',
       },
     );
   });
@@ -85,6 +103,12 @@ describe('celebrity character presets', () => {
     );
   });
 
+  it('registers the academic teacher bio copy', () => {
+    expect(getPresetCharacterBio('teacher_math_lu_heng')).toBe(
+      '先把条件、目标和模型摆清，再动笔算。',
+    );
+  });
+
   it('includes fixed world character presets alongside celebrity presets', () => {
     const presets = listBuiltInCharacterPresets();
     const axunPreset = getBuiltInCharacterPreset('moments_interactor_axun');
@@ -120,7 +144,7 @@ describe('celebrity character presets', () => {
     expect(suYuPreset).toMatchObject({
       id: 'char-preset-su-yu-english-coach',
       name: '苏语',
-      groupKey: 'public_expression',
+      groupKey: 'academic_teachers',
     });
     expect(zhouRanPreset).toMatchObject({
       id: 'char-preset-zhou-ran-fitness-coach',
@@ -158,5 +182,64 @@ describe('celebrity character presets', () => {
     expect(
       zhouRanPreset?.character.profile?.cognitiveBoundaries?.knowledgeLimits,
     ).toContain('胸痛');
+  });
+
+  it('includes core academic teacher presets with teaching guardrails', () => {
+    const teacherPresetKeys = [
+      'teacher_chinese_gu_yan',
+      'teacher_math_lu_heng',
+      'teacher_physics_lin_qi',
+      'teacher_chemistry_fang_wei',
+      'teacher_biology_ye_qinghe',
+      'teacher_history_zhou_yi',
+      'teacher_geography_jiang_chuan',
+      'teacher_civics_cheng_mingli',
+      'teacher_computer_luo_xing',
+    ];
+    const teachers = teacherPresetKeys.map((presetKey) =>
+      getBuiltInCharacterPreset(presetKey),
+    );
+
+    expect(teachers).toHaveLength(9);
+    for (const preset of teachers) {
+      expect(preset).toBeDefined();
+      expect(preset).toMatchObject({
+        groupKey: 'academic_teachers',
+        character: {
+          sourceType: 'preset_catalog',
+          deletionPolicy: 'archive_allowed',
+          relationshipType: 'mentor',
+          momentsFrequency: 0,
+          feedFrequency: 0,
+        },
+      });
+      expect(preset?.character.profile?.coreLogic).toContain(
+        '不替用户完成可直接提交的作业、考试、论文',
+      );
+      expect(preset?.character.profile?.scenePrompts?.chat).toContain(
+        '先判断用户是在问概念、题目、计划、复盘还是考试冲刺',
+      );
+      expect(preset?.character.profile?.memory?.coreMemory).toContain(
+        '少记空泛鼓励',
+      );
+    }
+
+    const mathPreset = getBuiltInCharacterPreset('teacher_math_lu_heng');
+    const chemistryPreset = getBuiltInCharacterPreset(
+      'teacher_chemistry_fang_wei',
+    );
+    const civicsPreset = getBuiltInCharacterPreset(
+      'teacher_civics_cheng_mingli',
+    );
+    const computerPreset = getBuiltInCharacterPreset(
+      'teacher_computer_luo_xing',
+    );
+
+    expect(mathPreset?.character.profile?.coreLogic).toContain('先拆条件');
+    expect(chemistryPreset?.character.profile?.coreLogic).toContain(
+      '危险实验',
+    );
+    expect(civicsPreset?.character.profile?.coreLogic).toContain('煽动性输出');
+    expect(computerPreset?.character.profile?.coreLogic).toContain('恶意代码');
   });
 });

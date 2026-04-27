@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="90" y1="78" x2="930" y2="946" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#244C7A" />
+      <stop offset="1" stop-color="#8FC7B8" />
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg)" />
+  <circle cx="778" cy="226" r="170" fill="rgba(255,255,255,0.12)" />
+  <circle cx="246" cy="796" r="152" fill="rgba(255,255,255,0.14)" />
+  <rect x="168" y="164" width="688" height="696" rx="160" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.2)" stroke-width="3" />
+  <path d="M278 712 512 288l234 424H278Z" stroke="#FFFFFF" stroke-width="36" stroke-linejoin="round" />
+  <path d="M360 610h304M512 288v424" stroke="#EAF8F3" stroke-width="28" stroke-linecap="round" />
+  <text x="512" y="552" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="180" font-weight="700" fill="#FFFFFF">π</text>
+</svg>
