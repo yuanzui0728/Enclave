@@ -3211,7 +3211,7 @@ export function WechatSyncPage() {
         {previewItems.length ? (
           <div className="mt-4 grid gap-4 xl:grid-cols-2">
             {previewItems.map((item) => (
-              <PreviewCharacterCard
+              <WechatSyncPreviewDraftCard
                 key={item.contact.username}
                 item={item}
                 evidenceContact={
@@ -6789,6 +6789,935 @@ function PreviewCharacterCard({
       ) : null}
     </Card>
   );
+}
+
+function WechatSyncPreviewDraftCard({
+  item,
+  evidenceContact,
+  selected,
+  validationIssues,
+  onRemove,
+  onToggleSelect,
+  onNameChange,
+  onRelationshipChange,
+  onBioChange,
+  onDomainsChange,
+  onMemorySummaryChange,
+}: {
+  item: WechatSyncPreviewItem;
+  evidenceContact: WechatSyncContactBundle;
+  selected: boolean;
+  validationIssues: string[];
+  onRemove: () => void;
+  onToggleSelect: () => void;
+  onNameChange: (value: string) => void;
+  onRelationshipChange: (value: string) => void;
+  onBioChange: (value: string) => void;
+  onDomainsChange: (value: string) => void;
+  onMemorySummaryChange: (value: string) => void;
+}) {
+  const draft = item.draftCharacter;
+  const profile = draft.profile;
+  const traits = profile?.traits;
+  const identity = profile?.identity;
+  const behavioralPatterns = profile?.behavioralPatterns;
+  const cognitiveBoundaries = profile?.cognitiveBoundaries;
+  const reasoningConfig = profile?.reasoningConfig;
+  const memory = profile?.memory;
+  const scenePrompts = profile?.scenePrompts;
+  const confidenceTone =
+    item.confidence === "high"
+      ? "healthy"
+      : item.confidence === "medium"
+        ? "warning"
+        : "muted";
+  const roleName = draft.name || item.contact.displayName;
+  const domains = (
+    draft.expertDomains?.length ? draft.expertDomains : ["general"]
+  ).join(" / ");
+  const previewSamples = item.contact.sampleMessages.slice(0, 4);
+  const expandedSamples = evidenceContact.sampleMessages.slice(0, 80);
+  const expandedMoments = evidenceContact.momentHighlights.slice(0, 24);
+  const hasExpandedEvidence =
+    evidenceContact.sampleMessages.length > item.contact.sampleMessages.length ||
+    evidenceContact.momentHighlights.length > item.contact.momentHighlights.length;
+  const evidenceWindowLabel = formatWechatSyncEvidenceWindow(
+    evidenceContact.evidenceWindow,
+    evidenceContact.sampleMessages.length,
+    evidenceContact.momentHighlights.length,
+  );
+  const avatarSource = resolvePreviewAvatarSource(
+    draft.avatar,
+    evidenceContact.avatarUrl,
+  );
+  const primaryPromptBlocks = [
+    {
+      label: "Base Prompt",
+      value: profile?.basePrompt,
+      defaultOpen: true,
+    },
+    {
+      label: "Core Logic",
+      value: profile?.coreLogic,
+      defaultOpen: true,
+    },
+    {
+      label: "聊天场景 Prompt",
+      value: scenePrompts?.chat,
+      defaultOpen: true,
+    },
+    {
+      label: "打招呼 Prompt",
+      value: scenePrompts?.greeting,
+      defaultOpen: false,
+    },
+    {
+      label: "主动触达 Prompt",
+      value: scenePrompts?.proactive,
+      defaultOpen: false,
+    },
+  ].filter((entry) => hasPreviewText(entry.value));
+  const secondaryScenePromptBlocks = [
+    { label: "朋友圈发帖", value: scenePrompts?.moments_post },
+    { label: "朋友圈评论", value: scenePrompts?.moments_comment },
+    { label: "Feed 发帖", value: scenePrompts?.feed_post },
+    { label: "Feed 评论", value: scenePrompts?.feed_comment },
+    { label: "频道发帖", value: scenePrompts?.channel_post },
+  ].filter((entry) => hasPreviewText(entry.value));
+  const traitCount =
+    (traits?.speechPatterns?.length ?? 0) +
+    (traits?.catchphrases?.length ?? 0) +
+    (traits?.topicsOfInterest?.length ?? 0);
+  const rawDraftJson = JSON.stringify(draft, null, 2);
+
+  return (
+    <Card className="bg-[linear-gradient(160deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_48%,rgba(237,250,244,0.94))] shadow-[var(--shadow-soft)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-lg font-semibold text-[color:var(--text-primary)]">
+            {roleName}
+          </div>
+          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+            源联系人：{item.contact.displayName}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <PreviewMetricChip
+              label="关系类型"
+              value={formatRelationshipTypeLabel(draft.relationshipType)}
+            />
+            <PreviewMetricChip
+              label="角色来源"
+              value={formatCharacterSourceTypeLabel(draft.sourceType)}
+            />
+            <PreviewMetricChip
+              label="证据窗口"
+              value={
+                evidenceContact.evidenceWindow?.messageMode === "all"
+                  ? "全部历史"
+                  : `最近 ${evidenceContact.evidenceWindow?.requestedMessageLimit ?? evidenceContact.sampleMessages.length}`
+              }
+            />
+            <PreviewMetricChip
+              label="消息 / 近况"
+              value={`${evidenceContact.sampleMessages.length} / ${evidenceContact.momentHighlights.length}`}
+            />
+            <PreviewMetricChip
+              label="Prompt 逻辑块"
+              value={primaryPromptBlocks.length + secondaryScenePromptBlocks.length}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusPill tone={confidenceTone}>
+            {item.confidence === "high"
+              ? "高可信"
+              : item.confidence === "medium"
+                ? "中可信"
+                : "低可信"}
+          </StatusPill>
+          <Button
+            variant={selected ? "primary" : "secondary"}
+            size="sm"
+            onClick={onToggleSelect}
+          >
+            {selected ? "已选中" : "加入批量"}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onRemove}>
+            移出本轮
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdminTextField
+              label="角色名"
+              value={draft.name || ""}
+              onChange={onNameChange}
+              placeholder="导入后的角色名"
+            />
+            <AdminTextField
+              label="领域标签（逗号分隔）"
+              value={draft.expertDomains?.join(", ") || ""}
+              onChange={onDomainsChange}
+              placeholder="例如：产品, 创业, 出差"
+            />
+          </div>
+          <AdminTextField
+            label="关系定位"
+            value={draft.relationship || ""}
+            onChange={onRelationshipChange}
+            placeholder="描述你和这个联系人的关系"
+          />
+          <AdminTextArea
+            label="角色简介"
+            value={draft.bio || ""}
+            onChange={onBioChange}
+            textareaClassName="min-h-24"
+            placeholder="导入后的角色简介"
+          />
+          <AdminTextArea
+            label="记忆摘要"
+            value={draft.profile?.memorySummary || ""}
+            onChange={onMemorySummaryChange}
+            textareaClassName="min-h-28"
+            placeholder="总结这位联系人与你的长期熟悉关系"
+          />
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/75 px-3 py-3 text-sm text-[color:var(--text-secondary)]">
+            当前导入关键字段概览：领域 {domains}
+          </div>
+
+          <AdminMiniPanel title="角色基础信息" tone="soft">
+            <div className="flex items-start gap-3">
+              <PreviewAvatarBadge name={roleName} avatarSource={avatarSource} />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                  {roleName}
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  这里是生成后的角色基础 persona，不只是联系人摘要。导入后这些字段会直接进入角色档案。
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <PreviewMetricChip
+                    label="Relationship"
+                    value={draft.relationship || "未填写"}
+                  />
+                  <PreviewMetricChip
+                    label="RelationshipType"
+                    value={formatRelationshipTypeLabel(draft.relationshipType)}
+                  />
+                  <PreviewMetricChip
+                    label="SourceType"
+                    value={formatCharacterSourceTypeLabel(draft.sourceType)}
+                  />
+                  <PreviewMetricChip
+                    label="ExpertDomains"
+                    value={draft.expertDomains?.length ?? 0}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 space-y-3">
+              <PreviewReadBlock
+                label="角色个性摘要"
+                value={draft.personality}
+                emptyLabel="当前草稿没有单独的人格摘要。"
+              />
+              <PreviewReadBlock
+                label="Avatar / Source Key"
+                value={
+                  [
+                    draft.avatar ? `avatar: ${draft.avatar}` : null,
+                    draft.sourceKey ? `sourceKey: ${draft.sourceKey}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join("\n") || null
+                }
+                mono
+                emptyLabel="当前草稿未提供额外 avatar/sourceKey。"
+              />
+            </div>
+          </AdminMiniPanel>
+        </div>
+
+        <div className="space-y-3">
+          <AdminMiniPanel title="源联系人基础资料">
+            <div className="flex items-start gap-3">
+              <PreviewAvatarBadge
+                name={evidenceContact.displayName}
+                avatarSource={evidenceContact.avatarUrl}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                  {evidenceContact.remarkName ||
+                    evidenceContact.displayName ||
+                    evidenceContact.nickname ||
+                    evidenceContact.username}
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  头像、地区、标签、个签、朋友圈/近况都已被纳入角色生成的一线证据。
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <PreviewMetricChip
+                label="微信号 / Alias"
+                value={evidenceContact.alias || "暂无"}
+              />
+              <PreviewMetricChip
+                label="地区"
+                value={evidenceContact.region || "暂无"}
+              />
+              <PreviewMetricChip
+                label="消息总数"
+                value={evidenceContact.messageCount}
+              />
+              <PreviewMetricChip
+                label="最近聊天"
+                value={formatDateTime(evidenceContact.latestMessageAt)}
+              />
+            </div>
+            <div className="mt-3 space-y-3">
+              <PreviewReadBlock
+                label="个签 / 资料简介"
+                value={evidenceContact.detailDescription}
+                emptyLabel="当前没有可用的资料简介。"
+              />
+              <PreviewReadBlock
+                label="头像 URL"
+                value={evidenceContact.avatarUrl}
+                mono
+                emptyLabel="当前没有可用的头像 URL。"
+              />
+              <PreviewChipList
+                label="标签"
+                values={evidenceContact.tags}
+                emptyLabel="暂无标签"
+              />
+              <PreviewChipList
+                label="话题关键词"
+                values={evidenceContact.topicKeywords}
+                emptyLabel="暂无稳定关键词"
+              />
+            </div>
+          </AdminMiniPanel>
+
+          <AdminMiniPanel title="源联系人上下文">
+            <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+              <div>用户名：{item.contact.username}</div>
+              <div>
+                备注 / 昵称：
+                {evidenceContact.remarkName ||
+                  evidenceContact.nickname ||
+                  "暂无"}
+              </div>
+              <div>地区：{evidenceContact.region || "暂无"}</div>
+              <div>消息数：{evidenceContact.messageCount}</div>
+              <div>最近聊天：{formatDateTime(evidenceContact.latestMessageAt)}</div>
+              <div>
+                标签：
+                {evidenceContact.tags.length
+                  ? evidenceContact.tags.join("、")
+                  : "暂无"}
+              </div>
+              <div>
+                关键词：
+                {evidenceContact.topicKeywords.length
+                  ? evidenceContact.topicKeywords.join("、")
+                  : "暂无"}
+              </div>
+              <div>证据窗口：{evidenceWindowLabel}</div>
+            </div>
+          </AdminMiniPanel>
+
+          <AdminMiniPanel title="聊天摘要">
+            <div className="text-sm leading-6 text-[color:var(--text-secondary)]">
+              {evidenceContact.chatSummary || "当前没有附带聊天摘要。"}
+            </div>
+          </AdminMiniPanel>
+
+          <AdminMiniPanel title="聊天样本">
+            <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+              {previewSamples.length ? (
+                previewSamples.map((message) => (
+                  <div
+                    key={`${message.timestamp}-${message.text}`}
+                    className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2"
+                  >
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {message.sender || formatDirection(message.direction)} ·{" "}
+                      {message.timestamp}
+                    </div>
+                    <div className="mt-1 leading-6">{message.text}</div>
+                  </div>
+                ))
+              ) : (
+                <div>当前没有聊天样本。</div>
+              )}
+            </div>
+          </AdminMiniPanel>
+
+          {(hasExpandedEvidence ||
+            evidenceContact.momentHighlights.length > 0) && (
+            <AdminMiniPanel title="当前会话长证据">
+              <details className="text-sm text-[color:var(--text-secondary)]">
+                <summary className="cursor-pointer select-none leading-6">
+                  展开当前会话原始证据摘要
+                  {`（消息 ${evidenceContact.sampleMessages.length} 条，近况 ${evidenceContact.momentHighlights.length} 条）`}
+                </summary>
+                <div className="mt-3 space-y-3">
+                  <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                    这里默认展示当前会话缓存中的前 {expandedSamples.length} 条聊天和前{" "}
+                    {expandedMoments.length} 条近况，便于人工复核；本轮角色生成与导入会使用全部缓存证据，而不是只用这里展示的片段。
+                  </div>
+                  {expandedSamples.length ? (
+                    <div className="space-y-2">
+                      {expandedSamples.map((message) => (
+                        <div
+                          key={`raw-${message.timestamp}-${message.text}`}
+                          className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2"
+                        >
+                          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                            {message.sender || formatDirection(message.direction)} ·{" "}
+                            {message.timestamp}
+                          </div>
+                          <div className="mt-1 leading-6">{message.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div>当前没有可展开的聊天原文。</div>
+                  )}
+                  {expandedMoments.length ? (
+                    <div className="space-y-2">
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                        朋友圈 / 近况
+                      </div>
+                      {expandedMoments.map((moment) => (
+                        <div
+                          key={`moment-${moment.postedAt}-${moment.text}`}
+                          className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2"
+                        >
+                          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                            {formatDateTime(moment.postedAt)}
+                            {moment.location ? ` · ${moment.location}` : ""}
+                            {moment.mediaHint ? ` · ${moment.mediaHint}` : ""}
+                          </div>
+                          <div className="mt-1 leading-6">{moment.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </details>
+            </AdminMiniPanel>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <AdminMiniPanel
+          title="行为逻辑与提示词"
+          className="xl:col-span-2"
+          tone="soft"
+        >
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <PreviewMetricChip
+              label="核心 Prompt"
+              value={primaryPromptBlocks.length}
+            />
+            <PreviewMetricChip
+              label="辅助场景"
+              value={secondaryScenePromptBlocks.length}
+            />
+            <PreviewMetricChip
+              label="Legacy System"
+              value={hasPreviewText(profile?.systemPrompt) ? "已生成" : "未生成"}
+            />
+            <PreviewMetricChip
+              label="阅读模式"
+              value="核心默认展开"
+            />
+          </div>
+          <div className="mt-3 grid gap-3 xl:grid-cols-2">
+            {primaryPromptBlocks.length ? (
+              primaryPromptBlocks.map((entry) => (
+                <PreviewExpandableTextBlock
+                  key={entry.label}
+                  label={entry.label}
+                  value={entry.value}
+                  defaultOpen={entry.defaultOpen}
+                />
+              ))
+            ) : (
+              <PreviewReadBlock
+                label="逻辑草稿"
+                value={null}
+                emptyLabel="当前草稿没有生成可展示的 prompt 逻辑。"
+              />
+            )}
+          </div>
+          {secondaryScenePromptBlocks.length ? (
+            <details className="mt-3 rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-3">
+              <summary className="cursor-pointer select-none text-sm font-medium text-[color:var(--text-primary)]">
+                展开查看其他场景 Prompt（{secondaryScenePromptBlocks.length}）
+              </summary>
+              <div className="mt-3 grid gap-3 xl:grid-cols-2">
+                {secondaryScenePromptBlocks.map((entry) => (
+                  <PreviewExpandableTextBlock
+                    key={entry.label}
+                    label={entry.label}
+                    value={entry.value}
+                  />
+                ))}
+              </div>
+            </details>
+          ) : null}
+          {hasPreviewText(profile?.systemPrompt) ? (
+            <details className="mt-3 rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-3">
+              <summary className="cursor-pointer select-none text-sm font-medium text-[color:var(--text-primary)]">
+                查看兼容层 System Prompt
+              </summary>
+              <div className="mt-3 whitespace-pre-wrap rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-3 font-mono text-xs leading-6 text-[color:var(--text-secondary)]">
+                {profile?.systemPrompt}
+              </div>
+            </details>
+          ) : null}
+        </AdminMiniPanel>
+
+        <AdminMiniPanel title="表达风格与兴趣" tone="soft">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <PreviewMetricChip
+              label="情绪底色"
+              value={traits?.emotionalTone || "未设定"}
+            />
+            <PreviewMetricChip
+              label="回复长度"
+              value={formatResponseLengthLabel(traits?.responseLength)}
+            />
+            <PreviewMetricChip
+              label="Emoji 习惯"
+              value={formatEmojiUsageLabel(traits?.emojiUsage)}
+            />
+          </div>
+          <div className="mt-3 space-y-3">
+            <PreviewChipList
+              label="常用表达"
+              values={traits?.speechPatterns ?? []}
+              emptyLabel="当前没有抽取到稳定的常用表达。"
+            />
+            <PreviewChipList
+              label="口头禅"
+              values={traits?.catchphrases ?? []}
+              emptyLabel="当前没有稳定口头禅。"
+            />
+            <PreviewChipList
+              label="兴趣话题"
+              values={traits?.topicsOfInterest ?? []}
+              emptyLabel="当前没有稳定兴趣话题。"
+            />
+            <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/70 px-3 py-2 text-xs leading-6 text-[color:var(--text-muted)]">
+              当前共整理出 {traitCount} 条风格与兴趣线索，导入后会成为角色表达风格的主要约束。
+            </div>
+          </div>
+        </AdminMiniPanel>
+
+        <AdminMiniPanel title="人物画像与边界" tone="soft">
+          <div className="space-y-3">
+            <PreviewReadBlock
+              label="Occupation / 身份定位"
+              value={identity?.occupation}
+              emptyLabel="当前没有单独的身份定位。"
+            />
+            <PreviewReadBlock
+              label="Background"
+              value={identity?.background}
+              emptyLabel="当前没有单独背景描述。"
+            />
+            <PreviewReadBlock
+              label="Motivation"
+              value={identity?.motivation}
+              emptyLabel="当前没有单独动机描述。"
+            />
+            <PreviewReadBlock
+              label="Worldview"
+              value={identity?.worldview}
+              emptyLabel="当前没有单独世界观描述。"
+            />
+            <PreviewReadBlock
+              label="Work Style"
+              value={behavioralPatterns?.workStyle}
+              emptyLabel="当前没有单独工作风格描述。"
+            />
+            <PreviewReadBlock
+              label="Social Style"
+              value={behavioralPatterns?.socialStyle}
+              emptyLabel="当前没有单独社交风格描述。"
+            />
+            <PreviewChipList
+              label="禁区 / Taboos"
+              values={behavioralPatterns?.taboos ?? []}
+              emptyLabel="当前没有明确禁区。"
+            />
+            <PreviewChipList
+              label="小习惯 / Quirks"
+              values={behavioralPatterns?.quirks ?? []}
+              emptyLabel="当前没有明显小习惯。"
+            />
+            <PreviewReadBlock
+              label="Expertise Description"
+              value={cognitiveBoundaries?.expertiseDescription}
+              emptyLabel="当前没有单独专长边界说明。"
+            />
+            <PreviewReadBlock
+              label="Knowledge Limits"
+              value={cognitiveBoundaries?.knowledgeLimits}
+              emptyLabel="当前没有单独知识边界说明。"
+            />
+            <PreviewReadBlock
+              label="Refusal Style"
+              value={cognitiveBoundaries?.refusalStyle}
+              emptyLabel="当前没有单独拒绝风格说明。"
+            />
+          </div>
+        </AdminMiniPanel>
+
+        <AdminMiniPanel title="记忆与运行配置" tone="soft">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <PreviewMetricChip
+              label="CoT"
+              value={formatBooleanFlagLabel(reasoningConfig?.enableCoT)}
+            />
+            <PreviewMetricChip
+              label="Reflection"
+              value={formatBooleanFlagLabel(reasoningConfig?.enableReflection)}
+            />
+            <PreviewMetricChip
+              label="Routing"
+              value={formatBooleanFlagLabel(reasoningConfig?.enableRouting)}
+            />
+          </div>
+          <div className="mt-3 space-y-3">
+            <PreviewReadBlock
+              label="Memory Summary"
+              value={profile?.memorySummary}
+              emptyLabel="当前没有 memory summary。"
+            />
+            <PreviewReadBlock
+              label="Core Memory"
+              value={memory?.coreMemory}
+              emptyLabel="当前没有 core memory。"
+            />
+            <PreviewReadBlock
+              label="Recent Summary"
+              value={memory?.recentSummary}
+              emptyLabel="当前没有 recent summary。"
+            />
+          </div>
+        </AdminMiniPanel>
+
+        <AdminMiniPanel
+          title="完整草稿 JSON"
+          className="xl:col-span-2"
+          tone="soft"
+        >
+          <details className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-3">
+            <summary className="cursor-pointer select-none text-sm font-medium text-[color:var(--text-primary)]">
+              展开查看完整 draftCharacter JSON
+            </summary>
+            <pre className="mt-3 max-h-[32rem] overflow-auto rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-3 font-mono text-[11px] leading-6 text-[color:var(--text-secondary)]">
+              {rawDraftJson}
+            </pre>
+          </details>
+        </AdminMiniPanel>
+      </div>
+
+      {item.warnings.length ? (
+        <div className="mt-4 space-y-2">
+          {item.warnings.map((warning) => (
+            <div
+              key={warning}
+              className="rounded-2xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-[color:var(--text-secondary)]"
+            >
+              {warning}
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {validationIssues.length ? (
+        <div className="mt-4 space-y-2">
+          {validationIssues.map((issue) => (
+            <div
+              key={issue}
+              className="rounded-2xl border border-rose-200 bg-rose-50/90 px-3 py-2 text-sm text-[color:var(--text-secondary)]"
+            >
+              {issue}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+function PreviewMetricChip({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2 shadow-[var(--shadow-soft)]">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-[color:var(--text-primary)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function PreviewReadBlock({
+  label,
+  value,
+  emptyLabel = "暂无内容。",
+  mono = false,
+}: {
+  label: string;
+  value?: string | null;
+  emptyLabel?: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-3">
+      <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+        {label}
+      </div>
+      <div
+        className={`mt-2 whitespace-pre-wrap text-sm leading-6 ${
+          mono ? "font-mono text-[12px]" : ""
+        } ${
+          hasPreviewText(value)
+            ? "text-[color:var(--text-secondary)]"
+            : "text-[color:var(--text-muted)]"
+        }`}
+      >
+        {hasPreviewText(value) ? value : emptyLabel}
+      </div>
+    </div>
+  );
+}
+
+function PreviewChipList({
+  label,
+  values,
+  emptyLabel,
+}: {
+  label: string;
+  values: string[];
+  emptyLabel: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-3">
+      <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+        {label}
+      </div>
+      {values.length ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {values.map((value) => (
+            <span
+              key={`${label}-${value}`}
+              className="inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-2.5 py-1 text-xs text-[color:var(--text-secondary)]"
+            >
+              {value}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2 text-sm text-[color:var(--text-muted)]">
+          {emptyLabel}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PreviewExpandableTextBlock({
+  label,
+  value,
+  defaultOpen = false,
+}: {
+  label: string;
+  value?: string | null;
+  defaultOpen?: boolean;
+}) {
+  if (!hasPreviewText(value)) {
+    return (
+      <PreviewReadBlock
+        label={label}
+        value={null}
+        emptyLabel="当前没有这段提示词或逻辑文本。"
+      />
+    );
+  }
+
+  return (
+    <details
+      open={defaultOpen}
+      className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-3"
+    >
+      <summary className="cursor-pointer list-none select-none">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+              {label}
+            </div>
+            <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+              {summarizePreviewText(value)}
+            </div>
+          </div>
+          <span className="text-xs text-[color:var(--text-muted)]">
+            {defaultOpen ? "默认展开" : "点击展开"}
+          </span>
+        </div>
+      </summary>
+      <div className="mt-3 whitespace-pre-wrap rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+        {value}
+      </div>
+    </details>
+  );
+}
+
+function PreviewAvatarBadge({
+  name,
+  avatarSource,
+}: {
+  name: string;
+  avatarSource?: string | null;
+}) {
+  const fallback = (name || "?").trim().slice(0, 1).toUpperCase() || "?";
+  const imageUrl = isPreviewImageUrl(avatarSource) ? avatarSource : null;
+
+  return imageUrl ? (
+    <img
+      src={imageUrl}
+      alt={name}
+      className="h-14 w-14 rounded-2xl border border-[color:var(--border-faint)] object-cover shadow-[var(--shadow-soft)]"
+    />
+  ) : (
+    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[color:var(--border-faint)] bg-[linear-gradient(145deg,rgba(255,243,224,0.95),rgba(236,253,245,0.95))] text-lg font-semibold text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]">
+      {fallback}
+    </div>
+  );
+}
+
+function hasPreviewText(value?: string | null) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function summarizePreviewText(value?: string | null, maxLength = 96) {
+  const normalized = value?.replace(/\s+/g, " ").trim() ?? "";
+  if (!normalized) {
+    return "暂无可展示内容";
+  }
+  return normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength - 1)}…`
+    : normalized;
+}
+
+function resolvePreviewAvatarSource(
+  draftAvatar?: string | null,
+  contactAvatarUrl?: string | null,
+) {
+  if (isPreviewImageUrl(draftAvatar)) {
+    return draftAvatar;
+  }
+  if (isPreviewImageUrl(contactAvatarUrl)) {
+    return contactAvatarUrl;
+  }
+  return draftAvatar || contactAvatarUrl || null;
+}
+
+function isPreviewImageUrl(value?: string | null) {
+  if (!value) {
+    return false;
+  }
+  return /^(https?:\/\/|data:image\/)/i.test(value.trim());
+}
+
+function formatRelationshipTypeLabel(value?: string | null) {
+  switch (value) {
+    case "family":
+      return "家人";
+    case "expert":
+      return "专家";
+    case "mentor":
+      return "导师";
+    case "custom":
+      return "自定义";
+    case "self":
+      return "自己";
+    case "friend":
+    default:
+      return "朋友";
+  }
+}
+
+function formatCharacterSourceTypeLabel(value?: string | null) {
+  switch (value) {
+    case "wechat_import":
+      return "微信导入";
+    case "manual_admin":
+      return "后台手工";
+    case "need_generated":
+      return "缺口生成";
+    case "shake_generated":
+      return "摇一摇生成";
+    case "ai_generated":
+      return "AI 生成";
+    case "preset_catalog":
+      return "预设安装";
+    case "model_persona":
+      return "模型人格";
+    case "default_seed":
+      return "默认保底";
+    default:
+      return "未标记";
+  }
+}
+
+function formatResponseLengthLabel(value?: string | null) {
+  switch (value) {
+    case "short":
+      return "偏短";
+    case "long":
+      return "偏长";
+    case "medium":
+      return "中等";
+    default:
+      return "未设定";
+  }
+}
+
+function formatEmojiUsageLabel(value?: string | null) {
+  switch (value) {
+    case "none":
+      return "不用";
+    case "frequent":
+      return "频繁";
+    case "occasional":
+      return "偶尔";
+    default:
+      return "未设定";
+  }
+}
+
+function formatBooleanFlagLabel(value?: boolean) {
+  return value ? "开启" : "关闭";
 }
 
 function formatDateTime(value?: string | null) {
