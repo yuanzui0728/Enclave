@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import {
   AppPage,
   AppSection,
@@ -592,13 +592,28 @@ function MiniProgramListCard({
   onTogglePinned: (miniProgramId: string) => void;
 }) {
   const tone = getMiniProgramToneStyle(miniProgram.tone);
+  const handleSelect = () => onSelect(miniProgram.id);
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.currentTarget !== event.target) {
+      return;
+    }
+
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    handleSelect();
+  };
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(miniProgram.id)}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleSelect}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "w-full rounded-[16px] border px-3 py-3 text-left shadow-none transition",
+        "w-full cursor-pointer rounded-[16px] border px-3 py-3 text-left shadow-none transition",
         active
           ? "border-[rgba(7,193,96,0.18)] bg-[rgba(243,251,246,0.96)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
@@ -655,6 +670,6 @@ function MiniProgramListCard({
           {pinned ? "移出常用" : "加入常用"}
         </Button>
       </div>
-    </button>
+    </div>
   );
 }

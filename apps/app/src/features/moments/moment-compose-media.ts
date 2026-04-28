@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createFeedPost,
   createUserMoment,
@@ -61,6 +61,26 @@ export function useMomentComposeDraft() {
 
   const hasMedia = imageDrafts.length > 0 || Boolean(videoDraft);
   const hasContent = Boolean(text.trim()) || hasMedia;
+  const reset = useCallback(() => {
+    setText((current) => (current ? "" : current));
+    setImageDrafts((current) => {
+      if (!current.length) {
+        return current;
+      }
+
+      releaseMomentImageDrafts(current);
+      return [];
+    });
+    setVideoDraft((current) => {
+      if (!current) {
+        return current;
+      }
+
+      releaseMomentVideoDraft(current);
+      return null;
+    });
+    setMediaError((current) => (current ? null : current));
+  }, []);
 
   return {
     text,
@@ -128,14 +148,7 @@ export function useMomentComposeDraft() {
       });
     },
     setMediaError,
-    reset() {
-      releaseMomentImageDrafts(imageDraftsRef.current);
-      releaseMomentVideoDraft(videoDraftRef.current);
-      setText("");
-      setImageDrafts([]);
-      setVideoDraft(null);
-      setMediaError(null);
-    },
+    reset,
   };
 }
 

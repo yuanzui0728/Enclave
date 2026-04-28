@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ImagePlus, Video } from "lucide-react";
@@ -41,9 +41,7 @@ export function MobileMomentsPublishPage() {
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
   const statusBackLabel = safeReturnPath ? "返回上一页" : "返回朋友圈";
-  const resetComposeDraft = useEffectEvent(() => {
-    composeDraft.reset();
-  });
+  const resetComposeDraft = composeDraft.reset;
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
 

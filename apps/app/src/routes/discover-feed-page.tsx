@@ -2,7 +2,6 @@ import {
   Suspense,
   lazy,
   useEffect,
-  useEffectEvent,
   useRef,
   useState,
   type ReactNode,
@@ -86,9 +85,7 @@ export function DiscoverFeedPage() {
     isDesktopLayout,
   });
   const composeDraft = useMomentComposeDraft();
-  const resetComposeDraft = useEffectEvent(() => {
-    composeDraft.reset();
-  });
+  const resetComposeDraft = composeDraft.reset;
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(

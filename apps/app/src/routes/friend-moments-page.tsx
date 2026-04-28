@@ -2,7 +2,6 @@ import {
   Suspense,
   lazy,
   useEffect,
-  useEffectEvent,
   useMemo,
   useState,
 } from "react";
@@ -74,9 +73,7 @@ export function FriendMomentsPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const composeDraft = useMomentComposeDraft();
-  const resetComposeDraft = useEffectEvent(() => {
-    composeDraft.reset();
-  });
+  const resetComposeDraft = composeDraft.reset;
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );

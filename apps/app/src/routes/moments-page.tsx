@@ -81,9 +81,7 @@ export function MomentsPage() {
   });
   const normalizedPathname = normalizePathname(pathname);
   const composeDraft = useMomentComposeDraft();
-  const resetComposeDraft = useEffectEvent(() => {
-    composeDraft.reset();
-  });
+  const resetComposeDraft = composeDraft.reset;
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
