@@ -224,6 +224,9 @@ importers:
       globals:
         specifier: ^15.15.0
         version: 15.15.0
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
       tailwindcss:
         specifier: ^4.0.9
         version: 4.2.2
@@ -236,6 +239,9 @@ importers:
       vite:
         specifier: ^6.1.0
         version: 6.4.1
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(jsdom@26.1.0)
 
   apps/cloud-api:
     dependencies:

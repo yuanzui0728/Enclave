@@ -217,6 +217,17 @@ function createInitialRuntimeConfig() {
       injectedConfig?.cloudApiBaseUrl ??
       persistedConfig?.cloudApiBaseUrl ??
       envCloudApiBaseUrl,
+    channel: injectedConfig?.channel ?? persistedConfig?.channel,
+    worldAccessMode:
+      injectedConfig?.worldAccessMode ?? persistedConfig?.worldAccessMode,
+    cloudPhone: injectedConfig?.cloudPhone ?? persistedConfig?.cloudPhone,
+    cloudWorldId: injectedConfig?.cloudWorldId ?? persistedConfig?.cloudWorldId,
+    applicationId:
+      injectedConfig?.applicationId ?? persistedConfig?.applicationId,
+    appVersionName:
+      injectedConfig?.appVersionName ?? persistedConfig?.appVersionName,
+    appVersionCode:
+      injectedConfig?.appVersionCode ?? persistedConfig?.appVersionCode,
     environment: injectedConfig?.environment ?? persistedConfig?.environment ?? import.meta.env.MODE,
     publicAppName: injectedConfig?.publicAppName ?? persistedConfig?.publicAppName ?? "Yinjie",
     preferredLocales:

@@ -22,19 +22,36 @@ function getLocalStorage(): Storage | null {
 
 function createStateStorage(): StateStorage {
   return {
-    async getItem(name) {
-      const secureValue = await getSecureStorageItem(name);
-      if (secureValue !== null) {
-        return secureValue;
+    getItem(name) {
+      if (isNativeSecureStorageAvailable()) {
+        return getSecureStorageItem(name).then((secureValue) => {
+          if (secureValue !== null) {
+            return secureValue;
+          }
+
+          const storage = getLocalStorage();
+          return storage ? storage.getItem(name) : memoryStorage.get(name) ?? null;
+        });
       }
 
       const storage = getLocalStorage();
       return storage ? storage.getItem(name) : memoryStorage.get(name) ?? null;
     },
-    async setItem(name, value) {
-      const storedSecurely = await setSecureStorageItem(name, value);
-      if (storedSecurely) {
-        return;
+    setItem(name, value) {
+      if (isNativeSecureStorageAvailable()) {
+        return setSecureStorageItem(name, value).then((storedSecurely) => {
+          if (storedSecurely) {
+            return;
+          }
+
+          const storage = getLocalStorage();
+          if (storage) {
+            storage.setItem(name, value);
+            return;
+          }
+
+          memoryStorage.set(name, value);
+        });
       }
 
       const storage = getLocalStorage();
@@ -45,10 +62,21 @@ function createStateStorage(): StateStorage {
 
       memoryStorage.set(name, value);
     },
-    async removeItem(name) {
-      const removedSecurely = await removeSecureStorageItem(name);
-      if (removedSecurely) {
-        return;
+    removeItem(name) {
+      if (isNativeSecureStorageAvailable()) {
+        return removeSecureStorageItem(name).then((removedSecurely) => {
+          if (removedSecurely) {
+            return;
+          }
+
+          const storage = getLocalStorage();
+          if (storage) {
+            storage.removeItem(name);
+            return;
+          }
+
+          memoryStorage.delete(name);
+        });
       }
 
       const storage = getLocalStorage();
