@@ -16,7 +16,8 @@
     "lint:mobile-web": "eslint src/components/mobile-shell.tsx src/features/shell/use-desktop-layout.ts src/features/shell/mobile-web-route-persistence.ts src/routes/chat-list-page.tsx src/routes/contacts-page.tsx src/routes/discover-page.tsx src/routes/search-page.tsx src/routes/chat-room-page.tsx src/routes/group-chat-page.tsx src/routes/profile-page.tsx src/routes/mobile-moments-publish-page.tsx src/routes/mobile-friend-moments-page.tsx",
     "audit:desktop-web:routing": "node ./scripts/audit-desktop-web-routing.mjs",
     "audit:desktop-web": "pnpm typecheck && pnpm lint:desktop-web && pnpm audit:desktop-web:routing && pnpm build",
-    "audit:mobile-web": "pnpm typecheck && pnpm lint:mobile-web && pnpm build"
+    "audit:mobile-web:routes": "node ./scripts/audit-mobile-routes.mjs",
+    "audit:mobile-web": "pnpm typecheck && pnpm lint:mobile-web && pnpm audit:mobile-web:routes && pnpm build"
   },
   "dependencies": {
     "@lingui/macro": "5.9.5",
@@ -41,6 +42,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/vite": "^4.0.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
