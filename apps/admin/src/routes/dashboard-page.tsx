@@ -2550,6 +2550,20 @@ function formatDesktopDiagnostics(
   },
   t: DashboardTranslator,
 ) {
+  const remoteMode =
+    values.coreApiCommandSource === "remote" ||
+    values.diagnosticsStatus?.startsWith("remote-");
+  const logPath = values.desktopLogPath
+    ? t(msg` · 日志=${values.desktopLogPath}`)
+    : "";
+  const lastError = values.lastCoreApiError
+    ? t(msg` · 最近错误=${values.lastCoreApiError}`)
+    : "";
+
+  if (remoteMode) {
+    return `${values.platform} · ${values.summary}${logPath}${lastError}`;
+  }
+
   const packageStatus = values.linuxMissingPackages.length
     ? t(msg`缺失依赖=${values.linuxMissingPackages.join(", ")}`)
     : t(msg`Linux 依赖正常`);
@@ -2573,12 +2587,6 @@ function formatDesktopDiagnostics(
         msg`由桌面壳托管${values.managedChildPid ? ` pid=${values.managedChildPid}` : ""}`,
       )
     : t(msg`未由桌面壳托管`);
-  const logPath = values.desktopLogPath
-    ? t(msg` · 日志=${values.desktopLogPath}`)
-    : "";
-  const lastError = values.lastCoreApiError
-    ? t(msg` · 最近错误=${values.lastCoreApiError}`)
-    : "";
 
   return `${values.platform} · ${values.summary} · ${values.coreApiCommandResolved ? t(msg`命令正常`) : t(msg`命令缺失`)} · ${sidecarStatus} · ${failureStatus} · ${managedStatus} · ${packageStatus}${values.coreApiPortOccupied ? t(msg` · 端口占用中`) : ""}${logPath}${lastError}`;
 }
@@ -2588,6 +2596,9 @@ function formatCommandSource(
   bundledExists: boolean | undefined,
   t: DashboardTranslator,
 ) {
+  if (source === "remote") {
+    return t(msg`远程连接`);
+  }
   if (source === "bundled" || source === "bundled-sidecar") {
     return t(msg`内置 sidecar`);
   }

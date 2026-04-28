@@ -97,6 +97,7 @@
     "i18n:check:changed": "pnpm i18n:extract && pnpm i18n:verify-catalogs && pnpm i18n:compile && pnpm i18n:audit:changed && pnpm i18n:missing:changed && pnpm i18n:hardcode:changed && pnpm i18n:hardcode:ratchet",
     "i18n:check:staged": "pnpm i18n:extract && pnpm i18n:verify-catalogs && pnpm i18n:compile && pnpm i18n:audit:staged && pnpm i18n:missing:staged && pnpm i18n:hardcode:staged && pnpm i18n:hardcode:ratchet",
     "audit:desktop-web": "pnpm --filter @yinjie/app audit:desktop-web",
+    "audit:desktop": "pnpm audit:desktop-web && pnpm --filter @yinjie/desktop audit:desktop-shell:static",
     "audit:mobile-web": "pnpm --filter @yinjie/app audit:mobile-web",
     "audit:android-shell": "pnpm audit:mobile-web && pnpm android:doctor",
     "audit:android-release": "pnpm audit:mobile-web && pnpm android:release:doctor",

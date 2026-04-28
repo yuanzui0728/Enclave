@@ -1,46 +1,18 @@
-import { useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { useDesktopRuntime } from "@yinjie/ui";
 
 export function DesktopRuntimeGuard() {
-  const attemptedAutostartRef = useRef(false);
   const {
     desktopAvailable,
     desktopStatusQuery,
     probeMutation,
     runtimeContextQuery,
     runtimeDiagnosticsQuery,
-    startMutation,
   } = useDesktopRuntime({
     queryKeyPrefix: "admin-desktop",
     statusRefetchInterval: 3_000,
     invalidateOnAction: [["admin-system-status"]],
   });
-
-  useEffect(() => {
-    if (!desktopAvailable) {
-      return;
-    }
-
-    const status = desktopStatusQuery.data;
-    if (!status || status.reachable || startMutation.isPending || attemptedAutostartRef.current) {
-      return;
-    }
-
-    attemptedAutostartRef.current = true;
-    startMutation.mutate();
-  }, [desktopAvailable, desktopStatusQuery.data, startMutation]);
-
-  useEffect(() => {
-    if (!desktopAvailable) {
-      attemptedAutostartRef.current = false;
-      return;
-    }
-
-    if (desktopStatusQuery.data?.reachable) {
-      attemptedAutostartRef.current = false;
-    }
-  }, [desktopAvailable, desktopStatusQuery.data?.baseUrl, desktopStatusQuery.data?.reachable]);
 
   if (!desktopAvailable) {
     return null;
@@ -48,10 +20,11 @@ export function DesktopRuntimeGuard() {
 
   const status = desktopStatusQuery.data;
   const shouldBlock = !status || !status.reachable;
-  const busy = startMutation.isPending || probeMutation.isPending;
+  const busy = probeMutation.isPending || desktopStatusQuery.isFetching;
   const errorMessage =
-    (startMutation.error instanceof Error && startMutation.error.message) ||
     (probeMutation.error instanceof Error && probeMutation.error.message) ||
+    (desktopStatusQuery.error instanceof Error &&
+      desktopStatusQuery.error.message) ||
     null;
 
   if (!shouldBlock) {
@@ -61,15 +34,15 @@ export function DesktopRuntimeGuard() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(6,9,16,0.96),rgba(9,12,20,0.98))] px-6">
       <div className="w-full max-w-xl rounded-[32px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
-        <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--brand-secondary)]">桌面启动中</div>
-        <div className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">本地控制台正在等待核心接口</div>
+        <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--brand-secondary)]">桌面远程连接</div>
+        <div className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">管理后台正在等待远程核心接口</div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-secondary)]">
-          桌面壳正在检查本地 Rust 运行时是否可达。如果尚未就绪，壳层会先尝试自动拉起，再继续进入管理后台。
+          桌面壳只负责连接远程世界实例。请确认设置页里的服务器地址可访问，或通过环境变量提供桌面壳探活地址。
         </p>
 
         <div className="mt-5 grid gap-3">
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-            状态：{startMutation.isPending ? "正在启动核心接口..." : status?.message ?? "等待桌面状态..."}
+            状态：{probeMutation.isPending ? "正在重新检查远程接口..." : status?.message ?? "等待桌面状态..."}
           </div>
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
             地址：{status?.baseUrl ?? runtimeContextQuery.data?.coreApiBaseUrl ?? "加载中"}
@@ -85,11 +58,11 @@ export function DesktopRuntimeGuard() {
         <div className="mt-5 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => startMutation.mutate()}
+            onClick={() => probeMutation.mutate()}
             disabled={busy}
             className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-60"
           >
-            {startMutation.isPending ? "启动中..." : "再试一次"}
+            {probeMutation.isPending ? "检查中..." : "重新检查"}
           </button>
           <button
             type="button"
@@ -109,8 +82,7 @@ export function DesktopRuntimeGuard() {
 
         <div className="mt-4 text-xs leading-6 text-[color:var(--text-muted)]">
           {probeMutation.data?.message ??
-            startMutation.data?.message ??
-            "如果长时间没有恢复，先检查桌面包内置的 core-api 是否完整，再确认是否需要通过 YINJIE_CORE_API_CMD 覆盖启动命令。"}
+            "如果长时间没有恢复，先检查远程 API 地址、反向代理 /health、网络连通性和桌面运行时配置。"}
         </div>
         {errorMessage ? <div className="mt-3 text-sm text-[#fda4af]">{errorMessage}</div> : null}
       </div>
@@ -132,6 +104,16 @@ function formatDesktopDiagnostics(values: {
   linuxMissingPackages: string[];
   summary: string;
 }) {
+  const remoteMode =
+    values.coreApiCommandSource === "remote" ||
+    values.diagnosticsStatus?.startsWith("remote-");
+  const logPath = values.desktopLogPath ? ` · 日志=${values.desktopLogPath}` : "";
+  const lastError = values.lastCoreApiError ? ` · 最近错误=${values.lastCoreApiError}` : "";
+
+  if (remoteMode) {
+    return `${values.platform} · ${values.summary}${logPath}${lastError}`;
+  }
+
   const packageStatus = values.linuxMissingPackages.length
     ? `缺失依赖=${values.linuxMissingPackages.join(", ")}`
     : "Linux 依赖正常";
@@ -149,13 +131,14 @@ function formatDesktopDiagnostics(values: {
   const managedStatus = values.managedByDesktopShell
     ? `由桌面壳托管${values.managedChildPid ? ` pid=${values.managedChildPid}` : ""}`
     : "未由桌面壳托管";
-  const logPath = values.desktopLogPath ? ` · 日志=${values.desktopLogPath}` : "";
-  const lastError = values.lastCoreApiError ? ` · 最近错误=${values.lastCoreApiError}` : "";
 
   return `${values.platform} · ${values.summary} · ${values.coreApiCommandResolved ? "命令正常" : "命令缺失"} · ${sidecarStatus} · ${failureStatus} · ${managedStatus} · ${packageStatus}${values.coreApiPortOccupied ? " · 端口占用中" : ""}${logPath}${lastError}`;
 }
 
 function formatCommandSource(source?: string, bundledExists?: boolean) {
+  if (source === "remote") {
+    return "远程连接";
+  }
   if (source === "bundled" || source === "bundled-sidecar") {
     return "内置 sidecar";
   }
