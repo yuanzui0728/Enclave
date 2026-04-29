@@ -1,6 +1,6 @@
 import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
 import { type Moment } from "@yinjie/contracts";
-import { Button, TextField, cn } from "@yinjie/ui";
+import { Button, cn } from "@yinjie/ui";
 import {
   Bot,
   Heart,
@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { MomentCommentComposer } from "../../../components/moment-comment-composer";
 import { MomentMediaGallery } from "../../../components/moment-media-gallery";
 import { formatTimestamp } from "../../../lib/format";
 
@@ -311,21 +312,15 @@ export function DesktopMomentDetailPanel({
               </span>
             </div>
             <div className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
-              <TextField
+              <MomentCommentComposer
                 value={commentDraft}
-                onChange={(event) => onCommentChange(event.target.value)}
+                onChange={onCommentChange}
+                onSubmit={onCommentSubmit}
+                pending={commentLoading}
                 placeholder="在右栏继续写评论..."
-                className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+                buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
               />
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={!commentDraft.trim() || commentLoading}
-                onClick={onCommentSubmit}
-                className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-              >
-                {commentLoading ? "发送中..." : "发送"}
-              </Button>
             </div>
           </div>
         </div>

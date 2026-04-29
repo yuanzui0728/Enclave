@@ -10,6 +10,11 @@ import {
 let stack: DesktopBrowserStack;
 let smokeData: DesktopSmokeData;
 
+type SmokeMoment = {
+  id: string;
+  text: string;
+};
+
 test.beforeAll(async () => {
   stack = await startDesktopBrowserStack();
   smokeData = await prepareDesktopSmokeData(stack.coreApi.baseUrl);
@@ -135,3 +140,51 @@ test("preserves desktop chat route state across reloads", async ({ page }) => {
     page.locator('button[title="消息"][aria-current="page"]'),
   ).toBeVisible();
 });
+
+test("accepts typing in moments comment composers", async ({ page }) => {
+  const moment = await createSmokeMoment("朋友圈评论输入回归测试");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${stack.app.baseUrl}/discover/moments`);
+
+  const mobileCard = page.locator(`#moment-post-${moment.id}`);
+  await expect(mobileCard).toBeVisible();
+  const mobileInput = mobileCard.getByPlaceholder("写评论...");
+  await mobileInput.fill("移动端评论输入");
+  await expect(mobileInput).toHaveValue("移动端评论输入");
+
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto(`${stack.app.baseUrl}/tabs/moments`);
+
+  const desktopCard = page.locator(`#desktop-moment-post-${moment.id}`);
+  await expect(desktopCard).toBeVisible();
+  await desktopCard.getByRole("button", { name: "评论" }).click();
+  const desktopInput = desktopCard.getByPlaceholder("写评论...");
+  await expect(desktopInput).toBeFocused();
+  await page.keyboard.type("桌面端评论输入");
+  await expect(desktopInput).toHaveValue("桌面端评论输入");
+});
+
+async function createSmokeMoment(text: string) {
+  const response = await fetch(
+    `${stack.coreApi.baseUrl}/api/moments/user-post`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        contentType: "text",
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to create smoke moment: ${response.status} ${await response.text()}`,
+    );
+  }
+
+  return (await response.json()) as SmokeMoment;
+}

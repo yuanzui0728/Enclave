@@ -16,8 +16,9 @@ import {
   getMoments,
   toggleMomentLike,
 } from "@yinjie/contracts";
-import { AppPage, Button, InlineNotice, TextField } from "@yinjie/ui";
+import { AppPage, Button, InlineNotice } from "@yinjie/ui";
 import { MomentMediaGallery } from "../components/moment-media-gallery";
+import { MomentCommentComposer } from "../components/moment-comment-composer";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { SocialPostCard } from "../components/social-post-card";
 import {
@@ -1061,33 +1062,23 @@ export function MomentsPage() {
                   ) : null
                 }
                 composer={
-                  <>
-                    <TextField
-                      value={commentDrafts[moment.id] ?? ""}
-                      onChange={(event) =>
-                        setCommentDrafts((current) => ({
-                          ...current,
-                          [moment.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="写评论..."
-                      className="min-w-0 flex-1 rounded-full py-1.5 text-[12px]"
-                    />
-                    <Button
-                      disabled={
-                        !(commentDrafts[moment.id] ?? "").trim() ||
-                        commentMutation.isPending
-                      }
-                      onClick={() => commentMutation.mutate(moment.id)}
-                      variant="primary"
-                      size="sm"
-                      className="h-8 px-3 text-[12px]"
-                    >
-                      {pendingCommentMomentId === moment.id
-                        ? "发送中..."
-                        : "发送"}
-                    </Button>
-                  </>
+                  <MomentCommentComposer
+                    value={commentDrafts[moment.id] ?? ""}
+                    onChange={(value) =>
+                      setCommentDrafts((current) => ({
+                        ...current,
+                        [moment.id]: value,
+                      }))
+                    }
+                    onSubmit={() => commentMutation.mutate(moment.id)}
+                    pending={pendingCommentMomentId === moment.id}
+                    disabled={commentMutation.isPending}
+                    placeholder="写评论..."
+                    pendingLabel="发送中..."
+                    className="w-full"
+                    inputClassName="rounded-full py-1.5 text-[16px]"
+                    buttonClassName="h-8 px-3 text-[12px]"
+                  />
                 }
               />
             );
