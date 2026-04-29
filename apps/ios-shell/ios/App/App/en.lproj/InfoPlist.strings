@@ -1,0 +1,6 @@
+"CFBundleDisplayName" = "Yinjie";
+"YinjiePublicAppName" = "Yinjie";
+"NSCameraUsageDescription" = "Used to take profile photos or moment images.";
+"NSPhotoLibraryUsageDescription" = "Used to choose profile photos or moment images from your photo library.";
+"NSPhotoLibraryAddUsageDescription" = "Used to save exported images to your photo library.";
+"NSMicrophoneUsageDescription" = "Used for voice input and voice interactions.";

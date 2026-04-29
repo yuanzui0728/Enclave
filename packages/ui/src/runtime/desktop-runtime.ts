@@ -31,6 +31,12 @@ export type DesktopOperationResult = {
   message: string;
 };
 
+export type DesktopLocaleResult = {
+  locale: string;
+  systemLocale?: string | null;
+  source: "storage" | "system" | "default" | string;
+};
+
 export type DesktopRuntimeDiagnostics = {
   platform: string;
   coreApiCommand: string;
@@ -49,13 +55,16 @@ export type DesktopRuntimeDiagnostics = {
   summary: string;
 };
 
-async function invokeDesktop<T>(command: string): Promise<T> {
+async function invokeDesktop<T>(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<T> {
   const tauriWindow = window as TauriWindow;
   if (!tauriWindow.__TAURI_INTERNALS__?.invoke) {
     throw new Error("Desktop runtime commands are only available inside the Tauri shell.");
   }
 
-  return tauriWindow.__TAURI_INTERNALS__.invoke(command) as Promise<T>;
+  return tauriWindow.__TAURI_INTERNALS__.invoke(command, args) as Promise<T>;
 }
 
 export function isDesktopRuntimeAvailable() {
@@ -68,6 +77,16 @@ export function getDesktopRuntimeContext() {
 
 export function getDesktopCoreApiStatus() {
   return invokeDesktop<DesktopCoreApiStatus>("desktop_core_api_status");
+}
+
+export function getDesktopLocale() {
+  return invokeDesktop<DesktopLocaleResult>("desktop_get_locale");
+}
+
+export function setDesktopLocale(locale: string) {
+  return invokeDesktop<DesktopOperationResult>("desktop_set_locale", {
+    input: { locale },
+  });
 }
 
 export function getDesktopRuntimeDiagnostics() {

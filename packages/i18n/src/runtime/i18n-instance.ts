@@ -5,6 +5,7 @@ export const appI18n = setupI18n();
 
 let activeLocale: SupportedLocale = DEFAULT_LOCALE;
 
+appI18n.load(DEFAULT_LOCALE, {});
 appI18n.activate(DEFAULT_LOCALE);
 
 export function getActiveLocale() {

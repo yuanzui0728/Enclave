@@ -19,6 +19,7 @@ export * from "./favorites";
 export * from "./followup-runtime";
 export * from "./games";
 export * from "./inference";
+export * from "./locales";
 export * from "./moments";
 export * from "./moderation";
 export * from "./need-discovery";

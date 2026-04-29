@@ -1,6 +1,7 @@
 import type { ChatBackgroundAsset } from "./chat-backgrounds";
+import type { SupportedLocaleCode } from "./locales";
 
-export type WorldLanguageCode = "zh-CN" | "en-US" | "ja-JP" | "ko-KR";
+export type WorldLanguageCode = SupportedLocaleCode;
 
 export interface WorldLanguageOption {
   code: WorldLanguageCode;

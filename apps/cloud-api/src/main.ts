@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+import { CloudApiExceptionFilter } from "./i18n/cloud-api-exception.filter";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,6 +26,7 @@ async function bootstrap() {
       },
     }),
   );
+  app.useGlobalFilters(new CloudApiExceptionFilter());
   app.enableCors({
     origin: true,
     credentials: false,

@@ -1,5 +1,6 @@
 import type { Messages } from "@lingui/core";
 import type { I18nAppSurface, SupportedLocale } from "../locales";
+import { getSurfaceTextDictionary } from "./surface-text-dictionaries";
 
 type CatalogModule = {
   messages: Messages;
@@ -124,23 +125,39 @@ export async function loadTextDictionaryForSurface(
 
   const dictionaryPromise =
     locale === "zh-CN"
-      ? Promise.resolve(new Map<string, string>())
+      ? Promise.resolve(mergeTextDictionaries(new Map(), surface, locale))
       : Promise.all([
           sharedCatalogLoaders["zh-CN"](),
           surfaceCatalogLoaders[surface]["zh-CN"](),
           loadMessagesForSurface(surface, locale),
         ]).then(([sourceSharedCatalog, sourceSurfaceCatalog, targetMessages]) =>
-          createTextDictionary(
-            {
-              ...sourceSharedCatalog.messages,
-              ...sourceSurfaceCatalog.messages,
-            },
-            targetMessages,
+          mergeTextDictionaries(
+            createTextDictionary(
+              {
+                ...sourceSharedCatalog.messages,
+                ...sourceSurfaceCatalog.messages,
+              },
+              targetMessages,
+            ),
+            surface,
+            locale,
           ),
         );
 
   textDictionaryCache.set(cacheKey, dictionaryPromise);
   return dictionaryPromise;
+}
+
+function mergeTextDictionaries(
+  dictionary: ReadonlyMap<string, string>,
+  surface: I18nAppSurface,
+  locale: SupportedLocale,
+) {
+  const mergedDictionary = new Map(dictionary);
+  getSurfaceTextDictionary(surface, locale).forEach((value, key) => {
+    mergedDictionary.set(key, value);
+  });
+  return mergedDictionary;
 }
 
 export function prefetchMessagesForSurface(

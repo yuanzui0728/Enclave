@@ -3,6 +3,14 @@ import {
   isNativeMobileBridgeAvailable,
   shareFileWithNativeShell,
 } from "./mobile-bridge";
+import {
+  formatFileDownloadStartedMessage,
+  formatFileSaveFailedMessage,
+  formatFileSharePanelMessage,
+  getFileSaveCancelledMessage,
+  resolveFileKindLabel,
+  translateKnownFileDialogTitle,
+} from "./file-runtime-i18n";
 
 export type SaveLocalFileInput = {
   blob: Blob;
@@ -24,10 +32,6 @@ type DesktopLocalFileSavePayload = {
   message: string;
 };
 
-function resolveKindLabel(kindLabel: string | undefined) {
-  return kindLabel?.trim() || "文件";
-}
-
 function normalizeFileName(fileName: string) {
   const normalized = fileName.trim();
   return normalized || "download";
@@ -36,10 +40,12 @@ function normalizeFileName(fileName: string) {
 function saveLocalFileWithBrowser(
   input: SaveLocalFileInput,
 ): SaveLocalFileResult {
+  const kindLabel = resolveFileKindLabel(input.kindLabel);
+
   if (typeof document === "undefined") {
     return {
       status: "failed",
-      message: `${resolveKindLabel(input.kindLabel)}保存失败，请稍后再试。`,
+      message: formatFileSaveFailedMessage(kindLabel),
     };
   }
 
@@ -55,31 +61,31 @@ function saveLocalFileWithBrowser(
 
   return {
     status: "started",
-    message: `${resolveKindLabel(input.kindLabel)}开始下载。`,
+    message: formatFileDownloadStartedMessage(kindLabel),
   };
 }
 
 async function saveLocalFileWithNativeShell(
   input: SaveLocalFileInput,
 ): Promise<SaveLocalFileResult> {
-  const kindLabel = resolveKindLabel(input.kindLabel);
+  const kindLabel = resolveFileKindLabel(input.kindLabel);
   const result = await shareFileWithNativeShell({
     blob: input.blob,
     fileName: normalizeFileName(input.fileName),
     mimeType: input.blob.type || undefined,
-    title: input.dialogTitle,
+    title: translateKnownFileDialogTitle(input.dialogTitle),
   });
 
   if (!result.shared) {
     return {
       status: "failed",
-      message: `${kindLabel}保存失败，请稍后再试。`,
+      message: formatFileSaveFailedMessage(kindLabel),
     };
   }
 
   return {
     status: "started",
-    message: `${kindLabel}已打开系统分享面板，可继续保存到文件或转发给其他应用。`,
+    message: formatFileSharePanelMessage(kindLabel),
   };
 }
 
@@ -107,13 +113,13 @@ export async function saveLocalFile(
     const result = await invoke<DesktopLocalFileSavePayload>(
       "desktop_save_binary_file",
       {
-        input: {
-          bytes,
-          fileName,
-          dialogTitle: input.dialogTitle?.trim() || undefined,
+          input: {
+            bytes,
+            fileName,
+            dialogTitle: translateKnownFileDialogTitle(input.dialogTitle),
+          },
         },
-      },
-    );
+      );
 
     if (result.success) {
       return {
@@ -126,15 +132,15 @@ export async function saveLocalFile(
     if (result.cancelled) {
       return {
         status: "cancelled",
-        message: result.message || "已取消保存。",
+        message: result.message || getFileSaveCancelledMessage(),
       };
     }
 
+    const kindLabel = resolveFileKindLabel(input.kindLabel);
+
     return {
       status: "failed",
-      message:
-        result.message ||
-        `${resolveKindLabel(input.kindLabel)}保存失败，请稍后再试。`,
+      message: result.message || formatFileSaveFailedMessage(kindLabel),
     };
   } catch {
     return saveLocalFileWithBrowser({

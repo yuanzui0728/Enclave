@@ -26,6 +26,15 @@ const mobileBridgePluginPath = path.join(
 const projectPath = path.join(shellRoot, "ios", "App", "App.xcodeproj", "project.pbxproj");
 const entitlementsPath = path.join(iosAppRoot, "App.entitlements");
 const privacyManifestPath = path.join(iosAppRoot, "PrivacyInfo.xcprivacy");
+const infoPlistStringLocalizations = ["zh-Hans", "en", "ja", "ko"];
+const requiredInfoPlistStringKeys = [
+  "CFBundleDisplayName",
+  "YinjiePublicAppName",
+  "NSCameraUsageDescription",
+  "NSPhotoLibraryUsageDescription",
+  "NSPhotoLibraryAddUsageDescription",
+  "NSMicrophoneUsageDescription",
+];
 
 function fileIncludes(filePath, pattern) {
   if (!fs.existsSync(filePath)) {
@@ -99,6 +108,19 @@ const checks = [
       : "Info.plist not found yet; run `pnpm ios:sync` first",
   },
   {
+    label: "info-plist-localizations",
+    ok: infoPlistStringLocalizations.every((region) => {
+      const stringsPath = path.join(
+        iosAppRoot,
+        `${region}.lproj`,
+        "InfoPlist.strings",
+      );
+      return fs.existsSync(stringsPath) && fileIncludesAll(stringsPath, requiredInfoPlistStringKeys);
+    }),
+    detail:
+      "InfoPlist.strings exists for zh-Hans, en, ja, and ko with app name and permission strings",
+  },
+  {
     label: "appdelegate-push-cache",
     ok:
       !fs.existsSync(appDelegatePath) ||
@@ -159,6 +181,21 @@ const checks = [
       : "Xcode project not found yet; run `pnpm ios:sync` first",
   },
   {
+    label: "localization-target-membership",
+    ok:
+      !fs.existsSync(projectPath) ||
+      fileIncludesAll(projectPath, [
+        "InfoPlist.strings in Resources",
+        "zh-Hans.lproj/InfoPlist.strings",
+        "en.lproj/InfoPlist.strings",
+        "ja.lproj/InfoPlist.strings",
+        "ko.lproj/InfoPlist.strings",
+      ]),
+    detail: fs.existsSync(projectPath)
+      ? "App.xcodeproj includes localized InfoPlist.strings resources"
+      : "Xcode project not found yet; run `pnpm ios:sync` first",
+  },
+  {
     label: "entitlements-config",
     ok:
       (!fs.existsSync(entitlementsPath) ||
@@ -197,9 +234,12 @@ const checks = [
       !fs.existsSync(runtimePluginPath) ||
       (fileIncludes(runtimePluginPath, "bundledConfig[\"apiBaseUrl\"]") &&
         fileIncludes(runtimePluginPath, "worldAccessMode") &&
-        fileIncludes(runtimePluginPath, "configStatus")),
+        fileIncludes(runtimePluginPath, "configStatus") &&
+        fileIncludes(runtimePluginPath, "object(forInfoDictionaryKey: \"YinjiePublicAppName\")") &&
+        fileIncludes(runtimePluginPath, "preferredLocales") &&
+        fileIncludes(runtimePluginPath, "Locale.preferredLanguages")),
     detail: fs.existsSync(runtimePluginPath)
-      ? "YinjieRuntime prefers bundled runtime-config.json and exposes sync status fields"
+      ? "YinjieRuntime prefers bundled runtime-config.json, exposes sync status, and reads localized app metadata plus preferred locale fields"
       : "runtime plugin not found yet; run `pnpm ios:sync` first",
   },
   {

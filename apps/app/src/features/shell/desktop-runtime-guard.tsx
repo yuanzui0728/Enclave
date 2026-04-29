@@ -145,11 +145,15 @@ export function DesktopRuntimeGuard() {
     remoteStatusQuery.error instanceof Error &&
     (!remoteProbeState.hasSuccessfulProbe ||
       remoteProbeState.consecutiveFailures >= REMOTE_GUARD_FAILURE_THRESHOLD);
+  const remoteCoreApiHealthy = remoteStatusQuery.data?.coreApi?.healthy;
+  const remoteStatusMalformed =
+    Boolean(remoteStatusQuery.data) && remoteCoreApiHealthy !== true;
   const remoteUnavailable =
     !hasDesktopRuntimeControl &&
     (needsRemoteConfiguration ||
       remoteProbeUnavailable ||
-      remoteStatusQuery.data?.coreApi.healthy === false);
+      remoteCoreApiHealthy === false ||
+      remoteStatusMalformed);
 
   if (!desktopUnavailable && !remoteUnavailable) {
     return null;

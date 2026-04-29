@@ -142,6 +142,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
     (state) => state.onboardingCompleted,
   );
   const appTitle = runtimeConfig.publicAppName.trim() || "Yinjie";
+  const ownerFallbackName = t(msg`世界主人`);
+  const ownerDisplayName = ownerName?.trim() || ownerFallbackName;
+  const brandInitial = t(msg`隐`);
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
   const [desktopWindow, setDesktopWindow] =
@@ -509,7 +512,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
     }
 
     if (!verifyDesktopLockPasscode(unlockPasscode)) {
-      setLockError("口令不正确，请重新输入。");
+      setLockError(t(msg`口令不正确，请重新输入。`));
       return;
     }
 
@@ -521,12 +524,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
     const normalizedConfirm = setupPasscodeConfirm.trim();
 
     if (!/^\d{4,6}$/.test(normalizedPasscode)) {
-      setLockError("请设置 4 到 6 位数字口令。");
+      setLockError(t(msg`请设置 4 到 6 位数字口令。`));
       return;
     }
 
     if (normalizedPasscode !== normalizedConfirm) {
-      setLockError("两次输入的口令不一致。");
+      setLockError(t(msg`两次输入的口令不一致。`));
       return;
     }
 
@@ -537,7 +540,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
     setSetupPasscode("");
     setSetupPasscodeConfirm("");
     setLockError(null);
-    setLockNotice("桌面锁定口令已设置，请输入口令解锁。");
+    setLockNotice(t(msg`桌面锁定口令已设置，请输入口令解锁。`));
   };
 
   const openMomentsShortcut = () => {
@@ -561,7 +564,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
       );
 
       if (!actionOperatorCharacter) {
-        throw new Error("当前世界还没有“行动助理”角色。");
+        throw new Error(t(msg`当前世界还没有“行动助理”角色。`));
       }
 
       const conversation = await getOrCreateConversation(
@@ -577,7 +580,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
       );
     } catch (error) {
       setOwnerCardNotice(
-        error instanceof Error ? error.message : "打开会话失败，请稍后再试。",
+        error instanceof Error
+          ? error.message
+          : t(msg`打开会话失败，请稍后再试。`),
       );
     } finally {
       setIsOpeningActionOperatorConversation(false);
@@ -623,7 +628,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
             >
               <div className="flex min-w-0 items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.88)] px-3 py-1.5 shadow-[var(--shadow-soft)]">
                 <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] text-[13px] font-semibold text-[color:var(--text-on-brand)]">
-                  隐
+                  {brandInitial}
                 </div>
                 <div className="min-w-0 leading-none">
                   <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
@@ -631,9 +636,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                   </div>
                   <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
                     <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
-                    <span className="truncate">
-                      {ownerName?.trim() || "世界主人"}
-                    </span>
+                    <span className="truncate">{ownerDisplayName}</span>
                   </div>
                 </div>
               </div>
@@ -641,7 +644,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
             <div className="flex items-center gap-2">
               <DesktopWindowButton
-                label="Minimize"
+                label={t(msg`最小化`)}
                 onClick={() => {
                   if (!desktopWindow) {
                     return;
@@ -653,7 +656,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 <Minus size={15} strokeWidth={1.8} />
               </DesktopWindowButton>
               <DesktopWindowButton
-                label={isMaximized ? "Restore" : "Maximize"}
+                label={isMaximized ? t(msg`还原`) : t(msg`最大化`)}
                 onClick={() => {
                   if (!desktopWindow) {
                     return;
@@ -666,7 +669,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               </DesktopWindowButton>
               <DesktopWindowButton
                 danger
-                label="Close"
+                label={t(msg`关闭`)}
                 onClick={() => {
                   if (!desktopWindow) {
                     return;
@@ -695,7 +698,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           {(isMoreMenuOpen || isOwnerCardOpen) && showDesktopNavigation ? (
             <button
               type="button"
-              aria-label="关闭浮层"
+              aria-label={t(msg`关闭浮层`)}
               onClick={() => {
                 setIsMoreMenuOpen(false);
                 setIsOwnerCardOpen(false);
@@ -727,7 +730,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
                       : undefined,
                   )}
-                  aria-label="打开世界主人快捷卡片"
+                  aria-label={t(msg`打开世界主人快捷卡片`)}
                   aria-expanded={isOwnerCardOpen}
                   onClick={() => {
                     setOwnerCardNotice(null);
@@ -745,7 +748,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     )}
                   >
                     <AvatarChip
-                      name={ownerName ?? "世界主人"}
+                      name={ownerDisplayName}
                       src={ownerAvatar}
                       size={compactDesktopNav ? "md" : "wechat"}
                     />
@@ -874,17 +877,19 @@ export function DesktopShell({ children }: PropsWithChildren) {
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(7,193,96,0.10)]">
                   <AvatarChip
-                    name={ownerName ?? "世界主人"}
+                    name={ownerDisplayName}
                     src={ownerAvatar}
                     size="wechat"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-2xl font-semibold text-[color:var(--text-primary)]">
-                    {lockMode === "setup" ? "设置桌面锁定口令" : "桌面已锁定"}
+                    {lockMode === "setup"
+                      ? t(msg`设置桌面锁定口令`)
+                      : t(msg`桌面已锁定`)}
                   </div>
                   <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-                    {ownerName ?? "世界主人"}
+                    {ownerDisplayName}
                   </div>
                 </div>
               </div>
@@ -904,21 +909,23 @@ export function DesktopShell({ children }: PropsWithChildren) {
                   )}
                   <span>
                     {lockMode === "setup"
-                      ? "首次锁定需要先设置本机口令"
-                      : "输入本机口令后恢复桌面访问"}
+                      ? t(msg`首次锁定需要先设置本机口令`)
+                      : t(msg`输入本机口令后恢复桌面访问`)}
                   </span>
                 </div>
                 <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
                   {lockMode === "setup"
-                    ? "口令仅保存在当前浏览器或桌面客户端本地，用来阻止离开座位时工作区继续暴露。"
+                    ? t(
+                        msg`口令仅保存在当前浏览器或桌面客户端本地，用来阻止离开座位时工作区继续暴露。`,
+                      )
                     : lockPasscodeLength
-                      ? `当前已启用 ${lockPasscodeLength} 位本地锁定口令。`
-                      : "当前设备尚未保存锁定口令。"}
+                      ? t(msg`当前已启用 ${lockPasscodeLength} 位本地锁定口令。`)
+                      : t(msg`当前设备尚未保存锁定口令。`)}
                 </div>
                 {lockedAt ? (
                   <div className="mt-3 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
                     <Clock3 size={14} />
-                    <span>锁定时间 {formatTimestamp(lockedAt)}</span>
+                    <span>{t(msg`锁定时间 ${formatTimestamp(lockedAt)}`)}</span>
                   </div>
                 ) : null}
               </div>
@@ -952,7 +959,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     }}
                     type="password"
                     inputMode="numeric"
-                    placeholder="设置 4 到 6 位数字口令"
+                    placeholder={t(msg`设置 4 到 6 位数字口令`)}
                     className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
                   />
                   <TextField
@@ -971,7 +978,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     }}
                     type="password"
                     inputMode="numeric"
-                    placeholder="再次输入口令确认"
+                    placeholder={t(msg`再次输入口令确认`)}
                     className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
                   />
                   <div className="flex flex-wrap gap-3">
@@ -980,7 +987,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       onClick={submitSetupLock}
                       className="rounded-[14px]"
                     >
-                      设置口令并锁定
+                      {t(msg`设置口令并锁定`)}
                     </Button>
                     <Button
                       type="button"
@@ -988,7 +995,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       onClick={closeDesktopLock}
                       className="rounded-[14px]"
                     >
-                      取消锁定
+                      {t(msg`取消锁定`)}
                     </Button>
                   </div>
                 </div>
@@ -1010,7 +1017,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     }}
                     type="password"
                     inputMode="numeric"
-                    placeholder="输入桌面锁定口令"
+                    placeholder={t(msg`输入桌面锁定口令`)}
                     className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
                   />
                   <div className="flex flex-wrap gap-3">
@@ -1019,7 +1026,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       onClick={submitUnlock}
                       className="rounded-[14px]"
                     >
-                      解锁继续使用
+                      {t(msg`解锁继续使用`)}
                     </Button>
                   </div>
                 </div>
@@ -1125,29 +1132,33 @@ function DesktopOwnerQuickCard({
   onOpenMoments: () => void;
   onOpenActionOperatorConversation: () => void;
 }) {
+  const t = useRuntimeTranslator();
+  const ownerFallbackName = t(msg`世界主人`);
+  const ownerDisplayName = ownerName?.trim() || ownerFallbackName;
+
   return (
     <div className="absolute left-[calc(100%+0.75rem)] top-0 z-30 w-[286px] rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.98)] p-3 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
       <div className="rounded-[18px] bg-[linear-gradient(180deg,rgba(7,193,96,0.12),rgba(255,255,255,0.92))] p-3.5">
         <div className="flex items-start gap-3">
           <AvatarChip
-            name={ownerName ?? "世界主人"}
+            name={ownerDisplayName}
             src={ownerAvatar}
             size="lg"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <div className="truncate text-[17px] font-semibold text-[color:var(--text-primary)]">
-                {ownerName?.trim() || "世界主人"}
+                {ownerDisplayName}
               </div>
               <div className="rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[#15803d]">
-                世界主人
+                {t(msg`世界主人`)}
               </div>
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
               {appTitle}
             </div>
             <div className="mt-2 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
-              {ownerSignature.trim() || "在现实之外，进入另一片世界。"}
+              {ownerSignature.trim() || t(msg`在现实之外，进入另一片世界。`)}
             </div>
           </div>
         </div>
@@ -1156,14 +1167,18 @@ function DesktopOwnerQuickCard({
       <div className="mt-3 grid grid-cols-2 gap-2">
         <DesktopOwnerShortcutButton
           icon={Camera}
-          label="朋友圈"
-          description="看看我最近发了什么"
+          label={t(msg`朋友圈`)}
+          description={t(msg`看看我最近发了什么`)}
           onClick={onOpenMoments}
         />
         <DesktopOwnerShortcutButton
           icon={MessageSquareText}
-          label={isOpeningActionOperatorConversation ? "打开中..." : "行动助理"}
-          description="进入真实世界动作会话"
+          label={
+            isOpeningActionOperatorConversation
+              ? t(msg`打开中...`)
+              : t(msg`行动助理`)
+          }
+          description={t(msg`进入真实世界动作会话`)}
           onClick={onOpenActionOperatorConversation}
           disabled={isOpeningActionOperatorConversation}
         />

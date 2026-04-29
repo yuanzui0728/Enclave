@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Heart, MapPin, MessageCircle } from "lucide-react";
-import { Button, TextField } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
+import { MomentCommentComposer } from "./moment-comment-composer";
 import { formatTimestamp } from "../lib/format";
 
 type MomentPostCardProps = {
@@ -113,23 +113,17 @@ export function MomentPostCard({
 
         {/* Comment input */}
         {showCommentBox ? (
-          <div className="mt-2 flex items-center gap-2">
-            <TextField
+          <div className="mt-2">
+            <MomentCommentComposer
               value={commentDraft}
-              onChange={(e) => onCommentChange(e.target.value)}
+              onChange={onCommentChange}
+              onSubmit={onCommentSubmit}
+              pending={commentLoading}
               placeholder="评论..."
-              className="min-w-0 flex-1 rounded-full py-1.5 text-[13px]"
-              autoFocus
+              className="w-full"
+              inputClassName="rounded-full py-1.5 text-[16px]"
+              buttonClassName="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
             />
-            <Button
-              disabled={!commentDraft.trim() || commentLoading}
-              onClick={onCommentSubmit}
-              variant="primary"
-              size="sm"
-              className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
-            >
-              {commentLoading ? "..." : "发送"}
-            </Button>
           </div>
         ) : null}
       </div>

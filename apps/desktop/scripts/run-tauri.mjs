@@ -70,7 +70,20 @@ function ensureLinuxDesktopDependencies() {
     process.exit(1);
   }
 
-  const requiredPackages = ["glib-2.0", "gobject-2.0", "gtk+-3.0"];
+  const requiredPackages = [
+    "glib-2.0",
+    "gobject-2.0",
+    "gio-2.0",
+    "gtk+-3.0",
+    "gdk-3.0",
+    "gdk-pixbuf-2.0",
+    "pango",
+    "cairo",
+    "atk",
+    "webkit2gtk-4.1",
+    "javascriptcoregtk-4.1",
+    "libsoup-3.0",
+  ];
   const missingPackages = requiredPackages.filter((pkg) => !hasPkgConfigPackage(pkg));
 
   if (missingPackages.length === 0) {
@@ -82,7 +95,16 @@ function ensureLinuxDesktopDependencies() {
       `Missing Linux desktop system packages: ${missingPackages.join(", ")}.`,
       "Install the Tauri Linux dependencies first.",
       "For Debian/Ubuntu this usually includes:",
-      "libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev",
+      [
+        "libglib2.0-dev",
+        "libgtk-3-dev",
+        "libwebkit2gtk-4.1-dev",
+        "libsoup-3.0-dev",
+        "libgdk-pixbuf-2.0-dev",
+        "libpango1.0-dev",
+        "libcairo2-dev",
+        "libatk1.0-dev",
+      ].join(" "),
     ].join(" "),
   );
   process.exit(1);

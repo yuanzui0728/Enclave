@@ -27,7 +27,7 @@ export function LanguageSwitcher({
   const resolvedDescription =
     description === undefined ? (
       <Trans>
-        默认使用简体中文；切换后只影响当前页面会话，并立即应用到已接入的界面文案和格式化规则。
+        语言偏好会保存在当前设备，并立即应用到已接入的界面文案和格式化规则。
       </Trans>
     ) : (
       description

@@ -16,11 +16,11 @@ import {
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
-  TextField,
   cn,
 } from "@yinjie/ui";
 import { ArrowLeft, Heart, MapPin, MessageCircle } from "lucide-react";
 import { AvatarChip } from "../components/avatar-chip";
+import { MomentCommentComposer } from "../components/moment-comment-composer";
 import { MomentMediaGallery } from "../components/moment-media-gallery";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
@@ -665,11 +665,14 @@ function MobileFriendMomentCard({
           </div>
         ) : null}
         <div className="mt-3 flex items-center gap-2">
-          <TextField
+          <MomentCommentComposer
             value={commentDraft}
-            onChange={(event) => onCommentChange(event.target.value)}
+            onChange={onCommentChange}
+            onSubmit={onCommentSubmit}
+            pending={commentPending}
             placeholder="说点什么..."
-            className="min-w-0 flex-1 rounded-full py-1.5 text-[12px]"
+            inputClassName="rounded-full py-1.5 text-[16px]"
+            buttonClassName="h-8 px-3 text-[12px]"
           />
         </div>
       </div>

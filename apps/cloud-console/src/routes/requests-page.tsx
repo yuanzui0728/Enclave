@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { formatDateTime as formatLocaleDateTime } from "@yinjie/i18n";
 import { CloudAdminErrorBlock } from "../components/cloud-admin-error-block";
 import { useConsoleNotice } from "../components/console-notice";
 import {
@@ -18,7 +19,10 @@ import {
 } from "../lib/request-route-search";
 
 function formatDateTime(value: string) {
-  return new Date(value).toLocaleString();
+  return formatLocaleDateTime(new Date(value), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function matchesRequestQuery(

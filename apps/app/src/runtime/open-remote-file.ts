@@ -4,6 +4,12 @@ import {
   shareFileWithNativeShell,
 } from "./mobile-bridge";
 import { openExternalUrl } from "./external-url";
+import {
+  getFileFallbackOpenMessage,
+  getFileOpenedMessage,
+  getFileOpenFailedMessage,
+  translateKnownFileDialogTitle,
+} from "./file-runtime-i18n";
 
 export type OpenRemoteFileInput = {
   url: string;
@@ -29,7 +35,7 @@ export async function openRemoteFile(
   if (!normalizedUrl) {
     return {
       opened: false,
-      message: "文件打开失败，请稍后再试。",
+      message: getFileOpenFailedMessage(),
     };
   }
 
@@ -49,13 +55,13 @@ export async function openRemoteFile(
         blob,
         fileName,
         mimeType: blob.type || input.mimeType?.trim() || undefined,
-        title: input.dialogTitle,
+        title: translateKnownFileDialogTitle(input.dialogTitle),
       });
 
       if (result.opened) {
         return {
           opened: true,
-          message: "已打开文件。",
+          message: getFileOpenedMessage(),
         };
       }
 
@@ -63,13 +69,13 @@ export async function openRemoteFile(
         blob,
         fileName,
         mimeType: blob.type || input.mimeType?.trim() || undefined,
-        title: input.dialogTitle,
+        title: translateKnownFileDialogTitle(input.dialogTitle),
       });
 
       if (shareResult.shared) {
         return {
           opened: true,
-          message: "当前设备未直接预览，已打开系统面板，可继续在其他应用中打开。",
+          message: getFileFallbackOpenMessage(),
         };
       }
 
@@ -79,7 +85,7 @@ export async function openRemoteFile(
     } catch {
       return {
         opened: false,
-        message: "文件打开失败，请稍后再试。",
+        message: getFileOpenFailedMessage(),
       };
     }
   }
@@ -87,6 +93,6 @@ export async function openRemoteFile(
   const opened = await openExternalUrl(normalizedUrl);
   return {
     opened,
-    message: opened ? "已打开文件。" : "文件打开失败，请稍后再试。",
+    message: opened ? getFileOpenedMessage() : getFileOpenFailedMessage(),
   };
 }

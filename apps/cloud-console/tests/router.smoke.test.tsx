@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { installCloudAdminApiMock, renderRoute } from "./test-helpers";
+import { resolveCloudAdminApiBaseFromLocation } from "../src/lib/cloud-admin-api";
 
 describe("cloud-console router smoke", () => {
   beforeEach(() => {
@@ -43,6 +44,106 @@ describe("cloud-console router smoke", () => {
         "href",
       ),
     ).toBe("/waiting-sync");
+  });
+
+  it("renders the cloud console default locale in Simplified Chinese", async () => {
+    renderRoute("/", { locale: null });
+
+    expect(await screen.findByText("舰队仪表盘")).toBeTruthy();
+    expect(await screen.findByText("关注队列")).toBeTruthy();
+    expect(await screen.findByText("就绪世界")).toBeTruthy();
+    expect(
+      (await screen.findByRole("link", { name: "申请" })).getAttribute("href"),
+    ).toBe("/requests");
+  });
+
+  it("pauses cloud queries until the admin secret is saved", async () => {
+    renderRoute("/", { adminSecret: "", locale: null });
+
+    expect(await screen.findByText("需要管理密钥")).toBeTruthy();
+    expect(screen.queryByText("舰队仪表盘")).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("clears an invalid admin secret and returns to the access setup state", async () => {
+    const { requests } = installCloudAdminApiMock();
+
+    renderRoute("/", { adminSecret: "wrong-secret", locale: null });
+
+    expect(await screen.findByText("CLOUD_ADMIN_SECRET 无效。")).toBeTruthy();
+    await waitFor(() => {
+      expect(window.localStorage.getItem("yinjie_cloud_admin_secret")).toBeNull();
+    });
+    expect(await screen.findByText("需要管理密钥")).toBeTruthy();
+    expect(screen.getAllByText("CLOUD_ADMIN_SECRET 无效。")).toHaveLength(1);
+    expect(
+      requests.filter((entry) => entry.url === "POST /admin/cloud/auth/token"),
+    ).toHaveLength(1);
+  });
+
+  it("uses the cloud API port for local Vite origins without an explicit API base", () => {
+    expect(
+      resolveCloudAdminApiBaseFromLocation({
+        configuredBase: "",
+        location: {
+          hostname: "127.0.0.1",
+          origin: "http://127.0.0.1:5184",
+          port: "5184",
+          protocol: "http:",
+        },
+      }),
+    ).toBe("http://127.0.0.1:3001");
+
+    expect(
+      resolveCloudAdminApiBaseFromLocation({
+        configuredBase: " https://cloud-api.example.com/ ",
+        location: {
+          hostname: "127.0.0.1",
+          origin: "http://127.0.0.1:5184",
+          port: "5184",
+          protocol: "http:",
+        },
+      }),
+    ).toBe("https://cloud-api.example.com");
+
+    expect(
+      resolveCloudAdminApiBaseFromLocation({
+        configuredBase: "",
+        location: {
+          hostname: "console.example.com",
+          origin: "https://console.example.com",
+          port: "",
+          protocol: "https:",
+        },
+      }),
+    ).toBe("https://console.example.com");
+  });
+
+  it("switches cloud console copy across English, Japanese, and Korean", async () => {
+    renderRoute("/", { locale: "zh-CN" });
+
+    expect(await screen.findByText("舰队仪表盘")).toBeTruthy();
+
+    const languageSelect = await screen.findByLabelText("界面语言");
+
+    fireEvent.change(languageSelect, { target: { value: "en-US" } });
+    expect(await screen.findByText("Fleet Dashboard")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Requests" })).toBeTruthy();
+
+    fireEvent.change(languageSelect, { target: { value: "ja-JP" } });
+    expect(await screen.findByText("フリートダッシュボード")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "申請" })).toBeTruthy();
+
+    fireEvent.change(languageSelect, { target: { value: "ko-KR" } });
+    expect(await screen.findByText("플릿 대시보드")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "요청" })).toBeTruthy();
+  });
+
+  it("uses the persisted cloud console locale preference", async () => {
+    renderRoute("/", { locale: "ko-KR" });
+
+    expect(await screen.findByText("플릿 대시보드")).toBeTruthy();
+    expect(await screen.findByText("관심 큐")).toBeTruthy();
   });
 
   it("navigates through compact request and world nav links", async () => {

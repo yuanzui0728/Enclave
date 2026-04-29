@@ -8,17 +8,61 @@ import { ensureAiRelationshipSeed } from './database/relationship-seed';
 import { WorldOwnerService } from './modules/auth/world-owner.service';
 import { SocialService } from './modules/social/social.service';
 
-function resolveCorsOrigins() {
-  const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS
+function resolveConfiguredCorsOrigins() {
+  return process.env.CORS_ALLOWED_ORIGINS
     ?.split(',')
     .map((value) => value.trim())
     .filter(Boolean);
+}
 
-  if (!configuredOrigins?.length || configuredOrigins.includes('*')) {
-    return true;
+function resolveAllowedCorsOrigin(origin: string | undefined) {
+  const configuredOrigins = resolveConfiguredCorsOrigins();
+
+  if (
+    origin === 'http://localhost' ||
+    origin === 'https://localhost' ||
+    origin?.startsWith('http://localhost:') ||
+    origin?.startsWith('https://localhost:')
+  ) {
+    return origin;
   }
 
-  return configuredOrigins;
+  if (!configuredOrigins?.length || configuredOrigins.includes('*')) {
+    return origin ?? '*';
+  }
+
+  return origin && configuredOrigins.includes(origin) ? origin : undefined;
+}
+
+function applyCorsHeaders(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) {
+  const requestOrigin = req.headers.origin;
+  const origin = typeof requestOrigin === 'string' ? requestOrigin : undefined;
+  const allowedOrigin = resolveAllowedCorsOrigin(origin);
+
+  if (allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  }
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    res.setHeader(
+      'Access-Control-Allow-Methods',
+      'GET,HEAD,PUT,PATCH,POST,DELETE',
+    );
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      req.headers['access-control-request-headers'] ?? 'Content-Type',
+    );
+    res.status(204).end();
+    return;
+  }
+
+  next();
 }
 
 async function bootstrap() {
@@ -28,7 +72,7 @@ async function bootstrap() {
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
   app.getHttpAdapter().getInstance().set('trust proxy', true);
-  app.enableCors({ origin: resolveCorsOrigins(), credentials: true });
+  app.use(applyCorsHeaders);
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.use(
     '/api/character-assets',

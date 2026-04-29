@@ -1,7 +1,7 @@
 # Desktop Client Regression Checklist
 
-日期：2026-04-12
-范围：Windows、macOS
+日期：2026-04-28
+范围：Windows、macOS、Linux
 
 ## 目标
 
@@ -28,6 +28,12 @@
 - 对外分发版本需记录：
   - 是否已签名
   - 是否已 notarized
+
+### Linux
+
+- `pnpm --filter @yinjie/desktop build` 可在安装 Tauri Linux 系统依赖后完成
+- 缺失系统依赖时，`apps/desktop/scripts/run-tauri.mjs` 会明确列出缺失的 `pkg-config` 包
+- Linux 验证至少记录 `pkg-config` 预检结果或 `cargo check` 结果
 
 ## 安装与启动
 
@@ -92,6 +98,12 @@
 - `.dmg` 可正常挂载并拖拽安装
 - 未签名 / 未 notarized 的测试包风险已明确记录
 - vibrancy、红黄绿窗口按钮和前后台切换行为正常
+
+### Linux
+
+- 系统已安装 GTK/WebKit 运行依赖
+- 无边框窗口拖拽、最小化、最大化、关闭 / 托盘恢复行为正常
+- 缺失依赖时不会进入含糊的 Rust 编译失败，而是先给出可执行的安装提示
 
 ## 参考流程
 

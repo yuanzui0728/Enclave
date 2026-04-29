@@ -358,6 +358,18 @@ msgstr "{highPriorityCount}"
 msgid "{imageCount} 张图片"
 msgstr "{imageCount} images"
 
+#: apps/app/src/runtime/file-runtime-i18n.ts:44
+msgid "{kindLabel}保存失败，请稍后再试。"
+msgstr "{kindLabel} failed to save. Please try again later."
+
+#: apps/app/src/runtime/file-runtime-i18n.ts:53
+msgid "{kindLabel}已打开系统分享面板，可继续保存到文件或转发给其他应用。"
+msgstr "Opened the system share panel for {kindLabel}; you can save it to Files or send it to another app."
+
+#: apps/app/src/runtime/file-runtime-i18n.ts:48
+msgid "{kindLabel}开始下载。"
+msgstr "{kindLabel} download started."
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:2438
 msgid "{label} 已复制到剪贴板，可发送到手机继续。"
 msgstr "{label} copied to clipboard. Send it to your phone to continue."
@@ -817,6 +829,9 @@ msgid "世界"
 msgstr "World"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2415
+#: apps/app/src/features/shell/desktop-shell.tsx:145
+#: apps/app/src/features/shell/desktop-shell.tsx:1136
+#: apps/app/src/features/shell/desktop-shell.tsx:1154
 #: apps/app/src/routes/desktop-feedback-page.tsx:118
 #: apps/app/src/routes/desktop-mobile-page.tsx:207
 #: apps/app/src/routes/desktop-mobile-page.tsx:1225
@@ -994,6 +1009,10 @@ msgstr "World character directory failed to refresh."
 #: apps/app/src/routes/discover-page.tsx:462
 msgid "世界里的角色会自然更新近况，你也可以随时把这一刻发进去。"
 msgstr "Characters in the world update naturally, and you can post this moment anytime."
+
+#: apps/app/src/features/shell/desktop-shell.tsx:532
+msgid "两次输入的口令不一致。"
+msgstr "The two passcodes do not match."
 
 #: apps/app/src/i18n/static-dom-seed.ts:257
 msgid "个"
@@ -1441,6 +1460,7 @@ msgid "保存后，当前聊天页会立即切到这张背景。"
 msgstr "After saving, this chat will switch to the background immediately."
 
 #: apps/app/src/i18n/static-dom-seed.ts:923
+#: apps/app/src/runtime/file-runtime-i18n.ts:33
 msgid "保存图片"
 msgstr "Save image"
 
@@ -1455,6 +1475,10 @@ msgstr "Save the current invitation card SVG and forward it later."
 #: apps/app/src/components/chat-composer.tsx:2311
 msgid "保存截图"
 msgstr "Save screenshot"
+
+#: apps/app/src/runtime/file-runtime-i18n.ts:35
+msgid "保存文件"
+msgstr "Save File"
 
 #: apps/app/src/i18n/static-dom-seed.ts:772
 msgid "保存群公告"
@@ -1481,6 +1505,7 @@ msgid "保存邀请卡"
 msgstr "Save invite card"
 
 #: apps/app/src/i18n/static-dom-seed.ts:485
+#: apps/app/src/runtime/file-runtime-i18n.ts:37
 msgid "保存附件"
 msgstr "Save attachment"
 
@@ -1935,6 +1960,7 @@ msgstr "Keyword “{0}”"
 #: apps/app/src/features/desktop/chat/desktop-group-member-picker.tsx:229
 #: apps/app/src/features/desktop/chat/desktop-group-member-removal-picker.tsx:166
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:125
+#: apps/app/src/features/shell/desktop-shell.tsx:672
 #: apps/app/src/i18n/static-dom-seed.ts:855
 msgid "关闭"
 msgstr "Close"
@@ -2018,6 +2044,7 @@ msgstr "Close service account menu"
 msgid "关闭未保存提示"
 msgstr "Close unsaved prompt"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:701
 #: apps/app/src/i18n/static-dom-seed.ts:737
 msgid "关闭浮层"
 msgstr "Close overlay"
@@ -2142,6 +2169,10 @@ msgstr "If you release it later, this will only continue to accumulate."
 msgid "再拖下去，最好的回流口会变钝。"
 msgstr "Wait any longer and the best return window will cool off."
 
+#: apps/app/src/features/shell/desktop-shell.tsx:981
+msgid "再次输入口令确认"
+msgstr "Enter the passcode again to confirm"
+
 #: apps/app/src/i18n/static-dom-seed.ts:57
 msgid "再生成一批内容后，这里会逐步形成更连续的视频推荐流。"
 msgstr "Generate another batch and this will become a more continuous video recommendation feed."
@@ -2162,6 +2193,14 @@ msgstr "Adventure"
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:78
 msgid "最多支持 9 张图片一起发送，可逐张移除。"
 msgstr "You can send up to 9 images at once and remove them one by one."
+
+#: apps/app/src/features/shell/desktop-shell.tsx:659
+msgid "最大化"
+msgstr "Maximize"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:647
+msgid "最小化"
+msgstr "Minimize"
 
 #: apps/app/src/routes/group-qr-page.tsx:1452
 msgid "最新发送批次"
@@ -3246,6 +3285,18 @@ msgstr "Remove favorite"
 msgid "取消置顶"
 msgstr "Unpin"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:998
+msgid "取消锁定"
+msgstr "Cancel Lock"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:515
+msgid "口令不正确，请重新输入。"
+msgstr "Incorrect passcode. Please try again."
+
+#: apps/app/src/features/shell/desktop-shell.tsx:919
+msgid "口令仅保存在当前浏览器或桌面客户端本地，用来阻止离开座位时工作区继续暴露。"
+msgstr "The passcode is saved only in this browser or desktop client, and keeps the workspace covered when you step away."
+
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2115
 msgid "可以先添加成员，或者切换筛选查看特定角色。"
 msgstr "You can add members first, or switch filters to view specific roles."
@@ -3479,6 +3530,7 @@ msgstr "Library"
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:104
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:980
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1327
+#: apps/app/src/runtime/file-runtime-i18n.ts:19
 msgid "图片"
 msgstr "Image"
 
@@ -3525,6 +3577,10 @@ msgstr "Manage the world owner profile and signature in the desktop workspace."
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:104
 msgid "在独立窗口打开"
 msgstr "Open in separate window"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:1161
+msgid "在现实之外，进入另一片世界。"
+msgstr "Beyond reality, enter another world."
 
 #: apps/app/src/i18n/static-dom-seed.ts:726
 msgid "在看门诊，也先帮你把轻重缓急分清。"
@@ -4238,6 +4294,10 @@ msgstr "Added to blocklist."
 msgid "已加载"
 msgstr "Loaded"
 
+#: apps/app/src/runtime/file-runtime-i18n.ts:58
+msgid "已取消保存。"
+msgstr "Save cancelled."
+
 #: apps/app/src/i18n/static-dom-seed.ts:957
 msgid "已取消收藏消息。"
 msgstr "Message removed from Favorites."
@@ -4355,6 +4415,10 @@ msgstr "Image print view opened."
 #: apps/app/src/components/chat-composer.tsx:2339
 msgid "已打开截图所在位置。"
 msgstr "Opened screenshot location."
+
+#: apps/app/src/runtime/file-runtime-i18n.ts:62
+msgid "已打开文件。"
+msgstr "File opened."
 
 #: apps/app/src/i18n/static-dom-seed.ts:875
 #: apps/app/src/routes/character-detail-page.tsx:739
@@ -4820,6 +4884,10 @@ msgstr "The current world owner has enabled a dedicated API Key."
 msgid "当前世界实例暂时不可用，请稍后再试。"
 msgstr "Current world instance is temporarily unavailable. Please try again later."
 
+#: apps/app/src/features/shell/desktop-shell.tsx:567
+msgid "当前世界还没有“行动助理”角色。"
+msgstr "This world does not have an “Action Assistant” character yet."
+
 #: apps/app/src/routes/group-qr-page.tsx:585
 msgid "当前主推荐本身就在冷却中，结构不会立刻变化，先等它恢复优先位。"
 msgstr "The current top recommendation is already in cooldown, so the queue will not change right away. Wait for it to regain priority."
@@ -5001,6 +5069,10 @@ msgstr "Current Mini Program Workspace"
 #: apps/app/src/i18n/static-dom-seed.ts:906
 msgid "当前工作台"
 msgstr "Current workspace"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:922
+msgid "当前已启用 {lockPasscodeLength} 位本地锁定口令。"
+msgstr "A {lockPasscodeLength}-digit local lock passcode is enabled."
 
 #: apps/app/src/routes/chat-details-page.tsx:1204
 msgid "当前已经处于黑名单中"
@@ -5299,6 +5371,10 @@ msgstr "This device does not support voice messages. Use keyboard input instead.
 msgid "当前设备不支持语音发送。"
 msgstr "This device doesn't support voice sending."
 
+#: apps/app/src/features/shell/desktop-shell.tsx:923
+msgid "当前设备尚未保存锁定口令。"
+msgstr "No lock passcode is saved on this device yet."
+
 #: apps/app/src/features/chat/use-speech-input.ts:193
 msgid "当前设备无法采集麦克风音频。"
 msgstr "This device can't capture microphone audio."
@@ -5323,6 +5399,7 @@ msgid "当前设备暂时无法打开系统分享，请稍后重试。"
 msgstr "This device cannot open the system share sheet right now. Please try again later."
 
 #: apps/app/src/i18n/static-dom-seed.ts:1090
+#: apps/app/src/runtime/file-runtime-i18n.ts:71
 msgid "当前设备未直接预览，已打开系统面板，可继续在其他应用中打开。"
 msgstr "This device did not preview it directly. The system panel is open so you can open it in another app."
 
@@ -5651,9 +5728,18 @@ msgstr "Print image"
 msgid "打开"
 msgstr "Open"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:733
 #: apps/app/src/i18n/static-dom-seed.ts:382
 msgid "打开世界主人快捷卡片"
 msgstr "Open world owner quick card"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:1178
+msgid "打开中..."
+msgstr "Opening..."
+
+#: apps/app/src/features/shell/desktop-shell.tsx:585
+msgid "打开会话失败，请稍后再试。"
+msgstr "Failed to open the conversation. Please try again later."
 
 #: apps/app/src/i18n/static-dom-seed.ts:353
 msgid "打开伴侣"
@@ -5718,6 +5804,10 @@ msgstr "Failed to open the location, please try again later."
 #: apps/app/src/routes/contacts-page.tsx:1869
 msgid "打开搜一搜"
 msgstr "Open Search"
+
+#: apps/app/src/runtime/file-runtime-i18n.ts:31
+msgid "打开文件"
+msgstr "Open File"
 
 #: apps/app/src/i18n/static-dom-seed.ts:1094
 msgid "打开文件失败，请稍后再试。"
@@ -6315,7 +6405,7 @@ msgstr "Search text, attachments, and system notices"
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:597
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:384
 #: apps/app/src/features/shell/desktop-nav-matching.ts:98
-#: apps/app/src/features/shell/desktop-shell.tsx:847
+#: apps/app/src/features/shell/desktop-shell.tsx:850
 #: apps/app/src/routes/chat-list-page.tsx:667
 #: apps/app/src/routes/contacts-page.tsx:1872
 #: apps/app/src/routes/contacts-page.tsx:1943
@@ -6686,6 +6776,8 @@ msgstr "Database {0}"
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1240
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1331
 #: apps/app/src/i18n/static-dom-seed.ts:174
+#: apps/app/src/runtime/file-runtime-i18n.ts:14
+#: apps/app/src/runtime/file-runtime-i18n.ts:20
 msgid "文件"
 msgstr "File"
 
@@ -6698,6 +6790,7 @@ msgid "文件快传"
 msgstr "Quick File Transfer"
 
 #: apps/app/src/i18n/static-dom-seed.ts:1089
+#: apps/app/src/runtime/file-runtime-i18n.ts:66
 msgid "文件打开失败，请稍后再试。"
 msgstr "File open failed. Try again later."
 
@@ -6976,7 +7069,7 @@ msgid "更多信息"
 msgstr "More info"
 
 #: apps/app/src/components/chat-composer.tsx:3310
-#: apps/app/src/features/shell/desktop-shell.tsx:833
+#: apps/app/src/features/shell/desktop-shell.tsx:836
 msgid "更多功能"
 msgstr "More Features"
 
@@ -7070,6 +7163,7 @@ msgstr "Friend info"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:687
 #: apps/app/src/features/shell/desktop-nav-matching.ts:71
 #: apps/app/src/features/shell/desktop-nav-matching.ts:72
+#: apps/app/src/features/shell/desktop-shell.tsx:1170
 #: apps/app/src/i18n/static-dom-seed.ts:33
 #: apps/app/src/routes/character-detail-page.tsx:298
 #: apps/app/src/routes/discover-page.tsx:108
@@ -7746,6 +7840,10 @@ msgstr "Back to Current Workspace on Desktop"
 msgid "桌面小程序面板里的当前工作台和最近使用，会从这里直接发到手机继续。"
 msgstr "The current workspace and recent use from the desktop mini program panel can be sent to mobile directly from here."
 
+#: apps/app/src/features/shell/desktop-shell.tsx:889
+msgid "桌面已锁定"
+msgstr "Desktop Locked"
+
 #: apps/app/src/routes/desktop-mobile-page.tsx:1175
 #: apps/app/src/routes/desktop-mobile-page.tsx:1790
 #: apps/app/src/routes/desktop-mobile-page.tsx:1915
@@ -7787,6 +7885,10 @@ msgstr "Desktop groups profile, AI configuration, and policy viewing into one wo
 #: apps/app/src/i18n/static-dom-seed.ts:58
 msgid "桌面端收成微信式内容浏览结构，主区域看视频，右侧接住作者、评论和推荐队列。"
 msgstr "Desktop uses a WeChat-like content browsing layout: video in the main area, author, comments, and queue on the right."
+
+#: apps/app/src/features/shell/desktop-shell.tsx:543
+msgid "桌面锁定口令已设置，请输入口令解锁。"
+msgstr "Desktop lock passcode is set. Enter it to unlock."
 
 #: apps/app/src/routes/welcome-page.tsx:806
 msgid "检测到你输入的是 /api 路径，已自动换算为对应的世界入口地址：{normalizedLocalApiBaseUrl}"
@@ -8879,6 +8981,10 @@ msgstr "Album tool"
 msgid "看最近添加"
 msgstr "View recent adds"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:1171
+msgid "看看我最近发了什么"
+msgstr "See what I posted recently"
+
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1084
 msgid "看精选"
 msgstr "View featured"
@@ -9894,7 +10000,7 @@ msgstr "Chat extras"
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1547
 #: apps/app/src/features/shell/desktop-nav-config.ts:95
 #: apps/app/src/features/shell/desktop-nav-config.ts:96
-#: apps/app/src/features/shell/desktop-shell.tsx:851
+#: apps/app/src/features/shell/desktop-shell.tsx:854
 msgid "聊天文件"
 msgstr "Chat files"
 
@@ -10072,6 +10178,7 @@ msgstr "Scope"
 msgid "荐"
 msgstr "F"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:1179
 #: apps/app/src/i18n/static-dom-seed.ts:677
 msgid "行动助理"
 msgstr "Action Assistant"
@@ -10189,6 +10296,10 @@ msgstr "Failed to resolve cloud world access."
 msgid "解析我的世界"
 msgstr "Resolve my world"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:1029
+msgid "解锁继续使用"
+msgstr "Unlock to Continue"
+
 #: apps/app/src/i18n/static-dom-seed.ts:687
 msgid "言初"
 msgstr "Yanchu"
@@ -10228,7 +10339,7 @@ msgstr "Star this friend"
 
 #: apps/app/src/features/shell/desktop-nav-config.ts:123
 #: apps/app/src/features/shell/desktop-nav-config.ts:124
-#: apps/app/src/features/shell/desktop-shell.tsx:849
+#: apps/app/src/features/shell/desktop-shell.tsx:852
 #: apps/app/src/routes/desktop-mobile-page.tsx:186
 #: apps/app/src/routes/profile-page.tsx:108
 #: apps/app/src/routes/profile-settings-page.tsx:717
@@ -10236,9 +10347,17 @@ msgstr "Star this friend"
 msgid "设置"
 msgstr "Settings"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:962
+msgid "设置 4 到 6 位数字口令"
+msgstr "Set a 4 to 6 digit passcode"
+
 #: apps/app/src/routes/profile-settings-page.tsx:742
 msgid "设置分类"
 msgstr "Settings Categories"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:990
+msgid "设置口令并锁定"
+msgstr "Set Passcode and Lock"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:471
 msgid "设置备注"
@@ -10259,6 +10378,10 @@ msgstr "Failed to set reminder. Try again later."
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:484
 msgid "设置标签"
 msgstr "Set tags"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:888
+msgid "设置桌面锁定口令"
+msgstr "Set Desktop Lock Passcode"
 
 #: apps/app/src/routes/profile-settings-page.tsx:306
 msgid "设置键盘聊天输入时的发送快捷键"
@@ -10483,6 +10606,10 @@ msgstr "Please wait"
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:238
 msgid "请稍候..."
 msgstr "Please wait..."
+
+#: apps/app/src/features/shell/desktop-shell.tsx:527
+msgid "请设置 4 到 6 位数字口令。"
+msgstr "Set a 4 to 6 digit passcode."
 
 #: apps/app/src/routes/welcome-page.tsx:617
 msgid "请输入世界主人的名字。"
@@ -10723,9 +10850,17 @@ msgstr "Enter display name"
 msgid "输入更完整的隐界号能更快命中目标角色，也可以通过角色名和资料关键词查找。"
 msgstr "Enter a fuller Yinjie ID to find the target faster, or search by character name and profile keywords."
 
+#: apps/app/src/features/shell/desktop-shell.tsx:913
+msgid "输入本机口令后恢复桌面访问"
+msgstr "Enter the local passcode to restore desktop access"
+
 #: apps/app/src/components/chat-composer.tsx:4601
 msgid "输入标注文字"
 msgstr "Enter annotation text"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:1020
+msgid "输入桌面锁定口令"
+msgstr "Enter desktop lock passcode"
 
 #: apps/app/src/i18n/static-dom-seed.ts:736
 msgid "输入消息"
@@ -10884,6 +11019,7 @@ msgid "返回通讯录"
 msgstr "Back to contacts"
 
 #: apps/app/src/components/chat-composer.tsx:5238
+#: apps/app/src/features/shell/desktop-shell.tsx:659
 msgid "还原"
 msgstr "Reset"
 
@@ -11298,6 +11434,10 @@ msgstr "Open favorites results"
 msgid "进入朋友圈结果"
 msgstr "Open Moments results"
 
+#: apps/app/src/features/shell/desktop-shell.tsx:1181
+msgid "进入真实世界动作会话"
+msgstr "Open the real-world action conversation"
+
 #: apps/app/src/routes/character-detail-page.tsx:919
 msgid "进入视频通话"
 msgstr "Enter video call"
@@ -11653,6 +11793,11 @@ msgstr "Pipeline details"
 msgid "锁定"
 msgstr "Lock"
 
+#. placeholder {0}: formatTimestamp(lockedAt)
+#: apps/app/src/features/shell/desktop-shell.tsx:928
+msgid "锁定时间 {0}"
+msgstr "Locked at {0}"
+
 #: apps/app/src/routes/group-qr-page.tsx:2864
 msgid "错过活跃窗口，再补会更难接回流。"
 msgstr "Miss the active window and it will be harder to catch the return later."
@@ -11732,6 +11877,10 @@ msgstr "Luhui"
 #: apps/app/src/i18n/static-dom-seed.ts:288
 msgid "限时 3 天"
 msgstr "Limited for 3 days"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:147
+msgid "隐"
+msgstr "Y"
 
 #: apps/app/src/i18n/static-dom-seed.ts:615
 msgid "隐界会保存你的账号资料、聊天行为、动态内容和必要的运行日志，用于维持世界状态、消息同步和基础安全审计。"
@@ -11903,6 +12052,10 @@ msgstr "Top"
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1121
 msgid "首推来自 {0}"
 msgstr "Top pick from {0}"
+
+#: apps/app/src/features/shell/desktop-shell.tsx:912
+msgid "首次锁定需要先设置本机口令"
+msgstr "Set a local passcode before locking for the first time"
 
 #: apps/app/src/i18n/static-dom-seed.ts:118
 msgid "首版先不做小游戏运行容器，点击开始游戏会先记录使用状态并回到内容工作区。"

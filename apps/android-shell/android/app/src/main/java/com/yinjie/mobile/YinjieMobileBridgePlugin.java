@@ -2,8 +2,6 @@ package com.yinjie.mobile;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.Context;
@@ -61,8 +59,7 @@ public class YinjieMobileBridgePlugin extends Plugin {
     private static final String EXTRA_CONVERSATION_ID = "yinjie_conversation_id";
     private static final String EXTRA_GROUP_ID = "yinjie_group_id";
     private static final String EXTRA_TARGET_SOURCE = "yinjie_target_source";
-    private static final String CHANNEL_ID = "yinjie_messages";
-    private static final String CHANNEL_NAME = "隐界消息";
+    private static final String CHANNEL_ID = YinjieNotificationChannels.MESSAGES_CHANNEL_ID;
     private Uri pendingCameraCaptureUri;
 
     @PluginMethod
@@ -128,7 +125,10 @@ public class YinjieMobileBridgePlugin extends Plugin {
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
         }
 
-        Intent chooser = Intent.createChooser(shareIntent, title != null ? title : "Share");
+        Intent chooser = Intent.createChooser(
+            shareIntent,
+            title != null ? title : getContext().getString(R.string.native_share_title)
+        );
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         try {
@@ -174,7 +174,10 @@ public class YinjieMobileBridgePlugin extends Plugin {
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
         }
 
-        Intent chooser = Intent.createChooser(shareIntent, title != null ? title : "Share");
+        Intent chooser = Intent.createChooser(
+            shareIntent,
+            title != null ? title : getContext().getString(R.string.native_share_title)
+        );
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
@@ -218,7 +221,10 @@ public class YinjieMobileBridgePlugin extends Plugin {
         viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         viewIntent.setClipData(ClipData.newRawUri(fileName, fileUri));
 
-        Intent chooser = Intent.createChooser(viewIntent, title != null ? title : "Open");
+        Intent chooser = Intent.createChooser(
+            viewIntent,
+            title != null ? title : getContext().getString(R.string.native_open_file_title)
+        );
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
@@ -426,7 +432,7 @@ public class YinjieMobileBridgePlugin extends Plugin {
             return;
         }
 
-        createNotificationChannelIfNeeded();
+        YinjieNotificationChannels.createMessagesChannelIfNeeded(getContext());
 
         String route = normalize(call.getString("route"));
         String conversationId = normalize(call.getString("conversationId"));
@@ -710,25 +716,6 @@ public class YinjieMobileBridgePlugin extends Plugin {
         if (groupId != null) {
             intent.putExtra(EXTRA_GROUP_ID, groupId);
         }
-    }
-
-    private void createNotificationChannelIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            return;
-        }
-
-        NotificationManager manager = getContext().getSystemService(NotificationManager.class);
-        if (manager == null || manager.getNotificationChannel(CHANNEL_ID) != null) {
-            return;
-        }
-
-        NotificationChannel channel = new NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
-        );
-        channel.setDescription("隐界的新消息与提醒");
-        manager.createNotificationChannel(channel);
     }
 
     static void cacheLaunchTarget(Context context, Intent intent) {

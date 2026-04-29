@@ -1,8 +1,6 @@
 package com.yinjie.mobile;
 
 import android.Manifest;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -20,8 +18,7 @@ import com.google.firebase.messaging.RemoteMessage;
 public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
     private static final String PREFERENCES_NAME = "com.yinjie.mobile_bridge";
     private static final String PUSH_TOKEN_KEY = "push_token";
-    private static final String CHANNEL_ID = "yinjie_messages";
-    private static final String CHANNEL_NAME = "隐界消息";
+    private static final String CHANNEL_ID = YinjieNotificationChannels.MESSAGES_CHANNEL_ID;
     private static final String EXTRA_TARGET_KIND = "yinjie_target_kind";
     private static final String EXTRA_TARGET_ROUTE = "yinjie_target_route";
     private static final String EXTRA_CONVERSATION_ID = "yinjie_conversation_id";
@@ -51,16 +48,22 @@ public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
             return;
         }
 
-        createNotificationChannelIfNeeded();
+        YinjieNotificationChannels.createMessagesChannelIfNeeded(this);
 
         String title = remoteMessage.getNotification() != null ? remoteMessage.getNotification().getTitle() : null;
         String body = remoteMessage.getNotification() != null ? remoteMessage.getNotification().getBody() : null;
 
         if (title == null || title.trim().isEmpty()) {
-            title = remoteMessage.getData().getOrDefault("title", "隐界");
+            title = remoteMessage.getData().getOrDefault(
+                "title",
+                getString(R.string.notification_default_title)
+            );
         }
         if (body == null || body.trim().isEmpty()) {
-            body = remoteMessage.getData().getOrDefault("body", "你有一条新的消息。");
+            body = remoteMessage.getData().getOrDefault(
+                "body",
+                getString(R.string.notification_default_body)
+            );
         }
 
         Intent launchIntent = new Intent(this, MainActivity.class);
@@ -120,25 +123,6 @@ public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
         if (groupId != null) {
             intent.putExtra(EXTRA_GROUP_ID, groupId);
         }
-    }
-
-    private void createNotificationChannelIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            return;
-        }
-
-        NotificationManager manager = getSystemService(NotificationManager.class);
-        if (manager == null || manager.getNotificationChannel(CHANNEL_ID) != null) {
-            return;
-        }
-
-        NotificationChannel channel = new NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
-        );
-        channel.setDescription("隐界的新消息与提醒");
-        manager.createNotificationChannel(channel);
     }
 
     private String normalize(String value) {

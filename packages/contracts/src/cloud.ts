@@ -130,6 +130,14 @@ export interface RevokeCloudAdminSessionResponse {
   success: true;
 }
 
+export interface CloudApiErrorResponse {
+  statusCode: number;
+  errorCode: string;
+  message: string;
+  params?: Record<string, string | number | boolean | null>;
+  requestId?: string | null;
+}
+
 export interface RevokeCloudAdminSessionsByIdRequest {
   sessionIds: string[];
 }

@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import { ErrorBlock } from "@yinjie/ui";
 import type { ShowConsoleNotice } from "./console-notice";
 import { getCloudAdminApiErrorRequestId } from "../lib/cloud-admin-api";
+import { translateCloudConsoleTextForActiveLocale } from "../lib/cloud-console-i18n";
 import {
   createRequestScopedNotice,
   showRequestScopedNotice,
@@ -9,10 +10,12 @@ import {
 
 function getCloudAdminErrorMessage(error: unknown) {
   if (error instanceof Error && error.message.trim()) {
-    return error.message.trim();
+    return translateCloudConsoleTextForActiveLocale(error.message.trim());
   }
 
-  return "Cloud admin request failed.";
+  return translateCloudConsoleTextForActiveLocale(
+    "Cloud admin request failed.",
+  );
 }
 
 export function showCloudAdminErrorNotice(

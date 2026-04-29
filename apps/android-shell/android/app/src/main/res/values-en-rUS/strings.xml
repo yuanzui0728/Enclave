@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yinjie</string>
+    <string name="title_activity_main">Yinjie</string>
+    <string name="package_name">com.yinjie.mobile</string>
+    <string name="custom_url_scheme">com.yinjie.mobile</string>
+    <string name="native_share_title">Share</string>
+    <string name="native_open_file_title">Open</string>
+    <string name="notification_channel_name">Yinjie Messages</string>
+    <string name="notification_channel_description">New messages and reminders from Yinjie</string>
+    <string name="notification_default_title">Yinjie</string>
+    <string name="notification_default_body">You have a new message.</string>
+</resources>

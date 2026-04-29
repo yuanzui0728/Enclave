@@ -1,0 +1,6 @@
+"CFBundleDisplayName" = "隐界";
+"YinjiePublicAppName" = "隐界";
+"NSCameraUsageDescription" = "用于拍摄头像或动态图片。";
+"NSPhotoLibraryUsageDescription" = "用于从相册选择头像或动态图片。";
+"NSPhotoLibraryAddUsageDescription" = "用于将导出图片保存到相册。";
+"NSMicrophoneUsageDescription" = "用于语音输入或语音互动功能。";

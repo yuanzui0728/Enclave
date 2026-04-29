@@ -12,6 +12,10 @@ import type {
   CloudAdminSessionSummary,
 } from "@yinjie/contracts";
 import {
+  formatDateTime as formatLocaleDateTime,
+  useAppLocale,
+} from "@yinjie/i18n";
+import {
   AdminSessionActionButton,
   AdminSessionBrandBadge,
   AdminSessionBrandEyebrow,
@@ -65,6 +69,10 @@ import {
 } from "../lib/cloud-admin-api";
 import { copyTextToClipboard } from "../lib/clipboard";
 import {
+  translateCloudConsoleCsvRow,
+  translateCloudConsoleText,
+} from "../lib/cloud-console-i18n";
+import {
   createRequestScopedNotice,
   type RequestScopedNotice,
   showRequestScopedNotice,
@@ -79,7 +87,10 @@ function formatDateTime(value?: string | null) {
     return "Not available";
   }
 
-  return new Date(value).toLocaleString();
+  return formatLocaleDateTime(new Date(value), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function formatDate(value?: string | null) {
@@ -92,12 +103,12 @@ function formatDate(value?: string | null) {
     return "Not available";
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return formatLocaleDateTime(new Date(parsed), {
     year: "numeric",
     month: "short",
     day: "numeric",
     timeZone: "UTC",
-  }).format(new Date(parsed));
+  });
 }
 
 function formatDateRange(startValue?: string | null, endValue?: string | null) {
@@ -794,8 +805,9 @@ function buildSourceGroupRiskWeeklyTimeline(
 
 function buildSourceGroupRiskSnapshotCsv(
   snapshot: CloudAdminSessionSourceGroupRiskSnapshot,
+  locale?: string | null,
 ) {
-  const headers = [
+  const headers = translateCloudConsoleCsvRow([
     "sourceKey",
     "riskLevel",
     "riskSignals",
@@ -810,7 +822,7 @@ function buildSourceGroupRiskSnapshotCsv(
     "latestCreatedAt",
     "latestLastUsedAt",
     "latestRevokedAt",
-  ];
+  ], locale);
   const lines = [headers.join(",")];
 
   for (const group of snapshot.groups) {
@@ -848,8 +860,9 @@ function buildSourceGroupRiskSessionsCsvFilename(
 
 function buildSourceGroupRiskSessionsCsv(
   snapshot: CloudAdminSessionSourceGroupRiskSnapshot,
+  locale?: string | null,
 ) {
-  const headers = [
+  const headers = translateCloudConsoleCsvRow([
     "sessionId",
     "sourceKey",
     "riskLevel",
@@ -868,7 +881,7 @@ function buildSourceGroupRiskSessionsCsv(
     "revocationReason",
     "createdAt",
     "updatedAt",
-  ];
+  ], locale);
   const lines = [headers.join(",")];
   const groupBySource = new Map(
     snapshot.groups.map((group) => [
@@ -928,10 +941,11 @@ function buildSourceGroupRiskTimelineCsv(
   snapshot: CloudAdminSessionSourceGroupSnapshot,
   timeline: SourceGroupRiskTimelineDisplayPoint[],
   view: SourceGroupRiskTimelineView,
+  locale?: string | null,
 ) {
   const headers =
     view === "daily"
-      ? [
+      ? translateCloudConsoleCsvRow([
           "sourceKey",
           "issuedFromIp",
           "issuedUserAgent",
@@ -945,9 +959,9 @@ function buildSourceGroupRiskTimelineCsv(
           "expiredSessions",
           "revokedSessions",
           "refreshTokenReuseRevocations",
-        ]
+        ], locale)
       : view === "weekly"
-        ? [
+        ? translateCloudConsoleCsvRow([
             "sourceKey",
             "issuedFromIp",
             "issuedUserAgent",
@@ -962,8 +976,8 @@ function buildSourceGroupRiskTimelineCsv(
             "expiredSessions",
             "revokedSessions",
             "refreshTokenReuseRevocations",
-          ]
-        : [
+          ], locale)
+        : translateCloudConsoleCsvRow([
             "sourceKey",
             "issuedFromIp",
             "issuedUserAgent",
@@ -975,7 +989,7 @@ function buildSourceGroupRiskTimelineCsv(
             "expiredSessions",
             "revokedSessions",
             "refreshTokenReuseRevocations",
-          ];
+          ], locale);
   const lines = [headers.join(",")];
 
   for (const point of timeline) {
@@ -989,7 +1003,7 @@ function buildSourceGroupRiskTimelineCsv(
               "day" in point ? point.day : "",
               "pointCount" in point ? point.pointCount : "",
               point.timestamp,
-              point.eventSummary,
+              translateCloudConsoleText(point.eventSummary, locale),
               point.riskLevel,
               point.riskSignals.join(";"),
               point.activeSessions,
@@ -1006,7 +1020,7 @@ function buildSourceGroupRiskTimelineCsv(
                 "weekEnd" in point ? point.weekEnd : "",
                 "pointCount" in point ? point.pointCount : "",
                 point.timestamp,
-                point.eventSummary,
+                translateCloudConsoleText(point.eventSummary, locale),
                 point.riskLevel,
                 point.riskSignals.join(";"),
                 point.activeSessions,
@@ -1019,7 +1033,7 @@ function buildSourceGroupRiskTimelineCsv(
               snapshot.group.issuedFromIp ?? "",
               snapshot.group.issuedUserAgent ?? "",
               point.timestamp,
-              point.eventSummary,
+              translateCloudConsoleText(point.eventSummary, locale),
               point.riskLevel,
               point.riskSignals.join(";"),
               point.activeSessions,
@@ -1077,6 +1091,7 @@ export function AdminSessionsPage() {
   const filters = useSearch({ from: "/sessions" });
   const queryClient = useQueryClient();
   const { showNotice } = useConsoleNotice();
+  const { locale } = useAppLocale();
   const adminSessionsSectionRef = useRef<HTMLElement | null>(null);
   const [pendingSession, setPendingSession] =
     useState<CloudAdminSessionSummary | null>(null);
@@ -1125,7 +1140,7 @@ export function AdminSessionsPage() {
     action: Parameters<typeof getAdminSessionSourceRiskGuardMessage>[0],
   ) {
     if (filters.sourceRiskLevel === "all") {
-      throw new Error(getAdminSessionSourceRiskGuardMessage(action));
+      throw new Error(getAdminSessionSourceRiskGuardMessage(action, locale));
     }
 
     return filters.sourceRiskLevel;
@@ -1141,8 +1156,8 @@ export function AdminSessionsPage() {
 
   function getAdminSessionsErrorMessage(error: unknown) {
     return error instanceof Error
-      ? error.message
-      : "Unknown admin sessions error.";
+      ? translateCloudConsoleText(error.message, locale)
+      : translateCloudConsoleText("Unknown admin sessions error.", locale);
   }
 
   function buildHighlightedSessionReceiptContext(
@@ -1207,7 +1222,7 @@ export function AdminSessionsPage() {
   function describeSourceRiskSelection() {
     return hasSourceRiskFilter
       ? `Risk filter: ${formatSourceGroupRiskFilterLabel(filters.sourceRiskLevel)}.`
-      : getAdminSessionSourceRiskSelectionPrompt();
+      : getAdminSessionSourceRiskSelectionPrompt(locale);
   }
 
   function clearSelectedAdminSessions() {
@@ -1293,8 +1308,11 @@ export function AdminSessionsPage() {
 
     showNotice(
       copied
-        ? "Admin sessions permalink copied."
-        : "Clipboard copy failed in this environment.",
+        ? translateCloudConsoleText("Admin sessions permalink copied.", locale)
+        : translateCloudConsoleText(
+            "Clipboard copy failed in this environment.",
+            locale,
+          ),
       copied ? "success" : "danger",
     );
   }
@@ -1431,6 +1449,7 @@ export function AdminSessionsPage() {
       settlePendingBulkRevoke();
       showAdminSessionsMutationNotice(
         createSessionRevokeNotice({
+          locale,
           requestId: response.requestId,
           revokedCount,
           skippedCount,
@@ -1454,6 +1473,7 @@ export function AdminSessionsPage() {
       settlePendingFilteredRevoke();
       showAdminSessionsMutationNotice(
         createSessionRevokeNotice({
+          locale,
           requestId: response.requestId,
           revokedCount: response.data.revokedCount,
           skippedCount: response.data.skippedCount,
@@ -1490,6 +1510,7 @@ export function AdminSessionsPage() {
     onSuccess: (response, payload) => {
       settlePendingSourceGroupRevoke();
       const notice = createSessionRevokeNotice({
+        locale,
         requestId: response.requestId,
         revokedCount: response.data.revokedCount,
         skippedCount: response.data.skippedCount,
@@ -1541,6 +1562,7 @@ export function AdminSessionsPage() {
       showAdminSessionsNotice(
         createAdminSessionArtifactDownloadNotice({
           kind: "admin-session-audit-snapshot",
+          locale,
           requestId,
           downloaded,
           totalSessions: snapshot.group.totalSessions,
@@ -1574,6 +1596,7 @@ export function AdminSessionsPage() {
     onSuccess: ({ downloaded, group, requestId, snapshot }) => {
       const notice = createAdminSessionArtifactDownloadNotice({
         kind: "focused-source-snapshot",
+        locale,
         requestId,
         downloaded,
         totalSessions: snapshot.group.totalSessions,
@@ -1620,6 +1643,7 @@ export function AdminSessionsPage() {
       showAdminSessionsNotice(
         createAdminSessionArtifactDownloadNotice({
           kind: "risk-snapshot",
+          locale,
           requestId,
           downloaded,
           totalGroups: snapshot.totalGroups,
@@ -1645,7 +1669,7 @@ export function AdminSessionsPage() {
           requestId: response.requestId,
         },
         buildSourceGroupRiskCsvFilename(riskLevel),
-        buildSourceGroupRiskSnapshotCsv(response.data),
+        buildSourceGroupRiskSnapshotCsv(response.data, locale),
         "text/csv;charset=utf-8",
       );
     },
@@ -1653,6 +1677,7 @@ export function AdminSessionsPage() {
       showAdminSessionsNotice(
         createAdminSessionArtifactDownloadNotice({
           kind: "risk-groups-csv",
+          locale,
           requestId,
           downloaded,
           totalGroups: snapshot.totalGroups,
@@ -1677,7 +1702,7 @@ export function AdminSessionsPage() {
           requestId: response.requestId,
         },
         buildSourceGroupRiskSessionsCsvFilename(riskLevel),
-        buildSourceGroupRiskSessionsCsv(response.data),
+        buildSourceGroupRiskSessionsCsv(response.data, locale),
         "text/csv;charset=utf-8",
       );
     },
@@ -1685,6 +1710,7 @@ export function AdminSessionsPage() {
       showAdminSessionsNotice(
         createAdminSessionArtifactDownloadNotice({
           kind: "risk-sessions-csv",
+          locale,
           requestId,
           downloaded,
           totalSessions: snapshot.totalSessions,
@@ -1708,6 +1734,7 @@ export function AdminSessionsPage() {
       settlePendingRiskGroupRevoke();
       showAdminSessionsMutationNotice(
         createRiskGroupRevokeNotice({
+          locale,
           requestId: response.requestId,
           matchedGroupCount: response.data.matchedGroupCount,
           revokedGroupCount: response.data.revokedGroupCount,
@@ -2051,7 +2078,7 @@ export function AdminSessionsPage() {
       !focusedSourceSnapshotQuery.data ||
       !visibleFocusedSourceRiskTimeline.length
     ) {
-      showAdminSessionsNotice(createAdminSessionRiskTimelineNotReadyNotice());
+      showAdminSessionsNotice(createAdminSessionRiskTimelineNotReadyNotice(locale));
       return;
     }
 
@@ -2067,12 +2094,14 @@ export function AdminSessionsPage() {
         focusedSourceSnapshotQuery.data,
         visibleFocusedSourceRiskTimeline,
         timelineView,
+        locale,
       ),
       "text/csv;charset=utf-8",
     );
     showAdminSessionsNotice(
       createAdminSessionArtifactDownloadNotice({
         kind: "risk-timeline-csv",
+        locale,
         downloaded,
         pointCount: visibleFocusedSourceRiskTimeline.length,
         view: timelineView,
@@ -2984,6 +3013,7 @@ export function AdminSessionsPage() {
                                           <div className="text-[11px] uppercase tracking-[0.14em]">
                                             {formatHighlightedOperationReceiptLabel(
                                               receipt.kind,
+                                              locale,
                                             )}
                                           </div>
                                         </div>

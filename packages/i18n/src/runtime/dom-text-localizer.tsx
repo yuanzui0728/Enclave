@@ -15,8 +15,6 @@ const SKIP_TEXT_ELEMENT_SELECTOR = [
   "noscript",
   "textarea",
   "input",
-  "select",
-  "option",
   "[contenteditable='true']",
   "[data-i18n-skip='true']",
 ].join(",");
@@ -48,7 +46,7 @@ export function DomTextLocalizer({
     }
 
     const translateValue = (sourceValue: string) => {
-      if (locale === DEFAULT_LOCALE) {
+      if (locale === DEFAULT_LOCALE && dictionary.size === 0) {
         return sourceValue;
       }
 
@@ -211,6 +209,111 @@ function translateKnownPattern(
 
     return dictionary.get(trimmedTarget) ?? target;
   };
+
+  const translateDelimitedParts = (
+    separator: string,
+    joiner: string = separator,
+  ) => {
+    if (!sourceValue.includes(separator)) {
+      return null;
+    }
+
+    let translatedAnyPart = false;
+    const translatedParts = sourceValue.split(separator).map((part) => {
+      const translatedPart = translatePatternTarget(part);
+      translatedAnyPart = translatedAnyPart || translatedPart !== part;
+      return translatedPart;
+    });
+
+    return translatedAnyPart ? translatedParts.join(joiner) : null;
+  };
+
+  const dotDelimitedValue = translateDelimitedParts(" · ");
+  if (dotDelimitedValue) {
+    return dotDelimitedValue;
+  }
+
+  const pipeDelimitedValue = translateDelimitedParts(" | ");
+  if (pipeDelimitedValue) {
+    return pipeDelimitedValue;
+  }
+
+  const englishColonLabelMatch = sourceValue.match(
+    /^([A-Za-z][A-Za-z0-9 /()_-]{1,48}):\s*(.+)$/,
+  );
+  if (englishColonLabelMatch) {
+    const label = englishColonLabelMatch[1] ?? "";
+    const value = englishColonLabelMatch[2] ?? "";
+    const translatedLabel = translatePatternTarget(label);
+    const translatedValue = translatePatternTarget(value);
+    if (translatedLabel !== label || translatedValue !== value) {
+      return `${translatedLabel}: ${translatedValue}`;
+    }
+  }
+
+  const englishTrailingValueMatch = sourceValue.match(
+    /^(Updated|Created|Started|Finished|Available|Bootstrapped|Last accessed|Last interactive|Last booted|Last heartbeat|Last suspended|Last operation|Latest update|Last generated|Observed at|expires|available)\s+(.+)$/,
+  );
+  if (englishTrailingValueMatch) {
+    const label = englishTrailingValueMatch[1] ?? "";
+    const value = englishTrailingValueMatch[2] ?? "";
+    const translatedLabel = translatePatternTarget(label);
+    if (translatedLabel !== label) {
+      return `${translatedLabel} ${value}`;
+    }
+  }
+
+  const englishCountLabelMatch = sourceValue.match(
+    /^(\d+(?:\.\d+)?)\s+(active|active providers|total|current|expired|revoked|failed|pending|running|worlds|requests|jobs|sessions|tasks|groups|receipts|receipt\(s\)|session\(s\)|job\(s\)|world\(s\)|task\(s\)|group\(s\)|point\(s\)|match\(es\)|matched session\(s\))$/,
+  );
+  if (englishCountLabelMatch && locale !== "en-US") {
+    const count = englishCountLabelMatch[1] ?? "0";
+    const label = englishCountLabelMatch[2] ?? "";
+    return translateEnglishCountLabel(count, label, locale);
+  }
+
+  const englishShowingJobsMatch = sourceValue.match(
+    /^Showing (.+?) of (.+?) jobs\.$/,
+  );
+  if (englishShowingJobsMatch && locale !== "en-US") {
+    const range = englishShowingJobsMatch[1] ?? "0";
+    const total = englishShowingJobsMatch[2] ?? "0";
+    if (locale === "ja-JP") {
+      return `${total} 件のジョブのうち ${range} を表示しています。`;
+    }
+    if (locale === "ko-KR") {
+      return `작업 ${total}개 중 ${range}개를 표시합니다.`;
+    }
+    return `显示 ${range} / ${total} 个任务。`;
+  }
+
+  const englishPageOfMatch = sourceValue.match(/^Page (\d+) of (\d+)$/);
+  if (englishPageOfMatch && locale !== "en-US") {
+    const page = englishPageOfMatch[1] ?? "1";
+    const total = englishPageOfMatch[2] ?? "1";
+    if (locale === "ja-JP") {
+      return `${page} / ${total} ページ`;
+    }
+    if (locale === "ko-KR") {
+      return `${page} / ${total} 페이지`;
+    }
+    return `第 ${page} 页 / 共 ${total} 页`;
+  }
+
+  const englishShowingLatestMatch = sourceValue.match(
+    /^Showing the latest (\d+) of up to (\d+) receipt\(s\)(.*)$/,
+  );
+  if (englishShowingLatestMatch && locale !== "en-US") {
+    const visibleCount = englishShowingLatestMatch[1] ?? "0";
+    const limit = englishShowingLatestMatch[2] ?? "0";
+    if (locale === "ja-JP") {
+      return `最大 ${limit} 件の受領のうち最新 ${visibleCount} 件を表示しています。`;
+    }
+    if (locale === "ko-KR") {
+      return `최대 ${limit}개 영수증 중 최신 ${visibleCount}개를 표시합니다.`;
+    }
+    return `最多 ${limit} 条回执中显示最新 ${visibleCount} 条。`;
+  }
 
   const popularPlayersMatch = sourceValue.match(/^(\d+(?:\.\d+)?) 万人在玩$/);
   if (popularPlayersMatch) {
@@ -1235,6 +1338,87 @@ function translateAttachmentLabel(label: string, locale: SupportedLocale) {
     default:
       return label;
   }
+}
+
+function translateEnglishCountLabel(
+  count: string,
+  label: string,
+  locale: SupportedLocale,
+) {
+  const normalizedLabel = label.replace(/\(s\)$/, "s");
+
+  if (locale === "ja-JP") {
+    const labels: Record<string, string> = {
+      active: "アクティブ",
+      "active providers": "アクティブプロバイダー",
+      total: "合計",
+      current: "現在",
+      expired: "期限切れ",
+      revoked: "取り消し済み",
+      failed: "失敗",
+      pending: "保留中",
+      running: "実行中",
+      worlds: "世界",
+      requests: "申請",
+      jobs: "ジョブ",
+      sessions: "セッション",
+      tasks: "タスク",
+      groups: "グループ",
+      receipts: "受領",
+      points: "ポイント",
+      matches: "一致",
+      "matched sessions": "一致セッション",
+    };
+    return `${count} ${labels[normalizedLabel] ?? label}`;
+  }
+
+  if (locale === "ko-KR") {
+    const labels: Record<string, string> = {
+      active: "활성",
+      "active providers": "활성 공급자",
+      total: "전체",
+      current: "현재",
+      expired: "만료",
+      revoked: "해지",
+      failed: "실패",
+      pending: "대기",
+      running: "실행 중",
+      worlds: "월드",
+      requests: "요청",
+      jobs: "작업",
+      sessions: "세션",
+      tasks: "작업",
+      groups: "그룹",
+      receipts: "영수증",
+      points: "포인트",
+      matches: "일치",
+      "matched sessions": "일치 세션",
+    };
+    return `${labels[normalizedLabel] ?? label} ${count}개`;
+  }
+
+  const labels: Record<string, string> = {
+    active: "个活跃",
+    "active providers": "个活跃供应方",
+    total: "个总计",
+    current: "个当前",
+    expired: "个过期",
+    revoked: "个已吊销",
+    failed: "个失败",
+    pending: "个待处理",
+    running: "个运行中",
+    worlds: "个世界",
+    requests: "个申请",
+    jobs: "个任务",
+    sessions: "个会话",
+    tasks: "个任务",
+    groups: "个分组",
+    receipts: "条回执",
+    points: "个点",
+    matches: "个匹配",
+    "matched sessions": "个匹配会话",
+  };
+  return `${count}${labels[normalizedLabel] ?? ` ${label}`}`;
 }
 
 function formatPatternNumber(value: number) {

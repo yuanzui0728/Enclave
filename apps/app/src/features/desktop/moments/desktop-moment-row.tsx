@@ -1,6 +1,11 @@
-import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { type Moment } from "@yinjie/contracts";
-import { Button, TextField, cn } from "@yinjie/ui";
+import { Button, cn } from "@yinjie/ui";
 import {
   Bot,
   Heart,
@@ -10,6 +15,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { MomentCommentComposer } from "../../../components/moment-comment-composer";
 import { MomentMediaGallery } from "../../../components/moment-media-gallery";
 import { formatTimestamp } from "../../../lib/format";
 
@@ -47,6 +53,7 @@ export function DesktopMomentRow({
   onSelectAuthor,
 }: DesktopMomentRowProps) {
   const [showComposer, setShowComposer] = useState(false);
+  const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const commentsPreview = moment.comments.slice(-2);
   const likedByOwner = Boolean(
     ownerId && moment.likes.some((like) => like.authorId === ownerId),
@@ -65,6 +72,17 @@ export function DesktopMomentRow({
     }
   }, [commentDraft, commentLoading]);
 
+  useEffect(() => {
+    if (!showComposer) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      composerInputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showComposer]);
+
   const activeRowClassName =
     "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_10px_24px_rgba(15,23,42,0.05)]";
   const activeActionClassName =
@@ -73,6 +91,7 @@ export function DesktopMomentRow({
 
   return (
     <article
+      id={`desktop-moment-post-${moment.id}`}
       onClick={onOpenDetail}
       className={cn(
         "cursor-pointer rounded-[16px] border px-4 py-4 transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
@@ -282,28 +301,17 @@ export function DesktopMomentRow({
           ) : null}
 
           {showComposer ? (
-            <div
-              className="mt-3 flex items-center gap-2"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <TextField
+            <div className="mt-3" onClick={(event) => event.stopPropagation()}>
+              <MomentCommentComposer
+                inputRef={composerInputRef}
                 value={commentDraft}
-                onChange={(event) => onCommentChange(event.target.value)}
+                onChange={onCommentChange}
+                onSubmit={onCommentSubmit}
+                pending={commentLoading}
                 placeholder="写评论..."
-                className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+                buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
               />
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={!commentDraft.trim() || commentLoading}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onCommentSubmit();
-                }}
-                className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-              >
-                {commentLoading ? "发送中..." : "发送"}
-              </Button>
             </div>
           ) : null}
         </div>

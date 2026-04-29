@@ -25,7 +25,7 @@ public class YinjieRuntimePlugin: CAPPlugin, CAPBridgedPlugin {
             nonEmptyString(info["YinjieEnvironment"] as? String) ??
             "production"
         let publicAppName =
-            nonEmptyString(info["YinjiePublicAppName"] as? String) ??
+            nonEmptyString(Bundle.main.object(forInfoDictionaryKey: "YinjiePublicAppName") as? String) ??
             nonEmptyString(bundledConfig["publicAppName"] as? String) ??
             (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ??
             (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ??
@@ -35,7 +35,8 @@ public class YinjieRuntimePlugin: CAPPlugin, CAPBridgedPlugin {
             "appPlatform": "ios",
             "environment": environment,
             "publicAppName": publicAppName,
-            "applicationId": Bundle.main.bundleIdentifier ?? "com.yinjie.ios"
+            "applicationId": Bundle.main.bundleIdentifier ?? "com.yinjie.ios",
+            "preferredLocales": preferredLocales()
         ]
 
         if let apiBaseUrl {
@@ -76,5 +77,12 @@ public class YinjieRuntimePlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         return value
+    }
+
+    private func preferredLocales() -> [String] {
+        return Locale.preferredLanguages.compactMap { value in
+            let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return normalized.isEmpty ? nil : normalized
+        }
     }
 }

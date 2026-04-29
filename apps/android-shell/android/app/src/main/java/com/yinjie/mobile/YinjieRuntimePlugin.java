@@ -3,9 +3,13 @@ package com.yinjie.mobile;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.pm.PackageInfoCompat;
+import androidx.core.os.LocaleListCompat;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -20,9 +24,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 @CapacitorPlugin(name = "YinjieRuntime")
 public class YinjieRuntimePlugin extends Plugin {
+    private static final String DEFAULT_LOCALE = "zh-CN";
+    private static final String LOCALE_SOURCE_APP = "app";
+    private static final String LOCALE_SOURCE_SYSTEM = "system";
+    private static final String LOCALE_SOURCE_DEFAULT = "default";
+
     @PluginMethod
     public void getConfig(PluginCall call) {
         try {
@@ -79,6 +89,102 @@ public class YinjieRuntimePlugin extends Plugin {
         } catch (PackageManager.NameNotFoundException exception) {
             call.reject("failed to read android runtime metadata", exception);
         }
+    }
+
+    @PluginMethod
+    public void getLocale(PluginCall call) {
+        call.resolve(readLocalePayload());
+    }
+
+    @PluginMethod
+    public void setLocale(PluginCall call) {
+        String locale = resolveSupportedLocale(call.getString("locale"));
+        if (locale == null) {
+            call.reject("unsupported locale");
+            return;
+        }
+
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(locale));
+
+        JSObject result = new JSObject();
+        result.put("locale", locale);
+        result.put("source", LOCALE_SOURCE_APP);
+        call.resolve(result);
+    }
+
+    private JSObject readLocalePayload() {
+        LocaleListCompat applicationLocales = AppCompatDelegate.getApplicationLocales();
+        if (!applicationLocales.isEmpty()) {
+            String locale = resolveSupportedLocale(applicationLocales.get(0));
+            if (locale != null) {
+                return buildLocalePayload(locale, LOCALE_SOURCE_APP);
+            }
+        }
+
+        String systemLocale = resolveSupportedLocale(readSystemLocale());
+        if (systemLocale != null) {
+            return buildLocalePayload(systemLocale, LOCALE_SOURCE_SYSTEM);
+        }
+
+        return buildLocalePayload(DEFAULT_LOCALE, LOCALE_SOURCE_DEFAULT);
+    }
+
+    private JSObject buildLocalePayload(String locale, String source) {
+        JSObject result = new JSObject();
+        result.put("locale", locale);
+        result.put("source", source);
+        return result;
+    }
+
+    private Locale readSystemLocale() {
+        Configuration configuration = getContext().getResources().getConfiguration();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !configuration.getLocales().isEmpty()) {
+            return configuration.getLocales().get(0);
+        }
+
+        return configuration.locale;
+    }
+
+    private String resolveSupportedLocale(Locale locale) {
+        if (locale == null) {
+            return null;
+        }
+
+        return resolveSupportedLocale(locale.toLanguageTag());
+    }
+
+    private String resolveSupportedLocale(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim().replace('_', '-').toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) {
+            return null;
+        }
+
+        if (
+            normalized.equals("zh") ||
+            normalized.equals("zh-cn") ||
+            normalized.equals("zh-hans") ||
+            normalized.startsWith("zh-hans-")
+        ) {
+            return "zh-CN";
+        }
+
+        if (normalized.equals("en") || normalized.startsWith("en-")) {
+            return "en-US";
+        }
+
+        if (normalized.equals("ja") || normalized.startsWith("ja-")) {
+            return "ja-JP";
+        }
+
+        if (normalized.equals("ko") || normalized.startsWith("ko-")) {
+            return "ko-KR";
+        }
+
+        return null;
     }
 
     private JSObject readBundledRuntimeConfig() {

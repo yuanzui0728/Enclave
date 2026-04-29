@@ -7,6 +7,10 @@ import type {
   WorldLifecycleJobSummary,
 } from "@yinjie/contracts";
 import {
+  compareByLocale,
+  formatDateTime as formatLocaleDateTime,
+} from "@yinjie/i18n";
+import {
   CloudAdminErrorBlock,
   showCloudAdminErrorNotice,
 } from "../components/cloud-admin-error-block";
@@ -63,7 +67,10 @@ function formatDateTime(value?: string | null) {
     return "Not available";
   }
 
-  return new Date(value).toLocaleString();
+  return formatLocaleDateTime(new Date(value), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function formatLeaseOwner(value?: string | null) {
@@ -283,7 +290,7 @@ export function JobsPage() {
         }
         const leftLabel = providerLabelByKey.get(left) ?? left;
         const rightLabel = providerLabelByKey.get(right) ?? right;
-        return leftLabel.localeCompare(rightLabel);
+        return compareByLocale(leftLabel, rightLabel);
       })
       .map((key) => ({
         key,

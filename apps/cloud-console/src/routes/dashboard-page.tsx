@@ -9,6 +9,10 @@ import type {
   WorldLifecycleJobSummary,
 } from "@yinjie/contracts";
 import {
+  compareByLocale,
+  formatDateTime as formatLocaleDateTime,
+} from "@yinjie/i18n";
+import {
   CloudAdminErrorBlock,
   showCloudAdminErrorNotice,
 } from "../components/cloud-admin-error-block";
@@ -75,7 +79,10 @@ function formatDateTime(value?: string | null) {
     return "Not available";
   }
 
-  return new Date(value).toLocaleString();
+  return formatLocaleDateTime(new Date(value), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 function getAttentionTone(severity: CloudWorldAttentionItem["severity"]) {
@@ -347,7 +354,10 @@ export function DashboardPage() {
     }
 
     return [...summaryByProvider.values()]
-      .sort((left, right) => right.worlds - left.worlds || left.label.localeCompare(right.label))
+      .sort(
+        (left, right) =>
+          right.worlds - left.worlds || compareByLocale(left.label, right.label),
+      )
       .slice(0, 4);
   }, [fleetItems, providerLabelByKey]);
   const fleetMetaByWorldId = useMemo(
