@@ -181,6 +181,27 @@ import type {
   CustomStickerRecord,
   StickerCatalogResponse,
 } from "./stickers";
+import type {
+  BanCloudUserRequest,
+  CheckoutRequest,
+  CheckoutResponse,
+  CloudConfigEntry,
+  CloudUserDetail,
+  CloudUserListQuery,
+  CloudUserListResponse,
+  GrantSubscriptionRequest,
+  InviteRedemptionListQuery,
+  InviteRedemptionListResponse,
+  InviteSummaryResponse,
+  RedeemInviteRequest,
+  RedeemInviteResponse,
+  RejectInviteRedemptionRequest,
+  SubscriptionPlanSummary,
+  SubscriptionRecordSummary,
+  SubscriptionStateResponse,
+  UpsertCloudConfigRequest,
+  UpsertSubscriptionPlanRequest,
+} from "./subscription";
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://localhost:3000";
@@ -3078,6 +3099,246 @@ export function triggerSceneFriendRequest(
       method: "POST",
       body: JSON.stringify(payload),
     },
+    baseUrl,
+  );
+}
+
+export function getMyCloudSubscription(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<SubscriptionStateResponse>(
+    "/cloud/me/subscription",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function getMyCloudInviteSummary(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<InviteSummaryResponse>(
+    "/cloud/me/invite/summary",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
+export function redeemMyCloudInvite(
+  payload: RedeemInviteRequest,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<RedeemInviteResponse>(
+    "/cloud/me/invite/redeem",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+export function postMyCloudCheckout(
+  payload: CheckoutRequest,
+  accessToken: string,
+  baseUrl?: string,
+) {
+  return requestCloudApi<CheckoutResponse>(
+    "/cloud/me/checkout",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+function buildCloudAdminHeaders(init?: RequestInit): RequestInit {
+  return {
+    ...init,
+    headers: init?.headers ?? new Headers(),
+  };
+}
+
+function buildCloudAdminQueryString(query?: Record<string, unknown>) {
+  if (!query) return "";
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === null || value === "") continue;
+    params.set(key, String(value));
+  }
+  const result = params.toString();
+  return result ? `?${result}` : "";
+}
+
+export function listCloudUsersAdmin(
+  query: CloudUserListQuery | undefined,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<CloudUserListResponse>(
+    `/cloud/admin/users${buildCloudAdminQueryString(query as Record<string, unknown>)}`,
+    buildCloudAdminHeaders(init),
+    baseUrl,
+  );
+}
+
+export function getCloudUserAdmin(
+  id: string,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<CloudUserDetail>(
+    `/cloud/admin/users/${encodeURIComponent(id)}`,
+    buildCloudAdminHeaders(init),
+    baseUrl,
+  );
+}
+
+export function grantCloudUserSubscriptionAdmin(
+  id: string,
+  payload: GrantSubscriptionRequest,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<SubscriptionRecordSummary>(
+    `/cloud/admin/users/${encodeURIComponent(id)}/subscriptions`,
+    buildCloudAdminHeaders({
+      ...init,
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        ...(init?.headers as Record<string, string> | undefined),
+        "Content-Type": "application/json",
+      },
+    }),
+    baseUrl,
+  );
+}
+
+export function banCloudUserAdmin(
+  id: string,
+  payload: BanCloudUserRequest,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<{ success: true }>(
+    `/cloud/admin/users/${encodeURIComponent(id)}/ban`,
+    buildCloudAdminHeaders({
+      ...init,
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        ...(init?.headers as Record<string, string> | undefined),
+        "Content-Type": "application/json",
+      },
+    }),
+    baseUrl,
+  );
+}
+
+export function unbanCloudUserAdmin(
+  id: string,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<{ success: true }>(
+    `/cloud/admin/users/${encodeURIComponent(id)}/unban`,
+    buildCloudAdminHeaders({
+      ...init,
+      method: "POST",
+    }),
+    baseUrl,
+  );
+}
+
+export function listSubscriptionPlansAdmin(
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<SubscriptionPlanSummary[]>(
+    "/cloud/admin/subscription-plans",
+    buildCloudAdminHeaders(init),
+    baseUrl,
+  );
+}
+
+export function upsertSubscriptionPlanAdmin(
+  payload: UpsertSubscriptionPlanRequest,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<SubscriptionPlanSummary>(
+    "/cloud/admin/subscription-plans",
+    buildCloudAdminHeaders({
+      ...init,
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        ...(init?.headers as Record<string, string> | undefined),
+        "Content-Type": "application/json",
+      },
+    }),
+    baseUrl,
+  );
+}
+
+export function listCloudConfigsAdmin(
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<CloudConfigEntry[]>(
+    "/cloud/admin/configs",
+    buildCloudAdminHeaders(init),
+    baseUrl,
+  );
+}
+
+export function upsertCloudConfigAdmin(
+  payload: UpsertCloudConfigRequest,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<CloudConfigEntry>(
+    "/cloud/admin/configs",
+    buildCloudAdminHeaders({
+      ...init,
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        ...(init?.headers as Record<string, string> | undefined),
+        "Content-Type": "application/json",
+      },
+    }),
+    baseUrl,
+  );
+}
+
+export function listInviteRedemptionsAdmin(
+  query: InviteRedemptionListQuery | undefined,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<InviteRedemptionListResponse>(
+    `/cloud/admin/invites/redemptions${buildCloudAdminQueryString(query as Record<string, unknown>)}`,
+    buildCloudAdminHeaders(init),
+    baseUrl,
+  );
+}
+
+export function rejectInviteRedemptionAdmin(
+  id: string,
+  payload: RejectInviteRedemptionRequest,
+  init: RequestInit | undefined,
+  baseUrl?: string,
+) {
+  return requestCloudApi<{ success: true }>(
+    `/cloud/admin/invites/redemptions/${encodeURIComponent(id)}/reject`,
+    buildCloudAdminHeaders({
+      ...init,
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        ...(init?.headers as Record<string, string> | undefined),
+        "Content-Type": "application/json",
+      },
+    }),
     baseUrl,
   );
 }

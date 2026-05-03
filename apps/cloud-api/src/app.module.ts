@@ -9,20 +9,14 @@ import { AdminAuthController } from "./auth/admin-auth.controller";
 import { AdminAuthService } from "./auth/admin-auth.service";
 import { AdminGuard } from "./auth/admin.guard";
 import { CloudAuthController } from "./auth/cloud-auth.controller";
-import { CloudClientAuthGuard } from "./auth/cloud-client-auth.guard";
-import { MockSmsProviderService } from "./auth/mock-sms-provider.service";
-import { PhoneAuthService } from "./auth/phone-auth.service";
+import { CloudAuthCoreModule } from "./auth/cloud-auth-core.module";
 import { CloudController } from "./cloud/cloud.controller";
 import { CloudService } from "./cloud/cloud.service";
+import { CloudConfigModule } from "./cloud-config/cloud-config.module";
 import { CloudRuntimeConfigValidator } from "./config/cloud-runtime-config.validator";
 import { resolveCloudAuthTokenTtl, resolveCloudJwtSecret } from "./config/cloud-runtime-config";
 import { buildCloudTypeOrmOptions, cloudEntities } from "./database/cloud-database.config";
-import { CloudInstanceEntity } from "./entities/cloud-instance.entity";
-import { CloudWorldEntity } from "./entities/cloud-world.entity";
-import { CloudWorldRequestEntity } from "./entities/cloud-world-request.entity";
-import { PhoneVerificationSessionEntity } from "./entities/phone-verification-session.entity";
-import { WorldAccessSessionEntity } from "./entities/world-access-session.entity";
-import { WorldLifecycleJobEntity } from "./entities/world-lifecycle-job.entity";
+import { InviteModule } from "./invite/invite.module";
 import { MockComputeProviderService } from "./orchestration/mock-compute-provider.service";
 import { WorldLifecycleWorkerService } from "./orchestration/world-lifecycle-worker.service";
 import { ComputeProviderRegistryService } from "./providers/compute-provider-registry.service";
@@ -30,6 +24,8 @@ import { ManualDockerComputeProviderService } from "./providers/manual-docker-co
 import { ManualDockerRemoteExecutorService } from "./providers/manual-docker-remote-executor.service";
 import { WorldRuntimeController } from "./runtime-callbacks/world-runtime.controller";
 import { WorldRuntimeService } from "./runtime-callbacks/world-runtime.service";
+import { SubscriptionModule } from "./subscription/subscription.module";
+import { UsersModule } from "./users/users.module";
 import { WorldAccessController } from "./world-access/world-access.controller";
 import { WorldAccessService } from "./world-access/world-access.service";
 import { WaitingSessionSyncService } from "./world-access/waiting-session-sync.service";
@@ -52,6 +48,11 @@ import { WaitingSessionSyncService } from "./world-access/waiting-session-sync.s
       useFactory: (configService: ConfigService) => buildCloudTypeOrmOptions(configService),
     }),
     TypeOrmModule.forFeature([...cloudEntities]),
+    CloudAuthCoreModule,
+    CloudConfigModule,
+    SubscriptionModule,
+    InviteModule,
+    UsersModule,
   ],
   controllers: [
     AdminAuthController,
@@ -63,11 +64,8 @@ import { WaitingSessionSyncService } from "./world-access/waiting-session-sync.s
   ],
   providers: [
     AdminAuthService,
-    PhoneAuthService,
-    MockSmsProviderService,
     CloudAlertNotifierService,
     CloudService,
-    CloudClientAuthGuard,
     AdminGuard,
     WorldAccessService,
     WaitingSessionSyncService,

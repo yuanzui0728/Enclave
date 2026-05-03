@@ -58,7 +58,15 @@ export class PhoneAuthService {
     };
   }
 
-  async verifyCode(phone: string, code: string): Promise<VerifyPhoneCodeResponse> {
+  async verifyCode(
+    phone: string,
+    code: string,
+    extras?: {
+      inviteCode?: string | null;
+      deviceFingerprint?: string | null;
+      ip?: string | null;
+    },
+  ): Promise<VerifyPhoneCodeResponse> {
     const normalizedPhone = this.normalizePhone(phone);
     const normalizedCode = code.trim();
 
@@ -91,6 +99,14 @@ export class PhoneAuthService {
     session.verifiedAt = new Date();
     await this.sessionRepo.save(session);
 
+    if (this.userPostVerifyHook) {
+      try {
+        await this.userPostVerifyHook(normalizedPhone, extras ?? {});
+      } catch (error) {
+        // ensureUser 不应阻塞登录，记录日志由调用方处理
+      }
+    }
+
     const accessToken = await this.jwtService.signAsync(
       {
         sid: session.id,
@@ -111,6 +127,19 @@ export class PhoneAuthService {
       phone: normalizedPhone,
       expiresAt,
     };
+  }
+
+  private userPostVerifyHook:
+    | ((phone: string, extras: { inviteCode?: string | null; deviceFingerprint?: string | null; ip?: string | null }) => Promise<void>)
+    | null = null;
+
+  registerPostVerifyHook(
+    hook: (
+      phone: string,
+      extras: { inviteCode?: string | null; deviceFingerprint?: string | null; ip?: string | null },
+    ) => Promise<void>,
+  ) {
+    this.userPostVerifyHook = hook;
   }
 
   normalizePhone(phone: string) {

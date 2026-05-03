@@ -34,6 +34,7 @@ export * from "./social";
 export * from "./shake-discovery";
 export * from "./speech";
 export * from "./stickers";
+export * from "./subscription";
 export * from "./system";
 export * from "./token-usage";
 export * from "./wechat-sync";

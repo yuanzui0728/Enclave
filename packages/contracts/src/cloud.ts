@@ -102,6 +102,8 @@ export interface SendPhoneCodeResponse {
 export interface VerifyPhoneCodeRequest {
   phone: string;
   code: string;
+  inviteCode?: string;
+  deviceFingerprint?: string;
 }
 
 export interface VerifyPhoneCodeResponse {

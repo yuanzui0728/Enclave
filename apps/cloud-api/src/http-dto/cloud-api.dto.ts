@@ -144,6 +144,246 @@ export class VerifyCodeDto {
   @Transform(trimString)
   @Matches(CODE_PATTERN, { message: "code 格式不正确。" })
   code: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "inviteCode 必须是字符串。" })
+  @MinLength(1, { message: "inviteCode 不能为空。" })
+  @MaxLength(32, { message: "inviteCode 不能超过 32 个字符。" })
+  inviteCode?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "deviceFingerprint 必须是字符串。" })
+  @MinLength(1, { message: "deviceFingerprint 不能为空。" })
+  @MaxLength(128, { message: "deviceFingerprint 不能超过 128 个字符。" })
+  deviceFingerprint?: string;
+}
+
+export class RedeemInviteDto {
+  @Transform(trimString)
+  @IsString({ message: "code 必须是字符串。" })
+  @MinLength(1, { message: "code 不能为空。" })
+  @MaxLength(32, { message: "code 不能超过 32 个字符。" })
+  code: string;
+}
+
+export class CheckoutDto {
+  @Transform(trimString)
+  @IsString({ message: "planCode 必须是字符串。" })
+  @MinLength(1, { message: "planCode 不能为空。" })
+  @MaxLength(64, { message: "planCode 不能超过 64 个字符。" })
+  planCode: string;
+}
+
+const SUBSCRIPTION_STATUSES = ["active", "expired", "none"] as const;
+const CLOUD_USER_STATUSES = ["active", "banned", "archived"] as const;
+const INVITE_REDEMPTION_STATUSES = ["rewarded", "rejected"] as const;
+const SUBSCRIPTION_SOURCES = [
+  "trial",
+  "purchase",
+  "invite_reward",
+  "admin_grant",
+] as const;
+
+export class ListCloudUsersDto {
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "query 必须是字符串。" })
+  @MaxLength(255, { message: "query 不能超过 255 个字符。" })
+  query?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(SUBSCRIPTION_STATUSES, { message: "subscriptionStatus 不合法。" })
+  subscriptionStatus?: (typeof SUBSCRIPTION_STATUSES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(CLOUD_USER_STATUSES, { message: "status 不合法。" })
+  status?: (typeof CLOUD_USER_STATUSES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "inviterPhone 必须是字符串。" })
+  @MaxLength(32, { message: "inviterPhone 不能超过 32 个字符。" })
+  inviterPhone?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsISO8601({ strict: true }, { message: "registeredFrom 必须是 ISO8601 时间。" })
+  registeredFrom?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsISO8601({ strict: true }, { message: "registeredTo 必须是 ISO8601 时间。" })
+  registeredTo?: string;
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "page 必须是整数。" })
+  @Min(1, { message: "page 最小为 1。" })
+  page?: number;
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "pageSize 必须是整数。" })
+  @Min(1, { message: "pageSize 最小为 1。" })
+  @Max(100, { message: "pageSize 最大为 100。" })
+  pageSize?: number;
+}
+
+export class GrantSubscriptionDto {
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "planCode 必须是字符串。" })
+  @MaxLength(64, { message: "planCode 不能超过 64 个字符。" })
+  planCode?: string;
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "durationDays 必须是整数。" })
+  @Min(1, { message: "durationDays 至少为 1。" })
+  @Max(3650, { message: "durationDays 最多为 3650。" })
+  durationDays?: number;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(SUBSCRIPTION_SOURCES, { message: "source 不合法。" })
+  source?: (typeof SUBSCRIPTION_SOURCES)[number];
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "note 必须是字符串。" })
+  @MaxLength(500, { message: "note 不能超过 500 个字符。" })
+  note?: string;
+}
+
+export class BanCloudUserDto {
+  @Transform(trimString)
+  @IsString({ message: "reason 必须是字符串。" })
+  @MinLength(1, { message: "reason 不能为空。" })
+  @MaxLength(500, { message: "reason 不能超过 500 个字符。" })
+  reason: string;
+}
+
+export class UpsertSubscriptionPlanDto {
+  @Transform(trimString)
+  @IsOptional()
+  @IsUUID("4", { message: "id 必须是合法 UUID。" })
+  id?: string;
+
+  @Transform(trimString)
+  @IsString({ message: "code 必须是字符串。" })
+  @MinLength(1, { message: "code 不能为空。" })
+  @MaxLength(32, { message: "code 不能超过 32 个字符。" })
+  code: string;
+
+  @Transform(trimString)
+  @IsString({ message: "name 必须是字符串。" })
+  @MinLength(1, { message: "name 不能为空。" })
+  @MaxLength(64, { message: "name 不能超过 64 个字符。" })
+  name: string;
+
+  @Transform(parseInteger)
+  @IsInt({ message: "durationDays 必须是整数。" })
+  @Min(1, { message: "durationDays 至少为 1。" })
+  @Max(3650, { message: "durationDays 最多为 3650。" })
+  durationDays: number;
+
+  @Transform(parseInteger)
+  @IsInt({ message: "priceCents 必须是整数。" })
+  @Min(0, { message: "priceCents 不能为负数。" })
+  priceCents: number;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "currency 必须是字符串。" })
+  @MaxLength(8, { message: "currency 不能超过 8 个字符。" })
+  currency?: string;
+
+  @Transform(parseBoolean)
+  @IsOptional()
+  @IsBoolean({ message: "isActive 必须是布尔值。" })
+  isActive?: boolean;
+
+  @Transform(parseBoolean)
+  @IsOptional()
+  @IsBoolean({ message: "isTrial 必须是布尔值。" })
+  isTrial?: boolean;
+
+  @Transform(parseBoolean)
+  @IsOptional()
+  @IsBoolean({ message: "isPubliclyPurchasable 必须是布尔值。" })
+  isPubliclyPurchasable?: boolean;
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "sortOrder 必须是整数。" })
+  sortOrder?: number;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "description 必须是字符串。" })
+  @MaxLength(1000, { message: "description 不能超过 1000 个字符。" })
+  description?: string | null;
+}
+
+export class UpsertCloudConfigDto {
+  @Transform(trimString)
+  @IsString({ message: "key 必须是字符串。" })
+  @MinLength(1, { message: "key 不能为空。" })
+  @MaxLength(64, { message: "key 不能超过 64 个字符。" })
+  key: string;
+
+  @IsOptional()
+  value: unknown;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "description 必须是字符串。" })
+  @MaxLength(500, { message: "description 不能超过 500 个字符。" })
+  description?: string | null;
+}
+
+export class ListInviteRedemptionsDto {
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "query 必须是字符串。" })
+  @MaxLength(255, { message: "query 不能超过 255 个字符。" })
+  query?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsIn(INVITE_REDEMPTION_STATUSES, { message: "status 不合法。" })
+  status?: (typeof INVITE_REDEMPTION_STATUSES)[number];
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "page 必须是整数。" })
+  @Min(1, { message: "page 最小为 1。" })
+  page?: number;
+
+  @Transform(parseInteger)
+  @IsOptional()
+  @IsInt({ message: "pageSize 必须是整数。" })
+  @Min(1, { message: "pageSize 最小为 1。" })
+  @Max(100, { message: "pageSize 最大为 100。" })
+  pageSize?: number;
+}
+
+export class RejectInviteRedemptionDto {
+  @Transform(trimString)
+  @IsString({ message: "reason 必须是字符串。" })
+  @MinLength(1, { message: "reason 不能为空。" })
+  @MaxLength(500, { message: "reason 不能超过 500 个字符。" })
+  reason: string;
+}
+
+export class SubscriptionLookupDto {
+  @Transform(trimString)
+  @Matches(PHONE_PATTERN, { message: "phone 格式不正确。" })
+  phone: string;
 }
 
 export class RefreshAdminSessionDto {

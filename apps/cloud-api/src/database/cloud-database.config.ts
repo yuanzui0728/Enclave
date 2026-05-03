@@ -1,10 +1,16 @@
 import type { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import type { DataSourceOptions } from "typeorm";
 import { CloudAdminSessionEntity } from "../entities/cloud-admin-session.entity";
+import { CloudConfigEntity } from "../entities/cloud-config.entity";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
+import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
+import { InviteCodeEntity } from "../entities/invite-code.entity";
+import { InviteRedemptionEntity } from "../entities/invite-redemption.entity";
 import { PhoneVerificationSessionEntity } from "../entities/phone-verification-session.entity";
+import { SubscriptionPlanEntity } from "../entities/subscription-plan.entity";
+import { UserSubscriptionEntity } from "../entities/user-subscription.entity";
 import { WaitingSessionSyncTaskEntity } from "../entities/waiting-session-sync-task.entity";
 import { WorldAccessSessionEntity } from "../entities/world-access-session.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
@@ -15,6 +21,9 @@ import { AddCloudAdminSessionRevocationMetadata1776647400000 } from "./migration
 import { CreateWaitingSessionSyncTaskTable1776648600000 } from "./migrations/1776648600000-create-waiting-session-sync-task-table";
 import { AddWaitingSessionSyncTaskStatusColumns1776649800000 } from "./migrations/1776649800000-add-waiting-session-sync-task-status-columns";
 import { AddActiveWorldLifecycleJobUniqueIndex1776650400000 } from "./migrations/1776650400000-add-active-world-lifecycle-job-unique-index";
+import { CreateCloudUserAndSubscriptionTables1776651000000 } from "./migrations/1776651000000-create-cloud-user-and-subscription-tables";
+import { CreateInviteAndConfigTables1776651600000 } from "./migrations/1776651600000-create-invite-and-config-tables";
+import { SeedDefaultSubscriptionPlansAndConfigs1776652200000 } from "./migrations/1776652200000-seed-default-subscription-plans-and-configs";
 import { resolveCloudDatabasePath } from "../config/cloud-runtime-config";
 
 type ConfigReader = {
@@ -30,6 +39,12 @@ export const cloudEntities = [
   WorldAccessSessionEntity,
   WaitingSessionSyncTaskEntity,
   WorldLifecycleJobEntity,
+  CloudUserEntity,
+  SubscriptionPlanEntity,
+  UserSubscriptionEntity,
+  InviteCodeEntity,
+  InviteRedemptionEntity,
+  CloudConfigEntity,
 ] as const;
 
 export const cloudMigrations = [
@@ -40,6 +55,9 @@ export const cloudMigrations = [
   CreateWaitingSessionSyncTaskTable1776648600000,
   AddWaitingSessionSyncTaskStatusColumns1776649800000,
   AddActiveWorldLifecycleJobUniqueIndex1776650400000,
+  CreateCloudUserAndSubscriptionTables1776651000000,
+  CreateInviteAndConfigTables1776651600000,
+  SeedDefaultSubscriptionPlansAndConfigs1776652200000,
 ];
 
 export function buildCloudDataSourceOptions(config: ConfigReader): DataSourceOptions {
