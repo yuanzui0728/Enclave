@@ -31,6 +31,11 @@ const PendingReviewsPage = lazy(async () => {
   return { default: mod.PendingReviewsPage };
 });
 
+const RecentChangesPage = lazy(async () => {
+  const mod = await import("./routes/recent-changes-page");
+  return { default: mod.RecentChangesPage };
+});
+
 const rootRoute = createRootRoute({ component: RootLayout });
 
 const indexRoute = createRoute({
@@ -63,12 +68,19 @@ const pendingReviewsRoute = createRoute({
   component: PendingReviewsPage,
 });
 
+const recentChangesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/recent-changes",
+  component: RecentChangesPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
   characterRoute,
   pendingReviewsRoute,
+  recentChangesRoute,
 ]);
 
 export const router = createRouter({ routeTree });

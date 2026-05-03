@@ -17,7 +17,9 @@ import {
   wikiApi,
   type WikiContentSnapshot,
   type WikiPageView,
+  type WikiRevisionSummary,
 } from "../lib/wiki-api";
+import { SnapshotDiff } from "../components/snapshot-diff";
 
 type Tab = "read" | "edit" | "history";
 
@@ -59,7 +61,13 @@ export function CharacterPage() {
           }}
         />
       )}
-      {pageQ.data && tab === "history" && <HistoryView characterId={characterId} />}
+      {pageQ.data && tab === "history" && (
+        <HistoryView
+          characterId={characterId}
+          currentRevisionId={pageQ.data.page.currentRevisionId}
+          onChanged={() => void pageQ.refetch()}
+        />
+      )}
     </div>
   );
 }
@@ -349,52 +357,186 @@ function FormRow({
   );
 }
 
-function HistoryView({ characterId }: { characterId: string }) {
+function HistoryView({
+  characterId,
+  currentRevisionId,
+  onChanged,
+}: {
+  characterId: string;
+  currentRevisionId: string | null;
+  onChanged: () => void;
+}) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const historyQ = useQuery({
     queryKey: ["wiki", "history", characterId],
-    queryFn: () => wikiApi.getHistory(characterId),
+    queryFn: () => wikiApi.getHistory(characterId, 100),
   });
+
+  const revertMut = useMutation({
+    mutationFn: (input: { toRevisionId: string; reason: string }) =>
+      wikiApi.revert(characterId, input.toRevisionId, input.reason),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["wiki", "history", characterId] });
+      void qc.invalidateQueries({ queryKey: ["wiki", "page", characterId] });
+      onChanged();
+    },
+  });
+
+  const revisions = historyQ.data ?? [];
+  const previousById = useMemo(() => {
+    const sorted = [...revisions].sort((a, b) => a.version - b.version);
+    const map = new Map<string, WikiRevisionSummary | null>();
+    let prev: WikiRevisionSummary | null = null;
+    for (const r of sorted) {
+      map.set(r.id, prev);
+      if (r.status === "approved") prev = r;
+    }
+    return map;
+  }, [revisions]);
+
   if (historyQ.isLoading) return <LoadingBlock />;
   if (historyQ.isError)
     return <ErrorBlock message={(historyQ.error as Error).message} />;
+
+  const canRevert = hasRole(user, "patroller");
   return (
-    <Card className="p-4">
-      {historyQ.data && historyQ.data.length === 0 && (
-        <p className="text-sm text-[var(--text-muted)]">还没有任何编辑记录。</p>
+    <div className="space-y-3">
+      {revisions.length === 0 && (
+        <Card className="p-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            还没有任何编辑记录。
+          </p>
+        </Card>
       )}
-      <ul className="divide-y divide-[var(--border-subtle)]">
-        {historyQ.data?.map((rev) => (
-          <li key={rev.id} className="py-3 flex items-start gap-3">
-            <div className="w-12 text-sm font-mono text-[var(--text-muted)]">
-              v{rev.version}
+      {revisions.map((rev) => (
+        <RevisionCard
+          key={rev.id}
+          rev={rev}
+          previous={previousById.get(rev.id) ?? null}
+          isCurrent={rev.id === currentRevisionId}
+          canRevert={canRevert}
+          onRevert={(reason) =>
+            revertMut.mutate({ toRevisionId: rev.id, reason })
+          }
+          reverting={revertMut.isPending}
+        />
+      ))}
+      {revertMut.isError && (
+        <ErrorBlock message={(revertMut.error as Error).message} />
+      )}
+    </div>
+  );
+}
+
+function RevisionCard({
+  rev,
+  previous,
+  isCurrent,
+  canRevert,
+  onRevert,
+  reverting,
+}: {
+  rev: WikiRevisionSummary;
+  previous: WikiRevisionSummary | null;
+  isCurrent: boolean;
+  canRevert: boolean;
+  onRevert: (reason: string) => void;
+  reverting: boolean;
+}) {
+  const [showDiff, setShowDiff] = useState(false);
+  const [showRevert, setShowRevert] = useState(false);
+  const [reason, setReason] = useState("");
+  return (
+    <Card className="p-3 flex items-start gap-3 text-sm">
+      <div className="w-12 font-mono text-[var(--text-muted)] pt-0.5">
+        v{rev.version}
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <strong>{rev.editorUserId}</strong>
+          <span className="text-xs text-[var(--text-muted)]">
+            {rev.editorRoleAtTime}
+          </span>
+          <span className="text-xs text-[var(--text-muted)]">
+            {new Date(rev.createdAt).toLocaleString()}
+          </span>
+          <StatusPill>{rev.status}</StatusPill>
+          {rev.changeSource !== "edit" && (
+            <StatusPill>{rev.changeSource}</StatusPill>
+          )}
+          {isCurrent && <StatusPill>当前版本</StatusPill>}
+          {!rev.isPatrolled && rev.status === "approved" && (
+            <span className="text-xs px-2 py-0.5 rounded bg-[rgba(254,243,199,0.6)] text-[#92400e]">
+              待巡查
+            </span>
+          )}
+        </div>
+        {rev.editSummary && <div className="mt-1">{rev.editSummary}</div>}
+        <div className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-3">
+          {rev.diffFromParent?.changed && (
+            <span>字段：{rev.diffFromParent.changed.join(", ")}</span>
+          )}
+          <button
+            type="button"
+            className="underline hover:text-[var(--text-primary)]"
+            onClick={() => setShowDiff((v) => !v)}
+          >
+            {showDiff ? "收起对比" : "查看对比"}
+          </button>
+          {canRevert && !isCurrent && rev.status === "approved" && (
+            <button
+              type="button"
+              className="underline hover:text-[var(--text-primary)]"
+              onClick={() => setShowRevert((v) => !v)}
+            >
+              回滚到此版本
+            </button>
+          )}
+        </div>
+        {showDiff && (
+          <div className="mt-3 rounded border border-[var(--border-subtle)] p-3">
+            <SnapshotDiff
+              before={previous?.contentSnapshot ?? null}
+              after={rev.contentSnapshot}
+              changedFields={rev.diffFromParent?.changed}
+            />
+          </div>
+        )}
+        {showRevert && (
+          <div className="mt-3 rounded border border-[var(--border-subtle)] p-3 space-y-2">
+            <label className="block text-sm">
+              <span className="block mb-1">回滚原因（必填）</span>
+              <TextField
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="例如：v3 涉及破坏性内容"
+              />
+            </label>
+            <div className="flex gap-2">
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={reverting || reason.trim().length === 0}
+                onClick={() => {
+                  onRevert(reason.trim());
+                  setShowRevert(false);
+                  setReason("");
+                }}
+              >
+                {reverting ? "回滚中..." : "确认回滚"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowRevert(false)}
+              >
+                取消
+              </Button>
             </div>
-            <div className="flex-1">
-              <div className="text-sm">
-                <strong>{rev.editorUserId}</strong>
-                <span className="ml-2 text-xs text-[var(--text-muted)]">
-                  {rev.editorRoleAtTime}
-                </span>
-                <span className="ml-2 text-xs text-[var(--text-muted)]">
-                  {new Date(rev.createdAt).toLocaleString()}
-                </span>
-              </div>
-              {rev.editSummary && (
-                <div className="text-sm mt-1">{rev.editSummary}</div>
-              )}
-              <div className="text-xs text-[var(--text-muted)] mt-1">
-                状态：{rev.status} · 来源：{rev.changeSource}
-                {rev.isPatrolled ? " · 已巡查" : ""}
-                {rev.isMinor ? " · 小修改" : ""}
-              </div>
-              {rev.diffFromParent?.changed && (
-                <div className="text-xs text-[var(--text-muted)] mt-1">
-                  改动字段：{rev.diffFromParent.changed.join(", ")}
-                </div>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+          </div>
+        )}
+      </div>
     </Card>
   );
 }

@@ -206,4 +206,29 @@ export const wikiApi = {
       },
     );
   },
+  patrol(revisionId: string) {
+    return request<{ revisionId: string; isPatrolled: true }>(
+      `/wiki/edits/${encodeURIComponent(revisionId)}/patrol`,
+      { method: "POST" },
+    );
+  },
+  revert(characterId: string, toRevisionId: string, reason: string) {
+    return request<{ revisionId: string; version: number }>(
+      `/wiki/pages/${encodeURIComponent(characterId)}/revert`,
+      {
+        method: "POST",
+        body: JSON.stringify({ toRevisionId, reason }),
+      },
+    );
+  },
+  recentChanges(opts: { limit?: number; onlyUnpatrolled?: boolean } = {}) {
+    const params = new URLSearchParams();
+    if (opts.limit) params.set("limit", String(opts.limit));
+    if (opts.onlyUnpatrolled) params.set("onlyUnpatrolled", "1");
+    const qs = params.toString();
+    return request<WikiRevisionSummary[]>(
+      `/wiki/recent-changes${qs ? `?${qs}` : ""}`,
+      { auth: false },
+    );
+  },
 };

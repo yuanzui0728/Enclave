@@ -17,6 +17,9 @@ export function RootLayout() {
             <Link to="/" className="hover:underline">
               首页
             </Link>
+            <Link to="/recent-changes" className="hover:underline">
+              最近修改
+            </Link>
             {hasRole(user, "patroller") && (
               <Link to="/pending-reviews" className="hover:underline">
                 待审编辑
