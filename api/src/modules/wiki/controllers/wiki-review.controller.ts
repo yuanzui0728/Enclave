@@ -40,4 +40,13 @@ export class WikiReviewController {
   ) {
     return this.review.decide(revisionId, user, body);
   }
+
+  @Post('edits/:revisionId/patrol')
+  @RequireRole('patroller')
+  patrol(
+    @Param('revisionId') revisionId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.review.markPatrolled(revisionId, user);
+  }
 }

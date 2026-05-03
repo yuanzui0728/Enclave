@@ -91,4 +91,26 @@ export class WikiPageService {
     if (!rev) throw new NotFoundException(`版本 ${id} 不存在`);
     return rev;
   }
+
+  async listRecentChanges(input: {
+    limit?: number;
+    onlyUnpatrolled?: boolean;
+  }): Promise<CharacterRevisionEntity[]> {
+    const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
+    const qb = this.revisionRepo
+      .createQueryBuilder('r')
+      .orderBy('r.createdAt', 'DESC')
+      .take(limit);
+    if (input.onlyUnpatrolled) {
+      qb.where('r.status = :status AND r.isPatrolled = :patrolled', {
+        status: 'approved',
+        patrolled: false,
+      });
+    } else {
+      qb.where('r.status IN (:...statuses)', {
+        statuses: ['approved', 'pending', 'reverted'],
+      });
+    }
+    return qb.getMany();
+  }
 }

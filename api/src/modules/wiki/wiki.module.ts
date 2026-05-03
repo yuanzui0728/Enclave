@@ -12,6 +12,7 @@ import { WikiEditService } from './services/wiki-edit.service';
 import { WikiReviewService } from './services/wiki-review.service';
 import { WikiPageController } from './controllers/wiki-page.controller';
 import { WikiReviewController } from './controllers/wiki-review.controller';
+import { WikiRevertController } from './controllers/wiki-revert.controller';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { WikiReviewController } from './controllers/wiki-review.controller';
       UserWikiProfileEntity,
     ]),
   ],
-  controllers: [WikiPageController, WikiReviewController],
+  controllers: [WikiPageController, WikiReviewController, WikiRevertController],
   providers: [WikiPageService, WikiEditService, WikiReviewService, WikiRoleGuard],
   exports: [WikiPageService, WikiEditService, WikiReviewService],
 })

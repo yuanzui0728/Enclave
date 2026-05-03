@@ -17,19 +17,31 @@ import {
 import { WikiEditService } from '../services/wiki-edit.service';
 import { WikiPageService } from '../services/wiki-page.service';
 
-@Controller('wiki/pages')
+@Controller('wiki')
 export class WikiPageController {
   constructor(
     private readonly pages: WikiPageService,
     private readonly edits: WikiEditService,
   ) {}
 
-  @Get(':id')
+  @Get('recent-changes')
+  recentChanges(
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @Query('onlyUnpatrolled') onlyUnpatrolled?: string,
+  ) {
+    return this.pages.listRecentChanges({
+      limit,
+      onlyUnpatrolled:
+        onlyUnpatrolled === '1' || onlyUnpatrolled === 'true',
+    });
+  }
+
+  @Get('pages/:id')
   view(@Param('id') id: string) {
     return this.pages.getPageView(id);
   }
 
-  @Get(':id/history')
+  @Get('pages/:id/history')
   history(
     @Param('id') id: string,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
@@ -37,12 +49,12 @@ export class WikiPageController {
     return this.pages.getHistory(id, limit);
   }
 
-  @Get(':id/revisions/:revisionId')
+  @Get('pages/:id/revisions/:revisionId')
   revision(@Param('revisionId') revisionId: string) {
     return this.pages.getRevisionOrThrow(revisionId);
   }
 
-  @Post(':id/edits')
+  @Post('pages/:id/edits')
   @UseGuards(JwtAuthGuard)
   submit(
     @Param('id') id: string,
