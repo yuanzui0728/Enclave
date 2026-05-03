@@ -27,6 +27,7 @@ import { RealWorldSyncModule } from './modules/real-world-sync/real-world-sync.m
 import { FollowupRuntimeModule } from './modules/followup-runtime/followup-runtime.module';
 import { InferenceModule } from './modules/inference/inference.module';
 import { ReminderRuntimeModule } from './modules/reminder-runtime/reminder-runtime.module';
+import { WikiModule } from './modules/wiki/wiki.module';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -207,6 +208,7 @@ import {
     InferenceModule,
     CloudRuntimeModule,
     SystemModule,
+    WikiModule,
   ],
 })
 export class AppModule {}
