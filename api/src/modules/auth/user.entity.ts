@@ -39,6 +39,15 @@ export class UserEntity {
   @Column({ nullable: true, type: 'text' })
   defaultChatBackgroundPayload: string | null;
 
+  @Column({ default: 'newcomer' })
+  role: string; // 'newcomer' | 'autoconfirmed' | 'patroller' | 'admin'
+
+  @Column({ type: 'datetime', nullable: true })
+  roleGrantedAt?: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  roleGrantedBy?: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }

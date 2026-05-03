@@ -90,6 +90,7 @@ import { InferenceProviderAccountEntity } from './modules/inference/inference-pr
 import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-model-catalog-entry.entity';
 import { SelfAgentHeartbeatRunEntity } from './modules/self-agent/self-agent-heartbeat-run.entity';
 import { SelfAgentRunEntity } from './modules/self-agent/self-agent-run.entity';
+import { UserWikiProfileEntity } from './modules/wiki/entities/user-wiki-profile.entity';
 import {
   prepareDatabasePath,
   resolveApiPath,
@@ -171,6 +172,7 @@ import {
           InferenceModelCatalogEntryEntity,
           SelfAgentHeartbeatRunEntity,
           SelfAgentRunEntity,
+          UserWikiProfileEntity,
         ],
         synchronize: true,
       }),
