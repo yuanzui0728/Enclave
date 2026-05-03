@@ -91,6 +91,9 @@ import { InferenceModelCatalogEntryEntity } from './modules/inference/inference-
 import { SelfAgentHeartbeatRunEntity } from './modules/self-agent/self-agent-heartbeat-run.entity';
 import { SelfAgentRunEntity } from './modules/self-agent/self-agent-run.entity';
 import { UserWikiProfileEntity } from './modules/wiki/entities/user-wiki-profile.entity';
+import { CharacterPageEntity } from './modules/wiki/entities/character-page.entity';
+import { CharacterRevisionEntity } from './modules/wiki/entities/character-revision.entity';
+import { EditSubmissionEntity } from './modules/wiki/entities/edit-submission.entity';
 import {
   prepareDatabasePath,
   resolveApiPath,
@@ -173,6 +176,9 @@ import {
           SelfAgentHeartbeatRunEntity,
           SelfAgentRunEntity,
           UserWikiProfileEntity,
+          CharacterPageEntity,
+          CharacterRevisionEntity,
+          EditSubmissionEntity,
         ],
         synchronize: true,
       }),
