@@ -39,8 +39,11 @@ export class UserEntity {
   @Column({ nullable: true, type: 'text' })
   defaultChatBackgroundPayload: string | null;
 
+  @Column({ default: 'world_owner' })
+  userType: string; // 'world_owner' | 'wiki_member'
+
   @Column({ default: 'newcomer' })
-  role: string; // 'newcomer' | 'autoconfirmed' | 'patroller' | 'admin'
+  role: string; // wiki RBAC: 'newcomer' | 'autoconfirmed' | 'patroller' | 'admin'
 
   @Column({ type: 'datetime', nullable: true })
   roleGrantedAt?: Date | null;

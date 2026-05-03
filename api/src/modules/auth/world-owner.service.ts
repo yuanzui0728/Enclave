@@ -55,6 +55,7 @@ export class WorldOwnerService {
 
   async ensureSingleOwnerMigration(): Promise<UserEntity> {
     const users = await this.userRepo.find({
+      where: { userType: 'world_owner' },
       order: { createdAt: 'ASC' },
     });
 
@@ -68,6 +69,7 @@ export class WorldOwnerService {
         customApiKey: null,
         customApiBase: null,
         defaultChatBackgroundPayload: null,
+        userType: 'world_owner',
       });
       return this.userRepo.save(owner);
     }
@@ -188,7 +190,7 @@ export class WorldOwnerService {
 
   async getOwnerOrThrow(): Promise<UserEntity> {
     const owner = await this.userRepo.findOne({
-      where: {},
+      where: { userType: 'world_owner' },
       order: { createdAt: 'ASC' },
     });
 
