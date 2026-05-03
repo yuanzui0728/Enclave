@@ -7,9 +7,11 @@ import {
   Param,
   Body,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { CharactersService } from './characters.service';
 import { CharacterEntity } from './character.entity';
+import { AdminGuard } from '../admin/admin.guard';
 
 @Controller('characters')
 export class CharactersController {
@@ -20,7 +22,6 @@ export class CharactersController {
     return this.charactersService.findAllVisibleToOwner();
   }
 
-  /** 返回硬编码预设目录（不查 DB），供前台发现页使用 */
   @Get('preset-catalog')
   listPresetCatalog() {
     return this.charactersService.listPresetCatalog();
@@ -28,7 +29,6 @@ export class CharactersController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    // 优先读 DB；若不存在则尝试从预设目录懒安装（支持在未添加好友时浏览角色详情）
     const char =
       (await this.charactersService.findById(id)) ??
       (await this.charactersService.ensurePresetCharacterInstalled(id));
@@ -37,6 +37,7 @@ export class CharactersController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   async create(@Body() body: Partial<CharacterEntity>) {
     const char = {
       ...body,
@@ -47,6 +48,7 @@ export class CharactersController {
   }
 
   @Patch(':id')
+  @UseGuards(AdminGuard)
   async update(@Param('id') id: string, @Body() body: Partial<CharacterEntity>) {
     const existing = await this.charactersService.findById(id);
     if (!existing) throw new NotFoundException(`Character ${id} not found`);
@@ -56,6 +58,7 @@ export class CharactersController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   async remove(@Param('id') id: string) {
     await this.charactersService.delete(id);
     return { success: true };
