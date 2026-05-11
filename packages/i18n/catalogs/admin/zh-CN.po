@@ -9681,13 +9681,13 @@ msgid "实验报告"
 msgstr "实验报告"
 
 #: apps/admin/src/routes/evals-page.tsx:1142
-msgid "用例聚焦"
-msgstr "用例聚焦"
-
-#: apps/admin/src/routes/evals-page.tsx:1142
 #: apps/admin/src/routes/token-usage-page.tsx:1098
 msgid "未聚焦"
 msgstr "未聚焦"
+
+#: apps/admin/src/routes/evals-page.tsx:1142
+msgid "用例聚焦"
+msgstr "用例聚焦"
 
 #: apps/admin/src/routes/evals-page.tsx:1143
 msgid "数字人状态"
@@ -13148,12 +13148,6 @@ msgid "当前候选池"
 msgstr "当前候选池"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1078
-#: apps/admin/src/routes/need-discovery-page.tsx:1283
-#: apps/admin/src/routes/need-discovery-page.tsx:1312
-msgid "当前候选"
-msgstr "当前候选"
-
-#: apps/admin/src/routes/need-discovery-page.tsx:1078
 #: apps/admin/src/routes/need-discovery-page.tsx:1081
 #: apps/admin/src/routes/need-discovery-page.tsx:1275
 #: apps/admin/src/routes/need-discovery-page.tsx:1286
@@ -13167,6 +13161,12 @@ msgstr "当前候选"
 #: apps/admin/src/routes/token-usage-page.tsx:1561
 msgid "条"
 msgstr "条"
+
+#: apps/admin/src/routes/need-discovery-page.tsx:1078
+#: apps/admin/src/routes/need-discovery-page.tsx:1283
+#: apps/admin/src/routes/need-discovery-page.tsx:1312
+msgid "当前候选"
+msgstr "当前候选"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1081
 #: apps/admin/src/routes/need-discovery-page.tsx:1283

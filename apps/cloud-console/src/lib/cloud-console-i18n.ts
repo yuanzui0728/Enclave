@@ -2304,7 +2304,7 @@ export function formatCloudConsoleSuspendWorldTitle(
   worldName: string,
   locale?: string | null,
 ) {
-  return selectCloudConsoleText(locale ?? getCurrentCloudConsoleLocale(), {
+  return selectCloudConsoleText(locale, {
     "en-US": `Suspend ${worldName}?`,
     "zh-CN": `暂停世界 ${worldName}？`,
     "ja-JP": `ワールド ${worldName} を一時停止しますか？`,
@@ -2316,7 +2316,7 @@ export function formatCloudConsoleRetryWorldRecoveryTitle(
   worldName: string,
   locale?: string | null,
 ) {
-  return selectCloudConsoleText(locale ?? getCurrentCloudConsoleLocale(), {
+  return selectCloudConsoleText(locale, {
     "en-US": `Retry recovery for ${worldName}?`,
     "zh-CN": `为世界 ${worldName} 重试恢复？`,
     "ja-JP": `ワールド ${worldName} の復旧を再試行しますか？`,

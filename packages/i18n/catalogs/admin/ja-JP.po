@@ -1581,11 +1581,11 @@ msgstr "Provider アカウント、モデルカタログ、デフォルトルー
 #: apps/admin/src/components/root-layout.tsx:236
 #: apps/admin/src/routes/digital-human-page.tsx:222
 msgid "数字人 Provider"
-msgstr ""
+msgstr "デジタルヒューマン Provider"
 
 #: apps/admin/src/components/root-layout.tsx:238
 msgid "配置外部数字人播放器模板、回调 token 和扩展参数，把内置播放器替换成真实数字人服务。"
-msgstr ""
+msgstr "外部デジタルヒューマンプレイヤーのテンプレート、コールバックトークン、拡張パラメータを設定し、組み込みプレイヤーを実際のデジタルヒューマンサービスに置き換えます。"
 
 #: apps/admin/src/components/root-layout.tsx:243
 #: apps/admin/src/lib/route-breadcrumb.ts:157
@@ -1719,7 +1719,7 @@ msgstr "パラメータ無効"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:42
 msgid "待诊断"
-msgstr ""
+msgstr "診断待ち"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:43
 #: apps/admin/src/routes/dashboard-page.tsx:633
@@ -1757,7 +1757,7 @@ msgstr "外部デジタルヒューマン Provider は準備済みです。実�
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:67
 msgid "外部数字人模板和回调已配齐，但还没有跑过一次真实联调诊断。"
-msgstr ""
+msgstr "外部デジタルヒューマンのテンプレートとコールバックは設定済みですが、実機での連携診断はまだ実行されていません。"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:71
 msgid "当前仍在内置数字人舞台模式，适合先验证会话、语音和状态链路。"
@@ -1785,7 +1785,7 @@ msgstr "次に実際のデジタルヒューマン通話を開始し、コール
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:90
 msgid "下一步在「模型与路由」跑一次数字人诊断，确认真实 provider 回调成功。"
-msgstr ""
+msgstr "次は「モデルとルーティング」でデジタルヒューマン診断を実行し、実 provider コールバックが成功することを確認してください。"
 
 #: apps/admin/src/lib/digital-human-admin-summary.ts:93
 msgid "下一步把模式切到 external_iframe，并补真实播放器模板。"
@@ -9478,15 +9478,15 @@ msgstr "{hours} 時間 {minutes} 分"
 
 #: apps/admin/src/routes/digital-human-page.tsx:184
 msgid "数字人 Provider 配置已保存。"
-msgstr ""
+msgstr "デジタルヒューマン Provider 設定を保存しました。"
 
 #: apps/admin/src/routes/digital-human-page.tsx:223
 msgid "配置外部数字人播放器"
-msgstr ""
+msgstr "外部デジタルヒューマンプレイヤーを設定"
 
 #: apps/admin/src/routes/digital-human-page.tsx:225
 msgid "选择数字人模式，配置外部播放器模板、回调 token 与扩展参数，让数字人状态从“模拟”切到真实 provider。"
-msgstr ""
+msgstr "デジタルヒューマンモードを選択し、外部プレイヤーのテンプレート、コールバックトークン、拡張パラメータを設定して、デジタルヒューマンの状態を「モック」から実 provider に切り替えます。"
 
 #: apps/admin/src/routes/digital-human-page.tsx:229
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1307
@@ -9496,24 +9496,24 @@ msgstr "現在のモード"
 #: apps/admin/src/routes/digital-human-page.tsx:234
 #: apps/admin/src/routes/digital-human-page.tsx:413
 msgid "回调 token"
-msgstr ""
+msgstr "コールバックトークン"
 
 #: apps/admin/src/routes/digital-human-page.tsx:243
 msgid "数字人 Provider 已可联调真实视频通话。"
-msgstr ""
+msgstr "デジタルヒューマン Provider で実際のビデオ通話の連携テストが可能になりました。"
 
 #. placeholder {0}: summary.statusLabel
 #: apps/admin/src/routes/digital-human-page.tsx:244
 msgid "数字人 Provider 当前未就绪：{0}"
-msgstr ""
+msgstr "デジタルヒューマン Provider はまだ準備できていません：{0}"
 
 #: apps/admin/src/routes/digital-human-page.tsx:251
 msgid "Provider 配置"
-msgstr ""
+msgstr "Provider 設定"
 
 #: apps/admin/src/routes/digital-human-page.tsx:261
 msgid "撤销修改"
-msgstr ""
+msgstr "変更を取り消す"
 
 #: apps/admin/src/routes/digital-human-page.tsx:271
 #: apps/admin/src/routes/inference-page.tsx:1169
@@ -9522,88 +9522,88 @@ msgstr "保存"
 
 #: apps/admin/src/routes/digital-human-page.tsx:271
 msgid "保存中…"
-msgstr ""
+msgstr "保存中…"
 
 #: apps/admin/src/routes/digital-human-page.tsx:286
 msgid "内置舞台（mock_stage）"
-msgstr ""
+msgstr "内蔵ステージ（mock_stage）"
 
 #: apps/admin/src/routes/digital-human-page.tsx:290
 msgid "内置 iframe（mock_iframe）"
-msgstr ""
+msgstr "内蔵 iframe（mock_iframe）"
 
 #: apps/admin/src/routes/digital-human-page.tsx:294
 msgid "外部 iframe（external_iframe）"
-msgstr ""
+msgstr "外部 iframe（external_iframe）"
 
 #: apps/admin/src/routes/digital-human-page.tsx:300
 msgid "外部播放器 URL 模板"
-msgstr ""
+msgstr "外部プレイヤー URL テンプレート"
 
 #: apps/admin/src/routes/digital-human-page.tsx:307
 msgid "支持占位符：{sessionId} {conversationId} {characterId} {characterName} {callbackUrl} {callbackToken}，以及 providerParams 中的任意 key（如 {voice}）。仅外部 iframe 模式生效。"
-msgstr ""
+msgstr "プレースホルダ：{sessionId} {conversationId} {characterId} {characterName} {callbackUrl} {callbackToken}、および providerParams 内の任意のキー（例：{voice}）に対応します。外部 iframe モードでのみ有効です。"
 
 #: apps/admin/src/routes/digital-human-page.tsx:311
 msgid "外部模式必填"
-msgstr ""
+msgstr "外部モードでは必須"
 
 #: apps/admin/src/routes/digital-human-page.tsx:320
 msgid "Provider 回调 token"
-msgstr ""
+msgstr "Provider コールバックトークン"
 
 #: apps/admin/src/routes/digital-human-page.tsx:323
 msgid "留空则 provider-state 回调不会带鉴权"
-msgstr ""
+msgstr "空欄にすると provider-state コールバックに認証情報が付与されません"
 
 #: apps/admin/src/routes/digital-human-page.tsx:331
 msgid "生成新 token"
-msgstr ""
+msgstr "新しいトークンを生成"
 
 #: apps/admin/src/routes/digital-human-page.tsx:336
 msgid "provider 在回写 PATCH /api/chat/digital-human-calls/sessions/:id/provider-state 时需带上该 token，否则会被拒绝。"
-msgstr ""
+msgstr "provider が PATCH /api/chat/digital-human-calls/sessions/:id/provider-state を呼び出す際にこのトークンを付与する必要があります。付与しない場合は拒否されます。"
 
 #: apps/admin/src/routes/digital-human-page.tsx:343
 msgid "扩展参数（JSON 对象）"
-msgstr ""
+msgstr "拡張パラメータ（JSON オブジェクト）"
 
 #: apps/admin/src/routes/digital-human-page.tsx:348
 msgid "这里的 key 会自动注入到 URL 模板的占位符中。值会按 string/number/boolean 直接渲染，其它结构会被 JSON 序列化。"
-msgstr ""
+msgstr "ここのキーは URL テンプレートのプレースホルダに自動的に注入されます。値は string/number/boolean はそのまま、それ以外の構造は JSON シリアライズされて埋め込まれます。"
 
 #. placeholder {0}: paramsValidation.count
 #: apps/admin/src/routes/digital-human-page.tsx:358
 msgid "已解析 {0} 个 key："
-msgstr ""
+msgstr "{0} 個のキーを解析しました："
 
 #: apps/admin/src/routes/digital-human-page.tsx:367
 msgid "读取配置失败，请确认 ADMIN_SECRET 已生效后重试。"
-msgstr ""
+msgstr "設定の読み込みに失敗しました。ADMIN_SECRET が有効であることを確認してから再試行してください。"
 
 #: apps/admin/src/routes/digital-human-page.tsx:368
 msgid "正在加载配置…"
-msgstr ""
+msgstr "設定を読み込み中…"
 
 #: apps/admin/src/routes/digital-human-page.tsx:383
 msgid "保存失败"
-msgstr ""
+msgstr "保存に失敗しました"
 
 #: apps/admin/src/routes/digital-human-page.tsx:387
 msgid "保存失败，请稍后再试。"
-msgstr ""
+msgstr "保存に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/admin/src/routes/digital-human-page.tsx:395
 msgid "实时网关快照"
-msgstr ""
+msgstr "リアルタイムゲートウェイのスナップショット"
 
 #: apps/admin/src/routes/digital-human-page.tsx:404
 msgid "Provider"
-msgstr ""
+msgstr "Provider"
 
 #: apps/admin/src/routes/digital-human-page.tsx:425
 msgid "正在读取系统状态…"
-msgstr ""
+msgstr "システム状態を読み込み中…"
 
 #. placeholder {0}: result.id
 #: apps/admin/src/routes/evals-page.tsx:369
@@ -9681,13 +9681,13 @@ msgid "实验报告"
 msgstr "実験レポート"
 
 #: apps/admin/src/routes/evals-page.tsx:1142
-msgid "用例聚焦"
-msgstr "ユースケースフォーカス"
-
-#: apps/admin/src/routes/evals-page.tsx:1142
 #: apps/admin/src/routes/token-usage-page.tsx:1098
 msgid "未聚焦"
 msgstr "フォーカスなし"
+
+#: apps/admin/src/routes/evals-page.tsx:1142
+msgid "用例聚焦"
+msgstr "ユースケースフォーカス"
 
 #: apps/admin/src/routes/evals-page.tsx:1143
 msgid "数字人状态"
@@ -13148,12 +13148,6 @@ msgid "当前候选池"
 msgstr "現在の候補プール"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1078
-#: apps/admin/src/routes/need-discovery-page.tsx:1283
-#: apps/admin/src/routes/need-discovery-page.tsx:1312
-msgid "当前候选"
-msgstr "現在の候補"
-
-#: apps/admin/src/routes/need-discovery-page.tsx:1078
 #: apps/admin/src/routes/need-discovery-page.tsx:1081
 #: apps/admin/src/routes/need-discovery-page.tsx:1275
 #: apps/admin/src/routes/need-discovery-page.tsx:1286
@@ -13167,6 +13161,12 @@ msgstr "現在の候補"
 #: apps/admin/src/routes/token-usage-page.tsx:1561
 msgid "条"
 msgstr "件"
+
+#: apps/admin/src/routes/need-discovery-page.tsx:1078
+#: apps/admin/src/routes/need-discovery-page.tsx:1283
+#: apps/admin/src/routes/need-discovery-page.tsx:1312
+msgid "当前候选"
+msgstr "現在の候補"
 
 #: apps/admin/src/routes/need-discovery-page.tsx:1081
 #: apps/admin/src/routes/need-discovery-page.tsx:1283
