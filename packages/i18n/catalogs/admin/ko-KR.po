@@ -78,6 +78,7 @@ msgstr "{issueCount}개 처리 필요"
 #: apps/admin/src/components/admin-sidebar.tsx:158
 #: apps/admin/src/routes/action-runtime-page.tsx:2666
 #: apps/admin/src/routes/dashboard-page.tsx:1024
+#: apps/admin/src/routes/digital-human-page.tsx:228
 #: apps/admin/src/routes/token-usage-page.tsx:1089
 msgid "已就绪"
 msgstr "준비됨"
@@ -1281,6 +1282,8 @@ msgstr "입고 예정 ID"
 #: apps/admin/src/routes/character-factory-page.tsx:298
 #: apps/admin/src/routes/chat-records-page.tsx:1177
 #: apps/admin/src/routes/dashboard-page.tsx:1195
+#: apps/admin/src/routes/digital-human-page.tsx:232
+#: apps/admin/src/routes/digital-human-page.tsx:407
 #: apps/admin/src/routes/evals-page.tsx:2577
 #: apps/admin/src/routes/inference-page.tsx:1189
 #: apps/admin/src/routes/inference-page.tsx:1748
@@ -1576,41 +1579,50 @@ msgid "管理 Provider 账户、模型目录、默认路由和模型角色批量
 msgstr "Provider 계정, 모델 카탈로그, 기본 라우팅, 모델 페르소나 캐릭터 일괄 설치를 관리합니다."
 
 #: apps/admin/src/components/root-layout.tsx:236
+#: apps/admin/src/routes/digital-human-page.tsx:222
+msgid "数字人 Provider"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:238
+msgid "配置外部数字人播放器模板、回调 token 和扩展参数，把内置播放器替换成真实数字人服务。"
+msgstr ""
+
+#: apps/admin/src/components/root-layout.tsx:243
 #: apps/admin/src/lib/route-breadcrumb.ts:157
 #: apps/admin/src/routes/chat-records-page.tsx:1657
 msgid "回复逻辑"
 msgstr "답변 로직"
 
-#: apps/admin/src/components/root-layout.tsx:237
+#: apps/admin/src/components/root-layout.tsx:244
 msgid "围绕角色、会话和全局规则排查回复链路。"
 msgstr "캐릭터, 세션, 글로벌 규칙을 중심으로 답장 흐름을 조사합니다."
 
-#: apps/admin/src/components/root-layout.tsx:241
+#: apps/admin/src/components/root-layout.tsx:248
 #: apps/admin/src/lib/route-breadcrumb.ts:68
 #: apps/admin/src/routes/cyber-avatar-page.tsx:134
 #: apps/admin/src/routes/need-discovery-page.tsx:473
 msgid "需求发现"
 msgstr "니즈 탐색"
 
-#: apps/admin/src/components/root-layout.tsx:242
+#: apps/admin/src/components/root-layout.tsx:249
 msgid "配置短期/长期角色生成策略，并查看候选与运行记录。"
 msgstr "단기/장기 캐릭터 생성 전략을 설정하고 후보와 실행 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:246
+#: apps/admin/src/components/root-layout.tsx:253
 #: apps/admin/src/lib/route-breadcrumb.ts:177
 msgid "赛博分身"
 msgstr "사이버 아바타"
 
-#: apps/admin/src/components/root-layout.tsx:247
+#: apps/admin/src/components/root-layout.tsx:254
 msgid "查看行为信号、画像状态、投影提示词与建模运行记录。"
 msgstr "행동 신호, 프로필 상태, 투영 프롬프트, 모델링 실행 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:253
+#: apps/admin/src/components/root-layout.tsx:260
 #: apps/admin/src/routes/character-factory-page.tsx:1264
 msgid "运行时"
 msgstr "런타임"
 
-#: apps/admin/src/components/root-layout.tsx:258
+#: apps/admin/src/components/root-layout.tsx:265
 #: apps/admin/src/lib/route-breadcrumb.ts:78
 #: apps/admin/src/routes/cyber-avatar-page.tsx:95
 #: apps/admin/src/routes/cyber-avatar-page.tsx:104
@@ -1621,53 +1633,53 @@ msgstr "런타임"
 msgid "主动跟进"
 msgstr "선제 후속 조치"
 
-#: apps/admin/src/components/root-layout.tsx:259
+#: apps/admin/src/components/root-layout.tsx:266
 msgid "承接：我自己"
 msgstr "담당: 나 자신"
 
-#: apps/admin/src/components/root-layout.tsx:260
+#: apps/admin/src/components/root-layout.tsx:267
 msgid "配置我自己回捞未闭环事项的规则、Prompt 和推荐链路。"
 msgstr "자신이 미해결 open loop를 회수하기 위한 규칙, Prompt, 추천 흐름을 설정합니다."
 
-#: apps/admin/src/components/root-layout.tsx:264
+#: apps/admin/src/components/root-layout.tsx:271
 msgid "主代理"
 msgstr "메인 에이전트"
 
-#: apps/admin/src/components/root-layout.tsx:265
+#: apps/admin/src/components/root-layout.tsx:272
 msgid "承接：我自己主代理"
 msgstr "담당: 나 자신 메인 에이전트"
 
-#: apps/admin/src/components/root-layout.tsx:267
+#: apps/admin/src/components/root-layout.tsx:274
 msgid "查看 self-agent workspace、heartbeat、standing orders 和近期巡检记录。"
 msgstr "self-agent workspace, heartbeat, standing orders 및 최근 점검 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:272
+#: apps/admin/src/components/root-layout.tsx:279
 #: apps/admin/src/lib/route-breadcrumb.ts:98
 #: apps/admin/src/routes/reminder-runtime-page.tsx:2124
 #: apps/admin/src/routes/self-agent-page.tsx:101
 msgid "提醒运行时"
 msgstr "리마인더 런타임"
 
-#: apps/admin/src/components/root-layout.tsx:273
+#: apps/admin/src/components/root-layout.tsx:280
 msgid "承接：小盯"
 msgstr "담당: 샤오딩"
 
-#: apps/admin/src/components/root-layout.tsx:275
+#: apps/admin/src/components/root-layout.tsx:282
 msgid "查看小盯的活跃提醒、最近触发 / 完成、私聊出站与轻提醒发圈记录。"
 msgstr "샤오딩의 활성 리마인더, 최근 트리거/완료, 개인 채팅 발송, 가벼운 Moments 리마인더 게시 기록을 확인합니다."
 
-#: apps/admin/src/components/root-layout.tsx:280
+#: apps/admin/src/components/root-layout.tsx:287
 #: apps/admin/src/lib/route-breadcrumb.ts:167
 #: apps/admin/src/routes/cyber-avatar-page.tsx:159
 #: apps/admin/src/routes/cyber-avatar-page.tsx:190
 msgid "真实世界动作"
 msgstr "현실 세계 액션"
 
-#: apps/admin/src/components/root-layout.tsx:281
+#: apps/admin/src/components/root-layout.tsx:288
 msgid "承接：行动助理"
 msgstr "담당: 액션 어시스턴트"
 
-#: apps/admin/src/components/root-layout.tsx:282
+#: apps/admin/src/components/root-layout.tsx:289
 msgid "查看行动助理的动作门控、连接器、规则和执行轨迹。"
 msgstr "액션 어시스턴트의 게이트, 커넥터, 규칙, 실행 추적을 확인합니다."
 
@@ -1689,88 +1701,101 @@ msgstr "세계 언어"
 msgid "等待系统状态返回数字人 provider 配置。"
 msgstr "시스템 상태가 디지털 휴먼 provider 설정을 반환하기를 기다리는 중입니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:27
+#: apps/admin/src/lib/digital-human-admin-summary.ts:34
 msgid "可联调"
 msgstr "연동 테스트 가능"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:29
+#: apps/admin/src/lib/digital-human-admin-summary.ts:36
 msgid "缺模板"
 msgstr "템플릿 누락"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:31
+#: apps/admin/src/lib/digital-human-admin-summary.ts:38
 msgid "缺回调"
 msgstr "콜백 누락"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:33
+#: apps/admin/src/lib/digital-human-admin-summary.ts:40
 msgid "参数无效"
 msgstr "매개변수 무효"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:34
+#: apps/admin/src/lib/digital-human-admin-summary.ts:42
+msgid "待诊断"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:43
 #: apps/admin/src/routes/dashboard-page.tsx:633
 #: apps/admin/src/routes/dashboard-page.tsx:1144
 #: apps/admin/src/routes/dashboard-page.tsx:1160
+#: apps/admin/src/routes/digital-human-page.tsx:228
 #: apps/admin/src/routes/reply-logic-page.tsx:1216
 msgid "待配置"
 msgstr "설정 대기"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:35
+#: apps/admin/src/lib/digital-human-admin-summary.ts:44
 msgid "模拟"
 msgstr "모의"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:39
+#: apps/admin/src/lib/digital-human-admin-summary.ts:48
 msgid "外部数字人播放器模板还没配好，当前视频页只能停留在占位链路。"
 msgstr "외부 디지털 휴먼 플레이어 템플릿이 아직 설정되지 않아 현재 영상 페이지는 플레이스홀더 흐름에만 머뭅니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:42
+#: apps/admin/src/lib/digital-human-admin-summary.ts:51
 msgid "外部播放器地址已具备，但 provider-state 回写鉴权还没配齐，画面就绪状态不稳定。"
 msgstr "외부 플레이어 URL은 준비되었지만 provider-state 콜백 인증이 아직 완비되지 않아 화면 준비 상태가 불안정할 수 있습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:46
+#: apps/admin/src/lib/digital-human-admin-summary.ts:55
 msgid "扩展参数 JSON 当前无效，外部数字人实例参数没有成功注入到播放器模板。"
 msgstr "확장 파라미터 JSON이 유효하지 않아 외부 디지털 휴먼 인스턴스 파라미터가 플레이어 템플릿에 주입되지 않았습니다."
 
 #. placeholder {0}: gateway.paramsCount
-#: apps/admin/src/lib/digital-human-admin-summary.ts:51
+#: apps/admin/src/lib/digital-human-admin-summary.ts:60
 msgid "外部数字人 Provider 已就绪，当前模板会注入 {0} 个上游参数。"
 msgstr "외부 디지털 휴먼 Provider가 준비되었습니다. 현재 템플릿에는 상위 파라미터 {0}개가 주입됩니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:54
+#: apps/admin/src/lib/digital-human-admin-summary.ts:63
 msgid "外部数字人 Provider 已就绪，当前可以直接联调真实播放器和状态回写。"
 msgstr "외부 디지털 휴먼 Provider가 준비되었습니다. 실제 플레이어와 상태 콜백을 바로 연동 테스트할 수 있습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:58
+#: apps/admin/src/lib/digital-human-admin-summary.ts:67
+msgid "外部数字人模板和回调已配齐，但还没有跑过一次真实联调诊断。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:71
 msgid "当前仍在内置数字人舞台模式，适合先验证会话、语音和状态链路。"
 msgstr "현재는 내장 디지털 휴먼 스테이지 모드입니다. 먼저 세션, 음성, 상태 흐름을 검증하기에 적합합니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:62
+#: apps/admin/src/lib/digital-human-admin-summary.ts:75
 msgid "当前仍在内置数字人播放器模式，播放器壳已接通，但还不是真实外部数字人。"
 msgstr "현재는 내장 디지털 휴먼 플레이어 모드입니다. 플레이어 셸은 연결되었지만 실제 외부 디지털 휴먼은 아닙니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:68
+#: apps/admin/src/lib/digital-human-admin-summary.ts:81
 msgid "下一步先到设置页补 playerUrlTemplate。"
 msgstr "다음 단계로 설정 페이지에서 playerUrlTemplate을 추가하세요."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:70
+#: apps/admin/src/lib/digital-human-admin-summary.ts:83
 msgid "下一步补 callbackToken，让 provider-state 回调进入可鉴权状态。"
 msgstr "다음 단계로 callbackToken을 추가해 provider-state 콜백이 인증 가능하도록 하세요."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:72
+#: apps/admin/src/lib/digital-human-admin-summary.ts:85
 msgid "下一步修正 providerParams JSON，再重试外部视频通话联调。"
 msgstr "다음 단계로 providerParams JSON을 수정한 뒤 외부 영상 통화 연동을 다시 시도하세요."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:74
+#: apps/admin/src/lib/digital-human-admin-summary.ts:87
 msgid "下一步直接发起一次真实数字人视频通话，核对回调和画面切换。"
 msgstr "다음 단계로 실제 디지털 휴먼 영상 통화를 시작해 콜백과 화면 전환을 확인하세요."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:76
+#: apps/admin/src/lib/digital-human-admin-summary.ts:90
+msgid "下一步在「模型与路由」跑一次数字人诊断，确认真实 provider 回调成功。"
+msgstr ""
+
+#: apps/admin/src/lib/digital-human-admin-summary.ts:93
 msgid "下一步把模式切到 external_iframe，并补真实播放器模板。"
 msgstr "다음 단계로 모드를 external_iframe으로 바꾸고 실제 플레이어 템플릿을 추가하세요."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:78
+#: apps/admin/src/lib/digital-human-admin-summary.ts:95
 msgid "下一步补外部 provider 模板和回调，把内置播放器替换成真实数字人服务。"
 msgstr "다음 단계로 외부 provider 템플릿과 콜백을 추가해 내장 플레이어를 실제 디지털 휴먼 서비스로 교체하세요."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:88
+#: apps/admin/src/lib/digital-human-admin-summary.ts:105
 #: apps/admin/src/routes/dashboard-page.tsx:633
 #: apps/admin/src/routes/inference-page.tsx:1196
 #: apps/admin/src/routes/inference-page.tsx:1205
@@ -1781,7 +1806,7 @@ msgstr "다음 단계로 외부 provider 템플릿과 콜백을 추가해 내장
 msgid "已配置"
 msgstr "구성됨"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:89
+#: apps/admin/src/lib/digital-human-admin-summary.ts:106
 #: apps/admin/src/lib/format.ts:17
 #: apps/admin/src/routes/inference-page.tsx:226
 #: apps/admin/src/routes/inference-page.tsx:1197
@@ -1799,24 +1824,24 @@ msgstr "구성됨"
 msgid "未配置"
 msgstr "구성되지 않음"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:92
+#: apps/admin/src/lib/digital-human-admin-summary.ts:109
 msgid "系统状态已检测到外部播放器模板。"
 msgstr "시스템 상태에서 외부 플레이어 템플릿을 감지했습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:93
+#: apps/admin/src/lib/digital-human-admin-summary.ts:110
 msgid "当前模式不依赖外部播放器模板。"
 msgstr "현재 모드는 외부 플레이어 템플릿에 의존하지 않습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:94
+#: apps/admin/src/lib/digital-human-admin-summary.ts:111
 msgid "进入设置页补齐播放器 URL 模板"
 msgstr "설정 페이지에서 플레이어 URL 템플릿 보완"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:96
+#: apps/admin/src/lib/digital-human-admin-summary.ts:113
 msgid "已设置"
 msgstr "설정됨"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:97
-#: apps/admin/src/lib/digital-human-admin-summary.ts:123
+#: apps/admin/src/lib/digital-human-admin-summary.ts:114
+#: apps/admin/src/lib/digital-human-admin-summary.ts:140
 #: apps/admin/src/lib/format.ts:13
 #: apps/admin/src/routes/character-factory-page.tsx:45
 #: apps/admin/src/routes/character-runtime-page.tsx:26
@@ -1837,35 +1862,35 @@ msgstr "설정됨"
 msgid "未设置"
 msgstr "설정되지 않음"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:99
+#: apps/admin/src/lib/digital-human-admin-summary.ts:116
 msgid "provider-state 回调可走鉴权。"
 msgstr "provider-state 콜백에 인증을 적용할 수 있습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:100
+#: apps/admin/src/lib/digital-human-admin-summary.ts:117
 msgid "未设置时，provider-state 回调不会附带保护 token。"
 msgstr "설정하지 않으면 provider-state 콜백에 보호 token이 포함되지 않습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:103
+#: apps/admin/src/lib/digital-human-admin-summary.ts:120
 msgid "无效"
 msgstr "무효"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:107
+#: apps/admin/src/lib/digital-human-admin-summary.ts:124
 msgid "当前没有扩展参数 JSON。"
 msgstr "확장 파라미터 JSON이 설정되어 있지 않습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:108
+#: apps/admin/src/lib/digital-human-admin-summary.ts:125
 msgid "扩展参数 JSON 解析失败。"
 msgstr "확장 파라미터 JSON 파싱에 실패했습니다."
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:117
+#: apps/admin/src/lib/digital-human-admin-summary.ts:134
 msgid "内置舞台"
 msgstr "내장 스테이지"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:119
+#: apps/admin/src/lib/digital-human-admin-summary.ts:136
 msgid "内置 iframe"
 msgstr "내장 iframe"
 
-#: apps/admin/src/lib/digital-human-admin-summary.ts:121
+#: apps/admin/src/lib/digital-human-admin-summary.ts:138
 msgid "外部 iframe"
 msgstr "외부 iframe"
 
@@ -4065,6 +4090,7 @@ msgid "尚未保存"
 msgstr "아직 저장되지 않음"
 
 #: apps/admin/src/routes/character-editor-page.tsx:1157
+#: apps/admin/src/routes/digital-human-page.tsx:375
 msgid "已保存"
 msgstr "저장됨"
 
@@ -7819,6 +7845,7 @@ msgstr "실세계 브리핑과 사용자 행동은 계속해서 need-discovery�
 
 #: apps/admin/src/routes/cyber-avatar-page.tsx:2450
 #: apps/admin/src/routes/dashboard-page.tsx:1477
+#: apps/admin/src/routes/digital-human-page.tsx:398
 #: apps/admin/src/routes/evals-page.tsx:1611
 #: apps/admin/src/routes/evals-page.tsx:2036
 #: apps/admin/src/routes/inference-page.tsx:1418
@@ -8504,10 +8531,13 @@ msgid "最近错误"
 msgstr "최근 오류"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1194
+#: apps/admin/src/routes/digital-human-page.tsx:280
 msgid "数字人模式"
 msgstr "디지털 휴먼 모드"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1198
+#: apps/admin/src/routes/digital-human-page.tsx:233
+#: apps/admin/src/routes/digital-human-page.tsx:409
 msgid "播放器模板"
 msgstr "플레이어 템플릿"
 
@@ -8516,6 +8546,8 @@ msgid "回调鉴权"
 msgstr "콜백 인증"
 
 #: apps/admin/src/routes/dashboard-page.tsx:1205
+#: apps/admin/src/routes/digital-human-page.tsx:235
+#: apps/admin/src/routes/digital-human-page.tsx:417
 msgid "扩展参数"
 msgstr "확장 파라미터"
 
@@ -9444,6 +9476,135 @@ msgstr "sidecar 누락"
 msgid "{hours} 小时 {minutes} 分钟"
 msgstr "{hours}시간 {minutes}분"
 
+#: apps/admin/src/routes/digital-human-page.tsx:184
+msgid "数字人 Provider 配置已保存。"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:223
+msgid "配置外部数字人播放器"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:225
+msgid "选择数字人模式，配置外部播放器模板、回调 token 与扩展参数，让数字人状态从“模拟”切到真实 provider。"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:229
+#: apps/admin/src/routes/reminder-runtime-page.tsx:1307
+msgid "当前模式"
+msgstr "현재 모드"
+
+#: apps/admin/src/routes/digital-human-page.tsx:234
+#: apps/admin/src/routes/digital-human-page.tsx:413
+msgid "回调 token"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:243
+msgid "数字人 Provider 已可联调真实视频通话。"
+msgstr ""
+
+#. placeholder {0}: summary.statusLabel
+#: apps/admin/src/routes/digital-human-page.tsx:244
+msgid "数字人 Provider 当前未就绪：{0}"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:251
+msgid "Provider 配置"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:261
+msgid "撤销修改"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:271
+#: apps/admin/src/routes/inference-page.tsx:1169
+msgid "保存"
+msgstr "저장"
+
+#: apps/admin/src/routes/digital-human-page.tsx:271
+msgid "保存中…"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:286
+msgid "内置舞台（mock_stage）"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:290
+msgid "内置 iframe（mock_iframe）"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:294
+msgid "外部 iframe（external_iframe）"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:300
+msgid "外部播放器 URL 模板"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:307
+msgid "支持占位符：{sessionId} {conversationId} {characterId} {characterName} {callbackUrl} {callbackToken}，以及 providerParams 中的任意 key（如 {voice}）。仅外部 iframe 模式生效。"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:311
+msgid "外部模式必填"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:320
+msgid "Provider 回调 token"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:323
+msgid "留空则 provider-state 回调不会带鉴权"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:331
+msgid "生成新 token"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:336
+msgid "provider 在回写 PATCH /api/chat/digital-human-calls/sessions/:id/provider-state 时需带上该 token，否则会被拒绝。"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:343
+msgid "扩展参数（JSON 对象）"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:348
+msgid "这里的 key 会自动注入到 URL 模板的占位符中。值会按 string/number/boolean 直接渲染，其它结构会被 JSON 序列化。"
+msgstr ""
+
+#. placeholder {0}: paramsValidation.count
+#: apps/admin/src/routes/digital-human-page.tsx:358
+msgid "已解析 {0} 个 key："
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:367
+msgid "读取配置失败，请确认 ADMIN_SECRET 已生效后重试。"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:368
+msgid "正在加载配置…"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:383
+msgid "保存失败"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:387
+msgid "保存失败，请稍后再试。"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:395
+msgid "实时网关快照"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:404
+msgid "Provider"
+msgstr ""
+
+#: apps/admin/src/routes/digital-human-page.tsx:425
+msgid "正在读取系统状态…"
+msgstr ""
+
 #. placeholder {0}: result.id
 #: apps/admin/src/routes/evals-page.tsx:369
 msgid "数据集运行完成：{0}"
@@ -9520,13 +9681,13 @@ msgid "实验报告"
 msgstr "실험 보고서"
 
 #: apps/admin/src/routes/evals-page.tsx:1142
+msgid "用例聚焦"
+msgstr "사용 사례 포커스"
+
+#: apps/admin/src/routes/evals-page.tsx:1142
 #: apps/admin/src/routes/token-usage-page.tsx:1098
 msgid "未聚焦"
 msgstr "포커스 없음"
-
-#: apps/admin/src/routes/evals-page.tsx:1142
-msgid "用例聚焦"
-msgstr "사용 사례 포커스"
 
 #: apps/admin/src/routes/evals-page.tsx:1143
 msgid "数字人状态"
@@ -12394,10 +12555,6 @@ msgstr "테스트 중..."
 msgid "测试连接"
 msgstr "연결 테스트"
 
-#: apps/admin/src/routes/inference-page.tsx:1169
-msgid "保存"
-msgstr "저장"
-
 #: apps/admin/src/routes/inference-page.tsx:1180
 msgid "切换中..."
 msgstr "전환 중..."
@@ -14005,12 +14162,6 @@ msgstr "오늘 {0}건 채택 · 모멘트 {1}"
 msgid "未完成"
 msgstr "미완료"
 
-#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
-#. placeholder {1}: formatCompactTime(item.latestRunAt)
-#: apps/admin/src/routes/real-world-sync-page.tsx:373
-msgid "最近 {0} · {1}"
-msgstr "최근 {0} · {1}"
-
 #. placeholder {0}: item.latestRunStatus
 #. placeholder {0}: previewResult.action
 #. placeholder {0}: previewResult.parsedTask.category
@@ -14023,6 +14174,12 @@ msgstr "최근 {0} · {1}"
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1686
 msgid "{0}"
 msgstr "{0}"
+
+#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
+#. placeholder {1}: formatCompactTime(item.latestRunAt)
+#: apps/admin/src/routes/real-world-sync-page.tsx:373
+msgid "最近 {0} · {1}"
+msgstr "최근 {0} · {1}"
 
 #: apps/admin/src/routes/real-world-sync-page.tsx:374
 msgid "最近暂无执行记录"
@@ -15372,10 +15529,6 @@ msgstr "파싱 모드"
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1303
 msgid "建议默认走\"规则优先 + 模型兜底\"。模型不会直接写库，只会先把原话改写成标准提醒口令，再交回规则引擎处理。"
 msgstr "기본적으로 \"규칙 우선 + 모델 폴백\"을 권장합니다. 모델은 DB에 직접 쓰지 않고, 원문을 표준 알림 명령으로 다시 작성한 후 규칙 엔진에 넘겨 처리합니다."
-
-#: apps/admin/src/routes/reminder-runtime-page.tsx:1307
-msgid "当前模式"
-msgstr "현재 모드"
 
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1317
 msgid "规则优先 + 模型兜底"

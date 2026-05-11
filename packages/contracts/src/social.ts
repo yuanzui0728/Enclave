@@ -78,6 +78,13 @@ export interface TriggerSceneRequest {
   scene: string;
 }
 
+export type SceneMatchSource = "scene" | "fallback" | "none";
+
+export interface TriggerSceneResponse {
+  request: FriendRequest | null;
+  matchSource: SceneMatchSource;
+}
+
 export interface ShakePreviewCharacter extends Pick<CharacterDraft, "id" | "name" | "avatar" | "relationship" | "expertDomains"> {
   id: string;
   name: string;

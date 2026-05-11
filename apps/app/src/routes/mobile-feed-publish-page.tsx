@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type { FeedListResponse } from "@yinjie/contracts";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ImagePlus, Video } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -56,8 +61,22 @@ export function MobileFeedPublishPage() {
     onSuccess: async () => {
       storeFeedPublishFlash(t(msg`广场动态已发布，世界居民公开可见。`));
       composeDraft.reset();
+      // 发布会让分页边界后移：把 paged cache 收回到 page 1，避免下次 mount discover-feed-page
+      // 时多页 refetch 造成边界重复（page 1 末尾 = page 2 开头）。
+      queryClient.setQueryData<InfiniteData<FeedListResponse>>(
+        ["app-feed-paged", baseUrl],
+        (current) =>
+          current
+            ? {
+                pages: current.pages.slice(0, 1),
+                pageParams: current.pageParams.slice(0, 1),
+              }
+            : current,
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
+        // discover-feed-page 用 paged key 走无限分页，要同步刷新
+        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
       ]);
       void navigate({

@@ -2,11 +2,19 @@ import {
   Suspense,
   lazy,
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { msg } from "@lingui/macro";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -137,11 +145,75 @@ export function DiscoverFeedPage() {
       : undefined;
   const safeReturnHash = safeReturnPath ? routeState.returnHash : undefined;
 
-  const feedQuery = useQuery({
-    queryKey: ["app-feed", baseUrl],
-    // 广场没有分页 UI：限额定高，确保所有可见公开动态都能展示。
-    queryFn: () => getFeed(1, 200, baseUrl),
+  // 广场用无限分页：首屏 20 条，触底拉下一页，避免一次性把 200 条都拉过来
+  // （后端那侧虽有 page 但前端老 client 写死 limit=200，整体反序列化和 JSON 媒体载荷都很沉）。
+  const feedQuery = useInfiniteQuery({
+    queryKey: ["app-feed-paged", baseUrl],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => getFeed(pageParam, 20, baseUrl),
+    getNextPageParam: (lastPage, allPages) => {
+      const fetched = allPages.reduce(
+        (acc, page) => acc + page.posts.length,
+        0,
+      );
+      return fetched < lastPage.total ? allPages.length + 1 : undefined;
+    },
   });
+  // 按 id 去重：分页路径下若新发/删除导致页间边界偏移，page N 末尾和 page N+1 开头
+  // 可能拿到同一条 post。UI 层兜底去重，避免列表重复闪烁。
+  const feedPosts = useMemo(() => {
+    if (!feedQuery.data) return [] as FeedListResponse["posts"];
+    const seen = new Set<string>();
+    const items: FeedListResponse["posts"] = [];
+    for (const page of feedQuery.data.pages) {
+      for (const post of page.posts) {
+        if (seen.has(post.id)) continue;
+        seen.add(post.id);
+        items.push(post);
+      }
+    }
+    return items;
+  }, [feedQuery.data]);
+  // 触底加载：sentinel 进入视口 → fetchNextPage。
+  // 用默认 root=null（viewport）+ rootMargin 提前触发，避免触到底再等。
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const hasNextFeedPage = feedQuery.hasNextPage;
+  const isFetchingNextFeedPage = feedQuery.isFetchingNextPage;
+  const fetchNextFeedPage = feedQuery.fetchNextPage;
+  useEffect(() => {
+    if (!hasNextFeedPage || isFetchingNextFeedPage) {
+      return;
+    }
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void fetchNextFeedPage();
+        }
+      },
+      { rootMargin: "320px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [fetchNextFeedPage, hasNextFeedPage, isFetchingNextFeedPage]);
+
+  // 桌面端没有触底 sentinel：mount 后自动连续 prefetch，把后续页悄悄填上，
+  // 保证用户在桌面工作区也能看到全部动态（首屏仍只渲染第一页，省时间）。
+  useEffect(() => {
+    if (!isDesktopLayout) return;
+    if (hasNextFeedPage && !isFetchingNextFeedPage) {
+      void fetchNextFeedPage();
+    }
+  }, [
+    isDesktopLayout,
+    hasNextFeedPage,
+    isFetchingNextFeedPage,
+    fetchNextFeedPage,
+  ]);
+
   const blockedQuery = useQuery({
     queryKey: ["app-discover-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
@@ -163,7 +235,12 @@ export function DiscoverFeedPage() {
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`广场动态已发布，世界居民公开可见。`));
+      // 发布会让分页边界整体后移：若不先把 cache 收回到 page 1，
+      // refetch 多页会让原 page 1 末尾那条同时出现在新 page 1 末尾 + 新 page 2 开头（重复）。
+      resetFeedToFirstPage();
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
+        // 同时刷新旧 key，让 discover-page 和 search-index 等共用 cache 的页面也同步
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
       ]);
@@ -173,38 +250,43 @@ export function DiscoverFeedPage() {
   const likeMutation = useMutation({
     mutationFn: (postId: string) => likeFeedPost(postId, baseUrl),
     onMutate: async (postId) => {
-      await queryClient.cancelQueries({ queryKey: ["app-feed", baseUrl] });
-      const snapshots = queryClient.getQueriesData<FeedListResponse>({
-        queryKey: ["app-feed", baseUrl],
+      await queryClient.cancelQueries({ queryKey: ["app-feed-paged", baseUrl] });
+      const snapshots = queryClient.getQueriesData<
+        InfiniteData<FeedListResponse>
+      >({
+        queryKey: ["app-feed-paged", baseUrl],
       });
       snapshots.forEach(([key, data]) => {
-        if (!data?.posts) {
+        if (!data) {
           return;
         }
-        queryClient.setQueryData<FeedListResponse>(key, {
+        queryClient.setQueryData<InfiniteData<FeedListResponse>>(key, {
           ...data,
-          posts: data.posts.map((post) =>
-            post.id === postId && !post.ownerState?.hasLiked
-              ? {
-                  ...post,
-                  likeCount: post.likeCount + 1,
-                  ownerState: {
-                    ...(post.ownerState ?? {
-                      hasLiked: false,
-                      hasFavorited: false,
-                      isFollowingAuthor: false,
-                      isNotInterested: false,
-                      hasViewed: false,
-                      hasShared: false,
-                      lastViewedAt: null,
-                      watchProgressSeconds: null,
-                      completed: false,
-                    }),
-                    hasLiked: true,
-                  },
-                }
-              : post,
-          ),
+          pages: data.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((post) =>
+              post.id === postId && !post.ownerState?.hasLiked
+                ? {
+                    ...post,
+                    likeCount: post.likeCount + 1,
+                    ownerState: {
+                      ...(post.ownerState ?? {
+                        hasLiked: false,
+                        hasFavorited: false,
+                        isFollowingAuthor: false,
+                        isNotInterested: false,
+                        hasViewed: false,
+                        hasShared: false,
+                        lastViewedAt: null,
+                        watchProgressSeconds: null,
+                        completed: false,
+                      }),
+                      hasLiked: true,
+                    },
+                  }
+                : post,
+            ),
+          })),
         });
       });
       return { snapshots };
@@ -220,6 +302,8 @@ export function DiscoverFeedPage() {
       setNoticeAction(null);
       setNotice(t(msg`广场互动已更新。`));
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
+        // 同时刷新旧 key，让 discover-page 和 search-index 等共用 cache 的页面也同步
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
       ]);
@@ -269,6 +353,8 @@ export function DiscoverFeedPage() {
           : t(msg`广场互动已更新。`),
       );
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
+        // 同时刷新旧 key，让 discover-page 和 search-index 等共用 cache 的页面也同步
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
       ]);
@@ -302,7 +388,7 @@ const pendingLikePostId = likeMutation.isPending
   const blockedCharacterIds = new Set(
     (blockedQuery.data ?? []).map((item) => item.characterId),
   );
-  const visiblePosts = (feedQuery.data?.posts ?? []).filter(
+  const visiblePosts = feedPosts.filter(
     (post) =>
       post.authorType !== "character" ||
       !blockedCharacterIds.has(post.authorId),
@@ -348,16 +434,31 @@ const pendingLikePostId = likeMutation.isPending
     return true;
   }
 
+  function resetFeedToFirstPage() {
+    queryClient.setQueryData<InfiniteData<FeedListResponse>>(
+      ["app-feed-paged", baseUrl],
+      (current) =>
+        current
+          ? {
+              pages: current.pages.slice(0, 1),
+              pageParams: current.pageParams.slice(0, 1),
+            }
+          : current,
+    );
+  }
+
   function handleStatusBack() {
     if (navigateToRouteStateReturn()) {
       return;
     }
 
+    resetFeedToFirstPage();
     void feedQuery.refetch();
     void blockedQuery.refetch();
   }
 
   function handleRetryLoad() {
+    resetFeedToFirstPage();
     void feedQuery.refetch();
     void blockedQuery.refetch();
   }
@@ -713,6 +814,7 @@ const pendingLikePostId = likeMutation.isPending
           onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
           onRemoveVideo={() => composeDraft.clearVideoDraft()}
           onRefresh={() => {
+            resetFeedToFirstPage();
             void feedQuery.refetch();
             if (ownerId) {
               void blockedQuery.refetch();
@@ -1053,6 +1155,21 @@ const pendingLikePostId = likeMutation.isPending
                 </button>
               </div>
             </InlineNotice>
+          ) : null}
+
+          {visiblePosts.length > 0 ? (
+            <>
+              <div ref={loadMoreRef} className="h-1 w-full" aria-hidden="true" />
+              {isFetchingNextFeedPage ? (
+                <div className="py-3 text-center text-[11px] text-[color:var(--text-muted)]">
+                  {t(msg`正在加载更多…`)}
+                </div>
+              ) : !hasNextFeedPage ? (
+                <div className="py-3 text-center text-[11px] text-[color:var(--text-muted)]">
+                  {t(msg`已经到底了`)}
+                </div>
+              ) : null}
+            </>
           ) : null}
 
           {!feedQuery.isLoading &&

@@ -2,9 +2,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import OpenAI, { toFile } from 'openai';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
@@ -638,7 +638,20 @@ export class SystemService {
     private readonly behaviorLogRepo: Repository<AIBehaviorLogEntity>,
     private readonly schedulerService: SchedulerService,
     private readonly schedulerTelemetry: SchedulerTelemetryService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
+
+  private async readDatabaseJournalMode(): Promise<string | null> {
+    try {
+      const rows = (await this.dataSource.query('PRAGMA journal_mode')) as
+        | Array<{ journal_mode?: string }>
+        | undefined;
+      const mode = rows?.[0]?.journal_mode;
+      return typeof mode === 'string' ? mode.toLowerCase() : null;
+    } catch {
+      return null;
+    }
+  }
 
   private resolveDatabasePath() {
     return resolveDatabasePath(this.config.get<string>('DATABASE_PATH'));
@@ -2574,6 +2587,7 @@ export class SystemService {
       ]);
 
     const databasePath = this.resolveDatabasePath();
+    const databaseJournalMode = await this.readDatabaseJournalMode();
     const publicBaseUrl = this.config.get<string>('PUBLIC_API_BASE_URL')?.trim();
 
     const scheduler = await this.getSchedulerPayload();
@@ -2656,7 +2670,8 @@ export class SystemService {
       },
       database: {
         path: databasePath,
-        walEnabled: false,
+        walEnabled: databaseJournalMode === 'wal',
+        journalMode: databaseJournalMode,
         connected: true,
       },
       inferenceGateway: {

@@ -14,6 +14,7 @@ export interface ServiceHealth {
 export interface DatabaseStatus {
   path: string;
   walEnabled: boolean;
+  journalMode: string | null;
   connected: boolean;
 }
 

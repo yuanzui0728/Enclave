@@ -1,6 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 
 @Entity('moment_comments')
+@Index('idx_moment_comments_postId', ['postId'])
 export class MomentCommentEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

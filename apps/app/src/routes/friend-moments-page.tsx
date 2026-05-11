@@ -135,18 +135,20 @@ export function FriendMomentsPage() {
       composeDraft.reset();
       setShowCompose(false);
       setNotice(t(msg`朋友圈已发布。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onSuccess: async () => {
       setNotice(t(msg`朋友圈互动已更新。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
   const commentMutation = useMutation({
@@ -177,9 +179,10 @@ export function FriendMomentsPage() {
         current?.postId === momentId ? null : current,
       );
       setNotice(t(msg`朋友圈互动已更新。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
 

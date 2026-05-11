@@ -21,6 +21,7 @@ function createSystemService(runtimeDir?: string) {
     {} as never,
     {} as never,
     {} as never,
+    {} as never,
   );
 }
 

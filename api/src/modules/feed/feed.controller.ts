@@ -124,6 +124,14 @@ export class FeedController {
     return this.feedService.shareOwnerPost(postId, body.channel);
   }
 
+  @Post(':id/forward-to-chat')
+  forwardPostToChat(
+    @Param('id') postId: string,
+    @Body() body: { targetCharacterId: string; note?: string },
+  ) {
+    return this.feedService.forwardOwnerChannelPostToChat(postId, body);
+  }
+
   @Post(':id/view')
   viewPost(
     @Param('id') postId: string,

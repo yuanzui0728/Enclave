@@ -116,9 +116,10 @@ export function ProfileMomentsPage() {
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
 
@@ -162,9 +163,10 @@ export function ProfileMomentsPage() {
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
 
@@ -183,9 +185,10 @@ export function ProfileMomentsPage() {
         tone: "success",
         message: t(msg`朋友圈已发布。`),
       });
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
 
@@ -217,9 +220,10 @@ export function ProfileMomentsPage() {
         tone: "success",
         message: t(msg`已删除这条朋友圈。`),
       });
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
 

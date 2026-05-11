@@ -17,9 +17,50 @@ import {
 import { WorldContextEntity } from './world-context.entity';
 
 const WORLD_RUNTIME_LOCATION_CONFIG_KEY = 'world_runtime_location';
+const WORLD_LAST_LIVE_WEATHER_CONFIG_KEY = 'world_last_live_weather';
 const WORLD_CONTEXT_MAX_AGE_MS = 20 * 60 * 1000;
 const WORLD_LOCATION_CACHE_TTL_MS = 60 * 1000;
 const WORLD_LOCATION_REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
+const WORLD_EXTERNAL_FETCH_TIMEOUT_MS = 8000;
+const WORLD_LAST_LIVE_WEATHER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const WORLD_LIVE_WEATHER_COORD_TOLERANCE = 0.5;
+// ipwho.is rejects requests with the default `mode: 'cors'` on its free plan
+// ("CORS is not supported on the Free plan" → 403). Node fetch defaults to
+// `cors`; we set `no-cors` here so the request is treated as a plain GET.
+const WORLD_FETCH_USER_AGENT = 'yinjie-world/1.0 (+https://github.com/yuanzui0728/Enclave)';
+
+type LastLiveWeatherCache = {
+  weather: string;
+  latitude: number;
+  longitude: number;
+  resolvedAt: string;
+};
+
+function isTransientFetchError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { name?: string; cause?: { code?: string } };
+  if (err.name === 'AbortError' || err.name === 'TimeoutError') return true;
+  const code = err.cause?.code;
+  return (
+    code === 'UND_ERR_CONNECT_TIMEOUT' ||
+    code === 'UND_ERR_SOCKET' ||
+    code === 'UND_ERR_HEADERS_TIMEOUT' ||
+    code === 'ECONNRESET' ||
+    code === 'ETIMEDOUT' ||
+    code === 'EAI_AGAIN'
+  );
+}
+
+function describeFetchError(error: unknown): string {
+  if (!error || typeof error !== 'object') return String(error);
+  const err = error as { message?: string; name?: string; cause?: { code?: string; message?: string } };
+  const parts: string[] = [];
+  if (err.name) parts.push(`name=${err.name}`);
+  if (err.message) parts.push(`message=${err.message}`);
+  if (err.cause?.code) parts.push(`cause.code=${err.cause.code}`);
+  if (err.cause?.message) parts.push(`cause.message=${err.cause.message}`);
+  return parts.join(' ') || String(error);
+}
 
 const DEFAULT_WORLD_LOCATION = Object.freeze({
   source: 'default' as const,
@@ -566,46 +607,132 @@ export class WorldService {
     runtimeRules: Awaited<ReturnType<WorldService['getRuntimeRules']>>,
     language: WorldLanguageCode,
   ): Promise<string> {
+    const search = new URLSearchParams({
+      latitude: String(location.latitude),
+      longitude: String(location.longitude),
+      current: 'temperature_2m,weather_code,is_day',
+      timezone: location.timezone,
+    });
+    const url = `https://api.open-meteo.com/v1/forecast?${search.toString()}`;
+
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(WORLD_EXTERNAL_FETCH_TIMEOUT_MS),
+          mode: 'no-cors',
+          headers: { 'User-Agent': WORLD_FETCH_USER_AGENT },
+        });
+
+        if (!response.ok) {
+          throw new Error(`weather response ${response.status}`);
+        }
+
+        const payload = (await response.json()) as OpenMeteoCurrentResponse;
+        const current = payload.current;
+        if (!current) {
+          throw new Error('weather payload missing current data');
+        }
+
+        const label = this.worldLanguage.mapWeatherCodeToLabel(
+          language,
+          current.weather_code,
+          current.is_day,
+        );
+        const temperature =
+          typeof current.temperature_2m === 'number' &&
+          Number.isFinite(current.temperature_2m)
+            ? `${Math.round(current.temperature_2m)}°C`
+            : '';
+
+        const weather = [label, temperature].filter(Boolean).join(' ');
+        await this.cacheLastLiveWeather(location, weather);
+        return weather;
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0 && isTransientFetchError(error)) {
+          continue;
+        }
+        break;
+      }
+    }
+
+    this.logger.warn(
+      `Failed to fetch live weather for ${location.timezone} (lat=${location.latitude} lon=${location.longitude}): ${describeFetchError(lastError)}`,
+    );
+
+    const cached = await this.readLastLiveWeather(location);
+    if (cached) {
+      return cached;
+    }
+    return this.getFallbackWeather(season, hour, runtimeRules, language);
+  }
+
+  private async cacheLastLiveWeather(
+    location: WorldResolvedLocation,
+    weather: string,
+  ): Promise<void> {
+    if (!weather?.trim()) return;
+    const payload: LastLiveWeatherCache = {
+      weather,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      resolvedAt: new Date().toISOString(),
+    };
     try {
-      const search = new URLSearchParams({
-        latitude: String(location.latitude),
-        longitude: String(location.longitude),
-        current: 'temperature_2m,weather_code,is_day',
-        timezone: location.timezone,
-      });
-      const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?${search.toString()}`,
-        { signal: AbortSignal.timeout(3000) },
+      await this.systemConfig.setConfig(
+        WORLD_LAST_LIVE_WEATHER_CONFIG_KEY,
+        JSON.stringify(payload),
       );
-
-      if (!response.ok) {
-        throw new Error(`weather response ${response.status}`);
-      }
-
-      const payload = (await response.json()) as OpenMeteoCurrentResponse;
-      const current = payload.current;
-      if (!current) {
-        throw new Error('weather payload missing current data');
-      }
-
-      const label = this.worldLanguage.mapWeatherCodeToLabel(
-        language,
-        current.weather_code,
-        current.is_day,
-      );
-      const temperature =
-        typeof current.temperature_2m === 'number' &&
-        Number.isFinite(current.temperature_2m)
-          ? `${Math.round(current.temperature_2m)}°C`
-          : '';
-
-      return [label, temperature].filter(Boolean).join(' ');
     } catch (error) {
       this.logger.warn(
-        `Failed to fetch live weather for ${location.timezone}, falling back to seasonal preset.`,
+        `Failed to cache last live weather: ${describeFetchError(error)}`,
       );
-      return this.getFallbackWeather(season, hour, runtimeRules, language);
     }
+  }
+
+  private async readLastLiveWeather(
+    location: WorldResolvedLocation,
+  ): Promise<string | null> {
+    const raw = await this.systemConfig.getConfig(
+      WORLD_LAST_LIVE_WEATHER_CONFIG_KEY,
+    );
+    if (!raw?.trim()) return null;
+
+    let parsed: Partial<LastLiveWeatherCache>;
+    try {
+      parsed = JSON.parse(raw) as Partial<LastLiveWeatherCache>;
+    } catch {
+      return null;
+    }
+
+    const weather = normalizeString(parsed.weather);
+    const latitude = Number(parsed.latitude);
+    const longitude = Number(parsed.longitude);
+    const resolvedAt = Date.parse(parsed.resolvedAt ?? '');
+    if (
+      !weather ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      !Number.isFinite(resolvedAt)
+    ) {
+      return null;
+    }
+
+    if (Date.now() - resolvedAt > WORLD_LAST_LIVE_WEATHER_MAX_AGE_MS) {
+      return null;
+    }
+
+    if (
+      Math.abs(latitude - location.latitude) >
+        WORLD_LIVE_WEATHER_COORD_TOLERANCE ||
+      Math.abs(longitude - location.longitude) >
+        WORLD_LIVE_WEATHER_COORD_TOLERANCE
+    ) {
+      return null;
+    }
+
+    return weather;
   }
 
   private getFallbackWeather(
@@ -733,7 +860,7 @@ export class WorldService {
       await this.saveResolvedLocation(resolved);
     } catch (error) {
       this.logger.warn(
-        `Failed to resolve request IP ${sourceIp}, keeping existing world location.`,
+        `Failed to resolve request IP ${sourceIp}, keeping existing world location: ${describeFetchError(error)}`,
       );
     }
   }
@@ -825,19 +952,39 @@ export class WorldService {
   private async lookupLocationByIp(
     sourceIp: string,
   ): Promise<WorldResolvedLocation> {
-    const response = await fetch(
-      `https://ipwho.is/${encodeURIComponent(sourceIp)}`,
-      {
-        signal: AbortSignal.timeout(3000),
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`ipwho.is response ${response.status}`);
+    const url = `https://ipwho.is/${encodeURIComponent(sourceIp)}`;
+
+    let lastError: unknown = null;
+    let payload: IpWhoIsResponse | null = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(WORLD_EXTERNAL_FETCH_TIMEOUT_MS),
+          mode: 'no-cors',
+          headers: { 'User-Agent': WORLD_FETCH_USER_AGENT },
+        });
+        if (!response.ok) {
+          throw new Error(`ipwho.is response ${response.status}`);
+        }
+        const body = (await response.json()) as IpWhoIsResponse;
+        if (!body.success) {
+          throw new Error('ipwho.is lookup failed');
+        }
+        payload = body;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0 && isTransientFetchError(error)) {
+          continue;
+        }
+        throw error;
+      }
     }
 
-    const payload = (await response.json()) as IpWhoIsResponse;
-    if (!payload.success) {
-      throw new Error('ipwho.is lookup failed');
+    if (!payload) {
+      throw lastError instanceof Error
+        ? lastError
+        : new Error('ipwho.is lookup failed');
     }
 
     return {
@@ -1005,11 +1152,22 @@ export class WorldService {
       return null;
     }
 
-    const forwarded = request.headers['x-forwarded-for'];
-    const firstForwarded = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-    const candidate = normalizeString(firstForwarded)
-      ? normalizeString(firstForwarded).split(',')[0]?.trim()
-      : (request.ip ?? request.socket.remoteAddress ?? null);
+    const pickHeader = (name: string): string | null => {
+      const raw = request.headers[name];
+      const first = Array.isArray(raw) ? raw[0] : raw;
+      const text = normalizeString(first);
+      if (!text) return null;
+      const firstHop = text.split(',')[0]?.trim() ?? '';
+      return firstHop || null;
+    };
+
+    const candidate =
+      pickHeader('cf-connecting-ip') ||
+      pickHeader('x-real-ip') ||
+      pickHeader('x-forwarded-for') ||
+      request.ip ||
+      request.socket.remoteAddress ||
+      null;
 
     if (!candidate) {
       return null;

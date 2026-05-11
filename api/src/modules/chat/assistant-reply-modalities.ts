@@ -11,7 +11,8 @@ export type AssistantReplyTargetMessage = {
     | 'voice'
     | 'contact_card'
     | 'location_card'
-    | 'note_card';
+    | 'note_card'
+    | 'feed_post_card';
   text: string;
   attachment?: MessageAttachment;
 };

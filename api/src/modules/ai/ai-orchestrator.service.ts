@@ -26,7 +26,10 @@ import {
   AiProviderAuthError,
 } from './ai.types';
 import { PromptBuilderService } from './prompt-builder.service';
-import { sanitizeAiText } from './ai-text-sanitizer';
+import {
+  extractJsonFromModelOutput,
+  sanitizeAiText,
+} from './ai-text-sanitizer';
 import { validateGeneratedSceneOutput } from './moment-output-validator';
 import { MomentGenerationContextService } from './moment-generation-context.service';
 import { buildNativeAudioModelCandidates } from './native-audio-routing';
@@ -2405,7 +2408,10 @@ export class AiOrchestratorService {
 
     const raw = response.choices[0]?.message?.content ?? '{}';
     try {
-      return JSON.parse(raw) as Record<string, unknown>;
+      return JSON.parse(extractJsonFromModelOutput(raw)) as Record<
+        string,
+        unknown
+      >;
     } catch {
       this.logger.error('Failed to parse personality JSON', raw);
       return {};
@@ -2510,7 +2516,10 @@ export class AiOrchestratorService {
 
     const raw = response.choices[0]?.message?.content ?? '{}';
     try {
-      return JSON.parse(raw) as Record<string, unknown>;
+      return JSON.parse(extractJsonFromModelOutput(raw)) as Record<
+        string,
+        unknown
+      >;
     } catch {
       this.logger.error('Failed to parse quick character JSON', raw);
       return {};
@@ -2544,8 +2553,9 @@ export class AiOrchestratorService {
       });
 
       const raw = response.choices[0]?.message?.content ?? '{}';
+      const candidate = extractJsonFromModelOutput(raw);
       try {
-        return JSON.parse(raw) as Record<string, unknown>;
+        return JSON.parse(candidate) as Record<string, unknown>;
       } catch {
         this.logger.error('Failed to parse JSON task result', raw);
         return options.fallback ?? {};
@@ -2724,7 +2734,7 @@ export class AiOrchestratorService {
       });
 
       const raw = response.choices[0]?.message?.content ?? '{}';
-      return JSON.parse(raw) as {
+      return JSON.parse(extractJsonFromModelOutput(raw)) as {
         needsGroupChat: boolean;
         reason: string;
         requiredDomains: string[];

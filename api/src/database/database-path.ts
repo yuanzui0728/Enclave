@@ -152,6 +152,20 @@ export function prepareDatabasePath(configuredPath?: string | null) {
     return targetPath;
   }
 
+  // If the source is in WAL mode, fold any pending frames into the main DB
+  // before we file-copy it, so the legacy `-wal` sidecar isn't needed to read
+  // the snapshot we just took. Failure is non-fatal (we still copy sidecars).
+  try {
+    const src = new Database(preferredDatabaseFile.path);
+    try {
+      src.pragma('wal_checkpoint(TRUNCATE)');
+    } finally {
+      src.close();
+    }
+  } catch (err) {
+    console.warn('[database] pre-bootstrap checkpoint failed (continuing):', err);
+  }
+
   fs.copyFileSync(preferredDatabaseFile.path, targetPath);
   copySidecarFile(preferredDatabaseFile.path, targetPath, '-journal');
   copySidecarFile(preferredDatabaseFile.path, targetPath, '-wal');

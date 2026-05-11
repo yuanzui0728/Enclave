@@ -298,6 +298,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return message;
   }
 
+  /**
+   * 用户主动塞进会话的附件卡片消息（如视频号转发到聊天）。
+   * 不触发 AI 回复，只把消息落库 + socket emit。
+   */
+  async sendUserAttachmentMessage(
+    convId: string,
+    senderId: string,
+    senderName: string,
+    attachment: Parameters<ChatService['saveUserAttachmentMessage']>[3],
+    text?: string,
+  ) {
+    const message = await this.chatService.saveUserAttachmentMessage(
+      convId,
+      senderId,
+      senderName,
+      attachment,
+      text,
+    );
+    this.emitThreadMessage(convId, message);
+    return message;
+  }
+
   private async emitSystemNotice(conversationId: string, text: string) {
     const message = await this.chatService.saveSystemMessage(
       conversationId,

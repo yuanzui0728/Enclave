@@ -1183,6 +1183,14 @@ function buildSearchResultMeta(item: ChatMessageSearchItem) {
     return attachment.title;
   }
 
+  if (attachment.kind === "feed_post_card") {
+    return (
+      attachment.title?.trim() ||
+      attachment.excerpt ||
+      attachment.authorName
+    );
+  }
+
   if (attachment.kind === "sticker") {
     return attachment.label || t(msg`表情消息`);
   }
@@ -1245,6 +1253,13 @@ function resolveSearchPreviewText(item: ChatMessageSearchItem) {
 
   if (attachment.kind === "note_card") {
     return attachment.excerpt.trim() || t(msg`分享了笔记 ${attachment.title}。`);
+  }
+
+  if (attachment.kind === "feed_post_card") {
+    return (
+      attachment.excerpt.trim() ||
+      t(msg`转发了 ${attachment.authorName} 的视频号。`)
+    );
   }
 
   if (attachment.kind === "sticker") {

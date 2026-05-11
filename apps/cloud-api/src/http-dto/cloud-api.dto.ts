@@ -190,6 +190,14 @@ export class VerifyCodeDto {
   @MinLength(1, { message: "deviceFingerprint 不能为空。" })
   @MaxLength(128, { message: "deviceFingerprint 不能超过 128 个字符。" })
   deviceFingerprint?: string;
+
+  // 客户端探测的公网 IP（花生壳 vicp.fun L4 隧道无法传递 client IP 时的兜底）；
+  // 后端仅在 server-side 头未取到公网 IP 时采纳，且校验为合法 IPv4/IPv6。
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientReportedIp 必须是字符串。" })
+  @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
+  clientReportedIp?: string;
 }
 
 export class RedeemInviteDto {
@@ -234,6 +242,12 @@ export class VerifyEmailCodeDto {
   @MinLength(1, { message: "deviceFingerprint 不能为空。" })
   @MaxLength(128, { message: "deviceFingerprint 不能超过 128 个字符。" })
   deviceFingerprint?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientReportedIp 必须是字符串。" })
+  @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
+  clientReportedIp?: string;
 }
 
 export class VerifyGoogleIdTokenDto {
@@ -256,6 +270,12 @@ export class VerifyGoogleIdTokenDto {
   @MinLength(1, { message: "deviceFingerprint 不能为空。" })
   @MaxLength(128, { message: "deviceFingerprint 不能超过 128 个字符。" })
   deviceFingerprint?: string;
+
+  @Transform(trimString)
+  @IsOptional()
+  @IsString({ message: "clientReportedIp 必须是字符串。" })
+  @MaxLength(45, { message: "clientReportedIp 不能超过 45 个字符。" })
+  clientReportedIp?: string;
 }
 
 export class CheckoutDto {

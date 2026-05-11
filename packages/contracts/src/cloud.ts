@@ -104,6 +104,10 @@ export interface VerifyPhoneCodeRequest {
   code: string;
   inviteCode?: string;
   deviceFingerprint?: string;
+  // 花生壳 vicp.fun 隧道是纯 L4 转发，不注入任何 client-IP 头；
+  // 让前端探一次公网 IP（ipify 等）作为兜底，后端仅在 server-side 头取不到
+  // 公网 IP 时才采纳，否则保留服务器测得值（不可被客户端覆盖）。
+  clientReportedIp?: string;
 }
 
 export interface VerifyPhoneCodeResponse {
@@ -127,6 +131,7 @@ export interface VerifyEmailCodeRequest {
   code: string;
   inviteCode?: string;
   deviceFingerprint?: string;
+  clientReportedIp?: string;
 }
 
 export interface VerifyEmailCodeResponse {
@@ -139,6 +144,7 @@ export interface VerifyGoogleIdTokenRequest {
   idToken: string;
   inviteCode?: string;
   deviceFingerprint?: string;
+  clientReportedIp?: string;
 }
 
 export interface VerifyGoogleIdTokenResponse {

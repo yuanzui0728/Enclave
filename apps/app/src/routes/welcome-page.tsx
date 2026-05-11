@@ -28,6 +28,7 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 import { track } from "@yinjie/analytics";
 import { AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { detectClientPublicIp } from "../lib/client-public-ip";
 import { getDeviceFingerprint } from "../lib/device-fingerprint";
 import { persistInviteCode, readStoredInviteCode } from "../lib/invite-code-storage";
 import { describeRequestError } from "../lib/request-error";
@@ -642,11 +643,13 @@ export function WelcomePage() {
     try {
       const inviteCodePayload =
         authMode === "register" && inviteCode ? inviteCode : undefined;
+      const clientReportedIp = (await detectClientPublicIp()) ?? undefined;
       const verifyResult = await verifyCloudGoogleIdToken(
         {
           idToken,
           inviteCode: inviteCodePayload,
           deviceFingerprint: getDeviceFingerprint(),
+          clientReportedIp,
         },
         normalizedCloudApiBaseUrl || undefined,
       );
@@ -754,6 +757,7 @@ export function WelcomePage() {
         verifyAttempted = true;
         const inviteCodePayload =
           authMode === "register" && inviteCode ? inviteCode : undefined;
+        const clientReportedIp = (await detectClientPublicIp()) ?? undefined;
         if (accountType === "email") {
           const verifyResult = await verifyCloudEmailCode(
             {
@@ -761,6 +765,7 @@ export function WelcomePage() {
               code: code.trim(),
               inviteCode: inviteCodePayload,
               deviceFingerprint: getDeviceFingerprint(),
+              clientReportedIp,
             },
             normalizedCloudApiBaseUrl || undefined,
           );
@@ -789,6 +794,7 @@ export function WelcomePage() {
               code: code.trim(),
               inviteCode: inviteCodePayload,
               deviceFingerprint: getDeviceFingerprint(),
+              clientReportedIp,
             },
             normalizedCloudApiBaseUrl || undefined,
           );

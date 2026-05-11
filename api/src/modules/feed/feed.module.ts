@@ -14,6 +14,7 @@ import { SocialModule } from '../social/social.module';
 import { CyberAvatarModule } from '../cyber-avatar/cyber-avatar.module';
 import { SystemConfigModule } from '../config/config.module';
 import { MinimaxModule } from '../minimax/minimax.module';
+import { ChatModule } from '../chat/chat.module';
 import { FeedMinimaxCallbacks } from './feed-minimax.callbacks';
 
 @Module({
@@ -32,6 +33,7 @@ import { FeedMinimaxCallbacks } from './feed-minimax.callbacks';
     SystemConfigModule,
     forwardRef(() => CyberAvatarModule),
     MinimaxModule,
+    forwardRef(() => ChatModule),
   ],
   providers: [FeedService, FeedMinimaxCallbacks],
   controllers: [FeedController],

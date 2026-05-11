@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   addFeedComment,
@@ -252,7 +257,21 @@ export function DiscoverPage() {
     onSuccess: async () => {
       composeDraft.reset();
       setSuccessNotice(t(msg`广场动态已发布，世界居民公开可见。`));
-      await queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
+      // discover-feed-page 走无限分页：发布后分页边界后移，先把 paged cache 收回到 page 1
+      queryClient.setQueryData<InfiniteData<FeedListResponse>>(
+        ["app-feed-paged", baseUrl],
+        (current) =>
+          current
+            ? {
+                pages: current.pages.slice(0, 1),
+                pageParams: current.pageParams.slice(0, 1),
+              }
+            : current,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
+      ]);
     },
   });
 
@@ -296,25 +315,35 @@ export function DiscoverPage() {
         },
         baseUrl,
       );
-      return { request: result, scene };
+      return { ...result, scene };
     },
-    onSuccess: ({ request, scene }) => {
+    onSuccess: ({ request, matchSource, scene }) => {
       const sceneLabel =
         scenes.find((item) => item.id === scene)?.label ?? null;
       const translatedSceneLabel = sceneLabel ? t(sceneLabel) : scene;
 
-      if (!request) {
-        setSceneMessage(t(msg`${translatedSceneLabel} 里暂时没有新的相遇。`));
+      if (!request || matchSource === "none") {
+        setSceneMessage(
+          t(msg`${translatedSceneLabel}里和别处都暂时没有新的相遇了。`),
+        );
         return;
       }
 
       setSuccessNotice(t(msg`场景相遇已写入好友申请列表。`));
       const greeting = request.greeting ?? t(msg`对你产生了兴趣。`);
-      setSceneMessage(
-        t(
-          msg`${request.characterName} 在${translatedSceneLabel}里注意到了你：${greeting}`,
-        ),
-      );
+      if (matchSource === "fallback") {
+        setSceneMessage(
+          t(
+            msg`${request.characterName} 不在${translatedSceneLabel}，但顺路碰到了你：${greeting}`,
+          ),
+        );
+      } else {
+        setSceneMessage(
+          t(
+            msg`${request.characterName} 在${translatedSceneLabel}里注意到了你：${greeting}`,
+          ),
+        );
+      }
       void queryClient.invalidateQueries({
         queryKey: ["app-friend-requests", baseUrl],
       });
@@ -367,7 +396,10 @@ export function DiscoverPage() {
     },
     onSuccess: async () => {
       setSuccessNotice(t(msg`广场互动已更新。`));
-      await queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
+      ]);
     },
   });
 
@@ -383,7 +415,10 @@ export function DiscoverPage() {
     onSuccess: async (_, postId) => {
       setFeedCommentDrafts((current) => ({ ...current, [postId]: "" }));
       setSuccessNotice(t(msg`广场互动已更新。`));
-      await queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
+      ]);
     },
   });
 

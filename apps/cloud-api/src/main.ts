@@ -48,6 +48,11 @@ function rewriteWorldApiQueryTokenToHeader(): RequestHandler {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
+  // 启用 express 的 trust proxy，让 req.ip 解析 X-Forwarded-For；
+  // 这是 extractIp() 兜底链里 req.ip 那一跳能拿到真实客户端 IP 的前提。
+  // 反向代理（nginx）在本机回环上，所以 trust = true（信任所有上游）即可；
+  // 公网入口我们不直接暴露 cloud-api，没有 spoof 风险。
+  app.getHttpAdapter().getInstance().set("trust proxy", true);
   app.use(rewriteWorldApiQueryTokenToHeader());
   app.use(skipBodyParserForProxy(express.json({ limit: "32mb" })));
   app.use(

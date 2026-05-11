@@ -3,7 +3,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
-import { ArrowLeft, ChevronRight, Copy, Play, Share2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Play } from "lucide-react";
 
 const t = translateRuntimeMessage;
 import { TabPageTopBar } from "../components/tab-page-top-bar";
@@ -540,24 +540,6 @@ export function GamesPage() {
             className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
           >
             <ArrowLeft size={17} />
-          </Button>
-        }
-        rightActions={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
-            onClick={() => void handleCopyGameToMobile(selectedGame.id)}
-            aria-label={
-              nativeMobileShareSupported ? t(msg`分享当前游戏`) : t(msg`复制游戏入口`)
-            }
-          >
-            {nativeMobileShareSupported ? (
-              <Share2 size={17} />
-            ) : (
-              <Copy size={17} />
-            )}
           </Button>
         }
       />

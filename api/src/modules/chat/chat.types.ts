@@ -128,6 +128,24 @@ export interface NoteCardAttachment {
   updatedAt: string;
 }
 
+/**
+ * 视频号帖子转发卡片：用户/角色把视频号一条帖子转发到私聊里时的最小快照。
+ */
+export interface FeedPostCardAttachment {
+  kind: 'feed_post_card';
+  postId: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  title?: string;
+  excerpt: string;
+  mediaType: 'text' | 'image' | 'video' | 'audio';
+  coverUrl?: string;
+  primaryMediaUrl?: string;
+  durationMs?: number;
+  surface: 'channels';
+}
+
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
@@ -135,7 +153,8 @@ export type MessageAttachment =
   | VoiceAttachment
   | ContactCardAttachment
   | LocationCardAttachment
-  | NoteCardAttachment;
+  | NoteCardAttachment
+  | FeedPostCardAttachment;
 
 export interface Message {
   id: string;
@@ -154,7 +173,8 @@ export interface Message {
     | 'voice'
     | 'contact_card'
     | 'location_card'
-    | 'note_card';
+    | 'note_card'
+    | 'feed_post_card';
   text: string;
   attachment?: MessageAttachment;
   createdAt: Date;
@@ -176,7 +196,8 @@ export interface GroupMessage {
     | 'voice'
     | 'contact_card'
     | 'location_card'
-    | 'note_card';
+    | 'note_card'
+    | 'feed_post_card';
   text: string;
   attachment?: MessageAttachment;
   createdAt: Date;

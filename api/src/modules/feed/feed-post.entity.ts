@@ -3,9 +3,16 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity('feed_posts')
+@Index('idx_feed_posts_surface_status_createdAt', [
+  'surface',
+  'publishStatus',
+  'createdAt',
+])
+@Index('idx_feed_posts_authorId_status', ['authorId', 'publishStatus'])
 export class FeedPostEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

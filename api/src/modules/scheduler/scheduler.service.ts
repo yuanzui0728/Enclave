@@ -366,6 +366,21 @@ export class SchedulerService {
     );
   }
 
+  /**
+   * 视频号角色主动转发 cron：与 process_pending_feed_reactions（5min 节奏的
+   * 互动 cron）和 check_channels_schedule（20min 节奏的内容生成 cron）解耦。
+   * 30min 节奏 + 服务内严格的「每角色每天 1 条 / 每 owner 每天 3 条」上限，
+   * 整体频次远低于互动，避免私聊被卡片刷屏。
+   */
+  @Cron('0 */30 * * * *')
+  async runChannelProactiveForward() {
+    await this.runScheduledJob(
+      'channel_proactive_forward',
+      () => this.handleChannelProactiveForward(),
+      'Failed to run channel proactive forward',
+    );
+  }
+
   @Cron('0 */2 * * *')
   async updateCharacterStatus() {
     await this.runScheduledJob(
@@ -555,6 +570,12 @@ export class SchedulerService {
         return (
           await this.executeTrackedJob(jobId, () =>
             this.handleCheckChannelsSchedule(),
+          )
+        ).summary;
+      case 'channel_proactive_forward':
+        return (
+          await this.executeTrackedJob(jobId, () =>
+            this.handleChannelProactiveForward(),
           )
         ).summary;
       case 'update_character_status':
@@ -1131,7 +1152,8 @@ export class SchedulerService {
 
     const scenes = runtimeRules.sceneFriendRequestScenes;
     const scene = scenes[Math.floor(Math.random() * scenes.length)];
-    const req = await this.socialService.triggerSceneFriendRequest(scene);
+    const { request: req } =
+      await this.socialService.triggerSceneFriendRequest(scene);
     if (!req) {
       return {
         summary: renderTemplate(
@@ -1169,6 +1191,11 @@ export class SchedulerService {
     // 广场版「NPC autonomy tick」——已对齐朋友圈逻辑：所有可见角色都可能上线，
     // 用户帖与角色帖都参与候选打分，行动后回写 character_friendships.
     const result = await this.feedService.runFeedNpcAutonomyTick();
+    return { summary: result.summary };
+  }
+
+  private async handleChannelProactiveForward(): Promise<TrackedJobResult> {
+    const result = await this.feedService.runChannelProactiveForwardTick();
     return { summary: result.summary };
   }
 

@@ -5,6 +5,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, useDesktopRuntime } from "@yinjie/ui";
+import { clearCloudRuntimeSession } from "../../lib/cloud-session";
 import { requiresRemoteServiceConfiguration } from "../../lib/runtime-config";
 import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -125,22 +126,6 @@ export function DesktopRuntimeGuard() {
     remoteStatusQuery.errorUpdatedAt,
   ]);
 
-  if (isMobileRuntime) {
-    return null;
-  }
-
-  if (hasDesktopRuntimeControl && !desktopAvailable) {
-    return null;
-  }
-
-  if (
-    !hasDesktopRuntimeControl &&
-    onEntryRoute &&
-    runtimeContext.capabilities.canConfigureRemoteService
-  ) {
-    return null;
-  }
-
   const desktopUnavailable =
     hasDesktopRuntimeControl &&
     (!desktopStatusQuery.data || !desktopStatusQuery.data.reachable);
@@ -157,6 +142,46 @@ export function DesktopRuntimeGuard() {
       remoteProbeUnavailable ||
       remoteCoreApiHealthy === false ||
       remoteStatusMalformed);
+
+  // 远程世界后端掉线时，不再用"暂时无法进入隐界 / 再试一次"挡用户——直接清掉
+  // 云会话并踢回 /welcome。welcome 页的重新登录会让 cloud-api 拉起对应世界的
+  // 后端，所以从用户视角看"重新登录"=自动恢复。桌面壳路径仍走原来的本地重试
+  // 兜底，因为那里是本地 Core API，没有"重新登录触发拉起"的语义。
+  const shouldBootToWelcome =
+    !isMobileRuntime && remoteUnavailable && !onEntryRoute;
+  const bootingToWelcomeRef = useRef(false);
+  useEffect(() => {
+    if (!shouldBootToWelcome) {
+      bootingToWelcomeRef.current = false;
+      return;
+    }
+    if (bootingToWelcomeRef.current) {
+      return;
+    }
+    bootingToWelcomeRef.current = true;
+    clearCloudRuntimeSession();
+    void navigate({ to: "/welcome", replace: true });
+  }, [navigate, shouldBootToWelcome]);
+
+  if (isMobileRuntime) {
+    return null;
+  }
+
+  if (hasDesktopRuntimeControl && !desktopAvailable) {
+    return null;
+  }
+
+  if (
+    !hasDesktopRuntimeControl &&
+    onEntryRoute &&
+    runtimeContext.capabilities.canConfigureRemoteService
+  ) {
+    return null;
+  }
+
+  if (shouldBootToWelcome) {
+    return null;
+  }
 
   if (!desktopUnavailable && !remoteUnavailable) {
     return null;

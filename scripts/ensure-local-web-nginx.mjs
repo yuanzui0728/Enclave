@@ -204,12 +204,23 @@ http {
     }
 
     location /cloud/ {
+      # /cloud/world-api/socket.io 的 WS upgrade 也走这里，必须显式带上
+      # Upgrade/Connection；不带的话浏览器 ws://<host>/cloud/world-api/socket.io
+      # 握手会在 nginx 这一跳被退化成普通 HTTP，cloud-api 那边的 upgrade
+      # listener 不会触发，前端就一直拿 "WebSocket connection failed"。
+      # 视频/音频走的是 cloud-api HTTP 代理，普通 proxy_set_header 足够；
+      # WS 升级在这里 set Upgrade 不会影响普通请求（无 Upgrade header 时
+      # $connection_upgrade map 默认是 "close"，等价无此 header）。
       proxy_pass ${cloudUpstream};
       proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $connection_upgrade;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_read_timeout 600s;
+      proxy_send_timeout 600s;
     }
 
     location /admin/cloud/ {
@@ -248,7 +259,12 @@ http {
     location / {
       error_page 418 = @site_proxy;
       if ($route_to_site) { return 418; }
-      add_header Cache-Control "no-store";
+      # no-store 会让公网每次刷新都全量传 index.html (~12KB)；
+      # no-cache 允许浏览器缓存但强制每次走 If-None-Match 验证。
+      # nginx 对静态文件自动发 ETag/Last-Modified，命中走 304 空响应，
+      # 公网隧道下省 body 传输和解析（重访 ~200-300ms）。hash 资源仍 1y immutable，
+      # 所以 index.html 改成 must-revalidate 不会导致用户拿到陈旧 chunk。
+      add_header Cache-Control "no-cache";
       try_files $uri $uri/ /index.html;
     }
 

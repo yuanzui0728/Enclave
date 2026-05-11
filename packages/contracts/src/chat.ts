@@ -22,7 +22,8 @@ export type MessageType =
   | "voice"
   | "contact_card"
   | "location_card"
-  | "note_card";
+  | "note_card"
+  | "feed_post_card";
 export type GroupMemberType = "user" | "character";
 export type ChatMessageSearchCategory = "all" | "media" | "files" | "links";
 

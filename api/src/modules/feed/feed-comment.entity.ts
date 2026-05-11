@@ -1,6 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 
 @Entity('feed_comments')
+@Index('idx_feed_comments_postId_status', ['postId', 'status'])
 export class FeedCommentEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

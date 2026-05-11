@@ -117,9 +117,10 @@ export function MobileFriendMomentsPage() {
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
   const commentMutation = useMutation({
@@ -151,9 +152,10 @@ export function MobileFriendMomentsPage() {
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
     },
   });
 

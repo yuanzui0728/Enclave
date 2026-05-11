@@ -48,6 +48,7 @@ import { buildVoiceAttachmentSummary } from './voice-attachment-summary';
 import {
   ContactCardAttachment,
   Conversation,
+  FeedPostCardAttachment,
   FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
@@ -126,6 +127,11 @@ type SendConversationMessageInput =
       type: 'note_card';
       text?: string;
       attachment: NoteCardAttachment;
+    }
+  | {
+      type: 'feed_post_card';
+      text?: string;
+      attachment: FeedPostCardAttachment;
     };
 
 type UploadedAttachmentFile = {
@@ -801,6 +807,58 @@ export class ChatService {
         characterId,
       });
     }
+    this.conversationHistory.set(conversationId, history);
+
+    return this.serializeMessage(messageEntity);
+  }
+
+  /**
+   * 把用户主动塞进会话的「附件卡片」消息直接落库 + 推 socket，不触发 AI 自动回复。
+   *
+   * 使用场景：视频号转发到聊天 —— 用户的转发动作不需要友角色立刻自动接话，
+   * 否则 HTTP 请求要等一次 LLM 调用回包（~5-10s），UX 会卡。
+   *
+   * 复用 saveProactiveAttachmentMessage 的写库 / history / activity 流程，
+   * 仅区别：senderType='user'，history 推进走 role='user'。
+   */
+  async saveUserAttachmentMessage(
+    conversationId: string,
+    senderId: string,
+    senderName: string,
+    attachment: MessageAttachment,
+    text?: string,
+  ): Promise<Message> {
+    const entity = await this.requireOwnedConversation(conversationId);
+    const fallbackText =
+      text?.trim() || this.getAttachmentFallbackText(attachment);
+
+    const messageEntity = this.msgRepo.create({
+      // 加随机后缀避免 cron / 多 client 并发转发时 PrimaryColumn 冲突
+      // （saveProactiveAttachmentMessage 用的旧 `${Date.now()}_${kind}` 模式
+      //  会有 1ms 内插入两条 = 主键冲突的小概率）
+      id: `msg_${Date.now()}_${attachment.kind}_${randomUUID().slice(0, 8)}`,
+      conversationId,
+      senderType: 'user',
+      senderId,
+      senderName,
+      type: attachment.kind,
+      text: fallbackText,
+      attachmentKind: attachment.kind,
+      attachmentPayload: JSON.stringify(attachment),
+    });
+
+    await this.msgRepo.save(messageEntity);
+    await this.touchConversationActivity(
+      entity,
+      messageEntity.createdAt ?? new Date(),
+    );
+
+    const history = await this.ensureConversationHistory(entity);
+    history.push({
+      role: 'user',
+      content: fallbackText,
+      parts: this.buildTextAiParts(fallbackText),
+    });
     this.conversationHistory.set(conversationId, history);
 
     return this.serializeMessage(messageEntity);
@@ -1684,7 +1742,8 @@ export class ChatService {
         | 'voice'
         | 'contact_card'
         | 'location_card'
-        | 'note_card',
+        | 'note_card'
+        | 'feed_post_card',
       text:
         entity.senderType === 'user'
           ? entity.text
@@ -1880,7 +1939,8 @@ export class ChatService {
       | 'voice'
       | 'contact_card'
       | 'location_card'
-      | 'note_card';
+      | 'note_card'
+      | 'feed_post_card';
     text: string;
     promptText: string;
     aiParts: AiMessagePart[];
@@ -1918,7 +1978,8 @@ export class ChatService {
       input.type === 'voice' ||
       input.type === 'contact_card' ||
       input.type === 'location_card' ||
-      input.type === 'note_card'
+      input.type === 'note_card' ||
+      input.type === 'feed_post_card'
     ) {
       if (!input.attachment || input.attachment.kind !== input.type) {
         throw new AppError('CHAT_ATTACHMENT_PAYLOAD_INVALID', {
@@ -2070,6 +2131,10 @@ export class ChatService {
       return this.buildTextAiParts(promptText);
     }
 
+    if (attachment.kind === 'feed_post_card') {
+      return this.buildTextAiParts(promptText);
+    }
+
     return [
       {
         type: 'sticker',
@@ -2198,6 +2263,16 @@ export class ChatService {
         attachment.tags.length
           ? `标签：${attachment.tags.map((tag) => `#${tag}`).join(' ')}`
           : '',
+      ].filter(Boolean);
+      const captionText = caption ? `，补充说明：${caption}` : '';
+      return `${detailParts.join('，')}${captionText}`.trim();
+    }
+
+    if (attachment.kind === 'feed_post_card') {
+      const detailParts = [
+        `转发了一条 ${attachment.authorName} 的视频号`,
+        attachment.title ? `标题：${attachment.title}` : '',
+        attachment.excerpt ? `摘要：${attachment.excerpt}` : '',
       ].filter(Boolean);
       const captionText = caption ? `，补充说明：${caption}` : '';
       return `${detailParts.join('，')}${captionText}`.trim();

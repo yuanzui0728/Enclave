@@ -3,10 +3,17 @@ import {
   lazy,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { ArrowLeft, Camera } from "lucide-react";
@@ -14,10 +21,11 @@ import {
   addMomentComment,
   deleteMoment,
   getBlockedCharacters,
-  getMoments,
+  getMomentsPage,
   toggleMomentLike,
   type Moment,
   type MomentComment,
+  type MomentsPageResponse,
 } from "@yinjie/contracts";
 import type { MessageDescriptor } from "@lingui/core";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -152,15 +160,67 @@ export function MomentsPage() {
     setDesktopAvatarPopover(null);
   }, [hash, pathname]);
 
-  const momentsQuery = useQuery({
-    queryKey: ["app-moments", baseUrl],
-    queryFn: () => getMoments(baseUrl),
+  // 朋友圈用无限分页，避免一次性把所有动态都拉过来（之前 1 次 ≈ 139 条 SQL）。
+  // 每页 20 条；触底 → fetchNextPage；下拉刷新 → 重置到第 1 页。
+  const momentsQuery = useInfiniteQuery({
+    queryKey: ["app-moments-paged", baseUrl],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      getMomentsPage({ page: pageParam, limit: 20 }, baseUrl),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.hasMore ? allPages.length + 1 : undefined,
   });
+  // 按 id 去重：分页路径下若新发/删除导致页间边界偏移，page N 末尾和 page N+1 开头
+  // 可能拿到同一条 moment。UI 层兜底去重，避免列表重复闪烁。
+  const momentsData = useMemo<Moment[]>(() => {
+    if (!momentsQuery.data) return [];
+    const seen = new Set<string>();
+    const items: Moment[] = [];
+    for (const page of momentsQuery.data.pages) {
+      for (const moment of page.items) {
+        if (seen.has(moment.id)) continue;
+        seen.add(moment.id);
+        items.push(moment);
+      }
+    }
+    return items;
+  }, [momentsQuery.data]);
+  const momentsHasNextPage = momentsQuery.hasNextPage;
+  const momentsIsFetchingNextPage = momentsQuery.isFetchingNextPage;
+  const momentsFetchNextPage = momentsQuery.fetchNextPage;
+  // 桌面工作区不挂触底 sentinel：mount 后自动连续 prefetch 把所有页悄悄填上。
+  // 移动端用 sentinel + IntersectionObserver 按需触发。
+  useEffect(() => {
+    if (!isDesktopLayout) return;
+    if (momentsHasNextPage && !momentsIsFetchingNextPage) {
+      void momentsFetchNextPage();
+    }
+  }, [
+    isDesktopLayout,
+    momentsHasNextPage,
+    momentsIsFetchingNextPage,
+    momentsFetchNextPage,
+  ]);
   const blockedQuery = useQuery({
     queryKey: ["app-moments-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(ownerId),
   });
+
+  function resetMomentsToFirstPage() {
+    // 帖子数量变化（发布/删除）时把已加载多页收回 page 1：
+    // 避免 invalidate 同时 refetch 多页造成的分页边界重复或丢失（page 1 末尾 = page 2 开头）。
+    queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
+      ["app-moments-paged", baseUrl],
+      (current) =>
+        current
+          ? {
+              pages: current.pages.slice(0, 1),
+              pageParams: current.pageParams.slice(0, 1),
+            }
+          : current,
+    );
+  }
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -177,9 +237,16 @@ export function MomentsPage() {
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`朋友圈已发布。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      resetMomentsToFirstPage();
+      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments-paged", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments", baseUrl],
+        }),
+      ]);
     },
   });
 
@@ -187,49 +254,58 @@ export function MomentsPage() {
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: async (momentId) => {
       if (!ownerId) {
-        return { snapshots: [] as Array<[readonly unknown[], Moment[] | undefined]> };
+        return {
+          snapshots: [] as Array<
+            [readonly unknown[], InfiniteData<MomentsPageResponse> | undefined]
+          >,
+        };
       }
-      await queryClient.cancelQueries({ queryKey: ["app-moments", baseUrl] });
-      const snapshots = queryClient.getQueriesData<Moment[]>({
-        queryKey: ["app-moments", baseUrl],
+      await queryClient.cancelQueries({ queryKey: ["app-moments-paged", baseUrl] });
+      const snapshots = queryClient.getQueriesData<
+        InfiniteData<MomentsPageResponse>
+      >({
+        queryKey: ["app-moments-paged", baseUrl],
       });
       snapshots.forEach(([key, data]) => {
         if (!data) {
           return;
         }
-        queryClient.setQueryData<Moment[]>(
-          key,
-          data.map((moment) => {
-            if (moment.id !== momentId) {
-              return moment;
-            }
-            const alreadyLiked = moment.likes.some(
-              (like) => like.authorId === ownerId,
-            );
-            const nextLikes = alreadyLiked
-              ? moment.likes.filter((like) => like.authorId !== ownerId)
-              : [
-                  ...moment.likes,
-                  {
-                    id: `optimistic-${ownerId}-${moment.id}`,
-                    postId: moment.id,
-                    authorId: ownerId,
-                    authorName: ownerUsername ?? t(msg`我`),
-                    authorAvatar: ownerAvatar ?? "",
-                    authorType: "user" as const,
-                    createdAt: new Date().toISOString(),
-                  },
-                ];
-            return {
-              ...moment,
-              likes: nextLikes,
-              likeCount: Math.max(
-                0,
-                moment.likeCount + (alreadyLiked ? -1 : 1),
-              ),
-            };
-          }),
-        );
+        queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(key, {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.map((moment) => {
+              if (moment.id !== momentId) {
+                return moment;
+              }
+              const alreadyLiked = moment.likes.some(
+                (like) => like.authorId === ownerId,
+              );
+              const nextLikes = alreadyLiked
+                ? moment.likes.filter((like) => like.authorId !== ownerId)
+                : [
+                    ...moment.likes,
+                    {
+                      id: `optimistic-${ownerId}-${moment.id}`,
+                      postId: moment.id,
+                      authorId: ownerId,
+                      authorName: ownerUsername ?? t(msg`我`),
+                      authorAvatar: ownerAvatar ?? "",
+                      authorType: "user" as const,
+                      createdAt: new Date().toISOString(),
+                    },
+                  ];
+              return {
+                ...moment,
+                likes: nextLikes,
+                likeCount: Math.max(
+                  0,
+                  moment.likeCount + (alreadyLiked ? -1 : 1),
+                ),
+              };
+            }),
+          })),
+        });
       });
       return { snapshots };
     },
@@ -243,9 +319,15 @@ export function MomentsPage() {
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`朋友圈互动已更新。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments-paged", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments", baseUrl],
+        }),
+      ]);
     },
   });
 
@@ -293,24 +375,35 @@ export function MomentsPage() {
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`朋友圈互动已更新。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments-paged", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments", baseUrl],
+        }),
+      ]);
     },
   });
   const deleteMutation = useMutation({
     mutationFn: (momentId: string) => deleteMoment(momentId, baseUrl),
     onMutate: async (momentId) => {
-      await queryClient.cancelQueries({ queryKey: ["app-moments", baseUrl] });
-      const snapshots = queryClient.getQueriesData<Moment[]>({
-        queryKey: ["app-moments", baseUrl],
+      await queryClient.cancelQueries({ queryKey: ["app-moments-paged", baseUrl] });
+      const snapshots = queryClient.getQueriesData<
+        InfiniteData<MomentsPageResponse>
+      >({
+        queryKey: ["app-moments-paged", baseUrl],
       });
       snapshots.forEach(([key, data]) => {
         if (!data) return;
-        queryClient.setQueryData<Moment[]>(
-          key,
-          data.filter((item) => item.id !== momentId),
-        );
+        queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(key, {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.filter((item) => item.id !== momentId),
+          })),
+        });
       });
       return { snapshots };
     },
@@ -324,9 +417,18 @@ export function MomentsPage() {
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`已删除这条朋友圈。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      // 删除会让分页边界前移：如不先把 cache 收回到 page 1，refetch 多页时下一页
+      // 的第一条会被前面那页的末尾"吃掉"，造成中间漏一条。
+      resetMomentsToFirstPage();
+      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments-paged", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-moments", baseUrl],
+        }),
+      ]);
     },
   });
   const pendingLikeMomentId = likeMutation.isPending
@@ -338,7 +440,7 @@ export function MomentsPage() {
   const blockedCharacterIds = new Set(
     (blockedQuery.data ?? []).map((item) => item.characterId),
   );
-  const visibleMoments = (momentsQuery.data ?? []).filter(
+  const visibleMoments = momentsData.filter(
     (moment) =>
       moment.authorType !== "character" ||
       !blockedCharacterIds.has(moment.authorId),
@@ -420,11 +522,14 @@ export function MomentsPage() {
       return;
     }
 
+    // 先收回到 page 1 再 refetch，避免多页 refetch 命中分页边界偏移
+    resetMomentsToFirstPage();
     void momentsQuery.refetch();
     void blockedQuery.refetch();
   }
 
   function handleRetryLoad() {
+    resetMomentsToFirstPage();
     void momentsQuery.refetch();
     void blockedQuery.refetch();
   }
@@ -781,6 +886,7 @@ export function MomentsPage() {
             );
           }}
           onRefresh={() => {
+            resetMomentsToFirstPage();
             void momentsQuery.refetch();
             if (ownerId) {
               void blockedQuery.refetch();
@@ -894,10 +1000,19 @@ export function MomentsPage() {
       }
       onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
       onRefresh={async () => {
+        // 重置到第 1 页：剔除其余页，让首页 refetch 拉新数据；用户再触底时重新堆。
+        resetMomentsToFirstPage();
         await Promise.all([
           momentsQuery.refetch(),
           ownerId ? blockedQuery.refetch() : Promise.resolve(null),
         ]);
+      }}
+      hasNextPage={Boolean(momentsQuery.hasNextPage)}
+      isFetchingNextPage={momentsQuery.isFetchingNextPage}
+      onLoadMore={() => {
+        if (momentsQuery.hasNextPage && !momentsQuery.isFetchingNextPage) {
+          void momentsQuery.fetchNextPage();
+        }
       }}
       onRetry={handleRetryLoad}
       onEmptyAction={handleEmptyStateAction}
@@ -955,6 +1070,9 @@ type MobileMomentsViewProps = {
   onNoticeBack: () => void;
   likeError: Error | null;
   commentError: Error | null;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
 };
 
 function MobileMomentsView({
@@ -993,12 +1111,38 @@ function MobileMomentsView({
   onNoticeBack,
   likeError,
   commentError,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
 }: MobileMomentsViewProps) {
   const t = tx;
   const { containerRef, state: pullState } = usePullToRefresh({
     onRefresh,
     enabled: true,
   });
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // 触底加载：观察列表底部 sentinel；进入视野且还有下一页 → 自动触发 fetchNextPage。
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) {
+      return;
+    }
+    const sentinel = loadMoreRef.current;
+    const root = containerRef.current;
+    if (!sentinel || !root) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          onLoadMore();
+        }
+      },
+      { root, rootMargin: "240px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [containerRef, hasNextPage, isFetchingNextPage, onLoadMore]);
 
   const activeMoment = actionBubble
     ? visibleMoments.find((moment) => moment.id === actionBubble.momentId) ??
@@ -1209,6 +1353,25 @@ function MobileMomentsView({
                 </Button>
               </div>
             </div>
+          ) : null}
+
+          {visibleMoments.length > 0 ? (
+            <>
+              <div
+                ref={loadMoreRef}
+                className="h-1 w-full"
+                aria-hidden="true"
+              />
+              {isFetchingNextPage ? (
+                <div className="py-4 text-center text-[12px] text-[#9A9A9A]">
+                  {t(msg`正在加载更多…`)}
+                </div>
+              ) : !hasNextPage ? (
+                <div className="py-4 text-center text-[12px] text-[#C0C0C0]">
+                  {t(msg`已经到底了`)}
+                </div>
+              ) : null}
+            </>
           ) : null}
 
           <div className="h-[calc(env(safe-area-inset-bottom,0px)+24px)]" />

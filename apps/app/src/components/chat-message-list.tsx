@@ -93,6 +93,8 @@ import {
 } from "../features/favorites/favorites-storage";
 import { isFavoriteNoteMissingError } from "../features/favorites/note-editor-helpers";
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
+import { buildDesktopChannelsRouteHash } from "../features/channels/channels-route-state";
+import { resolveAppMediaUrl } from "../lib/media-url";
 import {
   extractChatReplyMetadata,
   sanitizeDisplayedChatText,
@@ -172,7 +174,8 @@ type OpenableAttachment =
   | Extract<MessageAttachment, { kind: "file" }>
   | Extract<MessageAttachment, { kind: "contact_card" }>
   | Extract<MessageAttachment, { kind: "location_card" }>
-  | Extract<MessageAttachment, { kind: "note_card" }>;
+  | Extract<MessageAttachment, { kind: "note_card" }>
+  | Extract<MessageAttachment, { kind: "feed_post_card" }>;
 
 type SaveableAttachment =
   | Extract<MessageAttachment, { kind: "image" }>
@@ -1820,6 +1823,22 @@ export function ChatMessageList({
       return;
     }
 
+    if (attachment.kind === "feed_post_card") {
+      // 视频号转发卡片点开 → 跳到对应视频号详情。复用 channels-route-state
+      // 的 hash 编码（postId / section / returnPath）。
+      const channelsHash = buildDesktopChannelsRouteHash({
+        postId: attachment.postId,
+        section: "recommended",
+      });
+      // 桌面走 /discover/channels；移动走 /tabs/channels（与 channels-page 保持一致）
+      if (variant === "desktop") {
+        void navigate({ to: "/discover/channels", hash: channelsHash });
+      } else {
+        void navigate({ to: "/tabs/channels", hash: channelsHash });
+      }
+      return;
+    }
+
     if (attachment.kind === "file") {
       const openFileAttachment = () =>
         openRemoteFile({
@@ -3023,6 +3042,17 @@ export function ChatMessageList({
                   ) : message.type === "note_card" &&
                     message.attachment?.kind === "note_card" ? (
                     <NoteCardMessage
+                      attachment={message.attachment}
+                      variant={variant}
+                      onOpen={
+                        selectionMode
+                          ? undefined
+                          : () => openAttachment(message)
+                      }
+                    />
+                  ) : message.type === "feed_post_card" &&
+                    message.attachment?.kind === "feed_post_card" ? (
+                    <FeedPostCardMessage
                       attachment={message.attachment}
                       variant={variant}
                       onOpen={
@@ -4280,6 +4310,13 @@ function getOpenableAttachment(
     return message.attachment;
   }
 
+  if (
+    message.type === "feed_post_card" &&
+    message.attachment?.kind === "feed_post_card"
+  ) {
+    return message.attachment;
+  }
+
   return null;
 }
 
@@ -5043,6 +5080,100 @@ function NoteCardMessage({
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`${translateRuntimeMessage(variant === "desktop" ? msg`打开笔记` : msg`查看笔记摘要`)} ${attachment.title}`}
+    >
+      {card}
+    </button>
+  );
+}
+
+/**
+ * 视频号转发卡片：用户/角色把视频号一条帖子转发进来时显示的卡片，
+ * 点开走 buildDesktopChannelsRouteHash 跳到该 postId 的视频号详情。
+ *
+ * 没有封面就用 video / audio / 文本图标兜底。
+ */
+function FeedPostCardMessage({
+  attachment,
+  variant,
+  onOpen,
+}: {
+  attachment: Extract<MessageAttachment, { kind: "feed_post_card" }>;
+  variant: "mobile" | "desktop";
+  onOpen?: () => void;
+}) {
+  const isDesktop = variant === "desktop";
+  const cover = attachment.coverUrl
+    ? resolveAppMediaUrl(attachment.coverUrl)
+    : null;
+  const mediaLabel = (() => {
+    if (attachment.mediaType === "video") return translateRuntimeMessage(msg`视频`);
+    if (attachment.mediaType === "audio") return translateRuntimeMessage(msg`音频`);
+    if (attachment.mediaType === "image") return translateRuntimeMessage(msg`图文`);
+    return translateRuntimeMessage(msg`视频号`);
+  })();
+  const card = (
+    <div
+      className={`overflow-hidden bg-white shadow-none ${
+        isDesktop
+          ? "w-[260px] rounded-[16px] border border-black/6"
+          : "w-[228px] rounded-[13px] border border-[color:var(--border-subtle)]"
+      }`}
+    >
+      {cover ? (
+        <div className={isDesktop ? "h-[140px]" : "h-[124px]"}>
+          <img
+            src={cover}
+            alt={attachment.title ?? attachment.authorName}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ) : (
+        <div
+          className={`flex items-center justify-center bg-[linear-gradient(140deg,#1a1a1a_0%,#3b3b3b_100%)] text-white ${
+            isDesktop ? "h-[140px]" : "h-[124px]"
+          }`}
+        >
+          <span className="text-xs uppercase tracking-[0.18em] opacity-80">
+            {mediaLabel}
+          </span>
+        </div>
+      )}
+      <div className={isDesktop ? "space-y-2 px-3.5 py-3" : "space-y-1.5 px-3 py-3"}>
+        <div
+          className={`line-clamp-2 font-medium text-[color:var(--text-primary)] ${
+            isDesktop ? "text-sm leading-5" : "text-[13px] leading-5"
+          }`}
+        >
+          {attachment.title?.trim() ||
+            attachment.excerpt ||
+            translateRuntimeMessage(msg`视频号动态`)}
+        </div>
+        <div
+          className={`flex items-center justify-between gap-3 border-t border-[rgba(15,23,42,0.06)] pt-2 text-[color:var(--text-muted)] ${
+            isDesktop ? "text-[11px]" : "text-[10px]"
+          }`}
+        >
+          <span className="truncate">
+            {translateRuntimeMessage(msg`视频号 · ${attachment.authorName}`)}
+          </span>
+          <span className="shrink-0 tracking-[0.12em] text-[color:var(--brand-primary)]">
+            {translateRuntimeMessage(msg`查看`)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={`${translateRuntimeMessage(msg`打开视频号`)} ${attachment.authorName}`}
     >
       {card}
     </button>

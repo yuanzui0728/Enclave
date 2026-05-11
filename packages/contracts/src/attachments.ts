@@ -111,6 +111,25 @@ export interface NoteCardAttachment {
   updatedAt: string;
 }
 
+/**
+ * 视频号帖子转发卡片：用户/角色把视频号一条帖子转发到私聊里时
+ * 携带的最小快照——点开后跳回视频号详情。
+ */
+export interface FeedPostCardAttachment {
+  kind: "feed_post_card";
+  postId: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  title?: string;
+  excerpt: string;
+  mediaType: "text" | "image" | "video" | "audio";
+  coverUrl?: string;
+  primaryMediaUrl?: string;
+  durationMs?: number;
+  surface: "channels";
+}
+
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
@@ -118,7 +137,8 @@ export type MessageAttachment =
   | VoiceAttachment
   | ContactCardAttachment
   | LocationCardAttachment
-  | NoteCardAttachment;
+  | NoteCardAttachment
+  | FeedPostCardAttachment;
 
 export type UploadableAttachment =
   | ImageAttachment

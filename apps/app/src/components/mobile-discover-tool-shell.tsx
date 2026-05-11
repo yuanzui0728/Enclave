@@ -16,7 +16,7 @@ type MobileDiscoverToolShellProps = {
   subtitle?: ReactNode;
   heroBadge?: ReactNode;
   heroTitle: ReactNode;
-  heroDescription: ReactNode;
+  heroDescription?: ReactNode;
   heroVisual: ReactNode;
   heroAction?: ReactNode;
   notice?: ReactNode;
@@ -200,9 +200,11 @@ export function MobileDiscoverToolShell({
               <div className="mt-3 text-[22px] font-semibold leading-tight text-[#111827]">
                 {heroTitle}
               </div>
-              <div className="mt-2 text-[13px] leading-6 text-[#6b7280]">
-                {heroDescription}
-              </div>
+              {heroDescription ? (
+                <div className="mt-2 text-[13px] leading-6 text-[#6b7280]">
+                  {heroDescription}
+                </div>
+              ) : null}
             </div>
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[rgba(7,193,96,0.12)] text-[#07c160]">
               {heroVisual}

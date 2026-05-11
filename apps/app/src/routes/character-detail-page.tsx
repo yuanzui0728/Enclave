@@ -319,7 +319,6 @@ export function CharacterDetailPage() {
   const commonGroupsLabel = t(msg`共同群聊`);
   const currentStatusLabel = t(msg`当前状态`);
   const expertiseLabel = t(msg`擅长领域`);
-  const coreDirectiveLabel = t(msg`核心理念`);
   const bioLabel = t(msg`角色简介`);
   const noMoreIntroLabel = t(msg`暂时没有更多介绍。`);
   const friendPermissionsTitle = t(msg`朋友权限`);
@@ -344,7 +343,6 @@ export function CharacterDetailPage() {
     translateCharacterActivity(t, character?.currentActivity) ||
     character?.relationship?.trim() ||
     t(msg`暂无状态`);
-  const coreDirective = character?.profile?.coreDirective?.trim() || "";
   const tagSummary = friendship?.tags?.length
     ? friendship.tags.join("、")
     : unsetLabel;
@@ -1693,123 +1691,80 @@ export function CharacterDetailPage() {
               />
             </ProfileSection>
 
-            <ProfileSection
-              title={moreInfoTitle}
-              flatOnMobile={!isDesktopLayout}
-              compact={!isDesktopLayout}
-            >
-              {isDesktopLayout && isFriend ? (
-                <ProfileRow
-                  label={recentInteractionLabel}
-                  value={formatTimestamp(
-                    friendship?.lastInteractedAt ?? character.lastActiveAt,
-                  )}
-                  compact={!isDesktopLayout}
-                />
-              ) : null}
-              {isFriend && (friendship?.sparkStreak ?? 0) >= 3 ? (
-                <ProfileRow
-                  label={t(msg`火花`)}
-                  value={
-                    <span className="inline-flex items-center justify-end gap-1.5">
-                      <SparkBadge
-                        streak={friendship?.sparkStreak}
-                        size={isDesktopLayout ? "md" : "sm"}
-                      />
-                      <span className="text-[12px] text-[color:var(--text-muted)]">
-                        {t(msg`已连续 ${friendship?.sparkStreak ?? 0} 天`)}
+            {isDesktopLayout ? (
+              <ProfileSection
+                title={moreInfoTitle}
+                flatOnMobile={!isDesktopLayout}
+                compact={!isDesktopLayout}
+              >
+                {isFriend ? (
+                  <ProfileRow
+                    label={recentInteractionLabel}
+                    value={formatTimestamp(
+                      friendship?.lastInteractedAt ?? character.lastActiveAt,
+                    )}
+                    compact={!isDesktopLayout}
+                  />
+                ) : null}
+                {isFriend && (friendship?.sparkStreak ?? 0) >= 3 ? (
+                  <ProfileRow
+                    label={t(msg`火花`)}
+                    value={
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        <SparkBadge
+                          streak={friendship?.sparkStreak}
+                          size="md"
+                        />
+                        <span className="text-[12px] text-[color:var(--text-muted)]">
+                          {t(msg`已连续 ${friendship?.sparkStreak ?? 0} 天`)}
+                        </span>
                       </span>
-                    </span>
-                  }
-                  compact={!isDesktopLayout}
-                />
-              ) : null}
-              {commonGroups.length ? (
-                <ProfileRow
-                  label={commonGroupsLabel}
-                  value={t(msg`${commonGroups.length} 个`)}
-                  onClick={() => {
-                    const firstGroup = commonGroups[0];
-                    if (!firstGroup) {
-                      return;
                     }
+                    compact={!isDesktopLayout}
+                  />
+                ) : null}
+                {commonGroups.length ? (
+                  <ProfileRow
+                    label={commonGroupsLabel}
+                    value={t(msg`${commonGroups.length} 个`)}
+                    onClick={() => {
+                      const firstGroup = commonGroups[0];
+                      if (!firstGroup) {
+                        return;
+                      }
 
-                    void navigate({
-                      to: isDesktopLayout
-                        ? buildDesktopChatThreadPath({
-                            conversationId: firstGroup.id,
-                          })
-                        : "/group/$groupId",
-                      params: isDesktopLayout
-                        ? undefined
-                        : { groupId: firstGroup.id },
-                    });
-                  }}
-                  compact={!isDesktopLayout}
-                />
-              ) : null}
-              {isDesktopLayout && isFriend ? (
-                <ProfileRow
-                  label={currentStatusLabel}
-                  value={activitySummary}
-                  compact={!isDesktopLayout}
-                />
-              ) : null}
-              {isDesktopLayout ? (
+                      void navigate({
+                        to: buildDesktopChatThreadPath({
+                          conversationId: firstGroup.id,
+                        }),
+                      });
+                    }}
+                    compact={!isDesktopLayout}
+                  />
+                ) : null}
+                {isFriend ? (
+                  <ProfileRow
+                    label={currentStatusLabel}
+                    value={activitySummary}
+                    compact={!isDesktopLayout}
+                  />
+                ) : null}
                 <ProfileRow
                   label={expertiseLabel}
                   value={expertiseSummary}
                   multiline
                   compact={!isDesktopLayout}
                 />
-              ) : null}
-              {coreDirective ? (
                 <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
-                  <div
-                    className={cn(
-                      "text-[color:var(--text-muted)]",
-                      isDesktopLayout
-                        ? "text-xs uppercase tracking-[0.16em]"
-                        : "text-[11px]",
-                    )}
-                  >
-                    {coreDirectiveLabel}
+                  <div className="text-[color:var(--text-muted)] text-xs uppercase tracking-[0.16em]">
+                    {bioLabel}
                   </div>
-                  <div
-                    className={cn(
-                      "mt-2 text-[color:var(--text-secondary)]",
-                      isDesktopLayout
-                        ? "text-sm leading-7"
-                        : "text-[13px] leading-6",
-                    )}
-                  >
-                    {coreDirective}
+                  <div className="mt-2 text-[color:var(--text-secondary)] text-sm leading-7">
+                    {translateCharacterBio(t, character.bio) || noMoreIntroLabel}
                   </div>
                 </div>
-              ) : null}
-              <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
-                <div
-                  className={cn(
-                    "text-[color:var(--text-muted)]",
-                    isDesktopLayout
-                      ? "text-xs uppercase tracking-[0.16em]"
-                      : "text-[11px]",
-                  )}
-                >
-                  {bioLabel}
-                </div>
-                <div
-                  className={cn(
-                    "mt-2 text-[color:var(--text-secondary)]",
-                    isDesktopLayout
-                      ? "text-sm leading-7"
-                      : "text-[13px] leading-6",
-                  )}
-                >
-                  {translateCharacterBio(t, character.bio) || noMoreIntroLabel}
-                </div>
-              </div>
-            </ProfileSection>
+              </ProfileSection>
+            ) : null}
 
             <ProfileSection
               title={

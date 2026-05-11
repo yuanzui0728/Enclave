@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type { MomentsPageResponse } from "@yinjie/contracts";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, Play, Plus, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -59,9 +64,22 @@ export function MobileMomentsPublishPage() {
     onSuccess: async () => {
       storeMomentPublishFlash(t(msg`朋友圈已发布。`));
       composeDraft.reset();
-      await queryClient.invalidateQueries({
-        queryKey: ["app-moments", baseUrl],
-      });
+      // 发布会让分页边界后移，先把 paged cache 收回到 page 1（避免下次 mount 时边界重复）
+      queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
+        ["app-moments-paged", baseUrl],
+        (current) =>
+          current
+            ? {
+                pages: current.pages.slice(0, 1),
+                pageParams: current.pageParams.slice(0, 1),
+              }
+            : current,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
+        // moments-page 用 paged key 走无限分页
+        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
+      ]);
       void navigate({
         to: safeReturnPath ?? "/discover/moments",
         ...(safeReturnHash ? { hash: safeReturnHash } : {}),

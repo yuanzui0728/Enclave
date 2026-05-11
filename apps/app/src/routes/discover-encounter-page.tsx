@@ -13,6 +13,7 @@ import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shel
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { parseMobileDiscoverToolRouteState } from "../features/discover/mobile-discover-tool-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { useShakeDetector } from "../hooks/use-shake-detector";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -93,6 +94,49 @@ function MobileDiscoverEncounterPage() {
     },
   });
 
+  const { permissionState, requestPermission } = useShakeDetector({
+    enabled: !shakeMutation.isPending,
+    onShake: () => {
+      if (shakeMutation.isPending) {
+        return;
+      }
+      shakeMutation.mutate();
+    },
+  });
+
+  const handleShakeButtonClick = async () => {
+    if (shakeMutation.isPending) {
+      return;
+    }
+    if (permissionState === "needs-permission") {
+      await requestPermission();
+    }
+    shakeMutation.mutate();
+  };
+
+  const heroDescription = (() => {
+    switch (permissionState) {
+      case "granted":
+        return t(msg`晃动手机即可开始相遇，也可以直接点下方按钮。每次相遇都会直接加入你的通讯录。`);
+      case "needs-permission":
+        return t(msg`首次使用请点下方按钮授权动作传感器，之后晃动手机即可触发相遇。`);
+      case "denied":
+        return t(msg`已拒绝动作传感器授权，可在系统设置开启，或点下方按钮手动触发相遇。`);
+      default:
+        return t(msg`每次摇一摇都会先生成一个新的相遇结果；当前页面会直接保留这次结果，并把对方加入你的通讯录。`);
+    }
+  })();
+
+  const heroButtonLabel = (() => {
+    if (shakeMutation.isPending) {
+      return t(msg`正在寻找...`);
+    }
+    if (permissionState === "needs-permission") {
+      return t(msg`开启摇一摇`);
+    }
+    return t(msg`摇一摇`);
+  })();
+
   useEffect(() => {
     setMessage(""); // i18n-ignore-line: clearing state
   }, [baseUrl]);
@@ -124,20 +168,18 @@ function MobileDiscoverEncounterPage() {
     <MobileDiscoverToolShell
       title={t(msg`摇一摇`)}
       subtitle={t(msg`随机遇见新的世界居民`)}
-      shareTitle={t(msg`摇一摇`)}
-      shareSummary={t(msg`随机遇见新的世界居民，点一下就会尝试安排一次新的相遇，并直接保留到你的通讯录。`)}
       heroTitle={t(msg`随机相遇`)}
-      heroDescription={t(msg`每次摇一摇都会先生成一个新的相遇结果；当前页面会直接保留这次结果，并把对方加入你的通讯录。`)}
+      heroDescription={heroDescription}
       heroVisual={<Compass size={28} />}
       heroAction={
         <Button
-          onClick={() => shakeMutation.mutate()}
+          onClick={() => void handleShakeButtonClick()}
           disabled={shakeMutation.isPending}
           variant="primary"
           className="h-12 w-full rounded-full bg-[#07c160] text-white hover:bg-[#06ad56]"
         >
           <Sparkles size={16} />
-          {shakeMutation.isPending ? t(msg`正在寻找...`) : t(msg`摇一摇`)}
+          {heroButtonLabel}
         </Button>
       }
       notice={
@@ -160,23 +202,6 @@ function MobileDiscoverEncounterPage() {
         })
       }
     >
-      <section className="overflow-hidden rounded-[16px] border border-black/5 bg-white">
-        <div className="grid grid-cols-2 divide-x divide-black/5">
-          <div className="px-4 py-4">
-            <div className="text-[12px] text-[#8c8c8c]">{t(msg`匹配方式`)}</div>
-            <div className="mt-1 text-[15px] font-medium text-[#111827]">
-              {t(msg`随机安排`)}
-            </div>
-          </div>
-          <div className="px-4 py-4">
-            <div className="text-[12px] text-[#8c8c8c]">{t(msg`结果处理`)}</div>
-            <div className="mt-1 text-[15px] font-medium text-[#111827]">
-              {t(msg`直接保留`)}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {shakeMutation.isError && shakeMutation.error instanceof Error ? (
         <InlineNotice
           className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"

@@ -1231,6 +1231,14 @@ export class GroupService {
       ].filter(Boolean);
       const captionText = caption ? `，补充说明：${caption}` : '';
       attachmentSummary = `${detailParts.join('，')}${captionText}`.trim();
+    } else if (attachment.kind === 'feed_post_card') {
+      const detailParts = [
+        `转发了一条 ${attachment.authorName} 的视频号`,
+        attachment.title ? `标题：${attachment.title}` : '',
+        attachment.excerpt ? `摘要：${attachment.excerpt}` : '',
+      ].filter(Boolean);
+      const captionText = caption ? `，补充说明：${caption}` : '';
+      attachmentSummary = `${detailParts.join('，')}${captionText}`.trim();
     } else {
       attachmentSummary = caption
         ? `发送了一个表情包：${attachment.label ?? attachment.stickerId}，补充说明：${caption}`

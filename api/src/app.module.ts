@@ -135,6 +135,19 @@ import {
       useFactory: (config: ConfigService) => ({
         type: 'better-sqlite3',
         database: prepareDatabasePath(config.get<string>('DATABASE_PATH')),
+        enableWAL: true,
+        statementCacheSize: 200,
+        prepareDatabase: (db: {
+          pragma: (statement: string) => unknown;
+        }) => {
+          db.pragma('journal_mode = WAL');
+          db.pragma('synchronous = NORMAL');
+          db.pragma('busy_timeout = 5000');
+          db.pragma('cache_size = -65536');
+          db.pragma('temp_store = MEMORY');
+          db.pragma('mmap_size = 268435456');
+          db.pragma('wal_autocheckpoint = 1000');
+        },
         entities: [
           CharacterEntity,
           UserEntity,

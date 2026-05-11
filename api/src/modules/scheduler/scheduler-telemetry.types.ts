@@ -113,6 +113,15 @@ export const SCHEDULER_JOB_DEFINITIONS = [
     enabled: true,
   },
   {
+    id: 'channel_proactive_forward',
+    name: '视频号角色主动转发',
+    cadence: '0 */30 * * * *',
+    description:
+      '让角色把高分热门视频号帖子主动转发到 owner 私聊。每角色每天 1 条 / 每 owner 每天 3 条上限。',
+    nextRunHint: '每 30 分钟',
+    enabled: true,
+  },
+  {
     id: 'update_character_status',
     name: '活动状态调度',
     cadence: '0 */2 * * *',

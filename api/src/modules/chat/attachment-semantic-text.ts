@@ -67,6 +67,12 @@ export function resolveAttachmentSearchableText(attachment?: MessageAttachment) 
       attachment.excerpt,
       attachment.tags.join(' '),
     );
+  } else if (attachment.kind === 'feed_post_card') {
+    parts.push(
+      attachment.title ?? '',
+      attachment.excerpt,
+      attachment.authorName,
+    );
   } else if (attachment.kind === 'sticker') {
     parts.push(attachment.label ?? '', attachment.stickerId);
   }
@@ -168,6 +174,19 @@ export function resolveAttachmentSemanticText(
     );
   }
 
+  if (attachment.kind === 'feed_post_card') {
+    return truncateSemanticText(
+      [
+        `${attachment.authorName} 的视频号`,
+        attachment.title ?? '',
+        attachment.excerpt,
+      ]
+        .filter(Boolean)
+        .join('，'),
+      maxChars,
+    );
+  }
+
   return truncateSemanticText(attachment.label ?? attachment.stickerId, maxChars);
 }
 
@@ -205,6 +224,11 @@ function buildAttachmentFallbackLabel(attachment?: MessageAttachment) {
 
   if (attachment.kind === 'note_card') {
     return attachment.title ? `笔记 · ${attachment.title}` : '笔记';
+  }
+
+  if (attachment.kind === 'feed_post_card') {
+    const label = attachment.title?.trim() || attachment.authorName;
+    return label ? `视频号 · ${label}` : '视频号';
   }
 
   return attachment.label ? `表情 · ${attachment.label}` : '表情';

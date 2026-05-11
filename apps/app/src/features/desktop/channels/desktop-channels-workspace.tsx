@@ -37,12 +37,14 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { AudioCard } from "../../../components/audio-card";
+import { ChannelsForwardPicker } from "../../../components/channels-forward-picker";
 import { EmptyState } from "../../../components/empty-state";
-import { FeatureUnavailableDialog } from "../../../components/feature-unavailable-dialog";
 import { formatTimestamp } from "../../../lib/format";
 import { resolveAppMediaUrl } from "../../../lib/media-url";
+import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 type DesktopChannelsWorkspaceProps = {
   activeSection: FeedChannelHomeSection;
@@ -133,8 +135,16 @@ export function DesktopChannelsWorkspace({
 }: DesktopChannelsWorkspaceProps) {
   const navigate = useNavigate();
   const t = useRuntimeTranslator();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
+  const queryClient = useQueryClient();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  // 视频号转发面板：null = 关闭。点 Share 按钮 → 设当前帖摘要。
+  const [forwardPickerPost, setForwardPickerPost] = useState<{
+    id: string;
+    excerpt: string;
+  } | null>(null);
+  const [forwardNotice, setForwardNotice] = useState<string | null>(null);
   const [commentDrawerPostId, setCommentDrawerPostId] = useState<string | null>(
     null,
   );
@@ -305,11 +315,6 @@ export function DesktopChannelsWorkspace({
                     )}
                   >
                     {section.label}
-                    {section.count > 0 ? (
-                      <span className="ml-1 text-[11px] text-[color:var(--text-muted)]">
-                        {section.count}
-                      </span>
-                    ) : null}
                   </span>
                   {active ? (
                     <span className="pointer-events-none absolute bottom-0 left-1/2 h-[2px] w-7 -translate-x-1/2 rounded-full bg-[color:var(--brand-primary)]" />
@@ -383,7 +388,15 @@ export function DesktopChannelsWorkspace({
                   likePending={likePendingPostId === post.id}
                   onLike={() => onLike(post.id)}
                   onOpenAuthor={() => onOpenAuthor(post.authorId)}
-                  onShare={() => setShareDialogOpen(true)}
+                  onShare={() =>
+                    setForwardPickerPost({
+                      id: post.id,
+                      excerpt: `${post.authorName}：${post.text ?? ""}`.slice(
+                        0,
+                        80,
+                      ),
+                    })
+                  }
                   onToggleAuthorFollow={() =>
                     onToggleAuthorFollow(
                       post.authorId,
@@ -446,12 +459,47 @@ export function DesktopChannelsWorkspace({
         ) : null}
       </div>
 
-      <FeatureUnavailableDialog
-        open={shareDialogOpen}
-        title={t(msg`转发还在路上`)}
-        description={t(msg`视频号转发能力还在开发中，等播放器到位后会一起开放。`)}
-        onClose={() => setShareDialogOpen(false)}
+      <ChannelsForwardPicker
+        open={Boolean(forwardPickerPost)}
+        postId={forwardPickerPost?.id ?? null}
+        postExcerpt={forwardPickerPost?.excerpt}
+        baseUrl={baseUrl}
+        onClose={() => setForwardPickerPost(null)}
+        onForwarded={(target) => {
+          setForwardNotice(t(msg`已转发给 ${target.name}。`));
+          // 让 channels-home 数据刷新出新的 shareCount
+          void queryClient.invalidateQueries({
+            queryKey: ["app-channels-home", baseUrl],
+          });
+        }}
       />
+      {forwardNotice ? (
+        <ForwardNotice
+          message={forwardNotice}
+          onDismiss={() => setForwardNotice(null)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * 顶部短暂浮现的转发成功提示——3 秒自动消失。
+ */
+function ForwardNotice({
+  message,
+  onDismiss,
+}: {
+  message: string;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    const timer = window.setTimeout(onDismiss, 3000);
+    return () => window.clearTimeout(timer);
+  }, [onDismiss]);
+  return (
+    <div className="fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full bg-[rgba(17,24,39,0.92)] px-4 py-2 text-[13px] text-white shadow-lg">
+      {message}
     </div>
   );
 }

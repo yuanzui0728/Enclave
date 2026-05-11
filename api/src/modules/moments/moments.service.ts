@@ -158,7 +158,20 @@ export class MomentsService implements OnModuleInit {
     return this._enrichPost(post);
   }
 
-  async getFeed(): Promise<Moment[]> {
+  /**
+   * 朋友圈分页拉取。
+   * - 不传分页参数：保留旧行为（一次返回全部已过滤的 Moment[]），用于历史调用方（搜索索引、share 卡片等）。
+   * - 传入 page/limit：返回 { items, total, hasMore }，配合前端无限滚动。
+   * 内部统一走 batchEnrich（按 postId IN(...) 一次拉 likes + 一次拉 comments），消除 N+1。
+   */
+  async getFeed(): Promise<Moment[]>;
+  async getFeed(input: {
+    page?: number;
+    limit?: number;
+  }): Promise<{ items: Moment[]; total: number; hasMore: boolean }>;
+  async getFeed(
+    input?: { page?: number; limit?: number },
+  ): Promise<Moment[] | { items: Moment[]; total: number; hasMore: boolean }> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const avatarContext = await this.buildMomentAvatarContext({
       ownerId: owner.id,
@@ -172,9 +185,22 @@ export class MomentsService implements OnModuleInit {
         avatarContext.ownerFriendCharacterIds,
       ),
     );
-    return Promise.all(
-      visiblePosts.map((post) => this._enrichPost(post, avatarContext)),
-    );
+
+    if (!input) {
+      return this._batchEnrichPosts(visiblePosts, avatarContext);
+    }
+
+    const page = Math.max(1, Math.floor(input.page ?? 1));
+    const rawLimit = Math.floor(input.limit ?? 20);
+    const limit = Math.min(50, Math.max(1, rawLimit));
+    const start = (page - 1) * limit;
+    const pageSlice = visiblePosts.slice(start, start + limit);
+    const items = await this._batchEnrichPosts(pageSlice, avatarContext);
+    return {
+      items,
+      total: visiblePosts.length,
+      hasMore: start + limit < visiblePosts.length,
+    };
   }
 
   async getPost(postId: string): Promise<Moment | null> {
@@ -860,6 +886,52 @@ export class MomentsService implements OnModuleInit {
     return new Date(Date.now() - offset);
   }
 
+  /**
+   * 一次性给 N 条帖子拉 likes + comments，再在内存里分组——
+   * 消掉 _enrichPost 单条循环里的 N+1（之前 69 帖 ≈ 139 次 SQL，现在 3 次）。
+   */
+  private async _batchEnrichPosts(
+    posts: MomentPostEntity[],
+    avatarContext?: MomentAvatarContext,
+  ): Promise<Moment[]> {
+    if (posts.length === 0) {
+      return [];
+    }
+    const resolvedAvatarContext =
+      avatarContext ?? (await this.buildMomentAvatarContext());
+    const postIds = posts.map((post) => post.id);
+    const [likes, comments] = await Promise.all([
+      this.likeRepo.find({
+        where: { postId: In(postIds) },
+        order: { createdAt: 'ASC' },
+      }),
+      this.commentRepo.find({
+        where: { postId: In(postIds) },
+        order: { createdAt: 'ASC' },
+      }),
+    ]);
+    const likesByPost = new Map<string, MomentLikeEntity[]>();
+    for (const like of likes) {
+      const list = likesByPost.get(like.postId);
+      if (list) list.push(like);
+      else likesByPost.set(like.postId, [like]);
+    }
+    const commentsByPost = new Map<string, MomentCommentEntity[]>();
+    for (const comment of comments) {
+      const list = commentsByPost.get(comment.postId);
+      if (list) list.push(comment);
+      else commentsByPost.set(comment.postId, [comment]);
+    }
+    return posts.map((post) =>
+      this._buildMomentFromParts(
+        post,
+        likesByPost.get(post.id) ?? [],
+        commentsByPost.get(post.id) ?? [],
+        resolvedAvatarContext,
+      ),
+    );
+  }
+
   private async _enrichPost(
     post: MomentPostEntity,
     avatarContext?: MomentAvatarContext,
@@ -876,8 +948,21 @@ export class MomentsService implements OnModuleInit {
         order: { createdAt: 'ASC' },
       }),
     ]);
-    // 朋友圈是「好友圈」语义：非好友角色的点赞/评论不在这里露出，
-    // 与 canOwnerViewPost 处的门控（lines 685-687）保持一致。
+    return this._buildMomentFromParts(
+      post,
+      likes,
+      comments,
+      resolvedAvatarContext,
+    );
+  }
+
+  private _buildMomentFromParts(
+    post: MomentPostEntity,
+    likes: MomentLikeEntity[],
+    comments: MomentCommentEntity[],
+    resolvedAvatarContext: MomentAvatarContext,
+  ): Moment {
+    // 朋友圈是「好友圈」语义：非好友角色的点赞/评论不在这里露出。
     const visibleLikes = likes.filter(
       (like) =>
         like.authorType !== 'character' ||

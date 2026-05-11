@@ -3,7 +3,7 @@ import defaultAvatarDusk from "../assets/default-avatar-dusk.svg";
 import defaultAvatarEmber from "../assets/default-avatar-ember.svg";
 import defaultAvatarMint from "../assets/default-avatar-mint.svg";
 import defaultOwnerAvatar from "../assets/default-owner-avatar.svg";
-import { resolveAppCoreApiBaseUrl } from "../lib/runtime-config";
+import { resolveAppMediaUrl } from "../lib/media-url";
 
 const fallbackAvatars = [
   defaultOwnerAvatar,
@@ -80,12 +80,10 @@ function resolveAvatarSource(value: string) {
   if (!value.startsWith("/api/")) {
     return value;
   }
-
-  try {
-    return new URL(value, `${resolveAppCoreApiBaseUrl()}/`).toString();
-  } catch {
-    return value;
-  }
+  // 走 resolveAppMediaUrl 统一处理：(a) 拼前缀时保留 /cloud/world-api，
+  // (b) 远程公网入口下追加 ?token= 让 cloud-api guard 放行（commit 1c20a2fe
+  // 把裸 /api/ 在公网 Host 一律 403 兜底防匿名直通本机 owner db）。
+  return resolveAppMediaUrl(value);
 }
 
 function pickFallbackAvatar(name?: string | null, src?: string | null) {

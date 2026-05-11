@@ -463,7 +463,47 @@ function getFriendRequestSourceLabel(t: Translator, triggerScene?: string) {
     return t(msg`来自摇一摇`);
   }
 
-  return t(msg`来自 ${triggerScene}`);
+  const localizedScene = getSceneLabelById(t, triggerScene);
+  return t(msg`来自${localizedScene}`);
+}
+
+function getSceneLabelById(t: Translator, sceneId: string): string {
+  switch (sceneId) {
+    case "coffee_shop":
+      return t(msg`咖啡馆`);
+    case "gym":
+      return t(msg`健身房`);
+    case "library":
+      return t(msg`图书馆`);
+    case "park":
+      return t(msg`公园`);
+    case "classroom":
+      return t(msg`教室`);
+    case "lab":
+      return t(msg`实验室`);
+    case "office":
+      return t(msg`办公室`);
+    case "coworking":
+      return t(msg`联合办公空间`);
+    case "study_room":
+      return t(msg`自习室`);
+    case "restaurant":
+      return t(msg`餐厅`);
+    case "museum":
+      return t(msg`博物馆`);
+    case "bookstore":
+      return t(msg`书店`);
+    case "travel":
+      return t(msg`旅途`);
+    case "night_walk":
+      return t(msg`夜晚的街道`);
+    case "theater":
+      return t(msg`剧场`);
+    case "home":
+      return t(msg`居家场景`);
+    default:
+      return sceneId; // i18n-ignore-line: unknown scene id passthrough
+  }
 }
 
 function formatFriendRequestDate(t: Translator, createdAt: string) {

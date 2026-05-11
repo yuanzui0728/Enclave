@@ -1,5 +1,14 @@
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
-import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import {
+  forwardRef,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
@@ -21,6 +30,10 @@ import type {
   MomentVideoAsset,
 } from '../moments/moment-media.types';
 import { MomentPostEntity } from '../moments/moment-post.entity';
+import { resolveReadableMomentMediaPath } from '../moments/moment-media.storage';
+import { ChatService } from '../chat/chat.service';
+import { ChatGateway } from '../chat/chat.gateway';
+import type { FeedPostCardAttachment } from '../chat/chat.types';
 import {
   NPC_USER_POST_NEUTRAL_INTIMACY,
   npcIntimacyMultiplier,
@@ -79,6 +92,25 @@ const CHANNEL_VIDEO_ASPECT_RATIO = 9 / 16;
 const MAX_FEED_IMAGE_COUNT = 9;
 const MAX_FEED_VIDEO_DURATION_MS = 5 * 60 * 1000;
 
+// 已知失效的外部媒体 host（持续返 403/410 / DNS 不通）。
+// 视频号过滤会把指向这些 host 的视频/音频帖隐藏。新增条目时小写域名即可。
+const FEED_DEAD_MEDIA_HOSTS = new Set<string>([
+  'commondatastorage.googleapis.com',
+]);
+
+// 角色主动转发时附带短评的清洗：去掉换行 / 引号 / 末尾省略号，强制 ≤ 24 字。
+function sanitizeForwardQuip(raw: string | undefined | null): string {
+  if (!raw) return '';
+  const cleaned = raw
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/^["“”'']+|["“”'']+$/g, '')
+    .trim();
+  if (!cleaned) return '';
+  // 留 24 个 unicode "字"——简化用 Array.from 近似，不严格按 grapheme 拆分
+  const chars = Array.from(cleaned);
+  return chars.length <= 24 ? cleaned : `${chars.slice(0, 23).join('')}…`;
+}
+
 @Injectable()
 export class FeedService implements OnModuleInit {
   private readonly logger = new Logger(FeedService.name);
@@ -104,10 +136,15 @@ export class FeedService implements OnModuleInit {
     private readonly minimaxJobs: MinimaxJobService,
     private readonly minimaxQuota: MinimaxQuotaService,
     private readonly minimaxClient: MinimaxClient,
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService: ChatService,
+    @Inject(forwardRef(() => ChatGateway))
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   async onModuleInit() {
     await this.backfillFeedAuthorAvatars();
+    await this.cleanupBrokenChannelPosts();
   }
 
   async getFeed(
@@ -125,11 +162,29 @@ export class FeedService implements OnModuleInit {
       ownerId: owner.id,
       ownerAvatar: owner.avatar,
     });
-    const visiblePosts =
-      surface === 'channels'
-        ? await this.getVisibleChannelPosts(owner.id, 'recommended')
-        : await this.getVisibleFeedPosts(surface, owner.id);
-    const pagedPosts = paginate(visiblePosts, page, limit);
+
+    let pagedPosts: FeedPostEntity[];
+    let total: number;
+    if (surface === 'feed') {
+      // 广场：SQL 层完成 visibility 过滤 + skip/take，避免拉全表后再内存过滤
+      const result = await this.findVisibleFeedPostsPaged(
+        owner.id,
+        page,
+        limit,
+      );
+      pagedPosts = result.posts;
+      total = result.total;
+    } else {
+      // 视频号：保留旧路径——需要叠 blocked / not_interested / section 等复合规则，
+      // 全集语义在 channels 还有 ChannelHome 等多个调用方依赖。
+      const visiblePosts = await this.getVisibleChannelPosts(
+        owner.id,
+        'recommended',
+      );
+      pagedPosts = paginate(visiblePosts, page, limit);
+      total = visiblePosts.length;
+    }
+
     const [commentsPreviewMap, ownerStateMap] = await Promise.all([
       this.buildCommentsPreviewMap(
         pagedPosts.map((post) => post.id),
@@ -144,7 +199,7 @@ export class FeedService implements OnModuleInit {
         ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
         commentsPreview: commentsPreviewMap.get(post.id) ?? [],
       })),
-      total: visiblePosts.length,
+      total,
     };
   }
 
@@ -431,6 +486,11 @@ export class FeedService implements OnModuleInit {
         occurredAt: saved.createdAt ?? new Date(),
       });
     }
+    // 视频号已发布且媒体可播放 → 排角色即时反应。draft 状态（minimax 视频还没回来）
+    // 不调，等 applyMinimaxVideoToChannelPost / applyMinimaxAudioToChannelPost 时再触发。
+    if (saved.surface === 'channels' && saved.publishStatus === 'published') {
+      void this.scheduleChannelsCharacterReactions(saved);
+    }
     return saved;
   }
 
@@ -542,7 +602,50 @@ export class FeedService implements OnModuleInit {
         occurredAt: saved.createdAt ?? new Date(),
       });
     }
+    // 视频号评论：调度 AI 角色回复，形成评论回复链。replyDepth 通过递归层数控制 ≤ 2，
+    // 避免无限循环（角色回复角色 → 角色再回复 …）。
+    void this.maybeScheduleChannelsCommentReplies(input.postId, saved);
     return saved;
+  }
+
+  private async maybeScheduleChannelsCommentReplies(
+    postId: string,
+    comment: FeedCommentEntity,
+  ): Promise<void> {
+    try {
+      const post = await this.postRepo.findOneBy({ id: postId });
+      if (!post || post.surface !== 'channels') return;
+      const depth = await this.computeCommentReplyDepth(comment);
+      await this.scheduleAiChannelsCommentReplies(
+        postId,
+        {
+          commentId: comment.id,
+          authorId: comment.authorId,
+          authorName: comment.authorName,
+          authorType: comment.authorType,
+          text: comment.text,
+        },
+        depth,
+      );
+    } catch {
+      // ignore
+    }
+  }
+
+  // 沿 replyToCommentId 链路向上数到根，得到本评论在回复树中的深度。
+  // depth=0：根评论；depth=1：根评论的回复；depth=2：根评论的回复的回复。
+  private async computeCommentReplyDepth(
+    comment: FeedCommentEntity,
+  ): Promise<number> {
+    let depth = 0;
+    let cursor: FeedCommentEntity | null = comment;
+    while (cursor?.replyToCommentId && depth < 5) {
+      depth += 1;
+      cursor = await this.commentRepo.findOneBy({
+        id: cursor.replyToCommentId,
+      });
+    }
+    return depth;
   }
 
   async replyToComment(commentId: string, text: string) {
@@ -640,6 +743,201 @@ export class FeedService implements OnModuleInit {
       occurredAt: interaction.createdAt ?? new Date(),
     });
     await this.postRepo.increment({ id: postId }, 'shareCount', 1);
+  }
+
+  /**
+   * 把视频号一条帖子转发为一张 feed_post_card 卡片消息塞进与目标好友的私聊。
+   *
+   * 使用者：
+   *  - 用户主动转发（actorType='user'）：senderId/Name 取 owner，conversationId 由
+   *    chatService.getOrCreateConversation('direct_<targetCharacterId>') 解析得到。
+   *  - 角色主动转发（actorType='character'）：actorId 必须等于 targetCharacterId
+   *    （角色就是消息发送方，发到角色与用户的私聊里）；卡片在该 character 的对话里出现。
+   */
+  async forwardChannelPostToChat(input: {
+    actorType: 'user' | 'character';
+    actorId: string;
+    actorName: string;
+    actorAvatar?: string;
+    postId: string;
+    targetCharacterId: string;
+    note?: string;
+  }): Promise<{ messageId: string; conversationId: string }> {
+    const post = await this.postRepo.findOneBy({ id: input.postId });
+    if (!post) {
+      throw new AppError('FEED_POST_NOT_FOUND', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: 'Feed post not found',
+      });
+    }
+    if (post.surface !== 'channels') {
+      throw new AppError('FEED_FORWARD_NOT_CHANNELS', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Only channels posts can be forwarded',
+      });
+    }
+    if (post.publishStatus !== 'published') {
+      throw new AppError('FEED_POST_NOT_PUBLISHED', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Cannot forward an unpublished post',
+      });
+    }
+    if (
+      (post.mediaType === 'video' || post.mediaType === 'audio') &&
+      !this.isPostMediaPlayable(post)
+    ) {
+      throw new AppError('FEED_FORWARD_MEDIA_BROKEN', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'Post media is not playable',
+      });
+    }
+
+    if (input.actorType === 'character' && input.actorId !== input.targetCharacterId) {
+      // 角色发起的转发只能进入「该角色 ↔ 用户」的私聊，避免错把内容塞到其它人的会话里。
+      throw new AppError('FEED_FORWARD_CHARACTER_ACTOR_MISMATCH', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage:
+          'Character actor must equal targetCharacterId for forwards',
+      });
+    }
+
+    // 校验目标角色真实存在——否则 chatService.getOrCreateConversation 会用
+    // characterId 当 title 兜底创建一个空壳 conversation，体验很怪。
+    const targetCharacter = await this.characters.findById(
+      input.targetCharacterId,
+    );
+    if (!targetCharacter) {
+      throw new AppError('FEED_FORWARD_TARGET_REQUIRED', {
+        status: HttpStatus.NOT_FOUND,
+        legacyMessage: 'Target character not found',
+      });
+    }
+
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const conv = await this.chatService.getOrCreateConversation(
+      input.targetCharacterId,
+    );
+    const conversationId = conv.id;
+
+    const primaryUrl = this.resolvePrimaryFeedMediaUrl(post);
+    const attachment: FeedPostCardAttachment = {
+      kind: 'feed_post_card',
+      postId: post.id,
+      authorId: post.authorId,
+      authorName: post.authorName,
+      authorAvatar: post.authorAvatar,
+      title: post.title ?? undefined,
+      excerpt: (post.text ?? '').slice(0, 160),
+      mediaType: post.mediaType as FeedPostCardAttachment['mediaType'],
+      coverUrl: post.coverUrl ?? undefined,
+      primaryMediaUrl: primaryUrl ?? undefined,
+      durationMs: post.durationMs ?? undefined,
+      surface: 'channels',
+    };
+
+    // 两条路径都走「直接写消息 + socket emit」，不要走 sendMessage —— 那会等
+    // 一次 LLM 回包，HTTP 请求会卡到 5-10s，前端 toast 慢。微信视频号转发到
+    // 聊天的体感本来也是「卡片即时出现，对方再不再回是看心情」。
+    const savedMessage =
+      input.actorType === 'character'
+        ? await this.chatGateway.sendProactiveAttachmentMessage(
+            conversationId,
+            input.actorId,
+            input.actorName,
+            attachment,
+            input.note?.trim() || undefined,
+          )
+        : await this.chatGateway.sendUserAttachmentMessage(
+            conversationId,
+            input.actorId,
+            input.actorName,
+            attachment,
+            input.note?.trim() || undefined,
+          );
+
+    await this.postRepo.increment({ id: post.id }, 'shareCount', 1);
+
+    const interaction = this.interactionRepo.create({
+      ownerId: owner.id,
+      postId: post.id,
+      type: 'forward_to_chat',
+      payload: {
+        targetCharacterId: input.targetCharacterId,
+        viaActor: input.actorId,
+        viaActorType: input.actorType,
+      },
+    });
+    await this.interactionRepo.save(interaction);
+
+    void this.cyberAvatar.captureSignal({
+      ownerId: owner.id,
+      signalType: 'feed_interaction',
+      sourceSurface: 'feed',
+      sourceEntityType: 'feed_interaction',
+      sourceEntityId: interaction.id,
+      dedupeKey: `feed_forward:${interaction.id}`,
+      summaryText:
+        input.actorType === 'character'
+          ? `${input.actorName} 转发了一条视频号给你`
+          : `转发视频号给 ${input.targetCharacterId}`,
+      payload: {
+        postId: post.id,
+        targetCharacterId: input.targetCharacterId,
+        viaActor: input.actorId,
+        viaActorType: input.actorType,
+      },
+      occurredAt: interaction.createdAt ?? new Date(),
+    });
+
+    return {
+      messageId: savedMessage?.id ?? '',
+      conversationId,
+    };
+  }
+
+  /**
+   * Owner-发起的转发包装：解析当前 owner 身份，再走通用 forwardChannelPostToChat。
+   * Controller 入口走这个；角色主动转发由 cron 直接调用 forwardChannelPostToChat。
+   */
+  async forwardOwnerChannelPostToChat(
+    postId: string,
+    body: { targetCharacterId: string; note?: string },
+  ): Promise<{ messageId: string; conversationId: string }> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const targetCharacterId = body.targetCharacterId?.trim();
+    if (!targetCharacterId) {
+      throw new AppError('FEED_FORWARD_TARGET_REQUIRED', {
+        status: HttpStatus.BAD_REQUEST,
+        legacyMessage: 'targetCharacterId is required',
+      });
+    }
+    return this.forwardChannelPostToChat({
+      actorType: 'user',
+      actorId: owner.id,
+      actorName: owner.username?.trim() || 'You',
+      actorAvatar: owner.avatar ?? undefined,
+      postId,
+      targetCharacterId,
+      note: body.note,
+    });
+  }
+
+  // 抽出一个统一的「拿首选可播放 URL」的小工具，供卡片快照引用。
+  private resolvePrimaryFeedMediaUrl(post: FeedPostEntity): string | null {
+    try {
+      const arr = JSON.parse(post.mediaPayload ?? '[]') as Array<{
+        kind?: string;
+        url?: string;
+      }>;
+      for (const a of Array.isArray(arr) ? arr : []) {
+        if (a?.kind === post.mediaType && a.url?.trim()) {
+          return a.url.trim();
+        }
+      }
+    } catch {
+      /* fallthrough */
+    }
+    return post.mediaUrl?.trim() || null;
   }
 
   async viewOwnerPost(
@@ -984,6 +1282,10 @@ export class FeedService implements OnModuleInit {
       publishStatus: 'published',
       createdAt: jittered,
     });
+    // Minimax 视频回包 → 帖子从 draft 转 published 才有 mediaUrl，
+    // 这里是真正可播放后的最早时机，调度角色即时反应。
+    const refreshed = await this.postRepo.findOneBy({ id: postId });
+    if (refreshed) void this.scheduleChannelsCharacterReactions(refreshed);
   }
 
   async applyMinimaxAudioToChannelPost(
@@ -1011,6 +1313,8 @@ export class FeedService implements OnModuleInit {
       publishStatus: 'published',
       createdAt: jittered,
     });
+    const refreshed = await this.postRepo.findOneBy({ id: postId });
+    if (refreshed) void this.scheduleChannelsCharacterReactions(refreshed);
   }
 
   async deleteChannelDraftPost(postId: string): Promise<void> {
@@ -1103,6 +1407,351 @@ export class FeedService implements OnModuleInit {
 
   private jitterPastTimestamp(maxMs: number): Date {
     return new Date(Date.now() - Math.floor(Math.random() * maxMs));
+  }
+
+  /**
+   * 视频号新帖发布即调度角色即时反应（点赞 / 评论），平均 2~30 分钟内随机散开，
+   * 制造「刚发就有动静」的体感。对应朋友圈的 scheduleCharacterInteractions。
+   *
+   * 仅对真实可播放的视频/音频/图文帖触发；调用方需要在帖子可播放后再调（draft 状态不调）。
+   */
+  private async scheduleChannelsCharacterReactions(
+    post: FeedPostEntity,
+  ): Promise<void> {
+    if (post.surface !== 'channels') return;
+    if (post.publishStatus !== 'published') return;
+    if (
+      (post.mediaType === 'video' || post.mediaType === 'audio') &&
+      !this.isPostMediaPlayable(post)
+    ) {
+      return;
+    }
+
+    try {
+      const owner = await this.worldOwnerService.getOwnerOrThrow();
+      const [visibleCharacterIds, blockedSet] = await Promise.all([
+        this.getVisibleCharacterIdSet(owner.id),
+        this.socialService
+          .getBlockedCharacterIds(owner.id)
+          .then((ids) => new Set(ids)),
+      ]);
+
+      const allChars = (
+        await this.characters.findAllVisibleToOwner(owner.id)
+      ).filter(
+        (character) =>
+          character.id !== post.authorId &&
+          visibleCharacterIds.has(character.id) &&
+          !blockedSet.has(character.id),
+      );
+      if (allChars.length === 0) return;
+
+      const intimacyByCharId = new Map<string, number>();
+      if (post.authorType === 'character') {
+        // 单角色 getIntimacy 失败不该让整批反应都丢——用 allSettled，
+        // 拿不到的就当 0（中性）继续走概率筛。
+        const results = await Promise.allSettled(
+          allChars.map(async (char) => {
+            const intimacy = await this.characterFriendships.getIntimacy(
+              char.id,
+              post.authorId,
+            );
+            return [char.id, intimacy] as const;
+          }),
+        );
+        for (const r of results) {
+          if (r.status === 'fulfilled') {
+            intimacyByCharId.set(r.value[0], r.value[1]);
+          }
+        }
+      }
+
+      allChars.forEach((char, i) => {
+        const freq = char.activityFrequency ?? 'normal';
+        const baseChance = freq === 'high' ? 0.2 : freq === 'low' ? 0.07 : 0.13;
+        const intimacy = intimacyByCharId.get(char.id) ?? 0;
+        const effectiveIntimacy =
+          post.authorType === 'character'
+            ? intimacy
+            : NPC_USER_POST_NEUTRAL_INTIMACY;
+        const interactChance = Math.min(
+          0.5,
+          baseChance * npcIntimacyMultiplier(effectiveIntimacy),
+        );
+        if (Math.random() > interactChance) return;
+
+        // 视频号节奏比朋友圈快：2-30 分钟为主，比 moments 更短随机
+        const baseDelay =
+          freq === 'high'
+            ? 2 * 60 * 1000 // 2 min
+            : freq === 'low'
+              ? 30 * 60 * 1000 // 30 min
+              : 8 * 60 * 1000; // 8 min
+        const intimacySpeedup = Math.max(0.3, 1 - intimacy / 150);
+        const delay =
+          (baseDelay + Math.random() * baseDelay + i * 2000) * intimacySpeedup;
+
+        setTimeout(() => {
+          void (async () => {
+            try {
+              const fresh = await this.postRepo.findOneBy({ id: post.id });
+              if (!fresh || fresh.publishStatus !== 'published') return;
+              if (
+                (fresh.mediaType === 'video' || fresh.mediaType === 'audio') &&
+                !this.isPostMediaPlayable(fresh)
+              ) {
+                return;
+              }
+              const stillVisible = (
+                await this.getVisibleCharacterIdSet(owner.id)
+              ).has(char.id);
+              if (!stillVisible) return;
+
+              // 与 cron tick 共享后端表，必须查重防止：
+              //   · toggleLike 重入 → 已有的 like 被反向删掉
+              //   · 同一角色同一 post 被刷出多条 AI 评论
+              const [existingLike, existingCommentCount] = await Promise.all([
+                this.likeRepo.findOneBy({ postId: fresh.id, authorId: char.id }),
+                this.commentRepo.count({
+                  where: { postId: fresh.id, authorId: char.id },
+                }),
+              ]);
+              const hasComment = existingCommentCount > 0;
+              if (existingLike && hasComment) return;
+
+              // 60% 评论 / 40% 点赞（与 plan 一致）；若该路径已有产物则走另一条
+              let isComment = Math.random() < 0.6;
+              if (isComment && hasComment) isComment = false;
+              if (!isComment && existingLike) isComment = !hasComment;
+
+              if (isComment) {
+                const profile = await this.characters.getProfile(char.id);
+                if (!profile) return;
+                const observation = await this.buildFeedAiObservation(fresh);
+                const userMessage =
+                  await this.worldLanguage.formatPostCommentTask({
+                    authorName: fresh.authorName,
+                    summary: observation.summary,
+                    surface: 'channels',
+                  });
+                const reply = await this.ai.generateReply({
+                  profile,
+                  conversationHistory: [],
+                  userMessage,
+                  userMessageParts: observation.parts,
+                  usageContext: {
+                    surface: 'app',
+                    scene: 'feed_comment_generate',
+                    scopeType: 'character',
+                    scopeId: char.id,
+                    scopeLabel: char.name,
+                    characterId: char.id,
+                    characterName: char.name,
+                  },
+                });
+                await this.addComment({
+                  postId: fresh.id,
+                  authorId: char.id,
+                  authorName: char.name,
+                  authorAvatar: char.avatar,
+                  authorType: 'character',
+                  text: reply.text,
+                });
+                if (fresh.authorType === 'character') {
+                  await this.characterFriendships.bumpInteraction(
+                    char.id,
+                    fresh.authorId,
+                  );
+                }
+                await this.postRepo.update(
+                  { id: fresh.id },
+                  { aiReacted: true },
+                );
+                return;
+              }
+
+              if (existingLike) return;
+              await this.toggleLike(
+                fresh.id,
+                char.id,
+                char.name,
+                char.avatar,
+                'character',
+              );
+              if (fresh.authorType === 'character') {
+                await this.characterFriendships.bumpInteraction(
+                  char.id,
+                  fresh.authorId,
+                );
+              }
+              await this.postRepo.update(
+                { id: fresh.id },
+                { aiReacted: true },
+              );
+            } catch {
+              // ignore — 散点失败不影响其它角色
+            }
+          })();
+        }, delay);
+      });
+    } catch (error) {
+      this.logger.warn(
+        `scheduleChannelsCharacterReactions failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * 视频号帖被评论后，1-30min 内挑 1~2 个相关角色（贴主本人 + 30% 概率围观者）
+   * 给该评论生成 AI 回复，形成评论回复链。replyDepth ≤ 2 通过 parentCommentId 链路控制。
+   */
+  private async scheduleAiChannelsCommentReplies(
+    postId: string,
+    sourceComment: {
+      commentId: string;
+      authorId: string;
+      authorName: string;
+      authorType?: string;
+      text: string;
+    },
+    replyDepth = 0,
+  ): Promise<void> {
+    if (replyDepth >= 2) return;
+    try {
+      const post = await this.postRepo.findOneBy({ id: postId });
+      if (!post || post.surface !== 'channels') return;
+      if (post.publishStatus !== 'published') return;
+
+      const owner = await this.worldOwnerService.getOwnerOrThrow();
+      const [visibleCharacterIds, blockedSet] = await Promise.all([
+        this.getVisibleCharacterIdSet(owner.id),
+        this.socialService
+          .getBlockedCharacterIds(owner.id)
+          .then((ids) => new Set(ids)),
+      ]);
+
+      // 候选回复者：
+      // 1) 贴主本人（若是角色且未被屏蔽，且不是评论作者本人）
+      // 2) 30% 概率再随机挑一个围观角色插话
+      const repliers: { id: string; name: string; avatar: string }[] = [];
+      if (
+        post.authorType === 'character' &&
+        post.authorId !== sourceComment.authorId &&
+        visibleCharacterIds.has(post.authorId) &&
+        !blockedSet.has(post.authorId)
+      ) {
+        const author = await this.characters.findById(post.authorId);
+        if (author) {
+          repliers.push({
+            id: author.id,
+            name: author.name,
+            avatar: author.avatar,
+          });
+        }
+      }
+
+      if (Math.random() < 0.3) {
+        const bystanders = (
+          await this.characters.findAllVisibleToOwner(owner.id)
+        ).filter(
+          (c) =>
+            visibleCharacterIds.has(c.id) &&
+            !blockedSet.has(c.id) &&
+            c.id !== post.authorId &&
+            c.id !== sourceComment.authorId,
+        );
+        if (bystanders.length > 0) {
+          const bystander =
+            bystanders[Math.floor(Math.random() * bystanders.length)];
+          repliers.push({
+            id: bystander.id,
+            name: bystander.name,
+            avatar: bystander.avatar,
+          });
+        }
+      }
+
+      if (repliers.length === 0) return;
+
+      // 取/构造 parent comment id。若已是回复（有 parentCommentId）则继续挂在同 parent 下。
+      const sourceCommentRow = await this.commentRepo.findOneBy({
+        id: sourceComment.commentId,
+      });
+      const parentCommentId =
+        sourceCommentRow?.parentCommentId ?? sourceComment.commentId;
+
+      repliers.forEach((replier, index) => {
+        const delay = 60_000 + Math.random() * 4 * 60_000 + index * 30_000; // 1-5min，错开
+        setTimeout(() => {
+          void (async () => {
+            try {
+              const fresh = await this.postRepo.findOneBy({ id: postId });
+              if (!fresh || fresh.publishStatus !== 'published') return;
+              const stillVisible = (
+                await this.getVisibleCharacterIdSet(owner.id)
+              ).has(replier.id);
+              if (!stillVisible) return;
+
+              // 防止同一 replier 对同一源评论生成多条回复（cron 触发 + 用户多次评论可能并发）。
+              const alreadyReplied = await this.commentRepo.findOneBy({
+                authorId: replier.id,
+                replyToCommentId: sourceComment.commentId,
+              });
+              if (alreadyReplied) return;
+
+              const profile = await this.characters.getProfile(replier.id);
+              if (!profile) return;
+              const observation = await this.buildFeedAiObservation(fresh);
+              const isPostAuthor = replier.id === fresh.authorId;
+              const userMessage =
+                await this.worldLanguage.formatPostCommentReplyTask({
+                  postAuthorName: fresh.authorName,
+                  sourceCommenterName: sourceComment.authorName,
+                  sourceCommentText: sourceComment.text,
+                  summary: observation.summary,
+                  isPostAuthor,
+                });
+              const reply = await this.ai.generateReply({
+                profile,
+                conversationHistory: [],
+                userMessage,
+                userMessageParts: observation.parts,
+                usageContext: {
+                  surface: 'app',
+                  scene: 'feed_comment_generate',
+                  scopeType: 'character',
+                  scopeId: replier.id,
+                  scopeLabel: replier.name,
+                  characterId: replier.id,
+                  characterName: replier.name,
+                },
+              });
+              await this.addComment({
+                postId,
+                authorId: replier.id,
+                authorName: replier.name,
+                authorAvatar: replier.avatar,
+                authorType: 'character',
+                text: reply.text,
+                parentCommentId,
+                replyToCommentId: sourceComment.commentId,
+                replyToAuthorId: sourceComment.authorId,
+              });
+              await this.postRepo.update(
+                { id: postId },
+                { aiReacted: true },
+              );
+            } catch {
+              // ignore — 单角色失败不阻塞其它人
+            }
+          })();
+        }, delay);
+      });
+    } catch (error) {
+      this.logger.warn(
+        `scheduleAiChannelsCommentReplies failed: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -1318,6 +1967,261 @@ export class FeedService implements OnModuleInit {
       summary: `process_pending_feed_reactions: ${participantCount} 个 NPC 上线，点赞 ${likeCount} 次，评论 ${commentCount} 次（剩余 LLM 配额 ${llmCallsRemaining}）`,
       likeCount,
       commentCount,
+    };
+  }
+
+  /**
+   * 角色主动把热门视频号帖子转发到好友（owner）的私聊里。
+   *
+   * 节流策略（业务上必须有，否则一上线就会被卡片刷屏）：
+   *  - 每个 owner 每天最多收到 3 条角色主动转发
+   *  - 同一角色 24h 内最多发 1 条
+   *  - 角色不会重复转发自己曾经转过的帖子
+   *
+   * 候选帖：surface=channels, mediaType in (video,audio), 创建于 3d 内，
+   * recommendationScore ≥ 50，且 isPostMediaPlayable 为真。
+   *
+   * LLM 配额：本 cron 单独限 6 次（短评生成）；超过 → 不再给 note 文案，仅卡片。
+   */
+  async runChannelProactiveForwardTick(): Promise<{
+    summary: string;
+    forwarded: number;
+  }> {
+    const MAX_FORWARDS_PER_OWNER_PER_DAY = 3;
+    const MAX_LLM_CALLS_PER_TICK = 6;
+    const RECENT_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+    const RECOMMENDATION_THRESHOLD = 50;
+    const BASE_BROWSE_CHANCE = 0.05;
+
+    const nowMs = Date.now();
+    const recentSince = new Date(nowMs - RECENT_WINDOW_MS);
+    const dayWindowSince = new Date(nowMs - 24 * 60 * 60 * 1000);
+
+    let owner;
+    try {
+      owner = await this.worldOwnerService.getOwnerOrThrow();
+    } catch {
+      return {
+        summary: 'channel_proactive_forward: 无 owner 上下文，跳过',
+        forwarded: 0,
+      };
+    }
+
+    // 当日已收到的角色主动转发计数（用于全局上限）
+    const recentForwards = await this.interactionRepo.find({
+      where: {
+        ownerId: owner.id,
+        type: 'forward_to_chat',
+        createdAt: MoreThanOrEqual(dayWindowSince),
+      },
+      select: ['id', 'postId', 'payload', 'createdAt'],
+    });
+    const sentByCharCount = new Map<string, number>();
+    const characterForwardedPostIds = new Map<string, Set<string>>();
+    // 跨角色去重：同一帖子 24h 内最多只被任一角色主动转发一次。
+    // 否则 3 个角色都挑中同一爆款 → user 在 3 个不同私聊里收到同一卡片，刷屏。
+    const postsForwardedToday = new Set<string>();
+    let totalProactiveForwardsToday = 0;
+    for (const row of recentForwards) {
+      const payload = row.payload as
+        | { viaActor?: string; viaActorType?: string }
+        | null;
+      const actor = payload?.viaActor;
+      if (payload?.viaActorType !== 'character' || !actor) continue;
+      totalProactiveForwardsToday += 1;
+      sentByCharCount.set(actor, (sentByCharCount.get(actor) ?? 0) + 1);
+      if (!characterForwardedPostIds.has(actor)) {
+        characterForwardedPostIds.set(actor, new Set());
+      }
+      characterForwardedPostIds.get(actor)!.add(row.postId);
+      postsForwardedToday.add(row.postId);
+    }
+    if (totalProactiveForwardsToday >= MAX_FORWARDS_PER_OWNER_PER_DAY) {
+      return {
+        summary: `channel_proactive_forward: owner 24h 内已收到 ${totalProactiveForwardsToday} 条转发，达到上限`,
+        forwarded: 0,
+      };
+    }
+    const remainingGlobalQuota =
+      MAX_FORWARDS_PER_OWNER_PER_DAY - totalProactiveForwardsToday;
+
+    // 候选帖
+    const candidatePostsRaw = await this.postRepo.find({
+      where: [
+        {
+          surface: 'channels',
+          publishStatus: 'published',
+          mediaType: 'video',
+          createdAt: MoreThanOrEqual(recentSince),
+        },
+        {
+          surface: 'channels',
+          publishStatus: 'published',
+          mediaType: 'audio',
+          createdAt: MoreThanOrEqual(recentSince),
+        },
+      ],
+      order: { recommendationScore: 'DESC', createdAt: 'DESC' },
+    });
+    const candidatePosts = candidatePostsRaw.filter(
+      (post) =>
+        (post.recommendationScore ?? 0) >= RECOMMENDATION_THRESHOLD &&
+        this.isPostMediaPlayable(post),
+    );
+    if (candidatePosts.length === 0) {
+      return {
+        summary:
+          'channel_proactive_forward: 近 3d 无符合阈值的可转发视频号帖，跳过',
+        forwarded: 0,
+      };
+    }
+
+    // 候选角色：与 owner 的角色好友（避免给陌生角色发）
+    const friendCharacterIds = await this.socialService.getFriendCharacterIds(
+      owner.id,
+    );
+    if (friendCharacterIds.length === 0) {
+      return {
+        summary: 'channel_proactive_forward: owner 还没有角色好友',
+        forwarded: 0,
+      };
+    }
+    const blockedSet = new Set(
+      await this.socialService.getBlockedCharacterIds(owner.id),
+    );
+    const allCharacters = await this.characters.findAllVisibleToOwner(owner.id);
+    const characterById = new Map(allCharacters.map((c) => [c.id, c]));
+    const friendCharacters = friendCharacterIds
+      .map((id) => characterById.get(id))
+      .filter(
+        (c): c is (typeof allCharacters)[number] =>
+          Boolean(c) && !blockedSet.has(c!.id),
+      );
+
+    let llmCallsRemaining = MAX_LLM_CALLS_PER_TICK;
+    let forwarded = 0;
+
+    // 角色顺序随机化，避免每次都是同一个先发
+    const shuffledFriends = [...friendCharacters].sort(
+      () => Math.random() - 0.5,
+    );
+
+    for (const char of shuffledFriends) {
+      if (forwarded >= remainingGlobalQuota) break;
+      // 每角色每天 1 条
+      if ((sentByCharCount.get(char.id) ?? 0) >= 1) continue;
+      // 概率筛
+      if (Math.random() > BASE_BROWSE_CHANCE) continue;
+
+      // 该角色已经发过的帖子集合
+      const alreadySentPosts =
+        characterForwardedPostIds.get(char.id) ?? new Set<string>();
+
+      // 给候选帖打分（亲密度 × 时效 + 推荐分），跳过已发过的、跳过自己当作者的、
+      // 跳过 24h 内已被任意角色转过的（跨角色去重，避免同一帖子刷屏）
+      const scored = await Promise.all(
+        candidatePosts
+          .filter(
+            (post) =>
+              post.authorId !== char.id &&
+              !alreadySentPosts.has(post.id) &&
+              !postsForwardedToday.has(post.id),
+          )
+          .map(async (post) => {
+            let intimacy = NPC_USER_POST_NEUTRAL_INTIMACY;
+            if (post.authorType === 'character') {
+              const rel = await this.characterFriendships.getRelation(
+                char.id,
+                post.authorId,
+              );
+              intimacy =
+                rel.intimacy *
+                npcRelationCoolingFactor(nowMs, rel.lastInteractedAt);
+            }
+            const recencyMul = npcPostRecencyMultiplier(
+              nowMs,
+              post.createdAt.getTime(),
+            );
+            const intimacyMul = npcIntimacyMultiplier(intimacy);
+            const score =
+              (post.recommendationScore ?? 0) / 100 +
+              intimacyMul +
+              recencyMul +
+              Math.random() * 0.1;
+            return { post, score };
+          }),
+      );
+      if (scored.length === 0) continue;
+      scored.sort((a, b) => b.score - a.score);
+      const pick = scored[0]?.post;
+      if (!pick) continue;
+
+      // 生成可选短评（≤ 24 字）
+      let note: string | undefined;
+      if (llmCallsRemaining > 0) {
+        try {
+          const profile = await this.characters.getProfile(char.id);
+          if (profile) {
+            const observation = await this.buildFeedAiObservation(pick);
+            // 单独的 forward-quip 提示，避免和 formatPostCommentTask 的"评论一下"冲突。
+            // 不通过 worldLanguage 是因为这是新 surface，目前还没本地化模板；
+            // 中文一句话足够，AI 会按角色 persona 自然改写。
+            const userMessage =
+              `${pick.authorName} 在视频号发了：${observation.summary}。\n` +
+              `用一句话简短地把它转给好友，像在微信里顺手说"看看这个"那样自然，` +
+              `不要客套，不要解释，不要复述内容，≤ 24 字。`;
+            const reply = await this.ai.generateReply({
+              profile,
+              conversationHistory: [],
+              userMessage,
+              userMessageParts: observation.parts,
+              usageContext: {
+                surface: 'app',
+                scene: 'channel_forward_quip',
+                scopeType: 'character',
+                scopeId: char.id,
+                scopeLabel: char.name,
+                characterId: char.id,
+                characterName: char.name,
+              },
+            });
+            llmCallsRemaining -= 1;
+            const trimmed = sanitizeForwardQuip(reply.text);
+            if (trimmed) note = trimmed;
+          }
+        } catch {
+          // ignore — note 是可选的，没有就纯卡片
+        }
+      }
+
+      try {
+        await this.forwardChannelPostToChat({
+          actorType: 'character',
+          actorId: char.id,
+          actorName: char.name,
+          actorAvatar: char.avatar,
+          postId: pick.id,
+          targetCharacterId: char.id,
+          note,
+        });
+        forwarded += 1;
+        sentByCharCount.set(char.id, (sentByCharCount.get(char.id) ?? 0) + 1);
+        const seen =
+          characterForwardedPostIds.get(char.id) ?? new Set<string>();
+        seen.add(pick.id);
+        characterForwardedPostIds.set(char.id, seen);
+        // 同 tick 内后续角色不再选这条
+        postsForwardedToday.add(pick.id);
+      } catch (error) {
+        this.logger.warn(
+          `runChannelProactiveForwardTick: forward failed for char=${char.id} post=${pick.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    return {
+      summary: `channel_proactive_forward: 投递 ${forwarded} 条角色主动转发（剩余配额 ${remainingGlobalQuota - forwarded}/${MAX_FORWARDS_PER_OWNER_PER_DAY}，本次 LLM 用量 ${MAX_LLM_CALLS_PER_TICK - llmCallsRemaining}）`,
+      forwarded,
     };
   }
 
@@ -1598,6 +2502,87 @@ export class FeedService implements OnModuleInit {
     };
   }
 
+  // 视频号死链/无 URL 的视频/音频帖直接不展示。
+  // 文本/图片帖不在本规则管辖范围（用户决策：只隐藏死链/无 URL 的视频音频帖）。
+  private isPostMediaPlayable(post: FeedPostEntity): boolean {
+    if (post.mediaType !== 'video' && post.mediaType !== 'audio') return true;
+
+    const urls: string[] = [];
+    try {
+      const arr = JSON.parse(post.mediaPayload ?? '[]') as Array<{
+        kind?: string;
+        url?: string;
+      }>;
+      for (const a of Array.isArray(arr) ? arr : []) {
+        if (
+          a?.kind === post.mediaType &&
+          typeof a.url === 'string' &&
+          a.url.trim()
+        ) {
+          urls.push(a.url.trim());
+        }
+      }
+    } catch {
+      /* malformed payload — fall through to legacy mediaUrl */
+    }
+    if (post.mediaUrl?.trim()) urls.push(post.mediaUrl.trim());
+    if (urls.length === 0) return false;
+
+    return urls.some((url) => {
+      if (url.startsWith('blob:') || url.startsWith('data:')) return true;
+      if (url.startsWith('/api/moments/media/')) {
+        // 去掉 ?token=...# 之类后缀，再 basename 防 ../traversal
+        const cleanPath = url.split('?')[0].split('#')[0];
+        const rawName = cleanPath.slice('/api/moments/media/'.length);
+        const fileName = path.basename(rawName).trim();
+        if (!fileName) return false;
+        return existsSync(resolveReadableMomentMediaPath(fileName));
+      }
+      try {
+        const host = new URL(url).hostname.toLowerCase();
+        return !FEED_DEAD_MEDIA_HOSTS.has(host);
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  // 启动时把死链/无 URL 的视频号视频/音频帖批量标 hidden，避免每次请求重算。
+  // 重复跑无副作用：已经 hidden 的不会再次匹配 publishStatus='published' 条件。
+  private async cleanupBrokenChannelPosts() {
+    try {
+      const candidates = await this.postRepo.find({
+        where: [
+          {
+            surface: 'channels',
+            publishStatus: 'published',
+            mediaType: 'video',
+          },
+          {
+            surface: 'channels',
+            publishStatus: 'published',
+            mediaType: 'audio',
+          },
+        ],
+      });
+      const broken = candidates.filter(
+        (post) => !this.isPostMediaPlayable(post),
+      );
+      if (broken.length === 0) return;
+      await this.postRepo.update(
+        { id: In(broken.map((post) => post.id)) },
+        { publishStatus: 'hidden' },
+      );
+      this.logger.log(
+        `cleanupBrokenChannelPosts: hid ${broken.length} channels post(s) without playable media`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `cleanupBrokenChannelPosts failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
   private async getVisibleFeedPosts(surface: FeedSurface, ownerId: string) {
     const posts = await this.postRepo.find({
       where: { surface, publishStatus: 'published' },
@@ -1614,6 +2599,10 @@ export class FeedService implements OnModuleInit {
       if (post.authorType !== 'character') return true;
       if (!visibleCharacterIds.has(post.authorId)) return false;
       if (post.visibility === 'private') return false;
+      // 视频号过滤：视频/音频帖必须有可播放 URL（本地文件存在或非死链外站）。
+      if (surface === 'channels' && !this.isPostMediaPlayable(post)) {
+        return false;
+      }
       // 广场（surface='feed'）公开可见：所有非屏蔽角色都展示，无论是否好友；
       // 视频号（surface='channels'）保留 friends 仅好友可见的语义。
       if (surface === 'feed') {
@@ -1624,6 +2613,41 @@ export class FeedService implements OnModuleInit {
       }
       return true;
     });
+  }
+
+  /**
+   * 广场专用 SQL 分页路径：把 visibility 过滤下推到 WHERE 子句，避免拉全表后再内存过滤。
+   * 仅供 surface='feed'（广场动态）使用——视频号（'channels'）还要叠 blocked/not_interested/section
+   * 等过滤，逻辑更复杂，保留旧的 getVisibleChannelPosts。
+   */
+  private async findVisibleFeedPostsPaged(
+    ownerId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ posts: FeedPostEntity[]; total: number }> {
+    const visibleCharacterIds = await this.getVisibleCharacterIdSet(ownerId);
+    const visibleIds = Array.from(visibleCharacterIds);
+
+    const qb = this.postRepo
+      .createQueryBuilder('post')
+      .where('post.surface = :surface', { surface: 'feed' })
+      .andWhere('post.publishStatus = :status', { status: 'published' });
+
+    if (visibleIds.length === 0) {
+      qb.andWhere("post.authorType <> 'character'");
+    } else {
+      qb.andWhere(
+        "(post.authorType <> 'character' OR (post.authorId IN (:...visibleIds) AND post.visibility <> 'private'))",
+        { visibleIds },
+      );
+    }
+
+    qb.orderBy('post.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [posts, total] = await qb.getManyAndCount();
+    return { posts, total };
   }
 
   private async getVisibleChannelPosts(

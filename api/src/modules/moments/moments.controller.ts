@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -26,8 +27,16 @@ export class MomentsController {
   constructor(private readonly momentsService: MomentsService) {}
 
   @Get()
-  getFeed() {
-    return this.momentsService.getFeed();
+  getFeed(@Query('page') page?: string, @Query('limit') limit?: string) {
+    // 兼容旧调用：不传 page 时返回完整 Moment[]（搜索索引、分享卡等使用）；
+    // 传了 page/limit 时走分页路径，返回 { items, total, hasMore }。
+    if (page === undefined && limit === undefined) {
+      return this.momentsService.getFeed();
+    }
+    return this.momentsService.getFeed({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @Post('media')

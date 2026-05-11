@@ -33,7 +33,6 @@ import {
   listFeedComments,
   markFeedPostNotInterested,
   replyFeedComment,
-  shareFeedPost,
   unfavoriteFeedPost,
   unfollowChannelAuthor,
   viewFeedPost,
@@ -46,6 +45,8 @@ import {
 import { AppPage, Button, cn, InlineNotice } from "@yinjie/ui";
 import { AudioCard } from "../components/audio-card";
 import { AvatarChip } from "../components/avatar-chip";
+import { ChannelsForwardPicker } from "../components/channels-forward-picker";
+import { resolveAppMediaUrl } from "../lib/media-url";
 import { ExpandableText } from "../components/expandable-text";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import {
@@ -61,11 +62,10 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { normalizePathname } from "../lib/normalize-pathname";
-import { shareWithNativeShell } from "../runtime/mobile-bridge";
-import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const EMPTY_CHANNEL_POSTS: FeedPostListItem[] = [];
+const CHANNELS_PAGE_LIMIT = 20;
 const DesktopChannelsWorkspace = lazy(async () => {
   const mod =
     await import("../features/desktop/channels/desktop-channels-workspace");
@@ -92,9 +92,6 @@ export function ChannelsPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const nativeMobileShareSupported = isNativeMobileShareSurface({
-    isDesktopLayout,
-  });
   const normalizedPathname = normalizePathname(pathname);
   const routeState = useMemo(() => parseDesktopChannelsRouteHash(hash), [hash]);
   const normalizedDesktopReturnPath =
@@ -135,6 +132,11 @@ export function ChannelsPage() {
     null,
   );
   const [noticeAction, setNoticeAction] = useState<(() => void) | null>(null);
+  // 视频号转发面板：null = 关闭，非空 = 当前要转发的 post 摘要
+  const [forwardPickerPost, setForwardPickerPost] = useState<{
+    id: string;
+    excerpt: string;
+  } | null>(null);
   const previousBaseUrlRef = useRef(baseUrl);
 
   const channelsQuery = useQuery({
@@ -142,7 +144,7 @@ export function ChannelsPage() {
     queryFn: () =>
       getChannelHome(baseUrl, {
         section: activeSection,
-        limit: 20,
+        limit: CHANNELS_PAGE_LIMIT,
       }),
   });
 
@@ -715,80 +717,13 @@ export function ChannelsPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  async function handleSharePost(post: (typeof visiblePosts)[number]) {
-    const shareHash = buildDesktopChannelsRouteHash({
-      postId: post.id,
-      section: activeSection,
+  // 视频号转发：点击转发按钮 → 弹好友选择器 → 用户选完调
+  // forwardFeedPostToChat（在 ChannelsForwardPicker 内部完成）。
+  function handleSharePost(post: (typeof visiblePosts)[number]) {
+    setForwardPickerPost({
+      id: post.id,
+      excerpt: `${post.authorName}：${post.text ?? ""}`.slice(0, 80),
     });
-    const sharePath = `${pathname}${shareHash ? `#${shareHash}` : ""}`;
-    const shareUrl =
-      typeof window === "undefined"
-        ? sharePath
-        : `${window.location.origin}${sharePath}`;
-    const summaryText = `${post.authorName}：${post.text}\n${shareUrl}`;
-
-    if (nativeMobileShareSupported) {
-      const shared = await shareWithNativeShell({
-        title: t(msg`${post.authorName} 的视频号动态`),
-        text: `${post.authorName}：${post.text}`,
-        url: shareUrl,
-      });
-
-      if (shared) {
-        await shareFeedPost(post.id, { channel: "native" }, baseUrl);
-        setNoticeTone("success");
-        setNoticeActionLabel(null);
-        setNoticeAction(null);
-        setNotice(t(msg`已打开系统分享面板。`));
-        return;
-      }
-    }
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setNoticeTone("info");
-      setNoticeActionLabel(
-        nativeMobileShareSupported ? t(msg`重试分享`) : t(msg`重试复制`),
-      );
-      setNoticeAction(() => () => {
-        void handleSharePost(post);
-      });
-      setNotice(
-        nativeMobileShareSupported
-          ? t(msg`当前设备暂时无法打开系统分享，请稍后重试。`)
-          : t(msg`当前环境暂不支持复制内容摘要。`),
-      );
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(summaryText);
-      await shareFeedPost(post.id, { channel: "copy" }, baseUrl);
-      setNoticeTone("success");
-      setNoticeActionLabel(null);
-      setNoticeAction(null);
-      setNotice(
-        nativeMobileShareSupported
-          ? t(msg`系统分享暂时不可用，已复制内容摘要。`)
-          : t(msg`内容摘要已复制。`),
-      );
-    } catch {
-      setNoticeTone("info");
-      setNoticeActionLabel(
-        nativeMobileShareSupported ? t(msg`重试分享`) : t(msg`重试复制`),
-      );
-      setNoticeAction(() => () => {
-        void handleSharePost(post);
-      });
-      setNotice(
-        nativeMobileShareSupported
-          ? t(msg`系统分享失败，请稍后重试。`)
-          : t(msg`复制内容摘要失败，请稍后重试。`),
-      );
-    }
   }
 
   function toggleFavorite(post: (typeof visiblePosts)[number]) {
@@ -1089,7 +1024,6 @@ export function ChannelsPage() {
               )}
             >
               {section.label}
-              {section.count > 0 ? ` ${section.count}` : ""}
             </button>
           ))}
         </div>
@@ -1264,6 +1198,23 @@ export function ChannelsPage() {
           });
         }}
       />
+      <ChannelsForwardPicker
+        open={Boolean(forwardPickerPost)}
+        postId={forwardPickerPost?.id ?? null}
+        postExcerpt={forwardPickerPost?.excerpt}
+        baseUrl={baseUrl}
+        onClose={() => setForwardPickerPost(null)}
+        onForwarded={(target) => {
+          setNoticeTone("success");
+          setNoticeActionLabel(null);
+          setNoticeAction(null);
+          setNotice(t(msg`已转发给 ${target.name}。`));
+          // 让"我点过转发"的小角标 / shareCount 立即体现
+          void queryClient.invalidateQueries({
+            queryKey: ["app-channels-home", baseUrl],
+          });
+        }}
+      />
     </AppPage>
   );
 }
@@ -1278,7 +1229,9 @@ function MobileChannelMediaSurface({ post }: { post: FeedPostListItem }) {
       <div className="relative flex h-[64dvh] w-full items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-6">
         {audioAsset?.posterUrl || post.coverUrl ? (
           <img
-            src={audioAsset?.posterUrl ?? post.coverUrl ?? undefined}
+            src={resolveAppMediaUrl(
+              audioAsset?.posterUrl ?? post.coverUrl ?? undefined,
+            )}
             alt={post.title ?? ""}
             className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px]"
           />
@@ -1299,11 +1252,13 @@ function MobileChannelMediaSurface({ post }: { post: FeedPostListItem }) {
   }
 
   if (post.mediaType === "video" && (videoAsset?.url || post.mediaUrl)) {
+    const rawVideoUrl = videoAsset?.url ?? post.mediaUrl ?? undefined;
+    const rawPosterUrl = videoAsset?.posterUrl ?? post.coverUrl ?? undefined;
     return (
       <video
-        key={videoAsset?.url ?? post.mediaUrl}
-        src={videoAsset?.url ?? post.mediaUrl ?? undefined}
-        poster={videoAsset?.posterUrl ?? post.coverUrl ?? undefined}
+        key={rawVideoUrl}
+        src={rawVideoUrl ? resolveAppMediaUrl(rawVideoUrl) : undefined}
+        poster={rawPosterUrl ? resolveAppMediaUrl(rawPosterUrl) : undefined}
         controls
         playsInline
         preload="metadata"
