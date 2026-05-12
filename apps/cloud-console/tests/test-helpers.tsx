@@ -9,6 +9,15 @@ import { render } from "@testing-library/react";
 import { AppLocaleProvider } from "@yinjie/i18n";
 import { vi } from "vitest";
 import { matchesQueueStateFilter } from "../src/lib/job-queue-state";
+
+// jsdom does not implement ResizeObserver; recharts' ResponsiveContainer needs it.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
 import {
   getJobAuditBadgeLabel,
   getJobSupersededByJobType,
