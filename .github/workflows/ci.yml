@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  typecheck:
-    name: typecheck
+  workspace-build:
+    name: workspace build smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +28,14 @@ jobs:
           node-version: 20
           cache: pnpm
 
+      - name: Cache turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -32,11 +44,43 @@ jobs:
           I18N_AUDIT_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD' }}
         run: pnpm i18n:check:changed
 
-      - name: Typecheck (admin and app excluded — drift tracked separately)
-        run: pnpm exec turbo run typecheck --filter=!@yinjie/admin --filter=!@yinjie/app
+      - name: Build all workspace packages (except admin & desktop)
+        # - admin: build 脚本含 tsc 严格检查、有已知 drift，单独走 vite-only 烟囱
+        # - desktop: 走 tauri build，需要 Rust 工具链，应在专用 release pipeline 跑
+        # 其余覆盖 contracts/config/i18n/ui/app/cloud-console/site/cloud-api
+        run: pnpm exec turbo run build --filter=!@yinjie/admin --filter=!@yinjie/desktop
+
+      - name: Admin vite-only build smoke
+        # 验证 admin 能产出可发布的前端 bundle（绕开 tsc drift）
+        run: pnpm --filter @yinjie/admin exec vite build
+
+  api-smoke:
+    name: api (NestJS) build smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (nest build)
+        run: npm run build
+
+      - name: Verify build output
+        # 编出 dist/main.js 才算"能跑起来"
+        run: test -f dist/main.js
 
   cloud-smoke:
-    name: cloud-smoke
+    name: cloud-smoke (browser e2e)
     runs-on: ubuntu-latest
     outputs:
       diagnosis_highest_severity: ${{ steps.cloud_smoke_diagnosis.outputs.highest_severity }}
@@ -55,6 +99,22 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+
+      - name: Cache turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
