@@ -14175,12 +14175,6 @@ msgstr "Today: {0} adopted · {1} posted"
 msgid "未完成"
 msgstr "Incomplete"
 
-#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
-#. placeholder {1}: formatCompactTime(item.latestRunAt)
-#: apps/admin/src/routes/real-world-sync-page.tsx:373
-msgid "最近 {0} · {1}"
-msgstr "Recent {0} · {1}"
-
 #. placeholder {0}: item.latestRunStatus
 #. placeholder {0}: previewResult.action
 #. placeholder {0}: previewResult.parsedTask.category
@@ -14193,6 +14187,12 @@ msgstr "Recent {0} · {1}"
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1686
 msgid "{0}"
 msgstr "{0}"
+
+#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
+#. placeholder {1}: formatCompactTime(item.latestRunAt)
+#: apps/admin/src/routes/real-world-sync-page.tsx:373
+msgid "最近 {0} · {1}"
+msgstr "Recent {0} · {1}"
 
 #: apps/admin/src/routes/real-world-sync-page.tsx:374
 msgid "最近暂无执行记录"

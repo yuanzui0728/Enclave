@@ -464,7 +464,9 @@ test.describe("cloud-console browser smoke", () => {
     ).toBeVisible();
     await page.locator("a").filter({ hasText: worldName }).first().click();
 
-    await expect(page.getByText("Bootstrap package")).toBeVisible();
+    await expect(
+      page.getByText("Bootstrap package", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByLabel("World API base URL")).toHaveValue(
       "https://browser-world.example.com/api",
     );
@@ -540,7 +542,7 @@ test.describe("cloud-console browser smoke", () => {
     });
 
     await page.goto(`${stack.consoleServer.baseUrl}/worlds`);
-    await expect(page.getByText("Instance fleet")).toBeVisible();
+    await expect(page.getByText("Managed worlds")).toBeVisible();
 
     await expect(
       page.getByRole("button", { name: `Suspend ${worldName}` }),
