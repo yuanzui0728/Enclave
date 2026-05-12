@@ -13,35 +13,24 @@
 | **Day 1** | `day1/01-onboarding.png` | 主图 · 5 幕叙事入场 | 复用 `docs/screenshots/core-onboarding.png` | ✅ 就绪 |
 | **Day 1** | `day1/02-moments.png` | 副图 · AI 朋友圈 | 复用 `docs/screenshots/core-moments.png` | ✅ 就绪 |
 | **Day 2** | `day2/01-core-loop.gif` | 主图 · 核心闭环 GIF | 由 `yinjie-core-loop.gif` 压缩，618 KB | ✅ 就绪 |
-| **Day 3** | `day3/01-character-editor.png` | 主图 · 后台角色编辑器 | **占位卡** | ⚠️ 需现截 |
+| **Day 3** | `day3/01-character-editor.png` | 主图 · 后台角色编辑器（周燃健身教练）| **Playwright 实截** admin/127.0.0.1:5181 | ✅ 就绪 |
 | **Day 3** | `day3/02-self-character.png` | 副图 · 我的 AI 形象 | 复用 `docs/screenshots/core-self-character.png` | ✅ 就绪 |
-| **Day 4** | `day4/01-self-agent-modes.png` | 主图 · 赛博分身三档模式 | **占位卡** | ⚠️ 需现截 |
-| **Day 4** | `day4/02-self-agent-review.png` | 副图 · 复盘对话实例 | **占位卡** | ⚠️ 需现截（脱敏） |
-| **Day 5** | `day5/01-group-chat.png` | 主图 · AI 5 人群聊互怼 | **占位卡** | ⚠️ 需现截（9 屏拼图最佳） |
+| **Day 3** | `day3/03-character-factory.png` | 备图 · 角色工厂全流程 | **Playwright 实截** | ✅ 备选 |
+| **Day 4** | `day4/01-self-agent-modes.png` | 主图 · 赛博分身主代理工作台 | **Playwright 实截** admin/self-agent | ✅ 就绪 |
+| **Day 4** | `day4/02-self-agent-review.png` | 副图 · 复盘对话实例 | **占位卡** | ⚠️ 需现截（脱敏；admin 视角拍不出"温暖陪伴"感，建议用 app） |
+| **Day 5** | `day5/01-group-chat.png` | 主图 · AI 5 人群聊互怼 | **占位卡** | ⚠️ 需现截（admin 没有群聊视图，必须起 app 跑真实群） |
 | **Day 6** | `day6/01-architecture.png` | 主图 · 技术架构三层图 | 程序生成（Pillow 绘制） | ✅ 就绪 |
 | **Day 6** | `day6/02-docker-compose.png` | 副图 · docker compose 三行启动 | 程序生成（终端模拟） | ✅ 就绪 |
 | **Day 7** | `day7/01-grid-2x3.png` | 主图 · 6 张核心截图拼图 | 程序生成 | ✅ 就绪 |
 | **Day 7** | `day7/02-grid-3x3-with-todo.png` | 备图 · 9 宫格（含 3 个 TODO 位） | 程序生成；现截 3 张后可重跑覆盖 | ✅ 就绪 |
 
-**总览**：12 张图，**8 张已就绪可直接发**，4 张需要你跑项目现截覆盖。
+**总览**：13 张图，**11 张已就绪可直接发**，2 张仍需现截（Day4 副图、Day5 主图）。
 
 ---
 
-## 需要现截的 4 张（重要）
+## 还需要现截的 2 张
 
-按发布顺序排，**Day 1 / Day 2 发布期间就要把这 4 张截好**。
-
-### Day 3 主图：`day3/01-character-editor.png`
-- 页面：后台管理端 → 角色编辑器
-- 路径：`apps/admin` → `character-editor-page.tsx`
-- 截图要点：在一屏里同时露出 **人设 / 作息 / 关系网** 三个区域（必要时缩小浏览器宽度或滚屏拼接）
-- 目的：让观众看到"你能像捏小说人物一样捏 AI"
-
-### Day 4 主图：`day4/01-self-agent-modes.png`
-- 页面：主 App → 赛博分身入口
-- 路径：`apps/app` → `self-agent-page.tsx`（或对应路由）
-- 截图要点：**陪伴 / 复盘 / 整理** 三档模式选择界面，文字要清晰可读
-- 目的：让观众第一眼理解"三档差异"
+Day 3 主图 / Day 4 主图已用 Playwright 自动截好（见 `_capture.mjs`）。下面这 2 张 admin 视角无法呈现戏剧感，建议你启动 app（5180）后用 iPhone 真机或浏览器手机模式截。
 
 ### Day 4 副图：`day4/02-self-agent-review.png`
 - 页面：和赛博分身的一次真实复盘对话
@@ -58,15 +47,18 @@
 
 ## 重新生成
 
-如果改了截图素材或想调拼图样式，运行：
-
+合成类资产（GIF 压缩 / 拼图 / 架构图 / docker 卡 / 占位卡）：
 ```bash
 python docs/marketing/jike-assets/_build.py
 ```
+依赖：`pip install pillow`（Pillow 12+）。
 
-脚本会重新生成：GIF 压缩、Day 7 拼图、Day 6 架构图、4 张 TODO 占位卡。**已经覆盖为真实截图的文件不会被覆盖**（脚本只生成占位卡和合成图）。
-
-依赖：`pip install pillow`（Pillow 12+ 即可）。
+Admin 实截类资产（Day3 角色编辑器、Day4 self-agent）：
+```bash
+# 前置：pnpm dev:admin 已起 5181；api 已起 3000
+node docs/marketing/jike-assets/_capture.mjs
+```
+脚本会自动注入 admin localStorage 跳过登录 gate，从 `api/database.sqlite` 取真实角色数据。需要不同的角色，改 `_capture.mjs` 的 `SHOTS` 数组里的 route。
 
 ---
 
