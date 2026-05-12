@@ -58,6 +58,9 @@ interface EnqueueMusicArgs {
   characterName: string;
   characterAvatar?: string | null;
   targetType: MinimaxJobTargetType;
+  // 可选：直接挂上目标 id，避免 enqueue → setTimeout(processMusicJobs) 与
+  // 调用方随后 attachTarget 之间的竞态。子任务（如 BGM）建议直接传入。
+  targetId?: string | null;
 }
 
 @Injectable()
@@ -152,7 +155,7 @@ export class MinimaxJobService {
       inputPayload: JSON.stringify(payload),
       model: actualModel,
       targetType: args.targetType,
-      targetId: null,
+      targetId: args.targetId ?? null,
       characterId: args.characterId,
       characterName: args.characterName,
       characterAvatar: args.characterAvatar ?? null,

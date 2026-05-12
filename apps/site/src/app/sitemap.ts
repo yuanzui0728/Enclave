@@ -9,6 +9,7 @@ const STATIC_PATHS = [
   "download",
   "changelog",
   "use-cases",
+  "press-kit",
   "privacy",
   "terms",
 ] as const;
@@ -21,6 +22,7 @@ const LAST_MOD_BY_PATH: Record<(typeof STATIC_PATHS)[number], string> = {
   download: "2026-05-07",
   changelog: "2026-04-24",
   "use-cases": "2026-05-07",
+  "press-kit": "2026-05-11",
   privacy: "2026-05-07",
   terms: "2026-05-07",
 };
@@ -30,6 +32,7 @@ const CHANGE_FREQ: Record<(typeof STATIC_PATHS)[number], "weekly" | "monthly"> =
   download: "monthly",
   changelog: "weekly",
   "use-cases": "monthly",
+  "press-kit": "monthly",
   privacy: "monthly",
   terms: "monthly",
 };
@@ -39,6 +42,7 @@ const PRIORITY: Record<(typeof STATIC_PATHS)[number], number> = {
   download: 0.7,
   changelog: 0.7,
   "use-cases": 0.7,
+  "press-kit": 0.6,
   privacy: 0.5,
   terms: 0.5,
 };

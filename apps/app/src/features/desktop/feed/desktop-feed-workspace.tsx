@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   getFeedPost,
@@ -45,6 +50,10 @@ type DesktopFeedWorkspaceProps = {
   onCommentSubmit: (postId: string) => void;
   onCreate: () => void;
   onStartCommentReply?: (comment: FeedComment) => void;
+  onSelectCommentAuthor?: (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    comment: FeedComment,
+  ) => void;
   onImageFilesSelected: (files: FileList | null) => void;
   onLike: (postId: string) => void;
   onRemoveImage: (id: string) => void;
@@ -89,6 +98,7 @@ export function DesktopFeedWorkspace({
   onCreate,
   onImageFilesSelected,
   onStartCommentReply,
+  onSelectCommentAuthor,
   onLike,
   onRemoveImage,
   onRemoveVideo,
@@ -197,6 +207,7 @@ export function DesktopFeedWorkspace({
                 onOpenCompose={() => setShowCompose(true)}
                 onShare={onShare}
                 onStartCommentReply={onStartCommentReply}
+                onSelectCommentAuthor={onSelectCommentAuthor}
                 onToggleFavorite={onToggleFavorite}
               />
             </div>

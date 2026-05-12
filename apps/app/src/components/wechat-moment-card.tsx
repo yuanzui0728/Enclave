@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  memo,
   useEffect,
   useRef,
   useState,
@@ -52,7 +53,39 @@ const WECHAT_LINK_COLOR = "#576B95";
 const WECHAT_TIMESTAMP_COLOR = "#9A9A9A";
 const WECHAT_TEXT_COLOR = "#1A1A1A";
 
-export const WeChatMomentCard = forwardRef<HTMLElement, WeChatMomentCardProps>(
+// memo + 自定义 comparator：朋友圈列表里 like / comment optimistic update 时
+// setQueryData 用 data.map(m => m.id===target ? new : m) 保留其他 moment 对象
+// 引用不变 — 包 memo 后 sibling card 跳过重渲染。
+//
+// 现实情况：caller (moments-page.tsx 等 7 处) 的 onAuthorTap / onOpenActionMenu
+// 等 handler 都是 inline 箭头函数 (() => onLikeMoment(moment.id))，每次 parent
+// render 都新引用。默认 shallow memo 看到 handler 引用变 → 重新渲染，等于没包。
+// 这里改用 custom comparator 只比较"数据属性"，handler 引用变化不触发 re-render。
+// 副作用：handler 内的闭包引用旧 parent 状态——但所有 handler 都是 fire-and-forget
+// (调 mutation.mutate 等)，闭包的 stale 不会引发实际 bug（mutation 自身是稳定
+// 引用，moment.id 通过 props 重新读到最新值）。
+function arePropsEqual(
+  prev: Readonly<WeChatMomentCardProps>,
+  next: Readonly<WeChatMomentCardProps>,
+) {
+  return (
+    prev.moment === next.moment &&
+    prev.liked === next.liked &&
+    prev.ownerId === next.ownerId &&
+    prev.cardId === next.cardId &&
+    prev.hideAuthor === next.hideAuthor &&
+    prev.flush === next.flush &&
+    // handler 「是否存在」也得比较 — 比如 onDelete 在非 owner moment 上是 undefined
+    // 有/无的切换会改变 UI（删除链接显隐），不能忽略
+    Boolean(prev.onDelete) === Boolean(next.onDelete) &&
+    Boolean(prev.onAuthorTap) === Boolean(next.onAuthorTap) &&
+    Boolean(prev.onDoubleTapLike) === Boolean(next.onDoubleTapLike) &&
+    Boolean(prev.onCommentTap) === Boolean(next.onCommentTap) &&
+    Boolean(prev.onLikeAuthorTap) === Boolean(next.onLikeAuthorTap)
+  );
+}
+
+export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardProps>(
   function WeChatMomentCard(
     {
       moment,
@@ -318,7 +351,7 @@ export const WeChatMomentCard = forwardRef<HTMLElement, WeChatMomentCardProps>(
       </article>
     );
   },
-);
+), arePropsEqual);
 
 function MoreHorizontalDots() {
   return (

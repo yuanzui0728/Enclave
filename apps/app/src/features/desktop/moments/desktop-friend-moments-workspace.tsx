@@ -4,6 +4,7 @@ import {
   type Character,
   type Moment,
   type MomentComment,
+  type MomentLike,
 } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
@@ -62,6 +63,11 @@ type DesktopFriendMomentsWorkspaceProps = {
     anchorElement: HTMLButtonElement;
     momentId?: string;
   }) => void;
+  onOpenLikerPopover?: (input: {
+    anchorElement: HTMLButtonElement;
+    momentId: string;
+    like: MomentLike;
+  }) => void;
   onRemoveImage: (id: string) => void;
   onRemoveVideo: () => void;
   onStartCommentReply?: (input: {
@@ -110,6 +116,7 @@ export function DesktopFriendMomentsWorkspace({
   onOpenMomentsHome,
   onOpenProfile,
   onOpenProfilePopover,
+  onOpenLikerPopover,
   onRemoveImage,
   onRemoveVideo,
   onStartCommentReply,
@@ -250,6 +257,16 @@ export function DesktopFriendMomentsWorkspace({
             onAuthorAction={onOpenProfile}
             onSelectAuthor={(event) =>
               openProfilePopover(event.currentTarget, moment.id)
+            }
+            onSelectLiker={
+              onOpenLikerPopover
+                ? (event, like) =>
+                    onOpenLikerPopover({
+                      anchorElement: event.currentTarget,
+                      momentId: moment.id,
+                      like,
+                    })
+                : undefined
             }
             onToggleFavorite={() => onToggleFavorite(moment.id)}
           />

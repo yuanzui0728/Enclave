@@ -1021,7 +1021,15 @@ export class SchedulerService {
   ): Promise<{ music: number; video: number }> {
     const MUSIC_PER_CHAR_PROB = 0.05;
     const MUSIC_MAX_PER_TICK = 3;
+    const MUSIC_RECENT_DAYS = 14;
+    // 最近 14 天音乐发布数 → 权重倍率
+    // 0 次（很久没发） → 3x，1 次 → 1x，≥2 次 → 完全跳过
+    // 让长尾角色更快被翻牌、避免老熟脸刷屏
+    const MUSIC_WEIGHT_BY_RECENT: readonly number[] = [3, 1, 0];
     const VIDEO_MAX_PER_TICK = 1;
+    // 视频窗口比音乐更长（视频生成成本高、频率低）
+    const VIDEO_RECENT_DAYS = 21;
+    const VIDEO_WEIGHT_BY_RECENT: readonly number[] = [3, 1, 0];
     let music = 0;
     let video = 0;
 
@@ -1036,10 +1044,38 @@ export class SchedulerService {
         const end = char.activeHoursEnd ?? 22;
         return hour >= start && hour <= end;
       });
+
+      // 一次性查所有候选角色最近 14 天的音乐发布数，构建 authorId → 计数 map
+      const recentSince = new Date(
+        now.getTime() - MUSIC_RECENT_DAYS * 24 * 60 * 60 * 1000,
+      );
+      const recentRows = candidates.length
+        ? await this.momentPostRepo
+            .createQueryBuilder('p')
+            .select('p.authorId', 'authorId')
+            .addSelect('COUNT(*)', 'cnt')
+            .where('p.generationKind = :k', { k: 'minimax_music' })
+            .andWhere('p.postedAt >= :since', { since: recentSince })
+            .andWhere('p.authorId IN (:...ids)', {
+              ids: candidates.map((c) => c.id),
+            })
+            .groupBy('p.authorId')
+            .getRawMany<{ authorId: string; cnt: string }>()
+        : [];
+      const recentCount = new Map<string, number>(
+        recentRows.map((r) => [r.authorId, Number(r.cnt)]),
+      );
+
       shuffleInPlace(candidates);
       for (const char of candidates) {
         if (music >= MUSIC_MAX_PER_TICK) break;
-        if (Math.random() > MUSIC_PER_CHAR_PROB) continue;
+        const recent = recentCount.get(char.id) ?? 0;
+        const weight =
+          MUSIC_WEIGHT_BY_RECENT[
+            Math.min(recent, MUSIC_WEIGHT_BY_RECENT.length - 1)
+          ];
+        if (weight <= 0) continue;
+        if (Math.random() > MUSIC_PER_CHAR_PROB * weight) continue;
         const todayMusic = await this.momentPostRepo.count({
           where: {
             authorId: char.id,
@@ -1052,7 +1088,7 @@ export class SchedulerService {
         if (post) {
           music += 1;
           this.logger.log(
-            `minimax music moment ${post.id} scheduled for ${char.name}`,
+            `minimax music moment ${post.id} scheduled for ${char.name} [recent14d=${recent}, weight=${weight}]`,
           );
         }
       }
@@ -1081,8 +1117,52 @@ export class SchedulerService {
         const end = char.activeHoursEnd ?? 22;
         return hour >= start && hour <= end;
       });
-      shuffleInPlace(candidates);
-      for (const char of candidates) {
+
+      // 21 天视频反向加权：0 次 → 3x，1 次 → 1x，≥2 次 → 完全跳过。
+      // 加权后用「按权重展开 + 洗牌 + 去重」做加权随机排序，
+      // 让冷门角色排在前面，但每 tick 仍尽量出 1 条（不走概率门槛）。
+      const recentSinceVideo = new Date(
+        now.getTime() - VIDEO_RECENT_DAYS * 24 * 60 * 60 * 1000,
+      );
+      const recentVideoRows = candidates.length
+        ? await this.momentPostRepo
+            .createQueryBuilder('p')
+            .select('p.authorId', 'authorId')
+            .addSelect('COUNT(*)', 'cnt')
+            .where('p.generationKind = :k', { k: 'minimax_video' })
+            .andWhere('p.postedAt >= :since', { since: recentSinceVideo })
+            .andWhere('p.authorId IN (:...ids)', {
+              ids: candidates.map((c) => c.id),
+            })
+            .groupBy('p.authorId')
+            .getRawMany<{ authorId: string; cnt: string }>()
+        : [];
+      const recentVideoCount = new Map<string, number>(
+        recentVideoRows.map((r) => [r.authorId, Number(r.cnt)]),
+      );
+
+      const weightedPool: { char: CharacterEntity; recent: number; weight: number }[] = [];
+      for (const c of candidates) {
+        const recent = recentVideoCount.get(c.id) ?? 0;
+        const weight =
+          VIDEO_WEIGHT_BY_RECENT[
+            Math.min(recent, VIDEO_WEIGHT_BY_RECENT.length - 1)
+          ];
+        if (weight <= 0) continue;
+        for (let i = 0; i < weight; i++) {
+          weightedPool.push({ char: c, recent, weight });
+        }
+      }
+      shuffleInPlace(weightedPool);
+      const seen = new Set<string>();
+      const orderedCandidates: typeof weightedPool = [];
+      for (const item of weightedPool) {
+        if (seen.has(item.char.id)) continue;
+        seen.add(item.char.id);
+        orderedCandidates.push(item);
+      }
+
+      for (const { char, recent, weight } of orderedCandidates) {
         if (video >= VIDEO_MAX_PER_TICK) break;
         const todayVideoForChar = await this.momentPostRepo.count({
           where: {
@@ -1099,7 +1179,7 @@ export class SchedulerService {
         if (post) {
           video += 1;
           this.logger.log(
-            `minimax video moment ${post.id} scheduled for ${char.name}`,
+            `minimax video moment ${post.id} scheduled for ${char.name} [recent21d=${recent}, weight=${weight}]`,
           );
         }
       }

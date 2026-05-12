@@ -1,3 +1,4 @@
+import { type MouseEvent as ReactMouseEvent } from "react";
 import { msg } from "@lingui/macro";
 import {
   type FeedComment,
@@ -31,6 +32,10 @@ type DesktopFeedListProps = {
   /** 可选 — 触发"分享图卡"上抛 postId。 */
   onShare?: (postId: string) => void;
   onStartCommentReply?: (comment: FeedComment) => void;
+  onSelectCommentAuthor?: (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    comment: FeedComment,
+  ) => void;
   onToggleFavorite: (postId: string) => void;
 };
 
@@ -54,6 +59,7 @@ export function DesktopFeedList({
   onOpenCompose,
   onShare,
   onStartCommentReply,
+  onSelectCommentAuthor,
   onToggleFavorite,
 }: DesktopFeedListProps) {
   const t = useRuntimeTranslator();
@@ -99,6 +105,7 @@ export function DesktopFeedList({
                 onLike={() => onLike(post.id)}
                 onShare={onShare ? () => onShare(post.id) : undefined}
                 onStartCommentReply={onStartCommentReply}
+                onSelectCommentAuthor={onSelectCommentAuthor}
                 onToggleFavorite={() => onToggleFavorite(post.id)}
               />
             );

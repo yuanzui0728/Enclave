@@ -27,6 +27,7 @@ import {
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
 import {
   emitChatMessage,
+  getChatSocket,
   joinConversationRoom,
   onChatError,
   onChatMessage,
@@ -342,31 +343,59 @@ export function useConversationThread(conversationId: string) {
   ]);
 
   const sendMutation = useMutation({
+    // optimistic UI 在 onMutate 里做：消息立刻出现、输入框立刻清空。mutationFn
+    // 只负责真正的副作用 (socket emit)，throw 时 onError 把对应本地消息标记为
+    // failed，避免「socket 离线时点发送 → 消息永远卡 sending」。
+    onMutate: (input: {
+      payload: SendMessagePayload;
+      retryMessageId?: string;
+    }) => {
+      if (!ownerId) return { messageId: undefined };
+
+      setSocketError(null);
+
+      let messageId: string | undefined;
+      if (input.retryMessageId) {
+        messageId = input.retryMessageId;
+        setMessages((current) =>
+          markThreadMessageSending(current, input.retryMessageId!),
+        );
+      } else {
+        const optimistic = buildOptimisticDirectMessage({
+          payload: input.payload,
+          ownerId,
+          senderName: username ?? "You",
+        });
+        messageId = optimistic.id;
+        setMessages((current) => [...current, optimistic]);
+      }
+
+      if (!input.retryMessageId && input.payload.type !== "sticker") {
+        setText("");
+      }
+
+      return { messageId };
+    },
     mutationFn: async (input: {
       payload: SendMessagePayload;
       retryMessageId?: string;
     }) => {
-      if (!ownerId) {
-        return;
-      }
+      if (!ownerId) return;
 
-      setSocketError(null);
-      emitChatMessage(input.payload);
-      setMessages((current) =>
-        input.retryMessageId
-          ? markThreadMessageSending(current, input.retryMessageId)
-          : [
-              ...current,
-              buildOptimisticDirectMessage({
-                payload: input.payload,
-                ownerId,
-                senderName: username ?? "You",
-              }),
-            ],
-      );
-      if (!input.retryMessageId && input.payload.type !== "sticker") {
-        setText("");
+      // Fail-fast：socket 断开时不要让消息卡在 sending。socket.io-client 在
+      // 断开期间会 buffer emits 并在重连后 replay，但用户当下不知道，体感是
+      // 「发了没动静」。直接抛错让 onError 把消息标 failed + 显示重试按钮。
+      if (!getChatSocket().connected) {
+        throw new Error("socket-disconnected");
       }
+      emitChatMessage(input.payload);
+    },
+    onError: (_err, _variables, context) => {
+      const messageId = context?.messageId;
+      if (!messageId) return;
+      setMessages((current) =>
+        markThreadMessagesFailed(current, [messageId]),
+      );
     },
   });
 

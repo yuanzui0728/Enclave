@@ -241,10 +241,13 @@ async function buildMomentCreateRequest(input: {
   }
 
   if (input.imageDrafts.length > 0) {
-    const media: MomentImageAsset[] = [];
-    for (const draft of input.imageDrafts) {
-      media.push(await uploadMomentImageDraft(draft, input.baseUrl));
-    }
+    // 并发上传：原 for-await 串行在公网隧道 600ms+ RTT 下 9 张图要排 5s+，
+    // 改 Promise.all 让 N 张图并发跑，总耗时收敛到 ≈ 最慢一张。
+    const media = await Promise.all(
+      input.imageDrafts.map((draft) =>
+        uploadMomentImageDraft(draft, input.baseUrl),
+      ),
+    );
 
     return {
       text: text || undefined,
@@ -285,10 +288,12 @@ async function buildFeedCreateRequest(input: {
   }
 
   if (input.imageDrafts.length > 0) {
-    const media: MomentImageAsset[] = [];
-    for (const draft of input.imageDrafts) {
-      media.push(await uploadMomentImageDraft(draft, input.baseUrl));
-    }
+    // 并发上传：见 buildMomentCreateRequest 注释。
+    const media = await Promise.all(
+      input.imageDrafts.map((draft) =>
+        uploadMomentImageDraft(draft, input.baseUrl),
+      ),
+    );
 
     return {
       text: text || undefined,
@@ -329,18 +334,27 @@ async function uploadMomentVideoDraft(
   videoFormData.set("width", String(draft.width));
   videoFormData.set("height", String(draft.height));
   videoFormData.set("durationMs", String(draft.durationMs));
-  const response = await uploadMomentMedia(videoFormData, baseUrl);
-  const video = response.media as MomentVideoAsset;
 
-  if (!draft.posterFile) {
+  // 视频和封面并发上传，原来是先 await 视频再 await 封面 —— 公网隧道下白白多花一个 RTT。
+  const posterFormData = draft.posterFile
+    ? (() => {
+        const fd = new FormData();
+        fd.set("file", draft.posterFile);
+        fd.set("width", String(draft.width));
+        fd.set("height", String(draft.height));
+        return fd;
+      })()
+    : null;
+
+  const [videoResponse, posterResponse] = await Promise.all([
+    uploadMomentMedia(videoFormData, baseUrl),
+    posterFormData ? uploadMomentMedia(posterFormData, baseUrl) : Promise.resolve(null),
+  ]);
+
+  const video = videoResponse.media as MomentVideoAsset;
+  if (!posterResponse) {
     return video;
   }
-
-  const posterFormData = new FormData();
-  posterFormData.set("file", draft.posterFile);
-  posterFormData.set("width", String(draft.width));
-  posterFormData.set("height", String(draft.height));
-  const posterResponse = await uploadMomentMedia(posterFormData, baseUrl);
 
   return {
     ...video,

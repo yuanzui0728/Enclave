@@ -15,6 +15,7 @@ import {
   getFriends,
   getMoments,
   toggleMomentLike,
+  type Moment,
 } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
@@ -38,6 +39,7 @@ import {
   publishMomentComposeDraft,
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
+import { useOptimisticMomentLikeHandlers } from "../features/moments/use-optimistic-like";
 import { translateCharacterBio } from "../lib/character-i18n";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { formatTimestamp } from "../lib/format";
@@ -91,10 +93,22 @@ export function FriendMomentsPage() {
   const [showCompose, setShowCompose] = useState(false);
   const [notice, setNotice] = useState("");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
-  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<{
-    anchorElement: HTMLButtonElement;
-    returnHash?: string;
-  } | null>(null);
+  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "character";
+        characterId: string;
+        fallbackAvatar?: string | null;
+        fallbackName: string;
+        returnHash?: string;
+      }
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "owner";
+        returnHash?: string;
+      }
+    | null
+  >(null);
   const routeState = parseDesktopFriendMomentsRouteState(hash);
   const routeSelectedMomentId = routeState.momentId ?? null;
 
@@ -131,24 +145,35 @@ export function FriendMomentsPage() {
         videoDraft: composeDraft.videoDraft,
         baseUrl,
       }),
-    onSuccess: async () => {
+    onSuccess: (newMoment) => {
       composeDraft.reset();
       setShowCompose(false);
       setNotice(t(msg`朋友圈已发布。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // 立刻 prepend 到共享 flat / paged cache：本页按好友 characterId 过滤不会显示用户自己的动态，
+      // 但用户随手切到 /tabs/moments 或 /profile/moments 时应该能直接看到刚发的内容。
+      queryClient.setQueryData<Moment[]>(["app-moments", baseUrl], (current) =>
+        current ? [newMoment, ...current] : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
     },
+  });
+  const optimisticLike = useOptimisticMomentLikeHandlers({
+    baseUrl,
+    ownerId,
+    ownerUsername,
+    ownerAvatar,
   });
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
-    onSuccess: async () => {
+    onMutate: optimisticLike.onMutate,
+    onError: optimisticLike.onError,
+    onSuccess: () => {
       setNotice(t(msg`朋友圈互动已更新。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // 点赞 toggle 是 boolean，optimistic 已把 likes 切对。完全省掉 invalidate，
+      // 避免拉回 GET /api/moments 全量 + 30+ media 条件请求 RTT。
     },
   });
   const commentMutation = useMutation({
@@ -173,16 +198,17 @@ export function FriendMomentsPage() {
         baseUrl,
       );
     },
-    onSuccess: async (_, momentId) => {
+    onSuccess: (_, momentId) => {
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
       setDesktopReplyTarget((current) =>
         current?.postId === momentId ? null : current,
       );
       setNotice(t(msg`朋友圈互动已更新。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // fire-and-forget：await 会让"发表"按钮一直 disabled，公网隧道下感觉评论卡几秒。
+      void queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
     },
   });
 
@@ -552,11 +578,37 @@ export function FriendMomentsPage() {
         onOpenProfilePopover={({ anchorElement, momentId }) => {
           setDesktopAvatarPopover({
             anchorElement,
+            kind: "character",
+            characterId,
+            fallbackAvatar: character?.avatar,
+            fallbackName: displayName,
             returnHash: buildDesktopFriendMomentsRouteHash({
               ...routeState,
               momentId: momentId ?? routeSelectedMomentId ?? undefined,
             }),
           });
+        }}
+        onOpenLikerPopover={({ anchorElement, momentId, like }) => {
+          const returnHash = buildDesktopFriendMomentsRouteHash({
+            ...routeState,
+            momentId: momentId ?? routeSelectedMomentId ?? undefined,
+          });
+          if (like.authorType === "character") {
+            setDesktopAvatarPopover({
+              anchorElement,
+              kind: "character",
+              characterId: like.authorId,
+              fallbackAvatar: like.authorAvatar,
+              fallbackName: like.authorName,
+              returnHash,
+            });
+          } else if (like.authorType === "user") {
+            setDesktopAvatarPopover({
+              anchorElement,
+              kind: "owner",
+              returnHash,
+            });
+          }
         }}
         onOpenProfile={() => {
           void navigate({
@@ -607,19 +659,27 @@ export function FriendMomentsPage() {
       />
       {desktopAvatarPopover ? (
         <Suspense fallback={null}>
-          <DesktopMessageAvatarPopover
-            anchorElement={desktopAvatarPopover.anchorElement}
-            kind="character"
-            characterId={characterId}
-            fallbackAvatar={character?.avatar}
-            fallbackName={displayName}
-            navigationContext={{
-              hideMomentsAction: true,
-              profileReturnHash: desktopAvatarPopover.returnHash,
-              profileReturnPath: pathname,
-            }}
-            onClose={() => setDesktopAvatarPopover(null)}
-          />
+          {desktopAvatarPopover.kind === "character" ? (
+            <DesktopMessageAvatarPopover
+              anchorElement={desktopAvatarPopover.anchorElement}
+              kind="character"
+              characterId={desktopAvatarPopover.characterId}
+              fallbackAvatar={desktopAvatarPopover.fallbackAvatar}
+              fallbackName={desktopAvatarPopover.fallbackName}
+              navigationContext={{
+                hideMomentsAction: desktopAvatarPopover.characterId === characterId,
+                profileReturnHash: desktopAvatarPopover.returnHash,
+                profileReturnPath: pathname,
+              }}
+              onClose={() => setDesktopAvatarPopover(null)}
+            />
+          ) : (
+            <DesktopMessageAvatarPopover
+              anchorElement={desktopAvatarPopover.anchorElement}
+              kind="owner"
+              onClose={() => setDesktopAvatarPopover(null)}
+            />
+          )}
         </Suspense>
       ) : null}
     </Suspense>

@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
-import { type Moment, type MomentComment } from "@yinjie/contracts";
+import {
+  type Moment,
+  type MomentComment,
+  type MomentLike,
+} from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { MomentShareCardModal } from "../../../components/moment-share-card-modal";
 import { DesktopMomentComposePanel } from "./desktop-moment-compose-panel";
@@ -47,6 +51,11 @@ type DesktopMomentsWorkspaceProps = {
     anchorElement: HTMLButtonElement;
     moment: Moment;
   }) => void;
+  onOpenLikerPopover?: (input: {
+    anchorElement: HTMLButtonElement;
+    moment: Moment;
+    like: MomentLike;
+  }) => void;
   onRemoveImage: (id: string) => void;
   onRemoveVideo: () => void;
   onStartCommentReply?: (input: {
@@ -89,6 +98,7 @@ export function DesktopMomentsWorkspace({
   onImageFilesSelected,
   onLike,
   onOpenAuthorPopover,
+  onOpenLikerPopover,
   onRemoveImage,
   onRemoveVideo,
   onStartCommentReply,
@@ -178,6 +188,7 @@ export function DesktopMomentsWorkspace({
                 onToggleFavorite={onToggleFavorite}
                 onOpenCompose={() => setShowCompose(true)}
                 onSelectAuthor={onOpenAuthorPopover}
+                onSelectLiker={onOpenLikerPopover}
               />
             </div>
           </div>

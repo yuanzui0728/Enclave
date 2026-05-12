@@ -79,10 +79,23 @@ export class MomentsController {
     @Param('fileName') fileName: string,
     @Res() response: Response,
   ) {
+    // 媒体文件名形如 `${timestamp}-${uuid}-${origName}.ext`，写盘后**永不复用同名**——
+    // 等价于内容寻址，可以无脑 immutable。原来不带 Cache-Control，浏览器只能走 ETag
+    // 条件请求，公网隧道下每张图都要一次 RTT 验证（304 也要 ~600ms）。朋友圈 / 广场
+    // 一屏 30+ 图 → 30 次 RTT。改 immutable 后浏览器命中本地缓存就**不发请求**。
+    //
+    // 走 sendFile.options.headers 而不是 response.setHeader：sendFile 失败（文件
+    // 不存在抛 ENOENT → NestJS 全局 500）时**不会**带上 immutable Cache-Control，
+    // 避免浏览器把错误响应永久缓存。
     return response.sendFile(
       this.momentsService.resolveMomentMediaFilePath(
         this.momentsService.normalizeMomentMediaFileName(fileName),
       ),
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      },
     );
   }
 

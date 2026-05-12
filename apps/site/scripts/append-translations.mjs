@@ -177,6 +177,50 @@ const TRANSLATIONS = [
   ["隐界群组：多 AI 角色与你的多人对话场景", "Enclave groups: multi-party rooms where you and several AI characters chat together", "エンクレイブのグループ：複数の AI キャラクターとあなたが集まる多人数チャット", "엔클레이브 그룹: 여러 AI 캐릭터와 함께하는 다자 대화 방"],
   ["隐界新人引导：首次进入虚拟世界的角色初始化与世界设定", "Enclave onboarding: the first-time character setup and world bootstrap flow", "エンクレイブのオンボーディング：初回のキャラクター設定と世界の立ち上げ", "엔클레이브 온보딩: 첫 진입 시 캐릭터 설정과 세계 초기화 화면"],
   ["隐界我的角色：你与 AI 化身的资料卡、个性、形象设定", "Enclave self character: profile cards, personality, and appearance for you and your AI avatar", "エンクレイブの「マイキャラ」：あなたと AI 分身のプロフィール、性格、ビジュアル設定", "엔클레이브 내 캐릭터: 당신과 AI 아바타의 프로필, 성격, 비주얼 설정"],
+  // ===== Press Kit =====
+  ["媒体资料", "Press Kit", "プレスキット", "프레스 키트"],
+  ["下载隐界 Enclave 媒体资料包：产品介绍 PDF、截图、Logo 和创始人头像，给媒体与创作者直接使用。", "Download the Enclave press kit: product PDF, screenshots, logo, and founder avatar for media and creators.", "隐界 Enclave のプレスキット：製品 PDF、スクリーンショット、ロゴ、創始者アバターをメディアやクリエイター向けにダウンロードできます。", "Enclave 프레스 키트를 다운로드하세요: 제품 PDF, 스크린샷, 로고, 창업자 아바타를 미디어와 크리에이터가 바로 사용할 수 있습니다."],
+  ["Press Kit", "Press Kit", "Press Kit", "Press Kit"],
+  ["隐界 Enclave 媒体资料包", "Enclave Press Kit", "隐界 Enclave プレスキット", "Enclave 프레스 키트"],
+  ["给媒体、博主和创作者准备的公开素材页。这里可以直接下载产品介绍、截图、Logo 和创始人头像，用于报道、评测、视频和资料库条目。", "A public asset page for media, bloggers, and creators. Download the product overview, screenshots, logo, and founder avatar for articles, reviews, videos, and directories.", "メディア、ブロガー、クリエイター向けの公開素材ページです。製品紹介、スクリーンショット、ロゴ、創始者アバターを記事、レビュー、動画、ディレクトリで利用できます。", "미디어, 블로거, 크리에이터를 위한 공개 자료 페이지입니다. 제품 소개, 스크린샷, 로고, 창업자 아바타를 기사, 리뷰, 영상, 디렉터리에 사용할 수 있습니다."],
+  ["下载产品介绍 PDF", "Download product PDF", "製品紹介 PDF をダウンロード", "제품 소개 PDF 다운로드"],
+  ["媒体联系", "Media contact", "メディア連絡", "미디어 문의"],
+  ["隐界创始人品牌化插画头像", "Brand-style illustration avatar for the Enclave founder", "隐界創始者のブランドイラストアバター", "Enclave 창업자 브랜드 일러스트 아바타"],
+  ["快速事实", "Quick facts", "概要", "빠른 정보"],
+  ["素材下载", "Asset downloads", "素材ダウンロード", "자료 다운로드"],
+  ["所有素材可直接用于报道、评测、视频封面和资料库条目；请保留产品名“隐界 Enclave”。", "All assets can be used directly in coverage, reviews, video covers, and directories; please keep the product name “隐界 Enclave”.", "すべての素材は記事、レビュー、動画サムネイル、ディレクトリでそのまま利用できます。製品名「隐界 Enclave」を残してください。", "모든 자료는 기사, 리뷰, 영상 커버, 디렉터리에 바로 사용할 수 있습니다. 제품명 “隐界 Enclave”를 유지해 주세요."],
+  ["截图", "Screenshots", "スクリーンショット", "스크린샷"],
+  ["截图来自当前线上版本，按当前页面语言自动匹配。", "Screenshots come from the current live build and match the current page language.", "スクリーンショットは現在の公開版から取得され、ページの言語に自動で合わせます。", "스크린샷은 현재 라이브 버전에서 가져오며 현재 페이지 언어에 맞춰집니다."],
+  ["下载 PNG", "Download PNG", "PNG をダウンロード", "PNG 다운로드"],
+  ["使用说明", "Usage notes", "利用上の注意", "사용 안내"],
+  ["报道或引用时建议使用“隐界 Enclave”作为产品名。需要采访、补充截图、视频素材或其它格式文件，可以直接邮件联系。", "Use “隐界 Enclave” as the product name when covering or referencing it. Email us for interviews, extra screenshots, video assets, or other file formats.", "記事や引用では製品名として「隐界 Enclave」を使用してください。取材、追加スクリーンショット、動画素材、その他形式のファイルが必要な場合はメールでご連絡ください。", "보도하거나 인용할 때 제품명은 “隐界 Enclave”로 표기해 주세요. 인터뷰, 추가 스크린샷, 영상 자료, 다른 파일 형식이 필요하면 이메일로 문의해 주세요."],
+  ["产品介绍 PDF", "Product overview PDF", "製品紹介 PDF", "제품 소개 PDF"],
+  ["适合报道前快速了解产品定位、架构、使用场景与下载方式。", "A quick way to understand positioning, architecture, use cases, and download options before coverage.", "記事作成前に、製品の位置づけ、アーキテクチャ、利用シーン、ダウンロード方法を素早く把握できます。", "보도 전에 제품 포지셔닝, 아키텍처, 사용 사례, 다운로드 방식을 빠르게 파악할 수 있습니다."],
+  ["PDF · 4 语种", "PDF · 4 languages", "PDF · 4 言語", "PDF · 4개 언어"],
+  ["下载 PDF", "Download PDF", "PDF をダウンロード", "PDF 다운로드"],
+  ["Logo 标识", "Logo mark", "ロゴマーク", "로고 마크"],
+  ["用于文章配图、视频封面、资料库条目与社交媒体预览。", "For article images, video covers, directories, and social previews.", "記事画像、動画サムネイル、ディレクトリ、SNS プレビューに利用できます。", "기사 이미지, 영상 커버, 디렉터리, 소셜 미디어 미리보기에 사용할 수 있습니다."],
+  ["PNG · 512x512", "PNG · 512x512", "PNG · 512x512", "PNG · 512x512"],
+  ["下载 Logo", "Download logo", "ロゴをダウンロード", "로고 다운로드"],
+  ["产品截图", "Product screenshots", "製品スクリーンショット", "제품 스크린샷"],
+  ["覆盖聊天、朋友圈、群组、频道流、入坑引导与我的角色六个核心场景。", "Covers six core scenes: chat, moments, groups, channels feed, onboarding, and my character.", "チャット、モーメンツ、グループ、チャンネルフィード、オンボーディング、マイキャラの 6 つの主要シーンを収録。", "채팅, 모먼트, 그룹, 채널 피드, 온보딩, 내 캐릭터 등 6가지 핵심 장면을 포함합니다."],
+  ["PNG · 390x844", "PNG · 390x844", "PNG · 390x844", "PNG · 390x844"],
+  ["查看截图", "View screenshots", "スクリーンショットを見る", "스크린샷 보기"],
+  ["创始人插画头像", "Founder illustration avatar", "創始者イラストアバター", "창업자 일러스트 아바타"],
+  ["品牌化创始人插画头像，可用于媒体资料页和创作者简介；不代表真实照片。", "A brand-style founder illustration avatar for press pages and creator bios; it is not a real photo.", "プレスページやクリエイタープロフィールで使えるブランド調の創始者イラストアバターです。実写写真ではありません。", "프레스 페이지와 크리에이터 소개에 사용할 수 있는 브랜드 스타일 창업자 일러스트 아바타입니다. 실제 사진은 아닙니다."],
+  ["PNG · 1024x1024", "PNG · 1024x1024", "PNG · 1024x1024", "PNG · 1024x1024"],
+  ["下载头像", "Download avatar", "アバターをダウンロード", "아바타 다운로드"],
+  ["产品名称", "Product name", "製品名", "제품명"],
+  ["一句话介绍", "One-line description", "一言紹介", "한 줄 소개"],
+  ["一个属于你的 AI 虚拟世界：私人 AI 居民、朋友圈、群聊、电话，浏览器即开即用。", "A private AI world of your own: AI residents, moments, groups, and calls, ready in the browser.", "あなただけの AI バーチャルワールド：プライベート AI 住人、モーメンツ、グループ、通話をブラウザですぐに利用できます。", "당신만의 프라이빗 AI 세계: AI 주민, 모먼트, 그룹, 통화를 브라우저에서 바로 사용할 수 있습니다."],
+  ["核心定位", "Core positioning", "中核的な位置づけ", "핵심 포지셔닝"],
+  ["面向长期陪伴和深度对话的 AI 社交世界，而不是问答式 chatbot。", "An AI social world for long-term companionship and deep conversations, not a Q&A chatbot.", "長期的な伴走と深い会話のための AI ソーシャルワールドであり、Q&A チャットボットではありません。", "장기적인 동행과 깊은 대화를 위한 AI 소셜 월드이며 Q&A 챗봇이 아닙니다."],
+  ["许可", "License", "ライセンス", "라이선스"],
+  ["MIT 开源，可自部署、审计和二次开发。", "Open source under MIT; self-hostable, auditable, and forkable.", "MIT オープンソース。セルフホスト、監査、二次開発が可能です。", "MIT 오픈소스이며 자체 호스팅, 감사, 2차 개발이 가능합니다."],
+  ["平台", "Platforms", "プラットフォーム", "플랫폼"],
+  ["Web 已可用，桌面端支持 Windows / macOS，iOS / Android 与小程序在路上。", "Web is live, desktop supports Windows / macOS, and iOS / Android plus the mini-program are on the way.", "Web は利用可能、デスクトップ版は Windows / macOS に対応し、iOS / Android とミニプログラムは準備中です。", "Web은 사용 가능하고 데스크톱은 Windows / macOS를 지원하며 iOS / Android와 미니 프로그램은 준비 중입니다."],
+  ["隐私架构", "Privacy architecture", "プライバシー構造", "개인정보 보호 구조"],
+  ["一人一世界，每个实例只服务一个真实用户。", "One world per person; each instance serves one real user.", "一人に一つの世界。各インスタンスは一人の実ユーザーだけに対応します。", "한 사람당 하나의 세계. 각 인스턴스는 한 명의 실제 사용자만을 위해 동작합니다."],
   // ===== privacy/terms date label + footer license =====
   ["最近更新：", "Last updated: ", "最終更新：", "마지막 업데이트: "],
   ["MIT License", "MIT License", "MIT License", "MIT 라이선스"],
@@ -184,8 +228,19 @@ const TRANSLATIONS = [
 
 const LOCALES = ["zh-CN", "en-US", "ja-JP", "ko-KR"];
 
-function appendIfMissing(po, msgid, msgstr) {
-  if (po.includes(`msgid ${JSON.stringify(msgid)}`)) {
+function appendOrFillMissing(po, msgid, msgstr) {
+  const msgidLine = `msgid ${JSON.stringify(msgid)}`;
+  let index = po.indexOf(msgidLine);
+  if (index >= 0) {
+    while (index >= 0) {
+      const blockEnd = po.indexOf("\n\n", index);
+      const end = blockEnd >= 0 ? blockEnd : po.length;
+      const block = po.slice(index, end);
+      if (block.includes('msgstr ""')) {
+        po = `${po.slice(0, index)}${block.replace('msgstr ""', `msgstr ${JSON.stringify(msgstr)}`)}${po.slice(end)}`;
+      }
+      index = po.indexOf(msgidLine, index + msgidLine.length);
+    }
     return po;
   }
   const block = `\n#. js-lingui-explicit-id\nmsgid ${JSON.stringify(msgid)}\nmsgstr ${JSON.stringify(msgstr)}\n`;
@@ -200,8 +255,9 @@ for (let li = 0; li < LOCALES.length; li += 1) {
   for (const tuple of TRANSLATIONS) {
     const zh = tuple[0];
     const target = tuple[li];
-    if (!po.includes(`msgid ${JSON.stringify(zh)}`)) {
-      po = appendIfMissing(po, zh, target);
+    const nextPo = appendOrFillMissing(po, zh, target);
+    if (nextPo !== po) {
+      po = nextPo;
       added += 1;
     }
   }

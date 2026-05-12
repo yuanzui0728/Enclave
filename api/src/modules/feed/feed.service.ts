@@ -145,6 +145,7 @@ export class FeedService implements OnModuleInit {
   async onModuleInit() {
     await this.backfillFeedAuthorAvatars();
     await this.cleanupBrokenChannelPosts();
+    await this.cleanupLegacyDemoChannelPosts();
   }
 
   async getFeed(
@@ -1325,6 +1326,81 @@ export class FeedService implements OnModuleInit {
     await this.postRepo.delete(postId);
   }
 
+  // 视频朋友圈双发到视频号：根据 momentPostId 幂等地创建或更新 channels 那条
+  // feed_post（用同一段 mp4），让用户在朋友圈和视频号都能看到这条视频。
+  // BGM 完成后会再次调用以更新 mediaPayload 指向带 BGM 的新文件。
+  async upsertChannelVideoPostFromMoment(input: {
+    momentPostId: string;
+    authorId: string;
+    authorName: string;
+    authorAvatar?: string | null;
+    videoUrl: string;
+    posterUrl?: string | null;
+    durationMs?: number | null;
+    mimeType?: string;
+    fileName?: string | null;
+    size?: number;
+    text: string;
+    title?: string | null;
+    topicTags?: string[];
+  }): Promise<FeedPostEntity> {
+    const media: MomentMediaAsset[] = [
+      {
+        id: input.fileName ?? `feed-video-${Date.now()}`,
+        kind: 'video',
+        url: input.videoUrl,
+        posterUrl: input.posterUrl ?? undefined,
+        mimeType: input.mimeType ?? 'video/mp4',
+        fileName: input.fileName ?? 'feed-video.mp4',
+        size: input.size ?? 0,
+        durationMs: input.durationMs ?? undefined,
+      },
+    ];
+
+    const existing = await this.postRepo
+      .createQueryBuilder('post')
+      .where('post.surface = :surface', { surface: 'channels' })
+      .andWhere('post.statsPayload LIKE :marker', {
+        marker: `%\"momentPostId\":\"${input.momentPostId}\"%`,
+      })
+      .orderBy('post.createdAt', 'DESC')
+      .getOne();
+
+    if (existing) {
+      existing.mediaPayload = this.serializeFeedMedia(media);
+      existing.mediaType = 'video';
+      existing.mediaUrl = input.videoUrl;
+      existing.coverUrl = input.posterUrl ?? existing.coverUrl;
+      existing.durationMs = input.durationMs ?? existing.durationMs;
+      const updated = await this.postRepo.save(existing);
+      this.logger.log(
+        `channel video post ${updated.id} mediaPayload refreshed for moment ${input.momentPostId}`,
+      );
+      return updated;
+    }
+
+    return this.createPost({
+      authorAvatar: input.authorAvatar ?? '',
+      authorId: input.authorId,
+      authorName: input.authorName,
+      authorType: 'character',
+      text: input.text,
+      title: input.title ?? undefined,
+      media,
+      mediaType: 'video',
+      mediaUrl: input.videoUrl,
+      coverUrl: input.posterUrl ?? null,
+      durationMs: input.durationMs ?? undefined,
+      aspectRatio: 9 / 16,
+      topicTags: input.topicTags ?? ['日常', 'AI世界'],
+      sourceKind: 'character_generated',
+      recommendationScore: 80,
+      surface: 'channels',
+      publishStatus: 'published',
+      statsPayload: { momentPostId: input.momentPostId, syncedFrom: 'moments' },
+    });
+  }
+
   async createChannelAudioPost(input: {
     authorId: string;
     authorName: string;
@@ -1335,20 +1411,22 @@ export class FeedService implements OnModuleInit {
     text: string;
     title?: string | null;
     topicTags?: string[];
+    // 视频号图文视频：可附带 N 张配图，前端按抖音风左右滑展示
+    images?: MomentImageAsset[];
   }): Promise<FeedPostEntity> {
-    const media: MomentMediaAsset[] = [
-      {
-        id: `feed-audio-${Date.now()}`,
-        kind: 'audio',
-        url: input.audioUrl,
-        posterUrl: input.posterUrl ?? undefined,
-        mimeType: 'audio/mpeg',
-        fileName: 'feed-audio.mp3',
-        size: 0,
-        durationMs: input.durationMs ?? undefined,
-        title: input.title ?? `${input.authorName}·音乐`,
-      },
-    ];
+    const audioAsset: MomentMediaAsset = {
+      id: `feed-audio-${Date.now()}`,
+      kind: 'audio',
+      url: input.audioUrl,
+      posterUrl: input.posterUrl ?? undefined,
+      mimeType: 'audio/mpeg',
+      fileName: 'feed-audio.mp3',
+      size: 0,
+      durationMs: input.durationMs ?? undefined,
+      title: input.title ?? `${input.authorName}·音乐`,
+    };
+    const images = input.images ?? [];
+    const media: MomentMediaAsset[] = [audioAsset, ...images];
     return this.createPost({
       authorAvatar: input.authorAvatar ?? '',
       authorId: input.authorId,
@@ -1361,7 +1439,7 @@ export class FeedService implements OnModuleInit {
       mediaUrl: input.audioUrl,
       coverUrl: input.posterUrl ?? null,
       durationMs: input.durationMs ?? undefined,
-      aspectRatio: 1,
+      aspectRatio: images.length > 0 ? 9 / 16 : 1,
       topicTags: input.topicTags ?? ['音乐', 'AI世界'],
       sourceKind: 'character_generated',
       recommendationScore: 90,
@@ -2579,6 +2657,45 @@ export class FeedService implements OnModuleInit {
     } catch (error) {
       this.logger.warn(
         `cleanupBrokenChannelPosts failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  // 切 MiniMax 真生成（17ee2503，May 9）之前，视频号有一段 demo 兜底期：
+  // ensureChannelSeedData / topUp 会把 3 个本地视频文件 + placehold.co 占位封面
+  // 套到所有可见角色身上，结果每个老账号库都囤着 46 条「Paul Graham/张雪峰/...
+  // 一个接一个发同一支《晨光海岸》」的假数据，用户在 视频号 里反复滑到同样的
+  // 3 支片子，体感就是「全是不能看的东西」。这些帖的文件实际存在能播放（所以
+  // cleanupBrokenChannelPosts 不会管它），但内容上就是 demo 污染。这里直接
+  // 硬 DELETE：feed_posts 本体 + 子表 feed_comments / feed_post_likes /
+  // user_feed_interactions 一起清掉；不动 mediaType=audio 真音乐贴（封面要么是
+  // 真 jpg 要么干脆没封面，不会命中）。重复执行无副作用。
+  //
+  // 识别条件（任一即认定为 demo）：
+  // 1. coverUrl 指向 placehold.co（早期占位封面）
+  // 2. mediaUrl 指向 3 个已知 legacy 视频文件之一（一份 demo 被多角色复用）
+  private async cleanupLegacyDemoChannelPosts() {
+    try {
+      const candidates = await this.postRepo
+        .createQueryBuilder('post')
+        .where('post.surface = :surface', { surface: 'channels' })
+        .andWhere(
+          "(post.coverUrl LIKE '%placehold.co%' OR post.mediaUrl LIKE '%/1778311410821-a746c78f-minimax-video.mp4%' OR post.mediaUrl LIKE '%/1778311950732-f23b70af-minimax-video.mp4%' OR post.mediaUrl LIKE '%/1778311207586-814b332b-minimax-video.mp4%')",
+        )
+        .getMany();
+      if (candidates.length === 0) return;
+
+      const ids = candidates.map((post) => post.id);
+      await this.commentRepo.delete({ postId: In(ids) });
+      await this.likeRepo.delete({ postId: In(ids) });
+      await this.interactionRepo.delete({ postId: In(ids) });
+      await this.postRepo.delete({ id: In(ids) });
+      this.logger.log(
+        `cleanupLegacyDemoChannelPosts: deleted ${ids.length} demo-era channels post(s) + child rows`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `cleanupLegacyDemoChannelPosts failed: ${(error as Error).message}`,
       );
     }
   }

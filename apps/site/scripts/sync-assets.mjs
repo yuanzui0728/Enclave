@@ -108,6 +108,12 @@ const faviconDst = path.join(siteRoot, "public", "favicon.png");
 if (copyIfChanged(faviconSrc, faviconDst)) copied++;
 else skipped++;
 
+// Press kit logo uses a stable public path so media downloads are not coupled to
+// favicon filenames.
+const pressKitLogoDst = path.join(siteRoot, "public", "press-kit", "enclave-logo-mark-512.png");
+if (copyIfChanged(faviconSrc, pressKitLogoDst)) copied++;
+else skipped++;
+
 // Multi-size favicons via sharp (16/32/180/192/512)
 async function emitFaviconSizes() {
   if (!existsSync(faviconSrc)) return 0;

@@ -16,8 +16,13 @@ import {
   Bookmark,
   EyeOff,
   MessageCircleMore,
+  Music2,
+  Pause,
+  Play,
   Share2,
   ThumbsUp,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import {
@@ -43,7 +48,6 @@ import {
   type FeedPostWithComments,
 } from "@yinjie/contracts";
 import { AppPage, Button, cn, InlineNotice } from "@yinjie/ui";
-import { AudioCard } from "../components/audio-card";
 import { AvatarChip } from "../components/avatar-chip";
 import { ChannelsForwardPicker } from "../components/channels-forward-picker";
 import { resolveAppMediaUrl } from "../lib/media-url";
@@ -194,14 +198,13 @@ export function ChannelsPage() {
         queryClient.setQueryData(key, data);
       });
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`视频号互动已更新。`));
-      await queryClient.invalidateQueries({
-        queryKey: ["app-channels-home", baseUrl],
-      });
+      // 点赞 toggle 是 boolean，optimistic 已经切对 hasLiked/likeCount。
+      // 完全省掉 invalidate，避免视频号首页全量 + media 条件请求 RTT。
     },
   });
 
@@ -239,7 +242,7 @@ export function ChannelsPage() {
         baseUrl,
       );
     },
-    onSuccess: async (_, input) => {
+    onSuccess: (_, input) => {
       setCommentDrafts((current) => ({ ...current, [input.postId]: "" }));
       setMobileReplyTarget((current) =>
         current?.postId === input.postId ? null : current,
@@ -255,14 +258,13 @@ export function ChannelsPage() {
           ? t(msg`视频号回复已发送。`)
           : t(msg`视频号评论已发送。`),
       );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-channels-home", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-feed-comments", baseUrl, input.postId],
-        }),
-      ]);
+      // fire-and-forget：await 会让"发送"按钮一直 disabled。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-feed-comments", baseUrl, input.postId],
+      });
     },
   });
   const generateMutation = useMutation({
@@ -330,19 +332,18 @@ export function ChannelsPage() {
   const likeCommentMutation = useMutation({
     mutationFn: (input: { commentId: string; postId: string }) =>
       likeFeedComment(input.commentId, baseUrl),
-    onSuccess: async (_, input) => {
+    onSuccess: (_, input) => {
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`评论互动已更新。`));
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-channels-home", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-feed-comments", baseUrl, input.postId],
-        }),
-      ]);
+      // fire-and-forget：await 会让 like-comment 按钮一直 disabled。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-channels-home", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-feed-comments", baseUrl, input.postId],
+      });
     },
   });
 
@@ -1219,35 +1220,40 @@ export function ChannelsPage() {
   );
 }
 
-function MobileChannelMediaSurface({ post }: { post: FeedPostListItem }) {
+function MobileChannelMediaSurface({
+  post,
+  active,
+  userUnmuted,
+  onRequestUnmute,
+}: {
+  post: FeedPostListItem;
+  active: boolean;
+  userUnmuted: boolean;
+  onRequestUnmute: () => void;
+}) {
   const t = useRuntimeTranslator();
   const audioAsset = post.media?.find((asset) => asset.kind === "audio");
   const videoAsset = post.media?.find((asset) => asset.kind === "video");
 
   if (post.mediaType === "audio" && (audioAsset || post.mediaUrl)) {
+    const images = (post.media ?? []).filter(
+      (asset): asset is Extract<typeof asset, { kind: "image" }> =>
+        asset.kind === "image",
+    );
+    // 兜底：历史 audio 帖只有封面，把它当成单图沉浸式背景
+    const fallbackPoster = audioAsset?.posterUrl ?? post.coverUrl ?? null;
     return (
-      <div className="relative flex h-[64dvh] w-full items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-6">
-        {audioAsset?.posterUrl || post.coverUrl ? (
-          <img
-            src={resolveAppMediaUrl(
-              audioAsset?.posterUrl ?? post.coverUrl ?? undefined,
-            )}
-            alt={post.title ?? ""}
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px]"
-          />
-        ) : null}
-        <div className="relative">
-          <AudioCard
-            url={audioAsset?.url ?? post.mediaUrl ?? ""}
-            posterUrl={audioAsset?.posterUrl ?? post.coverUrl ?? undefined}
-            title={
-              audioAsset?.title ?? post.title ?? `${post.authorName}·${t(msg`音乐`)}`
-            }
-            durationMs={audioAsset?.durationMs ?? post.durationMs ?? undefined}
-            variant="moment"
-          />
-        </div>
-      </div>
+      <ChannelAudioPictorial
+        title={
+          audioAsset?.title ?? post.title ?? `${post.authorName}·${t(msg`音乐`)}`
+        }
+        audioUrl={audioAsset?.url ?? post.mediaUrl ?? ""}
+        images={images.map((asset) => asset.url)}
+        fallbackPosterUrl={fallbackPoster}
+        active={active}
+        userUnmuted={userUnmuted}
+        onRequestUnmute={onRequestUnmute}
+      />
     );
   }
 
@@ -1255,20 +1261,18 @@ function MobileChannelMediaSurface({ post }: { post: FeedPostListItem }) {
     const rawVideoUrl = videoAsset?.url ?? post.mediaUrl ?? undefined;
     const rawPosterUrl = videoAsset?.posterUrl ?? post.coverUrl ?? undefined;
     return (
-      <video
-        key={rawVideoUrl}
-        src={rawVideoUrl ? resolveAppMediaUrl(rawVideoUrl) : undefined}
-        poster={rawPosterUrl ? resolveAppMediaUrl(rawPosterUrl) : undefined}
-        controls
-        playsInline
-        preload="metadata"
-        className="h-[64dvh] w-full bg-black object-contain"
+      <ChannelVideoSurface
+        videoUrl={rawVideoUrl}
+        posterUrl={rawPosterUrl}
+        active={active}
+        userUnmuted={userUnmuted}
+        onRequestUnmute={onRequestUnmute}
       />
     );
   }
 
   return (
-    <div className="flex h-[64dvh] w-full items-center justify-center bg-black px-6 text-center">
+    <div className="flex min-h-[calc(100dvh-12rem)] w-full items-center justify-center bg-black px-6 text-center">
       <div>
         <div className="text-[16px] font-semibold text-white">
           {t(msg`暂无可播放内容`)}
@@ -1277,6 +1281,299 @@ function MobileChannelMediaSurface({ post }: { post: FeedPostListItem }) {
           {t(msg`稍后再来看看`)}
         </div>
       </div>
+    </div>
+  );
+}
+
+// 视频号"图文视频"沉浸式渲染：全卡背景图 + 左右滑切配图 + dots + 音频自动播。
+// 历史音乐帖没有多图（images=[]）时，使用 fallbackPosterUrl 当唯一背景，禁用滑动。
+function ChannelAudioPictorial({
+  title,
+  audioUrl,
+  images,
+  fallbackPosterUrl,
+  active,
+  userUnmuted,
+  onRequestUnmute,
+}: {
+  title: string;
+  audioUrl: string;
+  images: string[];
+  fallbackPosterUrl: string | null;
+  active: boolean;
+  userUnmuted: boolean;
+  onRequestUnmute: () => void;
+}) {
+  const t = useRuntimeTranslator();
+  const displayImages =
+    images.length > 0
+      ? images
+      : fallbackPosterUrl
+        ? [fallbackPosterUrl]
+        : [];
+  const [imageIndex, setImageIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const swipeHandledRef = useRef(false);
+
+  // 进入 active 时播放，离开时暂停 + 复位（保证全局只有一条 audio 在响）。
+  // 注意：userUnmuted 不是这里的依赖——否则用户主动暂停后再切静音，会被
+  // 重新强制 play()，违反暂停意图。muted 同步交给下方独立 effect。
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (active && audioUrl) {
+      audio.muted = !userUnmuted;
+      const promise = audio.play();
+      if (promise && typeof promise.catch === "function") {
+        promise.catch(() => {
+          audio.muted = true;
+          audio.play().catch(() => undefined);
+        });
+      }
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, audioUrl]);
+
+  // mute 切换仅同步 audio.muted，不重新 play
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) audio.muted = !userUnmuted;
+  }, [userUnmuted]);
+
+  // 切贴时重置图片索引
+  useEffect(() => {
+    if (!active) setImageIndex(0);
+  }, [active]);
+
+  const canSwipe = displayImages.length > 1;
+
+  const goNext = () => {
+    if (!canSwipe) return;
+    setImageIndex((i) => (i + 1 >= displayImages.length ? 0 : i + 1));
+  };
+  const goPrev = () => {
+    if (!canSwipe) return;
+    setImageIndex((i) => (i - 1 < 0 ? displayImages.length - 1 : i - 1));
+  };
+
+  const handleTouchStart = (event: React.TouchEvent) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+    swipeHandledRef.current = false;
+  };
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (swipeHandledRef.current) return;
+    const touch = event.touches[0];
+    if (!touch || touchStartXRef.current == null || touchStartYRef.current == null) {
+      return;
+    }
+    const dx = touch.clientX - touchStartXRef.current;
+    const dy = touch.clientY - touchStartYRef.current;
+    // 横向位移占主导且超阈值 → 切图；竖向占主导 → 让外层 snap-y 接管
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      swipeHandledRef.current = true;
+      if (dx < 0) goNext();
+      else goPrev();
+    }
+  };
+  const handleTouchEnd = () => {
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.muted = !userUnmuted;
+      // play() 可能被浏览器策略 reject（用户没解锁手势），这种情况下 audio
+      // 实际并没开始播；不在这里乐观置 isPlaying=true，统一由下方 onPlay
+      // 事件回调来同步状态，保证 UI 和真实播放状态一致。
+      audio.play().catch(() => undefined);
+    } else {
+      audio.pause();
+      // 同理，由 onPause 事件回调统一置 isPlaying=false。
+    }
+  };
+
+  const currentImage = displayImages[imageIndex];
+
+  return (
+    <div
+      className="relative h-full min-h-[calc(100dvh-12rem)] w-full overflow-hidden bg-black"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {currentImage ? (
+        <img
+          key={currentImage}
+          src={resolveAppMediaUrl(currentImage)}
+          alt={title}
+          draggable={false}
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10]">
+          <Music2 size={56} className="text-white/40" />
+        </div>
+      )}
+
+      {/* 桌面/平板鼠标用左右大箭头 */}
+      {canSwipe ? (
+        <>
+          <button
+            type="button"
+            aria-label={t(msg`上一张`)}
+            onClick={goPrev}
+            className="group absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-white/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <button
+            type="button"
+            aria-label={t(msg`下一张`)}
+            onClick={goNext}
+            className="group absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-white/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
+          >
+            <ArrowLeft size={20} className="rotate-180" />
+          </button>
+        </>
+      ) : null}
+
+      {/* 顶部右上：静音切换 / 播放暂停 */}
+      <div className="pointer-events-auto absolute right-3.5 top-12 z-20 flex flex-col items-end gap-2">
+        <button
+          type="button"
+          aria-label={userUnmuted ? t(msg`静音`) : t(msg`取消静音`)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRequestUnmute();
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.55)] text-white backdrop-blur"
+        >
+          {userUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+        </button>
+        <button
+          type="button"
+          aria-label={isPlaying ? t(msg`暂停`) : t(msg`播放`)}
+          onClick={(event) => {
+            event.stopPropagation();
+            togglePlay();
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.55)] text-white backdrop-blur"
+        >
+          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+      </div>
+
+      {/* 底部居中 dots */}
+      {canSwipe ? (
+        <div className="pointer-events-none absolute left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5"
+          style={{ bottom: "max(env(safe-area-inset-bottom,0px), 16rem)" }}
+        >
+          {displayImages.map((_, idx) => (
+            <span
+              key={idx}
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                idx === imageIndex
+                  ? "w-5 bg-white"
+                  : "w-1.5 bg-white/45",
+              )}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {/* 隐藏音频元素：实际播放走 useEffect 控制 */}
+      <audio
+        ref={audioRef}
+        src={audioUrl ? resolveAppMediaUrl(audioUrl) : undefined}
+        loop
+        preload="metadata"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        className="hidden"
+      />
+    </div>
+  );
+}
+
+// 视频沉浸式播放：active 时自动播 + muted 跟 userUnmuted；离开暂停 + 复位。
+function ChannelVideoSurface({
+  videoUrl,
+  posterUrl,
+  active,
+  userUnmuted,
+  onRequestUnmute,
+}: {
+  videoUrl: string | undefined;
+  posterUrl: string | undefined;
+  active: boolean;
+  userUnmuted: boolean;
+  onRequestUnmute: () => void;
+}) {
+  const t = useRuntimeTranslator();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // 同 audio：userUnmuted 不当依赖，避免用户暂停后被强制 replay。
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (active && videoUrl) {
+      video.muted = !userUnmuted;
+      const promise = video.play();
+      if (promise && typeof promise.catch === "function") {
+        promise.catch(() => {
+          video.muted = true;
+          video.play().catch(() => undefined);
+        });
+      }
+    } else {
+      video.pause();
+      video.currentTime = 0;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, videoUrl]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) video.muted = !userUnmuted;
+  }, [userUnmuted]);
+
+  return (
+    <div className="relative h-full min-h-[calc(100dvh-12rem)] w-full bg-black">
+      <video
+        ref={videoRef}
+        key={videoUrl}
+        src={videoUrl ? resolveAppMediaUrl(videoUrl) : undefined}
+        poster={posterUrl ? resolveAppMediaUrl(posterUrl) : undefined}
+        playsInline
+        loop
+        preload="metadata"
+        controls={false}
+        className="h-full min-h-[calc(100dvh-12rem)] w-full object-cover"
+      />
+      <button
+        type="button"
+        aria-label={userUnmuted ? t(msg`静音`) : t(msg`取消静音`)}
+        onClick={(event) => {
+          event.stopPropagation();
+          onRequestUnmute();
+        }}
+        className="absolute right-3.5 top-12 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.55)] text-white backdrop-blur"
+      >
+        {userUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+      </button>
     </div>
   );
 }
@@ -1369,6 +1666,8 @@ function MobileChannelsViewport({
   onVisiblePost,
 }: MobileChannelsViewportProps) {
   const [activePostId, setActivePostId] = useState<string | null>(null);
+  // 抖音风音频静音手势解锁：一旦用户首次点静音图标，整页保持解除静音
+  const [userUnmuted, setUserUnmuted] = useState(false);
   const cardRefs = useRef(new Map<string, HTMLElement>());
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -1462,6 +1761,8 @@ function MobileChannelsViewport({
           likePending={likePendingPostId === post.id}
           post={post}
           setCardRef={(node) => registerCardRef(post.id, node)}
+          userUnmuted={userUnmuted}
+          onRequestUnmute={() => setUserUnmuted((prev) => !prev)}
           onLike={() => onLike(post.id)}
           onOpenAuthor={() => onOpenAuthor(post)}
           onOpenComments={() => onOpenComments(post)}
@@ -1481,6 +1782,8 @@ type MobileChannelsCardProps = {
   likePending: boolean;
   post: FeedPostListItem;
   setCardRef: (node: HTMLElement | null) => void;
+  userUnmuted: boolean;
+  onRequestUnmute: () => void;
   onLike: () => void;
   onOpenAuthor: () => void;
   onOpenComments: () => void;
@@ -1491,10 +1794,13 @@ type MobileChannelsCardProps = {
 };
 
 function MobileChannelsCard({
+  active,
   favorite,
   likePending,
   post,
   setCardRef,
+  userUnmuted,
+  onRequestUnmute,
   onLike,
   onOpenAuthor,
   onOpenComments,
@@ -1511,7 +1817,12 @@ function MobileChannelsCard({
       className="snap-start scroll-mt-2 overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-white shadow-none"
     >
       <div className="relative min-h-[calc(100dvh-12rem)] bg-[#0f1115]">
-        <MobileChannelMediaSurface post={post} />
+        <MobileChannelMediaSurface
+          post={post}
+          active={active}
+          userUnmuted={userUnmuted}
+          onRequestUnmute={onRequestUnmute}
+        />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0))]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
 

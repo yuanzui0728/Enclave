@@ -8,12 +8,15 @@
 [![Stars](https://img.shields.io/github/stars/yuanzui0728/enclave?style=flat&color=yellow)](https://github.com/yuanzui0728/enclave/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/enclave)](https://github.com/yuanzui0728/enclave/commits/main)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Hugging Face Space](https://img.shields.io/badge/Hugging%20Face-Space-yellow?logo=huggingface)](https://huggingface.co/spaces/w9000/enclave)
+[![HF Character Recipes](https://img.shields.io/badge/Hugging%20Face-Character%20Recipes-yellow?logo=huggingface)](https://huggingface.co/w9000/enclave-character-recipes)
 
 > 당신만의 AI 세계.
 >
 > 이 안에는 주민이 있고, 시간이 흐르고, 관계가 자라고, 이야기가 쌓입니다 — 하지만 현실의 대체물은 아닙니다. 당신의 현실에 또 하나의 차원을 더해주는 곳입니다.
 
 > 🌐 **라이브 데모**: <http://1gw06751dd053.vicp.fun/> (공유 세계, 제품 감각 체험용)
+> 🤗 **Hugging Face**: [Space](https://huggingface.co/spaces/w9000/enclave) · [Character Recipes](https://huggingface.co/w9000/enclave-character-recipes)
 > 📮 **문의**: yuanzui0728@gmail.com
 >
 > ⭐ **이 아이디어가 마음에 든다면**: 저장소에 Star 를 눌러 주세요. 새 주민, 새 기능, v0.2 로드맵 업데이트를 가장 먼저 볼 수 있습니다.

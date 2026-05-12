@@ -1,13 +1,17 @@
 // i18n-ignore-start: provider adapter — log strings only.
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { mkdir, stat, unlink, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import {
   resolvePrimaryMomentMediaStorageDir,
   resolveReadableMomentMediaPath,
 } from '../moments/moment-media.storage';
+
+const execFileAsync = promisify(execFile);
 
 export interface PersistedAsset {
   fileName: string;
@@ -57,6 +61,68 @@ export class MinimaxAssetStorage {
     if (/^https?:\/\//i.test(maybeRelative)) return maybeRelative;
     if (maybeRelative.startsWith('/')) return `${this.serverBaseUrl}${maybeRelative}`;
     return `${this.serverBaseUrl}/${maybeRelative}`;
+  }
+
+  // 把已落地的视频文件和 BGM 音频文件混音成新的 mp4：
+  // - 视频流不重编码（-c:v copy），仅替换音轨
+  // - BGM 转 AAC，输出取最短（视频 6s，BGM 通常更长）
+  // 成功 → 返回新落地的 PersistedAsset；失败 → 返回 null（调用方自行降级）。
+  async mixVideoWithAudio(args: {
+    videoFileName: string;
+    audioFileName: string;
+  }): Promise<PersistedAsset | null> {
+    const videoPath = resolveReadableMomentMediaPath(args.videoFileName);
+    const audioPath = resolveReadableMomentMediaPath(args.audioFileName);
+    const dir = resolvePrimaryMomentMediaStorageDir();
+    await mkdir(dir, { recursive: true });
+    const outName = `${Date.now()}-${randomUUID().slice(0, 8)}-minimax-video-bgm.mp4`;
+    const outPath = path.join(dir, outName);
+    try {
+      await execFileAsync(
+        'ffmpeg',
+        [
+          '-y',
+          '-i',
+          videoPath,
+          '-i',
+          audioPath,
+          '-map',
+          '0:v:0',
+          '-map',
+          '1:a:0',
+          '-c:v',
+          'copy',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '128k',
+          '-shortest',
+          outPath,
+        ],
+        { timeout: 60_000 },
+      );
+      const fileStat = await stat(outPath);
+      this.logger.log(
+        `mixed video ${args.videoFileName} + bgm ${args.audioFileName} -> ${outName} (${fileStat.size}B)`,
+      );
+      return {
+        fileName: outName,
+        publicUrl: `/api/moments/media/${outName}`,
+        size: fileStat.size,
+        mimeType: 'video/mp4',
+      };
+    } catch (err) {
+      this.logger.warn(
+        `mixVideoWithAudio failed (${args.videoFileName} + ${args.audioFileName}): ${(err as Error)?.message}`,
+      );
+      // 不要留半截输出文件
+      try {
+        await unlink(outPath);
+      } catch {
+        /* noop */
+      }
+      return null;
+    }
   }
 
   // 容错删除：文件不存在或路径异常都静默通过；仅记日志，不抛异常。

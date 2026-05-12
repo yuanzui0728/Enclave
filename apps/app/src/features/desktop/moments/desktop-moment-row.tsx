@@ -6,7 +6,11 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { msg } from "@lingui/macro";
-import { type Moment, type MomentComment } from "@yinjie/contracts";
+import {
+  type Moment,
+  type MomentComment,
+  type MomentLike,
+} from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, cn } from "@yinjie/ui";
 import {
@@ -57,6 +61,11 @@ type DesktopMomentRowProps = {
   onToggleFavorite: () => void;
   onAuthorAction?: () => void;
   onSelectAuthor?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  /** Tap a name in the like row → open that user's profile/info card. */
+  onSelectLiker?: (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    like: MomentLike,
+  ) => void;
 };
 
 export function DesktopMomentRow({
@@ -80,6 +89,7 @@ export function DesktopMomentRow({
   onToggleFavorite,
   onAuthorAction,
   onSelectAuthor,
+  onSelectLiker,
 }: DesktopMomentRowProps) {
   const t = useRuntimeTranslator();
   const composerInputRef = useRef<HTMLTextAreaElement>(null);
@@ -369,14 +379,35 @@ export function DesktopMomentRow({
 
           {moment.likes.length > 0 ? (
             <div className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+              <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[12px] leading-6 text-[color:var(--text-secondary)]">
                 <Heart
                   size={12}
-                  className="text-[color:var(--brand-primary)]"
+                  className="mr-1 text-[color:var(--brand-primary)]"
                 />
-                <span>
-                  {moment.likes.map((like) => like.authorName).join("、")}
-                </span>
+                {moment.likes.map((like, index) => (
+                  <span
+                    key={like.id ?? `${like.authorId}-${index}`}
+                    className="inline-flex items-center"
+                  >
+                    {onSelectLiker ? (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelectLiker(event, like);
+                        }}
+                        className="text-[color:var(--brand-primary)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-1"
+                      >
+                        {like.authorName}
+                      </button>
+                    ) : (
+                      <span>{like.authorName}</span>
+                    )}
+                    {index < moment.likes.length - 1 ? (
+                      <span className="px-0.5">、</span>
+                    ) : null}
+                  </span>
+                ))}
               </div>
             </div>
           ) : null}

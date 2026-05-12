@@ -34,7 +34,17 @@
 
 ## 官网结构（`apps/site/src/`）
 
-`routes/` · `site-shell.tsx` · `site-content.ts` · `site-links.ts` · `use-site-copy.ts`
+`app/` · `components/` · `i18n/` · `lib/` · `types/`
+
+## 官网页面（`apps/site/src/app/[locale]/`）
+
+- `page.tsx`：官网首页，承载产品介绍、核心能力、截图、跨端、FAQ 与开始使用入口
+- `download/page.tsx`：下载页，承载 Web / 桌面 / 移动端 / 自部署开始方式
+- `use-cases/page.tsx` 与 `use-cases/[slug]/page.tsx`：用例聚合页与用例详情页
+- `changelog/page.tsx`：更新日志页
+- `press-kit/page.tsx`：媒体资料页，承载产品介绍 PDF、截图、Logo 与创始人插画头像下载
+- `privacy/page.tsx`：隐私政策页
+- `terms/page.tsx`：服务条款页
 
 ## 世界角色管理平台结构（`apps/wiki/src/`）
 

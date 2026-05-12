@@ -22,6 +22,19 @@ const HOP_BY_HOP_HEADERS = new Set([
   "upgrade",
 ]);
 
+// 反代到 child world-api 的 HTTP Agent。原实现没指定 agent，Node 默认 agent
+// 不开 keep-alive，每次 http.request 都新建 TCP / 三次握手 / 立刻 close，
+// child api 端 TIME_WAIT 大量堆积，高并发下还可能耗尽本机临时端口。
+// keep-alive + LIFO 调度让热连接复用；maxSockets 256 给单 host 大并发上限；
+// 30s keep-alive 与 Node http server 默认空闲超时一致，不会被 server 提前关。
+// 注：socket.io 走的是另一条 ws-proxy 路径（raw TCP pipe），不经过这个 Agent。
+const upstreamAgent = new http.Agent({
+  keepAlive: true,
+  keepAliveMsecs: 30_000,
+  maxSockets: 256,
+  scheduling: "lifo",
+});
+
 @Injectable()
 export class WorldApiProxyService {
   private readonly logger = new Logger(WorldApiProxyService.name);
@@ -105,6 +118,7 @@ export class WorldApiProxyService {
         method: req.method,
         path: subPath,
         headers: filteredHeaders,
+        agent: upstreamAgent,
       },
       (upstreamRes) => {
         res.statusCode = upstreamRes.statusCode ?? 502;

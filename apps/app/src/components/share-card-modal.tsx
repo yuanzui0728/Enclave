@@ -6,9 +6,12 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
-import * as htmlToImage from "html-to-image";
-import QRCode from "qrcode";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+
+// qrcode (~70KB) + html-to-image (~30KB) 是分享卡片专用的重依赖。
+// 静态 import 会让它们被 vendor-misc chunk 吃掉，模块预加载链路一并拉，公网
+// 隧道下首屏多 ~100KB / ~1 个 RTT，但实际上大多数会话不会触发分享卡片。
+// 改用动态 import，模块第一次需要时才拉，且浏览器后续命中 HTTP/SW 缓存。
 
 const t = translateRuntimeMessage;
 
@@ -21,11 +24,18 @@ const SITE_URL = "https://www.enclave.top";
 let qrPromise: Promise<string | null> | null = null;
 function getQrDataUrl(): Promise<string | null> {
   if (!qrPromise) {
-    qrPromise = QRCode.toDataURL(SITE_URL, {
-      margin: 1,
-      width: 128,
-      errorCorrectionLevel: "M",
-    }).catch(() => null);
+    qrPromise = (async () => {
+      try {
+        const { default: QRCode } = await import("qrcode");
+        return await QRCode.toDataURL(SITE_URL, {
+          margin: 1,
+          width: 128,
+          errorCorrectionLevel: "M",
+        });
+      } catch {
+        return null;
+      }
+    })();
   }
   return qrPromise;
 }
@@ -180,6 +190,8 @@ export function ShareCardModal({
       if (cancelled) return;
 
       try {
+        const htmlToImage = await import("html-to-image");
+        if (cancelled) return;
         const dataUrl = await htmlToImage.toPng(node, {
           pixelRatio: 2,
           cacheBust: false,

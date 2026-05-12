@@ -1069,12 +1069,136 @@ export class ReminderRuntimeService {
     if (
       rulesEvaluation.handled ||
       input.rules.parserRules.parserMode === 'rules_only' ||
-      !input.text.trim()
+      !input.text.trim() ||
+      !this.hasReminderCueSignal(input.text, input.rules)
     ) {
       return rulesEvaluation;
     }
 
     return this.evaluateConversationTurnWithLlmFallback(input, rulesEvaluation);
+  }
+
+  private hasReminderCueSignal(
+    text: string,
+    rules: ReminderRuntimeRulesValue,
+  ): boolean {
+    if (!text) return false;
+    const t = text;
+
+    const verbCues = [
+      '提醒',
+      '记得',
+      '记下',
+      '记着',
+      '记一下',
+      '记住',
+      '别忘',
+      '忘了',
+      '别忘了',
+      '盯着',
+      '替我记',
+      '帮我记',
+      '帮我盯',
+      '待办',
+      '提一下',
+    ];
+    if (verbCues.some((k) => t.includes(k))) return true;
+
+    const parserRules = rules.parserRules;
+    const allIntentPatterns = [
+      ...parserRules.helpIntentPatterns,
+      ...parserRules.listIntentPatterns,
+      ...parserRules.cancelIntentPatterns,
+      ...parserRules.updateIntentPatterns,
+      ...parserRules.snoozeIntentPatterns,
+      ...parserRules.completeIntentPatterns,
+    ];
+    for (const pattern of allIntentPatterns) {
+      try {
+        if (new RegExp(pattern).test(t)) return true;
+      } catch {
+        // ignore broken patterns
+      }
+    }
+
+    const keywordLists: string[][] = [
+      parserRules.createIntentKeywords,
+      parserRules.habitKeywords,
+      parserRules.habitIntentKeywords,
+      parserRules.hardReminderKeywords,
+      parserRules.dailyRecurrenceKeywords,
+      parserRules.weeklyRecurrenceKeywords,
+    ];
+    if (keywordLists.some((list) => list.some((k) => t.includes(k)))) {
+      return true;
+    }
+
+    const timeCues = [
+      '今天',
+      '明天',
+      '后天',
+      '大后天',
+      '昨天',
+      '今晚',
+      '明晚',
+      '今早',
+      '明早',
+      '早上',
+      '早晨',
+      '上午',
+      '中午',
+      '下午',
+      '晚上',
+      '傍晚',
+      '凌晨',
+      '夜里',
+      '半夜',
+      '深夜',
+      '睡前',
+      '饭前',
+      '饭后',
+      '周末',
+      '周一',
+      '周二',
+      '周三',
+      '周四',
+      '周五',
+      '周六',
+      '周日',
+      '周天',
+      '星期一',
+      '星期二',
+      '星期三',
+      '星期四',
+      '星期五',
+      '星期六',
+      '星期日',
+      '星期天',
+      '礼拜一',
+      '礼拜二',
+      '礼拜三',
+      '礼拜四',
+      '礼拜五',
+      '礼拜六',
+      '礼拜日',
+      '礼拜天',
+      '月底',
+      '月初',
+      '月末',
+    ];
+    if (timeCues.some((k) => t.includes(k))) return true;
+
+    if (/\d{1,2}\s*[点时](?:\d{1,2}|半|一刻)?/.test(t)) return true;
+    if (/\d{1,2}\s*分/.test(t)) return true;
+    if (
+      /(?:\d{1,2}|[一二三四五六七八九十两])\s*(?:小时|分钟|个小时)\s*[后内]/.test(
+        t,
+      )
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   private async evaluateConversationTurnFromClarification(

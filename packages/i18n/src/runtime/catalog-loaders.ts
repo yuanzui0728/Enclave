@@ -64,11 +64,7 @@ const textDictionaryCache = new Map<
   Promise<ReadonlyMap<string, string>>
 >();
 
-const CJK_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
-const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
-const KOREAN_HANGUL_PATTERN = /[\uac00-\ud7af]/;
-const SIMPLIFIED_CHINESE_MARKER_PATTERN =
-  /[个条项进运这为时对队关务续联调实测门复义状数读写优级险备错页启线]/;
+const CJK_PATTERN = /[㐀-䶿一-鿿豈-﫿]/;
 
 export async function loadMessagesForSurface(
   surface: I18nAppSurface,
@@ -80,42 +76,24 @@ export async function loadMessagesForSurface(
     return cachedMessages;
   }
 
-  const messagesPromise =
-    locale === "ja-JP" || locale === "ko-KR"
-      ? Promise.all([
-          sharedCatalogLoaders["en-US"](),
-          surfaceCatalogLoaders[surface]["en-US"](),
-          sharedCatalogLoaders[locale](),
-          surfaceCatalogLoaders[surface][locale](),
-        ]).then(
-          ([
-            fallbackSharedCatalog,
-            fallbackSurfaceCatalog,
-            sharedCatalog,
-            surfaceCatalog,
-          ]) =>
-            mergeMessagesWithLocaleFallback(
-              {
-                ...sharedCatalog.messages,
-                ...surfaceCatalog.messages,
-              },
-              {
-                ...fallbackSharedCatalog.messages,
-                ...fallbackSurfaceCatalog.messages,
-              },
-              locale,
-            ),
-        )
-      : Promise.all([
-          sharedCatalogLoaders[locale](),
-          surfaceCatalogLoaders[surface][locale](),
-        ]).then(
-          ([sharedCatalog, surfaceCatalog]) =>
-            ({
-              ...sharedCatalog.messages,
-              ...surfaceCatalog.messages,
-            }) satisfies Messages,
-        );
+  // 历史上 ja-JP / ko-KR 会额外并行拉一份 en-US catalog 作 runtime fallback：
+  // 启发式 (isLikelyMissingLocaleMessage) 判定"翻译里还是简体中文"，命中就
+  // 替换成 en-US 译文。公网隧道 ~430ms RTT 下这等于每个 ja/ko 用户首屏多拉
+  // 2 个 chunk ~280KB + 占用 2 个并发槽 + 全表 heuristic 扫描。
+  // 实测当前所有 ja/ko 未译键的 en-US 值也是同样的中文 (en-US 也没翻完)，
+  // runtime fallback 一个键都救不回来。i18n:compile 后挂的
+  // merge-locale-fallback.mjs 在构建期发现 en-US 比 target locale 有更好
+  // 翻译时直接写入 target catalog，所以 runtime 只拉本地化 catalog 一份即可。
+  const messagesPromise = Promise.all([
+    sharedCatalogLoaders[locale](),
+    surfaceCatalogLoaders[surface][locale](),
+  ]).then(
+    ([sharedCatalog, surfaceCatalog]) =>
+      ({
+        ...sharedCatalog.messages,
+        ...surfaceCatalog.messages,
+      }) satisfies Messages,
+  );
 
   messageCache.set(cacheKey, messagesPromise);
   return messagesPromise;
@@ -177,49 +155,6 @@ export function prefetchMessagesForSurface(
       messageCache.delete(`${surface}:${locale}`);
     });
   });
-}
-
-function mergeMessagesWithLocaleFallback(
-  primaryMessages: Messages,
-  fallbackMessages: Messages,
-  locale: SupportedLocale,
-) {
-  const mergedMessages: Messages = { ...fallbackMessages };
-
-  for (const [key, value] of Object.entries(primaryMessages)) {
-    mergedMessages[key] = isLikelyMissingLocaleMessage(value, locale)
-      ? (fallbackMessages[key] ?? value)
-      : value;
-  }
-
-  return mergedMessages;
-}
-
-function isLikelyMissingLocaleMessage(
-  value: Messages[string],
-  locale: SupportedLocale,
-) {
-  if (typeof value !== "string" && !Array.isArray(value)) {
-    return false;
-  }
-
-  const serializedValue = Array.isArray(value) ? value.join("") : value;
-  if (!CJK_PATTERN.test(serializedValue)) {
-    return false;
-  }
-
-  if (locale === "ja-JP") {
-    return (
-      !JAPANESE_KANA_PATTERN.test(serializedValue) &&
-      SIMPLIFIED_CHINESE_MARKER_PATTERN.test(serializedValue)
-    );
-  }
-
-  if (locale === "ko-KR") {
-    return !KOREAN_HANGUL_PATTERN.test(serializedValue);
-  }
-
-  return false;
 }
 
 function createTextDictionary(

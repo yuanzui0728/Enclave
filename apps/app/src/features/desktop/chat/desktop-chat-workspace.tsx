@@ -1,4 +1,6 @@
 import {
+  Suspense,
+  lazy,
   useCallback,
   useEffect,
   useMemo,
@@ -65,8 +67,21 @@ import { OfficialAccountsEntryCard } from "../../../components/official-accounts
 import { OfficialServiceConversationCard } from "../../../components/official-service-conversation-card";
 import { SparkBadge } from "../../../components/spark-badge";
 import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
-import { DesktopOfficialAccountsWorkspace } from "../official-accounts/desktop-official-accounts-workspace";
-import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
+// 官号 / 订阅工作区是低频访问（用户在 chat 列表才偶尔切到），原静态 import
+// 把它们硬塞进 chat-workspace-shell 132KB chunk。改成 lazy import 单独成
+// chunk，桌面用户进聊天界面立刻能用，访问官号/订阅再现拉。
+const DesktopOfficialAccountsWorkspace = lazy(async () => {
+  const mod = await import(
+    "../official-accounts/desktop-official-accounts-workspace"
+  );
+  return { default: mod.DesktopOfficialAccountsWorkspace };
+});
+const DesktopSubscriptionWorkspace = lazy(async () => {
+  const mod = await import(
+    "../official-accounts/desktop-subscription-workspace"
+  );
+  return { default: mod.DesktopSubscriptionWorkspace };
+});
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import {
   buildChatReminderNavigation,
@@ -1753,6 +1768,7 @@ export function DesktopChatWorkspace({
 
       <section className="min-w-0 flex-1">
         {officialAccountsActive ? (
+          <Suspense fallback={null}>
           <DesktopOfficialAccountsWorkspace
             selectedAccountId={selectedOfficialAccountId}
             selectedArticleId={selectedOfficialArticleId}
@@ -1819,7 +1835,9 @@ export function DesktopChatWorkspace({
               });
             }}
           />
+          </Suspense>
         ) : subscriptionInboxActive ? (
+          <Suspense fallback={null}>
           <DesktopSubscriptionWorkspace
             selectedArticleId={selectedOfficialArticleId}
             onOpenArticle={(articleId) => {
@@ -1843,6 +1861,7 @@ export function DesktopChatWorkspace({
               });
             }}
           />
+          </Suspense>
         ) : selectedServiceAccountId ? (
           <OfficialAccountServiceThread
             accountId={selectedServiceAccountId}

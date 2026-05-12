@@ -12,6 +12,7 @@ export async function SiteFooter({ locale }: { locale: SupportedLocale }) {
     startNow: i18n._("免费开始"),
     download: i18n._("下载"),
     changelog: i18n._("更新日志"),
+    pressKit: i18n._("媒体资料"),
     github: "GitHub",
     privacy: i18n._("隐私政策"),
     terms: i18n._("服务条款"),
@@ -45,6 +46,9 @@ export async function SiteFooter({ locale }: { locale: SupportedLocale }) {
           </Link>
           <Link href={buildLocalePath(locale, "/changelog")} className="hover:text-(--brand-primary)">
             {labels.changelog}
+          </Link>
+          <Link href={buildLocalePath(locale, "/press-kit")} className="hover:text-(--brand-primary)">
+            {labels.pressKit}
           </Link>
           <Link href={buildLocalePath(locale, "/privacy")} className="hover:text-(--brand-primary)">
             {labels.privacy}

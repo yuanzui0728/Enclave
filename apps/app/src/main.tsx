@@ -1,6 +1,5 @@
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import {
@@ -164,13 +163,12 @@ async function bootstrap() {
           hasExplicitWebLocalePreference={Boolean(explicitWebLocalePreference)}
         />
         <QueryClientProvider client={queryClient}>
-          <GoogleOAuthProvider
-            clientId={import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ?? ""}
-          >
-            <Suspense fallback={<BootstrapScreen />}>
-              <RouterProvider router={router} />
-            </Suspense>
-          </GoogleOAuthProvider>
+          {/* GoogleOAuthProvider 已下移到 routes/welcome-page.tsx 内仅包裹
+              GoogleLogin 组件 — 唯一用 GoogleLogin 的地方。这样首屏不再
+              拉 @react-oauth/google 包 (~25-35KB)，登录页第一次访问时才拉。 */}
+          <Suspense fallback={<BootstrapScreen />}>
+            <RouterProvider router={router} />
+          </Suspense>
         </QueryClientProvider>
       </AppLocaleProvider>
     </React.StrictMode>,

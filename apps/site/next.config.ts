@@ -52,6 +52,7 @@ const config: NextConfig = {
       { source: "/_next/image", headers: [{ key: "Cache-Control", value: LONG_CACHE }] },
       { source: "/screenshots/:path*", headers: [{ key: "Cache-Control", value: LONG_CACHE }] },
       { source: "/animations/:path*", headers: [{ key: "Cache-Control", value: LONG_CACHE }] },
+      { source: "/brand/:path*", headers: [{ key: "Cache-Control", value: LONG_CACHE }] },
       { source: "/icons/:path*", headers: [{ key: "Cache-Control", value: LONG_CACHE }] },
       { source: "/fonts/:path*", headers: [{ key: "Cache-Control", value: LONG_CACHE }] },
       // HTML 页面：浏览器立即重验，CDN 可缓存 10 分钟，过期后 SWR 一天

@@ -1,5 +1,9 @@
 import { msg } from "@lingui/macro";
-import { type Moment, type MomentComment } from "@yinjie/contracts";
+import {
+  type Moment,
+  type MomentComment,
+  type MomentLike,
+} from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../../../components/empty-state";
@@ -30,6 +34,11 @@ type DesktopMomentsFeedProps = {
     anchorElement: HTMLButtonElement;
     moment: Moment;
   }) => void;
+  onSelectLiker?: (input: {
+    anchorElement: HTMLButtonElement;
+    moment: Moment;
+    like: MomentLike;
+  }) => void;
 };
 
 export function DesktopMomentsFeed({
@@ -50,6 +59,7 @@ export function DesktopMomentsFeed({
   onToggleFavorite,
   onOpenCompose,
   onSelectAuthor,
+  onSelectLiker,
 }: DesktopMomentsFeedProps) {
   const t = useRuntimeTranslator();
   return (
@@ -90,6 +100,16 @@ export function DesktopMomentsFeed({
                       onSelectAuthor({
                         anchorElement: event.currentTarget,
                         moment,
+                      })
+                  : undefined
+              }
+              onSelectLiker={
+                onSelectLiker
+                  ? (event, like) =>
+                      onSelectLiker({
+                        anchorElement: event.currentTarget,
+                        moment,
+                        like,
                       })
                   : undefined
               }

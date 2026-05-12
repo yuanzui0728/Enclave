@@ -31,6 +31,7 @@ import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import { buildCharacterDetailRouteHash } from "../../contacts/character-detail-route-state";
 import { buildDesktopContactsRouteHash } from "../../contacts/contacts-route-state";
 import { getFriendDisplayName } from "../../contacts/contact-utils";
+import { useCappedPending } from "../../../hooks/use-capped-pending";
 import { useDesktopLayout } from "../../shell/use-desktop-layout";
 import { DesktopUtilityShell } from "../desktop-utility-shell";
 import { buildDesktopChatThreadPath } from "../chat/desktop-chat-route-state";
@@ -154,6 +155,24 @@ export function DesktopAddFriendWorkspace() {
       setSelectedCharacterId(variables.characterId);
     },
   });
+  const sendRequestDisplayedPending = useCappedPending(
+    sendRequestMutation.isPending,
+    500,
+  );
+  // 网络慢时也别让"发送中"卡 UI：500ms 后强制关闭发送弹层，请求继续在后台跑
+  useEffect(() => {
+    if (
+      sendRequestMutation.isPending &&
+      !sendRequestDisplayedPending &&
+      sendDialogCharacterId !== null
+    ) {
+      setSendDialogCharacterId(null);
+    }
+  }, [
+    sendRequestDisplayedPending,
+    sendRequestMutation.isPending,
+    sendDialogCharacterId,
+  ]);
 
   useEffect(() => {
     setSearchText(routeState.keyword);
@@ -650,7 +669,7 @@ export function DesktopAddFriendWorkspace() {
                         pendingRequest={selectedResult.pendingRequest}
                         actionPending={
                           (selectedResult.status === "available" &&
-                            sendRequestMutation.isPending &&
+                            sendRequestDisplayedPending &&
                             sendRequestMutation.variables?.characterId ===
                               selectedResult.character.id) ||
                           (selectedResult.status === "friend" &&
@@ -699,7 +718,7 @@ export function DesktopAddFriendWorkspace() {
         character={sendDialogCharacter}
         identifier={sendDialogIdentifier}
         ownerName={ownerName}
-        pending={sendRequestMutation.isPending}
+        pending={sendRequestDisplayedPending}
         onClose={() => setSendDialogCharacterId(null)}
         onSubmit={async (greeting) => {
           if (!sendDialogCharacterId) {

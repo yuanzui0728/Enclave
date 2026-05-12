@@ -1,6 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
-import { type Moment, type MomentComment } from "@yinjie/contracts";
+import {
+  type Moment,
+  type MomentComment,
+  type MomentLike,
+} from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { ArrowLeft, PenSquare } from "lucide-react";
@@ -50,6 +54,11 @@ type DesktopProfileMomentsWorkspaceProps = {
   onDelete: (momentId: string) => void;
   onImageFilesSelected: (files: FileList | null) => void;
   onLike: (momentId: string) => void;
+  onOpenLikerPopover?: (input: {
+    anchorElement: HTMLButtonElement;
+    momentId: string;
+    like: MomentLike;
+  }) => void;
   onRemoveImage: (id: string) => void;
   onRemoveVideo: () => void;
   onStartCommentReply?: (input: {
@@ -93,6 +102,7 @@ export function DesktopProfileMomentsWorkspace({
   onDelete,
   onImageFilesSelected,
   onLike,
+  onOpenLikerPopover,
   onRemoveImage,
   onRemoveVideo,
   onStartCommentReply,
@@ -176,6 +186,16 @@ export function DesktopProfileMomentsWorkspace({
                     onStartCommentReply({
                       momentId: comment.postId,
                       comment,
+                    })
+                : undefined
+            }
+            onSelectLiker={
+              onOpenLikerPopover
+                ? (event, like) =>
+                    onOpenLikerPopover({
+                      anchorElement: event.currentTarget,
+                      momentId: moment.id,
+                      like,
                     })
                 : undefined
             }

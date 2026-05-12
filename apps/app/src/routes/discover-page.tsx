@@ -15,6 +15,7 @@ import {
   likeFeedPost,
   shake,
   triggerSceneFriendRequest,
+  type FeedComment,
   type FeedListResponse,
 } from "@yinjie/contracts";
 import {
@@ -224,6 +225,8 @@ export function DiscoverPage() {
     isDesktopLayout && normalizedPathname !== desktopDiscoverPath;
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
+  const ownerUsername = useWorldOwnerStore((state) => state.username);
+  const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const composeDraft = useMomentComposeDraft();
@@ -254,24 +257,43 @@ export function DiscoverPage() {
         videoDraft: composeDraft.videoDraft,
         baseUrl,
       }),
-    onSuccess: async () => {
+    onSuccess: (newPost) => {
       composeDraft.reset();
       setSuccessNotice(t(msg`广场动态已发布，世界居民公开可见。`));
-      // discover-feed-page 走无限分页：发布后分页边界后移，先把 paged cache 收回到 page 1
+      // 立刻把新 post prepend 到 paged 头部（顺手把已加载的多页砍回 1 页避免分页边界重复）+
+      // 平铺 flat cache，跳到 /tabs/feed 时立即可见，不必等 refetch 完成。
+      const newListItem = { ...newPost, commentsPreview: [] };
       queryClient.setQueryData<InfiniteData<FeedListResponse>>(
         ["app-feed-paged", baseUrl],
         (current) =>
-          current
+          current && current.pages.length > 0
             ? {
-                pages: current.pages.slice(0, 1),
+                pages: [
+                  {
+                    ...current.pages[0]!,
+                    posts: [newListItem, ...current.pages[0]!.posts],
+                    total: current.pages[0]!.total + 1,
+                  },
+                ],
                 pageParams: current.pageParams.slice(0, 1),
               }
             : current,
       );
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
-      ]);
+      queryClient.setQueryData<FeedListResponse>(
+        ["app-feed", baseUrl],
+        (current) =>
+          current
+            ? {
+                posts: [newListItem, ...current.posts],
+                total: current.total + 1,
+              }
+            : current,
+      );
+      // 后台 invalidate 让其它共享 cache 的页面同步合并最新状态
+      void queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-feed-paged", baseUrl],
+      });
     },
   });
 
@@ -394,31 +416,145 @@ export function DiscoverPage() {
         queryClient.setQueryData(key, data);
       });
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setSuccessNotice(t(msg`广场互动已更新。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
-      ]);
+      // 点赞 toggle 是 boolean，optimistic 已经把 likeCount/hasLiked 切对。
+      // 完全省掉 invalidate，避免拉回 paged 多页 + 30+ media 条件请求 RTT。
     },
   });
 
+  // mutationFn 不能再次读 feedCommentDrafts 取文本：onMutate 里的
+  // setFeedCommentDrafts(clear) 会在 onMutate 返回的微任务边界被 React 18 flush 掉，
+  // 等 TanStack Query 调 mutationFn 时闭包里的 feedCommentDrafts[postId] 已经是 ""。
+  // 在 onMutate 里把 text 写进 ref，mutationFn 直接读 ref。
+  const feedCommentSubmitTextRef = useRef<Record<string, string>>({});
   const commentFeedMutation = useMutation({
-    mutationFn: (postId: string) =>
-      addFeedComment(
+    // optimistic 插入临时评论 + 立即清输入框，避免公网隧道 ~600ms RTT 期间
+    // 用户看到输入框不消失 / 评论不出现。临时 id 形如 optimistic-feed-comment-*，
+    // onSuccess 时 invalidate refetch 让真实 comment 替换。
+    onMutate: async (postId: string) => {
+      const text = feedCommentDrafts[postId]?.trim();
+      if (!text || !ownerId) return { skipped: true as const };
+
+      feedCommentSubmitTextRef.current[postId] = text;
+
+      await queryClient.cancelQueries({ queryKey: ["app-feed", baseUrl] });
+
+      const snapshots = queryClient.getQueriesData<FeedListResponse>({
+        queryKey: ["app-feed", baseUrl],
+      });
+
+      const tempId = `optimistic-feed-comment-${ownerId}-${Date.now()}`;
+      const tempComment: FeedComment = {
+        id: tempId,
         postId,
-        {
-          text: feedCommentDrafts[postId].trim(),
-        },
-        baseUrl,
-      ),
-    onSuccess: async (_, postId) => {
+        authorId: ownerId,
+        authorName: ownerUsername ?? t(msg`我`),
+        authorAvatar: ownerAvatar ?? "",
+        authorType: "user",
+        text,
+        parentCommentId: null,
+        replyToCommentId: null,
+        replyToAuthorId: null,
+        likeCount: 0,
+        likedByOwner: false,
+        createdAt: new Date().toISOString(),
+      };
+
+      snapshots.forEach(([key, data]) => {
+        if (!data?.posts) return;
+        queryClient.setQueryData<FeedListResponse>(key, {
+          ...data,
+          posts: data.posts.map((post) =>
+            post.id !== postId
+              ? post
+              : {
+                  ...post,
+                  commentsPreview: [
+                    ...(post.commentsPreview ?? []),
+                    tempComment,
+                  ],
+                  commentCount: post.commentCount + 1,
+                },
+          ),
+        });
+      });
+
+      const savedDraft = feedCommentDrafts[postId] ?? "";
       setFeedCommentDrafts((current) => ({ ...current, [postId]: "" }));
+
+      return { skipped: false as const, snapshots, postId, tempId, savedDraft };
+    },
+    mutationFn: (postId: string) => {
+      // 从 ref 读 onMutate 已捕获的 text，避免被 setFeedCommentDrafts(clear) 抢跑
+      const text = feedCommentSubmitTextRef.current[postId];
+      if (!text) {
+        throw new Error(t(msg`请先输入评论内容。`));
+      }
+      return addFeedComment(postId, { text }, baseUrl);
+    },
+    onError: (_err, postId, context) => {
+      delete feedCommentSubmitTextRef.current[postId];
+      if (!context || context.skipped) return;
+      context.snapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      setFeedCommentDrafts((current) => ({
+        ...current,
+        [context.postId]: context.savedDraft,
+      }));
+    },
+    onSuccess: (realComment, postId, context) => {
+      delete feedCommentSubmitTextRef.current[postId];
       setSuccessNotice(t(msg`广场互动已更新。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-feed-paged", baseUrl] }),
-      ]);
+      // 把 optimistic temp（id=optimistic-feed-comment-*）原地换成 server 真实评论。
+      // 完全省掉一次 invalidate refetch ——公网隧道下 refetch 会带回 paged 多页 +
+      // 30+ media 条件请求 RTT。staleTime 60s 内拿不到其他 NPC 同时评论，但
+      // pull-to-refresh / re-mount 都能补；可接受。
+      if (context && !context.skipped) {
+        const { tempId } = context;
+        queryClient.setQueriesData<FeedListResponse>(
+          { queryKey: ["app-feed", baseUrl] },
+          (data) =>
+            data?.posts
+              ? {
+                  ...data,
+                  posts: data.posts.map((post) =>
+                    post.id !== postId
+                      ? post
+                      : {
+                          ...post,
+                          commentsPreview: (post.commentsPreview ?? []).map(
+                            (c) => (c.id === tempId ? realComment : c),
+                          ),
+                        },
+                  ),
+                }
+              : data,
+        );
+        queryClient.setQueriesData<InfiniteData<FeedListResponse>>(
+          { queryKey: ["app-feed-paged", baseUrl] },
+          (data) =>
+            data
+              ? {
+                  ...data,
+                  pages: data.pages.map((page) => ({
+                    ...page,
+                    posts: page.posts.map((post) =>
+                      post.id !== postId
+                        ? post
+                        : {
+                            ...post,
+                            commentsPreview: (post.commentsPreview ?? []).map(
+                              (c) => (c.id === tempId ? realComment : c),
+                            ),
+                          },
+                    ),
+                  })),
+                }
+              : data,
+        );
+      }
     },
   });
 

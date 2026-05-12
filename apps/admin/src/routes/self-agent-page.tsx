@@ -424,19 +424,6 @@ export function SelfAgentPage() {
               }
             />
             <AdminToggle
-              label={t(msg`允许委托 reminder-runtime`)}
-              checked={effectiveRules.policy.allowReminderRuntimeDelegation}
-              onChange={(checked) =>
-                setRulesDraft((current) => ({
-                  ...(current ?? overview.rules),
-                  policy: {
-                    ...(current?.policy ?? overview.rules.policy),
-                    allowReminderRuntimeDelegation: checked,
-                  },
-                }))
-              }
-            />
-            <AdminToggle
               label={t(msg`所有委托动作一律先确认`)}
               checked={effectiveRules.policy.forceConfirmationForDelegatedActions}
               onChange={(checked) =>

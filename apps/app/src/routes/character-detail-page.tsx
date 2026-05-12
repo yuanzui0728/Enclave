@@ -51,6 +51,7 @@ import {
 import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
 import { buildMobileFriendMomentsRouteHash } from "../features/moments/mobile-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { useCappedPending } from "../hooks/use-capped-pending";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatTimestamp } from "../lib/format";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
@@ -556,6 +557,10 @@ export function CharacterDetailPage() {
       ]);
     },
   });
+  const sendFriendRequestDisplayedPending = useCappedPending(
+    sendFriendRequestMutation.isPending,
+    500,
+  );
   const setStarredMutation = useMutation({
     mutationFn: (starred: boolean) =>
       setFriendStarred(characterId, { starred }, baseUrl),
@@ -1565,7 +1570,7 @@ export function CharacterDetailPage() {
                         ? awaitingAcceptanceLabel
                         : hasInboundFriendRequest
                           ? viewFriendRequestLabel
-                          : sendFriendRequestMutation.isPending
+                          : sendFriendRequestDisplayedPending
                             ? sendingLabel
                             : addToContactsLabel}
                     </Button>
@@ -1861,7 +1866,7 @@ export function CharacterDetailPage() {
                     ? awaitingAcceptanceLabel
                     : hasInboundFriendRequest
                       ? viewFriendRequestLabel
-                      : sendFriendRequestMutation.isPending
+                      : sendFriendRequestDisplayedPending
                         ? sendingLabel
                         : addToContactsLabel
                 }

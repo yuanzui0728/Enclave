@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Enclave logo">
+  <defs>
+    <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffa32f"/>
+      <stop offset="1" stop-color="#ff741a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="92" fill="url(#logo-bg)"/>
+  <g>
+    <path d="M203 177h29l24 58 31-69h31l-47 100v58h-31v-58z" fill="#8a3a08" opacity=".78"/>
+    <path d="M194 166h31l31 69 31-69h31l-47 100v58h-31v-58z" fill="#fffdf7"/>
+  </g>
+</svg>

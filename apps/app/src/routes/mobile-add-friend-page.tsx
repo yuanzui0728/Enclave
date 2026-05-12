@@ -56,6 +56,7 @@ import {
 } from "../features/contacts/mobile-add-friend-route-state";
 import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { useCappedPending } from "../hooks/use-capped-pending";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -199,6 +200,24 @@ function MobileAddFriend() {
       ]);
     },
   });
+  const sendRequestDisplayedPending = useCappedPending(
+    sendRequestMutation.isPending,
+    500,
+  );
+  // 网络慢时也别让"发送中"卡 UI：500ms 后强制关闭发送弹层，请求继续在后台跑
+  useEffect(() => {
+    if (
+      sendRequestMutation.isPending &&
+      !sendRequestDisplayedPending &&
+      sendDialogCharacterId !== null
+    ) {
+      setSendDialogCharacterId(null);
+    }
+  }, [
+    sendRequestDisplayedPending,
+    sendRequestMutation.isPending,
+    sendDialogCharacterId,
+  ]);
 
   const friendshipMap = useMemo(
     () =>
@@ -466,7 +485,7 @@ function MobileAddFriend() {
                 item={result}
                 actionPending={
                   (result.status === "available" &&
-                    sendRequestMutation.isPending &&
+                    sendRequestDisplayedPending &&
                     sendRequestMutation.variables?.characterId ===
                       result.character.id) ||
                   (result.status === "friend" &&
@@ -486,7 +505,7 @@ function MobileAddFriend() {
         open={Boolean(sendDialogResult)}
         result={sendDialogResult}
         ownerName={ownerName}
-        pending={sendRequestMutation.isPending}
+        pending={sendRequestDisplayedPending}
         onClose={() => setSendDialogCharacterId(null)}
         onSubmit={async (greeting) => {
           if (!sendDialogResult) {

@@ -10,7 +10,12 @@ export type MinimaxJobStatus =
   | 'failed'
   | 'cancelled';
 
-export type MinimaxJobTargetType = 'channel_post' | 'moment_post';
+export type MinimaxJobTargetType =
+  | 'channel_post'
+  | 'moment_post'
+  // BGM 子任务：视频生成完成后追加的纯器乐 music job，
+  // 完成回调里用 ffmpeg 混入同一 moment_post 的视频文件。
+  | 'moment_post_video_bgm';
 
 export interface MinimaxVideoJobInputPayload {
   kind: 'video';

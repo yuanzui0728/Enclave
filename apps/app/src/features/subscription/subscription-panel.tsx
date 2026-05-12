@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import QRCode from "qrcode";
+// qrcode 是 ~70KB 重依赖。改用动态 import 让它独立成 chunk，
+// 只在用户实际访问订阅/邀请二维码时才拉，不再吃首屏 vendor-misc。
 import {
   createCheckout,
   getMyCloudInviteSummary,
@@ -113,20 +114,23 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
     }
     let cancelled = false;
     setQrError(false);
-    QRCode.toDataURL(shareUrl, {
-      margin: 1,
-      width: 220,
-      errorCorrectionLevel: "M",
-    })
-      .then((dataUrl) => {
+    (async () => {
+      try {
+        const { default: QRCode } = await import("qrcode");
+        if (cancelled) return;
+        const dataUrl = await QRCode.toDataURL(shareUrl, {
+          margin: 1,
+          width: 220,
+          errorCorrectionLevel: "M",
+        });
         if (!cancelled) setQrDataUrl(dataUrl);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) {
           setQrDataUrl(null);
           setQrError(true);
         }
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };

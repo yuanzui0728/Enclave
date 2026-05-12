@@ -8,7 +8,6 @@ import { CharacterEntity } from '../characters/character.entity';
 import { ActionRunEntity } from '../action-runtime/action-run.entity';
 import { FollowupOpenLoopEntity } from '../followup-runtime/followup-open-loop.entity';
 import { ReminderTaskEntity } from '../reminder-runtime/reminder-task.entity';
-import { ReminderRuntimeModule } from '../reminder-runtime/reminder-runtime.module';
 import { SelfAgentHeartbeatRunEntity } from './self-agent-heartbeat-run.entity';
 import { SelfAgentRunEntity } from './self-agent-run.entity';
 import { SelfAgentRulesService } from './self-agent-rules.service';
@@ -20,7 +19,6 @@ import { SelfAgentService } from './self-agent.service';
     ActionRuntimeModule,
     AuthModule,
     SystemConfigModule,
-    ReminderRuntimeModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CharacterEntity,

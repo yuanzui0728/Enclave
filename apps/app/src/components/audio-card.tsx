@@ -92,7 +92,9 @@ export function AudioCard({
     if (!el) return;
     if (el.paused) {
       pauseOthers(el);
-      void el.play();
+      el.play().catch((err) => {
+        console.warn("[audio-card] play() rejected:", err);
+      });
     } else {
       el.pause();
     }
@@ -138,7 +140,7 @@ export function AudioCard({
         <div className="truncate text-sm font-medium">
           {title ?? t(msg`音乐`)}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={handleToggle}
@@ -158,10 +160,10 @@ export function AudioCard({
             step={0.1}
             value={Math.min(progress, duration || 0)}
             onChange={handleSeek}
-            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-white/20 accent-white"
+            className="h-1 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/20 accent-white"
             disabled={!duration}
           />
-          <span className="w-12 flex-none text-right font-mono text-xs text-white/70">
+          <span className="flex-none whitespace-nowrap text-right font-mono text-[11px] leading-none text-white/70">
             {formatSeconds(progress)}/{formatSeconds(duration)}
           </span>
         </div>

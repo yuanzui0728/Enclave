@@ -304,10 +304,24 @@ body.yj-mobile::after {
 /* 长列表项启用 content-visibility: auto，让浏览器跳过屏外项的渲染/布局。
  * 公网隧道下首屏与滚动期间能少做大量 layout/paint 工作。
  * contain-intrinsic-size 给浏览器一个估算高度，避免初始 layout 跳动。
- * 不能加在带 sticky position / 需要测量整体高度的容器上。 */
+ * 不能加在带 sticky position / 需要测量整体高度的容器上。
+ *
+ * 三档预估高度，按列表项的"典型"高度选：
+ *   yj-list-item-virtual: 64px (聊天会话行、联系人行、角色行)
+ *   yj-list-item-virtual-medium: 160px (评论、朋友列表卡)
+ *   yj-list-item-virtual-card: 320px (朋友圈/广场卡片，含图视频)
+ * auto 关键字让浏览器测过一次后用真实高度，估值只在首次 layout 用到。 */
 .yj-list-item-virtual {
   content-visibility: auto;
   contain-intrinsic-size: auto 64px;
+}
+.yj-list-item-virtual-medium {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 160px;
+}
+.yj-list-item-virtual-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 
 /* iOS Safari 在 input/textarea 字号小于 16px 时聚焦会自动放大且不复原。

@@ -8,12 +8,15 @@
 [![Stars](https://img.shields.io/github/stars/yuanzui0728/enclave?style=flat&color=yellow)](https://github.com/yuanzui0728/enclave/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/enclave)](https://github.com/yuanzui0728/enclave/commits/main)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Hugging Face Space](https://img.shields.io/badge/Hugging%20Face-Space-yellow?logo=huggingface)](https://huggingface.co/spaces/w9000/enclave)
+[![HF Character Recipes](https://img.shields.io/badge/Hugging%20Face-Character%20Recipes-yellow?logo=huggingface)](https://huggingface.co/w9000/enclave-character-recipes)
 
 > あなただけの、AI による小さな世界。
 >
 > 住人がいて、時間が流れ、関係が育ち、物語が重なっていく——でも、それは現実の代わりではありません。現実の人生に、もう一つの次元を与えるためのものです。
 
 > 🌐 **ライブデモ**：<http://1gw06751dd053.vicp.fun/>（共有ワールド。プロダクトの手ざわりを試す用）
+> 🤗 **Hugging Face**：[Space](https://huggingface.co/spaces/w9000/enclave) · [Character Recipes](https://huggingface.co/w9000/enclave-character-recipes)
 > 📮 **お問い合わせ**：yuanzui0728@gmail.com
 >
 > ⭐ **この構想が気に入ったら**：リポジトリに Star をください。新しい住人や機能、v0.2 ロードマップの更新をすぐに追えます。

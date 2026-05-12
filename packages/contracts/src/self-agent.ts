@@ -96,7 +96,6 @@ export interface SelfAgentOverviewStats {
 export interface SelfAgentPolicyRules {
   enabled: boolean;
   allowActionRuntimeDelegation: boolean;
-  allowReminderRuntimeDelegation: boolean;
   forceConfirmationForDelegatedActions: boolean;
   blockedActionConnectorKeys: string[];
   blockedActionOperationKeys: string[];

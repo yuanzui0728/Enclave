@@ -8,7 +8,6 @@ import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { SELF_CHARACTER_ID } from '../characters/default-characters';
 import { FollowupOpenLoopEntity } from '../followup-runtime/followup-open-loop.entity';
-import { ReminderRuntimeService } from '../reminder-runtime/reminder-runtime.service';
 import { ReminderTaskEntity } from '../reminder-runtime/reminder-task.entity';
 import { SelfAgentHeartbeatRunEntity } from './self-agent-heartbeat-run.entity';
 import { SelfAgentRulesService } from './self-agent-rules.service';
@@ -23,10 +22,27 @@ import type {
   SelfAgentRunTriggerTypeValue,
 } from './self-agent.types';
 
+const REMINDER_HANDOFF_PROMPT_SECTION = [
+  '<self_agent_reminder_handoff>',
+  '你（"我自己"）不负责记提醒、不替用户记事、不维护提醒列表——那是小盯（角色名"小盯"，⏰）的职责。',
+  '',
+  '当你识别到用户带有提醒/待办/记事/盯时间相关的需求（包括但不限于：',
+  '"提醒我…/帮我记…/别忘了/我老忘…/记着…/到点叫我/每天/每周/明早 N 点…/吃药/开会/打卡 等"），',
+  '不要自己接下来去记或安排，也不要给出固定模板回复，而是顺手把用户引到小盯那里去：',
+  '- 用熟人语气一句话点出来即可，例如：',
+  '  · "这种事让小盯帮你盯比较稳，你跟它说一句就行。"',
+  '  · "怕忘的事不用都堆我脑子里，去找小盯，它专门干这个。"',
+  '- 不要复述"小盯的能力清单"或长串教程，给一句轻引导就够。',
+  '- 不要替小盯生成"明早8点提醒…"这种话术，让用户自己跟小盯说。',
+  '',
+  '如果用户只是在闲聊、问候、吐槽、问你自己在干啥，那就正常聊，不要硬扯到小盯。',
+  '</self_agent_reminder_handoff>',
+].join('\n');
+
 type SelfAgentHandlingResult = {
   handled: boolean;
   responseText?: string;
-  handledBy?: 'action_runtime' | 'reminder_runtime';
+  handledBy?: 'action_runtime';
 };
 
 type SelfAgentWorkspaceDocumentName =
@@ -85,7 +101,6 @@ export class SelfAgentService {
     @InjectRepository(SelfAgentRunEntity)
     private readonly runRepo: Repository<SelfAgentRunEntity>,
     private readonly actionRuntime: ActionRuntimeService,
-    private readonly reminderRuntime: ReminderRuntimeService,
     private readonly rulesService: SelfAgentRulesService,
     private readonly workspace: SelfAgentWorkspaceService,
   ) {}
@@ -174,34 +189,6 @@ export class SelfAgentService {
       }
     }
 
-    if (rules.policy.allowReminderRuntimeDelegation) {
-      const reminderResult = await this.reminderRuntime.handleConversationTurn({
-        conversationId: input.conversationId,
-        userMessage: input.userMessage,
-        sourceMessageId: input.sourceMessageId,
-      });
-      if (reminderResult.handled) {
-        await this.saveRunRecord({
-          triggerType: 'conversation',
-          status: 'handled',
-          routeKey: 'reminder_runtime',
-          policyDecision: 'delegated',
-          summary: 'self-agent 将这条消息路由给了 reminder-runtime。',
-          conversationId: input.conversationId,
-          sourceMessageId: input.sourceMessageId,
-          ownerId: input.ownerId,
-          characterId: input.character.id,
-          inputPreview: input.userMessage,
-          outputPreview: reminderResult.responseText ?? null,
-        });
-        return {
-          handled: true,
-          responseText: reminderResult.responseText,
-          handledBy: 'reminder_runtime',
-        };
-      }
-    }
-
     return { handled: false };
   }
 
@@ -210,7 +197,8 @@ export class SelfAgentService {
       return [];
     }
 
-    return this.workspace.buildChatPromptSections(input);
+    const workspaceSections = await this.workspace.buildChatPromptSections(input);
+    return [...workspaceSections, REMINDER_HANDOFF_PROMPT_SECTION];
   }
 
   async getRules(): Promise<SelfAgentRulesValue> {

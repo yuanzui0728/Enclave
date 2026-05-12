@@ -51,6 +51,31 @@ function resolveManualChunk(id: string) {
       return "vendor-shell";
     }
 
+    // qrcode (~70KB) 和 html-to-image (~30KB) 只在分享/订阅二维码场景用到，
+    // 但被多个动态 import 入口（share-card-modal、profile-subscription、
+    // subscription-panel 各拆 dynamic import）引用 — 若不显式拆出，Rollup
+    // 会把它们升级到 vendor-misc 当共享 chunk，重新挤进首屏关键路径，把
+    // 动态 import 的好处吃光。这里强制单独成 chunk，只在第一次需要时拉。
+    if (normalizedId.includes("/qrcode/")) {
+      return "vendor-qrcode";
+    }
+    if (normalizedId.includes("/html-to-image/")) {
+      return "vendor-html-to-image";
+    }
+
+    // @lingui runtime (~15-20KB) 拆 vendor-i18n —— catalog 自身已经按 locale
+    // 单独 chunk + modulepreload，runtime 这部分原本被 vendor-misc 吃掉。
+    if (normalizedId.includes("/@lingui/")) {
+      return "vendor-i18n";
+    }
+
+    // @react-oauth/google (~25-35KB) 拆 vendor-oauth —— 配合 main.tsx 把
+    // GoogleOAuthProvider 下沉到 welcome-page，这个 chunk 现在只在 welcome
+    // 路由打开时才拉，不再吃首屏。
+    if (normalizedId.includes("/@react-oauth/")) {
+      return "vendor-oauth";
+    }
+
     return "vendor-misc";
   }
 
@@ -106,6 +131,60 @@ function asyncCssPlugin() {
   };
 }
 
+// i18n catalog 是 dynamic import（catalog-loaders.ts: import("../../catalogs/.../*.po")），
+// Vite 默认的 entry-graph modulepreload 不会覆盖 — 浏览器必须等 entry 执行后
+// 才发现这个 import，再发起一次网络请求。公网隧道 RTT ~430ms 下这一跳很贵。
+// 这里在 build 时注入一段 inline <script>：HTML 解析阶段就根据用户 locale
+// (localStorage / navigator.language) 动态 appendChild 出对应 locale 的 catalog
+// chunk 的 <link rel="modulepreload">，与 entry script 下载并行，省 1 个 RTT。
+// SSR 模式无 bundle，dev 模式不需要（catalogs 直接从源拉），所以仅 build 生效。
+function catalogPreloadPlugin() {
+  // packages/i18n 同时为 5 个 surface (app/admin/cloud-console/site/wiki) 生成 catalog
+  // 文件，dist 里会有形如 zh-CN-<hash>.js 的 30+ 个文件，但 app surface 实际只
+  // 会 dynamic import shared + app 这 2 个。光按文件名前缀匹配会把其他 surface
+  // 的 catalog 也预加载（白白浪费 ~150KB/locale 流量）。用 rollup chunk 的
+  // facadeModuleId 精确定位源自 catalogs/shared/<locale>.po 或 catalogs/app/<locale>.po
+  // 的 chunk，其他 surface 一律忽略。
+  type RollupChunkLike = {
+    facadeModuleId?: string | null;
+    type?: string;
+  };
+  return {
+    name: "yinjie-app-catalog-preload",
+    enforce: "post" as const,
+    transformIndexHtml: {
+      order: "post" as const,
+      handler(
+        html: string,
+        ctx: { bundle?: Record<string, RollupChunkLike> },
+      ) {
+        if (!ctx.bundle) return html;
+        const catalogMap: Record<string, string[]> = {
+          "zh-CN": [],
+          "en-US": [],
+          "ja-JP": [],
+          "ko-KR": [],
+        };
+        const facadeMatch =
+          /\/catalogs\/(shared|app)\/(zh-CN|en-US|ja-JP|ko-KR)\.po(?:[?#]|$)/;
+        for (const [fileName, chunk] of Object.entries(ctx.bundle)) {
+          if (!chunk || chunk.type !== "chunk") continue;
+          const facadeId = chunk.facadeModuleId;
+          if (!facadeId) continue;
+          const match = facadeMatch.exec(facadeId);
+          if (!match) continue;
+          catalogMap[match[2]].push("/" + fileName);
+        }
+        if (Object.values(catalogMap).every((arr) => arr.length === 0)) {
+          return html;
+        }
+        const inlineScript = `<script>(function(){try{var s=null;try{s=localStorage.getItem('yinjie-i18n-locale:app');}catch(_){}var lang=(s||navigator.language||'').toLowerCase();var locale='zh-CN';if(lang.indexOf('zh')===0)locale='zh-CN';else if(lang.indexOf('en')===0)locale='en-US';else if(lang.indexOf('ja')===0)locale='ja-JP';else if(lang.indexOf('ko')===0)locale='ko-KR';var m=${JSON.stringify(catalogMap)};var arr=m[locale]||[];for(var i=0;i<arr.length;i++){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=arr[i];document.head.appendChild(l);}}catch(e){}})();</script>`;
+        return html.replace("</head>", `    ${inlineScript}\n  </head>`);
+      },
+    },
+  };
+}
+
 export default defineConfig(({ command }) => ({
   base: resolveAppBase(command),
   plugins: [
@@ -117,6 +196,7 @@ export default defineConfig(({ command }) => ({
     lingui(),
     tailwindcss(),
     asyncCssPlugin(),
+    catalogPreloadPlugin(),
     // 公网隧道下首屏要省字节，vite-plugin-compression 在构建期生成 *.gz 同名
     // 兄弟文件，nginx 通过 gzip_static on 直接吐，不再现压（CPU + 体积同省）。
     viteCompression({

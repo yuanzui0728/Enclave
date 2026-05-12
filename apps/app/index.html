@@ -15,35 +15,43 @@
       // localStorage["yinjie:server-build-id"] 比对，需要时再触发刷新。
     </script>
     <script>
-      // SW 兜底清理：app 已经把 SW 整体下线（public/sw.js 是自毁开关），
-      // 这段 inline 是双保险——所有 host 都跑，发现还有 SW 注册就 unregister
-      // + 清 caches + reload。sessionStorage 守护避免反复 reload。
-      // 必须在 React bundle 之前执行，因为 bundle 自己就有可能是旧 SW
-      // precache 里掏出来的，得先把旧 SW 干掉才能拿到不带拦截的资源。
+      // SW kill switch (默认 no-op)
+      // 触发条件: URL 含 ?nosw=1 或 localStorage["yinjie:nosw"]==="1"
+      // 触发动作: unregister 所有 SW + 清光所有 caches + reload 一次
+      //          (sessionStorage 守护防 reload 循环)
+      // 平时:    no-op — 让 register-service-worker.ts 注册我们的 cache-first SW
+      //          (apps/app/public/sw.js, 白名单缓存 hashed /assets/*).
+      // 为什么放在 React bundle 之前：万一 bundle 是旧坏 SW precache 出来的，
+      // 必须先 unregister 把那个旧 SW 干掉，否则 bundle 加载就会被它拦截。
       (function () {
         if (typeof window === "undefined") return;
         if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+        var active = false;
+        try {
+          var sp = new URLSearchParams(window.location.search);
+          if (sp.has("nosw")) active = true;
+        } catch (e) {}
+        try {
+          if (!active && window.localStorage.getItem("yinjie:nosw") === "1") active = true;
+        } catch (e) {}
+        if (!active) return;
         var GUARD_KEY = "yinjie:sw-cleanup-reload";
         var alreadyTried = false;
         try { alreadyTried = window.sessionStorage.getItem(GUARD_KEY) === "1"; } catch (e) {}
         if (alreadyTried) return;
         navigator.serviceWorker.getRegistrations().then(function (regs) {
-          if (!regs || regs.length === 0) {
-            try { window.sessionStorage.setItem(GUARD_KEY, "1"); } catch (e) {}
-            return null;
-          }
-          return Promise.all(regs.map(function (r) { return r.unregister(); }))
+          return Promise.all((regs || []).map(function (r) { return r.unregister(); }))
             .then(function () {
               if (typeof caches !== "undefined" && caches.keys) {
                 return caches.keys().then(function (keys) {
                   return Promise.all(keys.map(function (k) { return caches.delete(k); }));
                 });
               }
-            })
-            .then(function () {
-              try { window.sessionStorage.setItem(GUARD_KEY, "1"); } catch (e) {}
-              window.location.reload();
             });
+        }).then(function () {
+          try { window.sessionStorage.setItem(GUARD_KEY, "1"); } catch (e) {}
+          try { window.localStorage.removeItem("yinjie:nosw"); } catch (e) {}
+          window.location.reload();
         }).catch(function () {});
       })();
     </script>

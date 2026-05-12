@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/yuanzui0728/yinjie-app/schema/character-blueprint.schema.json",
+  "title": "Enclave Character Blueprint Recipe",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "identity",
+    "expertise",
+    "tone",
+    "prompting",
+    "memorySeed",
+    "reasoning",
+    "lifeStrategy",
+    "publishMapping"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "required": [
+        "name",
+        "relationship",
+        "relationshipType",
+        "avatar",
+        "bio",
+        "occupation",
+        "background",
+        "motivation",
+        "worldview"
+      ],
+      "properties": {
+        "name": { "type": "string" },
+        "relationship": { "type": "string" },
+        "relationshipType": { "type": "string" },
+        "avatar": { "type": "string" },
+        "bio": { "type": "string" },
+        "occupation": { "type": "string" },
+        "background": { "type": "string" },
+        "motivation": { "type": "string" },
+        "worldview": { "type": "string" },
+        "region": { "type": ["string", "null"] }
+      }
+    },
+    "expertise": {
+      "type": "object",
+      "required": [
+        "expertDomains",
+        "expertiseDescription",
+        "knowledgeLimits",
+        "refusalStyle"
+      ],
+      "properties": {
+        "expertDomains": { "$ref": "#/$defs/stringArray" },
+        "expertiseDescription": { "type": "string" },
+        "knowledgeLimits": { "type": "string" },
+        "refusalStyle": { "type": "string" }
+      }
+    },
+    "tone": {
+      "type": "object",
+      "required": [
+        "speechPatterns",
+        "catchphrases",
+        "topicsOfInterest",
+        "emotionalTone",
+        "responseLength",
+        "emojiUsage",
+        "workStyle",
+        "socialStyle",
+        "taboos",
+        "quirks",
+        "coreDirective",
+        "basePrompt",
+        "systemPrompt"
+      ],
+      "properties": {
+        "speechPatterns": { "$ref": "#/$defs/stringArray" },
+        "catchphrases": { "$ref": "#/$defs/stringArray" },
+        "topicsOfInterest": { "$ref": "#/$defs/stringArray" },
+        "emotionalTone": { "type": "string" },
+        "responseLength": { "enum": ["short", "medium", "long"] },
+        "emojiUsage": { "enum": ["none", "occasional", "frequent"] },
+        "workStyle": { "type": "string" },
+        "socialStyle": { "type": "string" },
+        "taboos": { "$ref": "#/$defs/stringArray" },
+        "quirks": { "$ref": "#/$defs/stringArray" },
+        "coreDirective": { "type": "string" },
+        "basePrompt": { "type": "string" },
+        "systemPrompt": { "type": "string" }
+      }
+    },
+    "prompting": {
+      "type": "object",
+      "required": ["coreLogic", "scenePrompts"],
+      "properties": {
+        "coreLogic": { "type": "string" },
+        "scenePrompts": {
+          "type": "object",
+          "required": [
+            "chat",
+            "moments_post",
+            "moments_comment",
+            "feed_post",
+            "channel_post",
+            "feed_comment",
+            "greeting",
+            "proactive"
+          ],
+          "properties": {
+            "chat": { "type": "string" },
+            "moments_post": { "type": "string" },
+            "moments_comment": { "type": "string" },
+            "feed_post": { "type": "string" },
+            "channel_post": { "type": "string" },
+            "feed_comment": { "type": "string" },
+            "greeting": { "type": "string" },
+            "proactive": { "type": "string" }
+          }
+        }
+      }
+    },
+    "memorySeed": {
+      "type": "object",
+      "required": [
+        "memorySummary",
+        "coreMemory",
+        "recentSummarySeed",
+        "forgettingCurve",
+        "recentSummaryPrompt",
+        "coreMemoryPrompt"
+      ],
+      "properties": {
+        "memorySummary": { "type": "string" },
+        "coreMemory": { "type": "string" },
+        "recentSummarySeed": { "type": "string" },
+        "forgettingCurve": { "type": "number", "minimum": 0, "maximum": 100 },
+        "recentSummaryPrompt": { "type": "string" },
+        "coreMemoryPrompt": { "type": "string" }
+      }
+    },
+    "reasoning": {
+      "type": "object",
+      "required": ["enableCoT", "enableReflection", "enableRouting"],
+      "properties": {
+        "enableCoT": { "type": "boolean" },
+        "enableReflection": { "type": "boolean" },
+        "enableRouting": { "type": "boolean" }
+      }
+    },
+    "lifeStrategy": {
+      "type": "object",
+      "required": [
+        "activityFrequency",
+        "momentsFrequency",
+        "feedFrequency",
+        "activeHoursStart",
+        "activeHoursEnd",
+        "triggerScenes"
+      ],
+      "properties": {
+        "activityFrequency": { "type": "string" },
+        "momentsFrequency": { "type": "number", "minimum": 0 },
+        "feedFrequency": { "type": "number", "minimum": 0 },
+        "activeHoursStart": { "type": ["number", "null"], "minimum": 0, "maximum": 23 },
+        "activeHoursEnd": { "type": ["number", "null"], "minimum": 0, "maximum": 23 },
+        "triggerScenes": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "publishMapping": {
+      "type": "object",
+      "required": [
+        "isTemplate",
+        "onlineModeDefault",
+        "activityModeDefault",
+        "initialOnline",
+        "initialActivity"
+      ],
+      "properties": {
+        "isTemplate": { "type": "boolean" },
+        "onlineModeDefault": { "enum": ["auto", "manual"] },
+        "activityModeDefault": { "enum": ["auto", "manual"] },
+        "initialOnline": { "type": "boolean" },
+        "initialActivity": { "type": ["string", "null"] }
+      }
+    },
+    "realityLink": { "type": ["object", "null"] }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -5,7 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import type { MomentsPageResponse } from "@yinjie/contracts";
+import type { Moment, MomentsPageResponse } from "@yinjie/contracts";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, Play, Plus, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -61,25 +61,34 @@ export function MobileMomentsPublishPage() {
         videoDraft: composeDraft.videoDraft,
         baseUrl,
       }),
-    onSuccess: async () => {
+    onSuccess: (newMoment) => {
       storeMomentPublishFlash(t(msg`朋友圈已发布。`));
       composeDraft.reset();
-      // 发布会让分页边界后移，先把 paged cache 收回到 page 1（避免下次 mount 时边界重复）
+      // 把新发布的 moment prepend 到 paged 头部 + 收回到 page 1。跳转后 moments-page mount
+      // 能立刻看到自己刚发的内容；后台 invalidate 再去合并服务端最新状态（评论/点赞等）。
       queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
         ["app-moments-paged", baseUrl],
         (current) =>
-          current
+          current && current.pages.length > 0
             ? {
-                pages: current.pages.slice(0, 1),
+                pages: [
+                  {
+                    ...current.pages[0]!,
+                    items: [newMoment, ...current.pages[0]!.items],
+                  },
+                ],
                 pageParams: current.pageParams.slice(0, 1),
               }
             : current,
       );
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        // moments-page 用 paged key 走无限分页
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      queryClient.setQueryData<Moment[]>(["app-moments", baseUrl], (current) =>
+        current ? [newMoment, ...current] : current,
+      );
+      // fire-and-forget：原来 await refetch 让"发表中"按钮多卡 600ms+。
+      void queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
       void navigate({
         to: safeReturnPath ?? "/discover/moments",
         ...(safeReturnHash ? { hash: safeReturnHash } : {}),

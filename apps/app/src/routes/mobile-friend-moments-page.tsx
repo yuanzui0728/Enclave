@@ -10,6 +10,7 @@ import {
   getMoments,
   toggleMomentLike,
   type MomentComment,
+  type MomentLike,
 } from "@yinjie/contracts";
 import { getActiveLocale, translateRuntimeMessage } from "@yinjie/i18n";
 import {
@@ -36,8 +37,10 @@ import {
   parseMobileFriendMomentsRouteState,
 } from "../features/moments/mobile-friend-moments-route-state";
 import { usePullToRefresh } from "../features/moments/use-pull-to-refresh";
+import { useOptimisticMomentLikeHandlers } from "../features/moments/use-optimistic-like";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useWorldOwnerStore } from "../store/world-owner-store";
 
 const t = translateRuntimeMessage;
 
@@ -52,6 +55,9 @@ export function MobileFriendMomentsPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const ownerId = useWorldOwnerStore((state) => state.id);
+  const ownerUsername = useWorldOwnerStore((state) => state.username);
+  const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const resolvedCharacterId = characterId ?? "";
   const routeState = useMemo(
     () => parseMobileFriendMomentsRouteState(hash),
@@ -110,17 +116,23 @@ export function MobileFriendMomentsPage() {
     enabled: Boolean(resolvedCharacterId),
   });
 
+  const optimisticLike = useOptimisticMomentLikeHandlers({
+    baseUrl,
+    ownerId,
+    ownerUsername,
+    ownerAvatar,
+  });
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
-    onSuccess: async () => {
+    onMutate: optimisticLike.onMutate,
+    onError: optimisticLike.onError,
+    onSuccess: () => {
       setNotice({
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // 点赞 toggle 是 boolean，optimistic 已把 likes 切对。完全省掉 invalidate，
+      // 避免拉回 GET /api/moments 全量 + 30+ media 条件请求 RTT。
     },
   });
   const commentMutation = useMutation({
@@ -145,17 +157,19 @@ export function MobileFriendMomentsPage() {
         baseUrl,
       );
     },
-    onSuccess: async (_, momentId) => {
+    onSuccess: (_, momentId) => {
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
       setCommentBarTarget(null);
       setNotice({
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // fire-and-forget：await refetch 会让"发表"按钮一直 disabled，
+      // 公网隧道下感觉评论"卡好几秒"。让 invalidate 在后台跑就行。
+      void queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
     },
   });
 
@@ -256,6 +270,20 @@ export function MobileFriendMomentsPage() {
       }),
     });
     return true;
+  }
+
+  function openLikerCharacterDetail(like: MomentLike) {
+    if (like.authorType !== "character") {
+      return;
+    }
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId: like.authorId },
+      hash: buildCharacterDetailRouteHash({
+        returnPath: `/friend-moments/${resolvedCharacterId}`,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
   }
 
   function handleBack() {
@@ -537,7 +565,11 @@ export function MobileFriendMomentsPage() {
                 return (
                   <div
                     key={moment.id}
-                    className={index === 0 ? "" : "border-t border-[#ECECEC]"}
+                    className={
+                      index === 0
+                        ? "yj-list-item-virtual-card"
+                        : "yj-list-item-virtual-card border-t border-[#ECECEC]"
+                    }
                   >
                     <div className="flex items-start gap-2 px-4 py-3.5">
                       <div className="w-12 shrink-0 pt-1 text-right">
@@ -571,6 +603,7 @@ export function MobileFriendMomentsPage() {
                           onCommentTap={(comment) =>
                             onCommentTap(moment.id, comment)
                           }
+                          onLikeAuthorTap={openLikerCharacterDetail}
                         />
                       </div>
                     </div>

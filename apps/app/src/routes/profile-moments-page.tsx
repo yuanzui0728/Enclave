@@ -10,6 +10,7 @@ import {
   toggleMomentLike,
   type Moment,
   type MomentComment,
+  type MomentLike,
 } from "@yinjie/contracts";
 import { getActiveLocale, useRuntimeTranslator } from "@yinjie/i18n";
 import {
@@ -30,6 +31,7 @@ import {
 } from "../components/wechat-comment-bar";
 import { WeChatMomentCard } from "../components/wechat-moment-card";
 import { WeChatMomentsCover } from "../components/wechat-moments-cover";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -40,6 +42,7 @@ import {
   publishMomentComposeDraft,
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
+import { useOptimisticMomentLikeHandlers } from "../features/moments/use-optimistic-like";
 import { buildMobileMomentsPublishRouteHash } from "../features/moments/mobile-moments-publish-route-state";
 import { usePullToRefresh } from "../features/moments/use-pull-to-refresh";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -54,6 +57,11 @@ const DesktopProfileMomentsWorkspace = lazy(async () => {
     "../features/desktop/moments/desktop-profile-moments-workspace"
   );
   return { default: mod.DesktopProfileMomentsWorkspace };
+});
+
+const DesktopMessageAvatarPopover = lazy(async () => {
+  const mod = await import("../features/chat/message-avatar-popover-shell");
+  return { default: mod.DesktopMessageAvatarPopover };
 });
 
 const PUBLISH_RETURN_HASH = buildMobileMomentsPublishRouteHash({
@@ -93,6 +101,20 @@ export function ProfileMomentsPage() {
     tone: "success" | "info";
     message: string;
   } | null>(null);
+  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "character";
+        characterId: string;
+        fallbackAvatar?: string | null;
+        fallbackName: string;
+      }
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "owner";
+      }
+    | null
+  >(null);
   const composeDraft = useMomentComposeDraft();
 
   const momentsQuery = useQuery({
@@ -109,17 +131,23 @@ export function ProfileMomentsPage() {
     );
   }, [momentsQuery.data, ownerId]);
 
+  const optimisticLike = useOptimisticMomentLikeHandlers({
+    baseUrl,
+    ownerId,
+    ownerUsername: ownerName,
+    ownerAvatar,
+  });
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
-    onSuccess: async () => {
+    onMutate: optimisticLike.onMutate,
+    onError: optimisticLike.onError,
+    onSuccess: () => {
       setNotice({
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // 点赞 toggle 是 boolean，optimistic 已把 likes 切对。完全省掉 invalidate，
+      // 避免拉回 GET /api/moments 全量 + 30+ media 条件请求 RTT。
     },
   });
 
@@ -153,7 +181,7 @@ export function ProfileMomentsPage() {
         baseUrl,
       );
     },
-    onSuccess: async (_, momentId) => {
+    onSuccess: (_, momentId) => {
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
       setCommentBarTarget(null);
       setDesktopReplyTarget((current) =>
@@ -163,10 +191,11 @@ export function ProfileMomentsPage() {
         tone: "success",
         message: t(msg`朋友圈互动已更新。`),
       });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // fire-and-forget：await 会让"发表"按钮一直 disabled，公网隧道下卡几秒。
+      void queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
     },
   });
 
@@ -178,17 +207,22 @@ export function ProfileMomentsPage() {
         videoDraft: composeDraft.videoDraft,
         baseUrl,
       }),
-    onSuccess: async () => {
+    onSuccess: (newMoment) => {
       composeDraft.reset();
       setShowCompose(false);
       setNotice({
         tone: "success",
         message: t(msg`朋友圈已发布。`),
       });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // 立刻 prepend 到 flat cache，本页（按 ownerId 过滤）也能马上看到刚发布的；
+      // 后台 invalidate 再合并服务端最新状态（其它共享 cache 的页面同步）。
+      queryClient.setQueryData<Moment[]>(["app-moments", baseUrl], (current) =>
+        current ? [newMoment, ...current] : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
     },
   });
 
@@ -215,15 +249,16 @@ export function ProfileMomentsPage() {
         queryClient.setQueryData(key, data);
       });
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setNotice({
         tone: "success",
         message: t(msg`已删除这条朋友圈。`),
       });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-moments-paged", baseUrl] }),
-      ]);
+      // fire-and-forget：optimistic 已把该条从 flat cache 抹掉；await 让删除按钮多卡 600ms+。
+      void queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
     },
   });
 
@@ -261,6 +296,19 @@ export function ProfileMomentsPage() {
     navigateBackOrFallback(() =>
       navigate({ to: "/tabs/profile", replace: true }),
     );
+
+  const openLikerCharacterDetail = (like: MomentLike) => {
+    if (like.authorType !== "character") {
+      return;
+    }
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId: like.authorId },
+      hash: buildCharacterDetailRouteHash({
+        returnPath: "/profile/moments",
+      }),
+    });
+  };
 
   const goPublish = () =>
     navigate({
@@ -368,6 +416,22 @@ export function ProfileMomentsPage() {
             void handleDesktopImageFilesSelected(files);
           }}
           onLike={(momentId) => likeMutation.mutate(momentId)}
+          onOpenLikerPopover={({ anchorElement, like }) => {
+            if (like.authorType === "character") {
+              setDesktopAvatarPopover({
+                anchorElement,
+                kind: "character",
+                characterId: like.authorId,
+                fallbackAvatar: like.authorAvatar,
+                fallbackName: like.authorName,
+              });
+            } else if (like.authorType === "user") {
+              setDesktopAvatarPopover({
+                anchorElement,
+                kind: "owner",
+              });
+            }
+          }}
           onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
           onRemoveVideo={() => composeDraft.clearVideoDraft()}
           onStartCommentReply={({ momentId, comment }) =>
@@ -408,6 +472,26 @@ export function ProfileMomentsPage() {
             void handleDesktopVideoFileSelected(file);
           }}
         />
+        {desktopAvatarPopover ? (
+          <Suspense fallback={null}>
+            {desktopAvatarPopover.kind === "character" ? (
+              <DesktopMessageAvatarPopover
+                anchorElement={desktopAvatarPopover.anchorElement}
+                kind="character"
+                characterId={desktopAvatarPopover.characterId}
+                fallbackAvatar={desktopAvatarPopover.fallbackAvatar}
+                fallbackName={desktopAvatarPopover.fallbackName}
+                onClose={() => setDesktopAvatarPopover(null)}
+              />
+            ) : (
+              <DesktopMessageAvatarPopover
+                anchorElement={desktopAvatarPopover.anchorElement}
+                kind="owner"
+                onClose={() => setDesktopAvatarPopover(null)}
+              />
+            )}
+          </Suspense>
+        ) : null}
       </Suspense>
     );
   }
@@ -543,7 +627,11 @@ export function ProfileMomentsPage() {
           {ownMoments.map((moment, index) => (
             <div
               key={moment.id}
-              className={index === 0 ? "" : "border-t border-[#ECECEC]"}
+              className={
+                index === 0
+                  ? "yj-list-item-virtual-card"
+                  : "yj-list-item-virtual-card border-t border-[#ECECEC]"
+              }
             >
               <PersonalAlbumRow
                 moment={moment}
@@ -553,6 +641,7 @@ export function ProfileMomentsPage() {
                 }
                 onDoubleTapLike={() => likeMutation.mutate(moment.id)}
                 onCommentTap={(comment) => onCommentTap(moment.id, comment)}
+                onLikeAuthorTap={openLikerCharacterDetail}
                 onDelete={() => {
                   if (deleteMutation.isPending) return;
                   if (
@@ -639,6 +728,7 @@ function PersonalAlbumRow({
   onOpenActionMenu,
   onDoubleTapLike,
   onCommentTap,
+  onLikeAuthorTap,
   onDelete,
 }: {
   moment: Moment;
@@ -646,6 +736,7 @@ function PersonalAlbumRow({
   onOpenActionMenu: (rect: DOMRect) => void;
   onDoubleTapLike: () => void;
   onCommentTap: (comment: MomentComment | null) => void;
+  onLikeAuthorTap: (like: MomentLike) => void;
   onDelete?: () => void;
 }) {
   const date = new Date(moment.postedAt);
@@ -679,6 +770,7 @@ function PersonalAlbumRow({
           onOpenActionMenu={onOpenActionMenu}
           onDoubleTapLike={onDoubleTapLike}
           onCommentTap={onCommentTap}
+          onLikeAuthorTap={onLikeAuthorTap}
           onDelete={onDelete}
         />
       </div>

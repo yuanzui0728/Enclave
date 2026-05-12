@@ -1,24 +1,40 @@
-// SW 已经从 app 整体下线：
-//   - vite.config.ts 不再用 vite-plugin-pwa 生成 sw.js；
-//   - public/sw.js 是「自毁开关」：浏览器 update check 拿到后会 claim →
-//     清 caches → 让 client 刷新 → unregister 自己；
-//   - 这个函数原本负责注册 SW，现在改成「兜底清理已存量 SW」+
-//     「监听自毁开关发的 postMessage 触发 reload」，确保历史装机能干净退出。
-// SW precache 在多次构建之间锁住旧 chunk，导致用户拿不到新代码，这条路径
-// 不再值得维护——索性彻底走 nginx + 浏览器 HTTP 缓存。
+// SW 注册 + kill switch。
 //
-// 兜底清理用 sessionStorage 守护避免反复 reload。一个标签页内最多 reload
-// 一次；关掉再开就重新跑一次（理论上那时已经没 SW 了，立即返回）。
+// 默认行为：注册 /sw.js（cache-first 白名单，详见 apps/app/public/sw.js）。
+// Kill switch：URL `?nosw=1` 或 localStorage["yinjie:nosw"]="1" 触发完全卸载
+// (unregister 所有 SW + 清光所有 caches + 一次 reload)；sessionStorage 守护
+// 防止 reload 循环。
+//
+// 历史：vite-plugin-pwa precache 锁死旧 chunk 一度让 SW 被整体下线；自毁开关
+// SW + 这里的兜底清理跑了几个迭代后，本次重启用 SW 是受控的 cache-first 设计。
 
+const NOSW_QUERY_KEY = "nosw";
+const NOSW_LOCALSTORAGE_KEY = "yinjie:nosw";
 const CLEANUP_GUARD_KEY = "yinjie:sw-cleanup-done";
 
-function hasNavigatorSW(): boolean {
+function hasSwSupport(): boolean {
   if (typeof navigator === "undefined") return false;
   return "serviceWorker" in navigator;
 }
 
+function killSwitchActive(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.has(NOSW_QUERY_KEY)) return true;
+  } catch {
+    // ignore
+  }
+  try {
+    if (window.localStorage.getItem(NOSW_LOCALSTORAGE_KEY) === "1") return true;
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
 async function unregisterAllAndClearCaches(): Promise<boolean> {
-  if (!hasNavigatorSW()) return false;
+  if (!hasSwSupport()) return false;
   let didSomething = false;
   try {
     const regs = await navigator.serviceWorker.getRegistrations();
@@ -43,38 +59,15 @@ async function unregisterAllAndClearCaches(): Promise<boolean> {
   return didSomething;
 }
 
-export function registerAppServiceWorker() {
-  if (typeof window === "undefined") return;
-  if (!hasNavigatorSW()) return;
-
-  // 自毁开关 SW 在 activate 阶段会 postMessage({type: "yinjie-sw-please-reload"})
-  // 兜底（如果 client.navigate 在某些平台被禁止）。一旦收到，主动 reload。
-  try {
-    navigator.serviceWorker.addEventListener("message", (event) => {
-      const data = event.data as { type?: string } | null;
-      if (data && data.type === "yinjie-sw-please-reload") {
-        try {
-          window.sessionStorage.setItem(CLEANUP_GUARD_KEY, "1");
-        } catch {
-          // ignore
-        }
-        window.location.reload();
-      }
-    });
-  } catch {
-    // ignore
-  }
-
-  // 兜底清理：sessionStorage 守护，每个标签页最多 reload 一次。
+function runKillSwitch(): void {
   let alreadyCleaned = false;
   try {
-    alreadyCleaned = window.sessionStorage.getItem(CLEANUP_GUARD_KEY) === "1";
+    alreadyCleaned =
+      window.sessionStorage.getItem(CLEANUP_GUARD_KEY) === "1";
   } catch {
     alreadyCleaned = true;
   }
-  if (alreadyCleaned) {
-    return;
-  }
+  if (alreadyCleaned) return;
 
   void (async () => {
     const didCleanup = await unregisterAllAndClearCaches();
@@ -83,8 +76,39 @@ export function registerAppServiceWorker() {
     } catch {
       // ignore
     }
+    // 清 localStorage flag，避免下次刷新还反复触发 kill。?nosw=1 query 留在
+    // URL 里没关系，reload 后再次命中也走 sessionStorage 守护短路。
+    try {
+      window.localStorage.removeItem(NOSW_LOCALSTORAGE_KEY);
+    } catch {
+      // ignore
+    }
     if (didCleanup) {
       window.location.reload();
     }
   })();
+}
+
+function registerNow(): void {
+  navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+    // 注册失败不影响应用，退化到纯 HTTP cache。
+  });
+}
+
+export function registerAppServiceWorker(): void {
+  if (typeof window === "undefined") return;
+  if (!hasSwSupport()) return;
+  if (window.location.protocol === "file:") return; // Capacitor 原生壳
+
+  if (killSwitchActive()) {
+    runKillSwitch();
+    return;
+  }
+
+  // 延后到 window.load 之后注册，不抢首屏带宽。
+  if (document.readyState === "complete") {
+    registerNow();
+  } else {
+    window.addEventListener("load", registerNow, { once: true });
+  }
 }

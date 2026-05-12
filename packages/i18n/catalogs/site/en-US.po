@@ -93,9 +93,106 @@ msgid "%s · 隐界 Enclave"
 msgstr "%s · Enclave"
 
 #. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:54
+#: apps/site/src/components/site-footer.tsx:15
+msgid "媒体资料"
+msgstr "Press Kit"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:55
+msgid "下载隐界 Enclave 媒体资料包：产品介绍 PDF、截图、Logo 和创始人头像，给媒体与创作者直接使用。"
+msgstr "Download the Enclave press kit: product PDF, screenshots, logo, and founder avatar for media and creators."
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:99
+msgid "Press Kit"
+msgstr "Press Kit"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:102
+msgid "隐界 Enclave 媒体资料包"
+msgstr "Enclave Press Kit"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:105
+msgid "给媒体、博主和创作者准备的公开素材页。这里可以直接下载产品介绍、截图、Logo 和创始人头像，用于报道、评测、视频和资料库条目。"
+msgstr "A public asset page for media, bloggers, and creators. Download the product overview, screenshots, logo, and founder avatar for articles, reviews, videos, and directories."
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:116
+msgid "下载产品介绍 PDF"
+msgstr "Download product PDF"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:123
+msgid "媒体联系"
+msgstr "Media contact"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:134
+#: apps/site/src/app/manifest.ts:12
+#: apps/site/src/components/og/og-template.tsx:11
+#: apps/site/src/components/seo/home-json-ld.tsx:15
+#: apps/site/src/components/seo/site-json-ld.tsx:9
+msgid "隐界 Enclave"
+msgstr "Enclave"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:136
+#: apps/site/src/components/hero-section.tsx:11
+#: apps/site/src/components/og/og-template.tsx:8
+msgid "一个属于你的 AI 虚拟世界"
+msgstr "A private AI world of your own"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:142
+msgid "隐界创始人品牌化插画头像"
+msgstr "Brand-style illustration avatar for the Enclave founder"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:153
+msgid "快速事实"
+msgstr "Quick facts"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:172
+msgid "素材下载"
+msgstr "Asset downloads"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:175
+msgid "所有素材可直接用于报道、评测、视频封面和资料库条目；请保留产品名“隐界 Enclave”。"
+msgstr "All assets can be used directly in coverage, reviews, video covers, and directories; please keep the product name “隐界 Enclave”."
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:214
+msgid "截图"
+msgstr "Screenshots"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:217
+msgid "截图来自当前线上版本，按当前页面语言自动匹配。"
+msgstr "Screenshots come from the current live build and match the current page language."
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:245
+msgid "下载 PNG"
+msgstr "Download PNG"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:256
+msgid "使用说明"
+msgstr "Usage notes"
+
+#. js-lingui-explicit-id
+#: apps/site/src/app/[locale]/press-kit/page.tsx:258
+msgid "报道或引用时建议使用“隐界 Enclave”作为产品名。需要采访、补充截图、视频素材或其它格式文件，可以直接邮件联系。"
+msgstr "Use “隐界 Enclave” as the product name when covering or referencing it. Email us for interviews, extra screenshots, video assets, or other file formats."
+
+#. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/privacy/page.tsx:25
 #: apps/site/src/app/[locale]/privacy/page.tsx:74
-#: apps/site/src/components/site-footer.tsx:16
+#: apps/site/src/components/site-footer.tsx:17
 msgid "隐私政策"
 msgstr "Privacy"
 
@@ -174,7 +271,7 @@ msgstr "For privacy questions, email yuanzui0728@gmail.com."
 #. js-lingui-explicit-id
 #: apps/site/src/app/[locale]/terms/page.tsx:25
 #: apps/site/src/app/[locale]/terms/page.tsx:74
-#: apps/site/src/components/site-footer.tsx:17
+#: apps/site/src/components/site-footer.tsx:18
 msgid "服务条款"
 msgstr "Terms"
 
@@ -313,14 +410,6 @@ msgstr "These aren't synthetic demos — they're how the community actually runs
 #: apps/site/src/components/capability-grid.tsx:14
 msgid "查看用例"
 msgstr "Read the use case"
-
-#. js-lingui-explicit-id
-#: apps/site/src/app/manifest.ts:12
-#: apps/site/src/components/og/og-template.tsx:11
-#: apps/site/src/components/seo/home-json-ld.tsx:15
-#: apps/site/src/components/seo/site-json-ld.tsx:9
-msgid "隐界 Enclave"
-msgstr "Enclave"
 
 #. js-lingui-explicit-id
 #: apps/site/src/app/manifest.ts:14
@@ -691,12 +780,6 @@ msgid "AI 虚拟世界 · 一键开始"
 msgstr "AI virtual world · one-click start"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/hero-section.tsx:11
-#: apps/site/src/components/og/og-template.tsx:8
-msgid "一个属于你的 AI 虚拟世界"
-msgstr "A private AI world of your own"
-
-#. js-lingui-explicit-id
 #: apps/site/src/components/hero-section.tsx:12
 msgid "在隐界，你不是和一个 chatbot 聊天，而是拥有一个有居民、有时间、有关系的私人世界。它不与现实对立，让现实里的你，多出一种可能。"
 msgstr "Enclave isn't a chatbot. It's a private world with its own residents, time, and relationships. It doesn't replace reality — it gives the real you one more possibility."
@@ -743,79 +826,97 @@ msgstr "Sign up and use — no install required"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:15
 #: apps/site/src/lib/capabilities-data.ts:81
+#: apps/site/src/lib/press-kit-data.ts:94
 msgid "聊天"
 msgstr "Chat"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:16
+#: apps/site/src/lib/press-kit-data.ts:95
 msgid "线程化对话与消息提醒"
 msgstr "Threaded conversations with message alerts"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:17
+#: apps/site/src/lib/press-kit-data.ts:96
 msgid "隐界聊天界面：与 AI 角色的线程化对话、消息提醒、强提醒、已读标记"
 msgstr "Yinjie chat interface: threaded conversations with AI characters, message alerts, strong alerts, and read receipts"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:21
 #: apps/site/src/lib/capabilities-data.ts:82
+#: apps/site/src/lib/press-kit-data.ts:100
 msgid "朋友圈"
 msgstr "Moments"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:22
+#: apps/site/src/lib/press-kit-data.ts:101
 msgid "AI 与人共同的时间线"
 msgstr "Shared timeline for AI and humans"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:23
+#: apps/site/src/lib/press-kit-data.ts:102
 msgid "隐界朋友圈：AI 角色与你共享的私人时间线，会主动发动态与互动"
 msgstr "Yinjie Moments: a private timeline shared with AI characters who post and engage on their own"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:27
 #: apps/site/src/lib/capabilities-data.ts:83
+#: apps/site/src/lib/press-kit-data.ts:106
 msgid "频道流"
 msgstr "Channels"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:28
+#: apps/site/src/lib/press-kit-data.ts:107
 msgid "频道、视频号、官方账号"
 msgstr "Channels, video accounts, and official accounts"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:29
+#: apps/site/src/lib/press-kit-data.ts:108
 msgid "隐界频道流：频道、视频号、官方账号的内容聚合界面"
 msgstr "Yinjie Channels: aggregated content from channels, video accounts, and official accounts"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:33
 #: apps/site/src/lib/capabilities-data.ts:84
+#: apps/site/src/lib/press-kit-data.ts:112
 msgid "群组"
 msgstr "Groups"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:34
+#: apps/site/src/lib/press-kit-data.ts:113
 msgid "多人对话与角色互动"
 msgstr "Multi-person chats and character interactions"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:35
+#: apps/site/src/lib/press-kit-data.ts:114
 msgid "隐界群组：多 AI 角色与你的多人对话场景"
 msgstr "Yinjie Groups: multi-person scenarios with multiple AI characters and you"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:39
 #: apps/site/src/lib/capabilities-data.ts:85
+#: apps/site/src/lib/press-kit-data.ts:118
 msgid "入坑引导"
 msgstr "Onboarding"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:40
+#: apps/site/src/lib/press-kit-data.ts:119
 msgid "新人启动与世界初始化"
 msgstr "Onboarding and world setup for new users"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:41
+#: apps/site/src/lib/press-kit-data.ts:120
 msgid "隐界新人引导：首次进入虚拟世界的角色初始化与世界设定"
 msgstr "Yinjie new-user onboarding: first-entry character setup and world configuration for the virtual world"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:45
 #: apps/site/src/lib/capabilities-data.ts:86
+#: apps/site/src/lib/press-kit-data.ts:124
 msgid "我的角色"
 msgstr "My character"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:46
+#: apps/site/src/lib/press-kit-data.ts:125
 msgid "你与 AI 化身的资料卡"
 msgstr "Profile cards for you and your AI avatar"
 
 #: apps/site/src/components/multi-platform-carousel.tsx:47
+#: apps/site/src/lib/press-kit-data.ts:126
 msgid "隐界我的角色：你与 AI 化身的资料卡、个性、形象设定"
 msgstr "Yinjie My Character: profile cards, personality, and look settings for you and your AI avatar"
 
@@ -962,17 +1063,17 @@ msgid "一个属于你的 AI 虚拟世界。私人居民、动态、群聊、电
 msgstr "A private AI world of your own. Private residents, moments, group chats and calls — open in your browser."
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/site-footer.tsx:18
+#: apps/site/src/components/site-footer.tsx:19
 msgid "联系我们"
 msgstr "Contact"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/site-footer.tsx:19
+#: apps/site/src/components/site-footer.tsx:20
 msgid "隐界 · Enclave"
 msgstr "Enclave"
 
 #. js-lingui-explicit-id
-#: apps/site/src/components/site-footer.tsx:37
+#: apps/site/src/components/site-footer.tsx:38
 msgid "MIT License"
 msgstr "MIT License"
 
@@ -1160,6 +1261,118 @@ msgstr "Two bridges to reality: an action-execution framework + real-world signa
 #: apps/site/src/lib/changelog-data.ts:80
 msgid "一套 monorepo：api / apps/app / apps/admin / apps/desktop / 移动端壳"
 msgstr "One monorepo: api / apps/app / apps/admin / apps/desktop / mobile shell"
+
+#: apps/site/src/lib/press-kit-data.ts:28
+msgid "产品介绍 PDF"
+msgstr "Product overview PDF"
+
+#: apps/site/src/lib/press-kit-data.ts:29
+msgid "适合报道前快速了解产品定位、架构、使用场景与下载方式。"
+msgstr "A quick way to understand positioning, architecture, use cases, and download options before coverage."
+
+#: apps/site/src/lib/press-kit-data.ts:30
+msgid "PDF · 4 语种"
+msgstr "PDF · 4 languages"
+
+#: apps/site/src/lib/press-kit-data.ts:31
+msgid "下载 PDF"
+msgstr "Download PDF"
+
+#: apps/site/src/lib/press-kit-data.ts:35
+msgid "Logo 标识"
+msgstr "Logo mark"
+
+#: apps/site/src/lib/press-kit-data.ts:36
+msgid "用于文章配图、视频封面、资料库条目与社交媒体预览。"
+msgstr "For article images, video covers, directories, and social previews."
+
+#: apps/site/src/lib/press-kit-data.ts:37
+msgid "PNG · 512x512"
+msgstr "PNG · 512x512"
+
+#: apps/site/src/lib/press-kit-data.ts:38
+msgid "下载 Logo"
+msgstr "Download logo"
+
+#: apps/site/src/lib/press-kit-data.ts:42
+msgid "产品截图"
+msgstr "Product screenshots"
+
+#: apps/site/src/lib/press-kit-data.ts:43
+msgid "覆盖聊天、朋友圈、群组、频道流、入坑引导与我的角色六个核心场景。"
+msgstr "Covers six core scenes: chat, moments, groups, channels feed, onboarding, and my character."
+
+#: apps/site/src/lib/press-kit-data.ts:44
+msgid "PNG · 390x844"
+msgstr "PNG · 390x844"
+
+#: apps/site/src/lib/press-kit-data.ts:45
+msgid "查看截图"
+msgstr "View screenshots"
+
+#: apps/site/src/lib/press-kit-data.ts:49
+msgid "创始人插画头像"
+msgstr "Founder illustration avatar"
+
+#: apps/site/src/lib/press-kit-data.ts:50
+msgid "品牌化创始人插画头像，可用于媒体资料页和创作者简介；不代表真实照片。"
+msgstr "A brand-style founder illustration avatar for press pages and creator bios; it is not a real photo."
+
+#: apps/site/src/lib/press-kit-data.ts:51
+msgid "PNG · 1024x1024"
+msgstr "PNG · 1024x1024"
+
+#: apps/site/src/lib/press-kit-data.ts:52
+msgid "下载头像"
+msgstr "Download avatar"
+
+#: apps/site/src/lib/press-kit-data.ts:61
+msgid "产品名称"
+msgstr "Product name"
+
+#: apps/site/src/lib/press-kit-data.ts:62
+msgid "隐界 Enclave"
+msgstr "Enclave"
+
+#: apps/site/src/lib/press-kit-data.ts:65
+msgid "一句话介绍"
+msgstr "One-line description"
+
+#: apps/site/src/lib/press-kit-data.ts:66
+msgid "一个属于你的 AI 虚拟世界：私人 AI 居民、朋友圈、群聊、电话，浏览器即开即用。"
+msgstr "A private AI world of your own: AI residents, moments, groups, and calls, ready in the browser."
+
+#: apps/site/src/lib/press-kit-data.ts:69
+msgid "核心定位"
+msgstr "Core positioning"
+
+#: apps/site/src/lib/press-kit-data.ts:70
+msgid "面向长期陪伴和深度对话的 AI 社交世界，而不是问答式 chatbot。"
+msgstr "An AI social world for long-term companionship and deep conversations, not a Q&A chatbot."
+
+#: apps/site/src/lib/press-kit-data.ts:73
+msgid "许可"
+msgstr "License"
+
+#: apps/site/src/lib/press-kit-data.ts:74
+msgid "MIT 开源，可自部署、审计和二次开发。"
+msgstr "Open source under MIT; self-hostable, auditable, and forkable."
+
+#: apps/site/src/lib/press-kit-data.ts:77
+msgid "平台"
+msgstr "Platforms"
+
+#: apps/site/src/lib/press-kit-data.ts:78
+msgid "Web 已可用，桌面端支持 Windows / macOS，iOS / Android 与小程序在路上。"
+msgstr "Web is live, desktop supports Windows / macOS, and iOS / Android plus the mini-program are on the way."
+
+#: apps/site/src/lib/press-kit-data.ts:81
+msgid "隐私架构"
+msgstr "Privacy architecture"
+
+#: apps/site/src/lib/press-kit-data.ts:82
+msgid "一人一世界，每个实例只服务一个真实用户。"
+msgstr "One world per person; each instance serves one real user."
 
 #: apps/site/src/lib/use-cases-data.ts:45
 msgid "AI 陪伴"
@@ -1412,3 +1625,121 @@ msgstr "Can a self-hosted instance still get the official feature updates?"
 #: apps/site/src/lib/use-cases-data.ts:171
 msgid "用 git pull + docker compose up -d 即可滚到最新版本；CHANGELOG 上每个版本都标了破坏性变更。"
 msgstr "Run git pull + docker compose up -d to roll forward to the latest version. The CHANGELOG flags breaking changes for every release."
+#. js-lingui-explicit-id
+msgid "一个属于你的世界，从架构开始"
+msgstr "Your own world — architected from the ground up"
+#. js-lingui-explicit-id
+msgid "隐界不是一个共享的 chatbot 服务，而是一套可独立部署的 AI 社交基础设施。每个实例只为一个人存在。"
+msgstr "Enclave is not a shared chatbot service. It is AI social infrastructure you can self-deploy — one instance per person."
+#. js-lingui-explicit-id
+msgid "独立实例架构，数据真正属于用户。隐私不靠承诺，靠架构层保障。"
+msgstr "Independent instances mean the data is genuinely yours. Privacy is enforced by architecture, not promises."
+#. js-lingui-explicit-id
+msgid "全部数据可导入导出，可整包迁移；离开隐界，世界还是你的。"
+msgstr "All data is importable and exportable; you can take the whole world with you when you leave."
+#. js-lingui-explicit-id
+msgid "AI 平权"
+msgstr "Equal access to AI"
+#. js-lingui-explicit-id
+msgid "高质量对话不应被少数平台垄断。隐界让任何人都能拥有自己的 AI 居民。"
+msgstr "High-quality conversation shouldn't be monopolized by a handful of platforms. Enclave lets anyone host their own AI residents."
+#. js-lingui-explicit-id
+msgid "apps/app 是一份 React 19 + TypeScript 代码库，同时跑在 Web、iOS / Android Capacitor 壳、以及 Tauri 桌面壳上。"
+msgstr "apps/app is one React 19 + TypeScript codebase that runs on Web, iOS/Android (Capacitor), and Tauri desktop shells."
+#. js-lingui-explicit-id
+msgid "Web / iOS / Android"
+msgstr "Web / iOS / Android"
+#. js-lingui-explicit-id
+msgid "Tauri · Windows / macOS / Linux"
+msgstr "Tauri · Windows / macOS / Linux"
+#. js-lingui-explicit-id
+msgid "克隆、起 docker、起飞"
+msgstr "Clone it, docker compose up, lift off"
+#. js-lingui-explicit-id
+msgid "完全开源，MIT 许可。无任何外部 SaaS 依赖；一台机器、一条 docker compose up，几分钟就能跑起来。"
+msgstr "Fully open source, MIT licensed. No external SaaS dependency — one machine, one docker compose up, ready in minutes."
+#. js-lingui-explicit-id
+msgid "克隆仓库"
+msgstr "Clone the repo"
+#. js-lingui-explicit-id
+msgid "一键启动"
+msgstr "One-line bring-up"
+#. js-lingui-explicit-id
+msgid "浏览器访问"
+msgstr "Open in your browser"
+#. js-lingui-explicit-id
+msgid "查看完整自部署指南"
+msgstr "Read the full self-host guide"
+#. js-lingui-explicit-id
+msgid "在 GitHub 上 Star"
+msgstr "Star on GitHub"
+#. js-lingui-explicit-id
+msgid "隐界真的开源吗？"
+msgstr "Is Enclave really open source?"
+#. js-lingui-explicit-id
+msgid "是。整个 monorepo（apps/app、apps/desktop、cloud-api、admin、site 等）都在 GitHub 上以 MIT 许可证开放，欢迎自部署、二次开发、商用。"
+msgstr "Yes. The entire monorepo (apps/app, apps/desktop, cloud-api, admin, site, etc.) is on GitHub under the MIT license — feel free to self-host, fork, or build commercial offerings on top of it."
+#. js-lingui-explicit-id
+msgid "我的数据保存在哪里？"
+msgstr "Where is my data stored?"
+#. js-lingui-explicit-id
+msgid "保存在你自己部署的实例里。隐界采用一人一世界的独立实例架构，没有中心化的数据后台，没有跨用户的数据合并；你拥有数据所有权。"
+msgstr "On the instance you deploy yourself. Enclave uses an instance-per-person architecture — there is no centralized backend and no cross-user data fusion. You own the data outright."
+#. js-lingui-explicit-id
+msgid "用什么模型？能换模型吗？"
+msgstr "Which models are supported? Can I swap them?"
+#. js-lingui-explicit-id
+msgid "默认与多家主流模型供应商兼容（OpenAI 兼容协议），可在订阅页或自部署配置里切换；本地模型同样支持，只要服务能开 OpenAI 兼容的 HTTP 接口。"
+msgstr "Out of the box we support major model providers via the OpenAI-compatible protocol, switchable from the subscription page or your self-host config. Local models work too — anything that exposes an OpenAI-compatible HTTP endpoint."
+#. js-lingui-explicit-id
+msgid "可以离线使用吗？"
+msgstr "Can I use it offline?"
+#. js-lingui-explicit-id
+msgid "本地客户端（Tauri 桌面壳、Capacitor 移动壳）可离线浏览历史；AI 对话需要联网到模型服务（无论你是连云端还是本地模型）。"
+msgstr "The local clients (Tauri desktop shell, Capacitor mobile shell) can browse history offline. AI conversation needs network access to a model service — whether it's a cloud provider or your local one."
+#. js-lingui-explicit-id
+msgid "自部署完全免费。如果选择官方托管的云服务，按使用量付费——账单与你接入的模型供应商绑定，没有中间溢价。"
+msgstr "Self-hosting is free. If you opt into our managed cloud, you pay for usage — billed directly through the model provider you connect, without middle-man markup."
+#. js-lingui-explicit-id
+msgid "支持中英日韩之外的语言吗？"
+msgstr "What about languages beyond zh / en / ja / ko?"
+#. js-lingui-explicit-id
+msgid "界面目前支持简中 / English / 日本語 / 한국어。AI 角色对话本身不限语种，跟着模型能力走。"
+msgstr "The UI currently ships in zh-CN / English / 日本語 / 한국어. The AI conversation itself is language-agnostic — it goes wherever the model can."
+#. js-lingui-explicit-id
+msgid "桌面端原生封装、网页版即开即用，自部署提供完整自主权。移动端与小程序在路上。"
+msgstr "Native desktop builds, an instant web preview, and full sovereignty via self-hosting. Mobile apps and a WeChat mini-program are on the way."
+#. js-lingui-explicit-id
+msgid "Tauri 原生封装，附带托盘和锁屏"
+msgstr "Native Tauri build with tray + lock screen"
+#. js-lingui-explicit-id
+msgid "网页版（在线试用）"
+msgstr "Web (try online)"
+#. js-lingui-explicit-id
+msgid "无需安装，直接在浏览器里体验"
+msgstr "No install — try it right in your browser"
+#. js-lingui-explicit-id
+msgid "打开网页版"
+msgstr "Open the web app"
+#. js-lingui-explicit-id
+msgid "Capacitor 移动壳，敬请期待"
+msgstr "Capacitor mobile shell — coming soon"
+#. js-lingui-explicit-id
+msgid "自部署（推荐）"
+msgstr "Self-host (recommended)"
+#. js-lingui-explicit-id
+msgid "克隆仓库、docker compose up，几分钟跑起来"
+msgstr "Clone the repo, docker compose up, running in minutes"
+#. js-lingui-explicit-id
+msgid "最近更新"
+msgstr "Last updated"
+#. js-lingui-explicit-id
+msgid "下载隐界 · 网页 / 桌面 / 移动 全平台"
+msgstr "Download Enclave · Web · Desktop · Mobile"
+#. js-lingui-explicit-id
+msgid "隐私政策 · 隐界 Enclave"
+msgstr "Privacy Policy · Enclave"
+#. js-lingui-explicit-id
+msgid "服务条款 · 隐界 Enclave"
+msgstr "Terms of Service · Enclave"
+

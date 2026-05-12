@@ -6,7 +6,8 @@ import { AppError } from '../../common/app-error.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
-import type { AiMessagePart } from '../ai/ai.types';
+import type { AiMessagePart, PersonalityProfile } from '../ai/ai.types';
+import { pickThemeAndStyle } from './music-theme-catalog';
 import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { CharactersService } from '../characters/characters.service';
 import { MomentEntity } from './moment.entity';
@@ -120,6 +121,43 @@ export class MomentsService implements OnModuleInit {
     await this.backfillMomentAuthorAvatars();
     await this.backfillUserMomentVisibilityToFriends();
     await this.backfillCharacterMomentsToFeed();
+    await this.cleanupLegacyDemoMomentPosts();
+  }
+
+  // 跟 feed.service 的 cleanupLegacyDemoChannelPosts 对称：May 9 切真生成之前
+  // moments 也用 3 个 legacy 视频文件做兜底，部分账号库还囤着
+  // 「MiniMax M1 拍了一段画面记录今天。」这样的模板朋友圈。这里硬删 post 本体
+  // + 关联 moment_likes / moment_comments。重复执行无副作用。
+  private async cleanupLegacyDemoMomentPosts() {
+    try {
+      const LEGACY_FILES = [
+        '1778311410821-a746c78f-minimax-video.mp4',
+        '1778311950732-f23b70af-minimax-video.mp4',
+        '1778311207586-814b332b-minimax-video.mp4',
+      ];
+      const qb = this.postRepo.createQueryBuilder('post');
+      const orClauses = LEGACY_FILES.map(
+        (file, idx) => `post.mediaPayload LIKE :file${idx}`,
+      ).join(' OR ');
+      const params: Record<string, string> = {};
+      LEGACY_FILES.forEach((file, idx) => {
+        params[`file${idx}`] = `%${file}%`;
+      });
+      const candidates = await qb.where(orClauses, params).getMany();
+      if (candidates.length === 0) return;
+
+      const ids = candidates.map((post) => post.id);
+      await this.commentRepo.delete({ postId: In(ids) });
+      await this.likeRepo.delete({ postId: In(ids) });
+      await this.postRepo.delete({ id: In(ids) });
+      this.logger.log(
+        `cleanupLegacyDemoMomentPosts: deleted ${ids.length} demo-era moment_post(s) + child rows`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `cleanupLegacyDemoMomentPosts failed: ${(error as Error).message}`,
+      );
+    }
   }
 
   async createUserMoment(input: CreateMomentInput): Promise<Moment> {
@@ -1804,34 +1842,75 @@ export class MomentsService implements OnModuleInit {
 
   // ============= MiniMax 音乐贴 / 视频贴 =============
 
-  // 优先调用 MiniMax /v1/lyrics_generation 生成真正的歌词；失败或配额耗尽时
-  // fallback 到本地 composeMusicLyrics（按标点切分 seedText 凑结构）
+  // 主路径：MiniMax /v1/lyrics_generation，强 prompt（主题+风格+禁用模板）
+  // 配额耗尽 / 失败：LLM fallback（ai.generatePlainText）
+  // LLM 也失败：最后才用本地 composeMusicLyrics，且把主题注入 seed 避免雷同
   private async generateLyricsOrFallback(
+    characterId: string,
     characterName: string,
+    profile: PersonalityProfile,
     seedText: string,
   ): Promise<string> {
-    if (!this.minimaxClient.isConfigured()) {
-      return composeMusicLyrics(characterName, seedText);
+    const { theme, style } = pickThemeAndStyle(characterId);
+    const personaBlock = extractPersonaBlock(profile);
+    const prompt = composeLyricsPrompt({
+      name: characterName,
+      personaBlock,
+      theme,
+      style,
+      seedText,
+    });
+
+    if (this.minimaxClient.isConfigured()) {
+      const reserved = await this.minimaxQuota.tryReserve('lyrics');
+      if (reserved) {
+        try {
+          const result = await this.minimaxClient.generateLyrics({ prompt });
+          await this.minimaxQuota.commit('lyrics');
+          this.logger.log(
+            `lyrics via minimax for ${characterName} [theme=${theme}, style=${style}]`,
+          );
+          return result.lyrics;
+        } catch (err) {
+          await this.minimaxQuota.release('lyrics');
+          this.logger.warn(
+            `minimax lyrics failed, fallback LLM: ${(err as Error)?.message}`,
+          );
+        }
+      } else {
+        this.logger.debug('lyrics quota exhausted, fallback LLM');
+      }
     }
-    const reserved = await this.minimaxQuota.tryReserve('lyrics');
-    if (!reserved) {
-      this.logger.debug('lyrics quota exhausted, using local fallback');
-      return composeMusicLyrics(characterName, seedText);
-    }
+
     try {
-      const result = await this.minimaxClient.generateLyrics({
-        prompt: `为 ${characterName} 这一刻心境写一首中文歌词，结构包含 [verse] 和 [chorus]。情绪线索：${seedText.slice(0, 200)}`,
+      const text = await this.ai.generatePlainText({
+        prompt,
+        usageContext: {
+          surface: 'app',
+          scene: 'minimax_music_lyrics_fallback',
+          scopeType: 'character',
+          scopeId: characterId,
+          scopeLabel: characterName,
+          characterId,
+          characterName,
+        },
+        maxTokens: 600,
+        temperature: 0.9,
       });
-      await this.minimaxQuota.commit('lyrics');
-      this.logger.log(`lyrics generated via minimax for ${characterName}`);
-      return result.lyrics;
+      const cleaned = ensureVerseChorus(text);
+      if (cleaned) {
+        this.logger.log(
+          `lyrics via LLM fallback for ${characterName} [theme=${theme}]`,
+        );
+        return cleaned;
+      }
     } catch (err) {
-      await this.minimaxQuota.release('lyrics');
       this.logger.warn(
-        `minimax lyrics gen failed, falling back: ${(err as Error)?.message}`,
+        `LLM lyrics fallback failed: ${(err as Error)?.message}`,
       );
-      return composeMusicLyrics(characterName, seedText);
     }
+
+    return composeMusicLyrics(characterName, `${theme}：${seedText}`);
   }
 
   async scheduleMinimaxMusicMoment(
@@ -1875,10 +1954,16 @@ export class MomentsService implements OnModuleInit {
       );
     }
     if (!seedText) {
-      seedText = `${char.name} 写了一首歌，记录此刻心情。`;
+      const { theme } = pickThemeAndStyle(char.id);
+      seedText = `${char.name} 此刻心境与「${theme}」相关，请围绕这一画面展开。`;
     }
 
-    const lyrics = await this.generateLyricsOrFallback(char.name, seedText);
+    const lyrics = await this.generateLyricsOrFallback(
+      char.id,
+      char.name,
+      profile,
+      seedText,
+    );
     const job = await this.minimaxJobs.enqueueMusicJob({
       model: 'music-2.6',
       prompt: composeMusicPrompt(char.name, seedText),
@@ -1930,6 +2015,19 @@ export class MomentsService implements OnModuleInit {
     }
   }
 
+  // 视频生成上下文用：最近 7 天该角色任意一条朋友圈/Feed 的文本摘要（≤80 字）。
+  // 没有则返回 null，由 LLM 自由发挥。
+  private async pickRecentMomentSummary(charId: string): Promise<string | null> {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const recent = await this.postRepo.findOne({
+      where: { authorId: charId, postedAt: MoreThanOrEqual(since) },
+      order: { postedAt: 'DESC' },
+    });
+    const text = recent?.text?.replace(/\s+/g, ' ').trim();
+    if (!text) return null;
+    return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  }
+
   async scheduleMinimaxVideoMoment(
     char: CharacterEntity,
     pickModel: () => Promise<
@@ -1946,12 +2044,17 @@ export class MomentsService implements OnModuleInit {
     const profile = await this.characters.getProfile(char.id);
     if (!profile) return null;
 
+    // 抽最近 7 天该角色发过的一条 moment 文本作为「今天发生的事」喂给 LLM，
+    // 让生成的 seedText 不再凭空抒情、贴角色当下生活。
+    const recentEvent = await this.pickRecentMomentSummary(char.id);
+
     let seedText = '';
     try {
       seedText = (
         await this.ai.generateMoment({
           profile,
           currentTime: new Date(),
+          recentTopics: recentEvent ? [recentEvent] : undefined,
           usageContext: {
             surface: 'app',
             scene: 'minimax_moment_video',
@@ -1970,9 +2073,16 @@ export class MomentsService implements OnModuleInit {
     }
     if (!seedText) seedText = `${char.name} 拍了一段画面记录今天。`;
 
+    const personaBlock = extractPersonaBlock(profile);
     const job = await this.minimaxJobs.enqueueVideoJob({
       model,
-      prompt: composeMomentVideoPrompt(char.name, profile.relationship, seedText),
+      prompt: composeMomentVideoPrompt({
+        characterName: char.name,
+        personaBlock,
+        currentActivity: char.currentActivity,
+        recentEvent,
+        seedText,
+      }),
       resolution: '768P',
       characterId: char.id,
       characterName: char.name,
@@ -2054,6 +2164,109 @@ export class MomentsService implements OnModuleInit {
     void this.scheduleCharacterInteractions(saved);
   }
 
+  // 拼一段贴角色性格的 BGM prompt：取 emotionalTone / 关心话题 / 擅长领域作 mood
+  // 提示，让不同角色发出来的 BGM 在风格上有区分（程序员→冷峻电子，治愈系→lofi
+  // 钢琴…）。profile 拿不到时回退到中性 ambient。
+  async resolveVideoBgmPrompt(
+    characterId: string,
+    characterName: string,
+  ): Promise<string> {
+    const profile = await this.characters
+      .getProfile(characterId)
+      .catch(() => null);
+    const tone = profile?.traits?.emotionalTone?.replace(/\s+/g, ' ').trim();
+    const interests = profile?.traits?.topicsOfInterest
+      ?.slice(0, 2)
+      .filter(Boolean)
+      .join('、');
+    const domains = profile?.expertDomains?.slice(0, 2).join('、');
+    const moodHints: string[] = [];
+    if (tone) moodHints.push(`情绪基调：${tone.slice(0, 40)}`);
+    if (interests) moodHints.push(`常关心：${interests.slice(0, 40)}`);
+    if (domains) moodHints.push(`擅长领域：${domains.slice(0, 40)}`);
+    if (!moodHints.length) {
+      moodHints.push('情绪基调：温和、生活感、不抢戏');
+    }
+    return [
+      `${characterName} 朋友圈短视频的纯器乐 BGM，时长 30 秒以内，无人声。`,
+      moodHints.join('；') + '。',
+      '风格要贴这个角色——不要把所有人都做成 lofi 咖啡店；该工程感就工程感，该温柔就温柔。',
+      '编曲简洁，可循环，作为 6 秒短片底噪不抢镜头。',
+    ].join(' ');
+  }
+
+  // BGM 子任务回调：把已生成的 BGM 音频混入该 moment_post 的视频文件，
+  // 替换 mediaPayload 指向新文件并清理旧文件。失败 → 静默保留静音视频。
+  async applyBgmToVideoMomentPost(
+    postId: string,
+    bgmFileName: string,
+  ): Promise<boolean> {
+    // try/finally 确保 BGM 临时文件在任何返回路径上都被回收，避免磁盘泄漏。
+    // unlinkIfExists 幂等，重复调用安全。
+    try {
+      const post = await this.postRepo.findOneBy({ id: postId });
+      if (!post) {
+        this.logger.warn(`applyBgmToVideoMomentPost: post ${postId} missing`);
+        return false;
+      }
+      const media = this.parseMomentMediaPayload(post.mediaPayload);
+      const video = media.find(
+        (m): m is MomentVideoAsset => m.kind === 'video',
+      );
+      if (!video?.url) {
+        this.logger.warn(
+          `applyBgmToVideoMomentPost: post ${postId} has no video media yet`,
+        );
+        return false;
+      }
+      // 从 publicUrl `/api/moments/media/<file>` 抽 fileName
+      const oldVideoFileName = video.url.split('/').pop();
+      if (!oldVideoFileName) return false;
+      const mixed = await this.minimaxStorage.mixVideoWithAudio({
+        videoFileName: oldVideoFileName,
+        audioFileName: bgmFileName,
+      });
+      if (!mixed) return false;
+      const newVideo: MomentVideoAsset = {
+        ...video,
+        id: mixed.fileName,
+        url: mixed.publicUrl,
+        mimeType: mixed.mimeType,
+        fileName: mixed.fileName,
+        size: mixed.size,
+      };
+      post.mediaPayload = this.serializeMomentMedia([newVideo]);
+      await this.postRepo.save(post);
+      // 先把视频号 mediaPayload 指向新文件，再 unlink 旧静音视频；
+      // 否则中间这一段时间视频号那条贴指向已删文件 → 404。
+      try {
+        await this.feedService.upsertChannelVideoPostFromMoment({
+          momentPostId: postId,
+          authorId: post.authorId,
+          authorName: post.authorName,
+          authorAvatar: post.authorAvatar,
+          videoUrl: newVideo.url,
+          posterUrl: newVideo.posterUrl ?? null,
+          durationMs: newVideo.durationMs ?? null,
+          mimeType: newVideo.mimeType,
+          fileName: newVideo.fileName,
+          size: newVideo.size,
+          text: `${post.authorName} 拍了一段画面`,
+        });
+      } catch (err) {
+        this.logger.warn(
+          `channel video post refresh after bgm failed for moment ${postId}: ${(err as Error)?.message}`,
+        );
+      }
+      // 视频号已经指向新文件后，安全回收旧静音视频
+      await this.minimaxStorage.unlinkIfExists(oldVideoFileName);
+      return true;
+    } finally {
+      // BGM 中间产物：成功也好失败也好都不再需要
+      await this.minimaxStorage.unlinkIfExists(bgmFileName);
+    }
+  }
+
   async deleteMinimaxPlaceholderPost(postId: string): Promise<void> {
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post) return;
@@ -2070,7 +2283,12 @@ export class MomentsService implements OnModuleInit {
   async tryRenderMinimaxMusicCover(
     job: MinimaxJobEntity,
     seedText: string,
-  ): Promise<{ url: string; fileName: string } | null> {
+  ): Promise<{
+    url: string;
+    fileName: string;
+    mimeType: string;
+    size: number;
+  } | null> {
     if (!this.minimaxClient.isConfigured()) return null;
     const reserved = await this.minimaxQuota.tryReserve('image-01');
     if (!reserved) return null;
@@ -2087,7 +2305,12 @@ export class MomentsService implements OnModuleInit {
         suffix: '-cover',
       });
       await this.minimaxQuota.commit('image-01');
-      return { url: persisted.publicUrl, fileName: persisted.fileName };
+      return {
+        url: persisted.publicUrl,
+        fileName: persisted.fileName,
+        mimeType: image.mimeType,
+        size: persisted.size,
+      };
     } catch (err) {
       await this.minimaxQuota.release('image-01');
       this.logger.warn(
@@ -2095,6 +2318,63 @@ export class MomentsService implements OnModuleInit {
       );
       return null;
     }
+  }
+
+  // 视频号图文视频：再额外渲染 N 张 9:16 配图。配额不够 / 单张失败都不报错，
+  // 调用方按返回数组长度做 fallback（最少 0 张也允许）。
+  async tryRenderMinimaxMusicPictorials(
+    job: MinimaxJobEntity,
+    seedText: string,
+    count = 3,
+  ): Promise<
+    Array<{ url: string; fileName: string; mimeType: string; size: number }>
+  > {
+    if (!this.minimaxClient.isConfigured() || count <= 0) return [];
+    const prompts = composeMusicPictorialPrompts(
+      job.characterName,
+      seedText,
+    ).slice(0, count);
+    const tasks = prompts.map(async (prompt, idx) => {
+      const reserved = await this.minimaxQuota.tryReserve('image-01');
+      if (!reserved) return null;
+      try {
+        const image = await this.minimaxClient.generateImage({
+          model: 'image-01',
+          prompt,
+          aspectRatio: '9:16',
+        });
+        const persisted = await this.minimaxStorage.persist({
+          buffer: image.buffer,
+          mimeType: image.mimeType,
+          kind: 'image',
+          suffix: `-pictorial-${idx + 1}`,
+        });
+        await this.minimaxQuota.commit('image-01');
+        return {
+          url: persisted.publicUrl,
+          fileName: persisted.fileName,
+          mimeType: image.mimeType,
+          size: persisted.size,
+        };
+      } catch (err) {
+        await this.minimaxQuota.release('image-01');
+        this.logger.warn(
+          `music pictorial[${idx}] gen failed for job ${job.id}: ${(err as Error)?.message}`,
+        );
+        return null;
+      }
+    });
+    const settled = await Promise.allSettled(tasks);
+    const out: Array<{
+      url: string;
+      fileName: string;
+      mimeType: string;
+      size: number;
+    }> = [];
+    for (const r of settled) {
+      if (r.status === 'fulfilled' && r.value) out.push(r.value);
+    }
+    return out;
   }
 }
 
@@ -2104,6 +2384,98 @@ function composeMusicPrompt(characterName: string, seedText: string): string {
     `情绪线索：${seedText.slice(0, 200)}`,
     '风格：电子流行 + 氛围合成器，节奏适中，情感清晰。',
   ].join(' ');
+}
+
+// 从 PersonalityProfile 抽取贴歌词最有用的几段：底层逻辑、朋友圈场景设定、
+// 说话方式 / 口头禅 / 情绪基调、记忆摘要。每段独立截断，总长度控制在 ~800 字内
+// 避免 minimax prompt 过长被截断。
+function extractPersonaBlock(profile: PersonalityProfile): string {
+  const segments: string[] = [];
+  const push = (label: string, value: string | undefined, max = 200) => {
+    const cleaned = value?.replace(/\s+/g, ' ').trim();
+    if (cleaned) segments.push(`【${label}】${cleaned.slice(0, max)}`);
+  };
+
+  push('身份关系', profile.relationship);
+  if (profile.expertDomains?.length) {
+    push('擅长领域', profile.expertDomains.slice(0, 4).join('、'), 80);
+  }
+  push('底层逻辑', profile.coreLogic, 240);
+  push('发朋友圈风格', profile.scenePrompts?.moments_post, 180);
+
+  const traits = profile.traits;
+  if (traits) {
+    if (traits.speechPatterns?.length) {
+      push('说话方式', traits.speechPatterns.slice(0, 3).join('；'), 120);
+    }
+    if (traits.catchphrases?.length) {
+      push('口头禅', traits.catchphrases.slice(0, 4).join('、'), 80);
+    }
+    if (traits.emotionalTone) push('情绪基调', traits.emotionalTone, 60);
+    if (traits.topicsOfInterest?.length) {
+      push('关心的话题', traits.topicsOfInterest.slice(0, 4).join('、'), 100);
+    }
+  }
+  push('记忆摘要', profile.memorySummary, 200);
+
+  return segments.join('\n') || '（角色资料较少，请按主题自由发挥但保持一致人格）';
+}
+
+function composeLyricsPrompt(args: {
+  name: string;
+  personaBlock: string;
+  theme: string;
+  style: string;
+  seedText: string;
+}): string {
+  const seedLine = args.seedText?.trim()
+    ? `本次心境线索（不要照抄，仅作灵感）：${args.seedText.slice(0, 200)}`
+    : '本次心境线索：（请围绕主题自由展开）';
+  return [
+    `你正在为 AI 角色「${args.name}」写一首中文歌的歌词。这首歌应当像这个角色亲自写的，而不是一首通用抒情诗。`,
+    '',
+    '— 角色档案 —',
+    args.personaBlock,
+    '',
+    `本次主题：${args.theme}`,
+    `表达风格：${args.style}`,
+    seedLine,
+    '',
+    '硬性要求：',
+    '1. 严格使用 [verse] 与 [chorus] 两个段落标签，可选追加一个 [bridge]。',
+    '2. 每段 4-6 行，每行 7-15 个汉字；verse 与 chorus 内容不得相同或近似。',
+    '3. 禁止出现以下模板套话：「写了一首歌」「记录此刻心情」「在心中回响」「歌声 / 旋律响起」「想要告诉你」。',
+    '4. 围绕主题展开具体画面、动作或细节，避免空泛抒情与口号化句子。',
+    '5. 用词、比喻、视角、情绪走向必须与上面的角色档案一致：',
+    '   · 该角色擅长什么领域，歌词里就出现该领域的意象（例：程序员→代码/调试/版本号；厨师→火候/刀工/食材）。',
+    '   · 该角色的说话方式、口头禅、情绪基调要在歌词里能听出来。',
+    '   · 不要把所有角色都写成同一种文艺青年。',
+    '6. 不要副歌反复 4 遍这种偷懒结构；不要写标题、解释、Markdown、英文翻译。',
+    '',
+    '只输出歌词本体。',
+  ].join('\n');
+}
+
+// LLM 输出有时会丢段标或被多余前后缀污染。这里做最小修复：
+// - 含 [verse] 与 [chorus] → 直接用
+// - 缺段标但有内容 → 把前一半行作 verse、后一半作 chorus 包起来
+// - 完全空 → 返回空字符串（让上层走最终兜底）
+function ensureVerseChorus(raw: string): string {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) return '';
+  const lower = trimmed.toLowerCase();
+  if (lower.includes('[verse]') && lower.includes('[chorus]')) {
+    return trimmed.startsWith('\n') ? trimmed : `\n${trimmed}\n`;
+  }
+  const lines = trimmed
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter((s) => s && !/^\[[a-z]+\]$/i.test(s));
+  if (lines.length < 2) return '';
+  const half = Math.max(1, Math.ceil(lines.length / 2));
+  const verse = lines.slice(0, half).join('\n');
+  const chorus = lines.slice(half).join('\n') || verse;
+  return `\n[verse]\n${verse}\n[chorus]\n${chorus}\n`;
 }
 
 function composeMusicLyrics(_characterName: string, seedText: string): string {
@@ -2124,22 +2496,46 @@ function composeMusicLyrics(_characterName: string, seedText: string): string {
   return `\n[verse]\n${verse}\n[chorus]\n${chorus || verse}\n`;
 }
 
-function composeMomentVideoPrompt(
-  characterName: string,
-  relationship: string | undefined,
-  seedText: string,
-): string {
-  const relSnippet = relationship?.trim()
-    ? `角色定位：${relationship.slice(0, 100)}。`
+// 把角色档案 + 当前活动 + 最近事件 + LLM 情境一起塞进视频 prompt，
+// 让画面物件、视角、场景能反映出角色身份；避免每个角色都拍同款空镜。
+const ACTIVITY_LABELS: Record<string, string> = {
+  working: '正在工作 / 专注做事',
+  eating: '正在吃东西 / 用餐场景',
+  resting: '正在休息 / 放空',
+  commuting: '正在通勤 / 移动中',
+  free: '空闲、随心所欲',
+  sleeping: '准备休息 / 夜深',
+};
+
+function composeMomentVideoPrompt(args: {
+  characterName: string;
+  personaBlock: string;
+  currentActivity?: string;
+  recentEvent: string | null;
+  seedText: string;
+}): string {
+  const activityLabel = args.currentActivity
+    ? ACTIVITY_LABELS[args.currentActivity] ?? args.currentActivity
     : '';
-  return [
-    `${characterName} 朋友圈短片，9:16 竖屏，6 秒。`,
-    relSnippet,
-    `情境：${seedText.slice(0, 200)}。`,
-    '风格：生活感、真实光线、轻微镜头运动。',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const sections: string[] = [
+    `${args.characterName} 朋友圈短片，9:16 竖屏，6 秒。`,
+    '— 角色档案 —',
+    args.personaBlock,
+  ];
+  if (activityLabel) {
+    sections.push(`此时此刻：${activityLabel}。`);
+  }
+  if (args.recentEvent) {
+    sections.push(`最近发生（仅作上下文）：${args.recentEvent}`);
+  }
+  sections.push(`情境：${args.seedText.slice(0, 200)}。`);
+  sections.push(
+    '硬性要求：',
+    '· 画面里出现的物件、场景、视角必须与角色身份和擅长领域一致——程序员→代码屏 / 键盘 / 工位；厨师→灶台 / 食材 / 刀工；歌手→话筒 / 排练室 / 后台；不要把所有人都拍成奶茶 + 街头空镜。',
+    '· 镜头视角应像角色本人随手举起手机拍下的，第一视角或近景 OK。',
+    '· 风格：生活感、真实光线、轻微镜头运动；6 秒一镜到底，不要快剪。',
+  );
+  return sections.join('\n');
 }
 
 function composeMusicCoverPrompt(
@@ -2147,5 +2543,18 @@ function composeMusicCoverPrompt(
   seedText: string,
 ): string {
   return `音乐封面：${characterName} 视角，${seedText.slice(0, 80)}。极简电影风，柔和色调，正方形海报构图。`;
+}
+
+// 给视频号图文视频准备的 3 张 9:16 配图 prompt：人物特写 / 场景氛围 / 情绪隐喻。
+function composeMusicPictorialPrompts(
+  characterName: string,
+  seedText: string,
+): string[] {
+  const mood = seedText.slice(0, 80);
+  return [
+    `${characterName} 当下心境的人物特写 / 立绘，电影感打光，背景虚化，情绪线索：${mood}。9:16 竖构图，画面留白足以叠加文字。`,
+    `与 ${characterName} 心境呼应的环境画面：街道 / 室内 / 自然景物之一，无人物特写或仅留背影，氛围线索：${mood}。9:16 竖构图，胶片质感。`,
+    `${characterName} 情绪的视觉隐喻：色彩 + 光影 + 几何，少量符号化元素，主题：${mood}。9:16 竖构图，抽象但有故事感。`,
+  ];
 }
 // i18n-ignore-end

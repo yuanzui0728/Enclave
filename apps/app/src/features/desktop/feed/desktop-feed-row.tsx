@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, type MouseEvent as ReactMouseEvent } from "react";
 import { msg } from "@lingui/macro";
 import {
   type FeedComment,
@@ -44,6 +44,11 @@ type DesktopFeedRowProps = {
   /** 可选 — 触发"分享图卡"。 */
   onShare?: () => void;
   onStartCommentReply?: (comment: FeedComment) => void;
+  /** 点击评论里的作者/回复对象名 → 打开对应用户的资料/头像卡。 */
+  onSelectCommentAuthor?: (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    comment: FeedComment,
+  ) => void;
   onToggleFavorite: () => void;
 };
 
@@ -64,6 +69,7 @@ export function DesktopFeedRow({
   onLike,
   onShare,
   onStartCommentReply,
+  onSelectCommentAuthor,
   onToggleFavorite,
 }: DesktopFeedRowProps) {
   const t = useRuntimeTranslator();
@@ -105,6 +111,13 @@ export function DesktopFeedRow({
     }
     if (comment.replyToAuthorId) {
       return authorNameById.get(comment.replyToAuthorId) ?? null;
+    }
+    return null;
+  }
+
+  function lookupReplyToComment(comment: FeedComment): FeedComment | null {
+    if (comment.replyToCommentId) {
+      return commentsById.get(comment.replyToCommentId) ?? null;
     }
     return null;
   }
@@ -266,7 +279,21 @@ export function DesktopFeedRow({
               <div className="mt-3 space-y-1.5">
                 {commentsForDisplay.map((comment) => {
                   const replyToName = lookupReplyToName(comment);
+                  const replyToComment = lookupReplyToComment(comment);
                   const isActiveReply = activeReply?.commentId === comment.id;
+                  const authorClickHandler = onSelectCommentAuthor
+                    ? (event: ReactMouseEvent<HTMLButtonElement>) => {
+                        event.stopPropagation();
+                        onSelectCommentAuthor(event, comment);
+                      }
+                    : undefined;
+                  const replyToClickHandler =
+                    onSelectCommentAuthor && replyToComment
+                      ? (event: ReactMouseEvent<HTMLButtonElement>) => {
+                          event.stopPropagation();
+                          onSelectCommentAuthor(event, replyToComment);
+                        }
+                      : undefined;
                   if (!canReply) {
                     return (
                       <div
@@ -277,20 +304,30 @@ export function DesktopFeedRow({
                           authorName={comment.authorName}
                           replyToName={replyToName}
                           text={comment.text}
+                          onAuthorClick={authorClickHandler}
+                          onReplyToClick={replyToClickHandler}
                         />
                       </div>
                     );
                   }
+                  const openReply = () => {
+                    onStartCommentReply?.(comment);
+                    focusComposer();
+                  };
                   return (
-                    <button
+                    <div
                       key={comment.id}
-                      type="button"
-                      onClick={() => {
-                        onStartCommentReply?.(comment);
-                        focusComposer();
+                      role="button"
+                      tabIndex={0}
+                      onClick={openReply}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openReply();
+                        }
                       }}
                       className={cn(
-                        "block w-full rounded-[10px] px-2 py-1.5 text-left text-[13px] leading-6 transition-colors",
+                        "block w-full cursor-pointer rounded-[10px] px-2 py-1.5 text-left text-[13px] leading-6 transition-colors",
                         isActiveReply
                           ? "bg-[rgba(7,193,96,0.12)]"
                           : "hover:bg-white",
@@ -301,8 +338,10 @@ export function DesktopFeedRow({
                         authorName={comment.authorName}
                         replyToName={replyToName}
                         text={comment.text}
+                        onAuthorClick={authorClickHandler}
+                        onReplyToClick={replyToClickHandler}
                       />
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -376,21 +415,45 @@ function CommentLine({
   authorName,
   replyToName,
   text,
+  onAuthorClick,
+  onReplyToClick,
 }: {
   authorName: string;
   replyToName: string | null;
   text: string;
+  onAuthorClick?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  onReplyToClick?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 }) {
   const t = useRuntimeTranslator();
   return (
     <span>
-      <span className="font-medium text-[#07c160]">{authorName}</span>
+      {onAuthorClick ? (
+        <button
+          type="button"
+          onClick={onAuthorClick}
+          className="font-medium text-[#07c160] hover:opacity-80"
+        >
+          {authorName}
+        </button>
+      ) : (
+        <span className="font-medium text-[#07c160]">{authorName}</span>
+      )}
       {replyToName ? (
         <>
           <span className="text-[color:var(--text-secondary)]">
             {t(msg` 回复 `)}
           </span>
-          <span className="font-medium text-[#07c160]">{replyToName}</span>
+          {onReplyToClick ? (
+            <button
+              type="button"
+              onClick={onReplyToClick}
+              className="font-medium text-[#07c160] hover:opacity-80"
+            >
+              {replyToName}
+            </button>
+          ) : (
+            <span className="font-medium text-[#07c160]">{replyToName}</span>
+          )}
         </>
       ) : null}
       <span className="text-[color:var(--text-secondary)]">

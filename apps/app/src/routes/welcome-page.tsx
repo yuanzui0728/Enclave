@@ -8,7 +8,7 @@ import {
 } from "react";
 import { msg } from "@lingui/macro";
 import { useLingui } from "@lingui/react";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -1069,6 +1069,11 @@ export function WelcomePage() {
                 <span className="h-px flex-1 bg-[color:var(--border-faint)]" />
               </div>
               <div className="flex justify-center">
+                {/* GoogleOAuthProvider 下沉到此处，让 @react-oauth/google
+                    chunk 仅在 welcome 路由加载，省首屏 ~25-35KB。 */}
+                <GoogleOAuthProvider
+                  clientId={import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ?? ""}
+                >
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
                     const idToken = credentialResponse.credential;
@@ -1096,6 +1101,7 @@ export function WelcomePage() {
                   size="large"
                   width="320"
                 />
+                </GoogleOAuthProvider>
               </div>
             </div>
           ) : null}

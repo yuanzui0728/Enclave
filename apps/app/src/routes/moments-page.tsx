@@ -25,6 +25,7 @@ import {
   toggleMomentLike,
   type Moment,
   type MomentComment,
+  type MomentLike,
   type MomentsPageResponse,
 } from "@yinjie/contracts";
 import type { MessageDescriptor } from "@lingui/core";
@@ -46,6 +47,7 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/favorites/favorites-storage";
+import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import { buildDesktopFriendMomentsRouteHash } from "../features/moments/friend-moments-route-state";
 import { buildMobileFriendMomentsRouteHash } from "../features/moments/mobile-friend-moments-route-state";
 import { buildMobileMomentsPublishRouteHash } from "../features/moments/mobile-moments-publish-route-state";
@@ -124,13 +126,22 @@ export function MomentsPage() {
   );
   const [noticeAction, setNoticeAction] = useState<(() => void) | null>(null);
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
-  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<{
-    anchorElement: HTMLButtonElement;
-    characterId: string;
-    fallbackAvatar?: string | null;
-    fallbackName: string;
-    returnHash?: string;
-  } | null>(null);
+  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "character";
+        characterId: string;
+        fallbackAvatar?: string | null;
+        fallbackName: string;
+        returnHash?: string;
+      }
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "owner";
+        returnHash?: string;
+      }
+    | null
+  >(null);
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   const routeState = parseDesktopMomentsRouteState(hash);
   const routeSelectedAuthorId = routeState.authorId ?? null;
@@ -230,23 +241,40 @@ export function MomentsPage() {
         videoDraft: composeDraft.videoDraft,
         baseUrl,
       }),
-    onSuccess: async () => {
+    onSuccess: (newMoment) => {
       composeDraft.reset();
       setShowCompose(false);
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`朋友圈已发布。`));
-      resetMomentsToFirstPage();
-      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments-paged", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments", baseUrl],
-        }),
-      ]);
+      // 立刻把新发布的 moment prepend 到 paged 头部并把已加载的多页砍回 1 页 ——
+      // 之前 fire-and-forget invalidate 后 600ms+ 才更新 UI，用户感受到"得刷新才能看到"。
+      queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
+        ["app-moments-paged", baseUrl],
+        (current) =>
+          current && current.pages.length > 0
+            ? {
+                pages: [
+                  {
+                    ...current.pages[0]!,
+                    items: [newMoment, ...current.pages[0]!.items],
+                  },
+                ],
+                pageParams: current.pageParams.slice(0, 1),
+              }
+            : current,
+      );
+      queryClient.setQueryData<Moment[]>(["app-moments", baseUrl], (current) =>
+        current ? [newMoment, ...current] : current,
+      );
+      // 后台 invalidate 让其它共享 cache 的页面（profile/friend-moments-page、search-index 等）也同步
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments", baseUrl],
+      });
     },
   });
 
@@ -314,28 +342,40 @@ export function MomentsPage() {
         queryClient.setQueryData(key, data);
       });
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`朋友圈互动已更新。`));
-      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments-paged", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments", baseUrl],
-        }),
-      ]);
+      // 点赞 toggle 返回 { liked: boolean }，optimistic 已经把 ownerState 切对；
+      // 服务端不会重算业务字段。完全省掉 invalidate，避免一次 GET /api/moments 全量
+      // refetch 又拉回 30+ media 条件请求。
     },
   });
 
+  // mutationFn 不能再次读 commentDrafts 取文本：onMutate 里的
+  // setCommentDrafts(clear) 会在 onMutate 返回的微任务边界被 React 18 flush 掉，
+  // 等 TanStack Query 调 mutationFn 时闭包里的 commentDrafts[momentId] 已经是 ""。
+  // 在 onMutate 里把 text/target 写进 ref，mutationFn 直接读 ref。
+  const commentSubmitArgsRef = useRef<
+    Record<
+      string,
+      {
+        text: string;
+        target: { commentId: string; authorId: string } | null;
+      }
+    >
+  >({});
   const commentMutation = useMutation({
-    mutationFn: (momentId: string) => {
+    // onMutate: optimistic 插入临时评论 + 清输入/回复目标。
+    // 公网隧道 ~600ms RTT 下，原 onSuccess 才清 drafts 会让用户看到输入框
+    // 600ms 不消失；optimistic 插入还让评论立刻可见。临时 id 以 'optimistic-'
+    // 前缀打标，onSuccess 通过 invalidate 让真实数据替换；onError 回滚 snapshot
+    // 并恢复 drafts/reply target。
+    onMutate: async (momentId: string) => {
       const text = commentDrafts[momentId]?.trim();
-      if (!text) {
-        throw new Error(t(msg`请先输入评论内容。`));
+      if (!text || !ownerId) {
+        return { skipped: true as const };
       }
 
       const desktopTarget =
@@ -353,17 +393,71 @@ export function MomentsPage() {
           }
         : mobileTarget;
 
-      return addMomentComment(
-        momentId,
-        {
-          text,
-          replyToCommentId: target?.commentId,
-          replyToAuthorId: target?.authorId,
-        },
-        baseUrl,
-      );
-    },
-    onSuccess: async (_, momentId) => {
+      commentSubmitArgsRef.current[momentId] = { text, target };
+
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: ["app-moments-paged", baseUrl],
+        }),
+        queryClient.cancelQueries({ queryKey: ["app-moments", baseUrl] }),
+      ]);
+
+      const flatSnapshots = queryClient.getQueriesData<Moment[]>({
+        queryKey: ["app-moments", baseUrl],
+      });
+      const pagedSnapshots = queryClient.getQueriesData<
+        InfiniteData<MomentsPageResponse>
+      >({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
+
+      const tempId = `optimistic-comment-${ownerId}-${Date.now()}`;
+      const tempComment: MomentComment = {
+        id: tempId,
+        postId: momentId,
+        authorId: ownerId,
+        authorName: ownerUsername ?? t(msg`我`),
+        authorAvatar: ownerAvatar ?? "",
+        authorType: "user",
+        text,
+        replyToCommentId: target?.commentId ?? null,
+        replyToAuthorId: target?.authorId ?? null,
+        createdAt: new Date().toISOString(),
+      };
+
+      const appendComment = (moment: Moment): Moment =>
+        moment.id !== momentId
+          ? moment
+          : {
+              ...moment,
+              comments: [...moment.comments, tempComment],
+              commentCount: moment.commentCount + 1,
+            };
+
+      flatSnapshots.forEach(([key, data]) => {
+        if (!data) return;
+        queryClient.setQueryData<Moment[]>(key, data.map(appendComment));
+      });
+      pagedSnapshots.forEach(([key, data]) => {
+        if (!data) return;
+        queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(key, {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.map(appendComment),
+          })),
+        });
+      });
+
+      // 清输入与 reply target —— 用户看到立刻清空，体感"已发送"。
+      const savedDraft = commentDrafts[momentId] ?? "";
+      const savedDesktopReply =
+        desktopReplyTarget && desktopReplyTarget.postId === momentId
+          ? desktopReplyTarget
+          : null;
+      const savedMobileReply =
+        commentBarTarget?.momentId === momentId ? commentBarTarget : null;
+
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
       setDesktopReplyTarget((current) =>
         current?.postId === momentId ? null : current,
@@ -371,19 +465,96 @@ export function MomentsPage() {
       setCommentBarTarget((current) =>
         current?.momentId === momentId ? null : current,
       );
+
+      return {
+        skipped: false as const,
+        flatSnapshots,
+        pagedSnapshots,
+        momentId,
+        tempId,
+        savedDraft,
+        savedDesktopReply,
+        savedMobileReply,
+      };
+    },
+    mutationFn: (momentId: string) => {
+      // 从 ref 读 onMutate 已捕获的 text/target，避免被 setCommentDrafts(clear) 抢跑
+      const args = commentSubmitArgsRef.current[momentId];
+      if (!args?.text) {
+        throw new Error(t(msg`请先输入评论内容。`));
+      }
+
+      return addMomentComment(
+        momentId,
+        {
+          text: args.text,
+          replyToCommentId: args.target?.commentId,
+          replyToAuthorId: args.target?.authorId,
+        },
+        baseUrl,
+      );
+    },
+    onError: (_err, momentId, context) => {
+      delete commentSubmitArgsRef.current[momentId];
+      if (!context || context.skipped) return;
+      context.flatSnapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      context.pagedSnapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      // 恢复 drafts / reply target，让用户能改后重发。
+      setCommentDrafts((current) => ({
+        ...current,
+        [context.momentId]: context.savedDraft,
+      }));
+      if (context.savedDesktopReply) {
+        setDesktopReplyTarget(context.savedDesktopReply);
+      }
+      if (context.savedMobileReply) {
+        setCommentBarTarget(context.savedMobileReply);
+      }
+    },
+    onSuccess: (realComment, momentId, context) => {
+      delete commentSubmitArgsRef.current[momentId];
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`朋友圈互动已更新。`));
-      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments-paged", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments", baseUrl],
-        }),
-      ]);
+      // 把 optimistic temp（id=optimistic-comment-*）原地换成 server 真实评论。
+      // 这样**完全省掉**一次 invalidate 触发的 GET /api/moments + paged refetch
+      // ——公网隧道下 refetch 还会带回 30+ media 条件请求 RTT，是评论后体感
+      // "页面又卡一下"的主要原因。staleTime 60s (mobile) 期间用户拿不到其他
+      // NPC 同时段写的评论，但 pull-to-refresh / re-mount 都能补；可接受。
+      if (context && !context.skipped) {
+        const { tempId } = context;
+        const replaceComment = (moment: Moment): Moment =>
+          moment.id !== momentId
+            ? moment
+            : {
+                ...moment,
+                comments: moment.comments.map((c) =>
+                  c.id === tempId ? realComment : c,
+                ),
+              };
+        queryClient.setQueriesData<Moment[]>(
+          { queryKey: ["app-moments", baseUrl] },
+          (data) => (data ? data.map(replaceComment) : data),
+        );
+        queryClient.setQueriesData<InfiniteData<MomentsPageResponse>>(
+          { queryKey: ["app-moments-paged", baseUrl] },
+          (data) =>
+            data
+              ? {
+                  ...data,
+                  pages: data.pages.map((page) => ({
+                    ...page,
+                    items: page.items.map(replaceComment),
+                  })),
+                }
+              : data,
+        );
+      }
     },
   });
   const deleteMutation = useMutation({
@@ -412,7 +583,7 @@ export function MomentsPage() {
         queryClient.setQueryData(key, data);
       });
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setNoticeTone("success");
       setNoticeActionLabel(null);
       setNoticeAction(null);
@@ -420,15 +591,13 @@ export function MomentsPage() {
       // 删除会让分页边界前移：如不先把 cache 收回到 page 1，refetch 多页时下一页
       // 的第一条会被前面那页的末尾"吃掉"，造成中间漏一条。
       resetMomentsToFirstPage();
-      // 同时刷新分页 (moments-page) 和全集 (profile/friend-moments-page、search-index 等)
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments-paged", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-moments", baseUrl],
-        }),
-      ]);
+      // fire-and-forget：optimistic 已把这条从 cache 抹掉；await 会让删除按钮多卡 600ms+。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments-paged", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-moments", baseUrl],
+      });
     },
   });
   const pendingLikeMomentId = likeMutation.isPending
@@ -484,6 +653,17 @@ export function MomentsPage() {
       to: "/friend-moments/$characterId",
       params: { characterId },
       hash: buildMobileFriendMomentsRouteHash({
+        returnPath: pathname,
+        returnHash: currentRouteHash || undefined,
+      }),
+    });
+  }
+
+  function openCharacterDetail(characterId: string) {
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId },
+      hash: buildCharacterDetailRouteHash({
         returnPath: pathname,
         returnHash: currentRouteHash || undefined,
       }),
@@ -855,6 +1035,25 @@ export function MomentsPage() {
 
             openDesktopFriendMoments(targetMoment);
           }}
+          onOpenLikerPopover={({ anchorElement, like }) => {
+            const returnHash = currentRouteHash || undefined;
+            if (like.authorType === "character") {
+              setDesktopAvatarPopover({
+                anchorElement,
+                kind: "character",
+                characterId: like.authorId,
+                fallbackAvatar: like.authorAvatar,
+                fallbackName: like.authorName,
+                returnHash,
+              });
+            } else if (like.authorType === "user") {
+              setDesktopAvatarPopover({
+                anchorElement,
+                kind: "owner",
+                returnHash,
+              });
+            }
+          }}
           onToggleFavorite={(momentId) => {
             const moment = visibleMoments.find((item) => item.id === momentId);
             if (!moment) {
@@ -901,20 +1100,28 @@ export function MomentsPage() {
         />
         {desktopAvatarPopover ? (
           <Suspense fallback={null}>
-            <DesktopMessageAvatarPopover
-              anchorElement={desktopAvatarPopover.anchorElement}
-              kind="character"
-              characterId={desktopAvatarPopover.characterId}
-              fallbackAvatar={desktopAvatarPopover.fallbackAvatar}
-              fallbackName={desktopAvatarPopover.fallbackName}
-              navigationContext={{
-                momentsReturnHash: desktopAvatarPopover.returnHash,
-                momentsReturnPath: pathname,
-                profileReturnHash: desktopAvatarPopover.returnHash,
-                profileReturnPath: pathname,
-              }}
-              onClose={() => setDesktopAvatarPopover(null)}
-            />
+            {desktopAvatarPopover.kind === "character" ? (
+              <DesktopMessageAvatarPopover
+                anchorElement={desktopAvatarPopover.anchorElement}
+                kind="character"
+                characterId={desktopAvatarPopover.characterId}
+                fallbackAvatar={desktopAvatarPopover.fallbackAvatar}
+                fallbackName={desktopAvatarPopover.fallbackName}
+                navigationContext={{
+                  momentsReturnHash: desktopAvatarPopover.returnHash,
+                  momentsReturnPath: pathname,
+                  profileReturnHash: desktopAvatarPopover.returnHash,
+                  profileReturnPath: pathname,
+                }}
+                onClose={() => setDesktopAvatarPopover(null)}
+              />
+            ) : (
+              <DesktopMessageAvatarPopover
+                anchorElement={desktopAvatarPopover.anchorElement}
+                kind="owner"
+                onClose={() => setDesktopAvatarPopover(null)}
+              />
+            )}
           </Suspense>
         ) : null}
       </Suspense>
@@ -964,6 +1171,11 @@ export function MomentsPage() {
           openMobileFriendMoments(moment.authorId);
         }
       }}
+      onLikeAuthorTap={(like) => {
+        if (like.authorType === "character") {
+          openCharacterDetail(like.authorId);
+        }
+      }}
       onLikeMoment={(momentId) => likeMutation.mutate(momentId)}
       onDeleteMoment={(momentId) => {
         if (deleteMutation.isPending) return;
@@ -1000,10 +1212,26 @@ export function MomentsPage() {
       }
       onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
       onRefresh={async () => {
-        // 重置到第 1 页：剔除其余页，让首页 refetch 拉新数据；用户再触底时重新堆。
-        resetMomentsToFirstPage();
+        // 下拉刷新只换头部 page 1，保留已加载的 page 2+：
+        // 1) 旧逻辑把 N 页砍回 1 页 → 列表瞬间变短、撑不满视口 → iOS 上滑橡皮筋反弹
+        //    + IntersectionObserver 串行一页一页 fetchNextPage 把内容堆回来，体感很慢；
+        // 2) 顶部新发布的内容若把老 page 2 起点往下挤，由 momentsData 的 id 去重 useMemo 兜底重复。
+        const key = ["app-moments-paged", baseUrl];
         await Promise.all([
-          momentsQuery.refetch(),
+          getMomentsPage({ page: 1, limit: 20 }, baseUrl).then((freshFirstPage) => {
+            queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
+              key,
+              (current) => {
+                if (!current || current.pages.length === 0) {
+                  return { pages: [freshFirstPage], pageParams: [1] };
+                }
+                return {
+                  pages: [freshFirstPage, ...current.pages.slice(1)],
+                  pageParams: current.pageParams,
+                };
+              },
+            );
+          }),
           ownerId ? blockedQuery.refetch() : Promise.resolve(null),
         ]);
       }}
@@ -1056,6 +1284,7 @@ type MobileMomentsViewProps = {
   onBack: () => void;
   onCompose: () => void;
   onAuthorTap: (moment: Moment) => void;
+  onLikeAuthorTap: (like: MomentLike) => void;
   onLikeMoment: (momentId: string) => void;
   onDeleteMoment: (momentId: string) => void;
   onOpenActionMenu: (momentId: string, anchorRect: DOMRect) => void;
@@ -1097,6 +1326,7 @@ function MobileMomentsView({
   onBack,
   onCompose,
   onAuthorTap,
+  onLikeAuthorTap,
   onLikeMoment,
   onDeleteMoment,
   onOpenActionMenu,
@@ -1292,8 +1522,8 @@ function MobileMomentsView({
               key={moment.id}
               className={
                 index === 0
-                  ? ""
-                  : "border-t border-[#ECECEC]"
+                  ? "yj-list-item-virtual-card"
+                  : "yj-list-item-virtual-card border-t border-[#ECECEC]"
               }
             >
               <WeChatMomentCard
@@ -1308,6 +1538,7 @@ function MobileMomentsView({
                 onOpenActionMenu={(rect) => onOpenActionMenu(moment.id, rect)}
                 onDoubleTapLike={() => onLikeMoment(moment.id)}
                 onCommentTap={(comment) => onCommentTap(moment.id, comment)}
+                onLikeAuthorTap={onLikeAuthorTap}
                 onDelete={
                   ownerId &&
                   moment.authorType === "user" &&

@@ -3,7 +3,6 @@ export const SELF_AGENT_RULES_CONFIG_KEY = 'self_agent_rules';
 export type SelfAgentPolicyRulesValue = {
   enabled: boolean;
   allowActionRuntimeDelegation: boolean;
-  allowReminderRuntimeDelegation: boolean;
   forceConfirmationForDelegatedActions: boolean;
   blockedActionConnectorKeys: string[];
   blockedActionOperationKeys: string[];
@@ -49,7 +48,6 @@ export const DEFAULT_SELF_AGENT_RULES: SelfAgentRulesValue = {
   policy: {
     enabled: true,
     allowActionRuntimeDelegation: true,
-    allowReminderRuntimeDelegation: true,
     forceConfirmationForDelegatedActions: true,
     blockedActionConnectorKeys: [],
     blockedActionOperationKeys: [],
@@ -117,10 +115,6 @@ export function normalizeSelfAgentRules(
       allowActionRuntimeDelegation: normalizeBoolean(
         policyInput.allowActionRuntimeDelegation,
         DEFAULT_SELF_AGENT_RULES.policy.allowActionRuntimeDelegation,
-      ),
-      allowReminderRuntimeDelegation: normalizeBoolean(
-        policyInput.allowReminderRuntimeDelegation,
-        DEFAULT_SELF_AGENT_RULES.policy.allowReminderRuntimeDelegation,
       ),
       forceConfirmationForDelegatedActions: normalizeBoolean(
         policyInput.forceConfirmationForDelegatedActions,
