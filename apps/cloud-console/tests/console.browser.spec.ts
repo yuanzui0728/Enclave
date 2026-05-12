@@ -387,6 +387,21 @@ test.describe("cloud-console browser smoke", () => {
     }
   });
 
+  // Cloud-console defaults to zh-CN (DEFAULT_LOCALE) when no preference is persisted.
+  // Pin the surface locale to en-US so the assertions against English placeholders/labels stay valid.
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => {
+      try {
+        window.localStorage.setItem(
+          "yinjie-i18n-locale:cloud-console",
+          "en-US",
+        );
+      } catch {
+        // localStorage may be unavailable on the first init; the next navigation will retry.
+      }
+    });
+  });
+
   test("activates a request and handles modal dismissal in a real browser", async ({
     page,
   }) => {

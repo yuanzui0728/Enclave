@@ -9529,13 +9529,13 @@ msgid "撤销修改"
 msgstr "変更を取り消す"
 
 #: apps/admin/src/routes/digital-human-page.tsx:276
-msgid "保存中…"
-msgstr "保存中…"
-
-#: apps/admin/src/routes/digital-human-page.tsx:276
 #: apps/admin/src/routes/inference-page.tsx:1169
 msgid "保存"
 msgstr "保存"
+
+#: apps/admin/src/routes/digital-human-page.tsx:276
+msgid "保存中…"
+msgstr "保存中…"
 
 #: apps/admin/src/routes/digital-human-page.tsx:291
 msgid "内置舞台（mock_stage）"
@@ -9669,11 +9669,6 @@ msgid "当前数据集"
 msgstr "現在のデータセット"
 
 #: apps/admin/src/routes/evals-page.tsx:1139
-#: apps/admin/src/routes/evals-page.tsx:2817
-msgid "当前运行"
-msgstr "現在の実行"
-
-#: apps/admin/src/routes/evals-page.tsx:1139
 #: apps/admin/src/routes/evals-page.tsx:1140
 #: apps/admin/src/routes/evals-page.tsx:1141
 #: apps/admin/src/routes/games-page.tsx:860
@@ -9682,6 +9677,11 @@ msgstr "現在の実行"
 #: apps/admin/src/routes/reply-logic-page.tsx:497
 msgid "未选择"
 msgstr "未選択"
+
+#: apps/admin/src/routes/evals-page.tsx:1139
+#: apps/admin/src/routes/evals-page.tsx:2817
+msgid "当前运行"
+msgstr "現在の実行"
 
 #: apps/admin/src/routes/evals-page.tsx:1140
 msgid "当前链路"
@@ -10052,12 +10052,6 @@ msgid "运行预设"
 msgstr "実行プリセット"
 
 #: apps/admin/src/routes/evals-page.tsx:1552
-#: apps/admin/src/routes/evals-page.tsx:2328
-#: apps/admin/src/routes/evals-page.tsx:2926
-msgid "基线"
-msgstr "ベースライン"
-
-#: apps/admin/src/routes/evals-page.tsx:1552
 #: apps/admin/src/routes/evals-page.tsx:1552
 #: apps/admin/src/routes/evals-page.tsx:1555
 #: apps/admin/src/routes/evals-page.tsx:1555
@@ -10072,6 +10066,12 @@ msgstr "ベースライン"
 #: apps/admin/src/routes/inference-page.tsx:1123
 msgid "默认"
 msgstr "デフォルト"
+
+#: apps/admin/src/routes/evals-page.tsx:1552
+#: apps/admin/src/routes/evals-page.tsx:2328
+#: apps/admin/src/routes/evals-page.tsx:2926
+msgid "基线"
+msgstr "ベースライン"
 
 #: apps/admin/src/routes/evals-page.tsx:1555
 #: apps/admin/src/routes/evals-page.tsx:2377
@@ -14175,6 +14175,12 @@ msgstr "本日採用 {0} 件 · モーメンツ投稿 {1}"
 msgid "未完成"
 msgstr "未完了"
 
+#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
+#. placeholder {1}: formatCompactTime(item.latestRunAt)
+#: apps/admin/src/routes/real-world-sync-page.tsx:373
+msgid "最近 {0} · {1}"
+msgstr "最近 {0} · {1}"
+
 #. placeholder {0}: item.latestRunStatus
 #. placeholder {0}: previewResult.action
 #. placeholder {0}: previewResult.parsedTask.category
@@ -14187,12 +14193,6 @@ msgstr "未完了"
 #: apps/admin/src/routes/reminder-runtime-page.tsx:1686
 msgid "{0}"
 msgstr "{0}"
-
-#. placeholder {0}: t(RUN_STATUS_LABELS[item.latestRunStatus ?? "success"] ?? msg`${item.latestRunStatus}`)
-#. placeholder {1}: formatCompactTime(item.latestRunAt)
-#: apps/admin/src/routes/real-world-sync-page.tsx:373
-msgid "最近 {0} · {1}"
-msgstr "最近 {0} · {1}"
 
 #: apps/admin/src/routes/real-world-sync-page.tsx:374
 msgid "最近暂无执行记录"
