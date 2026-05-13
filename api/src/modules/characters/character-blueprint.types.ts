@@ -9,7 +9,8 @@ export type CharacterBlueprintSourceTypeValue =
   | 'ai_generated'
   | 'wiki_contributed'
   | 'need_generated'
-  | 'shake_generated';
+  | 'shake_generated'
+  | 'private_import';
 
 export type CharacterBlueprintStatusValue = 'draft' | 'published' | 'archived';
 

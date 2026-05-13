@@ -1180,29 +1180,10 @@ export class FeedService implements OnModuleInit {
       selectedCharacter.name,
     );
 
-    let text = fallbackText;
-    if (profile) {
-      try {
-        const baseText = await this.ai.generateMoment({
-          profile,
-          currentTime: new Date(),
-          usageContext: {
-            surface: 'app',
-            scene: 'channel_post_generate',
-            scopeType: 'character',
-            scopeId: selectedCharacter.id,
-            scopeLabel: selectedCharacter.name,
-            characterId: selectedCharacter.id,
-            characterName: selectedCharacter.name,
-          },
-        });
-        text = baseText.trim() || fallbackText;
-      } catch (err) {
-        this.logger.warn(
-          `channel text gen failed for ${selectedCharacter.id}, using fallback: ${(err as Error)?.message}`,
-        );
-      }
-    }
+    // 视频号不再调 LLM 生成 baseText：每个视频草稿都额外打一次 n1n 太贵；
+    // 真正的画面内容由 minimax 视频模型基于 videoPrompt 决定，文字部分用本地
+    // 兜底文案即可，配额耗尽 / minimax 失败时整条草稿都会被回滚。
+    const text = fallbackText;
 
     const videoPrompt = composeChannelVideoPrompt(
       selectedCharacter.name,

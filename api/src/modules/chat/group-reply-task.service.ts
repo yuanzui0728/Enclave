@@ -1,5 +1,6 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AppError } from '../../common/app-error.exception';
+import { sleepForWorldJitter } from '../../common/cron-jitter.util';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
@@ -370,6 +371,7 @@ export class GroupReplyTaskService {
 
   @Cron('17 4 * * *')
   async cleanupTerminalTasks() {
+    await sleepForWorldJitter(600_000);
     const result = await this.cleanupTasks();
     if (result.deletedCount > 0) {
       this.logger.log(

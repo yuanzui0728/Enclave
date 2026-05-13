@@ -9,6 +9,7 @@ import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   CYBER_AVATAR_REAL_WORLD_SYNC_CRON,
 } from './cyber-avatar.constants';
+import { sleepForWorldJitter } from '../../common/cron-jitter.util';
 import { CyberAvatarRealWorldBriefEntity } from './cyber-avatar-real-world-brief.entity';
 import { CyberAvatarRealWorldItemEntity } from './cyber-avatar-real-world-item.entity';
 import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
@@ -202,6 +203,7 @@ export class CyberAvatarRealWorldService {
 
   @Cron(CYBER_AVATAR_REAL_WORLD_SYNC_CRON)
   async runSyncCron() {
+    await sleepForWorldJitter(60_000);
     const rules = await this.rulesService.getRules();
     if (
       !rules.enabled ||

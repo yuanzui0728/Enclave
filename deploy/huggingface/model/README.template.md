@@ -5,44 +5,89 @@ language:
   - en
   - ja
   - ko
-pretty_name: Enclave Character Recipes
+pretty_name: Enclave Character Blueprint Schema
 tags:
   - ai-companion
   - prompt-engineering
   - character-ai
   - agents
+  - schema
+  - json-schema
   - social-simulation
-  - roleplay
   - self-hosted
   - open-source
 ---
 
-# Enclave Character Recipes
+# Enclave Character Blueprint Schema
 
-This repository contains the public Hugging Face model-card entry for Enclave character recipes.
+A **JSON Schema** toolkit for designing portable AI character recipes used by [Enclave]({{GITHUB_URL}}) and any compatible AI social runtime.
 
-It does not contain model weights. Enclave runs on OpenAI-compatible LLM providers and uses structured character blueprints to define identity, tone, memory seed, scene prompts, reasoning flags, and publishing behavior.
+> This is a **schema** repository, not a model. There are no weights. Use it to validate, generate, and exchange character blueprints across runtimes.
 
-## Files
+## What's inside
 
-- `schema/character-blueprint.schema.json` describes the portable recipe shape.
-- `recipes/starter-self-reflection.recipe.json` is a starter recipe for an inner-reflection companion.
+| File | What |
+|---|---|
+| `schema/character-blueprint.schema.json` | The canonical JSON Schema (Draft 2020-12) describing the recipe shape. |
+| `LICENSE` | MIT. |
 
-## Related Links
+## What is a "character blueprint"
 
-- Space: {{SPACE_URL}}
-- GitHub: {{GITHUB_URL}}
-- Self-hosting guide: {{DEPLOY_URL}}
+A portable structure that defines an AI resident:
 
-## Intended Use
+- **identity** — name, relationship, bio, motivation, worldview
+- **expertise** — domains, limits, refusal style
+- **tone** — speech patterns, taboos, system prompt, base prompt
+- **prompting** — scene prompts (chat / moments / feed / group / proactive)
+- **memorySeed** — long-term & short-term memory configuration
+- **reasoning** — CoT / reflection / routing flags
+- **lifeStrategy** — active hours, activity frequency, trigger scenes
+- **publishMapping** — runtime initial state
 
-Use these recipes as prompt-engineering assets inside Enclave or as examples for building AI companion/social-agent systems. A recipe is not a standalone model and does not provide inference by itself.
+A blueprint drives an AI that **acts on its own** — schedules its own posts, comments on others, holds long-running relationships — not a one-shot chatbot.
+
+## Validate a recipe
+
+```bash
+npx -y ajv-cli validate \
+  -s schema/character-blueprint.schema.json \
+  -d my-recipe.json
+```
+
+```python
+# Python
+import json, jsonschema
+schema = json.load(open("schema/character-blueprint.schema.json"))
+recipe = json.load(open("my-recipe.json"))
+jsonschema.validate(recipe, schema)
+```
+
+## Want recipes?
+
+10 ready-to-use recipes built against this schema:
+
+➡️ **[{{DATASET_REPO}}]({{DATASET_URL}})** — characters dataset with Datasets Viewer
+
+Including: IELTS speaking buddy · wedding planner · health companion · deep-work sidekick · cowriter · fitness coach · bilingual partner · late-night listener · onboarding host · self-reflection partner.
+
+## Related
+
+- 🌍 [Enclave Space]({{SPACE_URL}}) — product landing
+- 📚 [Character Recipes Dataset]({{DATASET_URL}}) — 10 personas as JSONL
+- ⭐ [Enclave on GitHub]({{GITHUB_URL}}) — open-source self-hosted runtime
+- 📖 [Self-hosting guide]({{DEPLOY_URL}})
+- 📧 Contact: {{CONTACT_EMAIL}}
+
+## Intended use
+
+- Validate character recipes in CI
+- Generate UIs and admin forms from the schema
+- Power character template marketplaces across AI runtimes
 
 ## Limitations
 
-- No model weights are included.
-- Behavior depends on the selected LLM provider, model, safety settings, and runtime memory.
-- Recipes should be reviewed before use in production or sensitive domains.
+- This is a schema; it does not produce responses by itself.
+- Behavior of any blueprint depends on the chosen LLM provider, safety policy, and runtime memory implementation.
 
 ## License
 

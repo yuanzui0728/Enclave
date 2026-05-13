@@ -28,7 +28,7 @@ COPY --from=deps /repo/apps/site/node_modules ./apps/site/node_modules
 COPY . .
 # NEXT_PUBLIC_* must be set at build time — Next bakes them into static HTML
 # (canonical URLs, OG, sitemap, JSON-LD). Override via --build-arg in CI.
-ARG NEXT_PUBLIC_SITE_URL=http://1gw06751dd053.vicp.fun
+ARG NEXT_PUBLIC_SITE_URL=https://enclaveai.top
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 # Asset sync (screenshots, GIFs, favicons) + Next build
 RUN pnpm --filter @yinjie/site exec node scripts/sync-assets.mjs \

@@ -787,6 +787,116 @@ export const wikiApi = {
       { method: "DELETE" },
     );
   },
+
+  // ── 我的私有角色（不走审核流，登录用户隔离） ─────────────────────────────
+  listMyCharacters() {
+    return request<PrivateCharacterRecord[]>("/wiki/my-characters");
+  },
+  getMyCharacter(id: string) {
+    return request<PrivateCharacterRecord>(
+      `/wiki/my-characters/${encodeURIComponent(id)}`,
+    );
+  },
+  createMyCharacter(dto: PrivateCharacterDto) {
+    return request<PrivateCharacterRecord>("/wiki/my-characters", {
+      method: "POST",
+      body: JSON.stringify(dto),
+    });
+  },
+  updateMyCharacter(id: string, dto: PrivateCharacterDto) {
+    return request<PrivateCharacterRecord>(
+      `/wiki/my-characters/${encodeURIComponent(id)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(dto),
+      },
+    );
+  },
+  deleteMyCharacter(id: string) {
+    return request<{ success: true }>(
+      `/wiki/my-characters/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
+  },
+  /** 触发浏览器下载 export bundle 文件。 */
+  async exportMyCharacter(id: string, fallbackName: string): Promise<void> {
+    const token = getToken();
+    const res = await fetch(
+      `${API_BASE}/wiki/my-characters/${encodeURIComponent(id)}/export`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      },
+    );
+    if (!res.ok) {
+      throw new WikiApiError(res.status, null, `导出失败 (${res.status})`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const safeName = (fallbackName || "character").replace(
+      /[\\/:*?"<>|\r\n\t]+/g,
+      "_",
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${safeName}.character.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+  /** 上传一个 JSON 文件，按 name upsert 到当前用户的私有角色。 */
+  async importMyCharacter(
+    file: File,
+  ): Promise<{ record: PrivateCharacterRecord; overwrote: boolean }> {
+    const text = await file.text();
+    let payload: unknown;
+    try {
+      payload = JSON.parse(text);
+    } catch (err) {
+      throw new WikiApiError(
+        400,
+        null,
+        `JSON 解析失败：${(err as Error).message}`,
+      );
+    }
+    return request<{ record: PrivateCharacterRecord; overwrote: boolean }>(
+      "/wiki/my-characters/import",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+  },
+};
+
+export type PrivateCharacterRecord = {
+  id: string;
+  ownerUserId: string;
+  name: string;
+  avatar: string;
+  bio: string;
+  personality?: string | null;
+  relationship: string;
+  relationshipType: string;
+  expertDomains: string[];
+  triggerScenes?: string[] | null;
+  recipe?: CharacterBlueprintRecipe | null;
+  profile?: unknown | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PrivateCharacterDto = {
+  name: string;
+  avatar?: string;
+  bio?: string;
+  personality?: string | null;
+  relationship?: string;
+  relationshipType?: string;
+  expertDomains?: string[];
+  triggerScenes?: string[] | null;
+  recipe?: CharacterBlueprintRecipe | null;
+  profile?: unknown | null;
 };
 
 export type FieldProtection = {

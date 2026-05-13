@@ -4,12 +4,12 @@
 #
 # 关于"运行最新代码"的设计前提：
 #   1) app  (5180): 走 vite build → apps/app/dist，nginx 静态服务。脚本会
-#      pnpm --dir apps/app build 后 ensure-local-web-nginx，公网 HTTP 隧道
-#      :29490 也走这条链路，dist 一换公网立即生效。
-#   2) site (5185): 公网 HTTPS https://1gw06751dd053.vicp.fun/ 直连此端口。
-#      默认走 site-prod (next build + next start)，与 CLAUDE.md 强制要求一致：
-#      避免 next dev 5-10x 性能损耗，且保证 .next 是基于当前源码现拉的产物。
-#      本地想要 HMR 热重载请加 --site-dev，切到 next dev。
+#      pnpm --dir apps/app build 后 ensure-local-web-nginx，
+#      公网 HTTPS https://1gw06751dd053.vicp.fun/ 与 HTTP :29490 两条隧道
+#      都打 nginx 5180，dist 一换公网立即生效。
+#   2) site (5185): 当前**没有公网入口**（HTTPS 隧道已改指 5180/app）。
+#      site 仍建议跑 site-prod (next build + next start)：保证 .next 是基于
+#      当前源码现拉的产物。本地想要 HMR 热重载请加 --site-dev，切到 next dev。
 #      site 与 site-prod 共用 5185、互斥，本脚本会在启动前显式 stop 另一边。
 #   3) cloud-api (3001): dev-services.mjs 的 prestart 会无条件 nest build，
 #      所以 --no-build 不影响它（仍然会构建）。
@@ -42,7 +42,7 @@ usage() {
                        prestart 强制执行，本开关不影响它们。
   --site-dev           site 走 next dev (本地开发热重载, 5-10x 慢于 prod)
                        默认 site 走 site-prod (next build + next start)，
-                       公网 https://1gw06751dd053.vicp.fun/ 必须用这个模式。
+                       保证 .next 是基于当前源码现拉的产物。
   --skip-account-prep  跳过账号目录初始化检查
   -h, --help           显示此帮助
 
@@ -52,7 +52,7 @@ usage() {
   $(basename "$0") wiki admin           # 只重启 wiki 与 admin
   $(basename "$0") --no-build cloud-api # 仅重启 cloud-api，跳过预构建
   $(basename "$0") cloud-console        # 只重启云世界控制台
-  $(basename "$0") site                 # 只重启官网 site-prod (5185, 公网入口)
+  $(basename "$0") site                 # 只重启官网 site-prod (5185, 仅本地访问)
   $(basename "$0") --site-dev site      # 只把官网切到 dev 模式
 EOF
 }
@@ -185,9 +185,10 @@ restart_cloud_console() {
 }
 
 restart_site_prod() {
-  # 公网 https://1gw06751dd053.vicp.fun/ 直连 5185，必须用 site-prod (next build +
-  # next start)。site-prod 的 prestart 会无条件 sync-assets → next build，
-  # 所以 restart 这条命令本身就保证 .next 是基于当前源码现拉的产物（=最新代码）。
+  # site (5185) 当前**没有公网入口** (HTTPS 隧道已改指 nginx 5180 → app)。
+  # 仍用 site-prod (next build + next start) 是为了避免 dev 模式 5-10x 性能损耗，
+  # 也保证 .next 是基于当前源码现拉的产物 — site-prod 的 prestart 会无条件
+  # sync-assets → next build。
   # 与 site (next dev) 共用 5185 端口，启动前先确保 dev 端不在跑，避免抢端口失败。
   node scripts/dev-services.mjs stop site >/dev/null 2>&1 || true
   node scripts/dev-services.mjs restart site-prod
@@ -197,7 +198,7 @@ restart_site_prod() {
 }
 
 restart_site_dev() {
-  # 本地开发模式：next dev，HMR 友好但运行时 5-10x 慢；公网不应跑这个模式。
+  # 本地开发模式：next dev，HMR 友好但运行时 5-10x 慢；仅供本地调试。
   # 与 site-prod 共用 5185 端口，先停掉 prod 端。
   node scripts/dev-services.mjs stop site-prod >/dev/null 2>&1 || true
   # 如果 .next 里残留 standalone / BUILD_ID / prerender-manifest 等 build 产物，
@@ -276,15 +277,15 @@ echo "[restart-app] ✅ 完成 (用时 ${ELAPSED}s)"
 echo ""
 echo "服务地址："
 want cloud-api     && echo "  Cloud API:      http://127.0.0.1:3001  (按手机号 spawn 独立 main-api 子进程)"
-want app           && echo "  主 App:         http://127.0.0.1:5180"
+want app           && echo "  主 App:         http://127.0.0.1:5180  (公网入口: https://1gw06751dd053.vicp.fun/)"
 want wiki          && echo "  Wiki 角色平台:  http://127.0.0.1:5184"
 want admin         && echo "  管理后台:       http://127.0.0.1:5181"
 want cloud-console && echo "  云世界控制台:   http://127.0.0.1:5182"
 if want site; then
   if [[ "$SITE_MODE" == "dev" ]]; then
-    echo "  官网 (dev):     http://127.0.0.1:5185  (next dev, 仅本地用; 公网走的是 prod)"
+    echo "  官网 (dev):     http://127.0.0.1:5185  (next dev, 仅本地访问)"
   else
-    echo "  官网 (prod):    http://127.0.0.1:5185  (next start, 公网 https://1gw06751dd053.vicp.fun/ 入口)"
+    echo "  官网 (prod):    http://127.0.0.1:5185  (next start, 仅本地访问)"
   fi
 fi
 echo ""

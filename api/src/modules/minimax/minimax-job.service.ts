@@ -319,6 +319,14 @@ export class MinimaxJobService {
               });
             } catch (err) {
               await this.quota.release('image-01');
+              if (
+                err instanceof MinimaxClientError &&
+                err.code === 'MINIMAX_QUOTA_EXHAUSTED'
+              ) {
+                // 同 handleClientError 里的逻辑：image-01 服务端确认今日耗尽，
+                // 标本地不再 reserve，下次直接走 maybeDemoteFastToHd / 跳过。
+                this.quota.markExhaustedToday('image-01');
+              }
               this.logger.warn(
                 `cover gen failed for job ${job.id}: ${(err as Error)?.message}`,
               );
@@ -700,6 +708,11 @@ export class MinimaxJobService {
     const retriable =
       e instanceof MinimaxClientError ? e.retriable : true;
     const message = e?.message ?? 'unknown error';
+    // 真实 minimax 服务端确认本 model 今日额度已耗尽 → 标记，后续
+    // tryReserve 直接返回 false，避免今天剩余 cron tick 继续打无效请求。
+    if (e instanceof MinimaxClientError && code === 'MINIMAX_QUOTA_EXHAUSTED') {
+      this.quota.markExhaustedToday(job.model);
+    }
     if (!retriable) {
       await this.markFailed(job, code, `${context}: ${message}`);
       return;

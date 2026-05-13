@@ -17,7 +17,8 @@ export type CharacterSourceType =
   | "ai_generated"
   | "wiki_contributed"
   | "wechat_import"
-  | "model_persona";
+  | "model_persona"
+  | "private_import";
 export type CharacterDeletionPolicy = "protected" | "archive_allowed";
 export type CharacterModelRoutingMode =
   | "inherit_default"

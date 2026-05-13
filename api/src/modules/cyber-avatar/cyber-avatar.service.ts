@@ -14,6 +14,7 @@ import {
   createEmptyCyberAvatarAggregation,
   createEmptyCyberAvatarProfile,
 } from './cyber-avatar.constants';
+import { sleepForWorldJitter } from '../../common/cron-jitter.util';
 import { CyberAvatarRulesService } from './cyber-avatar-rules.service';
 import type {
   CyberAvatarAggregationPayload,
@@ -139,6 +140,7 @@ export class CyberAvatarService {
 
   @Cron(CYBER_AVATAR_INCREMENTAL_SCAN_CRON)
   async runIncrementalRefreshCron() {
+    await sleepForWorldJitter(60_000);
     const rules = await this.rulesService.getRules();
     if (
       !rules.enabled ||
@@ -154,6 +156,7 @@ export class CyberAvatarService {
 
   @Cron(CYBER_AVATAR_DEEP_REFRESH_CRON)
   async runDeepRefreshCron() {
+    await sleepForWorldJitter(600_000);
     const rules = await this.rulesService.getRules();
     if (
       !rules.enabled ||

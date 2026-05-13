@@ -6,7 +6,8 @@ export type CharacterBlueprintSourceType =
   | "manual_admin"
   | "template_clone"
   | "ai_generated"
-  | "wiki_contributed";
+  | "wiki_contributed"
+  | "private_import";
 
 export type CharacterBlueprintStatus = "draft" | "published" | "archived";
 export type CharacterFactoryFieldSourceStatus =

@@ -7,7 +7,6 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
@@ -21,37 +20,28 @@ const templateRoot = path.join(repoRoot, "deploy", "huggingface");
 
 const DEFAULT_OWNER = "w9000";
 const DEFAULT_SPACE_REPO = "enclave";
-const DEFAULT_MODEL_REPO = "enclave-character-recipes";
-const DEFAULT_GITHUB_URL = "https://github.com/yuanzui0728/yinjie-app";
-const DEFAULT_SITE_URL = "http://1gw06751dd053.vicp.fun";
+const DEFAULT_DATASET_REPO = "enclave-character-recipes";
+const DEFAULT_MODEL_REPO = "enclave-character-blueprint";
+const DEFAULT_GITHUB_URL = "https://github.com/yuanzui0728/enclave";
+const DEFAULT_SITE_URL = "https://1gw06751dd053.vicp.fun";
 const DEFAULT_CONTACT_EMAIL = "yuanzui0728@gmail.com";
-
-const EXCLUDED_NAMES = new Set([
-  ".cache",
-  ".next",
-  ".turbo",
-  "build",
-  "coverage",
-  "dist",
-  "logs",
-  "node_modules",
-  "test-results",
-]);
+const TARGETS = ["space", "dataset", "model"];
 
 function parseArgs(argv) {
   const options = {
     command: "stage",
     dryRun: false,
-    spaceOnly: false,
-    modelOnly: false,
+    targets: new Set(TARGETS),
     owner: process.env.HF_OWNER || process.env.HUGGINGFACE_OWNER || DEFAULT_OWNER,
     spaceRepo: process.env.HF_SPACE_REPO || DEFAULT_SPACE_REPO,
+    datasetRepo: process.env.HF_DATASET_REPO || DEFAULT_DATASET_REPO,
     modelRepo: process.env.HF_MODEL_REPO || DEFAULT_MODEL_REPO,
     githubUrl: process.env.HF_GITHUB_URL || DEFAULT_GITHUB_URL,
     siteUrl: process.env.HF_SITE_URL || DEFAULT_SITE_URL,
     contactEmail: process.env.HF_CONTACT_EMAIL || DEFAULT_CONTACT_EMAIL,
-    spaceAppUrl: process.env.HF_SPACE_APP_URL || "",
   };
+
+  let targetsExplicit = false;
 
   for (const arg of argv) {
     if (arg === "--") {
@@ -60,29 +50,35 @@ function parseArgs(argv) {
       options.command = arg;
     } else if (arg === "--dry-run") {
       options.dryRun = true;
-    } else if (arg === "--space-only") {
-      options.spaceOnly = true;
-    } else if (arg === "--model-only") {
-      options.modelOnly = true;
+    } else if (arg.startsWith("--target=")) {
+      if (!targetsExplicit) {
+        options.targets = new Set();
+        targetsExplicit = true;
+      }
+      for (const t of arg.slice("--target=".length).split(",")) {
+        const v = t.trim().toLowerCase();
+        if (!TARGETS.includes(v)) throw new Error(`Unknown --target value: ${v}`);
+        options.targets.add(v);
+      }
     } else if (arg.startsWith("--owner=")) {
       options.owner = arg.slice("--owner=".length);
     } else if (arg.startsWith("--space-repo=")) {
       options.spaceRepo = arg.slice("--space-repo=".length);
+    } else if (arg.startsWith("--dataset-repo=")) {
+      options.datasetRepo = arg.slice("--dataset-repo=".length);
     } else if (arg.startsWith("--model-repo=")) {
       options.modelRepo = arg.slice("--model-repo=".length);
     } else if (arg.startsWith("--github-url=")) {
       options.githubUrl = arg.slice("--github-url=".length);
     } else if (arg.startsWith("--site-url=")) {
       options.siteUrl = arg.slice("--site-url=".length);
-    } else if (arg.startsWith("--space-app-url=")) {
-      options.spaceAppUrl = arg.slice("--space-app-url=".length);
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
   }
 
-  if (options.spaceOnly && options.modelOnly) {
-    throw new Error("--space-only and --model-only cannot be used together");
+  if (!options.targets.size) {
+    throw new Error("No targets selected.");
   }
 
   return options;
@@ -90,23 +86,13 @@ function parseArgs(argv) {
 
 function resolveRepo(input, fallbackOwner) {
   const trimmed = input.trim().replace(/^\/+|\/+$/g, "");
-  if (!trimmed) {
-    throw new Error("Repository name cannot be empty");
-  }
-
+  if (!trimmed) throw new Error("Repository name cannot be empty");
   if (trimmed.includes("/")) {
     const [owner, name, ...rest] = trimmed.split("/");
-    if (!owner || !name || rest.length) {
-      throw new Error(`Invalid Hugging Face repo id: ${input}`);
-    }
+    if (!owner || !name || rest.length) throw new Error(`Invalid HF repo id: ${input}`);
     return { owner, name, repoId: `${owner}/${name}` };
   }
-
-  return {
-    owner: fallbackOwner,
-    name: trimmed,
-    repoId: `${fallbackOwner}/${trimmed}`,
-  };
+  return { owner: fallbackOwner, name: trimmed, repoId: `${fallbackOwner}/${trimmed}` };
 }
 
 function spaceSubdomain(owner, name) {
@@ -115,28 +101,28 @@ function spaceSubdomain(owner, name) {
 
 function buildContext(options) {
   const space = resolveRepo(options.spaceRepo, options.owner);
+  const dataset = resolveRepo(options.datasetRepo, options.owner);
   const model = resolveRepo(options.modelRepo, options.owner);
-  const spaceAppUrl =
-    options.spaceAppUrl ||
-    `https://${spaceSubdomain(space.owner, space.name)}.hf.space`;
-
+  const githubOwnerRepo = (() => {
+    try {
+      const u = new URL(options.githubUrl);
+      return u.pathname.replace(/^\/+|\/+$/g, "");
+    } catch {
+      return options.githubUrl;
+    }
+  })();
   return {
     options,
     space,
+    dataset,
     model,
-    spaceAppUrl,
     spaceUrl: `https://huggingface.co/spaces/${space.repoId}`,
+    spaceAppUrl: `https://${spaceSubdomain(space.owner, space.name)}.static.hf.space`,
+    datasetUrl: `https://huggingface.co/datasets/${dataset.repoId}`,
     modelUrl: `https://huggingface.co/${model.repoId}`,
     deployUrl: `${options.githubUrl}/blob/main/DEPLOY.md`,
+    githubOwnerRepo,
   };
-}
-
-function shouldStageSpace(options) {
-  return !options.modelOnly;
-}
-
-function shouldStageModel(options) {
-  return !options.spaceOnly;
 }
 
 function ensureDir(dir) {
@@ -149,64 +135,16 @@ function writeText(filePath, content) {
 }
 
 function copyFile(source, target) {
-  if (!existsSync(source)) {
-    return false;
-  }
+  if (!existsSync(source)) return false;
   ensureDir(path.dirname(target));
   copyFileSync(source, target);
   return true;
 }
 
-function isEnvFile(name) {
-  return name === ".env" || (name.startsWith(".env.") && !name.endsWith(".example"));
-}
-
-function shouldSkipEntry(name) {
-  return (
-    EXCLUDED_NAMES.has(name) ||
-    isEnvFile(name) ||
-    name.endsWith(".log") ||
-    name.endsWith(".tsbuildinfo") ||
-    name.endsWith(".sqlite") ||
-    name.endsWith(".sqlite-journal") ||
-    name.endsWith(".sqlite-wal") ||
-    name.endsWith(".sqlite-shm")
-  );
-}
-
-function copyDirFiltered(source, target) {
-  if (!existsSync(source)) {
-    return;
-  }
-
-  const stats = statSync(source);
-  if (!stats.isDirectory()) {
-    copyFile(source, target);
-    return;
-  }
-
-  ensureDir(target);
-  for (const entry of readdirSync(source, { withFileTypes: true })) {
-    if (shouldSkipEntry(entry.name)) {
-      continue;
-    }
-
-    const src = path.join(source, entry.name);
-    const dst = path.join(target, entry.name);
-    if (entry.isDirectory()) {
-      copyDirFiltered(src, dst);
-    } else if (entry.isFile()) {
-      copyFile(src, dst);
-    }
-  }
-}
-
 function renderTemplate(filePath, replacements) {
   const template = readFileSync(filePath, "utf8");
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (match, key) => {
-    if (!(key in replacements)) {
-      throw new Error(`Missing template replacement: ${key}`);
-    }
+    if (!(key in replacements)) throw new Error(`Missing template replacement: ${key}`);
     return replacements[key];
   });
 }
@@ -215,87 +153,92 @@ function replacementsFor(context) {
   return {
     HF_OWNER: context.space.owner,
     HF_SPACE_REPO: context.space.name,
+    HF_DATASET_REPO: context.dataset.name,
     HF_MODEL_REPO: context.model.name,
+    SPACE_REPO: context.space.repoId,
+    DATASET_REPO: context.dataset.repoId,
+    MODEL_REPO: context.model.repoId,
     SPACE_URL: context.spaceUrl,
     SPACE_APP_URL: context.spaceAppUrl,
+    DATASET_URL: context.datasetUrl,
     MODEL_URL: context.modelUrl,
     GITHUB_URL: context.options.githubUrl,
+    GITHUB_OWNER_REPO: context.githubOwnerRepo,
     DEPLOY_URL: context.deployUrl,
     SITE_URL: context.options.siteUrl,
     CONTACT_EMAIL: context.options.contactEmail,
+    LANGS: "zh / en / ja / ko",
   };
 }
+
+// ---------- STAGE: SPACE (static landing) ----------
+
+const SPACE_SCREENSHOTS = [
+  "core-feed", "core-feed.en", "core-feed.ja", "core-feed.ko",
+  "core-chat", "core-chat.en", "core-chat.ja", "core-chat.ko",
+  "core-group", "core-group.en", "core-group.ja", "core-group.ko",
+  "core-moments", "core-moments.en", "core-moments.ja", "core-moments.ko",
+  "core-self-character", "core-self-character.en", "core-self-character.ja", "core-self-character.ko",
+  "core-onboarding", "core-onboarding.en", "core-onboarding.ja", "core-onboarding.ko",
+];
+
+const SPACE_LOOP_GIFS = [
+  "yinjie-core-loop.gif",
+  "yinjie-core-loop.en.gif",
+  "yinjie-core-loop.ja.gif",
+  "yinjie-core-loop.ko.gif",
+];
 
 function stageSpace(context) {
   const destination = path.join(artifactRoot, "space");
   rmSync(destination, { recursive: true, force: true });
   ensureDir(destination);
 
-  for (const file of [
-    ".dockerignore",
-    ".npmrc",
-    "LICENSE",
-    "lingui.config.ts",
-    "package.json",
-    "pnpm-lock.yaml",
-    "pnpm-workspace.yaml",
-    "tsconfig.base.json",
-    "turbo.json",
-  ]) {
-    copyFile(path.join(repoRoot, file), path.join(destination, file));
-  }
+  const reps = replacementsFor(context);
 
-  for (const dir of [
-    "apps/site",
-    "docs/assets",
-    "docs/screenshots",
-    "packages/analytics",
-    "packages/config",
-    "packages/contracts",
-    "packages/i18n",
-    "packages/ui",
-  ]) {
-    copyDirFiltered(path.join(repoRoot, dir), path.join(destination, dir));
-  }
-
-  copyFile(
-    path.join(repoRoot, "apps/desktop/src-tauri/icons/icon.png"),
-    path.join(destination, "apps/desktop/src-tauri/icons/icon.png"),
+  // index.html with placeholder substitution
+  const indexHtml = renderTemplate(
+    path.join(templateRoot, "space", "static", "index.html"),
+    reps,
   );
+  writeText(path.join(destination, "index.html"), indexHtml);
 
-  const dockerfile = readFileSync(
-    path.join(repoRoot, "apps/site/Dockerfile"),
-    "utf8",
-  ).replace(
-    /^ARG NEXT_PUBLIC_SITE_URL=.*$/m,
-    `ARG NEXT_PUBLIC_SITE_URL=${context.spaceAppUrl}`,
-  );
-  writeText(path.join(destination, "Dockerfile"), dockerfile);
-
+  // README.md (Space card, front-matter drives SDK)
   writeText(
     path.join(destination, "README.md"),
-    renderTemplate(
-      path.join(templateRoot, "space", "README.template.md"),
-      replacementsFor(context),
-    ),
+    renderTemplate(path.join(templateRoot, "space", "README.template.md"), reps),
   );
 
+  // LICENSE
+  copyFile(path.join(repoRoot, "LICENSE"), path.join(destination, "LICENSE"));
+
+  // assets: screenshots
+  ensureDir(path.join(destination, "assets", "screenshots"));
+  for (const base of SPACE_SCREENSHOTS) {
+    const src = path.join(repoRoot, "docs", "screenshots", `${base}.png`);
+    const dst = path.join(destination, "assets", "screenshots", `${base}.png`);
+    if (!copyFile(src, dst)) {
+      console.warn(`[hf:stage:space] missing screenshot: ${src}`);
+    }
+  }
+
+  // assets: loop gifs
+  ensureDir(path.join(destination, "assets", "loop"));
+  for (const name of SPACE_LOOP_GIFS) {
+    const src = path.join(repoRoot, "docs", "assets", name);
+    const dst = path.join(destination, "assets", "loop", name);
+    if (!copyFile(src, dst)) {
+      console.warn(`[hf:stage:space] missing loop gif: ${src}`);
+    }
+  }
+
+  // .gitattributes for LFS-friendly handling of binary assets on HF
   writeText(
-    path.join(destination, ".hfignore"),
+    path.join(destination, ".gitattributes"),
     [
-      ".artifacts/",
-      ".cache/",
-      ".next/",
-      ".turbo/",
-      "node_modules/",
-      "apps/*/node_modules/",
-      "packages/*/node_modules/",
-      "dist/",
-      "build/",
-      "*.log",
-      ".env",
-      ".env.*",
-      "!*.env.example",
+      "*.gif filter=lfs diff=lfs merge=lfs -text",
+      "*.png filter=lfs diff=lfs merge=lfs -text",
+      "*.jpg filter=lfs diff=lfs merge=lfs -text",
       "",
     ].join("\n"),
   );
@@ -303,44 +246,114 @@ function stageSpace(context) {
   return destination;
 }
 
+// ---------- STAGE: DATASET (recipes + viewer) ----------
+
+function stageDataset(context) {
+  const destination = path.join(artifactRoot, "dataset");
+  rmSync(destination, { recursive: true, force: true });
+  ensureDir(destination);
+
+  const reps = replacementsFor(context);
+
+  // README with Datasets-Viewer-driving front-matter
+  writeText(
+    path.join(destination, "README.md"),
+    renderTemplate(path.join(templateRoot, "dataset", "README.template.md"), reps),
+  );
+
+  // LICENSE
+  copyFile(path.join(repoRoot, "LICENSE"), path.join(destination, "LICENSE"));
+
+  // schema (so users can validate without jumping to model repo)
+  ensureDir(path.join(destination, "schema"));
+  copyFile(
+    path.join(templateRoot, "model", "schema", "character-blueprint.schema.json"),
+    path.join(destination, "schema", "character-blueprint.schema.json"),
+  );
+
+  // per-recipe JSON files (human-readable)
+  ensureDir(path.join(destination, "recipes"));
+  const recipeDir = path.join(templateRoot, "dataset", "recipes");
+  const recipeFiles = readdirSync(recipeDir)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+  if (!recipeFiles.length) {
+    throw new Error(`No recipe files in ${recipeDir}`);
+  }
+
+  const recipes = [];
+  for (const f of recipeFiles) {
+    const src = path.join(recipeDir, f);
+    const raw = readFileSync(src, "utf8");
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      throw new Error(`Invalid JSON in ${f}: ${e.message}`);
+    }
+    if (!parsed.id || !parsed.name || !parsed.blueprint) {
+      throw new Error(`Recipe ${f} missing required fields (id/name/blueprint)`);
+    }
+    copyFileSync(src, path.join(destination, "recipes", f));
+    recipes.push(parsed);
+  }
+
+  // recipes.jsonl for HF Datasets Viewer
+  // Column order = property insertion order: id, name, lang, summary, tags, blueprint.
+  const jsonl = recipes
+    .map((r) => {
+      const row = {
+        id: r.id,
+        name: r.name,
+        lang: r.lang || "en",
+        summary: r.summary || "",
+        tags: r.tags || [],
+        blueprint: r.blueprint,
+      };
+      return JSON.stringify(row);
+    })
+    .join("\n") + "\n";
+  writeText(path.join(destination, "recipes.jsonl"), jsonl);
+
+  console.log(`[hf:stage:dataset] packaged ${recipes.length} recipes into recipes.jsonl`);
+
+  return destination;
+}
+
+// ---------- STAGE: MODEL (schema-only) ----------
+
 function stageModel(context) {
   const destination = path.join(artifactRoot, "model");
   rmSync(destination, { recursive: true, force: true });
   ensureDir(destination);
 
+  const reps = replacementsFor(context);
+
   copyFile(path.join(repoRoot, "LICENSE"), path.join(destination, "LICENSE"));
-  copyDirFiltered(
-    path.join(templateRoot, "model", "schema"),
-    path.join(destination, "schema"),
-  );
-  copyDirFiltered(
-    path.join(templateRoot, "model", "recipes"),
-    path.join(destination, "recipes"),
+
+  ensureDir(path.join(destination, "schema"));
+  copyFile(
+    path.join(templateRoot, "model", "schema", "character-blueprint.schema.json"),
+    path.join(destination, "schema", "character-blueprint.schema.json"),
   );
 
   writeText(
     path.join(destination, "README.md"),
-    renderTemplate(
-      path.join(templateRoot, "model", "README.template.md"),
-      replacementsFor(context),
-    ),
+    renderTemplate(path.join(templateRoot, "model", "README.template.md"), reps),
   );
 
   return destination;
 }
 
+// ---------- PUBLISH ----------
+
 function currentHfUser() {
-  const result = spawnSync("huggingface-cli", ["whoami"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  });
-  if (result.status !== 0) {
-    return null;
-  }
+  const result = spawnSync("huggingface-cli", ["whoami"], { cwd: repoRoot, encoding: "utf8" });
+  if (result.status !== 0) return null;
   return result.stdout
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find((line) => line && !line.startsWith("orgs:"));
+    .map((l) => l.trim())
+    .find((l) => l && !l.startsWith("orgs:"));
 }
 
 function runHf(args, options = {}) {
@@ -349,16 +362,11 @@ function runHf(args, options = {}) {
     console.log(`[hf:dry-run] ${printable}`);
     return;
   }
-
-  const result = spawnSync("huggingface-cli", args, {
-    cwd: repoRoot,
-    encoding: "utf8",
-    stdio: "pipe",
-  });
+  const result = spawnSync("huggingface-cli", args, { cwd: repoRoot, encoding: "utf8", stdio: "pipe" });
   const output = `${result.stdout || ""}${result.stderr || ""}`;
   if (result.status !== 0) {
-    if (options.allowAlreadyExists && /already exists|409|Conflict/i.test(output)) {
-      console.log(`[hf] Repository already exists: ${options.repoId}`);
+    if (options.allowAlreadyExists && /already exists|409|Conflict|You already created/i.test(output)) {
+      console.log(`[hf] Repository already exists: ${options.repoId || ""}`);
       return;
     }
     process.stdout.write(result.stdout || "");
@@ -370,13 +378,25 @@ function runHf(args, options = {}) {
 }
 
 function createRepoArgs(repo, type, activeUser) {
+  // huggingface-cli repo create <name> --type {model|dataset|space} [--space_sdk static] [--organization X]
   const args = ["repo", "create", repo.name, "-y"];
   if (type === "space") {
-    args.push("--type", "space", "--space_sdk", "docker");
+    args.push("--type", "space", "--space_sdk", "static");
+  } else if (type === "dataset") {
+    args.push("--type", "dataset");
   }
+  // model is the default --type, omit
   if (repo.owner !== activeUser) {
     args.push("--organization", repo.owner);
   }
+  return args;
+}
+
+function uploadArgs(repo, type, dir, message) {
+  const args = ["upload", repo.repoId, dir, "."];
+  if (type === "space") args.push("--repo-type", "space");
+  else if (type === "dataset") args.push("--repo-type", "dataset");
+  args.push("--commit-message", message);
   return args;
 }
 
@@ -386,69 +406,50 @@ function publish(context, staged) {
     throw new Error("huggingface-cli is not logged in. Run `huggingface-cli login` first.");
   }
 
-  if (staged.space) {
-    runHf(createRepoArgs(context.space, "space", activeUser), {
-      allowAlreadyExists: true,
-      dryRun: context.options.dryRun,
-      repoId: context.space.repoId,
-    });
-    runHf(
-      [
-        "upload",
-        context.space.repoId,
-        staged.space,
-        ".",
-        "--repo-type",
-        "space",
-        "--commit-message",
-        "Update Enclave Space listing",
-      ],
-      { dryRun: context.options.dryRun },
-    );
-  }
+  const order = [
+    ["space",   context.space,   staged.space,   "Update Enclave Space landing"],
+    ["dataset", context.dataset, staged.dataset, "Update Enclave character recipes dataset"],
+    ["model",   context.model,   staged.model,   "Update Enclave character blueprint schema"],
+  ];
 
-  if (staged.model) {
-    runHf(createRepoArgs(context.model, "model", activeUser), {
+  for (const [type, repo, dir, msg] of order) {
+    if (!dir) continue;
+    console.log(`[hf:publish] ${type} → ${repo.repoId}`);
+    runHf(createRepoArgs(repo, type, activeUser), {
       allowAlreadyExists: true,
       dryRun: context.options.dryRun,
-      repoId: context.model.repoId,
+      repoId: repo.repoId,
     });
-    runHf(
-      [
-        "upload",
-        context.model.repoId,
-        staged.model,
-        ".",
-        "--repo-type",
-        "model",
-        "--commit-message",
-        "Update Enclave character recipes",
-      ],
-      { dryRun: context.options.dryRun },
-    );
+    runHf(uploadArgs(repo, type, dir, msg), { dryRun: context.options.dryRun });
   }
 }
+
+// ---------- MAIN ----------
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
   const context = buildContext(options);
   const staged = {};
 
-  if (shouldStageSpace(options)) {
+  if (options.targets.has("space")) {
     staged.space = stageSpace(context);
-    console.log(`[hf:stage] Space staged at ${path.relative(repoRoot, staged.space)}`);
+    console.log(`[hf:stage] Space staged at ${path.relative(repoRoot, staged.space)} → ${context.space.repoId}`);
   }
-
-  if (shouldStageModel(options)) {
+  if (options.targets.has("dataset")) {
+    staged.dataset = stageDataset(context);
+    console.log(`[hf:stage] Dataset staged at ${path.relative(repoRoot, staged.dataset)} → ${context.dataset.repoId}`);
+  }
+  if (options.targets.has("model")) {
     staged.model = stageModel(context);
-    console.log(`[hf:stage] Model staged at ${path.relative(repoRoot, staged.model)}`);
+    console.log(`[hf:stage] Model staged at ${path.relative(repoRoot, staged.model)} → ${context.model.repoId}`);
   }
-
-  console.log(`[hf:stage] Space repo: ${context.space.repoId}`);
-  console.log(`[hf:stage] Model repo: ${context.model.repoId}`);
 
   if (options.command === "publish") {
     publish(context, staged);
+    console.log(`[hf:publish] done.`);
+    console.log(`  Space:   ${context.spaceUrl}`);
+    console.log(`  Dataset: ${context.datasetUrl}`);
+    console.log(`  Model:   ${context.modelUrl}`);
   }
 }
 

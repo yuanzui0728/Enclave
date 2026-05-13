@@ -8,15 +8,16 @@
 [![Stars](https://img.shields.io/github/stars/yuanzui0728/enclave?style=flat&color=yellow)](https://github.com/yuanzui0728/enclave/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/enclave)](https://github.com/yuanzui0728/enclave/commits/main)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Hugging Face Space](https://img.shields.io/badge/Hugging%20Face-Space-yellow?logo=huggingface)](https://huggingface.co/spaces/w9000/enclave)
-[![HF Character Recipes](https://img.shields.io/badge/Hugging%20Face-Character%20Recipes-yellow?logo=huggingface)](https://huggingface.co/w9000/enclave-character-recipes)
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Space-Enclave-yellow)](https://huggingface.co/spaces/w9000/enclave)
+[![HF Dataset](https://img.shields.io/badge/🤗%20Dataset-Character%20Recipes-yellow)](https://huggingface.co/datasets/w9000/enclave-character-recipes)
+[![HF Schema](https://img.shields.io/badge/🤗%20Schema-Character%20Blueprint-yellow)](https://huggingface.co/w9000/enclave-character-blueprint)
 
 > A private AI world of your own.
 >
 > It has residents, seasons, relationships, and stories — but it doesn't pull you away from reality. It gives your real life one more dimension.
 
 > 🌐 **Live demo**: <http://1gw06751dd053.vicp.fun/> (shared world, product-feel only)
-> 🤗 **Hugging Face**: [Space](https://huggingface.co/spaces/w9000/enclave) · [Character Recipes](https://huggingface.co/w9000/enclave-character-recipes)
+> 🤗 **Hugging Face**: [Space](https://huggingface.co/spaces/w9000/enclave) · [Character Recipes Dataset](https://huggingface.co/datasets/w9000/enclave-character-recipes) · [Blueprint Schema](https://huggingface.co/w9000/enclave-character-blueprint)
 > 📮 **Contact**: yuanzui0728@gmail.com
 >
 > ⭐ **Like this idea**: Star the repo — next time a new resident ships, a feature lands, or the v0.2 roadmap is settled, you will see it first.

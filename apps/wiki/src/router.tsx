@@ -36,6 +36,23 @@ const CreateCharacterPage = lazy(async () => {
   return { default: mod.CreateCharacterPage };
 });
 
+const MyCharactersPage = lazy(async () => {
+  const mod = await import("./routes/my-characters-page");
+  return { default: mod.MyCharactersPage };
+});
+
+const MyCharacterCreatePage = lazy(async () => {
+  const mod = await import("./routes/my-character-edit-page");
+  const Component = mod.MyCharacterEditPage;
+  return { default: () => <Component mode="create" /> };
+});
+
+const MyCharacterEditPage = lazy(async () => {
+  const mod = await import("./routes/my-character-edit-page");
+  const Component = mod.MyCharacterEditPage;
+  return { default: () => <Component mode="edit" /> };
+});
+
 const PendingReviewsPage = lazy(async () => {
   const mod = await import("./routes/pending-reviews-page");
   return { default: mod.PendingReviewsPage };
@@ -139,6 +156,24 @@ const createCharacterRoute = createRoute({
   component: CreateCharacterPage,
 });
 
+const myCharactersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/my-characters",
+  component: MyCharactersPage,
+});
+
+const myCharacterCreateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/my-characters/new",
+  component: MyCharacterCreatePage,
+});
+
+const myCharacterEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/my-characters/$id",
+  component: MyCharacterEditPage,
+});
+
 const pendingReviewsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/pending-reviews",
@@ -215,6 +250,9 @@ const routeTree = rootRoute.addChildren([
   characterRoute,
   characterDiffRoute,
   createCharacterRoute,
+  myCharactersRoute,
+  myCharacterCreateRoute,
+  myCharacterEditRoute,
   pendingReviewsRoute,
   recentChangesRoute,
   adminLayoutRoute.addChildren([

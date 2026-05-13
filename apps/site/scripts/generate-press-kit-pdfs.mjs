@@ -173,7 +173,7 @@ function renderHtml(locale, copy) {
   <ul>${sections}</ul>
   <h2>${escapeHtml(copy.contactTitle)}</h2>
   <div class="contact">${escapeHtml(copy.contact)}</div>
-  <div class="footer">GitHub: https://github.com/yuanzui0728/yinjie-app · Website: http://1gw06751dd053.vicp.fun</div>
+  <div class="footer">GitHub: https://github.com/yuanzui0728/yinjie-app · Website: https://enclaveai.top</div>
 </body>
 </html>`;
 }

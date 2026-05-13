@@ -264,6 +264,16 @@ const DesktopFeedbackPage = lazy(async () => {
   return { default: mod.DesktopFeedbackPage };
 });
 
+const ProfileFeedbackPage = lazy(async () => {
+  const mod = await import("./routes/profile-feedback-page");
+  return { default: mod.ProfileFeedbackPage };
+});
+
+const ProfileCharacterImportPage = lazy(async () => {
+  const mod = await import("./routes/profile-character-import-page");
+  return { default: mod.ProfileCharacterImportPage };
+});
+
 const DesktopAddFriendPage = lazy(async () => {
   const mod = await import("./routes/desktop-add-friend-page");
   return { default: mod.DesktopAddFriendPage };
@@ -930,6 +940,20 @@ const profileMomentsRoute = createRoute({
   component: ProfileMomentsPage,
 });
 
+const profileFeedbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/feedback",
+  beforeLoad: requireWorldReady,
+  component: ProfileFeedbackPage,
+});
+
+const profileCharacterImportRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/character-import",
+  beforeLoad: requireWorldReady,
+  component: ProfileCharacterImportPage,
+});
+
 const desktopMobileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/desktop/mobile",
@@ -1098,6 +1122,8 @@ const routeTree = rootRoute.addChildren([
   profileSubscriptionRoute,
   profileFavoritesRoute,
   profileMomentsRoute,
+  profileFeedbackRoute,
+  profileCharacterImportRoute,
   desktopMobileRoute,
   mobileFriendMomentsRoute,
   desktopFriendMomentsRoute,

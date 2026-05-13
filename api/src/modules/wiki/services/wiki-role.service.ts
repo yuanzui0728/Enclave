@@ -1,6 +1,7 @@
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AppError } from '../../../common/app-error.exception';
+import { sleepForWorldJitter } from '../../../common/cron-jitter.util';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -154,6 +155,7 @@ export class WikiRoleService {
   /** Daily sweep: promote any newcomers that crossed the threshold and clean expired protections. */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async dailySweep(): Promise<void> {
+    await sleepForWorldJitter(600_000);
     const newcomers = await this.userRepo.find({
       where: { role: 'newcomer', userType: 'wiki_member' },
     });

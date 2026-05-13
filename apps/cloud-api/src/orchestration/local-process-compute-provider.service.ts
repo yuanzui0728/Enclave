@@ -9,7 +9,7 @@ import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { CloudComputeProviderSummary } from "@yinjie/contracts";
 import { ChildProcess, spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, openSync } from "node:fs";
 import path from "node:path";
 import { Repository } from "typeorm";
@@ -25,6 +25,11 @@ import {
   buildWorldBootstrapConfig,
   resolveCloudPlatformBaseUrl,
 } from "./world-bootstrap-config";
+import {
+  parseMinimaxKeyPool,
+  pickMinimaxKey,
+} from "./minimax-key-pool";
+import { MinimaxQuotaDispatcherService } from "./minimax-quota-dispatcher.service";
 
 type RunningChild = {
   pid: number;
@@ -50,6 +55,7 @@ function findRepoRoot(start: string): string {
 
 const REPO_ROOT =
   process.env.YINJIE_REPO_ROOT?.trim() || findRepoRoot(__dirname);
+
 const API_DIST_ENTRY = path.join(REPO_ROOT, "api", "dist", "main.js");
 const ACCOUNTS_ROOT = path.join(REPO_ROOT, "data", "accounts");
 const LOG_DIR = path.join(REPO_ROOT, "logs", "dev-services");
@@ -87,6 +93,7 @@ export class LocalProcessComputeProviderService
     private readonly configService: ConfigService,
     @InjectRepository(CloudInstanceEntity)
     private readonly instanceRepo: Repository<CloudInstanceEntity>,
+    private readonly minimaxQuotaDispatcher: MinimaxQuotaDispatcherService,
   ) {
     const configured = parseInt(
       process.env.CLOUD_LOCAL_PROCESS_BASE_PORT?.trim() ?? "",
@@ -124,9 +131,12 @@ export class LocalProcessComputeProviderService
       // 之前会 spawn 失败一次然后把 launchConfig.pid 改成新 pid，再重启时
       // 那个新 pid 已死，但 port 仍被原孤儿占着 → reattach 永远失败。这里
       // 改成只信端口存活：能 ping 通就直接当 running，pid 只用来后续 kill。
+      // 必须带 instance.worldId：pingHealth 只信"端口能响应且 identity 匹配自家 world"。
+      // 这一步以前只看 res.status < 500，结果 cloud-api 自己（孤儿）或别号 child 占了
+      // 同端口都会被误判 healthy，导致 reattach 把 instance 标 running，但实际 spawn 不上来。
       const portHealthy =
         port && Number.isFinite(port) && port > 0
-          ? await this.pingHealth(port, 1_500)
+          ? await this.pingHealth(port, 1_500, instance.worldId)
           : false;
 
       this.logger.log(
@@ -149,6 +159,15 @@ export class LocalProcessComputeProviderService
           await this.instanceRepo.save(instance);
         }
       } else {
+        // pingHealth 拒判但 pid 还活着 = 这是上一代 cloud-api 留下的孤儿 child
+        // （比如升级到带 /identity 的版本之前 spawn 出来的）。必须主动收掉，否则它会
+        // 继续持 sqlite + port，新 spawn 的 child 起来就成两个 writer 写同一个 db。
+        if (pid > 0 && this.isPidAlive(pid)) {
+          this.logger.warn(
+            `reattach failed but pid=${pid} still alive for world=${instance.worldId}; evicting to free sqlite/port for fresh spawn.`,
+          );
+          await this.killPidGracefully(pid);
+        }
         instance.powerState = "stopped";
         instance.lastOperationAt = new Date();
         await this.instanceRepo.save(instance);
@@ -189,7 +208,7 @@ export class LocalProcessComputeProviderService
   async createInstance(
     world: CloudWorldEntity,
   ): Promise<ProvisionWorldInstanceResult> {
-    const port = this.allocatePort();
+    const port = await this.allocatePort();
     const accountDir = this.resolveAccountDir(world.phone);
     mkdirSync(accountDir, { recursive: true });
 
@@ -232,11 +251,38 @@ export class LocalProcessComputeProviderService
       return { powerState: "running", providerSnapshotId: null };
     }
 
-    const port = this.parsePersistedPort(instance) ?? this.allocatePort();
+    // 先信任持久化的 port — 大部分时候它是空的（创建时就停了）或仍然属于本 world。
+    // 但 startInstance 是 lifecycle worker 重试入口，撞 EADDRINUSE 时之前会反复 spawn-exit
+    // 死循环。这里 spawn 失败后清掉脏 port 再 fallback 到 allocatePort 重试，让冲突状态自愈。
+    const persistedPort = this.parsePersistedPort(instance);
+    let port = persistedPort ?? (await this.allocatePort());
     const accountDir = this.resolveAccountDir(world.phone);
     mkdirSync(accountDir, { recursive: true });
 
-    const child = await this.spawnChild(world, port, accountDir);
+    let child: ChildProcess;
+    try {
+      child = await this.spawnChild(world, port, accountDir);
+    } catch (err) {
+      if (!(persistedPort && port === persistedPort)) {
+        throw err;
+      }
+      this.logger.warn(
+        `spawn on persisted port=${port} failed for world=${world.id}: ${(err as Error).message}; trying to evict stale child and retry`,
+      );
+      const stalePid = this.parsePersistedPid(instance);
+      if (stalePid > 0 && this.isPidAlive(stalePid)) {
+        await this.killPidGracefully(stalePid);
+      }
+      try {
+        child = await this.spawnChild(world, port, accountDir);
+      } catch (retryErr) {
+        this.logger.warn(
+          `retry on same port=${port} still failed: ${(retryErr as Error).message}; falling back to a fresh port`,
+        );
+        port = await this.allocatePort();
+        child = await this.spawnChild(world, port, accountDir);
+      }
+    }
     this.running.set(world.id, {
       pid: child.pid ?? 0,
       port,
@@ -275,7 +321,8 @@ export class LocalProcessComputeProviderService
     let rawStatus: string;
 
     if (state && this.isAlive(state)) {
-      const healthy = await this.pingHealth(state.port, 1_500);
+      // 带 world.id 做身份校验，避免别号 child 占了同端口后 reconcile 误判 running。
+      const healthy = await this.pingHealth(state.port, 1_500, world.id);
       deploymentState = healthy ? "running" : "starting";
       rawStatus = healthy ? "running" : "starting";
     } else if (instance && instance.powerState === "stopped") {
@@ -313,10 +360,26 @@ export class LocalProcessComputeProviderService
     return path.join(ACCOUNTS_ROOT, sanitized);
   }
 
-  private allocatePort() {
+  private async allocatePort(): Promise<number> {
     const used = new Set<number>();
     for (const state of this.running.values()) {
       used.add(state.port);
+    }
+    // 还要算上 DB 里其他 instance 持久化的端口 — 即使它们当前 stopped、不在 running map，
+    // 它们的 port 也可能被外部进程（孤儿 child / 老 cloud-api / 重启没回收的 child）占着。
+    // 之前只看 in-memory running，导致多个 instance 在 DB 里登记同一个 port，撞起来就死循环。
+    try {
+      const allForProvider = await this.instanceRepo.find({
+        where: { providerKey: this.key },
+      });
+      for (const inst of allForProvider) {
+        const p = this.parsePersistedPort(inst);
+        if (p) used.add(p);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `allocatePort: failed to scan persisted ports, falling back to in-memory only: ${(err as Error).message}`,
+      );
     }
     let port = this.basePort;
     while (used.has(port)) {
@@ -330,6 +393,36 @@ export class LocalProcessComputeProviderService
     if (typeof raw !== "string") return null;
     const parsed = parseInt(raw, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  private parsePersistedPid(instance: CloudInstanceEntity | null) {
+    const raw = instance?.launchConfig?.pid;
+    if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+    if (typeof raw !== "string") return 0;
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  // SIGTERM 给 ~3s 优雅退出，超时 SIGKILL。多用于 reattach 失败但 pid 还活着的孤儿 child —
+  // 必须让它先死，否则新 child 起来会和它一起写同一个 sqlite。
+  private async killPidGracefully(pid: number) {
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {
+      // already dead or no permission — fall through to existence check
+    }
+    for (let i = 0; i < 30; i += 1) {
+      if (!this.isPidAlive(pid)) return;
+      await this.sleep(100);
+    }
+    if (this.isPidAlive(pid)) {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {
+        // ignore
+      }
+      await this.sleep(200);
+    }
   }
 
   private isAlive(state: RunningChild) {
@@ -371,8 +464,44 @@ export class LocalProcessComputeProviderService
       PUBLIC_API_BASE_URL: `http://127.0.0.1:${port}`,
     };
 
+    // MiniMax token plan 按 world 维度稳定 hash 分配。池为空时不注入，
+    // child 自己读 api/.env 的 MINIMAX_API_KEY 兜底（向后兼容旧单 key 配置）。
+    const minimaxPool = parseMinimaxKeyPool(
+      this.configService.get<string>("MINIMAX_API_KEYS"),
+      this.configService.get<string>("MINIMAX_API_KEY"),
+    );
+    const minimaxAlloc = pickMinimaxKey(world.id, minimaxPool);
+    if (minimaxAlloc) {
+      env.MINIMAX_API_KEY = minimaxAlloc.key;
+    }
+    // 安全：child 只该看到自己分到的那个 key，整个池只属于 cloud-api 层。
+    // 不删的话 ...process.env 会把全部 CSV 池泄露给 child env（/proc/PID/environ 可见）。
+    delete env.MINIMAX_API_KEYS;
+
+    // 算 per-world 日配额并注入 env：共享同一 key 的 N 个 world 公平分摊单 key 日限额；
+    // 配额 < world 数时 dispatcher 做日轮换，保证每个 world 都能轮到。
+    // dispatcher 对 pool=空 / myAlloc=null 有兜底逻辑，但底层 worldRepo.find() 仍可能
+    // 抛 db 错误（连接异常等）—— catch 住后 child 走 fallback 限额。
+    try {
+      const share = await this.minimaxQuotaDispatcher.computeWorldDailyShare(world.id);
+      env.MINIMAX_DAILY_LIMIT_HAILUO_FAST = String(share.hailuoFast);
+      env.MINIMAX_DAILY_LIMIT_HAILUO = String(share.hailuo);
+      env.MINIMAX_DAILY_LIMIT_MUSIC_26 = String(share.music26);
+      env.MINIMAX_DAILY_LIMIT_MUSIC_25 = String(share.music25);
+      env.MINIMAX_DAILY_LIMIT_IMAGE_01 = String(share.image01);
+      env.MINIMAX_DAILY_LIMIT_LYRICS = String(share.lyrics);
+    } catch (err) {
+      this.logger.warn(
+        `compute minimax daily share failed for world=${world.id}: ${(err as Error)?.message}; child uses fallback limits`,
+      );
+    }
+
     this.logger.log(
-      `spawning api child for phone=${world.phone} world=${world.id} port=${port} dir=${accountDir}`,
+      `spawning api child for phone=${world.phone} world=${world.id} port=${port} dir=${accountDir}` +
+        (minimaxAlloc
+          ? ` minimax-key=#${minimaxAlloc.index}/${minimaxAlloc.total} (…${minimaxAlloc.fingerprint})`
+          : " minimax-key=<pool empty, child fallback>") +
+        ` quota=hailuoFast:${env.MINIMAX_DAILY_LIMIT_HAILUO_FAST ?? "-"}/hailuo:${env.MINIMAX_DAILY_LIMIT_HAILUO ?? "-"}/music26:${env.MINIMAX_DAILY_LIMIT_MUSIC_26 ?? "-"}`,
     );
 
     const child = spawn(process.execPath, ["--enable-source-maps", API_DIST_ENTRY], {
@@ -400,11 +529,24 @@ export class LocalProcessComputeProviderService
       );
     });
 
-    await this.waitForHealthy(port, child);
+    await this.waitForHealthy(port, child, world.id);
+    // settle check：waitForHealthy 返回后再睡一小段，确认 child 不是因为 EADDRINUSE 之类
+    // 在 health probe 通过之后才退出（spawn 早期 race：identity 通了的同时 server 因端口
+    // 抢占失败 quit）。child 死了就把 spawn 整体算失败，让 startInstance 的重试分支兜住。
+    await this.sleep(300);
+    if (child.exitCode !== null) {
+      throw new Error(
+        `api child exited shortly after passing health check (code=${child.exitCode})`,
+      );
+    }
     return child;
   }
 
-  private async waitForHealthy(port: number, child: ChildProcess) {
+  private async waitForHealthy(
+    port: number,
+    child: ChildProcess,
+    expectedWorldId: string,
+  ) {
     const deadline = Date.now() + HEALTH_DEADLINE_MS;
     while (Date.now() < deadline) {
       if (child.exitCode !== null) {
@@ -412,7 +554,7 @@ export class LocalProcessComputeProviderService
           `api child exited before health check passed (code=${child.exitCode})`,
         );
       }
-      if (await this.pingHealth(port, 1_000)) {
+      if (await this.pingHealth(port, 1_000, expectedWorldId)) {
         return;
       }
       await this.sleep(HEALTH_POLL_INTERVAL_MS);
@@ -420,15 +562,32 @@ export class LocalProcessComputeProviderService
     throw new Error(`api child on port ${port} did not become healthy in time`);
   }
 
-  private async pingHealth(port: number, timeoutMs: number) {
+  // expectedWorldId 必传时做严格身份校验（worldId 必须匹配）；不传时退化为"端口能响应
+  // 且响应来自一个 world api（body 有 worldId 字段）"的弱判断。任何 cloud-api 自己（孤儿/
+  // 当前实例）撞同端口都会因没有 /api/world/identity 路由返回 404 或不同 worldId，被这里拒绝。
+  private async pingHealth(
+    port: number,
+    timeoutMs: number,
+    expectedWorldId?: string,
+  ) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/api/world/owner`, {
+      const res = await fetch(`http://127.0.0.1:${port}/api/world/identity`, {
         method: "GET",
         signal: ctrl.signal,
       });
-      return res.status < 500;
+      if (res.status !== 200) return false;
+      const body = (await res.json().catch(() => null)) as
+        | { worldId?: unknown }
+        | null;
+      if (!body || typeof body.worldId !== "string" || !body.worldId) {
+        return false;
+      }
+      if (expectedWorldId && body.worldId !== expectedWorldId) {
+        return false;
+      }
+      return true;
     } catch {
       return false;
     } finally {

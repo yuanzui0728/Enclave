@@ -1,7 +1,7 @@
 import { SUPPORTED_LOCALES, type SupportedLocale } from "./locales";
 
 export const SITE_BASE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://1gw06751dd053.vicp.fun"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://enclaveai.top"
 ).replace(/\/+$/, "");
 
 export const OG_LOCALE: Record<SupportedLocale, string> = {

@@ -46,11 +46,11 @@ services:
       context: .
       dockerfile: apps/site/Dockerfile
       args:
-        NEXT_PUBLIC_SITE_URL: ${SITE_PUBLIC_URL:-http://1gw06751dd053.vicp.fun}
+        NEXT_PUBLIC_SITE_URL: ${SITE_PUBLIC_URL:-https://enclaveai.top}
     ports:
       - "${SITE_PORT:-3001}:3001"
     environment:
-      - NEXT_PUBLIC_SITE_URL=${SITE_PUBLIC_URL:-http://1gw06751dd053.vicp.fun}
+      - NEXT_PUBLIC_SITE_URL=${SITE_PUBLIC_URL:-https://enclaveai.top}
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3001/zh-CN >/dev/null 2>&1 || exit 1"]

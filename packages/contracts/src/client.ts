@@ -798,6 +798,17 @@ function resolveFeedMediaType(
   mediaType: FeedPost["mediaType"] | undefined,
   media: FeedMediaAsset[],
 ): FeedPost["mediaType"] {
+  // 优先信任后端 mediaType（含 "audio"）。视频号音乐贴的 media[] 是 audio + 多图，
+  // 早期实现只看 media[0].kind 会把 audio 帖落到 "image"，前端就拿不到 "audio" 分支
+  // → 沉浸式播放器不渲染、UI 显示"暂无可播放内容"。
+  if (mediaType === "audio" || mediaType === "video") {
+    return mediaType;
+  }
+
+  if (media[0]?.kind === "audio") {
+    return "audio";
+  }
+
   if (media[0]?.kind === "video") {
     return "video";
   }
@@ -806,7 +817,7 @@ function resolveFeedMediaType(
     return "image";
   }
 
-  return mediaType === "image" || mediaType === "video" ? mediaType : "text";
+  return mediaType === "image" ? "image" : "text";
 }
 
 function createFeedMediaFromLegacy(
@@ -1763,6 +1774,24 @@ export function deleteCharacter(id: string, baseUrl?: string) {
     `/characters/${id}`,
     {
       method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+/**
+ * Tenant-facing：从 wiki 导出的 JSON bundle 导入私有角色到当前 world，
+ * 按 name upsert。同名→覆盖；新名→新建并自动建 friendship。
+ */
+export function importPersonalCharacter(
+  bundle: unknown,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<{ character: Character; overwrote: boolean }>(
+    "/characters/import-personal",
+    {
+      method: "POST",
+      body: JSON.stringify(bundle),
     },
     baseUrl,
   );

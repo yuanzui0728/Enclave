@@ -11,7 +11,8 @@ import type {
 export const CYBER_AVATAR_RUNTIME_RULES_CONFIG_KEY =
   'cyber_avatar_runtime_rules';
 
-export const CYBER_AVATAR_INCREMENTAL_SCAN_CRON = '*/5 * * * *';
+// 增量赛博画像扫描：5min→30min（每次 tick 都跑 generateJsonObject）。
+export const CYBER_AVATAR_INCREMENTAL_SCAN_CRON = '*/30 * * * *';
 export const CYBER_AVATAR_DEEP_REFRESH_CRON = '30 4 * * *';
 export const CYBER_AVATAR_REAL_WORLD_SYNC_CRON = '17 * * * *';
 

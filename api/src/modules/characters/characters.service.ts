@@ -411,6 +411,97 @@ export class CharactersService implements OnModuleInit {
     });
   }
 
+  /**
+   * 从 wiki 导出的 JSON bundle 导入私有角色到当前 world：
+   * - 按 name 在 characters 表里 upsert（同名→覆盖；不存在→新建）
+   * - 自动给 world-owner 建 friendship（已存在则保留 intimacy/status）
+   * - sourceType 写 'private_import'，sourceKey 记录原 name
+   */
+  async importPersonalCharacter(input: {
+    name: string;
+    avatar?: string;
+    bio?: string;
+    personality?: string | null;
+    relationship?: string;
+    relationshipType?: string;
+    expertDomains?: string[];
+    triggerScenes?: string[] | null;
+    profile?: PersonalityProfile | null;
+  }): Promise<{ character: CharacterEntity; overwrote: boolean }> {
+    const trimmedName = (input.name ?? '').trim();
+    if (!trimmedName) {
+      throw new AppError('PRIVATE_IMPORT_INVALID', {
+        legacyMessage: '导入文件缺少 name 字段。',
+      });
+    }
+
+    const existing = await this.repo.findOne({
+      where: { name: trimmedName },
+    });
+
+    const baseFields: Partial<CharacterEntity> = {
+      name: trimmedName,
+      avatar: input.avatar ?? '',
+      bio: input.bio ?? '',
+      personality: input.personality ?? undefined,
+      relationship: input.relationship ?? trimmedName,
+      relationshipType: input.relationshipType ?? 'friend',
+      expertDomains: input.expertDomains ?? [],
+      triggerScenes: input.triggerScenes ?? undefined,
+      profile: input.profile ?? ({} as PersonalityProfile),
+    };
+
+    let saved: CharacterEntity;
+    if (existing) {
+      Object.assign(existing, baseFields);
+      saved = await this.repo.save(existing);
+    } else {
+      const newId = `private-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      saved = await this.repo.save(
+        this.repo.create({
+          id: newId,
+          sourceType: 'private_import',
+          sourceKey: trimmedName,
+          deletionPolicy: 'archive_allowed',
+          isTemplate: false,
+          isOnline: false,
+          onlineMode: 'auto',
+          activityFrequency: 'normal',
+          momentsFrequency: 1,
+          feedFrequency: 1,
+          intimacyLevel: 0,
+          socialOpenness: 'normal',
+          proactiveBrowseChance: 0.3,
+          activityMode: 'auto',
+          modelRoutingMode: 'inherit_default',
+          allowOwnerKeyOverride: true,
+          ...baseFields,
+        } as Partial<CharacterEntity>),
+      );
+    }
+
+    // Ensure friendship with world-owner so the character shows up in the
+    // tenant's friends list. We don't overwrite existing intimacy/status.
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const existingFriendship = await this.friendshipRepo.findOne({
+      where: { ownerId: owner.id, characterId: saved.id },
+    });
+    if (!existingFriendship) {
+      await this.friendshipRepo.save(
+        this.friendshipRepo.create({
+          ownerId: owner.id,
+          characterId: saved.id,
+          status: 'friend',
+          source: 'private_import',
+        }),
+      );
+    }
+
+    return { character: saved, overwrote: !!existing };
+  }
+
   private normalizeCharacterAvatars(characters: CharacterEntity[]) {
     return characters.map(
       (character) => this.normalizeCharacterAvatar(character) ?? character,

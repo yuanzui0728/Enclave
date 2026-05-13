@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { sleepForWorldJitter } from '../../../common/cron-jitter.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CharacterEntity } from '../../characters/character.entity';
@@ -47,6 +48,7 @@ export class FarmNpcTickService {
 
   @Cron(FARM_NPC_TICK_CRON)
   async runScheduledTick(): Promise<void> {
+    await sleepForWorldJitter(60_000);
     if (this.running) {
       this.logger.warn('上一次 farm tick 仍在执行，跳过本轮');
       return;

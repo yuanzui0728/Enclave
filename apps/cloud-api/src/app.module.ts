@@ -19,6 +19,7 @@ import { buildCloudTypeOrmOptions, cloudEntities } from "./database/cloud-databa
 import { FeedbackModule } from "./feedback/feedback.module";
 import { InviteModule } from "./invite/invite.module";
 import { LocalProcessComputeProviderService } from "./orchestration/local-process-compute-provider.service";
+import { MinimaxQuotaDispatcherService } from "./orchestration/minimax-quota-dispatcher.service";
 import { MockComputeProviderService } from "./orchestration/mock-compute-provider.service";
 import { WorldLifecycleWorkerService } from "./orchestration/world-lifecycle-worker.service";
 import { ComputeProviderRegistryService } from "./providers/compute-provider-registry.service";
@@ -84,6 +85,7 @@ import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
     ManualDockerComputeProviderService,
     ManualDockerRemoteExecutorService,
     LocalProcessComputeProviderService,
+    MinimaxQuotaDispatcherService,
     ComputeProviderRegistryService,
     CloudRuntimeConfigValidator,
     WorldLifecycleWorkerService,

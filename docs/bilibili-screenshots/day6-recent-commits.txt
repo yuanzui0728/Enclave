@@ -1,0 +1,5 @@
+6879c2e9 feat(channels/mobile): 视频/音乐底部进度条 + 拖动 seek
+98cd8db5 feat(channels/mobile): 视频/音频改抖音式点击切播放 — 去掉静音/暂停按钮
+2c2d1e7c fix(channels): resolveFeedMediaType 保留 audio — 修复视频号音乐贴无法播放
+09ccee98 fix(api/moments): 媒体 Cache-Control 改走 sendFile.options.headers
+b9841459 perf(app/moments+feed): 评论/点赞改纯 optimistic，去掉 onSuccess 的 invalidate refetch

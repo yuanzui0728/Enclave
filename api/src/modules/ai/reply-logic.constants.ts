@@ -352,7 +352,9 @@ export const GROUP_REPLY_RECENT_SPEAKER_WINDOW = 4;
 
 export const MEMORY_COMPRESSION_INTERVAL = 10;
 export const MOMENT_GENERATE_CHANCE = 0.15;
-export const CHANNEL_GENERATE_CHANCE = 0.22;
+// 2026-05-13: 视频号视频走 MiniMax，per-key 配额紧张，把生成概率从 0.22 降到 0.1
+// 减少单 world 触发频率，配合 cloud-api per-world 配额派发避免抢光
+export const CHANNEL_GENERATE_CHANCE = 0.1;
 export const SCENE_FRIEND_REQUEST_CHANCE = 0.4;
 export const SCENE_FRIEND_REQUEST_SCENES = [
   'coffee_shop',

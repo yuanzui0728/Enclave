@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { useNavigate } from "@tanstack/react-router";
-import { getMyCloudProfile, getWorldOwner } from "@yinjie/contracts";
+import { getMyCloudProfile, getWorldOwner, isApiRequestError } from "@yinjie/contracts";
 import { AppPage, AppSection, InlineNotice } from "@yinjie/ui";
 
 const t = translateRuntimeMessage;
@@ -111,45 +111,45 @@ export function SplashPage() {
         return;
       }
 
-      // 整体超时（8s 内两个都没回） → 清 cloud + /welcome
-      if (!ownerResult) {
-        if (isCloudMode) {
-          clearCloudRuntimeSession();
-        }
-        void navigate({ to: "/welcome", replace: true });
-        return;
-      }
-
-      // cloud profile 失败：cloud 必须有效，否则降级到 /welcome
-      if (
+      // 只有 cloud-api 明确回 401/403 才说明 token 真的失效——必须重新登录。
+      // 网络错误 / 5xx / 超时是后端"暂时不可用"，绝不能借此清掉用户的 7d session：
+      // 历史上 splash 不区分两者，cloud-api 一重启就把所有还有效的 token 抹掉，
+      // 表现为"重启服务就要重新登陆"。
+      const profileAuthExpired =
         isCloudMode &&
-        profileResult &&
-        profileResult.status === "rejected"
-      ) {
+        profileResult?.status === "rejected" &&
+        isApiRequestError(profileResult.reason) &&
+        (profileResult.reason.statusCode === 401 ||
+          profileResult.reason.statusCode === 403);
+
+      if (profileAuthExpired) {
         clearCloudRuntimeSession();
         void navigate({ to: "/welcome", replace: true });
         return;
       }
-      if (profileResult && profileResult.status === "fulfilled" && profileResult.value) {
+
+      if (profileResult?.status === "fulfilled" && profileResult.value) {
         setCloudProfile(profileResult.value);
       }
 
-      // owner 失败 → 通常是后端没起或网络抖动，回 /welcome
-      if (ownerResult.status === "rejected") {
-        if (isCloudMode) {
-          clearCloudRuntimeSession();
-        }
-        void navigate({ to: "/welcome", replace: true });
-        return;
+      // owner 拿到就用最新的；拿不到（超时 / 网络抖动 / api 重启）就回落到
+      // zustand 持久化里的旧 owner 状态——只用来决定路由 (onboardingCompleted)，
+      // 不动 cloud session。
+      const owner =
+        ownerResult?.status === "fulfilled" ? ownerResult.value : null;
+      if (owner) {
+        hydrateOwner(owner);
       }
 
-      const owner = ownerResult.value;
-      hydrateOwner(owner);
+      const cachedOnboardingCompleted =
+        owner?.onboardingCompleted ??
+        useWorldOwnerStore.getState().onboardingCompleted;
+
       const restoredRoute = isMobileWebRuntime(runtimeConfig.appPlatform)
         ? readPersistedMobileWebRoute()
         : null;
       void navigate({
-        to: owner.onboardingCompleted
+        to: cachedOnboardingCompleted
           ? restoredRoute ?? "/tabs/chat"
           : "/welcome",
         replace: true,

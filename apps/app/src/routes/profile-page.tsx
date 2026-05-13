@@ -8,9 +8,11 @@ import {
   CreditCard,
   FileText,
   LogOut,
+  MessageSquareText,
   Settings,
   ShieldCheck,
   Star,
+  UserPlus,
 } from "lucide-react";
 import { AppPage, cn } from "@yinjie/ui";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -180,6 +182,21 @@ export function ProfilePage() {
             />
           </ProfileEntryGroup>
         ) : null}
+
+        <ProfileEntryGroup className="mt-3">
+          <ProfileEntry
+            icon={UserPlus}
+            iconClassName="bg-[rgba(139,92,246,0.12)] text-[#7c3aed]"
+            label={t(msg`导入角色`)}
+            to="/profile/character-import"
+          />
+          <ProfileEntry
+            icon={MessageSquareText}
+            iconClassName="bg-[rgba(56,189,248,0.12)] text-[#0891b2]"
+            label={t(msg`反馈`)}
+            to="/profile/feedback"
+          />
+        </ProfileEntryGroup>
 
         <ProfileEntryGroup className="mt-3">
           <ProfileEntry

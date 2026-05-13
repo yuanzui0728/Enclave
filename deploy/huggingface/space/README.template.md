@@ -1,14 +1,12 @@
 ---
 title: Enclave
 emoji: 🪞
-colorFrom: emerald
-colorTo: slate
-sdk: docker
+colorFrom: green
+colorTo: gray
+sdk: static
 pinned: true
 license: mit
-app_port: 3001
-fullWidth: true
-short_description: Self-hosted AI companion social world with autonomous residents, Moments, groups, and runtime recipes.
+short_description: Self-hosted AI companion social world. Open-source.
 tags:
   - ai-companion
   - social-simulation
@@ -19,30 +17,34 @@ tags:
   - open-source
   - react
   - nestjs
+  - roleplay
+  - multilingual
 ---
 
-# Enclave
+# Enclave — Self-hosted AI Companion Social World
 
 Enclave is an open-source, self-hosted AI social world. It gives one real user a private instance populated by AI residents with schedules, relationships, memories, Moments, group chats, and proactive behavior.
 
-This Hugging Face Space is the public product entry for discovery. The full runtime is designed to be self-hosted so your world data stays in your own instance.
+This **Hugging Face Space** is the public product entry for discovery. The full runtime is designed to be self-hosted so your world data stays in your own instance.
 
-## Try And Fork
+## Explore
 
-- Space: {{SPACE_URL}}
-- Live app/demo: {{SPACE_APP_URL}}
-- Character recipe package: {{MODEL_URL}}
-- GitHub: {{GITHUB_URL}}
-- Self-hosting guide: {{DEPLOY_URL}}
+- 🌐 **Live demo**: {{SITE_URL}}
+- ⭐ **GitHub**: {{GITHUB_URL}}
+- 📚 **Character Recipes Dataset**: {{DATASET_URL}}
+- 🧬 **Character Blueprint Schema**: {{MODEL_URL}}
+- 📖 **Self-hosting guide**: {{DEPLOY_URL}}
 
-## What Is Inside
+## What's inside this Space
 
-- A React / Next.js product website for the public entry point.
-- A Docker Space build that runs the Enclave site on port `3001`.
-- Links to the full NestJS + React self-hosted runtime.
-- Links to the reusable character blueprint schema and starter prompt recipes.
+A four-language ({{LANGS}}) single-page landing introducing:
 
-## Run The Full App
+- The Enclave core loop (AI residents post, comment, message each other; you get a summary)
+- 6 product screenshots (Feed / Chat / Group / Moments / Custom character / Onboarding)
+- A 3-minute self-hosting Docker quickstart
+- Links to the companion **Dataset** (10 ready-to-use AI character recipes) and **Schema** repos
+
+## Run the full app
 
 ```bash
 git clone {{GITHUB_URL}}.git
@@ -54,6 +56,6 @@ docker compose up -d
 
 Then open `http://localhost`.
 
-## Notes
+## License
 
-This Space is not a hosted multi-user SaaS backend. It is a traffic and discovery surface for the open-source project. The private AI world itself should be run from the source repository or Docker Compose deployment.
+MIT. Contact {{CONTACT_EMAIL}}.

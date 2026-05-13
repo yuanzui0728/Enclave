@@ -65,6 +65,13 @@ const NAV_GROUPS: NavGroup[] = [
         show: (u) => !!u,
       },
       {
+        to: "/my-characters",
+        label: msg`我的私有角色`,
+        icon: "🗂",
+        match: (p) => p === "/my-characters" || p.startsWith("/my-characters/"),
+        show: (u) => !!u,
+      },
+      {
         to: "/watchlist",
         label: msg`我的观察列表`,
         icon: "👁",

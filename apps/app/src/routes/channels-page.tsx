@@ -17,12 +17,9 @@ import {
   EyeOff,
   MessageCircleMore,
   Music2,
-  Pause,
   Play,
   Share2,
   ThumbsUp,
-  Volume2,
-  VolumeX,
   X,
 } from "lucide-react";
 import {
@@ -1224,12 +1221,12 @@ function MobileChannelMediaSurface({
   post,
   active,
   userUnmuted,
-  onRequestUnmute,
+  onUnlock,
 }: {
   post: FeedPostListItem;
   active: boolean;
   userUnmuted: boolean;
-  onRequestUnmute: () => void;
+  onUnlock: () => void;
 }) {
   const t = useRuntimeTranslator();
   const audioAsset = post.media?.find((asset) => asset.kind === "audio");
@@ -1252,7 +1249,7 @@ function MobileChannelMediaSurface({
         fallbackPosterUrl={fallbackPoster}
         active={active}
         userUnmuted={userUnmuted}
-        onRequestUnmute={onRequestUnmute}
+        onUnlock={onUnlock}
       />
     );
   }
@@ -1266,7 +1263,7 @@ function MobileChannelMediaSurface({
         posterUrl={rawPosterUrl}
         active={active}
         userUnmuted={userUnmuted}
-        onRequestUnmute={onRequestUnmute}
+        onUnlock={onUnlock}
       />
     );
   }
@@ -1285,8 +1282,137 @@ function MobileChannelMediaSurface({
   );
 }
 
+// 底部进度条 + 拖动 seek：音视频共用。
+// 视觉：贴卡片底部、细线（默认 3px，按下拉宽到 6px + 圆形 thumb），白色填充已播放部分。
+// 交互：pointer events 统一处理鼠标 / 触屏 / 笔。setPointerCapture 让手指滑出条外也跟手。
+// 阻止 touch / click 冒泡，避免触发外层 ChannelAudioPictorial 的 swipe / tap-to-pause。
+function MediaProgressBar({
+  mediaRef,
+  active,
+}: {
+  mediaRef: React.RefObject<HTMLMediaElement | null>;
+  active: boolean;
+}) {
+  const [progress, setProgress] = useState(0);
+  const [scrubbing, setScrubbing] = useState(false);
+  const scrubbingRef = useRef(false);
+  const scrubProgressRef = useRef(0);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const media = mediaRef.current;
+    if (!media) return;
+    const sync = () => {
+      if (scrubbingRef.current) return;
+      const d = media.duration;
+      if (d > 0 && Number.isFinite(d)) {
+        setProgress(media.currentTime / d);
+      }
+    };
+    media.addEventListener("timeupdate", sync);
+    media.addEventListener("loadedmetadata", sync);
+    media.addEventListener("durationchange", sync);
+    sync();
+    return () => {
+      media.removeEventListener("timeupdate", sync);
+      media.removeEventListener("loadedmetadata", sync);
+      media.removeEventListener("durationchange", sync);
+    };
+  }, [mediaRef]);
+
+  // 卡片切走时进度条归零，下次进入避免显示上一首的位置
+  useEffect(() => {
+    if (!active) setProgress(0);
+  }, [active]);
+
+  const computeRatio = (clientX: number) => {
+    const track = trackRef.current;
+    if (!track) return 0;
+    const rect = track.getBoundingClientRect();
+    if (rect.width <= 0) return 0;
+    const r = (clientX - rect.left) / rect.width;
+    return Math.max(0, Math.min(1, r));
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // 某些环境 setPointerCapture 会抛——忽略即可，仍能通过 move/up 事件继续 scrub
+    }
+    scrubbingRef.current = true;
+    setScrubbing(true);
+    const r = computeRatio(event.clientX);
+    scrubProgressRef.current = r;
+    setProgress(r);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!scrubbingRef.current) return;
+    event.stopPropagation();
+    const r = computeRatio(event.clientX);
+    scrubProgressRef.current = r;
+    setProgress(r);
+  };
+
+  const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!scrubbingRef.current) return;
+    event.stopPropagation();
+    scrubbingRef.current = false;
+    setScrubbing(false);
+    const media = mediaRef.current;
+    if (media && media.duration > 0 && Number.isFinite(media.duration)) {
+      media.currentTime = scrubProgressRef.current * media.duration;
+    }
+  };
+
+  // 触屏 / 鼠标 / 合成 click 都要拦下来，避免外层 tap-to-pause / swipe 误触
+  const stopTouch = (event: React.TouchEvent<HTMLDivElement>) =>
+    event.stopPropagation();
+  const stopClick = (event: React.MouseEvent<HTMLDivElement>) =>
+    event.stopPropagation();
+
+  return (
+    <div
+      className="pointer-events-auto absolute inset-x-0 z-20 touch-none px-3 py-2.5"
+      style={{ bottom: "max(env(safe-area-inset-bottom,0px), 0px)" }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
+      onTouchStart={stopTouch}
+      onTouchMove={stopTouch}
+      onTouchEnd={stopTouch}
+      onClick={stopClick}
+    >
+      <div
+        ref={trackRef}
+        className={cn(
+          "relative w-full rounded-full bg-white/30 transition-[height]",
+          scrubbing ? "h-1.5" : "h-[3px]",
+        )}
+      >
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-white"
+          style={{ width: `${progress * 100}%` }}
+        />
+        {scrubbing ? (
+          <div
+            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow"
+            style={{ left: `${progress * 100}%` }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 // 视频号"图文视频"沉浸式渲染：全卡背景图 + 左右滑切配图 + dots + 音频自动播。
 // 历史音乐帖没有多图（images=[]）时，使用 fallbackPosterUrl 当唯一背景，禁用滑动。
+//
+// 交互参考抖音 / 微信视频号：无显式静音 / 暂停按钮；首次点击解除静音 + 保持播放，
+// 之后点击切换 play/pause；暂停态显示居中大 Play 图标作为状态提示。
 function ChannelAudioPictorial({
   title,
   audioUrl,
@@ -1294,7 +1420,7 @@ function ChannelAudioPictorial({
   fallbackPosterUrl,
   active,
   userUnmuted,
-  onRequestUnmute,
+  onUnlock,
 }: {
   title: string;
   audioUrl: string;
@@ -1302,7 +1428,7 @@ function ChannelAudioPictorial({
   fallbackPosterUrl: string | null;
   active: boolean;
   userUnmuted: boolean;
-  onRequestUnmute: () => void;
+  onUnlock: () => void;
 }) {
   const t = useRuntimeTranslator();
   const displayImages =
@@ -1362,6 +1488,23 @@ function ChannelAudioPictorial({
     setImageIndex((i) => (i - 1 < 0 ? displayImages.length - 1 : i - 1));
   };
 
+  // 点击屏幕处理：首次点解除静音 + 强制 play；之后切 play/pause。
+  const handleTap = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!userUnmuted) {
+      onUnlock();
+      audio.muted = false;
+      if (audio.paused) audio.play().catch(() => undefined);
+      return;
+    }
+    if (audio.paused) {
+      audio.play().catch(() => undefined);
+    } else {
+      audio.pause();
+    }
+  };
+
   const handleTouchStart = (event: React.TouchEvent) => {
     const touch = event.touches[0];
     if (!touch) return;
@@ -1385,23 +1528,24 @@ function ChannelAudioPictorial({
     }
   };
   const handleTouchEnd = () => {
+    const wasSwipe = swipeHandledRef.current;
     touchStartXRef.current = null;
     touchStartYRef.current = null;
-  };
-
-  const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (audio.paused) {
-      audio.muted = !userUnmuted;
-      // play() 可能被浏览器策略 reject（用户没解锁手势），这种情况下 audio
-      // 实际并没开始播；不在这里乐观置 isPlaying=true，统一由下方 onPlay
-      // 事件回调来同步状态，保证 UI 和真实播放状态一致。
-      audio.play().catch(() => undefined);
-    } else {
-      audio.pause();
-      // 同理，由 onPause 事件回调统一置 isPlaying=false。
+    if (!wasSwipe) {
+      // 纯点击：切播放/暂停（首次顺带解除静音）
+      handleTap();
     }
+    // swipeHandledRef 不在这里清——下面 onClick 还要看；改在 touchStart 重置
+  };
+  // 桌面鼠标场景兜底：触屏 touchend 后浏览器仍会合成 click，但 swipe
+  // 期间 click 多数浏览器会自动取消；这里只为非触屏鼠标点击服务。
+  const handleClick = (event: React.MouseEvent) => {
+    // touch 设备已在 touchend 中调用 handleTap；这里检测纯鼠标事件
+    if (event.detail === 0) return; // 由键盘等触发的 synthetic click 忽略
+    // touchstart 走过的话 touchEnd 已 handle 过；synthetic click 在 swipe 时浏览器会抑制
+    // 没法 100% 区分 — 简单办法：依据是否有 touchStartXRef 痕迹判断
+    if (touchStartXRef.current !== null || swipeHandledRef.current) return;
+    handleTap();
   };
 
   const currentImage = displayImages[imageIndex];
@@ -1412,6 +1556,10 @@ function ChannelAudioPictorial({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      aria-label={isPlaying ? t(msg`暂停`) : t(msg`播放`)}
     >
       {currentImage ? (
         <img
@@ -1433,7 +1581,10 @@ function ChannelAudioPictorial({
           <button
             type="button"
             aria-label={t(msg`上一张`)}
-            onClick={goPrev}
+            onClick={(event) => {
+              event.stopPropagation();
+              goPrev();
+            }}
             className="group absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-white/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
           >
             <ArrowLeft size={20} />
@@ -1441,7 +1592,10 @@ function ChannelAudioPictorial({
           <button
             type="button"
             aria-label={t(msg`下一张`)}
-            onClick={goNext}
+            onClick={(event) => {
+              event.stopPropagation();
+              goNext();
+            }}
             className="group absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-white/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
           >
             <ArrowLeft size={20} className="rotate-180" />
@@ -1449,31 +1603,14 @@ function ChannelAudioPictorial({
         </>
       ) : null}
 
-      {/* 顶部右上：静音切换 / 播放暂停 */}
-      <div className="pointer-events-auto absolute right-3.5 top-12 z-20 flex flex-col items-end gap-2">
-        <button
-          type="button"
-          aria-label={userUnmuted ? t(msg`静音`) : t(msg`取消静音`)}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRequestUnmute();
-          }}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.55)] text-white backdrop-blur"
-        >
-          {userUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
-        </button>
-        <button
-          type="button"
-          aria-label={isPlaying ? t(msg`暂停`) : t(msg`播放`)}
-          onClick={(event) => {
-            event.stopPropagation();
-            togglePlay();
-          }}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.55)] text-white backdrop-blur"
-        >
-          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-        </button>
-      </div>
+      {/* 暂停状态指示：居中大 Play 图标 */}
+      {active && userUnmuted && !isPlaying ? (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-black/45 backdrop-blur-sm">
+            <Play size={32} className="text-white" fill="white" />
+          </div>
+        </div>
+      ) : null}
 
       {/* 底部居中 dots */}
       {canSwipe ? (
@@ -1504,26 +1641,31 @@ function ChannelAudioPictorial({
         onPause={() => setIsPlaying(false)}
         className="hidden"
       />
+
+      <MediaProgressBar mediaRef={audioRef} active={active} />
     </div>
   );
 }
 
 // 视频沉浸式播放：active 时自动播 + muted 跟 userUnmuted；离开暂停 + 复位。
+// 交互参考抖音 / 微信视频号：无显式静音 / 暂停按钮；首次点击解除静音 + 保持播放，
+// 之后点击切换 play/pause；暂停态显示居中大 Play 图标作为状态提示。
 function ChannelVideoSurface({
   videoUrl,
   posterUrl,
   active,
   userUnmuted,
-  onRequestUnmute,
+  onUnlock,
 }: {
   videoUrl: string | undefined;
   posterUrl: string | undefined;
   active: boolean;
   userUnmuted: boolean;
-  onRequestUnmute: () => void;
+  onUnlock: () => void;
 }) {
   const t = useRuntimeTranslator();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // 同 audio：userUnmuted 不当依赖，避免用户暂停后被强制 replay。
   useEffect(() => {
@@ -1550,8 +1692,30 @@ function ChannelVideoSurface({
     if (video) video.muted = !userUnmuted;
   }, [userUnmuted]);
 
+  const handleTap = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (!userUnmuted) {
+      onUnlock();
+      video.muted = false;
+      if (video.paused) video.play().catch(() => undefined);
+      return;
+    }
+    if (video.paused) {
+      video.play().catch(() => undefined);
+    } else {
+      video.pause();
+    }
+  };
+
   return (
-    <div className="relative h-full min-h-[calc(100dvh-12rem)] w-full bg-black">
+    <div
+      className="relative h-full min-h-[calc(100dvh-12rem)] w-full bg-black"
+      onClick={handleTap}
+      role="button"
+      tabIndex={0}
+      aria-label={isPlaying ? t(msg`暂停`) : t(msg`播放`)}
+    >
       <video
         ref={videoRef}
         key={videoUrl}
@@ -1561,19 +1725,19 @@ function ChannelVideoSurface({
         loop
         preload="metadata"
         controls={false}
-        className="h-full min-h-[calc(100dvh-12rem)] w-full object-cover"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        className="pointer-events-none h-full min-h-[calc(100dvh-12rem)] w-full object-cover"
       />
-      <button
-        type="button"
-        aria-label={userUnmuted ? t(msg`静音`) : t(msg`取消静音`)}
-        onClick={(event) => {
-          event.stopPropagation();
-          onRequestUnmute();
-        }}
-        className="absolute right-3.5 top-12 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.55)] text-white backdrop-blur"
-      >
-        {userUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
-      </button>
+      {active && userUnmuted && !isPlaying ? (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-black/45 backdrop-blur-sm">
+            <Play size={32} className="text-white" fill="white" />
+          </div>
+        </div>
+      ) : null}
+
+      <MediaProgressBar mediaRef={videoRef} active={active} />
     </div>
   );
 }
@@ -1666,7 +1830,7 @@ function MobileChannelsViewport({
   onVisiblePost,
 }: MobileChannelsViewportProps) {
   const [activePostId, setActivePostId] = useState<string | null>(null);
-  // 抖音风音频静音手势解锁：一旦用户首次点静音图标，整页保持解除静音
+  // 抖音风：用户首次点屏幕解除静音后，整页保持解除静音（单向，不再回到 muted）
   const [userUnmuted, setUserUnmuted] = useState(false);
   const cardRefs = useRef(new Map<string, HTMLElement>());
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -1762,7 +1926,7 @@ function MobileChannelsViewport({
           post={post}
           setCardRef={(node) => registerCardRef(post.id, node)}
           userUnmuted={userUnmuted}
-          onRequestUnmute={() => setUserUnmuted((prev) => !prev)}
+          onUnlock={() => setUserUnmuted(true)}
           onLike={() => onLike(post.id)}
           onOpenAuthor={() => onOpenAuthor(post)}
           onOpenComments={() => onOpenComments(post)}
@@ -1783,7 +1947,7 @@ type MobileChannelsCardProps = {
   post: FeedPostListItem;
   setCardRef: (node: HTMLElement | null) => void;
   userUnmuted: boolean;
-  onRequestUnmute: () => void;
+  onUnlock: () => void;
   onLike: () => void;
   onOpenAuthor: () => void;
   onOpenComments: () => void;
@@ -1800,7 +1964,7 @@ function MobileChannelsCard({
   post,
   setCardRef,
   userUnmuted,
-  onRequestUnmute,
+  onUnlock,
   onLike,
   onOpenAuthor,
   onOpenComments,
@@ -1821,7 +1985,7 @@ function MobileChannelsCard({
           post={post}
           active={active}
           userUnmuted={userUnmuted}
-          onRequestUnmute={onRequestUnmute}
+          onUnlock={onUnlock}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0))]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />

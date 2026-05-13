@@ -25,10 +25,12 @@ const REQUEST_TIMEOUT_MS = 30_000; // API 请求 30s
 const DOWNLOAD_TIMEOUT_MS = 120_000; // 二进制下载 120s
 
 // MiniMax base_resp.status_code 分类
-// 1008 余额不足 / 1042 单日 token 超限：确定性失败，重试浪费时间和日志
-const QUOTA_EXHAUSTED_CODES = new Set<number>([1008, 1042]);
-// 1002 触发 RPM 限流 / 2003 模型并发数超限 / 1004 鉴权(可能瞬时网络)：可重试
-const RETRIABLE_PROVIDER_CODES = new Set<number>([1002, 1004, 2003]);
+// 1008 余额不足 / 1042 单日 token 超限 / 2056 token plan daily/5h usage limit：
+// 都是当天/当窗口确定性额度耗尽，重试浪费时间和日志。
+const QUOTA_EXHAUSTED_CODES = new Set<number>([1008, 1042, 2056]);
+// 1002 触发 RPM 限流 / 2003 模型并发数超限 / 1004 鉴权(可能瞬时网络) /
+// 2062 token plan interactive-use concurrency 限流：可短期重试。
+const RETRIABLE_PROVIDER_CODES = new Set<number>([1002, 1004, 2003, 2062]);
 
 // 注意：故意不在 fetch 完成后 clearTimeout。fetch 在收到 headers 时就 resolve，
 // 但 body 读取（response.text / arrayBuffer）是流式的，可能再卡几分钟。让 timer
@@ -267,6 +269,37 @@ export class MinimaxClient {
       );
     }
     return { lyrics };
+  }
+
+  // MiniMax-M2.7 是 reasoning model：max_tokens 包含 reasoning_tokens，
+  // ≤1000 时几乎全部 token 都被 reasoning 吃掉、content 为空。这里默认 2000，
+  // 实测能稳定拿到完整 [verse]/[chorus] 输出。
+  async chatCompletion(input: {
+    model?: string;
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+    maxTokens?: number;
+    temperature?: number;
+  }): Promise<{ content: string }> {
+    const body = {
+      model: input.model ?? 'MiniMax-M2.7',
+      messages: input.messages,
+      max_tokens: input.maxTokens ?? 2000,
+      temperature: input.temperature ?? 0.9,
+    };
+    const response = await this.postJson<{
+      choices?: Array<{ message?: { content?: string } }>;
+      base_resp?: MinimaxBaseResp;
+    }>('/v1/text/chatcompletion_v2', body);
+    this.assertSuccess(response.base_resp, 'chat completion');
+    const content = response.choices?.[0]?.message?.content?.trim() ?? '';
+    if (!content) {
+      throw new MinimaxClientError(
+        'MINIMAX_CHAT_EMPTY',
+        'chat completion returned empty content',
+        true,
+      );
+    }
+    return { content };
   }
 
   async downloadBinary(

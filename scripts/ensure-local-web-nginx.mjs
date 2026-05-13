@@ -22,19 +22,13 @@ const bootstrapErrorLogPath = path.join(logsDir, "bootstrap-error.log");
 const appDistDir = path.join(rootDir, "apps", "app", "dist");
 const apiUpstream = "http://127.0.0.1:3000";
 const cloudUpstream = "http://127.0.0.1:3001";
-const siteUpstream = "http://127.0.0.1:5185";
-// 公网 HTTPS 隧道 https://1gw06751dd053.vicp.fun （Host 不带端口） 实际打到
-// nginx 5180 而不是直连 5185；HTTP 隧道 :29490 也打 5180。需要在 nginx 这一
-// 层把两个 Host 区分开走 site 还是 app。这个 hostname 与 :29490 端口的隧道
-// 控制台配置一致；如果改隧道域名，这里也要同步。
-const siteHostExact = "1gw06751dd053.vicp.fun";
-// 花生壳两条隧道分别独立映射：
-//   HTTPS https://1gw06751dd053.vicp.fun → 127.0.0.1:5185 (site, Next.js 直连)
-//   HTTP  http://1gw06751dd053.vicp.fun:29490 → 127.0.0.1:5180 (nginx → app dist)
-// nginx 5180 只服务 app；不再尝试按 Host 反代到 site。原先在 location / 中
-// 的 if-Host=vicp.fun → proxy_pass 5185 写法既不可靠（"if is evil"），又因为
-// nginx 在 server_name 匹配时忽略 Host 端口，会把 :29490 隧道的请求也吃进去
-// 反代到 5185，导致用户 :29490 看到的是 site 而不是 app。
+// 公网隧道域名。两条花生壳隧道都进 nginx 5180、都吐 app dist：
+//   HTTPS https://1gw06751dd053.vicp.fun           (Host=1gw06751dd053.vicp.fun)        → app dist
+//   HTTP  http://1gw06751dd053.vicp.fun:29490      (Host=1gw06751dd053.vicp.fun:29490)  → app dist
+// 这里仍保留 hostname 是为了用 $is_public_host 在 /api/ + /socket.io/ 上拒绝
+// 公网直通本机 3000（共享 owner db），不是给 site 反代用了。
+// 如果隧道域名改了，下方 $is_public_host 的正则也要同步。
+const publicHost = "1gw06751dd053.vicp.fun";
 const listenAddress = "127.0.0.1:5180";
 
 ensureDir(runtimeDir);
@@ -119,17 +113,6 @@ http {
     '' close;
   }
 
-  # 花生壳两条隧道实际都进 nginx 5180（公网响应 Server: nginx 已确认）：
-  #   HTTPS https://${siteHostExact}            (Host=${siteHostExact},        无端口) → site (5185)
-  #   HTTP  http://${siteHostExact}:29490       (Host=${siteHostExact}:29490)         → app dist
-  # nginx server_name 匹配会忽略 Host 端口，无法区分；改用 $http_host 精确匹配
-  # 出 $route_to_site，命中时通过 error_page → named location 内部跳转做反代
-  # （避开 "if + proxy_pass is evil"）。
-  map $http_host $route_to_site {
-    default 0;
-    "${siteHostExact}" 1;
-  }
-
   # 公网 Host（vicp.fun 隧道 / 公网域名）下禁止 /api/ + /socket.io/ 直通本机 3000。
   # 这两条路径上的 api 是单租户、无鉴权、共享 owner db 的本机开发实例；公网放开
   # 等于把本地数据公开（任何人访问都看到同一个 owner 的聊天/朋友圈/角色）。前端
@@ -138,7 +121,7 @@ http {
   # 保持直通，单机开发体验不变。
   map $http_host $is_public_host {
     default 0;
-    ~^${siteHostExact.replace(/\./g, "\\.")} 1;
+    ~^${publicHost.replace(/\./g, "\\.")} 1;
   }
 
   server {
@@ -148,9 +131,6 @@ http {
     root ${appDistDir};
     index index.html;
 
-    # location / 内 if 块通过 proxy_pass 反代到 5185 时不会继承 location 级
-    # 的 proxy_set_header，这里在 server 级提供默认值。其他显式声明 header
-    # 的 location 会按 nginx 全有或全无规则覆盖整组，不受影响。
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -254,11 +234,9 @@ http {
       try_files $uri =404;
     }
 
-    # 默认 location：HTTPS 隧道 (Host=${siteHostExact} 无端口) 反代到 site (5185)；
-    # 其他 Host（HTTP :29490 隧道、本机直连）走 app dist (SPA)。
+    # 默认 location：所有 Host（HTTPS 隧道、HTTP :29490 隧道、本机直连）统一吐 app dist。
+    # site (5185) 不再有公网入口，本仓库的 marketing 站点改为仅本地访问。
     location / {
-      error_page 418 = @site_proxy;
-      if ($route_to_site) { return 418; }
       # no-store 会让公网每次刷新都全量传 index.html (~12KB)；
       # no-cache 允许浏览器缓存但强制每次走 If-None-Match 验证。
       # nginx 对静态文件自动发 ETag/Last-Modified，命中走 304 空响应，
@@ -266,19 +244,6 @@ http {
       # 所以 index.html 改成 must-revalidate 不会导致用户拿到陈旧 chunk。
       add_header Cache-Control "no-cache";
       try_files $uri $uri/ /index.html;
-    }
-
-    location @site_proxy {
-      internal;
-      proxy_pass ${siteUpstream};
-      proxy_http_version 1.1;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto $scheme;
-      proxy_set_header Accept-Encoding $http_accept_encoding;
-      proxy_read_timeout 60s;
-      proxy_send_timeout 60s;
     }
   }
 }

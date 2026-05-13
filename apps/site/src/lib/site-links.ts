@@ -6,7 +6,7 @@ function readEnvUrl(value: string | undefined, fallback: string) {
 export const siteLinks = {
   app: readEnvUrl(
     process.env.NEXT_PUBLIC_SITE_APP_URL,
-    "http://1gw06751dd053.vicp.fun",
+    "https://1gw06751dd053.vicp.fun",
   ),
   deploy: readEnvUrl(
     process.env.NEXT_PUBLIC_SITE_DEPLOY_URL,

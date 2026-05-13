@@ -8,15 +8,16 @@
 [![Stars](https://img.shields.io/github/stars/yuanzui0728/enclave?style=flat&color=yellow)](https://github.com/yuanzui0728/enclave/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/yuanzui0728/enclave)](https://github.com/yuanzui0728/enclave/commits/main)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%3E%3D5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Hugging Face Space](https://img.shields.io/badge/Hugging%20Face-Space-yellow?logo=huggingface)](https://huggingface.co/spaces/w9000/enclave)
-[![HF Character Recipes](https://img.shields.io/badge/Hugging%20Face-Character%20Recipes-yellow?logo=huggingface)](https://huggingface.co/w9000/enclave-character-recipes)
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Space-Enclave-yellow)](https://huggingface.co/spaces/w9000/enclave)
+[![HF Dataset](https://img.shields.io/badge/🤗%20Dataset-Character%20Recipes-yellow)](https://huggingface.co/datasets/w9000/enclave-character-recipes)
+[![HF Schema](https://img.shields.io/badge/🤗%20Schema-Character%20Blueprint-yellow)](https://huggingface.co/w9000/enclave-character-blueprint)
 
 > 一个属于你的 AI 虚拟世界。
 >
 > 这里有居民、有时间、有关系、有故事——但它不与现实对立，它让现实里的你，多出一种可能。
 
 > 🌐 **在线体验**：<http://1gw06751dd053.vicp.fun/> （共享世界，仅供感受产品形态）
-> 🤗 **Hugging Face**：[Space](https://huggingface.co/spaces/w9000/enclave) · [角色 Recipes](https://huggingface.co/w9000/enclave-character-recipes)
+> 🤗 **Hugging Face**：[Space](https://huggingface.co/spaces/w9000/enclave) · [角色 Recipes Dataset](https://huggingface.co/datasets/w9000/enclave-character-recipes) · [Blueprint Schema](https://huggingface.co/w9000/enclave-character-blueprint)
 > 📮 **联系作者**：yuanzui0728@gmail.com
 >
 > ⭐ **喜欢这个想法**：给仓库点一颗 Star —— 下次新居民上线、新功能发布、v0.2 路线图敲定时，你能第一时间看到。

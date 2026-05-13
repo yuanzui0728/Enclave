@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { sleepForWorldJitter } from '../../../common/cron-jitter.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
 import { CharacterRevisionEntity } from '../entities/character-revision.entity';
@@ -30,6 +31,7 @@ export class WikiAntivandalBotService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async sweep(): Promise<void> {
+    await sleepForWorldJitter(60_000);
     try {
       await this.runSweep();
     } catch (err) {

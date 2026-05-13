@@ -1,7 +1,7 @@
 import { chromium } from "/home/ps/claude/yinjie-app/node_modules/.pnpm/playwright@1.59.1/node_modules/playwright/index.mjs";
 import { setTimeout as wait } from "node:timers/promises";
 
-const PUBLIC_URL = process.env.YINJIE_APP_TEST_URL || "http://1gw06751dd053.vicp.fun:29490/";
+const PUBLIC_URL = process.env.YINJIE_APP_TEST_URL || "https://1gw06751dd053.vicp.fun/";
 const BUDGET_MS = Number(process.env.YINJIE_APP_TEST_BUDGET_MS || 25_000);
 
 async function measure({ scenario, contextOptions = {}, extraHeaders, beforeNavigate }) {

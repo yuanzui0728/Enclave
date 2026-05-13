@@ -9,22 +9,30 @@ function resolveManualChunk(id: string) {
   const normalizedId = id.replace(/\\/g, "/");
 
   if (normalizedId.includes("/node_modules/")) {
+    // 公网隧道 HTTP/1.1 + RTT ~760ms，同域 6 并发上限决定首屏请求数 = 关键瓶颈。
+    // 把"启动就要"的 vendor (react 链 / tanstack / zustand / tauri / capacitor /
+    // 其它杂项) 合并成单个 vendor-core，让首屏 modulepreload 从 10+ 降到 ~5；
+    // 单文件变大但 immutable cache 命中后只下一次，HTTP/1.1 排队收益大于体积代价。
     if (
       normalizedId.includes("/react/") ||
       normalizedId.includes("/react-dom/") ||
-      normalizedId.includes("/scheduler/")
+      normalizedId.includes("/scheduler/") ||
+      normalizedId.includes("/@tanstack/") ||
+      normalizedId.includes("/zustand/") ||
+      normalizedId.includes("/@tauri-apps/api/") ||
+      normalizedId.includes("/@capacitor/core/")
     ) {
-      return "vendor-react";
-    }
-
-    if (normalizedId.includes("/@tanstack/")) {
-      return "vendor-tanstack";
+      return "vendor-core";
     }
 
     if (normalizedId.includes("/lucide-react/")) {
       return "vendor-icons";
     }
 
+    // socket.io-client (~36KB) 之前被 RootLayout 静态链上首屏；
+    // ConversationStrongReminderHost 已改为 lazy() 加载后，整条 socket 链
+    // 都走动态 import，本 chunk 只在 chat / desktop-chat / strong-reminder
+    // 首次需要时拉。保留单独 chunk 让其它 lazy 路由共享，不被 vendor-misc 吃掉。
     if (
       normalizedId.includes("/socket.io-client/") ||
       normalizedId.includes("/engine.io-client/") ||
@@ -38,17 +46,6 @@ function resolveManualChunk(id: string) {
       normalizedId.includes("/@hookform/resolvers/")
     ) {
       return "vendor-forms";
-    }
-
-    if (normalizedId.includes("/zustand/")) {
-      return "vendor-state";
-    }
-
-    if (
-      normalizedId.includes("/@tauri-apps/api/") ||
-      normalizedId.includes("/@capacitor/core/")
-    ) {
-      return "vendor-shell";
     }
 
     // qrcode (~70KB) 和 html-to-image (~30KB) 只在分享/订阅二维码场景用到，
@@ -76,7 +73,10 @@ function resolveManualChunk(id: string) {
       return "vendor-oauth";
     }
 
-    return "vendor-misc";
+    // 其它 node_modules 一并并入 vendor-core，进一步压缩首屏请求数。
+    // 历史上 vendor-misc 容易把杂项二级依赖收成共享 chunk 反挤首屏，干脆
+    // 让首屏关键的合并到 vendor-core，非首屏的 lazy chunk 在 entry 自己内联。
+    return "vendor-core";
   }
 
   if (normalizedId.includes("/packages/ui/src/")) {
@@ -202,6 +202,15 @@ export default defineConfig(({ command }) => ({
     viteCompression({
       algorithm: "gzip",
       ext: ".gz",
+      threshold: 1024,
+      deleteOriginFile: false,
+    }),
+    // brotli 比 gzip 再小 ~15-20%，对应 nginx brotli_static on（nginx-extras）。
+    // 浏览器优先用 br，没有则回落 gzip，再没有就拿原始文件。两份预压缩并存
+    // 没有 CPU 代价（构建期一次生成）。
+    viteCompression({
+      algorithm: "brotliCompress",
+      ext: ".br",
       threshold: 1024,
       deleteOriginFile: false,
     }),
