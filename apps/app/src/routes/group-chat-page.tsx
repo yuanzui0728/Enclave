@@ -22,6 +22,7 @@ import {
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import {
   hydrateGroupInviteDeliveryFromNative,
+  isGroupInviteStorageKey,
   resolveGroupInviteRouteContext,
 } from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -164,13 +165,27 @@ export function GroupChatPage() {
     const handleFocus = () => {
       void syncRouteContext();
     };
+    // 走查新一次 R1：和姊妹页 group-qr-page.tsx 新 R1 同款问题——原版 storage
+    // handler 复用 handleFocus，OTHER tab 任何 localStorage 写入（主题、草稿、
+    // last viewed page 等等）都会触发 syncRouteContext → 内部 await
+    // hydrateGroupInviteDeliveryFromNative + 读 3 个 storage key + setRouteContext。
+    // 群聊页常驻打开，活跃用户其它 tab 一直在写无关 key，纯白消耗。用
+    // isGroupInviteStorageKey gate 一下，只在群邀请投递/记录/复登的 3 个 key
+    // 上才真同步；老 Safari 的 localStorage.clear() 场景 key=null 仍按全量
+    // 同步对待。
+    const handleStorage = (event: StorageEvent) => {
+      if (!isGroupInviteStorageKey(event.key)) {
+        return;
+      }
+      void syncRouteContext();
+    };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("storage", handleFocus);
+    window.addEventListener("storage", handleStorage);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("storage", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [groupId, search]);
 
