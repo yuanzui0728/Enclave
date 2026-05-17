@@ -1856,10 +1856,11 @@ export function GroupChatThreadPanel({
             handleTypingDismissRouteContextNotice();
             setText(value);
           }}
-          onSendSticker={async (sticker) => {
-            await handleSendSticker(sticker);
-            setReplyDraft(null);
-          }}
+          // handleSendSticker 内已经在开头同步 setReplyDraft(null)；这里再
+          // await 完一遍才清，正好覆盖用户在公网 RTT 几百 ms 内点别条消息
+          // 「回复」后挂上的新 reply draft——肉眼看就是"我明明刚 reply 了这
+          // 条，怎么又被清了"。inner 那次清掉就够，外层再清反而是 bug。
+          onSendSticker={handleSendSticker}
           onSendAttachment={sendAttachmentMessage}
           onSendPresetText={handleSendPresetText}
           mentionCandidates={mentionCandidates}
