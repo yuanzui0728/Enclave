@@ -226,6 +226,13 @@ export function ProfileInfoNamePage() {
         )}
       </div>
 
+      {/* sanitized.length < draft.length：用户输入带首尾/连续空白（如 "abc " / "a  b"），sanitize 折叠后短一截。counter 显示的是 sanitized.length，用户看着 input 里 4 个字符、计数器却显示 3，没说明的话会以为是 bug。跟同目录 signature-page 同款 hint。i18n-ignore-line */}
+      {draft.length > 0 && sanitized.length < draft.length ? (
+        <div className="px-4 pt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+          {t(msg`名字保存时会去掉首尾空白、把连续空格合成一个。`)}
+        </div>
+      ) : null}
+
       {/* 名字短于下限时（legacy 1 字用户进入页面也是这种情况），把 disabled
           「完成」的原因显式告诉用户；之前 trimmed.length===0 完全不提示，用户
           清空输入后只看到「完成」灰着，毫无线索，以为是 bug。这里改成：
