@@ -271,7 +271,13 @@ describe('CharactersService.importPersonalCharacter', () => {
   });
 
   it('derives profile from recipe when profile is missing', async () => {
-    const buildProfileSpy = jest.fn(() => ({ derived: true } as never));
+    // 第 5 次走查 R2：import 路径用 hasMeaningfulProfile 守门，sentinel
+    // object 必须带至少一个 canonical 字段（name / basePrompt / coreLogic /
+    // systemPrompt / scenePrompts.chat）才会被保留，否则会 fall through 到
+    // baseline。spec 用 name+derived 双标记：既保留语义又能验证派生路径。
+    const buildProfileSpy = jest.fn(
+      () => ({ name: '新角色', derived: true } as never),
+    );
     const { svc, buildProfileSpy: spy } = makeService({
       existing: null,
       buildProfileSpy,
@@ -297,12 +303,16 @@ describe('CharactersService.importPersonalCharacter', () => {
   });
 
   it('prefers explicit profile over recipe (does not derive)', async () => {
-    const buildProfileSpy = jest.fn(() => ({ derived: true } as never));
+    const buildProfileSpy = jest.fn(
+      () => ({ name: '新角色', derived: true } as never),
+    );
     const { svc } = makeService({ existing: null, buildProfileSpy });
     const out = await svc.importPersonalCharacter({
       name: '新角色',
       recipe: { foo: 'bar' } as never,
-      profile: { explicit: true } as never,
+      // explicit profile 同样要带 canonical 字段才会被 hasMeaningfulProfile
+      // 认作"用户给了能跑的人设"——空对象的 case 由后续单独的 spec 覆盖。
+      profile: { name: '新角色', explicit: true } as never,
     });
     expect(buildProfileSpy).not.toHaveBeenCalled();
     const savedProfile = (out.character as Char).profile as Record<string, unknown>;
@@ -348,6 +358,68 @@ describe('CharactersService.importPersonalCharacter', () => {
     expect(profile.basePrompt).toContain('理性');
     expect(profile.basePrompt).toContain('北京的产品经理');
     expect((profile.traits as Record<string, unknown>).emotionalTone).toBe('自然真实');
+  });
+
+  // 第 5 次走查 R2：bundle 显式带 profile:{}（手工 bundle 误传 / 老版 wiki 半残
+  // 导出）原条件 input.profile !== undefined 会把空对象当 truthy 透传，跳过
+  // baseline + 同名 re-import 时还把 existing 的 meaningful profile 抹平。
+  it('synthesizes baseline when profile is explicit empty object', async () => {
+    const { svc } = makeService({ existing: null });
+    const out = await svc.importPersonalCharacter({
+      name: '小空',
+      relationship: '老同学',
+      bio: '画家',
+      profile: {} as never,
+    });
+    const profile = (out.character as Char).profile as Record<string, unknown>;
+    expect(profile.name).toBe('小空');
+    expect(profile.basePrompt).toContain('小空');
+    expect(profile.basePrompt).toContain('老同学');
+    expect((profile.traits as Record<string, unknown>).emotionalTone).toBe(
+      '自然真实',
+    );
+  });
+
+  it('keeps existing meaningful profile when re-import sends profile:{}', async () => {
+    const { svc } = makeService({
+      existing: {
+        id: 'char-existing',
+        name: '小留',
+        sourceType: 'private_import',
+        deletionPolicy: 'archive_allowed',
+        profile: {
+          characterId: 'char-existing',
+          name: '小留',
+          relationship: '挚友',
+          coreLogic: '资深 mentor',
+          memory: {
+            coreMemory: '对方爱看老电影',
+            recentSummary: '上周聊了《老炮儿》',
+            forgettingCurve: 0,
+          },
+          traits: {
+            speechPatterns: [],
+            catchphrases: [],
+            topicsOfInterest: [],
+            emotionalTone: 'warm',
+            responseLength: 'medium',
+            emojiUsage: 'occasional',
+          },
+        },
+      } as Char,
+    });
+    const out = await svc.importPersonalCharacter({
+      name: '小留',
+      bio: 'updated bio',
+      profile: {} as never,
+    });
+    const profile = (out.character as Char).profile as Record<string, unknown>;
+    // 关键：existing 的 coreLogic / memory 不能被空 profile 洗掉
+    expect(profile.coreLogic).toBe('资深 mentor');
+    expect((profile.memory as Record<string, unknown>).coreMemory).toBe(
+      '对方爱看老电影',
+    );
+    expect(out.character.bio).toBe('updated bio');
   });
 
   // 2026-05-16 修复：tryDeriveProfileFromRecipe 抛出（典型场景：wiki strip 过
