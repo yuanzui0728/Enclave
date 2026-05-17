@@ -179,6 +179,14 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     queryKey: ["app-chat-details-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(targetCharacterId),
+    // 走查新一轮 R7：与 character-detail-page (line 247) / contacts-page /
+    // desktop-chat-details-panel 共享同一 queryKey "app-chat-details-blocked"，
+    // 那 3 处第七轮 R2 把 staleTime 对齐到 15s（desktop 还给 30s 因为相对
+    // 静态），本页一直裸跑——desktop 默认 staleTime=10s，移动端 60s，但凡
+    // 用户从 contacts / character-detail 跳进 chat-details 间隔 >10s（desktop）
+    // 或 >60s（mobile）就重复拉 blocked 列表（公网隧道 ~600ms RTT）。15s 对齐
+    // 即可。
+    staleTime: 15_000,
   });
 
   const navigateToRouteStateReturn = ({
