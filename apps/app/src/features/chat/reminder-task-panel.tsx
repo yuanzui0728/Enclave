@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
@@ -63,7 +63,22 @@ export function ReminderTaskPanel({
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  // 走查新一轮 R7：4 个 action 按钮（完成 / 30 分后 / 明天 / 删除）都只靠
+  // `disabled={taskPending}` 兜双触发，taskPending 是 mutation.variables 经 React
+  // commit 才更新的状态。同帧连点同一个按钮 2 次都能同时通过 disabled=false →
+  // 两次 mutateAsync 同时发 POST /reminder-tasks/$id/$action。server 端 complete /
+  // cancel 是 idempotent (第二次 409)，snooze 不是 idempotent → 两次 snooze 30
+  // 分钟实际把任务往后顺了 60 分钟（server 在当前 remindAt 上再加 30 分钟）。
+  // 加 sync ref 锁，按 (taskId, action) 上锁，finally 解锁；不同任务/动作互不影响。
+  const taskActionBusyKeysRef = useRef<Set<string>>(new Set());
+  const buildTaskActionKey = (taskId: string, action: string) =>
+    `${taskId}::${action}`;
   const handleComplete = async (task: ReminderTaskRecord) => {
+    const key = buildTaskActionKey(task.id, "complete");
+    if (taskActionBusyKeysRef.current.has(key)) {
+      return;
+    }
+    taskActionBusyKeysRef.current.add(key);
     try {
       await completeTask(task.id);
       setNotice({
@@ -81,10 +96,17 @@ export function ReminderTaskPanel({
             ? taskError.message
             : t(msg`完成提醒失败，请稍后再试。`),
       });
+    } finally {
+      taskActionBusyKeysRef.current.delete(key);
     }
   };
 
   const handleSnooze30Minutes = async (task: ReminderTaskRecord) => {
+    const key = buildTaskActionKey(task.id, "snooze-30m");
+    if (taskActionBusyKeysRef.current.has(key)) {
+      return;
+    }
+    taskActionBusyKeysRef.current.add(key);
     try {
       await snoozeTask(task.id, { minutes: 30 });
       setNotice({
@@ -99,10 +121,17 @@ export function ReminderTaskPanel({
             ? taskError.message
             : t(msg`延后提醒失败，请稍后再试。`),
       });
+    } finally {
+      taskActionBusyKeysRef.current.delete(key);
     }
   };
 
   const handleSnoozeTomorrow = async (task: ReminderTaskRecord) => {
+    const key = buildTaskActionKey(task.id, "snooze-tomorrow");
+    if (taskActionBusyKeysRef.current.has(key)) {
+      return;
+    }
+    taskActionBusyKeysRef.current.add(key);
     try {
       const until = buildTomorrowReminderIso(task);
       await snoozeTask(task.id, { until });
@@ -118,10 +147,17 @@ export function ReminderTaskPanel({
             ? taskError.message
             : t(msg`延后提醒失败，请稍后再试。`),
       });
+    } finally {
+      taskActionBusyKeysRef.current.delete(key);
     }
   };
 
   const handleCancel = async (task: ReminderTaskRecord) => {
+    const key = buildTaskActionKey(task.id, "cancel");
+    if (taskActionBusyKeysRef.current.has(key)) {
+      return;
+    }
+    taskActionBusyKeysRef.current.add(key);
     try {
       await cancelTask(task.id);
       setNotice({
@@ -136,6 +172,8 @@ export function ReminderTaskPanel({
             ? taskError.message
             : t(msg`删除提醒失败，请稍后再试。`),
       });
+    } finally {
+      taskActionBusyKeysRef.current.delete(key);
     }
   };
 
