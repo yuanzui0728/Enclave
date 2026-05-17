@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -30,6 +30,21 @@ export function DesktopChatConfirmDialog({
   const t = useRuntimeTranslator();
   const resolvedConfirmLabel = confirmLabel ?? t(msg`确认`);
   const resolvedPendingLabel = pendingLabel ?? t(msg`处理中...`);
+  // 走查新一轮 R4：确认按钮只靠 disabled={pending} 兜双触发，pending 是父组件
+  // mutation.isPending 经 React commit 才更新 DOM。同帧连点「删除聊天 / 清空记录 /
+  // 删除并退出 / 加入黑名单」按钮 2 次都能同时通过 disabled=false → parent
+  // onConfirm 触发 mutate 2 次：
+  // · hide / delete / clear / leave 都走 HTTP DELETE/POST，幂等 server 接 2 次浪费
+  //   RTT；非幂等的 leave-group 第二次会拿到「不在群里」error 反过来覆盖第一次
+  //   成功的 notice，用户以为操作没成。
+  // 加 sync ref 锁，pending 翻回 false 由 useEffect 复位。
+  const confirmSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      confirmSubmittingRef.current = false;
+    }
+  }, [pending]);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -103,7 +118,13 @@ export function DesktopChatConfirmDialog({
           <Button
             type="button"
             variant={danger ? "danger" : "primary"}
-            onClick={onConfirm}
+            onClick={() => {
+              if (confirmSubmittingRef.current || pending) {
+                return;
+              }
+              confirmSubmittingRef.current = true;
+              onConfirm();
+            }}
             disabled={pending}
             className={
               danger
