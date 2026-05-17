@@ -570,6 +570,13 @@ export class FarmStateService {
         legacyMessage: '该作物还没成熟',
       });
     }
+    // 与 npc-tick 的 findStealablePlot 对齐：腐烂后 24h 不能再偷。
+    // 之前服务端没拦，邻居模态 UI 虽然把按钮置灰但 API 直调能拿到一份"鬼菜"。
+    if (Date.now() >= plot.maturedAt + 24 * 3600 * 1000) {
+      throw new AppError('FARM_CROP_ROTTEN', {
+        legacyMessage: '作物已经腐烂，没法再顺了',
+      });
+    }
     if ((plot.stolenBy ?? []).includes(FARM_PLAYER_ACTOR_ID)) {
       throw new AppError('FARM_ALREADY_STOLEN', {
         legacyMessage: '你已经偷过这块田了',
