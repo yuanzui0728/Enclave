@@ -7021,7 +7021,20 @@ function LocationViewerOverlay({
           </ViewerActionButton>
         </div>
 
-        <div className="relative flex-1 px-4 pb-5 pt-2">
+        {/* 走查新一轮 R3：同 ImageViewerOverlay R2 — 上面那个 absolute inset-0
+            backdrop 按钮被后兄弟（radial gradient + 这条 relative flex h-full）
+            完全覆盖，点不到。位置查看器的可视 backdrop 区域只剩中间这条
+            `flex-1` 的 padding（卡片以外的暗色环绕区）。给容器自己挂 onClick：
+            target === currentTarget（点在 padding 上而不是卡片）才关闭，点卡片
+            本身不关。 */}
+        <div
+          className="relative flex-1 px-4 pb-5 pt-2"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              onClose();
+            }
+          }}
+        >
           <div
             className={`relative h-full overflow-hidden rounded-[30px] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
               isDesktop ? "mx-auto max-w-4xl" : ""
