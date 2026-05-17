@@ -168,6 +168,18 @@ function parsePrivateCharacterImportBody(payload: unknown): {
       legacyMessage: '导入内容不是合法 JSON。',
     });
   }
+  // 第 5 次走查 R4：typeof [] === 'object'，所以 Array 在前面那条 if 里溜过去。
+  // 走 `const p = ... as Record`，下游读 p.name 取到 undefined，于是 400 报
+  // "缺少 name 字段" ——用户看着 bundle 里明明就有 name 完全摸不到头脑，
+  // 真实问题是 bundle 被错误地 wrap 成 array（典型来源：从某个 list endpoint
+  // 复制 JSON 时连 [...] 一起拿过来了）。提前 reject 给一条更准确的提示。
+  if (Array.isArray(payload)) {
+    throw new AppError('PRIVATE_IMPORT_INVALID', {
+      status: HttpStatus.BAD_REQUEST,
+      legacyMessage:
+        '导入内容必须是 JSON 对象（一个角色 bundle），而不是数组。请去掉外层的 [...]。',
+    });
+  }
   const p = payload as Record<string, unknown>;
   const schema = typeof p.$schema === 'string' ? p.$schema : null;
   if (schema && schema !== PRIVATE_CHARACTER_EXPORT_SCHEMA) {
