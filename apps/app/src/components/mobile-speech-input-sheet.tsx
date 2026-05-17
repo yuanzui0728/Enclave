@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Mic, Square, WandSparkles, X } from "lucide-react";
 import { msg } from "@lingui/macro";
 import { useRuntimeTranslator } from "@yinjie/i18n";
@@ -108,6 +108,7 @@ export function MobileSpeechInputSheet({
   canCommit,
 }: MobileSpeechInputSheetProps) {
   const t = useRuntimeTranslator();
+  const titleId = useId();
 
   // 原生壳硬件 Back 键：sheet 打开时优先关 sheet（前提是手指没在按住录音），
   // 不让 BACK 同时 history.back 把用户从聊天页带回 chat list。和
@@ -143,14 +144,30 @@ export function MobileSpeechInputSheet({
         onClick={onClose}
         disabled={holding}
       />
-      <div className="pointer-events-auto relative w-full max-w-[19.5rem]">
+      {/* 走查新一轮 R4：和姊妹 sheet mobile-message-action-sheet.tsx
+          / mobile-message-reminder-sheet.tsx / message-quote-selection-sheet.tsx
+          同款 a11y 缺漏——按住底部 mic 按钮打开的语音输入 sheet 没挂
+          role="dialog" + aria-modal + aria-labelledby。盲人用户按住录音
+          后屏幕阅读器（iOS VoiceOver / Android TalkBack）只能念到 status
+          icon 旁的状态行，听不到 sheet 整体作为 modal 的语义；title 也
+          没接 aria-labelledby，新进焦点的时候 SR 不会念出 sheet 标题。
+          补 dialog 语义，title 文本节点接 id。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="pointer-events-auto relative w-full max-w-[19.5rem]"
+      >
         <div className="rounded-[24px] border border-black/8 bg-[rgba(247,247,247,0.96)] px-4 pb-4 pt-3 text-[#111827] shadow-[0_20px_48px_rgba(15,23,42,0.18)] backdrop-blur-xl">
           <div className="flex justify-center pb-2.5">
             <div className="h-1 w-10 rounded-full bg-black/8" />
           </div>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[0.01em] text-[#111827]">
+              <div
+                id={titleId}
+                className="text-[15px] font-medium tracking-[0.01em] text-[#111827]"
+              >
                 {title}
               </div>
               <div className="mt-1 text-[11px] leading-5 text-[#7a7a7a]">
