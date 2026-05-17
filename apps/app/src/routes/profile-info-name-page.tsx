@@ -176,7 +176,15 @@ export function ProfileInfoNamePage() {
           autoCorrect="off"
           onChange={(event) => {
             userTouchedRef.current = true;
-            setDraft(event.target.value);
+            // 4th-R1 走查：用户粘贴 "foo\nbar" 进 input type=text 时，浏览器
+            // 把 \n 当 line separator 渲染（视觉上像空格）但 value.length 把
+            // \n 算 1 字，结果 counter 数字 vs 用户视觉看到的字数会差一截。
+            // 跟同目录 signature-page onChange 同款 1:1 替换（不用 +，保持 length
+            // 不变 → 光标位置稳定），\r\n\t 立即变成普通空格、 onKeyDown 那条
+            // Enter 提交路径也不会被 \n 干扰。剩下的 sanitize（包括其它控制字符
+            // + 折叠连续空白 + trim）依然走 sanitizeOwnerName 在 save 时兜底。
+            const normalized = event.target.value.replace(/[\r\n\t]/g, " ");
+            setDraft(normalized);
             // 用户已经动手敲新的名字，意味着上一次保存失败这件事翻篇了，把
             // 红字 banner 清掉，免得新尝试还挂着旧 attempt 的失败说明。
             saveMutation.reset();
