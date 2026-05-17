@@ -563,4 +563,30 @@ describe('CharactersService.importPersonalCharacter', () => {
     expect(memory.forgettingCurve).toBe(85);
     expect(memory.recentSummaryPrompt).toBe('新的提示词');
   });
+
+  // 新会话 R1：avatar 不能是 // 开头的 scheme-relative URL（浏览器按当前协议
+  // 解析成 https://evil/x → 跟踪像素 / 隐私探针 / 内网 SSRF）。
+  it('rejects scheme-relative avatar URL like //evil/x.png', async () => {
+    const { svc } = makeService({ existing: null });
+    await expect(
+      svc.importPersonalCharacter({
+        name: 'NRRejSchemeRel',
+        avatar: '//evil.example/x.png',
+      }),
+    ).rejects.toThrow(/avatar/);
+  });
+
+  // 新会话 R1：bio / personality 接受 NULL byte / DEL / BIDI override 等不可见
+  // 控制字节会污染 AI prompt + tokenizer，入口 strip 掉，正常文本保留。
+  it('strips invisible control chars from bio / personality but keeps \\t\\n\\r', async () => {
+    const { svc } = makeService({ existing: null });
+    const out = await svc.importPersonalCharacter({
+      name: 'NRStripCtl',
+      bio: 'normal\x00hidden\nline2\tcol',
+      personality: 'real\x7Fdel-bidi‮-mark',
+    });
+    // NULL / DEL / RLO 都被 strip；\n \t 保留
+    expect(out.character.bio).toBe('normalhidden\nline2\tcol');
+    expect(out.character.personality).toBe('realdel-bidi-mark');
+  });
 });

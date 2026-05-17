@@ -106,7 +106,7 @@ msgstr "Forward to chat"
 #: apps/app/src/components/chat-composer.tsx:5543
 #: apps/app/src/components/chat-message-list.tsx:3004
 #: apps/app/src/components/chat-message-list.tsx:3073
-#: apps/app/src/components/chat-message-list.tsx:7410
+#: apps/app/src/components/chat-message-list.tsx:7423
 #: apps/app/src/components/mobile-chat-attachment-preview.tsx:99
 #: apps/app/src/components/mobile-speech-input-sheet.tsx:230
 #: apps/app/src/components/wechat-action-bubble.tsx:150
@@ -162,7 +162,7 @@ msgstr "Retrying..."
 
 #: apps/app/src/components/channels-forward-picker.tsx:260
 #: apps/app/src/features/search/desktop-search-workspace.tsx:1248
-#: apps/app/src/routes/moments-page.tsx:2276
+#: apps/app/src/routes/moments-page.tsx:2375
 msgid "重试加载"
 msgstr "Retry loading"
 
@@ -324,7 +324,7 @@ msgid "图片发送失败，请稍后再试。"
 msgstr "Failed to send image. Please try again later."
 
 #: apps/app/src/components/chat-composer.tsx:2888
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:352
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:372
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:380
 #: apps/app/src/i18n/static-dom-seed.ts:1072
 #: apps/app/src/routes/mobile-note-editor-page.tsx:433
@@ -1213,7 +1213,7 @@ msgstr "System share is temporarily unavailable; note summary copied."
 #: apps/app/src/components/chat-message-list.tsx:1568
 #: apps/app/src/components/chat-message-list.tsx:4402
 #: apps/app/src/components/chat-message-list.tsx:4472
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:326
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:333
 #: apps/app/src/routes/chat-details-page.tsx:312
 msgid "对方"
 msgstr "The other person"
@@ -1508,7 +1508,7 @@ msgstr "Deleting..."
 #: apps/app/src/components/wechat-moment-card.tsx:292
 #: apps/app/src/features/chat/group-message-context-menu.tsx:82
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:69
-#: apps/app/src/features/chat/reminder-task-panel.tsx:283
+#: apps/app/src/features/chat/reminder-task-panel.tsx:321
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:538
 #: apps/app/src/features/contacts/management/contacts-bulk-action-bar.tsx:177
 #: apps/app/src/features/contacts/management/contacts-bulk-action-bar.tsx:180
@@ -1586,7 +1586,7 @@ msgid "聊天记录"
 msgstr "Chat history"
 
 #: apps/app/src/components/chat-message-list.tsx:3357
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:247
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:254
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1237
 #: apps/app/src/features/chat/group-message-context-menu.tsx:62
 #: apps/app/src/features/chat/message-quote-selection-sheet.tsx:118
@@ -1611,7 +1611,7 @@ msgstr "Me"
 #: apps/app/src/components/chat-message-list.tsx:3601
 #: apps/app/src/components/chat-message-list.tsx:4561
 #: apps/app/src/components/mobile-shell.tsx:34
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:325
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:332
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:782
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1304
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1334
@@ -1626,7 +1626,7 @@ msgstr "Me"
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:107
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:299
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:134
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1229
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1257
 #: apps/app/src/lib/conversation-preview.ts:105
 #: apps/app/src/routes/character-detail-page.tsx:140
 #: apps/app/src/routes/chat-details-page.tsx:117
@@ -1636,7 +1636,7 @@ msgstr "Me"
 #: apps/app/src/routes/mobile-add-friend-page.tsx:105
 #: apps/app/src/routes/mobile-add-friend-page.tsx:966
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:280
-#: apps/app/src/routes/moments-page.tsx:530
+#: apps/app/src/routes/moments-page.tsx:547
 #: apps/app/src/routes/profile-moments-page.tsx:318
 #: apps/app/src/routes/profile-page.tsx:90
 msgid "我"
@@ -1741,9 +1741,9 @@ msgstr "Save attachment"
 #: apps/app/src/components/chat-message-list.tsx:4624
 #: apps/app/src/components/mobile-shell.tsx:31
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:191
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:975
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:998
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1740
-#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1966
+#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1967
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:750
 #: apps/app/src/features/desktop/official-accounts/desktop-official-accounts-workspace.tsx:976
 #: apps/app/src/features/shell/desktop-nav-matching.ts:34
@@ -1907,7 +1907,7 @@ msgstr "Location"
 
 #: apps/app/src/components/chat-message-list.tsx:4617
 #: apps/app/src/components/chat-message-list.tsx:5571
-#: apps/app/src/components/chat-message-list.tsx:7183
+#: apps/app/src/components/chat-message-list.tsx:7196
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:117
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1062
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:1175
@@ -1957,8 +1957,8 @@ msgstr "View note summary"
 
 #: apps/app/src/components/chat-message-list.tsx:4664
 #: apps/app/src/components/chat-message-list.tsx:4672
-#: apps/app/src/components/chat-message-list.tsx:7069
-#: apps/app/src/components/chat-message-list.tsx:7298
+#: apps/app/src/components/chat-message-list.tsx:7082
+#: apps/app/src/components/chat-message-list.tsx:7311
 #: apps/app/src/components/official-article-viewer.tsx:279
 #: apps/app/src/features/desktop/games/desktop-games-workspace.tsx:241
 #: apps/app/src/features/games/game-center-session-panel.tsx:70
@@ -1976,7 +1976,7 @@ msgid "复制名片"
 msgstr "Copy card"
 
 #: apps/app/src/components/chat-message-list.tsx:4673
-#: apps/app/src/components/chat-message-list.tsx:7069
+#: apps/app/src/components/chat-message-list.tsx:7082
 msgid "复制位置"
 msgstr "Copy location"
 
@@ -2049,7 +2049,7 @@ msgid "继续聊"
 msgstr "Continue chat"
 
 #: apps/app/src/components/chat-message-list.tsx:5434
-#: apps/app/src/components/chat-message-list.tsx:7431
+#: apps/app/src/components/chat-message-list.tsx:7444
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:615
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:682
 #: apps/app/src/routes/character-detail-page.tsx:337
@@ -2296,7 +2296,7 @@ msgstr " people"
 #: apps/app/src/components/chat-message-list.tsx:6568
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:115
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:58
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:544
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:567
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1403
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:378
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:775
@@ -2310,7 +2310,7 @@ msgstr "Video call"
 #: apps/app/src/components/chat-message-list.tsx:6568
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:159
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:51
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:538
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:561
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1389
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:378
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:775
@@ -2387,25 +2387,25 @@ msgstr "Close location viewer"
 msgid "聊天位置"
 msgstr "Chat location"
 
-#: apps/app/src/components/chat-message-list.tsx:7037
+#: apps/app/src/components/chat-message-list.tsx:7050
 msgid "来自聊天中的位置卡片"
 msgstr "Location card from chat"
 
-#: apps/app/src/components/chat-message-list.tsx:7058
+#: apps/app/src/components/chat-message-list.tsx:7071
 msgid "这条位置消息来自当前聊天场景，可继续回到消息定位。"
 msgstr "This location message is from the current chat. You can return to the message."
 
-#: apps/app/src/components/chat-message-list.tsx:7078
-#: apps/app/src/components/chat-message-list.tsx:7403
+#: apps/app/src/components/chat-message-list.tsx:7091
+#: apps/app/src/components/chat-message-list.tsx:7416
 #: apps/app/src/i18n/static-dom-seed.ts:932
 msgid "定位消息"
 msgstr "Locate message"
 
-#: apps/app/src/components/chat-message-list.tsx:7156
+#: apps/app/src/components/chat-message-list.tsx:7169
 msgid "未命名笔记"
 msgstr "Untitled note"
 
-#: apps/app/src/components/chat-message-list.tsx:7178
+#: apps/app/src/components/chat-message-list.tsx:7191
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:854
 #: apps/app/src/components/mobile-discover-tool-shell.tsx:141
 #: apps/app/src/components/mobile-document-shell.tsx:143
@@ -2415,7 +2415,7 @@ msgstr "Untitled note"
 #: apps/app/src/features/games/farm/farm-page.tsx:168
 #: apps/app/src/features/games/farm/farm-page.tsx:176
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:151
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:223
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:226
 #: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:513
 #: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:532
 #: apps/app/src/features/search/mobile-search-workspace.tsx:231
@@ -2433,12 +2433,12 @@ msgstr "Untitled note"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:801
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1139
 #: apps/app/src/routes/mobile-notes-page.tsx:161
-#: apps/app/src/routes/moments-page.tsx:2093
+#: apps/app/src/routes/moments-page.tsx:2192
 #: apps/app/src/routes/official-accounts-page.tsx:362
 #: apps/app/src/routes/official-accounts-page.tsx:392
-#: apps/app/src/routes/profile-character-import-page.tsx:233
+#: apps/app/src/routes/profile-character-import-page.tsx:251
 #: apps/app/src/routes/profile-feedback-page.tsx:174
-#: apps/app/src/routes/profile-info-avatar-page.tsx:479
+#: apps/app/src/routes/profile-info-avatar-page.tsx:477
 #: apps/app/src/routes/profile-info-name-page.tsx:147
 #: apps/app/src/routes/profile-info-page.tsx:86
 #: apps/app/src/routes/profile-info-placeholder-page.tsx:52
@@ -2454,7 +2454,7 @@ msgstr "Untitled note"
 msgid "返回"
 msgstr "Back"
 
-#: apps/app/src/components/chat-message-list.tsx:7191
+#: apps/app/src/components/chat-message-list.tsx:7204
 #: apps/app/src/components/wechat-moment-card.tsx:302
 #: apps/app/src/features/chat/mobile-chat-thread-header.tsx:26
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:204
@@ -2463,80 +2463,80 @@ msgstr "Back"
 msgid "更多操作"
 msgstr "More actions"
 
-#: apps/app/src/components/chat-message-list.tsx:7201
+#: apps/app/src/components/chat-message-list.tsx:7214
 msgid "笔记已被删除或不可见"
 msgstr "Note has been deleted or is unavailable"
 
-#: apps/app/src/components/chat-message-list.tsx:7204
+#: apps/app/src/components/chat-message-list.tsx:7217
 msgid "该笔记可能已经被发送者删除，或你不再有查看权限。"
 msgstr "This note may have been deleted by the sender, or you no longer have permission to view it."
 
-#: apps/app/src/components/chat-message-list.tsx:7213
+#: apps/app/src/components/chat-message-list.tsx:7226
 msgid "编辑于"
 msgstr "Edited at"
 
-#: apps/app/src/components/chat-message-list.tsx:7247
+#: apps/app/src/components/chat-message-list.tsx:7260
 msgid "这条笔记暂时没有正文内容。"
 msgstr "This note has no body content yet."
 
-#: apps/app/src/components/chat-message-list.tsx:7298
+#: apps/app/src/components/chat-message-list.tsx:7311
 msgid "复制摘要"
 msgstr "Copy summary"
 
-#: apps/app/src/components/chat-message-list.tsx:7366
+#: apps/app/src/components/chat-message-list.tsx:7379
 #: apps/app/src/features/chat-details/mobile-details-action-sheet.tsx:76
 msgid "关闭操作菜单"
 msgstr "Close action menu"
 
-#: apps/app/src/components/chat-message-list.tsx:7382
+#: apps/app/src/components/chat-message-list.tsx:7395
 msgid "编辑笔记"
 msgstr "Edit note"
 
-#: apps/app/src/components/chat-message-list.tsx:7430
+#: apps/app/src/components/chat-message-list.tsx:7443
 msgid " 的隐界名片"
 msgstr "'s Yinjie Card"
 
-#: apps/app/src/components/chat-message-list.tsx:7432
+#: apps/app/src/components/chat-message-list.tsx:7445
 msgid "隐界号："
 msgstr "Yinjie ID: "
 
-#: apps/app/src/components/chat-message-list.tsx:7449
+#: apps/app/src/components/chat-message-list.tsx:7462
 msgid "这是一条来自聊天中的收藏笔记。"
 msgstr "This is a saved note from a chat."
 
-#: apps/app/src/components/chat-message-list.tsx:7451
+#: apps/app/src/components/chat-message-list.tsx:7464
 msgid "标签："
 msgstr "Tags: "
 
-#: apps/app/src/components/chat-message-list.tsx:7453
+#: apps/app/src/components/chat-message-list.tsx:7466
 msgid "图片："
 msgstr "Images: "
 
-#: apps/app/src/components/chat-message-list.tsx:7453
+#: apps/app/src/components/chat-message-list.tsx:7466
 msgid " 张"
 msgstr " images"
 
-#: apps/app/src/components/chat-message-list.tsx:7454
+#: apps/app/src/components/chat-message-list.tsx:7467
 msgid "文件："
 msgstr "Files: "
 
-#: apps/app/src/components/chat-message-list.tsx:7454
+#: apps/app/src/components/chat-message-list.tsx:7467
 msgid " 个"
 msgstr " items"
 
-#: apps/app/src/components/chat-message-list.tsx:7455
+#: apps/app/src/components/chat-message-list.tsx:7468
 msgid "更新于"
 msgstr "Updated at"
 
 #: apps/app/src/components/expandable-text.tsx:27
 #: apps/app/src/features/chat/chat-reminder-summary-text.tsx:138
-#: apps/app/src/features/chat/reminder-task-panel.tsx:185
+#: apps/app/src/features/chat/reminder-task-panel.tsx:223
 msgid "展开"
 msgstr "Expand"
 
 #: apps/app/src/components/expandable-text.tsx:28
 #: apps/app/src/features/chat/chat-reminder-summary-text.tsx:138
-#: apps/app/src/features/chat/reminder-task-panel.tsx:185
+#: apps/app/src/features/chat/reminder-task-panel.tsx:223
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:1060
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:923
 #: apps/app/src/routes/desktop-mobile-page.tsx:999
@@ -2578,14 +2578,14 @@ msgstr "Close dialog"
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:140
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:109
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:71
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:98
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:100
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:54
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:148
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:58
 #: apps/app/src/features/games/farm/components/seed-shop-sheet.tsx:121
 #: apps/app/src/features/games/farm/components/warehouse-sheet.tsx:64
 #: apps/app/src/features/games/game-center-session-panel.tsx:123
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1380
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1408
 #: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:150
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:124
 #: apps/app/src/i18n/static-dom-seed.ts:855
@@ -2644,7 +2644,7 @@ msgstr "Save it to your photos and post to X / RedNote / Weibo to invite more re
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:396
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:291
 #: apps/app/src/features/desktop/moments/desktop-friend-moments-workspace.tsx:489
-#: apps/app/src/features/desktop/moments/desktop-moments-workspace.tsx:154
+#: apps/app/src/features/desktop/moments/desktop-moments-workspace.tsx:161
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:247
 #: apps/app/src/features/shell/desktop-shell.tsx:72
 #: apps/app/src/routes/channel-author-page.tsx:499
@@ -2657,8 +2657,8 @@ msgstr "Save it to your photos and post to X / RedNote / Weibo to invite more re
 #: apps/app/src/routes/discover-page.tsx:980
 #: apps/app/src/routes/live-companion-page.tsx:299
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:1081
-#: apps/app/src/routes/moments-page.tsx:2010
-#: apps/app/src/routes/profile-info-avatar-page.tsx:514
+#: apps/app/src/routes/moments-page.tsx:2109
+#: apps/app/src/routes/profile-info-avatar-page.tsx:512
 #: apps/app/src/routes/profile-info-page.tsx:59
 #: apps/app/src/routes/profile-moments-page.tsx:772
 #: apps/app/src/routes/profile-page.tsx:113
@@ -2907,8 +2907,8 @@ msgstr "Share tool"
 #: apps/app/src/components/mobile-document-shell.tsx:197
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:619
 #: apps/app/src/features/chat/conversation-thread-panel.tsx:160
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:778
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:835
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:801
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:858
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:193
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1805
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1847
@@ -2959,9 +2959,9 @@ msgstr "Share tool"
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:51
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:77
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:897
-#: apps/app/src/routes/moments-page.tsx:941
-#: apps/app/src/routes/moments-page.tsx:2208
-#: apps/app/src/routes/moments-page.tsx:2360
+#: apps/app/src/routes/moments-page.tsx:958
+#: apps/app/src/routes/moments-page.tsx:2307
+#: apps/app/src/routes/moments-page.tsx:2459
 #: apps/app/src/routes/official-account-article-page.tsx:207
 #: apps/app/src/routes/official-account-detail-page.tsx:389
 #: apps/app/src/routes/official-account-detail-page.tsx:420
@@ -4168,7 +4168,7 @@ msgid "全部成员"
 msgstr "All members"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:587
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:708
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:731
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1728
 #: apps/app/src/features/desktop/official-accounts/desktop-subscription-workspace.tsx:392
 #: apps/app/src/features/official-accounts/service/official-account-service-thread.tsx:650
@@ -4222,7 +4222,7 @@ msgstr "Chat history is temporarily unavailable"
 #: apps/app/src/features/desktop/contacts/desktop-contacts-starred-friends-pane.tsx:204
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:170
 #: apps/app/src/features/desktop/moments/desktop-friend-moments-workspace.tsx:235
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:172
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:178
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:175
 #: apps/app/src/features/official-accounts/service/official-account-service-thread.tsx:673
 #: apps/app/src/features/search/mobile-search-workspace.tsx:374
@@ -4262,7 +4262,7 @@ msgstr "Chat history is temporarily unavailable"
 #: apps/app/src/routes/group-qr-page.tsx:1685
 #: apps/app/src/routes/mobile-add-friend-page.tsx:610
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:939
-#: apps/app/src/routes/moments-page.tsx:2199
+#: apps/app/src/routes/moments-page.tsx:2298
 #: apps/app/src/routes/official-account-article-page.tsx:389
 #: apps/app/src/routes/official-account-article-page.tsx:492
 #: apps/app/src/routes/official-account-detail-page.tsx:380
@@ -4279,7 +4279,7 @@ msgstr "Retry loading"
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:632
 #: apps/app/src/features/chat/chat-reminder-entries.ts:70
 #: apps/app/src/features/chat/chat-reminder-entries.ts:95
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:787
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:810
 #: apps/app/src/features/desktop/chat/desktop-chat-window-route-state.ts:26
 #: apps/app/src/features/desktop/chat/desktop-chat-window-route-state.ts:115
 #: apps/app/src/routes/desktop-chat-window-page.tsx:53
@@ -4446,11 +4446,11 @@ msgid "待提醒"
 msgstr "Pending"
 
 #: apps/app/src/features/chat/chat-reminder-entries.ts:174
-#: apps/app/src/features/chat/reminder-task-panel.tsx:261
+#: apps/app/src/features/chat/reminder-task-panel.tsx:299
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:911
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:1123
 #: apps/app/src/routes/mini-programs-page.tsx:365
-#: apps/app/src/routes/profile-info-avatar-page.tsx:504
+#: apps/app/src/routes/profile-info-avatar-page.tsx:502
 #: apps/app/src/routes/profile-info-name-page.tsx:164
 #: apps/app/src/routes/profile-info-signature-page.tsx:158
 msgid "完成"
@@ -4465,7 +4465,7 @@ msgid "已完成消息提醒。"
 msgstr "Message reminder completed."
 
 #: apps/app/src/features/chat/chat-reminder-entries.ts:190
-#: apps/app/src/features/chat/reminder-task-panel.tsx:82
+#: apps/app/src/features/chat/reminder-task-panel.tsx:97
 msgid "完成提醒失败，请稍后再试。"
 msgstr "Failed to complete the reminder. Try again later."
 
@@ -4547,7 +4547,7 @@ msgstr "Sent a new message"
 
 #. placeholder {0}: membersQuery.data.length
 #. placeholder {0}: participants.length
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:203
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:210
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:872
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1365
 #: apps/app/src/routes/group-chat-details-page.tsx:452
@@ -4555,15 +4555,15 @@ msgstr "Sent a new message"
 msgid "{0} 人群聊"
 msgstr "{0}-member group chat"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:205
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:212
 msgid "对方正在生成图片..."
 msgstr "They are generating an image..."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:207
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:214
 msgid "对方正在回复..."
 msgstr "They are replying..."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:705
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:728
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:1729
 #: apps/app/src/routes/desktop-chat-files-page.tsx:515
 #: apps/app/src/routes/desktop-chat-history-page.tsx:336
@@ -4571,15 +4571,15 @@ msgstr "They are replying..."
 msgid "正在读取会话..."
 msgstr "Loading conversations..."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:709
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:732
 msgid "正在读取会话"
 msgstr "Loading conversation"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:710
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:733
 msgid "稍等一下，正在同步这段聊天里的消息。"
 msgstr "Hang on — syncing the messages in this chat."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:720
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:743
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:991
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1044
 #: apps/app/src/features/search/mobile-search-workspace.tsx:502
@@ -4590,41 +4590,41 @@ msgstr "Hang on — syncing the messages in this chat."
 msgid "会话"
 msgstr "Conversation"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:721
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:744
 msgid "会话暂时不可用"
 msgstr "Conversation unavailable for now"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:788
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:811
 msgid "还没有消息"
 msgstr "No messages yet"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:789
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:812
 msgid "先发一句开场白，把这段对话真正聊起来。"
 msgstr "Send an opening line to actually get this conversation going."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:825
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:848
 #: apps/app/src/i18n/static-dom-seed.ts:755
 msgid "直接说：明早8点提醒我吃药"
 msgstr "Try: remind me to take medicine at 8 tomorrow morning"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:826
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:849
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1842
 #: apps/app/src/i18n/static-dom-seed.ts:736
 msgid "输入消息"
 msgstr "Type a message"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:902
-#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1898
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:925
+#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1899
 msgid "视频通话功能开发中"
 msgstr "Video call feature in development"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:903
-#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1899
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:926
+#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1900
 msgid "语音通话功能开发中"
 msgstr "Voice call feature in development"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:905
-#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1901
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:928
+#: apps/app/src/features/chat/group-chat-thread-panel.tsx:1902
 msgid "该功能暂未开放，敬请期待。"
 msgstr "This feature isn't available yet. Stay tuned."
 
@@ -5179,22 +5179,22 @@ msgid "群聊 · 免打扰"
 msgstr "Group chat · Do not disturb"
 
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:966
-#: apps/app/src/features/chat/use-conversation-thread.ts:701
+#: apps/app/src/features/chat/use-conversation-thread.ts:728
 msgid "图片上传结果异常。"
 msgstr "Image upload result was abnormal."
 
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:985
-#: apps/app/src/features/chat/use-conversation-thread.ts:722
+#: apps/app/src/features/chat/use-conversation-thread.ts:749
 msgid "文件上传结果异常。"
 msgstr "File upload result was abnormal."
 
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1007
-#: apps/app/src/features/chat/use-conversation-thread.ts:746
+#: apps/app/src/features/chat/use-conversation-thread.ts:773
 msgid "语音上传结果异常。"
 msgstr "Voice upload result was abnormal."
 
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1107
-#: apps/app/src/features/chat/use-conversation-thread.ts:811
+#: apps/app/src/features/chat/use-conversation-thread.ts:848
 msgid "这条消息暂时无法重试发送。"
 msgstr "This message can't be retried right now."
 
@@ -6294,90 +6294,90 @@ msgid "暂时关闭提醒浮条"
 msgstr "Temporarily hide reminder banner"
 
 #. placeholder {0}: task.title
-#: apps/app/src/features/chat/reminder-task-panel.tsx:73
+#: apps/app/src/features/chat/reminder-task-panel.tsx:88
 msgid "已完成：{0}"
 msgstr "Done: {0}"
 
 #. placeholder {0}: task.title
-#: apps/app/src/features/chat/reminder-task-panel.tsx:74
+#: apps/app/src/features/chat/reminder-task-panel.tsx:89
 msgid "已记录这次完成：{0}"
 msgstr "Logged this completion: {0}"
 
 #. placeholder {0}: task.title
-#: apps/app/src/features/chat/reminder-task-panel.tsx:92
+#: apps/app/src/features/chat/reminder-task-panel.tsx:114
 msgid "{0} 已往后顺 30 分钟。"
 msgstr "{0} pushed back by 30 minutes."
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:100
-#: apps/app/src/features/chat/reminder-task-panel.tsx:119
+#: apps/app/src/features/chat/reminder-task-panel.tsx:122
+#: apps/app/src/features/chat/reminder-task-panel.tsx:148
 msgid "延后提醒失败，请稍后再试。"
 msgstr "Failed to snooze reminder. Please try again later."
 
 #. placeholder {0}: task.title
-#: apps/app/src/features/chat/reminder-task-panel.tsx:111
+#: apps/app/src/features/chat/reminder-task-panel.tsx:140
 msgid "{0} 已顺到明天。"
 msgstr "{0} pushed to tomorrow."
 
 #. placeholder {0}: task.title
-#: apps/app/src/features/chat/reminder-task-panel.tsx:129
+#: apps/app/src/features/chat/reminder-task-panel.tsx:165
 msgid "已删除：{0}"
 msgstr "Deleted: {0}"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:137
+#: apps/app/src/features/chat/reminder-task-panel.tsx:173
 msgid "删除提醒失败，请稍后再试。"
 msgstr "Failed to delete reminder. Please try again later."
 
 #. placeholder {0}: tasks.length
-#: apps/app/src/features/chat/reminder-task-panel.tsx:173
+#: apps/app/src/features/chat/reminder-task-panel.tsx:211
 msgid "小盯替你记着 {0} 件事"
 msgstr "Xiaoding is keeping track of {0} things for you"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:177
+#: apps/app/src/features/chat/reminder-task-panel.tsx:215
 msgid "直接点按就能完成、延后或删掉提醒。"
 msgstr "Tap directly to complete, snooze, or delete a reminder."
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:178
+#: apps/app/src/features/chat/reminder-task-panel.tsx:216
 #: apps/app/src/i18n/static-dom-seed.ts:754
 msgid "点按展开查看提醒。"
 msgstr "Tap to expand reminders."
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:213
+#: apps/app/src/features/chat/reminder-task-panel.tsx:251
 msgid "正在同步提醒任务…"
 msgstr "Syncing reminder tasks..."
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:217
+#: apps/app/src/features/chat/reminder-task-panel.tsx:255
 msgid "还没有在替你记的事。直接发一句“明早8点提醒我吃药”或“每周五提醒我买猫粮”就行。"
 msgstr "No reminders yet. Just send something like \"remind me to take meds at 8 tomorrow\" or \"remind me to buy cat food every Friday\"."
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:269
+#: apps/app/src/features/chat/reminder-task-panel.tsx:307
 msgid "30分后"
 msgstr "In 30 minutes"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:276
+#: apps/app/src/features/chat/reminder-task-panel.tsx:314
 msgid "明天"
 msgstr "Tomorrow"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:339
+#: apps/app/src/features/chat/reminder-task-panel.tsx:377
 msgid "长期"
 msgstr "Long-term"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:342
+#: apps/app/src/features/chat/reminder-task-panel.tsx:380
 msgid "重复"
 msgstr "Repeat"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:344
+#: apps/app/src/features/chat/reminder-task-panel.tsx:382
 msgid "硬提醒"
 msgstr "Strong reminder"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:344
+#: apps/app/src/features/chat/reminder-task-panel.tsx:382
 msgid "一次"
 msgstr "Once"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:350
+#: apps/app/src/features/chat/reminder-task-panel.tsx:388
 msgid "已延后到 {snoozedTimestamp}"
 msgstr "Snoozed to {snoozedTimestamp}"
 
-#: apps/app/src/features/chat/reminder-task-panel.tsx:356
+#: apps/app/src/features/chat/reminder-task-panel.tsx:394
 msgid "下次提醒 {nextLabel}"
 msgstr "Next reminder {nextLabel}"
 
@@ -7195,18 +7195,18 @@ msgstr "Delete custom sticker"
 msgid "自定义"
 msgstr "Custom"
 
-#: apps/app/src/features/chat/use-conversation-thread.ts:580
+#: apps/app/src/features/chat/use-conversation-thread.ts:599
 msgid "网络暂时连不上，消息已保存，点重试可重新发送。"
 msgstr "Network is temporarily unavailable. Your message is saved—tap retry to resend."
 
-#: apps/app/src/features/chat/use-conversation-thread.ts:626
-#: apps/app/src/features/chat/use-conversation-thread.ts:654
-#: apps/app/src/features/chat/use-conversation-thread.ts:690
+#: apps/app/src/features/chat/use-conversation-thread.ts:648
+#: apps/app/src/features/chat/use-conversation-thread.ts:681
+#: apps/app/src/features/chat/use-conversation-thread.ts:717
 msgid "The target character is not ready yet."
 msgstr "The target character is not ready yet."
 
 #. placeholder {0}: sticker.label ?? sticker.stickerId
-#: apps/app/src/features/chat/use-conversation-thread.ts:663
+#: apps/app/src/features/chat/use-conversation-thread.ts:690
 msgid "[表情包] {0}"
 msgstr "[Stickers] {0}"
 
@@ -7680,7 +7680,7 @@ msgstr "Social and Content"
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:328
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:745
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:526
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:56
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:60
 #: apps/app/src/features/search/desktop-search-workspace.tsx:144
 #: apps/app/src/features/search/mobile-search-workspace.tsx:105
 #: apps/app/src/features/search/mobile-search-workspace.tsx:511
@@ -7700,8 +7700,8 @@ msgstr "Social and Content"
 #: apps/app/src/routes/friend-moments-page.tsx:1018
 #: apps/app/src/routes/mobile-favorites-page.tsx:121
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:734
-#: apps/app/src/routes/moments-page.tsx:1541
-#: apps/app/src/routes/moments-page.tsx:2083
+#: apps/app/src/routes/moments-page.tsx:1601
+#: apps/app/src/routes/moments-page.tsx:2182
 #: apps/app/src/routes/profile-moments-page.tsx:934
 #: apps/app/src/routes/profile-page.tsx:168
 msgid "朋友圈"
@@ -11458,9 +11458,9 @@ msgid "重试加载更多"
 msgstr "Retry loading more"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:197
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:185
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:191
 #: apps/app/src/routes/discover-feed-page.tsx:2767
-#: apps/app/src/routes/moments-page.tsx:2319
+#: apps/app/src/routes/moments-page.tsx:2418
 msgid "正在寻找未屏蔽的动态"
 msgstr "Looking for unblocked posts"
 
@@ -11478,9 +11478,9 @@ msgid "当前所有动态作者都在你的屏蔽名单里。去通讯录里解�
 msgstr "Every post author is on your block list. Unblock people in your contacts or wait for new posts."
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:215
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:195
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:201
 #: apps/app/src/routes/discover-feed-page.tsx:2787
-#: apps/app/src/routes/moments-page.tsx:2340
+#: apps/app/src/routes/moments-page.tsx:2439
 msgid "打开通讯录"
 msgstr "Open contacts"
 
@@ -11624,7 +11624,7 @@ msgid "这里不只看朋友，世界主人和居民的公开发言都会进入�
 msgstr "This is not only friends: public posts from the world owner and residents enter this feed."
 
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:63
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
 #: apps/app/src/i18n/static-dom-seed.ts:40
 #: apps/app/src/routes/desktop-mobile-page.tsx:1257
 #: apps/app/src/routes/desktop-mobile-page.tsx:1322
@@ -11633,7 +11633,7 @@ msgid "刷新"
 msgstr "Refresh"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:65
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:67
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:76
 #: apps/app/src/features/search/desktop-search-workspace.tsx:1890
 #: apps/app/src/i18n/static-dom-seed.ts:16
 msgid "回到顶部"
@@ -11649,7 +11649,7 @@ msgid "已加载 {loadedCount} / 共 {serverTotal} 条动态"
 msgstr "Loaded {loadedCount} / {serverTotal} posts"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:84
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:88
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:97
 msgid "共 {loadedCount} 条动态"
 msgstr "{loadedCount} posts"
 
@@ -11657,7 +11657,7 @@ msgstr "{loadedCount} posts"
 #: apps/app/src/routes/discover-feed-page.tsx:2639
 #: apps/app/src/routes/friend-moments-page.tsx:291
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:193
-#: apps/app/src/routes/moments-page.tsx:411
+#: apps/app/src/routes/moments-page.tsx:428
 msgid "重试点赞"
 msgstr "Retry like"
 
@@ -11670,7 +11670,7 @@ msgstr "Retry sending"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-workspace.tsx:400
 #: apps/app/src/routes/discover-feed-page.tsx:2703
-#: apps/app/src/routes/moments-page.tsx:2293
+#: apps/app/src/routes/moments-page.tsx:2392
 msgid "正在加载更多…"
 msgstr "Loading more…"
 
@@ -11681,7 +11681,7 @@ msgstr "Failed to load more · tap to retry"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-workspace.tsx:417
 #: apps/app/src/routes/discover-feed-page.tsx:2719
-#: apps/app/src/routes/moments-page.tsx:2300
+#: apps/app/src/routes/moments-page.tsx:2399
 msgid "已经到底了"
 msgstr "You've reached the end"
 
@@ -12062,11 +12062,11 @@ msgid "正在读取这位角色的朋友圈..."
 msgstr "Loading this character's Moments..."
 
 #: apps/app/src/features/desktop/moments/desktop-friend-moments-workspace.tsx:230
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:167
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:173
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:170
 #: apps/app/src/i18n/static-dom-seed.ts:38
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:926
-#: apps/app/src/routes/moments-page.tsx:2187
+#: apps/app/src/routes/moments-page.tsx:2286
 msgid "朋友圈暂时不可用"
 msgstr "Moments is temporarily unavailable"
 
@@ -12116,8 +12116,8 @@ msgstr "Not updated yet"
 
 #: apps/app/src/features/desktop/moments/desktop-friend-moments-workspace.tsx:399
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:85
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:207
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:71
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:213
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:80
 #: apps/app/src/features/desktop/moments/desktop-profile-moments-workspace.tsx:273
 #: apps/app/src/i18n/static-dom-seed.ts:41
 msgid "发朋友圈"
@@ -12186,32 +12186,36 @@ msgstr "Add as friend to leave a comment."
 msgid "正在读取朋友圈..."
 msgstr "Loading Moments..."
 
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:186
-#: apps/app/src/routes/moments-page.tsx:2322
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:192
+#: apps/app/src/routes/moments-page.tsx:2421
 msgid "当前页加载到的动态作者都在你的屏蔽名单里，正在自动翻下一页找未屏蔽的居民动态。"
 msgstr "All loaded post authors on this page are on your block list. Automatically loading the next page to find unblocked posts."
 
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:190
-#: apps/app/src/routes/moments-page.tsx:2328
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:196
+#: apps/app/src/routes/moments-page.tsx:2427
 msgid "朋友圈都被你屏蔽了"
 msgstr "All Moments are blocked"
 
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:191
-#: apps/app/src/routes/moments-page.tsx:2331
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:197
+#: apps/app/src/routes/moments-page.tsx:2430
 msgid "已加载的动态作者全部在你的屏蔽名单里。去通讯录里解除屏蔽，或者等其他居民发布新动态。"
 msgstr "Every loaded post author is on your block list. Unblock people in your contacts or wait for new posts."
 
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:203
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:209
 #: apps/app/src/i18n/static-dom-seed.ts:42
 msgid "朋友圈还很安静"
 msgstr "Moments is still quiet"
 
-#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:204
+#: apps/app/src/features/desktop/moments/desktop-moments-feed.tsx:210
 #: apps/app/src/i18n/static-dom-seed.ts:43
 msgid "你先发一条，或者等世界里的其他人先开口。"
 msgstr "Post one first, or wait for someone else in the world to speak."
 
-#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:87
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
+msgid "刷新中…"
+msgstr ""
+
+#: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:96
 msgid "已加载 {loadedCount} / 共 {totalCount} 条动态"
 msgstr "Loaded {loadedCount} / {totalCount} posts"
 
@@ -13388,59 +13392,59 @@ msgstr "Pesticide active"
 msgid "被偷过"
 msgstr "Has been stolen"
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:29
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:34
 msgid "点我换一句"
 msgstr "Tap for a new line"
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:37
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:42
 msgid "管家"
 msgstr "Steward"
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:82
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:87
 msgid "喵——有 {ripeCount} 块田熟了，趁热收吧。"
 msgstr "Meow~ {ripeCount} plots are ripe — harvest while they're fresh."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:85
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:90
 msgid "糟糕，{rottenCount} 块田已经坏掉了，铲了重种？"
 msgstr "Uh oh — {rottenCount} plots have rotted. Clear and replant?"
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:88
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:93
 msgid "田里 {weedCount} 处杂草、{bugCount} 只虫子，记得清一下。"
 msgstr "{weedCount} weeds and {bugCount} bugs in the field — remember to clear them."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:90
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:95
 msgid "田里 {weedCount} 处杂草，记得清一下。"
 msgstr "{weedCount} weeds in the field — remember to clear them."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:92
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:97
 msgid "田里 {bugCount} 只虫子，记得清一下。"
 msgstr "{bugCount} bugs in the field — remember to clear them."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:97
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:102
 msgid "提醒一下：{thiefName} 今天来顺过你的菜。"
 msgstr "Heads up: {thiefName} stole your crops today."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:102
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:107
 msgid "夜深了，作物也在睡觉，浇个水就回去歇会儿吧。"
 msgstr "It's late — the crops are sleeping too. Water them and go rest."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:104
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:109
 msgid "早上阳光好，正适合浇水。"
 msgstr "Morning sun is great — perfect for watering."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:106
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:111
 msgid "中午阳光毒，浇水容易蒸发，等下午吧。"
 msgstr "The midday sun is harsh — watering evaporates quickly. Wait for the afternoon."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:108
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:113
 msgid "下午是好时候，串串门、看看邻居？"
 msgstr "Afternoon is a good time. How about visiting the neighbors?"
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:110
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:115
 msgid "入夜啦，记得防一下夜里来串门的人。"
 msgstr "Night has fallen — watch out for nighttime visitors."
 
-#: apps/app/src/features/games/farm/components/farm-mascot.tsx:115
+#: apps/app/src/features/games/farm/components/farm-mascot.tsx:120
 msgid "今天没啥事儿，世界角色们各自忙各自的。"
 msgstr "Nothing going on today — world characters are each doing their own thing."
 
@@ -13482,53 +13486,58 @@ msgstr "Your dog just blocked a thief"
 msgid "忽略"
 msgstr "Dismiss"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:91
-msgid "给"
-msgstr "Give to"
-
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:91
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:141
 msgid "送礼"
 msgstr "Gift"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:114
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
+msgid "给"
+msgstr "Give to"
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:17
 msgid "金币"
 msgstr "Coins"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:118
 msgid "仓库作物"
 msgstr "Warehouse crops"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:118
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:194
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:120
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:201
 #: apps/app/src/features/games/farm/components/seed-shop-sheet.tsx:134
 msgid "种子"
 msgstr "Seeds"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:119
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:121
 msgid "化肥/农药"
 msgstr "Fertilizer / Pesticide"
 
+#. placeholder {0}: neighbor.characterName
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:130
+msgid "{0} 的好感度已满，送礼不会再涨好感。"
+msgstr ""
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:137
 msgid "每 100 金币换 1 点好感。最多 2000 金币 / 次。"
 msgstr "Every 100 coins = +1 affinity. Max 2000 coins per gift."
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:154
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:161
 msgid "赠送 🪙"
 msgstr "Send 🪙"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:175
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:202
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:229
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:182
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:209
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:236
 msgid "送 1"
 msgstr "Send 1"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:181
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:188
 msgid "仓库空空如也"
 msgstr "Warehouse is empty"
 
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:208
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:215
 msgid "种子袋空空如也"
 msgstr "Seed bag is empty"
 
@@ -14314,7 +14323,7 @@ msgid "更适合长期养成和资源经营。"
 msgstr "Better for long-term progression and resource management."
 
 #: apps/app/src/features/games/game-center-data.ts:117
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:231
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:234
 msgid "抢车位"
 msgstr "Parking grab"
 
@@ -15892,29 +15901,29 @@ msgstr ""
 
 #. placeholder {0}: formatYuan(r.amountCents)
 #. placeholder {1}: r.streakDays
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:208
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:211
 msgid "日签 +{0}，连签 {1} 天"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:234
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:237
 msgid "完美复刻 · 服务端"
 msgstr ""
 
 #. placeholder {0}: state.dailyShieldRemaining
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:250
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:253
 msgid "今日免罚 ×{0}"
 msgstr ""
 
 #. placeholder {0}: state.streakDays
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:256
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:259
 msgid "连签 {0} 天"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:279
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:282
 msgid "领日签"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:280
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:283
 msgid "已签到"
 msgstr "Checked in"
 
@@ -15922,332 +15931,332 @@ msgstr "Checked in"
 #. placeholder {0}: state.homeOccupancies.length
 #. placeholder {1}: detail.lotSize
 #. placeholder {1}: state.lotSize
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:353
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:886
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:379
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:914
 msgid "车位 {0} / {1}"
 msgstr ""
 
 #. placeholder {0}: formatYuan(state.totalEarnedCents)
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:356
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:382
 msgid "累计 {0}"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:419
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:447
 msgid "空位"
 msgstr "Empty spot"
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:439
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:467
 msgid "我的车"
 msgstr "My cars"
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:439
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:467
 msgid "访客"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:460
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:488
 msgid "可拖车"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:460
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:488
 msgid "罚单"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:460
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:488
 msgid "警告"
 msgstr ""
 
 #. placeholder {0}: formatYuan(r.gainedCents)
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:539
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:567
 msgid "车已收回，到账 {0}"
 msgstr ""
 
 #. placeholder {0}: formatYuan(r.gainedCents)
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:549
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:577
 msgid "收入 {0}"
 msgstr ""
 
 #. placeholder {0}: formatYuan(r.finedCents)
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:560
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:588
 msgid "贴条收到 {0}"
 msgstr ""
 
 #. placeholder {0}: formatYuan(r.finedCents)
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:569
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:597
 msgid "拖车费 {0}"
 msgstr ""
 
 #. placeholder {0}: occupancy.slotIndex + 1
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:586
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:614
 msgid "你的车，停在自家车位 #{0}"
 msgstr ""
 
 #. placeholder {0}: occupancy.slotIndex + 1
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:587
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:615
 msgid "访客车，占用 #{0}"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:592
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:620
 msgid "累积收益"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:594
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:622
 msgid "占用时长"
 msgstr ""
 
 #. placeholder {0}: Math.max(0, Math.floor((state.serverNowMs - occupancy.parkedAtMs) / 60_000))
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:595
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:623
 msgid "{0} 分"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:609
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:637
 msgid "收钱（不召回）"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:617
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:645
 msgid "召回车辆"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:634
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:662
 msgid "已开过罚单"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:636
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:664
 msgid "暂无收益可罚"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:637
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:665
 msgid "贴罚单（需 ≥ 警告）"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:645
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:673
 msgid "拖车（需 ≥ 可拖车）"
 msgstr ""
 
 #. placeholder {0}: slotIndex + 1
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:697
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:725
 msgid "已停进邻居家 #{0}"
 msgstr ""
 
 #. placeholder {0}: slotIndex + 1
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:698
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:726
 msgid "已停在 #{0}"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:709
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:737
 msgid "挑一辆车停过去"
 msgstr ""
 
 #. placeholder {0}: slotIndex + 1
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:710
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:738
 msgid "挑一辆车停 #{0}"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:714
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:742
 msgid "车库里没有闲置车（被外出 / 冷却中）。先收回一辆。"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:765
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:793
 msgid "点谁的车场，把你的车停过去开始挂机"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:782
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:810
 msgid "你的 world 里还没有可访问的角色 —— 添加些 contacts 再回来。"
 msgstr ""
 
 #. placeholder {0}: n.emptySlotCount
 #. placeholder {1}: n.lotSize
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:836
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:864
 msgid "空 {0}/{1}"
 msgstr ""
 
 #. placeholder {0}: n.intimacyLevel
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:838
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:866
 msgid "亲密度 {0}"
 msgstr ""
 
 #. placeholder {0}: state.ownedCars.length
 #. placeholder {1}: state.garageSlots
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:976
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1004
 msgid "我的车（{0}/{1}）"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1022
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1050
 msgid "升级成功"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1027
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1055
 msgid "升级"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1038
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1066
 msgid "已换色"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1042
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1070
 msgid "换色"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1051
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1079
 msgid "已修复"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1055
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1083
 msgid "维修"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1066
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1094
 msgid "车场升级"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1078
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1106
 msgid "车位扩到 {size}"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1090
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1118
 msgid "{size} 车位"
 msgstr ""
 
 #. placeholder {0}: SURFACE_DISPLAY[sf].name
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1108
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1136
 msgid "已切到 {0}"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1128
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1156
 msgid "车库 +1"
 msgstr ""
 
 #. placeholder {0}: state.garageSlots
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1133
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1161
 msgid "车库扩容（当前 {0}）"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1139
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1167
 msgid "买车"
 msgstr ""
 
 #. placeholder {0}: TIER_DISPLAY[tier].name
 #. placeholder {1}: RARITY_DISPLAY[r].name
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1154
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1182
 msgid "已购入 {0}（{1}）"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1168
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1196
 msgid "价格 = 档位 × 稀有度倍率（服务端计算）"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1196
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1224
 msgid "领奖成功"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1205
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1233
 msgid "财富榜"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1239
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1267
 msgid "榜单加载中..."
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1246
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1274
 msgid "每日任务"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1250
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1278
 msgid "今日任务即将刷新"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1290
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1318
 msgid "已领"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1292
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1320
 msgid "领奖"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1293
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1321
 msgid "未达成"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1303
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1331
 msgid "事件"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1329
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1357
 msgid "暂时还没有事件"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1399
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1427
 msgid "操作失败"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1405
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1433
 msgid "今日停 3 次邻居车场"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1407
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1435
 msgid "今日贴 2 张罚单"
 msgstr ""
 
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1409
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1437
 msgid "今日累计收益 ¥20"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1425
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1453
 msgid "{0} 停了一辆自家车"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1426
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1454
 msgid "{0} 停进了 {tgt} 的车场"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1428
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1456
 msgid "{0} 召回了一辆车"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1430
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1458
 msgid "{0} 收了一波钱"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1432
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1460
 msgid "{0} 给 {tgt} 贴了张罚单"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1434
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1462
 msgid "{0} 把 {tgt} 的车拖走了"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1436
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1464
 msgid "{0} 提了一辆新车"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1438
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1466
 msgid "{0} 给爱车升级"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1440
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1468
 msgid "{0} 升级了车场"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1442
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1470
 msgid "{0} 完成了今日签到"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1444
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1472
 msgid "{0} 领取了任务奖励"
 msgstr ""
 
 #. placeholder {0}: e.actorName
-#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1446
+#: apps/app/src/features/games/parking-war/parking-war-game.tsx:1474
 msgid "{0} 把车停进了你车场"
 msgstr ""
 
@@ -19200,13 +19209,13 @@ msgid "端口占用：{portOccupiedLabel}"
 msgstr "Port occupied: {portOccupiedLabel}"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:265
+msgid "请稍候..."
+msgstr "Please wait..."
+
+#: apps/app/src/features/shell/desktop-runtime-guard.tsx:265
 #: apps/app/src/i18n/static-dom-seed.ts:11
 msgid "再试一次"
 msgstr "Try again"
-
-#: apps/app/src/features/shell/desktop-runtime-guard.tsx:265
-msgid "请稍候..."
-msgstr "Please wait..."
 
 #: apps/app/src/features/shell/desktop-shell.tsx:381
 msgid "口令不正确，请重新输入。"
@@ -20169,8 +20178,8 @@ msgid "我的动态"
 msgstr "My posts"
 
 #: apps/app/src/i18n/static-dom-seed.ts:430
-#: apps/app/src/routes/moments-page.tsx:2106
-#: apps/app/src/routes/moments-page.tsx:2360
+#: apps/app/src/routes/moments-page.tsx:2205
+#: apps/app/src/routes/moments-page.tsx:2459
 msgid "发一条朋友圈"
 msgstr "Post to Moments"
 
@@ -21661,8 +21670,8 @@ msgstr "Failed to copy game invite link. Try again later."
 #: apps/app/src/routes/friend-moments-page.tsx:512
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:210
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:377
-#: apps/app/src/routes/moments-page.tsx:437
-#: apps/app/src/routes/moments-page.tsx:690
+#: apps/app/src/routes/moments-page.tsx:454
+#: apps/app/src/routes/moments-page.tsx:707
 #: apps/app/src/routes/profile-moments-page.tsx:246
 #: apps/app/src/routes/profile-moments-page.tsx:418
 msgid "朋友圈互动已更新。"
@@ -21683,7 +21692,7 @@ msgid "正在读取角色朋友圈..."
 msgstr "Loading character Moments..."
 
 #: apps/app/src/i18n/static-dom-seed.ts:1081
-#: apps/app/src/routes/moments-page.tsx:2348
+#: apps/app/src/routes/moments-page.tsx:2447
 msgid "还很安静"
 msgstr "Still quiet"
 
@@ -23425,15 +23434,15 @@ msgstr "Content update"
 #: apps/app/src/routes/friend-moments-page.tsx:289
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:189
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:191
-#: apps/app/src/routes/moments-page.tsx:420
-#: apps/app/src/routes/moments-page.tsx:422
+#: apps/app/src/routes/moments-page.tsx:437
+#: apps/app/src/routes/moments-page.tsx:439
 msgid "点赞失败：{0}"
 msgstr "Like failed: {0}"
 
 #: apps/app/src/routes/channels-page.tsx:265
 #: apps/app/src/routes/friend-moments-page.tsx:290
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:192
-#: apps/app/src/routes/moments-page.tsx:423
+#: apps/app/src/routes/moments-page.tsx:440
 #: apps/app/src/routes/profile-moments-page.tsx:234
 msgid "点赞失败，请稍后重试。"
 msgstr "Failed to like. Please try again later."
@@ -23447,7 +23456,7 @@ msgstr "Channels interaction updated."
 #: apps/app/src/routes/discover-page.tsx:517
 #: apps/app/src/routes/friend-moments-page.tsx:448
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:348
-#: apps/app/src/routes/moments-page.tsx:609
+#: apps/app/src/routes/moments-page.tsx:626
 #: apps/app/src/routes/profile-moments-page.tsx:390
 msgid "请先输入评论内容。"
 msgstr "Enter a comment first."
@@ -24392,33 +24401,33 @@ msgstr "Loading chat history..."
 msgid "换个关键词试试，或者切到图片、文件、链接分类继续找。"
 msgstr "Try a different keyword, or switch to Images, Files, or Links to keep looking."
 
-#: apps/app/src/routes/chat-room-page.tsx:222
-#: apps/app/src/routes/group-chat-page.tsx:181
+#: apps/app/src/routes/chat-room-page.tsx:238
+#: apps/app/src/routes/group-chat-page.tsx:196
 msgid "发语音继续"
 msgstr "Send voice to continue"
 
-#: apps/app/src/routes/chat-room-page.tsx:226
+#: apps/app/src/routes/chat-room-page.tsx:242
 msgid "本轮语音通话已结束。你可以直接继续输入，也可以切回语音发送。"
 msgstr "This voice call has ended. You can keep typing or switch back to voice."
 
-#: apps/app/src/routes/chat-room-page.tsx:229
+#: apps/app/src/routes/chat-room-page.tsx:245
 msgid "本轮视频通话已结束。你可以直接继续输入，也可以切回语音发送。"
 msgstr "This video call has ended. You can keep typing or switch back to voice."
 
-#: apps/app/src/routes/chat-room-page.tsx:243
-#: apps/app/src/routes/group-chat-page.tsx:202
+#: apps/app/src/routes/chat-room-page.tsx:259
+#: apps/app/src/routes/group-chat-page.tsx:217
 msgid "继续打字"
 msgstr "Continue typing"
 
-#: apps/app/src/routes/chat-room-page.tsx:272
+#: apps/app/src/routes/chat-room-page.tsx:288
 msgid "正在打开桌面对话"
 msgstr "Opening desktop conversation"
 
-#: apps/app/src/routes/chat-room-page.tsx:273
+#: apps/app/src/routes/chat-room-page.tsx:289
 msgid "正在载入桌面聊天工作区，马上恢复当前会话。"
 msgstr "Loading the desktop chat workspace; the current conversation will be restored shortly."
 
-#: apps/app/src/routes/chat-room-page.tsx:274
+#: apps/app/src/routes/chat-room-page.tsx:290
 msgid "载入桌面对话..."
 msgstr "Loading desktop conversation..."
 
@@ -25861,7 +25870,7 @@ msgstr "Failed to load all comments. Please try again later."
 #: apps/app/src/routes/friend-moments-page.tsx:675
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:329
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:339
-#: apps/app/src/routes/moments-page.tsx:1228
+#: apps/app/src/routes/moments-page.tsx:1245
 #: apps/app/src/routes/profile-moments-page.tsx:790
 msgid "图片选择失败，请稍后重试。"
 msgstr "Image selection failed. Try again later."
@@ -25871,7 +25880,7 @@ msgstr "Image selection failed. Try again later."
 #: apps/app/src/routes/friend-moments-page.tsx:685
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:339
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:349
-#: apps/app/src/routes/moments-page.tsx:1240
+#: apps/app/src/routes/moments-page.tsx:1257
 #: apps/app/src/routes/profile-moments-page.tsx:802
 msgid "视频选择失败，请稍后重试。"
 msgstr "Video selection failed. Try again later."
@@ -25931,21 +25940,21 @@ msgstr "Post to the feed"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2154
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:820
-#: apps/app/src/routes/moments-page.tsx:2440
+#: apps/app/src/routes/moments-page.tsx:2539
 #: apps/app/src/routes/profile-moments-page.tsx:1039
 msgid "正在刷新..."
 msgstr "Refreshing…"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2156
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:822
-#: apps/app/src/routes/moments-page.tsx:2442
+#: apps/app/src/routes/moments-page.tsx:2541
 #: apps/app/src/routes/profile-moments-page.tsx:1041
 msgid "松手刷新"
 msgstr "Release to refresh"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2157
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:823
-#: apps/app/src/routes/moments-page.tsx:2443
+#: apps/app/src/routes/moments-page.tsx:2542
 #: apps/app/src/routes/profile-moments-page.tsx:1042
 msgid "下拉刷新"
 msgstr "Pull to refresh"
@@ -26387,14 +26396,14 @@ msgstr "Attachment {0}"
 #: apps/app/src/routes/friend-moments-page.tsx:499
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:469
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:471
-#: apps/app/src/routes/moments-page.tsx:667
-#: apps/app/src/routes/moments-page.tsx:669
+#: apps/app/src/routes/moments-page.tsx:684
+#: apps/app/src/routes/moments-page.tsx:686
 msgid "评论失败：{0}"
 msgstr "Comment failed: {0}"
 
 #: apps/app/src/routes/friend-moments-page.tsx:500
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:472
-#: apps/app/src/routes/moments-page.tsx:670
+#: apps/app/src/routes/moments-page.tsx:687
 #: apps/app/src/routes/profile-moments-page.tsx:466
 #: apps/app/src/routes/profile-moments-page.tsx:500
 msgid "评论失败，请稍后重试。"
@@ -26945,23 +26954,23 @@ msgstr "Show in current group chat only."
 msgid "当前内容：{0}"
 msgstr "Current content: {0}"
 
-#: apps/app/src/routes/group-chat-page.tsx:185
+#: apps/app/src/routes/group-chat-page.tsx:200
 msgid "本轮群语音通话已结束。你可以继续在群里输入，也可以切回语音发送。"
 msgstr "This group voice call has ended. You can keep typing in the group or switch back to voice."
 
-#: apps/app/src/routes/group-chat-page.tsx:188
+#: apps/app/src/routes/group-chat-page.tsx:203
 msgid "本轮群视频通话已结束。你可以继续在群里输入，也可以切回语音发送。"
 msgstr "This group video call has ended. You can keep typing in the group or switch back to voice."
 
-#: apps/app/src/routes/group-chat-page.tsx:231
+#: apps/app/src/routes/group-chat-page.tsx:246
 msgid "正在打开桌面群聊"
 msgstr "Opening desktop group chat"
 
-#: apps/app/src/routes/group-chat-page.tsx:232
+#: apps/app/src/routes/group-chat-page.tsx:247
 msgid "正在载入桌面聊天工作区，马上恢复当前群聊。"
 msgstr "Loading the desktop chat workspace; the current group chat will be restored shortly."
 
-#: apps/app/src/routes/group-chat-page.tsx:233
+#: apps/app/src/routes/group-chat-page.tsx:248
 msgid "载入桌面群聊..."
 msgstr "Loading desktop group chat..."
 
@@ -28186,9 +28195,10 @@ msgstr "Back to Moments home"
 #. placeholder {0}: translateAppErrorCode(error) ?? error.message
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:721
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:723
-#: apps/app/src/routes/moments-page.tsx:1587
-#: apps/app/src/routes/moments-page.tsx:1818
-#: apps/app/src/routes/moments-page.tsx:1820
+#: apps/app/src/routes/moments-page.tsx:1663
+#: apps/app/src/routes/moments-page.tsx:1665
+#: apps/app/src/routes/moments-page.tsx:1917
+#: apps/app/src/routes/moments-page.tsx:1919
 msgid "刷新失败：{0}"
 msgstr "Refresh failed: {0}"
 
@@ -28285,7 +28295,7 @@ msgid "最多只能添加 8 个标签，先移除一个再来。"
 msgstr "You can add at most 8 tags—remove one first."
 
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1180
-#: apps/app/src/routes/profile-info-avatar-page.tsx:504
+#: apps/app/src/routes/profile-info-avatar-page.tsx:502
 #: apps/app/src/routes/profile-info-name-page.tsx:164
 #: apps/app/src/routes/profile-info-signature-page.tsx:158
 msgid "保存中"
@@ -28332,79 +28342,79 @@ msgstr "Draft with attachments only"
 msgid "草稿 · 更新于 {0}"
 msgstr "Draft · Updated {0}"
 
-#: apps/app/src/routes/moments-page.tsx:815
+#: apps/app/src/routes/moments-page.tsx:832
 msgid "重试删除"
 msgstr "Retry delete"
 
 #. placeholder {0}: error.message
 #. placeholder {0}: translateAppErrorCode(error) ?? error.message
-#: apps/app/src/routes/moments-page.tsx:821
-#: apps/app/src/routes/moments-page.tsx:823
+#: apps/app/src/routes/moments-page.tsx:838
+#: apps/app/src/routes/moments-page.tsx:840
 msgid "删除失败：{0}"
 msgstr "Delete failed: {0}"
 
-#: apps/app/src/routes/moments-page.tsx:824
+#: apps/app/src/routes/moments-page.tsx:841
 #: apps/app/src/routes/profile-moments-page.tsx:651
 msgid "删除失败，请稍后重试。"
 msgstr "Failed to delete. Please try again later."
 
-#: apps/app/src/routes/moments-page.tsx:839
+#: apps/app/src/routes/moments-page.tsx:856
 #: apps/app/src/routes/profile-moments-page.tsx:672
 msgid "已删除这条朋友圈。"
 msgstr "Post deleted."
 
-#: apps/app/src/routes/moments-page.tsx:1338
+#: apps/app/src/routes/moments-page.tsx:1355
 msgid "正在打开好友朋友圈"
 msgstr "Opening friend Moments"
 
-#: apps/app/src/routes/moments-page.tsx:1339
+#: apps/app/src/routes/moments-page.tsx:1356
 msgid "正在切换到桌面好友朋友圈工作区，马上显示对应居民的动态。"
 msgstr "Switching to the desktop friend Moments workspace; the resident's posts will show shortly."
 
-#: apps/app/src/routes/moments-page.tsx:1340
+#: apps/app/src/routes/moments-page.tsx:1357
 msgid "正在切换到桌面朋友圈..."
 msgstr "Switching to desktop Moments..."
 
-#: apps/app/src/routes/moments-page.tsx:1381
+#: apps/app/src/routes/moments-page.tsx:1398
 msgid "部分朋友圈加载失败，请点击刷新重试：{localized}"
 msgstr ""
 
-#: apps/app/src/routes/moments-page.tsx:1398
+#: apps/app/src/routes/moments-page.tsx:1415
 msgid "正在打开桌面朋友圈"
 msgstr "Opening desktop Moments"
 
-#: apps/app/src/routes/moments-page.tsx:1399
+#: apps/app/src/routes/moments-page.tsx:1416
 msgid "正在载入桌面朋友圈工作区，马上显示动态和详情。"
 msgstr "Loading the desktop Moments workspace; posts and details will show shortly."
 
-#: apps/app/src/routes/moments-page.tsx:1400
+#: apps/app/src/routes/moments-page.tsx:1417
 msgid "载入桌面朋友圈..."
 msgstr "Loading desktop Moments..."
 
-#: apps/app/src/routes/moments-page.tsx:1588
-#: apps/app/src/routes/moments-page.tsx:1821
+#: apps/app/src/routes/moments-page.tsx:1666
+#: apps/app/src/routes/moments-page.tsx:1920
 msgid "刷新失败，请稍后重试。"
 msgstr "Refresh failed, please try again later."
 
-#: apps/app/src/routes/moments-page.tsx:1736
+#: apps/app/src/routes/moments-page.tsx:1826
 #: apps/app/src/routes/profile-moments-page.tsx:1148
 msgid "确定删除这条朋友圈吗？"
 msgstr "Delete this post?"
 
-#: apps/app/src/routes/moments-page.tsx:2180
+#: apps/app/src/routes/moments-page.tsx:2279
 msgid "正在刷新朋友圈"
 msgstr "Refreshing Moments"
 
 #. placeholder {0}: fetchNextPageError.message
-#: apps/app/src/routes/moments-page.tsx:2265
+#: apps/app/src/routes/moments-page.tsx:2364
 msgid "加载更多失败：{0}"
 msgstr "Load more failed: {0}"
 
-#: apps/app/src/routes/moments-page.tsx:2266
+#: apps/app/src/routes/moments-page.tsx:2365
 msgid "加载更多失败，请稍后重试。"
 msgstr "Load more failed, please try again later."
 
-#: apps/app/src/routes/moments-page.tsx:2351
+#: apps/app/src/routes/moments-page.tsx:2450
 msgid "你先发一条动态，或者等世界里的角色们先开口。"
 msgstr "Post something first, or wait for the world's characters to speak up."
 
@@ -28558,91 +28568,101 @@ msgstr "name cannot be only zero-width whitespace. Please edit the file and try 
 msgid "name 不能包含换行符或控制字符，请编辑文件后再试。"
 msgstr "Name cannot contain newlines or control characters. Please edit the file and try again."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:217
+#. placeholder {0}: files.length
+#. placeholder {1}: file.name
+#: apps/app/src/routes/profile-character-import-page.tsx:197
+msgid "检测到 {0} 个文件，只处理第一个（{1}）。请逐个导入。"
+msgstr "Detected {0} files; only the first one ({1}) will be processed. Please import them one at a time."
+
+#: apps/app/src/routes/profile-character-import-page.tsx:235
 msgid "导入失败，请稍后再试"
 msgstr "Import failed. Please try again later."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:227
+#: apps/app/src/routes/profile-character-import-page.tsx:245
 #: apps/app/src/routes/profile-page.tsx:188
 msgid "导入角色"
 msgstr "Import characters"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:258
+#: apps/app/src/routes/profile-character-import-page.tsx:276
 msgid "在「世界角色管理平台 → 我的私有角色」编辑或新建角色，点「📤 导出 JSON」下载文件"
 msgstr "In the World Character Management portal → My Private Characters, edit or create a character, then click \"📤 Export JSON\" to download the file"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:267
+#: apps/app/src/routes/profile-character-import-page.tsx:285
 msgid "回到这里，拖入或选择刚才下载的 .character.json 文件"
 msgstr "Come back here and drop or pick the .character.json file you just downloaded"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:276
+#: apps/app/src/routes/profile-character-import-page.tsx:294
 msgid "确认无误后点「导入到我的世界」。同名会覆盖（保留原 id 和好友关系），不同名则新建并加为好友。"
 msgstr "When ready, click \"Import to my world\". Same name overwrites (keeping the original id and friendship); a new name creates the character and adds them as a friend."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:310
+#: apps/app/src/routes/profile-character-import-page.tsx:328
 msgid "松手即可读取"
 msgstr "Release to read"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:311
+#: apps/app/src/routes/profile-character-import-page.tsx:329
 msgid "拖入文件，或点下面按钮选择"
 msgstr "Drop a file, or pick one with the button below"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:314
+#: apps/app/src/routes/profile-character-import-page.tsx:332
 msgid "仅支持 .character.json / application/json"
 msgstr "Only .character.json / application/json is supported"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:323
+#: apps/app/src/routes/profile-character-import-page.tsx:341
 msgid "选择文件"
 msgstr "Choose file"
 
 #. placeholder {0}: expertDomains.length - 6
-#: apps/app/src/routes/profile-character-import-page.tsx:430
+#: apps/app/src/routes/profile-character-import-page.tsx:448
 msgid "+{0}"
 msgstr "+{0}"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:447
+#: apps/app/src/routes/profile-character-import-page.tsx:465
 msgid "文件 $schema 是 \"{schema}\"，与期望的 \"yinjie-private-character/v1\" 不一致。请到「世界角色管理平台 → 我的私有角色」重新导出文件。"
 msgstr "The file's $schema is \"{schema}\", but \"yinjie-private-character/v1\" is expected. Please re-export the file from the World Character Management portal → My Private Characters."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:450
+#: apps/app/src/routes/profile-character-import-page.tsx:468
 msgid "文件缺少 $schema 标识；仍可尝试导入，但建议检查内容是否齐全。"
 msgstr "File is missing the $schema field. You can still try to import, but please double-check the contents."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:462
+#: apps/app/src/routes/profile-character-import-page.tsx:480
 msgid "导入中…"
 msgstr "Importing…"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:462
+#: apps/app/src/routes/profile-character-import-page.tsx:480
 msgid "✅ 导入到我的世界"
 msgstr "✅ Import to my world"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:470
+#: apps/app/src/routes/profile-character-import-page.tsx:488
 msgid "换一个文件"
 msgstr "Choose another file"
 
 #. placeholder {0}: character.name
-#: apps/app/src/routes/profile-character-import-page.tsx:495
+#: apps/app/src/routes/profile-character-import-page.tsx:532
 msgid "已覆盖同名角色：{0}"
 msgstr "Overwrote existing character: {0}"
 
 #. placeholder {0}: character.name
-#: apps/app/src/routes/profile-character-import-page.tsx:496
+#: apps/app/src/routes/profile-character-import-page.tsx:533
 msgid "已导入新角色：{0}"
 msgstr "Imported new character: {0}"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:501
+#: apps/app/src/routes/profile-character-import-page.tsx:544
+msgid "这位仍在你的黑名单里——角色数据已更新，但需要先解除拉黑才能继续对话。"
+msgstr "This contact is still on your block list — their data has been updated, but you'll need to unblock them before chatting."
+
+#: apps/app/src/routes/profile-character-import-page.tsx:547
 msgid "原有 id 和好友关系都保留了。"
 msgstr "The original id and friendship are preserved."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:502
+#: apps/app/src/routes/profile-character-import-page.tsx:548
 msgid "已自动加为你的好友，可以在通讯录里找到。"
 msgstr "Automatically added as your friend; find them in Contacts."
 
-#: apps/app/src/routes/profile-character-import-page.tsx:511
+#: apps/app/src/routes/profile-character-import-page.tsx:557
 msgid "去通讯录"
 msgstr "Open Contacts"
 
-#: apps/app/src/routes/profile-character-import-page.tsx:520
+#: apps/app/src/routes/profile-character-import-page.tsx:566
 msgid "再导入一个"
 msgstr "Import another"
 
@@ -28695,71 +28715,71 @@ msgstr "Only image files are allowed."
 msgid "读取图片失败，请换一张试试。"
 msgstr "Failed to load image. Please try another."
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:472
+#: apps/app/src/routes/profile-info-avatar-page.tsx:470
 msgid "更换头像"
 msgstr "Change avatar"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:519
+#: apps/app/src/routes/profile-info-avatar-page.tsx:517
 msgid "点击下方更换"
 msgstr "Tap below to change"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:531
+#: apps/app/src/routes/profile-info-avatar-page.tsx:529
 msgid "本地图片"
 msgstr "Local image"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:544
+#: apps/app/src/routes/profile-info-avatar-page.tsx:542
 msgid "清除已选图片"
 msgstr "Clear selected image"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:559
+#: apps/app/src/routes/profile-info-avatar-page.tsx:557
 msgid "图片地址"
 msgstr "Image URL"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:601
+#: apps/app/src/routes/profile-info-avatar-page.tsx:599
 msgid "粘贴图片 URL 或留空"
 msgstr "Paste image URL or leave empty"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:608
+#: apps/app/src/routes/profile-info-avatar-page.tsx:606
 msgid "当前头像已存为本地图片。粘贴新 URL 或重新选择都会替换它。"
 msgstr "Current avatar is stored as a local image. Pasting a new URL or picking again will replace it."
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:613
+#: apps/app/src/routes/profile-info-avatar-page.tsx:611
 msgid "需要是 http/https 开头的合法图片链接。"
 msgstr "Needs to be a valid image URL starting with http/https."
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:618
+#: apps/app/src/routes/profile-info-avatar-page.tsx:616
 msgid "只支持 http/https 图片链接，或 data:image/ 开头的图片数据。"
 msgstr "Only http/https image URLs or data:image/ data URIs are supported."
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:623
+#: apps/app/src/routes/profile-info-avatar-page.tsx:621
 msgid "粘贴的图片超过 2MB 上限，请压缩或换个 URL。"
 msgstr "The pasted image exceeds the 2 MB limit. Please compress it or use a different URL."
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:628
+#: apps/app/src/routes/profile-info-avatar-page.tsx:626
 msgid "图片数据不完整或为空，请检查后再粘贴。"
 msgstr "The image data is incomplete or empty. Please check before pasting."
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:633
+#: apps/app/src/routes/profile-info-avatar-page.tsx:631
 msgid "图片链接需要带路径（如 /avatar.png），裸域名不是图片地址。"
 msgstr "Image URL must include a path (like /avatar.png) — a bare host isn't an image address."
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:658
+#: apps/app/src/routes/profile-info-avatar-page.tsx:656
 msgid "从相册选择"
 msgstr "Select from album"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:661
+#: apps/app/src/routes/profile-info-avatar-page.tsx:659
 msgid "图片大小不超过 1MB"
 msgstr "Image must be under 1 MB"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:687
+#: apps/app/src/routes/profile-info-avatar-page.tsx:685
 msgid "正在恢复…"
 msgstr "Restoring…"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:688
+#: apps/app/src/routes/profile-info-avatar-page.tsx:686
 msgid "恢复默认头像"
 msgstr "Restore default avatar"
 
-#: apps/app/src/routes/profile-info-avatar-page.tsx:691
+#: apps/app/src/routes/profile-info-avatar-page.tsx:689
 msgid "清掉自定义头像，换回系统默认。"
 msgstr "Clear the custom avatar and switch back to the system default."
 
@@ -28768,31 +28788,31 @@ msgstr "Clear the custom avatar and switch back to the system default."
 msgid "名字"
 msgstr "Name"
 
-#: apps/app/src/routes/profile-info-name-page.tsx:202
+#: apps/app/src/routes/profile-info-name-page.tsx:210
 msgid "输入名字"
 msgstr "Enter name"
 
-#: apps/app/src/routes/profile-info-name-page.tsx:225
+#: apps/app/src/routes/profile-info-name-page.tsx:233
 msgid "好名字让朋友更容易找到你，至少 {NAME_MIN_LENGTH} 个字、最多 {NAME_MAX_LENGTH} 个字符。"
 msgstr "A good name makes it easier for friends to find you — between {NAME_MIN_LENGTH} and {NAME_MAX_LENGTH} characters."
 
-#: apps/app/src/routes/profile-info-name-page.tsx:232
+#: apps/app/src/routes/profile-info-name-page.tsx:240
 msgid "名字保存时会去掉首尾空白、把连续空格合成一个。"
 msgstr "When saved, leading/trailing whitespace is removed and consecutive spaces collapse into one."
 
-#: apps/app/src/routes/profile-info-name-page.tsx:246
+#: apps/app/src/routes/profile-info-name-page.tsx:254
 msgid "请输入名字。"
 msgstr "Please enter a name."
 
-#: apps/app/src/routes/profile-info-name-page.tsx:250
+#: apps/app/src/routes/profile-info-name-page.tsx:258
 msgid "请输入有效的名字（不能只有空白或换行符）。"
 msgstr "Please enter a valid name (it can’t be only whitespace or line breaks)."
 
-#: apps/app/src/routes/profile-info-name-page.tsx:254
+#: apps/app/src/routes/profile-info-name-page.tsx:262
 msgid "名字太短啦，至少要 {NAME_MIN_LENGTH} 个字符。"
 msgstr "Name is too short — needs at least {NAME_MIN_LENGTH} characters."
 
-#: apps/app/src/routes/profile-info-name-page.tsx:262
+#: apps/app/src/routes/profile-info-name-page.tsx:270
 msgid "名字太长啦，最多 {NAME_MAX_LENGTH} 个字符，请删掉一些。"
 msgstr "Name is too long — please keep it within {NAME_MAX_LENGTH} characters."
 
