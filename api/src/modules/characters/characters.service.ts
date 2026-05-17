@@ -497,7 +497,11 @@ export class CharactersService implements OnModuleInit {
     aiRelationships?:
       | { characterId: string; relationshipType: string; strength: number }[]
       | null;
-  }): Promise<{ character: CharacterEntity; overwrote: boolean }> {
+  }): Promise<{
+    character: CharacterEntity;
+    overwrote: boolean;
+    friendshipStatus: string;
+  }> {
     const trimmedName = (input.name ?? '').trim();
     if (!trimmedName) {
       throw new AppError('PRIVATE_IMPORT_INVALID', {
@@ -855,8 +859,9 @@ export class CharactersService implements OnModuleInit {
     const existingFriendship = await this.friendshipRepo.findOne({
       where: { ownerId: owner.id, characterId: saved.id },
     });
+    let friendshipStatus: string;
     if (!existingFriendship) {
-      await this.friendshipRepo.save(
+      const created = await this.friendshipRepo.save(
         this.friendshipRepo.create({
           ownerId: owner.id,
           characterId: saved.id,
@@ -864,12 +869,19 @@ export class CharactersService implements OnModuleInit {
           source: 'private_import',
         }),
       );
+      friendshipStatus = created.status;
     } else if (existingFriendship.status === 'removed') {
       existingFriendship.status = 'friend';
-      await this.friendshipRepo.save(existingFriendship);
+      const updated = await this.friendshipRepo.save(existingFriendship);
+      friendshipStatus = updated.status;
+    } else {
+      friendshipStatus = existingFriendship.status;
     }
 
-    return { character: saved, overwrote: !!existing };
+    // 第 5 次走查 R3：return 出 friendshipStatus 让 UI 判定显示哪条文案。
+    // 之前 UI 无脑说"已自动加为你的好友"，但 blocked 状态的角色 re-import 后
+    // 仍是 blocked（intentional：blocked 是用户明确动作），仍说"好友"是误导。
+    return { character: saved, overwrote: !!existing, friendshipStatus };
   }
 
   /**

@@ -1910,7 +1910,14 @@ export function importPersonalCharacter(
   bundle: unknown,
   baseUrl?: string,
 ) {
-  return requestLegacyApi<{ character: Character; overwrote: boolean }>(
+  return requestLegacyApi<{
+    character: Character;
+    overwrote: boolean;
+    // 'friend' | 'close' | 'best' | 'blocked' | 'removed'。blocked 状态的角色
+    // re-import 后仍保留 blocked（用户明确动作不被覆盖），UI 据此显示对应文案
+    // 而不是无脑说"已加为好友"。
+    friendshipStatus: string;
+  }>(
     "/characters/import-personal",
     {
       method: "POST",

@@ -27,6 +27,10 @@ type Result =
       kind: "success";
       character: Character;
       overwrote: boolean;
+      // 'friend' | 'close' | 'best' | 'blocked' | 'removed'。blocked 来自用户
+      // 主动 block 过的关系，re-import 不会自动解除——UI 显示对应文案，避免
+      // 误导用户以为又是好友。
+      friendshipStatus: string;
     }
   | { kind: "danger"; message: string };
 
@@ -196,6 +200,7 @@ export function ProfileCharacterImportPage() {
         kind: "success",
         character: res.character,
         overwrote: res.overwrote,
+        friendshipStatus: res.friendshipStatus,
       });
       setPreview(null);
       // 通讯录 / 角色列表用 react-query 缓存，staleTime 10-60s 内不会重新拉。
@@ -334,6 +339,7 @@ export function ProfileCharacterImportPage() {
           <SuccessCard
             character={result.character}
             overwrote={result.overwrote}
+            friendshipStatus={result.friendshipStatus}
             onImportAnother={clearSelection}
             // 导入会自动加好友（characters.service.ts:importPersonalCharacter
             // 末尾的 friendship upsert）。"世界角色"目录的过滤是
@@ -471,18 +477,37 @@ function FilePreviewCard({
 function SuccessCard({
   character,
   overwrote,
+  friendshipStatus,
   onImportAnother,
   onGoCharacters,
 }: {
   character: Character;
   overwrote: boolean;
+  friendshipStatus: string;
   onImportAnother: () => void;
   onGoCharacters: () => void;
 }) {
   const t = useRuntimeTranslator();
+  // 第 5 次走查 R3：blocked 状态的角色 re-import 不会被自动解除（backend 故意
+  // 保留用户主动 block 的动作）。原 UI 无论 friendship 状态都说"已自动加为
+  // 你的好友"，blocked 用户看到这条会以为自己刚把对方加回来——但去通讯录
+  // 看仍在黑名单里。改成基于 friendshipStatus 分支显示。
+  const isBlocked = friendshipStatus === "blocked";
   return (
-    <div className="space-y-3 rounded-2xl border border-emerald-400/30 bg-[rgba(16,185,129,0.08)] p-4">
-      <div className="flex items-start gap-2 text-[13px] font-medium text-[#047857]">
+    <div
+      className={cn(
+        "space-y-3 rounded-2xl border p-4",
+        isBlocked
+          ? "border-amber-400/30 bg-[rgba(245,158,11,0.08)]"
+          : "border-emerald-400/30 bg-[rgba(16,185,129,0.08)]",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-start gap-2 text-[13px] font-medium",
+          isBlocked ? "text-[#b45309]" : "text-[#047857]",
+        )}
+      >
         <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
         <div>
           {overwrote
@@ -490,10 +515,19 @@ function SuccessCard({
             : t(msg`已导入新角色：${character.name}`)}
         </div>
       </div>
-      <div className="text-[11px] text-[#047857]/80">
-        {overwrote
-          ? t(msg`原有 id 和好友关系都保留了。`)
-          : t(msg`已自动加为你的好友，可以在通讯录里找到。`)}
+      <div
+        className={cn(
+          "text-[11px]",
+          isBlocked ? "text-[#b45309]/80" : "text-[#047857]/80",
+        )}
+      >
+        {isBlocked
+          ? t(
+              msg`这位仍在你的黑名单里——角色数据已更新，但需要先解除拉黑才能继续对话。`,
+            )
+          : overwrote
+            ? t(msg`原有 id 和好友关系都保留了。`)
+            : t(msg`已自动加为你的好友，可以在通讯录里找到。`)}
       </div>
       <div className="flex flex-wrap items-center gap-2 pt-1">
         <Button
