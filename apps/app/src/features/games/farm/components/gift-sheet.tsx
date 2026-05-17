@@ -43,6 +43,8 @@ export function GiftSheet({ neighbor, open, onClose, onGifted }: GiftSheetProps)
 
   const state: FarmPlayerStateView | undefined = stateQuery.data;
   const isPending = giftCoinsMutation.isPending || giftItemMutation.isPending;
+  // 服务端 100 满好感会 409 拦掉送礼；UI 也提前禁用，告诉玩家原因，别白白点几下再吃 toast。
+  const intimacyMaxed = (neighbor.intimacyLevel ?? 0) >= 100;
 
   function handleGiftCoins() {
     if (!neighbor) return;
@@ -123,6 +125,11 @@ export function GiftSheet({ neighbor, open, onClose, onGifted }: GiftSheetProps)
         {errorMsg && (
           <div className="bg-rose-50 px-4 py-2 text-xs text-rose-600">{errorMsg}</div>
         )}
+        {intimacyMaxed && (
+          <div className="bg-amber-50 px-4 py-2 text-xs text-amber-700">
+            {t(msg`${neighbor.characterName} 的好感度已满，送礼不会再涨好感。`)}
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {tab === "coins" && (
             <div className="flex flex-col gap-3">
@@ -148,7 +155,7 @@ export function GiftSheet({ neighbor, open, onClose, onGifted }: GiftSheetProps)
               <button
                 type="button"
                 onClick={handleGiftCoins}
-                disabled={isPending || (state?.coins ?? 0) < amount}
+                disabled={isPending || intimacyMaxed || (state?.coins ?? 0) < amount}
                 className="self-end rounded-full bg-emerald-600 px-4 py-1.5 text-sm text-white shadow disabled:opacity-60"
               >
                 {t(msg`赠送 🪙`)} {amount}
@@ -169,7 +176,7 @@ export function GiftSheet({ neighbor, open, onClose, onGifted }: GiftSheetProps)
                     <button
                       type="button"
                       onClick={() => handleGiftItem("crop", cropId)}
-                      disabled={isPending}
+                      disabled={isPending || intimacyMaxed}
                       className="rounded-full bg-emerald-600 px-3 py-1 text-xs text-white shadow disabled:opacity-60"
                     >
                       {t(msg`送 1`)}
@@ -196,7 +203,7 @@ export function GiftSheet({ neighbor, open, onClose, onGifted }: GiftSheetProps)
                     <button
                       type="button"
                       onClick={() => handleGiftItem("seed", cropId)}
-                      disabled={isPending}
+                      disabled={isPending || intimacyMaxed}
                       className="rounded-full bg-emerald-600 px-3 py-1 text-xs text-white shadow disabled:opacity-60"
                     >
                       {t(msg`送 1`)}
@@ -223,7 +230,7 @@ export function GiftSheet({ neighbor, open, onClose, onGifted }: GiftSheetProps)
                     <button
                       type="button"
                       onClick={() => handleGiftItem("consumable", id)}
-                      disabled={isPending}
+                      disabled={isPending || intimacyMaxed}
                       className="rounded-full bg-emerald-600 px-3 py-1 text-xs text-white shadow disabled:opacity-60"
                     >
                       {t(msg`送 1`)}
