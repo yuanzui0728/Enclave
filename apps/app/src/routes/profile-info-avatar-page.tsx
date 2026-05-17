@@ -408,8 +408,15 @@ export function ProfileInfoAvatarPage() {
         if (typeof result === "string") {
           userTouchedRef.current = true;
           setPickedLocal({ dataUrl: result, size: file.size, name: file.name });
-          // 选了本地图后，URL 输入框里的旧 URL 不再适用，先清掉
-          setDraft("");
+          // 3rd-R1 走查：之前这里 setDraft("") 把 URL 输入框清空。看似 cleanup（pickedLocal
+          // 在场时 URL 输入框是隐藏的，清不清没视觉差），但 X 取消选图后 draft 已经被改成
+          // ""——上一轮 W2R2.1 才补 setDraft(initialDraft) 让 X 回到"初始状态"。但这条恢复
+          // 链有 bug：如果用户进页前 stored avatar 是 URL_A，打开页面后又把 URL 输入框改成
+          // URL_B，然后点「从相册选择」选了张图、又点 X 取消——用户期望看到自己刚刚输入的
+          // URL_B，但实际回到 URL_A，自己手敲的 URL 被吞了。
+          // 改法：reader.onload 不再动 draft，pickedLocal 在场时 URL 输入框只是被 gate
+          // 隐藏；clearPickedLocal 也不再动 draft，X 真正意义上只「撤销选图」而不会回滚
+          // 任何文字输入。两条路径都不动 draft，少一份状态耦合。
         }
       }
       finish();
@@ -420,25 +427,16 @@ export function ProfileInfoAvatarPage() {
   function clearPickedLocal() {
     setPickedLocal(null);
     setLocalError(null);
-    // 之前 onload 把 userTouchedRef 拉成 true（"用户已经在这页操作过"）。
-    // 用户按 X 清掉本地图后这条状态没被擦掉，后续 store.avatar 异步 hydrate
-    // 进来时 useEffect([initialDraft]) 会因 userTouchedRef=true 跳过，URL 输入
-    // 框永远停在 onload 顺带 setDraft("") 时清空的状态、不回填新值。等同于把
-    // 用户从"刚开始编辑这页"的语境拽回到"未触碰、跟着 store 走"的状态。
-    userTouchedRef.current = false;
-    // 仅把 userTouchedRef=false 不够：useEffect([initialDraft]) 只在 initialDraft
-    // 变化时触发；本次进页面后用户没切账号、store.avatar 不变 → initialDraft
-    // 同字符串 → effect 不重跑 → draft 永远停在 reader.onload 写的 ""。
-    // 用户原本有个 URL 头像，picked 一张本地图后又按 X 取消，URL 输入框直接被
-    // 清空了——他们想"撤销选图、回到原状态"的预期被打破。在这里手动把 draft
-    // 同步回 initialDraft，让 X 真正意义上"取消"这次操作。
-    // 第 2 轮新走查 W2R2.1 代码 review 实测命中。
-    setDraft(initialDraft);
-    // 走查 R1：用户「选图 → 完成失败（banner 红字）→ X 取消」后，errorMessage
-    // 仍 fallthrough 到 saveMutation.isError / resetMutation.isError 这一支挂着
-    // 上次 attempt 的红字，视觉上「我撤销了刚才那次选择 + 那次保存」但底部
-    // 依旧挂着旧错误。跟 handlePickAvatar / URL onChange 两条路径已经做的 .reset()
-    // 不一致——X 取消本质也是「这次 attempt 翻篇」，对齐 reset。
+    // 3rd-R1 走查：之前这里还 reset userTouchedRef=false + setDraft(initialDraft)
+    // 配合 reader.onload 里的 setDraft("") 做"X 真正意义上取消"的恢复链。但实际
+    // 上 reader.onload 把 draft 写成 "" 这一步就是 bug——若用户在选图前手敲过
+    // URL_B，X 后会被 setDraft(initialDraft=URL_A) 覆盖，user typing 丢失。
+    // 现在 reader.onload 已不再动 draft，pickedLocal 在场时 URL 输入框被 gate
+    // 隐藏但 draft 值仍是用户上次输入的值，X 后 URL 输入框重新显示，自然回到
+    // 用户敲到一半的形态。所以这里不需要任何 draft / userTouched 复位，X 只
+    // 单纯"撤销选图"，不回滚 URL 输入框文本。saveMutation/resetMutation.reset()
+    // 保留，让上一次 attempt 的 error banner 翻篇（跟 onChange / handlePickAvatar
+    // 同款 reset）。
     saveMutation.reset();
     resetMutation.reset();
   }
