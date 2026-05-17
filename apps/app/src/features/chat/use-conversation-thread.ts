@@ -529,6 +529,7 @@ export function useConversationThread(conversationId: string) {
     onMutate: (input: {
       payload: SendMessagePayload;
       retryMessageId?: string;
+      clearComposerDraft?: boolean;
     }) => {
       if (!ownerId) return { messageId: undefined };
 
@@ -560,7 +561,22 @@ export function useConversationThread(conversationId: string) {
         syncActiveConversationMessage(optimistic);
       }
 
-      if (!input.retryMessageId && input.payload.type !== "sticker") {
+      // 走查 R1：原版「非 sticker 一律 setText("")」会把用户的 composer 草稿
+      // 误清。单聊发图/文件/语音/语音通话邀请/preset 文本 (`sendTextMessage`
+      // 带 overrideText) 都走这条 mutation，type !== "sticker" 命中后用户在
+      // composer 里已经打的字会被秒清。例：用户打到一半「看下这张图…」然后
+      // 点 + 选图，图片走 type=image 的 mutation onMutate → setText("")，
+      // composer 立刻空。同样路径：点 📞 打语音电话时面板 onPanelOpened
+      // 触发 sendTextMessage(call-invite override) → 同步清空草稿。
+      // 真正的 composer 清空时机由调用方（handleSubmit 等）显式决定——
+      // 群聊 group-chat-thread-panel 走的就是这个口径（handleSubmit 内
+      // setText("")）。这里改成：除了重试/sticker 之外，只在「调用方明确
+      // 要求清 composer」(clearComposerDraft=true) 时才清。
+      if (
+        !input.retryMessageId &&
+        input.payload.type !== "sticker" &&
+        input.clearComposerDraft
+      ) {
         setText("");
       }
 
@@ -569,6 +585,7 @@ export function useConversationThread(conversationId: string) {
     mutationFn: async (input: {
       payload: SendMessagePayload;
       retryMessageId?: string;
+      clearComposerDraft?: boolean;
     }) => {
       if (!ownerId) return;
 
@@ -611,7 +628,10 @@ export function useConversationThread(conversationId: string) {
     [sendMutationAsync],
   );
 
-  const sendTextMessage = async (overrideText?: string) => {
+  const sendTextMessage = async (
+    overrideText?: string,
+    options?: { clearComposerDraft?: boolean },
+  ) => {
     const trimmed = (overrideText ?? text).trim();
     if (!trimmed || !ownerId) {
       return;
@@ -634,6 +654,11 @@ export function useConversationThread(conversationId: string) {
         characterId: targetCharacterId,
         text: trimmed,
       },
+      // 走查 R1：单聊发文本时由「handleSubmit」明确传 clearComposerDraft=true
+      // 来清 composer；preset / call-invite / 其它 overrideText 调用方传 false
+      // (默认 undefined)，避免误清正在打字的用户。详见 sendMutation onMutate
+      // 头部注释。
+      clearComposerDraft: options?.clearComposerDraft === true,
     });
   };
 

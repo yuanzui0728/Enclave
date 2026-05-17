@@ -359,6 +359,11 @@ export function ConversationThreadPanel({
       try {
         await sendTextMessage(
           replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
+          // 走查 R1：明确告诉 use-conversation-thread 这次是「用户从 composer
+          // 真按了发送」，可以把 composer 清掉。preset / 通话邀请 / 附件等
+          // 走同一个 mutation 但 overrideText 用法不一样，那些路径不传这个
+          // flag → 用户在 composer 里没发完的草稿不会被秒清。
+          { clearComposerDraft: true },
         );
       } catch (sendError) {
         setSocketError(
