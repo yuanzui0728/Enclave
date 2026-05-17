@@ -183,6 +183,13 @@ export function ConversationThreadPanel({
     ) : null;
   const highlightedWindowRequestRef = useRef<string | null>(null);
   const handledDesktopCallRequestTokenRef = useRef<number | null>(null);
+  // 走查新一轮 R5：单聊「发送」按钮 + Enter / Cmd-Enter 快捷键都只靠
+  // `disabled={composerPending}` 兜双触发，composerPending = sendMutation.isPending
+  // 经 React commit 才进 DOM。同帧连点 / 同帧两次 Enter 都能同时通过 → 两份
+  // sendTextMessage 跑下来 onMutate 各自 push 不同 local id 的 optimistic 消息 →
+  // emitChatMessage 飞两次 → 对端连收 2 条一模一样的用户消息。和群聊
+  // group-chat-thread-panel `sendingTextRef`（commit 56ed67e4）同款修法。
+  const sendingTextRef = useRef(false);
   const {
     ref: scrollAnchorRef,
     isAtBottom,
@@ -340,27 +347,38 @@ export function ConversationThreadPanel({
     // "目标角色还没准备好"——这条 throw 发生在 runSendMutation 之前，外层吞
     // mutation error 的 try/catch 兜不到，rejection 一路冒到 window.unhandled
     // rejection 污染 telemetry。
-    const submittedTextLength = text.length;
-    try {
-      await sendTextMessage(
-        replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
-      );
-    } catch (sendError) {
-      setSocketError(
-        sendError instanceof Error
-          ? sendError.message
-          : t(msg`发送失败，请稍后再试。`),
-      );
+    if (sendingTextRef.current) {
       return;
     }
-    track("chat_message_sent", {
-      conversationKind: "direct",
-      kind: "text",
-      hasReply: Boolean(replyDraft),
-      textLength: submittedTextLength,
-    });
-    scrollToBottom("smooth");
-    setReplyDraft(null);
+    if (!text.trim()) {
+      return;
+    }
+    sendingTextRef.current = true;
+    const submittedTextLength = text.length;
+    try {
+      try {
+        await sendTextMessage(
+          replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
+        );
+      } catch (sendError) {
+        setSocketError(
+          sendError instanceof Error
+            ? sendError.message
+            : t(msg`发送失败，请稍后再试。`),
+        );
+        return;
+      }
+      track("chat_message_sent", {
+        conversationKind: "direct",
+        kind: "text",
+        hasReply: Boolean(replyDraft),
+        textLength: submittedTextLength,
+      });
+      scrollToBottom("smooth");
+      setReplyDraft(null);
+    } finally {
+      sendingTextRef.current = false;
+    }
   };
 
   const handleSendPresetText = async (presetText: string) => {
