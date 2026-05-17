@@ -186,16 +186,34 @@ export function useLocalChatMessageActionState() {
     const handleSync = () => {
       void syncState();
     };
+    // 走查新一轮 R8：和 chat-room-page / group-chat-page / group-qr-page R1
+    // 同款 storage event 漏 gate 问题——本 hook 是被 chat-list-page /
+    // chat-message-list / use-message-reminders / desktop workspace / search-index
+    // 等 5+ 个 surface 同时挂着的全局 hook，原版 storage 监听对任何 OTHER tab
+    // 的 localStorage 写入（主题、草稿、last viewed page、收藏 fingerprint、
+    // 视频号关注等等）都触发 syncState → desktop 走 hydrateFromNative 拍 IPC、
+    // 移动端走 readLocalChatMessageActionState 全量 JSON.parse storage。下游
+    // 虽然有 updatedAt 兜底跳 setState，但 IPC + JSON.parse 是无谓硬开销，
+    // 同一份 storage 在活跃 multi-tab 用户那里每秒可能被打数十次。
+    // 用 STORAGE_KEY gate 一下：只在自己关心的 yinjie-chat-local-message-actions
+    // key 上才同步；老 Safari 的 localStorage.clear() (event.key=null) 仍按
+    // 全量同步对待，避免静默 stale。
+    const handleStorageSync = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== STORAGE_KEY) {
+        return;
+      }
+      void syncState();
+    };
 
     window.addEventListener("focus", handleSync);
-    window.addEventListener("storage", handleSync);
+    window.addEventListener("storage", handleStorageSync);
     window.addEventListener(CHANGE_EVENT, handleSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.removeEventListener("focus", handleSync);
-      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("storage", handleStorageSync);
       window.removeEventListener(CHANGE_EVENT, handleSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
