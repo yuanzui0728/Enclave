@@ -6917,12 +6917,26 @@ function ImageViewerOverlay({
         </>
       )}
 
+      {/* 走查新一轮 R2：这一层 `absolute inset-0` 把上面那个 backdrop 关闭按钮
+          整张盖住了——后兄弟元素永远在前兄弟上面，背景按钮根本收不到点击。
+          移动端用户看 chat 里 1 张图 → 全屏查看器，点周围"黑色背景"想关，
+          只能找右上角 ✕（mobile 在左上角）；标准 photo viewer 模式（IG / 微信 /
+          系统相册）都是"图片以外的黑色区域 tap 关闭"。给容器自己挂 onClick：
+          target === currentTarget 时（点的是容器本身的 padding 区，不是 <img>）
+          才关闭，点图片本身不关。同时手势 onTouchEnd 也补一份 fallback——
+          mobile 的 React 合成 click 在 touchmove 后偶发不触发，借助现有
+          touchDeltaXRef 判定"无横向滑动"再 close，等价于点击意图。 */}
       <div
         className={`absolute inset-0 flex items-center justify-center ${
           isDesktop
             ? "px-24 pb-10 pt-24"
             : "px-4 pb-[calc(env(safe-area-inset-bottom,0px)+6.75rem)] pt-24"
         }`}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            onClose();
+          }
+        }}
         onTouchStart={isDesktop ? undefined : handleTouchStart}
         onTouchMove={isDesktop ? undefined : handleTouchMove}
         onTouchEnd={isDesktop ? undefined : handleTouchEnd}
