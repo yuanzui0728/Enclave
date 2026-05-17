@@ -622,21 +622,30 @@ export class CharactersService implements OnModuleInit {
     // bundle 既无 profile 也无 recipe（早期 wiki 写入路径只填 name/bio）→ 用
     // 标量字段合成一个最小可用 baseline，避免 DB 里落 profile={} 这种导致
     // chat 路径 system_prompt 全空、AI 直接拒答的角色行。
-    if (input.profile !== undefined && input.profile !== null) {
+    //
+    // 第 5 次走查 R2：原条件 `input.profile !== undefined && input.profile !== null`
+    // 会把 `profile:{}`（手工 bundle 误传 / 老版 wiki 导出半残）当 truthy 透传，
+    // 跳过下面的 baseline fallback 同时还把 existing 的 meaningful profile（含
+    // coreLogic 和 chat memory）整盘抹平 —— 验证：POST profile:{} 后 DB 落
+    // `{characterId:'...'}`，chat 路径 basePrompt/name 全空，AI 拒答。
+    // 改成统一用 hasMeaningfulProfile 判定 "用户实际给了能跑的人设"。
+    if (hasMeaningfulProfile(input.profile)) {
       patch.profile = input.profile;
     } else if (input.recipe) {
       const derived = this.tryDeriveProfileFromRecipe(input.recipe, trimmedName);
-      if (derived) patch.profile = derived;
+      if (derived && hasMeaningfulProfile(derived)) patch.profile = derived;
     }
-    if (!patch.profile) {
+    if (!hasMeaningfulProfile(patch.profile)) {
       // 同名 re-import：bundle 没带 profile/recipe（用户可能只想刷一下 bio / avatar），
       // 但现存 row 的 profile 已经被前一次正常 import 填好、且 chat memory 压缩
       // 可能往里追写了 memory.recentSummary —— 这时不能再用 baseline 把 existing.profile
       // 整盘覆盖（会丢角色记忆 + 用户精心填的 coreLogic）。只有现存 row 没 profile
-      // 或 profile 不可用时才补 baseline。
+      // 或 profile 不可用时才补 baseline；否则把 patch.profile 删掉、保留 existing。
       const existingProfileMeaningful = hasMeaningfulProfile(existing?.profile);
       if (!existingProfileMeaningful) {
         patch.profile = this.buildBaselineProfileFromInput(trimmedName, input);
+      } else {
+        delete patch.profile;
       }
     }
     // recipe / explicit profile 路径强制覆盖时，把现存 row 的 memory 子树 merge
