@@ -131,7 +131,13 @@ export function DesktopMomentsFeed({
               onStartCommentReply={onStartCommentReply}
               onToggleFavorite={() => onToggleFavorite(moment.id)}
               onSelectAuthor={
-                moment.authorType === "character" && onSelectAuthor
+                // 新走查 R2：之前只 character 接 onSelectAuthor，own user moment
+                // 的 avatar 完全没接 → 用户点自己头像无反应。Mobile MobileMomentsView
+                // 的 onAuthorTap 一直按 user+ownerId 跳 /profile/moments，桌面这边
+                // 漏接。这里给两种 authorType 都接上，parent (moments-page) 在
+                // onOpenAuthorPopover 里按 authorType 分流（character → friend-moments
+                // 工作区；user → owner popover）。
+                onSelectAuthor
                   ? (event) =>
                       onSelectAuthor({
                         anchorElement: event.currentTarget,

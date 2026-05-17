@@ -391,6 +391,15 @@ export function MomentsPage() {
   // 5 DELETE 在 1ms 内全飞出去。ref 同步赋值，第一次 click 翻 true 之后所有
   // 后续 click 立刻早返。
   const mobileDeleteInflightRef = useRef(false);
+  // 新走查 R2：同帧双击守卫——CDP 实测 onCommentSubmit 同帧 2 次 click 触发
+  // 2 次 POST /api/moments/{id}/comment，DB 里写 2 条一模一样的评论；同样
+  // onLikeMomentId 双击 → 2 次 POST /like 把 toggle 多翻一轮。仅靠
+  // commentMutation.isPending 不行：mutate() 是同步调起的，但 React useState
+  // 的 isPending 更新要等下一个 render，同帧第二个 click 的 handler 闭包里
+  // 读到的还是上次的 isPending=false。ref 同步赋值是唯一可靠的同帧锁。
+  // 单帧锁按 momentId 维度分别记账——不同帖子的同帧 click 互不影响。
+  const commentInflightRef = useRef<Record<string, boolean>>({});
+  const likeInflightRef = useRef<Record<string, boolean>>({});
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -1481,7 +1490,17 @@ export function MomentsPage() {
               [momentId]: value,
             }))
           }
-          onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
+          onCommentSubmit={(momentId) => {
+            // 新走查 R2：ref 同步锁——同帧 click 第二次会读到 isPending=false
+            // （React state 没翻新），直接 mutate 两次 → DB 写 2 条重复评论。
+            if (commentInflightRef.current[momentId]) return;
+            commentInflightRef.current[momentId] = true;
+            commentMutation.mutate(momentId, {
+              onSettled: () => {
+                delete commentInflightRef.current[momentId];
+              },
+            });
+          }}
           onStartCommentReply={({ momentId, comment }) =>
             setDesktopReplyTarget({
               authorId: comment.authorId,
@@ -1506,13 +1525,38 @@ export function MomentsPage() {
           onImageFilesSelected={(files) => {
             void handleImageFilesSelected(files);
           }}
-          onLike={(momentId) => likeMutation.mutate(momentId)}
-          onOpenAuthorPopover={({ moment: targetMoment }) => {
-            if (targetMoment?.authorType !== "character") {
+          onLike={(momentId) => {
+            // 新走查 R2：同帧 click 同步锁——双击点赞会同时发 2 个 POST /like
+            // 把 toggle 多翻一轮，端 cache 看着是回到原状但白白付 2 个 RTT。
+            if (likeInflightRef.current[momentId]) return;
+            likeInflightRef.current[momentId] = true;
+            likeMutation.mutate(momentId, {
+              onSettled: () => {
+                delete likeInflightRef.current[momentId];
+              },
+            });
+          }}
+          onOpenAuthorPopover={({ anchorElement, moment: targetMoment }) => {
+            if (targetMoment?.authorType === "character") {
+              openDesktopFriendMoments(targetMoment);
               return;
             }
-
-            openDesktopFriendMoments(targetMoment);
+            // 新走查 R2：own user moment 的头像点击之前 silent no-op，DOM 上还是
+            // <AvatarChip> 不挂 <button> 包装，用户根本不知道自己头像可不可点。
+            // 现在 desktop-moments-feed 已把 user 类型也接到 onSelectAuthor，
+            // 这里按 authorType=user + ownerId 匹配 → 打开 owner popover（跟 liker
+            // 行点「我自己」走的同款 owner kind，提供入口跳「我的朋友圈」等）。
+            if (
+              targetMoment?.authorType === "user" &&
+              ownerId &&
+              targetMoment.authorId === ownerId
+            ) {
+              setDesktopAvatarPopover({
+                anchorElement,
+                kind: "owner",
+                returnHash: currentRouteHash || undefined,
+              });
+            }
           }}
           onOpenLikerPopover={({ anchorElement, like }) => {
             const returnHash = currentRouteHash || undefined;
@@ -1760,7 +1804,16 @@ export function MomentsPage() {
           openCharacterDetail(like.authorId);
         }
       }}
-      onLikeMoment={(momentId) => likeMutation.mutate(momentId)}
+      onLikeMoment={(momentId) => {
+        // 新走查 R2：同帧 click 同步锁——见 desktop onLike 注释。
+        if (likeInflightRef.current[momentId]) return;
+        likeInflightRef.current[momentId] = true;
+        likeMutation.mutate(momentId, {
+          onSettled: () => {
+            delete likeInflightRef.current[momentId];
+          },
+        });
+      }}
       onDeleteMoment={(momentId) => {
         // ref guard 必须在 window.confirm 之前 set，否则 confirm 阻塞期间
         // 队列里的第二个 click 拿同一份闭包跑出来时 isPending 仍是旧 false，
@@ -1809,7 +1862,16 @@ export function MomentsPage() {
           [momentId]: value,
         }))
       }
-      onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
+      onCommentSubmit={(momentId) => {
+        // 新走查 R2：同帧 click 同步锁——见 desktop onCommentSubmit 注释。
+        if (commentInflightRef.current[momentId]) return;
+        commentInflightRef.current[momentId] = true;
+        commentMutation.mutate(momentId, {
+          onSettled: () => {
+            delete commentInflightRef.current[momentId];
+          },
+        });
+      }}
       onRefresh={async () => {
         // 下拉刷新只换头部 page 1，保留已加载的 page 2+：
         // 1) 旧逻辑把 N 页砍回 1 页 → 列表瞬间变短、撑不满视口 → iOS 上滑橡皮筋反弹
