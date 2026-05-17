@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
@@ -22,6 +22,8 @@ export function FeatureUnavailableDialog({
   confirmLabel,
 }: FeatureUnavailableDialogProps) {
   const resolvedConfirmLabel = confirmLabel ?? t(msg`我知道了`);
+  const titleId = useId();
+  const descId = useId();
   useEffect(() => {
     if (!open) {
       return;
@@ -67,12 +69,33 @@ export function FeatureUnavailableDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]">
+      {/* 走查新一轮 R5：和姊妹 sheet/dialog mobile-message-action-sheet.tsx
+          / mobile-message-reminder-sheet.tsx / mobile-speech-input-sheet.tsx
+          同款 a11y 缺漏——这是个 modal（点击 backdrop 关闭、屏幕居中弹），
+          但 panel 既没挂 role="dialog" + aria-modal，也没挂 aria-labelledby
+          /aria-describedby。屏幕阅读器（iOS VoiceOver / Android TalkBack）
+          打开时只听到 "关闭提示 按钮" 和 button，听不到 title/description。
+          单聊点视频/语音通话按钮时这个 dialog 会弹（FeatureUnavailableDialog
+          被 conversation-thread-panel.tsx 引用），盲人用户无法理解为什么
+          按钮没生效。补 dialog 语义。 */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className="relative w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+      >
         <div className="px-6 pb-2 pt-6 text-center">
-          <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+          <div
+            id={titleId}
+            className="text-[16px] font-medium text-[color:var(--text-primary)]"
+          >
             {title}
           </div>
-          <div className="mt-3 text-[13px] leading-6 text-[color:var(--text-muted)]">
+          <div
+            id={descId}
+            className="mt-3 text-[13px] leading-6 text-[color:var(--text-muted)]"
+          >
             {description}
           </div>
         </div>
