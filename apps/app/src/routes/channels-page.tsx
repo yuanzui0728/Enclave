@@ -3140,9 +3140,17 @@ function MobileChannelsViewport({
             followPending={followPendingAuthorId === post.authorId}
             post={post}
             commentsPreview={
-              commentsPreviewByPostId?.[post.id] ??
-              post.commentsPreview ??
-              EMPTY_COMMENT_PREVIEW
+              // 走查 R1（本轮）：原来 ?? post.commentsPreview 在 commentsPreviewByPostId
+              // 还没回来时会兜到 getChannelHome 在 line 413 强写的 `commentsPreview: []`——
+              // 但这个 [] 是 *每次 home refetch 现造的新数组身份*（点赞 / 关注 /
+              // 减少推荐 任何 invalidate 都会换一次），propagate 到 MobileChannelsCard
+              // 让 React.memo shallow compare 永远不 bail，"卡片完全 memo 化"那条
+              // 优化失效。fallback 直接落到 EMPTY_COMMENT_PREVIEW（稳定的常量），
+              // 跟 getCommentsPreview（line 173-181）的同款修复对齐。
+              // 注：mobile viewport 不会被 desktopWorkspacePosts 喂数据（desktop 路径
+              // 在上面 line 1542 已经分叉走 DesktopChannelsWorkspace），post.commentsPreview
+              // 在这条路径下永远是 home 接口给的空 []，省掉这层 fallback 不会丢信息。
+              commentsPreviewByPostId?.[post.id] ?? EMPTY_COMMENT_PREVIEW
             }
             setCardRef={getCardRefCallback(post.id)}
             userUnmuted={userUnmuted}

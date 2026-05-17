@@ -1412,11 +1412,24 @@ export class FeedService implements OnModuleInit {
       type: 'view',
     });
 
+    // 走查 R1（本轮）：原来 `typeof === 'number'` 不挡 NaN / Infinity / 负数 /
+    // 巨值。NaN 走下方 Math.max(prev, NaN) = NaN → `NaN || null` 把已有的
+    // watchProgressSeconds 整段抹成 null（用户在某条音乐听到 30s，被 buggy /
+    // 老 client 发个 NaN 后服务端记录就丢成 0）。Infinity 序列化到 SQLite JSON
+    // 是 `null`、读出来也异常。这里统一过 `Number.isFinite` + 非负 + 64 位整
+    // 数上限（30 天秒数远小于 2.6e6，2^31 给得很宽）。无效值降级到 null，跟原
+    // "客户端没传" 等价处理，绝不让脏数据冲掉已经积累的合法进度。
+    const SAFE_PROGRESS_SECONDS_MAX = 2_592_000; // 30 days
+    const rawProgress = payload?.progressSeconds;
+    const sanitizedProgress =
+      typeof rawProgress === 'number' &&
+      Number.isFinite(rawProgress) &&
+      rawProgress >= 0
+        ? Math.min(Math.floor(rawProgress), SAFE_PROGRESS_SECONDS_MAX)
+        : null;
+
     const nextPayload = {
-      progressSeconds:
-        typeof payload?.progressSeconds === 'number'
-          ? payload.progressSeconds
-          : null,
+      progressSeconds: sanitizedProgress,
       completed: Boolean(payload?.completed),
     };
 
