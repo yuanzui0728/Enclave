@@ -173,6 +173,11 @@ export function FriendMomentsPage() {
   useEffect(() => {
     mutationBaseUrlRef.current = baseUrl;
   }, [baseUrl]);
+  // 新走查 R3：跟 moments-page R2 同款同帧双击守卫。CDP 实测在主朋友圈页双击
+  // 「发送」评论会发 2 次 POST /comment 写 2 条重复评论；friend-moments 走
+  // 一样的 commentMutation 模板，肯定有同样 bug。提前加 ref 锁防 DB 脏写。
+  const commentInflightRef = useRef<Record<string, boolean>>({});
+  const likeInflightRef = useRef<Record<string, boolean>>({});
   const createMutation = useMutation({
     // 走查新 Round 1：跟 1b285789 / moments-page / profile-moments-page 同类 bug。
     // 慢网下旧 mutation 的 onSuccess 跑回来会抹掉用户重开后输入的新草稿。
@@ -922,7 +927,16 @@ export function FriendMomentsPage() {
             [momentId]: value,
           }))
         }
-        onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
+        onCommentSubmit={(momentId) => {
+          // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
+          if (commentInflightRef.current[momentId]) return;
+          commentInflightRef.current[momentId] = true;
+          commentMutation.mutate(momentId, {
+            onSettled: () => {
+              delete commentInflightRef.current[momentId];
+            },
+          });
+        }}
         onStartCommentReply={({ momentId, comment }) =>
           setDesktopReplyTarget({
             authorId: comment.authorId,
@@ -942,7 +956,16 @@ export function FriendMomentsPage() {
         onImageFilesSelected={(files) => {
           void handleImageFilesSelected(files);
         }}
-        onLike={(momentId) => likeMutation.mutate(momentId)}
+        onLike={(momentId) => {
+          // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
+          if (likeInflightRef.current[momentId]) return;
+          likeInflightRef.current[momentId] = true;
+          likeMutation.mutate(momentId, {
+            onSettled: () => {
+              delete likeInflightRef.current[momentId];
+            },
+          });
+        }}
         onOpenMomentsHome={() => {
           void navigate({ to: "/tabs/moments" });
         }}

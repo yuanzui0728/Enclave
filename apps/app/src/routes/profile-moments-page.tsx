@@ -207,6 +207,13 @@ export function ProfileMomentsPage() {
   useEffect(() => {
     mutationBaseUrlRef.current = baseUrl;
   }, [baseUrl]);
+  // 新走查 R3：同款同帧双击守卫（见 moments-page R2 注释）。CDP 实测主页
+  // 双击「发送」评论会写 2 条重复评论，profile-moments / friend-moments 走
+  // 同样的 commentMutation 模板必有同 bug。提前加 ref 锁防 DB 脏写 + RTT 浪费。
+  // 三把：comment / like / delete 都按 momentId 分别记账。
+  const commentInflightRef = useRef<Record<string, boolean>>({});
+  const likeInflightRef = useRef<Record<string, boolean>>({});
+  const deleteInflightRef = useRef<Record<string, boolean>>({});
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -875,7 +882,16 @@ export function ProfileMomentsPage() {
               [momentId]: value,
             }))
           }
-          onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
+          onCommentSubmit={(momentId) => {
+            // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
+            if (commentInflightRef.current[momentId]) return;
+            commentInflightRef.current[momentId] = true;
+            commentMutation.mutate(momentId, {
+              onSettled: () => {
+                delete commentInflightRef.current[momentId];
+              },
+            });
+          }}
           onCreate={() =>
             createMutation.mutate({
               // snapshot — 见 createMutation 注释。
@@ -884,11 +900,30 @@ export function ProfileMomentsPage() {
               videoDraft: composeDraft.videoDraft,
             })
           }
-          onDelete={(momentId) => deleteMutation.mutate(momentId)}
+          onDelete={(momentId) => {
+            // 新走查 R3：同帧 click 同步锁——行内 DesktopMomentRow 有 confirm，
+            // 但确认 OK 同帧双击仍可能落到这。
+            if (deleteInflightRef.current[momentId]) return;
+            deleteInflightRef.current[momentId] = true;
+            deleteMutation.mutate(momentId, {
+              onSettled: () => {
+                delete deleteInflightRef.current[momentId];
+              },
+            });
+          }}
           onImageFilesSelected={(files) => {
             void handleDesktopImageFilesSelected(files);
           }}
-          onLike={(momentId) => likeMutation.mutate(momentId)}
+          onLike={(momentId) => {
+            // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
+            if (likeInflightRef.current[momentId]) return;
+            likeInflightRef.current[momentId] = true;
+            likeMutation.mutate(momentId, {
+              onSettled: () => {
+                delete likeInflightRef.current[momentId];
+              },
+            });
+          }}
           onOpenLikerPopover={({ anchorElement, like }) => {
             if (like.authorType === "character") {
               setDesktopAvatarPopover({
@@ -1138,18 +1173,37 @@ export function ProfileMomentsPage() {
                   onOpenActionMenu={(rect) =>
                     setActionBubble({ momentId: moment.id, anchorRect: rect })
                   }
-                  onDoubleTapLike={() => likeMutation.mutate(moment.id)}
+                  onDoubleTapLike={() => {
+                    // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
+                    if (likeInflightRef.current[moment.id]) return;
+                    likeInflightRef.current[moment.id] = true;
+                    likeMutation.mutate(moment.id, {
+                      onSettled: () => {
+                        delete likeInflightRef.current[moment.id];
+                      },
+                    });
+                  }}
                   onCommentTap={(comment) => onCommentTap(moment.id, comment)}
                   onLikeAuthorTap={openLikerCharacterDetail}
                   onDelete={() => {
+                    // 新走查 R3：ref 同步锁要在 confirm 之前 set——confirm
+                    // 阻塞期间排队的第二个 click 拿旧闭包跑出来时 isPending 仍
+                    // 是 false（跟 moments-page mobileDeleteInflightRef 同理）。
+                    if (deleteInflightRef.current[moment.id]) return;
                     if (deleteMutation.isPending) return;
+                    deleteInflightRef.current[moment.id] = true;
                     if (
                       typeof window !== "undefined" &&
                       !window.confirm(t(msg`确定删除这条朋友圈吗？`))
                     ) {
+                      delete deleteInflightRef.current[moment.id];
                       return;
                     }
-                    deleteMutation.mutate(moment.id);
+                    deleteMutation.mutate(moment.id, {
+                      onSettled: () => {
+                        delete deleteInflightRef.current[moment.id];
+                      },
+                    });
                   }}
                 />
               </div>
@@ -1166,7 +1220,15 @@ export function ProfileMomentsPage() {
         liked={liked}
         onLike={() => {
           if (actionBubble) {
-            likeMutation.mutate(actionBubble.momentId);
+            // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
+            const id = actionBubble.momentId;
+            if (likeInflightRef.current[id]) return;
+            likeInflightRef.current[id] = true;
+            likeMutation.mutate(id, {
+              onSettled: () => {
+                delete likeInflightRef.current[id];
+              },
+            });
           }
         }}
         onComment={() => {
@@ -1224,7 +1286,15 @@ export function ProfileMomentsPage() {
         }
         onSubmit={() => {
           if (commentBarTarget) {
-            commentMutation.mutate(commentBarTarget.momentId);
+            // 新走查 R3：同帧 click 同步锁，见 moments-page R2 注释。
+            const id = commentBarTarget.momentId;
+            if (commentInflightRef.current[id]) return;
+            commentInflightRef.current[id] = true;
+            commentMutation.mutate(id, {
+              onSettled: () => {
+                delete commentInflightRef.current[id];
+              },
+            });
           }
         }}
         onClose={() => setCommentBarTarget(null)}
