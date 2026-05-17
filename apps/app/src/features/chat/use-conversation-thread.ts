@@ -97,6 +97,8 @@ export function useConversationThread(conversationId: string) {
   // conversationId 切换时随其他 state 一起重置；socket 撑长（AI 回声）时
   // 末尾 id 变化仍会触发。
   const lastMarkedReadNewestIdRef = useRef<string | null>(null);
+  // 同帧双击同一条 failed 消息的「重试」按钮锁，详见 retryMessage 内注释。
+  const retryingMessageIdsRef = useRef<Set<string>>(new Set());
 
   const messagesQuery = useQuery({
     queryKey: [
@@ -784,6 +786,16 @@ export function useConversationThread(conversationId: string) {
 
   const retryMessage = useCallback(
     async (messageId: string) => {
+      // 走查新一轮 R6：同帧双击同一条 failed 消息的「重试」按钮，
+      // markThreadMessageSending 还没 commit，下一次 click 仍看到
+      // localStatus === "failed" → 飞两份相同 emitChatMessage，对端
+      // 在 single 单聊里收到 2 条一模一样的用户消息（local_id 不同 →
+      // server echo 来时两条都被 dedup 各自匹配 local_id 也都过）。
+      // 群聊 group-chat-thread-panel `retryingMessageIdsRef` 同款修法
+      // （commit 593255ad）。
+      if (retryingMessageIdsRef.current.has(messageId)) {
+        return;
+      }
       if (!ownerId) {
         return;
       }
@@ -811,10 +823,15 @@ export function useConversationThread(conversationId: string) {
         throw new Error(t(msg`这条消息暂时无法重试发送。`));
       }
 
-      await runSendMutation({
-        payload,
-        retryMessageId: messageId,
-      });
+      retryingMessageIdsRef.current.add(messageId);
+      try {
+        await runSendMutation({
+          payload,
+          retryMessageId: messageId,
+        });
+      } finally {
+        retryingMessageIdsRef.current.delete(messageId);
+      }
     },
     // sendMutation 整个对象每次 render 都换引用，不要塞进 deps —— retryMessage 会
     // 跟着每次 render 重建，把它当作"稳定回调"挂在子组件 onClick 上的语义就破了。
