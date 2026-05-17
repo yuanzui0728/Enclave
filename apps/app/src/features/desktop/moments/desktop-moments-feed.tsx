@@ -24,6 +24,16 @@ type DesktopMomentsFeedProps = {
   loadErrorMessage?: string | null;
   likePendingMomentId: string | null;
   moments: Moment[];
+  /** 走查 R3：后端给了 N 条 moment 但前端全被 blockedCharacterIds 过滤掉时，
+   *  之前桌面只看 moments.length===0 直接走「朋友圈还很安静 / 发一条朋友圈」CTA，
+   *  把"全被你拉黑了"误导成"还没有人发朋友圈"，用户被推去发动态填补"空空的"
+   *  feed。移动端 MobileMomentsView 一直按 hasFilteredOutMoments 切到「正在寻找
+   *  未屏蔽的动态」/「朋友圈都被你屏蔽了 / 打开通讯录」分支，桌面这里漏了。
+   *  传 hasFilteredOutMoments + 还在 prefetch 的 hasNextPage + onOpenContacts
+   *  让桌面跟齐 mobile 的两条分支。 */
+  hasFilteredOutMoments?: boolean;
+  hasNextPage?: boolean;
+  onOpenContacts?: () => void;
   ownerId?: string | null;
   isMomentFavorite: (momentId: string) => boolean;
   onCancelCommentReply?: () => void;
@@ -60,6 +70,9 @@ export function DesktopMomentsFeed({
   loadErrorMessage = null,
   likePendingMomentId,
   moments,
+  hasFilteredOutMoments = false,
+  hasNextPage = false,
+  onOpenContacts,
   ownerId,
   isMomentFavorite,
   onCancelCommentReply,
@@ -161,6 +174,30 @@ export function DesktopMomentsFeed({
                 ) : undefined
               }
             />
+          ) : hasFilteredOutMoments ? (
+            // 走查 R3：后端有 N 条 moment 但全被 blockedCharacterIds 过滤掉。
+            // 还在 auto-prefetch（hasNextPage=true）→ 当前页都是被屏蔽角色，
+            // 给「正在寻找未屏蔽的动态」文案让用户知道在等什么；prefetch 跑完
+            // 仍然 0 → 给「朋友圈都被你屏蔽了 / 打开通讯录」让用户能去解除屏蔽。
+            // 跟 MobileMomentsView 同分支模板。
+            hasNextPage ? (
+              <EmptyState
+                title={t(msg`正在寻找未屏蔽的动态`)}
+                description={t(msg`当前页加载到的动态作者都在你的屏蔽名单里，正在自动翻下一页找未屏蔽的居民动态。`)}
+              />
+            ) : (
+              <EmptyState
+                title={t(msg`朋友圈都被你屏蔽了`)}
+                description={t(msg`已加载的动态作者全部在你的屏蔽名单里。去通讯录里解除屏蔽，或者等其他居民发布新动态。`)}
+                action={
+                  onOpenContacts ? (
+                    <Button variant="primary" onClick={onOpenContacts}>
+                      {t(msg`打开通讯录`)}
+                    </Button>
+                  ) : undefined
+                }
+              />
+            )
           ) : (
             <EmptyState
               title={t(msg`朋友圈还很安静`)}

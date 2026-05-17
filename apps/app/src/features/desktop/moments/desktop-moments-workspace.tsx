@@ -42,6 +42,14 @@ type DesktopMomentsWorkspaceProps = {
    */
   totalCount?: number | null;
   isFullyLoaded?: boolean;
+  /** 走查 R3：后端给了 N 条 moment 但前端 visibleMoments 全被屏蔽过滤掉时，
+   *  desktop-moments-feed 改走「正在寻找未屏蔽的动态」/「朋友圈都被你屏蔽了」
+   *  分支，不再误导用户去发朋友圈。和 mobile MomentsView 同模板。 */
+  hasFilteredOutMoments?: boolean;
+  /** auto-prefetch 是否还有下一页可拉 —— 用来区分「屏蔽态：还在翻」与「翻完了」。 */
+  hasNextPage?: boolean;
+  /** 「打开通讯录」按钮回调——「朋友圈都被你屏蔽了」分支挂在里头。 */
+  onOpenContacts?: () => void;
   ownerAvatar?: string | null;
   ownerId?: string | null;
   ownerUsername?: string | null;
@@ -103,6 +111,9 @@ export function DesktopMomentsWorkspace({
   moments,
   totalCount = null,
   isFullyLoaded = true,
+  hasFilteredOutMoments = false,
+  hasNextPage = false,
+  onOpenContacts,
   ownerAvatar,
   ownerId,
   ownerUsername,
@@ -216,6 +227,9 @@ export function DesktopMomentsWorkspace({
                 loadErrorMessage={loadErrorMessage}
                 likePendingMomentId={likePendingMomentId}
                 moments={moments}
+                hasFilteredOutMoments={hasFilteredOutMoments}
+                hasNextPage={hasNextPage}
+                onOpenContacts={onOpenContacts}
                 ownerId={ownerId}
                 isMomentFavorite={isMomentFavorite}
                 onCancelCommentReply={onCancelCommentReply}

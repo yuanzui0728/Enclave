@@ -1442,6 +1442,14 @@ export function MomentsPage() {
           moments={visibleMoments}
           totalCount={momentsServerTotal}
           isFullyLoaded={!momentsHasNextPage}
+          // 走查 R3：把屏蔽态透到桌面 feed —— hasFilteredOutMoments=true 时
+          // 让 EmptyState 切到「正在寻找未屏蔽的动态」/「朋友圈都被你屏蔽了 /
+          // 打开通讯录」，跟 mobile 同模板，不再把"全被你拉黑了"误导成"还很安静"。
+          hasFilteredOutMoments={hasFilteredOutMoments}
+          hasNextPage={momentsHasNextPage}
+          onOpenContacts={() => {
+            void navigate({ to: "/tabs/contacts" });
+          }}
           ownerAvatar={ownerAvatar}
           ownerId={ownerId}
           ownerUsername={ownerUsername}
