@@ -81,6 +81,10 @@ export class WikiUsersAdminService {
 
     const qb = this.userRepo
       .createQueryBuilder('u')
+      // Wiki 用户 tab 只看 wiki_member。system bot（admin_sync / antivandal_bot）
+      // 和 world_owner（APP 用户本人占位）混在 users 表里但不是 wiki 注册用户，
+      // 留在列表里会让运营误把它们当成"没绑邮箱的注册用户"。
+      .where('u.userType = :userType', { userType: 'wiki_member' })
       .orderBy('u.createdAt', 'DESC');
     if (q) {
       // 用户输入里的 % / _ 是 LIKE 的元字符，不转义的话 q="_" 会匹配所有单字符
@@ -89,7 +93,7 @@ export class WikiUsersAdminService {
       // ESCAPE '\\' 实际跑到 SQLite 会变 ESCAPE '\\\\'（两字符）→ "must be a
       // single character"；改成不需要 backslash quoting 的 '!' 就稳了。
       const escaped = q.toLowerCase().replace(/[%_!]/g, '!$&');
-      qb.where(
+      qb.andWhere(
         "(LOWER(u.username) LIKE :pat ESCAPE '!' OR LOWER(u.email) LIKE :pat ESCAPE '!')",
         { pat: `%${escaped}%` },
       );

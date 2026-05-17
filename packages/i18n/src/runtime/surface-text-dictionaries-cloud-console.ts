@@ -77,6 +77,8 @@ const cloudConsoleText: LocaleDictionary = {
     "Wiki user detail": "Wiki 用户详情",
     "Wiki operations": "Wiki 运维",
     "Roles and private characters": "角色权限与私有角色",
+    "Include test accounts (smoke / e2e / Twilio)":
+      "包含测试账号（smoke / e2e / Twilio）",
     Plans: "套餐",
     Configs: "配置",
     "Invite Audit": "邀请审计",

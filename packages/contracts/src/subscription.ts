@@ -157,6 +157,9 @@ export interface CloudUserListQuery {
   registeredTo?: string;
   page?: number;
   pageSize?: number;
+  // 默认 undefined / false：服务端隐藏 smoke / e2e / Twilio 测试号。运营临时
+  // 需要看测试账号时传 true 放开。
+  includeTestAccounts?: boolean;
 }
 
 export interface CloudUserListResponse {

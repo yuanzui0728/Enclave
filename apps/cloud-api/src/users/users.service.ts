@@ -36,6 +36,20 @@ export type EnsureUserContext = {
   setPasswordOnRegister?: string | null;
 };
 
+// e2e / smoke / playwright / Twilio 测试号会把"用户"tab 灌得到处是脏数据，运营
+// 看不清真实账号。固定的几个判别条件够准：
+//   - phone 以 "+" 开头：生产手机注册走 hash-like 14 位 id（91xxxx…），不会带 +。
+//     E.164 格式（+86…、+15005550001）目前只来自自动化测试。
+//   - email 命中 smoke- 前缀 / @example.com / 我们 smoke 脚本固定的 a.com/b.com/c.com
+//     这几个 RFC2606 保留 + 内部约定的"垃圾域名"。
+const TEST_ACCOUNT_EMAIL_PATTERNS = [
+  "smoke%",
+  "%@example.com",
+  "%@a.com",
+  "%@b.com",
+  "%@c.com",
+] as const;
+
 @Injectable()
 export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
@@ -314,11 +328,27 @@ export class UsersService implements OnModuleInit {
     registeredTo?: string;
     page?: number;
     pageSize?: number;
+    includeTestAccounts?: boolean;
   }): Promise<CloudUserListResponse> {
     const page = Math.max(query.page ?? 1, 1);
     const pageSize = Math.min(Math.max(query.pageSize ?? 20, 1), 100);
 
     const builder = this.userRepo.createQueryBuilder("user");
+    if (!query.includeTestAccounts) {
+      // 默认隐藏 smoke / e2e / Twilio 测试号，让"用户"tab 干净。运营临时排查
+      // 需要看测试账号时 UI 上勾选 includeTestAccounts=true 即可放回来。
+      builder.andWhere(
+        new Brackets((qb) => {
+          qb.where("user.phone IS NULL OR user.phone NOT LIKE '+%'");
+          TEST_ACCOUNT_EMAIL_PATTERNS.forEach((pattern, idx) => {
+            qb.andWhere(
+              `(user.email IS NULL OR user.email NOT LIKE :testEmailPattern${idx})`,
+              { [`testEmailPattern${idx}`]: pattern },
+            );
+          });
+        }),
+      );
+    }
     if (query.query) {
       builder.andWhere("user.phone LIKE :phoneLike", {
         phoneLike: `%${query.query.trim()}%`,

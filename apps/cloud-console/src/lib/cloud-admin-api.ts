@@ -1257,6 +1257,7 @@ export const cloudAdminApi = {
         registeredTo: query?.registeredTo,
         page: query?.page,
         pageSize: query?.pageSize,
+        includeTestAccounts: query?.includeTestAccounts,
       })}`,
     ),
 

@@ -117,6 +117,7 @@ export function UsersPage() {
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [includeTestAccounts, setIncludeTestAccounts] = useState(false);
 
   // 后端搜索时也 trim，前端这里 normalize 一遍避免 " 138" / "138 " 走出两条 cache key
   const normalizedQuery = query.trim();
@@ -128,6 +129,7 @@ export function UsersPage() {
       status,
       subscriptionStatus,
       page,
+      includeTestAccounts,
     ],
     queryFn: () =>
       cloudAdminApi.listCloudUsers({
@@ -136,6 +138,7 @@ export function UsersPage() {
         subscriptionStatus: subscriptionStatus || undefined,
         page,
         pageSize: 20,
+        includeTestAccounts: includeTestAccounts || undefined,
       }),
   });
 
@@ -212,6 +215,18 @@ export function UsersPage() {
           )}
         </div>
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
+        <input
+          type="checkbox"
+          checked={includeTestAccounts}
+          onChange={(event) => {
+            setIncludeTestAccounts(event.target.checked);
+            setPage(1);
+          }}
+        />
+        <span>{t("Include test accounts (smoke / e2e / Twilio)")}</span>
+      </label>
 
       {usersQuery.isLoading ? (
         <LoadingBlock label={t("Loading SaaS users...")} />

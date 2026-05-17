@@ -4,6 +4,8 @@ import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminCloudController } from "./admin/admin-cloud.controller";
+import { WikiAdminController } from "./admin/wiki-admin.controller";
+import { WikiAdminProxyService } from "./admin/wiki-admin-proxy.service";
 import { CloudAlertNotifierService } from "./alerts/cloud-alert-notifier.service";
 import { AdminAuthController } from "./auth/admin-auth.controller";
 import { AdminAuthService } from "./auth/admin-auth.service";
@@ -71,6 +73,7 @@ import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
     CloudAuthController,
     CloudController,
     AdminCloudController,
+    WikiAdminController,
     WorldAccessController,
     WorldRuntimeController,
   ],
@@ -90,6 +93,7 @@ import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
     CloudRuntimeConfigValidator,
     WorldLifecycleWorkerService,
     WorldRuntimeService,
+    WikiAdminProxyService,
   ],
 })
 export class AppModule {}

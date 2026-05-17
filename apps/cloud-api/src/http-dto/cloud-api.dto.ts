@@ -405,6 +405,11 @@ export class ListCloudUsersDto {
   @Min(1, { message: "pageSize 最小为 1。" })
   @Max(100, { message: "pageSize 最大为 100。" })
   pageSize?: number;
+
+  @Transform(parseBoolean)
+  @IsOptional()
+  @IsBoolean({ message: "includeTestAccounts 必须是布尔值。" })
+  includeTestAccounts?: boolean;
 }
 
 export class GrantSubscriptionDto {

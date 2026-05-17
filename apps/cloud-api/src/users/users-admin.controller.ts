@@ -43,6 +43,7 @@ export class UsersAdminController {
       registeredTo: query.registeredTo,
       page: query.page,
       pageSize: query.pageSize,
+      includeTestAccounts: query.includeTestAccounts,
     });
   }
 
