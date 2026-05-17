@@ -36,25 +36,37 @@ export class FarmQuestService {
 
   async getView(ownerId: string): Promise<FarmQuestsView> {
     const rows = await this.ensureAll(ownerId);
-    // syncLevelAchievements 只在 harvest 触发 level-up 时跑；如果玩家在 Phase4
-    // 上线时已经 >5 级，achievement_level_5 永远停在 0/5 — 等他下次升级才会同步。
-    // 在 getView 兜底就地补；但 syncLevelAchievements 之前是 2×(find+save)，每次
-    // 打开任务面板都跑 4 次 DB op。改成只在 row.progress < level 时才真去 setProgress，
-    // 没差异就只在内存里把 row.progress 顶到 level 让返回值对。
+    const today = todayLocalDate();
+    // daily 任务的过日处理：之前 bumpProgress 才检查 dailyResetDate 不等于 today
+    // 就归零；玩家第二天没做任何动作直接打开任务面板，UI 看到的还是昨天的 progress=3
+    // claimed=true 的状态 — 以为今天日常已领完。这里在 getView 就清掉过期的日期。
+    // 同时复用同一次循环搞 achievement_level_* sync。
     const player = await this.stateService.getOrCreatePlayerState(ownerId);
-    if (player.level > 0) {
-      const updates: Promise<unknown>[] = [];
-      for (const row of rows) {
-        if (row.questId !== 'achievement_level_5' && row.questId !== 'achievement_level_10') continue;
-        const def = getQuestDefinition(row.questId);
+    const updates: Promise<unknown>[] = [];
+    for (const row of rows) {
+      const def = getQuestDefinition(row.questId);
+      if (def.kind === 'daily' && row.dailyResetDate !== today) {
+        row.progress = 0;
+        row.claimed = false;
+        row.dailyResetDate = today;
+        updates.push(this.questRepo.save(row));
+        continue;
+      }
+      // syncLevelAchievements 只在 harvest 触发 level-up 时跑；如果玩家在 Phase4
+      // 上线时已经 >5 级，achievement_level_5 永远停在 0/5 — 等他下次升级才会同步。
+      // 兜底在 getView 检查；没差异就什么都不写。
+      if (
+        player.level > 0 &&
+        (row.questId === 'achievement_level_5' || row.questId === 'achievement_level_10')
+      ) {
         const target = Math.min(def.goal, player.level);
         if ((row.progress ?? 0) < target) {
           row.progress = target;
           updates.push(this.questRepo.save(row));
         }
       }
-      if (updates.length > 0) await Promise.all(updates);
     }
+    if (updates.length > 0) await Promise.all(updates);
     return {
       ownerId,
       generatedAt: new Date().toISOString(),
