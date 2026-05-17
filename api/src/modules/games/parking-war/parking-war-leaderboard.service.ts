@@ -5,7 +5,10 @@ import { Repository } from 'typeorm';
 import { CharactersService } from '../../characters/characters.service';
 import { ParkingWarNpcStateEntity } from './entities/parking-war-npc-state.entity';
 import { ParkingWarPlayerStateEntity } from './entities/parking-war-player-state.entity';
-import { PARKING_WAR_LEADERBOARD_TOTAL_WEIGHT_BP } from './parking-war.constants';
+import {
+  PARKING_WAR_EXCLUDED_CHARACTER_IDS,
+  PARKING_WAR_LEADERBOARD_TOTAL_WEIGHT_BP,
+} from './parking-war.constants';
 import type {
   ParkingWarCarTier,
   ParkingWarLeaderboardRow,
@@ -58,17 +61,25 @@ export class ParkingWarLeaderboardService {
     }
 
     if (npcs.length > 0) {
-      const charIds = Array.from(new Set(npcs.map((n) => n.characterId)));
-      const charsRaw = await this.charactersService.findManyByIds(charIds);
-      const charMap = new Map(charsRaw.map((c) => [c.id, c]));
+      // 只取玩家可见的角色 —— 隐藏 / 已删除 / 系统角色（"我自己" 等）
+      // 不该出现在榜单上；旧版本走 findManyByIds 不带 visibility，让玩家
+      // 排名看着比实际差几倍（202 NPC 中只有 ~50 个可见）
+      const visibleChars =
+        await this.charactersService.findAllVisibleToOwner(ownerId);
+      const charMap = new Map(
+        visibleChars
+          .filter((c) => !PARKING_WAR_EXCLUDED_CHARACTER_IDS.has(c.id))
+          .map((c) => [c.id, c]),
+      );
       for (const n of npcs) {
         const ch = charMap.get(n.characterId);
+        if (!ch) continue;
         rows.push({
           rank: 0,
           actorKind: 'npc',
           actorId: n.characterId,
-          actorName: ch?.name ?? n.characterId,
-          actorAvatar: ch?.avatar ?? null,
+          actorName: ch.name,
+          actorAvatar: ch.avatar ?? null,
           balanceCents: n.balanceCents,
           totalEarnedCents: n.totalEarnedCents,
           topCarTier: topCarTier(n.ownedCarsPayload),
@@ -79,10 +90,21 @@ export class ParkingWarLeaderboardService {
     }
 
     rows.sort((a, b) => b.score - a.score);
-    return rows.slice(0, limit).map((r, idx) => {
+    // 先把所有行排名再 slice —— 否则 NPC 启动余额 ¥5000+，新玩家排不进
+    // top-N 就完全消失在榜单里。先给所有人 rank，再按需保留自己 + 前 N。
+    const ranked = rows.map((r, idx) => {
       const { score: _drop, ...rest } = r;
       return { ...rest, rank: idx + 1 };
     });
+    const top = ranked.slice(0, limit);
+    const selfIdx = ranked.findIndex(
+      (r) => r.actorKind === 'player' && r.actorId === ownerId,
+    );
+    if (selfIdx >= 0 && selfIdx >= limit) {
+      // 自己掉出 top-N，把自己拼到末尾让前端能看见自己的真实名次
+      return [...top, ranked[selfIdx]];
+    }
+    return top;
   }
 }
 

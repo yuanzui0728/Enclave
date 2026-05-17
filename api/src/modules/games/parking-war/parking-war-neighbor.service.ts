@@ -342,6 +342,31 @@ export class ParkingWarNeighborService {
     return this.npcRepo.findOneBy({ characterId });
   }
 
+  /**
+   * 删掉 character 已经不可见 / 已被删的孤儿 NPC 状态。
+   * 早期 + 走查测试 + 旧版 onboarding 会留下一堆 npc row 但 character 已经
+   * 删了，榜单查询 + tick 全走它们一遍，体感很卡。每天清一次。
+   */
+  async pruneOrphanNpcStates(ownerId: string): Promise<number> {
+    const all = await this.npcRepo.find({ where: { ownerId } });
+    if (all.length === 0) return 0;
+    const ids = Array.from(new Set(all.map((n) => n.characterId)));
+    const characters = await this.charactersService.findManyByIds(ids);
+    const aliveIds = new Set(characters.map((c) => c.id));
+    const orphans = all.filter((n) => !aliveIds.has(n.characterId));
+    if (orphans.length === 0) return 0;
+    // 有车停在 orphan NPC 家的占用一并清掉，避免外键悬挂
+    const orphanCharIds = orphans.map((n) => n.characterId);
+    await this.occupancyRepo
+      .createQueryBuilder()
+      .delete()
+      .where('lotOwnerKind = :k', { k: 'npc' })
+      .andWhere('lotOwnerId IN (:...ids)', { ids: orphanCharIds })
+      .execute();
+    await this.npcRepo.remove(orphans);
+    return orphans.length;
+  }
+
   // ============================================================
   // helpers
   // ============================================================

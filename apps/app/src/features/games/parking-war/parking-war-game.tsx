@@ -330,8 +330,12 @@ function HomeTab({
   state: ParkingWarPlayerStateView;
   onToast: (m: string) => void;
 }) {
-  const [activeOccupancy, setActiveOccupancy] =
-    useState<ParkingWarOccupancyView | null>(null);
+  // 存 occupancyId 而不是整个 ParkingWarOccupancyView。
+  // 旧实现 sheet 打开后 state 刷新（60s refetchInterval / 操作 invalidate）
+  // 不会同步进 activeOccupancy，pending / warningLevel 都停留在打开那一刻
+  const [activeOccupancyId, setActiveOccupancyId] = useState<string | null>(
+    null,
+  );
   const [parkPickerSlot, setParkPickerSlot] = useState<number | null>(null);
 
   const slotByIndex = useMemo(() => {
@@ -344,7 +348,26 @@ function HomeTab({
     return m;
   }, [state.homeSlots, state.homeOccupancies]);
 
-  const cols = state.lotSize >= 12 ? 4 : state.lotSize >= 8 ? 4 : 3;
+  // 每次 state 刷新都从最新 homeOccupancies 里找一次。occupancyId 已经不存在
+  // （被 recall/tow 删了）就自动收起 sheet
+  const activeOccupancy = useMemo(() => {
+    if (activeOccupancyId == null) return null;
+    return (
+      state.homeOccupancies.find(
+        (o) => o.occupancyId === activeOccupancyId,
+      ) ?? null
+    );
+  }, [activeOccupancyId, state.homeOccupancies]);
+  useEffect(() => {
+    if (activeOccupancyId != null && activeOccupancy == null) {
+      setActiveOccupancyId(null);
+    }
+  }, [activeOccupancyId, activeOccupancy]);
+
+  // 4 -> 2x2，6 -> 2x3，8 -> 2x4，12 -> 3x4。
+  // 旧版固定 3 col → 4 槽位排成 3+1，第二行只有 1 个很丑
+  const cols =
+    state.lotSize >= 12 ? 4 : state.lotSize >= 8 ? 4 : state.lotSize >= 6 ? 3 : 2;
 
   return (
     <div className="px-4 py-4">
@@ -368,7 +391,9 @@ function HomeTab({
               slot={slot}
               occ={occ}
               ownerId={state.ownerId}
-              onClickOccupied={() => occ && setActiveOccupancy(occ)}
+              onClickOccupied={() =>
+                occ && setActiveOccupancyId(occ.occupancyId)
+              }
               onClickEmpty={() => setParkPickerSlot(slot.index)}
             />
           );
@@ -378,7 +403,7 @@ function HomeTab({
         <OccupancySheet
           occupancy={activeOccupancy}
           state={state}
-          onClose={() => setActiveOccupancy(null)}
+          onClose={() => setActiveOccupancyId(null)}
           onToast={onToast}
         />
       )}
@@ -1184,8 +1209,10 @@ function RankTab({
   state: ParkingWarPlayerStateView;
   onToast: (m: string) => void;
 }) {
-  const [scope, setScope] = useState<"friends" | "global">("friends");
-  const { data: board } = useParkingWarLeaderboard({ scope });
+  // global / friends 是同一份数据：每个 world 的 DB 只有 1 个玩家，
+  // 切换 scope 行数一模一样。早期是给跨 world 榜单留位，cloud-api
+  // 跨 world 榜单还没接，先去掉 toggle 避免误导。
+  const { data: board } = useParkingWarLeaderboard({ scope: "friends" });
   const { data: events } = useParkingWarEvents({ limit: 30 });
   const claimTask = useClaimParkingWarDailyTask();
   const handleClaim = async (taskId: string) => {
@@ -1201,47 +1228,37 @@ function RankTab({
     <div className="space-y-4 px-4 py-4">
       <section>
         <SectionTitle title={t(msg`财富榜`)} />
-        <div className="mb-2 flex gap-2 text-xs">
-          {(["friends", "global"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setScope(s)}
-              className={cn(
-                "rounded-full px-3 py-1 ring-1",
-                scope === s
-                  ? "bg-amber-100 text-amber-700 ring-amber-300"
-                  : "bg-white text-zinc-600 ring-zinc-200",
-              )}
-            >
-              {s === "friends" ? t(msg`本 world`) : t(msg`全服`)}
-            </button>
-          ))}
-        </div>
         <ol className="space-y-1 rounded-xl bg-white p-2 ring-1 ring-zinc-200">
-          {(board ?? []).map((row) => (
-            <li
-              key={`${row.actorKind}:${row.actorId}`}
-              className="flex items-center gap-3 px-2 py-1.5"
-            >
-              <span
+          {(board ?? []).map((row) => {
+            const isMe =
+              row.actorKind === "player" && row.actorId === state.ownerId;
+            return (
+              <li
+                key={`${row.actorKind}:${row.actorId}`}
                 className={cn(
-                  "w-6 text-center text-xs font-semibold",
-                  row.rank === 1 && "text-amber-500",
-                  row.rank === 2 && "text-zinc-400",
-                  row.rank === 3 && "text-orange-500",
+                  "flex items-center gap-3 rounded-md px-2 py-1.5",
+                  isMe && "bg-amber-50 ring-1 ring-amber-200",
                 )}
               >
-                {row.rank}
-              </span>
-              <div className="flex-1 truncate text-sm text-zinc-800">
-                {row.actorName}
-              </div>
-              <span className="text-xs text-amber-700">
-                {formatYuan(row.balanceCents)}
-              </span>
-            </li>
-          ))}
+                <span
+                  className={cn(
+                    "w-6 text-center text-xs font-semibold",
+                    row.rank === 1 && "text-amber-500",
+                    row.rank === 2 && "text-zinc-400",
+                    row.rank === 3 && "text-orange-500",
+                  )}
+                >
+                  {row.rank}
+                </span>
+                <div className="flex-1 truncate text-sm text-zinc-800">
+                  {isMe ? t(msg`我`) : row.actorName}
+                </div>
+                <span className="text-xs text-amber-700">
+                  {formatYuan(row.balanceCents)}
+                </span>
+              </li>
+            );
+          })}
           {(board ?? []).length === 0 && (
             <p className="px-2 py-3 text-xs text-zinc-400">
               {t(msg`榜单加载中...`)}

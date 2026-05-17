@@ -35,6 +35,11 @@ import type {
 export class ParkingWarTickService {
   private readonly logger = new Logger(ParkingWarTickService.name);
   private running = false;
+  // 上次 prune 的时间戳，每天最多跑一次。world 重启会清掉这个，
+  // 重启后第一次 tick 就会 prune 一次 —— 完全可以接受
+  private lastPruneAtMs = 0;
+  private static readonly PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000;
+  private static readonly PRUNE_KEEP_DAYS = 30;
 
   constructor(
     @InjectRepository(ParkingWarPlayerStateEntity)
@@ -107,12 +112,18 @@ export class ParkingWarTickService {
 
     for (const npc of npcStates) {
       scannedNpcCount += 1;
+      const npcName =
+        characterById.get(npc.characterId)?.name ?? npc.characterId;
 
       // 1) NPC 自家车场上 NPC 自己的车收益结算 → 进 NPC 余额
       await this.collectNpcHomeSelfEarnings(npc);
 
       // 2) NPC 给停在自家的玩家车贴条/拖车
-      const action = await this.maybeFineOrTowPlayerOnNpcHome(npc, playerState);
+      const action = await this.maybeFineOrTowPlayerOnNpcHome(
+        npc,
+        playerState,
+        npcName,
+      );
       ticketCount += action.tickets;
       towCount += action.tows;
 
@@ -121,7 +132,7 @@ export class ParkingWarTickService {
         const visit = await this.maybeNpcVisitPlayerHome(
           npc,
           playerState,
-          characterById.get(npc.characterId)?.name ?? npc.characterId,
+          npcName,
         );
         if (visit) npcVisitCount += 1;
       }
@@ -129,6 +140,46 @@ export class ParkingWarTickService {
       // 4) 推进所有 NPC 自家 home occupancy 的 warningLevel（防止它永远卡在 0）
       const warningsBumped = await this.bumpWarningLevels(npc);
       warningCount += warningsBumped;
+    }
+
+    // 每天最多 prune 一次：旧事件 + 孤儿 NPC 状态。
+    // 事件：NPC tick 一天能产 1000+ 事件，不清的话表无限增长
+    // 孤儿 NPC：早期 / 走查测试留下的 character 已删的 NPC row，
+    // 跑榜单 / tick 时全走一遍很卡
+    const nowMs = Date.now();
+    if (nowMs - this.lastPruneAtMs >= ParkingWarTickService.PRUNE_INTERVAL_MS) {
+      try {
+        const pruned = await this.eventService.pruneOldEvents(
+          ownerId,
+          ParkingWarTickService.PRUNE_KEEP_DAYS,
+        );
+        if (pruned > 0) {
+          this.logger.log(
+            `parking-war 事件清理：删除 ${pruned} 条 ${ParkingWarTickService.PRUNE_KEEP_DAYS} 天前的旧事件`,
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `parking-war 事件清理失败：${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+      try {
+        const orphans = await this.neighborService.pruneOrphanNpcStates(ownerId);
+        if (orphans > 0) {
+          this.logger.log(
+            `parking-war 孤儿 NPC 清理：删除 ${orphans} 个 character 已不可见的 NPC 状态`,
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `parking-war 孤儿 NPC 清理失败：${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+      this.lastPruneAtMs = nowMs;
     }
 
     return {
@@ -188,6 +239,7 @@ export class ParkingWarTickService {
   private async maybeFineOrTowPlayerOnNpcHome(
     npc: ParkingWarNpcStateEntity,
     playerState: ParkingWarPlayerStateEntity,
+    npcName: string,
   ): Promise<{ tickets: number; tows: number }> {
     const occs = await this.occupancyRepo.find({
       where: {
@@ -253,9 +305,10 @@ export class ParkingWarTickService {
           kind: 'tow',
           actorKind: 'npc',
           actorId: npc.characterId,
-          actorName: npc.characterId,
+          actorName: npcName,
           targetKind: 'player',
           targetId: playerState.ownerId,
+          targetName: '世界主人',
           amountCents: payable,
           payload: {
             carId: occ.carId,
@@ -296,9 +349,10 @@ export class ParkingWarTickService {
             kind: 'ticket',
             actorKind: 'npc',
             actorId: npc.characterId,
-            actorName: npc.characterId,
+            actorName: npcName,
             targetKind: 'player',
             targetId: playerState.ownerId,
+            targetName: '世界主人',
             amountCents: 0,
             payload: {
               carId: occ.carId,
@@ -335,9 +389,10 @@ export class ParkingWarTickService {
           kind: 'ticket',
           actorKind: 'npc',
           actorId: npc.characterId,
-          actorName: npc.characterId,
+          actorName: npcName,
           targetKind: 'player',
           targetId: playerState.ownerId,
+          targetName: '世界主人',
           amountCents: fine,
           payload: {
             carId: occ.carId,
