@@ -156,9 +156,12 @@ export function ParkingWarGame({
   }
 
   return (
+    // relative 让内部 BottomTabs / Toast 的 absolute 能贴在游戏容器底部，
+    // 而不是逃出去贴到 viewport。embedded 模式下游戏被装在 games-page
+    // 的卡片里，fixed 定位会让 tab 栏漂到整页底部覆盖宿主导航
     <div
       className={cn(
-        "flex h-full w-full flex-col bg-gradient-to-b from-sky-50 to-amber-50",
+        "relative flex h-full w-full flex-col overflow-hidden bg-gradient-to-b from-sky-50 to-amber-50",
         variant === "fullscreen" && "min-h-[100dvh]",
       )}
     >
@@ -173,7 +176,7 @@ export function ParkingWarGame({
       </div>
       <BottomTabs activeTab={tab} onChange={setTab} />
       {toast && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center">
+        <div className="pointer-events-none absolute inset-x-0 bottom-24 z-50 flex justify-center">
           <div className="rounded-full bg-zinc-900/90 px-4 py-2 text-sm text-white shadow-lg">
             {toast}
           </div>
@@ -297,7 +300,7 @@ function BottomTabs({
   onChange: (tab: TabId) => void;
 }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-zinc-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <div className="absolute inset-x-0 bottom-0 z-40 flex justify-around border-t border-zinc-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       {TABS.map(({ id, label, Icon }) => {
         const active = activeTab === id;
         return (
