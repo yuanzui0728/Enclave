@@ -774,17 +774,43 @@ export class CharactersService implements OnModuleInit {
     // 只对私有角色行本地有效，不应该污染 world 里 CharacterEntity 的 source 标签
     // —— 否则下次 import 时第 485 行的 sourceType 校验会拒绝覆盖。
 
+    // 第 5 次走查 R2 perf：原先流程是先 save、再回头修 profile.characterId /
+    // 剥 aiRelationships 自环、再二次 save。新导入路径 baseline profile 落库的
+    // characterId 永远是 ''，于是 needsResave 100% 触发，每次新导入都额外做一次
+    // DB 写。改成"先算出最终 id、pre-save 一次性修好"，新导入从 2 次写降到 1 次。
+    // randomUUID 比 Date.now()+Math.random 更稳，避免极端情况下 PK 冲突 500。
+    const desiredId: string = existing
+      ? existing.id
+      : `private-${randomUUID()}`;
+    // profile.characterId 永远 ≡ entity.id：buildBaselineProfileFromInput 这一刻
+    // 还没 newId，会落 characterId=''；chat orchestrator 走
+    // resolveRuntimeProvider({ characterId: profile.characterId }) 拿空串会跳过
+    // character_override 路由——usageContext.characterId 还能兜住但语义上是错的。
+    // 手工 bundle 写不匹配的 profile.characterId 也会让 character_override 静默失配，
+    // 所以这里强制覆盖到 desiredId。
+    if (patch.profile && patch.profile.characterId !== desiredId) {
+      patch.profile = { ...patch.profile, characterId: desiredId };
+    }
+    // aiRelationships 里指向自身的条目剥掉——任何 social-graph tick 走 self-edge
+    // 都是死循环或归一化失真的开端。
+    if (Array.isArray(patch.aiRelationships)) {
+      const withoutSelf = patch.aiRelationships.filter(
+        (rel) => rel.characterId !== desiredId,
+      );
+      if (withoutSelf.length !== patch.aiRelationships.length) {
+        patch.aiRelationships = withoutSelf;
+      }
+    }
+
     let saved: CharacterEntity;
     if (existing) {
       Object.assign(existing, patch);
       existing.name = trimmedName;
       saved = await this.repo.save(existing);
     } else {
-      // randomUUID 比 Date.now()+Math.random 更稳，避免极端情况下 PK 冲突 500。
-      const newId = `private-${randomUUID()}`;
       saved = await this.repo.save(
         this.repo.create({
-          id: newId,
+          id: desiredId,
           name: trimmedName,
           avatar: '',
           bio: '',
@@ -816,40 +842,6 @@ export class CharactersService implements OnModuleInit {
           ...patch,
         } as Partial<CharacterEntity>),
       );
-    }
-
-    // 把 entity.id 回写到 profile.characterId：buildBaselineProfileFromInput
-    // 这一刻还没 newId，会落 characterId=''；后续 chat orchestrator 走
-    // `runtimeProvider = resolveRuntimeProvider({ characterId: profile.characterId })`
-    // 拿到空串会跳过 character_override 路由——通过 usageContext.characterId
-    // 还能兜住但语义上是错的。
-    //
-    // 走查第 3 次 R1：原本只在 characterId 为空时回填，注释里写"允许用户在
-    // wiki 端 finalize 过的 profile.characterId"；但 wiki UI 实际不暴露这字段，
-    // 唯一能写它的路径就是手工 bundle，且写一个不匹配 entity.id 的值会让
-    // character_override 路由静默失配。改成"profile.characterId 永远 ≡ saved.id"。
-    // 同时把 aiRelationships 里指向自身的条目剥掉——任何 social-graph tick 走
-    // self-edge 都是死循环或归一化失真的开端。
-    const desiredProfileId = saved.id;
-    let needsResave = false;
-    if (
-      saved.profile &&
-      saved.profile.characterId !== desiredProfileId
-    ) {
-      saved.profile = { ...saved.profile, characterId: desiredProfileId };
-      needsResave = true;
-    }
-    if (Array.isArray(saved.aiRelationships)) {
-      const withoutSelf = saved.aiRelationships.filter(
-        (rel) => rel.characterId !== desiredProfileId,
-      );
-      if (withoutSelf.length !== saved.aiRelationships.length) {
-        saved.aiRelationships = withoutSelf;
-        needsResave = true;
-      }
-    }
-    if (needsResave) {
-      await this.repo.save(saved);
     }
 
     // Ensure friendship with world-owner so the character shows up in the
