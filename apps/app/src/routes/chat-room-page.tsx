@@ -53,9 +53,16 @@ export function ChatRoomPage() {
     useState<ChatComposeShortcutAction | null>(null);
   const [routeCallReturnKind, setRouteCallReturnKind] =
     useState<ChatCallReturnKind | null>(null);
+  // 移动端走查 R2：本组件只用 conversationsQuery 判定「这是不是群聊会话」并
+  // redirect 到 /group/$groupId（mobile）或 /tabs/chat#... (desktop)。chat-list-page
+  // 进入前刚拉过 app-conversations（15s staleTime）；这条 observer 没 staleTime
+  // 就吃全局默认（mobile-web 60s / 其他 10s），desktop 路径下每进/切单聊都触发
+  // 一次冗余 GET /conversations。和 use-conversation-thread R5 / chat-details
+  // 第七轮 R2 一致对齐 15s。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
   });
   const activeConversation =
     conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
