@@ -885,10 +885,16 @@ export class FarmStateService {
     }
     state.coins -= cost;
     const isFirstPurchase = dog.level === 0;
+    const nowMs = Date.now();
+    // 升级时之前直接用 dog.energy（库里 raw 值）+40，没考虑从 lastFedAt 到现在的衰减。
+    // 玩家离线 10 小时（衰减 40 点）后再上线升级 → 库里 dog.energy 还是离线前的值，
+    // +40 把"虚高"的旧能量当当前能量算，凭空多发 40 点。改用 computeDogEnergy
+    // 拿衰减后的实际值。
+    const decayedEnergy = computeDogEnergy(dog, nowMs);
     const newDog: FarmDogState = {
       level: nextLevel,
-      energy: isFirstPurchase ? 100 : Math.min(100, dog.energy + 40),
-      lastFedAt: Date.now(),
+      energy: isFirstPurchase ? 100 : Math.min(100, decayedEnergy + 40),
+      lastFedAt: nowMs,
     };
     state.dogPayload = newDog;
     const saved = await this.playerRepo.save(state);
