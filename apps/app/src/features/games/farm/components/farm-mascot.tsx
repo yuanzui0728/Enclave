@@ -12,7 +12,12 @@ interface FarmMascotProps {
 
 export function FarmMascot({ state }: FarmMascotProps) {
   const nowMs = useFarmAdjustedNow();
-  const messages = useMemo(() => buildMessages(state, nowMs), [state, nowMs]);
+  // farm-clock-context 每秒推一次 nowMs，原来用 nowMs 做 useMemo 依赖
+  // → 每秒重跑 buildMessages（5 次 state.plots.filter + 1 次 reduce），
+  // 12 块田 ×5 filter ×60/min = 3600 操作/分钟全是浪费。messages 只在
+  // 小时段切换时才会变内容，按 5 分钟桶做依赖即可。
+  const timeBucket = Math.floor(nowMs / (5 * 60 * 1000));
+  const messages = useMemo(() => buildMessages(state, nowMs), [state, timeBucket]); // eslint-disable-line react-hooks/exhaustive-deps
   const [cursor, setCursor] = useState(0);
   const message = messages[cursor % messages.length] ?? "";
 
