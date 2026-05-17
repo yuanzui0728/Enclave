@@ -69,7 +69,7 @@ export function ProfileCharacterImportPage() {
       "/tabs/profile",
     );
 
-  async function readFile(file: File) {
+  async function readFile(file: File, postReadWarning?: string | null) {
     const readId = ++latestReadIdRef.current;
     // 同步先把旧的清掉——避免新文件 file.text() 还没跑出来时，旧的预览卡 / 失败
     // 提示还挂着误导用户。后续每次 await 之后都要再校 readId 防止 stale 回填。
@@ -162,6 +162,12 @@ export function ProfileCharacterImportPage() {
       fileSize: file.size,
       payload: p,
     });
+    // readId 在每个 await 后已经校过；如果到这里 readId 仍是最新，再把
+    // postReadWarning（如多文件拖入提示）作为 danger 卡叠加显示——和
+    // preview 共存，提醒用户但不阻塞导入。
+    if (postReadWarning && readId === latestReadIdRef.current) {
+      setResult({ kind: "danger", message: postReadWarning });
+    }
   }
 
   function pickFile() {
@@ -178,8 +184,20 @@ export function ProfileCharacterImportPage() {
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file) void readFile(file);
+    const files = event.dataTransfer.files;
+    const file = files?.[0];
+    if (!file) return;
+    // 第 5 次走查 R3：用户拖入多个文件时静默只取第一个，用户以为全都进了
+    // —— 把"取首个"的提示通过 readFile 一起带进去，在 preview/result 设
+    // 完之后再叠加一条 warning（直接在这儿 setResult 会被 readFile 内的
+    // setResult(null) 抹掉）。
+    const multiFileWarning =
+      files && files.length > 1
+        ? t(
+            msg`检测到 ${files.length} 个文件，只处理第一个（${file.name}）。请逐个导入。`,
+          )
+        : null;
+    void readFile(file, multiFileWarning);
   }
 
   function clearSelection() {
