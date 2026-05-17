@@ -1162,9 +1162,24 @@ function isPrivateImportNameVisuallyEmpty(raw: string): boolean {
 
 // 走查 R1：原来 name 没卡控制字符，"line1\nline2" 被允许写入；落库后通讯录
 // /聊天列表/朋友圈的单行 title 渲染会把换行展开成换行符或撑高列表项，且
-// 用 ${name} 拼 AI prompt 也会被 LLM 当成多行指令。统一在 import 前 reject
-// (含 \n \r \t \v \f 和 0x00-0x1F / 0x7F 控制字符)。
-const NAME_CONTROL_CHAR_RE = /[\x00-\x1F\x7F]/;
+// 用 ${name} 拼 AI prompt 也会被 LLM 当成多行指令。统一在 import 前 reject。
+//
+// 第 5 次走查 R1：原正则只覆盖 \x00-\x1F\x7F 的 ASCII 控制字符，漏掉了 3 类
+// 真实会出问题的非 ASCII 不可见/越权字符：
+//   1. U+0085 (NEL)、U+2028 (LINE SEPARATOR)、U+2029 (PARAGRAPH SEPARATOR)
+//      — Unicode 行终止符，CSS/Canvas 等单行渲染会断行；JSON 中合法所以前面
+//      的 body parser 不拦。Test 7、8、13 验证：包含 U+2028 的 name/relationship
+//      被原条件放过、落库后通讯录单行渲染就被撑成多行。
+//   2. U+202A-U+202E (BIDI override)、U+200E/U+200F (LTR/RTL marks)
+//      — 经典 IDN homograph 攻击向量。Test 11 验证：name="good‮bad" 视觉上
+//      渲染成 "gooddab"（U+202E 翻转后续字符方向），用户在通讯录里看到的
+//      字面值与 DB 实际存的不一致；同时这字符塞进 AI prompt 也会形成 prompt
+//      injection 风险（LLM 看到的 token 顺序和用户视觉看到的不一致）。
+//   3. U+FEFF (BOM/ZWNBSP) — 已经被 isPrivateImportNameVisuallyEmpty 在"全
+//      零宽"判定里 strip 过，但夹在非空字符中间时这里也要拦（"abc<BOM>def"
+//      作为单行 chip 不会断行但会让搜索/dedup 失配）。
+const NAME_CONTROL_CHAR_RE =
+  /[\x00-\x1F\x7F\u0085\u2028\u2029\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/;
 function containsControlChar(raw: string): boolean {
   return NAME_CONTROL_CHAR_RE.test(raw);
 }

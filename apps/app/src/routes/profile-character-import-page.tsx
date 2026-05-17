@@ -135,7 +135,16 @@ export function ProfileCharacterImportPage() {
     }
     // 走查 R1：name 带换行符 / 控制字符会撑爆通讯录单行渲染，也会把多行指令
     // 注入 AI prompt。后端已经会拒，前端先拒避免一次无谓的网络往返。
-    if (/[\x00-\x1F\x7F]/.test(p.name)) {
+    // 第 5 次走查 R1：与后端 characters.service.ts:NAME_CONTROL_CHAR_RE 同步，
+    // 把 U+0085 / U+2028 / U+2029 行终止符 + BIDI override (U+202A-U+202E 等)
+    // + BOM 一并卡掉。BIDI 尤其关键：name="good‮bad" 视觉上会渲染成 "gooddab"
+    // —— 用户在通讯录看到的字面值与 DB 实际存的不一致，且塞进 AI prompt 也
+    // 是 token-vs-visual mismatch 形式的 prompt injection 窗口。
+    if (
+      /[\x00-\x1F\x7F\u0085\u2028\u2029\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/.test(
+        p.name,
+      )
+    ) {
       setResult({
         kind: "danger",
         message: t(
