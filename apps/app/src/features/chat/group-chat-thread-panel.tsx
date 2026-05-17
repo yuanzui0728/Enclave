@@ -69,6 +69,7 @@ import { isDesktopOnlyPath } from "../../lib/history-back";
 import {
   joinConversationRoom,
   onChatMessage,
+  onChatSocketConnect,
   onConversationUpdated,
   onTypingStart,
   onTypingStop,
@@ -499,6 +500,16 @@ export function GroupChatThreadPanel({
     }
 
     joinConversationRoom({ conversationId: groupId });
+    // 走查本会话 R1：和 use-conversation-thread.ts 同款修法。socket disconnect+
+    // reconnect 后 server 端是全新的 Socket 实例，原先的 room 全部丢掉；本
+    // effect 只在 mount/groupId 切换时 emit 一次 join_conversation，重连后再
+    // 没机会重 join。网络抖一下 / 后台切前台 / 公网隧道 token 续期 → 用户
+    // 停在原群上，新群消息、AI 回复、typing、conversation_updated 全部送不到，
+    // 要手动切走再切回才恢复。监听 connect 事件（reconnect 也走这个）重 emit
+    // join_conversation；socket.io 的 join 是 Set 幂等，重复 emit 无副作用。
+    const offConnect = onChatSocketConnect(() => {
+      joinConversationRoom({ conversationId: groupId });
+    });
 
     const offMessage = onChatMessage((payload) => {
       if (!("groupId" in payload) || payload.groupId !== groupId) {
@@ -594,6 +605,7 @@ export function GroupChatThreadPanel({
     });
 
     return () => {
+      offConnect();
       offMessage();
       offTypingStart();
       offTypingStop();

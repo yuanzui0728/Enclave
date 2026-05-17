@@ -1242,12 +1242,23 @@ export function ChatComposer({
     );
   }, [filteredMentionCandidates.length, mentionPickerOpen]);
 
+  // 走查本会话 R1：原版两个分支都 setMobileMentionDismissed(false) — if 语句
+  // 是死代码 / 注释也丢失。更严重的是：activeMention 是 useMemo 每次 keystroke
+  // 都新建对象（findActiveMentionToken 返回新 object，deps 含 inputCursor +
+  // value），所以"@ 上下文里再多打一个字"也算 ref change。结果：群聊 / 单聊
+  // 移动端用户在 @ 候选浮层弹出后按 Android BACK / 点 backdrop 关掉它，
+  // setMobileMentionDismissed(true) 那一帧确实关上了；下一个 keystroke 因为
+  // activeMention 重算成新 object 又把 dismissed 拨回 false → 浮层立刻回弹。
+  // 用户没法在同一个 @ 上下文里"先关掉浮层、继续敲字"。改成"按 @ 起点 dedup"——
+  // 同一个 @ 上下文 (相同 activeMention.start) 内保留用户的 dismiss 意图；只
+  // 有真的换 @ 上下文（start 变了 / @ 没了）才 reset，给新 @ fresh 显示机会。
+  const lastMentionStartRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!activeMention) {
-      setMobileMentionDismissed(false);
+    const nextStart = activeMention ? activeMention.start : null;
+    if (lastMentionStartRef.current === nextStart) {
       return;
     }
-
+    lastMentionStartRef.current = nextStart;
     setMobileMentionDismissed(false);
   }, [activeMention]);
 
