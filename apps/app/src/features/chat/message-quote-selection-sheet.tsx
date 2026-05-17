@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
@@ -26,6 +26,7 @@ export function MessageQuoteSelectionSheet({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [selectedText, setSelectedText] = useState("");
   const isDesktop = variant === "desktop";
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) {
@@ -100,7 +101,17 @@ export function MessageQuoteSelectionSheet({
         onClick={onClose}
         className="absolute inset-0"
       />
+      {/* 走查新一轮 R3：和姊妹 sheet mobile-message-action-sheet.tsx
+          （commit 30f58a286）+ mobile-message-reminder-sheet.tsx（本轮 R2）
+          同款 a11y 缺漏——长按消息选「部分引用」打开的这个 sheet 没挂
+          role="dialog" + aria-modal + aria-labelledby。盲人用户长按后只
+          听到 "关闭部分引用面板 按钮" + 一片 textarea，听不到 "部分引用"
+          这个标题。Desktop variant 同一个 panel 复用 backdrop modal 写法，
+          统一覆盖。 */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`absolute ${
           isDesktop
             ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[22px] bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
@@ -114,7 +125,7 @@ export function MessageQuoteSelectionSheet({
         )}
 
         <div className={isDesktop ? "" : "px-1 pb-0.5"}>
-          <div className="text-center text-[12px] text-[#8c8c8c]">
+          <div id={titleId} className="text-center text-[12px] text-[#8c8c8c]">
             {t(msg`部分引用`)}
           </div>
           <div
