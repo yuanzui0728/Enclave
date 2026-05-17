@@ -13,26 +13,12 @@ import type { InviteSummaryResponse, RedeemInviteResponse } from "@yinjie/contra
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CloudClientAuthGuard } from "../auth/cloud-client-auth.guard";
+import { extractIp } from "../auth/cloud-auth.controller";
 import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { RedeemInviteDto } from "../http-dto/cloud-api.dto";
 import { InviteService } from "./invite.service";
 
 type CloudPhoneRequest = { cloudPhone?: string };
-
-function extractIp(request: { headers: Record<string, string | string[] | undefined> }) {
-  const forwarded = request.headers["x-forwarded-for"];
-  const real = request.headers["x-real-ip"];
-  if (typeof forwarded === "string") {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  if (Array.isArray(forwarded) && forwarded.length > 0) {
-    const first = forwarded[0].split(",")[0]?.trim();
-    if (first) return first;
-  }
-  if (typeof real === "string") return real.trim();
-  return null;
-}
 
 @Controller("cloud/me/invite")
 @UseGuards(CloudClientAuthGuard)
@@ -57,6 +43,8 @@ export class InviteClientController {
     @Body() dto: RedeemInviteDto,
     @Req() req: CloudPhoneRequest & {
       headers: Record<string, string | string[] | undefined>;
+      ip?: string;
+      socket?: { remoteAddress?: string | null };
     },
   ): Promise<RedeemInviteResponse> {
     const phone = req.cloudPhone;
