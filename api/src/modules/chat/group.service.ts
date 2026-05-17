@@ -957,7 +957,7 @@ export class GroupService {
     groupId: string,
     userMessage: GroupMessage,
   ): Promise<void> {
-    await this.requireAccessibleGroup(groupId);
+    const group = await this.requireAccessibleGroup(groupId);
     const members = (
       await this.memberRepo.find({
         where: { groupId, memberType: 'character' },
@@ -977,8 +977,20 @@ export class GroupService {
     }
 
     const runtimeRules = await this.replyLogicRules.getRules();
+    // 走查本会话 R2：原版 where 只看 groupId，没拿 lastClearedAt 卡 cutoff。
+    // 用户点过"清空聊天记录"后 group.lastClearedAt 已经写进去了，但本接口
+    // 仍然把 lastClearedAt 之前的群消息当 conversationHistory 喂给 AI（见
+    // group-reply-task.service.ts:451 conversationHistory → AI prompt），AI
+    // 用清空前的上下文回复用户。和单聊 chat.service.ts:1543 ensureConversationHistory
+    // 走 getVisibleMessageCutoff 过滤的口径完全对不上：单聊清空后 AI 真的会
+    // "忘"，群聊清空后 AI 还记得用户以为擦掉的对话。同时 planner 算
+    // recentSpeakerIds 也跟着用了陈旧数据，actor 轮换会偏向已经被清空的发言者。
+    // 用 buildGroupMessageWhere 一并加 since=lastClearedAt 兜底。
     const recentMessages = await this.messageRepo.find({
-      where: { groupId },
+      where: this.buildGroupMessageWhere(
+        groupId,
+        group.lastClearedAt ? new Date(group.lastClearedAt) : undefined,
+      ),
       order: { createdAt: 'DESC' },
       take: Math.max(
         runtimeRules.historyWindow.max,
