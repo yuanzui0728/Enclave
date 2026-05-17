@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
@@ -33,6 +33,7 @@ export function MobileMessageReminderSheet({
   onSelect,
 }: MobileMessageReminderSheetProps) {
   const isDesktop = variant === "desktop";
+  const titleId = useId();
 
   // 原生壳硬件 Back 键：sheet 打开时优先关 sheet，不让 BACK 同时 history.back
   // 把用户从聊天页带回 chat list。和 mobile-message-action-sheet.tsx 对齐。
@@ -85,7 +86,17 @@ export function MobileMessageReminderSheet({
         aria-label={t(msg`关闭消息提醒面板`)}
         onClick={onClose}
       />
+      {/* 走查新一轮 R2：和姊妹 sheet mobile-message-action-sheet.tsx
+          （commit 30f58a286）同款 a11y 缺漏——长按消息选「提醒」打开
+          的这个 sheet 的 modal panel 没挂 role="dialog" + aria-modal
+          + aria-labelledby。屏幕阅读器（iOS VoiceOver / Android
+          TalkBack）不会把它当 modal 念，盲人用户长按消息选「提醒」
+          后只听到 "关闭消息提醒面板 按钮" + 几个 option 行，听不到
+          "提醒这条消息" 这个标题。补 dialog 语义。 */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={
           isDesktop
             ? "relative w-full max-w-[440px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 px-5 py-4 shadow-[var(--shadow-overlay)]"
@@ -99,6 +110,7 @@ export function MobileMessageReminderSheet({
         )}
         <div className={isDesktop ? "" : "px-1 pb-2.5"}>
           <div
+            id={titleId}
             className={
               isDesktop
                 ? "text-[15px] font-medium text-[color:var(--text-primary)]"
