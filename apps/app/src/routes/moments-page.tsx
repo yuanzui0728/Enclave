@@ -373,6 +373,14 @@ export function MomentsPage() {
   useEffect(() => {
     mutationBaseUrlRef.current = baseUrl;
   }, [baseUrl]);
+  // 新走查 R1：手动刷新按钮原本没有 in-flight guard，用户连点 5 次 → 5 次
+  // GET /api/moments?page=1 同时发出（CDP 实测）。公网隧道下每次都付一个 RTT
+  // + setQueryData 后等于 1 秒内整列表渲 5 次。用 ref 锁住，进入时翻 true，
+  // finally 翻 false；同时用 state 给 toolbar 按钮一个 disabled 视觉态。
+  // ref 同步赋值，第一次点击翻 true 之后所有后续 click 立刻早返，
+  // 跟 mobileDeleteInflightRef 同思路（confirm 阻塞期间 click 入队也不会重复触发）。
+  const refreshInflightRef = useRef(false);
+  const [refreshPending, setRefreshPending] = useState(false);
   // 同步防双击锁——下方 mobile onDeleteMoment 的 `if (deleteMutation.isPending)
   // return;` guard 是上一次 render 的闭包值，window.confirm 是阻塞 native dialog
   // 期间 click 事件会被浏览器排队，用户在 dialog 出现的极短窗口内连点两次：
@@ -1555,6 +1563,7 @@ export function MomentsPage() {
               nextFavorites.map((favorite) => favorite.sourceId),
             );
           }}
+          refreshPending={refreshPending}
           onRefresh={() => {
             // 桌面手动刷新：只换 page 1，保留 page 2+ 在原位
             // —— 之前一律 resetMomentsToFirstPage() 把已加载的 N 页砍回 1 页 +
@@ -1567,9 +1576,20 @@ export function MomentsPage() {
             // 只有真正"帖子数量变化"路径（createMutation/deleteMutation onSuccess）
             // 还走 resetMomentsToFirstPage —— 那里 invalidate 多页 refetch 会
             // 命中分页边界偏移导致中间漏一条。
-            const key = ["app-moments-paged", baseUrl];
+            //
+            // 新走查 R1：ref 同步锁——之前没有 in-flight guard，CDP 实测 20ms
+            // 间隔连点 5 次 = 5 次 GET /api/moments?page=1 + 5 次 GET
+            // /api/social/blocked-characters 同时飞出去，公网隧道下用户付 5 个
+            // RTT + setQueryData 把整列表重渲 5 次。ref 同步赋值，第一次 click
+            // 翻 true 后所有后续 click 立刻早返；state 给按钮一个 disabled
+            // 视觉态。
+            if (refreshInflightRef.current) return;
+            refreshInflightRef.current = true;
+            setRefreshPending(true);
+            const refreshBaseUrl = baseUrl;
+            const key = ["app-moments-paged", refreshBaseUrl];
             void Promise.all([
-              getMomentsPage({ page: 1, limit: 20 }, baseUrl)
+              getMomentsPage({ page: 1, limit: 20 }, refreshBaseUrl)
                 .then((freshFirstPage) => {
                   queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
                     key,
@@ -1585,19 +1605,28 @@ export function MomentsPage() {
                   );
                 })
                 .catch((error: unknown) => {
+                  // mid-flight 切账户：A 的刷新失败不该弹到 B 账户的 notice 通道。
+                  if (refreshBaseUrl !== mutationBaseUrlRef.current) {
+                    return;
+                  }
                   // 刷新失败：danger notice 通道（toolbar 已在 Round 1 接好 tone），
                   // 跟 like/comment/delete 失败处理对齐。
                   setNoticeTone("danger");
                   setNoticeActionLabel(null);
                   setNoticeAction(null);
                   setNotice(
-                    error instanceof Error
-                      ? t(msg`刷新失败：${error.message}`)
-                      : t(msg`刷新失败，请稍后重试。`),
+                    isApiRequestError(error)
+                      ? t(msg`刷新失败：${translateAppErrorCode(error) ?? error.message}`)
+                      : error instanceof Error
+                        ? t(msg`刷新失败：${error.message}`)
+                        : t(msg`刷新失败，请稍后重试。`),
                   );
                 }),
               ownerId ? blockedQuery.refetch() : Promise.resolve(null),
-            ]);
+            ]).finally(() => {
+              refreshInflightRef.current = false;
+              setRefreshPending(false);
+            });
           }}
           onTextChange={composeDraft.setText}
           onRemoveImage={(id) => composeDraft.removeImageDraft(id)}

@@ -557,9 +557,23 @@ export class CharactersService implements OnModuleInit {
     // 走查第 3 次 R1：avatar 全空白字符串原样存浪费字节，且前端 PreviewAvatar
     // / AvatarChip 都 trim 后落 fallback；统一在入口 trim。
     if (typeof input.avatar === 'string') patch.avatar = input.avatar.trim();
-    if (typeof input.bio === 'string') patch.bio = input.bio;
+    // 新会话 R1：bio / personality 是多行字段（character profile 长描述），不能像
+    // name/relationship 那样一刀切拒所有控制字符（会误伤换行）。但 NULL byte
+    // (\x00) + 其它非 \t/\n/\r 的 C0 控制字符（\x01-\x08、\x0B、\x0C、\x0E-\x1F、
+    // \x7F）塞进 bio：
+    //   - 进 AI prompt 拼接时让 LLM tokenizer 产生 OOV / 异常 token；
+    //   - SQLite 存 NULL 字节本身没问题，但 character detail 的 react 渲染
+    //     在不可见字符位会留视觉空洞；
+    //   - 第三方 SDK 把 string 转 C-string 时会被 NULL 截断。
+    // 在入口剥掉这些"不可见但允许 \t/\n/\r"的字节，比把整段 bio reject 更友好。
+    if (typeof input.bio === 'string') {
+      patch.bio = stripInvisibleControlChars(input.bio);
+    }
     if (input.personality !== undefined) {
-      patch.personality = input.personality ?? undefined;
+      patch.personality =
+        typeof input.personality === 'string'
+          ? stripInvisibleControlChars(input.personality)
+          : (input.personality ?? undefined);
     }
     // 走查第 3 次 R1：relationship / relationshipType 是单行 UI 文本（chip / title），
     // 塞 "\n" 会撑高通讯录单行渲染，并把多行指令注入 AI prompt。和 name 同档拒。
@@ -1197,6 +1211,17 @@ function containsControlChar(raw: string): boolean {
   return NAME_CONTROL_CHAR_RE.test(raw);
 }
 
+// \u65B0\u4F1A\u8BDD R1\uFF1Abio / personality \u7B49\u591A\u884C\u5B57\u6BB5\u5141\u8BB8 \t \n \r\uFF0C\u4F46\u5176\u5B83 C0 \u63A7\u5236\u5B57\u7B26
+// (\x00 NULL / \x01-\x08 / \x0B / \x0C / \x0E-\x1F) + DEL(\x7F) + BIDI override
+// \u4ECD\u7136\u662F"\u4E0D\u53EF\u89C1\u4F46\u6709\u526F\u4F5C\u7528"\u7684\u6C61\u67D3\u6E90\u3002\u5265\u6389\u8FD9\u4E9B\u5B57\u8282\u540E\u4FDD\u7559\u6B63\u5E38\u6587\u672C\u3002
+//
+// \u4E0D\u5265 \u200B-\u200D \u96F6\u5BBD\u8FDE\u63A5\u7B26\u2014\u2014\u8FD9\u4E9B\u5728\u4E2D\u6587/emoji ZWJ \u5E8F\u5217\u91CC\u5408\u6CD5\u9700\u8981\u4FDD\u7559\u3002
+const INVISIBLE_CONTROL_CHAR_GLOBAL_RE =
+  /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u0085\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
+function stripInvisibleControlChars(raw: string): string {
+  return raw.replace(INVISIBLE_CONTROL_CHAR_GLOBAL_RE, '');
+}
+
 // 字段长度上限。后端 entity 是 text/json 列没硬限，但用户填的内容直接进
 // AI prompt + 全部存全 world，过长会撑爆 context cost / DB 体积。
 // 数字偏宽松，目的是挡住误传（粘整本小说 / GB 级文件），不卡正常使用。
@@ -1223,10 +1248,18 @@ const PRIVATE_CHARACTER_FIELD_LIMITS = {
  * 拒绝 `javascript:` / `data:` / `file:` 等可能引发 XSS / SSRF 的 scheme。
  * 与 apps/wiki/src/lib/string-utils.ts 的 isSafeAvatarValue 严格对齐——
  * 前端早 reject 体感更好，但后端必须再守一道：curl PUT 可以绕过前端。
+ *
+ * 新会话 R1：原 `value.startsWith('/')` 把 `//evil.example/x.png` 当站内路径
+ * 放过。但 `<img src="//evil/x">` 浏览器按当前页面协议解析成 `https://evil/x`
+ * —— 这是 scheme-relative URL，允许恶意 bundle 内嵌任意第三方 host 的 image
+ * （跟踪像素 / 隐私探针 / 内网 SSRF）。改成"以 `/` 开头但下一个字符不是 `/`
+ * 才认作站内路径"，把 `//...` 路由到 scheme 校验分支，跟 javascript:/data:
+ * 一档 reject。
  */
 function isSafeAvatarValueBackend(raw: string): boolean {
   const value = raw.trim();
   if (!value) return true;
+  if (value.startsWith('//')) return false;
   if (value.startsWith('/')) return true;
   if (!value.includes(':')) return true;
   const lc = value.toLowerCase();

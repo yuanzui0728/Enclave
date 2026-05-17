@@ -28,6 +28,9 @@ type DesktopMomentsToolbarProps = {
   onBackToTop: () => void;
   onOpenCompose: () => void;
   onRefresh: () => void;
+  /** 走查新 R1：refresh in-flight 时按钮 disabled + 文案变「刷新中…」，
+   *  防止连点触发多次同步 GET /api/moments?page=1。 */
+  refreshPending?: boolean;
 };
 
 export function DesktopMomentsToolbar({
@@ -45,6 +48,7 @@ export function DesktopMomentsToolbar({
   onBackToTop,
   onOpenCompose,
   onRefresh,
+  refreshPending = false,
 }: DesktopMomentsToolbarProps) {
   const t = useRuntimeTranslator();
   return (
@@ -58,9 +62,14 @@ export function DesktopMomentsToolbar({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={onRefresh}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onRefresh}
+              disabled={refreshPending}
+            >
               <RefreshCcw size={14} />
-              {t(msg`刷新`)}
+              {refreshPending ? t(msg`刷新中…`) : t(msg`刷新`)}
             </Button>
             <Button variant="secondary" size="sm" onClick={onBackToTop}>
               <ArrowUp size={14} />

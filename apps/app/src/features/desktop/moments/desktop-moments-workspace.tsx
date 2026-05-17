@@ -89,6 +89,9 @@ type DesktopMomentsWorkspaceProps = {
   }) => void;
   onToggleFavorite: (momentId: string) => void;
   onRefresh: () => void;
+  /** 走查新 R1：手动刷新 in-flight 时把按钮置 disabled，避免连点触发多次
+   *  GET /api/moments?page=1（公网 600ms RTT 下连点 5 次 = 5 个 RTT 浪费）。 */
+  refreshPending?: boolean;
   onTextChange: (value: string) => void;
   onVideoFileSelected: (file: File | null) => void;
 };
@@ -141,6 +144,7 @@ export function DesktopMomentsWorkspace({
   onStartCommentReply,
   onToggleFavorite,
   onRefresh,
+  refreshPending = false,
   onTextChange,
   onVideoFileSelected,
 }: DesktopMomentsWorkspaceProps) {
@@ -211,6 +215,7 @@ export function DesktopMomentsWorkspace({
             }}
             onOpenCompose={() => setShowCompose(true)}
             onRefresh={onRefresh}
+            refreshPending={refreshPending}
           />
 
           <div
