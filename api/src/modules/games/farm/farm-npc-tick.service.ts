@@ -330,6 +330,20 @@ export class FarmNpcTickService {
     thiefNpc.warehousePayload = thiefWarehouse;
     thiefNpc.coins += coinsGained;
 
+    // 先把 intimacy 跌一下，拿到真实的 delta（如果 thief 的 intimacy 已经 ≤2，
+    // -3 会被 Math.max(0, ...) 截掉），再用真实值写 'steal' 事件，避免事件流里
+    // "X 顺走了你家的菜 -3" 但实际只-1/-2/0 的对外撒谎。
+    const oldIntimacy = thief.intimacyLevel ?? 0;
+    const newIntimacy = await this.eventService.applyIntimacyChange(
+      ownerId,
+      thief.id,
+      thief.id,
+      -3,
+      'character',
+      thief.name,
+      { recordEvent: false },
+    );
+    const intimacyDelta = (newIntimacy ?? oldIntimacy) - oldIntimacy;
     await this.eventService.recordEvent({
       ownerId,
       kind: 'steal',
@@ -340,20 +354,9 @@ export class FarmNpcTickService {
       targetId: FARM_PLAYER_ACTOR_ID,
       targetName: '我',
       cropId: ripe.cropId,
-      intimacyDelta: -3,
+      intimacyDelta,
       payload: { plotIndex: ripe.index, amount, coinsGained },
     });
-    // 上面那条 'steal' 事件已经带 intimacyDelta=-3，这里关掉重复的 intimacy_change
-    // 事件，只保留实际把 thief.intimacyLevel-3 的副作用。
-    await this.eventService.applyIntimacyChange(
-      ownerId,
-      thief.id,
-      thief.id,
-      -3,
-      'character',
-      thief.name,
-      { recordEvent: false },
-    );
     const broadcasted = await this.eventService.maybeBroadcastIncident({
       ownerId,
       thief,
