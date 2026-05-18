@@ -825,7 +825,12 @@ export function ConversationThreadPanel({
             ) : null}
             {messagesQuery.isError && messagesQuery.error instanceof Error ? (
               isDesktop ? (
-                <ErrorBlock message={messagesQuery.error.message} />
+                // R51：单聊核心消息流 messagesQuery 失败时，desktop 用裸
+                // <ErrorBlock>（mobile 用 MobileThreadStatusCard 自带语义）。
+                // 失败路径常见于公网隧道断 / cloud-api OOM / world child
+                // 重启时，盲人 SR 完全没反馈，会在空白聊天里一直按上下箭头
+                // 找消息。挂 role="alert"。
+                <ErrorBlock role="alert" message={messagesQuery.error.message} />
               ) : (
                 <MobileThreadStatusCard
                   badge={t(msg`会话`)}
@@ -838,7 +843,10 @@ export function ConversationThreadPanel({
             ) : null}
             {socketError ? (
               isDesktop ? (
-                <ErrorBlock message={socketError} />
+                // R51 续：socketError 是 WS 断连 / cloud-api gateway 401 /
+                // session 失效的兜底文案。SR 必须立刻知道（"socket-disconnected"
+                // 来不及播报，用户已经在敲下一条）。挂 role="alert"。
+                <ErrorBlock role="alert" message={socketError} />
               ) : (
                 <InlineNotice
                   tone="danger"
