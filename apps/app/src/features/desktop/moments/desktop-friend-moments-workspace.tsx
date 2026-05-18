@@ -147,12 +147,20 @@ export function DesktopFriendMomentsWorkspace({
   // mobile moments-page 早就按 baseUrl 清 shareMomentId，桌面 3 个 workspace
   // 都漏。本页是「角色朋友圈」专门页：character 切换或账户切换都会让 moments
   // 列表整体翻新，旧 shareMomentId 找不到了 → 切回旧角色又 find 回来 → 分享
-  // 卡片"幽灵"重新弹出。ownerId 当 reset 锚跟着账户切，character 切换由父
-  // page 的 [characterId] reset 已经把 commentDrafts 等都清了；这里只补
-  // ownerId 一支兜住跨账户。
+  // 卡片"幽灵"重新弹出。ownerId + character.id 一起当 reset 锚跟着 baseUrl /
+  // characterId 切。
+  //
+  // 走查电脑端朋友圈 R4（本轮）：之前注释说"character 切换由父 page 的
+  // [characterId] reset 已经把 commentDrafts 等都清了"——但父 page reset 的是
+  // *页面* state（commentDrafts / desktopReplyTarget / commentSubmitArgsRef
+  // / notice），shareMomentId 是 workspace 自己的 useState，父 page 触不到。
+  // friend-moments-page 不会按 characterId 卸载 workspace（没传 key），所以
+  // workspace 实例延续，shareMomentId 持续挂着。CDP 实测复现：A 角色页打开
+  // share modal → 切到 B → 再切回 A → ghost share card 重新弹出。把
+  // character.id 加进 deps 兜住跨角色场景。
   useEffect(() => {
     setShareMomentId(null);
-  }, [ownerId]);
+  }, [ownerId, character.id]);
   const shareMoment = shareMomentId
     ? moments.find((moment) => moment.id === shareMomentId) ?? null
     : null;
