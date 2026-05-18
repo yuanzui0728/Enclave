@@ -598,4 +598,41 @@ describe('CharactersService.importPersonalCharacter', () => {
     expect(out.character.bio).toBe('normalhidden\nline2\tcol');
     expect(out.character.personality).toBe('realdel-bidi-mark');
   });
+
+  // 新会话3 R1：profile / recipe 内层字符串（basePrompt / coreLogic /
+  // memory.recentSummary / traits 数组）也直接进 AI prompt，必须递归 strip。
+  it('strips invisible control chars deep in profile object', async () => {
+    const { svc } = makeService({ existing: null });
+    const out = await svc.importPersonalCharacter({
+      name: 'NRStripDeep',
+      profile: {
+        name: 'NRStripDeep',
+        basePrompt: 'be\x00fore',
+        coreLogic: 'core\x7Flogic',
+        memory: {
+          recentSummary: 'rec\x00ent',
+          coreMemory: 'co‮re',
+        },
+        traits: {
+          speechPatterns: ['ab\x00cd', 'ef‮gh'],
+          catchphrases: [],
+          topicsOfInterest: [],
+          emotionalTone: 'warm',
+          responseLength: 'medium',
+          emojiUsage: 'occasional',
+        },
+      } as never,
+    });
+    const prof = out.character.profile as Record<string, unknown>;
+    expect(prof.basePrompt).toBe('before');
+    expect(prof.coreLogic).toBe('corelogic');
+    expect((prof.memory as Record<string, unknown>).recentSummary).toBe('recent');
+    expect((prof.memory as Record<string, unknown>).coreMemory).toBe('core');
+    expect((prof.traits as Record<string, unknown>).speechPatterns).toEqual([
+      'abcd',
+      'efgh',
+    ]);
+    // 正常字段不受影响（保留 \n \t + emoji）
+    expect((prof.traits as Record<string, unknown>).emotionalTone).toBe('warm');
+  });
 });

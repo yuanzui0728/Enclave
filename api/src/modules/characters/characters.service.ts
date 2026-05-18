@@ -647,11 +647,18 @@ export class CharactersService implements OnModuleInit {
     // coreLogic 和 chat memory）整盘抹平 —— 验证：POST profile:{} 后 DB 落
     // `{characterId:'...'}`，chat 路径 basePrompt/name 全空，AI 拒答。
     // 改成统一用 hasMeaningfulProfile 判定 "用户实际给了能跑的人设"。
+    // 新会话3 R1：profile / recipe 内层 basePrompt / coreLogic / memory.recentSummary
+    // / traits 各 string 数组都直接进 AI prompt，恶意 bundle 在这里塞 NULL byte /
+    // BIDI / DEL 也会污染 tokenizer。在 patch.profile 落库前递归 strip 一次。
+    // tryDeriveProfileFromRecipe 用的是 blueprintService.buildProfileFromRecipe
+    // 内部不会主动 strip，所以两个分支都要 strip。
     if (hasMeaningfulProfile(input.profile)) {
-      patch.profile = input.profile;
+      patch.profile = stripInvisibleControlCharsDeep(input.profile);
     } else if (input.recipe) {
       const derived = this.tryDeriveProfileFromRecipe(input.recipe, trimmedName);
-      if (derived && hasMeaningfulProfile(derived)) patch.profile = derived;
+      if (derived && hasMeaningfulProfile(derived)) {
+        patch.profile = stripInvisibleControlCharsDeep(derived);
+      }
     }
     if (!hasMeaningfulProfile(patch.profile)) {
       // 同名 re-import：bundle 没带 profile/recipe（用户可能只想刷一下 bio / avatar），
@@ -1220,6 +1227,34 @@ const INVISIBLE_CONTROL_CHAR_GLOBAL_RE =
   /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u0085\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 function stripInvisibleControlChars(raw: string): string {
   return raw.replace(INVISIBLE_CONTROL_CHAR_GLOBAL_RE, '');
+}
+
+// \u65B0\u4F1A\u8BDD3 R1\uFF1Aprofile / recipe \u662F JSON object\uFF0C\u5185\u5C42 basePrompt / coreLogic /
+// memory.recentSummary / traits.speechPatterns[] \u7B49\u5168\u662F\u5B57\u7B26\u4E32\uFF0C\u5E76\u4E14\u5168\u90FD\u76F4\u63A5
+// \u62FC\u8FDB AI prompt\u3002\u539F strip \u53EA\u5BF9 bio / personality \u6807\u91CF\u751F\u6548\uFF0Cprofile \u5185\u5C42\u7684
+// NULL byte / DEL / BIDI \u4ECD\u80FD\u843D\u5E93\u3002
+//
+// \u6539\u6210\u5BF9 profile/recipe \u6574\u4E2A\u5BF9\u8C61\u9012\u5F52 strip \u6240\u6709\u5B57\u7B26\u4E32\u503C\u2014\u2014key \u4FDD\u6301\u539F\u6837\uFF08key
+// \u662F\u5F00\u53D1\u8005\u5B9A\u4E49\u7684\u56FA\u5B9A\u96C6\u5408\uFF0C\u4E0D\u4F1A\u88AB\u6076\u610F bundle \u6C61\u67D3\uFF09\u3002\u5BF9 5k \u5B57\u6BB5\u91CF\u7EA7\u7684 profile
+// JSON\uFF0C\u904D\u5386\u5F00\u9500 < 1ms\uFF0C\u53EF\u4EE5\u63A5\u53D7\u3002
+//
+// Array \u9879\u662F string \u2192 strip\uFF1B\u662F object \u2192 \u9012\u5F52\uFF1B\u5176\u5B83\uFF08number / boolean / null /
+// undefined\uFF09\u539F\u6837\u4FDD\u7559\u3002\u51FD\u6570\u8FD4\u56DE\u65B0\u5BF9\u8C61\uFF0C\u4E0D mutate \u5165\u53C2\uFF0C\u907F\u514D\u6C61\u67D3 input ref\u3002
+function stripInvisibleControlCharsDeep<T>(value: T): T {
+  if (typeof value === 'string') {
+    return stripInvisibleControlChars(value) as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => stripInvisibleControlCharsDeep(item)) as T;
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = stripInvisibleControlCharsDeep(v);
+    }
+    return out as T;
+  }
+  return value;
 }
 
 // 字段长度上限。后端 entity 是 text/json 列没硬限，但用户填的内容直接进
