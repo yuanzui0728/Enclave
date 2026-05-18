@@ -636,9 +636,19 @@ export function DesktopChatHistoryPanel({
 
             {!membersQuery.isLoading && !membersQuery.isError ? (
               <div className="mt-2 max-h-[180px] overflow-y-auto pr-0.5">
-                <div className="flex flex-wrap gap-1.5">
+                {/* 走查 R28：和姊妹 R27 日期 chip / R26 转发模式 chooser 同款——
+                    群聊「查找聊天记录」按发言人筛选时的全部成员 + 每个成员 chip
+                    是 mutually exclusive，原版只有绿底视觉差。盲人 SR 走过去
+                    听不出当前选了哪个发言人。radiogroup + radio + aria-checked。 */}
+                <div
+                  role="radiogroup"
+                  aria-label={t(msg`发言人筛选`)}
+                  className="flex flex-wrap gap-1.5"
+                >
                   <button
                     type="button"
+                    role="radio"
+                    aria-checked={!senderId}
                     onClick={() => {
                       setSenderId("");
                       setSelectorView(null);
@@ -656,6 +666,8 @@ export function DesktopChatHistoryPanel({
                     <button
                       key={option.id}
                       type="button"
+                      role="radio"
+                      aria-checked={senderId === option.id}
                       onClick={() => {
                         setSenderId(option.id);
                         setSelectorView(null);
