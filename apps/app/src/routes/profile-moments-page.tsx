@@ -224,6 +224,10 @@ export function ProfileMomentsPage() {
   const commentInflightRef = useRef<Record<string, boolean>>({});
   const likeInflightRef = useRef<Record<string, boolean>>({});
   const deleteInflightRef = useRef<Record<string, boolean>>({});
+  // 走查电脑端朋友圈 R2（本轮，新一轮）：同 moments-page / friend-moments-page ——
+  // compose「发布」按钮 disabled={createPending} 同帧双击 stale closure 双发 mutate
+  // → DB 写 2 条重复朋友圈。单 boolean ref 锁，onSettled 释放。
+  const createInflightRef = useRef(false);
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -1034,14 +1038,24 @@ export function ProfileMomentsPage() {
               },
             });
           }}
-          onCreate={() =>
-            createMutation.mutate({
-              // snapshot — 见 createMutation 注释。
-              text: composeDraft.text,
-              imageDrafts: composeDraft.imageDrafts,
-              videoDraft: composeDraft.videoDraft,
-            })
-          }
+          onCreate={() => {
+            // 走查电脑端朋友圈 R2（本轮，新一轮）：ref 同步锁兜同帧双击。
+            if (createInflightRef.current) return;
+            createInflightRef.current = true;
+            createMutation.mutate(
+              {
+                // snapshot — 见 createMutation 注释。
+                text: composeDraft.text,
+                imageDrafts: composeDraft.imageDrafts,
+                videoDraft: composeDraft.videoDraft,
+              },
+              {
+                onSettled: () => {
+                  createInflightRef.current = false;
+                },
+              },
+            );
+          }}
           onDelete={(momentId) => {
             // 新走查 R3：同帧 click 同步锁——行内 DesktopMomentRow 有 confirm，
             // 但确认 OK 同帧双击仍可能落到这。

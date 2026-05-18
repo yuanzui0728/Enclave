@@ -316,35 +316,42 @@ export function DesktopChatFilesPage() {
     staleTime: 15_000,
   });
 
-  const baseAttachmentRows = useMemo(() => {
-    const rows = filterSearchableChatMessages(
-      allAttachmentsQuery.data ?? [],
-      localMessageActionState,
-    );
-
-    if (!selectedConversationId) {
-      return rows;
-    }
-
-    return rows.filter(
-      (item) => item.conversationId === selectedConversationId,
-    );
-  }, [
-    allAttachmentsQuery.data,
-    localMessageActionState,
-    selectedConversationId,
-  ]);
-
-  const attachmentCounts = useMemo(
+  // 走查新一轮 R28：原版 baseAttachmentRows / attachmentCounts /
+  // visibleAttachmentRowCount 三处 useMemo 各自跑一遍 filterSearchableChatMessages
+  // (allAttachmentsQuery.data ?? [], localMessageActionState)，allAttachmentsQuery
+  // 把全部对话最多 100 条消息平 flat 出来动辄 1000+ 项，每次 hide / recall /
+  // socket 推新消息 → query data 换引用都让这条过滤器在同一帧跑 3 次。把它
+  // 提到 searchableAttachmentRows 单 useMemo，下游三处 derive，filter 只跑 1 次。
+  const searchableAttachmentRows = useMemo(
     () =>
       filterSearchableChatMessages(
         allAttachmentsQuery.data ?? [],
         localMessageActionState,
-      ).reduce<Record<string, number>>((result, item) => {
-        result[item.conversationId] = (result[item.conversationId] ?? 0) + 1;
-        return result;
-      }, {}),
+      ),
     [allAttachmentsQuery.data, localMessageActionState],
+  );
+
+  const baseAttachmentRows = useMemo(() => {
+    if (!selectedConversationId) {
+      return searchableAttachmentRows;
+    }
+
+    return searchableAttachmentRows.filter(
+      (item) => item.conversationId === selectedConversationId,
+    );
+  }, [searchableAttachmentRows, selectedConversationId]);
+
+  const attachmentCounts = useMemo(
+    () =>
+      searchableAttachmentRows.reduce<Record<string, number>>(
+        (result, item) => {
+          result[item.conversationId] =
+            (result[item.conversationId] ?? 0) + 1;
+          return result;
+        },
+        {},
+      ),
+    [searchableAttachmentRows],
   );
 
   const attachmentRows = useMemo(
@@ -381,14 +388,7 @@ export function DesktopChatFilesPage() {
       ),
     [imageRows],
   );
-  const visibleAttachmentRowCount = useMemo(
-    () =>
-      filterSearchableChatMessages(
-        allAttachmentsQuery.data ?? [],
-        localMessageActionState,
-      ).length,
-    [allAttachmentsQuery.data, localMessageActionState],
-  );
+  const visibleAttachmentRowCount = searchableAttachmentRows.length;
 
   useEffect(() => {
     setViewerAttachmentId((current) =>

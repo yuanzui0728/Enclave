@@ -215,6 +215,10 @@ export function FriendMomentsPage() {
   // 一样的 commentMutation 模板，肯定有同样 bug。提前加 ref 锁防 DB 脏写。
   const commentInflightRef = useRef<Record<string, boolean>>({});
   const likeInflightRef = useRef<Record<string, boolean>>({});
+  // 走查电脑端朋友圈 R2（本轮，新一轮）：同 moments-page —— compose「发布」按钮的
+  // `disabled={createPending}` 在同帧双击下读 stale closure，2 次 mutate → DB 双写。
+  // 单 boolean 锁，onSettled 释放。
+  const createInflightRef = useRef(false);
   const createMutation = useMutation({
     // 走查新 Round 1：跟 1b285789 / moments-page / profile-moments-page 同类 bug。
     // 慢网下旧 mutation 的 onSuccess 跑回来会抹掉用户重开后输入的新草稿。
@@ -1056,14 +1060,24 @@ export function FriendMomentsPage() {
             postId: momentId,
           })
         }
-        onCreate={() =>
-          createMutation.mutate({
-            // snapshot — 见 createMutation 注释。
-            text: composeDraft.text,
-            imageDrafts: composeDraft.imageDrafts,
-            videoDraft: composeDraft.videoDraft,
-          })
-        }
+        onCreate={() => {
+          // 走查电脑端朋友圈 R2（本轮，新一轮）：ref 同步锁兜同帧双击。
+          if (createInflightRef.current) return;
+          createInflightRef.current = true;
+          createMutation.mutate(
+            {
+              // snapshot — 见 createMutation 注释。
+              text: composeDraft.text,
+              imageDrafts: composeDraft.imageDrafts,
+              videoDraft: composeDraft.videoDraft,
+            },
+            {
+              onSettled: () => {
+                createInflightRef.current = false;
+              },
+            },
+          );
+        }}
         onImageFilesSelected={(files) => {
           void handleImageFilesSelected(files);
         }}

@@ -439,6 +439,14 @@ export function MomentsPage() {
   // 队列的 boolean 锁，不按 momentId 分维度。本轮把 desktop delete + retry 走
   // momentId 维度的 ref 锁，跟 like/comment 同模式。
   const deleteInflightRef = useRef<Record<string, boolean>>({});
+  // 走查电脑端朋友圈 R2（本轮，新一轮）：compose 面板「发布」按钮 `disabled={createPending}`
+  // 是上一次 render 的 createMutation.isPending —— 同帧双击：第一次 mutate() 同步
+  // 入队后 React 还没 commit isPending=true，第二次 click 在 stale closure 里仍读
+  // 到 false → disabled=false → 两次 POST /api/moments → DB 写 2 条一模一样的朋友圈。
+  // 公网 600ms RTT 下用户在按钮上"急了双击"非常容易复现。和 like/comment/delete
+  // 走 ref 同步锁同思路；这里没有 momentId 维度（一个面板同时只能发一条），用
+  // 单 boolean 即可，onSettled 释放。
+  const createInflightRef = useRef(false);
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -1652,14 +1660,26 @@ export function MomentsPage() {
               postId: momentId,
             })
           }
-          onCreate={() =>
-            createMutation.mutate({
-              // 拍 snapshot 进 variables — 见上方 createMutation 注释。
-              text: composeDraft.text,
-              imageDrafts: composeDraft.imageDrafts,
-              videoDraft: composeDraft.videoDraft,
-            })
-          }
+          onCreate={() => {
+            // 走查电脑端朋友圈 R2（本轮，新一轮）：ref 同步锁，避免同帧双击发 2 条
+            // 重复朋友圈。createPending（=mutation.isPending）是 React state 上一次
+            // render 的值，同帧 click 闭包都看 false → 2 次 mutate → DB 双写。
+            if (createInflightRef.current) return;
+            createInflightRef.current = true;
+            createMutation.mutate(
+              {
+                // 拍 snapshot 进 variables — 见上方 createMutation 注释。
+                text: composeDraft.text,
+                imageDrafts: composeDraft.imageDrafts,
+                videoDraft: composeDraft.videoDraft,
+              },
+              {
+                onSettled: () => {
+                  createInflightRef.current = false;
+                },
+              },
+            );
+          }}
           onDeleteMoment={(momentId) => {
             // 行内 DesktopMomentRow 已经有 window.confirm；这里直接走 mutation。
             // 走查电脑端朋友圈 R5：deleteMutation.isPending 是 useState 上一次 render
