@@ -613,8 +613,25 @@ fn main() {
             stop_core_api,
             restart_core_api
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running yinjie desktop");
+        .build(tauri::generate_context!())
+        .expect("error while building yinjie desktop")
+        .run(|_app_handle, _event| {
+            // macOS Dock 点击重新唤出窗口：关闭按钮在 mac 上走 hide_main_window
+            // 隐藏，但 Dock 图标仍在（mac 不像 windows 关窗就退出）。用户点 Dock
+            // 期望窗口重新出现，否则只能从托盘 Show 唤出，体感像「点不动」。
+            // RunEvent::Reopen 只在 mac 触发；has_visible_windows=false 才唤起，
+            // 已有可见窗口时让系统默认行为接管（避免重复 focus 抖动）。
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen {
+                has_visible_windows,
+                ..
+            } = &_event
+            {
+                if !*has_visible_windows {
+                    let _ = show_main_window(_app_handle);
+                }
+            }
+        });
 }
 
 fn setup_app_menu(app: &mut tauri::App, locale: &str) -> Result<(), Box<dyn std::error::Error>> {
