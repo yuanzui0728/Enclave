@@ -2717,7 +2717,19 @@ export function ChatMessageList({
     setSelectionActionPending("favorite");
     try {
       if (threadContext) {
-        await Promise.all(
+        // 走查新一轮 R1：和姊妹 handleDeleteSelectedMessages / handleRecallSelectedMessages
+        // 同款问题——原版 Promise.all 任意一条 createMessageFavorite 抛错就把整段
+        // throw 出去（公网隧道 timeout / cloud token 续期 / 服务端 409 重复收藏
+        // 都会抛），但前 K 条已经成功落库。catch 分支显示"批量收藏失败"，UI
+        // favoriteSourceIds 完全没更新；用户点"继续收藏"重试相同一批 N 个 → 之前
+        // 成功的 K 个被服务端再 409 → 又"批量收藏失败"，死循环看着没动。改成
+        // Promise.allSettled：成功的 id 攒到 set，走完一轮统一通过 syncFavoriteSourceIds
+        // 把成功项标到 UI；部分失败时 notice 给出"已收藏 N 条；剩余 M 条..."
+        // 让用户基于真实状态决定要不要重试。本路径同时给单聊和群聊多选用，
+        // 群聊里清整段调试消息时一次能命中 5-10 条，公网 RTT ~600ms × N 中
+        // 间 timeout 概率不低。
+        const fulfilledMessageIds = new Set<string>();
+        const results = await Promise.allSettled(
           messagesToFavorite.map((message) =>
             createMessageFavorite(
               {
@@ -2726,25 +2738,82 @@ export function ChatMessageList({
                 messageId: message.id,
               },
               baseUrl,
-            ),
+            ).then(() => message.id),
           ),
         );
-        const nextRemoteFavorites = await queryClient.fetchQuery({
-          queryKey: ["app-favorites", baseUrl],
-          queryFn: () => getFavorites(baseUrl),
-          staleTime: 0,
-        });
-        syncFavoriteSourceIds(nextRemoteFavorites);
-      } else {
-        let nextFavorites = readDesktopFavorites();
-        for (const message of messagesToFavorite) {
-          nextFavorites = upsertDesktopFavorite(
-            buildMessageFavoriteRecord(t, message, groupMode, threadContext),
-          );
+        let firstError: unknown = null;
+        for (const result of results) {
+          if (result.status === "fulfilled") {
+            fulfilledMessageIds.add(result.value);
+          } else if (firstError === null) {
+            firstError = result.reason;
+          }
         }
 
-        setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+        if (fulfilledMessageIds.size > 0) {
+          const nextRemoteFavorites = await queryClient.fetchQuery({
+            queryKey: ["app-favorites", baseUrl],
+            queryFn: () => getFavorites(baseUrl),
+            staleTime: 0,
+          });
+          syncFavoriteSourceIds(nextRemoteFavorites);
+        }
+
+        const failedCount =
+          messagesToFavorite.length - fulfilledMessageIds.size;
+        if (failedCount === 0) {
+          resetSelectionMode();
+          setActionNotice({
+            message:
+              messagesToFavorite.length === 1
+                ? t(msg`已收藏 1 条消息。`)
+                : t(msg`已收藏 ${messagesToFavorite.length} 条消息。`),
+            tone: "success",
+          });
+        } else if (fulfilledMessageIds.size === 0) {
+          setActionNotice({
+            message:
+              firstError instanceof Error && firstError.message
+                ? firstError.message
+                : t(msg`收藏失败，请稍后再试。`),
+            tone: "danger",
+            actionLabel: t(msg`继续收藏所选消息`),
+            onAction: () => {
+              void handleFavoriteSelectedMessages();
+            },
+            secondaryActionLabel: errorActionLabel,
+            onSecondaryAction: onErrorAction ?? undefined,
+          });
+        } else {
+          setActionNotice({
+            message:
+              firstError instanceof Error && firstError.message
+                ? t(
+                    msg`已收藏 ${fulfilledMessageIds.size} 条；剩余 ${failedCount} 条未收藏：${firstError.message}`,
+                  )
+                : t(
+                    msg`已收藏 ${fulfilledMessageIds.size} 条；剩余 ${failedCount} 条收藏失败，请稍后再试。`,
+                  ),
+            tone: "danger",
+            actionLabel: t(msg`继续收藏剩余消息`),
+            onAction: () => {
+              void handleFavoriteSelectedMessages();
+            },
+            secondaryActionLabel: errorActionLabel,
+            onSecondaryAction: onErrorAction ?? undefined,
+          });
+        }
+        return;
       }
+
+      let nextFavorites = readDesktopFavorites();
+      for (const message of messagesToFavorite) {
+        nextFavorites = upsertDesktopFavorite(
+          buildMessageFavoriteRecord(t, message, groupMode, threadContext),
+        );
+      }
+
+      setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
       resetSelectionMode();
       setActionNotice({
         message:
@@ -2752,20 +2821,6 @@ export function ChatMessageList({
             ? t(msg`已收藏 1 条消息。`)
             : t(msg`已收藏 ${messagesToFavorite.length} 条消息。`),
         tone: "success",
-      });
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`收藏失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续收藏所选消息`),
-        onAction: () => {
-          void handleFavoriteSelectedMessages();
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
       });
     } finally {
       selectionActionBusyRef.current = false;
