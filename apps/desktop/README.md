@@ -30,7 +30,15 @@ macOS 构建必须在 macOS 上执行（依赖 `iconutil`），并安装 Rust �
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 ```
 
-详细环境要求与签名/公证 TODO 见根目录 [`DEPLOY.md`](../../DEPLOY.md) 桌面端章节。
+快速无签名出 dmg 自测：
+
+```bash
+APPLE_SIGNING_IDENTITY=- pnpm desktop:bundle:mac:aarch64
+APPLE_SIGNING_IDENTITY=- pnpm desktop:bundle:mac:x86_64
+# 产物：dist/macos-bundle/{aarch64,x86_64}-apple-darwin/Yinjie-*.dmg
+```
+
+正式分发（Developer ID 签名 + notarization）走 GitHub Actions workflow `desktop-macos-release.yml`，详细签名/公证三种模式 + secrets 清单 + 排错见根目录 [`DEPLOY.md`](../../DEPLOY.md#macos-代码签名--公证) 桌面端章节。
 
 ## 审计
 

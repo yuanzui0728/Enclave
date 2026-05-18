@@ -197,20 +197,67 @@ pnpm --dir apps/desktop build:mac:x86_64
 
 产物位于 `apps/desktop/src-tauri/target/{aarch64-apple-darwin,x86_64-apple-darwin}/release/bundle/`，包括 `.app` 与 `.dmg`。
 
-### macOS 代码签名 / 公证（TODO）
+### macOS 代码签名 / 公证
 
-当前 `apps/desktop/src-tauri/tauri.conf.json` 中 `signingIdentity` 与 `providerShortName` 都是 `null`，构建出来的 `.app/.dmg` 是**未签名**的，分发到他人 macOS 上会被 Gatekeeper 拦截，需要用户手动绕过。要做正式分发须先取得 Apple Developer 账号。可选三种接入方式：
+`apps/desktop/src-tauri/tauri.conf.json` 中 `signingIdentity` 保持为 `null`，由 env 决定签名形态，三种打包模式：
 
-1. **直接写入 conf**（最简单，但泄露团队 ID 风险）：把 `signingIdentity` 改为 `"Developer ID Application: Your Company (TEAMID)"`，`providerShortName` 改为团队短名。
-2. **环境变量注入**（推荐 CI）：保持 conf 中为 `null`，在 `apps/desktop/scripts/run-tauri.mjs` 里读取 `APPLE_SIGNING_IDENTITY` / `APPLE_PROVIDER_SHORT_NAME`，构建时通过 `--config` 临时覆盖。
-3. **CI secret**：把签名身份与 App-specific password 存入 CI 密钥库（`APPLE_ID`、`APPLE_PASSWORD`、`APPLE_TEAM_ID`），构建后用 `xcrun notarytool submit` 提交公证。
+| 模式 | 触发 | 产物可分发性 |
+|------|------|--------------|
+| (1) 无签名（本地验证） | 不设 `APPLE_SIGNING_IDENTITY` 或设为 `-`（ad-hoc） | 本地可装，他人机器上 Gatekeeper 拦截 |
+| (2) Developer ID 签名，不公证 | 设 `APPLE_SIGNING_IDENTITY="Developer ID Application: Your Company (TEAMID)"` | 可分发，但首次启动用户需要在「系统设置 → 隐私与安全性」手动批准 |
+| (3) 签名 + 公证（推荐） | 模式 (2) + `APPLE_API_KEY` / `APPLE_API_ISSUER` / `APPLE_API_KEY_PATH`（App Store Connect API Key） | 直分发，Gatekeeper 不报警 |
 
-签名/公证落地前，桌面 macOS 包仍是**内部测试用**。审计校验脚本：
+本地（开发者机器）跑模式 (1) 自检：
 
 ```bash
-pnpm --dir apps/desktop audit:desktop-shell        # 全量
-pnpm --dir apps/desktop audit:desktop-shell:text-only  # 仅校验 4 语种翻译表完整性
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+APPLE_SIGNING_IDENTITY=- pnpm desktop:bundle:mac:aarch64
+APPLE_SIGNING_IDENTITY=- pnpm desktop:bundle:mac:x86_64
+# 产物：dist/macos-bundle/{aarch64,x86_64}-apple-darwin/Yinjie-*.dmg
 ```
+
+CI（GitHub Actions macos-14 runner）跑模式 (3)，必需的 repo secrets：
+
+| Secret | 必填模式 | 说明 |
+|--------|----------|------|
+| `APPLE_CERTIFICATE` | (2)(3) | Developer ID Application 证书 `.p12` 的 base64 |
+| `APPLE_CERTIFICATE_PASSWORD` | (2)(3) | `.p12` 解锁密码 |
+| `APPLE_SIGNING_IDENTITY` | (2)(3) | 形如 `Developer ID Application: Your Company (TEAMID)` |
+| `APPLE_API_KEY` | (3) | App Store Connect API Key `.p8` 文件内容 |
+| `APPLE_API_ISSUER` | (3) | API Key 对应的 issuer ID (UUID) |
+| `APPLE_API_KEY_PATH` | (3) | runner 内 `.p8` 文件存放路径（CI workflow 自动生成） |
+
+触发 CI mac 打包（不上传到 release）：
+
+```bash
+gh workflow run desktop-macos-release.yml -f target_mode=both -f upload_to_release=false
+```
+
+触发并发布到 release（推 tag）：
+
+```bash
+# tag 与 tauri.conf.json 的 version 必须一致
+git tag desktop-v0.1.0 && git push origin desktop-v0.1.0
+```
+
+审计校验（CI 自动跑，本地也可手动）：
+
+```bash
+pnpm --dir apps/desktop audit:desktop-shell        # 全量 = web invoke ↔ Tauri command + capability + 4 lproj
+pnpm --dir apps/desktop audit:desktop-shell:static # 不跑 web build，纯静态
+cd apps/desktop/src-tauri && cargo fmt --all -- --check  # CI mac gate 包含此条
+```
+
+### macOS 打包常见错误排查
+
+| 现象 | 原因 | 解决 |
+|------|------|------|
+| `iconutil: command not found` | Xcode CLT 未装 | `xcode-select --install` |
+| `error: failed to build for target aarch64-apple-darwin` | Rust target 未装 | `rustup target add aarch64-apple-darwin x86_64-apple-darwin` |
+| `pkg-config exited with status code 1` | 在 Linux 上误跑 mac 构建 | 必须在 macOS 上跑；本机只能做 audit + cargo fmt 静态校验 |
+| `frozen-lockfile: ERR_PNPM_OUTDATED_LOCKFILE` | `pnpm-lock.yaml` 与 `package.json` 不一致 | 本地 `pnpm install` 后重提交 lockfile |
+| Gatekeeper "无法打开..." 提示 | 用模式 (1) 出的包分发给他人 | 用模式 (3)；接收方也可右键打开 → 信任 |
+| Notarization 超时 | Apple 服务慢 | `xcrun notarytool log <submission-id> --key ...` 看详细，通常 1-15 分钟 |
 
 ## 升级
 
