@@ -969,7 +969,14 @@ export function DesktopMobilePage() {
     >
       <div className="space-y-5 p-5">
         {notice ? (
+          // 走查电脑端群聊 R88：和姊妹 R86/R87 一批 transient toast 同款修法——
+          // 「到手机继续」页（群通话面板入口）的 notice 是 2200ms 自动消失的反馈
+          //（line ~833 useEffect），原版裸 InlineNotice 没 role / aria-live。
+          // 盲人 SR 操作完听不到「已生成手机会话」/「已撤销...」等成功反馈。
+          // polite 不抢断 SR，2.2s 内消失也来得及朗读完一条 toast。
           <InlineNotice
+            role="status"
+            aria-live="polite"
             tone="success"
             className="border-[color:var(--border-faint)] bg-white"
           >
