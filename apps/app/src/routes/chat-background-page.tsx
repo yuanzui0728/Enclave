@@ -362,7 +362,36 @@ export function ChatBackgroundPage() {
       clearConversationMutation.error.message) ||
     null;
 
+  // 走查 R6：和姊妹 chat-composer pickAlbum/pickCamera/pickFile R2（commit b60471b8d）
+  // 同款问题——「上传图片」(默认背景 + 当前聊天背景两处入口) 只看 React state
+  // `busy` 兜双击，但 busy = uploadMutation.isPending，picker 阶段（系统 file
+  // dialog / iOS PHPicker / Android intent）根本没置 true（true 只在选完图开始
+  // upload 之后），同帧 / 快速二连点会让两次 pickImageFiles 全跑：
+  // · Web fallback: HTMLInputElement.click() 系统对话框两次堆叠；
+  // · 原生壳: pickImageFiles → pickAlbumWithNativeShell 没去重，第二次 invoke
+  //   让 PHPicker / ImagePicker 双开堆叠，第一次的 Promise 被第二次 dismiss 当
+  //   cancel 解决 → files=[] → 用户体感"选了没反应"。
+  // 加一把 raf 锁，第一次成功后立刻置 true，下一帧释放——默认 / 当前会话两条
+  // 入口共享同一把（同一时刻 UI 只能开一个原生 picker，逻辑上等价）。
+  const pickerOpeningRef = useRef(false);
+  const acquirePickerLock = () => {
+    if (pickerOpeningRef.current) {
+      return false;
+    }
+    pickerOpeningRef.current = true;
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        pickerOpeningRef.current = false;
+      });
+    } else {
+      pickerOpeningRef.current = false;
+    }
+    return true;
+  };
   const openPicker = async (target: UploadTarget) => {
+    if (!acquirePickerLock()) {
+      return;
+    }
     setUploadTarget(target);
     const files = await pickImageFiles({ multiple: false });
     const file = files[0];
