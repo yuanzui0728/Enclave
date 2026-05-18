@@ -166,6 +166,14 @@ export function GroupChatThreadPanel({
     nonce: number;
   } | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
+  // R65：和姊妹 conversation-thread-panel R9 同款 —— 群聊缺 SR 入站消息
+  // announcer。盲人 SR 用户在群聊里听不到角色回复内容（只能听到 typing
+  // 指示）。visually-hidden 但 aria-live="polite" div 在 idle 时朗读最新
+  // 一条 character 回复的"角色名：内容摘要"，aria-atomic 防止 SR 只念差量。
+  const characterIncomingAnnouncerSeenIdRef = useRef<string | null>(null);
+  const characterIncomingAnnouncerMountedRef = useRef(false);
+  const [characterIncomingAnnouncement, setCharacterIncomingAnnouncement] =
+    useState("");
   const [lastPublishedCallCounts, setLastPublishedCallCounts] = useState<{
     kind: DesktopChatCallKind;
     source: CallInviteSource | null;
@@ -895,6 +903,52 @@ export function GroupChatThreadPanel({
       ),
     [messages, resolveCharacterDisplayName],
   );
+  // R65：和姊妹 conversation-thread-panel R9 + R10 同款 announcer 链路。
+  // groupId 切换时重置基线，避免历史一次性念出来；mount 之后到达的真消息
+  // 才广播。
+  useEffect(() => {
+    characterIncomingAnnouncerMountedRef.current = false;
+    characterIncomingAnnouncerSeenIdRef.current = null;
+    setCharacterIncomingAnnouncement("");
+  }, [groupId]);
+  useEffect(() => {
+    let latestCharacterMessage: ChatRenderableMessage | undefined;
+    for (let i = renderableMessages.length - 1; i >= 0; i -= 1) {
+      const candidate = renderableMessages[i];
+      if (candidate?.senderType === "character") {
+        latestCharacterMessage = candidate;
+        break;
+      }
+    }
+    if (!latestCharacterMessage) {
+      characterIncomingAnnouncerMountedRef.current = true;
+      return;
+    }
+    if (!characterIncomingAnnouncerMountedRef.current) {
+      characterIncomingAnnouncerMountedRef.current = true;
+      characterIncomingAnnouncerSeenIdRef.current = latestCharacterMessage.id;
+      return;
+    }
+    if (
+      characterIncomingAnnouncerSeenIdRef.current === latestCharacterMessage.id
+    ) {
+      return;
+    }
+    characterIncomingAnnouncerSeenIdRef.current = latestCharacterMessage.id;
+    const senderName =
+      latestCharacterMessage.senderName?.trim() || t(msg`群成员`);
+    const rawPreview =
+      resolveMessageSemanticPreview(latestCharacterMessage, {
+        maxChars: 60,
+        bracketedFallback: true,
+      }) || t(msg`新消息`);
+    const ANNOUNCEMENT_MAX_CHARS = 60;
+    const preview =
+      rawPreview.length > ANNOUNCEMENT_MAX_CHARS
+        ? `${rawPreview.slice(0, ANNOUNCEMENT_MAX_CHARS).trim()}…`
+        : rawPreview;
+    setCharacterIncomingAnnouncement(t(msg`${senderName}：${preview}`));
+  }, [groupId, renderableMessages, t]);
   // 走查移动端群聊 R1：和姊妹路径 conversation-thread-panel.tsx「电脑端单聊
   // R1」(commit c230f9ae0) 同款修法——原版无 highlightedMessageId 时也 .some
   // 全表扫 messages 找 `m.id === undefined`，全程必然 false 但走完整条 O(n)。
@@ -1883,6 +1937,16 @@ export function GroupChatThreadPanel({
                 />
               )
             ) : null}
+            {/* R65：和姊妹 conversation-thread-panel R9 同款 —— 群聊 SR
+                入站消息 announcer。visually-hidden + aria-live="polite"，
+                aria-atomic 防止 SR 只念差量。 */}
+            <div
+              aria-live="polite"
+              aria-atomic="true"
+              className="pointer-events-none sr-only"
+            >
+              {characterIncomingAnnouncement}
+            </div>
             {messagesQuery.isError && messagesQuery.error instanceof Error ? (
               isDesktop ? (
                 // R53：和姊妹 R51 单聊 messagesQuery 同款 —— 群聊 desktop
