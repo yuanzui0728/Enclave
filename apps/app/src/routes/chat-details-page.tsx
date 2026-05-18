@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -255,13 +255,33 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     });
     return true;
   };
-  const handleOperationBack = () => {
+  // 走查新一轮 R5：和 chat-room-page handleMobileBack R4 同款修法——本页 onBack
+  // 在 ChatDetailsShell 顶部返回按钮 + 4 处 renderStatusBackAction / status retry
+  // / mutation onSecondaryAction（"返回上一页"）上挂着，全部走 navigateBackOrFallback
+  // 或 navigate 形态，没有同步 ref 守。同帧 <16ms 双击返回按钮 → window.history.back()
+  // 跑 2 次或 navigate 跑 2 次 → 用户后退 2 页跳出聊天页 / 多 push 一条 history。
+  // 同 mount 内连点不该多飞一次；page unmount 时 ref 跟着失效，next mount 自动
+  // 复位；少数边界（navigate 没真正切走）下 raf 后释放兜底。
+  const backFiredRef = useRef(false);
+  const guardBackAction = useCallback(<Args extends unknown[]>(handler: (...args: Args) => void) => {
+    return (...args: Args) => {
+      if (backFiredRef.current) return;
+      backFiredRef.current = true;
+      handler(...args);
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          backFiredRef.current = false;
+        });
+      }
+    };
+  }, []);
+  const handleOperationBack = guardBackAction(() => {
     if (navigateToRouteStateReturn()) {
       return;
     }
 
     void navigate({ to: "/tabs/chat" });
-  };
+  });
   const statusBackLabel = safeReturnPath
     ? t(msg`返回上一页`)
     : t(msg`返回消息列表`);
@@ -989,7 +1009,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   return (
     <ChatDetailsShell
       title={displayedConversationTitle ?? t(msg`聊天信息`)}
-      onBack={() => {
+      onBack={guardBackAction(() => {
         navigateBackOrFallback(
           () => {
             void navigate({
@@ -1000,7 +1020,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
           },
           `/chat/${conversationId}`,
         );
-      }}
+      })}
     >
       {conversationsQuery.isLoading ? (
         <div className="px-2.5">

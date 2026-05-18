@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -115,6 +116,24 @@ export function ChatBackgroundPage() {
     ? getConversationDisplayTitle(conversation.title)
     : "";
   const supportsConversationOverride = conversation?.type !== "group";
+  // 走查新一轮 R5：和 chat-room-page handleMobileBack / chat-details-page R5
+  // 同款修法——ChatDetailsShell 顶部返回按钮 onBack 走 navigateBackOrFallback，
+  // 同帧 <16ms 双击会让 window.history.back() 跑 2 次 → 用户后退 2 页跳出
+  // 整个聊天页。同 mount 内首次 click 后 guard 住所有后续 click；raf 后释放
+  // 兜底 navigate 没真正切走的边界。
+  const backFiredRef = useRef(false);
+  const guardBackAction = useCallback(<Args extends unknown[]>(handler: (...args: Args) => void) => {
+    return (...args: Args) => {
+      if (backFiredRef.current) return;
+      backFiredRef.current = true;
+      handler(...args);
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          backFiredRef.current = false;
+        });
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!backgroundQuery.data) {
@@ -750,7 +769,7 @@ export function ChatBackgroundPage() {
     <ChatDetailsShell
       title={displayedConversationTitle || t(msg`聊天背景`)}
       subtitle={t(msg`默认背景和好友专属背景`)}
-      onBack={() => {
+      onBack={guardBackAction(() => {
         navigateBackOrFallback(
           () => {
             void navigate({
@@ -761,7 +780,7 @@ export function ChatBackgroundPage() {
           },
           `/chat/${conversationId}/details`,
         );
-      }}
+      })}
     >
       <div className="space-y-3 px-3">{content}</div>
     </ChatDetailsShell>

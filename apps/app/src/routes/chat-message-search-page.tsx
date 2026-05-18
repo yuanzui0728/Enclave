@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { msg } from "@lingui/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
@@ -83,6 +83,23 @@ function MobileChatMessageSearchPage({
     staleTime: 15_000,
   });
 
+  // 走查新一轮 R5：和 chat-details / chat-background 同款修法——onBack 直接走
+  // navigate({...})，同帧 <16ms 双击返回按钮 push 2 条相同 history 项；用户从
+  // 搜索结果点回 chat-details 要按 2 次返回。同 mount 内首次 click 后 guard
+  // 住所有后续 click，raf 后释放兜底 navigate 没切走的边界。
+  const backFiredRef = useRef(false);
+  const guardBackAction = useCallback(<Args extends unknown[]>(handler: (...args: Args) => void) => {
+    return (...args: Args) => {
+      if (backFiredRef.current) return;
+      backFiredRef.current = true;
+      handler(...args);
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => {
+          backFiredRef.current = false;
+        });
+      }
+    };
+  }, []);
   const conversation =
     conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
   // 走查新一轮 R2：服务端 normalizeLegacyConversationEntity 在 title 全部
@@ -141,13 +158,13 @@ function MobileChatMessageSearchPage({
       onRetry={() => {
         void messagesQuery.refetch();
       }}
-      onBack={() => {
+      onBack={guardBackAction(() => {
         void navigate({
           to: "/chat/$conversationId/details",
           params: { conversationId },
           ...(searchRouteHash ? { hash: searchRouteHash } : {}),
         });
-      }}
+      })}
       onOpenMessage={(messageId) => {
         void navigate({
           to: "/chat/$conversationId",
