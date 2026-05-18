@@ -907,6 +907,41 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     saveToContactsMutation.mutate();
   };
 
+  // 走查 R2：「消息免打扰」「置顶聊天」两条 ChatSettingRow 既没挂 disabled，
+  // 也没 sync ref 锁——只有下面「强提醒」一条挂了 disabled={busy}。playwright
+  // 实测连点 3 次：3 份相同方向 POST 都飞出去（mute=true 三次 / pinned=false
+  // 三次），公网 RTT 双 / 三倍消耗 + onSuccess 让 notice 文本闪两次。同帧
+  // <16ms 第二次 click 即使加了 disabled={busy} 也兜不住（React state 要等
+  // commit），跟同页 dangerConfirmSubmittingRef / saveToContactsSubmittingRef
+  // 一起对齐：(a) 加 disabled={busy} 让 React commit 后挡常规重复 click;
+  // (b) 叠 sync ref 锁兜同帧 double-tap，两者复位由 useEffect [isPending] 触发。
+  const muteSubmittingRef = useRef(false);
+  const pinSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!muteMutation.isPending) {
+      muteSubmittingRef.current = false;
+    }
+  }, [muteMutation.isPending]);
+  useEffect(() => {
+    if (!pinMutation.isPending) {
+      pinSubmittingRef.current = false;
+    }
+  }, [pinMutation.isPending]);
+  const handleToggleMute = (next: boolean) => {
+    if (muteSubmittingRef.current) {
+      return;
+    }
+    muteSubmittingRef.current = true;
+    muteMutation.mutate(next);
+  };
+  const handleTogglePin = (next: boolean) => {
+    if (pinSubmittingRef.current) {
+      return;
+    }
+    pinSubmittingRef.current = true;
+    pinMutation.mutate(next);
+  };
+
   return (
     <ChatDetailsShell
       title={conversation?.title ?? t(msg`聊天信息`)}
@@ -1146,13 +1181,15 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 label={t(msg`消息免打扰`)}
                 variant="wechat"
                 checked={conversation?.isMuted ?? false}
-                onToggle={(checked) => muteMutation.mutate(checked)}
+                disabled={busy}
+                onToggle={handleToggleMute}
               />
               <ChatSettingRow
                 label={t(msg`置顶聊天`)}
                 variant="wechat"
                 checked={isPinned}
-                onToggle={(checked) => pinMutation.mutate(checked)}
+                disabled={busy}
+                onToggle={handleTogglePin}
               />
               <ChatSettingRow
                 label={t(msg`强提醒`)}
