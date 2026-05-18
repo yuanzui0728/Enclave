@@ -1110,6 +1110,13 @@ export function ChatComposer({
     );
   }, [desktopPlusMenuOpen, desktopPlusMenuView, favoritesQuery.data]);
 
+  // 走查 R70：和姊妹 chat-message-list R69 同款 —— favoritesQuery.data 进
+  // deps 让 sticker/+ 面板的「收藏」视图开着时，每次 favorites refetch
+  // （30s stale + focus + mutate setQueriesData）都拆 3 个 listener 重挂。
+  // handlers 真正需要的是「事件触发时拿到 latest favoritesQuery.data」
+  // 而不是「data 变化时重挂 listener」。ref 镜像 latest。
+  const composerFavoritesDataRef = useRef(favoritesQuery.data);
+  composerFavoritesDataRef.current = favoritesQuery.data;
   useEffect(() => {
     if (
       !isDesktop ||
@@ -1132,7 +1139,7 @@ export function ChatComposer({
 
       setDesktopFavoriteRecords((current) => {
         const nextRecords = mergeDesktopFavoriteRecords(
-          favoritesQuery.data ?? [],
+          composerFavoritesDataRef.current ?? [],
           readDesktopFavorites(),
         );
         // 跟 favorites-page 一致：focus/visibilitychange + storage 事件触发频繁，
@@ -1179,7 +1186,6 @@ export function ChatComposer({
   }, [
     desktopPlusMenuOpen,
     desktopPlusMenuView,
-    favoritesQuery.data,
     isDesktop,
     nativeDesktopFavorites,
   ]);
