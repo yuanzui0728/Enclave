@@ -544,6 +544,7 @@ export function DesktopDirectCallPanel({
         <div className="mt-5 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
           <div className="flex flex-wrap gap-3">
             <CallControlButton
+              toggle
               active={!micMuted}
               label={micMuted ? t(msg`解除麦克风静音`) : t(msg`静音麦克风`)}
               icon={micMuted ? <Mic size={16} /> : <MicOff size={16} />}
@@ -556,6 +557,7 @@ export function DesktopDirectCallPanel({
               }}
             />
             <CallControlButton
+              toggle
               active={speakerEnabled}
               label={speakerEnabled ? t(msg`扬声器已开`) : t(msg`开启扬声器`)}
               icon={
@@ -565,6 +567,7 @@ export function DesktopDirectCallPanel({
             />
             {isVideoMode ? (
               <CallControlButton
+                toggle
                 active={cameraEnabled}
                 label={
                   cameraEnabled
@@ -902,12 +905,18 @@ function CallControlButton({
   label,
   icon,
   disabled = false,
+  toggle = false,
   onClick,
 }: {
   active: boolean;
   label: string;
   icon: ReactNode;
   disabled?: boolean;
+  // R59：toggle=true 表示这是个开/关状态按钮（mic / speaker / camera），
+  // SR 需要 aria-pressed 才能朗读「checked / unchecked」；toggle=false
+  // 表示 active 只是个内容指示（如 replay 的 latestTurn 存在），不挂
+  // aria-pressed，避免 SR 误把"有上一句"念成"按钮已按下"。
+  toggle?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -915,6 +924,7 @@ function CallControlButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={toggle ? active : undefined}
       className={cn(
         "inline-flex items-center gap-2 rounded-[10px] border px-3.5 py-2 text-sm transition",
         active
