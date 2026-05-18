@@ -18,6 +18,7 @@ import {
   type VendorFamilyPersonaDefinition,
 } from './inference-catalog.seed';
 import { MinimaxNativeClient } from '../ai/minimax-native.client';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { executeChatCompletion } from '../ai/chat-completion-stream.util';
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
@@ -311,6 +312,7 @@ export class InferenceService implements OnModuleInit {
     private readonly modelCatalogRepo: Repository<InferenceModelCatalogEntryEntity>,
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
+    private readonly subscription: SubscriptionService,
   ) {}
 
   async onModuleInit() {
@@ -1883,6 +1885,9 @@ export class InferenceService implements OnModuleInit {
     const voice = provider.ttsVoice || DEFAULT_TTS_VOICE;
     let buffer: Buffer;
     if (MinimaxNativeClient.isMinimaxEndpoint(provider.ttsEndpoint)) {
+      // admin 诊断也消耗 token plan（speech-02-hd 11000/天）；非会员 world
+      // 不该靠诊断绕过 MinimaxClient 那道闸。
+      await this.subscription.assertCanUseAi('audio');
       const minimax = new MinimaxNativeClient(
         provider.ttsEndpoint,
         provider.ttsApiKey,
@@ -1957,6 +1962,8 @@ export class InferenceService implements OnModuleInit {
     if (
       MinimaxNativeClient.isMinimaxEndpoint(provider.imageGenerationEndpoint)
     ) {
+      // admin 诊断也走 minimax token plan；非会员 world 不该绕开会员闸。
+      await this.subscription.assertCanUseAi('image');
       const minimax = new MinimaxNativeClient(
         provider.imageGenerationEndpoint,
         provider.imageGenerationApiKey,
