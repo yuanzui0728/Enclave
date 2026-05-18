@@ -203,6 +203,15 @@ export function ConversationThreadPanel({
     }
   }, [isAtBottomRef, scrollToBottom]);
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
+  // 走查 R73：buildChatBackgroundStyle 之前直接挂在 JSX style= 上，每次 render
+  // 都 new 一个 `{backgroundImage,...}` 对象 → React 比 prop ref 不等 → DOM
+  // 触发一次 style 重设（即使值完全一样）。ConversationThreadPanel 在 typing
+  // tick / socket / hash change / mention picker 等都 re-render，hot path 上
+  // 每分钟数十次无意义 style diff。memo 到 effectiveBackground 引用稳定。
+  const backgroundStyle = useMemo(
+    () => buildChatBackgroundStyle(effectiveBackground),
+    [effectiveBackground],
+  );
   const isReminderConversation =
     conversationType === "direct" && participants[0] === REMINDER_CHARACTER_ID;
   const subtitle =
@@ -756,7 +765,7 @@ export function ConversationThreadPanel({
           className={`absolute inset-0 ${
             isDesktop ? "bg-[#e9e9e9]" : "bg-[color:var(--bg-canvas)]"
           }`}
-          style={buildChatBackgroundStyle(effectiveBackground)}
+          style={backgroundStyle}
         />
         <div
           className={`absolute inset-0 ${

@@ -972,6 +972,12 @@ export function GroupChatThreadPanel({
   const sendError =
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
+  // 走查 R73 续：和姊妹单聊 R73 同款——避免每次 render 都 new style 对象
+  // 触发 React 给容器 div 做无意义的 style 重设。
+  const backgroundStyle = useMemo(
+    () => buildChatBackgroundStyle(effectiveBackground),
+    [effectiveBackground],
+  );
   const announcement = groupQuery.data?.announcement?.trim() ?? "";
   // 走查新一轮 R2：和姊妹单聊路径 conversation-thread-panel.tsx「走查新一轮 R1」
   // 同款修法——原版直接在 JSX 里 `threadContext={{ id, type, title }}` 每 render
@@ -1764,7 +1770,7 @@ export function GroupChatThreadPanel({
           className={`absolute inset-0 ${
             isDesktop ? "bg-[#e9e9e9]" : "bg-[color:var(--bg-canvas)]"
           }`}
-          style={buildChatBackgroundStyle(effectiveBackground)}
+          style={backgroundStyle}
         />
         <div
           className={`absolute inset-0 ${
