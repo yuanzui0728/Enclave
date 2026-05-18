@@ -515,6 +515,21 @@ export function ChatMessageList({
   // navigate。和 openingFileMessageIdsRef 同思路按 messageId 上锁，不同消息互不
   // 影响（用户连续点 2 张不同的名片/笔记卡片是合法用法）。
   const openingAttachmentMessageIdsRef = useRef<Set<string>>(new Set());
+  // 走查电脑端单聊新一轮 R3：和 R7（commit 2a0fc8632 — 会话「在独立窗口打开」
+  // 漏同步锁 Tauri 二次创建走 error 路径假报失败）同款问题，这次出现在图片预
+  // 览：openImagePreview / ImageViewerOverlay 的「在独立窗口打开」/「打印」3
+  // 个入口都 `void openDesktopChatImageViewerWindowOnDemand(...)`，无任何同
+  // 步锁。同帧 <16ms double-click 都进入：
+  // · openDesktopStandaloneWindow 内部按 windowLabel 查重，但两次并发执行先
+  //   后跑 WebviewWindow.getByLabel
+  // · 第一次 getByLabel → undefined → new WebviewWindow 在 Tauri settle 中
+  // · 第二次 getByLabel 也 undefined → 也 new WebviewWindow(same label) →
+  //   Tauri 返回「window already exists」→ tauri://error → finish(false)
+  // · 用户：第一次窗口已成功打开 + 又看到「浏览器阻止了新窗口」红色 notice +
+  //   openImagePreview fallback 还顺手 setViewerMessageId 把当前页查看器一起
+  //   打开（窗口里和当前页同时显示同一张图，画面闪烁）
+  // 按 messageId + autoPrint 上锁，finally 解锁；不同图片/不同模式互不影响。
+  const openingImageViewerWindowKeysRef = useRef<Set<string>>(new Set());
   const speakAudioRef = useRef<HTMLAudioElement | null>(null);
   // 每次发起朗读请求自增，await 回来时和当前值比对 —— 用户中途切到别条
   // 消息（或点了同条停止）时把旧请求的回调彻底作废，避免两条音频抢着播。
@@ -1982,6 +1997,12 @@ export function ChatMessageList({
       return;
     }
 
+    // 走查电脑端单聊新一轮 R3：见上方 openingImageViewerWindowKeysRef 注释。
+    const lockKey = `preview:${target.id}`;
+    if (openingImageViewerWindowKeysRef.current.has(lockKey)) {
+      return;
+    }
+    openingImageViewerWindowKeysRef.current.add(lockKey);
     void openDesktopChatImageViewerWindowOnDemand({
       imageUrl: target.url,
       title: target.fileName || target.label || t(msg`图片`),
@@ -2007,6 +2028,9 @@ export function ChatMessageList({
           message: t(msg`图片预览打开失败，已改为当前页预览。`),
           tone: "warning",
         });
+      })
+      .finally(() => {
+        openingImageViewerWindowKeysRef.current.delete(lockKey);
       });
   };
 
@@ -4445,6 +4469,12 @@ export function ChatMessageList({
                   // shell 没起来都会让它 reject，这条 rejection 走 void 直接
                   // 落 window.unhandledrejection 污染 telemetry。补一条
                   // ActionNotice 反馈 + .catch 吞掉冒泡。
+                  // 走查电脑端单聊新一轮 R3：见上方 openingImageViewerWindowKeysRef。
+                  const lockKey = `open:${activeImage.id}`;
+                  if (openingImageViewerWindowKeysRef.current.has(lockKey)) {
+                    return;
+                  }
+                  openingImageViewerWindowKeysRef.current.add(lockKey);
                   void openDesktopChatImageViewerWindowOnDemand({
                     imageUrl: activeImage.url,
                     title: activeImage.fileName || activeImage.label || t(msg`图片`),
@@ -4472,6 +4502,9 @@ export function ChatMessageList({
                         message: t(msg`打开独立窗口失败，请稍后再试。`),
                         tone: "danger",
                       });
+                    })
+                    .finally(() => {
+                      openingImageViewerWindowKeysRef.current.delete(lockKey);
                     });
                 }
               : undefined
@@ -4479,6 +4512,12 @@ export function ChatMessageList({
           onPrint={
             isDesktop
               ? () => {
+                  // 走查电脑端单聊新一轮 R3：见上方 openingImageViewerWindowKeysRef。
+                  const lockKey = `print:${activeImage.id}`;
+                  if (openingImageViewerWindowKeysRef.current.has(lockKey)) {
+                    return;
+                  }
+                  openingImageViewerWindowKeysRef.current.add(lockKey);
                   void openDesktopChatImageViewerWindowOnDemand({
                     imageUrl: activeImage.url,
                     title: activeImage.fileName || activeImage.label || t(msg`图片`),
@@ -4507,6 +4546,9 @@ export function ChatMessageList({
                         message: t(msg`打开打印窗口失败，请稍后再试。`),
                         tone: "danger",
                       });
+                    })
+                    .finally(() => {
+                      openingImageViewerWindowKeysRef.current.delete(lockKey);
                     });
                 }
               : undefined
