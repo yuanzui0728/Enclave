@@ -1666,6 +1666,15 @@ export function StickerPanel({
     }
   };
 
+  // 走查电脑端群聊 R11（和姊妹 7f2669731 / 群聊 R11 3 个 member dialog 同款）：
+  // 原 deps 把 inline `onClose={() => setStickerPanelOpen(false)}` 列进去，
+  // chat-composer 父帧 typing tick / socket 推消息 / 多份 mutation pending /
+  // input 焦点切换都让 onClose 换新引用 → 拆装一次 keydown listener。clearSearch /
+  // clearSearchAndResumeManage 是 useCallback 稳定引用，state-derived 的
+  // trimmedKeyword.length / activeSectionId / customManageMode / showManageSearchPauseHint
+  // 都是真实信号、保留；onClose 这一项 ref 镜像、从 deps 摘出。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
@@ -1691,7 +1700,7 @@ export function StickerPanel({
 
       if (!isMobile) {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
 
@@ -1703,7 +1712,6 @@ export function StickerPanel({
     clearSearchAndResumeManage,
     customManageMode,
     isMobile,
-    onClose,
     showManageSearchPauseHint,
     trimmedKeyword.length,
   ]);
