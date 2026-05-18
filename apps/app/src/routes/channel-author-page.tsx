@@ -659,9 +659,20 @@ export function ChannelAuthorPage() {
                       msg`${formatTimestamp(featuredLivePost.createdAt)} · ${featuredLivePost.viewCount} 播放`,
                     )}
                   </div>
-                  <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                    {stripToolCallSyntax(featuredLivePost.text)}
-                  </div>
+                  {(() => {
+                    // 走查 2026-05-18 R3（本轮）：featuredLivePost hero 卡同款问题——
+                    // text 偶有 CoT prose 被抠空，标题下面会空着一块 line-clamp-2 占位。
+                    // featuredLivePost 的 title 是上面那个绿色"最近直播回放"标签，post
+                    // 本身的 title 已经渲在上面，cleanText 跟 title 撞车的几率低，主要
+                    // 是兜空文本。
+                    const cleanText = stripToolCallSyntax(featuredLivePost.text);
+                    if (!cleanText) return null;
+                    return (
+                      <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                        {cleanText}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <span className="shrink-0 rounded-full border border-[rgba(127,29,29,0.12)] bg-white px-3 py-1 text-[11px] font-medium text-[#7f1d1d]">
                   {t(msg`查看回放`)}
@@ -756,9 +767,29 @@ export function ChannelAuthorPage() {
                               {post.title}
                             </div>
                           ) : null}
-                          <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                            {stripToolCallSyntax(post.text)}
-                          </div>
+                          {(() => {
+                            // 走查 2026-05-18 R3（本轮）：原 line-clamp-3 文本框
+                            // 无条件渲染 stripToolCallSyntax(post.text)——
+                            //   - audio post 后端常把 title 和 text 都填 "X·音乐"
+                            //     (channels-page card 那条早就 `cleanText === post.title
+                            //     return null`)，作者主页这里没做同款判断，标题下方又
+                            //     重复一行同样的文字；
+                            //   - 偶有纯 CoT thinking-prose 的 post.text（DB 实测最长
+                            //     1019 字），stripToolCallSyntax 整段抠空，rendered 是
+                            //     一个空白 mt-2 div，视觉上像"标题和 topic tags 之间
+                            //     有个没读完的间隙"；
+                            // 跟卡片 (channels-page) 同款条件：cleanText 空 / 跟 title
+                            // 一样时直接 null。
+                            const cleanText = stripToolCallSyntax(post.text);
+                            if (!cleanText || cleanText === post.title) {
+                              return null;
+                            }
+                            return (
+                              <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                                {cleanText}
+                              </div>
+                            );
+                          })()}
                           {post.topicTags?.length ? (
                             <div className="mt-3 flex flex-wrap gap-1.5">
                               {post.topicTags.slice(0, 3).map((tag) => (

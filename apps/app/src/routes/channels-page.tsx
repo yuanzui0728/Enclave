@@ -3855,50 +3855,71 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
               {formatChannelMeta(post, t)}
             </div>
             <div className="mt-2 rounded-[16px] bg-[rgba(255,255,255,0.12)] px-2.5 py-2 text-[10px] leading-4 text-white/86 backdrop-blur">
-              {commentsPreview.length ? (
-                <>
-                  <div className="mb-1 text-[9px] uppercase tracking-[0.03em] text-white/60">
-                    {t(msg`最近评论`)}
-                  </div>
-                  <div className="space-y-1">
-                    {/*
-                      走查 2026-05-18 新一轮 R2：commentsPreview 是后端
-                      buildCommentsPreviewMap 给的"最近 3 条"评论，按 createdAt
-                      ASC 排（最老的在 [0]，最新的在 [2]）——backend 注释明确
-                      "postId → 最近 3 条评论"，slice(-3) 在 ASC 流上取最新 3 条。
-                      原前端 .slice(0, 2) 取的是这 3 条里最早的两条，把真·最新
-                      那条 (commentsPreview[2]) 漏了。视觉上「最近评论」标签下
-                      只显示 2 条，用户看的是次新 + 第三新，刚发的那条只在打开
-                      评论 sheet 后才能见到，卡片 chip 完全错位。
-                      改成 .slice(-2)：在按 ASC 排序的最近 3 条里取末尾 2 条，
-                      ASC 顺序保留（老→新），跟评论 sheet 内的阅读顺序对齐。
-                    */}
-                    {commentsPreview.slice(-2).map((comment) => (
-                      // 走查 R2：实测库里有 1000+ 字的"AI thinking 漏到 comment
-                      // .text"长评论（feed_comments 最长 1019 字），不 clamp
-                      // 这条 review 会把卡片底部 chip 撑成半屏高，盖到上面的标题 /
-                      // 头像 / overflow-hidden 后还把封面切走一截。每行限 1 行，
-                      // 超出末尾省略号。后端那条 AI thinking 入库属于服务端 bug，
-                      // 前端先把这层显示兜住。
-                      <div key={comment.id} className="line-clamp-1">
-                        <span className="font-medium">
-                          {comment.authorName}
-                        </span>
-                        {`：${stripToolCallSyntax(comment.text)}`}
+              {(() => {
+                // 走查 2026-05-18 R2（本轮）：commentsPreview 里偶尔混入纯
+                // AI thinking-prose 评论（库里至少 eb9c88ce 等帖各有 1 条
+                // 1019 字 CoT 漏出），stripToolCallSyntax 把这类内容整段抠成
+                // 空串，但原代码无脑拼 `${authorName}：${stripped}` 让卡底
+                // 出现 "我自己：" 这种孤零零的鬼影 row。先按 stripped 非空过滤
+                // 掉这类条目，再 slice(-2) 取真正能渲的最新 2 条。空过滤后整页
+                // 没有可显示的评论时再回到下面的 `commentCount > 0` 占位文案。
+                const renderableComments = commentsPreview
+                  .map((comment) => ({
+                    comment,
+                    cleanText: stripToolCallSyntax(comment.text),
+                  }))
+                  .filter((entry) => entry.cleanText)
+                  .slice(-2);
+                if (renderableComments.length) {
+                  return (
+                    <>
+                      <div className="mb-1 text-[9px] uppercase tracking-[0.03em] text-white/60">
+                        {t(msg`最近评论`)}
                       </div>
-                    ))}
-                  </div>
-                </>
-              ) : post.commentCount > 0 ? (
-                // home 主接口先返回，decorations 第二个并行请求才带 commentsPreview。
-                // 在 decorations 落地前，commentCount > 0 的卡如果显示"还没有评论"
-                // 会和 action rail 上"143 评论"的小角标自相矛盾——给个占位提示。
-                <span className="text-white/70">
-                  {t(msg`正在载入最近评论...`)}
-                </span>
-              ) : (
-                <span>{t(msg`还没有评论，先聊一句。`)}</span>
-              )}
+                      <div className="space-y-1">
+                        {/*
+                          走查 2026-05-18 新一轮 R2：commentsPreview 是后端
+                          buildCommentsPreviewMap 给的"最近 3 条"评论，按
+                          createdAt ASC 排（最老的在 [0]，最新的在 [2]）——
+                          backend 注释明确"postId → 最近 3 条评论"，slice(-3)
+                          在 ASC 流上取最新 3 条。原前端 .slice(0, 2) 取的是
+                          这 3 条里最早的两条，把真·最新那条 (commentsPreview[2])
+                          漏了。改成上面 filter 后再 slice(-2)：在按 ASC 排
+                          序的可渲染条里取末尾 2 条，ASC 顺序保留（老→新），
+                          跟评论 sheet 内的阅读顺序对齐。
+                        */}
+                        {renderableComments.map(({ comment, cleanText }) => (
+                          // 走查 R2：实测库里有 1000+ 字的"AI thinking 漏到
+                          // comment.text"长评论（feed_comments 最长 1019 字），
+                          // 不 clamp 这条 review 会把卡片底部 chip 撑成半屏高，
+                          // 盖到上面的标题 / 头像 / overflow-hidden 后还把封面
+                          // 切走一截。每行限 1 行，超出末尾省略号。后端那条 AI
+                          // thinking 入库属于服务端 bug，前端先把这层显示兜住。
+                          <div key={comment.id} className="line-clamp-1">
+                            <span className="font-medium">
+                              {comment.authorName}
+                            </span>
+                            {`：${cleanText}`}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                }
+                if (post.commentCount > 0) {
+                  // home 主接口先返回，decorations 第二个并行请求才带
+                  // commentsPreview。在 decorations 落地前 / 或筛掉所有 CoT
+                  // dump 后剩 0 条可渲：commentCount > 0 的卡如果显示"还没有
+                  // 评论"会和 action rail 上"143 评论"的小角标自相矛盾——给个
+                  // 占位提示。
+                  return (
+                    <span className="text-white/70">
+                      {t(msg`正在载入最近评论...`)}
+                    </span>
+                  );
+                }
+                return <span>{t(msg`还没有评论，先聊一句。`)}</span>;
+              })()}
             </div>
           </div>
         </div>
@@ -4263,20 +4284,34 @@ function MobileChannelCommentsSheet({
   const cannotInteract = post?.canInteract === false;
   const commentsListNode = useMemo<ReactNode>(() => {
     if (!comments.length) return null;
+    // 走查 2026-05-18 R2（本轮）：DB 里偶尔混入纯 AI thinking-prose 的评论
+    // （feed_comments 实测最长 1019 字 CoT，至少 yuanzui0728 库的 eb9c88ce
+    // 帖等就有 1 条），stripToolCallSyntax 直接抠成空串。原代码无脑 map →
+    // 渲染出仅 "作者名 + 时间戳 + 回复 X：" 的空泡泡（cleanText 空 → 整条评
+    // 论文本区是空白），点赞/回复按钮还在底下；用户体感「这条评论坏了 / 没
+    // 加载完」。先按 cleanText 非空过滤掉这类条目再 map：可见行数会少于
+    // 头部"N 条"角标几个，但角标本身就是后端 commentCount（含所有
+    // published），那条来源跟前端可见数 drift 是已知容忍偏差。
+    const renderableComments = comments
+      .map((comment) => ({
+        comment,
+        cleanText: stripToolCallSyntax(comment.text),
+        replyTargetName: comment.replyToCommentId
+          ? (comment.replyToAuthorName ??
+              commentAuthorNameMap.get(comment.replyToCommentId) ??
+              null)
+          : null,
+      }))
+      .filter((entry) => entry.cleanText);
+    if (!renderableComments.length) return null;
     return (
       <div className="space-y-3">
-        {comments.map((comment) => {
+        {renderableComments.map(({ comment, cleanText, replyTargetName }) => {
           // 优先用后端 serializeComment 给的 replyToAuthorName——本地
           // commentAuthorNameMap 只能反查到当前已显示的 comments；如果被
           // 回复的根评论在分页之外 / 已删 / 已隐，本地 map 是空，"回复 X"
           // 整段就漏掉了。后端的 lookup map 是整个 post 全量评论 + 单条
           // reply 新建时临时灌入，覆盖面更广，优先取后端值。
-          const replyTargetName = comment.replyToCommentId
-            ? (comment.replyToAuthorName ??
-                commentAuthorNameMap.get(comment.replyToCommentId) ??
-                null)
-            : null;
-          const cleanText = stripToolCallSyntax(comment.text);
           const liking = likePendingCommentId === comment.id;
           return (
             <div

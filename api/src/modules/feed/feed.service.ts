@@ -2807,23 +2807,77 @@ export class FeedService implements OnModuleInit {
       return new Map<string, ReturnType<FeedService['serializeComment']>[]>();
     }
 
-    const comments = await this.commentRepo.find({
-      where: { postId: In(postIds), status: 'published' },
-      order: { createdAt: 'ASC' },
-    });
+    // 走查 2026-05-18 R1：原实现 `find({ where: { postId: In(postIds), status:
+    // 'published' } })` 把每条 post 的全部 published 评论拉到内存里再 slice(-3)
+    // —— 视频号 home 19 张卡 × 平均 ~30 条评论 ≈ 570 行 JSON parse + serializeComment
+    // 跑一遍，最终只保留 60 条进 commentsPreviewByPostId。热门帖（e5800bb1 已有
+    // 146 条）单条就贡献 146 - 3 = 143 行白拉。decorations 接口每次 home 进入都
+    // 跑一遍，浪费 DB IO + 内存峰值。
+    // 用 SQL 窗函数把"每 postId 取最新 3 条"下放到 DB 层：
+    //   ROW_NUMBER() OVER (PARTITION BY postId ORDER BY createdAt DESC) <= 3
+    // SQLite 3.25+ / MySQL 8+ 都支持。这样行数从"全量"降到"19 × 3 = 57"，
+    // serializeComment / likedCommentIdSet 也只跑这 57 条。
+    // 用 ORM 的 hydration 路径而不是 getRawMany，避免手撸 row → entity 转换
+    // 漏字段 / Date 解析错（之前 getRawMany 返回的 row 字段名与预期不一致直接
+    // 撞 createdAt undefined → Invalid Date → serializeComment.toISOString 抛
+    // RangeError）。QueryBuilder 用子查询限定 id 范围，hydration 由 TypeORM
+    // 自己跑，跟原 commentRepo.find 路径行为一致。
+    const previewComments = await this.commentRepo
+      .createQueryBuilder('c')
+      .where(
+        `c.id IN (
+          SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY "postId" ORDER BY "createdAt" DESC) AS rn
+            FROM feed_comments
+            WHERE "postId" IN (:...postIds) AND "status" = 'published'
+          ) AS ranked
+          WHERE rn <= 3
+        )`,
+        { postIds },
+      )
+      .orderBy('c.postId', 'ASC')
+      .addOrderBy('c.createdAt', 'ASC')
+      .getMany();
+
+    // preview 评论里若有 reply → 被回复的根评论可能不在 preview 里（被 slice
+    // 截掉），用一次额外 IN 查询补回需要的 authorName，确保 serializeComment
+    // 能渲出"回复 X：..."前缀。bounded by 3 × postIds = ~57 行 max。
+    const previewIdSet = new Set(previewComments.map((c) => c.id));
+    const missingParentIds = Array.from(
+      new Set(
+        previewComments
+          .map((c) => c.replyToCommentId)
+          .filter(
+            (id): id is string => typeof id === 'string' && !previewIdSet.has(id),
+          ),
+      ),
+    );
+    const parentComments = missingParentIds.length
+      ? await this.commentRepo.find({
+          where: { id: In(missingParentIds) },
+          select: ['id', 'authorName'],
+        })
+      : [];
+
+    const replyAuthorNameMap = this.buildReplyAuthorNameMap([
+      ...previewComments,
+      ...parentComments.map((c) => {
+        const entity = new FeedCommentEntity();
+        entity.id = c.id;
+        entity.authorName = c.authorName;
+        return entity;
+      }),
+    ]);
     const likedCommentIds = await this.buildLikedCommentIdSet(
-      comments.map((comment) => comment.id),
+      previewComments.map((comment) => comment.id),
       ownerId,
     );
-    // 用整张评论表（含 preview 截掉的根评论）建反查表，保证 reply 子评论
-    // 进 preview 时还能拿到被回复评论的 authorName 渲出"回复 X"。
-    const replyAuthorNameMap = this.buildReplyAuthorNameMap(comments);
     const commentMap = new Map<
       string,
       ReturnType<FeedService['serializeComment']>[]
     >();
 
-    for (const comment of comments) {
+    for (const comment of previewComments) {
       const currentComments = commentMap.get(comment.postId) ?? [];
       currentComments.push(
         this.serializeComment(
@@ -2833,7 +2887,7 @@ export class FeedService implements OnModuleInit {
           replyAuthorNameMap,
         ),
       );
-      commentMap.set(comment.postId, currentComments.slice(-3));
+      commentMap.set(comment.postId, currentComments);
     }
 
     return commentMap;
