@@ -1818,6 +1818,22 @@ function OptimizeConfirmModal({
   const t = useRuntimeTranslator();
   const sectionLabel = getSectionLabel(section, t);
   const allCase = section === "all";
+  // 焦点管理：原写法 modal 挂载后焦点留在背后的"优化"按钮上，键盘 / SR
+  // 用户 Tab 会跳出 modal 到背景内容（视觉被 modal 遮住但 focus 跑了）。
+  // 1) 挂载时把焦点移到"取消"按钮（safer default），让 SR 读出 modal
+  //    title + 第一个 action；2) Tab/Shift-Tab 在两按钮间循环（focus trap）；
+  //    3) 卸载时还焦点给打开 modal 之前 active 的元素（"AI 一键生成"按钮）。
+  const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+  const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
+  const previousActiveRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    previousActiveRef.current =
+      (document.activeElement as HTMLElement | null) ?? null;
+    cancelBtnRef.current?.focus();
+    return () => {
+      previousActiveRef.current?.focus?.();
+    };
+  }, []);
 
   // ESC 关 modal —— 和 UserMenu / HintTooltip / 抽屉对齐
   useEffect(() => {
@@ -1828,11 +1844,25 @@ function OptimizeConfirmModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [onCancel]);
 
+  // Tab 焦点陷阱：两按钮在 cancel ↔ confirm 之间循环。
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab") return;
+    const active = document.activeElement;
+    if (!e.shiftKey && active === confirmBtnRef.current) {
+      e.preventDefault();
+      cancelBtnRef.current?.focus();
+    } else if (e.shiftKey && active === cancelBtnRef.current) {
+      e.preventDefault();
+      confirmBtnRef.current?.focus();
+    }
+  };
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="optimize-modal-title"
+      onKeyDown={onKeyDown}
       className="fixed inset-0 z-50 grid place-items-center bg-[color:var(--surface-overlay)]/70 px-4 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
@@ -1882,10 +1912,20 @@ function OptimizeConfirmModal({
           )}
         </div>
         <div className="flex flex-wrap justify-end gap-2 pt-1">
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <Button
+            ref={cancelBtnRef}
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+          >
             <Trans>取消</Trans>
           </Button>
-          <Button type="button" variant="primary" onClick={onConfirm}>
+          <Button
+            ref={confirmBtnRef}
+            type="button"
+            variant="primary"
+            onClick={onConfirm}
+          >
             <Trans>✨ 开始优化</Trans>
           </Button>
         </div>

@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import type { ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "../cn";
 
 const buttonVariants = cva(
@@ -33,18 +33,19 @@ const buttonVariants = cva(
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants>;
 
-export function Button({
-  className,
-  variant,
-  size,
-  type = "button",
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      type={type}
-      className={cn(buttonVariants({ variant, size }), className)}
-      {...props}
-    />
-  );
-}
+// forwardRef 让 modal 焦点陷阱 / 自定义 ref 转发到内部 <button>。原写法没
+// forwardRef，wiki OptimizeConfirmModal 想给"取消" / "✨ 开始优化"挂 ref
+// 实现焦点管理时 TS 直接报 'Property ref does not exist'。和 TextField 已
+// forwardRef 的形态对齐。
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button({ className, variant, size, type = "button", ...props }, ref) {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(buttonVariants({ variant, size }), className)}
+        {...props}
+      />
+    );
+  },
+);
