@@ -480,6 +480,15 @@ export function ChatMessageList({
   >(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
+  // 走查本会话 R1：MobileMessageReminderSheet 内任一时间选项 onClick 都是
+  // `() => onSelect(option)` 没 disabled 守，handleSelectReminder 入口 `if
+  // (!reminderTargetMessage) return` 走的是 React state 闭包 — `await setReminder`
+  // 飞行的 ~600ms 公网 RTT 窗口内，state 还没翻 null 之前用户连点 2 次（同一
+  // 选项或不同选项都行），两份 POST /reminders 同时打到服务端，群消息上挂 2 条
+  // 几乎相同的提醒。和姊妹 mutation (sendingTextRef / retryingMessageIdsRef /
+  // submittingRef) 一样补一把同步 ref 锁，retry-path 的 `void handleSelectReminder
+  // (option)` 也走同一把锁。
+  const selectingReminderRef = useRef(false);
   const speakAudioRef = useRef<HTMLAudioElement | null>(null);
   // 每次发起朗读请求自增，await 回来时和当前值比对 —— 用户中途切到别条
   // 消息（或点了同条停止）时把旧请求的回调彻底作废，避免两条音频抢着播。
@@ -2477,75 +2486,88 @@ export function ChatMessageList({
       return;
     }
 
-    try {
-      await setReminder(
-        {
-          messageId: reminderTargetMessage.id,
-          remindAt: option.remindAt,
-          threadId: threadContext?.id ?? "",
-          threadType: threadContext?.type ?? "direct",
-        },
-        {
-          messageId: reminderTargetMessage.id,
-          remindAt: option.remindAt,
-          threadId: threadContext?.id ?? "",
-          threadType: threadContext?.type ?? "direct",
-          threadTitle: threadContext?.title,
-          previewText: buildClipboardText(t, reminderTargetMessage),
-        },
-      );
-      setReminderTargetMessage(null);
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`设置提醒失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续设置提醒`),
-        onAction: () => {
-          void handleSelectReminder(option);
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+    // 见上面 selectingReminderRef 的注释：mutateAsync 飞行期间 React state
+    // 还没翻 null，同帧/同 RTT 窗口内连点 2 次会同时通过 `if (!reminderTargetMessage)`
+    // 守门，两份 POST /reminders 同时落库。ref 同步赋值挡掉同帧后续 click，
+    // finally 释放（无论成功 / 失败都解锁，让重试路径能再跑一次）。
+    if (selectingReminderRef.current) {
       return;
     }
+    selectingReminderRef.current = true;
 
-    void requestNotificationPermission().then((permissionState) => {
-      const nativeMobileShareSupported = isNativeMobileShareSurface();
-      const summary = formatReminderSummary(t, option.remindAt);
-      if (permissionState === "granted") {
+    try {
+      try {
+        await setReminder(
+          {
+            messageId: reminderTargetMessage.id,
+            remindAt: option.remindAt,
+            threadId: threadContext?.id ?? "",
+            threadType: threadContext?.type ?? "direct",
+          },
+          {
+            messageId: reminderTargetMessage.id,
+            remindAt: option.remindAt,
+            threadId: threadContext?.id ?? "",
+            threadType: threadContext?.type ?? "direct",
+            threadTitle: threadContext?.title,
+            previewText: buildClipboardText(t, reminderTargetMessage),
+          },
+        );
+        setReminderTargetMessage(null);
+      } catch (error) {
         setActionNotice({
-          message: t(msg`已设为消息提醒 · ${summary}，系统通知已开启。`),
-          tone: "success",
-        });
-        return;
-      }
-
-      if (permissionState === "denied") {
-        setActionNotice({
-          message: nativeMobileShareSupported
-            ? t(msg`已设为消息提醒 · ${summary}，系统通知未开启。可前往系统设置继续打开通知。`)
-            : t(msg`已设为消息提醒 · ${summary}，系统通知未开启。`),
-          tone: "warning",
-          actionLabel: nativeMobileShareSupported ? t(msg`去设置`) : undefined,
-          onAction: nativeMobileShareSupported
-            ? () => {
-                void openAppSettings();
-              }
-            : undefined,
+          message:
+            error instanceof Error
+              ? error.message
+              : t(msg`设置提醒失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续设置提醒`),
+          onAction: () => {
+            void handleSelectReminder(option);
+          },
           secondaryActionLabel: errorActionLabel,
           onSecondaryAction: onErrorAction ?? undefined,
         });
         return;
       }
 
-      setActionNotice({
-        message: t(msg`已设为消息提醒 · ${summary}。`),
-        tone: "success",
+      void requestNotificationPermission().then((permissionState) => {
+        const nativeMobileShareSupported = isNativeMobileShareSurface();
+        const summary = formatReminderSummary(t, option.remindAt);
+        if (permissionState === "granted") {
+          setActionNotice({
+            message: t(msg`已设为消息提醒 · ${summary}，系统通知已开启。`),
+            tone: "success",
+          });
+          return;
+        }
+
+        if (permissionState === "denied") {
+          setActionNotice({
+            message: nativeMobileShareSupported
+              ? t(msg`已设为消息提醒 · ${summary}，系统通知未开启。可前往系统设置继续打开通知。`)
+              : t(msg`已设为消息提醒 · ${summary}，系统通知未开启。`),
+            tone: "warning",
+            actionLabel: nativeMobileShareSupported ? t(msg`去设置`) : undefined,
+            onAction: nativeMobileShareSupported
+              ? () => {
+                  void openAppSettings();
+                }
+              : undefined,
+            secondaryActionLabel: errorActionLabel,
+            onSecondaryAction: onErrorAction ?? undefined,
+          });
+          return;
+        }
+
+        setActionNotice({
+          message: t(msg`已设为消息提醒 · ${summary}。`),
+          tone: "success",
+        });
       });
-    });
+    } finally {
+      selectingReminderRef.current = false;
+    }
   };
 
   const selectedMessageIdSet = useMemo(
