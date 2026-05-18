@@ -180,19 +180,29 @@ export function MobileReminderToastHost() {
     });
   }, [activeReminder, documentVisibility, notifyReminder]);
 
-  // 走查 2026-05-18 移动端群聊 R2：reminder toast 顶端定位 calc(safe-area-top
-  // + 6.5rem) ≈ y=104 是按"clear 单行 / 双行 topbar"算的；但 /chat/$id/search 和
-  // /group/$id/search 这两条路由 topbar 只是 56-60px 的标题行，正下方紧跟一条
-  // sticky 的搜索框（搜索 input 中心 y≈121），落在 toast bbox y=104..249 内 —
-  // dueReminders 非空时整个搜索框被 reminder 卡盖死，用户点不进去敲字。
-  // 这两条路由本身就是用户在做"找消息"专注任务，跟当前 reminder 并不互动，沿
-  // /tabs/chat 思路一起隐藏 toast（提醒还会留在 chat 列表 + 30s refetch 不掉）。
-  const isFocusedSearchRoute =
-    /^\/(?:chat|group)\/[^/]+\/search$/.test(normalizedPathname);
+  // 走查 2026-05-18 移动端群聊 R3：reminder toast 顶端 calc(safe-area-top + 6.5rem)
+  // ≈ y=104，bbox 占到 y=104..249（约 145px 高，含 title + preview + 双按钮）。
+  // 在 /chat/$id 和 /group/$id 这种聊天主线程页面，下方就是消息列表，toast 浮在
+  // 顶部不挡操作；但所有 thread 的二级页面（/details, /search, /edit/*,
+  // /announcement, /background, /qr, /members/add, /members/remove, /voice-call,
+  // /video-call）都把表单/输入/按钮/QR 排在 topbar 紧下方 102~250 这个高度，
+  // dueReminders 非空时整个交互区域被 reminder 卡盖死：
+  //   - /announcement 群公告 textarea y=102..320 被覆盖 70%
+  //   - /edit/name & /edit/nickname input y=102..146 整段盖死
+  //   - /members/add & /members/remove & /group/new 搜索框 y=168..191 + 选项行
+  //   - /background 背景方案 grid + /qr QR 码主体
+  //   - /chat|group/$id/search 搜索 input（R2 已修单条路由）
+  // 这些都是"焦点操作"页，用户不需要 reminder 来切断流程，跟 /tabs/chat 同思路
+  // 隐藏 toast；reminder 仍在数据层保留，30s 内自然 refetch / 用户回到聊天主页
+  // 或别的 tab 时还会弹出。/group/new 也归类为「焦点操作页」。
+  const isFocusedThreadSubRoute =
+    /^\/(?:chat|group)\/[^/]+\/.+$/.test(normalizedPathname);
+  const isFocusedCreationRoute = normalizedPathname === "/group/new";
   const shouldHideActiveReminder =
     !activeReminder ||
     normalizedPathname === "/tabs/chat" ||
-    isFocusedSearchRoute ||
+    isFocusedThreadSubRoute ||
+    isFocusedCreationRoute ||
     (() => {
       const activePath = buildChatReminderPath(activeReminder);
       const activeHash = `#${buildChatReminderHashValue(activeReminder.messageId)}`;
