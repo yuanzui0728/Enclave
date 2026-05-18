@@ -2726,9 +2726,18 @@ function DesktopCommentThreadReplies({
   // overflow 撑成 200+px 把线程卡撑高 + 下方 main 评论被挤出可视区。
   // 同步对齐 DesktopThreadCommentCard 的 cleanText 处理：先 strip 再 clamp
   // 到 2 行。空文本时（被 strip 抠成空串）不渲 authorName: 这条 ghost row。
-  const latestReplyCleanText = latestReply
-    ? stripToolCallSyntax(latestReply.text)
-    : "";
+  //
+  // 走查 2026-05-18 第二轮 R10：跟 R9 DesktopThreadCommentCard 同款热点 —
+  // DesktopCommentThreadReplies 在 panel 内为每个有 replies 的 thread 渲一份，
+  // panel 每帧 re-render（commentDrafts setState 等） 都跑 stripToolCallSyntax
+  // 一次。yuanzui0728 库里活跃 thread 实测 ~20 条带 replies，drawer 打开期
+  // 每帧 20 × regex（含 CoT-detection long regex）。8 字/秒打字时 160 次/秒。
+  // useMemo([latestReply?.text]) 锁住，只在 latestReply 真换（新 reply 落地）
+  // 时重算。
+  const latestReplyCleanText = useMemo(
+    () => (latestReply ? stripToolCallSyntax(latestReply.text) : ""),
+    [latestReply?.text],
+  );
 
   return (
     <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
