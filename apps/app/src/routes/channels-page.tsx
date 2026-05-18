@@ -370,9 +370,19 @@ export function ChannelsPage() {
     // - onMutate：snapshot 当前 commentCount，cache 里 +1；
     // - onError：只回滚被改的那条 post 的 commentCount（per-post 避免冲掉
     //   并发 like / favorite 的乐观），其它 post 沿用当前 cache；
-    // 注意 commentMutation.mutationFn 本身有 text.trim() 校验，空草稿直接 throw、
-    // 根本不会进 onMutate，所以这里不用预判空文本。
+    //
+    // 走查 2026-05-18 新一轮 R4：原注释说「mutationFn 自带 text.trim() 校验，
+    // 空草稿直接 throw、根本不会进 onMutate，所以不用预判空文本」——但
+    // react-query v5 中 onMutate 在 mutationFn 之前执行，空草稿会先走完整段
+    // optimistic +1，然后 mutationFn 抛错 → onError 回滚。中间这一帧用户看到
+    // commentCount 闪一下 +1 又跌回去，体感「我没敲东西怎么 count 闪了」。
+    // 实际路径中送按钮 disabled={!draft.trim()} 拦住了正常路径，但键盘提交 /
+    // 自动化 / future 别的入口可能绕过。早返让 onMutate 不做 cache 改动，
+    // mutationFn 仍会抛错走 onError 显示 toast。
     onMutate: async (input) => {
+      if (!input.text.trim()) {
+        return { previousEntries: [], mutationBaseUrl: baseUrl };
+      }
       await queryClient.cancelQueries({
         queryKey: ["app-channels-home", baseUrl],
       });
