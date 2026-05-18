@@ -31,6 +31,7 @@ import {
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import {
   getConversationThreadLabel,
   getConversationThreadType,
@@ -192,7 +193,11 @@ export function DesktopChatHistoryPage() {
       return clearConversationHistory(conversation.id, baseUrl);
     },
     onSuccess: async (_, conversation) => {
-      setNotice(t(msg`${conversation.title} 的聊天记录已清空。`));
+      setNotice(
+        t(
+          msg`${getConversationDisplayTitle(conversation.title)} 的聊天记录已清空。`,
+        ),
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -363,7 +368,11 @@ export function DesktopChatHistoryPage() {
             ) : null}
 
             <div className="space-y-1">
-              {conversations.map((conversation) => (
+              {conversations.map((conversation) => {
+                const displayTitle = getConversationDisplayTitle(
+                  conversation.title,
+                );
+                return (
                 <button
                   key={conversation.id}
                   type="button"
@@ -377,20 +386,20 @@ export function DesktopChatHistoryPage() {
                 >
                   {isPersistedGroupConversation(conversation) ? (
                     <GroupAvatarChip
-                      name={conversation.title}
+                      name={displayTitle}
                       members={conversation.participants}
                       size="wechat"
                     />
                   ) : (
                     <AvatarChip
-                      name={conversation.title}
+                      name={displayTitle}
                       src={conversation.avatar}
                       size="wechat"
                     />
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                      {conversation.title}
+                      {displayTitle}
                     </div>
                     <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                       {getConversationThreadLabel(conversation)} ·{" "}
@@ -398,7 +407,8 @@ export function DesktopChatHistoryPage() {
                     </div>
                   </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         </>

@@ -57,6 +57,7 @@ import {
 } from "../features/chat/local-chat-message-actions";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatMessageTimestamp, parseTimestamp } from "../lib/format";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import {
   getConversationThreadLabel,
   getConversationThreadType,
@@ -664,7 +665,11 @@ export function DesktopChatFilesPage() {
                   </div>
                 </button>
 
-                {conversations.map((conversation) => (
+                {conversations.map((conversation) => {
+                  const displayTitle = getConversationDisplayTitle(
+                    conversation.title,
+                  );
+                  return (
                   <button
                     key={conversation.id}
                     type="button"
@@ -678,27 +683,28 @@ export function DesktopChatFilesPage() {
                   >
                     {isPersistedGroupConversation(conversation) ? (
                       <GroupAvatarChip
-                        name={conversation.title}
+                        name={displayTitle}
                         members={conversation.participants}
                         size="wechat"
                       />
                     ) : (
                     <AvatarChip
-                      name={conversation.title}
+                      name={displayTitle}
                       src={conversation.avatar}
                       size="wechat"
                     />
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                        {conversation.title}
+                        {displayTitle}
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                         {t(msg`${getConversationThreadLabel(conversation)} · ${attachmentCounts[conversation.id] ?? 0} 项附件`)}
                       </div>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
 
               {!conversationsQuery.isLoading && !conversations.length ? (
@@ -974,7 +980,10 @@ function normalizeAttachmentRows(
       {
         id: item.id,
         conversationId: conversation.id,
-        conversationTitle: conversation.title,
+        // R4：AttachmentRow.conversationTitle 渲染在 meta 行（`${title} · ${sender}
+        // · ${time}`) 和图片 viewer avatarName 上，sentinel 不翻 → 非中文用户
+        // 看到 raw "未知联系人 · ..." 字面量。和 ConversationCardLink 同款翻一遍。
+        conversationTitle: getConversationDisplayTitle(conversation.title),
         conversationType: getConversationThreadType(conversation),
         conversationSource: conversation.source,
         attachment,
