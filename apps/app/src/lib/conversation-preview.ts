@@ -3,6 +3,14 @@ import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import type { LocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import { shouldHideSearchableChatMessage } from "../features/chat/local-chat-message-actions";
+import {
+  parseDirectCallInviteMessage,
+  parseGroupCallInviteMessage,
+} from "../features/chat/group-call-message";
+import {
+  getDirectCallStatusLabel,
+  getGroupCallStatusLabel,
+} from "../features/chat/group-call-presentation";
 import { isServerRecalledSystemMessage } from "./chat-text";
 import {
   getConversationThreadLabel,
@@ -109,6 +117,19 @@ export function getConversationPreviewParts(
     lastMessage.senderType !== "system"
       ? translateRuntimeMessage(msg`${senderLabel}：`)
       : "";
+  // 走查 R2：群通话/单聊通话邀请被 buildGroupCallInviteMessage /
+  // buildDirectCallInviteMessage 编码成多行带协议 marker 的文本（"[群语音通话]\n
+  // 群名\n状态 进行中\n发起于...\n人数快照...\n当前在线 N/M 人..."）。chat-list
+  // 走 resolveMessageSemanticPreview → sanitizeDisplayedChatText 不识别 marker，
+  // maxChars 只对 attachment 路径生效，message.text 直接整段返回。renderer 用
+  // CSS truncate 截断后，单行展示成"[群视频通话] 群名 状态 画面进行中 发起于..."
+  // 一坨混乱字符串，跟"[图片]"/"[语音]" 这类极简 preview 风格完全不一致。
+  // 识别 marker 后改成短摘要"[群视频通话] 进行中" / "[群语音通话] 已结束"，i18n
+  // 走 getGroupCallStatusLabel/getDirectCallStatusLabel，UI 干净且 locale 跟随。
+  const callPreview = resolveCallInvitePreviewText(lastMessage.text);
+  if (callPreview) {
+    return { prefix, text: callPreview };
+  }
   return {
     prefix,
     text:
@@ -117,6 +138,33 @@ export function getConversationPreviewParts(
         bracketedFallback: true,
       }) || getConversationOpenFallback(conversation),
   };
+}
+
+function resolveCallInvitePreviewText(text: string): string | null {
+  if (!text) {
+    return null;
+  }
+  const groupInvite = parseGroupCallInviteMessage(text);
+  if (groupInvite) {
+    const callLabel =
+      groupInvite.kind === "video"
+        ? translateRuntimeMessage(msg`[群视频通话]`)
+        : translateRuntimeMessage(msg`[群语音通话]`);
+    return `${callLabel} ${getGroupCallStatusLabel(
+      groupInvite.kind,
+      groupInvite.status,
+    )}`;
+  }
+  const directInvite = parseDirectCallInviteMessage(text);
+  if (directInvite) {
+    const callLabel =
+      directInvite.kind === "video"
+        ? translateRuntimeMessage(msg`[视频通话]`)
+        : translateRuntimeMessage(msg`[语音通话]`);
+    const status = directInvite.connectionStatus ?? "waiting";
+    return `${callLabel} ${getDirectCallStatusLabel(directInvite.kind, status)}`;
+  }
+  return null;
 }
 
 export function getConversationOpenFallback(
