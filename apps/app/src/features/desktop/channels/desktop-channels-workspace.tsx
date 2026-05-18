@@ -2812,7 +2812,28 @@ function DesktopThreadCommentCard({
     : null;
   // 走查 2026-05-17 R3：评论正文同样跑 stripToolCallSyntax，避免 AI 角色 CoT
   // 漏出的 <tool_call> / [TOOL_CALL] 标签原样在评论楼里显示一段 XML/JSON。
-  const cleanText = stripToolCallSyntax(comment.text);
+  //
+  // 走查 2026-05-18 第二轮 R9：原来裸调 stripToolCallSyntax(comment.text) 每次
+  // re-render 都跑一遍 regex（4 个 replace + 1 个 long CoT-detection test）。
+  // yuanzui0728 那条 post 积了 142 条评论，drawer 打开时面板里 142 张
+  // DesktopThreadCommentCard 全部 mount —— DesktopChannelCommentsPanel 不是 memo'd
+  // 且 onLikeComment / onReplyToComment 来自 channels-page 内联箭头（每帧换
+  // identity），导致 panel 每次父帧 re-render（commentDrafts setState
+  // / mutation 乐观更新 / focusEffect等）都 cascade 142 张卡的 render，每张卡
+  // 都跑 1 次 stripToolCallSyntax —— 142 次 regex / 帧。
+  // 实测用户在 drawer textarea 里按 8 字/秒打字，每个 keystroke 触发
+  // setCommentDrafts → 142 × stripToolCallSyntax = 1136 次 regex/秒。CoT detection
+  // 那条 80+ 字阈值的长 regex 在含中文 / 英文 prose 的 142 条评论上累计 ~10-20ms/
+  // 帧，typing latency 在 yuanzui0728 库的 post 上肉眼可见。
+  // 修法：useMemo([comment.text]) 锁住 cleanText，只在 comment.text 真变化时重
+  // 算。同帧多次 re-render（commentDrafts 变 / mutation 乐观更新等）共享 memo。
+  // 同款 hoist 也应用到 replyTargetName / replyToAuthorName lookup（commentAuthor
+  // NameMap.get 是 cheap，但 deps 化也省一次比较）。但 cleanText 是热点，优先
+  // 这条；replyTargetName 留 inline。
+  const cleanText = useMemo(
+    () => stripToolCallSyntax(comment.text),
+    [comment.text],
+  );
 
   return (
     <div
