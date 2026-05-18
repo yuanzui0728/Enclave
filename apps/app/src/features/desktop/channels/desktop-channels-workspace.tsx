@@ -173,6 +173,29 @@ export function DesktopChannelsWorkspace({
     setUnmuted((current) => !current);
   }, []);
 
+  // 走查 2026-05-18 新会话 R1：channels-page 在 baseUrl 切换（用户换账号）时
+  // 已经清掉自己那份 forwardPickerPost / commentDrafts / notice（line 1162-
+  // 1181），但 DesktopChannelsWorkspace 不在 React tree 上 unmount，自己这份
+  // forwardPickerPost / forwardNotice / commentDrawerPostId 没人重置。结果用
+  // 户在 A 账号打开转发面板挑好友、半途切到 B 账号 → picker 还开着 + postId
+  // 仍是 A 世界的 uuid → 点好友落地 B 世界的 API 立刻 FEED_POST_NOT_FOUND，
+  // 错误通过 picker 兜底文案翻成"这条视频号已经不在了"——但用户视角是「我刚
+  // 进新账号点了下转发就报视频号丢了」，错得没头没脑。同步把 channels-page
+  // 那条 baseUrl change reset 镜像到 workspace 这份本地状态上：picker / notice
+  // / 评论 drawer 一律清零，让新账号干净落地。unmuted / selectedPostId 不动
+  // —— unmuted 是用户跨账号一致的偏好；selectedPostId 上面 effect L195-204
+  // 已经按新 posts 兜底了。
+  const previousBaseUrlRef = useRef(baseUrl);
+  useEffect(() => {
+    if (previousBaseUrlRef.current === baseUrl) {
+      return;
+    }
+    previousBaseUrlRef.current = baseUrl;
+    setForwardPickerPost(null);
+    setForwardNotice(null);
+    setCommentDrawerPostId(null);
+  }, [baseUrl]);
+
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const slideRefs = useRef(new Map<string, HTMLDivElement>());
   const registerSlide = useCallback(
@@ -1225,6 +1248,12 @@ function ChannelFeedSlide({
             surface="dark"
             icon={<Share2 size={18} />}
             label={t(msg`转发`)}
+            // 走查 2026-05-18 新会话 R1：原 ariaLabel 缺席，按钮 visible label
+            // 只是「转发」，但旁边的点赞 / 评论按钮 ariaLabel 都带「当前 N 条」
+            // 给屏读上下文。这条对齐：点击会触发转发面板，告知"对哪条 post"
+            // 转发也无意义（picker 自己会显示标题）；这里强调它是会打开面板
+            // 的入口，避免屏读用户当成 toggle 误按。
+            ariaLabel={t(msg`转发到聊天`)}
             onClick={onShare}
           />
           <ChannelActionButton
@@ -1244,6 +1273,15 @@ function ChannelFeedSlide({
                 : isFavorite
                   ? t(msg`已收藏`)
                   : t(msg`收藏`)
+            }
+            // 走查 2026-05-18 新会话 R1：原 ariaLabel 缺席。aria-pressed 已经
+            // 告知 toggle 状态，但屏读用户没办法知道当前 toggle 的语义对象是
+            // 「这条视频号」。点赞按钮里给了 ariaLabel="点赞，当前 N 赞"，收藏
+            // 按钮按同款思路补「已收藏 / 收藏这条视频号」。
+            ariaLabel={
+              isFavorite
+                ? t(msg`已收藏这条视频号`)
+                : t(msg`收藏这条视频号`)
             }
             active={isFavorite}
             pending={favoritePending}
