@@ -153,10 +153,16 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   );
   const characterId =
     conversation?.type === "direct" ? conversation.participants[0] : undefined;
+  // 走查 R3（第 3 轮）：和 chat-details / desktop-chat-details-panel /
+  // desktop-direct-call-panel / desktop-message-avatar-popover 共享同一 queryKey
+  // "app-character"，其它 4 处对齐到 15s staleTime；进 call 屏前用户必然先看
+  // 过 chat-room/chat-details，那一拨 GET /characters/$id 还在 cache 里。补
+  // staleTime 复用主缓存，省掉进通话页又拉一次。
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId ?? "", baseUrl),
     enabled: Boolean(characterId),
+    staleTime: 15_000,
   });
   const sendCallStatusMessage = useCallback(
     async (status: "waiting" | "connected" | "ended", durationMs?: number) => {

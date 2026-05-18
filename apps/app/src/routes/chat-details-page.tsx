@@ -161,10 +161,17 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const targetCharacterId = conversation?.participants[0] ?? "";
   const isReminderConversation = targetCharacterId === REMINDER_CHARACTER_ID;
 
+  // 走查 R3（第 3 轮）：和 desktop-chat-details-panel / desktop-direct-call-panel /
+  // desktop-message-avatar-popover 共享同一 queryKey "app-character"，那 3 处都对齐
+  // 到 15s staleTime；本页一直裸跑 → 用户从 chat-room 顶部点 ⋯ 进 details 时
+  // 上一页 conversationsQuery 顺带的 participant character 状态在 cache 里还
+  // 是热的，但本观察者按 mobile-web 60s / 其它 10s 默认算 stale 就会再发一次
+  // GET /characters/$id（公网隧道 ~600ms）。15s 对齐 desktop 三处即可。
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, targetCharacterId],
     queryFn: () => getCharacter(targetCharacterId, baseUrl),
     enabled: Boolean(targetCharacterId),
+    staleTime: 15_000,
   });
 
   const friendsQuery = useQuery({
