@@ -283,10 +283,25 @@ function DirectChatDetailsPanel({
   const isBlocked = (blockedQuery.data ?? []).some(
     (item) => item.characterId === targetCharacterId,
   );
-  const commonGroups = (conversationsQuery.data ?? []).filter(
-    (item) =>
-      isPersistedGroupConversation(item) &&
-      item.participants.includes(targetCharacterId),
+  // 走查电脑端单聊 R6：原版每次 render 都现 .filter 一遍 conversations 找
+  // "包含 targetCharacterId 的群聊"。DirectChatDetailsPanel 的高频 render 源
+  // 很多——conversationsQuery / friendsQuery / friendRequestsQuery /
+  // blockedQuery / characterQuery 各 15-30s 轮询，每一份回拉都让 panel 重渲；
+  // 加上父 workspace 60s 轮询 + socket 推消息透传 conversation prop。每个
+  // tick 都 O(N×M) 跑一次 isPersistedGroupConversation × participants.includes
+  // —— 活跃用户 50+ 会话各 10-30 参与者，约 500-1500 次 includes 比较白用功。
+  // 结果只用 .length / [0]，但 useMemo 把数组引用稳住也避免 commonGroups.length
+  // 在 disabled / valueMuted 上反复触发 JSX 的等值比较。
+  // 和姊妹 GroupChatDetailsPanel existingMemberIds (line 1684-1687) /
+  // removableMembers (line 1689) 同款 useMemo 思路。
+  const commonGroups = useMemo(
+    () =>
+      (conversationsQuery.data ?? []).filter(
+        (item) =>
+          isPersistedGroupConversation(item) &&
+          item.participants.includes(targetCharacterId),
+      ),
+    [conversationsQuery.data, targetCharacterId],
   );
   const remarkName = friendship?.remarkName?.trim() ?? "";
   const displayName = remarkName || targetCharacter?.name || conversation.title;
