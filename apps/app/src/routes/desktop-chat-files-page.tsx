@@ -187,10 +187,17 @@ export function DesktopChatFilesPage() {
     return () => window.clearTimeout(timer);
   }, [actionNotice]);
 
+  // 走查新会话桌面端群聊 R1：app-conversations 是和 chat-list / chat-workspace /
+  // chat-details 共用的 query key——其它入口都已经按 15s staleTime 对齐过；这里
+  // 漏掉，用户从群「聊天文件」入口跳进来时即使 cache 刚刷过几百 ms 也会再发一
+  // 次 getConversations，公网隧道 ~600ms RTT 直接撞文件列表 query → "进入文件
+  // 页空白半秒"。和移动端单聊 R4 / desktop-message-avatar-popover R1 同款补
+  // staleTime: 15s。
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 15_000,
   });
 
   const conversations = useMemo(
@@ -268,15 +275,26 @@ export function DesktopChatFilesPage() {
 
   const selectedConversation =
     conversations.find((item) => item.id === selectedConversationId) ?? null;
+  // 走查新会话桌面端群聊 R1：原版 queryKey 第 3 段直接 `conversations.map(...)`
+  // 按服务端返回的"按最近活跃排序"顺序构造数组。chat-list 的 60s 轮询 / socket
+  // 推一条群消息都会让 conversations 重新排序（lastActivityAt 变化）——id 集合
+  // 没变，但数组元素的顺序变了 → react-query 深比较判断 key 不同 → 触发
+  // allAttachmentsQuery 整页 Promise.all 把 7 个 group + N 个单聊的全部消息再
+  // 全量 fetch 一遍（每条对话最多 100 条消息）。用户在文件页停一分钟，期间
+  // 群里有人发消息就会重新拉一次全量 attachments。先 sort 后再 join，让 key
+  // 只在"参与的对话集合"真变化时才换。
+  const allAttachmentsQueryKey = useMemo(
+    () =>
+      conversations
+        .map(
+          (item) =>
+            `${item.id}:${item.source ?? getConversationThreadType(item)}`,
+        )
+        .sort(),
+    [conversations],
+  );
   const allAttachmentsQuery = useQuery({
-    queryKey: [
-      "desktop-chat-files",
-      baseUrl,
-      conversations.map(
-        (item) =>
-          `${item.id}:${item.source ?? getConversationThreadType(item)}`,
-      ),
-    ],
+    queryKey: ["desktop-chat-files", baseUrl, allAttachmentsQueryKey],
     queryFn: async () => {
       if (!baseUrl) {
         return [];
@@ -291,6 +309,11 @@ export function DesktopChatFilesPage() {
       return rows.flat();
     },
     enabled: isDesktopLayout && Boolean(baseUrl) && conversations.length > 0,
+    // 文件清单（图片 + 文件附件）是低变更频率数据——新消息到达由
+    // app-conversations refetch 自然触发 queryKey 变化（id 集合变 → key 变），
+    // 重复进入 /desktop/chat-files 时 15s 内沿用上次结果，避免每次都重做 7
+    // 路 getGroupMessages + N 路 getConversationMessages 大数据回拉。
+    staleTime: 15_000,
   });
 
   const baseAttachmentRows = useMemo(() => {
