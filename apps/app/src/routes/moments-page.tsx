@@ -1318,6 +1318,28 @@ export function MomentsPage() {
       return;
     }
 
+    // 走查 R6：race condition gate —— 之前一旦 routeSelectedAuthorId 被 URL 设上、
+    // 但 syncedRouteSelectedAuthorId 还没匹配上 visibleMoments 里的某个 character
+    // moment（routeSelectedAuthorMoment 还没 find 到），就立刻把 URL 里的
+    // authorId 抹掉。问题：用户带 #author=X 从分享链接进来，首屏 momentsQuery
+    // 还在 fetch 第一页 / auto-prefetch 还没翻到 X 所在的那一页时，clear effect
+    // 抢先跑 → navigate 把 #author=X 从 URL 拿掉 → routeSelectedAuthorId 变 null
+    // → 下面专门负责 redirect 到 /desktop/friend-moments/X 的 effect 永远没机会
+    // 看见 sync=X 的瞬态 → 用户停在 /tabs/moments 看不到分享目标。
+    //
+    // 修法：只在「所有 page 都拉完了仍未匹配」时才清 URL —— momentsHasNextPage
+    // 是 react-query 的"还有下一页可拉"标志，false 才表示分页链路真的耗尽；
+    // 同时 isLoading 期内（第一页都没回前）也守住。auto-prefetch chain 中途因
+    // 网络 error 中止（isFetchNextPageError）也不要 clear，让用户能手动刷新重试，
+    // 而不是 URL 直接被 wipe 掉无路可退。
+    if (
+      momentsQuery.isLoading ||
+      momentsHasNextPage ||
+      momentsIsFetchNextPageError
+    ) {
+      return;
+    }
+
     const nextHash = buildDesktopMomentsRouteHash({
       momentId: routeSelectedMomentId ?? undefined,
       returnPath: safeReturnPath,
@@ -1335,6 +1357,9 @@ export function MomentsPage() {
     });
   }, [
     isDesktopLayout,
+    momentsHasNextPage,
+    momentsIsFetchNextPageError,
+    momentsQuery.isLoading,
     navigate,
     normalizedHash,
     pathname,

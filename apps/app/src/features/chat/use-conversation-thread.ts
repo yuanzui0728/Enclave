@@ -44,6 +44,7 @@ import {
   onTypingStop,
 } from "../../lib/socket";
 import { handleSocketSubscriptionExpiredError } from "../../lib/subscription-expired";
+import { getConversationDisplayTitle } from "../../lib/conversation-preview";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 
@@ -237,7 +238,13 @@ export function useConversationThread(conversationId: string) {
       return;
     }
 
-    setConversationTitle(conversation.title);
+    // 第四轮 R4：服务端 normalizeLegacyConversationEntity 在 title 全部 fallback
+    // 失败时持久化字面量 "未知联系人" / "Direct conversation"。chat-list-page
+    // 行内会经 getConversationDisplayTitle 翻成当前 locale，但本 hook 直存原始
+    // string 流给 conversation-thread-panel 顶部 header + ChatMessageList
+    // threadContext.title + ChatMessageSearchPanel subtitle，全部对非中文 locale
+    // 用户暴露中文字面量「未知联系人」。统一在源头翻译。
+    setConversationTitle(getConversationDisplayTitle(conversation.title));
     // conversationsQuery cache 每次刷新（60s 定时 / 窗口聚焦 / socket 消息
     // invalidate）都拿到新的 activeConversation 对象引用，effect 重跑。
     // 标题 string 用 setState 同值会被 React 跳过 re-render，但
@@ -379,7 +386,9 @@ export function useConversationThread(conversationId: string) {
         return;
       }
 
-      setConversationTitle(payload.title);
+      // R4：同上 activeConversation effect 的 sentinel 翻译。socket 推过来的
+      // payload.title 仍然可能是「未知联系人」字面量，必须经 normalize。
+      setConversationTitle(getConversationDisplayTitle(payload.title));
       // 和上方 activeConversation 那个 effect (line 210-219) 同款 dedup ——
       // socket 的 conversation_updated 在活跃聊天里频繁触发（每条新消息后端都
       // 会 emit 一次更新 lastMessage/unreadCount），payload.participants.slice
