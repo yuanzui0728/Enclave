@@ -187,6 +187,16 @@ export function ChannelAuthorPage() {
 
   useEffect(() => {
     setNotice(null);
+    // 走查 2026-05-18 R3：原来 baseUrl 切换（账户切换）时只清 notice，但
+    // followMutation 的 isError/error/isPending 状态留在 hook 内不重置——
+    // 用户在 A 账户的作者页点 +关注 失败 → 红色「关注失败」error card 渲出
+    // → 顶栏切到 B 账户 → profileQuery 用新 baseUrl/同 authorId 重新拉数据
+    // （B 账户里同一 char-id 可能根本不在）→ followMutation.isError 仍 true
+    // → 「关注失败」error card 继续盖在简介卡上头，文案是 A 账户的错误信息
+    // （往往是 'CHARACTER_NOT_FOUND' 之类技术细节），B 用户体感「我刚进作
+    // 者页就报 404，账户连不上」。reset() 把 hook 内 status 清回 idle，让
+    // 错误条只跟当前账户的真实操作绑定。
+    followMutation.reset();
     // 切到新 authorId（路由 in-place 切作者）时再读一次 LS；初次 mount 已经
     // 由 useState lazy initializer 处理过，不要在这里再 set 同样的初值——会
     // 触发 unnecessary re-render，也避开 mount + StrictMode 把覆盖 bug 重新引回。
@@ -194,6 +204,8 @@ export function ChannelAuthorPage() {
       lastReadAuthorIdRef.current = authorId;
       setActiveCollection(readStoredChannelAuthorCollection(authorId));
     }
+    // followMutation 是 useMutation 返回的稳定 reference，安全略过 deps lint
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authorId, baseUrl]);
 
   // 走查 R2：success notice 之前一直挂着不消，跟主视频号页 2.4s 自动消失的
