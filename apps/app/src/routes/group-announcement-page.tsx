@@ -301,7 +301,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
   return (
     <ChatDetailsShell
       title={t(msg`群公告`)}
-      subtitle={groupQuery.data?.name ?? t(msg`群聊信息`)}
+      subtitle={groupQuery.data?.name || t(msg`群聊信息`)}
       onBack={() => {
         // 走查 R1：原版直接 navigate({to: details}) 会 push 一条新 history 项，
         // 用户 [details → announcement → 点返回] 后 history 变成

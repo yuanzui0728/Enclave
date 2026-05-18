@@ -242,7 +242,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   );
   const totalCount = members.length;
   const waitingCount = Math.max(totalCount - activeCount, 0);
-  const groupName = groupQuery.data?.name ?? t(msg`群聊`);
+  const groupName = groupQuery.data?.name || t(msg`群聊`);
   const callTitle =
     mode === "voice" ? t(msg`群语音通话`) : t(msg`群视频通话`);
   const statusTitle = getGroupCallStatusLabel(mode, "ongoing");

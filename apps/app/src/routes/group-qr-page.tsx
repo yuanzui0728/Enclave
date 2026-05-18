@@ -2574,7 +2574,7 @@ export function GroupQrPage() {
   return (
     <ChatDetailsShell
       title={t(msg`群二维码`)}
-      subtitle={groupQuery.data?.name ?? t(msg`群聊邀请`)}
+      subtitle={groupQuery.data?.name || t(msg`群聊邀请`)}
       onBack={() => {
         // 走查 R1：原版直接 navigate push 新 history 项，用户 [details → qr →
         // 点返回] 后浏览器后退会落回 qr 死循环。和 background 页同口径用

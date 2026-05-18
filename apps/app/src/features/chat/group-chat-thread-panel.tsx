@@ -893,7 +893,7 @@ export function GroupChatThreadPanel({
   // O(n) 每个 typing tick / socket echo / 任何 state mutation 都白跑一次，
   // standaloneViewerItems / favorite buildContext 等 6 处下游 useMemo 跟着重算。
   // 把 group/title 引用稳定下来，跟单聊口径对齐。
-  const groupTitle = groupQuery.data?.name ?? t(msg`群聊`);
+  const groupTitle = groupQuery.data?.name || t(msg`群聊`);
   const messageListThreadContext = useMemo(
     () => ({
       id: groupId,
@@ -1490,7 +1490,7 @@ export function GroupChatThreadPanel({
         </header>
       ) : (
         <MobileChatThreadHeader
-          title={groupQuery.data?.name ?? t(msg`群聊`)}
+          title={groupQuery.data?.name || t(msg`群聊`)}
           subtitle={mobileSubtitle}
           onBack={onBack}
           actions={[

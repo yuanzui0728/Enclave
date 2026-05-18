@@ -99,7 +99,7 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
 
   return (
     <ChatMessageSearchPanel
-      subtitle={groupQuery.data?.name ?? t(msg`群聊`)}
+      subtitle={groupQuery.data?.name || t(msg`群聊`)}
       messages={messagesQuery.data}
       enableSenderFilter
       isLoading={messagesQuery.isLoading}

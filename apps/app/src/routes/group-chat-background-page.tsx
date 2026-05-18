@@ -701,7 +701,7 @@ export function GroupChatBackgroundPage() {
                 {t(msg`群聊背景`)}
               </div>
               <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                {groupQuery.data?.name ?? t(msg`群聊背景`)}
+                {groupQuery.data?.name || t(msg`群聊背景`)}
               </div>
             </div>
             <Button
@@ -743,7 +743,7 @@ export function GroupChatBackgroundPage() {
 
   return (
     <ChatDetailsShell
-      title={groupQuery.data?.name ?? t(msg`群聊背景`)}
+      title={groupQuery.data?.name || t(msg`群聊背景`)}
       subtitle={t(msg`默认背景和群聊专属背景`)}
       onBack={() => {
         navigateBackOrFallback(

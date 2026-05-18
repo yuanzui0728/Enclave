@@ -276,7 +276,7 @@ function MobileGroupChatEditPage({
   return (
     <ChatDetailsShell
       title={mode === "name" ? t(msg`群聊名称`) : t(msg`我在本群的昵称`)}
-      subtitle={groupQuery.data?.name ?? t(msg`群聊信息`)}
+      subtitle={groupQuery.data?.name || t(msg`群聊信息`)}
       onBack={() => {
         // 走查 R1：openGroupDetails 直接 navigate({to: details}) push 一条新
         // history 项，用户 [details → edit → 点返回] 后浏览器后退会落回 edit
