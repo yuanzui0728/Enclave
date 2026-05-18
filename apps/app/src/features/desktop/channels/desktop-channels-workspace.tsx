@@ -1504,9 +1504,31 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
   onToggleUnmuted: () => void;
 }) {
   const t = useRuntimeTranslator();
+  // 走查 2026-05-18 第二轮（本会话）R3：原 ref 是内联箭头 `(node) =>
+  // registerSlide(post.id, node)` —— 每次 ChannelFeedSlide re-render（isActive
+  // 翻转 / likePending / favoritePending / followPending / unmuted / isFavorite
+  // 等任一 prop 变化）都会重建箭头函数，React callback-ref 协议看到新 identity
+  // 后先调老 ref(null) 再调新 ref(node)。这导致 slideRefs Map 在两次 callback
+  // 之间瞬间丢掉这条 entry：
+  //   - 同帧的 [routeSelectedPostId] effect 调 slideRefs.current.get(routeSel) 兜
+  //     null → scrollIntoView 失败；
+  //   - IntersectionObserver 仍观察的是 DOM 元素本身（不动），所以 IO 路径不
+  //     受影响；
+  //   - Map.delete + Map.set 本身 cheap 但每条 slide 在 20 张 home 上每秒可能
+  //     re-render 数次（like 乐观 / IO 触发的 isActive 切换 / mute 切换），累计
+  //     上千次 Map churn。
+  // post.id 在一条 slide 生命周期内稳定，registerSlide 已经 useCallback 空 deps
+  // 稳定 identity。useCallback([post.id, registerSlide]) 锁住 ref 函数 identity，
+  // 同一条 slide 多次 re-render 不再触发 React 的 detach/attach。
+  const slideRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      registerSlide(post.id, node);
+    },
+    [post.id, registerSlide],
+  );
   return (
     <div
-      ref={(node) => registerSlide(post.id, node)}
+      ref={slideRef}
       data-post-id={post.id}
       className="flex h-full min-h-[640px] snap-start snap-always items-center justify-center px-6 py-6"
     >
