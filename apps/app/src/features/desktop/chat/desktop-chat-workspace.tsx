@@ -3017,6 +3017,16 @@ const ConversationCardLink = memo(function ConversationCardLink({
 
   const content = (
     <>
+      {/* R35：会话 isPinned 只通过 className 切到 bg-[rgba(240,244,242,0.92)]
+          的视觉差表达，没有任何 SR 可感知的文本。盲人用户在会话列表里只能
+          听到会话名 / preview / 时间戳 / 未读数，听不出"这条是置顶的"。
+          桌面端 contextMenu 已经能改置顶状态（置顶聊天 / 取消置顶），但
+          state 反馈完全是视觉的；和姊妹 isMuted 已有 BellOff + aria-label
+          的处理方向一致。补一段 sr-only 文本到 content 开头，SR 朗读时
+          会先报"已置顶 + 会话名 ..."，明确表达列表里的位置语义。 */}
+      {conversation.isPinned ? (
+        <span className="sr-only">{t(msg`已置顶`)}</span>
+      ) : null}
       {isGroupConversation ? (
         <GroupAvatarChip
           name={displayTitle}
