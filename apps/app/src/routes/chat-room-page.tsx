@@ -81,6 +81,23 @@ export function ChatRoomPage() {
     setRouteContext(resolveRouteContext(conversationId));
   }, [conversationId, search]);
 
+  // 新一轮 R1：chat-room-page 在路由参数 conversationId 变化时是「保留挂载、
+  // 只换 params」的——React 不重 mount 本组件（重 mount 的是子 ConversationThreadPanel
+  // 的 key={conversationId}）。所以 routeMobileShortcutAction / routeCallReturnKind
+  // 这两条「URL 一次性信号」state 会跨会话泄漏：
+  //   1) 在 conv A 通话结束 → URL 带 ?call-return=voice → setRouteCallReturnKind("voice")
+  //   2) 紧接着 6s 自动关闭计时器之前用户从 chat-details 名片分享 / Reminder /
+  //      Game invite 等路径跳到 /chat/B（path 同型，组件不卸）
+  //   3) routeCallReturnKind 还是 "voice"，B 顶部莫名其妙挂着「本轮语音通话已
+  //      结束。你可以直接继续输入...」notice
+  // routeMobileShortcutAction 同理：composer 快捷动作（如外部 deep link 强制
+  // 切语音输入）也会在 ConversationThreadPanel 处理之前的微秒级窗口里漏到下一个
+  // 会话。conversationId 变化时强制把两条 state 清零，避免错配。
+  useEffect(() => {
+    setRouteMobileShortcutAction(null);
+    setRouteCallReturnKind(null);
+  }, [conversationId]);
+
   useEffect(() => {
     if (isDesktopLayout) {
       void navigate({
