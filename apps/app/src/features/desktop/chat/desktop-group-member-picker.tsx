@@ -255,7 +255,9 @@ export function DesktopGroupMemberPicker({
 
             {friendsQuery.isError && friendsQuery.error instanceof Error ? (
               <div className="px-2 py-2">
-                <ErrorBlock message={friendsQuery.error.message} />
+                {/* R52：群成员选择器（拉人入群）friendsQuery 失败时盲人
+                    SR 静默 —— 列表只会变空，用户不知道是没好友还是接口挂了。 */}
+                <ErrorBlock role="alert" message={friendsQuery.error.message} />
               </div>
             ) : null}
 
