@@ -55,6 +55,20 @@ export function MobileDetailsActionSheet({
     };
   }, []);
 
+  // 走查 2026-05-18 移动端群聊 R5：和姊妹 sheet mobile-message-reminder-sheet R3
+  // / mobile-mention-picker-sheet R3 / group-message-context-menu R4 / mobile-
+  // message-action-sheet R3 同款修法——下方 back/Esc 两个 effect 原本把 onClose
+  // 列进 deps，但所有调用方（group-chat-details-page 1207/1291 / group-member-
+  // picker-page 884 / chat-details-page 等）都是 inline arrow `onClose={() =>
+  // setXxxOpen(false)}`，父帧 React state 任意变化（confirm按钮 hover / 父级
+  // re-render）都让 effect 拆装：
+  // - back 拦截：registerAndroidBackInterceptor → unregister 操作 native bridge
+  //   注册表，sheet 还开着的时候每次父 re-render 就拆装一次原生注册。
+  // - Esc：window.removeEventListener / addEventListener("keydown") 每次拆装。
+  // 镜像 onCloseRef，deps 收紧到 [open]，sheet 开着期间只挂一次。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   // 原生壳硬件 Back 键：sheet 打开时先关 sheet，不让 BACK 同时 history.back
   // 把用户从 chat-details / group-chat-details / group-member-picker 带回上
   // 一级。和 mobile-message-action-sheet.tsx 对齐。
@@ -64,11 +78,11 @@ export function MobileDetailsActionSheet({
     }
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [open, onClose]);
+  }, [open]);
 
   // 走查 Round 1：sheet 打开时按 Esc 没反应——桌面 web / 模拟器 / 自动化都拍不
   // 掉。这里加一个 keydown 监听，open 才挂，避免每次渲染都注册。
@@ -90,11 +104,11 @@ export function MobileDetailsActionSheet({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) {
     return null;
