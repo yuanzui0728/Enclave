@@ -114,7 +114,21 @@ export function DesktopChatFilesPage() {
   } | null>(null);
   const localMessageActionState = useLocalChatMessageActionState();
 
+  // 走查电脑端群聊 R5：和姊妹 DesktopGroupDetailCard R4（commit 165ca9815）/
+  // GroupChatDetailsPanel R1（commit bf7e3914b）同款 pattern。「定位到原消息」
+  // 按钮 line 832 原版 onClick → navigateToAttachmentMessage(item) → 直接 push
+  // /tabs/chat?...messageId=... history 项，无任何 throttle。同帧 <16ms 双击
+  // 都通过 → 2 条相同 history 项 → 用户从被定位的群消息回到附件页要按 2 次
+  // 返回；群消息的 around-message 窗口拉取走 getGroupMessages 公网 RTT
+  //（~600ms），第 2 次也会重复发出（thread panel 内 highlightedMessageId
+  // 的 anchor-window fetch 也跟着第二次重打）。按 messageId 分锁（不同附件
+  // 同帧连点是合法用法），raf 释放兜底"navigate 没真正切走"边界。
+  const navigatingAttachmentMessageIdsRef = useRef<Set<string>>(new Set());
   const navigateToAttachmentMessage = (item: AttachmentRow) => {
+    if (navigatingAttachmentMessageIdsRef.current.has(item.id)) {
+      return;
+    }
+    navigatingAttachmentMessageIdsRef.current.add(item.id);
     void navigate({
       to: "/tabs/chat",
       hash: buildDesktopChatThreadHash({
@@ -122,6 +136,13 @@ export function DesktopChatFilesPage() {
         messageId: item.id,
       }),
     });
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        navigatingAttachmentMessageIdsRef.current.delete(item.id);
+      });
+    } else {
+      navigatingAttachmentMessageIdsRef.current.delete(item.id);
+    }
   };
 
   useEffect(() => {
