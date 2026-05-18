@@ -128,9 +128,21 @@ export function DesktopGroupCallPanel({
     });
   }, [members]);
 
+  // 走查电脑端群聊 R79：原版 activeMembers / 下方席位渲染 .map 内
+  // joinedMemberIds.includes(member.memberId) 都是 O(K) 线性扫——8 个 visible
+  // members × K（最多 50）= 400 次比较 / render；activeMembers useMemo deps
+  // 含 joinedMemberIds 引用，每次 toggleJoinedState 翻新数组就重算 filter
+  // 也是 O(N·K)。本面板 re-render 触发源多（mic / camera / speaker 三个
+  // toggle / startedAt 翻转 / members 30s 轮询 / 1200ms auto-sync 内的
+  // setQueriesData 透传也会让 joinedMemberIds 引用变化触发整段重算）。
+  // 提一份 Set；activeMembers / 下方席位 button 复用，O(1) 查询。
+  const joinedMemberIdSet = useMemo(
+    () => new Set(joinedMemberIds),
+    [joinedMemberIds],
+  );
   const activeMembers = useMemo(
-    () => members.filter((member) => joinedMemberIds.includes(member.memberId)),
-    [joinedMemberIds, members],
+    () => members.filter((member) => joinedMemberIdSet.has(member.memberId)),
+    [joinedMemberIdSet, members],
   );
   const visibleMembers = useMemo(() => members.slice(0, 8), [members]);
   // 走查 R4：和 mobile-group-call-screen commit 948078bb2 同款问题——下面
@@ -149,18 +161,29 @@ export function DesktopGroupCallPanel({
   const hasSyncedStatus =
     lastSyncedCounts?.activeCount === activeCount &&
     lastSyncedCounts?.totalCount === members.length;
-  const workspaceSummaryLines = buildGroupCallWorkspaceSummaryLines({
-    kind,
-    status: "ongoing",
-    sourceLabel: t(msg`桌面端`),
-    counts: members.length
-      ? {
-          activeCount,
-          totalCount: members.length,
-          waitingCount,
-        }
-      : null,
-  });
+  // 走查电脑端群聊 R79：原版每次 render 都跑 buildGroupCallWorkspaceSummaryLines
+  // —— 函数内部 2-4 路 translateRuntimeMessage Map 查表 + 字符串拼接，本面板
+  // re-render 频繁（mic/camera/speaker toggle / 1200ms auto-sync effect /
+  // members 30s 轮询透传 / setLastPublishedCallCounts 后父级回流），每次都
+  // 重做相同字符串。useMemo 让 kind/activeCount/totalCount/waitingCount 不变
+  // 时直接复用旧数组——下方 .map (line ~449) 的 `key={line}` 也跟着稳定，
+  // InlineNotice 不再被识别为新孩子重挂。t deps 兜 locale 切换。
+  const workspaceSummaryLines = useMemo(
+    () =>
+      buildGroupCallWorkspaceSummaryLines({
+        kind,
+        status: "ongoing",
+        sourceLabel: t(msg`桌面端`),
+        counts: members.length
+          ? {
+              activeCount,
+              totalCount: members.length,
+              waitingCount,
+            }
+          : null,
+      }),
+    [activeCount, kind, members.length, t, waitingCount],
+  );
 
   // 走查电脑端群聊 R2：原版 mount 时直接打 onPanelOpened，把 (activeCount=0,
   // totalCount=0) 报给 parent → parent sendCallInviteMutation 立刻发一条
@@ -523,7 +546,10 @@ export function DesktopGroupCallPanel({
 
         <div className="mt-4 grid min-h-0 flex-1 gap-3 overflow-auto sm:grid-cols-2">
           {visibleMembers.map((member) => {
-            const joined = joinedMemberIds.includes(member.memberId);
+            // 走查电脑端群聊 R79 续：复用上方 joinedMemberIdSet（line ~140）
+            // 替代 O(K) 的 .includes 扫——8 个 tile × K 个 joined = O(8K) 退化
+            // 成 O(8) Set.has。
+            const joined = joinedMemberIdSet.has(member.memberId);
             const roleLabel =
               member.role === "owner"
                 ? t(msg`群主`)
