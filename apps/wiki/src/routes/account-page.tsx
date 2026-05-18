@@ -16,6 +16,7 @@ import { setSession } from "../lib/auth-store";
 import { wikiApi, WikiApiError, type AuthProfile } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
+import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 type TabKey = "password" | "profile" | "email";
 
@@ -124,10 +125,20 @@ function TabList({
   // 行为不一致——盲用用户会找不到这个 landmark 跳进去对应的什么 page。改成
   // role=tablist + role=tab + aria-selected，跟 character-page / admin-reports
   // 修法对齐。disabled 邮箱 tab 漏过 aria-selected（语义上始终不选中）。
+  // roving tabindex + 方向键：见 use-tablist-keyboard.ts，让键盘用户用 ← / → 在
+  // 三个 tab 之间切换，而不是每个 tab 都占一个 Tab stop。
+  const onKeyDown = useTablistKeyboard({
+    count: items.length,
+    onActivate: (i) => {
+      const it = items[i];
+      if (it && !it.disabled) onChange(it.key);
+    },
+  });
   return (
     <div
       role="tablist"
       aria-label={t(msg`账户设置板块`)}
+      onKeyDown={onKeyDown}
       className="flex gap-1 overflow-x-auto rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-shell)] p-1 lg:flex-col lg:gap-0.5 lg:overflow-visible"
     >
       {items.map((it) => {
@@ -138,6 +149,7 @@ function TabList({
             type="button"
             role="tab"
             aria-selected={active}
+            tabIndex={active ? 0 : -1}
             disabled={it.disabled}
             onClick={() => !it.disabled && onChange(it.key)}
             className={`whitespace-nowrap rounded-xl px-3 py-2 text-left text-sm transition-colors ${

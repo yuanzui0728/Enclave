@@ -80,6 +80,15 @@ export function FeatureUnavailableDialog({
         type="button"
         aria-label={t(msg`关闭提示`)}
         onClick={onClose}
+        // 走查电脑端群聊 R104：和姊妹 R101-R103 / 电脑端单聊 R107-R113 一批同款
+        // —— FeatureUnavailableDialog 的 backdrop <button> (absolute inset-0)
+        // 视觉不可见、纯 mouse"点击背景关闭"affordance，但 DOM 顺序在 dialog
+        // 子树第一位。本 dialog 被 group-chat-thread-panel / conversation-
+        // thread-panel 用作"群语音/视频通话开发中"提示，用户在群聊里点 header
+        // 「语音/视频通话」icon 弹出 dialog 后按 Tab → 焦点先落到这张不可见
+        // backdrop → 看不到 focus ring → 再按 Enter dialog 秒关。Esc keydown
+        // 已挂 (line 41-56)，键盘用户走 Esc 关 dialog。
+        tabIndex={-1}
         className="absolute inset-0"
       />
 

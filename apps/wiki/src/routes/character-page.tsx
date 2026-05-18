@@ -36,6 +36,7 @@ import {
   revisionOperationLabel,
   revisionStatusLabel,
 } from "../lib/revision-labels";
+import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 type Tab = "read" | "edit" | "history" | "talk";
 
@@ -103,31 +104,12 @@ export function CharacterPage() {
             "当前页"导航链接，比如侧栏菜单 / 面包屑）；点了"编辑"屏读会念
             "current page 编辑"误导用户以为离开了角色页。和版本切换条统一改成
             role=tablist + role=tab + aria-selected。 */}
-        <div
-          role="tablist"
-          aria-label={t(msg`角色页板块切换`)}
-          className="wiki-touch-scroll -mx-1 inline-flex overflow-x-auto rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1 shadow-[var(--shadow-soft)] sm:mx-0 sm:overflow-visible"
-        >
-          <TabButton active={tab === "read"} onClick={() => setTab("read")}>
-            <Trans>阅读</Trans>
-          </TabButton>
-          {/* pending_create 期间 character 实体尚未生成，submitEdit 会 400；
-              直接隐藏编辑入口，避免点了"打开编辑器 → 提交"全程后才报"角色不存在"。 */}
-          {!isPendingCreate && (
-            <TabButton active={tab === "edit"} onClick={() => setTab("edit")}>
-              <Trans>编辑</Trans>
-            </TabButton>
-          )}
-          <TabButton
-            active={tab === "history"}
-            onClick={() => setTab("history")}
-          >
-            <Trans>历史</Trans>
-          </TabButton>
-          <TabButton active={tab === "talk"} onClick={() => setTab("talk")}>
-            <Trans>讨论</Trans>
-          </TabButton>
-        </div>
+        <MainTabList
+          tab={tab}
+          setTab={setTab}
+          isPendingCreate={isPendingCreate}
+          label={t(msg`角色页板块切换`)}
+        />
         <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
           <WatchToggle characterId={characterId} />
           {user && (
@@ -157,43 +139,11 @@ export function CharacterPage() {
         {viewerCanSeeCurrent &&
           pageQ.data?.latestRevision?.id !==
             pageQ.data?.stableRevision?.id && (
-            // 稳定版 / 最新版是互斥切换 ReadView 内容的 tab，不是独立 toggle。
-            // 原写法 role=group + 内层 aria-pressed 是 toggle 语义（NVDA 念成
-            // "稳定版 pressed"），跟视觉「胶囊高亮当前段」对不上。对齐桌面/移动
-            // 视频号 section tabs 的修法：外层 role=tablist + aria-label，内层
-            // role=tab + aria-selected，让 SR 听到"已选中 稳定版 / 最新版 选项卡"。
-            <div
-              role="tablist"
-              aria-label={t(msg`版本切换`)}
-              className="inline-flex w-full shrink-0 overflow-hidden rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-xs shadow-[var(--shadow-soft)] sm:ml-auto sm:w-auto"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={viewMode === "stable"}
-                className={`flex-1 px-3 py-2 sm:flex-none ${
-                  viewMode === "stable"
-                    ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)]"
-                    : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]"
-                }`}
-                onClick={() => setViewMode("stable")}
-              >
-                <Trans>稳定版</Trans>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={viewMode === "current"}
-                className={`flex-1 px-3 py-2 sm:flex-none ${
-                  viewMode === "current"
-                    ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)]"
-                    : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]"
-                }`}
-                onClick={() => setViewMode("current")}
-              >
-                <Trans>最新版</Trans>
-              </button>
-            </div>
+            <ViewModeTabList
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              label={t(msg`版本切换`)}
+            />
           )}
         {/* pending_create 状态下底层 character 行还没建，submitEdit / soft-delete
             都会拿 "角色不存在" 直接 400。隐藏申请删除/恢复按钮，避免点了走死路；
@@ -318,6 +268,8 @@ function TabButton({
       type="button"
       role="tab"
       aria-selected={active}
+      // roving tabindex：只有当前 tab 可 Tab 进入，其它用方向键导航。
+      tabIndex={active ? 0 : -1}
       onClick={onClick}
       className={`inline-flex min-h-[36px] min-w-[68px] items-center justify-center rounded-full px-4 py-1.5 text-sm transition-colors ${
         active
@@ -327,6 +279,115 @@ function TabButton({
     >
       {children}
     </button>
+  );
+}
+
+function ViewModeTabList({
+  viewMode,
+  setViewMode,
+  label,
+}: {
+  viewMode: "stable" | "current";
+  setViewMode: (v: "stable" | "current") => void;
+  label: string;
+}) {
+  const modes = useMemo<Array<"stable" | "current">>(
+    () => ["stable", "current"],
+    [],
+  );
+  const onKeyDown = useTablistKeyboard({
+    count: modes.length,
+    onActivate: (i) => {
+      const next = modes[i];
+      if (next) setViewMode(next);
+    },
+  });
+  return (
+    <div
+      role="tablist"
+      aria-label={label}
+      onKeyDown={onKeyDown}
+      className="inline-flex w-full shrink-0 overflow-hidden rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-xs shadow-[var(--shadow-soft)] sm:ml-auto sm:w-auto"
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={viewMode === "stable"}
+        tabIndex={viewMode === "stable" ? 0 : -1}
+        className={`flex-1 px-3 py-2 sm:flex-none ${
+          viewMode === "stable"
+            ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)]"
+            : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]"
+        }`}
+        onClick={() => setViewMode("stable")}
+      >
+        <Trans>稳定版</Trans>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={viewMode === "current"}
+        tabIndex={viewMode === "current" ? 0 : -1}
+        className={`flex-1 px-3 py-2 sm:flex-none ${
+          viewMode === "current"
+            ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)]"
+            : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]"
+        }`}
+        onClick={() => setViewMode("current")}
+      >
+        <Trans>最新版</Trans>
+      </button>
+    </div>
+  );
+}
+
+function MainTabList({
+  tab,
+  setTab,
+  isPendingCreate,
+  label,
+}: {
+  tab: Tab;
+  setTab: (t: Tab) => void;
+  isPendingCreate: boolean;
+  label: string;
+}) {
+  const visibleTabs = useMemo<Tab[]>(() => {
+    const result: Tab[] = ["read"];
+    if (!isPendingCreate) result.push("edit");
+    result.push("history");
+    result.push("talk");
+    return result;
+  }, [isPendingCreate]);
+  const onKeyDown = useTablistKeyboard({
+    count: visibleTabs.length,
+    onActivate: (i) => {
+      const next = visibleTabs[i];
+      if (next) setTab(next);
+    },
+  });
+  return (
+    <div
+      role="tablist"
+      aria-label={label}
+      onKeyDown={onKeyDown}
+      className="wiki-touch-scroll -mx-1 inline-flex overflow-x-auto rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1 shadow-[var(--shadow-soft)] sm:mx-0 sm:overflow-visible"
+    >
+      <TabButton active={tab === "read"} onClick={() => setTab("read")}>
+        <Trans>阅读</Trans>
+      </TabButton>
+      {!isPendingCreate && (
+        <TabButton active={tab === "edit"} onClick={() => setTab("edit")}>
+          <Trans>编辑</Trans>
+        </TabButton>
+      )}
+      <TabButton active={tab === "history"} onClick={() => setTab("history")}>
+        <Trans>历史</Trans>
+      </TabButton>
+      <TabButton active={tab === "talk"} onClick={() => setTab("talk")}>
+        <Trans>讨论</Trans>
+      </TabButton>
+    </div>
   );
 }
 

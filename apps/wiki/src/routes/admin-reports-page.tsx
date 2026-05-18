@@ -20,6 +20,7 @@ import {
   reportStatusLabel,
   reportTargetLabel,
 } from "../lib/revision-labels";
+import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 export function AdminReportsPage() {
   const t = translateRuntimeMessage;
@@ -42,6 +43,13 @@ export function AdminReportsPage() {
     ["resolved", msg`已处理`],
     ["dismissed", msg`已驳回`],
   ];
+  const onTablistKeyDown = useTablistKeyboard({
+    count: tabs.length,
+    onActivate: (i) => {
+      const next = tabs[i]?.[0];
+      if (next) setStatus(next);
+    },
+  });
 
   return (
     <PageShell
@@ -65,6 +73,7 @@ export function AdminReportsPage() {
           <div
             role="tablist"
             aria-label={t(msg`举报状态筛选`)}
+            onKeyDown={onTablistKeyDown}
             className="wiki-touch-scroll inline-flex max-w-full overflow-x-auto rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1 shadow-[var(--shadow-soft)]"
           >
             {tabs.map(([s, label]) => (
@@ -75,6 +84,7 @@ export function AdminReportsPage() {
                 onClick={() => setStatus(s)}
                 disabled={reportsQ.isFetching && status !== s}
                 aria-selected={status === s}
+                tabIndex={status === s ? 0 : -1}
                 className={`rounded-full px-4 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                   status === s
                     ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]"

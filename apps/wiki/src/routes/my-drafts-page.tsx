@@ -20,6 +20,7 @@ import {
 } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { formatDateTime } from "../lib/format";
+import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 type Notice = { tone: "success" | "danger"; text: string } | null;
 type KindFilter = "all" | "private" | "world";
@@ -137,6 +138,13 @@ export function MyDraftsPage() {
       count: items.filter((it) => it.kind === "world").length,
     },
   ];
+  const onFilterTablistKeyDown = useTablistKeyboard({
+    count: filterChips.length,
+    onActivate: (i) => {
+      const next = filterChips[i]?.key;
+      if (next) setKindFilter(next);
+    },
+  });
 
   return (
     <PageShell
@@ -202,6 +210,7 @@ export function MyDraftsPage() {
           <div
             role="tablist"
             aria-label={t(msg`草稿类型筛选`)}
+            onKeyDown={onFilterTablistKeyDown}
             className="flex flex-wrap items-center gap-2"
           >
             {filterChips.map((c) => (
@@ -210,6 +219,7 @@ export function MyDraftsPage() {
                 type="button"
                 role="tab"
                 aria-selected={kindFilter === c.key}
+                tabIndex={kindFilter === c.key ? 0 : -1}
                 onClick={() => setKindFilter(c.key)}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   kindFilter === c.key

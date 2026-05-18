@@ -13,6 +13,7 @@ import { setSession } from "../lib/auth-store";
 import { wikiApi } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
+import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 type Mode = "password" | "email";
 
@@ -21,6 +22,14 @@ export function LoginPage() {
   const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/login" }) as { redirect?: string };
   const [mode, setMode] = useState<Mode>("password");
+  const MODES: Mode[] = ["password", "email"];
+  const onTablistKeyDown = useTablistKeyboard({
+    count: MODES.length,
+    onActivate: (i) => {
+      const next = MODES[i];
+      if (next) setMode(next);
+    },
+  });
 
   function gotoTarget() {
     // 防开放跳转：只接受站内绝对路径，且要排除 // 和 /\ 这类 protocol-relative
@@ -48,12 +57,14 @@ export function LoginPage() {
         <div
           role="tablist"
           aria-label={t(msg`登录方式`)}
+          onKeyDown={onTablistKeyDown}
           className="mb-4 flex gap-2"
         >
           <Button
             type="button"
             role="tab"
             aria-selected={mode === "password"}
+            tabIndex={mode === "password" ? 0 : -1}
             variant={mode === "password" ? "primary" : "ghost"}
             onClick={() => setMode("password")}
             className="flex-1"
@@ -64,6 +75,7 @@ export function LoginPage() {
             type="button"
             role="tab"
             aria-selected={mode === "email"}
+            tabIndex={mode === "email" ? 0 : -1}
             variant={mode === "email" ? "primary" : "ghost"}
             onClick={() => setMode("email")}
             className="flex-1"
