@@ -597,7 +597,18 @@ function SuccessCard({
 
 function PreviewAvatar({ avatar, name }: { avatar: string; name: string }) {
   const trimmed = (avatar ?? "").trim();
-  const isUrl = /^https?:\/\//i.test(trimmed) || trimmed.startsWith("/");
+  // 走查 R4：原 isUrl 只判 "http(s)://" 或 "/" 前缀；但 "//cdn.example.com/x.png"
+  // 这种 scheme-relative URL 也 startsWith("/")，会被当 displayable URL 渲染成
+  // <img src="//evil.com/track.gif">。浏览器按 page protocol（https）解析，
+  // preview 静默触发跨域请求 → 用户 IP / Referer 漏给第三方 tracker，相当于
+  // 在加载预览阶段就被打点。后端 isSafeAvatarValueBackend 已经走
+  // SCHEME_RELATIVE_AVATAR_RE = /^[/\\][/\\]/ 拒掉这一类（导入时 400），但
+  // preview 在用户点导入之前就 render，进 <img> 就已经把请求发出去了。
+  // 收紧：只接受 "/foo" 但不接受 "//foo"（也不接受 "\\foo"）。不在白名单内的
+  // 一律走 emoji/文字 fallback，不发请求。
+  const isUrl =
+    /^https?:\/\//i.test(trimmed) ||
+    (trimmed.startsWith("/") && !/^[/\\][/\\]/.test(trimmed));
   const [imgFailed, setImgFailed] = useState(false);
   // 用户切换/换文件预览不同 avatar 时重试加载，否则 imgFailed 状态粘住。
   useEffect(() => {
