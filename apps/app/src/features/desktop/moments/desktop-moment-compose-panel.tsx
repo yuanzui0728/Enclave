@@ -58,9 +58,24 @@ export function DesktopMomentComposePanel({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
+      if (event.key !== "Escape") {
+        return;
       }
+      // 走查电脑端朋友圈 R1：用户在 textarea 用中文 / 日文 IME 打到一半按 ESC
+      // 想关候选窗（拼音输入法的常规交互），window 级 ESC 监听器也跟着 fire
+      // 把整个发帖面板关掉——已提交的文字 / 图片 / 视频草稿都看不见了（草稿
+      // 本身在 useMomentComposeDraft store 留着，但用户得重开面板才能看到，
+      // 视感上是"打到一半全没了"）。和 desktop-feed-compose-panel.tsx 行 76-101
+      // / moment-comment-composer 已加的 isComposing 守卫对齐。原生 KeyboardEvent
+      // 直接有 isComposing；同时也兜 keyCode=229 防个别 IME（百度等）composing
+      // 期间不正确暴露 isComposing。
+      if (
+        event.isComposing ||
+        (event as KeyboardEvent & { keyCode?: number }).keyCode === 229
+      ) {
+        return;
+      }
+      onClose();
     };
 
     window.addEventListener("keydown", handleKeyDown);
