@@ -93,7 +93,10 @@ type DesktopChannelsWorkspaceProps = {
   // 中" 等等，channels-page L310/459/511/570/649/821/922/1072/1112），全部在
   // desktop 上渲成绿色 success 体感，明显误导。把 tone 透下来按 parent 给的
   // 渲染。
-  successNoticeTone?: "success" | "info";
+  // R6（2026-05-18 新会话）：tone 联合扩到 "danger" / "warning"，让失败 toast
+  // 跟 InlineNotice 视觉变体 + role=alert 对齐（详见 channels-page.tsx L153
+  // 同款 R6 注释）。
+  successNoticeTone?: "success" | "info" | "danger" | "warning";
   isPostFavorite: (postId: string) => boolean;
   onCloseAuthor: () => void;
   onCancelCommentReply: () => void;

@@ -150,7 +150,25 @@ export function ChannelsPage() {
     string | null
   >(null);
   const [notice, setNotice] = useState("");
-  const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  // 走查 2026-05-18 新会话 R6（本轮）：原 tone 只允许 "success" | "info"，
+  // 但下面 InlineNotice 的 role 判断（"danger" || "warning" → role=alert）
+  // 在 TypeScript 上是死分支永不命中，typecheck 报 TS2367。结果所有失败 toast
+  // （点赞失败 / 收藏失败 / 关注失败 / 评论失败 / 转发失败 / 减少推荐失败 / 换
+  // 一批失败 / 评论点赞失败）一律 setNoticeTone("info")，role 落 "status"
+  // = aria-live=polite，SR 用户的当前播报不会被打断，"点完赞 200-500ms 后才
+  // 听到失败" 的体感（典型场景：公网隧道弱网时点赞 → 用户继续往下滚 → 失败
+  // toast 冒出来但 SR 因 polite 排队后才播 → 用户已经离开这条 post），失败感
+  // 知严重延迟。把 tone 联合类型扩到包含 "danger" / "warning"，并把所有
+  // "...失败" / 阻塞类约束（如「需先加为好友才能互动」）显式分流：
+  //   - "...失败" 类（mutation onError）→ "danger" → role=alert（assertive）
+  //   - 阻塞约束（ensureCanInteract）→ "warning" → role=alert
+  //   - 中性信息（生成无内容 / 已在直播流中）→ "info" → role=status
+  //   - 成功反馈 → "success" → role=status
+  // InlineNotice 已经支持这 4 个 tone 的视觉变体（packages/ui/src/components/
+  // inline-notice.tsx），无需改基础组件。
+  const [noticeTone, setNoticeTone] = useState<
+    "success" | "info" | "danger" | "warning"
+  >("success");
   const [noticeActionLabel, setNoticeActionLabel] = useState<string | null>(
     null,
   );
@@ -201,6 +219,19 @@ export function ChannelsPage() {
   // POST /channels/generate（实测）。一次生成 ~3-5 秒 LPP 端口，重复触发把队列
   // 撑爆。同一套 ref + useEffect [isPending] 复位。
   const desktopGenerateSubmittingRef = useRef(false);
+  // 走查 2026-05-18 新会话 R5（本轮）：评论卡上的「赞」按钮（desktop drawer +
+  // mobile sheet 共用同一条 likeCommentMutation）一直漏 sync ref，跟同文件 R4
+  // 修过的 like/favorite/follow/generate 四个 toggle 同款 race：disabled=
+  // {pendingLikeCommentId === comment.id} 靠 likeCommentMutation.isPending →
+  // React state 下一次 render 才回 true。yuanzui0728 库里堆 142 条评论的那条
+  // post，drawer 打开后键鼠双击或触摸双击「赞 0 → 已赞 1」同帧 <16ms 内进 2
+  // 个 click handler，两次 mutate({commentId, postId}) 同步入栈，onMutate 各
+  // 自把 cache likeCount +1（看到「已赞 2」），两条 POST 都飞出去；服务端
+  // likeOwnerComment 对 already-liked 是 no-op（不会真叠 2 分）但仍走完
+  // build avatar context + DB findOne + Promise.all，再被回滚一次。+1 RTT 在
+  // 公网隧道下 ~200-500ms 浪费，再叠 onSettled invalidate 多刷一次 home
+  // decorations。补 sync ref 锁 — 同帧第二次 click 直接早返。
+  const commentLikeSubmittingRef = useRef(false);
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -380,9 +411,11 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      // 失败时给一行 info 通知；不要把单条点赞失败升级成"视频号暂时不可用"
-      // 大状态卡——home 列表其实还能用。
-      setNoticeTone("info");
+      // 失败时给一行 danger 通知；不要把单条点赞失败升级成"视频号暂时不可
+      // 用"大状态卡——home 列表其实还能用。tone=danger → 下方 InlineNotice
+      // role=alert / aria-live=assertive，让 SR 用户立刻知道失败（详见 L153
+      // R6 注释）。
+      setNoticeTone("danger");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -623,7 +656,8 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      setNoticeTone("info");
+      // R6: 失败 toast → danger（详见 L153 注释）。
+      setNoticeTone("danger");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       const fallback = input.replyTarget
@@ -679,10 +713,10 @@ export function ChannelsPage() {
       }
       // 网络/服务端错误不要冒到顶层的 errorMessage——那会让整个 home
       // 切到 "视频号暂时不可用" 状态卡，但实际推荐流仍然能拉到。改成
-      // info 风格的轻量通知，2.4s 自动消失。
+      // 轻量通知（不全屏），2.4s 自动消失；R6: tone=danger 走 role=alert。
       setNoticeActionLabel(null);
       setNoticeAction(null);
-      setNoticeTone("info");
+      setNoticeTone("danger");
       setNotice(
         err instanceof Error
           ? t(msg`换一批失败：${err.message}`)
@@ -808,7 +842,8 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      setNoticeTone("info");
+      // R6: 失败 toast → danger（详见 L153 注释）。
+      setNoticeTone("danger");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1052,7 +1087,8 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      setNoticeTone("info");
+      // R6: 失败 toast → danger（详见 L153 注释）。
+      setNoticeTone("danger");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1153,7 +1189,8 @@ export function ChannelsPage() {
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
       }
-      setNoticeTone("info");
+      // R6: 失败 toast → danger（详见 L153 注释）。
+      setNoticeTone("danger");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1303,7 +1340,8 @@ export function ChannelsPage() {
       // 走查 R8: 跟 commentMutation 一样的兜底——用户点赞完后立刻关 sheet，
       // mutation 失败时 mobileCommentSheetErrorMessage 已经不渲染了，optimistic
       // 翻回去用户也不知道为啥，加 page 级 notice 兜底。
-      setNoticeTone("info");
+      // R6: 失败 toast → danger（详见 L153 注释）。
+      setNoticeTone("danger");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(
@@ -1343,7 +1381,9 @@ export function ChannelsPage() {
   // 后直接 return；share / view / not-interested / 转发 仍开放给非好友。
   function ensureCanInteract(post: { canInteract?: boolean } | undefined | null) {
     if (!post || post.canInteract === false) {
-      setNoticeTone("info");
+      // R6: 阻塞约束 → warning（详见 L153 注释）。tone=warning → role=alert
+      // 让 SR 用户立刻知道为什么按了按钮没反应。
+      setNoticeTone("warning");
       setNoticeActionLabel(null);
       setNoticeAction(null);
       setNotice(t(msg`需先加为好友才能互动。`));
@@ -1677,6 +1717,11 @@ export function ChannelsPage() {
       desktopGenerateSubmittingRef.current = false;
     }
   }, [generateMutation.isPending]);
+  useEffect(() => {
+    if (!likeCommentMutation.isPending) {
+      commentLikeSubmittingRef.current = false;
+    }
+  }, [likeCommentMutation.isPending]);
 
   // useCallback 必要：onViewPost 作为 prop 进 DesktopChannelsWorkspace 的 useEffect 依赖，
   // 内联箭头函数会导致 effect 在父组件每次 re-render 都重跑，狂刷 viewFeedPost。
@@ -2349,7 +2394,11 @@ export function ChannelsPage() {
             toggleFavorite(post);
           }}
           onLikeComment={(comment) => {
+            // R5 sync ref 锁同帧双击（同上面 onLike / onToggleFavorite /
+            // onToggleAuthorFollow 注释）。
+            if (commentLikeSubmittingRef.current) return;
             if (!ensureCommentPostCanInteract(comment.postId)) return;
+            commentLikeSubmittingRef.current = true;
             likeCommentMutation.mutate({
               commentId: comment.id,
               postId: comment.postId,
@@ -2681,7 +2730,10 @@ export function ChannelsPage() {
         }}
         onErrorAction={mobileCommentSheetRetryAction?.onClick}
         onLikeComment={(comment) => {
+          // R5 sync ref 锁同帧双击（与 desktop drawer onLikeComment 同款）。
+          if (commentLikeSubmittingRef.current) return;
           if (!ensureCommentPostCanInteract(comment.postId)) return;
+          commentLikeSubmittingRef.current = true;
           likeCommentMutation.mutate({
             commentId: comment.id,
             postId: comment.postId,
@@ -2744,7 +2796,8 @@ export function ChannelsPage() {
           if (input.mutationBaseUrl !== mutationBaseUrlRef.current) {
             return;
           }
-          setNoticeTone("info");
+          // R6: 失败 toast → danger（详见 L153 注释）。
+          setNoticeTone("danger");
           setNoticeActionLabel(null);
           setNoticeAction(null);
           setNotice(t(msg`转发给 ${input.targetName} 失败：${input.message}`));

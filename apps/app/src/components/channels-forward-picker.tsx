@@ -71,6 +71,20 @@ export function ChannelsForwardPicker({
   const latestPostIdRef = useRef(postId);
   latestPostIdRef.current = postId;
 
+  // 走查 2026-05-18 新会话 R5（本轮）：handlePick 入口只靠 disabled={isBusy}
+  // = forwardMutation.isPending 锁双击，但 isPending 是 react-query 改 internal
+  // state 后下一次 render 才回 true 的异步 state。键鼠快速双击同一位好友（典
+  // 型间隔 <16ms）时两个 click handler 同步进入 handlePick → 两次
+  // mutateAsync({targetCharacterId: same}) 同步入栈 → 两条 forwardFeedPostToChat
+  // POST 同时飞出去 → 被转发的好友 chat 里被插两条一模一样的"分享自视频号"
+  // 卡片（接收方 server 端没去重）。同款 sync ref 锁挡同帧二次点击；
+  // forwardMutation settled 时通过下方 useEffect [isPending] 复位（声明在
+  // forwardMutation 之下，避免 TDZ）。
+  // 注：每条 forward 都会触发 ChatGateway 推一条 message + character 自动回应，
+  // 重复发会让 npc reaction queue 也跑两遍，公网下用户体感「我点了一次为什么
+  // 他回了两次」。
+  const pickSubmittingRef = useRef(false);
+
   // Reset error when opened/closed
   useEffect(() => {
     if (!open) setErrorMessage(null);
@@ -94,6 +108,13 @@ export function ChannelsForwardPicker({
       );
     },
   });
+  // R5 续：mutation settled 后释放同帧锁（声明顺序：forwardMutation 必须先于
+  // useEffect 引用）。
+  useEffect(() => {
+    if (!forwardMutation.isPending) {
+      pickSubmittingRef.current = false;
+    }
+  }, [forwardMutation.isPending]);
 
   useEffect(() => {
     if (!open) {
@@ -233,6 +254,10 @@ export function ChannelsForwardPicker({
   }, [friendsQuery.data]);
 
   async function handlePick(target: FriendListItem) {
+    // R5 sync ref 锁同帧双击 — 必须在 setErrorMessage 之前 early return，
+    // 避免把已经在 fly 的 forward 的错误状态意外清掉。
+    if (pickSubmittingRef.current) return;
+    pickSubmittingRef.current = true;
     setErrorMessage(null);
     // 走查 R3（本轮）：抓住开始 forward 这一刻的 postId，await 期间用户可能
     // 关 picker / 重开为其他 post（latestPostIdRef 反映 props 实时值）。
