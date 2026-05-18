@@ -3281,6 +3281,14 @@ export function ChatComposer({
                 <textarea
                   ref={desktopInputRef}
                   rows={desktopEditorExpanded ? 9 : 3}
+                  // 走查 R23：和 chat-list-page b45435c2 / 姊妹 search input 已经
+                  // 补过 aria-label 的同款 a11y 缺漏——桌面单聊主输入框没有 label
+                  // 或 aria-label 关联，只有 placeholder。屏幕阅读器（NVDA / JAWS）
+                  // 对 placeholder 的支持不一致，多数实现在用户开始打字后就不再
+                  // 朗读，盲人用户 focus 进来根本不知道这是消息输入框。和 placeholder
+                  // 同样用上层（conversation-thread-panel）传下来的"输入消息"/
+                  // "直接说：明早8点提醒我吃药"（reminder 会话）文案即可。
+                  aria-label={placeholder}
                   value={value}
                   onChange={(event) => {
                     onChange(event.target.value);
