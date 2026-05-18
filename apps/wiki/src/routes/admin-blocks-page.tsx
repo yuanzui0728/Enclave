@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { msg } from "@lingui/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +19,14 @@ import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
 import { formatDateTime } from "../lib/format";
 
+const EMPTY_BLOCK_FORM = {
+  userId: "",
+  scope: "global" as "global" | "page" | "talk",
+  targetCharacterId: "",
+  reason: "",
+  expiresAt: "",
+};
+
 export function AdminBlocksPage() {
   const t = translateRuntimeMessage;
   const { user } = useAuth();
@@ -32,27 +40,27 @@ export function AdminBlocksPage() {
     queryKey: ["wiki", "users"],
     queryFn: () => wikiApi.listUsers(),
   });
+  const [form, setForm] = useState(() => ({ ...EMPTY_BLOCK_FORM }));
+  // 成功提交后短暂显示一条成功 toast——原写法 blockMut 只 invalidateQueries，
+  // 用户体感"我点了提交，列表更新了，但下面的表单还填着原值"，容易再点一次
+  // 制造重复封禁。toast + 同步清表单两件事一起做。
+  const [successText, setSuccessText] = useState<string | null>(null);
+  useEffect(() => {
+    if (!successText) return;
+    const timer = window.setTimeout(() => setSuccessText(null), 3000);
+    return () => window.clearTimeout(timer);
+  }, [successText]);
   const blockMut = useMutation({
     mutationFn: wikiApi.blockUser,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["wiki", "blocks"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["wiki", "blocks"] });
+      setForm({ ...EMPTY_BLOCK_FORM });
+      setSuccessText(t(msg`封禁已添加，列表已刷新。`));
+    },
   });
   const revokeMut = useMutation({
     mutationFn: (id: string) => wikiApi.revokeBlock(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["wiki", "blocks"] }),
-  });
-
-  const [form, setForm] = useState<{
-    userId: string;
-    scope: "global" | "page" | "talk";
-    targetCharacterId: string;
-    reason: string;
-    expiresAt: string;
-  }>({
-    userId: "",
-    scope: "global",
-    targetCharacterId: "",
-    reason: "",
-    expiresAt: "",
   });
 
   const usersById = new Map((usersQ.data ?? []).map((u) => [u.id, u.username]));
@@ -166,6 +174,14 @@ export function AdminBlocksPage() {
           {blockMut.isError && (
             <span className="text-sm text-[color:var(--state-danger-text)]">
               {(blockMut.error as Error).message}
+            </span>
+          )}
+          {successText && (
+            <span
+              role="status"
+              className="text-sm text-[color:var(--state-success-text,#0a7d4f)]"
+            >
+              {successText}
             </span>
           )}
         </div>

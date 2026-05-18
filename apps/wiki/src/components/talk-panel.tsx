@@ -139,12 +139,19 @@ function ThreadCard({
   isOpen: boolean;
   onToggle: () => void;
 }) {
+  // aria-expanded 单独挂在控件上 SR 只能知道 "expanded / collapsed"，但不知道
+  // 展开的是哪个面板。配套 aria-controls 指向具体 panel id，SR 在念按钮时能补
+  // 一句 "controls thread-xxx-panel"，盲用用户可以按 SR 的快捷键直接跳到展开
+  // 内容。原写法漏配，导致 NVDA + ChromeVox 在长列表里听不出按钮和它影响的
+  // 内容的从属关系。
+  const panelId = `wiki-talk-thread-panel-${thread.id}`;
   return (
     <Card className="p-3">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
+        aria-controls={panelId}
         className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 text-left"
       >
         <span className="break-all font-medium">{thread.title}</span>
@@ -167,7 +174,11 @@ function ThreadCard({
           </Trans>
         </span>
       </button>
-      {isOpen && <ThreadDetail threadId={thread.id} thread={thread} />}
+      {isOpen && (
+        <div id={panelId}>
+          <ThreadDetail threadId={thread.id} thread={thread} />
+        </div>
+      )}
     </Card>
   );
 }

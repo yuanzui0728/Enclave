@@ -8,7 +8,7 @@ import {
   LoadingBlock,
   StatusPill,
 } from "@yinjie/ui";
-import { roleLabel } from "../lib/auth-store";
+import { ROLE_RANK, roleLabel } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
 import { wikiApi } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
@@ -123,12 +123,35 @@ export function AdminUsersPage() {
                         className="rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-sm shadow-[var(--shadow-soft)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
                         value={u.role}
                         disabled={u.id === user?.id || setRoleMut.isPending}
-                        onChange={(e) =>
-                          setRoleMut.mutate({
-                            userId: u.id,
-                            role: e.target.value as WikiRole,
-                          })
-                        }
+                        onChange={(e) => {
+                          const next = e.target.value as WikiRole;
+                          // 降级巡查员 / 管理员是高风险且不可"轻松撤销"的操作
+                          // （被降级用户立刻失去队列 / 后台权限，需要再上一级
+                          // 管理员才能恢复）。原写法 select 一改就直接 mutate，
+                          // 鼠标滚轮在 select 上滚一下就会选到错的 option 然后
+                          // 提交，回归不友好。改成对降级一律弹 confirm；升级或
+                          // 等值（onChange 偶发同值触发）不拦。
+                          const fromRank = ROLE_RANK[u.role] ?? -1;
+                          const toRank = ROLE_RANK[next] ?? -1;
+                          if (toRank < fromRank) {
+                            const ok = window.confirm(
+                              t(
+                                msg`将「${u.username}」的角色从 ${roleLabel(u.role)} 改为 ${roleLabel(next)}？该用户立刻失去对应权限。`,
+                              ),
+                            );
+                            if (!ok) {
+                              // select 在 React controlled 模式下回滚到 u.role
+                              // 不需要做任何事（DOM value 由 React 控制，state
+                              // 没改 → 重渲染就回到原值）；但浏览器实际 DOM 已
+                              // 显示新值，所以强行触发一次 form re-render：直接
+                              // setQueryData 即可（无网络往返）。最简单的：什么
+                              // 都不做，依赖 React 下一次 render，因为 select 的
+                              // value 是受控的，下次 render 会回到 u.role。
+                              return;
+                            }
+                          }
+                          setRoleMut.mutate({ userId: u.id, role: next });
+                        }}
                       >
                         {ROLE_OPTIONS.map((r) => (
                           <option key={r} value={r}>
