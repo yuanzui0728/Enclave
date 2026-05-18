@@ -1941,7 +1941,13 @@ function DesktopChannelAuthorPanel({
       ) : null}
 
       {errorMessage ? (
-        <div className="mt-4">
+        // 走查 2026-05-18 新会话 R12：DesktopChannelAuthorPanel 作者主页加载失败时
+        // 渲 ErrorBlock，跟前面 R8/R9/R11 同款无 role。盲用用户在视频号点头像
+        // 打开作者 overlay，若 getChannelAuthorProfile 失败（404 / 角色被删 /
+        // server 错），只看到 backdrop 全黑 + 上方"作者主页"标题，听不到为什么
+        // 资料没出来。挂 role="alert" 立刻播报错误内容（CHARACTER_NOT_FOUND /
+        // 网络错等技术原因），让用户清楚是临时错误还是这位作者已不在。
+        <div className="mt-4" role="alert">
           <ErrorBlock message={errorMessage} />
         </div>
       ) : null}
