@@ -393,10 +393,23 @@ export function DesktopDirectCallPanel({
     };
   }, []);
 
+  // 走查新一轮 R1：和姊妹 mobile-group R1 (commit 52d9f6080 — 群通话同步飞行
+  // 中双击「结束通话」发出 2 条「已结束」) 同款问题。原版 `if (endCallPending)
+  // return` 兜底走 React state，setEndCallPending(true) 要等 commit 才生效。
+  // 同帧 <16ms double-click「结束通话」按钮（同样 disabled=endCallPending 视觉
+  // 层也兜不住）：
+  // · click 1: endCallPending=false → 进入 → digitalHumanCall.endSession() +
+  //   await onEndCall()（父层会写入「通话已结束」聊天卡片）
+  // · click 2: endCallPending 仍 false（state 未提交）→ 也进入 → 第 2 次
+  //   endSession() + 第 2 次 onEndCall() → 聊天里冒出 2 条「通话已结束」消息
+  // ref 同步赋值挡掉同帧后续 click，finally 解锁（让 onEndCall 失败时下次
+  // 还能再试）。
+  const endCallSubmittingRef = useRef(false);
   const handleEndCall = async () => {
-    if (endCallPending) {
+    if (endCallSubmittingRef.current || endCallPending) {
       return;
     }
+    endCallSubmittingRef.current = true;
 
     setEndCallError(null);
     activeCall.cancelRecordingTurn();
@@ -404,10 +417,14 @@ export function DesktopDirectCallPanel({
     activeCall.stopReplyPlayback();
 
     if (!onEndCall) {
-      if (isVideoMode) {
-        await digitalHumanCall.endSession().catch(() => {});
+      try {
+        if (isVideoMode) {
+          await digitalHumanCall.endSession().catch(() => {});
+        }
+        onClose();
+      } finally {
+        endCallSubmittingRef.current = false;
       }
-      onClose();
       return;
     }
 
@@ -426,6 +443,7 @@ export function DesktopDirectCallPanel({
       );
     } finally {
       setEndCallPending(false);
+      endCallSubmittingRef.current = false;
     }
   };
 
