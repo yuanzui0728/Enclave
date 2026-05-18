@@ -1118,7 +1118,13 @@ function ChannelMediaSurface({
           // 主线程。
           <BackgroundCoverImage
             src={backgroundCover}
-            alt={post.title ?? ""}
+            // 走查 2026-05-18 第二轮 R8：BackgroundCoverImage 是 audio slide 的
+            // blurred opacity-30 装饰背景层，跟 AudioCard 的可视 title 重复传
+            // post.title 当 alt —— SR 用户用 image rotor 浏览图片时会先听到
+            // "X·音乐 image"，再听到 AudioCard 的可视 title "X·音乐"，双重朗读
+            // 体感"为什么页面读了两遍同样内容"。装饰层应该全 alt="" +
+            // aria-hidden 让 SR 整张跳过。caller 不再传 alt（component 内部
+            // 强制 alt=""）。
             isActive={isActive}
           />
         ) : null}
@@ -1228,11 +1234,9 @@ function ChannelMediaSurface({
 // 掉让渐变背景兜底。active 卡 eager、其余 lazy 避免 20 张并发拉公网封面。
 function BackgroundCoverImage({
   src,
-  alt,
   isActive,
 }: {
   src: string;
-  alt: string;
   isActive: boolean;
 }) {
   const [failed, setFailed] = useState(false);
@@ -1250,7 +1254,10 @@ function BackgroundCoverImage({
   return (
     <img
       src={src}
-      alt={alt}
+      // R8：装饰层固定 alt="" + aria-hidden 让 SR 整张跳过；AudioCard 的可视
+      // title 已经承担信息传达，blurred opacity-30 背景纯视觉氛围。
+      alt=""
+      aria-hidden="true"
       loading={isActive ? "eager" : "lazy"}
       decoding="async"
       onError={() => setFailed(true)}
