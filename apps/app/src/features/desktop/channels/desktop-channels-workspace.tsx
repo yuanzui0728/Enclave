@@ -642,17 +642,12 @@ export function DesktopChannelsWorkspace({
           return;
         }
       }
-      if (
-        event.key === "ArrowDown" ||
-        event.key === "PageDown" ||
-        event.key === " " // Space 是浏览器默认的向下滚一屏，桌面 channels 用 snap 容器，
-        // 直接走 handleNext 让 snap 落到下一条；shiftKey+Space 走向上对齐浏览器约定。
-      ) {
-        if (event.key === " " && event.shiftKey) {
-          event.preventDefault();
-          handlePrevRef.current();
-          return;
-        }
+      // Space 故意不挂键盘 slide nav：Space 是浏览器原生 button 激活键
+      // （focused 在 ChannelActionButton like/share/favorite/follow 上时按 Space
+      // 等同 click），若 preventDefault 抢去做 scroll，用户按 Space 想点赞会被
+      // 吞成"切下一条"，体感严重错位。Arrow / PageUp / PageDown 在 button focus
+      // 下浏览器默认是 no-op，挂上 nav 无副作用。
+      if (event.key === "ArrowDown" || event.key === "PageDown") {
         event.preventDefault();
         handleNextRef.current();
         return;
