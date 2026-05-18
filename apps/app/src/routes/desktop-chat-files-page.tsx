@@ -577,7 +577,20 @@ export function DesktopChatFilesPage() {
   return (
     <>
       <DesktopUtilityShell
-        title={selectedConversation?.title || t(msg`全部聊天文件`)}
+        // 走查电脑端单聊 R90：原版 `selectedConversation?.title` 直接渲染服务端
+        // 持久化的会话 title，direct 会话在 normalizeLegacyConversationEntity
+        // 全部 fallback 失败时会落字面量 sentinel「未知联系人」/「Direct
+        // conversation」。chat-files 工具页顶栏对非中文 locale 用户（en/ja/ko）
+        // 直接暴露中文 sentinel — 用户切到 en-US 后看到「未知联系人 · 聊天文件」
+        // 浮在最顶部。和姊妹 ConversationCardLink (R1) / 详情侧栏 (R7) /
+        // workspace 独立窗口 title (R1) 已修过的同款，统一翻一遍。
+        // 注意 sidebar 内的会话列表 line 669 已经走了 getConversationDisplayTitle，
+        // 只有顶栏漏。
+        title={
+          selectedConversation
+            ? getConversationDisplayTitle(selectedConversation.title)
+            : t(msg`全部聊天文件`)
+        }
         subtitle={
           selectedConversation
             ? t(msg`当前会话里的图片和文件会集中显示在这里。`)
