@@ -730,6 +730,24 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     activeCall.stopReplyPlayback();
     try {
       await digitalHumanCall.endSession();
+
+      // 走查第一轮 R2：和姊妹 handleBack (line 626-633) 同款问题——本入口
+      // 「改用语音通话」是 video 数字人 session 出错时的 recovery 出口，
+      // beginLeaving + endSession 都做了，唯独漏挂 sendCallStatusMessage("ended")。
+      // useEffect line 982 在 video mount 时已经发过 "waiting" 卡片，replace
+      // 走到 voice-call 后 mobile-ai-call-screen 重 mount 又会发一条 "waiting"
+      // voice 卡片 → 用户消息时间线里上一条 video「通话中…」永远不会被 close
+      // 成「通话已结束」，只能等用户回头进 chat 看时一脸懵。和 handleBack 同款
+      // 守门：waiting 发过且 ended 没发过才发 ended，避免重发 + 兼容已 ended
+      // 路径。
+      if (
+        conversation?.type === "direct" &&
+        waitingNoticeSentRef.current &&
+        !endedNoticeSentRef.current
+      ) {
+        endedNoticeSentRef.current = true;
+        await sendCallStatusMessage("ended");
+      }
     } finally {
       void navigate({
         to: "/chat/$conversationId/voice-call",
