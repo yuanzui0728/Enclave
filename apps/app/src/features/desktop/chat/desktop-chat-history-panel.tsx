@@ -929,6 +929,18 @@ function DesktopSearchTabButton({
     <button
       type="button"
       onClick={onClick}
+      // 走查 R31：DesktopSearchTabButton 用作「查找聊天记录」面板顶栏 6 个
+      // tab：全部 / 图片与视频 / 文件 / 链接 / 日期▽ / 群成员▽。前 4 个是
+      // 互斥分类选择，后 2 个是 popover disclosure。原版只用 brand color +
+      // 下方 2px 横条表示 active，盲人 SR 走过去只听到 6 段裸 label，听不出
+      // 当前选中 / 展开了哪个。
+      //
+      // 6 个 tab 混合了 category selector 和 disclosure trigger 行为，统一
+      // 用 aria-pressed 表达 active 状态 —— 前 4 个是"按下 = 选中此分类"，
+      // 后 2 个带 caret 是"按下 = 展开此 selector"，两种语义都和 aria-pressed
+      // 的 toggle 状态对得上。后 2 个还配 withCaret，aria-expanded 也准
+      // 但和 aria-pressed 不矛盾——选 aria-pressed 跟前 4 个保持一致体验。
+      aria-pressed={active}
       className={cn(
         "relative inline-flex shrink-0 items-center gap-1 px-2.5 py-2 text-[13px] transition-colors",
         active
