@@ -36,10 +36,17 @@ export function DesktopGroupMemberPicker({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // 走查新会话桌面端群聊 R2：和 desktop-create-group-dialog 同款问题——原版
+  // 用独立 cache key 「desktop-group-member-picker-friends」，不复用其它路径
+  // 已加载的 "app-friends" cache（contacts/chat-details/group-chat-thread-panel
+  // / message-avatar-popover 全部用 "app-friends"）。「添加成员」弹层是从群聊
+  // 详情侧栏触发，那一侧 friendsQuery 几百 ms 前刚拉过新数据，这里又走一发
+  // getFriends。统一 cache key + staleTime 15s（与其它入口对齐）。
   const friendsQuery = useQuery({
-    queryKey: ["desktop-group-member-picker-friends", baseUrl],
+    queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: open,
+    staleTime: 15_000,
   });
 
   useEffect(() => {

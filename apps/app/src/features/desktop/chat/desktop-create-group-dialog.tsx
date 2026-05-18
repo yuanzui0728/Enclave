@@ -77,10 +77,17 @@ export function DesktopCreateGroupDialog({
   const friendItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const messageItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  // 走查新会话桌面端群聊 R2：原版用独立 cache key 「desktop-create-group-friends」，
+  // 不和其它入口（chat-details-panel / group-chat-thread-panel / message-avatar-
+  // popover / contacts-page 全部用「app-friends」)共享 cache。从群聊里点
+  //「发起群聊」/「添加成员」时，contacts/details 已经在 ~600ms 前刚拉过 friends，
+  // 这里又得在公网隧道再走一发 getFriends。统一到 "app-friends" key + staleTime
+  // 15s（和其它入口对齐），cache 复用 → 弹层立刻有数据。
   const friendsQuery = useQuery({
-    queryKey: ["desktop-create-group-friends", baseUrl],
+    queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: open,
+    staleTime: 15_000,
   });
   const shareableMessagesQuery = useQuery({
     queryKey: [
