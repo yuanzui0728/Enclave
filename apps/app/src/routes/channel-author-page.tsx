@@ -105,6 +105,22 @@ export function ChannelAuthorPage() {
     () => readStoredChannelAuthorCollection(authorId),
   );
   const lastReadAuthorIdRef = useRef(authorId);
+  // 走查 2026-05-18（新一轮）R1：和 channels-page R1 同款 mid-flight 切账户守卫。
+  // 慢网下用户在 A 账户作者页点 +关注/已关注（200-500ms RTT）期间切到 B 账户：
+  // onSuccess/onError 跑回时闭包 baseUrl 已是 B —— 「已关注该视频号作者」notice
+  // 冒到 B 账户用户眼前（"我刚来 B 怎么收到了关注成功"），invalidate B 的
+  // channel-author/home/decorations 触发不必要的 B 端 refetch；该 invalidate 的
+  // A 反而漏掉，A 那条 author profile 一直停在乐观状态（按钮 已关注 / 计数 +1）
+  // 直到下次回 A 主动重进作者页。onError 的 setQueryData(rollback) 同理：把 A
+  // 的 previous 写到 B 的 cache 上，B 用户后续再进同一 authorId 会看到 A 的 stale
+  // 数据。
+  // 模板：onMutate 钉 mutationBaseUrl 进 context；onError/onSuccess 用
+  // mutationBaseUrl 做 cache 落点 + 比对 mutationBaseUrlRef.current 决定 toast
+  // 是否冒出。
+  const mutationBaseUrlRef = useRef(baseUrl);
+  useEffect(() => {
+    mutationBaseUrlRef.current = baseUrl;
+  }, [baseUrl]);
 
   const profileQuery = useQuery({
     queryKey: ["app-channel-author", baseUrl, authorId],
@@ -121,18 +137,19 @@ export function ChannelAuthorPage() {
     // refetch 整条链路才翻状态（实测公网 ~400ms），用户连点会以为按钮没响应。
     // 同步翻 profile cache 的 isFollowing + followerCount。
     onMutate: async () => {
+      const mutationBaseUrl = baseUrl;
       await queryClient.cancelQueries({
-        queryKey: ["app-channel-author", baseUrl, authorId],
+        queryKey: ["app-channel-author", mutationBaseUrl, authorId],
       });
       const previous = queryClient.getQueryData<typeof profileQuery.data>([
         "app-channel-author",
-        baseUrl,
+        mutationBaseUrl,
         authorId,
       ]);
       if (previous) {
         const wasFollowing = previous.isFollowing;
         queryClient.setQueryData(
-          ["app-channel-author", baseUrl, authorId],
+          ["app-channel-author", mutationBaseUrl, authorId],
           {
             ...previous,
             isFollowing: !wasFollowing,
@@ -142,24 +159,31 @@ export function ChannelAuthorPage() {
           },
         );
       }
-      return { previous };
+      return { previous, mutationBaseUrl };
     },
     onError: (_error, _input, context) => {
       // 回滚 profile cache。home 那边的 mutation 是另一条独立链路，不需要这里回滚。
+      // cache key 走 mutationBaseUrl，回到该写入的 A 账户；切到 B 时 onError 闭包
+      // 的 baseUrl 已是 B，硬写到 B 上会污染 B 的同名 authorId profile。
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       if (context?.previous) {
         queryClient.setQueryData(
-          ["app-channel-author", baseUrl, authorId],
+          ["app-channel-author", mutationBaseUrl, authorId],
           context.previous,
         );
       }
     },
-    onSuccess: async () => {
-      setNotice({
-        message: profileQuery.data?.isFollowing
-          ? t(msg`已关注该视频号作者。`)
-          : t(msg`已取消关注。`),
-        tone: "success",
-      });
+    onSuccess: async (_data, _input, context) => {
+      const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
+      if (sameAccount) {
+        setNotice({
+          message: profileQuery.data?.isFollowing
+            ? t(msg`已关注该视频号作者。`)
+            : t(msg`已取消关注。`),
+          tone: "success",
+        });
+      }
       // onMutate 已经翻了 isFollowing；这里 profileQuery.data.isFollowing 是
       // optimistic 后的最新值，所以文案分支需要对调（true 表示刚刚关注成功）。
       //
@@ -171,15 +195,19 @@ export function ChannelAuthorPage() {
       // 数字一直保持作者页点之前的旧值，直到用户切个 tab 触发重新进 home。
       // channels-page 自己的 followMutation 早就把这两个都 invalidate 了（line 652-654），
       // 这里跟它对齐。
+      //
+      // invalidate 落 mutationBaseUrl —— 标 B 的 cache stale 完全错（这条 follow
+      // 实际改的是 A），且 B 会做不必要的 refetch；A 反而漏掉，下次回 A 永远
+      // 停在乐观值。
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["app-channel-author", baseUrl, authorId],
+          queryKey: ["app-channel-author", mutationBaseUrl, authorId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-channels-home", baseUrl],
+          queryKey: ["app-channels-home", mutationBaseUrl],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-channels-home-decorations", baseUrl],
+          queryKey: ["app-channels-home-decorations", mutationBaseUrl],
         }),
       ]);
     },
