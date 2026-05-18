@@ -244,13 +244,28 @@ export function AdminProtectionPage() {
               <PanelEmpty message={t(msg`暂无记录。`)} />
             )}
             <ul className="space-y-2">
-              {logQ.data?.map((row) => (
+              {logQ.data?.map((row) => {
+                // 原写法直接渲染 row.oldLevel / row.newLevel 后端英文枚举
+                // （none / semi / full），但同页"新级别"下拉里管理员选的
+                // 是"无保护 / 半保护（自动确认+）/ 完全保护（仅管理员）"。
+                // 历史记录里跳英文 "semi → full"，跟上面 form 翻译不一致，
+                // 像 i18n 漏译。统一走本地化映射。
+                const lvl = (v: string): string =>
+                  v === "none"
+                    ? t(msg`无保护`)
+                    : v === "semi"
+                      ? t(msg`半保护`)
+                      : v === "full"
+                        ? t(msg`完全保护`)
+                        : v;
+                return (
                 <li
                   key={row.id}
                   className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-sm"
                 >
                   <div>
-                    <code>{row.oldLevel}</code> → <code>{row.newLevel}</code>
+                    <code>{lvl(row.oldLevel)}</code> →{" "}
+                    <code>{lvl(row.newLevel)}</code>
                   </div>
                   <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                     <Trans>
@@ -264,7 +279,8 @@ export function AdminProtectionPage() {
                     <div className="mt-1 text-xs">{row.reason}</div>
                   )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </AppSection>
         </>

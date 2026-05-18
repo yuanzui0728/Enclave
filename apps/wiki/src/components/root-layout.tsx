@@ -172,6 +172,20 @@ export function RootLayout() {
   });
   const [q, setQ] = useState(urlSearchQ);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // 抽屉关闭后把焦点还给最初的 ☰ 触发按钮 —— 键盘 / SR 用户点 ☰ 打开 → 按
+  // Escape 或点 X 关闭，原写法焦点会丢到 body（document.activeElement=BODY），
+  // 用户必须用 Shift+Tab 一路退回头部才能再操作。WAI-ARIA APG 的 disclosure
+  // pattern 要求 disclosure 关闭后焦点回到 trigger。
+  const navTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const prevMobileNavOpenRef = useRef(false);
+  useEffect(() => {
+    if (prevMobileNavOpenRef.current && !mobileNavOpen) {
+      // 关闭瞬间：把焦点还给 ☰。如果 ☰ 在 lg 视口不可见就跳过（≥lg 时
+      // mobileNavOpen 不会被用户主动开，这条分支理论上不会触发）。
+      navTriggerRef.current?.focus();
+    }
+    prevMobileNavOpenRef.current = mobileNavOpen;
+  }, [mobileNavOpen]);
 
   // Keep the top-bar input synced with /search?q= so reload / back / forward
   // and direct deep links don't leave the box visually empty.
@@ -241,7 +255,13 @@ export function RootLayout() {
       <header className="sticky top-0 z-30 border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-shell)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-screen-2xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
           <button
+            ref={navTriggerRef}
             type="button"
+            // 抽屉是 disclosure 模式：触发按钮 + 受其控制的 region。挂
+            // aria-expanded 让 SR 念出"折叠 / 展开"，原写法仅 aria-label
+            // 用户听到的只是"打开导航 button"，不知道当前状态。
+            aria-expanded={mobileNavOpen}
+            aria-controls="wiki-mobile-nav"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white text-lg lg:hidden"
             aria-label={t(msg`打开导航`)}
             onClick={() => setMobileNavOpen((v) => !v)}
@@ -388,14 +408,22 @@ export function RootLayout() {
 
       <div className="relative mx-auto flex w-full max-w-screen-2xl flex-1 gap-6 px-3 pb-10 pt-4 sm:px-6 sm:pt-6 sm:pb-12">
         {mobileNavOpen && (
+          // 遮罩 backdrop：原写法和抽屉内的 X 关闭按钮共用 aria-label="关闭
+          // 导航"，SR 用户 Tab 时会听到"关闭导航 button"两次完全一样，分不清
+          // 哪个是主关闭目标。遮罩仅服务鼠标/触摸"点空白处关闭"的便利，
+          // 不应是键盘/SR 的关闭入口（焦点应该走抽屉内的 X 按钮）。
+          // tabIndex=-1 + aria-hidden=true 把它从 SR / Tab 路径里隐藏，保留
+          // 视觉与点击行为。
           <button
             type="button"
-            aria-label={t(msg`关闭导航`)}
+            aria-hidden="true"
+            tabIndex={-1}
             onClick={() => setMobileNavOpen(false)}
             className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
           />
         )}
         <aside
+          id="wiki-mobile-nav"
           className={`wiki-touch-scroll fixed inset-y-0 left-0 z-40 w-72 max-w-[85%] transform overflow-y-auto border-r border-[color:var(--border-subtle)] bg-[color:var(--surface-shell)] px-4 py-5 shadow-2xl transition-transform duration-[var(--motion-fast)] ease-[var(--ease-standard)] lg:static lg:z-auto lg:block lg:w-64 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:border-r-0 lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none lg:overflow-visible ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full"
           }`}

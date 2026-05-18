@@ -687,50 +687,50 @@ msgstr "Notes"
 msgid "复制失败，请手动选中。"
 msgstr "Copy failed. Please select manually."
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:97
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:103
 msgid "复制"
 msgstr "Copy"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:132
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:138
 msgid "微信"
 msgstr "WeChat"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:133
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:139
 #: apps/wiki/src/routes/account-page.tsx:120
 #: apps/wiki/src/routes/login-page.tsx:229
 msgid "邮箱"
 msgstr "Email"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:143
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:155
 msgid "AI 生成额度用完：每小时上限 {quota} 次，{retryHint}后再试。"
 msgstr "AI generation quota exceeded: hourly limit is {quota}. Try again in {retryHint}."
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:147
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:159
 msgid "AI 生成额度用完：每小时上限 {quota} 次，请稍后再试。"
 msgstr "AI generation quota exceeded: hourly limit is {quota}. Please try again later."
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:151
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:163
 msgid "需要更多额度 / 商务合作，可联系运营："
 msgstr "Need more quota or business inquiries? Contact us:"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:157
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:163
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:169
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:175
 msgid "已复制"
 msgstr "Copied"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:158
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:170
 msgid "复制{wxLabel}号 {SUPPORT_WECHAT}"
 msgstr "Copy {wxLabel} ID {SUPPORT_WECHAT}"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:164
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:176
 msgid "复制{emailLabel} {SUPPORT_EMAIL}"
 msgstr "Copy {emailLabel} {SUPPORT_EMAIL}"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:178
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:190
 msgid "约 {min} 分钟"
 msgstr "about {min} min"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:180
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:192
 msgid "{sec} 秒"
 msgstr "{sec} sec"
 
@@ -762,7 +762,7 @@ msgstr "Submitted; admins will handle it."
 #: apps/wiki/src/routes/account-page.tsx:369
 #: apps/wiki/src/routes/account-page.tsx:480
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:485
-#: apps/wiki/src/routes/admin-blocks-page.tsx:173
+#: apps/wiki/src/routes/admin-blocks-page.tsx:178
 #: apps/wiki/src/routes/character-page.tsx:244
 msgid "提交中..."
 msgstr "Submitting..."
@@ -873,7 +873,7 @@ msgstr "Pending reviews"
 
 #: apps/wiki/src/components/root-layout.tsx:117
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
-#: apps/wiki/src/routes/admin-blocks-page.tsx:72
+#: apps/wiki/src/routes/admin-blocks-page.tsx:73
 #: apps/wiki/src/routes/admin-protection-page.tsx:102
 #: apps/wiki/src/routes/admin-reports-page.tsx:48
 #: apps/wiki/src/routes/admin-stats-page.tsx:36
@@ -916,88 +916,87 @@ msgstr "Anti-abuse filters"
 msgid "治理仪表盘"
 msgstr "Governance dashboard"
 
-#: apps/wiki/src/components/root-layout.tsx:188
+#: apps/wiki/src/components/root-layout.tsx:202
 msgid "隐界角色百科"
 msgstr "Enclave Character Wiki"
 
-#: apps/wiki/src/components/root-layout.tsx:246
+#: apps/wiki/src/components/root-layout.tsx:266
 msgid "打开导航"
 msgstr "Open navigation"
 
-#: apps/wiki/src/components/root-layout.tsx:267
+#: apps/wiki/src/components/root-layout.tsx:287
 msgid "隐界世界角色管理平台"
 msgstr "Hidden World Character Management"
 
-#: apps/wiki/src/components/root-layout.tsx:270
+#: apps/wiki/src/components/root-layout.tsx:290
 msgid "隐界角色管理"
 msgstr "Hidden World Wiki"
 
-#: apps/wiki/src/components/root-layout.tsx:285
+#: apps/wiki/src/components/root-layout.tsx:305
 msgid "搜索角色词条…（回车）"
 msgstr "Search entries… (enter)"
 
-#: apps/wiki/src/components/root-layout.tsx:288
-#: apps/wiki/src/components/root-layout.tsx:381
+#: apps/wiki/src/components/root-layout.tsx:308
+#: apps/wiki/src/components/root-layout.tsx:401
 msgid "搜索角色词条"
 msgstr "Search character entries"
 
-#: apps/wiki/src/components/root-layout.tsx:304
-#: apps/wiki/src/components/root-layout.tsx:322
+#: apps/wiki/src/components/root-layout.tsx:324
+#: apps/wiki/src/components/root-layout.tsx:342
 msgid "新手教程 / Tutorial"
 msgstr "Beginner guide / Tutorial"
 
-#: apps/wiki/src/components/root-layout.tsx:305
+#: apps/wiki/src/components/root-layout.tsx:325
 msgid "新手教程"
 msgstr "Beginner guide"
 
-#: apps/wiki/src/components/root-layout.tsx:326
+#: apps/wiki/src/components/root-layout.tsx:346
 msgid "教程"
 msgstr "Tutorial"
 
-#: apps/wiki/src/components/root-layout.tsx:344
-#: apps/wiki/src/components/root-layout.tsx:362
+#: apps/wiki/src/components/root-layout.tsx:364
+#: apps/wiki/src/components/root-layout.tsx:382
 #: apps/wiki/src/routes/login-page.tsx:41
 #: apps/wiki/src/routes/login-page.tsx:155
 #: apps/wiki/src/routes/register-page.tsx:124
 msgid "登录"
 msgstr "Sign in"
 
-#: apps/wiki/src/components/root-layout.tsx:359
+#: apps/wiki/src/components/root-layout.tsx:379
 #: apps/wiki/src/routes/admin-users-page.tsx:88
 #: apps/wiki/src/routes/register-page.tsx:52
 #: apps/wiki/src/routes/register-page.tsx:115
 msgid "注册"
 msgstr "Register"
 
-#: apps/wiki/src/components/root-layout.tsx:380
+#: apps/wiki/src/components/root-layout.tsx:400
 msgid "搜索词条…"
 msgstr "Search entries…"
 
-#: apps/wiki/src/components/root-layout.tsx:393
-#: apps/wiki/src/components/root-layout.tsx:407
+#: apps/wiki/src/components/root-layout.tsx:435
 msgid "关闭导航"
 msgstr "Close navigation"
 
-#: apps/wiki/src/components/root-layout.tsx:429
+#: apps/wiki/src/components/root-layout.tsx:457
 msgid "隐界世界角色管理平台 · 任何登录用户都可以提交角色创建、编辑和生命周期变更，由巡查员审核生效"
 msgstr "Hidden World Character Management · Any signed-in user can submit character creation, edits, and lifecycle changes; patrollers review and approve."
 
 #. placeholder {0}: user.username
-#: apps/wiki/src/components/root-layout.tsx:480
+#: apps/wiki/src/components/root-layout.tsx:508
 msgid "{0} 账户菜单"
 msgstr "{0} account menu"
 
-#: apps/wiki/src/components/root-layout.tsx:528
+#: apps/wiki/src/components/root-layout.tsx:556
 #: apps/wiki/src/routes/account-page.tsx:54
 #: apps/wiki/src/routes/account-page.tsx:69
 msgid "账户设置"
 msgstr "Account Settings"
 
-#: apps/wiki/src/components/root-layout.tsx:540
+#: apps/wiki/src/components/root-layout.tsx:568
 msgid "退出"
 msgstr "Sign out"
 
-#: apps/wiki/src/components/root-layout.tsx:560
+#: apps/wiki/src/components/root-layout.tsx:588
 msgid "主导航"
 msgstr "Main navigation"
 
@@ -1279,17 +1278,17 @@ msgid "已处理"
 msgstr "Resolved"
 
 #: apps/wiki/src/lib/revision-labels.ts:58
-#: apps/wiki/src/routes/admin-blocks-page.tsx:110
+#: apps/wiki/src/routes/admin-blocks-page.tsx:115
 msgid "全站"
 msgstr "Site-wide"
 
 #: apps/wiki/src/lib/revision-labels.ts:59
-#: apps/wiki/src/routes/admin-blocks-page.tsx:111
+#: apps/wiki/src/routes/admin-blocks-page.tsx:116
 msgid "单条目"
 msgstr "Single entry"
 
 #: apps/wiki/src/lib/revision-labels.ts:60
-#: apps/wiki/src/routes/admin-blocks-page.tsx:112
+#: apps/wiki/src/routes/admin-blocks-page.tsx:117
 #: apps/wiki/src/routes/character-page.tsx:128
 #: apps/wiki/src/routes/watchlist-page.tsx:164
 msgid "讨论"
@@ -1680,107 +1679,107 @@ msgstr "Supports regex / shrink / frequency / link_flood / keyword_list types; m
 msgid "提交并启用"
 msgstr "Submit and enable"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:59
+#: apps/wiki/src/routes/admin-blocks-page.tsx:60
 msgid "封禁已添加，列表已刷新。"
 msgstr "Block added, list refreshed."
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:73
+#: apps/wiki/src/routes/admin-blocks-page.tsx:74
 msgid "封禁管理"
 msgstr "Block management"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:75
+#: apps/wiki/src/routes/admin-blocks-page.tsx:76
 msgid "对违规用户进行全站、单条目或讨论范围的封禁，可设置到期时间或永久。已撤销/到期的记录可勾选展示。"
 msgstr "Block users site-wide, on a single entry, or on talk pages, with optional expiry. Toggle to include revoked/expired records."
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:80
+#: apps/wiki/src/routes/admin-blocks-page.tsx:81
 msgid "新增封禁"
 msgstr "Add block"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:83
+#: apps/wiki/src/routes/admin-blocks-page.tsx:84
 msgid "目标用户"
 msgstr "Target user"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:89
+#: apps/wiki/src/routes/admin-blocks-page.tsx:90
 msgid "— 选择用户 —"
 msgstr "— Select user —"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:99
+#: apps/wiki/src/routes/admin-blocks-page.tsx:104
 msgid "范围"
 msgstr "Scope"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:116
+#: apps/wiki/src/routes/admin-blocks-page.tsx:121
 msgid "条目 ID"
 msgstr "Entry ID"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:122
+#: apps/wiki/src/routes/admin-blocks-page.tsx:127
 msgid "例如：char-celebrity-andrej-karpathy"
 msgstr "e.g. char-celebrity-andrej-karpathy"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:126
+#: apps/wiki/src/routes/admin-blocks-page.tsx:131
 #: apps/wiki/src/routes/admin-protection-page.tsx:205
 msgid "原因"
 msgstr "Reason"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:130
+#: apps/wiki/src/routes/admin-blocks-page.tsx:135
 msgid "说明为什么对此用户/范围执行封禁"
 msgstr "Explain why this user/scope is being blocked"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:134
+#: apps/wiki/src/routes/admin-blocks-page.tsx:139
 #: apps/wiki/src/routes/admin-protection-page.tsx:195
 msgid "到期时间"
 msgstr "Expires at"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:135
+#: apps/wiki/src/routes/admin-blocks-page.tsx:140
 #: apps/wiki/src/routes/admin-protection-page.tsx:195
 msgid "可选；留空 = 永久"
 msgstr "Optional; leave blank = permanent"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:173
+#: apps/wiki/src/routes/admin-blocks-page.tsx:178
 msgid "提交封禁"
 msgstr "Submit block"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:198
+#: apps/wiki/src/routes/admin-blocks-page.tsx:203
 msgid "封禁列表"
 msgstr "Block list"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:206
+#: apps/wiki/src/routes/admin-blocks-page.tsx:211
 msgid "含已撤销 / 已到期"
 msgstr "Include revoked / expired"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:222
+#: apps/wiki/src/routes/admin-blocks-page.tsx:227
 msgid "没有相关封禁记录。"
 msgstr "No matching block records."
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:267
+#: apps/wiki/src/routes/admin-blocks-page.tsx:272
 msgid "生效中"
 msgstr "Active"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:271
+#: apps/wiki/src/routes/admin-blocks-page.tsx:276
 msgid "已撤销"
 msgstr "Revoked"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:275
+#: apps/wiki/src/routes/admin-blocks-page.tsx:280
 msgid "已到期"
 msgstr "Expired"
 
 #. placeholder {0}: formatDateTime(block.createdAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:286
+#: apps/wiki/src/routes/admin-blocks-page.tsx:291
 msgid "创建于 {0}"
 msgstr "Created at {0}"
 
 #. placeholder {0}: formatDateTime(block.expiresAt)
 #. placeholder {0}: formatDateTime(row.expiresAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:288
-#: apps/wiki/src/routes/admin-protection-page.tsx:261
+#: apps/wiki/src/routes/admin-blocks-page.tsx:293
+#: apps/wiki/src/routes/admin-protection-page.tsx:276
 msgid "到期 {0}"
 msgstr "Expires {0}"
 
 #. placeholder {0}: formatDateTime(block.revokedAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:290
+#: apps/wiki/src/routes/admin-blocks-page.tsx:295
 msgid "撤销于 {0}"
 msgstr "Revoked at {0}"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:301
+#: apps/wiki/src/routes/admin-blocks-page.tsx:306
 msgid "撤销"
 msgstr "Revoke"
 
@@ -1818,10 +1817,12 @@ msgstr "Current level"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:139
 #: apps/wiki/src/routes/admin-protection-page.tsx:174
+#: apps/wiki/src/routes/admin-protection-page.tsx:255
 msgid "无保护"
 msgstr "None"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:141
+#: apps/wiki/src/routes/admin-protection-page.tsx:257
 #: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:253
 #: apps/wiki/src/routes/watchlist-page.tsx:98
@@ -1829,6 +1830,7 @@ msgid "半保护"
 msgstr "Semi-protected"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:142
+#: apps/wiki/src/routes/admin-protection-page.tsx:259
 #: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:254
 #: apps/wiki/src/routes/watchlist-page.tsx:99
@@ -1885,7 +1887,7 @@ msgstr "No records."
 
 #. placeholder {0}: formatDateTime(row.createdAt)
 #. placeholder {1}: resolveUsername(row.changedBy)
-#: apps/wiki/src/routes/admin-protection-page.tsx:256
+#: apps/wiki/src/routes/admin-protection-page.tsx:271
 msgid "{0} · 由 {1}"
 msgstr "{0} · by {1}"
 
@@ -2027,9 +2029,14 @@ msgid "wiki 成员"
 msgstr "wiki member"
 
 #. placeholder {0}: u.username
+#: apps/wiki/src/routes/admin-users-page.tsx:139
+msgid "{0} 的角色"
+msgstr "{0}'s role"
+
+#. placeholder {0}: u.username
 #. placeholder {1}: roleLabel(u.role)
 #. placeholder {2}: roleLabel(next)
-#: apps/wiki/src/routes/admin-users-page.tsx:150
+#: apps/wiki/src/routes/admin-users-page.tsx:156
 msgid "将「{0}」的角色从 {1} 改为 {2}？该用户立刻失去对应权限。"
 msgstr "Change \"{0}\"'s role from {1} to {2}? They will immediately lose those permissions."
 

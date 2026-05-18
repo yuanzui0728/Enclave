@@ -130,7 +130,13 @@ export function AdminUsersPage() {
                         : "—"}
                     </td>
                     <td className="px-4 py-3">
+                      {/* select 在 <td> 内只能靠列 <th>"设置角色" 当 accessible
+                          name —— NVDA / VoiceOver 行为不一致：有的把行内用户名
+                          一并念出，有的只念列头。表里 20+ 行 select 全名相同时
+                          盲用用户不知道当前 select 改的是哪个账号。aria-label
+                          显式拼"{username} 的角色"，每行唯一区分。 */}
                       <select
+                        aria-label={t(msg`${u.username} 的角色`)}
                         className="rounded-full border border-[color:var(--border-subtle)] bg-white px-3 py-1.5 text-sm shadow-[var(--shadow-soft)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
                         value={u.role}
                         disabled={u.id === user?.id || setRoleMut.isPending}

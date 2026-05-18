@@ -13,6 +13,7 @@ import {
   StatusPill,
   TextField,
 } from "@yinjie/ui";
+import { roleLabel } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
 import { wikiApi, type WikiBlockRow } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
@@ -91,7 +92,11 @@ export function AdminBlocksPage() {
                 .filter((u) => u.id !== currentUserId)
                 .map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.username}（{u.role}）
+                    {/* 原写法 u.role 直接渲染英文（admin/patroller/
+                        autoconfirmed/newcomer），下拉里所有用户的角色都是英
+                        文，跟 admin/users 表里看到的"管理员/巡查员/自动确认/
+                        新人"中文不一致。走 auth-store roleLabel 本地化映射。 */}
+                    {u.username}（{roleLabel(u.role)}）
                   </option>
                 ))}
             </select>

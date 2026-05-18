@@ -687,50 +687,50 @@ msgstr "설명"
 msgid "复制失败，请手动选中。"
 msgstr "복사에 실패했습니다. 직접 선택해 주세요."
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:97
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:103
 msgid "复制"
 msgstr "복사"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:132
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:138
 msgid "微信"
 msgstr "WeChat"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:133
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:139
 #: apps/wiki/src/routes/account-page.tsx:120
 #: apps/wiki/src/routes/login-page.tsx:229
 msgid "邮箱"
 msgstr "이메일"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:143
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:155
 msgid "AI 生成额度用完：每小时上限 {quota} 次，{retryHint}后再试。"
 msgstr "AI 생성 한도를 모두 사용했습니다: 시간당 최대 {quota}회. {retryHint} 후 다시 시도해 주세요."
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:147
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:159
 msgid "AI 生成额度用完：每小时上限 {quota} 次，请稍后再试。"
 msgstr "AI 생성 한도를 모두 사용했습니다: 시간당 최대 {quota}회. 잠시 후 다시 시도해 주세요."
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:151
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:163
 msgid "需要更多额度 / 商务合作，可联系运营："
 msgstr "추가 한도 또는 비즈니스 협업이 필요하시면 운영팀에 연락해 주세요:"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:157
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:163
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:169
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:175
 msgid "已复制"
 msgstr "복사됨"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:158
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:170
 msgid "复制{wxLabel}号 {SUPPORT_WECHAT}"
 msgstr "{wxLabel} ID {SUPPORT_WECHAT} 복사"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:164
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:176
 msgid "复制{emailLabel} {SUPPORT_EMAIL}"
 msgstr "{emailLabel} {SUPPORT_EMAIL} 복사"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:178
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:190
 msgid "约 {min} 分钟"
 msgstr "약 {min}분"
 
-#: apps/wiki/src/components/quota-exhausted-notice.tsx:180
+#: apps/wiki/src/components/quota-exhausted-notice.tsx:192
 msgid "{sec} 秒"
 msgstr "{sec}초"
 
@@ -762,7 +762,7 @@ msgstr "제출되었습니다. 관리자가 처리합니다."
 #: apps/wiki/src/routes/account-page.tsx:369
 #: apps/wiki/src/routes/account-page.tsx:480
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:485
-#: apps/wiki/src/routes/admin-blocks-page.tsx:173
+#: apps/wiki/src/routes/admin-blocks-page.tsx:178
 #: apps/wiki/src/routes/character-page.tsx:244
 msgid "提交中..."
 msgstr "제출 중..."
@@ -873,7 +873,7 @@ msgstr "검토 대기 편집"
 
 #: apps/wiki/src/components/root-layout.tsx:117
 #: apps/wiki/src/routes/admin-abuse-filters-page.tsx:63
-#: apps/wiki/src/routes/admin-blocks-page.tsx:72
+#: apps/wiki/src/routes/admin-blocks-page.tsx:73
 #: apps/wiki/src/routes/admin-protection-page.tsx:102
 #: apps/wiki/src/routes/admin-reports-page.tsx:48
 #: apps/wiki/src/routes/admin-stats-page.tsx:36
@@ -916,88 +916,87 @@ msgstr "어뷰즈 방지 필터"
 msgid "治理仪表盘"
 msgstr "거버넌스 대시보드"
 
-#: apps/wiki/src/components/root-layout.tsx:188
+#: apps/wiki/src/components/root-layout.tsx:202
 msgid "隐界角色百科"
 msgstr "은계 캐릭터 위키"
 
-#: apps/wiki/src/components/root-layout.tsx:246
+#: apps/wiki/src/components/root-layout.tsx:266
 msgid "打开导航"
 msgstr "내비게이션 열기"
 
-#: apps/wiki/src/components/root-layout.tsx:267
+#: apps/wiki/src/components/root-layout.tsx:287
 msgid "隐界世界角色管理平台"
 msgstr "은계 월드 캐릭터 관리 플랫폼"
 
-#: apps/wiki/src/components/root-layout.tsx:270
+#: apps/wiki/src/components/root-layout.tsx:290
 msgid "隐界角色管理"
 msgstr "은계 캐릭터 관리"
 
-#: apps/wiki/src/components/root-layout.tsx:285
+#: apps/wiki/src/components/root-layout.tsx:305
 msgid "搜索角色词条…（回车）"
 msgstr "항목 검색… (Enter)"
 
-#: apps/wiki/src/components/root-layout.tsx:288
-#: apps/wiki/src/components/root-layout.tsx:381
+#: apps/wiki/src/components/root-layout.tsx:308
+#: apps/wiki/src/components/root-layout.tsx:401
 msgid "搜索角色词条"
 msgstr "캐릭터 항목 검색"
 
-#: apps/wiki/src/components/root-layout.tsx:304
-#: apps/wiki/src/components/root-layout.tsx:322
+#: apps/wiki/src/components/root-layout.tsx:324
+#: apps/wiki/src/components/root-layout.tsx:342
 msgid "新手教程 / Tutorial"
 msgstr "초보자 가이드 / Tutorial"
 
-#: apps/wiki/src/components/root-layout.tsx:305
+#: apps/wiki/src/components/root-layout.tsx:325
 msgid "新手教程"
 msgstr "튜토리얼"
 
-#: apps/wiki/src/components/root-layout.tsx:326
+#: apps/wiki/src/components/root-layout.tsx:346
 msgid "教程"
 msgstr "튜토리얼"
 
-#: apps/wiki/src/components/root-layout.tsx:344
-#: apps/wiki/src/components/root-layout.tsx:362
+#: apps/wiki/src/components/root-layout.tsx:364
+#: apps/wiki/src/components/root-layout.tsx:382
 #: apps/wiki/src/routes/login-page.tsx:41
 #: apps/wiki/src/routes/login-page.tsx:155
 #: apps/wiki/src/routes/register-page.tsx:124
 msgid "登录"
 msgstr "로그인"
 
-#: apps/wiki/src/components/root-layout.tsx:359
+#: apps/wiki/src/components/root-layout.tsx:379
 #: apps/wiki/src/routes/admin-users-page.tsx:88
 #: apps/wiki/src/routes/register-page.tsx:52
 #: apps/wiki/src/routes/register-page.tsx:115
 msgid "注册"
 msgstr "가입"
 
-#: apps/wiki/src/components/root-layout.tsx:380
+#: apps/wiki/src/components/root-layout.tsx:400
 msgid "搜索词条…"
 msgstr "항목 검색…"
 
-#: apps/wiki/src/components/root-layout.tsx:393
-#: apps/wiki/src/components/root-layout.tsx:407
+#: apps/wiki/src/components/root-layout.tsx:435
 msgid "关闭导航"
 msgstr "내비게이션 닫기"
 
-#: apps/wiki/src/components/root-layout.tsx:429
+#: apps/wiki/src/components/root-layout.tsx:457
 msgid "隐界世界角色管理平台 · 任何登录用户都可以提交角色创建、编辑和生命周期变更，由巡查员审核生效"
 msgstr "은계 월드 캐릭터 관리 플랫폼 · 로그인한 모든 사용자가 캐릭터 생성, 편집, 라이프사이클 변경을 제출할 수 있으며 순찰원의 검토를 거쳐 적용됩니다"
 
 #. placeholder {0}: user.username
-#: apps/wiki/src/components/root-layout.tsx:480
+#: apps/wiki/src/components/root-layout.tsx:508
 msgid "{0} 账户菜单"
 msgstr "{0} 계정 메뉴"
 
-#: apps/wiki/src/components/root-layout.tsx:528
+#: apps/wiki/src/components/root-layout.tsx:556
 #: apps/wiki/src/routes/account-page.tsx:54
 #: apps/wiki/src/routes/account-page.tsx:69
 msgid "账户设置"
 msgstr "계정 설정"
 
-#: apps/wiki/src/components/root-layout.tsx:540
+#: apps/wiki/src/components/root-layout.tsx:568
 msgid "退出"
 msgstr "로그아웃"
 
-#: apps/wiki/src/components/root-layout.tsx:560
+#: apps/wiki/src/components/root-layout.tsx:588
 msgid "主导航"
 msgstr "주요 네비게이션"
 
@@ -1279,17 +1278,17 @@ msgid "已处理"
 msgstr "처리됨"
 
 #: apps/wiki/src/lib/revision-labels.ts:58
-#: apps/wiki/src/routes/admin-blocks-page.tsx:110
+#: apps/wiki/src/routes/admin-blocks-page.tsx:115
 msgid "全站"
 msgstr "사이트 전체"
 
 #: apps/wiki/src/lib/revision-labels.ts:59
-#: apps/wiki/src/routes/admin-blocks-page.tsx:111
+#: apps/wiki/src/routes/admin-blocks-page.tsx:116
 msgid "单条目"
 msgstr "단일 항목"
 
 #: apps/wiki/src/lib/revision-labels.ts:60
-#: apps/wiki/src/routes/admin-blocks-page.tsx:112
+#: apps/wiki/src/routes/admin-blocks-page.tsx:117
 #: apps/wiki/src/routes/character-page.tsx:128
 #: apps/wiki/src/routes/watchlist-page.tsx:164
 msgid "讨论"
@@ -1680,107 +1679,107 @@ msgstr "regex / shrink / frequency / link_flood / keyword_list 등 타입 지원
 msgid "提交并启用"
 msgstr "제출 및 활성화"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:59
+#: apps/wiki/src/routes/admin-blocks-page.tsx:60
 msgid "封禁已添加，列表已刷新。"
 msgstr "차단을 추가했으며 목록을 새로 고쳤습니다."
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:73
+#: apps/wiki/src/routes/admin-blocks-page.tsx:74
 msgid "封禁管理"
 msgstr "차단 관리"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:75
+#: apps/wiki/src/routes/admin-blocks-page.tsx:76
 msgid "对违规用户进行全站、单条目或讨论范围的封禁，可设置到期时间或永久。已撤销/到期的记录可勾选展示。"
 msgstr "위반 사용자를 사이트 전체, 단일 항목, 토크 범위로 차단합니다. 만료 시점 또는 영구 설정 가능. 철회/만료 기록은 표시 토글로 확인 가능."
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:80
+#: apps/wiki/src/routes/admin-blocks-page.tsx:81
 msgid "新增封禁"
 msgstr "차단 추가"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:83
+#: apps/wiki/src/routes/admin-blocks-page.tsx:84
 msgid "目标用户"
 msgstr "대상 사용자"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:89
+#: apps/wiki/src/routes/admin-blocks-page.tsx:90
 msgid "— 选择用户 —"
 msgstr "— 사용자 선택 —"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:99
+#: apps/wiki/src/routes/admin-blocks-page.tsx:104
 msgid "范围"
 msgstr "범위"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:116
+#: apps/wiki/src/routes/admin-blocks-page.tsx:121
 msgid "条目 ID"
 msgstr "항목 ID"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:122
+#: apps/wiki/src/routes/admin-blocks-page.tsx:127
 msgid "例如：char-celebrity-andrej-karpathy"
 msgstr "예: char-celebrity-andrej-karpathy"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:126
+#: apps/wiki/src/routes/admin-blocks-page.tsx:131
 #: apps/wiki/src/routes/admin-protection-page.tsx:205
 msgid "原因"
 msgstr "사유"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:130
+#: apps/wiki/src/routes/admin-blocks-page.tsx:135
 msgid "说明为什么对此用户/范围执行封禁"
 msgstr "이 사용자/범위를 차단하는 이유를 설명하세요"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:134
+#: apps/wiki/src/routes/admin-blocks-page.tsx:139
 #: apps/wiki/src/routes/admin-protection-page.tsx:195
 msgid "到期时间"
 msgstr "만료 시점"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:135
+#: apps/wiki/src/routes/admin-blocks-page.tsx:140
 #: apps/wiki/src/routes/admin-protection-page.tsx:195
 msgid "可选；留空 = 永久"
 msgstr "선택 사항. 비워두면 영구"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:173
+#: apps/wiki/src/routes/admin-blocks-page.tsx:178
 msgid "提交封禁"
 msgstr "차단 제출"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:198
+#: apps/wiki/src/routes/admin-blocks-page.tsx:203
 msgid "封禁列表"
 msgstr "차단 목록"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:206
+#: apps/wiki/src/routes/admin-blocks-page.tsx:211
 msgid "含已撤销 / 已到期"
 msgstr "철회/만료 포함"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:222
+#: apps/wiki/src/routes/admin-blocks-page.tsx:227
 msgid "没有相关封禁记录。"
 msgstr "관련 차단 기록이 없습니다."
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:267
+#: apps/wiki/src/routes/admin-blocks-page.tsx:272
 msgid "生效中"
 msgstr "활성"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:271
+#: apps/wiki/src/routes/admin-blocks-page.tsx:276
 msgid "已撤销"
 msgstr "철회됨"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:275
+#: apps/wiki/src/routes/admin-blocks-page.tsx:280
 msgid "已到期"
 msgstr "만료됨"
 
 #. placeholder {0}: formatDateTime(block.createdAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:286
+#: apps/wiki/src/routes/admin-blocks-page.tsx:291
 msgid "创建于 {0}"
 msgstr "생성 {0}"
 
 #. placeholder {0}: formatDateTime(block.expiresAt)
 #. placeholder {0}: formatDateTime(row.expiresAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:288
-#: apps/wiki/src/routes/admin-protection-page.tsx:261
+#: apps/wiki/src/routes/admin-blocks-page.tsx:293
+#: apps/wiki/src/routes/admin-protection-page.tsx:276
 msgid "到期 {0}"
 msgstr "만료 {0}"
 
 #. placeholder {0}: formatDateTime(block.revokedAt)
-#: apps/wiki/src/routes/admin-blocks-page.tsx:290
+#: apps/wiki/src/routes/admin-blocks-page.tsx:295
 msgid "撤销于 {0}"
 msgstr "{0} 에 철회"
 
-#: apps/wiki/src/routes/admin-blocks-page.tsx:301
+#: apps/wiki/src/routes/admin-blocks-page.tsx:306
 msgid "撤销"
 msgstr "철회"
 
@@ -1818,10 +1817,12 @@ msgstr "현재 등급"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:139
 #: apps/wiki/src/routes/admin-protection-page.tsx:174
+#: apps/wiki/src/routes/admin-protection-page.tsx:255
 msgid "无保护"
 msgstr "없음"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:141
+#: apps/wiki/src/routes/admin-protection-page.tsx:257
 #: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:253
 #: apps/wiki/src/routes/watchlist-page.tsx:98
@@ -1829,6 +1830,7 @@ msgid "半保护"
 msgstr "반보호"
 
 #: apps/wiki/src/routes/admin-protection-page.tsx:142
+#: apps/wiki/src/routes/admin-protection-page.tsx:259
 #: apps/wiki/src/routes/character-page.tsx:338
 #: apps/wiki/src/routes/home-page.tsx:254
 #: apps/wiki/src/routes/watchlist-page.tsx:99
@@ -1885,7 +1887,7 @@ msgstr "기록이 없습니다."
 
 #. placeholder {0}: formatDateTime(row.createdAt)
 #. placeholder {1}: resolveUsername(row.changedBy)
-#: apps/wiki/src/routes/admin-protection-page.tsx:256
+#: apps/wiki/src/routes/admin-protection-page.tsx:271
 msgid "{0} · 由 {1}"
 msgstr "{0} · {1} 작성"
 
@@ -2027,9 +2029,14 @@ msgid "wiki 成员"
 msgstr "wiki 멤버"
 
 #. placeholder {0}: u.username
+#: apps/wiki/src/routes/admin-users-page.tsx:139
+msgid "{0} 的角色"
+msgstr "{0} 의 역할"
+
+#. placeholder {0}: u.username
 #. placeholder {1}: roleLabel(u.role)
 #. placeholder {2}: roleLabel(next)
-#: apps/wiki/src/routes/admin-users-page.tsx:150
+#: apps/wiki/src/routes/admin-users-page.tsx:156
 msgid "将「{0}」的角色从 {1} 改为 {2}？该用户立刻失去对应权限。"
 msgstr "\"{0}\"의 역할을 {1}에서 {2}(으)로 변경하시겠습니까? 해당 사용자는 즉시 권한을 잃습니다."
 
