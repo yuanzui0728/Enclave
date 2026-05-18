@@ -217,30 +217,26 @@ export function LiveCompanionPage() {
     const path = "/discover/channels";
     const link = resolveMobileHandoffLink(path);
 
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.clipboard ||
-      typeof navigator.clipboard.writeText !== "function"
-    ) {
-      setError(t(msg`当前环境暂不支持复制到手机。`));
+    // 走查 2026-05-18 R1：原早期 guard 只看 navigator.clipboard.writeText —— 但
+    // writeClipboardText 内部本来就有三级 fallback（native bridge → navigator
+    // .clipboard → execCommand）。在 iOS Capacitor 壳 / 部分 Safari WKWebView /
+    // 不暴露 navigator.clipboard 的桌面壳里 navigator.clipboard 缺席但 native
+    // bridge / execCommand 实际可用，guard 把这些环境硬卡死成"暂不支持"，用户
+    // 永远点不动「发准备到手机」/「发到手机继续」。直接按 writeClipboardText
+    // 的 boolean 返回兜底。
+    if (!(await writeClipboardText(link))) {
+      setError(t(msg`复制到手机失败，请稍后重试。`));
       return;
     }
 
-    try {
-      if (!(await writeClipboardText(link))) {
-        throw new Error("clipboard copy failed");
-      }
-      pushMobileHandoffRecord({
-        category: "channel",
-        description: input.description,
-        label: input.label,
-        path,
-      });
-      setError(null);
-      setNotice(t(msg`${input.label} 已复制，可发到手机继续。`));
-    } catch {
-      setError(t(msg`复制到手机失败，请稍后重试。`));
-    }
+    pushMobileHandoffRecord({
+      category: "channel",
+      description: input.description,
+      label: input.label,
+      path,
+    });
+    setError(null);
+    setNotice(t(msg`${input.label} 已复制，可发到手机继续。`));
   }
 
   if (!isDesktopLayout) {

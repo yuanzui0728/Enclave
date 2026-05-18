@@ -434,11 +434,45 @@ export function DesktopChannelsWorkspace({
             {(() => {
               // 按当前 tab 给"为什么空"的具体原因——尤其 关注 / 直播 这种
               // 经常空的 tab，通用文案没有信息量。
+              //
+              // 走查 2026-05-18 R1：原 EmptyState 只渲文字，没 CTA。用户在
+              // 朋友 / 关注 / 直播 三个常空 tab 落到空态后唯一可触发的入口
+              // 是顶部的「换一批」——而那条按钮在非推荐 tab 上点了 generate
+              // 后内容只会落到推荐流，本 tab 还是空，体感「按了没效果」。
+              // 移动端 MobileChannelsStatusCard 在空态卡里给了同款 CTA
+              // （channels-page.tsx L1837-1862）：following/friends/live 显
+              // "去推荐看看" 切 tab，recommended 显「换一批」触发 generate。
+              // 桌面 workspace 对齐，避免用户进空 tab 无所适从。
               const empty = getChannelsEmptyState(activeSection, t);
+              const isSpecialTab =
+                activeSection === "following" ||
+                activeSection === "friends" ||
+                activeSection === "live";
               return (
                 <EmptyState
                   title={empty.title}
                   description={empty.description}
+                  action={
+                    isSpecialTab ? (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => onSectionChange("recommended")}
+                      >
+                        {t(msg`去推荐看看`)}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={onRefresh}
+                        disabled={refreshPending}
+                      >
+                        <RefreshCcw size={14} />
+                        {refreshPending ? t(msg`生成中...`) : t(msg`换一批`)}
+                      </Button>
+                    )
+                  }
                 />
               );
             })()}
@@ -584,6 +618,15 @@ export function DesktopChannelsWorkspace({
 
 /**
  * 顶部短暂浮现的转发成功提示——3 秒自动消失。
+ *
+ * 走查 2026-05-18 R1：原 effect deps 是 [onDismiss]，但 onDismiss 是父级
+ * DesktopChannelsWorkspace 里 `() => setForwardNotice(null)` 内联箭头，每次父
+ * re-render 都换 identity。视频号工作区里鼠标滚动切 slide → IntersectionObserver
+ * → setSelectedPostId → 父 re-render → ForwardNotice 拿到新 onDismiss →
+ * useEffect cleanup 清旧 timer 再起新 3s timer。用户转发完一直滑 slide 时
+ * notice 永远不消失，最后还得手动等用户停下来才能 fire。
+ * 用 ref 缓存最新 onDismiss，effect 只依赖 message —— message 改变才重置
+ * timer，父 re-render 跟 timer 解耦。
  */
 function ForwardNotice({
   message,
@@ -592,10 +635,12 @@ function ForwardNotice({
   message: string;
   onDismiss: () => void;
 }) {
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
   useEffect(() => {
-    const timer = window.setTimeout(onDismiss, 3000);
+    const timer = window.setTimeout(() => onDismissRef.current(), 3000);
     return () => window.clearTimeout(timer);
-  }, [onDismiss]);
+  }, [message]);
   return (
     <div className="fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full bg-[rgba(17,24,39,0.92)] px-4 py-2 text-[13px] text-white shadow-lg">
       {message}
@@ -690,10 +735,20 @@ function ChannelMediaSurface({
       <div className="relative flex flex-1 items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-6">
         {backgroundCover ? (
           // 浮在背景里的封面图（半透明），给音乐贴一些视觉氛围
-          <img
+          //
+          // 走查 2026-05-18 R1：原 <img> 既无 lazy 也无 onError 兜底。20 张
+          // audio slide 一起 eager 拉公网封面，首屏并发十几张 minimax-cover 浪
+          // 费带宽 + 公网隧道 RTT；单张 cover 404（minimax 资源被回收 / cloud-
+          // api 反代 401 边界）时浏览器原生破图占位会盖在沉浸式播放区上方，
+          // 透着 opacity-30 还隐约能看到。和移动端 ChannelAudioPictorial / 桌
+          // 面 ChannelFallbackImage 的修法一致：active 卡 eager，其余 lazy；
+          // onError 直接把封面隐掉，让纯渐变背景兜底（卡顶角已经有"音乐"标签，
+          // 不需要 Music2 占位图标重复打）。decoding=async 避免大图同步解码卡
+          // 主线程。
+          <BackgroundCoverImage
             src={backgroundCover}
             alt={post.title ?? ""}
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px]"
+            isActive={isActive}
           />
         ) : null}
         <div className="relative">
@@ -785,6 +840,32 @@ function ChannelMediaSurface({
         </div>
       </div>
     </div>
+  );
+}
+
+// 走查 2026-05-18 R1：audio 帖背景封面（opacity-30 blur 的氛围层）—— 单张
+// 失败不该用 Music2 替换（卡内层已经有 AudioCard 显示 cover），失败就直接隐
+// 掉让渐变背景兜底。active 卡 eager、其余 lazy 避免 20 张并发拉公网封面。
+function BackgroundCoverImage({
+  src,
+  alt,
+  isActive,
+}: {
+  src: string;
+  alt: string;
+  isActive: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading={isActive ? "eager" : "lazy"}
+      decoding="async"
+      onError={() => setFailed(true)}
+      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px]"
+    />
   );
 }
 
