@@ -123,6 +123,7 @@ import {
   summarizeChatMentions,
 } from "../../../lib/chat-text";
 import {
+  getConversationDisplayTitle,
   getConversationPreviewParts,
   getConversationVisibleLastMessage,
 } from "../../../lib/conversation-preview";
@@ -1689,7 +1690,10 @@ export function DesktopChatWorkspace({
       const opened = await openDesktopChatWindow({
         conversationId: conversation.id,
         conversationType: getConversationThreadType(conversation),
-        title: conversation.title,
+        // R1：和 ConversationCardLink 同款，独立窗口 title 也得翻 sentinel——
+        // 否则 Tauri 把 raw「未知联系人」/「Direct conversation」当 OS-level
+        // window title 写进任务栏/Mission Control，跨 locale 用户看到字面量。
+        title: getConversationDisplayTitle(conversation.title),
         returnTo: buildDesktopChatThreadPath({
           conversationId: conversation.id,
         }),
@@ -2362,7 +2366,7 @@ export function DesktopChatWorkspace({
           panelRef={sidePanelRef}
           mode={rightPanelMode}
           title={
-            activeConversation.title ||
+            getConversationDisplayTitle(activeConversation.title) ||
             (isPersistedGroupConversation(activeConversation)
               ? t(msg`群聊`)
               : t(msg`聊天`))
@@ -2978,22 +2982,32 @@ const ConversationCardLink = memo(function ConversationCardLink({
     conversation.unreadCount > 0 &&
     mentionSummary?.hasMentionAll,
   );
+  // 走查 R1：移动端 chat-list-page / chat-details-page / chat-message-search-page
+  // / chat-background-page / use-conversation-thread 都经
+  // getConversationDisplayTitle(conversation.title) 把服务端持久化的中/英文
+  // 占位 sentinel（normalizeLegacyConversationEntity 写入的「未知联系人」/
+  //「Direct conversation」）翻成当前 locale；桌面端会话列表 ConversationCardLink
+  // 直接渲染 raw conversation.title → en-US/ja-JP/ko-KR 用户在列表里看到
+  // 突兀的中文「未知联系人」（或反过来 zh-CN 用户看到英文「Direct conversation」）。
+  // GroupAvatarChip / AvatarChip 的 name 还用来跑 SVG fallback 首字，sentinel
+  // 字面量被取首字「未」/「D」也不合 locale；统一翻一遍。
+  const displayTitle = getConversationDisplayTitle(conversation.title);
 
   const content = (
     <>
       {isGroupConversation ? (
         <GroupAvatarChip
-          name={conversation.title}
+          name={displayTitle}
           members={conversation.participants}
         />
       ) : (
-        <AvatarChip name={conversation.title} src={conversation.avatar} />
+        <AvatarChip name={displayTitle} src={conversation.avatar} />
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-1.5">
             <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
-              {conversation.title}
+              {displayTitle}
             </div>
             {isGroupConversation ? (
               <span className="shrink-0 rounded-full border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
