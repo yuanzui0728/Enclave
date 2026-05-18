@@ -2631,6 +2631,13 @@ function DesktopChannelCommentsPanel({
             </div>
             <button
               type="button"
+              // 走查 2026-05-18 第二轮 R12：原 visible label 只是 "取消"，SR 用
+              // 户 Tab 到这里听到 "取消 button" 无上下文 — 取消啥？同一 drawer
+              // 内还有顶部"关闭评论" X 按钮、textarea、发送按钮，多个 cancel-
+              // adjacent 控件让 SR 用户得回头读前面那条 "正在回复 X" chip 才
+              // 能拼出语义。aria-label 显式带回作者名："取消回复 X" 把语境闭
+              // 合在一个 ARIA 节点里，盲用用户 Tab 立刻就知道做什么。
+              aria-label={t(msg`取消回复 ${replyTarget.authorName}`)}
               onClick={onCancelReply}
               className="transition hover:opacity-75"
             >
