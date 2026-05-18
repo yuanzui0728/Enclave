@@ -333,14 +333,29 @@ export function LiveCompanionPage() {
         {notice ? (
           <InlineNotice
             tone="success"
+            // 走查 2026-05-18 新会话（本会话）R2：跟 channels-page R6 / 主视频号
+            // InlineNotice R1 同款 a11y 修复 —— 直播伴侣 success notice（开播切
+            // 状态 / 结束直播 / 清空准备 / 发到手机成功 / 带入直播准备 / 生成预
+            // 热成功）冒出来时 SR 用户听不到反馈。InlineNotice 包的是裸 <div>，
+            // 没挂 role/aria-live。success 走 role=status → aria-live=polite，
+            // 排队不打断当前阅读流。
+            role="status"
             className="border-[color:var(--border-faint)] bg-white"
           >
             {notice}
           </InlineNotice>
         ) : null}
         {error ? (
+          // 走查 2026-05-18 新会话（本会话）R2：原 tone="info" 把所有失败路径（复
+          // 制到手机失败 / 缺直播标题 / 当前没有直播 / 生成视频号内容失败）渲成
+          // 蓝色中性提示——视觉上跟绿色 success notice 区分度仅靠左侧 success 边
+          // 框色，色盲 / 高对比度模式下几乎一致；SR 用户更没区分。同 channels-
+          // page noticeTone R6：失败应走 tone=danger（红色背景 / 边框）+ role=
+          // alert（aria-live=assertive 立即打断当前播报），用户立刻知道操作没成
+          // 功。InlineNotice 是裸 props spread 到 div，role 直接挂上即可。
           <InlineNotice
-            tone="info"
+            tone="danger"
+            role="alert"
             className="border-[color:var(--border-faint)] bg-white"
           >
             {error}
