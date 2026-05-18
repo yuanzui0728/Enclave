@@ -12,6 +12,7 @@ import {
 import { DesktopChatRouteRedirectShell } from "../features/chat/chat-route-redirect-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isDesktopOnlyPath } from "../lib/history-back";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function ChatMessageSearchPage() {
@@ -84,7 +85,15 @@ function MobileChatMessageSearchPage({
 
   const conversation =
     conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
-  const conversationTitle = conversation?.title ?? t(msg`聊天记录`);
+  // 走查新一轮 R2：服务端 normalizeLegacyConversationEntity 在 title 全部
+  // fallback 失败时持久化字面量 "未知联系人" / "Direct conversation"。
+  // chat-list-page 行内 / use-conversation-thread 单聊 header 都已经走
+  // getConversationDisplayTitle 翻成当前 locale；本搜索页之前直接 conversation.title
+  // 漏一遍——en/ja/ko locale 用户从 chat-details 「查找聊天记录」进来时顶部
+  // 副标题还是原始中文 sentinel。和姊妹入口对齐。
+  const conversationTitle = conversation
+    ? getConversationDisplayTitle(conversation.title)
+    : t(msg`聊天记录`);
 
   useEffect(() => {
     if (
