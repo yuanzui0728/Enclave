@@ -116,6 +116,18 @@ export function ChannelsForwardPicker({
     }
   }, [forwardMutation.isPending]);
 
+  // 走查 2026-05-18 新会话 R9（本轮）：原 deps `[open, onClose]` 看似无害，
+  // 但父级 DesktopChannelsWorkspace 上 onClose 是内联箭头
+  // `onClose={() => setForwardPickerPost(null)}`，每次 workspace re-render
+  // 都换 identity——视频号工作区里 IntersectionObserver setSelectedPostId /
+  // like / favorite / follow cache 乐观更新 / viewFeedPost mutation 完成 /
+  // forwardNotice 3s 计时器到 等等都触发 re-render，picker 打开期间这条
+  // effect 每秒 4-8 次 cleanup + add 同款 listener。装卸本身廉价但在 React 18
+  // strict-mode dev 下能放大成抖动，且极端时与 native keydown 错峰丢键。
+  // latest-ref 锁稳：deps 只挂 open，listener 内部读 ref.current。同款修法
+  // 跟 workspace 那边 onCloseAuthorRef R3 一致。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) {
       return;
@@ -123,12 +135,12 @@ export function ChannelsForwardPicker({
     const handler = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open, onClose]);
+  }, [open]);
 
   // 走查 2026-05-18 新会话 R1（移动端视频号转发 picker）：picker 已挂
   // role="dialog" aria-modal="true"，但 aria-modal 在 ARIA 标记的 <div> 上
@@ -220,14 +232,16 @@ export function ChannelsForwardPicker({
   // 应该收 picker 而不是退掉整个视频号页。和 wechat-comment-bar /
   // share-card-modal / mobile-channels-comments-sheet 同款拦截：preventDefault
   // + 返回 true 消费按键。
+  // R9 同款：onClose inline arrow，父 re-render 频繁触发 cleanup + reset
+  // Android back interceptor。register/unregister 本身廉价但每秒多次没意义。
   useEffect(() => {
     if (!open) return;
     return registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
-  }, [open, onClose]);
+  }, [open]);
 
   // 锁背景滚动：picker 弹出时如果不锁，移动端两指滚 / 桌面滚轮会把底下的
   // 视频号 home 也滚走，picker 自身却 fixed 不动，看着像两层在打架。
