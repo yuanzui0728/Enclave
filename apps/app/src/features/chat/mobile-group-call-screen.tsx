@@ -1211,14 +1211,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 >
                   <div className="flex items-center gap-3">
                     <AvatarChip
-                      name={member.memberName ?? member.memberId}
+                      name={member.memberName || member.memberId}
                       src={member.memberAvatar}
                       size="wechat"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <div className="truncate text-[13px] font-medium text-white">
-                          {member.memberName ?? member.memberId}
+                          {member.memberName || member.memberId}
                         </div>
                         <MobileCallMetaChip className="px-2 py-0.5 text-[10px] text-white/64">
                           {roleLabel}

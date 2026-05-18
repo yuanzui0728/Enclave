@@ -1051,24 +1051,6 @@ function DirectChatDetailsPanel({
         </>
       )}
 
-      {pinMutation.isError && pinMutation.error instanceof Error ? (
-        <ErrorBlock message={pinMutation.error.message} />
-      ) : null}
-      {muteMutation.isError && muteMutation.error instanceof Error ? (
-        <ErrorBlock message={muteMutation.error.message} />
-      ) : null}
-      {hideMutation.isError && hideMutation.error instanceof Error ? (
-        <ErrorBlock message={hideMutation.error.message} />
-      ) : null}
-      {clearMutation.isError && clearMutation.error instanceof Error ? (
-        <ErrorBlock message={clearMutation.error.message} />
-      ) : null}
-      {reportMutation.isError && reportMutation.error instanceof Error ? (
-        <ErrorBlock message={reportMutation.error.message} />
-      ) : null}
-      {blockMutation.isError && blockMutation.error instanceof Error ? (
-        <ErrorBlock message={blockMutation.error.message} />
-      ) : null}
       <DesktopChatConfirmDialog
         open={Boolean(activeConfirm)}
         title={activeConfirm?.title ?? ""}
@@ -1218,7 +1200,7 @@ function GroupChatDetailsPanel({
       params: { groupId: conversation.id },
       search: buildGroupInviteReturnSearch({
         conversationPath: `/group/${conversation.id}`,
-        conversationTitle: groupQuery.data?.name ?? conversation.title,
+        conversationTitle: groupQuery.data?.name || conversation.title,
       }),
       hash: buildMobileGroupRouteHash({
         returnPath: "/tabs/chat",
@@ -1736,7 +1718,7 @@ function GroupChatDetailsPanel({
   // （typing socket / messages stream / conversations 60s 轮询都会让父 workspace
   // re-render 透传 conversation prop）。conversation.id / conversation.title /
   // group?.name / groupMembers 引用都稳定时（无变化时），整段直接复用旧引用。
-  const groupNameOrTitle = group?.name ?? conversation.title;
+  const groupNameOrTitle = group?.name || conversation.title;
   const memberItems = useMemo<DesktopMemberGridItem[]>(
     () => [
       ...groupMembers
@@ -1927,7 +1909,7 @@ function GroupChatDetailsPanel({
       <DesktopWechatGroupSection title={t(msg`群聊资料`)}>
         <DesktopWechatGroupRow
           label={t(msg`群聊名称`)}
-          value={groupQuery.data?.name ?? conversation.title}
+          value={groupQuery.data?.name || conversation.title}
           disabled={busy}
           onClick={() => setEditorMode("name")}
         />
@@ -2010,7 +1992,7 @@ function GroupChatDetailsPanel({
         />
         <DesktopWechatGroupRow
           label={t(msg`我在本群的昵称`)}
-          value={ownerMember?.memberName ?? t(msg`未设置`)}
+          value={ownerMember?.memberName || t(msg`未设置`)}
           disabled={busy}
           onClick={() => setEditorMode("nickname")}
         />
@@ -2079,7 +2061,7 @@ function GroupChatDetailsPanel({
 
       <DesktopGroupMemberPicker
         open={memberPickerOpen && memberPickerMode === "add"}
-        groupName={groupQuery.data?.name ?? conversation.title}
+        groupName={groupQuery.data?.name || conversation.title}
         existingMemberIds={existingMemberIds}
         pending={addMembersMutation.isPending}
         onClose={() => setMemberPickerOpen(false)}
@@ -2087,7 +2069,7 @@ function GroupChatDetailsPanel({
       />
       <DesktopGroupMemberRemovalPicker
         open={memberPickerOpen && memberPickerMode === "remove"}
-        groupName={groupQuery.data?.name ?? conversation.title}
+        groupName={groupQuery.data?.name || conversation.title}
         removableMembers={removableMembers}
         pending={removeMembersMutation.isPending}
         onClose={() => setMemberPickerOpen(false)}
@@ -2096,7 +2078,7 @@ function GroupChatDetailsPanel({
       <DesktopGroupMemberBrowserDialog
         open={memberBrowserOpen}
         autoFocusSearch={memberBrowserAutoFocusSearch}
-        groupName={groupQuery.data?.name ?? conversation.title}
+        groupName={groupQuery.data?.name || conversation.title}
         members={groupMembers}
         resolveDisplayName={resolveGroupMemberDisplayName}
         pending={busy}
@@ -2134,7 +2116,7 @@ function GroupChatDetailsPanel({
               threadContext: {
                 id: conversation.id,
                 type: "group",
-                title: group?.name ?? conversation.title,
+                title: group?.name || conversation.title,
               },
             });
             return;

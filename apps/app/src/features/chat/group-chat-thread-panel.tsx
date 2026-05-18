@@ -740,7 +740,7 @@ export function GroupChatThreadPanel({
         {
           text: buildGroupCallInviteMessage(
             input.kind,
-            groupQuery.data?.name ?? t(msg`当前群聊`),
+            groupQuery.data?.name || t(msg`当前群聊`),
             {
               activeCount: input.activeCount,
               totalCount: input.totalCount,
@@ -1467,7 +1467,7 @@ export function GroupChatThreadPanel({
         <header className="relative z-20 flex items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white px-6 py-3">
           <div className="min-w-0 flex-1 px-1 py-1">
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
-              {groupQuery.data?.name ?? t(msg`群聊`)}
+              {groupQuery.data?.name || t(msg`群聊`)}
             </div>
             <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
               {typingSummary
@@ -1691,7 +1691,7 @@ export function GroupChatThreadPanel({
             <DesktopGroupCallPanel
               kind={desktopCallPanelState.kind}
               groupId={groupId}
-              groupName={groupQuery.data?.name ?? t(msg`群聊`)}
+              groupName={groupQuery.data?.name || t(msg`群聊`)}
               members={membersQuery.data ?? []}
               lastSyncedCounts={
                 lastPublishedCallCounts?.kind === desktopCallPanelState.kind &&
@@ -1749,7 +1749,7 @@ export function GroupChatThreadPanel({
                     kind: desktopCallPanelState.kind,
                     conversationId: groupId,
                     conversationType: "group",
-                    title: groupQuery.data?.name ?? t(msg`群聊`),
+                    title: groupQuery.data?.name || t(msg`群聊`),
                   }),
                 });
               }}

@@ -576,7 +576,7 @@ export function DesktopChatFilesPage() {
   return (
     <>
       <DesktopUtilityShell
-        title={selectedConversation?.title ?? t(msg`全部聊天文件`)}
+        title={selectedConversation?.title || t(msg`全部聊天文件`)}
         subtitle={
           selectedConversation
             ? t(msg`当前会话里的图片和文件会集中显示在这里。`)

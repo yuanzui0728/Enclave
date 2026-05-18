@@ -438,7 +438,7 @@ export function DesktopChatHistoryPanel({
           />
           {isGroupConversation ? (
             <DesktopSearchTabButton
-              label={selectedSender?.label ?? t(msg`群成员`)}
+              label={selectedSender?.label || t(msg`群成员`)}
               active={selectorView === "sender" || Boolean(senderId)}
               withCaret
               onClick={() =>
