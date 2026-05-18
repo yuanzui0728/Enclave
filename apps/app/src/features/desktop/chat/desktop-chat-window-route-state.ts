@@ -41,6 +41,24 @@ export function buildDesktopChatWindowPath(input: DesktopChatWindowRouteState) {
   return hash ? `${DESKTOP_CHAT_WINDOW_PATH}#${hash}` : DESKTOP_CHAT_WINDOW_PATH;
 }
 
+// 走查 R7：和 mobile-chat-route-state R6 (commit 8bb4bd7a0) 同款 "//evil.com"
+// 协议无关 URL 拦截。本文件给 /desktop/chat-window 独立窗口路由用：
+// returnTo 会被 desktop-chat-window-page 的 focusMainChatWindow /
+// closeStandaloneWindow 通过 window.location.assign / window.opener.location.assign
+// 直接当导航 URL，浏览器 location 接受 "//host" 会拼成 "https://evil.com" 把
+// 用户带去外站。compile-time 没有 cross-file 强制；这里单独补一遍。
+function normalizeReturnTo(value?: string | null) {
+  const nextValue = value?.trim();
+  if (
+    !nextValue ||
+    !nextValue.startsWith("/") ||
+    nextValue.startsWith("//")
+  ) {
+    return undefined;
+  }
+  return nextValue;
+}
+
 export function parseDesktopChatWindowRouteHash(hash: string) {
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
   if (!normalizedHash) {
@@ -59,14 +77,14 @@ export function parseDesktopChatWindowRouteHash(hash: string) {
     return null;
   }
 
-  const returnTo = params.get("returnTo")?.trim();
+  const returnTo = normalizeReturnTo(params.get("returnTo"));
   const highlightedMessageId = params.get("messageId")?.trim();
 
   return {
     conversationId,
     conversationType,
     title,
-    returnTo: returnTo || undefined,
+    returnTo,
     highlightedMessageId: highlightedMessageId || undefined,
   } satisfies DesktopChatWindowRouteState;
 }
