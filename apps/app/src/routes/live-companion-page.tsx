@@ -33,6 +33,7 @@ type Translator = ReturnType<typeof useRuntimeTranslator>;
 import { AvatarChip } from "../components/avatar-chip";
 import { DesktopLayoutRequiredState } from "../components/desktop-layout-required-state";
 import { EmptyState } from "../components/empty-state";
+import { stripToolCallSyntax } from "../features/moments/moment-content";
 import {
   defaultLiveDraft,
   endLocalLiveSession,
@@ -904,7 +905,14 @@ function PostReferenceCard({
             {post.mediaType === "video" ? t(msg`短片`) : t(msg`内容卡片`)}
           </div>
           <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-            {post.text}
+            {/*
+              走查 2026-05-18 R2：原直接渲染 post.text —— AI 生成贴里夹的
+              <tool_call>...</tool_call> / [TOOL_CALL]/[/TOOL_CALL] 工具调用残留
+              会原样泄到「最近视频号内容」卡里看着像一坨 XML/JSON。视频号 home
+              卡 / 收藏列表 / desktop slide 都早就走 stripToolCallSyntax 了，这
+              里跟它对齐。
+            */}
+            {stripToolCallSyntax(post.text)}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button size="sm" onClick={onUse} className="rounded-xl">
@@ -944,9 +952,11 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 function createTopicFromPost(t: Translator, post: FeedPostListItem) {
-  return (
-    post.text.trim().slice(0, 24) || t(msg`${post.authorName} 的视频号内容`)
-  );
+  // 走查 2026-05-18 R2：原 slice 24 字直接吃 post.text —— 若帖正文以 <tool_
+  // 开头会截到"<tool_call>{\"name\":\"" 这类乱码当成 topic 草稿灌进 TextField，
+  // 用户回头编辑直播主题看到一行 AI 思考残留毫无意义。先 strip 再 slice。
+  const cleaned = stripToolCallSyntax(post.text).trim();
+  return cleaned.slice(0, 24) || t(msg`${post.authorName} 的视频号内容`);
 }
 
 function createCoverHookFromPost(t: Translator, post: FeedPostListItem) {
