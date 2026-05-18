@@ -491,6 +491,13 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder={t(msg`写一条群公告，群成员会在聊天页看到它。`)}
                 rows={8}
+                // 走查 R4：和姊妹页 R1-R3 同款 a11y 修法——textarea 上方 section
+                // 标题"群公告"虽然渲染在视觉上方，但和这个 textarea 之间没有
+                // htmlFor / aria-labelledby 关联，屏幕阅读器 focus 进来只有
+                // placeholder 可读，多数 SR 实现开始打字后就不再朗读。挂
+                // aria-label="群公告" 明确表达意图，跟父 ChatDetailsSection
+                // 的标题一致。
+                aria-label={t(msg`群公告`)}
                 // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
                 className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
