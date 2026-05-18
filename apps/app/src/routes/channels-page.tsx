@@ -768,16 +768,27 @@ export function ChannelsPage() {
       await queryClient.cancelQueries({
         queryKey: ["app-channels-home", baseUrl],
       });
+      // 走查 2026-05-18 R1：原来 onError 直接 setQueryData(key, previousData) 把
+      // 整张 home 还原，但用户「减少推荐」A 之后立刻可能滑到 B 点赞 / 关注，
+      // 这些都在 home cache 上做了 per-post 乐观更新；A 失败时整张 snapshot 覆盖
+      // 回去会把 B 的乐观（likeCount/+1、isFollowingAuthor 翻转、收藏、评论 +1
+      // 等）一起抹掉，B 那条要么靠下一次刷新才补回真值、要么 like 的 onSuccess
+      // 早已注明"不 invalidate"永远停在错值。改成 per-post 维度：只记录被删的
+      // 那一条 + 它的原始下标，onError 时把它按原位置塞回当前 cache，其它 post
+      // 沿用现有 cache（含期间发生的其它乐观更新）。
       const previousEntries: Array<{
         key: readonly unknown[];
-        previousData: FeedChannelHomeResponse;
+        removedPost: FeedPostListItem | null;
+        removedIndex: number;
       }> = [];
       const snapshots = queryClient.getQueriesData<FeedChannelHomeResponse>({
         queryKey: ["app-channels-home", baseUrl],
       });
       snapshots.forEach(([key, data]) => {
         if (!data?.posts) return;
-        previousEntries.push({ key, previousData: data });
+        const removedIndex = data.posts.findIndex((post) => post.id === postId);
+        const removedPost = removedIndex >= 0 ? data.posts[removedIndex] : null;
+        previousEntries.push({ key, removedPost, removedIndex });
         queryClient.setQueryData<FeedChannelHomeResponse>(key, {
           ...data,
           posts: data.posts.filter((post) => post.id !== postId),
@@ -785,12 +796,25 @@ export function ChannelsPage() {
       });
       return { previousEntries, mutationBaseUrl: baseUrl };
     },
-    onError: (error, _postId, context) => {
-      // 回滚：失败时把 post 还原回去。这里整张 home 还原是安全的——
-      // notInterested 不在并发 mutate 范围内（用户不会连点不同 post 的"减少推荐"），
-      // 且其他乐观更新通常以 per-post 维度，这里 filter 只删一条，恢复就行。
-      context?.previousEntries.forEach(({ key, previousData }) => {
-        queryClient.setQueryData(key, previousData);
+    onError: (error, postId, context) => {
+      // per-post 回滚：取当前 cache 做底，把删除前那一条按原下标 splice 回去，
+      // 不动同期发生的其它乐观更新。removedPost 为 null 表示原本就不在 cache
+      // 里（snapshot 取到时 home 还没数据），无需还原。
+      context?.previousEntries.forEach(({ key, removedPost, removedIndex }) => {
+        if (!removedPost) return;
+        const current =
+          queryClient.getQueryData<FeedChannelHomeResponse>(key);
+        if (!current?.posts) return;
+        // 若 cache 期间因为别的乐观/refetch 已经把这条 post 又加回来了（极端
+        // 情况），跳过，避免重复塞。
+        if (current.posts.some((post) => post.id === postId)) return;
+        const nextPosts = current.posts.slice();
+        const insertAt = Math.min(removedIndex, nextPosts.length);
+        nextPosts.splice(insertAt, 0, removedPost);
+        queryClient.setQueryData<FeedChannelHomeResponse>(key, {
+          ...current,
+          posts: nextPosts,
+        });
       });
       // mid-flight 切账户：失败 toast 不冒到新账户。
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
