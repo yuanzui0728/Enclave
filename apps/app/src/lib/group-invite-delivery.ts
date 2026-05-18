@@ -222,6 +222,34 @@ function parseGroupInviteDeliveryStore(raw: string | null | undefined) {
   }
 }
 
+// 走查 2026-05-18 移动端群聊 R7：和姊妹 favorites-storage R23 (70f0e7552) /
+// note-drafts-storage R20 (5e1725a23) / readDesktopFavorites R19 (e28faffe2) /
+// detailedTimestampMode R18 (515e91818) / readLocalChatMessageActionState R17
+// (2f829db87) / chat-image-viewer session store R10 (ba16a513e) 同款修法——
+// 下面 readLocalGroupInviteDeliveryStore 把 3 个 storage.getItem 裸调用串在
+// 一起，任何一个抛错都会冒到 caller。本函数在 GroupChatPage 的 useState lazy
+// init（routes/group-chat-page.tsx line 44-46 resolveRouteContext →
+// resolveGroupInviteRouteContext → readAllGroupInviteDeliveryRecords →
+// 本函数）里同步运行——抛错会直接冒到 React 渲染，让整个移动端群聊页 ☠️
+// 白屏（错误边界兜底）。
+//
+// localStorage.getItem 在两类常见场景抛 DOMException：
+//   1. Safari iOS / 桌面 Safari「阻止跨网站追踪」模式下，本站当作 third-party
+//      context 时 storage 访问被拒（SecurityError）
+//   2. 部分 enterprise / kiosk 浏览器策略禁用站点 storage（QuotaExceededError /
+//      SecurityError）
+// 写入路径已经在「走查新一轮 R2」(line 306-318) 拆三段 try/catch 兜了；读取
+// 路径漏掉。每个 getItem 单独包一层，单段失败降级成 null → parseJsonMap 走
+// fallback 返回空 map，业务上"读不到历史"等价"还没收到过群邀请"，UI 自然不显示
+// returnPath notice，比白屏强百倍。
+function safeGetItem(storage: Storage, key: string): string | null {
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 function readLocalGroupInviteDeliveryStore(): GroupInviteDeliveryStore {
   const storage = getStorage();
   if (!storage) {
@@ -234,17 +262,17 @@ function readLocalGroupInviteDeliveryStore(): GroupInviteDeliveryStore {
 
   return {
     deliveryRecords: parseJsonMap(
-      storage.getItem(GROUP_INVITE_DELIVERY_STORAGE_KEY),
+      safeGetItem(storage, GROUP_INVITE_DELIVERY_STORAGE_KEY),
       normalizeGroupInviteDeliveryRecords,
       {} as Record<string, GroupInviteDeliveryRecord>,
     ),
     deliveryTargets: parseJsonMap(
-      storage.getItem(GROUP_INVITE_DELIVERY_TARGETS_STORAGE_KEY),
+      safeGetItem(storage, GROUP_INVITE_DELIVERY_TARGETS_STORAGE_KEY),
       normalizeGroupInviteDeliveryTargets,
       {} as Record<string, GroupInviteDeliveryTarget[]>,
     ),
     reopenRecords: parseJsonMap(
-      storage.getItem(GROUP_INVITE_REOPEN_STORAGE_KEY),
+      safeGetItem(storage, GROUP_INVITE_REOPEN_STORAGE_KEY),
       normalizeGroupInviteReopenRecords,
       {} as Record<string, GroupInviteReopenRecord[]>,
     ),
