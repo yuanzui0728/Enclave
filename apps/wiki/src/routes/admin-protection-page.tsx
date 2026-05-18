@@ -49,10 +49,24 @@ export function AdminProtectionPage() {
   }>({ level: "none", reviewPolicy: "open", expiresAt: "", reason: "" });
 
   // 选中条目后用其当前保护设置预填表单，避免用户从空白开始重输。
-  // datetime-local 需要 "YYYY-MM-DDTHH:mm" 格式（无秒、无时区）。
+  // datetime-local 需要 "YYYY-MM-DDTHH:mm" 格式（无秒、无时区），且必须按用户
+  // 本地时钟解释。原写法 toISOString().slice(0,16) 把 UTC 字符直接灌进 local
+  // 输入框，UTC+8 用户看到的时间整体偏 8 小时；保存时 new Date(form.expiresAt)
+  // 又按本地时钟读 → toISOString → 写库再偏 8 小时，等于一次往返抹掉两次时
+  // 差，到期时间被改成 16 小时前。改用 local 字段构造字符串。
   useEffect(() => {
     if (!pageQ.data) return;
     const p = pageQ.data.page;
+    let expiresLocal = "";
+    if (p.protectionExpiresAt) {
+      const d = new Date(p.protectionExpiresAt);
+      if (!Number.isNaN(d.getTime())) {
+        const pad = (n: number) => String(n).padStart(2, "0");
+        expiresLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+          d.getDate(),
+        )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+    }
     setForm({
       level:
         p.protectionLevel === "semi" || p.protectionLevel === "full"
@@ -60,9 +74,7 @@ export function AdminProtectionPage() {
           : "none",
       reviewPolicy:
         p.reviewPolicy === "pending_changes" ? "pending_changes" : "open",
-      expiresAt: p.protectionExpiresAt
-        ? new Date(p.protectionExpiresAt).toISOString().slice(0, 16)
-        : "",
+      expiresAt: expiresLocal,
       reason: p.protectionReason ?? "",
     });
   }, [pageQ.data]);

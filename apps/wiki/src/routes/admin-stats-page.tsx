@@ -91,7 +91,9 @@ export function AdminStatsPage() {
             >
               <span className="text-xs">{resolveUsername(u.userId)}</span>
               <span className="text-xs text-[color:var(--text-muted)]">
-                edits {u.editCount} · approved {u.approvedEditCount}
+                <Trans>
+                  编辑 {u.editCount} · 通过 {u.approvedEditCount}
+                </Trans>
               </span>
               <span
                 className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -100,7 +102,7 @@ export function AdminStatsPage() {
                     : "bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
                 }`}
               >
-                reverted {u.revertedCount}
+                <Trans>回滚 {u.revertedCount}</Trans>
               </span>
             </li>
           ))}
@@ -123,7 +125,7 @@ export function AdminStatsPage() {
             >
               <span className="font-medium">{filter.name}</span>
               <span className="text-xs text-[color:var(--text-muted)]">
-                action: {filter.action}
+                <Trans>动作：{filter.action}</Trans>
               </span>
               <span className="ml-auto">
                 <Trans>近 7 天 {recentHits} 命中</Trans>

@@ -72,7 +72,16 @@ export function CharacterPage() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-        <div className="wiki-touch-scroll -mx-1 inline-flex overflow-x-auto rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1 shadow-[var(--shadow-soft)] sm:mx-0 sm:overflow-visible">
+        {/* 阅读/编辑/历史/讨论是同 URL 下互斥切换视图的 tab —— 不是 nav 链接，所
+            以 TabButton 原本的 aria-current="page" 是错的（page 这个值只用于
+            "当前页"导航链接，比如侧栏菜单 / 面包屑）；点了"编辑"屏读会念
+            "current page 编辑"误导用户以为离开了角色页。和版本切换条统一改成
+            role=tablist + role=tab + aria-selected。 */}
+        <div
+          role="tablist"
+          aria-label={t(msg`角色页板块切换`)}
+          className="wiki-touch-scroll -mx-1 inline-flex overflow-x-auto rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1 shadow-[var(--shadow-soft)] sm:mx-0 sm:overflow-visible"
+        >
           <TabButton active={tab === "read"} onClick={() => setTab("read")}>
             <Trans>阅读</Trans>
           </TabButton>
@@ -122,14 +131,20 @@ export function CharacterPage() {
         {viewerCanSeeCurrent &&
           pageQ.data?.latestRevision?.id !==
             pageQ.data?.stableRevision?.id && (
+            // 稳定版 / 最新版是互斥切换 ReadView 内容的 tab，不是独立 toggle。
+            // 原写法 role=group + 内层 aria-pressed 是 toggle 语义（NVDA 念成
+            // "稳定版 pressed"），跟视觉「胶囊高亮当前段」对不上。对齐桌面/移动
+            // 视频号 section tabs 的修法：外层 role=tablist + aria-label，内层
+            // role=tab + aria-selected，让 SR 听到"已选中 稳定版 / 最新版 选项卡"。
             <div
-              role="group"
+              role="tablist"
               aria-label={t(msg`版本切换`)}
               className="inline-flex w-full shrink-0 overflow-hidden rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-xs shadow-[var(--shadow-soft)] sm:ml-auto sm:w-auto"
             >
               <button
                 type="button"
-                aria-pressed={viewMode === "stable"}
+                role="tab"
+                aria-selected={viewMode === "stable"}
                 className={`flex-1 px-3 py-2 sm:flex-none ${
                   viewMode === "stable"
                     ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)]"
@@ -141,7 +156,8 @@ export function CharacterPage() {
               </button>
               <button
                 type="button"
-                aria-pressed={viewMode === "current"}
+                role="tab"
+                aria-selected={viewMode === "current"}
                 className={`flex-1 px-3 py-2 sm:flex-none ${
                   viewMode === "current"
                     ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)]"
@@ -274,8 +290,9 @@ function TabButton({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
-      aria-current={active ? "page" : undefined}
       className={`inline-flex min-h-[36px] min-w-[68px] items-center justify-center rounded-full px-4 py-1.5 text-sm transition-colors ${
         active
           ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]"

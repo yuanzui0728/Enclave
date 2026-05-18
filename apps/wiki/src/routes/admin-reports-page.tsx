@@ -53,14 +53,24 @@ export function AdminReportsPage() {
               <Trans>载入中…</Trans>
             </span>
           )}
-          <div className="wiki-touch-scroll inline-flex max-w-full overflow-x-auto rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1 shadow-[var(--shadow-soft)]">
+          {/* 未处理/已处理/驳回是同 URL 下互斥切换 reportsQ 内容的 tab，不是
+              nav 链接（每个 status 都还停留在 /admin/reports 这一条路径），所以
+              aria-current="page" 语义错误（page 是面包屑/侧栏当前页用的）。和
+              character-page 顶部 tabs / 版本切换条统一改成 tablist + tab +
+              aria-selected。 */}
+          <div
+            role="tablist"
+            aria-label={t(msg`举报状态筛选`)}
+            className="wiki-touch-scroll inline-flex max-w-full overflow-x-auto rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-1 shadow-[var(--shadow-soft)]"
+          >
             {tabs.map(([s, label]) => (
               <button
                 key={s}
                 type="button"
+                role="tab"
                 onClick={() => setStatus(s)}
                 disabled={reportsQ.isFetching && status !== s}
-                aria-current={status === s ? "page" : undefined}
+                aria-selected={status === s}
                 className={`rounded-full px-4 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                   status === s
                     ? "bg-[image:var(--brand-gradient)] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]"
