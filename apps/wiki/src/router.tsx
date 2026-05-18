@@ -1,4 +1,3 @@
-import { lazy } from "react";
 import {
   createRootRoute,
   createRoute,
@@ -10,6 +9,7 @@ import { Trans } from "@lingui/react/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { Button, Card } from "@yinjie/ui";
 import { RootLayout } from "./components/root-layout";
+import { lazyWithReload } from "./lib/lazy-with-reload";
 // 首屏路由：home-page 走静态 import 跟主 chunk 一起到，省一个 RTT。
 // 其它路由保留 lazy，按需加载。
 import { HomePage } from "./routes/home-page";
@@ -38,114 +38,114 @@ function WikiNotFound() {
   );
 }
 
-const LoginPage = lazy(async () => {
+const LoginPage = lazyWithReload(async () => {
   const mod = await import("./routes/login-page");
   return { default: mod.LoginPage };
 });
 
-const RegisterPage = lazy(async () => {
+const RegisterPage = lazyWithReload(async () => {
   const mod = await import("./routes/register-page");
   return { default: mod.RegisterPage };
 });
 
-const CharacterPage = lazy(async () => {
+const CharacterPage = lazyWithReload(async () => {
   const mod = await import("./routes/character-page");
   return { default: mod.CharacterPage };
 });
 
-const CharacterDiffPage = lazy(async () => {
+const CharacterDiffPage = lazyWithReload(async () => {
   const mod = await import("./routes/character-diff-page");
   return { default: mod.CharacterDiffPage };
 });
 
-const WorldCharacterEditPage = lazy(async () => {
+const WorldCharacterEditPage = lazyWithReload(async () => {
   const mod = await import("./routes/world-character-edit-page");
   return { default: mod.WorldCharacterEditPage };
 });
 
-const CreateCharacterPage = lazy(async () => {
+const CreateCharacterPage = lazyWithReload(async () => {
   const mod = await import("./routes/create-character-page");
   return { default: mod.CreateCharacterPage };
 });
 
-const MyCharactersPage = lazy(async () => {
+const MyCharactersPage = lazyWithReload(async () => {
   const mod = await import("./routes/my-characters-page");
   return { default: mod.MyCharactersPage };
 });
 
-const MyCharacterCreatePage = lazy(async () => {
+const MyCharacterCreatePage = lazyWithReload(async () => {
   const mod = await import("./routes/my-character-edit-page");
   const Component = mod.MyCharacterEditPage;
   return { default: () => <Component mode="create" /> };
 });
 
-const MyCharacterEditPage = lazy(async () => {
+const MyCharacterEditPage = lazyWithReload(async () => {
   const mod = await import("./routes/my-character-edit-page");
   const Component = mod.MyCharacterEditPage;
   return { default: () => <Component mode="edit" /> };
 });
 
-const PendingReviewsPage = lazy(async () => {
+const PendingReviewsPage = lazyWithReload(async () => {
   const mod = await import("./routes/pending-reviews-page");
   return { default: mod.PendingReviewsPage };
 });
 
-const RecentChangesPage = lazy(async () => {
+const RecentChangesPage = lazyWithReload(async () => {
   const mod = await import("./routes/recent-changes-page");
   return { default: mod.RecentChangesPage };
 });
 
-const AdminLayout = lazy(async () => {
+const AdminLayout = lazyWithReload(async () => {
   const mod = await import("./routes/admin-layout");
   return { default: mod.AdminLayout };
 });
 
-const AdminUsersPage = lazy(async () => {
+const AdminUsersPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-users-page");
   return { default: mod.AdminUsersPage };
 });
 
-const AdminBlocksPage = lazy(async () => {
+const AdminBlocksPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-blocks-page");
   return { default: mod.AdminBlocksPage };
 });
 
-const AdminProtectionPage = lazy(async () => {
+const AdminProtectionPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-protection-page");
   return { default: mod.AdminProtectionPage };
 });
 
-const WatchlistPage = lazy(async () => {
+const WatchlistPage = lazyWithReload(async () => {
   const mod = await import("./routes/watchlist-page");
   return { default: mod.WatchlistPage };
 });
 
-const SearchPage = lazy(async () => {
+const SearchPage = lazyWithReload(async () => {
   const mod = await import("./routes/search-page");
   return { default: mod.SearchPage };
 });
 
-const AdminReportsPage = lazy(async () => {
+const AdminReportsPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-reports-page");
   return { default: mod.AdminReportsPage };
 });
 
-const AdminAbuseFiltersPage = lazy(async () => {
+const AdminAbuseFiltersPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-abuse-filters-page");
   return { default: mod.AdminAbuseFiltersPage };
 });
 
-const AdminStatsPage = lazy(async () => {
+const AdminStatsPage = lazyWithReload(async () => {
   const mod = await import("./routes/admin-stats-page");
   return { default: mod.AdminStatsPage };
 });
 
-const AccountPage = lazy(async () => {
+const AccountPage = lazyWithReload(async () => {
   const mod = await import("./routes/account-page");
   return { default: mod.AccountPage };
 });
 
-const MyDraftsPage = lazy(async () => {
+const MyDraftsPage = lazyWithReload(async () => {
   const mod = await import("./routes/my-drafts-page");
   return { default: mod.MyDraftsPage };
 });
