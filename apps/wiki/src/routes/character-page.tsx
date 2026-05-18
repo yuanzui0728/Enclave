@@ -15,6 +15,7 @@ import {
   TagBadge,
   TextAreaField,
   TextField,
+  useTablistKeyboard,
 } from "@yinjie/ui";
 import { hasRole } from "../lib/auth-store";
 import { useAuth } from "../lib/use-auth";
@@ -36,7 +37,6 @@ import {
   revisionOperationLabel,
   revisionStatusLabel,
 } from "../lib/revision-labels";
-import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 type Tab = "read" | "edit" | "history" | "talk";
 

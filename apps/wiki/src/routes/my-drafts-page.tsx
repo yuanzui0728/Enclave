@@ -11,6 +11,7 @@ import {
   InlineNotice,
   LoadingBlock,
   TagBadge,
+  useTablistKeyboard,
 } from "@yinjie/ui";
 import { useAuth } from "../lib/use-auth";
 import {
@@ -20,7 +21,6 @@ import {
 } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { formatDateTime } from "../lib/format";
-import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 type Notice = { tone: "success" | "danger"; text: string } | null;
 type KindFilter = "all" | "private" | "world";

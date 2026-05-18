@@ -8,12 +8,12 @@ import {
   Button,
   InlineNotice,
   TextField,
+  useTablistKeyboard,
 } from "@yinjie/ui";
 import { setSession } from "../lib/auth-store";
 import { wikiApi } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
 import { FormRow } from "../components/form-row";
-import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 type Mode = "password" | "email";
 

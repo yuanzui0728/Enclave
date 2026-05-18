@@ -27,4 +27,5 @@ export * from "./components/text-field";
 export * from "./components/toggle-chip";
 export * from "./hooks/use-provider-setup";
 export * from "./hooks/use-desktop-runtime";
+export * from "./hooks/use-tablist-keyboard";
 export * from "./runtime/desktop-runtime";

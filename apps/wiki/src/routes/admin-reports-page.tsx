@@ -11,6 +11,7 @@ import {
   LoadingBlock,
   PanelEmpty,
   StatusPill,
+  useTablistKeyboard,
 } from "@yinjie/ui";
 import { wikiApi, type ModerationReport } from "../lib/wiki-api";
 import { PageShell } from "../components/page-shell";
@@ -20,7 +21,6 @@ import {
   reportStatusLabel,
   reportTargetLabel,
 } from "../lib/revision-labels";
-import { useTablistKeyboard } from "../lib/use-tablist-keyboard";
 
 export function AdminReportsPage() {
   const t = translateRuntimeMessage;

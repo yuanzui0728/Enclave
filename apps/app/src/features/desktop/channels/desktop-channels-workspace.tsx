@@ -2884,8 +2884,23 @@ function DesktopChannelCommentsPanel({
         commentsErrorMessage 设值时（ChannelCommentsDrawer 顶部已经渲了红色
         ErrorBlock），这条空态卡也会同时冒出来。用户既看到错误又看到「还没
         有评论」，矛盾且会让人以为真的没人评论（同移动端 R1 修复同款问题）。
+
+        走查 2026-05-19 第八轮 R2：空态条件历来只看 `!comments.length` —— 但
+        renderableComments 的 stripToolCallSyntax 过滤会把"纯 AI thinking-prose"
+        评论抠成空串（CoT detection > 80 字 + 第三人称"用户/我需要/let me..."），
+        实测 yuanzui0728 库 eb9c88ce 帖有 1019 字 CoT 漏出全被过滤。当 raw comments
+        全是 CoT prose（commentCount=5 但 renderableComments=[]）时：
+          - drawer header 仍渲 "评论 5"
+          - commentThreads.length=0 → 不渲 threads 块
+          - !comments.length 是 false（comments.length=5）→ 不渲空态
+          - 用户在 drawer 里看到「评论 5」但下面一片空白，textarea 显隐正常，
+            体感「明明说有 5 条评论但一条都看不到」。
+        改用 `!commentThreads.length` 当空态触发：renderableComments=[] 时也
+        正确显示「这条内容还没有评论，你可以先开口」CTA 引导发评论。原 raw
+        comments 含 CoT-prose 但 commentThreads 仍有内容时，CoT 卡被过滤掉
+        但其它正常评论照常渲，空态不冒。
       */}
-      {!commentsLoading && !comments.length && !commentsHasError ? (
+      {!commentsLoading && !commentThreads.length && !commentsHasError ? (
         <div className="rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
           {t(msg`这条内容还没有评论，你可以先开口。`)}
         </div>
