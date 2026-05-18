@@ -7207,8 +7207,13 @@ function ImageViewerOverlay({
   onPrint?: () => void;
 }) {
   const isDesktop = variant === "desktop";
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    onBackdrop: boolean;
+  } | null>(null);
   const touchDeltaXRef = useRef(0);
+  const touchDeltaYRef = useRef(0);
 
   // 原生壳硬件 Back 键：图片查看器打开时 BACK 应当先关查看器，不要直接
   // history.back 跳出聊天页。desktop 形态注册没副作用。
@@ -7253,8 +7258,13 @@ function ImageViewerOverlay({
       return;
     }
 
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      onBackdrop: event.target === event.currentTarget,
+    };
     touchDeltaXRef.current = 0;
+    touchDeltaYRef.current = 0;
   };
 
   const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
@@ -7265,20 +7275,35 @@ function ImageViewerOverlay({
     }
 
     touchDeltaXRef.current = touch.clientX - start.x;
+    touchDeltaYRef.current = touch.clientY - start.y;
   };
 
   const handleTouchEnd = () => {
     const deltaX = touchDeltaXRef.current;
+    const deltaY = touchDeltaYRef.current;
+    const start = touchStartRef.current;
     const threshold = 48;
 
     if (deltaX <= -threshold && onNext) {
       onNext();
     } else if (deltaX >= threshold && onPrevious) {
       onPrevious();
+    } else if (
+      // 走查 R1：handleTouchEnd 兜底"tap 关闭"——上方 onClick 走 React 合成
+      // click 路径，iOS Safari 在 touchstart→touchmove(<10px)→touchend 这种带
+      // 轻微抖动的 tap 上会把 click 抑制掉（< 48px swipe 阈值的死区），用户
+      // 点黑色背景关不掉图片查看器只能找右上角 ✕。touchstart 时 target ===
+      // currentTarget 才算"点的是 backdrop 自己"，触图本身的 tap 不走关闭。
+      start?.onBackdrop &&
+      Math.abs(deltaX) < 10 &&
+      Math.abs(deltaY) < 10
+    ) {
+      onClose();
     }
 
     touchStartRef.current = null;
     touchDeltaXRef.current = 0;
+    touchDeltaYRef.current = 0;
   };
 
   return (
