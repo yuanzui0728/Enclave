@@ -231,7 +231,17 @@ export function resolveAttachmentSemanticText(
     );
   }
 
-  return truncateSemanticText(attachment.label ?? attachment.stickerId, maxChars);
+  // 走查 2026-05-18 移动端单聊 R9 server-side 镜像：和 client
+  // apps/app/src/lib/message-attachment-semantic.ts 同款 ?? vs || 漏防 —— sticker.label
+  // 是 `string | undefined`，老 wiki import / 旧 reminder 卡 / 用户自定义贴纸都见过
+  // label === '' 落库；?? 不防空串导致 server 端 message-search.utils
+  // / chat-records-admin 吐回客户端 / admin 控制台的 previewText 漏白。改 || 让空
+  // 串也命中 stickerId fallback（stickerId 必填非空 string）。client / server 这条
+  // 函数本来就要求一起改（见 client 文件 stripSemanticPrimaryPrefix 上方注释）。
+  return truncateSemanticText(
+    attachment.label || attachment.stickerId,
+    maxChars,
+  );
 }
 
 function buildAttachmentFallbackLabel(attachment?: MessageAttachment) {
