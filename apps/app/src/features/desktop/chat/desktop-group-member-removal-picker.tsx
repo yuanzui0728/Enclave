@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
 import { translateRuntimeMessage } from "@yinjie/i18n";
@@ -33,6 +40,11 @@ export function DesktopGroupMemberRemovalPicker({
   const t = translateRuntimeMessage;
   const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和姊妹 picker 同款问题；虽然群成员通常 ≤ 50 比好友册小，但每次
+  // keystroke 仍同步 toLowerCase × name/subtitle 两路再 filter，慢机上仍
+  // 能看到输入框微小卡顿。和 desktop-create-group-dialog / picker 同口径
+  // 走 useDeferredValue。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -45,7 +57,7 @@ export function DesktopGroupMemberRemovalPicker({
   }, [groupName, open]);
 
   const filteredMembers = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return removableMembers.filter((member) => {
       if (!keyword) {
         return true;
@@ -56,7 +68,7 @@ export function DesktopGroupMemberRemovalPicker({
         member.subtitle.toLowerCase().includes(keyword)
       );
     });
-  }, [removableMembers, searchTerm]);
+  }, [deferredSearchTerm, removableMembers]);
 
   const selectedMembers = useMemo(() => {
     const selectedIdSet = new Set(selectedIds);

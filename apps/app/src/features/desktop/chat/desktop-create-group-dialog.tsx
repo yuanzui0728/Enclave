@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useId,
   useMemo,
@@ -63,6 +64,13 @@ export function DesktopCreateGroupDialog({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和移动端 create-group-page.tsx commit 456d91ecc 同款问题。
+  // filteredFriends 直接吃 searchTerm，yuanzui0728_5999 测号 70+ 好友时每个
+  // keystroke 都同步 toLowerCase + matchesFriendSearch(remarkName/region/
+  // source/tags 多路 haystack 各 lowercase 一次) + buildContactSections 分桶，
+  // 输入框肉眼可见 backlog。useDeferredValue 让 React 优先把字打进输入框、
+  // 过滤排到下个 idle 帧。和姊妹移动页 + 桌面同类页同口径。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [shareHistory, setShareHistory] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
@@ -136,7 +144,7 @@ export function DesktopCreateGroupDialog({
     ? getFriendDisplayName(sourceFriend)
     : null;
   const filteredFriends = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return sortedFriendItems.filter((item) => {
       if (item.friendship.status === "removed") {
         return false;
@@ -148,7 +156,7 @@ export function DesktopCreateGroupDialog({
 
       return matchesFriendSearch(item, keyword);
     });
-  }, [searchTerm, sortedFriendItems]);
+  }, [deferredSearchTerm, sortedFriendItems]);
   const pinnedSourceFriend = useMemo(
     () =>
       sourceFriendId

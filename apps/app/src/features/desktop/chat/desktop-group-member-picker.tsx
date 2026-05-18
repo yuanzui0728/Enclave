@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { msg } from "@lingui/macro";
 import { Search, X } from "lucide-react";
@@ -35,6 +42,12 @@ export function DesktopGroupMemberPicker({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const titleId = useId();
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和移动端 group-member-picker-page 同款问题。availableFriends
+  // 每个 keystroke 同步 toLowerCase + matchesFriendSearch（remarkName/region/
+  // source/tags 几路 haystack 各 lowercase 一遍），yuanzui0728_5999 测号
+  // 70+ 好友输入框肉眼可见 backlog。useDeferredValue 让 React 先把字打进
+  // 输入框，过滤排到下个 idle 帧。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // 走查新会话桌面端群聊 R2：和 desktop-create-group-dialog 同款问题——原版
@@ -65,7 +78,7 @@ export function DesktopGroupMemberPicker({
   );
 
   const availableFriends = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return (friendsQuery.data ?? []).filter(({ character, friendship }) => {
       if (existingMemberIdSet.has(character.id)) {
         return false;
@@ -81,7 +94,7 @@ export function DesktopGroupMemberPicker({
 
       return matchesFriendSearch({ character, friendship }, keyword);
     });
-  }, [existingMemberIdSet, friendsQuery.data, searchTerm]);
+  }, [deferredSearchTerm, existingMemberIdSet, friendsQuery.data]);
 
   const selectedFriends = useMemo(() => {
     const selectedSet = new Set(selectedIds);

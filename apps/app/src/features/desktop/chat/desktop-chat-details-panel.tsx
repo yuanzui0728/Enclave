@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useId,
   useMemo,
@@ -2094,6 +2095,13 @@ function DesktopGroupMemberBrowserDialog({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const memberItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [searchTerm, setSearchTerm] = useState("");
+  // 走查 R2：和姊妹 picker / removal-picker / create-group-dialog 同款问题。
+  // filteredMembers 直接吃 searchTerm，每个 keystroke 都会同步对每位成员
+  // 跑 4 路 toLowerCase 包含检查 + 三路 t(msg`群主/管理员/群成员`) 翻译查表
+  // —— 30 人群一次 keystroke 至少 90 次 t() 调用。useDeferredValue 让 React
+  // 优先把字打进输入框，过滤排到下个 idle 帧。同口径地把 roleLabel 的 3 条
+  // 文案提到 useMemo 外的稳定常量上（searchTerm 变化不影响 roleLabels 引用）。
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [activeFilter, setActiveFilter] =
     useState<DesktopGroupMemberBrowserFilter>("all");
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
@@ -2172,8 +2180,16 @@ function DesktopGroupMemberBrowserDialog({
     { id: "character", label: t(msg`角色成员`), count: characterCount },
   ];
 
+  const roleLabels = useMemo(
+    () => ({
+      owner: t(msg`群主`),
+      admin: t(msg`管理员`),
+      member: t(msg`群成员`),
+    }),
+    [t],
+  );
   const filteredMembers = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
+    const keyword = deferredSearchTerm.trim().toLowerCase();
     return members.filter((member) => {
       if (activeFilter === "owner" && member.role !== "owner") {
         return false;
@@ -2197,10 +2213,10 @@ function DesktopGroupMemberBrowserDialog({
       const rawName = member.memberName ?? member.memberId;
       const roleLabel =
         member.role === "owner"
-          ? t(msg`群主`)
+          ? roleLabels.owner
           : member.role === "admin"
-            ? t(msg`管理员`)
-            : t(msg`群成员`);
+            ? roleLabels.admin
+            : roleLabels.member;
 
       return (
         displayName.toLowerCase().includes(keyword) ||
@@ -2209,7 +2225,7 @@ function DesktopGroupMemberBrowserDialog({
         member.memberId.toLowerCase().includes(keyword)
       );
     });
-  }, [activeFilter, members, resolveDisplayName, searchTerm, t]);
+  }, [activeFilter, deferredSearchTerm, members, resolveDisplayName, roleLabels]);
 
   const activeFilterLabel =
     filterTabs.find((tab) => tab.id === activeFilter)?.label ?? t(msg`全部`);
