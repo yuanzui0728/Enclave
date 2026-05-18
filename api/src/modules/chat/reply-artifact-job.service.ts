@@ -442,58 +442,77 @@ export class ReplyArtifactJobService {
       return;
     }
 
-    const synthesized = await this.ai.synthesizeSpeech({
-      text: input.text,
-      conversationId: job.threadId,
-      characterId: job.characterId,
-      instructions: buildAssistantSpeechInstructions(job.characterName),
-    });
-
-    const latestContext = await this.validateGroupJob(job);
-    if (!latestContext) {
-      return;
-    }
-
-    const asset = await this.speechAssets.saveGeneratedSpeech(synthesized.buffer, {
-      mimeType: synthesized.mimeType,
-      fileExtension: synthesized.fileExtension,
-      baseName: `group-reply-${job.characterId}`,
-    });
-    const attachment: VoiceAttachment = {
-      kind: 'voice',
-      url: asset.audioUrl,
-      mimeType: asset.mimeType,
-      fileName: asset.fileName,
-      size: synthesized.buffer.length,
-      durationMs: synthesized.durationMs,
-      transcriptText: input.text,
-    };
-    const messageEntity = this.groupMessageRepo.create({
-      groupId: job.threadId,
-      senderId: job.characterId,
-      senderType: 'character',
-      senderName: job.characterName,
-      senderAvatar: job.characterAvatar ?? undefined,
-      text: input.text,
-      type: 'voice',
-      attachmentKind: attachment.kind,
-      attachmentPayload: JSON.stringify(attachment),
-    });
-    await this.groupMessageRepo.save(messageEntity);
-    await this.groupRepo.save({
-      ...latestContext.group,
-      lastActivityAt: messageEntity.createdAt ?? new Date(),
-    });
-    await this.markJobCompleted(job.id, messageEntity.id);
-    const groupVoiceSenderName = await this.resolveSenderRemark(
-      messageEntity.senderType,
-      messageEntity.senderId,
-      messageEntity.senderName,
-    );
-    this.chatGateway.emitThreadMessage(
+    // 走查第四批 R1：原版完全没有 emitTypingStart/Stop（对比同文件 line 370/429
+    // processConversationImageJob、line 511/564 processGroupImageJob 都包了 typing
+    // emit + finally）。synthesizeSpeech 公网 TTS provider 一次往返常 5-15s；
+    // 这段时间群聊里**没有任何 typing 提示**，用户从"我刚发完一条消息"到
+    // "看到一条 voice 消息突然出现"中间一段是沉默——会以为 AI 没回。包一层
+    // try/finally 让 typing 持续显示直到 voice 落库 emit。
+    this.chatGateway.emitTypingStart(
       job.threadId,
-      this.toGroupMessage(messageEntity, attachment, groupVoiceSenderName),
+      job.characterId,
+      'reply',
     );
+    try {
+      const synthesized = await this.ai.synthesizeSpeech({
+        text: input.text,
+        conversationId: job.threadId,
+        characterId: job.characterId,
+        instructions: buildAssistantSpeechInstructions(job.characterName),
+      });
+
+      const latestContext = await this.validateGroupJob(job);
+      if (!latestContext) {
+        return;
+      }
+
+      const asset = await this.speechAssets.saveGeneratedSpeech(synthesized.buffer, {
+        mimeType: synthesized.mimeType,
+        fileExtension: synthesized.fileExtension,
+        baseName: `group-reply-${job.characterId}`,
+      });
+      const attachment: VoiceAttachment = {
+        kind: 'voice',
+        url: asset.audioUrl,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName,
+        size: synthesized.buffer.length,
+        durationMs: synthesized.durationMs,
+        transcriptText: input.text,
+      };
+      const messageEntity = this.groupMessageRepo.create({
+        groupId: job.threadId,
+        senderId: job.characterId,
+        senderType: 'character',
+        senderName: job.characterName,
+        senderAvatar: job.characterAvatar ?? undefined,
+        text: input.text,
+        type: 'voice',
+        attachmentKind: attachment.kind,
+        attachmentPayload: JSON.stringify(attachment),
+      });
+      await this.groupMessageRepo.save(messageEntity);
+      await this.groupRepo.save({
+        ...latestContext.group,
+        lastActivityAt: messageEntity.createdAt ?? new Date(),
+      });
+      await this.markJobCompleted(job.id, messageEntity.id);
+      const groupVoiceSenderName = await this.resolveSenderRemark(
+        messageEntity.senderType,
+        messageEntity.senderId,
+        messageEntity.senderName,
+      );
+      this.chatGateway.emitThreadMessage(
+        job.threadId,
+        this.toGroupMessage(messageEntity, attachment, groupVoiceSenderName),
+      );
+    } finally {
+      this.chatGateway.emitTypingStop(
+        job.threadId,
+        job.characterId,
+        'reply',
+      );
+    }
   }
 
   private async processGroupImageJob(job: ReplyArtifactJobEntity) {

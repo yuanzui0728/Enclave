@@ -38,6 +38,7 @@ import { WorldAccessController } from "./world-access/world-access.controller";
 import { WorldAccessService } from "./world-access/world-access.service";
 import { WaitingSessionSyncService } from "./world-access/waiting-session-sync.service";
 import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
+import { WikiPublicModule } from "./wiki-public/wiki-public.module";
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { WorldApiProxyModule } from "./world-api-proxy/world-api-proxy.module";
     TelemetryModule,
     TokenUsageModule,
     WorldApiProxyModule,
+    WikiPublicModule,
   ],
   controllers: [
     AdminAuthController,
