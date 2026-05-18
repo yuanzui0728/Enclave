@@ -341,6 +341,10 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultNotFoundComponent: WikiNotFound,
+  // TanStack Router 默认不做 scroll restoration：滚到角色目录第 50 张卡
+  // → 点进去 → 按 back → 回到 y=0 顶部，要重新找位置。开启后路由保存 /
+  // 恢复每条历史的 scrollY，back/forward 都回到原位（前向新导航仍归零）。
+  scrollRestoration: true,
 });
 
 declare module "@tanstack/react-router" {

@@ -32,7 +32,13 @@ export function HomePage() {
   // 用 Set 记录已预拉的 id，避免反复 hover 同一张卡反复触发 prefetch。
   // staleTime 60s 跟服务端 etag 304 配合：30s 内重复访问同一角色完全零开销。
   const prefetchedRef = useRef<Set<string>>(new Set());
-  const prefetchPage = useCallback(
+  // 加 120ms debounce：键盘 Tab 30 张卡片在 67ms 内能跑过去，原来一次性
+  // 打 30 个 prefetch 请求，浏览器 6-conn 限制下排队还可能挡住真正的
+  // Enter 触发的 page-fetch。focus/hover 都走同一 timer：120ms 内焦点又走
+  // 了就不发请求；停留 120ms 表示 "user 想看这张"，再发。touchstart 不
+  // 走 debounce — 手机点 = 用户已决定要进。
+  const pendingFocusRef = useRef<number | null>(null);
+  const prefetchNow = useCallback(
     (characterId: string) => {
       if (prefetchedRef.current.has(characterId)) return;
       prefetchedRef.current.add(characterId);
@@ -44,6 +50,26 @@ export function HomePage() {
     },
     [qc],
   );
+  const prefetchDebounced = useCallback(
+    (characterId: string) => {
+      if (prefetchedRef.current.has(characterId)) return;
+      if (pendingFocusRef.current !== null) {
+        window.clearTimeout(pendingFocusRef.current);
+      }
+      pendingFocusRef.current = window.setTimeout(() => {
+        pendingFocusRef.current = null;
+        prefetchNow(characterId);
+      }, 120);
+    },
+    [prefetchNow],
+  );
+  useEffect(() => {
+    return () => {
+      if (pendingFocusRef.current !== null) {
+        window.clearTimeout(pendingFocusRef.current);
+      }
+    };
+  }, []);
 
   const total = charactersQ.data?.length ?? 0;
 
@@ -119,9 +145,11 @@ export function HomePage() {
               <Link
                 to="/character/$characterId"
                 params={{ characterId: c.id }}
-                onMouseEnter={() => prefetchPage(c.id)}
-                onFocus={() => prefetchPage(c.id)}
-                onTouchStart={() => prefetchPage(c.id)}
+                onMouseEnter={() => prefetchDebounced(c.id)}
+                onFocus={() => prefetchDebounced(c.id)}
+                // touchstart 在移动端滚动时也会触发（手指落点）：滚 10 张卡
+                // 就发 10 个 prefetch。现代手机 click latency 已经≈0，对比
+                // 浪费的带宽不值。只在 desktop hover/focus 时 prefetch。
                 // shadow-[var(--shadow-soft)] 在 @layer utilities，覆盖了全局
                 // @layer base `:focus-visible { box-shadow: var(--shadow-focus) }`，
                 // 导致 keyboard 用户 Tab 过 273 个卡片完全看不到焦点。
