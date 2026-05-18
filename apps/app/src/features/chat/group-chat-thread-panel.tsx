@@ -434,12 +434,29 @@ export function GroupChatThreadPanel({
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === groupId && isPersistedGroupConversation(item),
   );
+  // 走查 2026-05-18 移动端群聊 R8：本 Map 之前定义在下方 line ~848 给
+  // resolveCharacterDisplayName 用；同样的 character→memberName 反查在
+  // typingSummary 里裸跑 membersQuery.data?.find（O(K·M)：K=并发 typing
+  // 角色数 1-3，M=群成员数 5-50）。typingSummary 在 AI 回复期每秒重算多次
+  // （messages / typingStates / typing tick 都触发），每次都全量扫一遍 members
+  // 找 memberName 是热路径上的浪费。
+  // 把 memberNameByCharacterId hoist 到 typingSummary 之前 —— 同一份 Map
+  // typingSummary 和 resolveCharacterDisplayName 共享，typing lookup 退化成
+  // O(1) Map.get；React useMemo cache 保证 Map 只在 membersQuery.data 真变化
+  // 才重建。
+  const memberNameByCharacterId = useMemo<Map<string, string>>(() => {
+    const map = new Map<string, string>();
+    for (const member of membersQuery.data ?? []) {
+      if (member.memberType !== "character") continue;
+      const name = member.memberName?.trim();
+      if (name) map.set(member.memberId, name);
+    }
+    return map;
+  }, [membersQuery.data]);
   const typingSummary = useMemo(() => {
     const entries = Object.entries(typingStates)
       .map(([characterId, stage]) => {
-        const memberName = membersQuery.data?.find(
-          (member) => member.memberId === characterId,
-        )?.memberName;
+        const memberName = memberNameByCharacterId.get(characterId);
         // 走查 Round 4：原版 [...messages].reverse().find() 每次都先把整个
         // messages 拷一份再 reverse 再 find；活跃群 200 条消息 × 多个角色
         // typing × 每秒多次 typing event 触发 useMemo 重算时挺烫手——而且
@@ -447,7 +464,7 @@ export function GroupChatThreadPanel({
         // 只在 memberName 真为空时倒序循环找最近一条该 character 的消息，
         // 命中即 break。
         let messageName: string | undefined;
-        if (!memberName?.trim()) {
+        if (!memberName) {
           for (let index = messages.length - 1; index >= 0; index -= 1) {
             const message = messages[index];
             if (
@@ -463,7 +480,7 @@ export function GroupChatThreadPanel({
         return {
           characterId,
           stage,
-          name: memberName?.trim() || messageName?.trim() || t(msg`有人`),
+          name: memberName || messageName?.trim() || t(msg`有人`),
         };
       })
       .filter((entry) => Boolean(entry.characterId));
@@ -490,7 +507,7 @@ export function GroupChatThreadPanel({
     }
 
     return t(msg`${entries[0]?.name ?? t(msg`有人`)} 等 ${entries.length} 位角色正在回复...`);
-  }, [membersQuery.data, messages, typingStates, t]);
+  }, [memberNameByCharacterId, messages, typingStates, t]);
 
   useEffect(() => {
     if (unreadSnapshotReady || !conversationsQuery.isFetched) {
@@ -845,15 +862,9 @@ export function GroupChatThreadPanel({
   // memberName（joinedAt 时落，等价"群昵称"，最稳）作首选；remarkName 用户主动
   // 设的备注还在前面；character.name / messages.senderName 仅在前两者都没有时
   // 回退。
-  const memberNameByCharacterId = useMemo<Map<string, string>>(() => {
-    const map = new Map<string, string>();
-    for (const member of membersQuery.data ?? []) {
-      if (member.memberType !== "character") continue;
-      const name = member.memberName?.trim();
-      if (name) map.set(member.memberId, name);
-    }
-    return map;
-  }, [membersQuery.data]);
+  // 走查 R8：memberNameByCharacterId 已 hoist 到上方 typingSummary 之前共享
+  // （line ~440），同一份 Map 供 typingSummary 与本 resolveCharacterDisplayName
+  // 复用，避免对同一 Map 重复 useMemo。
   const resolveCharacterDisplayName = useCallback(
     (characterId?: string | null, fallbackName?: string | null) => {
       if (characterId) {
