@@ -135,6 +135,21 @@ export function GroupChatBackgroundPage() {
     setNotice(null);
   }, [groupId]);
 
+  // 走查移动端群聊 R1：和姊妹路径 chat-background-page.tsx 走查 R2（commit
+  // c16fa822e）同款修法——本页 setNotice("背景图已上传，记得保存当前设置。") /
+  // setNotice("默认背景图已保存。") / setNotice("当前群聊背景已保存。") 等 8
+  // 处 success 文案没 auto-dismiss，notice 一直挂在背景预览上方直到用户离开
+  // 页面或切到下一群（[groupId] effect 重置）。单聊版同位置已经按 chat-list /
+  // chat-details 口径对齐 3.5s 自动消，本页漏修。pageError 走 mutation.error
+  // 单独渲染，不经 notice 状态，无需顾及。
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   useEffect(() => {
     if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
       return;
