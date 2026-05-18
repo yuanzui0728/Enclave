@@ -155,11 +155,20 @@ export function FriendMomentsPage() {
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId, baseUrl),
     enabled: isDesktopLayout,
+    // 走查电脑端朋友圈 R3：和 mobile-friend-moments-page 同款 staleTime ——
+    // 用户从 desktop 通讯录 / character-detail popover / 单聊页过来时该角色
+    // 资料几秒前刚拉过；后退再进、或者在 friend-moments / chat / contacts
+    // 之间来回切，cache 还是 fresh，不需要每次重打 RTT。15s 跟 chat-details /
+    // contacts-page 等 8 处 staleTime 对齐。
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: isDesktopLayout,
+    // 同上 staleTime；好友列表变更频率低（手动添加好友 / 接受请求），15s
+    // 让从 contacts 跳过来不二次 refetch。
+    staleTime: 15_000,
   });
   // ?character=ID 服务端过滤，只回该角色发的 ≤几 KB ——之前 getMoments 全表
   // ~960KB 客户端 filter 出该角色 5-10 条，每次首进单个角色朋友圈页都付这
@@ -176,6 +185,10 @@ export function FriendMomentsPage() {
     queryKey: ["app-moments-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: isDesktopLayout && Boolean(ownerId),
+    // 走查电脑端朋友圈 R3：和 mobile-friend-moments-page R1 同款。屏蔽列表变更
+    // 频率低（用户手动操作），15s staleTime 让 contacts / 朋友圈页之间互跳不
+    // 每次都打这一次 RTT。
+    staleTime: 15_000,
   });
 
   // 走查 R1：跟 moments-page / profile-moments-page / mobile-friend-moments-page 同思路 ——

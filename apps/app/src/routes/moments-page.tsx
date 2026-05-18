@@ -267,6 +267,12 @@ export function MomentsPage() {
     queryKey: ["app-moments-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(ownerId),
+    // 走查电脑端朋友圈 R3：和 mobile-friend-moments-page / friend-moments-page
+    // 同款 staleTime。屏蔽列表变更频率低（用户手动操作），15s 让 /tabs/moments
+    // 在 /tabs/contacts、/tabs/chat、/desktop/friend-moments/X 等页之间互跳
+    // 时不每次都重打这一次 RTT。手动「刷新」按钮的 blockedQuery.refetch() 不受
+    // staleTime 限制，仍然能强刷。
+    staleTime: 15_000,
   });
 
   function resetMomentsToFirstPage() {
