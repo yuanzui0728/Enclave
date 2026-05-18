@@ -31,6 +31,8 @@
     "targets": "all",
     "icon": ["icons/icon.ico", "icons/icon.png", "icons/icon.icns"],
     "externalBin": [],
+    "shortDescription": "Yinjie desktop runtime shell",
+    "longDescription": "Yinjie desktop shell — Tauri-based runtime that loads the Yinjie web app and bridges native window / tray / file save / locale capabilities. Frontend assets are shared with the iOS / Android / Web clients.",
     "macOS": {
       "minimumSystemVersion": "11.0",
       "entitlements": "entitlements.plist",
@@ -38,6 +40,11 @@
       "providerShortName": null,
       "frameworks": [],
       "exceptionDomain": "",
+      "dmg": {
+        "windowSize": { "width": 660, "height": 400 },
+        "appPosition": { "x": 180, "y": 170 },
+        "applicationFolderPosition": { "x": 480, "y": 170 }
+      },
       "resources": [
         "zh-Hans.lproj/InfoPlist.strings",
         "en.lproj/InfoPlist.strings",
