@@ -1179,29 +1179,48 @@ function DesktopChatFilesImageViewer({
   onSave: () => void;
 }) {
   const t = useRuntimeTranslator();
+  // 走查电脑端单聊 R101：和姊妹 desktop-chat-confirm-dialog R11 / desktop-chat-
+  // history-dialog R11 / desktop-conversation-context-menu R12 同款 perf 修法。
+  // 原版 deps=[onClose, onNext, onPrevious]——这三个回调全是 parent 用 inline
+  // arrow 现造 (line 983-993)：onClose `() => setViewerAttachmentId(null)`，
+  // onPrev/onNext `() => setViewerAttachmentId(imageRows[i±1].id)`。父组件
+  // DesktopChatFilesPage 上：conversationsQuery 60s 轮询 + 切焦点 refetch、
+  // allAttachmentsQuery 跨 N 群 N 单聊重算、favoriteSourceIds 同步、actionNotice
+  // 2.2s/5s 自动消失、useDeferredValue 搜索词更新——任意一条 state 翻就让 viewer
+  // 父帧 re-render，3 个 inline arrow 全换引用 → 本 effect 拆 + 装 window keydown
+  // listener。viewer 打开期间一分钟可能拆装 5-10 次，纯白干活。ref 镜像三个回调，
+  // effect deps 收紧到 []，挂载时挂一次。
+  const onCloseRef = useRef(onClose);
+  const onPreviousRef = useRef(onPrevious);
+  const onNextRef = useRef(onNext);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    onPreviousRef.current = onPrevious;
+    onNextRef.current = onNext;
+  });
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
-      if (event.key === "ArrowLeft" && onPrevious) {
+      if (event.key === "ArrowLeft" && onPreviousRef.current) {
         event.preventDefault();
-        onPrevious();
+        onPreviousRef.current();
         return;
       }
 
-      if (event.key === "ArrowRight" && onNext) {
+      if (event.key === "ArrowRight" && onNextRef.current) {
         event.preventDefault();
-        onNext();
+        onNextRef.current();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, onNext, onPrevious]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(17,24,39,0.72)] backdrop-blur-[2px]">
