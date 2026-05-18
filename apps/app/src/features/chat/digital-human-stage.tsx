@@ -100,7 +100,24 @@ export function DigitalHumanStage({
             <div className="absolute inset-[-34px] rounded-full bg-[radial-gradient(circle,rgba(52,211,153,0.24),transparent_66%)] blur-3xl" />
             <div className="relative flex h-[224px] w-[224px] items-center justify-center overflow-hidden rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(30,41,59,0.96),rgba(15,23,42,0.98))] shadow-[0_26px_80px_rgba(2,6,23,0.46)]">
               {src ? (
-                <img src={src} alt={name} className="h-full w-full object-cover" />
+                // 走查电脑端单聊 R100：和姊妹 R88/R92/R93 一批 viewer img 已挂的同款。
+                // src 通常是 minimax 生成的角色头像（1024×1024 原图、200-600KB），
+                // 这里缩到 224×224 圆形显示。原版裸 <img> 没 decoding/draggable：
+                // 1) decoding="async"——浏览器默认同步在主线程 decode，桌面 1:1 视频
+                //    通话起手 mount 这条 DigitalHumanStage 时会卡 80-150ms（同帧
+                //    还有 status pill / 3 颗 talking dot 在 animate-pulse），用户
+                //    体感"接通瞬间整面板顿一下"。off-thread decode 让卡顿消失。
+                // 2) draggable={false}——通话期间用户按住头像（误以为能查看 AI 资料
+                //    或想试试拖动）会触发 HTML5 native drag，把 src URL 释放到桌面
+                //    意外触发"下载 AI 头像到桌面"；同时 drag start 后 mouseup 不
+                //    fire click，干扰未来在头像上挂点击进资料页的扩展。
+                <img
+                  src={src}
+                  alt={name}
+                  decoding="async"
+                  draggable={false}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <span className="text-[64px] font-semibold text-white/86">
                   {initial}
