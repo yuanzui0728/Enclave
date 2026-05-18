@@ -47,10 +47,22 @@ function readLocalState() {
     return defaultState;
   }
 
-  const raw = window.localStorage.getItem(DETAILED_TIMESTAMP_MODE_STORAGE_KEY);
-  const rawUpdatedAt = window.localStorage.getItem(
-    DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
-  );
+  // R18：和 R17 readLocalChatMessageActionState 同款 —— Safari iOS 隐私模式 /
+  // 部分浏览器禁用 storage 时 getItem 本身可能抛 SecurityError。这两条 getItem
+  // 给 readDetailedTimestampModeEnabled / hydrateDetailedTimestampModeFromNative
+  // 用，后者最终通过 chat-message-list line 572 useState lazy init 跑 → 抛错
+  // 让整个 ChatMessageList 组件 mount 失败 → 桌面单聊整页打不开。setItem 已在
+  // writeLocalState (line 99-) 走 try/catch；读路径同款保护。
+  let raw: string | null;
+  let rawUpdatedAt: string | null;
+  try {
+    raw = window.localStorage.getItem(DETAILED_TIMESTAMP_MODE_STORAGE_KEY);
+    rawUpdatedAt = window.localStorage.getItem(
+      DETAILED_TIMESTAMP_MODE_UPDATED_AT_STORAGE_KEY,
+    );
+  } catch {
+    return defaultState;
+  }
   const parsed = parseState(raw);
 
   if (parsed.updatedAt) {
