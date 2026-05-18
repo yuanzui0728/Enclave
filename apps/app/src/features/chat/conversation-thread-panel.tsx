@@ -282,9 +282,18 @@ export function ConversationThreadPanel({
   }, [conversationId]);
 
   useEffect(() => {
-    const latestCharacterMessage = [...renderedMessages]
-      .reverse()
-      .find((message) => message.senderType === "character");
+    // 走查 R10：原版 [...renderedMessages].reverse().find(...) 每次 effect 跑
+    // 都拷贝 + 反转一个 200 条数组。renderedMessages 在 socket tick / typing
+    // tick / setQueriesData 都会换引用 → effect 跑得很勤；用 .findLast 走原
+    // 数组从尾到头，无额外分配。Node 20+ / 所有现代浏览器自 2022 起原生支持。
+    let latestCharacterMessage: ChatRenderableMessage | undefined;
+    for (let i = renderedMessages.length - 1; i >= 0; i -= 1) {
+      const candidate = renderedMessages[i];
+      if (candidate?.senderType === "character") {
+        latestCharacterMessage = candidate;
+        break;
+      }
+    }
     if (!latestCharacterMessage) {
       // 把"基线 id"标稳：下一条真的 AI 回复才会触发 announcer。
       characterIncomingAnnouncerMountedRef.current = true;
@@ -305,11 +314,20 @@ export function ConversationThreadPanel({
       latestCharacterMessage.senderName?.trim() ||
       conversationTitle ||
       t(msg`对方`);
-    const preview =
+    // 走查 R10：resolveMessageSemanticPreview 的 maxChars 只截 attachment 分支
+    // (lib/message-attachment-semantic.ts:20-23 文本分支直接返回 sanitized text
+    // 不截)。多段 AI 长回复全文塞给 SR 会被念几分钟 → 在外层手动截断。60
+    // 字以内的纯文本足够让 SR 用户判断"谁发了什么"再决定要不要展开。
+    const rawPreview =
       resolveMessageSemanticPreview(latestCharacterMessage, {
         maxChars: 60,
         bracketedFallback: true,
       }) || t(msg`新消息`);
+    const ANNOUNCEMENT_MAX_CHARS = 60;
+    const preview =
+      rawPreview.length > ANNOUNCEMENT_MAX_CHARS
+        ? `${rawPreview.slice(0, ANNOUNCEMENT_MAX_CHARS).trim()}…`
+        : rawPreview;
     setCharacterIncomingAnnouncement(t(msg`${senderName}：${preview}`));
   }, [conversationId, conversationTitle, renderedMessages]);
 
