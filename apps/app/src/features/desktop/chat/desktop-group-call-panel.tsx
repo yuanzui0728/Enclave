@@ -76,6 +76,18 @@ export function DesktopGroupCallPanel({
   // 但 members 是 useQuery 的数组：每次 refetch 都换新引用（即便数据一样），
   // 用户点了「拉某成员下线」之后下一次 30s 轮询会把 joinedMemberIds 全部
   // 重置回初始集，操作消失。改成只在 groupId/kind 变更时重置。
+  //
+  // 走查电脑端群聊 R1：原版只在 [groupId, kind] 切换时 seed joinedMemberIds，
+  // useState 初始化也吃 props.members。如果用户切到新群后立刻点群通话按钮
+  // （public 隧道下 membersQuery ~600ms RTT 仍在飞），members 还是空数组——
+  // useState 给 []、本 effect 也 setJoinedMemberIds([])，ref 永远停在空集；
+  // members 真到达后下方 [members] effect 走的是"只修剪"路径，不再补 seed。
+  // 结果：通话面板顶部一直显示 "0/N 已加入"、workspaceSummary 跟着空着、
+  // hasSyncedStatus 永远不可能命中正确 active counts（lastPublishedCallCounts
+  // 起步 0/N，但实际从来没 broadcast 出去对的 counts，autoSync 1200ms 试一次
+  // 0/N 后被 attemptedSyncCountsRef 锁住），用户看不到任何成员加入态。改用
+  // ref 区分"已经用非空 members 完成首轮 seed"——首次拿到非空 members 时
+  // 自动补一次 seed，之后再 refetch 走"只修剪"。
   useEffect(() => {
     setMuted(false);
     setCameraEnabled(kind === "video");
@@ -83,6 +95,7 @@ export function DesktopGroupCallPanel({
     setStartedAt(new Date().toISOString());
     setPanelOpenedReported(false);
     setJoinedMemberIds(buildInitialJoinedMemberIds(members));
+    hasSeededJoinedMembersRef.current = members.length > 0;
     // 走查 Round 7 配套：切群/切通话类型也要清掉"已尝试过 counts"的记忆，
     // 否则上一组 counts 卡住下一组的首次自动同步。
     attemptedSyncCountsRef.current = null;
@@ -94,7 +107,20 @@ export function DesktopGroupCallPanel({
   // members refetch 时只「修剪」已不存在的成员，避免引用变化但内容相同时
   // 把用户已有的 join/leave 切换被覆盖。新成员不会自动 join——保持初始
   // owner/user/前 3 个的启发式只在群/通话切换时生效。
+  //
+  // 走查电脑端群聊 R1 配套：未做过首轮 seed（mount 时 members 为空）时，
+  // members 首次到达要补 seed —— 否则 joinedMemberIds 永远空，所有"已加入"
+  // 元数据皆 0。
+  const hasSeededJoinedMembersRef = useRef(members.length > 0);
   useEffect(() => {
+    if (!members.length) {
+      return;
+    }
+    if (!hasSeededJoinedMembersRef.current) {
+      hasSeededJoinedMembersRef.current = true;
+      setJoinedMemberIds(buildInitialJoinedMemberIds(members));
+      return;
+    }
     setJoinedMemberIds((current) => {
       const memberIdSet = new Set(members.map((member) => member.memberId));
       const next = current.filter((id) => memberIdSet.has(id));
