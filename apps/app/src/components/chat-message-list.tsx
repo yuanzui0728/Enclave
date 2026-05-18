@@ -7599,6 +7599,18 @@ function StickerMessage({
       decoding="async"
       onError={() => setLoadFailed(true)}
       onLoad={onMediaReady}
+      // 走查电脑端单聊 R119：和姊妹 R94 ImageMessage / R97 chat-files / R98
+      // NoteCardMessage / R99 FeedPostCardMessage / R104 attachment draft /
+      // R105 sticker grid / R106 sticker tab cover 同款 — StickerMessage
+      // 是聊天气泡里渲染的 sticker bubble，整张是 <img> 默认 draggable=true。
+      // 用户在单聊对方刚发来一张表情，想右键开 context menu / 点头像加表情
+      // 进自己包，mousedown 落在 <img> 上轻微 drag (>3px) → 浏览器启动 HTML5
+      // native drag (sticker URL) → drag start 后 mouseup/click 不 fire →
+      // 长按右键、点击都被吞，需要用户再操作一次；同时拖出的 URL drop 到
+      // 隔壁 textarea 时浏览器把 URL 当文本插入草稿，发出去对方收到一段
+      // 图片链接当文字；drop 到桌面则触发"保存这张表情到桌面"。和兄弟
+      // sticker 同款 draggable={false} 防御。
+      draggable={false}
       className="rounded-[18px] bg-white/70 object-contain shadow-none"
       style={stickerStyle}
     />
