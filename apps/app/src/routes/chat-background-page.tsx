@@ -701,7 +701,17 @@ export function ChatBackgroundPage() {
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="primary"
-                  disabled={busy}
+                  // 走查第一轮 R1：和上方 line 676 的「保存当前聊天背景」对齐
+                  // ——在 custom 模式还没挑 draft 时，上方那条已经 disabled，
+                  // 用户视线一往下扫看到本条「保存当前聊天设置」却是 enabled，
+                  // 点下去 saveConversationMutation.mutationFn 会走到「!conversationDraft」
+                  // 分支抛 Error("请先为当前聊天选择背景图。") → 顶部 pageError
+                  // 红条挂出一条本应不该看到的错。inherit 模式没 draft 需求，
+                  // 这条按钮还能正常保存 mode:"inherit" 落库。
+                  disabled={
+                    busy ||
+                    (conversationMode === "custom" && !conversationDraft)
+                  }
                   onClick={handleSaveConversation}
                 >
                   {t(msg`保存当前聊天设置`)}
