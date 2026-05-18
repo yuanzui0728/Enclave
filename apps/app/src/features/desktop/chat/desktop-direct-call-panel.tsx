@@ -598,7 +598,18 @@ export function DesktopDirectCallPanel({
             />
           </div>
 
-          <div className="mt-4 space-y-3">
+          {/* R42：通话面板的状态 InlineNotice 区——本通话是 AI 语音/视频通话
+              单聊核心 surface，状态变化（摄像头被关 / 权限被拒 / 数字人 gateway
+              切换 / 浏览器不支持 / 播放错误）SR 用户必须能感知。整段加 role +
+              aria-live，让条件切换时 SR 立刻播报；warning 类（cameraPreview.error
+              / speech.supported=false）走 polite 不抢断 — 多数情况下用户已经
+              在通话录音，抢断 SR 反而干扰；info 不抢断。assertive 留给真正
+              error 类（在下方 ErrorBlock 显示）。 */}
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-4 space-y-3"
+          >
             {isVideoMode && !cameraEnabled ? (
               <InlineNotice tone="info">
                 {t(msg`你已关闭本地摄像头，仍可继续进行数字人视频通话。`)}
