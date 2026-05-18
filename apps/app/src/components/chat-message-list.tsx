@@ -5967,12 +5967,35 @@ function ImageMessage({
   // <img> 就有 aspect-ratio + 真实显示尺寸，60 条历史的图陆续完成
   // 解码时不会让列高一格一格往上长。server 没给尺寸时回退到老行为
   // （maxWidth + maxHeight 双向 cap，加载完才知道高度）。
-  const renderedSize =
-    width && height && width > 0 && height > 0
-      ? width >= height
-        ? { width: maxSize, height: Math.round((height / width) * maxSize) }
-        : { width: Math.round((width / height) * maxSize), height: maxSize }
-      : null;
+  // 走查电脑端单聊 R82：renderedSize / imageStyle 之前 inline 算 + inline 拼
+  // style 对象，每次 ImageMessage re-render 都 new 一遍。chat-message-list
+  // 父帧每次 typing tick / socket echo / setMessages / mutation pending 翻转
+  // 都重渲，单聊滚到 100+ 历史里若有 20-30 张图片消息，每帧 20-30 个 fresh
+  // style 对象 → React 比 prop ref 不等 → DOM 上的 style 属性即便值完全
+  // 一样也跑一遍 diff/set。useMemo 把 size + style 引用稳住，依赖只有
+  // (width, height, maxSize) 真变化时才重算。和姊妹 R73 chat 背景 style 同款
+  // 优化方向。
+  const renderedSize = useMemo(
+    () =>
+      width && height && width > 0 && height > 0
+        ? width >= height
+          ? { width: maxSize, height: Math.round((height / width) * maxSize) }
+          : { width: Math.round((width / height) * maxSize), height: maxSize }
+        : null,
+    [width, height, maxSize],
+  );
+  const imageStyle = useMemo(
+    () =>
+      renderedSize
+        ? {
+            width: `${renderedSize.width}px`,
+            height: `${renderedSize.height}px`,
+            maxWidth: `${maxSize}px`,
+            maxHeight: `${maxSize}px`,
+          }
+        : { maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` },
+    [renderedSize, maxSize],
+  );
 
   const image = (
     <img
@@ -5987,16 +6010,7 @@ function ImageMessage({
           ? "rounded-[16px] border border-black/6"
           : "rounded-[13px] border border-[color:var(--border-subtle)]"
       }`}
-      style={
-        renderedSize
-          ? {
-              width: `${renderedSize.width}px`,
-              height: `${renderedSize.height}px`,
-              maxWidth: `${maxSize}px`,
-              maxHeight: `${maxSize}px`,
-            }
-          : { maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }
-      }
+      style={imageStyle}
       loading="lazy"
       decoding="async"
     />
