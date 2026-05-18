@@ -187,6 +187,16 @@ export function ChannelsPage() {
         section: activeSection,
         limit: CHANNELS_PAGE_LIMIT,
       }),
+    // 走查 2026-05-18 新一轮 R1：默认 staleTime=0 → 推荐/朋友/关注/直播 任何
+    // tab 切换都会让新挂载的 queryKey 立即被判 stale，react-query 先返
+    // 缓存数据再触发 background refetch；用户来回切「推荐 → 朋友 → 推荐」
+    // 3 次每次回到推荐都会重发一次 home + decorations（公网隧道 ~35KB/请求 +
+    // 200-500ms RTT × 2 个并行接口），完全是浪费。实测 4 次 tab 切换 + 返回
+    // recommended 共 5 次 home 请求、5 次 decorations，半数是 cache-hit 路径。
+    // 30s 内 tab 来回切复用缓存：足够覆盖用户在 4 个 tab 之间犹豫 / 比对的
+    // 典型行为；30s 后该刷新（generate 队列产新内容 / AI 新评论）。任何
+    // mutation 仍然 invalidate 绕过 staleTime 立即重拉，新数据不会卡。
+    staleTime: 30_000,
   });
   // 装饰位（tab 计数 + 评论预览）走第二个并行请求，不卡首屏列表/首播。
   // 拆分理由见 api/src/modules/feed/feed.service.ts getChannelHomeDecorations。
@@ -197,6 +207,11 @@ export function ChannelsPage() {
         section: activeSection,
         limit: CHANNELS_PAGE_LIMIT,
       }),
+    // 同 channelsQuery：tab 切换不重发，30s 后才视为 stale。decorations 包含
+    // sections.count（4 个 tab 数字）+ authors（推荐作者位）+ liveEntries +
+    // commentsPreviewByPostId（卡底最近评论），单接口 ~10KB；每次 tab 切换
+    // 都不缓存对公网公网隧道用户影响 40-60% 的总流量。
+    staleTime: 30_000,
   });
   const commentsPreviewByPostId =
     decorationsQuery.data?.commentsPreviewByPostId;
