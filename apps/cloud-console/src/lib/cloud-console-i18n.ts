@@ -314,10 +314,12 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Registration IP": "注册 IP",
     "Last login": "上次登录时间",
     "Last login IP": "当前 IP",
+    "Last chat": "上次发言时间", // i18n-ignore-line: runtime dict value
     "Sort by last login": "按上次登录时间排序",
     "Last user message": "上次用户消息时间", // i18n-ignore-line: runtime dict value
     "Sort by last user message": "按上次用户消息时间排序", // i18n-ignore-line: runtime dict value
     "Membership expires": "会员到期时间",
+    "Membership registered": "会员注册时间",
     Owner: "世界主人",
     "Owner signature": "世界主人签名",
     "App platform": "运行平台",
@@ -962,10 +964,12 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Registration IP": "登録 IP",
     "Last login": "最終ログイン日時",
     "Last login IP": "現在の IP",
+    "Last chat": "最終発言日時", // i18n-ignore-line: runtime dict value
     "Sort by last login": "最終ログイン日時で並び替え",
     "Last user message": "最終ユーザーメッセージ日時", // i18n-ignore-line: runtime dict value
     "Sort by last user message": "最終ユーザーメッセージ日時で並び替え", // i18n-ignore-line: runtime dict value
     "Membership expires": "会員有効期限",
+    "Membership registered": "会員登録日時",
     Owner: "ワールドオーナー",
     "Owner signature": "オーナーの署名",
     "App platform": "実行プラットフォーム",
@@ -1615,10 +1619,12 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
     "Registration IP": "가입 IP",
     "Last login": "마지막 로그인 시각",
     "Last login IP": "현재 IP",
+    "Last chat": "마지막 발언 시각", // i18n-ignore-line: runtime dict value
     "Sort by last login": "마지막 로그인 시각으로 정렬",
     "Last user message": "마지막 사용자 메시지 시각",
     "Sort by last user message": "마지막 사용자 메시지 시각으로 정렬",
     "Membership expires": "멤버십 만료 시각",
+    "Membership registered": "멤버십 가입 시각",
     Owner: "월드 오너",
     "Owner signature": "오너 서명",
     "App platform": "실행 플랫폼",

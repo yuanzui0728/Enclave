@@ -25,7 +25,7 @@ function formatTimestamp(value?: string | null) {
 const FILTER_CONTROL_CLASS =
   "rounded-2xl border border-[color:var(--border-subtle)] bg-white px-3 py-2 text-sm";
 
-type SortField = "expires" | "registered" | "lastLogin";
+type SortField = "expires" | "registered" | "lastLogin" | "lastChatMessage";
 type SortDirection = "asc" | "desc";
 
 function IpRegionCell({ ip }: { ip: string | null }) {
@@ -229,12 +229,11 @@ export function UsersPage() {
               <col className="w-[18%]" />
               <col className="w-[12%]" />
               <col className="w-[12%]" />
+              <col className="w-[11%]" />
+              <col className="w-[12%]" />
+              <col className="w-[11%]" />
               <col className="w-[12%]" />
               <col className="w-[12%]" />
-              <col className="w-[12%]" />
-              <col className="w-[8%]" />
-              <col className="w-[8%]" />
-              <col className="w-[6%]" />
             </colgroup>
             <thead className="bg-[#f8faf8] text-left text-[color:var(--text-muted)]">
               <tr>
@@ -268,9 +267,16 @@ export function UsersPage() {
                   />
                 </th>
                 <th className="px-4 py-3 font-medium">{t("Last login IP")}</th>
+                <th className="px-4 py-3 font-medium">
+                  <SortableHeader
+                    label={t("Last chat")}
+                    field="lastChatMessage"
+                    activeField={sortField}
+                    direction={sortDirection}
+                    onToggle={toggleSort}
+                  />
+                </th>
                 <th className="px-4 py-3 font-medium">{t("Inviter")}</th>
-                <th className="px-4 py-3 font-medium">{t("World")}</th>
-                <th className="px-4 py-3 font-medium">{t("Plan")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[color:var(--border-faint)]">
@@ -297,14 +303,11 @@ export function UsersPage() {
                   <td className="truncate px-4 py-3">
                     <IpRegionCell ip={user.lastLoginIp} />
                   </td>
+                  <td className="px-4 py-3">
+                    {formatTimestamp(user.lastChatMessageAt)}
+                  </td>
                   <td className="truncate px-4 py-3">
                     {user.inviterPhone || "-"}
-                  </td>
-                  <td className="truncate px-4 py-3">
-                    {user.worldStatus ? t(user.worldStatus) : "-"}
-                  </td>
-                  <td className="truncate px-4 py-3">
-                    {user.currentPlanCode || "-"}
                   </td>
                 </tr>
               ))}

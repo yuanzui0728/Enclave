@@ -19,6 +19,7 @@ import {
   type GoogleVerifiedProfile,
 } from "../auth/google-auth.service";
 import { PhoneAuthService } from "../auth/phone-auth.service";
+import { ClientTelemetryEventEntity } from "../entities/client-telemetry-event.entity";
 import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { InviteCodeEntity } from "../entities/invite-code.entity";
@@ -69,6 +70,8 @@ export class UsersService implements OnModuleInit {
     private readonly worldRepo: Repository<CloudWorldEntity>,
     @InjectRepository(InviteRedemptionEntity)
     private readonly redemptionRepo: Repository<InviteRedemptionEntity>,
+    @InjectRepository(ClientTelemetryEventEntity)
+    private readonly telemetryRepo: Repository<ClientTelemetryEventEntity>,
     private readonly subscription: SubscriptionService,
     private readonly invite: InviteService,
     private readonly phoneAuth: PhoneAuthService,
@@ -333,7 +336,7 @@ export class UsersService implements OnModuleInit {
     page?: number;
     pageSize?: number;
     includeTestAccounts?: boolean;
-    orderBy?: "expires" | "registered" | "lastLogin";
+    orderBy?: "expires" | "registered" | "lastLogin" | "lastChatMessage";
     orderDir?: "asc" | "desc";
   }): Promise<CloudUserListResponse> {
     const page = Math.max(query.page ?? 1, 1);
@@ -466,6 +469,17 @@ export class UsersService implements OnModuleInit {
         .orderBy("CASE WHEN user.lastLoginAt IS NULL THEN 1 ELSE 0 END", "ASC")
         .addOrderBy("user.lastLoginAt", orderDir)
         .addOrderBy("user.createdAt", "DESC");
+    } else if (orderBy === "lastChatMessage") {
+      // 跟 expires 一样走相关子查询贴 ORDER BY，避免 leftJoin 撞上 TypeORM
+      // 分页二段查询的列别名问题。索引命中 IDX_..._user_time(userId,occurredAt)
+      // + IDX_..._app_name_time(appId,eventName,occurredAt)。
+      const lastChatSql =
+        '(SELECT MAX("ce"."occurredAt") FROM "client_telemetry_events" "ce"' +
+        ' WHERE "ce"."userId" = "user"."id" AND "ce"."eventName" = \'chat_message_sent\')';
+      builder
+        .orderBy(`CASE WHEN ${lastChatSql} IS NULL THEN 1 ELSE 0 END`, "ASC")
+        .addOrderBy(lastChatSql, orderDir)
+        .addOrderBy("user.createdAt", "DESC");
     } else {
       builder.orderBy("user.createdAt", orderDir);
     }
@@ -540,7 +554,7 @@ export class UsersService implements OnModuleInit {
   }
 
   async serializeUserSummary(user: CloudUserEntity): Promise<CloudUserSummary> {
-    const [active, latest, ownInviteCode, inviter, world] = await Promise.all([
+    const [active, latest, ownInviteCode, inviter, world, lastChat] = await Promise.all([
       this.subscription.findActiveSubscription(user.id),
       this.subscription.findLatestSubscription(user.id),
       user.inviteCodeId
@@ -552,6 +566,12 @@ export class UsersService implements OnModuleInit {
       user.phone
         ? this.worldRepo.findOne({ where: { phone: user.phone } })
         : Promise.resolve(null),
+      this.telemetryRepo
+        .createQueryBuilder("ce")
+        .select("MAX(ce.occurredAt)", "lastChatAt")
+        .where("ce.userId = :userId", { userId: user.id })
+        .andWhere("ce.eventName = 'chat_message_sent'")
+        .getRawOne<{ lastChatAt: string | null }>(),
     ]);
 
     let subscriptionStatus: SubscriptionStatus = "none";
@@ -575,6 +595,10 @@ export class UsersService implements OnModuleInit {
       lastLoginIp: user.lastLoginIp,
       createdAt: user.createdAt.toISOString(),
       lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+      // SQLite 把 datetime 当 TEXT 存，getRawOne 出来就是字符串；空表 MAX 返回
+      // null，正好对应"该用户从没发过 chat_message_sent"。统一转成 ISO 防止
+      // "2026-05-18 03:31:59.441" 这种空格分隔被前端 new Date 在 Safari 上 NaN。
+      lastChatMessageAt: normalizeSqliteIsoTimestamp(lastChat?.lastChatAt ?? null),
     };
   }
 
@@ -584,5 +608,16 @@ export class UsersService implements OnModuleInit {
     const inviter = await this.userRepo.findOne({ where: { id: code.ownerUserId } });
     return inviter?.phone ?? null;
   }
+}
+
+function normalizeSqliteIsoTimestamp(raw: string | null): string | null {
+  if (!raw) return null;
+  // 已经是 ISO（含 T 和 Z/offset）就不动
+  if (raw.includes("T")) return raw;
+  // "2026-05-18 03:31:59.441" → "2026-05-18T03:31:59.441Z"
+  // SQLite datetime() / Date.toISOString() 写入的都是 UTC，没有时区后缀
+  // 时浏览器 new Date 会按本地时区解释，导致跨用户显示错位。
+  const parsed = new Date(raw.replace(" ", "T") + "Z");
+  return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString();
 }
 // i18n-ignore-end

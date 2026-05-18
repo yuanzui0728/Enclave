@@ -359,7 +359,12 @@ const SUBSCRIPTION_SOURCES = [
   "invite_reward",
   "admin_grant",
 ] as const;
-const CLOUD_USER_ORDER_BY = ["expires", "registered", "lastLogin"] as const;
+const CLOUD_USER_ORDER_BY = [
+  "expires",
+  "registered",
+  "lastLogin",
+  "lastChatMessage",
+] as const;
 const CLOUD_USER_ORDER_DIR = ["asc", "desc"] as const;
 
 export class ListCloudUsersDto {

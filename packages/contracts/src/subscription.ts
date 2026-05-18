@@ -146,9 +146,17 @@ export interface CloudUserSummary {
   lastLoginIp: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+  // 该用户在 client_telemetry_events 里最近一条 eventName='chat_message_sent'
+  // 的 occurredAt。null = 注册以来从没发过消息。运营用来判断"会员到底有没有
+  // 在用"，比单看 lastLoginAt 更准（登录可能只是 token 刷新）。
+  lastChatMessageAt: string | null;
 }
 
-export type CloudUserListOrderBy = "expires" | "registered" | "lastLogin";
+export type CloudUserListOrderBy =
+  | "expires"
+  | "registered"
+  | "lastLogin"
+  | "lastChatMessage";
 export type CloudUserListOrderDir = "asc" | "desc";
 
 export interface CloudUserListQuery {

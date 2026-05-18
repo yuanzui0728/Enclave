@@ -3,6 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminAuthService } from "../auth/admin-auth.service";
 import { AdminGuard } from "../auth/admin.guard";
 import { CloudConfigModule } from "../cloud-config/cloud-config.module";
+import { ClientTelemetryEventEntity } from "../entities/client-telemetry-event.entity";
 import { CloudAdminSessionEntity } from "../entities/cloud-admin-session.entity";
 import { CloudUserEntity } from "../entities/cloud-user.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
@@ -25,6 +26,7 @@ import { UsersService } from "./users.service";
       InviteRedemptionEntity,
       UserSubscriptionEntity,
       CloudAdminSessionEntity,
+      ClientTelemetryEventEntity,
     ]),
     CloudConfigModule,
     SubscriptionModule,
