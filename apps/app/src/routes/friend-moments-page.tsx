@@ -1142,10 +1142,19 @@ export function FriendMomentsPage() {
               characterId={desktopAvatarPopover.characterId}
               fallbackAvatar={desktopAvatarPopover.fallbackAvatar}
               fallbackName={desktopAvatarPopover.fallbackName}
+              // 走查新一轮 R9：原版只传 profileReturnPath/Hash，漏 momentsReturnPath/Hash。
+              // 当 popover 在 *别的* 角色 Y 的头像上弹出（hideMomentsAction=false），
+              // 用户点「朋友圈」按钮会跳 /desktop/friend-moments/Y，hash 里 returnPath
+              // 走 popover fallback "/tabs/chat"（见 desktop-message-avatar-popover.tsx
+              // 行 106 默认值），从 Y 的朋友圈页点「返回上一页」就跳 /tabs/chat，
+              // 而不是返回当前的 /desktop/friend-moments/X。补 momentsReturnPath=pathname
+              // / momentsReturnHash 让用户能正确回到自己来时的角色页。
               navigationContext={{
                 hideMomentsAction: desktopAvatarPopover.characterId === characterId,
                 profileReturnHash: desktopAvatarPopover.returnHash,
                 profileReturnPath: pathname,
+                momentsReturnHash: desktopAvatarPopover.returnHash,
+                momentsReturnPath: pathname,
               }}
               onClose={() => setDesktopAvatarPopover(null)}
             />
