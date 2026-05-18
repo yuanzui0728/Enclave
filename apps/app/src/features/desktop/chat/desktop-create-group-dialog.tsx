@@ -985,7 +985,15 @@ export function DesktopCreateGroupDialog({
             </div>
 
             {messageSelectionNotice ? (
-              <InlineNotice className="mb-3 text-xs" tone="muted">
+              // R44：messageSelectionNotice 是用户选择超量 / 不可分享消息时的
+              // tone="muted" 提示（"已达 50 条上限"、"撤回 / 已删除的消息不会
+              // 转发"等）。原版普通 div SR 感知不到。polite 不抢断 SR。
+              <InlineNotice
+                role="status"
+                aria-live="polite"
+                className="mb-3 text-xs"
+                tone="muted"
+              >
                 {messageSelectionNotice}
               </InlineNotice>
             ) : null}
