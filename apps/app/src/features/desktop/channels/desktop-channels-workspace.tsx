@@ -2750,6 +2750,17 @@ function DesktopCommentThreadReplies({
     <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
       <button
         type="button"
+        // 走查 2026-05-18 第二轮 R13："楼中楼" 折叠/展开按钮是经典的 disclosure
+        // 模式，但原裸 <button> 没挂 aria-expanded。SR 用户听到 "楼中楼 / 展开 N
+        // 条跟帖 button" / "楼中楼 / 收起 N 条跟帖 button"，靠 visible label 区分
+        // 当前状态 — 但 label 写的是"动作意图"（下一步要做什么）而不是"当前
+        // 状态"（现在是展开还是折叠的），盲用用户听到 "展开 5 条跟帖"会误以为
+        // "下方已经展开了 5 条" 而事实上是反的（collapsed=true 时显示"展开"，意
+        // 思是按下后会展开）。
+        // 标准 WAI-ARIA accordion / disclosure pattern：aria-expanded={!collapsed}，
+        // SR 念出 "楼中楼 button collapsed" / "楼中楼 button expanded"，状态语
+        // 义清晰；visible 文字保持"展开/收起 N 条跟帖"的动作引导不动。
+        aria-expanded={!collapsed}
         onClick={onToggleCollapsed}
         className="flex w-full items-center justify-between text-left"
       >

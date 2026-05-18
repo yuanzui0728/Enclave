@@ -96,12 +96,20 @@ export function DesktopGroupMemberPicker({
     });
   }, [deferredSearchTerm, existingMemberIdSet, friendsQuery.data]);
 
+  // 走查 R66：左侧 availableFriends .map 内每行调 selectedIds.includes(id) 两次
+  // （className 一次 + SelectionBadge 一次），加上 selectedFriends 内部又重建一个
+  // Set。yuanzui0728_5999 70+ 好友里勾 5 位时每次父渲染做 70 × 2 = 140 次线性扫，
+  // 父级 GroupChatDetailsPanel 高频 re-render（typing socket / messages stream /
+  // conversations 60s 轮询透传 conversation prop / member-picker 自己的 keystroke
+  // 输入 setSearchTerm + setSelectedIds 都会冒泡触发本面板 re-render）热路径
+  // 显著。useMemo 一份 Set，左侧行渲染走 has()、selectedFriends 也复用。
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
   const selectedFriends = useMemo(() => {
-    const selectedSet = new Set(selectedIds);
     return (friendsQuery.data ?? []).filter(({ character }) =>
-      selectedSet.has(character.id),
+      selectedIdSet.has(character.id),
     );
-  }, [friendsQuery.data, selectedIds]);
+  }, [friendsQuery.data, selectedIdSet]);
 
   const toggleSelection = (characterId: string) => {
     setSelectedIds((current) =>
@@ -298,7 +306,7 @@ export function DesktopGroupMemberPicker({
                     onClick={() => toggleSelection(character.id)}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
-                      selectedIds.includes(character.id)
+                      selectedIdSet.has(character.id)
                         ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
                         : "border border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white",
                     )}
@@ -313,7 +321,7 @@ export function DesktopGroupMemberPicker({
                       </div>
                     </div>
                     <SelectionBadge
-                      checked={selectedIds.includes(character.id)}
+                      checked={selectedIdSet.has(character.id)}
                     />
                   </button>
                 );

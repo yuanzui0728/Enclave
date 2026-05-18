@@ -70,10 +70,17 @@ export function DesktopGroupMemberRemovalPicker({
     });
   }, [deferredSearchTerm, removableMembers]);
 
+  // 走查 R66 配套：和姊妹 desktop-group-member-picker R66 同款修法。原版
+  // CandidateRow 每行 checked=selectedIds.includes(member.id) 是 O(K) 线性扫，
+  // 群成员通常 ≤ 50 + 多选时 K 可能也 ≤ 50，热路径上 N×K 次字符串比较。
+  // 父级 GroupChatDetailsPanel 同样有 typing socket / messages stream /
+  // conversations 60s 轮询多源 re-render，每次都白扫。Set 复用——selectedMembers
+  // 也省一次 new Set。
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
   const selectedMembers = useMemo(() => {
-    const selectedIdSet = new Set(selectedIds);
     return removableMembers.filter((member) => selectedIdSet.has(member.id));
-  }, [removableMembers, selectedIds]);
+  }, [removableMembers, selectedIdSet]);
 
   const toggleSelection = (memberId: string) => {
     setSelectedIds((current) =>
@@ -224,7 +231,7 @@ export function DesktopGroupMemberRemovalPicker({
               {filteredMembers.map((member) => (
                 <CandidateRow
                   key={member.id}
-                  checked={selectedIds.includes(member.id)}
+                  checked={selectedIdSet.has(member.id)}
                   disabled={pending}
                   name={member.name}
                   subtitle={member.subtitle}

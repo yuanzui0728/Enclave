@@ -1768,6 +1768,22 @@ export function ChannelsPage() {
   const pendingFollowAuthorId = followMutation.isPending
     ? (followMutation.variables?.authorId ?? null)
     : null;
+  // R4 sync ref 双击锁的复位：mutation settle 后清掉 ref，下一次正常点开放。
+  useEffect(() => {
+    if (!likeMutation.isPending) {
+      desktopLikeSubmittingRef.current = false;
+    }
+  }, [likeMutation.isPending]);
+  useEffect(() => {
+    if (!favoriteMutation.isPending) {
+      desktopFavoriteSubmittingRef.current = false;
+    }
+  }, [favoriteMutation.isPending]);
+  useEffect(() => {
+    if (!followMutation.isPending) {
+      desktopFollowSubmittingRef.current = false;
+    }
+  }, [followMutation.isPending]);
   const pendingCommentPostId = commentMutation.isPending
     ? (commentMutation.variables?.postId ?? null)
     : null;
