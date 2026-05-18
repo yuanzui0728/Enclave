@@ -3484,7 +3484,16 @@ export function ChatMessageList({
         />
       ) : null}
       {actionNotice ? (
+        // R37：和姊妹 desktop workspace R36 同款 — actionNotice 是 2.2~5s
+        // 自动消失的 transient toast（line 635 setTimeout），反馈复制 / 撤回 /
+        // 收藏 / 删除 / 朗读失败等成功 / 失败结果。原版只是 InlineNotice 普通
+        // div，SR 完全无法感知。
+        // danger tone 用 role="alert" + aria-live="assertive" 抢断当前 SR 朗读
+        // （失败必须立刻让用户知道）；success/warning 用 role="status" +
+        // aria-live="polite" 不抢断，等 SR 朗读完当前内容再补一句状态反馈。
         <InlineNotice
+          role={actionNotice.tone === "danger" ? "alert" : "status"}
+          aria-live={actionNotice.tone === "danger" ? "assertive" : "polite"}
           className="flex items-center justify-between gap-3 text-xs"
           tone={actionNotice.tone}
         >
