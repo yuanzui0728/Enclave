@@ -3468,12 +3468,25 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                     {t(msg`最近评论`)}
                   </div>
                   <div className="space-y-1">
-                    {commentsPreview.slice(0, 2).map((comment) => (
-                      // 走查 R2（本轮）：实测库里有 1000+ 字的"AI thinking 漏到
-                      // comment.text"长评论（feed_comments 最长 1019 字），不 clamp
-                      // 这条 review 会把卡片底部 chip 撑成半屏高，盖到上面的标题 / 头像 /
-                      // overflow-hidden 后还把封面切走一截。每行限 1 行，超出末尾省略号。
-                      // 后端那条 AI thinking 入库属于服务端 bug，前端先把这层显示兜住。
+                    {/*
+                      走查 2026-05-18 新一轮 R2：commentsPreview 是后端
+                      buildCommentsPreviewMap 给的"最近 3 条"评论，按 createdAt
+                      ASC 排（最老的在 [0]，最新的在 [2]）——backend 注释明确
+                      "postId → 最近 3 条评论"，slice(-3) 在 ASC 流上取最新 3 条。
+                      原前端 .slice(0, 2) 取的是这 3 条里最早的两条，把真·最新
+                      那条 (commentsPreview[2]) 漏了。视觉上「最近评论」标签下
+                      只显示 2 条，用户看的是次新 + 第三新，刚发的那条只在打开
+                      评论 sheet 后才能见到，卡片 chip 完全错位。
+                      改成 .slice(-2)：在按 ASC 排序的最近 3 条里取末尾 2 条，
+                      ASC 顺序保留（老→新），跟评论 sheet 内的阅读顺序对齐。
+                    */}
+                    {commentsPreview.slice(-2).map((comment) => (
+                      // 走查 R2：实测库里有 1000+ 字的"AI thinking 漏到 comment
+                      // .text"长评论（feed_comments 最长 1019 字），不 clamp
+                      // 这条 review 会把卡片底部 chip 撑成半屏高，盖到上面的标题 /
+                      // 头像 / overflow-hidden 后还把封面切走一截。每行限 1 行，
+                      // 超出末尾省略号。后端那条 AI thinking 入库属于服务端 bug，
+                      // 前端先把这层显示兜住。
                       <div key={comment.id} className="line-clamp-1">
                         <span className="font-medium">
                           {comment.authorName}
