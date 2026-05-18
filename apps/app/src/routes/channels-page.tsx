@@ -2311,8 +2311,19 @@ function MobileChannelMediaSurface({
   // 暗色文字卡，至少把内容显示出来；正文走 stripToolCallSyntax 过 AI 思考残留。
   const textContent = stripToolCallSyntax(post.text ?? "");
   if (post.title?.trim() || textContent.trim()) {
+    // 走查 2026-05-18 新一轮 R4：原 px-8 + max-w-[22rem] + items-center 在 < 400px
+    // 宽屏（绝大多数移动设备）上，居中的文字卡右边会被外层 action rail 的 40x40
+    // 按钮（rgba(15,23,42,0.62) 不透明 backdrop + blur）盖住 22-54px。action rail
+    // 是 MobileChannelsCard 里 absolute inset-y-0 right-0 + pr-3.5 的 sibling，
+    // z-order 在 MobileChannelMediaSurface 之后渲，肉眼覆盖。
+    // bottom 内容区已经按 `max-w-[calc(100%-4.25rem)]` 给 action rail 留 68px
+    // 出来；文字帖兜底没接这层。靠 pr-[4.25rem] 给右侧让出 68px（比 pl 多），
+    // 文字居中视觉上仍然居中（max-w 在让出空间后的可用区域内 ~280px 容纳长
+    // text-center），rail 不再压字。
+    // 注：text post 在 yuanzui R3 测试帖上线后是真实存在的 case，curl / 第三方
+    // 端口造的 owner post 也走这条；不是「只有调试用户撞」的稀有路径。
     return (
-      <div className="relative flex h-full min-h-[calc(100dvh-12rem)] w-full items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-8">
+      <div className="relative flex h-full min-h-[calc(100dvh-12rem)] w-full items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] pb-8 pl-8 pr-[4.25rem] pt-8">
         <div className="max-w-[22rem] text-center text-white">
           {post.title?.trim() ? (
             <div className="text-[22px] font-semibold leading-[1.6]">
@@ -2329,8 +2340,12 @@ function MobileChannelMediaSurface({
     );
   }
 
+  // 走查 2026-05-18 新一轮 R4：跟上面文字卡同款问题——"暂无可播放内容"标题 +
+  // "稍后再来看看"副标题居中，右侧被 action rail 按钮盖住一部分。窄屏（≤ 360px）
+  // 上 "暂无可播放内容" 末尾的"容"字会被点赞按钮的 dark backdrop 切掉一半。
+  // 同样靠 pr-[4.25rem] 给 action rail 让位。
   return (
-    <div className="flex min-h-[calc(100dvh-12rem)] w-full items-center justify-center bg-black px-6 text-center">
+    <div className="flex min-h-[calc(100dvh-12rem)] w-full items-center justify-center bg-black pb-6 pl-6 pr-[4.25rem] pt-6 text-center">
       <div>
         <div className="text-[16px] font-semibold text-white">
           {t(msg`暂无可播放内容`)}
