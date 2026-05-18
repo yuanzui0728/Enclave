@@ -37,11 +37,15 @@ export type EnsureUserContext = {
 };
 
 // e2e / smoke / playwright / Twilio 测试号会把"用户"tab 灌得到处是脏数据，运营
-// 看不清真实账号。固定的几个判别条件够准：
-//   - phone 以 "+" 开头：生产手机注册走 hash-like 14 位 id（91xxxx…），不会带 +。
-//     E.164 格式（+86…、+15005550001）目前只来自自动化测试。
-//   - email 命中 smoke- 前缀 / @example.com / 我们 smoke 脚本固定的 a.com/b.com/c.com
-//     这几个 RFC2606 保留 + 内部约定的"垃圾域名"。
+// 看不清真实账号。判别用「正向白名单 + 反向黑名单」两道筛：
+//   生产手机注册的 phone 一律是 14 位、9 开头的 hash id（91/92/.../99…）。所以
+//   反过来：phone 不是 NULL 也不是 14 位 9 开头 → 必然不是正式注册路径，全部
+//   归为测试。这一刀覆盖了：
+//     - "+" 开头 E.164（+86…/+15005550001 这种自动化测试号）
+//     - 11 位裸国内号（138/139/177/173 之类的演示号、demo 号、手动塞的种子号）
+//   email 再加一层后备：smoke- 前缀 / @example.com / smoke 脚本固定的 a/b/c.com
+//   这几个 RFC2606 保留 + 内部约定的"垃圾域名"——主要 catch 没填 phone 的纯
+//   email 注册测试号。
 const TEST_ACCOUNT_EMAIL_PATTERNS = [
   "smoke%",
   "%@example.com",
@@ -337,11 +341,15 @@ export class UsersService implements OnModuleInit {
 
     const builder = this.userRepo.createQueryBuilder("user");
     if (!query.includeTestAccounts) {
-      // 默认隐藏 smoke / e2e / Twilio 测试号，让"用户"tab 干净。运营临时排查
+      // 默认隐藏 smoke / e2e / Twilio / 演示号，让"用户"tab 干净。运营临时排查
       // 需要看测试账号时 UI 上勾选 includeTestAccounts=true 即可放回来。
       builder.andWhere(
         new Brackets((qb) => {
-          qb.where("user.phone IS NULL OR user.phone NOT LIKE '+%'");
+          // phone 白名单：要么没填（纯 email/Google 注册），要么是 14 位 9 开头
+          // 的生产 hash。两者都不是 → 测试号。
+          qb.where(
+            "user.phone IS NULL OR (LENGTH(user.phone) = 14 AND user.phone GLOB '9*')",
+          );
           TEST_ACCOUNT_EMAIL_PATTERNS.forEach((pattern, idx) => {
             qb.andWhere(
               `(user.email IS NULL OR user.email NOT LIKE :testEmailPattern${idx})`,
