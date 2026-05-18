@@ -188,6 +188,16 @@ export function ChannelsPage() {
   // 死循环。详见下面 routeSelectedPostId effect 里的长注释。
   const urlSelfSyncEchoPostIdRef = useRef<string | null | undefined>(undefined);
 
+  // 走查 2026-05-18 新会话（本轮 R4）：like / favorite / follow 三个 toggle 按
+  // 钮的 pending 锁靠 useMutation.isPending → React state，下一次 render 才生
+  // 效。同帧（<16ms）内连点 5 次 like 在 React state commit 前都过了，5 条
+  // POST 全飞出去（网络 + cache 乐观更新 5 倍）。跟 chat-details
+  // saveToContactsSubmittingRef / muteSubmittingRef 一套：再叠一层 sync ref
+  // 锁挡同帧 double-tap，mutation settled 后 useEffect [isPending] 复位。
+  const desktopLikeSubmittingRef = useRef(false);
+  const desktopFavoriteSubmittingRef = useRef(false);
+  const desktopFollowSubmittingRef = useRef(false);
+
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
     queryFn: () =>
@@ -1642,6 +1652,22 @@ export function ChannelsPage() {
   const pendingLikeCommentId = likeCommentMutation.isPending
     ? (likeCommentMutation.variables?.commentId ?? null)
     : null;
+  // R4 sync ref 双击锁的复位：mutation settle 后清掉 ref，下一次正常点开放。
+  useEffect(() => {
+    if (!likeMutation.isPending) {
+      desktopLikeSubmittingRef.current = false;
+    }
+  }, [likeMutation.isPending]);
+  useEffect(() => {
+    if (!favoriteMutation.isPending) {
+      desktopFavoriteSubmittingRef.current = false;
+    }
+  }, [favoriteMutation.isPending]);
+  useEffect(() => {
+    if (!followMutation.isPending) {
+      desktopFollowSubmittingRef.current = false;
+    }
+  }, [followMutation.isPending]);
 
   // useCallback 必要：onViewPost 作为 prop 进 DesktopChannelsWorkspace 的 useEffect 依赖，
   // 内联箭头函数会导致 effect 在父组件每次 re-render 都重跑，狂刷 viewFeedPost。
@@ -1791,6 +1817,19 @@ export function ChannelsPage() {
       return;
     }
 
+    // 走查 2026-05-18 新会话（本轮 R4）：URL 上有 author=Y 但 sync edRouteSelected
+    // AuthorId 还没追上（routeSelectedAuthorId=Y 在闭包里 != desktopSelectedPost.
+    // authorId 因为后者用 stale closure），同 commit 跑到这里 syncedRouteSelected
+    // AuthorId=undefined，nextHash 会把 URL 上的 author= 抹掉。下一帧 Effect A 用
+    // routeSelectedAuthorId=null 落 state → 用户的"deep-link 到这条 post + 这位
+    // 作者"意图被吞，author overlay 永远不开。
+    // 跳过本帧 navigate，等 Effect A 把 desktopSel 同步成 routeSel 后下一帧
+    // desktopSelectedPost.authorId === routeSelectedAuthorId 让 synced 有值 → 本
+    // effect 用最新 closure 重跑，nextHash 自然带回 author=，URL 不被砍。
+    if (routeSelectedAuthorId && !syncedRouteSelectedAuthorId) {
+      return;
+    }
+
     const nextHash = buildDesktopChannelsRouteHash({
       postId: desktopSelectedPostId,
       authorId: syncedRouteSelectedAuthorId,
@@ -1817,6 +1856,7 @@ export function ChannelsPage() {
     activeSection,
     isDesktopChannelsRoute,
     syncedRouteSelectedAuthorId,
+    routeSelectedAuthorId,
     normalizedHash,
     desktopSelectedPostId,
     isDesktopLayout,
@@ -2257,8 +2297,13 @@ export function ChannelsPage() {
             submitComment(postId, { replyTarget: desktopReplyTarget })
           }
           onLike={(postId) => {
+            // R4: sync ref 锁挡同帧双击。disabled={pending} 靠 React state，下一
+            // 次 render 才生效；同帧 <16ms 连点 5 次时 5 个 click handler 全过
+            // disabled，5 条 like POST 一起飞出去。
+            if (desktopLikeSubmittingRef.current) return;
             if (!ensureCommentPostCanInteract(postId)) return;
             const post = desktopWorkspacePosts.find((p) => p.id === postId);
+            desktopLikeSubmittingRef.current = true;
             likeMutation.mutate({
               postId,
               hasLiked: Boolean(post?.ownerState?.hasLiked),
@@ -2275,11 +2320,19 @@ export function ChannelsPage() {
           onCloseAuthor={closeChannelAuthor}
           onOpenAuthor={openChannelAuthor}
           onOpenAuthorPost={openChannelAuthorPost}
-          onToggleAuthorFollow={(authorId, following) =>
-            followMutation.mutate({ authorId, following })
-          }
+          onToggleAuthorFollow={(authorId, following) => {
+            // R4 sync ref 锁同帧双击（同上面 onLike 注释）。
+            if (desktopFollowSubmittingRef.current) return;
+            desktopFollowSubmittingRef.current = true;
+            followMutation.mutate({ authorId, following });
+          }}
           onSectionChange={handleSectionChange}
-          onToggleFavorite={toggleFavorite}
+          onToggleFavorite={(post) => {
+            // R4 sync ref 锁同帧双击。
+            if (desktopFavoriteSubmittingRef.current) return;
+            desktopFavoriteSubmittingRef.current = true;
+            toggleFavorite(post);
+          }}
           onLikeComment={(comment) => {
             if (!ensureCommentPostCanInteract(comment.postId)) return;
             likeCommentMutation.mutate({
@@ -4523,6 +4576,63 @@ function MobileChannelCommentsSheet({
     };
   }, [open]);
 
+  // 走查 2026-05-18 新会话 R2（移动端视频号评论 sheet）：跟同 commit 的
+  // ChannelsForwardPicker focus trap 同款问题—— sheet 挂了
+  // role="dialog" aria-modal="true" 但浏览器不会自动 trap focus（aria-modal
+  // 只对原生 <dialog>.showModal() 生效）。CDP 实测从「打开评论」按钮按 5 次
+  // Tab，焦点 5 次全漏到 background 的视频号卡 action rail 上 —— 既挡键盘用
+  // 户用 Tab 在评论列表里走/到发送按钮，又让 SR 用户的 modal 内部语义破口。
+  // 现状部分缓解：open 时已经把 textarea .focus() 拉进 sheet（line 4644-4651
+  // requestAnimationFrame focus），但 Tab cycle 仍能跳出。
+  // 同款修法 — keydown 监听 Tab + 首尾循环 + 飘出时拉回，不依赖第三方
+  // focus-trap 库。previouslyFocusedRef 记开打前焦点关闭时归还。
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedSheetRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    previouslyFocusedSheetRef.current =
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+        ? document.activeElement
+        : null;
+    return () => {
+      const prev = previouslyFocusedSheetRef.current;
+      previouslyFocusedSheetRef.current = null;
+      if (prev && document.contains(prev)) {
+        window.requestAnimationFrame(() => prev.focus());
+      }
+    };
+  }, [open]);
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const sheet = sheetRef.current;
+      if (!sheet) return;
+      const focusable = sheet.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !sheet.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
+
   // 走查 R9：Esc 键关 sheet —— ChannelsForwardPicker (line 95-104) 早就有这套
   // window keydown / Escape preventDefault + onClose 的兜底，但 MobileChannelComments
   // Sheet 一直缺。桌面端 / iPad 接外接键盘 / 真机 PWA 在 web 嵌入下，用户按 Esc
@@ -4830,9 +4940,13 @@ function MobileChannelCommentsSheet({
         在 tab 序列里）。配合 aria-labelledby 把头部"评论 · N 条"作为对话标题。
       */}
       <div
+        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-channels-comments-sheet-title"
+        // tabIndex=-1 让 sheet 自身可程序聚焦兜底（极端 loading 态下 sheet 内
+        // 没有任何 focusable child 时焦点 trap 仍能落到 sheet 上不漏）。
+        tabIndex={-1}
         className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
       >
         <div className="flex justify-center pb-1.5">
