@@ -150,6 +150,20 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     resetEntryGuard();
   }, [conversationId, resetEntryGuard]);
 
+  // 走查 R1：「聊天已置顶」「已开启消息免打扰」「聊天记录已清空」这一串
+  // mutation 成功提示在原版里没 auto-dismiss——setNotice 后会一直挂在
+  // 页面顶部直到用户下一次切设置或离开 details。chat-list-page R1（commit
+  // 见 listing notice useEffect）已经给过同款 3.5s auto-dismiss，本页跟着对齐。
+  // notice 带 actionLabel/onAction (强提醒被系统通知拒绝时让用户「去设置」)
+  // 时不能 dismiss——隐掉就再也没机会点 action，所以只 dismiss 纯文本 notice。
+  useEffect(() => {
+    if (!notice || (notice.actionLabel && notice.onAction)) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
