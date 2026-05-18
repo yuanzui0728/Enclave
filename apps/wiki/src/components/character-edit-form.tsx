@@ -1043,7 +1043,9 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
           )}
           {aiFlash && aiFlash.section === "all" && (
             <div className="mb-3">
-              <InlineNotice tone="success">
+              {/* AI 生成成功后的反馈通知是用户主动点击"AI 一键生成"后的回
+                  应——SR 需要播报。role=status 不打断阅读但仍可被听到。 */}
+              <InlineNotice tone="success" role="status">
                 {aiFlash.optimize ? (
                   aiFlash.count > 0 ? (
                     <Trans>
@@ -1669,7 +1671,7 @@ export function CharacterEditForm(props: CharacterEditFormProps) {
                 <InlineNotice tone="danger" role="alert">{aiError}</InlineNotice>
               )}
               {aiFlash && (
-                <InlineNotice tone="success">
+                <InlineNotice tone="success" role="status">
                   {aiFlash.optimize ? (
                     aiFlash.count > 0 ? (
                       <Trans>

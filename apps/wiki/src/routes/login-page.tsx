@@ -263,7 +263,13 @@ function EmailCodeForm({ onSuccess }: { onSuccess: () => void }) {
           </Button>
         </div>
       </FormRow>
-      {info && <InlineNotice tone="info">{info}</InlineNotice>}
+      {/* "验证码已发送" / debug code 等用户主动点"发送验证码"后的反馈，
+          需要 SR 即时播报；和邻居 error role=alert 对齐对称。 */}
+      {info && (
+        <InlineNotice tone="info" role="status">
+          {info}
+        </InlineNotice>
+      )}
       {error && (
         <InlineNotice tone="danger" role="alert">
           {error}

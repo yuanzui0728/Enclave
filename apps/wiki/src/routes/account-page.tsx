@@ -352,7 +352,11 @@ function ChangePasswordPanel({
             </Trans>
           </InlineNotice>
         )}
-        {info && <InlineNotice tone="info">{tReactive(info)}</InlineNotice>}
+        {info && (
+          <InlineNotice tone="info" role="status">
+            {tReactive(info)}
+          </InlineNotice>
+        )}
         {error && (
           <InlineNotice tone="danger" role="alert">
             {error}
@@ -464,7 +468,11 @@ function ChangeUsernamePanel({
             <Trans>用户名不能超过 32 个字符。</Trans>
           </InlineNotice>
         )}
-        {info && <InlineNotice tone="info">{tReactive(info)}</InlineNotice>}
+        {info && (
+          <InlineNotice tone="info" role="status">
+            {tReactive(info)}
+          </InlineNotice>
+        )}
         {error && (
           <InlineNotice tone="danger" role="alert">
             {error}
