@@ -1474,6 +1474,20 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                 // 端 owner.id 分支 no-op，按钮永远停在 "+ 关注"，看着像点不动。
                 <button
                   type="button"
+                  // 走查 2026-05-18 新会话 R4：原 button 没挂 aria-pressed —— 这
+                  // 是 toggle（关注 ↔ 已关注），SR 用户听到的只是按钮文字「已关
+                  // 注」/「+ 关注」，没办法判断"是当前状态还是要触发的目标动作"。
+                  // 同款侧栏 ChannelActionButton（赞/收藏）早就有 aria-pressed
+                  // ={active}，slide 头部的作者关注按钮一直漏。补 aria-pressed
+                  // = isFollowingAuthor，让 SR 听见"按下，已关注"/"未按下，关注"
+                  // 的状态信号；同时给 aria-label 加上明确"关注 {作者}/取消关注
+                  // {作者}"避免单看一个数字按钮听不出对谁操作。
+                  aria-pressed={Boolean(post.ownerState?.isFollowingAuthor)}
+                  aria-label={
+                    post.ownerState?.isFollowingAuthor
+                      ? t(msg`取消关注 ${post.authorName}`)
+                      : t(msg`关注 ${post.authorName}`)
+                  }
                   onClick={() => onToggleAuthorFollow(post)}
                   disabled={followPending}
                   className={cn(
@@ -1915,6 +1929,14 @@ function DesktopChannelAuthorPanel({
               <Button
                 variant={profile.isFollowing ? "secondary" : "primary"}
                 size="sm"
+                // R4: 同 slide header 关注按钮同款 aria-pressed/aria-label，
+                // 让 SR 用户能听出"按下/未按下"的 toggle 状态 + 操作对象（作者名）。
+                aria-pressed={profile.isFollowing}
+                aria-label={
+                  profile.isFollowing
+                    ? t(msg`取消关注 ${profile.authorName}`)
+                    : t(msg`关注 ${profile.authorName}`)
+                }
                 disabled={followPending}
                 onClick={() =>
                   onToggleFollow(profile.authorId, profile.isFollowing)
