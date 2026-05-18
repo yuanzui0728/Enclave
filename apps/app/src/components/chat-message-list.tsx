@@ -6013,6 +6013,16 @@ function ImageMessage({
       style={imageStyle}
       loading="lazy"
       decoding="async"
+      // 走查电脑端单聊 R94：和姊妹 R88/R92/R93 一批 viewer img 已挂的同款。
+      // ImageMessage 外层包了 <button onClick={onOpen}> 当作点击 viewer 入
+      // 口（line 6024-6031），但里面这张 <img> 默认 draggable=true。用户
+      // 在 thread 消息列表里按住图想点击查看时 mousedown→拖出阈值距离 →
+      // 浏览器启动 HTML5 native drag (图片 URL)，drag start 后 mouseup
+      // 不再触发 click → 用户原意"点开图片"被 silently 丢掉。同时拖动的
+      // 图片会被释放到桌面 / 其他窗口的可放下区域，意外触发"下载这张图
+      // 到桌面"。和姊妹 chat-composer (line 5407) / sticker img 已挂的
+      // 同款 draggable={false} 防御。
+      draggable={false}
     />
   );
 
