@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -82,6 +82,30 @@ export function LiveCompanionPage() {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 走查 2026-05-18 新会话（本会话）R5：「生成预热内容」按钮的 onClick 是裸 async
+  // 函数，没有任何 pending state、disabled、双击锁。clicking 3 次 / 100ms 在公网
+  // 隧道 RTT 200-500ms 期间会同步发 3 条 POST /channels/generate — LPP 端口端
+  // 单条生成 ~3-5 秒，3 条会把生成队列撑满。同时还存在 mid-flight 切账户问题：
+  //   1. 用户在 A 账户点「生成预热内容」→ POST flying
+  //   2. 顶栏切到 B 账户（baseUrl change 触发 statusQuery / channelsQuery 重拉）
+  //   3. A 的 generate POST 落地 → setNotice("已生成…") 闭包跑到 B → B 用户看
+  //      到莫名其妙的「已生成」绿条；同时 channelsQuery.refetch() 是当下 render
+  //      的 query（指向 B），refetch B 没事但 A 那条新生成的 post 永远等下次回
+  //      A 才看见。错误路径 setError 同理。
+  // 三重模板（同 channels-page R6 generate / chat-details saveSubmittingRef 系列
+  // R4 / forward-picker R5）：
+  //   1) useState isGenerating + 用 useRef 同帧锁防 <16ms 内 setState 来不及生效
+  //      时 2 次 click 同步入栈；
+  //   2) 在 try 入口前钉 baseUrl 到 localRef，落地后比对 mutationBaseUrlRef
+  //      （baseUrl 最新值）— 错的话早返，setNotice/setError 不冒到新账户；
+  //   3) Button disabled={isGenerating} 给可视用户反馈"正在生成中…"。
+  // mutationBaseUrlRef 跟着每次 baseUrl 变化同步刷新，闭包不会拿 stale。
+  const mutationBaseUrlRef = useRef(baseUrl);
+  useEffect(() => {
+    mutationBaseUrlRef.current = baseUrl;
+  }, [baseUrl]);
+  const generateSubmittingRef = useRef(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const statusQuery = useQuery({
     queryKey: ["desktop-live-companion-status", baseUrl],
@@ -711,24 +735,48 @@ export function LiveCompanionPage() {
                 type="button"
                 variant="secondary"
                 size="sm"
+                disabled={isGenerating}
                 onClick={async () => {
+                  // R5：同帧 sync ref 锁挡 <16ms 内 React state 还没 commit 的二
+                  // 次点击；isGenerating state 给可视用户反馈。
+                  if (generateSubmittingRef.current) return;
+                  generateSubmittingRef.current = true;
+                  setIsGenerating(true);
+                  const initialBaseUrl = baseUrl;
                   try {
-                    await generateChannelPost(baseUrl);
-                    await channelsQuery.refetch();
-                    setNotice(t(msg`已生成一条新的视频号内容，可继续作为直播参考。`));
-                    setError(null);
+                    await generateChannelPost(initialBaseUrl);
+                    // mid-flight 切账户：A 的 generate 落地时若 baseUrl 已切到 B，
+                    // 不在 B 上冒 toast，但 refetch 仍用最新 query（指向 B，B 用
+                    // 户主动想看的是 B 的内容；A 那条新生成 post 留待用户下次回
+                    // A 时主动 refetch / 进 home 自然 invalidate）。
+                    const sameAccount =
+                      mutationBaseUrlRef.current === initialBaseUrl;
+                    if (sameAccount) {
+                      await channelsQuery.refetch();
+                      setNotice(
+                        t(msg`已生成一条新的视频号内容，可继续作为直播参考。`),
+                      );
+                      setError(null);
+                    }
                   } catch (reason) {
-                    setError(
-                      reason instanceof Error
-                        ? reason.message
-                        : t(msg`生成视频号内容失败。`),
-                    );
+                    const sameAccount =
+                      mutationBaseUrlRef.current === initialBaseUrl;
+                    if (sameAccount) {
+                      setError(
+                        reason instanceof Error
+                          ? reason.message
+                          : t(msg`生成视频号内容失败。`),
+                      );
+                    }
+                  } finally {
+                    generateSubmittingRef.current = false;
+                    setIsGenerating(false);
                   }
                 }}
                 className="rounded-xl"
               >
                 <Wand2 size={14} />
-                {t(msg`生成预热内容`)}
+                {isGenerating ? t(msg`生成中...`) : t(msg`生成预热内容`)}
               </Button>
             </div>
 
