@@ -326,7 +326,19 @@ export function FriendMomentsPage() {
             ? t(msg`点赞失败：${error.message}`)
             : t(msg`点赞失败，请稍后重试。`),
         actionLabel: t(msg`重试点赞`),
-        action: () => likeMutation.mutate(momentId),
+        // 走查电脑端朋友圈 R5：跟 moments-page R5 / chat 等同款 ——
+        // retry action 之前裸 mutate，用户双击「重试点赞」会同帧 2 个 POST /like
+        // → toggle 多翻一轮 + 付 2 个 RTT，跟下面 onLike inflight ref 守卫不一致。
+        // 用同一把 likeInflightRef 兜住，retry 也走 onSettled 释放。
+        action: () => {
+          if (likeInflightRef.current[momentId]) return;
+          likeInflightRef.current[momentId] = true;
+          likeMutation.mutate(momentId, {
+            onSettled: () => {
+              delete likeInflightRef.current[momentId];
+            },
+          });
+        },
       });
     },
     onSuccess: (_data, _momentId, context) => {

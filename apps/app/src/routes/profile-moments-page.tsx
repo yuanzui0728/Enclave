@@ -257,7 +257,18 @@ export function ProfileMomentsPage() {
         tone: "danger",
         message: localized,
         actionLabel: t(msg`重试点赞`),
-        action: () => likeMutation.mutate(momentId),
+        // 走查电脑端朋友圈 R5：跟 moments-page / friend-moments-page R5 同款 ——
+        // retry action 之前裸 mutate，双击「重试点赞」会发 2 个 POST /like
+        // → toggle 翻回原状（用户以为"再试一次"反倒撤销了刚成功的状态）。
+        action: () => {
+          if (likeInflightRef.current[momentId]) return;
+          likeInflightRef.current[momentId] = true;
+          likeMutation.mutate(momentId, {
+            onSettled: () => {
+              delete likeInflightRef.current[momentId];
+            },
+          });
+        },
       });
     },
     onSuccess: (_data, _momentId, context) => {
@@ -698,7 +709,18 @@ export function ProfileMomentsPage() {
         tone: "danger",
         message: localized,
         actionLabel: t(msg`重试删除`),
-        action: () => deleteMutation.mutate(momentId),
+        // 走查电脑端朋友圈 R5：跟 moments-page R5 同款 ——
+        // retry action 之前裸 mutate，双击「重试删除」会发 2 个 DELETE
+        // （第二次会被 server 404 但仍付 RTT + 覆盖红条，体感"再发一条错误"）。
+        action: () => {
+          if (deleteInflightRef.current[momentId]) return;
+          deleteInflightRef.current[momentId] = true;
+          deleteMutation.mutate(momentId, {
+            onSettled: () => {
+              delete deleteInflightRef.current[momentId];
+            },
+          });
+        },
       });
     },
     onSuccess: (_data, _momentId, context) => {

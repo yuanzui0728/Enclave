@@ -410,6 +410,12 @@ export function MomentsPage() {
   // 单帧锁按 momentId 维度分别记账——不同帖子的同帧 click 互不影响。
   const commentInflightRef = useRef<Record<string, boolean>>({});
   const likeInflightRef = useRef<Record<string, boolean>>({});
+  // 走查电脑端朋友圈 R5：桌面删除有 `if (deleteMutation.isPending) return;`
+  // 但 isPending 是 useState 上一次 render 的值——同帧双击 / retry 双击都看
+  // false → 2 次 mutate；mobileDeleteInflightRef 是给 mobile confirm 阻塞期
+  // 队列的 boolean 锁，不按 momentId 分维度。本轮把 desktop delete + retry 走
+  // momentId 维度的 ref 锁，跟 like/comment 同模式。
+  const deleteInflightRef = useRef<Record<string, boolean>>({});
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onMutate: (momentId: string) => {
@@ -436,7 +442,19 @@ export function MomentsPage() {
       // 成功 toast 太接近，用户根本看不出是失败，跟 chat Round 6 同类 bug。
       setNoticeTone("danger");
       setNoticeActionLabel(t(msg`重试点赞`));
-      setNoticeAction(() => () => likeMutation.mutate(momentId));
+      // 走查电脑端朋友圈 R5：之前 retry action 是裸 `() => likeMutation.mutate(momentId)`，
+      // 用户双击「重试点赞」会同帧 2 次 mutate → 2 个 POST /like → toggle 多翻
+      // 一轮（点赞失败语义被"重试两次"翻成"再次取消"）；和上方 onLike inflight
+      // ref 守卫不一致。用同一把 likeInflightRef 兜住，retry 也走 onSettled 释放。
+      setNoticeAction(() => () => {
+        if (likeInflightRef.current[momentId]) return;
+        likeInflightRef.current[momentId] = true;
+        likeMutation.mutate(momentId, {
+          onSettled: () => {
+            delete likeInflightRef.current[momentId];
+          },
+        });
+      });
       setNotice(
         // 走查 R2：之前直拼 error.message 等于把 server 的 legacyMessage（始终
         // 中文）原样塞给非 zh-CN locale 用户。AppError 已经带 errorCode，先走
@@ -847,7 +865,18 @@ export function MomentsPage() {
       // 用户只看到帖子又出现了，根本搞不清是不是删除生效。
       setNoticeTone("danger");
       setNoticeActionLabel(t(msg`重试删除`));
-      setNoticeAction(() => () => deleteMutation.mutate(momentId));
+      // 同 like retry 走 deleteInflightRef 兜双击，否则双击「重试删除」会
+      // 触发 2 个 DELETE /api/moments/{id}（第二次会被 server 404 但仍付 RTT
+      // + 弹一条新红条覆盖原 retry 结果，体感"刚点了一下又冒出另一个错误"）。
+      setNoticeAction(() => () => {
+        if (deleteInflightRef.current[momentId]) return;
+        deleteInflightRef.current[momentId] = true;
+        deleteMutation.mutate(momentId, {
+          onSettled: () => {
+            delete deleteInflightRef.current[momentId];
+          },
+        });
+      });
       setNotice(
         // 走查 R2 同 like/comment：err 是 AppError 时优先走 translateAppErrorCode
         // 拿当前 locale 文案，miss 才回退 raw err.message。
@@ -1545,8 +1574,18 @@ export function MomentsPage() {
           }
           onDeleteMoment={(momentId) => {
             // 行内 DesktopMomentRow 已经有 window.confirm；这里直接走 mutation。
-            if (deleteMutation.isPending) return;
-            deleteMutation.mutate(momentId);
+            // 走查电脑端朋友圈 R5：deleteMutation.isPending 是 useState 上一次 render
+            // 的值，同帧双击两次 onDelete 都看 false → 2 个 DELETE。confirm 是 native
+            // dialog 同步阻塞期间 React 不 commit，第二次 confirm OK 时 isPending 仍
+            // 是 false。改 momentId 维度的 ref 同步锁，跟 like/comment 同模式 +
+            // retry 路径共用同一把锁避免一击落两次 mutation。
+            if (deleteInflightRef.current[momentId]) return;
+            deleteInflightRef.current[momentId] = true;
+            deleteMutation.mutate(momentId, {
+              onSettled: () => {
+                delete deleteInflightRef.current[momentId];
+              },
+            });
           }}
           onImageFilesSelected={(files) => {
             void handleImageFilesSelected(files);
