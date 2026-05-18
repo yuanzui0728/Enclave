@@ -651,7 +651,12 @@ export function DesktopChatFilesPage() {
               ) : null}
               {conversationsQuery.isError &&
               conversationsQuery.error instanceof Error ? (
-                <ErrorBlock message={conversationsQuery.error.message} />
+                // 走查电脑端群聊 R83：和姊妹 group-chat-thread-panel R53/R67 /
+                // GroupChatDetailsPanel R45 一批 ErrorBlock 同款 a11y 修法——
+                // 「聊天文件」页（群聊「聊天信息」→「聊天文件」入口）左列
+                // conversationsQuery 失败时盲人 SR 完全静默，只看到「正在读取
+                // 会话」消失却不知道为什么列表是空的。挂 role="alert"。
+                <ErrorBlock role="alert" message={conversationsQuery.error.message} />
               ) : null}
 
               <div className="space-y-1">
@@ -766,7 +771,11 @@ export function DesktopChatFilesPage() {
           ) : null}
           {allAttachmentsQuery.isError &&
           allAttachmentsQuery.error instanceof Error ? (
-            <ErrorBlock message={allAttachmentsQuery.error.message} />
+            // 走查电脑端群聊 R83 续：主区附件列表加载失败时盲人 SR 静默——
+            // 「聊天文件」是群聊主要附件入口，allAttachmentsQuery 跨 N 个 group +
+            // direct 拉消息 Promise.all 任一失败就整段 throw，盲人用户看不到
+            // 文件列表也听不到错误提示。挂 role="alert" 让 SR 立刻播报。
+            <ErrorBlock role="alert" message={allAttachmentsQuery.error.message} />
           ) : null}
 
           {conversations.length
