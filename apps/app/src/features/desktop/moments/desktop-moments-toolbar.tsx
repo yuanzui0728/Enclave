@@ -82,22 +82,30 @@ export function DesktopMomentsToolbar({
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-end">
-          {/* 之前一律 "当前共 X 条动态"，但 auto-prefetch 中途 X 还在涨，
-              用户读着以为 X 就是总数 ——「我才 100 条朋友圈？」其实有 240。
-              未跑完时拿服务端 total 当上限显示「已加载 100 / 共 240」；跑完后
-              回到客户端 visible count（loadedCount）—— 服务端 total 没扣黑名单
-              过滤的角色 moments，跑完显示 240 但客户端只能看 235 会反过来误导。
-              首页响应还没拿到时（totalCount=null && loadedCount=0），feed 正在
-              转 LoadingBlock，count 区藏起来避免「共 0 条」与 loading spinner 撞车。 */}
-          {totalCount === null && loadedCount === 0 ? null : (
+        {/* 之前一律 "当前共 X 条动态"，但 auto-prefetch 中途 X 还在涨，
+            用户读着以为 X 就是总数 ——「我才 100 条朋友圈？」其实有 240。
+            未跑完时拿服务端 total 当上限显示「已加载 100 / 共 240」；跑完后
+            回到客户端 visible count（loadedCount）—— 服务端 total 没扣黑名单
+            过滤的角色 moments，跑完显示 240 但客户端只能看 235 会反过来误导。
+            首页响应还没拿到时（totalCount=null && loadedCount=0），feed 正在
+            转 LoadingBlock，count 区藏起来避免「共 0 条」与 loading spinner 撞车。
+
+            走查 R1（本轮）：之前外层 `<div className="mt-4 flex items-center justify-end">`
+            始终渲染，内层 count 文案被 totalCount==null && loadedCount==0 gate 藏起来时
+            外层壳还在 — flex 容器无内容塌成 0 高，但 mt-4 仍贡献 16px margin。后果：
+            首屏 momentsQuery 没回前（~600ms 公网 RTT）+ mutation 错误打开 notice 前
+            的常见态下，标题行和 notice/ErrorBlock 之间硬塞一道空隙；count 出现后
+            空隙又消失，体感"toolbar 高度抖一下"。把 mt-4 容器一并 gate 掉，文案
+            没渲染时不留 margin。 */}
+        {totalCount === null && loadedCount === 0 ? null : (
+          <div className="mt-4 flex items-center justify-end">
             <div className="text-[12px] text-[color:var(--text-muted)]">
               {!isFullyLoaded && totalCount !== null && totalCount > loadedCount
                 ? t(msg`已加载 ${loadedCount} / 共 ${totalCount} 条动态`)
                 : t(msg`共 ${loadedCount} 条动态`)}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {notice ? (
           <div className="mt-4">
