@@ -150,6 +150,11 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   // auto-fire effect (line ~365) 也调 syncCurrentStatus，但走 panelOpenedReportedRef
   // / hasSyncedStatus 自己的 dedup，不会跟这个 ref 冲突。
   const syncStatusBusyRef = useRef(false);
+  // 走查 R4：handleEndCall 想要在结束之前等当前 in-flight 的 sync 落地（避免两条
+  // sendGroupMessage 同时投到群里出现"已结束 + 画面进行中"顺序乱），但 mutateAsync
+  // 不暴露 in-flight 的 promise；这里把每次 syncCurrentStatus 的 mutateAsync 句柄
+  // 留下，end 之前 await 它（不在乎结果，吞 reject 防 unhandledrejection）。
+  const inFlightSyncPromiseRef = useRef<Promise<unknown> | null>(null);
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, resolvedGroupId],
@@ -418,10 +423,12 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     }
     syncStatusBusyRef.current = true;
     try {
-      await syncStatusMutation.mutateAsync({
+      const pendingSync = syncStatusMutation.mutateAsync({
         activeCount,
         totalCount,
       });
+      inFlightSyncPromiseRef.current = pendingSync.catch(() => undefined);
+      await pendingSync;
     } catch {
       // 走查 R2：syncCurrentStatus 在 panel-opened effect / 1200ms deferred
       // effect / "重试同步状态" / "同步最新状态" 按钮四条路径上都被 `void
@@ -432,6 +439,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       // group-chat-thread-panel.tsx submitOutgoingGroupMessage Round 4 同款修法。
     } finally {
       syncStatusBusyRef.current = false;
+      inFlightSyncPromiseRef.current = null;
     }
   }, [
     activeCount,
@@ -558,6 +566,20 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const handleEndCall = async () => {
     if (leavingScreenRef.current || leavingScreen) {
       return;
+    }
+    // 走查 R4：syncCurrentStatus 在 line ~413 入口检查 leavingScreenRef，但 sync
+    // 的 mutateAsync 已经 in-flight 时 setLeavingScreen(true) 阻止不了它——sync
+    // 已经把 "ongoing" payload 排队飞出去。同帧用户先点「同步最新状态」紧接着
+    // 点「结束通话」（公网隧道 ~600ms RTT 下窗口很大），两条 sendGroupMessage
+    // 同时投到群里，群成员看到 "已结束" 后面紧跟一条 stray "画面进行中"，
+    // 与 R2 修过的 init-effect-reseed 是同一类问题。end 之前等当前 in-flight
+    // 的 sync promise 落地，让两条系统消息顺序确定（先 ongoing 再 ended）；
+    // 直接复用同一个 mutateAsync 句柄，不再额外起一份 sendGroupMessage。
+    // 下方 end 按钮 disabled 同步把 syncStatusMutation.isPending 串进去给
+    // 用户视觉反馈。
+    const pendingSync = inFlightSyncPromiseRef.current;
+    if (pendingSync) {
+      await pendingSync;
     }
 
     leavingScreenRef.current = true;
@@ -1222,13 +1244,22 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             onClick={() => {
               void handleEndCall();
             }}
-            disabled={endStatusMutation.isPending || leavingScreen}
+            // 走查 R4：sync 进行中先视觉 disable end 按钮，避免 sync 的 ~600ms
+            // RTT 窗口内用户连点 end → 两条 sendGroupMessage 抢路。handleEndCall
+            // 入口仍会 await 已在 in-flight 的 sync promise，双重保险。
+            disabled={
+              endStatusMutation.isPending ||
+              syncStatusMutation.isPending ||
+              leavingScreen
+            }
             className="h-12 w-full min-w-0"
           >
             <PhoneOff size={16} />
             {leavingScreen || endStatusMutation.isPending
               ? t(msg`结束中...`)
-              : t(msg`结束通话`)}
+              : syncStatusMutation.isPending
+                ? t(msg`等待同步...`)
+                : t(msg`结束通话`)}
           </MobileCallActionButton>
         </div>
       </div>
