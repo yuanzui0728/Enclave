@@ -264,9 +264,11 @@ export function WorldsPage() {
     const copied = await copyTextToClipboard(absolutePermalink);
 
     showNotice(
-      copied
-        ? "Worlds permalink copied."
-        : "Clipboard copy failed in this environment.",
+      t(
+        copied
+          ? "Worlds permalink copied."
+          : "Clipboard copy failed in this environment.",
+      ),
       copied ? "success" : "danger",
     );
   }
@@ -561,7 +563,9 @@ export function WorldsPage() {
         const retry = window.open(url, "_blank", "noopener,noreferrer");
         if (!retry) {
           showNotice(
-            "Browser blocked the popup. Allow popups for this site and retry.",
+            t(
+              "Browser blocked the popup. Allow popups for this site and retry.",
+            ),
             "danger",
           );
         }

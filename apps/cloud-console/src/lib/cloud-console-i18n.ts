@@ -114,6 +114,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
       "当前环境无法复制到剪贴板。",
     "Waiting sync task action failed.": "等待同步任务操作失败。",
     "Admin sessions permalink copied.": "管理会话固定链接已复制。",
+    "Worlds permalink copied.": "世界列表固定链接已复制。",
     "Enter admin": "进入后台",
     "Opening admin…": "正在打开后台…",
     "World is sleeping. Wake it up before entering admin.":
@@ -866,6 +867,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
       "待機同期タスク操作に失敗しました。",
     "Admin sessions permalink copied.":
       "管理セッションの固定リンクをコピーしました。",
+    "Worlds permalink copied.": "ワールド一覧の固定リンクをコピーしました。",
     sourceKey: "ソースキー",
     riskLevel: "リスクレベル",
     riskSignals: "リスクシグナル",
@@ -1523,6 +1525,7 @@ const cloudConsoleRuntimeText: CloudConsoleRuntimeDictionary = {
       "대기 동기화 작업 동작에 실패했습니다.",
     "Admin sessions permalink copied.":
       "관리자 세션 고정 링크를 복사했습니다.",
+    "Worlds permalink copied.": "월드 목록 고정 링크를 복사했습니다.",
     sourceKey: "소스 키",
     riskLevel: "위험 수준",
     riskSignals: "위험 신호",
