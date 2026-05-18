@@ -4857,6 +4857,18 @@ function filterStableMessageList(
 }
 
 function parseSharedHistorySummaryMessage(t: Translator, text: string) {
+  // 走查电脑端群聊 R7：和姊妹 parseDirectCallInviteMessage / parseGroupCallInviteMessage
+  // / parseGroupRelaySummaryMessage 同款早退优化。ChatMessageList 渲染每条消息时这
+  // 4 个 parser 都会被试着跑一遍，长群聊 200+ 历史 × 4 parser × 每次 typing tick /
+  // socket echo / mutation 翻 isPending 触发的 re-render 是 hot path。其它 3 个 parser
+  // 都用 startsWith 把不命中消息（普通文本/图片/语音/system 等绝大多数）挡掉，
+  // 唯独本 parser 不论什么消息都先 trim() + 跑 regex.match (含 `(.+?)` 回溯 +
+  // `\d+`)，对长汉字消息更费 CPU。protocol-data 固定为中文 `已分享你和...的...条聊天记录`
+  // （buildSharedHistoryNotice 写死），用 prefix 早退 99% 不命中的情况，剩下少数命中
+  // path 仍走原 regex 严格校验。
+  if (!text.includes("已分享你和")) {
+    return null;
+  }
   const normalized = text.trim();
   const match = normalized.match(/^已分享你和(.+?)的(\d+)条聊天记录$/); // i18n-ignore-line: protocol data regex
   if (!match) {
