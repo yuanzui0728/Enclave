@@ -141,6 +141,14 @@ export function DesktopConversationContextMenu({
         type="button"
         onClick={onClose}
         aria-label={t(msg`关闭会话菜单`)}
+        // 走查电脑端单聊 R113：和姊妹 R107-R112 dialog backdrop 同款 ——
+        // context menu 的 backdrop <button> (absolute inset-0) 视觉不可见、
+        // 纯 mouse"点击外部关闭"affordance，但 DOM 顺序排在 menu 子树第一位。
+        // 用户右键会话弹出 menu 后想 Tab 进 menu 项操作，焦点先落到这张不可
+        // 见 backdrop → 看不到 focus ring → 再按 Enter menu 秒关。Esc keydown
+        // 已挂 (line 111-122)，键盘用户走 Esc 关 menu；正常情况下 menu 项也
+        // 可以通过 ArrowDown/Tab 跳到第一项后继续 Tab。挂 tabIndex={-1}。
+        tabIndex={-1}
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
