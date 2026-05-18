@@ -416,10 +416,15 @@ function FilePreviewCard({
   const relationship = typeof p.relationship === "string" ? p.relationship : "";
   const relationshipType =
     typeof p.relationshipType === "string" ? p.relationshipType : "friend";
+  // 走查 R2：后端 assertPrivateCharacterFieldLimits / characters.service patch
+  // 路径已经会 trim 每个元素 + 丢空白条目，预览这里也跟上 — 否则用户在 wiki
+  // 端误填了空白 chip（"  " / ""），preview 渲染出"看不见的小药丸"占位，导入
+  // 后却没有，体验和数据对不上。trim 后再过滤空串。
   const expertDomains = Array.isArray(p.expertDomains)
-    ? (p.expertDomains as unknown[]).filter(
-        (x): x is string => typeof x === "string",
-      )
+    ? (p.expertDomains as unknown[])
+        .filter((x): x is string => typeof x === "string")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
     : [];
   const schema = typeof p.$schema === "string" ? p.$schema : null;
   const hasExpectedSchema = schema === "yinjie-private-character/v1";
