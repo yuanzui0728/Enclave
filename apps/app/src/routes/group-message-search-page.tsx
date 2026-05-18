@@ -54,14 +54,20 @@ function MobileGroupMessageSearchPage({ groupId }: { groupId: string }) {
       returnHash: safeReturnHash,
     }) || undefined;
 
+  // 走查 R2：两条 query 都没 staleTime（默认 0），用户在 details → search
+  // → details → search 反复切换时每次都冷启动 refetch /api/groups/$id +
+  // /messages（活跃群消息表 100+ 条）；公网隧道 RTT ~600ms × 多次浪费明显。
+  // socket onChatMessage 已显式 invalidate app-group-messages 所以 stale 不会脏。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
 
   const messagesQuery = useQuery({
     queryKey: ["app-group-messages", baseUrl, groupId],
     queryFn: () => getGroupMessages(groupId, baseUrl),
+    staleTime: 15_000,
   });
 
   useEffect(() => {

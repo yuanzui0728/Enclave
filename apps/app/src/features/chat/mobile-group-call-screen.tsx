@@ -223,6 +223,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     return count;
   }, [joinedMemberIds, members]);
   const visibleMembers = useMemo(() => members.slice(0, 10), [members]);
+  // 走查 R1：成员席位列表 render 里每个 button 用 joinedMemberIds.includes()
+  // 做 O(N) 查找。visibleMembers 上限 10 所以 worst-case O(N·10) 不痛，
+  // 但 joinedMemberIds 变化（每点一次切换席位都会）会触发整段重新跑一次
+  // includes，提前 Set 化更便宜，也跟上面 activeMembers 的 joinedSet 优化对齐。
+  const joinedMemberIdSet = useMemo(
+    () => new Set(joinedMemberIds),
+    [joinedMemberIds],
+  );
   // 走查 新 R1：原版直接在 JSX 里 `members.map(m=>m.memberId)` 喂 GroupAvatarChip，
   // 每次 render（成员加入/离开、syncCurrentStatus 1200ms timer 触发、activeCount
   // 变化等）都 new 一个 array → GroupAvatarChip 拿到新 prop 引用、重新算 hashSeed
@@ -1176,7 +1184,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
           <div className="mt-3.5 grid gap-2.5">
             {visibleMembers.map((member) => {
-              const joined = joinedMemberIds.includes(member.memberId);
+              const joined = joinedMemberIdSet.has(member.memberId);
               const roleLabel =
                 member.role === "owner"
                   ? t(msg`群主`)

@@ -190,6 +190,12 @@ export function GroupChatBackgroundPage() {
     uploadMutationResetRef.current();
   }, [baseUrl, groupId]);
 
+  // 走查 R3：四个 mutation 的 onSuccess 原本都 await invalidateQueries 才
+  // resolve；runningMutationRef 共用锁在 onSettled 才释放（line 295），等于
+  // 用户点完"保存"按钮要等 invalidate 全部返回才能再次操作（公网隧道 RTT
+  // 600ms × N 条），busy 状态多撑 1-2s。setNotice 已经在 await 前发了，剩下
+  // invalidate 是给其它页面拉刷用的，fire-and-forget 即可。和 R1 announcement/
+  // edit/create 三个页面同口径修法。
   const saveDefaultMutation = useMutation({
     mutationFn: async () => {
       if (!defaultDraft) {
@@ -198,29 +204,25 @@ export function GroupChatBackgroundPage() {
 
       return setWorldOwnerChatBackground({ background: defaultDraft }, baseUrl);
     },
-    onSuccess: async (owner) => {
+    onSuccess: (owner) => {
       setDefaultDraft(owner.defaultChatBackground ?? null);
       setNotice(t(msg`默认背景图已保存。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-background", baseUrl, groupId],
-        }),
-      ]);
+      void queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-background", baseUrl, groupId],
+      });
     },
   });
 
   const clearDefaultMutation = useMutation({
     mutationFn: () => clearWorldOwnerChatBackground(baseUrl),
-    onSuccess: async () => {
+    onSuccess: () => {
       setDefaultDraft(null);
       setNotice(t(msg`默认背景图已恢复系统背景。`));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-background", baseUrl, groupId],
-        }),
-      ]);
+      void queryClient.invalidateQueries({ queryKey: ["world-owner", baseUrl] });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-background", baseUrl, groupId],
+      });
     },
   });
 
@@ -244,7 +246,7 @@ export function GroupChatBackgroundPage() {
         baseUrl,
       );
     },
-    onSuccess: async (settings) => {
+    onSuccess: (settings) => {
       setGroupMode(settings.mode);
       setGroupDraft(settings.conversationBackground ?? null);
       setNotice(
@@ -252,7 +254,7 @@ export function GroupChatBackgroundPage() {
           ? t(msg`当前群聊背景已保存。`)
           : t(msg`当前群聊已恢复跟随默认背景。`),
       );
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["app-group-background", baseUrl, groupId],
       });
     },
@@ -260,11 +262,11 @@ export function GroupChatBackgroundPage() {
 
   const clearGroupMutation = useMutation({
     mutationFn: () => clearGroupBackground(groupId, baseUrl),
-    onSuccess: async () => {
+    onSuccess: () => {
       setGroupMode("inherit");
       setGroupDraft(null);
       setNotice(t(msg`当前群聊已恢复跟随默认背景。`));
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["app-group-background", baseUrl, groupId],
       });
     },

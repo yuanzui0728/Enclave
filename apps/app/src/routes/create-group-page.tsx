@@ -134,15 +134,18 @@ export function CreateGroupPage() {
         },
         baseUrl,
       ),
-    onSuccess: async (group) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: (group) => {
+      // 走查 R1：原本 await Promise.all(invalidateQueries) 才 navigate 进新群，
+      // 公网隧道 RTT ~600ms × 2 条 invalidate 阻塞导航，用户点完"确定建群"
+      // 看着 spinner 多转 ~1s 才进入群聊。invalidate 是给通讯录/会话列表拉刷
+      // 用的（目标页面 react-query 监听同 key 自动重拉），fire-and-forget
+      // 让导航立刻发生即可。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       const returnPath =
         safeReturnPath ??
         (routeState.source === "chat-details" && routeState.conversationId

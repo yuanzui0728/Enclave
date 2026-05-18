@@ -174,18 +174,21 @@ function MobileGroupChatEditPage({
 
   const saveGroupNameMutation = useMutation({
     mutationFn: (name: string) => updateGroup(groupId, { name }, baseUrl),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      // 走查 R1：原本 await Promise.all(invalidateQueries) 才 navigate，
+      // 公网隧道 RTT ~600ms × 3 条 invalidate 排队等响应，用户点完保存
+      // 看着 spinner 多转 1-2s 才跳回详情页。invalidate 是给其它页面拉刷
+      // 用的（详情页也是 react-query 监听同 key 会自动重拉），fire-and-forget
+      // 让导航立刻发生即可。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },
@@ -198,15 +201,14 @@ function MobileGroupChatEditPage({
   const saveNicknameMutation = useMutation({
     mutationFn: (nickname: string) =>
       updateGroupOwnerProfile(groupId, { nickname }, baseUrl),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-members", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+    onSuccess: () => {
+      // 同上：fire-and-forget 不卡 navigate。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-members", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },

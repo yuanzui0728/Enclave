@@ -175,17 +175,29 @@ export function GroupQrPage() {
     [groupId],
   );
 
+  // 走查 R2：三条 query 都没 staleTime（默认 0），每次进群二维码页都会
+  // 重新 GET /groups/$id + /members + /conversations。其中 conversations
+  // 影响最大——投递列表挂在它上面，用户每次回这页都触发整张会话列表 refetch
+  // （活跃用户 50+ 会话），公网隧道 RTT 600ms+ 看到列表闪烁。group-contacts-page
+  // 同 key 已用 staleTime: 15_000 + refetchOnWindowFocus: true，这里对齐：
+  // 1) 群/成员 query 加 15s staleTime 防止短时回访重拉；
+  // 2) conversations 加 staleTime + refetchOnWindowFocus 让从后台切前台时
+  //    能看到新加的会话出现在投递列表里。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   });
   const defaultGroupName = t(msg`隐界群聊`);
   const defaultGroupInviteLabel = t(msg`群聊邀请`);

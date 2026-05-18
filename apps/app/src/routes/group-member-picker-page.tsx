@@ -135,18 +135,27 @@ function MobileGroupMemberPickerPage({
     [routeState.highlightedMessageId, safeReturnHash, safeReturnPath],
   );
 
+  // 走查 R1：三个 query 都没 staleTime（默认 0），用户在 /group/A/members/add
+  // → /chat-list → 再 /group/A/members/add 这种秒级回访会重新 GET 三次
+  // /api/groups/$id + /members + /friends，公网隧道 RTT ~600ms × 3 浪费明显。
+  // create-group-page friendsQuery 已用 staleTime: 15_000 与其它兄弟页对齐；
+  // 这里同样统一，contacts/add-friend mutation 也已经在显式 invalidate 这些 key
+  // 所以 stale 不会脏。
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
     queryFn: () => getGroup(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: Boolean(groupId),
+    staleTime: 15_000,
   });
 
   // 走查 R1：tanstack-router 在 /group/A/members/add → /group/B/members/add 这种
@@ -394,17 +403,18 @@ function MobileGroupMemberPickerPage({
           setSelectedIds((current) =>
             current.filter((id) => !fulfilledIds.includes(id)),
           );
-          await Promise.all([
-            queryClient.invalidateQueries({
-              queryKey: ["app-group", baseUrl, groupId],
-            }),
-            queryClient.invalidateQueries({
-              queryKey: ["app-group-members", baseUrl, groupId],
-            }),
-            queryClient.invalidateQueries({
-              queryKey: ["app-conversations", baseUrl],
-            }),
-          ]);
+          // 走查 R4：部分成功路径下 await Promise.all 3 条 invalidate 后才
+          // throw error → 用户看到失败提示前要多等 ~1.8s 公网隧道 RTT。
+          // 立即 throw 让 toast 立刻弹出，invalidate 后台同步即可。
+          void queryClient.invalidateQueries({
+            queryKey: ["app-group", baseUrl, groupId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["app-group-members", baseUrl, groupId],
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["app-conversations", baseUrl],
+          });
         }
         const firstMessage = errors[0]?.message?.trim();
         throw new Error(
@@ -415,27 +425,28 @@ function MobileGroupMemberPickerPage({
         );
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setRemoveConfirmOpen(false);
       // 走查 R3：和姊妹页 pin/preferences/leave 同口径——本页 add/remove 成员
       // 都会改变 listGroups 返回的 memberCount，contacts-page / group-contacts-page
       // 的 ["app-contact-groups"] cache（30s staleTime）不会自动跟上，用户从本
       // 页 navigate 回 details → 退到 /contacts/groups 时人数仍是旧值。把这条
       // 也 invalidate，确保所有 cohort 看到最新成员数。
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-members", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      // 走查 R4：原本 await Promise.all 4 条 invalidate 才 navigate，公网隧道
+      // ~600ms × 4 ≈ 2.4s 用户看着 spinner 才跳回详情页。fire-and-forget 让
+      // 导航立刻发生，目标页 react-query 监听同 key 会自动重拉。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-members", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
       void navigate({
         to: "/group/$groupId/details",
         params: { groupId },

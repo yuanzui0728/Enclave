@@ -237,19 +237,21 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
   const pinMutation = useMutation({
     mutationFn: (pinned: boolean) =>
       setGroupPinned(groupId, { pinned }, baseUrl),
-    onSuccess: async (_, pinned) => {
+    onSuccess: (_, pinned) => {
+      // 走查 R4：原本 await Promise.all 3 条 invalidate 才 resolve；
+      // pinSubmittingRef 依赖 pinMutation.isPending 翻 false 才解锁（line 665-667），
+      // await 链下 isPending 一直拉着，公网隧道 RTT ~600ms × 3 ≈ 1.8s 内用户都
+      // 没法再点 toggle。fire-and-forget：notice 已经发了，cache 让目标页自己拉。
       showNotice(pinned ? t(msg`群聊已置顶。`) : t(msg`群聊已取消置顶。`));
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
     },
     // 失败时 toggle 不会被 invalidate 拉回 → UI 看着没动，没提示。和单聊
     // chat-details-page 同步加 onError。
@@ -295,18 +297,19 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                       : t(msg`关闭了群公告通知。`)
                     : t(msg`群聊设置已更新。`);
 
+      // 走查 R4：同 pinMutation 改法。preferencesMutation.isPending 控制 6 个
+      // 偏好 toggle 的 sync ref（line 670-678），await 链下解锁延迟用户连续切
+      // 偏好的间隔被强制拉长 ~1.8s。fire-and-forget。
       showNotice(nextNotice);
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-contact-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-contact-groups", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
     },
     onError: (error) => {
       showNotice(
@@ -319,19 +322,21 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
 
   const clearMutation = useMutation({
     mutationFn: () => clearGroupMessages(groupId, baseUrl),
-    onSuccess: async () => {
+    onSuccess: () => {
+      // 走查 R4：同 pin/preferences 改法。clearMutation.isPending 进入 busy 求和
+      // （line 644），await 链下整个详情页所有按钮都被 disable，公网隧道 ~1.8s
+      // 体感卡顿。fire-and-forget 让 UI 立刻响应；活跃群聊页面的 messages cache
+      // 由当前清群操作的服务端 emit 路径自动同步。
       showNotice(t(msg`群聊记录已清空。`));
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-messages", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group-messages", baseUrl, groupId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
     },
     onError: (error) => {
       showNotice(
