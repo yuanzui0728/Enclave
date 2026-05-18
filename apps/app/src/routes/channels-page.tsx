@@ -3829,12 +3829,32 @@ function MobileChannelsViewport({
   // 一变就立刻 POST /feed/:id/view，背后会做 owner-interaction findOneBy + 落库
   // + （首次）viewCount/watchCount 自增，rapid swipe 时实测一秒能打掉 6-8 次没人
   // 真在看的"观看"。加 600ms 防抖：用户在某条上停留够久才算 view，扫过的卡不发。
+  //
+  // 走查 2026-05-18 新会话 R2：再加一层 viewport 生命周期内的「已上报集合」
+  // 去重 —— 用户切 tab (推荐 ↔ 朋友) N 次时每次 setActiveSection 都让
+  // activePostId 经 null → 新 section 的 posts[0]，触发新 600ms timer；如果
+  // 该 postId 在两个 section 都排第一（比如 "我自己" 角色发的 post 在
+  // recommended 和 friends 两个 tab 都置顶），4 次切换 = 4 次 view POST 同一
+  // post，server 端 viewOwnerPost 走 update existing interaction (re-save +
+  // updatedAt 翻新) → lastViewedAt 被误触发 + 浪费 2-3 DB query/次 × 4 + 4 个
+  // 公网 RTT。viewCount 因 server 端 `if (!existing)` 守卫不会重复涨，但
+  // updatedAt drift 会让"最近观看"列表把同一帖反复置顶。
+  // viewport mount 期内同一 postId 只 view 一次；onVisiblePost 引用变（baseUrl
+  // 切换 → handleMobileViewPost 的 useCallback 重建）时清空，新账户重新计数。
+  const viewedPostIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    viewedPostIdsRef.current = new Set();
+  }, [onVisiblePost]);
   useEffect(() => {
     if (!activePostId) {
       return;
     }
     const postId = activePostId;
+    if (viewedPostIdsRef.current.has(postId)) {
+      return;
+    }
     const timer = window.setTimeout(() => {
+      viewedPostIdsRef.current.add(postId);
       onVisiblePost(postId);
     }, 600);
     return () => window.clearTimeout(timer);
