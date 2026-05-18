@@ -2653,7 +2653,14 @@ export function StickerPanel({
             </div>
           ) : null}
           {showCustomSortBar ? (
+            // 走查电脑端群聊 R16：自定义表情包的「最近使用 / 最近添加」排序切换
+            // 是 mutually exclusive 选择（同时只能一种排序），原版只用棕色底色 +
+            // 棕色文字做 active 视觉区分。盲人 SR 走过去只听到两个裸 label，
+            // 听不出当前用的是哪种排序。和姊妹 R15 sticker tab tablist /
+            // R26~R29 一系列 radiogroup 修法同口径。
             <div
+              role="radiogroup"
+              aria-label={t(msg`自定义表情排序`)}
               className={
                 isMobile
                   ? "mb-2 flex items-center gap-1.5"
@@ -2671,6 +2678,8 @@ export function StickerPanel({
                   <button
                     key={mode}
                     type="button"
+                    role="radio"
+                    aria-checked={active}
                     onClick={() => setCustomSortMode(mode)}
                     title={
                       mode === "recent"
