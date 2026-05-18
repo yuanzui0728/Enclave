@@ -2462,6 +2462,22 @@ function DesktopChannelCommentsPanel({
     });
     return map;
   }, [comments]);
+  // 走查 2026-05-19 第七轮 R1：onLikeComment / onReplyToComment 从 channels-page
+  // 一路是内联箭头透下来——父组件每次 re-render（commentDrafts setState 等）
+  // 都换 identity。配合下方 DesktopThreadCommentCard / DesktopCommentThreadReplies
+  // 的 memo（同 R1 一起加）才能真正断流：稳定 identity 让 memo shallow-compare
+  // 命中，pure typing 不会再 cascade 142 张卡 reconciliation。latest-ref 模式
+  // 同 workspace 顶部 handlerRefs / onSelectedPostChangeRef / onCloseAuthorRef。
+  const onLikeCommentRef = useRef(onLikeComment);
+  onLikeCommentRef.current = onLikeComment;
+  const stableOnLikeComment = useCallback((comment: FeedComment) => {
+    onLikeCommentRef.current(comment);
+  }, []);
+  const onReplyToCommentRef = useRef(onReplyToComment);
+  onReplyToCommentRef.current = onReplyToComment;
+  const stableOnReplyToComment = useCallback((comment: FeedComment) => {
+    onReplyToCommentRef.current(comment);
+  }, []);
   // 走查 2026-05-18 R3（本轮）：移动端 R5（channels-page L4287-4305）早就
   // 加了"空文本评论过滤"——feed_comments 库里偶尔混入纯 AI thinking-prose
   // 评论（实测 yuanzui0728 库 eb9c88ce 帖等就有 1019 字 CoT 漏出），
@@ -2525,35 +2541,52 @@ function DesktopChannelCommentsPanel({
     );
   }, [collapsedThreadsByPostId, selectedPostId, threadIdsWithReplies]);
 
-  function updateCollapsedThreadIds(
-    updater: string[] | ((current: string[]) => string[]),
-  ) {
-    if (!selectedPostId) {
-      return;
-    }
-
-    setCollapsedThreadsByPostId((current) => {
-      const currentIds = normalizeCollapsedThreadIds(
-        current[selectedPostId] ?? [],
-        threadIdsWithReplies,
-      );
-      const nextIdsRaw =
-        typeof updater === "function" ? updater(currentIds) : updater;
-      const nextIds = normalizeCollapsedThreadIds(
-        nextIdsRaw,
-        threadIdsWithReplies,
-      );
-
-      if (areThreadIdsEqual(currentIds, nextIds)) {
-        return current;
+  // R1 续：updateCollapsedThreadIds 原来是裸 function 声明，每次 panel
+  // re-render 都换 identity——下面用它构造 DesktopCommentThreadReplies 的
+  // onToggleCollapsed 内联箭头同样跟着每帧换，破 memo。useCallback 锁到
+  // [selectedPostId, threadIdsWithReplies]（这俩在 typing 期间 stable）。
+  const updateCollapsedThreadIds = useCallback(
+    (updater: string[] | ((current: string[]) => string[])) => {
+      if (!selectedPostId) {
+        return;
       }
 
-      return {
-        ...current,
-        [selectedPostId]: nextIds,
-      };
-    });
-  }
+      setCollapsedThreadsByPostId((current) => {
+        const currentIds = normalizeCollapsedThreadIds(
+          current[selectedPostId] ?? [],
+          threadIdsWithReplies,
+        );
+        const nextIdsRaw =
+          typeof updater === "function" ? updater(currentIds) : updater;
+        const nextIds = normalizeCollapsedThreadIds(
+          nextIdsRaw,
+          threadIdsWithReplies,
+        );
+
+        if (areThreadIdsEqual(currentIds, nextIds)) {
+          return current;
+        }
+
+        return {
+          ...current,
+          [selectedPostId]: nextIds,
+        };
+      });
+    },
+    [selectedPostId, threadIdsWithReplies],
+  );
+  // R1 续：把 thread-collapse toggle 拍成稳定回调（接 rootCommentId 当参数）
+  // 避免每条 thread 渲一个 fresh 箭头给 DesktopCommentThreadReplies。
+  const onToggleCollapsedById = useCallback(
+    (rootCommentId: string) => {
+      updateCollapsedThreadIds((current) =>
+        current.includes(rootCommentId)
+          ? current.filter((threadId) => threadId !== rootCommentId)
+          : [...current, rootCommentId],
+      );
+    },
+    [updateCollapsedThreadIds],
+  );
 
   useEffect(() => {
     if (!selectedPostId) {
@@ -2754,8 +2787,8 @@ function DesktopChannelCommentsPanel({
                 commentAuthorNameMap={commentAuthorNameMap}
                 compact={false}
                 likePendingCommentId={likePendingCommentId}
-                onLikeComment={onLikeComment}
-                onReplyToComment={onReplyToComment}
+                onLikeComment={stableOnLikeComment}
+                onReplyToComment={stableOnReplyToComment}
               />
               {replies.length ? (
                 <DesktopCommentThreadReplies
@@ -2763,17 +2796,12 @@ function DesktopChannelCommentsPanel({
                   collapsed={collapsedThreadIds.includes(rootComment.id)}
                   replies={replies}
                   replyTarget={replyTarget}
+                  rootCommentId={rootComment.id}
                   commentAuthorNameMap={commentAuthorNameMap}
                   likePendingCommentId={likePendingCommentId}
-                  onLikeComment={onLikeComment}
-                  onReplyToComment={onReplyToComment}
-                  onToggleCollapsed={() =>
-                    updateCollapsedThreadIds((current) =>
-                      current.includes(rootComment.id)
-                        ? current.filter((threadId) => threadId !== rootComment.id)
-                        : [...current, rootComment.id],
-                    )
-                  }
+                  onLikeComment={stableOnLikeComment}
+                  onReplyToComment={stableOnReplyToComment}
+                  onToggleCollapsedById={onToggleCollapsedById}
                 />
               ) : null}
             </div>
@@ -2859,16 +2887,22 @@ function DesktopChannelCommentsPanel({
   );
 }
 
-function DesktopCommentThreadReplies({
+// 走查 2026-05-19 第七轮 R1：memo 包住，配合 DesktopChannelCommentsPanel 内的
+// stableOnLikeComment / stableOnReplyToComment / onToggleCollapsedById 全套稳
+// 定 identity——typing 期间 commentDrafts setState 不再 cascade 142 张 thread
+// 包装层的 reconciliation。collapsed / replyTarget 等真正变化的 prop 仍会让
+// memo 失效让该重渲的 thread 重渲。
+const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
   cannotInteract,
   collapsed,
   commentAuthorNameMap,
   likePendingCommentId,
   onLikeComment,
   onReplyToComment,
-  onToggleCollapsed,
+  onToggleCollapsedById,
   replies,
   replyTarget,
+  rootCommentId,
 }: {
   cannotInteract: boolean;
   collapsed: boolean;
@@ -2876,7 +2910,9 @@ function DesktopCommentThreadReplies({
   likePendingCommentId: string | null;
   onLikeComment: (comment: FeedComment) => void;
   onReplyToComment: (comment: FeedComment) => void;
-  onToggleCollapsed: () => void;
+  // R1：从父级接 stable 回调 + 自己的 rootCommentId，避免每渲一帧给本组件 fresh
+  // 内联 onToggleCollapsed 箭头破 memo。
+  onToggleCollapsedById: (rootCommentId: string) => void;
   replies: FeedComment[];
   replyTarget: {
     authorId: string;
@@ -2884,6 +2920,7 @@ function DesktopCommentThreadReplies({
     commentId: string;
     postId: string;
   } | null;
+  rootCommentId: string;
 }) {
   const t = useRuntimeTranslator();
   const latestReply = replies[replies.length - 1] ?? null;
@@ -2924,7 +2961,7 @@ function DesktopCommentThreadReplies({
         // SR 念出 "楼中楼 button collapsed" / "楼中楼 button expanded"，状态语
         // 义清晰；visible 文字保持"展开/收起 N 条跟帖"的动作引导不动。
         aria-expanded={!collapsed}
-        onClick={onToggleCollapsed}
+        onClick={() => onToggleCollapsedById(rootCommentId)}
         className="flex w-full items-center justify-between text-left"
       >
         <div className="flex items-center gap-2 text-[10px] font-medium text-[color:var(--text-muted)]">
@@ -2969,9 +3006,13 @@ function DesktopCommentThreadReplies({
       )}
     </div>
   );
-}
+});
 
-function DesktopThreadCommentCard({
+// 走查 2026-05-19 第七轮 R1：memo 包住单卡 —— 是 typing 期间的真热点（panel
+// 内 142 张卡全 cascade）。配合 panel 内的 stableOnLikeComment /
+// stableOnReplyToComment / 上面 R1 给 commentAuthorNameMap 的 useMemo 一起，
+// pure typing 直接 shallow-compare 命中跳过整张卡 reconciliation。
+const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
   active,
   cannotInteract,
   comment,
@@ -3118,7 +3159,7 @@ function DesktopThreadCommentCard({
       </div>
     </div>
   );
-}
+});
 
 function readStoredCollapsedChannelCommentThreads() {
   if (typeof window === "undefined") {
