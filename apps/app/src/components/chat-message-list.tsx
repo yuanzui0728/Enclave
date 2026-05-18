@@ -6896,6 +6896,29 @@ function ImageViewerOverlay({
     return unregister;
   }, [isDesktop, onClose]);
 
+  // 第三轮 R1：mobile variant ESC 漏挂。父组件 chat-message-list 在 line 1920
+  // 那条 ESC + ←/→ 键盘 nav effect 加了 `if (!isDesktop) return`——desktop 才
+  // 接监听；mobile 这边只挂了 Android Back，外接键盘 / iPad Magic Keyboard /
+  // 模拟器 / 桌面 web 移动模拟（chrome devtools "mobile responsive"）按 ESC
+  // 关不掉图片查看器，只能点 backdrop。和姊妹 LocationViewerOverlay
+  // （本文件下方）/ 单聊里其他 sheet 都已经统一兜过 ESC，这里补齐。
+  // isDesktop 时让位给父组件那条带 ←/→ 翻图的 handler，避免双重监听。
+  // defaultPrevented 时让位：嵌套子模态（理论上没有，但保留语义）。
+  useEffect(() => {
+    if (isDesktop) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDesktop, onClose]);
+
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
     if (!touch) {
