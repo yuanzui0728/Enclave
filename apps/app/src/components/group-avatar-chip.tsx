@@ -1,4 +1,6 @@
 import { memo } from "react";
+import { msg } from "@lingui/macro";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import defaultAvatarDusk from "../assets/default-avatar-dusk.svg";
 import defaultAvatarEmber from "../assets/default-avatar-ember.svg";
 import defaultAvatarMint from "../assets/default-avatar-mint.svg";
@@ -46,7 +48,16 @@ export const GroupAvatarChip = memo(function GroupAvatarChip({
   return (
     <div
       className={`${frameClassName} yj-no-callout grid grid-cols-2 gap-[2px] overflow-hidden border border-white/80 bg-[#ececec] shadow-[var(--shadow-soft)]`}
-      aria-label={name ?? "group avatar"}
+      // 走查电脑端群聊 R11：原版 `name ?? "group avatar"` 有 2 个问题：
+      // 1) ?? 漏防空串 — name === "" 时 aria-label="" 屏幕阅读器跳过整张
+      //    group avatar 图，盲人在群聊列表 / 群通话面板 / 消息气泡里听不到群
+      //    标识。group_members.memberName / groups.name 都允许 trim 成空（旧
+      //    数据 + 老 conversation schema normalize 前过渡）。和姊妹 R10 移动端
+      //    sticker label || displayText (commit 0b4539945) 同款 ?? → || 清扫。
+      // 2) "group avatar" 写死英文，zh-CN / ja-JP / ko-KR 用户 SR 听到英文
+      //    fallback。和 GroupChatThreadPanel header / 详情页 title 一致兜底
+      //    "群聊" / "Group chat"。
+      aria-label={name?.trim() || translateRuntimeMessage(msg`群聊`)}
     >
       {sources.map((source, index) => (
         <img

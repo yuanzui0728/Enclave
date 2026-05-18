@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { msg } from "@lingui/macro";
+import { translateRuntimeMessage } from "@yinjie/i18n";
 import defaultAvatarDusk from "../assets/default-avatar-dusk.svg";
 import defaultAvatarEmber from "../assets/default-avatar-ember.svg";
 import defaultAvatarMint from "../assets/default-avatar-mint.svg";
@@ -82,7 +84,12 @@ export function AvatarChip({
               : "text-[22px]";
     return (
       <span
-        aria-label={name ?? "avatar"}
+        // 走查电脑端群聊 R11：和姊妹 GroupAvatarChip R11 同款 ?? vs || 漏防 +
+        // hardcoded English fallback。群聊场景下 group_members.memberName / 角色
+        // character.name 都允许 trim 成空（旧数据 + 老 conversation schema
+        // normalize 前过渡），?? 让 aria-label="" → SR 跳过整张 emoji 头像；
+        // "avatar" 写死英文 zh-CN/ja-JP/ko-KR 用户听到英文 fallback。
+        aria-label={name?.trim() || translateRuntimeMessage(msg`头像`)}
         className={`${classes} ${emojiTextSize} yj-no-callout flex items-center justify-center border border-white/80 bg-[color:var(--surface-console,#f5f5f5)] leading-none shadow-[var(--shadow-soft)]`}
       >
         <span aria-hidden="true">{trimmedSrc}</span>
@@ -97,7 +104,9 @@ export function AvatarChip({
   return (
     <img
       src={resolvedSrc}
-      alt={name ?? "avatar"}
+      // 走查电脑端群聊 R11：同上 ?? → || + 翻译。img alt="" 屏幕阅读器把头像
+      // 当 decorative image 整张跳过；hardcoded English 同款问题。
+      alt={name?.trim() || translateRuntimeMessage(msg`头像`)}
       loading="lazy"
       decoding="async"
       onError={() => {
