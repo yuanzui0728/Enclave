@@ -6585,14 +6585,29 @@ function GroupRelaySummaryMessage({
   // history 项，用户从迷你程序退回群聊要按 2 次返回。
   //
   // 每张卡独立 guard：用户点 A 卡再点 B 卡（不同 relay summary）不互相影响，
-  // 只挡同一张卡的 same-frame double tap。第一次成功后页面 unmount re-mount
-  // 时 ref 自动复位。
+  // 只挡同一张卡的 same-frame double tap。
+  //
+  // 走查电脑端群聊 R8：和姊妹 GroupCallInviteMessage 走查 R8（commit 4dbed057d）
+  // 同款隐患——原版 openFiredRef 一旦翻 true 就永不复位，只赌"navigate 必然
+  // 把当前页 unmount → 下次重新 mount ref 自动 fresh"。多数情况下确实如此
+  // （/discover/mini-programs 是新路由，groupChat thread panel 会 unmount），
+  // 但同帧双击触发 navigate 失败 / disabled / hash 相同被 router replace 成
+  // no-op 时，本组件还挂着、ref=true、整张卡再点不响应，必须刷新页面才能再
+  // 打开。raf 释放兜底"第一次成功后下一帧解锁"——既挡住 same-frame double
+  // tap（成功路径下 unmount 之前已经被锁住），又对失败 / no-op 边界自愈。
   const openFiredRef = useRef(false);
   const handleOpen = onOpen
     ? () => {
         if (openFiredRef.current) return;
         openFiredRef.current = true;
         onOpen();
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            openFiredRef.current = false;
+          });
+        } else {
+          openFiredRef.current = false;
+        }
       }
     : undefined;
 
