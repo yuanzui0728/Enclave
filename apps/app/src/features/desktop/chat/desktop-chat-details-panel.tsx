@@ -999,6 +999,18 @@ function DirectChatDetailsPanel({
           placeholder={currentEditDialog.placeholder}
           initialValue={currentEditDialog.initialValue}
           pending={updateProfileMutation.isPending}
+          // 走查新一轮 R26：updateProfileMutation 错误反馈在面板顶部那张
+          // ErrorBlock 渲染，但 dialog 打开时 backdrop 把面板整片遮住，错误
+          // 信息看不到。用户改备注 / 标签失败时只看到 dialog 没关、按钮回到
+          // 「保存」状态，分不清是"刚才保存了一下没反应"还是"还没保存"。
+          // DesktopContactTextEditDialog 内置 error 槽，把 mutation.error
+          // 透传过去渲染在保存按钮上方。
+          error={
+            updateProfileMutation.isError &&
+            updateProfileMutation.error instanceof Error
+              ? updateProfileMutation.error.message
+              : null
+          }
           onClose={() => setEditingField(null)}
           onConfirm={(value: string) => {
             void currentEditDialog.onConfirm(value);

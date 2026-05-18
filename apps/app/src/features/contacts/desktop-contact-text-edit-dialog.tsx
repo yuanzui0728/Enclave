@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
 import { Button, ErrorBlock, TextField } from "@yinjie/ui";
@@ -36,6 +36,23 @@ export function DesktopContactTextEditDialog({
 }: DesktopContactTextEditDialogProps) {
   const t = translateRuntimeMessage;
   const [draft, setDraft] = useState(initialValue);
+  const titleId = useId();
+  const descId = useId();
+  // 走查新一轮 R26：和姊妹 desktop-chat-text-edit-dialog R2 / confirm-dialog
+  // R4 同款问题——「保存」按钮 / form submit 都只靠 `disabled={confirmDisabled}`
+  // 兜双触发，confirmDisabled = pending || draft 未变；pending 是 parent
+  // updateProfileMutation.isPending 经 React commit 才进 DOM。用户开着「聊天
+  // 信息」侧栏改备注 / 标签时同帧双 Enter / 双击「保存」会同时通过 disabled
+  // = false → parent updateProfileMutation.mutateAsync 飞 2 次，公网隧道
+  // RTT 600ms × 2 浪费一次 PATCH /friends/{id}/profile + 两次 invalidate
+  // app-friends 串行打断。加 sync ref 锁同帧；pending 翻 false（success /
+  // error）后 useEffect 复位。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      submittingRef.current = false;
+    }
+  }, [pending]);
 
   useEffect(() => {
     if (!open) {
@@ -97,24 +114,40 @@ export function DesktopContactTextEditDialog({
         className="absolute inset-0"
       />
 
+      {/* 走查新一轮 R26：和姊妹 desktop-chat-text-edit-dialog / confirm-dialog
+          R2 同款 a11y 缺漏——modal 但既没挂 role="dialog" + aria-modal，也没挂
+          aria-labelledby / aria-describedby。单聊「聊天信息」改备注/标签 + 联系人
+          详情改备注 都会弹这个 dialog；盲人用户屏幕阅读器只听到「关闭弹层 按钮」
+          + 输入框，听不到 title「设置备注」/ description「备注名会优先显示...」。
+          title/description 通过 useId 挂稳定 id，打开瞬间 SR 把两段都念出来。 */}
       <form
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descId : undefined}
         className="relative w-full max-w-[520px] overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
-          if (confirmDisabled) {
+          if (confirmDisabled || submittingRef.current) {
             return;
           }
-
+          submittingRef.current = true;
           onConfirm(normalizedDraft);
         }}
       >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] px-5 py-4">
           <div className="min-w-0">
-            <div className="text-[17px] font-medium text-[color:var(--text-primary)]">
+            <div
+              id={titleId}
+              className="text-[17px] font-medium text-[color:var(--text-primary)]"
+            >
               {title}
             </div>
             {description ? (
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              <div
+                id={descId}
+                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+              >
                 {description}
               </div>
             ) : null}
