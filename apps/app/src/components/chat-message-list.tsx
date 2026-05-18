@@ -942,6 +942,17 @@ export function ChatMessageList({
     syncFavoriteSourceIds(favoritesQuery.data ?? []);
   }, [favoritesQuery.data, syncFavoriteSourceIds]);
 
+  // 走查 R69：原版 favoritesQuery.data 进 deps 导致每次 favorites refetch
+  // （focus / 30s stale 后访问 / setQueriesData 任一）整个 effect 拆装 ——
+  // 3 个 window/document listener （focus / visibility / storage）都
+  // removeEventListener + addEventListener 一遍。chat-message-list 在
+  // 所有单聊 / 群聊页都挂着，一次进会话页 + 1 次 focus + 1 次 invalidate
+  // 就是 3-6 次拆装。
+  // handlers 真正需要的是「事件触发时拿到 latest favoritesQuery.data」，
+  // 不是「data 变化时重新挂 listener」（重新挂等价于 noop）。ref 镜像
+  // latest 引用，deps 收紧到 [isDesktop, nativeDesktopFavorites]。
+  const favoritesDataRef = useRef(favoritesQuery.data);
+  favoritesDataRef.current = favoritesQuery.data;
   useEffect(() => {
     if (!isDesktop) {
       return;
@@ -958,7 +969,7 @@ export function ChatMessageList({
         return;
       }
 
-      syncFavoriteSourceIds(favoritesQuery.data ?? []);
+      syncFavoriteSourceIds(favoritesDataRef.current ?? []);
     };
 
     const handleFocus = () => {
@@ -994,12 +1005,7 @@ export function ChatMessageList({
       window.removeEventListener("storage", handleStorageSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [
-    favoritesQuery.data,
-    isDesktop,
-    nativeDesktopFavorites,
-    syncFavoriteSourceIds,
-  ]);
+  }, [isDesktop, nativeDesktopFavorites, syncFavoriteSourceIds]);
 
   const forwardMutation = useMutation({
     mutationFn: async (input: {
