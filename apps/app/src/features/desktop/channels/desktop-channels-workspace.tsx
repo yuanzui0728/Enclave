@@ -97,7 +97,10 @@ type DesktopChannelsWorkspaceProps = {
   // 跟 InlineNotice 视觉变体 + role=alert 对齐（详见 channels-page.tsx L153
   // 同款 R6 注释）。
   successNoticeTone?: "success" | "info" | "danger" | "warning";
-  isPostFavorite: (postId: string) => boolean;
+  // 走查 2026-05-18 第二轮 R1：isPostFavorite 已废 — 直读 post.ownerState
+  // .hasFavorited 替代。保留可选签名做向后兼容，但本组件不再调用。下一轮可以
+  // 完全删；channels-page L2423 的传入端已经可以去掉。
+  isPostFavorite?: (postId: string) => boolean;
   onCloseAuthor: () => void;
   onCancelCommentReply: () => void;
   onCommentChange: (postId: string, value: string) => void;
@@ -788,7 +791,20 @@ export function DesktopChannelsWorkspace({
                   isActive={post.id === selectedPost?.id}
                   sectionBadge={sectionBadge}
                   registerSlide={registerSlide}
-                  isFavorite={isPostFavorite(post.id)}
+                  // 走查 2026-05-18 第二轮（本会话）R1：原写法 isFavorite={
+                  // isPostFavorite(post.id)} —— channels-page L2423 把
+                  // isPostFavorite 定义成内联箭头 `(postId) => desktopWorkspace
+                  // Posts.find(p => p.id===postId)?.ownerState?.hasFavorited ?? false`，
+                  // 每次 channels-page render 都换 identity，每条 slide 调一次
+                  // 等于 20 张 slide × 一次 .find 线性扫 20 条 = 400 次 O(1)
+                  // 但 closure + 函数调用本身 + react-page 每帧都跑。
+                  // 真相是：传进来的 post 本身就是 desktopWorkspacePosts 数组里
+                  // 那个元素（posts.map((post)=>...)），post.ownerState.hasFavorited
+                  // 已经就在手里。等价改成属性直读，省掉 400 次扫 + 函数 prop
+                  // 也可以彻底拿掉（保留 isPostFavorite 是历史误指——mobile
+                  // L4179 早就 `favorite={Boolean(post.ownerState?.hasFavorited)}`
+                  // 直读了）。
+                  isFavorite={Boolean(post.ownerState?.hasFavorited)}
                   likePending={likePendingPostId === post.id}
                   favoritePending={favoritePendingPostId === post.id}
                   followPending={followPendingAuthorId === post.authorId}
