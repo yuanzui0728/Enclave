@@ -877,6 +877,23 @@ export function GroupChatThreadPanel({
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   const announcement = groupQuery.data?.announcement?.trim() ?? "";
+  // 走查新一轮 R2：和姊妹单聊路径 conversation-thread-panel.tsx「走查新一轮 R1」
+  // 同款修法——原版直接在 JSX 里 `threadContext={{ id, type, title }}` 每 render
+  // new 一个对象，ChatMessageList 内 imageMessages useMemo（line 1768）把
+  // threadContext 整对象作 dep，每个父帧失效 → 每帧 filter(visibleMessages)
+  // 找出所有图片消息再 map 一遍。长群聊滚到 100+ 条历史里有 30 张图时这层
+  // O(n) 每个 typing tick / socket echo / 任何 state mutation 都白跑一次，
+  // standaloneViewerItems / favorite buildContext 等 6 处下游 useMemo 跟着重算。
+  // 把 group/title 引用稳定下来，跟单聊口径对齐。
+  const groupTitle = groupQuery.data?.name ?? t(msg`群聊`);
+  const messageListThreadContext = useMemo(
+    () => ({
+      id: groupId,
+      type: "group" as const,
+      title: groupTitle,
+    }),
+    [groupId, groupTitle],
+  );
   const mobileSubtitle = membersQuery.data
     ? typingSummary
       ? typingSummary
@@ -1765,11 +1782,7 @@ export function GroupChatThreadPanel({
 
             <ChatMessageList
               messages={renderableMessages}
-              threadContext={{
-                id: groupId,
-                type: "group",
-                title: groupQuery.data?.name ?? t(msg`群聊`),
-              }}
+              threadContext={messageListThreadContext}
               buildMessageReturnTo={buildMessageReturnTo}
               groupMode
               showGroupMemberNicknames={
