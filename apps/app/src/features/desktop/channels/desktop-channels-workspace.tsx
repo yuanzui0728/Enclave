@@ -472,7 +472,7 @@ export function DesktopChannelsWorkspace({
   }, [scrollToOffset]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
+    <div className="relative flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
       <div className="border-b border-[color:var(--border-faint)] bg-white/92 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between gap-4 px-6">
           <div className="flex h-full items-stretch gap-7">
@@ -526,20 +526,37 @@ export function DesktopChannelsWorkspace({
           </div>
         </div>
 
-        {successNotice || errorMessage ? (
-          <div className="space-y-2 border-t border-[color:var(--border-faint)] bg-white/76 px-6 py-2">
-            {successNotice ? (
+      </div>
+
+      {/*
+        走查 2026-05-18 新会话 R2：notice / errorMessage 原来作为 header 的
+        flex 子节点，每次 like / favorite / follow / comment / share 触发的
+        2.4s notice 都把 header 高度从 56px 撑到 ~100px、content flex-1 同时
+        缩水 → snap-y 容器整体下移 → 当前 slide 顶 / 底被裁切，下条 slide 也
+        相应跳一下。视频号 home 每分钟正常会有 5-10 次 notice，等于每分钟看
+        见 5-10 次「页面突然抖一下」。改用 absolute 浮在 header 下面、覆在
+        content 顶部 —— header 永远 h-14 固定不动，snap 容器也不再重排；视
+        觉上 notice 还是从 header 边缘冒出，对齐 backdrop-blur 没掉。
+      */}
+      {successNotice || errorMessage ? (
+        <div className="pointer-events-none absolute left-0 right-0 top-14 z-20 space-y-2 border-b border-[color:var(--border-faint)] bg-white/92 px-6 py-2 backdrop-blur-xl">
+          {successNotice ? (
+            <div className="pointer-events-auto">
               <InlineNotice
                 tone="success"
                 className="border-[color:var(--border-faint)] bg-white"
               >
                 {successNotice}
               </InlineNotice>
-            ) : null}
-            {errorMessage ? <ErrorBlock message={errorMessage} /> : null}
-          </div>
-        ) : null}
-      </div>
+            </div>
+          ) : null}
+          {errorMessage ? (
+            <div className="pointer-events-auto">
+              <ErrorBlock message={errorMessage} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="relative min-h-0 flex-1 overflow-hidden bg-[#101013]">
         {isLoading ? (
@@ -2028,6 +2045,68 @@ function DesktopChannelCommentsPanel({
     });
   }, [commentThreads, replyTarget, selectedPostId, threadIdsWithReplies]);
 
+  // 走查 2026-05-18 新会话 R2：视频号评论 server 端按 createdAt ASC 返
+  // （最老在最上），桌面 drawer panel max-h-[420px] overflow-auto 一直
+  // 没自动滚 —— yuanzui0728 这条 post 已经积了 142 条评论：用户点 chat
+  // 图标打开 drawer 第一眼看到的是 5 天前最早的根评论，要手动滚到底才看到
+  // 最新对话；自己刚发的评论也是 append 到列表末尾，count +1 但视口里看
+  // 不到，体感「按了发送，到底成没成？」。Mobile 那边早就（commentDr -
+  // R1/R4）按 first-open + growth-if-near-bottom 兜了，desktop drawer 一直
+  // 漏。补一份精简版：首次拿到 comments 落底，后续 growth 时若用户仍贴底
+  // 才跟随；用户主动上滑读老评论时尊重位置（AI 1-5min 后自动回复落地
+  // 不该把他甩到底）。
+  const threadsScrollRef = useRef<HTMLDivElement | null>(null);
+  const previousCommentCountRef = useRef(0);
+  const hasAutoScrolledOnOpenRef = useRef(false);
+  const userNearBottomRef = useRef(true);
+  // post 切换（drawer 关再开 / 切换到另一条 post 的 drawer）时重置 first-
+  // scroll 标志，让新 post 也享受落底默认。
+  useEffect(() => {
+    hasAutoScrolledOnOpenRef.current = false;
+    previousCommentCountRef.current = 0;
+    userNearBottomRef.current = true;
+  }, [selectedPostId]);
+  useEffect(() => {
+    const node = threadsScrollRef.current;
+    if (!node) return;
+    const update = () => {
+      userNearBottomRef.current =
+        node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+    };
+    update();
+    node.addEventListener("scroll", update, { passive: true });
+    return () => node.removeEventListener("scroll", update);
+  }, [selectedPostId]);
+  useEffect(() => {
+    if (!selectedPostId) return;
+    if (commentsLoading && !comments.length) return;
+    if (!comments.length) {
+      previousCommentCountRef.current = 0;
+      return;
+    }
+    const node = threadsScrollRef.current;
+    if (!node) return;
+    const previousCount = previousCommentCountRef.current;
+    const growth = comments.length > previousCount;
+    const isNearBottom = userNearBottomRef.current;
+    const shouldScroll =
+      !hasAutoScrolledOnOpenRef.current || (growth && isNearBottom);
+    if (shouldScroll) {
+      hasAutoScrolledOnOpenRef.current = true;
+      previousCommentCountRef.current = comments.length;
+      window.requestAnimationFrame(() => {
+        const target = threadsScrollRef.current;
+        if (!target) return;
+        target.scrollTop = target.scrollHeight;
+        // 程序滚到底后显式同步 ref —— 短滚动 / 浏览器节流时 scroll 事件
+        // 不一定 fire，下一次 effect 又会拿 stale false。
+        userNearBottomRef.current = true;
+      });
+    } else if (comments.length !== previousCount) {
+      previousCommentCountRef.current = comments.length;
+    }
+  }, [comments.length, commentsLoading, selectedPostId]);
+
   return (
     <div className="mt-3 space-y-3">
       {commentsLoading && !comments.length ? (
@@ -2070,7 +2149,10 @@ function DesktopChannelCommentsPanel({
         </div>
       ) : null}
       {commentThreads.length ? (
-        <div className="max-h-[420px] space-y-3 overflow-auto pr-1">
+        <div
+          ref={threadsScrollRef}
+          className="max-h-[420px] space-y-3 overflow-auto pr-1"
+        >
           {commentThreads.map(({ replies, rootComment }) => (
             <div
               key={rootComment.id}

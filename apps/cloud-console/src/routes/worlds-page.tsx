@@ -440,16 +440,22 @@ export function WorldsPage() {
   }, [page, safePage]);
 
   // permalink 可能带过时的 provider key（provider 被改名/删除，或用户手写错
-  // URL），下游 filter 直接相等比较会静默把全列表过滤为空。等 providerOptions
-  // 加载完后若发现当前选中的 key 不在可选项里，悄悄回落到 "all"，URL 同步改写。
+  // URL），下游 filter 直接相等比较会静默把全列表过滤为空。这里跟「全部 provider
+  // 注册表」(providersQuery) 对比，而不是和当前可见 instance 派生出的
+  // providerOptions 对比 —— 后者只反映「当前 statusFilter 下还有实例的 provider」，
+  // 当用户开着 status=creating + provider=local-process 但当下没有 creating 实例时，
+  // providerOptions 是空集，会把合法的 provider 选择当作脏数据一并清掉。
   useEffect(() => {
     if (providerFilter === "all") return;
-    if (!instanceFleetQuery.data) return;
-    const knownKeys = new Set(providerOptions.map((option) => option.key));
+    if (!providersQuery.data) return;
+    const knownKeys = new Set<string>([
+      UNASSIGNED_PROVIDER_FILTER,
+      ...providersQuery.data.map((provider) => provider.key),
+    ]);
     if (!knownKeys.has(providerFilter)) {
       updateFilters({ provider: "all" });
     }
-  }, [providerFilter, providerOptions, instanceFleetQuery.data]);
+  }, [providerFilter, providersQuery.data]);
 
   const quickActionMutation = useMutation({
     mutationFn: (input: { worldId: string; action: WorldLifecycleAction }) =>
