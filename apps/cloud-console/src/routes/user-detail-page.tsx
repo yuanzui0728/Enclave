@@ -76,6 +76,10 @@ export function UserDetailPage() {
   }
 
   const user = userQuery.data;
+  // Google / email-only 注册的账号 phone 字段为空字符串，直接 {user.phone} 渲染
+  // 出空标题。按 phone → email → displayName 优先级兜底，永远展示一个可读身份。
+  const headingIdentity =
+    user.phone || user.email || user.displayName || t("(no identity)");
 
   return (
     <div className="space-y-4">
@@ -86,7 +90,7 @@ export function UserDetailPage() {
               {t("SaaS user")}
             </div>
             <h2 className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-              {user.phone}
+              {headingIdentity}
             </h2>
             <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
               {t("Account:")} {t(user.status)}
@@ -98,6 +102,13 @@ export function UserDetailPage() {
               {t("Expires at:")} {formatTimestamp(user.subscriptionExpiresAt)}
               <br />
               {t("Invite code:")} {user.inviteCode || "-"}
+              <br />
+              {t("Inviter:")}{" "}
+              {user.inviterPhone
+                ? user.redemptionAsInvitee
+                  ? `${user.inviterPhone} (${t(user.redemptionAsInvitee.status)}, ${formatTimestamp(user.redemptionAsInvitee.createdAt)})`
+                  : user.inviterPhone
+                : "-"}
               <br />
               {t("World status:")} {user.worldStatus ? t(user.worldStatus) : "-"}
               <br />
@@ -137,6 +148,9 @@ export function UserDetailPage() {
           </div>
           <div className="mt-3 flex gap-3">
             <input
+              type="number"
+              min={1}
+              step={1}
               value={grantDays}
               onChange={(event) => setGrantDays(event.target.value)}
               className="w-28 rounded-2xl border border-[color:var(--border-subtle)] px-3 py-2 text-sm"
@@ -144,12 +158,30 @@ export function UserDetailPage() {
             <Button
               variant="primary"
               className="rounded-2xl bg-[color:var(--brand-primary)] text-white"
-              disabled={grantMutation.isPending}
+              // 没校验 grantDays 时按下 → NaN/0 透传到后端，命中 BadRequest
+              // "durationDays 必须为正数"。前端先卡掉非正整数，按钮直接不可点。
+              disabled={
+                grantMutation.isPending ||
+                !Number.isInteger(Number(grantDays)) ||
+                Number(grantDays) <= 0
+              }
               onClick={() => grantMutation.mutate()}
             >
               {t("Grant days")}
             </Button>
           </div>
+          {grantMutation.isError ? (
+            <InlineNotice tone="danger" className="mt-3">
+              {grantMutation.error instanceof Error
+                ? grantMutation.error.message
+                : t("Manual grant failed.")}
+            </InlineNotice>
+          ) : null}
+          {grantMutation.isSuccess ? (
+            <InlineNotice tone="muted" className="mt-3">
+              {t("Subscription granted.")}
+            </InlineNotice>
+          ) : null}
         </div>
 
         <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
@@ -172,7 +204,9 @@ export function UserDetailPage() {
               <Button
                 variant="secondary"
                 className="rounded-2xl border-[rgba(220,38,38,0.16)] text-[#b42318]"
-                disabled={banMutation.isPending || user.status === "banned"}
+                // 只允许在 active 上 Ban；archived/banned 都禁用。原来对 archived
+                // 也开放，会让一个"归档"账号被偷偷标成 banned。
+                disabled={banMutation.isPending || user.status !== "active"}
                 onClick={() => banMutation.mutate()}
               >
                 {t("Ban")}
@@ -180,12 +214,28 @@ export function UserDetailPage() {
               <Button
                 variant="secondary"
                 className="rounded-2xl"
-                disabled={unbanMutation.isPending || user.status === "active"}
+                // 只允许在 banned 上 Unban；archived 不能通过这里复活，否则会被
+                // 静默改成 active。
+                disabled={unbanMutation.isPending || user.status !== "banned"}
                 onClick={() => unbanMutation.mutate()}
               >
                 {t("Unban")}
               </Button>
             </div>
+            {banMutation.isError ? (
+              <InlineNotice tone="danger">
+                {banMutation.error instanceof Error
+                  ? banMutation.error.message
+                  : t("Failed to ban user.")}
+              </InlineNotice>
+            ) : null}
+            {unbanMutation.isError ? (
+              <InlineNotice tone="danger">
+                {unbanMutation.error instanceof Error
+                  ? unbanMutation.error.message
+                  : t("Failed to unban user.")}
+              </InlineNotice>
+            ) : null}
           </div>
         </div>
       </section>

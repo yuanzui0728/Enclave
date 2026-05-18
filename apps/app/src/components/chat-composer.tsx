@@ -2445,10 +2445,28 @@ export function ChatComposer({
     };
   };
 
+  // 走查新一轮 R5：截图编辑器 6 个 action（发送/复制/保存 × 原图/裁剪）兜底
+  // 都靠 `attachmentBusy` React state，setAttachmentBusy(true) 要等 commit 才
+  // 进 DOM。同帧 <16ms double-click 任一按钮，或键盘快捷（Enter / Cmd+S / Cmd+C
+  // 等）同帧双触发：
+  // · 发送路径：handleSendAttachment 内部 sendBusyRef 早返第二次，但
+  //   buildDesktopScreenshotResult（canvas 渲染 + Blob 编码，~50ms CPU）已经
+  //   白跑一遍
+  // · 保存路径：saveLocalFile 走 Tauri 弹 2 个保存对话框堆叠（webview 阻塞
+  //   型 dialog 被 spawn 两次）
+  // · 复制路径：navigator.clipboard.write 跑两次，clipboard 内容被同一份图片
+  //   覆盖 2 次，无副作用但浪费 CPU
+  // ref 同步锁挡掉同帧 double-click；6 个 handler 共用同一 ref（同时只能跑
+  // 一个截图 action，符合截图编辑器顺序操作语义）。
+  const screenshotActionBusyRef = useRef(false);
   const handleSendDesktopScreenshot = async (mode: "original" | "cropped") => {
     if (!desktopScreenshotDraft || !onSendAttachment || attachmentBusy) {
       return;
     }
+    if (screenshotActionBusyRef.current) {
+      return;
+    }
+    screenshotActionBusyRef.current = true;
 
     try {
       const imagePayload = await buildDesktopScreenshotResult(mode);
@@ -2473,11 +2491,16 @@ export function ChatComposer({
           ? screenshotError.message
           : t(msg`截图处理失败，请稍后再试。`),
       );
+    } finally {
+      screenshotActionBusyRef.current = false;
     }
   };
 
   const handleCopyDesktopScreenshot = async (mode: "original" | "cropped") => {
     if (!desktopScreenshotDraft || attachmentBusy) {
+      return;
+    }
+    if (screenshotActionBusyRef.current) {
       return;
     }
 
@@ -2490,6 +2513,7 @@ export function ChatComposer({
       return;
     }
 
+    screenshotActionBusyRef.current = true;
     try {
       const imagePayload = await buildDesktopScreenshotResult(mode);
       if (!imagePayload) {
@@ -2515,6 +2539,8 @@ export function ChatComposer({
           ? copyError.message
           : t(msg`复制截图失败，请稍后再试。`),
       );
+    } finally {
+      screenshotActionBusyRef.current = false;
     }
   };
 
@@ -2522,6 +2548,10 @@ export function ChatComposer({
     if (!desktopScreenshotDraft || attachmentBusy) {
       return;
     }
+    if (screenshotActionBusyRef.current) {
+      return;
+    }
+    screenshotActionBusyRef.current = true;
 
     setAttachmentBusy(true);
     setAttachmentError(null);
@@ -2580,6 +2610,7 @@ export function ChatComposer({
       );
     } finally {
       setAttachmentBusy(false);
+      screenshotActionBusyRef.current = false;
     }
   };
 
