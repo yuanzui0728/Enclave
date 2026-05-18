@@ -297,6 +297,7 @@ export function DesktopGroupMemberPicker({
                   displayName !== character.name
                     ? t(msg`昵称：${character.name}`)
                     : character.relationship;
+                const checked = selectedIdSet.has(character.id);
 
                 return (
                   <button
@@ -304,9 +305,18 @@ export function DesktopGroupMemberPicker({
                     type="button"
                     disabled={pending}
                     onClick={() => toggleSelection(character.id)}
+                    // 走查电脑端群聊 R78：和姊妹 desktop-create-group-dialog R3
+                    //（line 700 aria-pressed={checked}）/ desktop-group-call-panel
+                    // R13 同款 a11y 修法——「添加成员」picker 左列每一行是 toggle
+                    // button（点击 select / 点击 deselect），原版只用绿底 +
+                    // SelectionBadge 视觉差表达勾选态。盲人 SR Tab 进来只听到
+                    //「${displayName} 昵称：xxx」+ button label，听不到当前是否
+                    // 已勾选；要在右列「已选成员」栏来回切换才能确认状态。补
+                    // aria-pressed = checked 让 SR 朗读「按下 / 未按下」。
+                    aria-pressed={checked}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
-                      selectedIdSet.has(character.id)
+                      checked
                         ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
                         : "border border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white",
                     )}
@@ -320,9 +330,7 @@ export function DesktopGroupMemberPicker({
                         {subtitle}
                       </div>
                     </div>
-                    <SelectionBadge
-                      checked={selectedIdSet.has(character.id)}
-                    />
+                    <SelectionBadge checked={checked} />
                   </button>
                 );
               })}

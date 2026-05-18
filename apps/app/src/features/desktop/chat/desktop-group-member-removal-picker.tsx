@@ -362,6 +362,12 @@ function CandidateRow({
       type="button"
       disabled={disabled}
       onClick={onClick}
+      // 走查电脑端群聊 R78：和姊妹 desktop-group-member-picker / desktop-create-
+      // group-dialog R3 同款修法。「移除群成员」picker 左列 row 也是 toggle
+      // button（点击 select / 点击 deselect），原版只用绿底 + SelectionBadge
+      // 视觉差表达勾选态。盲人 SR 走过去听到「${name} ${subtitle}」+ button
+      // label 听不到当前选中状态。补 aria-pressed = checked。
+      aria-pressed={checked}
       className={cn(
         "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
         checked
