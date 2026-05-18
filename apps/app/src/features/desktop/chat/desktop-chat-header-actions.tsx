@@ -83,7 +83,17 @@ export function DesktopChatHeaderActions({
         </DesktopChatHeaderButton>
 
         {callMenuOpen ? (
-          <div className="absolute right-0 top-[calc(100%+0.45rem)] z-30 w-40 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 p-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
+          // 走查新一轮 R16：和 R6（会话/消息 context menu）/ R8（官号 context menu
+          // 与「+」快捷菜单）同款 a11y 缺漏——这个「通话」下拉是单聊聊天头部最常
+          // 用的入口（语音 / 视频），但下拉只是个裸 div，盲人屏幕阅读器打开时
+          // 只听到「语音通话 按钮」「视频通话 按钮」两段悬空，没有上下文说明
+          // 它们属于「通话操作菜单」。补 role="menu" + aria-label，和姊妹菜单
+          // 修法一致。
+          <div
+            role="menu"
+            aria-label={t(msg`通话操作菜单`)}
+            className="absolute right-0 top-[calc(100%+0.45rem)] z-30 w-40 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 p-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
+          >
             <CallMenuButton
               label={t(msg`语音通话`)}
               icon={
