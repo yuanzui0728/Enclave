@@ -6009,6 +6009,15 @@ function SelectionToggle({
           : "border-[color:var(--border-subtle)] bg-white/92 text-transparent hover:border-[rgba(7,193,96,0.24)]"
       }`}
       aria-label={checked ? translateRuntimeMessage(msg`取消选择消息`) : translateRuntimeMessage(msg`选择消息`)}
+      // 走查电脑端群聊 R17：和姊妹 R32 时间戳 divider toggle / R13 群通话面板
+      // CallControlButton + 成员席位 tile / R34 composer toolbar toggle 同款修法。
+      // SelectionToggle 是多选模式下挂在每条消息旁的圆形勾选 button，aria-label
+      // 已经按 checked 状态描述"下一步会做的动作"（"选择消息" ↔ "取消选择
+      // 消息"），但 SR 用户没法在不按下的情况下知道当前是不是已选中。aria-pressed
+      // 提供即时的 audible toggle state，和 aria-label 互补。群聊里多选 N 条
+      // 消息批量转发 / 收藏 / 删除 / 撤回是高频操作，SR 用户需要 audible 反馈
+      // 来跟踪已选项。本组件单聊群聊共享，单聊路径同样受益。
+      aria-pressed={checked}
     >
       ✓
     </button>
