@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import {
   BellOff,
@@ -92,6 +92,24 @@ export function DesktopConversationContextMenu({
     Math.max(VIEWPORT_PADDING, y),
     Math.max(VIEWPORT_PADDING, viewportHeight - menuHeight - VIEWPORT_PADDING),
   );
+
+  // 走查 R3：和姊妹 group-message-context-menu R7 (19d5f2dd0) 同款 ESC 兜底。
+  // 桌面端右键会话弹的菜单上拍 ESC 没反应，只能点 backdrop 才能关；外接键盘
+  // 用户体感差异最大。defaultPrevented 时让位；stopPropagation 避免冒泡触发
+  // 外层 workspace dismissSidePanel 把背后的「聊天信息」侧栏一并关掉（菜单
+  // 容器有 portal-shield 但 window keydown 走的是全局监听，不经过子树）。
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   return (
     // 走查新一轮 R10：DesktopChatWorkspace 的 onPointerDownCapture（line 589）
