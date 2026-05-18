@@ -86,6 +86,14 @@ type DesktopChannelsWorkspaceProps = {
   routeSelectedAuthorId?: string | null;
   routeSelectedPostId?: string | null;
   successNotice?: string;
+  // 走查 2026-05-18 R4（本轮）：parent channels-page 的 noticeTone 在 mobile
+  // InlineNotice 上用对了 tone={noticeTone}，但 desktop workspace 上一直硬编
+  // 码 tone="success"——半数以上的 notice 路径 setNoticeTone("info") 是给失败
+  // 兜底的（"点赞失败：xxx" / "需先加为好友才能互动" / "稍等，已经在直播流
+  // 中" 等等，channels-page L310/459/511/570/649/821/922/1072/1112），全部在
+  // desktop 上渲成绿色 success 体感，明显误导。把 tone 透下来按 parent 给的
+  // 渲染。
+  successNoticeTone?: "success" | "info";
   isPostFavorite: (postId: string) => boolean;
   onCloseAuthor: () => void;
   onCancelCommentReply: () => void;
@@ -141,6 +149,7 @@ export function DesktopChannelsWorkspace({
   routeSelectedAuthorId = null,
   routeSelectedPostId = null,
   successNotice,
+  successNoticeTone = "success",
   isPostFavorite,
   onCloseAuthor,
   onCancelCommentReply,
@@ -565,7 +574,7 @@ export function DesktopChannelsWorkspace({
           {successNotice ? (
             <div className="pointer-events-auto">
               <InlineNotice
-                tone="success"
+                tone={successNoticeTone}
                 className="border-[color:var(--border-faint)] bg-white"
               >
                 {successNotice}

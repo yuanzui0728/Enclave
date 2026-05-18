@@ -45,6 +45,7 @@ import {
 import { buildCharacterDetailRouteHash } from "../features/contacts/character-detail-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { buildPublicShareUrl } from "../lib/share-url";
 import { buildYinjieId } from "../lib/yinjie-id";
@@ -189,6 +190,16 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       ) ?? null,
     [conversationId, conversationsQuery.data],
   );
+  // 走查新一轮 R3：服务端 normalizeLegacyConversationEntity 在 title 全部
+  // fallback 失败时持久化字面量 "未知联系人" / "Direct conversation"。chat-list
+  // 行内 / use-conversation-thread / chat-message-search-page 都已经走
+  // getConversationDisplayTitle 翻成当前 locale；本页 4 处（页面 header / 主体
+  // contactDisplayName / contactSummary 系统分享文案 / 管理 sheet 描述）一直直
+  // conversation.title，en/ja/ko locale 用户在角色被删 + 非好友会话里整页都是
+  // 中文 sentinel。统一在源头算一次复用。
+  const displayedConversationTitle = conversation
+    ? getConversationDisplayTitle(conversation.title)
+    : null;
   const backgroundQuery = useConversationBackground(conversationId);
   const targetCharacterId = conversation?.participants[0] ?? "";
   const isReminderConversation = targetCharacterId === REMINDER_CHARACTER_ID;
@@ -355,7 +366,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
   const contactDisplayName =
     friendship?.remarkName?.trim() ||
     targetCharacter?.name ||
-    conversation?.title ||
+    displayedConversationTitle ||
     t(msg`对方`);
   const contactProfileSubtitle = friendship?.remarkName?.trim()
     ? t(msg`昵称：${targetCharacter?.name ?? t(msg`未设置`)}`)
@@ -376,7 +387,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     const contactName =
       friendship?.remarkName?.trim() ||
       targetCharacter?.name ||
-      conversation.title ||
+      displayedConversationTitle ||
       t(msg`联系人`);
     const relationship =
       targetCharacter?.relationship?.trim() ||
@@ -977,7 +988,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
 
   return (
     <ChatDetailsShell
-      title={conversation?.title ?? t(msg`聊天信息`)}
+      title={displayedConversationTitle ?? t(msg`聊天信息`)}
       onBack={() => {
         navigateBackOrFallback(
           () => {
@@ -1411,7 +1422,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             open={managementSheetOpen}
             title={t(msg`聊天管理`)}
             description={t(
-              msg`对 ${targetCharacter?.name ?? conversation.title ?? t(msg`当前聊天`)} 进行隐藏、清空或安全操作。`,
+              msg`对 ${targetCharacter?.name ?? displayedConversationTitle ?? t(msg`当前聊天`)} 进行隐藏、清空或安全操作。`,
             )}
             onClose={() => setManagementSheetOpen(false)}
             actions={[

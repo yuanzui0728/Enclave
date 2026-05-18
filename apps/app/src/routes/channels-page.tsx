@@ -1917,6 +1917,7 @@ export function ChannelsPage() {
           routeSelectedPostId={routeSelectedPostId}
           sections={channelSections}
           successNotice={notice}
+          successNoticeTone={noticeTone}
           isPostFavorite={(postId) =>
             desktopWorkspacePosts.find((post) => post.id === postId)
               ?.ownerState?.hasFavorited ?? false

@@ -39,6 +39,7 @@ import {
 } from "../features/chat/mobile-chat-route-state";
 import { buildDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { getConversationDisplayTitle } from "../lib/conversation-preview";
 import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { pickImageFiles } from "../runtime/native-image-picker";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -106,6 +107,13 @@ export function ChatBackgroundPage() {
       ) ?? null,
     [conversationId, conversationsQuery.data],
   );
+  // 走查新一轮 R3：和 chat-details / chat-message-search / chat-list 等姊妹
+  // 入口对齐 — 服务端 sentinel "未知联系人" / "Direct conversation" 经此 helper
+  // 翻成当前 locale，避免 en/ja/ko 用户看到原始中文。本页 background preview
+  // 两处（mobile / desktop xl 布局）都用同一份。
+  const displayedConversationTitle = conversation
+    ? getConversationDisplayTitle(conversation.title)
+    : "";
   const supportsConversationOverride = conversation?.type !== "group";
 
   useEffect(() => {
@@ -554,7 +562,7 @@ export function ChatBackgroundPage() {
           {!isDesktopLayout ? (
             <ChatBackgroundPreview
               background={effectivePreviewBackground}
-              title={conversation.title}
+              title={displayedConversationTitle}
               subtitle={
                 conversationMode === "custom" && supportsConversationOverride
                   ? t(msg`当前聊天正在预览专属背景`)
@@ -726,7 +734,7 @@ export function ChatBackgroundPage() {
               {conversation ? (
                 <ChatBackgroundPreview
                   background={effectivePreviewBackground}
-                  title={conversation.title}
+                  title={displayedConversationTitle}
                   subtitle={t(msg`桌面端预览会同步展示在聊天工作区`)}
                 />
               ) : null}
