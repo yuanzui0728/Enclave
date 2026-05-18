@@ -442,18 +442,25 @@ function MobileChatListPage() {
             : t(msg`取消置顶失败，请稍后再试。`),
       );
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: (_, variables) => {
       setNoticeInfo(
         variables.pinned ? t(msg`聊天已置顶。`) : t(msg`聊天已取消置顶。`),
       );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, variables.conversationId],
-        }),
-      ]);
+      // 新一轮走查 R2：原版 `await Promise.all([invalidate(app-conversations),
+      // invalidate(app-group)])` 让 pinMutation.isPending 一直撑到这两条 GET
+      // refetch 回来（公网隧道 ~600ms RTT × 2 路并发 ≈ 600ms）。但 line ~1442
+      // 把 pinMutation.isPending && variables.conversationId === conversation.id
+      // 塞进 `pending` prop，pending 真值时这一行 `pointer-events-none opacity-70`
+      // —— 用户刚 pin 完想进群聊看消息，这行有近 1s 没法点击，看着像"卡死"。
+      // optimistic 已经在 onMutate 里走 patchConversationCache(... reorder:true)
+      // 把 cache + 排序就地改了，invalidate 只是兜底服务端 canonical，不必 await。
+      // 同 group-chat-details-page leaveMutation/hideMutation 本会话 R1 / R3 改法。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, variables.conversationId],
+      });
     },
   });
   const muteMutation = useMutation({
@@ -508,20 +515,21 @@ function MobileChatListPage() {
             : t(msg`关闭免打扰失败，请稍后再试。`),
       );
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: (_, variables) => {
       setNoticeInfo(
         variables.muted
           ? t(msg`已开启消息免打扰。`)
           : t(msg`已关闭消息免打扰。`),
       );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, variables.conversationId],
-        }),
-      ]);
+      // 新一轮走查 R2：和 pinMutation 同款——原版 await 让 muteMutation.isPending
+      // 一直撑到 invalidate refetch 完，line ~1445 把它接进 `pending` prop 让
+      // 这一行近 1s 不可点击。optimistic 已在 onMutate 改 cache，fire-and-forget。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, variables.conversationId],
+      });
     },
   });
   const readStateMutation = useMutation({
@@ -591,20 +599,23 @@ function MobileChatListPage() {
             : t(msg`标记未读失败，请稍后再试。`),
       );
     },
-    onSuccess: async (_, variables) => {
+    onSuccess: (_, variables) => {
       setNoticeInfo(
         variables.action === "read"
           ? t(msg`已标记为已读。`)
           : t(msg`已标记为未读。`),
       );
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, variables.conversationId],
-        }),
-      ]);
+      // 新一轮走查 R2：和 pinMutation / muteMutation 同款——原版 await 让
+      // readStateMutation.isPending 一直撑到 invalidate 回来（公网隧道 ~600ms
+      // RTT），line ~1448 把它接进 `pending` prop 让这一行近 1s 不可点击。
+      // optimistic 已经在 onMutate 把 unreadCount/lastReadAt 改了；invalidate
+      // 只是兜底服务端 canonical，fire-and-forget。
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["app-group", baseUrl, variables.conversationId],
+      });
     },
   });
 
