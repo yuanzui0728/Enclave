@@ -673,9 +673,23 @@ export function DesktopChatFilesPage() {
                 <ErrorBlock role="alert" message={conversationsQuery.error.message} />
               ) : null}
 
-              <div className="space-y-1">
+              {/* 走查电脑端群聊 R93：和姊妹 R92 顶部 3 chip / chat-history R27/R28
+                  同款修法——「聊天文件」页左列「全部会话 + N 个会话」是按会话
+                  聚合的 mutually exclusive 筛选选择，原版只用 brand 绿底 +
+                  shadow 视觉差表达 active。盲人 SR 走过去听到 N+1 段裸 button
+                  label「全部会话 / 群A / 单聊B / ...」浮空，听不出当前正在筛
+                  哪个会话；conversations.length 在活跃用户身上能到几十，盲人
+                  从头听到尾不知道焦点位置选中态。radiogroup + radio + aria-
+                  checked 让 SR 朗读"按钮 已选中 / 未选中"并按箭头键导航。 */}
+              <div
+                role="radiogroup"
+                aria-label={t(msg`筛选会话`)}
+                className="space-y-1"
+              >
                 <button
                   type="button"
+                  role="radio"
+                  aria-checked={!selectedConversationId}
                   onClick={() => setSelectedConversationId(null)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
@@ -705,6 +719,8 @@ export function DesktopChatFilesPage() {
                   <button
                     key={conversation.id}
                     type="button"
+                    role="radio"
+                    aria-checked={conversation.id === selectedConversationId}
                     onClick={() => setSelectedConversationId(conversation.id)}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
