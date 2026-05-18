@@ -44,10 +44,31 @@ export function AvatarChip({
     setLoadFailed(false);
   }, [trimmedSrc]);
 
+  // 走查 R1：fallbackSrc useMemo 原来挂在 emoji 早 return 之后，hook 顺序受
+  // isEmojiAvatar(trimmedSrc) 影响——emoji 串只跑 3 个 hook（useState/useMemo/
+  // useEffect），非 emoji 串跑 4 个。同一个 AvatarChip 实例的 src 在 emoji 与
+  // 图片之间切换时（典型：角色资料里 emoji 头像，后端推一次真实 avatar URL；或
+  // 反向：头像清空回退到 emoji），React 会撞到「Rendered fewer hooks than
+  // expected」并被 CatchBoundary 整片接管，移动端单聊 details / 群聊 details /
+  // contact-profile 都会渲染成 "Something went wrong!" 空页面，长按消息时弹出
+  // 的 MessageAvatarPopover 同样砸掉。Rules of Hooks：所有 hook 必须无条件、
+  // 同顺序调用。把 fallbackSrc useMemo 提到任何 conditional return 之前。
   // 角色 / 好友请求里 avatar 经常被存成单 emoji（比如 🌙 / 💬 / ☀️），
   // 之前 isLikelyImageSource 直接 false → 全部回落到默认渐变头像，导致「新的朋友」
   // 里 4/5 张头像都长得一样、看不出谁是谁。这里把 emoji 直接当文字 glyph 渲染，
   // 背景仍然走稳定 hash 出的渐变色，肉眼能立刻区分。
+  // 第三轮新会话 R3：pickFallbackAvatar 之前裸跑每次 render。其中
+  //   for (const character of seed) hash = ... char.codePointAt(0) ...
+  // 把整段 seed（含 src）一字一字过一遍。1MB data URL 头像走这条 = 1M+ 次
+  // codePointAt，hash 用不上时也照样跑（图片加载成功的常规路径就不需要 fallback）。
+  // useMemo([name, trimmedSrc]) 让 fallbackSrc 只在 src 真变化时重算；
+  // pickFallbackAvatar 内部把 seed 截到 256 字符上限（短串保持原 hash 行为，
+  //   长 data URL 也只过头 256 个 byte 算 hash，足够分散）。
+  const fallbackSrc = useMemo(
+    () => pickFallbackAvatar(name, trimmedSrc),
+    [name, trimmedSrc],
+  );
+
   if (!isLikelyImageSource(trimmedSrc) && isEmojiAvatar(trimmedSrc)) {
     const emojiTextSize =
       size === "sm"
@@ -68,18 +89,6 @@ export function AvatarChip({
       </span>
     );
   }
-
-  // 第三轮新会话 R3：pickFallbackAvatar 之前裸跑每次 render。其中
-  //   for (const character of seed) hash = ... char.codePointAt(0) ...
-  // 把整段 seed（含 src）一字一字过一遍。1MB data URL 头像走这条 = 1M+ 次
-  // codePointAt，hash 用不上时也照样跑（图片加载成功的常规路径就不需要 fallback）。
-  // useMemo([name, trimmedSrc]) 让 fallbackSrc 只在 src 真变化时重算；
-  // pickFallbackAvatar 内部把 seed 截到 256 字符上限（短串保持原 hash 行为，
-  //   长 data URL 也只过头 256 个 byte 算 hash，足够分散）。
-  const fallbackSrc = useMemo(
-    () => pickFallbackAvatar(name, trimmedSrc),
-    [name, trimmedSrc],
-  );
   const resolvedSrc =
     !loadFailed && isLikelyImageSource(trimmedSrc)
       ? resolveAvatarSource(trimmedSrc)
