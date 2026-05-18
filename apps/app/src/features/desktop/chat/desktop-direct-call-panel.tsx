@@ -375,11 +375,23 @@ export function DesktopDirectCallPanel({
     }
     closeSubmittingRef.current = true;
 
-    activeCall.stopReplyPlayback();
-    if (isVideoMode) {
-      await digitalHumanCall.endSession().catch(() => {});
+    // R14：原版 ref 设 true 后无 finally 复位。正常路径 onClose() 触发父级
+    // setDesktopCallPanelState(null) 让面板 unmount，ref 跟着销毁，逻辑没问题。
+    // 但若 await digitalHumanCall.endSession() 在视频模式下 hang（公网隧道
+    // token 续期 / 服务端慢 / 网络抖），onClose 迟迟跑不到，用户再点「返回
+    // 聊天」会被 ref 死锁；同时用户改点「结束通话」按钮（endCallSubmittingRef
+    // 独立）也只会发出结束消息但不会自动关面板（onEndCall 只是 sendTextMessage
+    // 不调 onClose），用户最后陷入「两个按钮都点不动」。和姊妹 handleEndCall
+    // (line 460-468) try/finally 同款，把解锁推到 finally 里。
+    try {
+      activeCall.stopReplyPlayback();
+      if (isVideoMode) {
+        await digitalHumanCall.endSession().catch(() => {});
+      }
+      onClose();
+    } finally {
+      closeSubmittingRef.current = false;
     }
-    onClose();
   };
 
   useEffect(() => {

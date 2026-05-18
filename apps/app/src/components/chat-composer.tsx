@@ -1968,7 +1968,33 @@ export function ChatComposer({
       return;
     }
 
+    // R14：原版混合粘贴（图 + 非图）一律走 `applyGenericFileDraft(pastedFiles[0])`，
+    // pastedFiles[0] 是什么类型就发什么类型，其余文件**静默丢弃**且无 UI 提示。
+    // 用户从 Finder/Explorer 同时复制 1 图 + 1 pdf 粘贴进 composer，可能只发出
+    // 图片（pdf 没了），也可能只发出 pdf（图片没了），取决于剪贴板里第一项是什么。
+    // 用户没看到通知，发完才发现"我刚才复制的两个都不见一个"。chat 协议这一端
+    // 确实是"1 个相册图 OR 1 个文件"二选一，但至少要明确告诉用户做了取舍。
+    // 策略：有图片就优先发图相册（多数粘贴场景里图是主体），同时给出 notice
+    // 说明被取舍掉的非图文件需要再单独粘一次；纯文件场景照旧只发第一个。
+    if (imageFiles.length > 0) {
+      const skippedNonImageCount = pastedFiles.length - imageFiles.length;
+      await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
+      setAttachmentError(
+        t(
+          msg`粘贴里包含 ${skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独粘贴一次。`,
+        ),
+      );
+      return;
+    }
+
     applyGenericFileDraft(pastedFiles[0]);
+    if (pastedFiles.length > 1) {
+      setAttachmentError(
+        t(
+          msg`一次只能发送一个文件，已放入第一个；剩余 ${pastedFiles.length - 1} 个请再单独粘贴一次。`,
+        ),
+      );
+    }
   };
 
   const handleDesktopDragEnter = (event: DragEvent<HTMLDivElement>) => {
@@ -2044,7 +2070,28 @@ export function ChatComposer({
       return;
     }
 
+    // R14：和 handleDesktopPaste 同款问题——混合 drop 一律 `applyGenericFileDraft
+    // (droppedFiles[0])`，第一个之外的全部静默丢弃。从 Finder 拖 1 图 + 1 文档
+    // 进来时用户看到的可能只是其中一个发出去了。同款修法。
+    if (imageFiles.length > 0) {
+      const skippedNonImageCount = droppedFiles.length - imageFiles.length;
+      await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
+      setAttachmentError(
+        t(
+          msg`这次拖入包含 ${skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独拖一次。`,
+        ),
+      );
+      return;
+    }
+
     applyGenericFileDraft(droppedFiles[0]);
+    if (droppedFiles.length > 1) {
+      setAttachmentError(
+        t(
+          msg`一次只能发送一个文件，已放入第一个；剩余 ${droppedFiles.length - 1} 个请再单独拖一次。`,
+        ),
+      );
+    }
   };
 
   const handleCancelAttachmentDraft = () => {
