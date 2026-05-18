@@ -226,6 +226,16 @@ export function WorldsPage() {
     useState<QuickActionConfirmState | null>(null);
   const [page, setPage] = useState(1);
   const [sortState, setSortState] = useState<WorldsSortState>(null);
+  // 「进入后台」是按 worldId 跨行并发的：用户可以同时点开 A、B 两个 world 的
+  // admin。可 react-query useMutation 是单例 —— enterAdminMutation.variables/
+  // isPending 只跟得上最后一次 mutate()，先点的 A 在 B 触发后立刻丢失 pending
+  // UI，按钮重新可点 → 同帧双击 / 切换之间再点回 A 会让同一个 world 弹两个
+  // admin tab + 多打一次 /admin/cloud/worlds/:id/bootstrap。改用 Set 自己记
+  // per-world inflight，跟 quickActionMutation 共用的 isPending 全局锁是两套
+  // 互不冲突的反双击机制。
+  const [enterAdminInFlight, setEnterAdminInFlight] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
   const pageSize = 20;
   const statusFilter = filters.status;
   const providerFilter = filters.provider;
@@ -523,6 +533,16 @@ export function WorldsPage() {
     if (typeof window === "undefined") {
       return;
     }
+    // 已经在为这个 world 拉 bootstrap：直接 noop。不靠 react-query 的全局
+    // isPending/variables —— 那个只跟得上最后一次 mutate，跨行点击就会丢锁。
+    if (enterAdminInFlight.has(worldId)) {
+      return;
+    }
+    setEnterAdminInFlight((prev) => {
+      const next = new Set(prev);
+      next.add(worldId);
+      return next;
+    });
     // 同步在 click handler 里占住 about:blank，避免 fetch 异步 resolve 后
     // user activation 窗口过期被 popup blocker 拦。OAuth 跳转走的也是这个套路。
     // noopener 会丢掉 window 引用，没法 redirect，所以这里不加；admin 是我们
@@ -548,6 +568,14 @@ export function WorldsPage() {
       },
       onError: () => {
         placeholder?.close();
+      },
+      onSettled: () => {
+        setEnterAdminInFlight((prev) => {
+          if (!prev.has(worldId)) return prev;
+          const next = new Set(prev);
+          next.delete(worldId);
+          return next;
+        });
       },
     });
   }
@@ -854,8 +882,7 @@ export function WorldsPage() {
                           type="button"
                           disabled={
                             !item.world.apiBaseUrl ||
-                            (enterAdminMutation.isPending &&
-                              enterAdminMutation.variables === item.world.id)
+                            enterAdminInFlight.has(item.world.id)
                           }
                           title={
                             !item.world.apiBaseUrl
@@ -867,8 +894,7 @@ export function WorldsPage() {
                           onClick={() => handleEnterAdminClick(item.world.id)}
                           className="self-start rounded-lg border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-primary)] hover:border-[color:var(--border-strong)] disabled:opacity-60"
                         >
-                          {enterAdminMutation.isPending &&
-                          enterAdminMutation.variables === item.world.id
+                          {enterAdminInFlight.has(item.world.id)
                             ? t("Opening admin…")
                             : t("Enter admin")}
                         </button>
