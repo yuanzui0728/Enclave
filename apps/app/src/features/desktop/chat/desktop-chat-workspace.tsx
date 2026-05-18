@@ -2927,6 +2927,18 @@ function DesktopReminderCard({
       <button
         type="button"
         onClick={() => onOpen(entry)}
+        // 走查电脑端群聊 R96：和姊妹 ConversationCardLink R22 同款修法——
+        // 桌面工作区左侧「消息提醒」面板里 reminder 行的 active 态（当前
+        // selectedConversationId + 当前 highlightedMessageId 命中时点亮绿边框 +
+        // 白底 + soft shadow）只是视觉差。盲人 SR 走过去逐条听 reminder 状态 +
+        // 标题 + 预览 + 时间，听不到"这条提醒就是当前正在右侧聊天窗高亮的
+        // 那条群消息提醒"。entry.threadType=group 时 reminder 也走这条卡片，
+        // 群消息提醒同款问题。SR 用方向键或 Tab 浏览整列时缺 anchoring。
+        // aria-current="true" 让 SR 在朗读 button 时附加"当前"语义，和
+        // ConversationCardLink 已挂的 aria-current="page" 协调一致——这里
+        // 不是 page 导航是 message-anchor，spec 允许 true / location / step /
+        // page 等离散值，用 "true" 表达"当前选中项"。
+        aria-current={active ? "true" : undefined}
         className="flex min-w-0 flex-1 items-center gap-2.5 text-left leading-tight"
       >
         {entry.threadType === "group" ? (
