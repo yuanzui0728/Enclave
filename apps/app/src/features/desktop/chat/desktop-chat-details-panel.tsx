@@ -256,8 +256,15 @@ function DirectChatDetailsPanel({
     staleTime: 15_000,
   });
 
+  // 走查 R22：原 queryKey 用 "app-chat-details-blocked"，是给移动端 chat-details-page
+  // 这条独立路由用的；desktop 这套 DesktopChatDetailsPanel 只在 desktop-chat-workspace
+  // 的右侧侧栏里挂，workspace 自己（line 338-347）+ desktop-message-avatar-popover
+  // 都用 "app-chat-blocked-characters" key。三者同屏 / 同 session 共存，但本面板
+  // 用独立 key → workspace 已经把 blocked 列表拉过、cache 是热的，详情侧栏一打
+  // 开还要在公网隧道（~600ms RTT）再发一次完全一样的 getBlockedCharacters。
+  // 统一到 desktop 端的 "app-chat-blocked-characters" key 复用主缓存。
   const blockedQuery = useQuery({
-    queryKey: ["app-chat-details-blocked", baseUrl],
+    queryKey: ["app-chat-blocked-characters", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(targetCharacterId),
     staleTime: 30_000,
