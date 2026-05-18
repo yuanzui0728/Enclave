@@ -200,8 +200,25 @@ function readLocalLiveCompanionStore(): LiveCompanionStore {
     };
   }
 
-  const draftRaw = storage.getItem(LIVE_DRAFT_STORAGE_KEY);
-  const historyRaw = storage.getItem(LIVE_HISTORY_STORAGE_KEY);
+  // 走查 2026-05-18 新会话 R1：和姊妹 favorites-storage R19/R23、note-drafts-
+  // storage R20 同款 —— Safari iOS 隐私模式 / 部分浏览器禁用 storage / 三方 cookie
+  // 拦截 ITP 严格模式下，window.localStorage.getItem 本身可能裸抛 SecurityError。
+  // LiveCompanionPage 在 mount 期 useState 初始化器里同步调 readLiveDraft() /
+  // readLiveHistory()（route 文件 L76-79），抛错会让整个 /desktop/channels/live-
+  // companion 路由直接 CatchBoundary 兜底白屏，用户在视频号顶栏点「直播伴侣」
+  // 完全打不开。getItem 各包一层 try-catch，单独失败时让另一项继续走默认值。
+  let draftRaw: string | null = null;
+  try {
+    draftRaw = storage.getItem(LIVE_DRAFT_STORAGE_KEY);
+  } catch {
+    draftRaw = null;
+  }
+  let historyRaw: string | null = null;
+  try {
+    historyRaw = storage.getItem(LIVE_HISTORY_STORAGE_KEY);
+  } catch {
+    historyRaw = null;
+  }
 
   return {
     draft: parseLiveDraftRaw(draftRaw),
@@ -237,16 +254,39 @@ function writeLiveCompanionStoreToLocal(
     return store;
   }
 
+  // 走查 2026-05-18 新会话 R1：setItem 在 QuotaExceeded（典型 5-10MB）/ Safari
+  // 隐私模式下抛 SecurityError、removeItem 在 storage 被禁用时也可能裸抛。原
+  // 写入裸调，抛了会顺着 writeLiveDraft → LiveCompanionPage 的写 draft effect /
+  // setActiveSession startLocalLiveSession 一路冒到 React 把整页崩。本地 web
+  // 持久化失败时，native Tauri 路径 queueNativeLiveCompanionStoreWrite 仍然
+  // 跑，桌面 native 仍能保住 draft / history；浏览器 web 版降级到内存状态，
+  // 重启失效但不再炸页面。
   if (hasLiveDraftChanges(store.draft)) {
-    storage.setItem(LIVE_DRAFT_STORAGE_KEY, JSON.stringify(store.draft));
+    try {
+      storage.setItem(LIVE_DRAFT_STORAGE_KEY, JSON.stringify(store.draft));
+    } catch {
+      // 静默：native 路径仍会同步；web 端退化成内存状态。
+    }
   } else {
-    storage.removeItem(LIVE_DRAFT_STORAGE_KEY);
+    try {
+      storage.removeItem(LIVE_DRAFT_STORAGE_KEY);
+    } catch {
+      // 静默
+    }
   }
 
   if (store.history.length) {
-    storage.setItem(LIVE_HISTORY_STORAGE_KEY, JSON.stringify(store.history));
+    try {
+      storage.setItem(LIVE_HISTORY_STORAGE_KEY, JSON.stringify(store.history));
+    } catch {
+      // 静默
+    }
   } else {
-    storage.removeItem(LIVE_HISTORY_STORAGE_KEY);
+    try {
+      storage.removeItem(LIVE_HISTORY_STORAGE_KEY);
+    } catch {
+      // 静默
+    }
   }
 
   if (options?.syncNative !== false) {
