@@ -153,7 +153,16 @@ export function DigitalHumanPlayer({
           </div>
         </div>
         <div className="space-y-3">
-          <InlineNotice tone={renderTone}>
+          {/* R55：数字人 player 的 renderStatus notice 文案随 backend 渲染
+              状态 queued → rendering → failed / 成功 动态切换；用户在 AI
+              视频通话中盲人 SR 必须能感知（"rendering 失败回退文字语音
+              链路"是 user-facing fatal）。failed 走 alert assertive，其余
+              走 status polite，对齐姊妹 R8 channels-workspace tone 分流。 */}
+          <InlineNotice
+            role={renderStatus === "failed" ? "alert" : "status"}
+            aria-live={renderStatus === "failed" ? "assertive" : "polite"}
+            tone={renderTone}
+          >
             {renderStatus === "failed"
               ? t(msg`数字人视频流渲染失败，当前已回退到文字加语音通话链路。可稍后重试连接数字人。`)
               : renderStatus === "rendering"
