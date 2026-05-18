@@ -2388,11 +2388,25 @@ export function ChatMessageList({
       // 改 section / 选 post，URL hash 永远不同步——刷新整页就退回 recommended，
       // 转发链接也带不上 postId。和 discover-page 的入口（mobile 一直走
       // /discover/channels，line 178）以及 channels-page 的 effect 保持一致。
-      if (variant === "desktop") {
-        void navigate({ to: "/tabs/channels", hash: channelsHash });
-      } else {
-        void navigate({ to: "/discover/channels", hash: channelsHash });
+      // 走查电脑端群聊 R9：和姊妹 contact_card / note_card 同款 — 原版裸跑
+      // `void navigate({...})` 无 messageId 锁，群里有人转发视频号卡片后用户
+      // 同帧 <16ms 双击同一张卡，tanstack-router push 2 条相同
+      // /tabs/channels?...postId=... history 项 → 用户从视频号页返回群聊
+      // 要按 2 次返回。和 line 2245-2248 / 2334-2337 的 openingAttachmentMessageIdsRef
+      // 口径对齐，按 messageId 上锁，.finally 解锁（navigate 成功后本组件随路由
+      // 变化 unmount，ref 自动 GC；navigate 失败或同会话内 hash-update 仍 finally
+      // 解锁让用户能立刻重试）。
+      if (openingAttachmentMessageIdsRef.current.has(message.id)) {
+        return;
       }
+      openingAttachmentMessageIdsRef.current.add(message.id);
+      const navigatePromise =
+        variant === "desktop"
+          ? navigate({ to: "/tabs/channels", hash: channelsHash })
+          : navigate({ to: "/discover/channels", hash: channelsHash });
+      void Promise.resolve(navigatePromise).finally(() => {
+        openingAttachmentMessageIdsRef.current.delete(message.id);
+      });
       return;
     }
 
