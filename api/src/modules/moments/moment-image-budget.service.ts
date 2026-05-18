@@ -7,8 +7,9 @@ import { CharactersService } from '../characters/characters.service';
 import { todayInShanghai } from '../minimax/minimax-quota.service';
 
 // 单 world 的"角色朋友圈自动配图"日上限。cloud-api dispatcher 启动 child 时按
-// 全 world 数均分 50 张/天注入 env；未注入时回落到 50（视作单 world 部署）。
-const MOMENT_IMAGE_WORLD_DAILY_SHARE_FALLBACK = 50;
+// 全 world 数均分 100 张/天注入 env；未注入时回落到 100（视作单 world 部署）。
+// 2026-05-18: 50 → 100，对齐 dispatcher FEED_IMAGE_DAILY_GLOBAL_DEFAULT。
+const MOMENT_IMAGE_WORLD_DAILY_SHARE_FALLBACK = 100;
 
 // "今天"窗口的起点向前再退 30 分钟，覆盖 generateMomentForChar 那里把
 // postedAt 抖动到过去 0-15 分钟带来的跨日漏算（凌晨 0:00-0:15 创建的帖子

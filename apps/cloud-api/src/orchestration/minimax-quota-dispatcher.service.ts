@@ -21,8 +21,9 @@ const PER_KEY_DAILY_TOTAL = {
 } as const;
 
 // "世界角色朋友圈自动配图"专用日上限（用途配额，**仍占 image01 model 总额**）。
-// 跨 world 均分到每个 child，避免某个 world 把 50 张全吃了。env 可覆盖。
-const FEED_IMAGE_DAILY_GLOBAL_DEFAULT = 50;
+// 跨 world 均分到每个 child，避免某个 world 把名额全吃了。env 可覆盖。
+// 2026-05-18: 50 → 100。image-01 总额 120/天，留 20 给聊天图片回执。
+const FEED_IMAGE_DAILY_GLOBAL_DEFAULT = 100;
 
 export type WorldDailyShare = {
   hailuoFast: number;

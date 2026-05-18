@@ -681,13 +681,13 @@ export class MomentsService implements OnModuleInit {
 
       // 尝试为这条朋友圈配 1 张 AI 方图。受 3 层约束控制（任一失败都安全
       // fallback 为纯文本，不影响发帖本身）：
-      //   1) MomentImageBudgetService —— 全 world 日上限 50 + world 内角色
+      //   1) MomentImageBudgetService —— 全 world 日上限 100 + world 内角色
       //      动态优先级均分
       //   2) MinimaxQuotaService.image-01 三态配额 —— 单 key 当日 120 张总额
       //   3) MiniMax API 实时熔断 —— 1042 / 2056 撞墙时 release 后 fallback
       //
       // 跳过：提醒角色发的"晚安/喝水/番茄钟"类系统消息（reminderMoment）。
-      // 这种文案配 AI 图无意义还会破坏体验，也白烧 50/天的有限名额。
+      // 这种文案配 AI 图无意义还会破坏体验，也白烧 100/天的有限名额。
       const imageMedia = reminderMoment
         ? null
         : await this.tryGenerateMomentImage(
