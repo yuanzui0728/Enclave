@@ -396,7 +396,15 @@ export function ChannelsForwardPicker({
         </div>
 
         {errorMessage ? (
-          <div className="mx-5 mb-2 rounded-[12px] border border-[color:var(--border-danger,#FCA5A5)] bg-[color:var(--surface-danger,#FEF2F2)] px-3 py-2 text-[12px] text-[color:var(--text-danger,#B91C1C)]">
+          // 走查 2026-05-18 新会话 R10：原 errorMessage 银行裸 <div>，转发失败
+          // （FEED_FORWARD_MEDIA_BROKEN / FEED_FORWARD_TARGET_REQUIRED /
+          // FEED_POST_NOT_FOUND / 通用兜底）冒红条时 SR 用户没反馈。挂 role=
+          // "alert"（aria-live=assertive）立即播报 — 失败信息比好友选择优先级
+          // 高，必须打断当前播报告知用户。
+          <div
+            role="alert"
+            className="mx-5 mb-2 rounded-[12px] border border-[color:var(--border-danger,#FCA5A5)] bg-[color:var(--surface-danger,#FEF2F2)] px-3 py-2 text-[12px] text-[color:var(--text-danger,#B91C1C)]"
+          >
             {errorMessage}
           </div>
         ) : null}
