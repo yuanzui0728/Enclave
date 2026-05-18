@@ -285,7 +285,17 @@ function buildAttachmentFallbackLabel(attachment?: MessageAttachment) {
     return label ? `视频号 · ${label}` : '视频号';
   }
 
-  return attachment.label ? `表情 · ${attachment.label}` : '表情';
+  // 走查 R14：和 client apps/app/src/lib/message-attachment-semantic.ts:313-317
+  // 同款 sticker label/stickerId fallback —— 客户端 R9 (commit 154b556fe) 已经
+  // 改过 `|| stickerId` 让空串也命中 fallback。server 端这条 buildAttachmentFallbackLabel
+  // 是 server-side 全局 message-search / chat-records-admin 的 fallback 路径，
+  // 之前只在 attachment.label 非空时给 `表情 · ${label}`，空串/缺失时返回
+  // 裸 '表情'，client 走 `||` 兜底拿到 stickerId 拼成 '表情 · {stickerId}'。
+  // 用户在 /tabs/search 全局搜索能看到 server 预览，client 在 chat-list /
+  // forward dialog 用本地预览，两边对同一条空 label 自定义贴纸的预览不一致。
+  // stickerId 是必填非空 string，永远有兜底；改成同款 `||` 让空串也命中。
+  const stickerDetail = attachment.label || attachment.stickerId;
+  return stickerDetail ? `表情 · ${stickerDetail}` : '表情';
 }
 
 function truncateSemanticText(value: string, maxChars: number) {
