@@ -60,6 +60,12 @@ type DesktopChannelsWorkspaceProps = {
   authorProfileLoading: boolean;
   comments: FeedComment[];
   commentsErrorMessage?: string | null;
+  // 走查 2026-05-19 第八轮 R1：mobile sheet 早就有 errorActionLabel / onErrorAction
+  // 兜「重试读取评论 / 重试评论点赞 / 重试回复 / 重试发送」按钮（channels-page.tsx
+  // L2858 / L2878），desktop drawer 一直只渲红条没 retry 入口。补这一对 prop 让父
+  // 级把 retry chain 透下来；undefined 时按原行为不渲按钮（向后兼容）。
+  commentsErrorActionLabel?: string;
+  onCommentsErrorAction?: () => void;
   commentsLoading: boolean;
   commentDrafts: Record<string, string>;
   commentLikePendingId: string | null;
@@ -142,6 +148,8 @@ export function DesktopChannelsWorkspace({
   authorProfileLoading,
   comments,
   commentsErrorMessage,
+  commentsErrorActionLabel,
+  onCommentsErrorAction,
   commentsLoading,
   commentDrafts,
   commentLikePendingId,
@@ -923,6 +931,8 @@ export function DesktopChannelsWorkspace({
               <ChannelCommentsDrawer
                 comments={comments}
                 commentsErrorMessage={commentsErrorMessage}
+                commentsErrorActionLabel={commentsErrorActionLabel}
+                onCommentsErrorAction={onCommentsErrorAction}
                 commentsLoading={commentsLoading}
                 draft={commentDrafts[selectedPost.id] ?? ""}
                 likePendingCommentId={commentLikePendingId}
@@ -1837,6 +1847,8 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
 function ChannelCommentsDrawer({
   comments,
   commentsErrorMessage,
+  commentsErrorActionLabel,
+  onCommentsErrorAction,
   commentsLoading,
   draft,
   likePendingCommentId,
@@ -1852,6 +1864,8 @@ function ChannelCommentsDrawer({
 }: {
   comments: FeedComment[];
   commentsErrorMessage?: string | null;
+  commentsErrorActionLabel?: string;
+  onCommentsErrorAction?: () => void;
   commentsLoading: boolean;
   draft: string;
   likePendingCommentId: string | null;
@@ -1987,8 +2001,29 @@ function ChannelCommentsDrawer({
             // / commentMutation / likeCommentMutation 错（公网隧道断 / 服务端 500）
             // SR 用户只看到 drawer 标题"评论 N"但听不到"评论读取失败"，体感「评
             // 论怎么不出来」。挂 role="alert" 立即播报错误。
+            //
+            // 走查 2026-05-19 第八轮 R1：mobile sheet 早就有「重试读取评论 / 重
+            // 试评论点赞 / 重试发送评论 / 重试回复评论」按钮 (channels-page.tsx
+            // L1694-1739)，desktop drawer 一直只渲红条没 retry 入口 — 用户在
+            // yuanzui0728 那条 142 条评论 post 公网隧道断了之后只能关 drawer /
+            // 切 slide / 刷整页才能再触发请求。把父级算好的 retry action 拼到
+            // ErrorBlock 下面；undefined 时按原行为不渲按钮（向后兼容）。
             <div className="mt-3" role="alert">
-              <ErrorBlock message={commentsErrorMessage} />
+              <ErrorBlock message={commentsErrorMessage}>
+                {commentsErrorActionLabel && onCommentsErrorAction ? (
+                  <div className="mt-2 flex">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onCommentsErrorAction}
+                      className="rounded-full bg-white"
+                    >
+                      <RefreshCcw size={13} />
+                      {commentsErrorActionLabel}
+                    </Button>
+                  </div>
+                ) : null}
+              </ErrorBlock>
             </div>
           ) : null}
           <DesktopChannelCommentsPanel

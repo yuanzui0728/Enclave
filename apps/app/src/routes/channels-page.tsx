@@ -1755,6 +1755,58 @@ export function ChannelsPage() {
     commentMutation.variables?.postId === desktopCommentDrawerPostId
       ? commentMutation.error.message
       : null);
+  // 走查 2026-05-19 第八轮 R1：mobile sheet 早就有 mobileCommentSheetRetryAction
+  // 把 listFeedComments / likeCommentMutation / commentMutation 三种失败兜成
+  // 「重试读取评论 / 重试评论点赞 / 重试发送评论 / 重试回复评论」按钮（同文件
+  // L1694-1739），desktop drawer 一直只渲红色 ErrorBlock 没有 retry 入口 — 用
+  // 户在 yuanzui0728 那条 142 条评论的 post 公网隧道断了之后只能关 drawer / 切
+  // slide / 刷整页才能再发请求。补一份对齐 mobile 的 retry action chain：
+  //   - listFeedComments 失败 → 「重试读取评论」refetch
+  //   - likeCommentMutation 失败（postId 命中当前 drawer）→ 「重试评论点赞」
+  //   - commentMutation 失败（postId 命中当前 drawer + text 非空）→
+  //     「重试回复评论」/ 「重试发送评论」（按 replyTarget 区分）
+  // commentMutation 的 retry text 同 mobile 那条逻辑：草稿空就退回失败时的旧
+  // text，避免 mutationFn 抛"请先输入评论内容"把红条又翻一遍。
+  const desktopCommentDrawerRetryAction =
+    desktopCommentsQuery.isError && desktopCommentDrawerPostId
+      ? {
+          label: t(msg`重试读取评论`),
+          onClick: () => {
+            void desktopCommentsQuery.refetch();
+          },
+        }
+      : likeCommentMutation.isError &&
+          likeCommentMutation.error instanceof Error &&
+          likeCommentMutation.variables?.postId === desktopCommentDrawerPostId
+        ? {
+            label: t(msg`重试评论点赞`),
+            onClick: () => {
+              if (!likeCommentMutation.variables) return;
+              likeCommentMutation.mutate(likeCommentMutation.variables);
+            },
+          }
+        : commentMutation.isError &&
+            commentMutation.error instanceof Error &&
+            commentMutation.variables?.postId === desktopCommentDrawerPostId &&
+            commentMutation.variables.text.trim()
+          ? {
+              label: commentMutation.variables.replyTarget
+                ? t(msg`重试回复评论`)
+                : t(msg`重试发送评论`),
+              onClick: () => {
+                const variables = commentMutation.variables;
+                if (!variables) return;
+                const rawDraft = commentDrafts[variables.postId];
+                const currentDraft = rawDraft?.trim()
+                  ? rawDraft
+                  : variables.text;
+                commentMutation.mutate({
+                  ...variables,
+                  text: currentDraft,
+                });
+              },
+            }
+          : null;
   const pendingLikePostId = likeMutation.isPending
     ? (likeMutation.variables?.postId ?? null)
     : null;
@@ -2500,6 +2552,8 @@ export function ChannelsPage() {
           refreshPending={generateMutation.isPending}
           comments={desktopCommentsQuery.data ?? EMPTY_COMMENT_PREVIEW}
           commentsErrorMessage={desktopCommentPanelErrorMessage}
+          commentsErrorActionLabel={desktopCommentDrawerRetryAction?.label}
+          onCommentsErrorAction={desktopCommentDrawerRetryAction?.onClick}
           commentsLoading={desktopCommentsQuery.isLoading}
           commentReplyTarget={desktopReplyTarget}
           commentLikePendingId={pendingLikeCommentId}
