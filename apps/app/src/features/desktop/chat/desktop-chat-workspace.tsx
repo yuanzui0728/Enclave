@@ -1600,24 +1600,43 @@ export function DesktopChatWorkspace({
     return null;
   }, [officialMessageContextMenu]);
 
+  // 走查新一轮 R7：context menu「在独立窗口打开」无任何同步锁，第一次
+  // setConversationContextMenu(null) 走 React state，菜单不会立即从 DOM
+  // 移走 — 同帧 <16ms double-click 都进入 handleOpenConversationWindow。
+  // openDesktopStandaloneWindow 内部按 windowLabel 查重，但两次并发执行
+  // 都先后跑 WebviewWindow.getByLabel：第一次 getByLabel→undefined→new
+  // WebviewWindow 还在 Tauri 内部 settle 期间，第二次 getByLabel 也拿不到
+  // → 也尝试 new WebviewWindow(same label) → Tauri 返回「window already
+  // exists」走 tauri://error → 这条 Promise resolve 出 false → 用户看到
+  // 「浏览器阻止了新窗口，请检查弹窗权限」红色 notice，但第一次明明成功了。
+  // 按 conversationId 上锁（连续右键 2 段不同会话打开窗口是合法用法）。
+  const openingWindowConversationIdsRef = useRef<Set<string>>(new Set());
   async function handleOpenConversationWindow(
     conversation: ConversationListItem,
   ) {
-    const opened = await openDesktopChatWindow({
-      conversationId: conversation.id,
-      conversationType: getConversationThreadType(conversation),
-      title: conversation.title,
-      returnTo: buildDesktopChatThreadPath({
+    if (openingWindowConversationIdsRef.current.has(conversation.id)) {
+      return;
+    }
+    openingWindowConversationIdsRef.current.add(conversation.id);
+    try {
+      const opened = await openDesktopChatWindow({
         conversationId: conversation.id,
-      }),
-    });
+        conversationType: getConversationThreadType(conversation),
+        title: conversation.title,
+        returnTo: buildDesktopChatThreadPath({
+          conversationId: conversation.id,
+        }),
+      });
 
-    setConversationContextMenu(null);
-    setNotice(
-      opened
-        ? t(msg`已在独立窗口打开聊天。`)
-        : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
-    );
+      setConversationContextMenu(null);
+      setNotice(
+        opened
+          ? t(msg`已在独立窗口打开聊天。`)
+          : t(msg`浏览器阻止了新窗口，请检查弹窗权限。`),
+      );
+    } finally {
+      openingWindowConversationIdsRef.current.delete(conversation.id);
+    }
   }
 
   // 走查新一轮 R7：消息提醒 section「清空已通知」/ 类似分组清空按钮 onClick
