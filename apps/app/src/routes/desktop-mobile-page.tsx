@@ -261,10 +261,20 @@ export function DesktopMobilePage() {
     retry: false,
   });
 
+  // 走查电脑端群聊 R94：和姊妹 desktop-direct-call-panel R2 / mobile-ai-call-
+  // screen / use-digital-human-entry-guard 三处一起把 GET /system-status
+  // 统一到 ["app-system-status", baseUrl] cache（commit 在 R2 那条做的）—
+  // 本页是「到手机继续」入口（群通话面板「到手机继续」按钮 / 单聊视频按钮 /
+  // 公众号 handoff），原本仍用独立 key "desktop-mobile-system-status" → 用户
+  // 从群通话面板点「到手机继续」过来时，desktop-direct-call-panel 几百 ms
+  // 前刚拉过同 baseUrl 的 system status（带 staleTime: 30_000 fresh 着），
+  // 这里又得在公网隧道再走一发；handoff 页头部「系统状态」区段空着等回包。
+  // 统一到 app-system-status + 30s staleTime 与那三处对齐。
   const systemStatusQuery = useQuery({
-    queryKey: ["desktop-mobile-system-status", baseUrl],
+    queryKey: ["app-system-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
     enabled: isDesktopLayout,
+    staleTime: 30_000,
   });
 
   const recentConversations = useMemo(
