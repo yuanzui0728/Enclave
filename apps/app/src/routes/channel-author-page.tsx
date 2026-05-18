@@ -137,19 +137,35 @@ export function ChannelAuthorPage() {
     // refetch 整条链路才翻状态（实测公网 ~400ms），用户连点会以为按钮没响应。
     // 同步翻 profile cache 的 isFollowing + followerCount。
     onMutate: async () => {
+      // 走查 2026-05-18 新一轮 R3：authorId 也要进 context — 移动端 channel-author
+      // 这条路由切作者（/channels/authors/X → /channels/authors/Y）是 in-place
+      // 切（TanStack Router 默认复用相同路径组件实例），同一 ChannelAuthorPage
+      // 实例 useParams 拿到新 authorId 但 followMutation hook 持续不重建。
+      // 慢网下用户：
+      //   1. 打开 author X 页 → 点 +关注 → mutation 飞（200-500ms RTT 公网）；
+      //   2. 立刻点 X 简介里某个跳转 → 路由切到 author Y → 同一组件再渲，
+      //      闭包 authorId 已经是 Y；
+      //   3. X 的 mutation 落地 → onSuccess 跑回 → invalidate(["...", A, Y])
+      //      把 Y 的 cache 标 stale → Y refetch 一次（白浪费 RTT），而真正
+      //      改了的 X 的 cache 留 stale 直到下次回 X 主动重进。
+      //   onError 的 setQueryData(rollback) 同理会把 X 的 previous 写到 Y 的
+      //   cache 上 — Y 用户立刻看到一坨 X 的 profile 字段（authorName/bio/
+      //   avatar 全错）直到下一帧 profileQuery 重新落地矫正。
+      // 跟 mutationBaseUrl 同款做法，把 authorId 也钉进 context。
       const mutationBaseUrl = baseUrl;
+      const mutationAuthorId = authorId;
       await queryClient.cancelQueries({
-        queryKey: ["app-channel-author", mutationBaseUrl, authorId],
+        queryKey: ["app-channel-author", mutationBaseUrl, mutationAuthorId],
       });
       const previous = queryClient.getQueryData<typeof profileQuery.data>([
         "app-channel-author",
         mutationBaseUrl,
-        authorId,
+        mutationAuthorId,
       ]);
       if (previous) {
         const wasFollowing = previous.isFollowing;
         queryClient.setQueryData(
-          ["app-channel-author", mutationBaseUrl, authorId],
+          ["app-channel-author", mutationBaseUrl, mutationAuthorId],
           {
             ...previous,
             isFollowing: !wasFollowing,
@@ -159,24 +175,30 @@ export function ChannelAuthorPage() {
           },
         );
       }
-      return { previous, mutationBaseUrl };
+      return { previous, mutationBaseUrl, mutationAuthorId };
     },
     onError: (_error, _input, context) => {
       // 回滚 profile cache。home 那边的 mutation 是另一条独立链路，不需要这里回滚。
-      // cache key 走 mutationBaseUrl，回到该写入的 A 账户；切到 B 时 onError 闭包
-      // 的 baseUrl 已是 B，硬写到 B 上会污染 B 的同名 authorId profile。
+      // cache key 走 mutationBaseUrl + mutationAuthorId，回到该写入的 A 账户 + X
+      // author；切到 B 或切到 Y author 时 onError 闭包的 baseUrl/authorId 已变，
+      // 硬写到当前会污染当前账户 + 当前 author 的 cache。
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const mutationAuthorId = context?.mutationAuthorId ?? authorId;
       if (context?.previous) {
         queryClient.setQueryData(
-          ["app-channel-author", mutationBaseUrl, authorId],
+          ["app-channel-author", mutationBaseUrl, mutationAuthorId],
           context.previous,
         );
       }
     },
     onSuccess: async (_data, _input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
+      const mutationAuthorId = context?.mutationAuthorId ?? authorId;
       const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
-      if (sameAccount) {
+      // 同时也要 sameAuthor — 用户已经切到别的 author 时，"已关注 X" notice
+      // 冒到当前 Y 的页面也错（用户看到「已关注」以为是 Y 的，其实是 X）。
+      const sameAuthor = mutationAuthorId === authorId;
+      if (sameAccount && sameAuthor) {
         setNotice({
           message: profileQuery.data?.isFollowing
             ? t(msg`已关注该视频号作者。`)
@@ -196,12 +218,12 @@ export function ChannelAuthorPage() {
       // channels-page 自己的 followMutation 早就把这两个都 invalidate 了（line 652-654），
       // 这里跟它对齐。
       //
-      // invalidate 落 mutationBaseUrl —— 标 B 的 cache stale 完全错（这条 follow
-      // 实际改的是 A），且 B 会做不必要的 refetch；A 反而漏掉，下次回 A 永远
-      // 停在乐观值。
+      // invalidate 落 mutationBaseUrl + mutationAuthorId —— 标错账户/作者的 cache
+      // stale 完全错（这条 follow 实际改的是 A 上的 X），且会触发不必要的
+      // refetch；真正该刷新的 cache 反而漏掉，下次回 A/X 永远停在乐观值。
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["app-channel-author", mutationBaseUrl, authorId],
+          queryKey: ["app-channel-author", mutationBaseUrl, mutationAuthorId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-channels-home", mutationBaseUrl],
