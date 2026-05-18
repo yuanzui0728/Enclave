@@ -360,12 +360,59 @@ export class UsersService implements OnModuleInit {
       );
     }
     if (query.query) {
-      builder.andWhere("user.phone LIKE :phoneLike", {
-        phoneLike: `%${query.query.trim()}%`,
-      });
+      // 生产 phone 是 14 位 hash，运营记不住；同一行又有 email/displayName 显式
+      // 展示。搜索框要同时模糊匹配三列，否则按 email 搜永远空。
+      const like = `%${query.query.trim()}%`;
+      builder.andWhere(
+        new Brackets((qb) => {
+          qb.where("user.phone LIKE :userQueryLike", { userQueryLike: like })
+            .orWhere("user.email LIKE :userQueryLike", { userQueryLike: like })
+            .orWhere("user.displayName LIKE :userQueryLike", {
+              userQueryLike: like,
+            });
+        }),
+      );
     }
     if (query.status) {
       builder.andWhere("user.status = :status", { status: query.status });
+    }
+    if (query.subscriptionStatus) {
+      // subscriptionStatus 必须在 LIMIT 之前过滤，否则就是"先取 20 条 + JS 过滤"
+      // → 选 expired 经常只看到 0–5 条且没下一页（实际全库可能几十条）。
+      //   active  = 存在 status='active' 且未过期的订阅
+      //   expired = 至少有一条订阅 但 不存在 active 行
+      //   none    = 完全没有订阅记录
+      // 这套口径必须跟 serializeUserSummary 里 active/latest 的推导保持一致。
+      const now = new Date();
+      if (query.subscriptionStatus === "active") {
+        builder.andWhere(
+          `EXISTS (SELECT 1 FROM "user_subscriptions" "subStatus"
+            WHERE "subStatus"."userId" = "user"."id"
+              AND "subStatus"."status" = 'active'
+              AND "subStatus"."startsAt" <= :subStatusNow
+              AND "subStatus"."expiresAt" > :subStatusNow)`,
+          { subStatusNow: now },
+        );
+      } else if (query.subscriptionStatus === "none") {
+        builder.andWhere(
+          `NOT EXISTS (SELECT 1 FROM "user_subscriptions" "subStatus"
+            WHERE "subStatus"."userId" = "user"."id")`,
+        );
+      } else if (query.subscriptionStatus === "expired") {
+        builder
+          .andWhere(
+            `EXISTS (SELECT 1 FROM "user_subscriptions" "subStatusAny"
+              WHERE "subStatusAny"."userId" = "user"."id")`,
+          )
+          .andWhere(
+            `NOT EXISTS (SELECT 1 FROM "user_subscriptions" "subStatusActive"
+              WHERE "subStatusActive"."userId" = "user"."id"
+                AND "subStatusActive"."status" = 'active'
+                AND "subStatusActive"."startsAt" <= :subStatusNow
+                AND "subStatusActive"."expiresAt" > :subStatusNow)`,
+            { subStatusNow: now },
+          );
+      }
     }
     if (query.registeredFrom) {
       builder.andWhere("user.createdAt >= :from", { from: new Date(query.registeredFrom) });
@@ -428,20 +475,16 @@ export class UsersService implements OnModuleInit {
       .take(pageSize)
       .getMany();
 
-    let items = await Promise.all(
+    const items = await Promise.all(
       records.map((user) => this.serializeUserSummary(user)),
     );
 
-    if (query.subscriptionStatus) {
-      items = items.filter((item) => item.subscriptionStatus === query.subscriptionStatus);
-    }
-
     return {
       items,
-      total: query.subscriptionStatus ? items.length : total,
+      total,
       page,
       pageSize,
-      totalPages: Math.max(Math.ceil((query.subscriptionStatus ? items.length : total) / pageSize), 1),
+      totalPages: Math.max(Math.ceil(total / pageSize), 1),
     };
   }
 

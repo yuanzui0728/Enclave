@@ -158,7 +158,7 @@ export function UsersPage() {
             setQuery(event.target.value);
             setPage(1);
           }}
-          placeholder={t("Search phone")}
+          placeholder={t("Search phone or email")}
           className={FILTER_CONTROL_CLASS}
         />
         <select
