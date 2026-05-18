@@ -448,6 +448,53 @@ function DirectChatDetailsPanel({
       navigateToChatWorkspace(true);
     },
   });
+
+  // 走查新一轮 R29：和姊妹移动端 chat-details-page R2（commit 2d6d33d57）同款
+  // 修法——「星标朋友」/「置顶聊天」/「消息免打扰」3 个 toggle 行只挂了
+  // `disabled={busy}`，busy = mutation.isPending 是 React state 要等 commit
+  // 才进 DOM。同帧 <16ms 第二次 click 都看到 disabled=false → mutation.mutate
+  // 飞 2 次，公网隧道 RTT 双倍消耗 + onSuccess 让 notice 文本闪两次。叠 sync
+  // ref 锁兜同帧 double-tap，pending 翻 false 后 useEffect 复位。
+  const starredSubmittingRef = useRef(false);
+  const pinSubmittingRef = useRef(false);
+  const muteSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (!setStarredMutation.isPending) {
+      starredSubmittingRef.current = false;
+    }
+  }, [setStarredMutation.isPending]);
+  useEffect(() => {
+    if (!pinMutation.isPending) {
+      pinSubmittingRef.current = false;
+    }
+  }, [pinMutation.isPending]);
+  useEffect(() => {
+    if (!muteMutation.isPending) {
+      muteSubmittingRef.current = false;
+    }
+  }, [muteMutation.isPending]);
+  const handleToggleStarred = (next: boolean) => {
+    if (starredSubmittingRef.current) {
+      return;
+    }
+    starredSubmittingRef.current = true;
+    setStarredMutation.mutate(next);
+  };
+  const handleTogglePin = (next: boolean) => {
+    if (pinSubmittingRef.current) {
+      return;
+    }
+    pinSubmittingRef.current = true;
+    pinMutation.mutate(next);
+  };
+  const handleToggleMute = (next: boolean) => {
+    if (muteSubmittingRef.current) {
+      return;
+    }
+    muteSubmittingRef.current = true;
+    muteMutation.mutate(next);
+  };
+
   const handleAddToContacts = () => {
     if (!targetCharacterId) {
       return;
@@ -873,20 +920,20 @@ function DirectChatDetailsPanel({
                 checked={friendship?.isStarred ?? false}
                 disabled={busy}
                 onToggle={() =>
-                  setStarredMutation.mutate(!(friendship?.isStarred ?? false))
+                  handleToggleStarred(!(friendship?.isStarred ?? false))
                 }
               />
               <DesktopContactProfileToggleRow
                 label={t(msg`置顶聊天`)}
                 checked={conversation.isPinned}
                 disabled={busy}
-                onToggle={() => pinMutation.mutate(!conversation.isPinned)}
+                onToggle={() => handleTogglePin(!conversation.isPinned)}
               />
               <DesktopContactProfileToggleRow
                 label={t(msg`消息免打扰`)}
                 checked={conversation.isMuted}
                 disabled={busy}
-                onToggle={() => muteMutation.mutate(!conversation.isMuted)}
+                onToggle={() => handleToggleMute(!conversation.isMuted)}
               />
             </DesktopContactProfileSection>
           ) : null}
