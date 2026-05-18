@@ -395,21 +395,16 @@ export class UsersService implements OnModuleInit {
       // subscriptionExpiresAt 在序列化时取「active 或 latest」的 expiresAt，等价
       // 于 MAX(expiresAt) per user（active 永远 > expired），所以这里直接 MAX
       // 就够，不用区分 status。
+      // 用相关子查询而不是 leftJoin：TypeORM .take() 会把整个 SELECT 包成分页
+      // 子查询，子查询里访问 leftJoin 出来的别名列容易"unknown column"，相关
+      // 子查询贴在 ORDER BY 里则不依赖任何额外 SELECT。
+      const latestExpiresSql =
+        '(SELECT MAX("us"."expiresAt") FROM "user_subscriptions" "us" WHERE "us"."userId" = "user"."id")';
       builder
-        .leftJoin(
-          (qb) =>
-            qb
-              .select("us.userId", "userId")
-              .addSelect("MAX(us.expiresAt)", "latestExpiresAt")
-              .from(UserSubscriptionEntity, "us")
-              .groupBy("us.userId"),
-          "subExp",
-          "subExp.userId = user.id",
-        )
         // NULL 永远排到末尾，匹配前端老逻辑里 av===null 返回 1 的语义；
         // 不依赖 SQLite/PG 的 NULLS LAST 方言。
-        .orderBy("CASE WHEN subExp.latestExpiresAt IS NULL THEN 1 ELSE 0 END", "ASC")
-        .addOrderBy("subExp.latestExpiresAt", orderDir)
+        .orderBy(`CASE WHEN ${latestExpiresSql} IS NULL THEN 1 ELSE 0 END`, "ASC")
+        .addOrderBy(latestExpiresSql, orderDir)
         .addOrderBy("user.createdAt", "DESC");
     } else if (orderBy === "lastLogin") {
       builder
