@@ -190,6 +190,16 @@ export function GroupMessageContextMenu({
         type="button"
         onClick={onClose}
         aria-label={t(msg`关闭消息菜单`)}
+        // 走查电脑端单聊 R117：和姊妹 R113 desktop-conversation-context-menu /
+        // R107-R114 dialog backdrop 同款 —— 右键单聊 / 群聊消息弹出的
+        // GroupMessageContextMenu 的 backdrop <button> (absolute inset-0)
+        // 视觉不可见、纯 mouse"点击外部关闭"affordance，但 DOM 顺序排在 menu
+        // 子树第一位。用户右键消息弹 menu 后想 Tab 进 menu 项 (回复/转发/
+        // 引用/撤回/收藏/删除)，焦点先落到这张不可见 backdrop → 看不到
+        // focus ring → 再按 Enter menu 秒关。Esc keydown 已挂；ArrowDown/Tab
+        // 可直接跳到第一个 menuitem。挂 tabIndex={-1} 把 backdrop 从 Tab 序列
+        // 移出。
+        tabIndex={-1}
         className="absolute inset-0 cursor-default bg-transparent"
       />
 
