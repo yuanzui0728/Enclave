@@ -10,6 +10,7 @@ import { Button, ErrorBlock, LoadingBlock, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
+import { getConversationDisplayTitle } from "../../../lib/conversation-preview";
 import {
   getConversationThreadLabel,
   isPersistedGroupConversation,
@@ -117,8 +118,11 @@ export function DesktopNoteSendDialog({
     if (!keyword) {
       return orderedConversations;
     }
+    // R2：和 forward-dialog 同款——搜索 haystack 跟着 row 显示翻 sentinel。
     return orderedConversations.filter((conversation) =>
-      conversation.title.toLowerCase().includes(keyword),
+      getConversationDisplayTitle(conversation.title)
+        .toLowerCase()
+        .includes(keyword),
     );
   }, [orderedConversations, searchTerm]);
 
@@ -245,6 +249,9 @@ export function DesktopNoteSendDialog({
             <div className="space-y-2">
               {filteredConversations.map((conversation) => {
                 const isGroup = isPersistedGroupConversation(conversation);
+                const displayTitle = getConversationDisplayTitle(
+                  conversation.title,
+                );
                 return (
                   <button
                     key={conversation.id}
@@ -262,20 +269,20 @@ export function DesktopNoteSendDialog({
                     <div className="flex min-w-0 items-center gap-3">
                       {isGroup ? (
                         <GroupAvatarChip
-                          name={conversation.title}
+                          name={displayTitle}
                           members={conversation.participants}
                           size="wechat"
                         />
                       ) : (
                         <AvatarChip
-                          name={conversation.title}
+                          name={displayTitle}
                           src={conversation.avatar}
                           size="wechat"
                         />
                       )}
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                          {conversation.title}
+                          {displayTitle}
                         </div>
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                           {getConversationThreadLabel(conversation)} ·{" "}

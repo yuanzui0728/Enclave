@@ -14,6 +14,7 @@ import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
+import { getConversationDisplayTitle } from "../../../lib/conversation-preview";
 import {
   getConversationThreadLabel,
   isPersistedGroupConversation,
@@ -188,8 +189,14 @@ export function DesktopMessageForwardDialog({
       return orderedConversations;
     }
 
+    // R2：搜索按显示后的 title 匹配——同 row 渲染走 getConversationDisplayTitle
+    // 翻 legacy sentinel，搜索 haystack 也得跟着翻；否则 en-US 用户输入
+    // 「Unknown」找不到 row 显示「Unknown contact」的会话（title 在 DB 里是
+    // raw 中文「未知联系人」）。
     return orderedConversations.filter((conversation) =>
-      conversation.title.toLowerCase().includes(keyword),
+      getConversationDisplayTitle(conversation.title)
+        .toLowerCase()
+        .includes(keyword),
     );
   }, [deferredSearchTerm, orderedConversations]);
 
@@ -435,6 +442,9 @@ export function DesktopMessageForwardDialog({
             >
               {filteredConversations.map((conversation, index) => {
                 const isGroup = isPersistedGroupConversation(conversation);
+                const displayTitle = getConversationDisplayTitle(
+                  conversation.title,
+                );
                 return (
                   <button
                     key={conversation.id}
@@ -451,20 +461,20 @@ export function DesktopMessageForwardDialog({
                     <div className="flex min-w-0 items-center gap-3">
                       {isGroup ? (
                         <GroupAvatarChip
-                          name={conversation.title}
+                          name={displayTitle}
                           members={conversation.participants}
                           size="wechat"
                         />
                       ) : (
                         <AvatarChip
-                          name={conversation.title}
+                          name={displayTitle}
                           src={conversation.avatar}
                           size="wechat"
                         />
                       )}
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                          {conversation.title}
+                          {displayTitle}
                         </div>
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                           {t(msg`${getConversationThreadLabel(conversation)} · 最近活跃 ${formatMessageTimestamp(conversation.lastActivityAt)}`)}

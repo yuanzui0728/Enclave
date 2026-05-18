@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@yinjie/ui";
+import { getConversationDisplayTitle } from "../../../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import {
   formatMessageTimestamp,
@@ -367,7 +368,7 @@ export function DesktopChatHistoryPanel({
               {isGroupConversation ? t(msg`群聊`) : t(msg`单聊`)}
             </span>
             <span className="truncate text-[12px] text-[color:var(--text-primary)]">
-              {conversation.title}
+              {getConversationDisplayTitle(conversation.title)}
             </span>
             {openedFromDetails ? (
               <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.14)]">

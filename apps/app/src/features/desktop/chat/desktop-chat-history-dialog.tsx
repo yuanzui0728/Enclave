@@ -4,6 +4,7 @@ import { ChevronLeft, X } from "lucide-react";
 import { type ConversationListItem } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import { cn } from "@yinjie/ui";
+import { getConversationDisplayTitle } from "../../../lib/conversation-preview";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
 
 type DesktopChatHistoryDialogProps = {
@@ -94,7 +95,10 @@ export function DesktopChatHistoryDialog({
               {t(msg`查找聊天记录`)}
             </span>
             <span className="px-1.5 text-[color:var(--text-dim)]">·</span>
-            <span className="truncate">{conversation.title || t(msg`当前聊天`)}</span>
+            <span className="truncate">
+              {getConversationDisplayTitle(conversation.title) ||
+                t(msg`当前聊天`)}
+            </span>
           </div>
 
           <button
