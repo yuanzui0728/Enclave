@@ -638,9 +638,17 @@ export function ChannelsPage() {
     // 里调的 upsertDesktopFavorite）原来已经立刻反映，但 slide 上的收藏按钮要等
     // home 重拉才翻状态，看着像是"按钮没响应"。
     onMutate: async (input) => {
-      await queryClient.cancelQueries({
-        queryKey: ["app-channels-home", baseUrl],
-      });
+      // 走查 2026-05-18 新会话 R3（本轮）：跟 likeMutation R2 同款 ——
+      // desktop 深链 post 的 app-feed-post cache 没被 optimistic 翻，slide 上
+      // 的收藏按钮不响应。补 cancel + setQueryData。
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: ["app-channels-home", baseUrl],
+        }),
+        queryClient.cancelQueries({
+          queryKey: ["app-feed-post", baseUrl, input.postId],
+        }),
+      ]);
       // 同 likeMutation：失败回滚 per-post，避免并发 mutate 互相覆盖。
       const previousEntries: Array<{
         key: readonly unknown[];
@@ -682,7 +690,39 @@ export function ChannelsPage() {
           ),
         });
       });
-      return { previousEntries, mutationBaseUrl: baseUrl };
+      // 走查 2026-05-18 新会话 R3：route post cache 同步 optimistic。
+      const previousRoutePost =
+        queryClient.getQueryData<FeedPostWithComments>([
+          "app-feed-post",
+          baseUrl,
+          input.postId,
+        ]) ?? null;
+      if (previousRoutePost) {
+        queryClient.setQueryData<FeedPostWithComments>(
+          ["app-feed-post", baseUrl, input.postId],
+          {
+            ...previousRoutePost,
+            favoriteCount: input.favorited
+              ? Math.max(0, previousRoutePost.favoriteCount - 1)
+              : previousRoutePost.favoriteCount + 1,
+            ownerState: {
+              ...(previousRoutePost.ownerState ?? {
+                hasLiked: false,
+                hasFavorited: false,
+                isFollowingAuthor: false,
+                isNotInterested: false,
+                hasViewed: false,
+                hasShared: false,
+                lastViewedAt: null,
+                watchProgressSeconds: null,
+                completed: false,
+              }),
+              hasFavorited: !input.favorited,
+            },
+          },
+        );
+      }
+      return { previousEntries, previousRoutePost, mutationBaseUrl: baseUrl };
     },
     onError: (error, input, context) => {
       context?.previousEntries.forEach(({ key, previousPost }) => {
@@ -696,6 +736,13 @@ export function ChannelsPage() {
           ),
         });
       });
+      // R3 续：route post cache 同步回滚。
+      if (context?.previousRoutePost && context.mutationBaseUrl) {
+        queryClient.setQueryData<FeedPostWithComments>(
+          ["app-feed-post", context.mutationBaseUrl, input.postId],
+          context.previousRoutePost,
+        );
+      }
       // mid-flight 切账户：失败 toast 不冒到新账户。
       if (context && context.mutationBaseUrl !== mutationBaseUrlRef.current) {
         return;
