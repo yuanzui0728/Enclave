@@ -182,9 +182,14 @@ export function CharacterDetailPage() {
     [recommendationId, safeMobileReturnHash, safeMobileReturnPath],
   );
 
+  // 走查 R5（第 5 轮）：和 chat-details-page / mobile-ai-call-screen / desktop
+  // 三处共享 "app-character"，其余 5 处都对齐到 15s staleTime；本页一直裸跑
+  // → 用户从 chat-details 点联系人卡片进入资料页时上一页刚拉过的 character
+  // cache 还热，按 mobile-web 60s / 其它 10s 默认会被判 stale 重发一次 GET。
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId, baseUrl),
+    staleTime: 15_000,
   });
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -235,9 +240,16 @@ export function CharacterDetailPage() {
   // 刚拉黑的 friendship 重置回来，绕过黑名单 —— 正是 line 2147-2152 的注释
   // 提前提防住的场景。一次 /social/blocks 不值得这种正确性 regression，保持
   // 始终 enabled。
+  // 走查 R5（第 5 轮）：和 chat-details-page / contacts-page / desktop-chat-details-panel
+  // 共享 "app-chat-details-blocked"，那 3 处对齐到 15s staleTime（chat-details
+  // 走查新一轮 R7 commit 8ccbb528d 已修），本页一直裸跑——上方那段大注释里
+  // "character-detail-page (line 247)" 其实是 conversationsQuery 的 staleTime，
+  // 不是 blockedQuery；这条 blockedQuery 是从 chat-details 跳进资料页时同
+  // queryKey cache 已经热的，缺 staleTime 会按默认重发一次 GET /social/blocks。
   const blockedQuery = useQuery({
     queryKey: ["app-chat-details-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
+    staleTime: 15_000,
   });
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
