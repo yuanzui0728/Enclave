@@ -279,13 +279,26 @@ export function DesktopChannelsWorkspace({
     // 把 <tool_call> / [TOOL_CALL] 这类残留过滤掉再当转发面板顶部摘要；
     // 桌面这里一直拿原文，AI 生成贴里夹的工具调用语法会原样塞进
     // 转发预览，看着像乱码。和移动端对齐一道清洗。
-    const cleanText = stripToolCallSyntax(post.text ?? "");
+    //
+    // 走查 2026-05-18 新会话续轮 R1：mobile handleSharePost（channels-page
+    // L1630-1647）早就加了 fallback 链 cleanText → post.title → "视频号动态"
+    // —— audio 帖（mediaType=audio）后端 createOwnerPost 走 audio 路径时 text
+    // 不强制，post.text 经常是空串；纯 AI thinking-prose 帖也会被 strip 抠成
+    // 空。原 desktop 代码直接拼 `${author}：${cleanText}` 让 picker 顶部摘要
+    // 变成「李白：」一个孤零零的全角冒号悬空，体感「要转发的内容是不是残缺了」。
+    // 桌面跟移动端对齐 fallback 链；用 translateRuntimeMessage 而非 t hook，
+    // 是因为下方 useCallback([]) 不该把 t 拽进 deps。
+    const cleanText = stripToolCallSyntax(post.text ?? "").trim();
+    const titleOrText =
+      cleanText ||
+      post.title?.trim() ||
+      translateRuntimeMessage(msg`视频号动态`);
     // 走查 2026-05-18 新会话 R2：picker 打开时钉住 baseUrl 供下方 onForwarded
     // / onForwardFailed 比对（跨账户的转发完成不冒到新账户）。
     forwardPickerBaseUrlRef.current = handlerRefs.current.baseUrl;
     setForwardPickerPost({
       id: post.id,
-      excerpt: `${post.authorName}：${cleanText}`.slice(0, 80),
+      excerpt: `${post.authorName}：${titleOrText}`.slice(0, 80),
     });
   }, []);
   const handleSlideToggleAuthorFollow = useCallback((post: FeedPostListItem) => {
