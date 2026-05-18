@@ -131,7 +131,21 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const [callTipsDismissed, setCallTipsDismissed] = useState(false);
   const [leavingScreen, setLeavingScreen] = useState(false);
   const [joinedMemberIds, setJoinedMemberIds] = useState<string[]>([]);
-  const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
+  // 走查新一轮 R3：原 useState lazy init 一刀切用 `new Date().toISOString()`，
+  // 但「resume call」流（桌面端打开通话邀请 → 通过 hash routeState 传
+  // recordedAt 给手机端继续 / 手机端切前后台 resume 等）走 routeState.recordedAt
+  // 才是真正的发起时间。原版下方 init useEffect 在 membersQuery loaded 之后
+  // 才会用 routeState.recordedAt 覆盖 startedAt——慢网下 membersQuery 公网
+  // 隧道 ~600ms 内，顶部「发起时间」CallMetricCard 显示 "now"，之后跳到真正
+  // 的 recordedAt（往往是几分钟甚至几十分钟前）。用户肉眼可见的时间跳变。
+  // useState 的 lazy initializer 在 mount 期同步跑，且 routeState 在前面已经
+  // 计算好，可以直接复用——避免这次 flash。
+  const [startedAt, setStartedAt] = useState(
+    () =>
+      routeState?.recordedAt ??
+      routeState?.snapshotRecordedAt ??
+      new Date().toISOString(),
+  );
   const [lastPublishedCounts, setLastPublishedCounts] = useState<{
     activeCount: number;
     totalCount: number;
