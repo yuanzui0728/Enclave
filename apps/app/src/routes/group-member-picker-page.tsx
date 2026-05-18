@@ -242,7 +242,21 @@ function MobileGroupMemberPickerPage({
       .map((item) => {
         const rawName = item.memberName?.trim() || item.memberId;
         const friend = friendMap.get(item.memberId);
-        const displayName = friend ? getFriendDisplayName(friend) : rawName;
+        // 走查 2026-05-18 移动端群聊 R3：原 displayName = getFriendDisplayName(friend)
+        // 等于 friend.friendship.remarkName || friend.character.name —— 后者拿的是
+        // character 的**当前**名字。若 character 在另一台设备 / 后台被改名（或落库
+        // 数据被工具/测试改成「走查词条_xxx」），同一个角色在群详情页（按
+        // memberName 显示 "阿巡"）和移除成员页（按 character.name 显示 "走查词条_
+        // 177886..."）名字完全对不上，用户根本不知道勾的是谁。
+        // 群成员展示沿用 WeChat 群语义：remarkName > 群里的 memberName（joinedAt
+        // 时落的，等价"群昵称"）> character.name > id —— 三处选择面板（details
+        // grid / remove picker / mention picker）逻辑统一。
+        const remarkName = friend?.friendship.remarkName?.trim();
+        const displayName =
+          remarkName ||
+          item.memberName?.trim() ||
+          friend?.character.name ||
+          item.memberId;
         const roleLabel =
           item.role === "admin" ? t(msg`管理员`) : t(msg`群成员`);
 
