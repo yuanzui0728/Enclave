@@ -78,7 +78,14 @@ export function DesktopContactTextEditDialog({
   const effectiveCloseLabel = closeLabel ?? t(msg`关闭弹层`);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查新一轮 R12 (单聊路径下复用)：本 dialog 也被 desktop-chat-details-panel
+    // 用于编辑联系人备注 / 标签。和姊妹 confirm/text-edit dialog 同款，缺
+    // portal-shield → 用户在 dialog 内点输入框 / 取消 / X / backdrop 时
+    // workspace pointerdown capture 把背后的「聊天信息」侧栏偷关掉。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-contact-text-edit-dialog"
+    >
       <button
         type="button"
         aria-label={effectiveCloseLabel}

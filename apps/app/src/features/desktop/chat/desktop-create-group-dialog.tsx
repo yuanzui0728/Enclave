@@ -723,7 +723,15 @@ export function DesktopCreateGroupDialog({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]">
+    // 走查新一轮 R12：和姊妹 confirm/text-edit/forward dialog 同款
+    // portal-shield。create-group dialog 从 workspace「+」快捷菜单 /
+    // 详情侧栏「发起群聊」打开，背后通常有侧栏；用户在 dialog 内点
+    // 搜索框 / 联系人 row 时 workspace pointerdown capture 偷关侧栏，
+    // 用户点取消时回不到原详情视图。Esc 路径已 stopPropagation。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]"
+      data-yj-portal-shield="desktop-create-group-dialog"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭发起群聊弹层`)}

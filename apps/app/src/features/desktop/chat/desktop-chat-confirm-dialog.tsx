@@ -74,7 +74,20 @@ export function DesktopChatConfirmDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查新一轮 R12：和 R10/R11 一脉相承的 portal-shield 问题。workspace
+    // 在 rightPanelMode=details 时挂的 onPointerDownCapture / document
+    // pointerdown(capture) 兜底会在「点击不落在 thread/header/sidePanel/
+    // shield 区域」时 dismissSidePanel。本 confirm dialog inline 渲染在
+    // workspace 根下，没有 shield —— 用户从「聊天信息」侧栏点「删除聊天/
+    // 清空记录/投诉/加入黑名单」打开本 dialog 后，点取消/确认按钮 / 点 X /
+    // 点 backdrop，pointerdown capture 都会先把侧栏偷关掉。对「清空/投诉/
+    // 加入黑名单」尤其坑：操作完不删除会话，用户期望回到详情侧栏继续，
+    // 结果发现侧栏没了得手动重开。Esc 路径上 R2 时已经 stopPropagation
+    // 解决过同款问题；这里给 pointerdown 路径加 shield。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-chat-confirm-dialog"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭 ${title} 弹层`)}

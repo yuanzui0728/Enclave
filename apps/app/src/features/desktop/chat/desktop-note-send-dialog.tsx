@@ -96,7 +96,14 @@ export function DesktopNoteSendDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-3 backdrop-blur-[3px] sm:p-4 lg:p-6">
+    // 走查新一轮 R12：和姊妹 forward dialog 同款 portal-shield。note-send
+    // 在桌面端 composer「+ → 收藏 → 笔记 → 发送」或者 notes-workspace 右键
+    // 「发送给」时打开，背后可能有「聊天信息」侧栏开着。用户在 dialog 内
+    // 点搜索框 / 会话行时 workspace pointerdown capture 偷关侧栏。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-3 backdrop-blur-[3px] sm:p-4 lg:p-6"
+      data-yj-portal-shield="desktop-note-send-dialog"
+    >
       <button
         type="button"
         aria-label={t(msg`关闭发送笔记弹层`)}

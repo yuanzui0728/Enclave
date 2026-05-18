@@ -151,7 +151,12 @@ export function DesktopMessageForwardDialog({
   }
 
   return (
+    // 走查新一轮 R12：和姊妹 confirm/text-edit dialog 同款 portal-shield。
+    // 转发弹层是从消息列表 / 多选「转发」打开，desktop 路径下背后通常有
+    // 「聊天信息」侧栏；用户在 dialog 里点搜索框 / 会话行时 workspace
+    // pointerdown capture 会把侧栏偷关。Esc 路径已 stopPropagation。
     <div
+      data-yj-portal-shield="desktop-message-forward-dialog"
       className={cn(
         "fixed inset-0 z-50",
         isMobile

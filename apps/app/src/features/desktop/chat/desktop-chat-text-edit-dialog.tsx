@@ -103,7 +103,15 @@ export function DesktopChatTextEditDialog({
   const effectiveCloseLabel = closeLabel ?? t(msg`关闭弹层`);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    // 走查新一轮 R12：和 confirm-dialog 同款 portal-shield。本 text-edit
+    // dialog 多数情况下是从「聊天信息」侧栏点群名称 / 我的群昵称 / 群公告
+    // 弹出。用户在 dialog 里点取消 / 确认 / X / backdrop 时，workspace
+    // pointerdown capture 兜底会偷把背后的侧栏关掉。Esc 路径已经在
+    // R2 里 stopPropagation 解决；这里给 pointer 路径加 shield。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
+      data-yj-portal-shield="desktop-chat-text-edit-dialog"
+    >
       <button
         type="button"
         aria-label={effectiveCloseLabel}
