@@ -4856,6 +4856,14 @@ function buildMessageFavoriteRecord(
     to: threadPath,
     badge: groupMode ? t(msg`群聊消息`) : t(msg`聊天消息`),
     avatarName: senderName,
+    // 走查新一轮 R3：群聊消息的 senderAvatar 是真实角色头像 URL（群成员可能
+    // 是多个不同 character，每个有自己的形象），原版只塞 avatarName 走
+    // AvatarChip 的 seed 灰底首字 fallback，收藏列表里所有群消息看上去都是
+    // 一堆"阿"/"林"/"老"的色块，互相分不清；FavoriteRecord 早就有 avatarSrc
+    // 字段（contracts/favorites.ts:20）+ 渲染端（mobile-favorites-page:563 /
+    // favorites-page:913）已经 <AvatarChip src={item.avatarSrc} /> 走通了，
+    // 只是 builder 没把数据接上。null → undefined 避免 contract 类型不匹配。
+    avatarSrc: message.senderAvatar ?? undefined,
   };
 }
 
