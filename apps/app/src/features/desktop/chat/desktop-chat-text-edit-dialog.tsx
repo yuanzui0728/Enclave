@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { X } from "lucide-react";
 import { Button, TextAreaField, TextField } from "@yinjie/ui";
@@ -65,6 +65,21 @@ export function DesktopChatTextEditDialog({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, open, pending]);
 
+  // 走查桌面端群聊 R2：和 DesktopChatConfirmDialog R4 同款问题——「保存」按钮
+  // / Enter 提交都只靠 `disabled={confirmDisabled}`，confirmDisabled 含
+  // `pending`，pending 是 parent useMutation.isPending React state，要等 commit
+  // 才进 DOM。同帧双击 / 双 Enter 都看到 false → parent updateGroupMutation /
+  // updateNicknameMutation.mutate() 飞 2 次。updateGroup PATCH 服务端虽幂等
+  // 不会改坏数据但浪费公网 RTT；onConfirm 闭包里同时 invalidate 多份 cache，
+  // 第二次 invalidate 撞上正在跑的第一次会强行打断、再触发一次额外 GET。
+  // 加 sync ref 锁同帧；pending 翻 false（success/error）后 useEffect 复位。
+  const submittingRef = useRef(false);
+  useEffect(() => {
+    if (!pending) {
+      submittingRef.current = false;
+    }
+  }, [pending]);
+
   if (!open) {
     return null;
   }
@@ -75,6 +90,13 @@ export function DesktopChatTextEditDialog({
     pending ||
     (!emptyAllowed && normalizedDraft.length === 0) ||
     normalizedDraft === normalizedInitialValue;
+  const handleConfirm = () => {
+    if (confirmDisabled || submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    onConfirm(normalizedDraft);
+  };
   const effectiveSubmitLabel = submitLabel ?? t(msg`保存`);
   const effectiveCloseLabel = closeLabel ?? t(msg`关闭弹层`);
 
@@ -95,11 +117,7 @@ export function DesktopChatTextEditDialog({
         className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
-          if (confirmDisabled) {
-            return;
-          }
-
-          onConfirm(normalizedDraft);
+          handleConfirm();
         }}
       >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
