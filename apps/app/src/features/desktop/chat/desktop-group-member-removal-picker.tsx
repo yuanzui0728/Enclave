@@ -182,6 +182,10 @@ export function DesktopGroupMemberRemovalPicker({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t(msg`搜索群成员`)}
+                // 走查 R5：父 label 只含 Search 图标 + input，没文本子节点，
+                // SR 进来只听到「编辑栏 搜索群成员 空」分裂行为。和姊妹
+                // chat-history R24 / 移动端 group-member-picker R3 同款 a11y。
+                aria-label={t(msg`搜索群成员`)}
                 className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
               />
             </label>

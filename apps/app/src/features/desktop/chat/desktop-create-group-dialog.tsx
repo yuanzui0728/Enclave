@@ -798,6 +798,12 @@ export function DesktopCreateGroupDialog({
               onChange={(event) => setSearchTerm(event.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder={t(msg`搜索联系人`)}
+              // 走查 R5：和姊妹移动端 group-member-picker R3 / 桌面 chat-history
+              // R24 / chat-files / forward-dialog 同款 a11y 修法——父 label 只
+              // 含 Search 图标 + input，无文本子节点，等于 input 没有 accessible
+              // name。SR focus 进来只听到「编辑栏 搜索联系人 空」（placeholder
+              // 部分实现读、部分不读），盲人用户得自己摸 dialog 标题猜 scope。
+              aria-label={t(msg`搜索联系人`)}
               className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-10 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
             />
             {searchTerm.trim() ? (

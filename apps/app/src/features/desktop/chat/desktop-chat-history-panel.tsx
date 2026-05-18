@@ -562,6 +562,11 @@ export function DesktopChatHistoryPanel({
                 value={memberKeyword}
                 onChange={(event) => setMemberKeyword(event.target.value)}
                 placeholder={t(msg`搜索群成员`)}
+                // 走查 R5：和顶部「搜索聊天记录」R24 同款 a11y——父 label 只含
+                // Search 图标 + input，无文本子节点，SR 听到「编辑栏 搜索群成员
+                // 空」分裂行为。这块是群聊「查找聊天记录」按发言人筛选时的
+                // 成员搜索框，专属群聊路径。
+                aria-label={t(msg`搜索群成员`)}
                 className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
             </label>
