@@ -174,6 +174,20 @@ function DesktopMomentRowInner({
     }
     return map;
   }, [moment.comments]);
+  // 走查电脑端朋友圈 R2（新一轮）：每条评论文本都要走 stripToolCallSyntax 把
+  // AI 角色偶发漏出的 [TOOL_CALL] / <tool_call> 语法剥掉。之前 CommentLine
+  // 内部 inline 算 + activeReply 那块 inline 算，整行 50 条评论 + 用户每按
+  // 一键 commentDraft 变 → row 不命中 memo → 50 次正则；同样 activeReply 框里
+  // replyTargetComment.text 也每帧 strip 一次。和 wechat-moment-card.tsx 行
+  // 162-179 mobile 早就走的 cleanTextById 预计算同模式，按 moment.comments 引用
+  // 变化做缓存 key，typing 期间 row 重渲只读 Map.get 不再扫正则。
+  const cleanCommentTextById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of moment.comments) {
+      map.set(c.id, stripToolCallSyntax(c.text));
+    }
+    return map;
+  }, [moment.comments]);
 
   function lookupReplyToName(comment: MomentComment) {
     if (!comment.replyToAuthorId) {
@@ -442,6 +456,10 @@ function DesktopMomentRowInner({
                   const replyToName = lookupReplyToName(comment);
                   const isActiveReply =
                     activeReply?.commentId === comment.id;
+                  // 走查 R2：从 useMemo'd cleanCommentTextById 取已 strip 过的
+                  // 文本，CommentLine 不再 inline 跑正则。
+                  const cleanText =
+                    cleanCommentTextById.get(comment.id) ?? comment.text;
                   if (!canReply) {
                     return (
                       <div
@@ -451,7 +469,7 @@ function DesktopMomentRowInner({
                         <CommentLine
                           authorName={comment.authorName}
                           replyToName={replyToName}
-                          text={comment.text}
+                          text={cleanText}
                         />
                       </div>
                     );
@@ -475,7 +493,7 @@ function DesktopMomentRowInner({
                       <CommentLine
                         authorName={comment.authorName}
                         replyToName={replyToName}
-                        text={comment.text}
+                        text={cleanText}
                       />
                     </button>
                   );
@@ -504,7 +522,7 @@ function DesktopMomentRowInner({
                       </div>
                       {replyTargetComment ? (
                         <div className="truncate text-[color:var(--text-muted)]">
-                          {t(msg`「${stripToolCallSyntax(replyTargetComment.text)}」`)}
+                          {t(msg`「${cleanCommentTextById.get(replyTargetComment.id) ?? stripToolCallSyntax(replyTargetComment.text)}」`)}
                         </div>
                       ) : null}
                     </div>
@@ -587,10 +605,10 @@ function CommentLine({
 }: {
   authorName: string;
   replyToName: string | null;
+  /** 调用方已经过 stripToolCallSyntax 过滤——见 cleanCommentTextById 注释。 */
   text: string;
 }) {
   const translate = useRuntimeTranslator();
-  const displayText = stripToolCallSyntax(text);
   return (
     <span>
       <span className="font-medium text-[#07c160]">{authorName}</span>
@@ -605,7 +623,7 @@ function CommentLine({
       <span className="text-[color:var(--text-secondary)]">
         {translate(msg`：`)}
       </span>
-      <span className="text-[color:var(--text-primary)]">{displayText}</span>
+      <span className="text-[color:var(--text-primary)]">{text}</span>
     </span>
   );
 }
