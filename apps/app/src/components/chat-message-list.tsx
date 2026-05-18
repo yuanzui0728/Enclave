@@ -2761,6 +2761,21 @@ export function ChatMessageList({
     }
 
     const deletedMessageIdSet = new Set<string>();
+    // 走查新一轮 R1：原版 for-await 一路裸跑，第 K 条 deleteXxxMessage 抛错
+    // （网络抖 / cloud token 续期 / 群被对方移除致 403）→ 整个函数 throw 出去
+    // 直接 catch 显示"批量删除失败"；但前 K-1 条服务端已经删掉，本地 cache
+    // 完全没动（cache 更新挂在 try 块 throw 点之后）。结果：
+    //   · UI 仍显示前 K-1 条消息（cache 没 filter）
+    //   · 用户点"继续删除所选消息"重试，selectedMessageIds 还含前 K-1 条 →
+    //     再 DELETE 一次 → 服务端返 404 → 又"批量删除失败"，死循环看着没动
+    //   · 用户最后强退多选，下次进群聊 messagesQuery refetch 才发现"咦怎么
+    //     少了几条"，跟自己最初的预期对不上
+    // 群聊里多选删 5-10 条很常见（清整段调试消息 / 清掉一段无关 AI 闲聊），
+    // 公网隧道 ~600ms RTT × 10 条 = 6 秒滚动，中途 timeout 的概率不低。
+    // 改成 per-iteration try/catch：成功的 add 到 set 继续往后跑；记下第一
+    // 条错误的 message 用于 notice；走完循环统一把 deletedMessageIdSet 拍进
+    // cache，部分成功也写回，UI 与服务端一致。
+    let firstError: unknown = null;
     selectionActionBusyRef.current = true;
     setSelectionActionPending("delete");
 
@@ -2774,20 +2789,27 @@ export function ChatMessageList({
           if (isLocalOnlyMessage(message)) {
             nextLocalState = hideLocalChatMessage(message.id);
             clearTransientMessageState(message.id);
+            deletedMessageIdSet.add(message.id);
             continue;
           }
 
-          if (threadContext.type === "group") {
-            await deleteGroupMessage(threadContext.id, message.id, baseUrl);
-          } else {
-            await deleteConversationMessage(
-              threadContext.id,
-              message.id,
-              baseUrl,
-            );
+          try {
+            if (threadContext.type === "group") {
+              await deleteGroupMessage(threadContext.id, message.id, baseUrl);
+            } else {
+              await deleteConversationMessage(
+                threadContext.id,
+                message.id,
+                baseUrl,
+              );
+            }
+            deletedMessageIdSet.add(message.id);
+            clearTransientMessageState(message.id);
+          } catch (error) {
+            if (firstError === null) {
+              firstError = error;
+            }
           }
-          deletedMessageIdSet.add(message.id);
-          clearTransientMessageState(message.id);
         }
 
         if (nextLocalState) {
@@ -2836,28 +2858,47 @@ export function ChatMessageList({
         setRecalledMessageIds(nextState.recalledMessageIds);
       }
 
-      resetSelectionMode();
-      setActionNotice({
-        message:
-          messagesToDelete.length === 1
-            ? t(msg`已删除 1 条消息。`)
-            : t(msg`已删除 ${messagesToDelete.length} 条消息。`),
-        tone: "success",
-      });
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`批量删除失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续删除所选消息`),
-        onAction: () => {
-          void handleDeleteSelectedMessages();
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+      const failedCount = messagesToDelete.length - deletedMessageIdSet.size;
+      if (failedCount === 0) {
+        resetSelectionMode();
+        setActionNotice({
+          message:
+            messagesToDelete.length === 1
+              ? t(msg`已删除 1 条消息。`)
+              : t(msg`已删除 ${messagesToDelete.length} 条消息。`),
+          tone: "success",
+        });
+      } else if (deletedMessageIdSet.size === 0) {
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? firstError.message
+              : t(msg`批量删除失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续删除所选消息`),
+          onAction: () => {
+            void handleDeleteSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      } else {
+        // 部分成功：cache 已经过滤掉成功的，selectedMessageIds 的 messages-changed
+        // effect (line ~615) 会顺手清掉成功条 → 留下未删的几条等用户重试或取消。
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? t(msg`已删除 ${deletedMessageIdSet.size} 条；剩余 ${failedCount} 条未删除：${firstError.message}`)
+              : t(msg`已删除 ${deletedMessageIdSet.size} 条；剩余 ${failedCount} 条删除失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续删除剩余消息`),
+          onAction: () => {
+            void handleDeleteSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
     } finally {
       selectionActionBusyRef.current = false;
       setSelectionActionPending(null);
@@ -2876,74 +2917,121 @@ export function ChatMessageList({
     const skippedCount = selectedMessages.length - messagesToRecall.length;
     selectionActionBusyRef.current = true;
     setSelectionActionPending("recall");
+    // 走查新一轮 R1：和姊妹 handleDeleteSelectedMessages 同款问题——原版
+    // for-await 撤回 N 条，第 K 条失败（公网隧道 timeout / cloud token 续期 /
+    // 服务端窗口期判定 GROUP_MESSAGE_RECALL_EXPIRED）就把整段循环 throw 出去，
+    // 前 K-1 条服务端已经成功撤回但 cache 完全没动（updateXxxMessageQueries
+    // 在 catch 之外的 throw 点之后）。结果：群里 K-1 条已经显示为"[消息已撤回]"，
+    // 但当前用户的本地 UI 还显示正文；下次 mount refetch 才发现差异，跟"撤回"
+    // 的"立即可见"语义严重不符。改成 per-iteration try/catch，把成功的累计
+    // 到 recalledMessageMap，循环走完之后统一拍回 cache；notice 分 all-success
+    // / partial / total-fail 三档展示。
 
+    let firstError: unknown = null;
+    const groupRecalled = new Map<string, GroupMessage>();
+    const directRecalled = new Map<string, Message>();
     try {
       if (threadContext.type === "group") {
-        const recalledMessageMap = new Map<string, GroupMessage>();
         for (const message of messagesToRecall) {
-          const recalledMessage = await recallGroupMessage(
-            threadContext.id,
-            message.id,
-            baseUrl,
-          );
-          recalledMessageMap.set(recalledMessage.id, recalledMessage);
+          try {
+            const recalledMessage = await recallGroupMessage(
+              threadContext.id,
+              message.id,
+              baseUrl,
+            );
+            groupRecalled.set(recalledMessage.id, recalledMessage);
+          } catch (error) {
+            if (firstError === null) {
+              firstError = error;
+            }
+          }
         }
 
-        updateGroupMessageQueries(
-          threadContext.id,
-          (current): GroupMessage[] | undefined =>
-            current?.map(
-              (item): GroupMessage => recalledMessageMap.get(item.id) ?? item,
-            ) ?? current,
-        );
+        if (groupRecalled.size > 0) {
+          updateGroupMessageQueries(
+            threadContext.id,
+            (current): GroupMessage[] | undefined =>
+              current?.map(
+                (item): GroupMessage => groupRecalled.get(item.id) ?? item,
+              ) ?? current,
+          );
+        }
       } else {
-        const recalledMessageMap = new Map<string, Message>();
         for (const message of messagesToRecall) {
-          const recalledMessage = await recallConversationMessage(
-            threadContext.id,
-            message.id,
-            baseUrl,
-          );
-          recalledMessageMap.set(recalledMessage.id, recalledMessage);
+          try {
+            const recalledMessage = await recallConversationMessage(
+              threadContext.id,
+              message.id,
+              baseUrl,
+            );
+            directRecalled.set(recalledMessage.id, recalledMessage);
+          } catch (error) {
+            if (firstError === null) {
+              firstError = error;
+            }
+          }
         }
 
-        updateConversationMessageQueries(
-          threadContext.id,
-          (current): Message[] | undefined =>
-            current?.map(
-              (item): Message => recalledMessageMap.get(item.id) ?? item,
-            ) ?? current,
-        );
+        if (directRecalled.size > 0) {
+          updateConversationMessageQueries(
+            threadContext.id,
+            (current): Message[] | undefined =>
+              current?.map(
+                (item): Message => directRecalled.get(item.id) ?? item,
+              ) ?? current,
+          );
+        }
       }
 
-      resetSelectionMode();
-      setActionNotice({
-        message:
-          skippedCount > 0
-            ? t(msg`已撤回 ${messagesToRecall.length} 条消息，另有 ${skippedCount} 条不支持撤回。`)
-            : messagesToRecall.length === 1
-              ? t(msg`已撤回 1 条消息。`)
-              : t(msg`已撤回 ${messagesToRecall.length} 条消息。`),
-        tone: "success",
-      });
+      const succeededCount =
+        threadContext.type === "group" ? groupRecalled.size : directRecalled.size;
+      const failedCount = messagesToRecall.length - succeededCount;
+      if (failedCount === 0) {
+        resetSelectionMode();
+        setActionNotice({
+          message:
+            skippedCount > 0
+              ? t(msg`已撤回 ${messagesToRecall.length} 条消息，另有 ${skippedCount} 条不支持撤回。`)
+              : messagesToRecall.length === 1
+                ? t(msg`已撤回 1 条消息。`)
+                : t(msg`已撤回 ${messagesToRecall.length} 条消息。`),
+          tone: "success",
+        });
+      } else if (succeededCount === 0) {
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? firstError.message
+              : t(msg`批量撤回失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续撤回所选消息`),
+          onAction: () => {
+            void handleRecallSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      } else {
+        setActionNotice({
+          message:
+            firstError instanceof Error && firstError.message
+              ? t(msg`已撤回 ${succeededCount} 条；剩余 ${failedCount} 条未撤回：${firstError.message}`)
+              : t(msg`已撤回 ${succeededCount} 条；剩余 ${failedCount} 条撤回失败，请稍后再试。`),
+          tone: "danger",
+          actionLabel: t(msg`继续撤回剩余消息`),
+          onAction: () => {
+            void handleRecallSelectedMessages();
+          },
+          secondaryActionLabel: errorActionLabel,
+          onSecondaryAction: onErrorAction ?? undefined,
+        });
+      }
 
-      await queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
-    } catch (error) {
-      setActionNotice({
-        message:
-          error instanceof Error
-            ? error.message
-            : t(msg`批量撤回失败，请稍后再试。`),
-        tone: "danger",
-        actionLabel: t(msg`继续撤回所选消息`),
-        onAction: () => {
-          void handleRecallSelectedMessages();
-        },
-        secondaryActionLabel: errorActionLabel,
-        onSecondaryAction: onErrorAction ?? undefined,
-      });
+      if (succeededCount > 0) {
+        await queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      }
     } finally {
       selectionActionBusyRef.current = false;
       setSelectionActionPending(null);
