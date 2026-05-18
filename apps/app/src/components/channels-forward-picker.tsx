@@ -411,7 +411,17 @@ export function ChannelsForwardPicker({
 
         <div className="max-h-[60vh] overflow-y-auto px-2 pb-4">
           {friendsQuery.isLoading ? (
-            <div className="py-10 text-center text-[13px] text-[color:var(--text-muted)]">
+            // 走查 2026-05-18 第二轮 R6：picker 内"正在加载好友列表…" loading
+            // 是裸 <div>，没 role/aria-live。SR 用户打开转发面板进入 dialog 后
+            // 只听到顶部 "转发到聊天" 标题 + "取消" 按钮，list 区一片寂静（视
+            // 觉上是文字，SR 不主动播报后续 mount 的内容）。loading 持续 100-
+            // 500ms 公网隧道，盲用用户体感"面板里什么都没有，是不是坏了"。
+            // 同 R5 LoadingBlock 修法：挂 role="status" 让 SR 进 dialog 时听到
+            // "正在加载好友列表"。
+            <div
+              role="status"
+              className="py-10 text-center text-[13px] text-[color:var(--text-muted)]"
+            >
               {t(msg`正在加载好友列表…`)}
             </div>
           ) : friendsQuery.isError ? (
@@ -420,7 +430,14 @@ export function ChannelsForwardPicker({
             // 不会自动重拉——用户得退回 channels home、等 30s 再点 share 才能
             // 再试。加一个内联重试按钮直接 refetch，落地体感跟其它读失败状态
             // 卡（视频号 home/作者主页）保持一致。
-            <div className="py-10 text-center text-[13px] text-[color:var(--text-muted)]">
+            //
+            // 走查第二轮 R6：同 R10 errorMessage 同款 —— 这条 friendsQuery 错
+            // 误也是裸 <div>，SR 用户在 picker 内点开就听到 "好友列表暂时拉不
+            // 下来" 这条错。挂 role="alert" 立即播报。
+            <div
+              role="alert"
+              className="py-10 text-center text-[13px] text-[color:var(--text-muted)]"
+            >
               <div>{t(msg`好友列表暂时拉不下来，请稍后重试。`)}</div>
               <button
                 type="button"
