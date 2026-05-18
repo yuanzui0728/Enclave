@@ -2051,11 +2051,46 @@ export function DiscoverFeedPage() {
               text: currentDraft,
             });
           }}
-          onRefresh={() => {
+          onRefresh={async () => {
+            // 新会话 R1：桌面 toolbar「刷新」原本 void feedQuery.refetch() +
+            // void blockedQuery.refetch() 一把扔出去，refetch 失败 (5xx / 网络
+            // 抖动 / world child 崩) 时 useInfiniteQuery 静默把 isError 翻 true
+            // 但 desktop-feed-list 那条 feedErrorMessage 空态 gate 在 posts.length
+            // ===0，正常列表上有 60+ 缓存 post 时永远进不去——用户视感是"我
+            // 点了刷新，啥也没动也没报错，是不是没生效？"。与 handlePullRefresh
+            // (L1058+) 移动端同样的 try/catch + setNotice 兜底对齐：refetch 解析
+            // 完查 result.isError 弹"广场刷新失败"，refetch 自身 reject 走 catch
+            // 路径同款兜底；refreshBaseUrl gate 防 mid-flight 切账户时旧账户
+            // 的失败弹到新账户 toolbar。
+            const refreshBaseUrl = baseUrl;
             resetFeedToFirstPage();
-            void feedQuery.refetch();
-            if (ownerId) {
-              void blockedQuery.refetch();
+            try {
+              const [feedResult] = await Promise.all([
+                feedQuery.refetch(),
+                ownerId ? blockedQuery.refetch() : Promise.resolve(null),
+              ]);
+              if (refreshBaseUrl !== baseUrlRef.current) return;
+              if (feedResult.isError) {
+                const error = feedResult.error;
+                setNoticeTone("info");
+                setNoticeActionLabel(null);
+                setNoticeAction(null);
+                setNotice(
+                  error instanceof Error
+                    ? t(msg`广场刷新失败：${error.message}`)
+                    : t(msg`广场刷新失败，请稍后重试。`),
+                );
+              }
+            } catch (error) {
+              if (refreshBaseUrl !== baseUrlRef.current) return;
+              setNoticeTone("info");
+              setNoticeActionLabel(null);
+              setNoticeAction(null);
+              setNotice(
+                error instanceof Error
+                  ? t(msg`广场刷新失败：${error.message}`)
+                  : t(msg`广场刷新失败，请稍后重试。`),
+              );
             }
           }}
           onTextChange={composeDraft.setText}
