@@ -9,7 +9,7 @@ import {
 import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getBlockedCharacters,
   getCharacter,
@@ -71,6 +71,12 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
   const { anchorElement, onClose } = props;
   const t = useRuntimeTranslator();
   const navigate = useNavigate();
+  // 走查电脑端朋友圈 R1：popover 跨页复用 ——「我的朋友圈」/「朋友圈」按钮在
+  // 当前页就是目标页时（/profile/moments 自己点自己头像 popover）应当藏起来，
+  // 避免「navigate 到当前 path 等于无操作」的体感"我点了但什么也没发生"。
+  const currentPathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -562,6 +568,29 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             {t(msg`朋友圈`)}
           </Button>
         )}
+        {isOwner && !hideMomentsAction && currentPathname !== "/profile/moments" ? (
+          // 走查电脑端朋友圈 R1：之前 owner-kind popover 只挂「打开设置」一个动作，
+          // /tabs/moments 上点自己头像 → popover 弹出来 → 想去「我的朋友圈」却没
+          // 入口（aria-label 上 fallback 写的是「查看 yz 的朋友圈」更显得空头承诺）。
+          // 移动端 moments-page onAuthorTap 对 own moment 直接 navigate /profile/moments，
+          // 桌面这里靠 popover 是因为 desktop owner 还想接「打开设置」，但 owner kind
+          // 同时也应当像 character kind 一样给「朋友圈」入口才对得起 aria-label。
+          // 已经在 /profile/moments 时把按钮藏起来——/profile/moments 也会接 like 行
+          // owner liker，popover 弹自己头像，留个按钮跳回自己等于 no-op，体感"点了
+          // 没反应"。和 character kind hideMomentsAction 同思路（只是这里靠 path
+          // 自检比起靠 callsite 透传更稳）。
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded-full"
+            onClick={() => {
+              onClose();
+              void navigate({ to: "/profile/moments" });
+            }}
+          >
+            {t(msg`我的朋友圈`)}
+          </Button>
+        ) : null}
         {isOwner ? null : (
           <Button
             variant="primary"

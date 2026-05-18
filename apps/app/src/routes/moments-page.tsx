@@ -975,12 +975,18 @@ export function MomentsPage() {
         // 让附带的评论 / 点赞也一起退场（孤儿评论无意义）。location
         // 兜底是防御性的——理论上没有 location-only moment，但若 contentType=text
         // + media=[] + text strip 为空，仅 location 仍能撑住卡片，留个口。
+        //
+        // 走查 R5（本轮，perf）：早返放行 ——「空胶水帖」只可能发生在 text-only
+        // moment 上；只要 moment 有 media 或 location，最终 return true 的分支
+        // 已经盖死，不需要 strip。原版无论如何先走一遍 stripToolCallSyntax 正则，
+        // 200 条 moment（图文为主）× 每条都 strip = 大量浪费的正则烧 CPU。
+        // optimistic like/comment 改 momentsData 后 visibleMoments 重 filter 一遍，
+        // 每帧又烧 ~20ms 正则。把"有 media 或 location"做提前 return true。
+        if (moment.media.length > 0 || moment.location) {
+          return true;
+        }
         const stripped = stripToolCallSyntax(moment.text);
-        if (
-          !stripped &&
-          moment.media.length === 0 &&
-          !moment.location
-        ) {
+        if (!stripped) {
           return false;
         }
         return true;
