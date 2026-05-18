@@ -301,7 +301,7 @@ function DirectChatDetailsPanel({
     : undefined;
   const relationshipSummary = isFriend
     ? remarkName
-      ? t(msg`昵称：${targetCharacter?.name ?? conversation.title}`)
+      ? t(msg`昵称：${targetCharacter?.name || conversation.title}`)
       : targetCharacter?.relationship || t(msg`联系人`)
     : targetCharacter?.relationship || t(msg`世界角色`);
   const backgroundLabel = getChatBackgroundLabel(
@@ -552,7 +552,7 @@ function DirectChatDetailsPanel({
     void navigate({
       to: "/desktop/add-friend",
       hash: buildDesktopAddFriendRouteHash({
-        keyword: targetCharacter?.name ?? conversation.title ?? "",
+        keyword: targetCharacter?.name || conversation.title || "",
         characterId: targetCharacterId,
         openCompose: true,
       }),
@@ -751,7 +751,7 @@ function DirectChatDetailsPanel({
 
       <DesktopContactProfileHeader
         avatar={targetCharacter?.avatar}
-        name={targetCharacter?.name ?? conversation.title}
+        name={targetCharacter?.name || conversation.title}
         displayName={displayName}
         subline={relationshipSummary}
         compact
@@ -789,7 +789,7 @@ function DirectChatDetailsPanel({
                 />
                 <DesktopContactProfileRow
                   label={t(msg`昵称`)}
-                  value={targetCharacter?.name ?? conversation.title}
+                  value={targetCharacter?.name || conversation.title}
                 />
                 <DesktopContactProfileRow
                   label={t(msg`个性签名`)}
@@ -833,7 +833,7 @@ function DirectChatDetailsPanel({
               <>
                 <DesktopContactProfileRow
                   label={t(msg`昵称`)}
-                  value={targetCharacter?.name ?? conversation.title}
+                  value={targetCharacter?.name || conversation.title}
                 />
                 <DesktopContactProfileRow
                   label={t(msg`身份`)}
@@ -2111,7 +2111,7 @@ function GroupChatDetailsPanel({
               anchorElement,
               kind: "character",
               characterId: member.memberId,
-              fallbackName: member.memberName ?? member.memberId,
+              fallbackName: member.memberName || member.memberId,
               fallbackAvatar: member.memberAvatar,
               threadContext: {
                 id: conversation.id,
@@ -2504,8 +2504,8 @@ function DesktopGroupMemberBrowserDialog({
 
       const displayName = resolveDisplayName
         ? resolveDisplayName(member)
-        : (member.memberName ?? member.memberId);
-      const rawName = member.memberName ?? member.memberId;
+        : (member.memberName || member.memberId);
+      const rawName = member.memberName || member.memberId;
       const roleLabel =
         member.role === "owner"
           ? roleLabels.owner
@@ -2776,7 +2776,7 @@ function DesktopGroupMemberBrowserDialog({
               {filteredMembers.map((member) => {
                 const displayName = resolveDisplayName
                   ? resolveDisplayName(member)
-                  : (member.memberName ?? member.memberId);
+                  : (member.memberName || member.memberId);
                 const rawName = member.memberName?.trim() || member.memberId;
                 const roleLabel =
                   member.role === "owner"
