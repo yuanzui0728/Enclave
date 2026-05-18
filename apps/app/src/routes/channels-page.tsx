@@ -1708,22 +1708,28 @@ export function ChannelsPage() {
           </Button>
         }
       >
-        <div className="mt-1.5 flex items-center gap-1">
-          {channelSections.map((section) => (
-            <button
-              key={section.key}
-              type="button"
-              onClick={() => handleSectionChange(section.key)}
-              className={cn(
-                "inline-flex h-9 items-center rounded-full px-3 text-[11px] transition",
-                activeSection === section.key
-                  ? "bg-[rgba(7,193,96,0.12)] font-medium text-[#07c160]"
-                  : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]",
-              )}
-            >
-              {section.label}
-            </button>
-          ))}
+        <div className="mt-1.5 flex items-center gap-1" role="tablist" aria-label={t(msg`视频号分组`)}>
+          {channelSections.map((section) => {
+            const selected = activeSection === section.key;
+            return (
+              <button
+                key={section.key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-pressed={selected}
+                onClick={() => handleSectionChange(section.key)}
+                className={cn(
+                  "inline-flex h-9 items-center rounded-full px-3 text-[11px] transition",
+                  selected
+                    ? "bg-[rgba(7,193,96,0.12)] font-medium text-[#07c160]"
+                    : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]",
+                )}
+              >
+                {section.label}
+              </button>
+            );
+          })}
         </div>
       </TabPageTopBar>
 
@@ -3260,6 +3266,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
           <div className="flex flex-col items-center gap-2.5">
             <ActionRailButton
               active={Boolean(post.ownerState?.hasLiked)}
+              ariaPressed={Boolean(post.ownerState?.hasLiked)}
               label={likePending ? t(msg`处理中`) : String(post.likeCount)}
               ariaLabel={
                 post.ownerState?.hasLiked
@@ -3289,6 +3296,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
             </ActionRailButton>
             <ActionRailButton
               active={favorite}
+              ariaPressed={favorite}
               label={
                 favoritePending
                   ? t(msg`处理中`)
@@ -3486,6 +3494,7 @@ function ActionRailButton({
   children,
   label,
   ariaLabel,
+  ariaPressed,
   active = false,
   disabled = false,
   onClick,
@@ -3493,6 +3502,10 @@ function ActionRailButton({
   children: ReactNode;
   label: string;
   ariaLabel?: string;
+  // toggle 按钮（点赞 / 收藏）传 aria-pressed，让 VoiceOver / TalkBack 念出
+  // "已选 / 未选"。普通操作按钮（评论 / 分享 / 减少推荐）不是 toggle，不要传
+  // 否则会让屏幕阅读器误以为是 toggle 控件。
+  ariaPressed?: boolean;
   active?: boolean;
   disabled?: boolean;
   onClick: () => void;
@@ -3503,6 +3516,7 @@ function ActionRailButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel ?? label}
+      aria-pressed={ariaPressed}
       className="flex flex-col items-center gap-1 text-white transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70"
     >
       <span
@@ -3878,14 +3892,25 @@ function MobileChannelCommentsSheet({
         盖住，用户没法看到自己正在敲的内容也按不到发送按钮（mobile-note-send-sheet
         早就改成了 max(safe-area, --keyboard-inset) 同款修复）。--keyboard-inset
         由 mobile-shell 的 useKeyboardInset 写入根 :root，键盘开合时实时更新。
+
+        走查 2026-05-18 R1（本轮）：role/aria-modal 缺失——sheet 视觉上是 modal
+        （z-50 backdrop + body overflow:hidden 锁滚 + Esc/Back 关闭），但没有
+        role="dialog" + aria-modal="true"，VoiceOver / TalkBack 不会进入 modal
+        模式，焦点能 tab 漏到底下的 ChannelsPage（视频号 card / action rail 仍
+        在 tab 序列里）。配合 aria-labelledby 把头部"评论 · N 条"作为对话标题。
       */}
-      <div className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-channels-comments-sheet-title"
+        className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(15,23,42,0.10)]"
+      >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
         <div className="flex items-start justify-between gap-3 px-4 pb-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" id="mobile-channels-comments-sheet-title">
               <div className="text-[14px] font-medium text-[#111827]">
                 {t(msg`评论`)}
               </div>

@@ -241,6 +241,10 @@ export function FriendMomentsPage() {
         ["app-moments-mine", mutationBaseUrl],
         (current) => (current ? [newMoment, ...current] : current),
       );
+      // 走查 R2：跟 moments-page R1 同款 —— pages[0].total 也要 +1，否则
+      // /tabs/moments toolbar「已加载 X / 共 Y 条动态」在 invalidate refetch 落地
+      // 前会显示陈旧的 Y。本页是发布到 paged cache 帮 /tabs/moments 第一帧能
+      // 看到，同步 total 才不会让目标页"总数没动"。
       queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
         ["app-moments-paged", mutationBaseUrl],
         (current) =>
@@ -250,6 +254,7 @@ export function FriendMomentsPage() {
                   {
                     ...current.pages[0]!,
                     items: [newMoment, ...current.pages[0]!.items],
+                    total: (current.pages[0]!.total ?? 0) + 1,
                   },
                 ],
                 pageParams: current.pageParams.slice(0, 1),

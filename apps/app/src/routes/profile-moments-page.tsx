@@ -565,6 +565,10 @@ export function ProfileMomentsPage() {
         ["app-moments-mine", mutationBaseUrl],
         (current) => (current ? [newMoment, ...current] : current),
       );
+      // 走查 R2：跟 moments-page R1 同款 —— pages[0].total 也要 +1，否则
+      // /tabs/moments toolbar「已加载 X / 共 Y 条动态」在 invalidate refetch 落地
+      // 前会显示陈旧的 Y。本页是发布到 paged cache 帮 /tabs/moments 第一帧能
+      // 看到，同步 total 才不会让目标页"总数没动"。
       queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(
         ["app-moments-paged", mutationBaseUrl],
         (current) =>
@@ -574,6 +578,7 @@ export function ProfileMomentsPage() {
                   {
                     ...current.pages[0]!,
                     items: [newMoment, ...current.pages[0]!.items],
+                    total: (current.pages[0]!.total ?? 0) + 1,
                   },
                 ],
                 pageParams: current.pageParams.slice(0, 1),
@@ -649,11 +654,19 @@ export function ProfileMomentsPage() {
       });
       pagedSnapshots.forEach(([key, data]) => {
         if (!data) return;
+        // 走查 R2：跟 moments-page R1 同款 —— pages[0].total 也要 -1，否则
+        // /tabs/moments toolbar「已加载 X / 共 Y 条动态」在 invalidate refetch
+        // (~600ms+) 落地前会显示陈旧的 Y。本页删除自己的 moment 后用户切到
+        // /tabs/moments，总数应该立刻反映出"少了一条"。仅 pages[0] 上下移 ——
+        // total 是服务端跨页累计值，不属于任何具体一页。
         queryClient.setQueryData<InfiniteData<MomentsPageResponse>>(key, {
           ...data,
-          pages: data.pages.map((page) => ({
+          pages: data.pages.map((page, index) => ({
             ...page,
             items: page.items.filter((item) => item.id !== momentId),
+            ...(index === 0
+              ? { total: Math.max(0, (page.total ?? 0) - 1) }
+              : {}),
           })),
         });
       });

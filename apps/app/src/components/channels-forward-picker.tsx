@@ -206,10 +206,20 @@ export function ChannelsForwardPicker({
         className="absolute inset-0"
       />
 
-      <div className="relative max-h-[80vh] w-full max-w-[420px] overflow-hidden rounded-t-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)] sm:rounded-[20px]">
+      {/*
+        走查 2026-05-18 R1：role/aria-modal 缺失——picker 视觉上是 modal，但
+        没有 dialog 语义，VoiceOver / TalkBack 焦点能漏到底层的 ChannelsPage
+        卡片 / action rail。aria-labelledby 指向"转发到聊天"标题。
+      */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="channels-forward-picker-title"
+        className="relative max-h-[80vh] w-full max-w-[420px] overflow-hidden rounded-t-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)] sm:rounded-[20px]"
+      >
         <div className="flex items-center justify-between px-5 pb-2 pt-5">
           <div>
-            <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+            <div id="channels-forward-picker-title" className="text-[16px] font-medium text-[color:var(--text-primary)]">
               {t(msg`转发到聊天`)}
             </div>
             {postExcerpt ? (

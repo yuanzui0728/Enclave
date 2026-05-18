@@ -608,29 +608,42 @@ export function ChannelAuthorPage() {
             ) : null}
 
             <section>
+              {/*
+                走查 2026-05-18 R1：collection tabs 跟 channels-page 的 section
+                tab 同款问题——只是普通 <button>，没有 role="tab" / aria-selected
+                / aria-pressed，VoiceOver / TalkBack 念出"音乐 12 button"听不出
+                谁是当前选中，盲用用户只能靠 tab 序列推断。补齐 tablist / tab
+                role + 当前态。
+              */}
               <div className="border-y border-[color:var(--border-faint)] bg-white px-3">
-                <div className="flex overflow-x-auto">
-                  {collectionTabs.map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => changeCollection(tab.key)}
-                      className={cn(
-                        "relative shrink-0 px-4 py-3 text-[14px] transition",
-                        activeCollection === tab.key
-                          ? "font-medium text-[color:var(--text-primary)]"
-                          : "text-[color:var(--text-secondary)]",
-                      )}
-                    >
-                      {tab.label}
-                      <span className="ml-1 text-[11px] opacity-70">
-                        {tab.count}
-                      </span>
-                      {activeCollection === tab.key ? (
-                        <span className="absolute inset-x-4 bottom-0 h-[2px] rounded-full bg-[color:var(--brand-primary)]" />
-                      ) : null}
-                    </button>
-                  ))}
+                <div className="flex overflow-x-auto" role="tablist" aria-label={t(msg`作者内容分栏`)}>
+                  {collectionTabs.map((tab) => {
+                    const selected = activeCollection === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        aria-pressed={selected}
+                        onClick={() => changeCollection(tab.key)}
+                        className={cn(
+                          "relative shrink-0 px-4 py-3 text-[14px] transition",
+                          selected
+                            ? "font-medium text-[color:var(--text-primary)]"
+                            : "text-[color:var(--text-secondary)]",
+                        )}
+                      >
+                        {tab.label}
+                        <span className="ml-1 text-[11px] opacity-70">
+                          {tab.count}
+                        </span>
+                        {selected ? (
+                          <span className="absolute inset-x-4 bottom-0 h-[2px] rounded-full bg-[color:var(--brand-primary)]" />
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
