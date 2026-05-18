@@ -1036,6 +1036,25 @@ export function DesktopChatWorkspace({
         return;
       }
 
+      // 走查电脑端群聊 R8：dialogActive 只追踪 workspace 顶层 state 上挂的
+      // 4 个 dialog；侧栏内嵌的 dialog（DesktopGroupMemberPicker /
+      // DesktopGroupMemberRemovalPicker / DesktopGroupMemberBrowserDialog /
+      // DesktopChatTextEditDialog / DesktopMessageForwardDialog 等）是
+      // GroupChatDetailsPanel / 子组件自己的 useState，外面看不到。用户开着
+      // 这些 dialog 按 Cmd+F → workspace 把 rightPanelMode 改成 "history" →
+      // details panel unmount → 这些子 dialog 也跟着 unmount，用户当前的
+      // 选成员/编辑名/转发流程被冲掉，右栏切到"查找聊天记录"。这些 dialog
+      // 都挂了 role="dialog" aria-modal="true"（之前的 a11y 走查 R1 给一批
+      // dialog 补齐过），DOM 查询能识别。注意不能查 [data-yj-portal-shield]
+      // ——workspace 自己的搜索框 / quick-menu 容器也用这个 attr 但是常驻
+      // 元素，永远命中。
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector('[role="dialog"][aria-modal="true"]')
+      ) {
+        return;
+      }
+
       event.preventDefault();
       setRightPanelMode("history");
     };
