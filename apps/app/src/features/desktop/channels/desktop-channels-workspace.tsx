@@ -1752,7 +1752,22 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
         <div className="flex w-12 flex-shrink-0 flex-col items-center gap-3 pb-12">
           <ChannelActionButton
             surface="dark"
-            icon={<ThumbsUp size={18} />}
+            // 走查 2026-05-19 第七轮 R2：desktop slide overlay 的点赞 ThumbsUp
+            // 历来 outline-only，仅靠 ChannelActionButton 的 border / text 色变
+            // 表达 active —— 但同款修复早在 mobile（channels-page L4352-4357）和
+            // desktop 的 Bookmark（同文件 L1791-1794，R1 2026-05-17）都改成
+            // fill-current 实心反馈了。desktop ThumbsUp 漏掉同款，跟 favorite
+            // 视觉变体不一致，且夜色 slide overlay 上 outline icon 的绿色描边线
+            // 跟未点赞态白边在 1.5px stroke 下区分度极弱，用户点完赞肉眼几乎判
+            // 不出"已点赞"。补 fill-current 跟 mobile / desktop favorite 对齐。
+            icon={
+              <ThumbsUp
+                size={18}
+                className={
+                  post.ownerState?.hasLiked ? "fill-current" : undefined
+                }
+              />
+            }
             label={`${post.likeCount}`}
             ariaLabel={
               post.ownerState?.hasLiked
