@@ -1460,8 +1460,39 @@ export function ChatComposer({
     void handleSendSticker(sticker);
   };
 
+  // 走查 R2：pickAlbum / pickCamera / pickFile 三个 + 面板入口都只看 React state
+  // `attachmentBusy` 兜双触发——但 attachmentBusy 在 picker 阶段 (打开系统 file
+  // dialog / iOS PHPicker / Android DocumentsContract) 根本没置 true（true 只
+  // 出现在选完图开始 upload 之后），所以即使非同帧的快速二连点也会让两次
+  // pickXxx 全跑到 `albumInputRef.current?.click()` / `void pickXxxWithNativeShell()`：
+  // · Web: HTMLInputElement.click() 触发系统文件对话框两次堆叠，第二次会让第
+  //   一次的 dialog 重画或被 OS 视为新的并发请求，部分 Chromium 版本直接刷掉
+  //   pending selection；playwright 实测同帧双击 input.click() 被调 2 次。
+  // · 原生壳 (iOS PHPicker / Android intent)：pickImagesWithNativeShell 没有
+  //   去重，第二次 invoke 让原生层弹两次 picker 堆叠，第一次的 result Promise
+  //   被第二次的 PHPicker dismiss 当 cancel 解决 → assets=[] → 用户体感"选了
+  //   没反应"。
+  // 加一把同帧 raf 守，第一次成功后立刻置 true，下一帧自然释放让 retry/cancel
+  // 路径还能正常工作。各 picker 共享同一把锁——同一时刻 UI 只能开一个原生
+  // picker，逻辑上等价。
+  const pickerOpeningRef = useRef(false);
+  const acquirePickerLock = () => {
+    if (pickerOpeningRef.current) {
+      return false;
+    }
+    pickerOpeningRef.current = true;
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        pickerOpeningRef.current = false;
+      });
+    } else {
+      pickerOpeningRef.current = false;
+    }
+    return true;
+  };
+
   const pickAlbum = () => {
-    if (attachmentBusy) {
+    if (attachmentBusy || !acquirePickerLock()) {
       return;
     }
 
@@ -1478,7 +1509,7 @@ export function ChatComposer({
   };
 
   const pickCamera = () => {
-    if (attachmentBusy) {
+    if (attachmentBusy || !acquirePickerLock()) {
       return;
     }
 
@@ -1554,7 +1585,7 @@ export function ChatComposer({
   });
 
   const pickFile = () => {
-    if (attachmentBusy) {
+    if (attachmentBusy || !acquirePickerLock()) {
       return;
     }
 
