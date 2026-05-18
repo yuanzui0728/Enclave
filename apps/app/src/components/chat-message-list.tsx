@@ -575,9 +575,21 @@ export function ChatMessageList({
       return;
     }
 
+    // 走查本会话 R3：和姊妹 chat-details-page R3 同款 — 原版只看 primary
+    // actionLabel 判断 dismiss 时长，2.2s 太短赶不上用户阅读"已设为消息提醒
+    // · ...系统通知未开启" 类 warning + 顺手点 "返回上一页"。
+    // handleSelectReminder（line ~2670）在 web 移动端 permission==="denied"
+    // 分支会让 actionLabel=undefined（只在原生壳里给"去设置"），
+    // 只挂 secondaryActionLabel="返回上一页"。原写法把它当作"无 action 的纯
+    // 信息 notice"以 2200ms dismiss，用户唯一能点的二级按钮还没看清楚就被
+    // 收回去。任一组 action（primary or secondary）有完整 label+handler 都
+    // 走 5000ms。
+    const hasInteractiveAction =
+      Boolean(actionNotice.actionLabel && actionNotice.onAction) ||
+      Boolean(actionNotice.secondaryActionLabel && actionNotice.onSecondaryAction);
     const timer = window.setTimeout(
       () => setActionNotice(null),
-      actionNotice.actionLabel ? 5000 : 2200,
+      hasInteractiveAction ? 5000 : 2200,
     );
     return () => window.clearTimeout(timer);
   }, [actionNotice]);
