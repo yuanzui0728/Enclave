@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { getConversations, type Message } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import { getConversationDisplayTitle } from "../../lib/conversation-preview";
 import { normalizePathname } from "../../lib/normalize-pathname";
 import { joinConversationRoom, onChatMessage } from "../../lib/socket";
 import { showLocalNotification } from "../../runtime/mobile-bridge";
@@ -96,7 +97,10 @@ export function ConversationStrongReminderHost() {
       const message = payload as Message;
       void showLocalNotification({
         id: `strong-reminder-${conversation.id}-${message.id}`,
-        title: t(msg`强提醒 · ${conversation.title}`),
+        // R6：OS-level local notification title 也得翻 sentinel——和姊妹
+        // chat-list-page / use-conversation-thread 同款；非中文 locale 用户在
+        // 通知中心 / Mac 任务栏看到 raw「未知联系人」字面量。
+        title: t(msg`强提醒 · ${getConversationDisplayTitle(conversation.title)}`),
         body: describeStrongReminderMessage(message),
         route: isDesktopLayout
           ? buildDesktopChatThreadPath({
