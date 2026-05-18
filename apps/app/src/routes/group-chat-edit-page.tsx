@@ -268,7 +268,13 @@ function MobileGroupChatEditPage({
     // 「群聊不存在」status card 上点「重试读取」时，name mode 也会白白多打
     // 一次 GET /api/groups/$id/members，公网隧道 ~600ms RTT 的浪费 + 后端
     // 请求噪音。按 mode 收口：只在 nickname mode 才捎带 members refetch。
-    const refetches = [groupQuery.refetch()];
+    //
+    // 走查 R67：原版 `const refetches = [groupQuery.refetch()]`，TS 推导成
+    // Promise<QueryObserverResult<Group, Error>>[]，push members refetch
+    // (Promise<QueryObserverResult<GroupMember[], Error>>) 时 TS 报 TS2345。
+    // 类型不一致让 pnpm tsc 直接抛错，CI build 卡这条。Promise.all 只用来
+    // 并发起飞、不消费 result，泛用 Promise<unknown> 数组即可。
+    const refetches: Promise<unknown>[] = [groupQuery.refetch()];
     if (mode === "nickname") {
       refetches.push(membersQuery.refetch());
     }

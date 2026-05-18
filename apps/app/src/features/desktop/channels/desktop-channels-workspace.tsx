@@ -556,10 +556,18 @@ export function DesktopChannelsWorkspace({
         return;
       }
       event.preventDefault();
-      if (commentDrawerPostId) {
-        setCommentDrawerPostId(null);
-      } else if (authorPanelVisible) {
+      // 走查 2026-05-18 第二轮 R14：原顺序是 drawer 先 author 后，但视觉层叠
+      // 上是 author overlay (z-40) 盖在 drawer (z-30) 之上 — 用户在 drawer 打
+      // 开的同时点 slide 上的作者头像（drawer 外层 pointer-events-none 让点击穿
+      // 透到底层 slide），两者并存：drawer 在底（被覆盖看不到），author overlay
+      // 在顶（可见）。原顺序按 Esc 先关 drawer（用户根本看不到，体感"按了 Esc
+      // 没反应"），再按 Esc 才关 author。两个 Esc 才解掉一层可见 modal。
+      // 修法：反转顺序。Esc 先关最顶层可见的（author overlay），下一个 Esc 再
+      // 关露出来的 drawer。符合用户直觉 + 标准 modal 栈出栈语义。
+      if (authorPanelVisible) {
         onCloseAuthorRef.current();
+      } else if (commentDrawerPostId) {
+        setCommentDrawerPostId(null);
       }
     };
 
