@@ -141,19 +141,33 @@ function isEmojiAvatar(value: string) {
   return false;
 }
 
+// 走查 2026-05-18 新会话 R1（移动端视频号）：原逻辑里两条放行规则会让 <img>
+// 替用户的浏览器去打陌生 host：
+//   1) 任意 `./` / `../` / 裸 `xxx.png` 都被当图片渲染——结果 `<img src="x.png">`
+//      在 `/tabs/channels` 这种页面上被浏览器按当前 URL 相对路径解析（实测落到
+//      `/api/x.png`、`/tabs/x.png` 都拿不到），每打开一次转发 picker / 作者列表
+//      就给 cloud-api 打一炮 404，referer 还把 channels 页面 URL 透出去。
+//   2) `//evil.example/icon.png` 这种 scheme-relative 串前两个字符以两个「斜杠
+//      类」字符开头（`/`、`\` 互相组合）的，被 URL parser 一规范化就跑到外部
+//      第三方 host（隐私探针 / 跟踪像素 / 内网 SSRF）。后端
+//      `isSafeAvatarValueBackend` 已经按这条规则在写入端 reject（见
+//      api/src/modules/characters/characters.service.ts:1287），但 DB 里历史脏
+//      数据 + curl 直 PUT 绕过仍能存进来——前端渲染要再守一道。
+// 收紧成「必有可识别 scheme / 站内绝对路径前缀」：emoji / 文字会落到 isEmoji-
+// Avatar 通道，外部 http(s) 头像（可信 CDN）仍然放行，裸字符串走 fallback 渐变。
+const SCHEME_RELATIVE_AVATAR_RE = /^[/\\][/\\]/;
 function isLikelyImageSource(value: string) {
   if (!value) {
     return false;
   }
-
+  if (SCHEME_RELATIVE_AVATAR_RE.test(value)) {
+    return false;
+  }
   return (
     value.startsWith("/") ||
-    value.startsWith("./") ||
-    value.startsWith("../") ||
     value.startsWith("blob:") ||
     /^https?:\/\//i.test(value) ||
-    /^data:image\//i.test(value) ||
-    /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(value)
+    /^data:image\//i.test(value)
   );
 }
 
