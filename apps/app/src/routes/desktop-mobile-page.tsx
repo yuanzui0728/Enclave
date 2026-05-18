@@ -68,7 +68,10 @@ import {
   parseDesktopContactsRouteState,
 } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { getConversationPreviewParts } from "../lib/conversation-preview";
+import {
+  getConversationDisplayTitle,
+  getConversationPreviewParts,
+} from "../lib/conversation-preview";
 import {
   hydrateMobileHandoffHistoryFromNative,
   pushMobileHandoffRecord,
@@ -498,9 +501,16 @@ export function DesktopMobilePage() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isDesktopLayout]);
+  // R21：和姊妹 ConversationCardLink / DirectChatDetailsPanel / 加好友预填关键词
+  // / 搜索浮层一票 sentinel 漏翻同款 —— callHandoffConversation?.title 和
+  // callHandoffState?.title 都直接来自服务端持久化的 ConversationEntity.title，
+  // 可能是 normalizeLegacyConversationEntity 写入的字面量「未知联系人」/「Direct
+  // conversation」。callHandoffTitle 拼进「把 ${title} 的通话入口带到手机继续。」
+  // / 接力卡片 label / aria-label 等 3 处 EN/JA/KO locale 文案，用户把通话从桌面
+  // 接力到手机时看到中文 sentinel 字面量塞在英文句子里。
   const callHandoffTitle =
-    callHandoffConversation?.title?.trim() ||
-    callHandoffState?.title?.trim() ||
+    getConversationDisplayTitle(callHandoffConversation?.title?.trim() ?? "") ||
+    getConversationDisplayTitle(callHandoffState?.title?.trim() ?? "") ||
     (callHandoffState?.conversationType === "group"
       ? t(msg`当前群聊`)
       : t(msg`当前聊天`));
