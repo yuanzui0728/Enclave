@@ -589,6 +589,17 @@ export class FeedService implements OnModuleInit {
         this.resolveAuthorBio(latestPost.authorId, latestPost.authorType),
       ]);
 
+    // 走查 2026-05-18 新会话 R8（本轮）：原 response 只回 recentPosts.slice(0, 12)
+    // 让前端 author overlay 的 "N 条内容" / "N 条直播回放" 两个 badge 直接拿
+    // .length / .filter().length，等于把高产作者（>12 条）统一显示为 12，与 home
+    // decorations 那条 ChannelAuthorSummary.postCount（全量）对不上 → 用户在 home
+    // 卡上看到「沈予 50 条内容」，点头像进作者主页又看到「12 条内容」。authorPosts
+    // 已经是经过 blocked / not_interested / playable 过滤后的完整列表（line 544-559），
+    // 拿全长 + .filter live_clip 直接送上来，免得 client 再 slice 一遍。
+    const liveClipCount = authorPosts.filter(
+      (post) => post.sourceKind === 'live_clip',
+    ).length;
+
     return {
       authorId: latestPost.authorId,
       authorName: this.remarkResolver.applyCharacterRemark(
@@ -607,6 +618,8 @@ export class FeedService implements OnModuleInit {
       bio,
       followerCount,
       isFollowing: Boolean(isFollowing),
+      postCount: authorPosts.length,
+      liveClipCount,
       recentPosts: authorPosts.slice(0, 12).map((post) => ({
         ...this.serializePost(post, ownerStateMap.get(post.id), avatarContext),
         commentsPreview: commentsPreviewMap.get(post.id) ?? [],

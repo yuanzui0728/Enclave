@@ -140,6 +140,14 @@ export interface FeedChannelAuthorProfile {
   bio?: string | null;
   followerCount: number;
   isFollowing: boolean;
+  // 走查 2026-05-18 新会话 R8（本轮）：原 schema 只回 recentPosts（服务端
+  // 强制 slice(0, 12) 截断）。author overlay badge "N 条内容" / "N 条直播
+  // 回放" 旧实现拿 recentPosts.length / recentPosts.filter(...).length，对
+  // 50+ 贴的高产作者一律显示 12 / ≤12，与 home 装饰位上的 ChannelAuthorSummary
+  // 的 postCount 字段对不上。补 postCount / liveClipCount 走全量统计；
+  // recentPosts 仍按 12 截断不变。
+  postCount: number;
+  liveClipCount: number;
   recentPosts: FeedPostListItem[];
 }
 

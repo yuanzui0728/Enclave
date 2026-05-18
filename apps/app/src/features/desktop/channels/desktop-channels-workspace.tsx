@@ -1802,9 +1802,17 @@ function DesktopChannelAuthorPanel({
       ? t(msg`这位居民暂时还没有填写视频号简介。`)
       : t(msg`这个视频号作者暂时还没有填写简介。`);
   const recentPosts = profile?.recentPosts.slice(0, 5) ?? [];
-  const liveClipCount = (profile?.recentPosts ?? []).filter(
-    (post) => post.sourceKind === "live_clip",
-  ).length;
+  // 走查 2026-05-18 新会话 R8（本轮）：原 liveClipCount = (profile?.recentPosts ?? [])
+  // .filter(p => p.sourceKind === "live_clip").length，但 server 把 recentPosts
+  // 截到 12 条 → 高产作者直播回放计数永远 ≤12，与 home 卡上的全量统计对不上。
+  // server 现在直接回 liveClipCount / postCount 两个全量数（feed.service.ts R8
+  // 同款修法）；client 优先用 server 字段，旧 client 兼容 fallback 走 .length。
+  const liveClipCount =
+    profile?.liveClipCount ??
+    (profile?.recentPosts ?? []).filter(
+      (post) => post.sourceKind === "live_clip",
+    ).length;
+  const postCount = profile?.postCount ?? profile?.recentPosts.length ?? 0;
 
   return (
     <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
@@ -1873,7 +1881,7 @@ function DesktopChannelAuthorPanel({
               {t(msg`${profile.followerCount} 关注者`)}
             </span>
             <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
-              {t(msg`${profile.recentPosts.length} 条内容`)}
+              {t(msg`${postCount} 条内容`)}
             </span>
             <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
               {t(msg`${liveClipCount} 条直播回放`)}
