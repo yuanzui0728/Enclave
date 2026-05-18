@@ -1624,9 +1624,18 @@ export function DesktopChatWorkspace({
         <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-3 py-3 backdrop-blur-xl">
             <div className="relative z-20 flex items-center gap-2">
+              {/* 走查新一轮 R13：和 R11 quickMenu 同款思路。聊天列表顶部的
+                  搜索框 + 展开的 DesktopSearchDropdownPanel 都在 chat list 子树
+                  里、不在 threadSectionRef / sidePanelRef / desktopHeaderActionsRef
+                  保护区。用户开着「聊天信息」侧栏想点搜索框「随手搜一下」时，
+                  pointerdown capture 兜底先 dismissSidePanel —— 还没开始打字
+                  当前会话的详情侧栏就已经被偷关。搜索结果点击导航走 React Router，
+                  会通过 workspace 自己的 useEffect 链根据新 routeState 处理侧栏，
+                  不依赖这个 dismiss。所以给搜索容器加 shield 安全。 */}
               <div
                 ref={desktopSearchLauncher.containerRef}
                 className="relative min-w-0 flex-1"
+                data-yj-portal-shield="desktop-chat-search-launcher"
               >
                 <TextField
                   value={searchTerm}
