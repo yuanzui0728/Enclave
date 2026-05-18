@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>隐界</title>
+    <!--
+      走查 2026-05-18 第四轮 R1：apps/app/index.html 历来没声明任何 favicon，
+      浏览器默认按 /favicon.ico 拉，apps/app/public 也没这个文件 → 每次进入
+      隐界（含 /tabs/channels 视频号）都在 console 冒一条 404 错。desktop
+      视频号 walk 实测 console.error: "Failed to load resource: 404
+      http://127.0.0.1:5183/favicon.ico"。复用 apps/site 那套 favicon PNG
+      （从 apps/site/public 复制到 apps/app/public），声明 link 让浏览器直接
+      走 PNG 不再尝试 /favicon.ico。
+    -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="shortcut icon" href="/favicon.png" />
     <!-- 公网隧道下让浏览器尽早完成同源 TCP/TLS 握手并 keep-alive（/api/*、
          /socket.io、/assets/* 共用同一个连接）。 -->
     <link rel="preconnect" href="/" crossorigin />
