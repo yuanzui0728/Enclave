@@ -7860,6 +7860,19 @@ function ImageViewerOverlay({
         <img
           src={activeImage.url}
           alt={activeImage.label}
+          // 走查电脑端单聊 R88：全屏图片查看器的主 <img> 漏 decoding/draggable。
+          // 1) decoding="async"——用户从消息列表里点张图触发 viewer mount，原图
+          //    大概 1-5MB（手机直出），浏览器默认同步在主线程 decode 才能渲染，
+          //    点开瞬间整页冻 100-300ms。和姊妹 StickerMessage / ImageMessage /
+          //    DesktopAttachmentDraftBar R87 同款方向，让 decode 跑 off-thread。
+          // 2) draggable={false}——line 7856-7858 的 onTouchStart/Move/End 是
+          //    移动端"左右滑切上下张"手势；电脑端用户在桌面 viewer 里按住图
+          //    拖拽默认会触发 HTML5 native drag（图片源 URL），干扰 onClick
+          //    背景关闭判定（mousedown → drag start 后 click 不 fire），用户
+          //    点空白也得多按一次才关。和姊妹 chat-composer (line 5407)
+          //    StickerMessage / mention picker 一批 viewer 已挂的同款。
+          decoding="async"
+          draggable={false}
           className={`max-h-full max-w-full object-contain shadow-[0_32px_80px_rgba(0,0,0,0.34)] ${
             isDesktop ? "rounded-[20px]" : "rounded-[14px]"
           }`}
