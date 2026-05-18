@@ -275,6 +275,31 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       }
     };
   }, []);
+  // 走查第一轮 R3：和 chat-room-page MobileChatThreadHeader R1（commit 222ec0680）
+  // 同款问题——本页有 6 处「点行进二级页」按钮（个人资料 / 推荐给朋友 /
+  // 查找聊天记录 / 设置当前聊天背景 / 语音通话 / 视频通话 / 加入群聊），全部走
+  // `onClick={() => { void navigate({ to: ... }) }}` 形态、没挂 disabled / 没同步 ref 守。
+  // 同帧 <16ms 双击任一行都让 tanstack-router push 2 条相同 history 项 → 用户从
+  // 二级页返回还要按 2 次返回才能回到 details；ChatSettingRow 内 onClick 没有
+  // 任何 throttle，每个 tap 都直冲 navigate。chat-details-page 唯一性 mount，
+  // 用一个共享 ref 守住所有前进按钮：第一次成功后 page unmount，第二次根本不
+  // 该再飞；和 backFiredRef 一样用 raf 复位兜底 navigate 没真正切走的边界。
+  const rowNavigateFiredRef = useRef(false);
+  const guardRowNavigation = useCallback(
+    <Args extends unknown[]>(handler: (...args: Args) => void) => {
+      return (...args: Args) => {
+        if (rowNavigateFiredRef.current) return;
+        rowNavigateFiredRef.current = true;
+        handler(...args);
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => {
+            rowNavigateFiredRef.current = false;
+          });
+        }
+      };
+    },
+    [],
+  );
   const handleOperationBack = guardBackAction(() => {
     if (navigateToRouteStateReturn()) {
       return;
@@ -439,7 +464,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
     targetCharacterId,
   ]);
 
-  const handleOpenCharacterProfile = () => {
+  const handleOpenCharacterProfile = guardRowNavigation(() => {
     if (!targetCharacterId) {
       return;
     }
@@ -452,7 +477,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         returnHash: chatRouteHash,
       }),
     });
-  };
+  });
 
   // 走查（新一轮）R1：「推荐给朋友」原版无任何双击锁。playwright 三连点
   // 触发 3 次 navigator.clipboard.writeText（web 路径）/ Native iOS 真机上
@@ -877,7 +902,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
       key: "add",
       label: t(msg`发起群聊`),
       kind: "add" as const,
-      onClick: () => {
+      onClick: guardRowNavigation(() => {
         void navigate({
           to: "/group/new",
           hash: buildCreateGroupRouteHash({
@@ -888,7 +913,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
           }),
         });
-      },
+      }),
     },
   ];
   const dangerSheetConfig =
@@ -1125,22 +1150,22 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               resetEntryGuard();
             }}
             voiceLabel={entryNotice.voiceLabel}
-            onContinue={() => {
+            onContinue={guardRowNavigation(() => {
               resetEntryGuard();
               void navigate({
                 to: "/chat/$conversationId/video-call",
                 params: { conversationId },
                 ...(chatRouteHash ? { hash: chatRouteHash } : {}),
               });
-            }}
-            onSwitchToVoice={() => {
+            })}
+            onSwitchToVoice={guardRowNavigation(() => {
               resetEntryGuard();
               void navigate({
                 to: "/chat/$conversationId/voice-call",
                 params: { conversationId },
                 ...(chatRouteHash ? { hash: chatRouteHash } : {}),
               });
-            }}
+            })}
             compact
           />
         </div>
@@ -1229,13 +1254,13 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
               <ChatSettingRow
                 label={t(msg`查找聊天记录`)}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/chat/$conversationId/search",
                     params: { conversationId },
                     ...(chatRouteHash ? { hash: chatRouteHash } : {}),
                   });
-                }}
+                })}
               />
             </div>
           </ChatDetailsSection>
@@ -1272,10 +1297,13 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             disabled={!targetCharacterId}
             voiceValue={t(msg`AI 语音`)}
             videoValue={t(msg`AI 数字人`)}
-            onSelectKind={(kind) => {
+            onSelectKind={guardRowNavigation((kind) => {
               setNotice(null);
               if (kind === "video") {
                 if (!guardVideoEntry()) {
+                  // 走查第一轮 R3：guardVideoEntry 拒绝时还没真发生导航，
+                  // ref 已经被外层 guardRowNavigation 抢占；raf 后释放即可，
+                  // 用户下一帧可再点其他通话类型。
                   return;
                 }
               }
@@ -1287,7 +1315,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 params: { conversationId },
                 ...(chatRouteHash ? { hash: chatRouteHash } : {}),
               });
-            }}
+            })}
           />
 
           <ChatDetailsSection title={t(msg`聊天扩展`)} variant="wechat">
@@ -1305,13 +1333,13 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                   backgroundQuery.data?.effectiveBackground,
                 )}
                 variant="wechat"
-                onClick={() => {
+                onClick={guardRowNavigation(() => {
                   void navigate({
                     to: "/chat/$conversationId/background",
                     params: { conversationId },
                     ...(chatRouteHash ? { hash: chatRouteHash } : {}),
                   });
-                }}
+                })}
               />
             </div>
           </ChatDetailsSection>
