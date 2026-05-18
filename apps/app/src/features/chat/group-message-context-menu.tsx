@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { msg } from "@lingui/macro";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
@@ -138,6 +138,17 @@ export function GroupMessageContextMenu({
     Math.max(VIEWPORT_PADDING, viewportHeight - menuHeight - VIEWPORT_PADDING),
   );
 
+  // 走查 2026-05-18 移动端群聊 R4：和姊妹 sheet mobile-message-reminder-sheet R3
+  // / mobile-mention-picker-sheet R3 / mobile-message-action-sheet R3 同款修法
+  // ——下方 back/Esc 两个 effect 原本把 onClose 列进 deps，但调用方 chat-message-list
+  // 是直接 `onClose={() => setContextMenuState(null)}` inline arrow，每次父帧
+  // 重渲染就是新引用。ChatMessageList 长聊里 typing tick / socket echo /
+  // setQueriesData / setMessages 每秒多次 re-render，context menu 还开着的时
+  // 候每帧都拆装一次原生 back interceptor + window keydown listener。镜像
+  // onCloseRef，deps 只保留挂载即可。
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   // 走查新一轮 R1：长按消息冒出的这个上下文菜单是用 `contextMenuState ? <Menu .../>
   // : null` 条件挂载的（chat-message-list 内）——挂上后没注册 Android 硬件 Back
   // 拦截。Android 用户长按消息 → 菜单弹出 → 按 BACK 不是关菜单而是触发 webview
@@ -148,11 +159,11 @@ export function GroupMessageContextMenu({
   useEffect(() => {
     const unregister = registerAndroidBackInterceptor((event) => {
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
       return true;
     });
     return unregister;
-  }, [onClose]);
+  }, []);
 
   // 走查 R7：和姊妹 sheet（mobile-message-action-sheet R2 等）同款 ESC 兜底
   // —— 桌面/平板/外接键盘右键消息弹的 context menu 上拍 ESC 没反应，只能点
@@ -164,11 +175,11 @@ export function GroupMessageContextMenu({
         return;
       }
       event.preventDefault();
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   return (
     <div
