@@ -98,6 +98,13 @@ type DesktopChannelsWorkspaceProps = {
   onReplyToComment: (comment: FeedComment) => void;
   onSectionChange: (section: FeedChannelHomeSection) => void;
   onSelectedPostChange: (postId: string | null) => void;
+  // 走查 2026-05-18 新会话 R3：把"当前哪条 post 的评论抽屉是开的"上报给
+  // channels-page，用来 gate desktopCommentsQuery 的 enable/key —— 之前 query
+  // 跟着 desktopSelectedPostId 走，用户每滑过一条 slide 就会 fetch 一次 comments
+  // （公网隧道 200-500ms RTT × N slide），但 90% slide 用户根本不点 chat 图标。
+  // 抽屉是 workspace 本地状态，channels-page 拿不到；通过这个回调把开关信号
+  // 透给父级，让 query 只在抽屉真打开时才发请求。
+  onDrawerOpenChange?: (postId: string | null) => void;
   onToggleAuthorFollow: (authorId: string, following: boolean) => void;
   onToggleFavorite: (post: FeedPostListItem) => void;
   onViewPost: (postId: string) => void;
@@ -146,6 +153,7 @@ export function DesktopChannelsWorkspace({
   onReplyToComment,
   onSectionChange,
   onSelectedPostChange,
+  onDrawerOpenChange,
   onToggleAuthorFollow,
   onToggleFavorite,
   onViewPost,
@@ -271,6 +279,15 @@ export function DesktopChannelsWorkspace({
       current && current === selectedPost?.id ? current : null,
     );
   }, [selectedPost?.id]);
+
+  // 走查 2026-05-18 新会话 R3：drawer open 状态上报 channels-page —— 父级用
+  // 来 gate desktopCommentsQuery（之前 query 跟着 desktopSelectedPostId 走，
+  // 每滑过一张 slide 都 fetch comments 一次浪费 RTT）。fire-and-forget：
+  // onDrawerOpenChange 是 channels-page 的 setState setter，identity 稳定，
+  // 不会让这个 effect 重复跑。
+  useEffect(() => {
+    onDrawerOpenChange?.(commentDrawerPostId);
+  }, [commentDrawerPostId, onDrawerOpenChange]);
 
   // 走查 2026-05-17 新会话 R2：原依赖整个 posts 数组——每次 ChannelsPage 上
   // 的 like/favorite/follow 乐观更新让 React Query setQueryData 返回新数组，

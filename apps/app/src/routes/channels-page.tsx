@@ -138,6 +138,15 @@ export function ChannelsPage() {
     useState<FeedCommentReplyTarget | null>(null);
   const [desktopReplyTarget, setDesktopReplyTarget] =
     useState<FeedCommentReplyTarget | null>(null);
+  // 走查 2026-05-18 新会话 R3：抽屉 open 状态上提到 channels-page，让
+  // desktopCommentsQuery 只在抽屉打开时 enable。之前 query 跟着 desktop
+  // SelectedPostId 走 — 每滑过一张 slide 都 fetch 一次 comments，公网隧道
+  // 200-500ms RTT × N slide 全打水漂（90% slide 用户根本不点 chat 图标）。
+  // workspace 通过 onDrawerOpenChange prop 回调 setter，本地 state 只用于
+  // workspace 内部抽屉显隐。
+  const [desktopCommentDrawerPostId, setDesktopCommentDrawerPostId] = useState<
+    string | null
+  >(null);
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [noticeActionLabel, setNoticeActionLabel] = useState<string | null>(
@@ -1056,12 +1065,17 @@ export function ChannelsPage() {
       ? getCommentsPreview(mobileCommentSheetPostId)
       : EMPTY_COMMENT_PREVIEW,
   });
+  // 走查 2026-05-18 新会话 R3：原 query key 跟着 desktopSelectedPostId 走 ——
+  // 用户滑过 N 张 slide 就 fetch N 次 comments，但抽屉 90% 不开，全是浪费的
+  // RTT。改用 desktopCommentDrawerPostId：workspace 通过 onDrawerOpenChange
+  // 回调把开关信号上报，query 只在抽屉真打开时 enable。抽屉关时 enable false
+  // → 不发请求；下次再打开同一条 post 时若已 cache 命中 → 零 RTT 直接渲染。
   const desktopCommentsQuery = useQuery({
-    queryKey: ["app-feed-comments", baseUrl, desktopSelectedPostId],
-    queryFn: () => listFeedComments(desktopSelectedPostId!, baseUrl),
-    enabled: Boolean(isDesktopLayout && desktopSelectedPostId),
-    placeholderData: desktopSelectedPostId
-      ? getCommentsPreview(desktopSelectedPostId)
+    queryKey: ["app-feed-comments", baseUrl, desktopCommentDrawerPostId],
+    queryFn: () => listFeedComments(desktopCommentDrawerPostId!, baseUrl),
+    enabled: Boolean(isDesktopLayout && desktopCommentDrawerPostId),
+    placeholderData: desktopCommentDrawerPostId
+      ? getCommentsPreview(desktopCommentDrawerPostId)
       : EMPTY_COMMENT_PREVIEW,
   });
   const desktopAuthorProfileQuery = useQuery({
@@ -1172,18 +1186,22 @@ export function ChannelsPage() {
               },
             }
           : null;
+  // 走查 2026-05-18 新会话 R3：error 匹配的 postId 从 desktopSelectedPostId
+  // 换成 desktopCommentDrawerPostId —— panel 错误只在抽屉打开时才能看见，按
+  // 抽屉对应的 postId 匹配语义更准（用户已经关抽屉或滑走时不该残留错条；
+  // page-level setNotice 那条 onError 兜底已经在 R8-1 fix 加好）。
   const desktopCommentPanelErrorMessage =
     (desktopCommentsQuery.isError && desktopCommentsQuery.error instanceof Error
       ? desktopCommentsQuery.error.message
       : null) ??
     (likeCommentMutation.isError &&
     likeCommentMutation.error instanceof Error &&
-    likeCommentMutation.variables?.postId === desktopSelectedPostId
+    likeCommentMutation.variables?.postId === desktopCommentDrawerPostId
       ? likeCommentMutation.error.message
       : null) ??
     (commentMutation.isError &&
     commentMutation.error instanceof Error &&
-    commentMutation.variables?.postId === desktopSelectedPostId
+    commentMutation.variables?.postId === desktopCommentDrawerPostId
       ? commentMutation.error.message
       : null);
   const pendingLikePostId = likeMutation.isPending
@@ -1287,6 +1305,12 @@ export function ChannelsPage() {
 
     setDesktopSelectedPostId(routeSelectedPostId);
     setDesktopReplyTarget(null);
+    // 走查 2026-05-18 新会话 R3：drawer 状态也清 — workspace 的 R5-1 reset
+    // 会在 baseUrl 切换时 setCommentDrawerPostId(null)，但那是 workspace 本地
+    // state；上提到 channels-page 的 desktopCommentDrawerPostId 这边也要同步
+    // 清空，否则 baseUrl change → workspace effect 还没跑前 query enable 残
+    // 留 → 跑到 B 账户 fetch /feed/A_postId/comments 拿 404。
+    setDesktopCommentDrawerPostId(null);
     setMobileCommentSheetPostId(null);
     setMobileReplyTarget(null);
   }, [baseUrl, routeSelectedPostId]);
@@ -1764,6 +1788,7 @@ export function ChannelsPage() {
             })
           }
           onSelectedPostChange={setDesktopSelectedPostId}
+          onDrawerOpenChange={setDesktopCommentDrawerPostId}
           onViewPost={handleDesktopViewPost}
         />
       </Suspense>
