@@ -576,7 +576,12 @@ function DirectChatDetailsPanel({
     void navigate({
       to: "/desktop/add-friend",
       hash: buildDesktopAddFriendRouteHash({
-        keyword: targetCharacter?.name || conversation.title || "",
+        // R8：和 R7 的 displayName / 昵称 row 同款——targetCharacter.name 缺失
+        // 时落到 conversation.title，后者可能是服务端持久化的 legacy sentinel
+        // 「未知联系人」/「Direct conversation」。「添加朋友」搜索框预填的关键词
+        // 不翻一遍 sentinel，en-US/ja-JP/ko-KR 用户从「聊天信息」点「加为朋友」
+        // 进 desktop/add-friend 时，搜索框里会直接预填中文「未知联系人」。
+        keyword: targetCharacter?.name || conversationDisplayTitle || "",
         characterId: targetCharacterId,
         openCompose: true,
       }),

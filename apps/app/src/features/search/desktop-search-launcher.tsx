@@ -23,7 +23,10 @@ import {
 } from "@yinjie/contracts";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
-import { getConversationPreviewParts } from "../../lib/conversation-preview";
+import {
+  getConversationDisplayTitle,
+  getConversationPreviewParts,
+} from "../../lib/conversation-preview";
 import { formatMessageTimestamp } from "../../lib/format";
 import { searchStringToObject } from "../../lib/route-search";
 import {
@@ -453,17 +456,23 @@ export function DesktopSearchDropdownPanel({
         conversation,
         localMessageActionState,
       );
+      // R8：服务端 normalizeLegacyConversationEntity 在 direct 会话 title fallback
+      // 全部失败时持久化字面量「未知联系人」/「Direct conversation」。桌面搜索浮层
+      // （Ctrl/Cmd+K）quicklink title 和 AvatarChip 的 name fallback（用来取首字）
+      // 都直接拿 raw title → en-US/ja-JP/ko-KR 用户在搜索结果里看到中文 sentinel，
+      // AvatarChip 首字也取「未」/「D」不合 locale。和 ConversationCardLink R1 同款。
+      const displayTitle = getConversationDisplayTitle(conversation.title);
 
       const quickLink: DesktopSearchQuickLink = {
         id: `conversation-${conversation.id}`,
-        title: conversation.title,
+        title: displayTitle,
         description: `${preview.prefix}${preview.text}`, // i18n-ignore-line
         meta: t(msg`${getConversationThreadLabel(conversation)} · ${conversation.participants.length} 位参与者`),
         badge: getConversationThreadLabel(conversation),
         to: buildDesktopChatThreadPath({
           conversationId: conversation.id,
         }),
-        avatarName: conversation.title,
+        avatarName: displayTitle,
       };
 
       return quickLink;

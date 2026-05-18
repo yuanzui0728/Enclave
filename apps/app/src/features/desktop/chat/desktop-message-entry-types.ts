@@ -5,6 +5,7 @@ import type {
   OfficialAccountServiceConversationSummary,
   OfficialAccountSubscriptionInboxSummary,
 } from "@yinjie/contracts";
+import { getConversationDisplayTitle } from "../../../lib/conversation-preview";
 
 export type DesktopMessageEntry =
   | {
@@ -106,7 +107,13 @@ export function buildDesktopMessageEntries({
   for (const conversation of conversations) {
     if (
       !matchesDesktopMessageEntryKeyword(normalizedKeyword, () => [
-        conversation.title,
+        // R8：搜索关键词匹配用 displayTitle 而不是 raw conversation.title——后者
+        // 在 direct 会话 fallback 失败时持久化的 legacy sentinel「未知联系人」/
+        // 「Direct conversation」对非中文 locale 用户不可读。会话列表行已经经过
+        // getConversationDisplayTitle 翻好显示，但搜索框过滤还在拿 raw 字面量
+        // 比对：en-US 用户搜「Unknown」/「Direct」/「contact」一条都搜不到，
+        // 因为底下匹配的是「未知联系人」。
+        getConversationDisplayTitle(conversation.title),
         getConversationPreviewText(conversation),
       ])
     ) {
