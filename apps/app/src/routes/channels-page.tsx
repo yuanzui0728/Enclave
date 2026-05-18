@@ -1369,7 +1369,7 @@ export function ChannelsPage() {
           : t(msg`评论点赞失败，请稍后重试。`),
       );
     },
-    onSuccess: (_, input, context) => {
+    onSuccess: (_data, _input, context) => {
       const mutationBaseUrl = context?.mutationBaseUrl ?? baseUrl;
       const sameAccount = mutationBaseUrl === mutationBaseUrlRef.current;
       if (sameAccount) {
@@ -1379,15 +1379,18 @@ export function ChannelsPage() {
         setNotice(t(msg`评论互动已更新。`));
       }
       // fire-and-forget：await 会让 like-comment 按钮一直 disabled。
-      // optimistic 已经翻了 likedByOwner/likeCount，invalidate 让 server 真值兜底
-      // 一次（防止极端情况下两边 state drift）。
-      // invalidate 落 mutationBaseUrl — 标 B 的 cache stale 完全错；A 才是这条
-      // 评论点赞实际发生的账户。
+      // 走查 2026-05-18 新会话 R3（本轮）：原来兜「optimistic 已经翻 likedByOwner /
+      // likeCount，invalidate 让 server 真值兜底一次防 drift」——但 likeOwnerComment
+      // 是 one-way 操作（server 端 already-liked = no-op，没有 unlike 路径），
+      // optimistic flip 必然等于 server 真值（除非 onError 错回滚但 server 实际
+      // 成功这种极罕见网络分区）。yuanzui0728 那条 142 条评论的 post 上每点一
+      // 个赞都触发 listFeedComments 全量 refetch (server ~100 条 serialize +
+      // replyAuthorMap + likedSet → ~10-30KB JSON，公网隧道 RTT 200-500ms)，
+      // 5-10 个赞累计 1-5 秒纯浪费。同 commentMutation R2 的修法对齐：去掉
+      // comments invalidate，让 optimistic 当家；decorations 仍 invalidate
+      // (commentsPreviewByPostId 那条预览的 likedByOwner / likeCount 也要刷新)。
       void queryClient.invalidateQueries({
         queryKey: ["app-channels-home-decorations", mutationBaseUrl],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["app-feed-comments", mutationBaseUrl, input.postId],
       });
     },
   });
