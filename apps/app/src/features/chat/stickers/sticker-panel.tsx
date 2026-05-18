@@ -765,8 +765,14 @@ export function StickerPanel({
     highlightedSearchPosition && highlightedSearchPosition > 1
       ? t(
           msg`Home ${
-            firstSearchResultItem?.sticker.label ??
-            firstSearchResultItem?.sticker.stickerId ??
+            // 走查电脑端群聊 R11：和姊妹移动端单聊 R10（commit 0b4539945）同款
+            // ?? vs || 漏防——StickerAttachment.label 是 `string | undefined`，老
+            // 自定义贴纸 / wiki import 偶发以空串落库。?? 只防 null/undefined，
+            // label === "" 时键盘 hint 出空 "Home "，盲人 SR 听不出回的是哪张
+            // sticker。改 || 让空串也落到 stickerId fallback。本文件下面 12 处
+            // 兄弟 ?? 同步清扫。
+            firstSearchResultItem?.sticker.label ||
+            firstSearchResultItem?.sticker.stickerId ||
             t(msg`回默认`)
           }`,
         )
@@ -777,7 +783,7 @@ export function StickerPanel({
     lastSearchResultItem
       ? t(
           msg`End ${
-            lastSearchResultItem.sticker.label ??
+            lastSearchResultItem.sticker.label ||
             lastSearchResultItem.sticker.stickerId
           }`,
         )
@@ -805,7 +811,7 @@ export function StickerPanel({
     ? firstSearchResultItem
       ? {
           label:
-            firstSearchResultItem.sticker.label ??
+            firstSearchResultItem.sticker.label ||
             firstSearchResultItem.sticker.stickerId,
           totalCount: activeItems.length,
           sectionCount: searchSections.length,
@@ -2066,7 +2072,7 @@ export function StickerPanel({
                       <img
                         src={highlightedSearchItem.sticker.url}
                         alt={
-                          highlightedSearchItem.sticker.label ??
+                          highlightedSearchItem.sticker.label ||
                           highlightedSearchItem.sticker.stickerId
                         }
                         className="h-8 w-8 object-contain"
@@ -2076,7 +2082,7 @@ export function StickerPanel({
                     <div className="min-w-0">
                       <div className="font-medium text-[#9a5a0a]">
                         {searchSendLabel}
-                        {highlightedSearchItem.sticker.label ??
+                        {highlightedSearchItem.sticker.label ||
                           highlightedSearchItem.sticker.stickerId}
                       </div>
                       <div className="truncate pt-0.5 text-[color:var(--text-secondary)]">
@@ -2152,7 +2158,7 @@ export function StickerPanel({
                             <img
                               src={firstSearchResultItem.sticker.url}
                               alt={
-                                firstSearchResultItem.sticker.label ??
+                                firstSearchResultItem.sticker.label ||
                                 firstSearchResultItem.sticker.stickerId
                               }
                               className="h-4 w-4 rounded-[6px] object-contain"
@@ -2160,7 +2166,7 @@ export function StickerPanel({
                             />
                             <span className="truncate">
                               {searchDefaultSendLabel}
-                              {firstSearchResultItem.sticker.label ??
+                              {firstSearchResultItem.sticker.label ||
                                 firstSearchResultItem.sticker.stickerId}
                             </span>
                             {recommendedSearchSection ? (
@@ -2189,8 +2195,8 @@ export function StickerPanel({
                       <span className="inline-flex max-w-[140px] items-center rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                         <span className="truncate">
                           Home{" "}
-                          {firstSearchResultItem?.sticker.label ??
-                            firstSearchResultItem?.sticker.stickerId ??
+                          {firstSearchResultItem?.sticker.label ||
+                            firstSearchResultItem?.sticker.stickerId ||
                             t(msg`回默认`)}
                         </span>
                       </span>
@@ -2200,8 +2206,8 @@ export function StickerPanel({
                       <span className="inline-flex max-w-[140px] items-center rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                         <span className="truncate">
                           End{" "}
-                          {lastSearchResultItem?.sticker.label ??
-                            lastSearchResultItem?.sticker.stickerId ??
+                          {lastSearchResultItem?.sticker.label ||
+                            lastSearchResultItem?.sticker.stickerId ||
                             t(msg`末项`)}
                         </span>
                       </span>
@@ -3226,7 +3232,7 @@ function StickerButton({
           }
         }}
         onFocus={onHover}
-        title={sticker.label ?? sticker.stickerId}
+        title={sticker.label || sticker.stickerId}
         className={`flex w-full flex-col items-center gap-1 ${
           selectionDisabled ? "cursor-default" : ""
         }`}
@@ -3234,7 +3240,7 @@ function StickerButton({
       >
         <img
           src={sticker.url}
-          alt={sticker.label ?? sticker.stickerId}
+          alt={sticker.label || sticker.stickerId}
           className={
             compact
               ? "h-12 w-12 rounded-[10px] object-contain"
@@ -3250,7 +3256,7 @@ function StickerButton({
                 : "text-[color:var(--text-secondary)]"
             }`}
           >
-            {sticker.label ?? sticker.stickerId}
+            {sticker.label || sticker.stickerId}
           </span>
         ) : null}
       </button>
