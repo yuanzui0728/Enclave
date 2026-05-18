@@ -305,6 +305,18 @@ export function DesktopGroupCallPanel({
     if (!members.length) {
       return;
     }
+    // 走查电脑端群聊 R72：原版按钮 disabled={inviteNoticePending}，但当
+    // hasSyncedStatus=true 时按钮文字变成「已同步群状态」却仍然 clickable。
+    // 用户看到「已同步」字样以为这是状态展示但其实是按钮，点一下 →
+    // handleManualSync 仍然走 onSendInviteNotice → parent sendCallInviteMutation
+    // 发出一条完全相同 counts 的 "ongoing N/M" 群消息——群里残留一条 status=
+    // ongoing 但 counts 跟上一条卡片一模一样的重复邀请，所有真实成员看到 2
+    // 条相同的"x 在群通话 N/M 已加入"。auto-sync effect 的 attemptedSyncCountsRef
+    // 是 effect 内独立的 gating，不挡手动 click。同 counts 已发过就早退；
+    // 真有新变更（成员加入/离开）后 hasSyncedStatus 自然翻 false，按钮重新生效。
+    if (hasSyncedStatus) {
+      return;
+    }
     inviteSubmittingRef.current = true;
     onSendInviteNotice({
       activeCount,
@@ -457,7 +469,12 @@ export function DesktopGroupCallPanel({
             type="button"
             variant="primary"
             onClick={handleManualSync}
-            disabled={inviteNoticePending}
+            // 走查电脑端群聊 R72：原版只锁 inviteNoticePending；hasSyncedStatus
+            // 时按钮文案翻成「已同步群状态」但仍 clickable，用户点击 → 群里
+            // 冒出一条 counts 相同的重复 "ongoing N/M" 卡片。同步状态时彻底
+            // 禁用让按钮真正表达"已完成"语义；handleManualSync 内也加同款守
+            // 防键盘 Enter / 程序化点击绕过。
+            disabled={inviteNoticePending || hasSyncedStatus}
             className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
           >
             <UserPlus size={16} />
