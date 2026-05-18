@@ -247,6 +247,20 @@ export function splitChatTextSegments(text: string): ChatTextSegment[] {
 }
 
 export function summarizeChatMentions(text: string): ChatMentionSummary {
+  // 走查电脑端群聊 R5：DesktopConversationRow 渲染每条群会话时都会 inline 调
+  // summarizeChatMentions(visibleLastMessage?.text)，splitChatTextSegments 内
+  // 先跑 sanitizeDisplayedChatText（chatReply regex + 5 路 sanitizeAssistantText
+  // replace）+ matchAll(mentionTokenPattern) + flatMap(expandBuiltinStickerSegments)
+  // 全过一遍——长会话列表 60+ 条里 group 占比再加 typing socket / unread tick /
+  // local action store 触发的整列重渲（聊天列表非 memo 子组件，父 workspace
+  // 任何 state 变都连带渲染所有 row），绝大多数普通消息（没 @）跑了一遍只
+  // 为得到 mentions=[]。@ 不在文本里就早退，跳过所有 O(n) 字符串清洗。
+  if (!text.includes("@")) {
+    return {
+      hasMentionAll: false,
+      mentions: [],
+    };
+  }
   const segments = splitChatTextSegments(text);
   const mentions = segments
     .filter(
