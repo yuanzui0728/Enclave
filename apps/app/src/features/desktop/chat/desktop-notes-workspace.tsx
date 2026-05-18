@@ -162,9 +162,18 @@ export function DesktopNotesWorkspace({
     // 单独一份 key，每次开弹层都要等冷启动 fetch；而且 sendMutation.onSuccess
     // 后只 invalidate ["app-conversations", baseUrl]，这份独立 cache 不
     // 失效，再开弹层看到的"最近活跃"还是发送前的时间戳。
+    //
+    // 走查电脑端群聊 R97：和姊妹 desktop-create-group-dialog R2 / chat-files
+    // / chat-window / chat-image-viewer 一批共享 app-conversations 入口同款
+    // 修法——本 query staleTime=0 → 即便 chat-workspace 几百 ms 前刚带
+    // staleTime: 15_000 拉过同 key fresh 数据，本 useQuery 观察者 mount 时
+    // refetchOnMount(stale) 仍判定 stale → 公网隧道再 RTT 一次"发送笔记到
+    // 群"对话列表才能展示。和那批入口对齐 15s staleTime，cache 复用 →
+    // sendDialogNote 翻 truthy 时弹层立刻有数据。
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(sendDialogNote),
+    staleTime: 15_000,
   });
 
   // sessionKey 用 draftId 单独标识初始化作用域：早先把 selectedNoteId 也拼进去
