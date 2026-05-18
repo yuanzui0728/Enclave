@@ -36,6 +36,13 @@ export function DigitalHumanEntryNotice({
 }) {
   return (
     <InlineNotice
+      // R57：DigitalHumanEntryNotice 是用户点视频通话按钮后才出现的
+      // 「门口提示」，告诉用户当前数字人 gateway / quota 状态 + 是否
+      // 改走语音。条件渲染（仅当 openCallMutation 返回 hint 或 gateway
+      // 不健康时挂出），盲人 SR 必须在它弹出来时立刻听到才知道为什么
+      // 通话没直接开。warning → alert assertive，info → status polite。
+      role={tone === "warning" ? "alert" : "status"}
+      aria-live={tone === "warning" ? "assertive" : "polite"}
       tone={tone}
       className={
         compact
